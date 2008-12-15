@@ -1375,10 +1375,12 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
     int PathCost = 0;
     bool bFound = false;
 	*psolcost = 0;
+	bool bOptimalSolution = false;
 
+	printf("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bsearchuntilfirstsolution, bOptimalSolution);
 
     //plan for the first solution only
-    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bsearchuntilfirstsolution, false, allocated_time_secs)) == false) 
+    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bsearchuntilfirstsolution, bOptimalSolution, allocated_time_secs)) == false) 
     {
         printf("failed to find a solution\n");
     }
@@ -1393,6 +1395,9 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
 
 int ADPlanner::set_goal(int goal_stateID)
 {
+
+	printf("planner: setting goal to %d\n", goal_stateID);
+	environment_->PrintState(goal_stateID, true, stdout);
 
 	//it will be a new search iteration
 	pSearchStateSpace_->searchiteration++;
@@ -1421,6 +1426,9 @@ int ADPlanner::set_goal(int goal_stateID)
 
 int ADPlanner::set_start(int start_stateID)
 {
+
+	printf("planner: setting start to %d\n", start_stateID);
+	environment_->PrintState(start_stateID, true, stdout);
 
 	//it will be a new search iteration
 	pSearchStateSpace_->searchiteration++;
@@ -1451,16 +1459,22 @@ int ADPlanner::set_start(int start_stateID)
 
 void ADPlanner::update_succs_of_changededges(vector<int>* succstatesIDV)
 {
+	printf("UpdateSuccs called on %d succs\n", succstatesIDV->size());
+
 	Update_SearchSuccs_of_ChangedEdges(succstatesIDV);
 }
+
 void ADPlanner::update_preds_of_changededges(vector<int>* predstatesIDV)
 {
+	printf("UpdatePreds called on %d preds\n", predstatesIDV->size());
+
 	Update_SearchSuccs_of_ChangedEdges(predstatesIDV);
 }
 
 
 int ADPlanner::force_planning_from_scratch()
 {
+	printf("planner: forceplanfromscratch set\n");
 
     pSearchStateSpace_->bReinitializeSearchStateSpace = true;
 
@@ -1470,6 +1484,7 @@ int ADPlanner::force_planning_from_scratch()
 
 int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 {
+	printf("planner: search mode set to %d\n", bSearchUntilFirstSolution);
 
 	bsearchuntilfirstsolution = bSearchUntilFirstSolution;
 
@@ -1479,7 +1494,7 @@ int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 
 void ADPlanner::costs_changed(ChangedCellsGetter const & changedcells)
 {
-  Update_SearchSuccs_of_ChangedEdges(changedcells.getPredsOfChangedCells());
+  Update_SearchSuccs_of_ChangedEdges(changedcells.getPredsOfChangedCells()); //TODO - change as it is assumes backward search
 }
 
 

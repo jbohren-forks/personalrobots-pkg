@@ -719,6 +719,16 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 
 	//Initialize Environment (should be called before initializing anything else)
+	
+    if(!environment_nav3Dkin.InitializeEnv(size_x, size_y, map, 0,0,0,0,0,0, 
+		goaltol_x, goaltol_y, goaltol_theta, perimeterptsV,
+		cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, 
+		obsthresh)){
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+
+	/*	
     if(!environment_nav3Dkin.InitializeEnv(size_x, size_y, map, startx, starty, starttheta, goalx, goaly, goaltheta, 
 		goaltol_x, goaltol_y, goaltol_theta, perimeterptsV,
 		cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, 
@@ -726,6 +736,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
 	}
+	*/
+	environment_nav3Dkin.SetStart(startx, starty,starttheta);
 
 	//Initialize MDP Info
 	if(!environment_nav3Dkin.InitializeMDPCfg(&MDPCfg))
@@ -752,6 +764,11 @@ int planandnavigate3dkin(int argc, char *argv[])
             printf("ERROR: failed to set start state\n");
             exit(1);
         }
+
+
+	MDPCfg.goalstateid = environment_nav3Dkin.SetGoal(goalx, goaly, goaltheta);
+
+
     if(planner.set_goal(MDPCfg.goalstateid) == 0)
         {
             printf("ERROR: failed to set goal state\n");
@@ -996,10 +1013,10 @@ int main(int argc, char *argv[])
     //planandnavigate2d(argc, argv);
 
     //3D planning
-    plan3dkin(argc, argv);
+    //plan3dkin(argc, argv);
 
     //3D planning
-    //planandnavigate3dkin(argc, argv);
+    planandnavigate3dkin(argc, argv);
 
     //xytheta planning
     //planxythetalat(argc, argv);

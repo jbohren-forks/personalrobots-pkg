@@ -130,9 +130,6 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
     printf("ERROR: illegal start coordinates for theta\n");
     exit(1);
   }
-  if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
-    printf("ERROR: invalid start configuration %d %d %d\n", EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta);
-  }
  
 
 
@@ -151,9 +148,6 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
   if(EnvNAV3DKINCfg.EndTheta < 0 || EnvNAV3DKINCfg.EndTheta >= NAV3DKIN_THETADIRS) {
     printf("ERROR: illegal goal coordinates for theta\n");
     exit(1);
-  }
-  if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
-    printf("ERROR: invalid goal configuration %d %d %d\n", EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta);
   }
 
   EnvNAV3DKINCfg.FootprintPolygon = robot_perimeterV;
@@ -180,15 +174,19 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
   else {
     for (int y = 0; y < EnvNAV3DKINCfg.EnvHeight_c; y++) {
       for (int x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++) {
-	char cval = mapdata[x+y*width];
-	if(cval == 1) {
-	  EnvNAV3DKINCfg.Grid2D[x][y] = 1;
-	} else {
-	  EnvNAV3DKINCfg.Grid2D[x][y] = 0;
-	}
+		EnvNAV3DKINCfg.Grid2D[x][y] = mapdata[x+y*width];
       }
     }
   }
+
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
+    printf("ERROR: invalid goal configuration %d %d %d\n", EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta);
+  }
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
+    printf("ERROR: invalid start configuration %d %d %d\n", EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta);
+  }
+
+
 }
 
 void EnvironmentNAV3DKIN::ReadConfiguration(FILE* fCfg)
@@ -728,7 +726,7 @@ bool EnvironmentNAV3DKIN::IsValidConfiguration(int X, int Y, int Theta)
 		int y = footprint.at(find).y;
 
 		if (x < 0 || x >= EnvNAV3DKINCfg.EnvWidth_c ||
-			y < 0 || Y >= EnvNAV3DKINCfg.EnvHeight_c ||		
+			y < 0 || y >= EnvNAV3DKINCfg.EnvHeight_c ||		
 			EnvNAV3DKINCfg.Grid2D[x][y] >= EnvNAV3DKINCfg.obsthresh)
 		{
 			return false;
@@ -1014,6 +1012,17 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs,
 					unsigned char obsthresh)
 {
+	printf("env: initialize with width=%d height=%d start=%.3f %.3f %.3f goalx=%.3f %.3f %.3f cellsize=%.3f nomvel=%.3f timetoturn=%.3f, obsthresh=%d\n",
+		width, height, startx, starty, starttheta, goalx, goaly, goaltheta, cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, obsthresh);
+
+	printf("perimeter has size=%d\n", perimeterptsV.size());
+	for(int i = 0; i < (int)perimeterptsV.size(); i++)
+	{
+		printf("perimeter(%d) = %.4f %.4f\n", i, perimeterptsV.at(i).x, perimeterptsV.at(i).y);
+	}
+
+
+
 	EnvNAV3DKINCfg.obsthresh = obsthresh;
 
 	//TODO - need to set the tolerance as well
@@ -1425,6 +1434,8 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 	int y = CONTXY2DISC(y_m, EnvNAV3DKINCfg.cellsize_m);
 	int theta = ContTheta2Disc(theta_rad, NAV3DKIN_THETADIRS);
 
+	printf("env: setting goal to %.3f %.3f %.3f (%d %d %d)\n", x_m, y_m, theta_rad, x, y, theta);
+
 	if(!IsWithinMapCell(x,y))
 	{
 		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
@@ -1441,6 +1452,12 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
     }
+
+	//need to recompute start heuristics?
+	if(EnvNAV3DKIN.goalstateid != OutHashEntry->stateID)
+		bNeedtoRecomputeStartHeuristics = true; //because termination condition may not plan all the way to the new goal
+
+
     EnvNAV3DKIN.goalstateid = OutHashEntry->stateID;
 
 	EnvNAV3DKINCfg.EndX_c = x;
@@ -1466,6 +1483,8 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
 		return -1;
 	}
+
+	printf("env: setting start to %.3f %.3f %.3f (%d %d %d)\n", x_m, y_m, theta_rad, x, y, theta);
 
     if(!IsValidConfiguration(x,y,theta))
 	{

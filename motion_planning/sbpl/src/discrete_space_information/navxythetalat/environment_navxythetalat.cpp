@@ -175,12 +175,7 @@ void EnvironmentNAVXYTHETALAT::SetConfiguration(int width, int height,
   else {
     for (int y = 0; y < EnvNAVXYTHETALATCfg.EnvHeight_c; y++) {
       for (int x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++) {
-	char cval = mapdata[x+y*width];
-	if(cval == 1) {
-	  EnvNAVXYTHETALATCfg.Grid2D[x][y] = 1;
-	} else {
-	  EnvNAVXYTHETALATCfg.Grid2D[x][y] = 0;
-	}
+			EnvNAVXYTHETALATCfg.Grid2D[x][y] = mapdata[x+y*width];
       }
     }
   }
@@ -1101,6 +1096,17 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(int width, int height,
 					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs,
 					unsigned char obsthresh,  vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
 {
+
+	printf("env: initialize with width=%d height=%d start=%.3f %.3f %.3f goalx=%.3f %.3f %.3f cellsize=%.3f nomvel=%.3f timetoturn=%.3f, obsthresh=%d\n",
+		width, height, startx, starty, starttheta, goalx, goaly, goaltheta, cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, obsthresh);
+
+	printf("perimeter has size=%d\n", perimeterptsV.size());
+	for(int i = 0; i < (int)perimeterptsV.size(); i++)
+	{
+		printf("perimeter(%d) = %.4f %.4f\n", i, perimeterptsV.at(i).x, perimeterptsV.at(i).y);
+	}
+
+
 	EnvNAVXYTHETALATCfg.obsthresh = obsthresh;
 
 	//TODO - need to set the tolerance as well
@@ -1504,6 +1510,8 @@ int EnvironmentNAVXYTHETALAT::SetGoal(double x_m, double y_m, double theta_rad){
 	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m);
 	int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
 
+	printf("env: setting goal to %.3f %.3f %.3f (%d %d %d)\n", x_m, y_m, theta_rad, x, y, theta);
+
 	if(!IsWithinMapCell(x,y))
 	{
 		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
@@ -1520,6 +1528,11 @@ int EnvironmentNAVXYTHETALAT::SetGoal(double x_m, double y_m, double theta_rad){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
     }
+
+	//need to recompute start heuristics?
+	if(EnvNAVXYTHETALAT.goalstateid != OutHashEntry->stateID)
+		bNeedtoRecomputeStartHeuristics = true; //because termination condition may not plan all the way to the new goal
+
     EnvNAVXYTHETALAT.goalstateid = OutHashEntry->stateID;
 
 	EnvNAVXYTHETALATCfg.EndX_c = x;
@@ -1544,6 +1557,8 @@ int EnvironmentNAVXYTHETALAT::SetStart(double x_m, double y_m, double theta_rad)
 		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
 		return -1;
 	}
+
+	printf("env: setting start to %.3f %.3f %.3f (%d %d %d)\n", x_m, y_m, theta_rad, x, y, theta);
 
     if(!IsValidConfiguration(x,y,theta))
 	{

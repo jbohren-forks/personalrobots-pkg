@@ -1077,6 +1077,8 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
 	bool bOptimalSolution = false;
 	*psolcost = 0;
 
+	printf("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bFirstSolution, bOptimalSolution);
+
     //plan
     if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false) 
     {
@@ -1094,6 +1096,9 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
 
 int ARAPlanner::set_goal(int goal_stateID)
 {
+
+	printf("planner: setting goal to %d\n", goal_stateID);
+	environment_->PrintState(goal_stateID, true, stdout);
 
 	if(bforwardsearch)
 	{	
@@ -1118,6 +1123,9 @@ int ARAPlanner::set_goal(int goal_stateID)
 
 int ARAPlanner::set_start(int start_stateID)
 {
+
+	printf("planner: setting start to %d\n", start_stateID);
+	environment_->PrintState(start_stateID, true, stdout);
 
 	if(bforwardsearch)
 	{	
@@ -1163,6 +1171,7 @@ void ARAPlanner::costs_changed()
 
 int ARAPlanner::force_planning_from_scratch()
 {
+	printf("planner: forceplanfromscratch set\n");
 
     pSearchStateSpace_->bReinitializeSearchStateSpace = true;
 
@@ -1172,6 +1181,8 @@ int ARAPlanner::force_planning_from_scratch()
 
 int ARAPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 {
+
+	printf("planner: search mode set to %d\n", bSearchUntilFirstSolution);
 
 	bsearchuntilfirstsolution = bSearchUntilFirstSolution;
 
