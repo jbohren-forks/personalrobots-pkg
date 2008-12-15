@@ -31,14 +31,18 @@
 
 <!-- Tilt Laser -->
   <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
-    <param name="port" type="string" value="/dev/ttyACM0" />
-    <param name="frameid" type="string" value="laser_tilt_link" />
-    <param name="min_ang_degrees" type="double" value="-80.0" />
-    <param name="max_ang_degrees" type="double" value="80.0" />
+  <param name="port" type="string" value="/dev/ttyACM0" />
+  <param name="frameid" type="string" value="laser_tilt_link" />
+  <param name="min_ang_degrees" type="double" value="-80.0" />
+  <param name="max_ang_degrees" type="double" value="80.0" />
   </node>
 
 <!-- imu -->
-  <node machine="four" pkg="imu_node" type="imu_node"/>
+  <param name="imu/time_offset" value="-20.0" />
+  <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
+  <param name="imu/autostart" " type="bool" value="true" />
+  <param name="imu/frameid"  type="string" value="imu" />
+  <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- odom estimation -->
   <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
