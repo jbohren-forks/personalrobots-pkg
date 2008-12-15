@@ -256,6 +256,27 @@ protected:
   inline double * getTransfFwd(int iFrame, int iParam) {
     return &(transf_fwd_data_[iFrame*6*16 + iParam*16]);
   }
+  inline void JacobianOfPointApprox(
+      double px, double py, double pz,
+      double pu, double pv, double pd,
+      double rx, double ry, double rz,
+      /// inverse of delta
+      double scale,
+      double *transf_global_disp,
+      double *Jp
+  );
+  inline void JacobianOfPointExact(
+      PointTrackObserv* obsv,
+      double *transf_global_disp,
+      double *Jp
+  );
+  /// \brief Solving the linear system with Cholesky factorization.
+  /// Cholesky factor the left hand side matrix A and
+  /// solve for dC.
+  /// (Alternatively, we may use a special SVD for symmetric square matrix
+  /// in OpenCV, which is slower than the Cholesky in eigen2)
+  void linearSolving();
+
   /// Levenberg-Marquardt scalar. Initialized to zero
   double lambdaLg10_;
   CvTermCriteria term_criteria_;

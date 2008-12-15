@@ -31,7 +31,7 @@ using namespace cv::willow;
 #define SHOWKEYPOINTS    0
 #define SHOWDISPARITYMAP 0
 
-#define ALLKEYFRAMES 1
+#define ALLKEYFRAMES 0
 
 #undef DEBUG
 

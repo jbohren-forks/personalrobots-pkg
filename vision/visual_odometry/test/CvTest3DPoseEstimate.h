@@ -2,6 +2,7 @@
 #define WGTEST3DPOSEESTIMATE_H_
 
 #include "CvStereoCamModel.h"
+#include "PointTracks.h"
 #include "VisOdom.h"
 using namespace cv::willow;
 
@@ -50,7 +51,7 @@ public:
         string& points_file, string& frames_file,
         int num_free_frames, int num_fixed_frames, int num_iterations,
         int repeats,
-        bool disturb_frames, bool disturb_points);
+        bool disturb_frames, bool disturb_points, bool disturb_obsvs);
     bool test();
     TestType mTestType;
 
@@ -79,6 +80,9 @@ protected:
 //    bool showDisparityMap(WImageBuffer1_16s & dispMap, string & winname, string & outputDirname, int frameIndex, int maxDisp);
 //    bool drawKeypoints(WImage3_b & image, vector<Keypoint> & keyPointsLast, vector<Keypoint> & keyPointsCurr);
     void loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
+    void disturbFrames(vector<FramePose*>& free_frames);
+    void disturbPoints(PointTracks* tracks);
+    void disturbObsvs(PointTracks* tracks);
     CvPoint3D64f mEulerAngle;
     CvPoint3D64f mTranslation;
     double mRotData[9];

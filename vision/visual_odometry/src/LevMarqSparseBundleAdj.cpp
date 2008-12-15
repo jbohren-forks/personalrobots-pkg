@@ -111,21 +111,9 @@ LevMarqSparseBundleAdj::~LevMarqSparseBundleAdj() {
   delete [] transf_fwd_data_;
 }
 
-void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T[]){
+inline void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T[]){
   double _rt[16];
-#if 0 // use OpenCV calls
-  CvMat rt;
-  CvMat T;
-  cvInitMatHeader(&rt, 4, 4, CV_64FC1, _rt);
-  cvInitMatHeader(&T, 4, 4, CV_64FC1, _T);
 
-  constructRTMatrix(param, _rt);
-  _rt[15] = 1.0;
-  _rt[12] = _rt[13] = _rt[14] = 0.0;
-
-  /// @todo replace the following with direct multiplication.
-  cvMatMul(m3DToDisparity, &rt, &T);
-#else
   // direct multiplication. Note that the last row is rt is 0, 0, 0, 1
   constructRTMatrix(param, _rt);
   double* cart_to_disp = m3DToDisparity->data.db;
@@ -153,7 +141,6 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
   _T[15] = cart_to_disp[12]*_rt[3] + cart_to_disp[13]*_rt[7] + cart_to_disp[14]*_rt[11] +
     cart_to_disp[15];
 
-#endif
 #if DEBUG2==1
   {
     cout << "LevMarqSparseBundleAdj::constructTransfMatrix"<<endl;
@@ -184,7 +171,7 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(
   }
 }
 
-void LevMarqSparseBundleAdj::constructTransfMatrices(){
+inline void LevMarqSparseBundleAdj::constructTransfMatrices(){
   for (int iFrame=0; iFrame < free_window_size_; iFrame++) {
 #if DEBUG2==1
     printf("construct matrices for frame of local index: %d\n", iFrame);
@@ -210,6 +197,127 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
         param_delta_, transf_fwd_data_i);
   }
   TIMEREND2(SBAFwdTransfMats);
+}
+
+inline void LevMarqSparseBundleAdj::JacobianOfPointApprox(
+    double px, double py, double pz,
+    double pu, double pv, double pd,
+    double rx, double ry, double rz,
+    /// inverse of delta
+    double scale,
+    double *transf_global_disp,
+    double *Jp
+) {
+  // compute an approximation of the Jacobian in the following way.
+  // compute the residue w.r.t. the point parameters with a delta increment
+  // in each parameter.
+  // use the same buffer for Jacobian (3x3) of the error vector for point p.
+  // The two dimensions are dim x param
+  // for parameter x, fill out column 0 of Jp
+  double frx, fry, frz;
+  PERSTRANSFORMRESIDUE(transf_global_disp, px+param_delta_, py, pz, pu, pv, pd,
+      frx, fry, frz);
+  Jp[0] = (frx - rx)*scale;
+  Jp[3] = (fry - ry)*scale;
+  Jp[6] = (frz - rz)*scale;
+
+  // for paramter y, fill out column 1 of Jp
+  PERSTRANSFORMRESIDUE(transf_global_disp, px, py+param_delta_, pz, pu, pv, pd,
+      frx, fry, frz);
+  Jp[1] = (frx - rx)*scale;
+  Jp[4] = (fry - ry)*scale;
+  Jp[7] = (frz - rz)*scale;
+  // for parameter z, fill out column 2 of Jp
+  PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz+param_delta_, pu, pv, pd,
+      frx, fry, frz);
+  Jp[2] = (frx - rx)*scale;
+  Jp[5] = (fry - ry)*scale;
+  Jp[8] = (frz - rz)*scale;
+}
+
+/// \brief Exact estimation of the Jacobian of a point.
+inline void LevMarqSparseBundleAdj::JacobianOfPointExact(
+    PointTrackObserv* obsv,
+    double *transf_global_disp,
+    double *Jp
+) {
+  // dot product of t[0,*] and [p, 1]. Computed in cost function already.
+  double Tx_p = obsv->T_p_[0];
+  // dot product of t[1,*] and [p, 1]
+  double Ty_p = obsv->T_p_[1];
+  // dot product of t[2,*] and [p, 1]
+  double Tz_p = obsv->T_p_[2];
+  // dot product of t[3,*] and [p, 1]
+  double Tw_p = obsv->T_p_[3];
+  double scale0 = 1./Tw_p;
+  double scale1 = scale0*scale0;
+
+#if 1 // need to decide which one is faster.
+  Jp[0*3 + 0] =  (transf_global_disp[0*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tx_p)*scale1;
+  Jp[0*3 + 1] =  (transf_global_disp[0*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tx_p)*scale1;
+  Jp[0*3 + 2] =  (transf_global_disp[0*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tx_p)*scale1;
+
+  Jp[1*3 + 0] =  (transf_global_disp[1*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Ty_p)*scale1;
+  Jp[1*3 + 1] =  (transf_global_disp[1*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Ty_p)*scale1;
+  Jp[1*3 + 2] =  (transf_global_disp[1*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Ty_p)*scale1;
+
+  Jp[2*3 + 0] =  (transf_global_disp[2*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tz_p)*scale1;
+  Jp[2*3 + 1] =  (transf_global_disp[2*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tz_p)*scale1;
+  Jp[2*3 + 2] =  (transf_global_disp[2*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tz_p)*scale1;
+#else
+  double scale_x = Tx_p*scale1;
+  double scale_y = Ty_p*scale1;
+  double scale_z = Tz_p*scale1;
+  Jp[0*3 + 0] =  transf_global_disp[0*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_x;
+  Jp[0*3 + 1] =  transf_global_disp[0*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_x;
+  Jp[0*3 + 2] =  transf_global_disp[0*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_x;
+
+  Jp[1*3 + 0] =  transf_global_disp[1*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_y;
+  Jp[1*3 + 1] =  transf_global_disp[1*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_y;
+  Jp[1*3 + 2] =  transf_global_disp[1*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_y;
+
+  Jp[2*3 + 0] =  transf_global_disp[2*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_z;
+  Jp[2*3 + 1] =  transf_global_disp[2*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_z;
+  Jp[2*3 + 2] =  transf_global_disp[2*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_z;
+#endif
+}
+
+inline void LevMarqSparseBundleAdj::linearSolving() {
+  // fill out of lower left part of the matrix
+  cvCompleteSymm(&mat_A_, 0);
+#if 0
+  cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
+  // update camera parameters with mat_dC
+  cvAdd(&mat_C_, &mat_dC_, &mat_C_);
+#else
+  {
+    Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
+    Eigen::VectorXd B0(mat_B_.rows);
+    Eigen::VectorXd C0(mat_C_.rows);
+    for (int j=0; j<A0.cols(); j++) {
+      for (int i=0; i<A0.rows(); i++) {
+        A0(i, j) = CV_MAT_ELEM( mat_A_, double, i, j );
+      }
+    }
+    for (int i=0; i<B0.size(); i++) {
+//      B0(i) = cvmGet(&mat_B_, i, 0);
+      B0(i) = B_data_[i];
+    }
+//    TIMERSTART2(SBALinearSolving);
+    A0.llt().solve(B0, &C0);
+//    TIMEREND2(SBALinearSolving);
+    // update camera/frame parameters with C0
+    for (int i=0; i<C0.size(); i++) {
+      frame_params_[i] += (frame_params_update_[i]=C0(i));
+    }
+  }
+#endif
+
+#if DEBUG2==1
+  printf("[LevMarqSBA]: updated cam params\n");
+  CvMatUtils::printMat(&mat_C_);
+#endif
+
 }
 
 /// \brief Main method to perform sparse bundle adjustment.
@@ -268,15 +376,10 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///     - Subtract \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} \f$ from
 ///       block \f$ (c, c2) \f$ of left hand side matrix \a A.
 ///
-/// 5. (Optional) Fix gauge by freezing appropriate coordinates and
-/// therefore reducing the linear system with a few dimensions.
+/// 5. <b>(Linear Solving)</b> Cholesky factor the left hand side matrix \a A and
+/// solve for \a dC.
 ///
-/// 6. <b>(Linear Solving)</b> Cholesky factor the left hand side matrix \a A and
-/// solve for \a dC. Add the frozen coordinates back in.
-/// (Instead we use SVD for symmetric square matrix.)
-/// Update camera parameters with \a dC.
-///
-/// 7. <b>(Backsubstitution)</b>  for each track \a p
+/// 6. <b>(Backsubstitution)</b>  for each track \a p
 ///   - Start with point update for this track \f$ dp = t_p \f$
 ///
 ///   - for  each free camera \a c on track \a p,
@@ -285,14 +388,14 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///
 ///   - Update point parameters with \a dp
 ///
-/// 8. <b>(Compute the cost function)</b> for the updated camera and point configuration
+/// 7. <b>(Compute the cost function)</b> for the updated camera and point configuration
 ///
-/// 9. If cost function has improved, accept the update step, decrease
+/// 8. If cost function has improved, accept the update step, decrease
 ///    \f$ \lambda \f$ and go to Step 3 (unless converged, in which case quit).
 ///    This step increases the influence of Gauss-Newton and decreases the
 ///    the influence of gradient descent.
 ///
-/// 10. Otherwise, reject the update,
+/// 9. Otherwise, reject the update,
 /// increase \f$ \lambda \f$ and go to Step 3 (unless exceeded the
 /// maximum number of iterations, in which case quit).
 /// This step increases the influence of gradient descent and reduce the
@@ -429,7 +532,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("point %d: [%f, %f, %f]\n", p->id_, px, py, pz);
 #endif
 
-//      TIMERSTART2(SBADerivatives);
+      TIMERSTART2(SBADerivatives);
       // - Compute derivatives.  For each camera c on track p.
       //   {
       BOOST_FOREACH( PointTrackObserv* obsv, *p) {
@@ -450,117 +553,31 @@ bool LevMarqSparseBundleAdj::optimize(
 
         // get a reference of the transformation matrix from global to disp
         double* transf_global_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
-#if 0
-        // compute the error vector for this point
-        PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz, pu, pv, pd,
-            rx, ry, rz);
-#else
+
         // rx, ry, rz have been computed already in costFunction()
         rx = obsv->disp_res_.x;
         ry = obsv->disp_res_.y;
         rz = obsv->disp_res_.z;
-#endif
-#if DEBUG2==1
-        printf("obsv on frame %d: [%f, %f, %f] <=> err [%f, %f, %f]\n",
-            obsv->frame_index_, pu, pv, pd, rx, ry, rz);
-#endif
+
 #if 0
-        // compute the residue w.r.t. the point parameters with a delta increment
-        // in each parameter.
-        // use the same buffer for Jacobian (3x3) of the error vector for point p.
-        // The two dimensions are dim x param
-        // for parameter x, fill out column 0 of Jp
-        double frx, fry, frz;
-        PERSTRANSFORMRESIDUE(transf_global_disp, px+param_delta_, py, pz, pu, pv, pd,
-            frx, fry, frz);
-        Jp[0] = (frx - rx)*scale;
-        Jp[3] = (fry - ry)*scale;
-        Jp[6] = (frz - rz)*scale;
-
-        // for paramter y, fill out column 1 of Jp
-        PERSTRANSFORMRESIDUE(transf_global_disp, px, py+param_delta_, pz, pu, pv, pd,
-            frx, fry, frz);
-        Jp[1] = (frx - rx)*scale;
-        Jp[4] = (fry - ry)*scale;
-        Jp[7] = (frz - rz)*scale;
-        // for parameter z, fill out column 2 of Jp
-        PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz+param_delta_, pu, pv, pd,
-            frx, fry, frz);
-        Jp[2] = (frx - rx)*scale;
-        Jp[5] = (fry - ry)*scale;
-        Jp[8] = (frz - rz)*scale;
+        JacobianOfPointApprox(px, py, pz, pu, pv, pd, rx, ry, rz, scale,
+            transf_global_disp, Jp);
 #else
-        // Jacobian Jp shall be estimated exact.
-#if 0
-        // dot product of t[0,*] and [p, 1]
-        double Tx_p = TRANSFORM_X(transf_global_disp, px, py, pz);
-        // dot product of t[1,*] and [p, 1]
-        double Ty_p = TRANSFORM_Y(transf_global_disp, px, py, pz);
-        // dot product of t[2,*] and [p, 1]
-        double Tz_p = TRANSFORM_Z(transf_global_disp, px, py, pz);
-        // dot product of t[3,*] and [p, 1]
-        double Tw_p = TRANSFORM_W(transf_global_disp, px, py, pz);
-        double scale1 = 1./(Tw_p*Tw_p);
-#else
-        /// @todo shall we compute Jp at the same place where we compute cost function?
-        // dot product of t[0,*] and [p, 1]
-        double Tx_p = obsv->T_p_[0];
-        // dot product of t[1,*] and [p, 1]
-        double Ty_p = obsv->T_p_[1];
-        // dot product of t[2,*] and [p, 1]
-        double Tz_p = obsv->T_p_[2];
-        // dot product of t[3,*] and [p, 1]
-        double Tw_p = obsv->T_p_[3];
-        double scale0 = 1./Tw_p;
-        double scale1 = scale0*scale0;
-#endif
-//        double Jp2[3*3];
-#if 1
-        Jp[0*3 + 0] =  (transf_global_disp[0*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tx_p)*scale1;
-        Jp[0*3 + 1] =  (transf_global_disp[0*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tx_p)*scale1;
-        Jp[0*3 + 2] =  (transf_global_disp[0*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tx_p)*scale1;
-
-        Jp[1*3 + 0] =  (transf_global_disp[1*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Ty_p)*scale1;
-        Jp[1*3 + 1] =  (transf_global_disp[1*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Ty_p)*scale1;
-        Jp[1*3 + 2] =  (transf_global_disp[1*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Ty_p)*scale1;
-
-        Jp[2*3 + 0] =  (transf_global_disp[2*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tz_p)*scale1;
-        Jp[2*3 + 1] =  (transf_global_disp[2*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tz_p)*scale1;
-        Jp[2*3 + 2] =  (transf_global_disp[2*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tz_p)*scale1;
-#else
-        double scale_x = Tx_p*scale1;
-        double scale_y = Ty_p*scale1;
-        double scale_z = Tz_p*scale1;
-        Jp[0*3 + 0] =  transf_global_disp[0*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_x;
-        Jp[0*3 + 1] =  transf_global_disp[0*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_x;
-        Jp[0*3 + 2] =  transf_global_disp[0*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_x;
-
-        Jp[1*3 + 0] =  transf_global_disp[1*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_y;
-        Jp[1*3 + 1] =  transf_global_disp[1*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_y;
-        Jp[1*3 + 2] =  transf_global_disp[1*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_y;
-
-        Jp[2*3 + 0] =  transf_global_disp[2*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_z;
-        Jp[2*3 + 1] =  transf_global_disp[2*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_z;
-        Jp[2*3 + 2] =  transf_global_disp[2*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_z;
-#endif
+        JacobianOfPointExact(obsv, transf_global_disp, Jp);
 #endif
 #if DEBUG==1
         {
           printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
               obsv->frame_index_, obsv->local_frame_index_);
           CvMatUtils::printMat(mat_Jp);
-#if 0
-          CvMat mat_Jp2 = cvMat(3, 3, CV_64FC1, Jp2);
-          CvMatUtils::printMat(&mat_Jp2);
-#endif
         }
 #endif
 
         //     Add \f$ J_p^T J_p\f$ to the upper triangular part of \f$ H_{pp} \f$
         for (int d0=0; d0<NUM_POINT_PARAMS; d0++) {
-          double Jpx = Jp[                     d0];
-          double Jpy = Jp[  NUM_POINT_PARAMS + d0];
-          double Jpz = Jp[2*NUM_POINT_PARAMS + d0];
+          const double& Jpx = Jp[                     d0];
+          const double& Jpy = Jp[  NUM_POINT_PARAMS + d0];
+          const double& Jpz = Jp[2*NUM_POINT_PARAMS + d0];
           for (int d1=d0; d1<NUM_POINT_PARAMS; d1++) {
             // Jp[d0]^T*Jp[d1], each a vector of 3
             Hpp[d0*NUM_POINT_PARAMS + d1] +=
@@ -593,13 +610,14 @@ bool LevMarqSparseBundleAdj::optimize(
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
 
             // fill out column k of Jc
+            double rx1, ry1, rz1;
             PERSTRANSFORMRESIDUE(transf_fwd_global_disp, px, py, pz, pu, pv, pd,
-                Jc[k], Jc[NUM_CAM_PARAMS + k], Jc[2*NUM_CAM_PARAMS + k]);
+                rx1, ry1, rz1);
 
             // compute the Jacobian regarding this point and this cam
-            Jc[                   k] = (Jc[                   k]-rx)*scale;
-            Jc[  NUM_CAM_PARAMS + k] = (Jc[  NUM_CAM_PARAMS + k]-ry)*scale;
-            Jc[2*NUM_CAM_PARAMS + k] = (Jc[2*NUM_CAM_PARAMS + k]-rz)*scale;
+            Jc[                   k] = (rx1-rx)*scale;
+            Jc[  NUM_CAM_PARAMS + k] = (ry1-ry)*scale;
+            Jc[2*NUM_CAM_PARAMS + k] = (rz1-rz)*scale;
           }
 //          TIMEREND2(SBADerivativesJc);
 #if DEBUG2==1
@@ -680,16 +698,10 @@ bool LevMarqSparseBundleAdj::optimize(
       CvMatUtils::printMat(&mat_Hpp);
 #endif
       // invert Hpp
-#if 0
-      // use OpenCV. 15 times slower than using a special implementation.
-      cvCompleteSymm(&mat_Hpp, 0);
-      cvInvert(&mat_Hpp, &mat_Hpp_inv, CV_SVD_SYM);
-#else
       // use special implementation for 3x3 symmetric matrix. 15 times faster
       // than cvInvert() -- see above.
       CvMat3X3Sym<double>::invert(Hpp, Hpp_inv);
       cvCompleteSymm(&mat_Hpp_inv, 0);
-#endif
 #if DEBUG2==1
       printf("Hpp_inv augmented of p=%d, step=%d\n", p->id_, mat_Hpp_inv.step);
       CvMatUtils::printMat(&mat_Hpp_inv);
@@ -702,7 +714,7 @@ bool LevMarqSparseBundleAdj::optimize(
           Hpp_inv[i*NUM_POINT_PARAMS +1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS +2]*bp[2];
       }
 //      TIMEREND2(SBADerivativesHppInv);
-//      TIMEREND2(SBADerivatives);
+      TIMEREND2(SBADerivatives);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_B before Outer Product of Tracks\n");
@@ -710,7 +722,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("bp=[%f, %f, %f]\n", bp[0], bp[1], bp[2]);
       printf("tp=[%f, %f, %f]\n", tp[0], tp[1], tp[2]);
 #endif
-//      TIMERSTART2(SBAOuterProdOfTrack);
+      TIMERSTART2(SBAOuterProdOfTrack);
 
       // (Outer product of track) For each free camera c on track p
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
@@ -747,10 +759,6 @@ bool LevMarqSparseBundleAdj::optimize(
 
         //   Compute the matrix \f$ H_{pc}^T H_{pp}^{-1} and store it in a variable
         //   \f$ T_{cp} \f$ (6x3).
-#if 0
-        // use OpenCV call
-        cvGEMM(&mat_Hpc, &mat_Hpp_inv, 1.0, NULL, 0.0, &obsv->mat_Tcp_, CV_GEMM_A_T);
-#else
         // direct computation
         double* Tcp = obsv->Tcp_;
         for (int i=0; i<NUM_CAM_PARAMS; i++) {
@@ -761,7 +769,6 @@ bool LevMarqSparseBundleAdj::optimize(
               Hpc[2*NUM_CAM_PARAMS + i]*Hpp_inv[2*NUM_POINT_PARAMS + j];
           }
         }
-#endif
 
 #if DEBUG2==1
         printf("matrix Hpc, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index1);
@@ -790,18 +797,6 @@ bool LevMarqSparseBundleAdj::optimize(
 
           //    Subtract \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} from
           //     block (c, c2) of left hand side matrix A.
-#if 0
-          // use OpenCV calls. saved here for debugging only.
-          CvMat& mat_Hpc2 = obsv2->mat_Hpc_;
-          CvMat A_cc2;
-          getABlock(&A_cc2, local_index1, local_index2);
-          cvGEMM(&obsv->mat_Tcp_, &mat_Hpc2, -1.0, &A_cc2, 1.0, &A_cc2, 0);
-//          double Hcc2[NUM_CAM_PARAMS*NUM_CAM_PARAMS];
-//          CvMat  mat_Hcc2 = cvMat(NUM_CAM_PARAMS, NUM_CAM_PARAMS, CV_64FC1, Hcc2);
-          //cvMatMul(&obsv->mat_Tcp_, &mat_Hpc2, &mat_Hcc2);
-          //cvSub(&A_cc2, &mat_Hcc2, &A_cc2);
-#else
-          // direct computation
           double* Acc2 = getABlock(local_index1, local_index2);
           double* Tcp  = obsv->Tcp_;
           double* Hpc2  = obsv2->Hpc_;
@@ -814,20 +809,16 @@ bool LevMarqSparseBundleAdj::optimize(
                 Tcp[i*NUM_POINT_PARAMS + 2]*Hpc2[NUM_CAM_PARAMS*2  + j];
             }
           }
-#endif
 
 #if DEBUG2==1
           printf("matrix Tcp, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index2);
           CvMatUtils::printMat(&obsv->mat_Tcp_);
           printf("matrix Hpc2, p=%d, c2=%d,%d\n", p->id_, obsv2->frame_index_, local_index2);
           CvMatUtils::printMat(&obsv2->mat_Hpc_);
-//          printf("matrix Hcc2, c=%d,%d, c2=%d,%d\n", obsv->frame_index_, local_index1,
-//              obsv2->frame_index_, local_index2);
-//          CvMatUtils::printMat(&mat_Hcc2);
 #endif
         }
       } // (Outer product of track)
-//      TIMEREND2(SBAOuterProdOfTrack);
+      TIMEREND2(SBAOuterProdOfTrack);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_A after Outer Product of Tracks\n");
@@ -837,46 +828,14 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
     } // done with a point track.
-    // 5. (Optional) Fix gauge by freezing appropriate coordinates and
-    // therefore reducing the linear system with a few dimensions.
-    //
+
     // 6. (Linear Solving) Cholesky factor the left hand side matrix A and
-    // solve for dC. Add the frozen coordinates back in.
-    // (Instead we use SVD for symmetric square matrix
-
-    // fill out of lower left part of the matrix
-//    TIMERSTART2(SBALinearSolving);
-    cvCompleteSymm(&mat_A_, 0);
+    // solve for dC.
+    // (Alternatively, we may use a special SVD for symmetric square matrix
+    // in OpenCV, which is slower than the Cholesky in eigen2)
     TIMERSTART2(SBALinearSolving);
-#if 0
-    cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
-#else
-    {
-      Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
-      Eigen::VectorXd B0(mat_B_.rows);
-      Eigen::VectorXd C0(mat_C_.rows);
-      for (int j=0; j<A0.cols(); j++) {
-        for (int i=0; i<A0.rows(); i++) {
-          A0(i, j) = cvmGet(&mat_A_, i, j);
-        }
-      }
-      for (int i=0; i<B0.size(); i++) {
-        B0(i) = cvmGet(&mat_B_, i, 0);
-      }
-      A0.llt().solve(B0, &C0);
-      for (int i=0; i<C0.size(); i++) {
-        cvmSet(&mat_dC_, i, 0, C0(i));
-      }
-    }
-#endif
-    // update camera parameters with mat_dC
-    cvAdd(&mat_C_, &mat_dC_, &mat_C_);
+    linearSolving();
     TIMEREND2(SBALinearSolving);
-
-#if DEBUG2==1
-    printf("[LevMarqSBA]: updated cam params\n");
-    CvMatUtils::printMat(&mat_C_);
-#endif
 
     TIMERSTART2(SBABackSubstitution);
     //
@@ -1078,7 +1037,7 @@ void LevMarqSparseBundleAdj::initParams(
     printf("transformation (local to global) for fixed frame %d\n", fp->mIndex);
     CvMatUtils::printMat(&(fp->transf_local_to_global_));
 #endif
-    // @todo we may not need this field transf_global_to_disp_
+    /// @todo we may not need this field transf_global_to_disp_
     if (fp->transf_global_to_disp_ == NULL ) {
       fp->transf_global_to_disp_ = cvCreateMat(4, 4, CV_64FC1);
 
@@ -1193,16 +1152,6 @@ double LevMarqSparseBundleAdj::costFunction(
       double *transf_global_to_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
       double rx, ry, rz;
 
-#if 0 // use OpenCV calls
-      CvMat disp_point = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_);
-      CvMat disp_point_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
-      CvMat mat_global_to_disp = cvMat(4, 4, CV_64FC1, transf_global_to_disp);
-
-      cvPerspectiveTransform(&point, &disp_point_est, &mat_global_to_disp);
-      rx = obsv->disp_coord_.x - obsv->disp_coord_est_.x;
-      ry = obsv->disp_coord_.y - obsv->disp_coord_est_.y;
-      rz = obsv->disp_coord_.z - obsv->disp_coord_est_.z;
-#else
       {
         double pu = obsv->disp_coord_.x;
         double pv = obsv->disp_coord_.y;
@@ -1211,7 +1160,6 @@ double LevMarqSparseBundleAdj::costFunction(
         PERSTRANSFORMRESIDUE2(transf_global_to_disp, px, py, pz, pu, pv, pd,
             obsv->T_p_[0], obsv->T_p_[1], obsv->T_p_[2], obsv->T_p_[3], rx, ry, rz);
       }
-#endif
       obsv->disp_res_.x = rx;
       obsv->disp_res_.y = ry;
       obsv->disp_res_.z = rz;

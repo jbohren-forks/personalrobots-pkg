@@ -200,19 +200,21 @@ bool CvTest3DPoseEstimate::test() {
   case BundleAdjUTest: {
     string frame_file("frames.xml");
     string point_file("cartesianPoints.xml");
-    return testBundleAdj(point_file, frame_file, 5, 5, 10, 1, true, true);
+    return testBundleAdj(point_file, frame_file, 5, 5, 10, 1, true, true, false);
     break;
   }
   case BundleAdj: {
-    string frame_file("frames.xml");
-    string point_file("cartesianPoints.xml");
-    int num_free_frames = 5;
+//    string frame_file("frames.xml");
+//    string point_file("cartesianPoints.xml");
+    string frame_file("frames101.xml");
+    string point_file("points260.xml");
+    int num_free_frames  = 5;
     int num_fixed_frames = 5;
-    int num_iterations = 10;
+    int num_iterations = 300;
     int num_repeats = 1;
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
-        true, true);
+        true, false, false);
     break;
   }
   default:
@@ -240,16 +242,16 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
     // note that B (or Tx) is in mm
-//    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     // now Tx is in meters
-    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     string dirname("/home/jdchen/Data/VisOdom/Data/james4");
 //    string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
     string dispimgfmt(".dispmap-%06d.xml");
     int start = 0;
-    int end   = 20;
+    int end   = 2324;
     int step  = 1;
 
     // set up a FileSeq
@@ -297,8 +299,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
   setInputData(James4);
 
-//  VOSparseBundleAdj sba(img_size_, 8, 3);
-  VOSparseBundleAdj sba(img_size_, 1, 1);
+  VOSparseBundleAdj sba(img_size_, 8, 3);
+//  VOSparseBundleAdj sba(img_size_, 1, 1);
 
   // parameterize the post estimator
   sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
@@ -685,7 +687,7 @@ bool CvTest3DPoseEstimate::testVideo4() {
   return status;
 }
 
-static void synthesizePoints(const string& data_path) {
+void synthesizePoints(const string& data_path) {
   int num_points = 260;
   double points[num_points*3];
   CvMat threeDPoints = cvMat(num_points, 3, CV_64FC1, points);
@@ -702,7 +704,7 @@ static void synthesizePoints(const string& data_path) {
   cvSave(file_path.c_str(), &threeDPoints, "randomPoitns", "random 3d points");
 }
 
-static void synthesizeFrames(const string& data_path) {
+void synthesizeFrames(const string& data_path) {
   int num_frames = 101;
   double frames[num_frames*7];
   CvMat  mat_frames = cvMat(num_frames, 7, CV_64FC1, frames);
@@ -719,61 +721,11 @@ static void synthesizeFrames(const string& data_path) {
       "frames in euler/meter, straight forward, .01 meter each step");
 }
 
-bool CvTest3DPoseEstimate::testBundleAdj(
-    string& points_file, string& frames_file,
-    int num_free_frames, int num_fixed_frames, int num_iterations,
-    int num_repeats,
-    bool disturb_frames, bool disturb_points) {
-  bool status = true;
-
-#if 0 // set it to 1 to generate a set of random 3d points
-  synthesizePoints(input_data_path_);
-#endif
-
-#if 1 // set it to 1 to generate a set of random 3d points
-  synthesizeFrames(input_data_path_);
-#endif
-
-  // rows of 3d points in Cartesian space
-  string points_file_path(input_data_path_);
-//  point_file.append("cartesianPoints.xml");
-  points_file_path.append(points_file);
-  CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
-  // rows of euler angle and shift
-  string frames_file_path(input_data_path_);
-//  frames_file.append("frames.xml");
-  frames_file_path.append(frames_file);
-  CvMat *frames = (CvMat *)cvLoad(frames_file_path.c_str());
-  CvMat cartToDisp;
-  CvMat dispToCart;
-
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  this->getProjectionMatrices(&cartToDisp, &dispToCart);
-
-  // set up cameras
-  vector<FramePose* > frame_poses;
-  double rod_shift[6];
-//  int index_offset = 9;
-  int oldest_index = numeric_limits<int>::max();
-  CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
-  for (int r=0; r<frames->rows; r++) {
-    CvMat param1x6;
-    CvMat param6x1;
-    cvGetSubRect(frames, &param1x6, cvRect(1,r,6,1));
-//    cvGetRow(frames, &param1x6, r);
-    cvReshape(&param1x6, &param6x1, 1, 6);
-    int frame_index = cvmGet(frames, r, 0);
-    if (frame_index<oldest_index) {
-      oldest_index = frame_index;
-    }
-
-    FramePose* fp = new FramePose(frame_index);
-    CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
-    frame_poses.push_back(fp);
-  }
-
-  // set up tracks
-  PointTracks tracks;
+void setUpTracks(const vector<FramePose* >& frame_poses,
+    const CvMat* frames, const CvMat *points,
+    const CvMat& cartToDisp, int oldest_index,
+    PointTracks* tracks)
+{
   CvPoint3D64f coord;
   CvPoint3D64f disp_coord0;
   CvPoint3D64f disp_coord1;
@@ -807,9 +759,157 @@ bool CvTest3DPoseEstimate::testBundleAdj(
       point->extend(obsv);
     }
 
-    tracks.tracks_.push_back(point);
-    tracks.oldest_frame_index_in_tracks_ = oldest_index;
+    tracks->tracks_.push_back(point);
+    tracks->oldest_frame_index_in_tracks_ = oldest_index;
   }
+  cvReleaseMat(&global_to_disp);
+  cvReleaseMat(&global_to_local);
+}
+
+/// disturb the frame parameters
+void CvTest3DPoseEstimate::disturbFrames(
+    vector<FramePose*>& free_frames) {
+  double rod_shift[6];
+  CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
+  double transpose_transl_data[3];
+  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
+  if (verbose_)
+    printf("Disturbed Free Frames\n");
+
+  double disturb_scale = .001;
+  double sigma = disturb_scale/2.0; // ~ 95%
+  int numFreeFrames = free_frames.size();
+  CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+  cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+  int iFrames = 0;
+  BOOST_FOREACH(FramePose *fp, free_frames){
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
+    for (int i=0; i<6; i++) {
+      CV_MAT_ELEM( mat_rod_shift, double, i, 0 )
+        += CV_MAT_ELEM(*xyzsNoised, double, iFrames, i);
+    }
+    // update the transformation matrix of fp
+    CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+
+    if (verbose_) {
+      printf("transf of frame: %d\n", fp->mIndex);
+      CvMatUtils::printMat(&fp->transf_local_to_global_);
+      // in Euler angle and translation
+      CvMat rot, transl;
+      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+      CvPoint3D64f euler;
+      CvMatUtils::rotMatToEuler(rot, euler);
+      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+      printf("In Euler angle and translation:\n");
+      printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+      cvTranspose(&transl, &transpose_transl);
+      CvMatUtils::printMat(&transpose_transl, "%9.4f");
+    }
+
+    iFrames++;
+  }
+
+  cvReleaseMat(&xyzsNoised);
+}
+
+void CvTest3DPoseEstimate::disturbPoints(PointTracks* tracks) {
+  double disturb_scale = .001;
+  double sigma = disturb_scale/2.0; // ~ 95%
+  int numPoints = tracks->tracks_.size();
+  CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
+  cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+  int iPoints = 0;
+  BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+    p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
+    p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
+    p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
+    if (verbose_)
+      printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
+          p->coordinates_.y, p->coordinates_.z);
+    iPoints++;
+  }
+  cvReleaseMat(&xyzsNoised);
+
+  if (verbose_) {
+    printf("Disturbed Points:\n");
+    tracks->print();
+  }
+}
+
+void CvTest3DPoseEstimate::disturbObsvs(PointTracks* tracks) {
+  CvRNG rng_state = cvRNG(0xffffffff);
+  double disturb[3];
+  CvMat mat_disturb = cvMat(1, 1, CV_64FC3, disturb);
+
+  BOOST_FOREACH(PointTrack* pt, tracks->tracks_) {
+    BOOST_FOREACH(PointTrackObserv* obsv, *pt) {
+      cvRandArr(&rng_state, &mat_disturb, CV_RAND_UNI,
+          cvScalar(-.5,-.5,-.5,0), // inclusive lower bound
+          cvScalar(.5,.5,.5,0) // exclusive upper bound
+      );
+      obsv->disp_coord_.x += disturb[0];
+      obsv->disp_coord_.y += disturb[1];
+      obsv->disp_coord_.z += disturb[2];
+    }
+  }
+}
+
+
+bool CvTest3DPoseEstimate::testBundleAdj(
+    string& points_file, string& frames_file,
+    int num_free_frames, int num_fixed_frames, int num_iterations,
+    int num_repeats,
+    bool disturb_frames, bool disturb_points, bool disturb_obsvs) {
+  bool status = true;
+
+#if 0 // set it to 1 to generate a set of random 3d points
+  synthesizePoints(input_data_path_);
+#endif
+
+#if 0 // set it to 1 to generate a set of random 3d points
+  synthesizeFrames(input_data_path_);
+#endif
+
+  // rows of 3d points in Cartesian space
+  string points_file_path(input_data_path_);
+//  point_file.append("cartesianPoints.xml");
+  points_file_path.append(points_file);
+  CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
+  // rows of euler angle and shift
+  string frames_file_path(input_data_path_);
+//  frames_file.append("frames.xml");
+  frames_file_path.append(frames_file);
+  CvMat *frames = (CvMat *)cvLoad(frames_file_path.c_str());
+  CvMat cartToDisp;
+  CvMat dispToCart;
+
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->getProjectionMatrices(&cartToDisp, &dispToCart);
+
+  // set up cameras
+  vector<FramePose* > frame_poses;
+//  int index_offset = 9;
+  int oldest_index = numeric_limits<int>::max();
+  for (int r=0; r<frames->rows; r++) {
+    CvMat param1x6;
+    CvMat param6x1;
+    cvGetSubRect(frames, &param1x6, cvRect(1,r,6,1));
+//    cvGetRow(frames, &param1x6, r);
+    cvReshape(&param1x6, &param6x1, 1, 6);
+    int frame_index = cvmGet(frames, r, 0);
+    if (frame_index<oldest_index) {
+      oldest_index = frame_index;
+    }
+
+    FramePose* fp = new FramePose(frame_index);
+    CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
+    frame_poses.push_back(fp);
+  }
+
+  // set up tracks
+  PointTracks tracks;
+  setUpTracks(frame_poses, frames, points, cartToDisp, oldest_index, &tracks);
 
   int full_free_window_size  = num_free_frames;
   int full_fixed_window_size = num_fixed_frames;
@@ -840,27 +940,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
   for (int k=0; k < num_repeats; k++ ) {
     // disturb the point parameters.
     if (disturb_points == true) {
-      double disturb_scale = .001;
-      double sigma = disturb_scale/2.0; // ~ 95%
-      int numPoints = tracks.tracks_.size();
-      CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
-      cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
-      int iPoints = 0;
-      BOOST_FOREACH(PointTrack* p, tracks.tracks_) {
-        p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
-        p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
-        p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
-        if (verbose_)
-          printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
-              p->coordinates_.y, p->coordinates_.z);
-        iPoints++;
-      }
-      cvReleaseMat(&xyzsNoised);
-
-      if (verbose_) {
-        printf("Disturbed Points:\n");
-        tracks.print();
-      }
+      disturbPoints(&tracks);
     }
 
     string output_dir(output_data_path_);
@@ -893,42 +973,11 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
 
     if (disturb_frames == true) {
-      // disturb the frame parameters
-      if (verbose_)
-        printf("Disturbed Free Frames\n");
+      disturbFrames(free_frames);
+    }
 
-      double disturb_scale = .001;
-      double sigma = disturb_scale/2.0; // ~ 95%
-      CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
-      cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
-      int iFrames = 0;
-      BOOST_FOREACH(FramePose *fp, free_frames){
-        CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
-        for (int i=0; i<6; i++) {
-          rod_shift[i] += cvmGet(xyzsNoised, iFrames, i);
-        }
-        // update the transformation matrix of fp
-        CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
-
-        if (verbose_) {
-          printf("transf of frame: %d\n", fp->mIndex);
-          CvMatUtils::printMat(&fp->transf_local_to_global_);
-          // in Euler angle and translation
-          CvMat rot, transl;
-          cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
-          CvPoint3D64f euler;
-          CvMatUtils::rotMatToEuler(rot, euler);
-          cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
-          printf("In Euler angle and translation:\n");
-          printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
-          cvTranspose(&transl, &transpose_transl);
-          CvMatUtils::printMat(&transpose_transl, "%9.4f");
-        }
-
-        iFrames++;
-      }
-
-      cvReleaseMat(&xyzsNoised);
+    if (disturb_obsvs == true) {
+      disturbObsvs(&tracks);
     }
 
     sba.optimize(&free_frames, &fixed_frames, &tracks);
@@ -1021,8 +1070,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     delete fp;
   }
 
-  cvReleaseMat(&global_to_disp);
-  cvReleaseMat(&global_to_local);
   cvReleaseMat(&frames);
   cvReleaseMat(&points);
 
