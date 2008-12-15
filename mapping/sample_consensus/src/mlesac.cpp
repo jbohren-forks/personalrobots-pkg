@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: mlesac.cpp,v 1.0 2008/12/04 12:00:00 rusu Exp $
+ * $Id$
  *
  */
 
@@ -76,8 +76,6 @@ namespace sample_consensus
     std::vector<int> best_model;
     std::vector<int> best_inliers, inliers;
     std::vector<int> selection;
-
-    int n_inliers_count = 0;
 
     // Compute sigma - remember to set threshold_ correctly !
     sigma_ = cloud_geometry::computeMedianAbsoluteDeviation (*sac_model_->getCloud (), *sac_model_->getIndices (), threshold_);
@@ -165,7 +163,7 @@ namespace sample_consensus
 
       iterations_ += 1;
       if (debug > 1)
-        std::cerr << "[MLESAC::computeModel] Trial " << iterations_ << " out of " << ceil (k) << ": best number of inliers so far is " << n_inliers_count << "." << std::endl;
+        std::cerr << "[MLESAC::computeModel] Trial " << iterations_ << " out of " << ceil (k) << ": best number of inliers so far is " << best_inliers.size () << "." << std::endl;
       if (iterations_ > max_iterations_)
       {
         if (debug > 0)

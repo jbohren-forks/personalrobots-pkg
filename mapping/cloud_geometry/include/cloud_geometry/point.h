@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: point.h,v 1.0 2008/12/04 12:00:00 rusu Exp $
+ * $Id$
  *
  */
 
@@ -148,6 +148,30 @@ namespace cloud_geometry
     return (r);
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Normalize a point.
+    * \param p the point/vector to normalize
+    * \param q the resulted normalized point/vector
+    */
+  inline void
+    normalizePoint (std_msgs::Point32 p, std_msgs::Point32 &q)
+  {
+    // Calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
+    double n_norm = sqrt (p.x * p.x + p.y * p.y + p.z * p.z);
+    q.x = p.x / n_norm;
+    q.y = p.y / n_norm;
+    q.z = p.z / n_norm;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Normalize a point and return the result in place.
+    * \param p the point/vector to normalize
+    */
+  inline void
+    normalizePoint (std_msgs::Point32 &p)
+  {
+    normalizePoint (p, p);
+  }
 
 }
 

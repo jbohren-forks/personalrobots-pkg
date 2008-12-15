@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: sac_model_line.cpp,v 1.0 2008/12/04 12:00:00 rusu Exp $
+ * $Id$
  *
  */
 
@@ -258,9 +258,9 @@ namespace sample_consensus
     Eigen::Matrix3d eigen_vectors;
     cloud_geometry::eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
 
-//     refit_coefficients[3] = V[2][0] + refit_coefficients[0];
-//     refit_coefficients[4] = V[2][1] + refit_coefficients[1];
-//     refit_coefficients[5] = V[2][2] + refit_coefficients[2];
+    refit_coefficients[3] = eigen_vectors (0, 2) + refit_coefficients[0];
+    refit_coefficients[4] = eigen_vectors (1, 2) + refit_coefficients[1];
+    refit_coefficients[5] = eigen_vectors (2, 2) + refit_coefficients[2];
 
     return (refit_coefficients);
   }

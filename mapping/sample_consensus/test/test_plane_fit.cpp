@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: test_plane_fit.cpp,v 1.0 2008/12/04 12:00:00 rusu Exp $
+ * $Id$
  *
  */
 
@@ -66,7 +66,7 @@ TEST (LMedS, SACModelPlane)
   model->setDataSet (&points);
   EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
 
-  bool result = sac->computeModel (0);
+  bool result = sac->computeModel ();
   EXPECT_EQ (result, true);
 
   std::vector<int> inliers = sac->getInliers ();
