@@ -441,6 +441,9 @@ bool EnvironmentNAV2D::InitializeEnv(int width, int height,
 					int goalx, int goaly, unsigned char obsthresh)
 {
 
+	printf("env: initialized with width=%d height=%d, start=%d %d, goal=%d %d, obsthresh=%d\n", 
+		width, height, startx, starty, goalx, goaly, obsthresh);
+
 	EnvNAV2DCfg.obsthresh = obsthresh;
 
 	SetConfiguration(width, height,
