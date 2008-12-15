@@ -1,6 +1,7 @@
 #ifndef FEATURES_BASIC_MATH_H
 #define FEATURES_BASIC_MATH_H
 
+#include <cstdlib>
 #include <cmath>
 
 #ifndef ushort

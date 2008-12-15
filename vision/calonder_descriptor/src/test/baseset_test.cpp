@@ -153,7 +153,7 @@ int main( int argc, char** argv )
     patch_dir = vm["patches"].as<string>();
   }
 
-  RTreeClassifier classifier;
+  RTreeClassifier classifier(true);
   std::vector< IplImage* > sources;
   std::vector< BaseKeypoint > base_set;
   Rng rng(seed);
@@ -257,7 +257,7 @@ int main( int argc, char** argv )
       BaseKeypoint key = base_set[i];
       cv::WImageView1_b image(key.image);
       cv::WImageView1_b patch(&image, key.x - size/2, key.y - size/2, size, size);
-      classifier.getSignature(patch.Ipl(), post);
+      classifier.getFloatSignature(patch.Ipl(), post);
       
       float max_prob = 0.0;
       int best_class = -1;

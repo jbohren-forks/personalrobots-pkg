@@ -28,7 +28,9 @@ class TestDirected(unittest.TestCase):
       cl1 = calonder.classifier()
 
       cl1.train(im.tostring(), im.size[0], im.size[1], kp)
+      print "Writing to unittest.tree"
       cl1.write('unittest.tree')
+      print "done"
 
       def testclassifier(kp, im, cl):
         ma = calonder.BruteForceMatcher()
@@ -37,23 +39,29 @@ class TestDirected(unittest.TestCase):
         for (x,y) in kp:
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
-          #print ["%3f" % x for x in sig.dump()]
+          print ["%3f" % x for x in sig.dump()]
           sigs.append(sig)
           ma.addSignature(sig)
 
+        print "Testing matcher"
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+          print ["%3f" % x for x in sig.dump()]
           (index, distance) = ma.findMatch(sig)
           self.assert_(i == index)
 
+      print "Testing classifier"
       testclassifier(kp, im, cl1)
+      print "done"
       del cl1
 
       # Now make another classifier, and read it from the file above
 
       cl2 = calonder.classifier()
+      print "Reading classifier"
       cl2.read('unittest.tree')
+      print "done"
 
       testclassifier(kp, im, cl2)
 

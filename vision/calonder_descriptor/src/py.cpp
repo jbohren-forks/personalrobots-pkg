@@ -189,7 +189,10 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
 
   signature_t *ps = (signature_t*)sig;
   pm->c->setSize(ps->size); // TODO: this is kind of a hack
-  pm->c->addSignature(ps->data, 0);
+  // FIXME: copying data to make sure matcher signatures stay in memory
+  float *data = (float*) malloc(ps->size * sizeof(float));
+  memcpy(data, ps->data, ps->size * sizeof(float));
+  pm->c->addSignature(data, 0);
   Py_RETURN_NONE;
 }
 
@@ -201,17 +204,20 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
   int predicates_size;
   char *predicates = NULL;
 
+  printf("In wrapped findMatch, about to parse args\n");
   if (!PyArg_ParseTuple(args, "O|s#", &sig, &predicates, &predicates_size))
     return NULL;
   signature_t *ps = (signature_t*)sig;
 
   float distance;
   int index;
+  printf("About to try to find match\n");
   if (predicates == NULL)
     index = pm->c->findMatch(ps->data, &distance);
   else {
     index = pm->c->findMatchPredicated(ps->data, predicates, &distance);
   }
+  printf("Successful\n");
   if (index == -1)
     Py_RETURN_NONE;
   else

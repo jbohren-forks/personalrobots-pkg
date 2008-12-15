@@ -34,8 +34,7 @@ int main(int argc, char** argv)
   for (int i = 0; i < num_corners; ++i)
     base_set.push_back( BaseKeypoint(kp[i].x, kp[i].y, im.Ipl()) );
   
-  RTreeClassifier cl;
-  cl.setThreshold(0.0);
+  RTreeClassifier cl(true);
   //Rng rng( std::time(0) );
   Rng rng( 0 );
   /*
@@ -57,7 +56,7 @@ int main(int argc, char** argv)
   float* sig = sig_buffer;
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    cl.getSignature(patch.Ipl(), sig);
+    cl.getFloatSignature(patch.Ipl(), sig);
     
     float sum = 0;
     for (int i = 0; i < num_corners; ++i) {
@@ -73,7 +72,7 @@ int main(int argc, char** argv)
   sig = (float*) malloc(sig_size * sizeof(float));
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    cl.getSignature(patch.Ipl(), sig);
+    cl.getFloatSignature(patch.Ipl(), sig);
     float distance = 0;
     int match = matcher.findMatch(sig, &distance);
     printf("match = %d, distance = %f\n", match, distance);

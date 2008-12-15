@@ -23,6 +23,8 @@ public:
   // BruteForceMatcher does NOT take ownership of signature's memory
   void addSignature(float* signature, Data const& data);
 
+  size_t numSignatures();
+  
   float* getSignature(int index);
   const float* getSignature(int index) const;
   Data& getData(int index);
@@ -58,6 +60,13 @@ BruteForceMatcher<Data>::BruteForceMatcher(size_t signature_size)
     size_(signature_size),
     distanceFunction(L1Distance)
 {}
+
+template < typename Data >
+inline
+size_t BruteForceMatcher<Data>::numSignatures()
+{
+  return signatures_.size();
+}
 
 template < typename Data >
 inline
