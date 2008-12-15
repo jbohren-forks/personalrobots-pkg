@@ -61,7 +61,7 @@ switch(cmd)
         req.publishanytime = str2num(rem);
     case 'debug'
         req.setmask = req.Set_DebugLevel();
-        req.debuglevel = str2num(rem);
+        req.debuglevel = strtrim(rem);
     otherwise
         display('unknown command');
 end

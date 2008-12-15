@@ -1,2 +1,2 @@
-depends on roscpp sessions, which can be found in
-https://ros.svn.sourceforge.net/svnroot/ros/branches/sessions-rosen/core/roscpp
+depends on new roscpp protocol, which can be found in this branch:
+https://ros.svn.sourceforge.net/svnroot/ros/branches/sessions-dec2008/

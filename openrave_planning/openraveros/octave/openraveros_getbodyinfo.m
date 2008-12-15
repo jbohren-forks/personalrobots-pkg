@@ -14,7 +14,7 @@ body.dof = bodyinfo.dof;
 body.T = reshape(cell2mat(bodyinfo.transform.m),[3 4]);
 
 body.jointvalues = cell2mat(bodyinfo.jointvalues);
-body.links = zeros(1,length(bodyinfo.links));
+body.links = zeros(12,length(bodyinfo.links));
 for i = 1:length(bodyinfo.links)
     body.links(:,i) = cell2mat(bodyinfo.links{i}.m);
 end

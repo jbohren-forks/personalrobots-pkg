@@ -1,4 +1,0 @@
-# Returns the transformations of all the body's links in the global coordinate system
-int32 bodyid
----
-AffineTransformMatrix[] links

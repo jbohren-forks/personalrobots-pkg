@@ -49,12 +49,17 @@ class ROSServer : public RaveServerBase
     };
 
 public:
-    ROSServer(EnvironmentBase* penv) : RaveServerBase(penv), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
+        ROSServer(SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
+         : RaveServerBase(penv), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
+        _psetviewer.reset(psetviewer);
         _bThreadDestroyed = false;
         _bCloseClient = false;
         _fSimulationTimestep = 0.01;
         _vgravity = Vector(0,0,-9.8f);
-        GetEnv()->SetDebugLevel(1);
+
+        SetPhysicsEngine(physicsengine);
+        SetCollisionChecker(collisionchecker);
+        SetViewer(viewer);
     }
     virtual ~ROSServer() {
         Destroy();
@@ -72,12 +77,7 @@ public:
         // have to maintain a certain destruction order
         _pphysics.reset();
         _pcolchecker.reset();
-
-        if( !!_pviewer ) {
-            _pviewer->quitmainloop();
-            _threadviewer.join();
-            _pviewer.reset();
-        }
+        _threadviewer.join();
 
         _bCloseClient = false;
     }
@@ -110,6 +110,80 @@ public:
     {
         return _bCloseClient;
     }
+
+    /// viewer thread assuming you can create different viewers in their own therads
+    virtual void ViewerThread(const string& strviewer)
+    {
+        {
+            boost::mutex::scoped_lock lock(_mutexViewer);
+            _pviewer.reset(GetEnv()->CreateViewer(strviewer.c_str()));
+            if( !!_pviewer ) {
+                GetEnv()->AttachViewer(_pviewer.get());
+                _pviewer->ViewerSetSize(1024,768);
+            }
+            _conditionViewer.notify_all();
+        }
+
+        if( !_pviewer )
+            return;
+
+        _pviewer->main(); // spin until quitfrommainloop is called
+        RAVELOG_DEBUGA("destroying viewer\n");
+        _pviewer.reset();
+    }
+
+    bool SetPhysicsEngine(const string& physicsengine)
+    {
+        if( physicsengine.size() > 0 ) {
+            _pphysics.reset(GetEnv()->CreatePhysicsEngine(physicsengine.c_str()));
+            GetEnv()->SetPhysicsEngine(_pphysics.get());
+            if( !_pphysics )
+                return false;
+            _pphysics->SetGravity(_vgravity);
+        }
+
+        return true;
+    }
+
+    bool SetCollisionChecker(const string& collisionchecker)
+    {
+        if( collisionchecker.size() > 0 ) {
+            _pcolchecker.reset(GetEnv()->CreateCollisionChecker(collisionchecker.c_str()));
+            if( !_pcolchecker )
+                return false;
+            GetEnv()->SetCollisionChecker(_pcolchecker.get());
+        }
+
+        return true;
+    }
+
+    bool SetViewer(const string& viewer)
+    {
+        if( !!_psetviewer )
+            return _psetviewer->SetViewer(GetEnv(),viewer);
+
+        _threadviewer.join(); // wait for the viewer
+        
+        if( viewer.size() > 0 ) {
+            boost::mutex::scoped_lock lock(_mutexViewer);
+            _threadviewer = boost::thread(boost::bind(&ROSServer::ViewerThread, this, viewer));
+            _conditionViewer.wait(lock);
+            
+            if( !_pviewer ) {
+                RAVELOG_WARNA("failed to create viewer %s\n", viewer.c_str());
+                _threadviewer.join();
+                return false;
+            }
+            else
+                RAVELOG_INFOA("viewer %s successfully attached\n", viewer.c_str());
+        }
+
+        return true;
+    }
+
+    //////////////
+    // services //
+    //////////////
 
     bool body_destroy_srv(body_destroy::request& req, body_destroy::response& res)
     {
@@ -197,22 +271,6 @@ public:
                 res.values[i] = vtemp[i];
         }
         
-        return true;
-    }
-
-    bool body_getlinks_srv(body_getlinks::request& req, body_getlinks::response& res)
-    {
-        KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
-        if( pbody == NULL )
-            return false;
-
-        LockEnvironment envlock(this);
-        vector<Transform> vtrans; pbody->GetBodyTransformations(vtrans);
-        
-        res.links.resize(vtrans.size()); int index = 0;
-        FOREACH(ittrans, vtrans)
-            res.links[index++] = GetAffineTransform(*ittrans);
-
         return true;
     }
 
@@ -423,8 +481,10 @@ public:
             }
         }
 
-        if( !GetEnv()->LoadProblem(pproblem.get(), req.args.c_str()) )
+        if( GetEnv()->LoadProblem(pproblem.get(), req.args.c_str()) != 0 ) {
+            RAVELOG_WARNA("failed to load problem %s with args %s\n", req.problemtype.c_str(), req.args.c_str());
             return false;
+        }
         
         _mapproblems[++_nNextProblemId] = pproblem;
         res.problemid = _nNextProblemId;
@@ -599,6 +659,17 @@ public:
         if( options & RobotInfo::Req_ActiveDOFs ) {
             FillActiveDOFs(probot, info.active);
             info.activedof = probot->GetActiveDOF();
+        }
+        if( options & BodyInfo::Req_JointLimits ) {
+            vector<dReal> vlower, vupper;
+            probot->GetActiveDOFLimits(vlower,vupper);
+            ROS_ASSERT( vlower.size() == vupper.size() );
+            info.activelowerlimit.resize(vlower.size());
+            info.activeupperlimit.resize(vupper.size());
+            for(size_t i = 0; i < vlower.size(); ++i) {
+                info.activelowerlimit[i] = vlower[i];
+                info.activeupperlimit[i] = vupper[i];
+            }
         }
     }
 
@@ -781,16 +852,12 @@ public:
             }
         }
         if( req.setmask & env_set::request::Set_PhysicsEngine ) {
-            _pphysics.reset(GetEnv()->CreatePhysicsEngine(req.physicsengine.c_str()));
-            GetEnv()->SetPhysicsEngine(_pphysics.get());
-            if( !!_pphysics )
-                _pphysics->SetGravity(_vgravity);
+            SetPhysicsEngine(req.physicsengine);
         }
         if( req.setmask & env_set::request::Set_CollisionChecker ) {
             int options = GetEnv()->GetCollisionOptions();
-            _pcolchecker.reset(GetEnv()->CreateCollisionChecker(req.collisionchecker.c_str()));
-            GetEnv()->SetCollisionChecker(_pcolchecker.get());
-            GetEnv()->SetCollisionOptions(options);
+            if( SetCollisionChecker(req.collisionchecker) )
+                GetEnv()->SetCollisionOptions(options);
         }
         if( req.setmask & env_set::request::Set_Gravity ) {
             _vgravity = Vector(req.gravity[0],req.gravity[1],req.gravity[2]);
@@ -801,19 +868,27 @@ public:
             GetEnv()->SetPublishBodiesAnytime(req.publishanytime>0);
         }
         if( req.setmask & env_set::request::Set_DebugLevel ) {
-            GetEnv()->SetDebugLevel(req.debuglevel);
+            map<string,DebugLevel> mlevels;
+            mlevels["fatal"] = Level_Fatal;
+            mlevels["error"] = Level_Error;
+            mlevels["info"] = Level_Info;
+            mlevels["warn"] = Level_Warn;
+            mlevels["debug"] = Level_Debug;
+            DebugLevel level = GetEnv()->GetDebugLevel();
+            if( mlevels.find(req.debuglevel) != mlevels.end() )
+                level = mlevels[req.debuglevel];
+            else {
+                stringstream ss(req.debuglevel);
+                int nlevel;
+                ss >> nlevel;
+                if( !!ss )
+                    level = (DebugLevel)nlevel;
+            }
+            GetEnv()->SetDebugLevel(level);
         }
         if( req.setmask & env_set::request::Set_Viewer ) {
-            if( !!_pviewer ) {
-                _pviewer->quitmainloop();
-                // no need to wait for joins
-                //_threadviewer.join();
-            }
-
-            _pviewer.reset(GetEnv()->CreateViewer(req.viewer.c_str()));
-            GetEnv()->AttachViewer(_pviewer.get());
-            if( !!_pviewer )
-                _threadviewer = boost::thread(boost::bind(&RaveViewerBase::main, _pviewer.get()));
+            GetEnv()->AttachViewer(NULL);
+            SetViewer(req.viewer);
         }
 
         return true;
@@ -1287,15 +1362,20 @@ private:
         return am;
     }
 
+    boost::shared_ptr<SetViewerFunc> _psetviewer;
     boost::shared_ptr<PhysicsEngineBase> _pphysics;
     boost::shared_ptr<CollisionCheckerBase> _pcolchecker;
-    boost::shared_ptr<RaveViewerBase> _pviewer;
     map<int, boost::shared_ptr<PlannerBase> > _mapplanners;
     map<int, boost::shared_ptr<ProblemInstance> > _mapproblems;
     map<int, boost::shared_ptr<FIGURE> > _mapFigureIds;
     int _nNextFigureId, _nNextPlannerId, _nNextProblemId;
-    boost::thread _threadviewer;
     float _fSimulationTimestep;
     Vector _vgravity;
     bool _bThreadDestroyed, _bCloseClient;
+
+    /// viewer control variables
+    boost::shared_ptr<RaveViewerBase> _pviewer;
+    boost::thread _threadviewer;
+    boost::mutex _mutexViewer;
+    boost::condition _conditionViewer;
 };

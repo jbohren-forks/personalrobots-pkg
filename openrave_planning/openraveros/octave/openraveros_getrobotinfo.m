@@ -30,3 +30,7 @@ robot.activedof = robotinfo.activedof;
 robot.affinedof = robotinfo.active.affine;
 robot.activejoints = cell2mat(robotinfo.active.joints);
 robot.rotationaxis = cell2mat(robotinfo.active.rotationaxis);
+
+robot.activelowerlimit = cell2mat(bodyinfo.activelowerlimit);
+robot.activeupperlimit = cell2mat(bodyinfo.activeupperlimit);
+

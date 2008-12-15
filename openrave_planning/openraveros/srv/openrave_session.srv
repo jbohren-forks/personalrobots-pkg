@@ -18,5 +18,11 @@ uint8 CloneViewer=2 # copy current viewer
 uint8 CloneSimulation=4 # copy simulation settings
 uint8 CloneRealControllers=8 # copy real robot controllers 
 
+# if not empty, the interfaces to set for the new environment
+# otherwise appropriate defaults are created
+string physicsengine
+string collisionchecker
+string viewer
+
 ---
 int32 sessionid

@@ -1,4 +1,4 @@
-%% openraveros_startup(sessionserver)
+%% openraveros_startup(sessionserver, createsession, viewer)
 %% adds all the necessary paths for the openraveros octave client
 
 %% Software License Agreement (BSD License)
@@ -26,7 +26,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 %%
 %% author: Rosen Diankov
-function openraveros_startup(sessionserver,createsession)
+function openraveros_startup(sessionserver,createsession, veiwer)
 global openraveros_globalsession
 persistent openraveros_initialized
 
@@ -50,8 +50,13 @@ if( ~exist('sessionserver','var') )
     sessionserver = 'openrave_session';
 end
 
+if( ~exist('viewer','var') )
+    viewer = 'qtcoin';
+end
+
 if( createsession && isempty(openraveros_globalsession) )
     req = openraveros_openrave_session();
+    req.viewer = viewer; % default viewer
     [localid,res] = rosoct_create_session(sessionserver,req);
     
     if( ~isempty(localid) && ~isempty(res) )
@@ -61,6 +66,6 @@ if( createsession && isempty(openraveros_globalsession) )
         openraveros_globalsession.id = localid;
         openraveros_globalsession.server = sessionserver;
         openraveros_globalsession.uuid = res.sessionid;
-        display(sprintf('created openraveros session uuid %d',res.sessionid));
+        %display(sprintf('created openraveros session uuid %d',res.sessionid));
     end
 end

@@ -10,7 +10,12 @@ uint8 activedof
 # information about the active dofs
 ActiveDOFs active
 
+# joint limits
+float32[] activelowerlimit
+float32[] activeupperlimit
+
 # upper 8 bits
 uint16 Req_Manipulators=256
 uint16 Req_Sensors=512
 uint16 Req_ActiveDOFs=1024
+uint16 Req_ActiveLimits=2048

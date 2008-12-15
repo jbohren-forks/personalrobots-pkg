@@ -99,6 +99,7 @@ inline std::string _stdwcstombs(const wchar_t* pname)
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/bind.hpp>
 
@@ -109,7 +110,6 @@ inline std::string _stdwcstombs(const wchar_t* pname)
 #include <openraveros/body_getaabbs.h>
 #include <openraveros/body_getdof.h>
 #include <openraveros/body_getjointvalues.h>
-#include <openraveros/body_getlinks.h>
 #include <openraveros/body_setjointvalues.h>
 #include <openraveros/body_settransform.h>
 #include <openraveros/env_checkcollision.h>
@@ -144,5 +144,11 @@ inline std::string _stdwcstombs(const wchar_t* pname)
 using namespace OpenRAVE;
 using namespace std;
 using namespace openraveros;
+
+class SetViewerFunc
+{
+public:
+    virtual bool SetViewer(EnvironmentBase* penv, const string& viewername) = 0;
+};
 
 #endif

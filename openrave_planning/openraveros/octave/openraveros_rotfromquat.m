@@ -1,4 +1,6 @@
-% R = openraveros_rotfromquat(quat)
+%% R = openraveros_rotfromquat(quat)
+%%
+%% quat - the format is [cos(angle/2) axis*sin(angle/2)]
 function R = openraveros_rotfromquat(quat)
 
 R = zeros(3,3);

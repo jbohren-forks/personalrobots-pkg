@@ -34,10 +34,11 @@ using namespace ros;
 #define REFLECT_SERVICE(srvname) \
     bool srvname##_srv(srvname::request& req, srvname::response& res) \
     { \
-        /* need separate copy in order to guarantee thread safety */ \
-        SessionState state = getstate(req); \
-        if( !state._pserver ) \
+        SessionState state = getstate(req); /* need separate copy in order to guarantee thread safety */ \
+        if( !state._pserver ) { \
+            ROS_INFO("failed to find session for service %s\n", #srvname); \
             return false; \
+        } \
         return state._pserver->srvname##_srv(req,res); \
     }
 
@@ -57,20 +58,33 @@ class SessionServer
         boost::shared_ptr<EnvironmentBase> _penv;
     };
 
+    class SessionSetViewerFunc : public SetViewerFunc
+    {
+    public:
+        SessionSetViewerFunc(SessionServer* pserv) : _pserv(pserv) {}
+        virtual bool SetViewer(EnvironmentBase* penv, const string& viewername) {
+            return _pserv->SetViewer(penv,viewername);
+        }
+
+    private:
+        SessionServer* _pserv;
+    };
+
     string _sessionname;
 public:
-    SessionServer() {
+    SessionServer() : _penvViewer(NULL), _ok(true) {
         _pParentEnvironment.reset(CreateEnvironment());
     }
     virtual ~SessionServer() {
         Destroy();
     }
 
-    bool Init() {
+    bool Init()
+    {
         node* pnode = node::instance();
         if( pnode == NULL )
             return false;
-
+        
         if( !pnode->advertiseService("openrave_session",&SessionServer::session_callback,this, 1) )
             return false;
         _sessionname = pnode->mapName("openrave_session");
@@ -87,8 +101,6 @@ public:
         if( !pnode->advertiseService("body_getdof",&SessionServer::body_getdof_srv,this,-1) )
             return false;
         if( !pnode->advertiseService("body_getjointvalues",&SessionServer::body_getjointvalues_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_getlinks",&SessionServer::body_getlinks_srv,this,-1) )
             return false;
         if( !pnode->advertiseService("body_setjointvalues",&SessionServer::body_setjointvalues_srv,this,-1) )
             return false;
@@ -149,11 +161,16 @@ public:
         if( !pnode->advertiseService("robot_setactivevalues",&SessionServer::robot_setactivevalues_srv,this,-1) )
             return false;
 
+        _ok = true;
+        _threadviewer = boost::thread(boost::bind(&SessionServer::ViewerThread, this));
+
         return true;
     }
 
     void Destroy()
     {
+        selfDestruct();
+
         node* pnode = node::instance();
         if( pnode == NULL )
             return;
@@ -165,7 +182,6 @@ public:
         pnode->unadvertiseService("body_getaabbs");
         pnode->unadvertiseService("body_getdof");
         pnode->unadvertiseService("body_getjointvalues");
-        pnode->unadvertiseService("body_getlinks");
         pnode->unadvertiseService("body_setjointvalues");
         pnode->unadvertiseService("body_settransform");
         pnode->unadvertiseService("env_checkcollision");
@@ -195,12 +211,96 @@ public:
         pnode->unadvertiseService("robot_sensorsend");
         pnode->unadvertiseService("robot_setactivedofs");
         pnode->unadvertiseService("robot_setactivevalues");
+
+        _threadviewer.join();
+    }
+    
+    virtual void spin()
+    {
+        while (_ok) {
+            usleep(1000);
+        };
+    }
+
+    virtual void selfDestruct()
+    {
+        _ok = false;
+        boost::mutex::scoped_lock lockcreate(_mutexViewer);
+        if( !!_penvViewer )
+            _penvViewer->AttachViewer(NULL);
+    }
+
+    bool SetViewer(EnvironmentBase* penv, const string& viewer)
+    {
+        boost::mutex::scoped_lock lock(_mutexViewer);
+        
+        // destroy the old viewer
+        if( !!_penvViewer ) {
+            _penvViewer->AttachViewer(NULL);
+
+            _conditionViewer.wait(lock);
+        }
+         
+        ROS_ASSERT(!_penvViewer);
+
+        _strviewer = viewer;
+        _penvViewer = penv;
+        
+        if( viewer.size() == 0 || !_penvViewer )
+            return true;
+
+        _conditionViewer.wait(lock);
+        return !!_pviewer;
     }
 
 private:
     map<int,SessionState> _mapsessions;
     boost::mutex _mutexsession;
     boost::shared_ptr<EnvironmentBase> _pParentEnvironment;
+
+    // persistent viewer
+    boost::shared_ptr<RaveViewerBase> _pviewer;
+    boost::thread _threadviewer; ///< persistent thread (qtcoin openrave plugin needs this)
+    boost::mutex _mutexViewer;
+    boost::condition _conditionViewer;
+    EnvironmentBase* _penvViewer;
+    string _strviewer;
+
+    bool _ok;
+
+    virtual void ViewerThread()
+    {
+        while(_ok) {
+            
+            {
+                boost::mutex::scoped_lock lockcreate(_mutexViewer);
+                if( _strviewer.size() == 0 || !_penvViewer ) {
+                    usleep(1000);
+                    continue;
+                }
+
+                _pviewer.reset(_penvViewer->CreateViewer(_strviewer.c_str()));
+                if( !!_pviewer ) {
+                    _penvViewer->AttachViewer(_pviewer.get());
+                    _pviewer->ViewerSetSize(1024,768);
+                }
+                _conditionViewer.notify_all();
+
+                if( !_pviewer )
+                    continue;
+            }
+
+            _pviewer->main(); // spin until quitfrommainloop is called
+            
+            boost::mutex::scoped_lock lockcreate(_mutexViewer);
+            RAVELOG_DEBUGA("destroying viewer\n");
+            ROS_ASSERT(_penvViewer == _pviewer->GetEnv());
+            _penvViewer->AttachViewer(NULL);
+            _pviewer.reset();
+            _penvViewer = NULL;
+            _conditionViewer.notify_all();
+        }
+    }
 
     template <class MReq>
     SessionState getstate(const MReq& req)
@@ -242,16 +342,16 @@ private:
         
         if( req.clone_sessionid ) {
             // clone the environment from clone_sessionid
-            SessionState state;
+            SessionState clonestate;
             {
                 boost::mutex::scoped_lock lock(_mutexsession);
-                state = _mapsessions[req.clone_sessionid];
+                clonestate = _mapsessions[req.clone_sessionid];
             }
 
-            if( !state._penv )
+            if( !clonestate._penv )
                 ROS_INFO("failed to find session %d", req.clone_sessionid);
             else 
-                state._penv.reset(state._penv->CloneSelf(req.clone_options));
+                state._penv.reset(clonestate._penv->CloneSelf(req.clone_options));
         }
 
         if( !state._penv ) {
@@ -260,7 +360,7 @@ private:
             state._penv.reset(_pParentEnvironment->CloneSelf(0));
         }
 
-        state._pserver.reset(new ROSServer(state._penv.get()));
+        state._pserver.reset(new ROSServer(new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
 
         _mapsessions[id] = state;
         res.sessionid = id;
@@ -275,7 +375,6 @@ private:
     REFLECT_SERVICE(body_getaabbs)
     REFLECT_SERVICE(body_getdof)
     REFLECT_SERVICE(body_getjointvalues)
-    REFLECT_SERVICE(body_getlinks)
     REFLECT_SERVICE(body_setjointvalues)
     REFLECT_SERVICE(body_settransform)
     REFLECT_SERVICE(env_checkcollision)

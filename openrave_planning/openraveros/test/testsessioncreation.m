@@ -46,3 +46,11 @@ end
 sessions = {};
 
 openraveros_restart();
+% for i = 1:4
+%     orEnvSetOptions('viewer qtcoin');
+%     orEnvLoadScene('data/lab1.env.xml');
+% end
+
+orEnvLoadScene('data/lab1.env.xml');
+orEnvSetOptions('viewer qtcoin');
+orEnvLoadScene('robots/barrettwam.robot.xml',1);

@@ -25,22 +25,36 @@
 // author: Rosen Diankov
 #include "openraveros.h"
 #include "session.h"
+#include <signal.h>
+
+void sigint_handler(int);
+
+boost::shared_ptr<ros::node> s_pmasternode;
+boost::shared_ptr<SessionServer> s_sessionserver;
 
 int main(int argc, char ** argv)
 {
+    signal(SIGINT,sigint_handler); // control C
+
     ros::init(argc,argv);
-    ros::node masternode("openraveserver");
+    s_pmasternode.reset(new ros::node("openraveserver", ros::node::DONT_HANDLE_SIGINT));
 
-    if( !masternode.checkMaster() )
+    if( !s_pmasternode->checkMaster() )
         return -1;
     
-    boost::shared_ptr<SessionServer> sessionserver(new SessionServer());
-    if( !sessionserver->Init() )
+    s_sessionserver.reset(new SessionServer());
+    if( !s_sessionserver->Init() )
         return -1;
 
-    masternode.spin();
-    
-    sessionserver.reset();
+    s_sessionserver->spin();
+    s_sessionserver.reset();
     ros::fini();
+    s_pmasternode.reset();
     return 0;
+}
+
+void sigint_handler(int)
+{
+    s_sessionserver->selfDestruct();
+    s_pmasternode->selfDestruct();
 }

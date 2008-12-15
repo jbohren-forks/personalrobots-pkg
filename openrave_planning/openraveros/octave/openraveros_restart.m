@@ -1,4 +1,4 @@
-%% openraveros_restart(sessionserver)
+%% openraveros_restart(sessionserver, viewer)
 %%
 %% restars an openraveros session if the current one is invalid
 
@@ -27,7 +27,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 %%
 %% author: Rosen Diankov
-function openraveros_restart(sessionserver)
+function openraveros_restart(sessionserver,viewer)
 global openraveros_globalsession
 
 openraveros_startup();
@@ -45,3 +45,15 @@ if( ~exist('sessionserver','var') )
     sessionserver = 'openrave_session';
 end
 openraveros_globalsession = openraveros_createsession(sessionserver);
+
+if( ~exist('viewer','var') )
+    viewer = 'qtcoin';
+end
+
+if( ~isempty(viewer) && ~isempty(openraveros_globalsession) )
+    %% set the viewer
+    reqset = openraveros_env_set();
+    reqset.setmask = reqset.Set_Viewer();
+    reqset.viewer = viewer;
+    resset = rosoct_session_call(openraveros_globalsession.id,'env_set',reqset);
+end

@@ -7,17 +7,24 @@ function values = orRobotGetDOFLimits(robotid)
 
 %% get some robot info
 session = openraveros_getglobalsession();
-req = openraveros_env_getbodies();
+req = openraveros_env_getrobots();
 req.bodyid = robotid;
-res = rosoct_session_call(session.id,'env_getbodies',req);
-if( ~isempty(resinfo) )
-    if( length(res.lowerlimit) ~= length(res.upperlimit) )
+req.options = openraveros_RobotInfo().Req_ActiveLimits();
+res = rosoct_session_call(session.id,'env_getrobots',req);
+if( ~isempty(res) )
+    if( res.robots{1}.id ~= robotid )
+        error('wrong robot id');
+    end
+
+    lowerlimit = res.robots{1}.activelowerlimit;
+    upperlimit = res.robots{1}.activeupperlimit;
+    if( length(lowerlimit) ~= length(upperlimit) )
         error('limits not same size');
     end
 
-    values = zeros(length(res.lowerlimit),2);
-    values(:,1) = cell2mat(res.lowerlimit);
-    values(:,2) = cell2mat(res.upperlimit);
+    values = zeros(length(lowerlimit),2);
+    values(:,1) = cell2mat(lowerlimit);
+    values(:,2) = cell2mat(upperlimit);
 else
     values = [];
 end
