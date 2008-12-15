@@ -34,7 +34,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="5000" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="5000" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="100.0" />
   </joint>
@@ -45,7 +45,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="5000" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="5000" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="100.0" />
   </joint>
@@ -56,7 +56,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="2000" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="2000" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="10.0" />
   </joint>
@@ -67,7 +67,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="500" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="500" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="10.0" />
   </joint>
@@ -78,7 +78,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="100" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="10.0" />
   </joint>
@@ -89,7 +89,7 @@
     <anchor xyz="0.0 0 0" />
     <safety_limit_min spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
     <safety_limit_max spring_constant="0.0" safety_length="0.01" damping_constant="0.0" />
-    <limit k_position="100.0" k_velocity="100.0" min="0" max="2" effort="100" velocity="5" />
+    <limit k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
     <joint_properties damping="10.0" />
   </joint>
