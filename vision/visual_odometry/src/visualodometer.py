@@ -444,7 +444,9 @@ class VisualOdometer:
     tocull = set()
     for (t0,t1) in zip(by_lastpt, by_lastpt[1:]):
       if t0.lastpt == t1.lastpt:
-        if len(t0.p) < len(t1.p):
+        tocull.add(t0)
+        tocull.add(t1)
+        if len(t0.p) > len(t1.p):
           tocull.add(t0)
         else:
           tocull.add(t1)
