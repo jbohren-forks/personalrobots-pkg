@@ -123,6 +123,7 @@ namespace cam
     bool setHoropter(int thresh);
     bool setSpeckleSize(int size);
     bool setSpeckleDiff(int diff);
+    bool setCorrsize(int size);
 
     // visible calls to StereoData functions
     bool doRectify();

@@ -491,6 +491,13 @@ StereoDcam::setSpeckleDiff(int val)
   return true;
 }
 
+bool
+StereoDcam::setCorrsize(int val)
+{
+  stIm->corrSize = val;
+  return true;
+}
+
 
 
 //

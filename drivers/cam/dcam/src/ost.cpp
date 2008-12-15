@@ -309,6 +309,7 @@ main(int argc, char **argv)	// no arguments
 	      dev->setUniqueThresh(sp_uthresh);
 	      dev->setSpeckleSize(sp_ssize);
 	      dev->setSpeckleDiff(sp_sdiff);
+	      dev->setCorrsize(sp_corr);
 	      isVideo = true;	// needed to keep thread running
 	      startCam = false;
 	    }
@@ -2154,6 +2155,8 @@ corrsize_cb(Fl_Counter *w, void *x)
       w->value(c);
     }
   sp_corr = pcorr = c;
+  if (dev)
+    dev->setCorrsize(sp_corr);
 }
 
 void
@@ -2725,6 +2728,9 @@ do_button(int e, int x, int y, int b, int m, imWindow *w)
 	lval = dev->stIm->imLeft->imRect[y*w+x];
       else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
 	lval = dev->stIm->imLeft->im[y*w+x];
+
+      if (dev->stIm->flim)
+	lval = (int8_t)dev->stIm->flim[y*w+x] - 31;
 
       if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
 	rval = dev->stIm->imRight->imRect[y*w+x];
