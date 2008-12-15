@@ -698,9 +698,13 @@ int ARAPlanner::SetSearchGoalState(int SearchGoalStateID, ARASearchStateSpace_t*
 int ARAPlanner::SetSearchStartState(int SearchStartStateID, ARASearchStateSpace_t* pSearchStateSpace)
 {
 
-	pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
+	CMDPSTATE* MDPstate = GetState(SearchStartStateID, pSearchStateSpace);
 
-    pSearchStateSpace->bReinitializeSearchStateSpace = true;
+	if(MDPstate !=  pSearchStateSpace->searchstartstate)
+	{	
+		pSearchStateSpace->searchstartstate = MDPstate;
+		pSearchStateSpace->bReinitializeSearchStateSpace = true;
+	}
 
 	return 1;
 

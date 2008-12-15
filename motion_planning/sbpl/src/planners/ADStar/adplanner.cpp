@@ -883,12 +883,14 @@ int ADPlanner::SetSearchGoalState(int SearchGoalStateID, ADSearchStateSpace_t* p
 
 int ADPlanner::SetSearchStartState(int SearchStartStateID, ADSearchStateSpace_t* pSearchStateSpace)
 {
+	CMDPSTATE* MDPstate = GetState(SearchStartStateID, pSearchStateSpace); 
 
-	pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
-
-    pSearchStateSpace->bReinitializeSearchStateSpace = true;
-
-	pSearchStateSpace->bRebuildOpenList = true;
+	if(MDPstate !=  pSearchStateSpace->searchstartstate)
+	{	
+		pSearchStateSpace->searchstartstate = MDPstate;
+		pSearchStateSpace->bReinitializeSearchStateSpace = true;
+		pSearchStateSpace->bRebuildOpenList = true;
+	}
 
 	return 1;
 
