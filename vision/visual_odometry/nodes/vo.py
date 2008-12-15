@@ -44,9 +44,11 @@ import rospy
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
 from robot_msgs.msg import VOPose
 import std_msgs.msg as stdmsg
+from image_msgs.msg import StereoInfo, Image, CamInfo
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast, Pose
 import camera
+from threading import Lock
 
 class imgAdapted:
   def __init__(self, i):
@@ -55,48 +57,115 @@ class imgAdapted:
   def tostring(self):
     return self.i.data
 
+class dcamImage:
+  def __init__(self, m):
+    ma = m.byte_data # MultiArray
+
+    self.data = ma.data
+    d = ma.layout.dim
+    assert d[0].label == "height"
+    assert d[1].label == "width"
+    self.size = (d[1].size, d[0].size)
+
+  def tostring(self):
+    return self.data
+
 class VO:
 
-  def __init__(self, decimate):
+  def __init__(self):
     rospy.TopicSub('/videre/images', ImageArray, self.handle_array, queue_size=2, buff_size=7000000)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
+    #rospy.TopicSub('/dcam/stereo_info', StereoInfo, self.handle_stereo_info)
+    rospy.TopicSub('/dcam/right/cam_info', CamInfo, self.handle_right_cam_info)
+    rospy.TopicSub('/dcam/left/image_rect', Image, self.handle_left_image, queue_size=2, buff_size=7000000)
+    rospy.TopicSub('/dcam/right/image_rect', Image, self.handle_right_image, queue_size=2, buff_size=7000000)
+
+    self.collected = {}
+    self.collection_lock = Lock()
 
     self.pub_vo = rospy.Publisher("/vo", VOPose)
 
     self.vo = None
-    self.decimate = decimate
     self.modulo = 0
+
+  # Old stereo node (dcam)
 
   def handle_params(self, iar):
     if not self.vo:
       cam = camera.VidereCamera(iar.data)
       self.vo = VisualOdometer(cam)
-      self.intervals = []
-      self.took = []
 
   def handle_array(self, iar):
     if self.vo:
-      t0 = time.time()
-      self.intervals.append(t0)
-      if (self.modulo % self.decimate) == 0:
-        imgR = imgAdapted(iar.images[0])
-        imgL = imgAdapted(iar.images[1])
-        af = SparseStereoFrame(imgL, imgR)
-        if 1:
-          pose = self.vo.handle_frame(af)
-        else:
-          pose = Pose()
-        #print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
-        p = VOPose()
-        p.inliers = self.vo.inl
-        # XXX - remove after camera sets frame_id
-        p.header = rostools.msg.Header(0, iar.header.stamp, "stereo_link")
-        p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
-        self.pub_vo.publish(p)
-      self.modulo += 1
-      self.took.append(time.time() - t0)
-      if (len(self.took) % 100) == 0:
-        print len(self.took)
+      imgR = imgAdapted(iar.images[0])
+      imgL = imgAdapted(iar.images[1])
+      af = SparseStereoFrame(imgL, imgR)
+      self.handle_frame(iar.header.stamp, af)
+
+  def handle_frame(self, stamp, af):
+      if 1:
+        pose = self.vo.handle_frame(af)
+      else:
+        pose = Pose()
+      #print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
+      p = VOPose()
+      p.inliers = self.vo.inl
+      # XXX - remove after camera sets frame_id
+      p.header = rostools.msg.Header(0, stamp, "stereo_link")
+      p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
+      self.pub_vo.publish(p)
+
+  def push(self, tag, m):
+    t = m.header.stamp.secs + m.header.stamp.nsecs * 1e-9
+    self.collected.setdefault(t, {})
+    assert not tag in  self.collected[t]
+    self.collected[t][tag] = m
+
+  def handle_pair(self, l, r):
+    if self.vo:
+      af = SparseStereoFrame(dcamImage(l), dcamImage(r))
+      self.handle_frame(l.header.stamp, af)
+
+  def check_queues(self, handler):
+    want = ['L', 'R']
+    completed = set()
+    for t in sorted(self.collected.keys()):
+      if set(self.collected[t].keys()) == set(want):
+        completed.add(t)
+
+    for t in sorted(completed):
+      v = self.collected[t]
+      handler(*tuple([v[l] for l in want]))
+      print "deliver", t, self.collected[t].keys()
+
+    if len(completed) != 0:
+      for t in self.collected.keys():
+        if t <= max(completed):
+          del self.collected[t]
+
+  # New stereo node (dcam)
+
+  def handle_stereo_info(self, m):
+    print "stereo info", m.T, m.RP
+
+  def handle_right_cam_info(self, m):
+    if not self.vo:
+      cam = camera.StereoCamera(m)
+      self.vo = VisualOdometer(cam)
+      self.intervals = []
+      self.took = []
+
+  def handle_left_image(self, m):
+    self.collection_lock.acquire()
+    self.push('L', m)
+    self.check_queues(self.handle_pair)
+    self.collection_lock.release()
+
+  def handle_right_image(self, m):
+    self.collection_lock.acquire()
+    self.push('R', m)
+    self.check_queues(self.handle_pair)
+    self.collection_lock.release()
 
   def dump(self):
     iv = self.intervals
@@ -105,7 +174,7 @@ class VO:
     print "Time in callback: %fms" % (sum(took) / len(took))
 
 def main(args):
-  vod = VO(int(args[1]))
+  vod = VO()
 
   rospy.ready('vo')
   rospy.spin()

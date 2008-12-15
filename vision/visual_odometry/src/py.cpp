@@ -36,7 +36,7 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 1
+#define JDC_DEBUG 0
 
 /************************************************************************/
 
@@ -285,7 +285,10 @@ static PyMethodDef frame_pose_methods[] = {
 static PyObject *
 frame_pose_GetAttr(PyObject *self, char *attrname)
 {
-    if (strcmp(attrname, "M") == 0) {
+    if (strcmp(attrname, "id") == 0) {
+      FramePose *fp = ((frame_pose_t*)self)->fp;
+      return PyInt_FromLong(fp->mIndex);
+    } else if (strcmp(attrname, "M") == 0) {
       FramePose *fp = ((frame_pose_t*)self)->fp;
       PyObject *r = PyList_New(16);
       for (int i = 0; i < 16; i++)
@@ -570,6 +573,10 @@ static vector<FramePose*> fpl_p2c(PyObject *o)
 
 PyObject *sba(PyObject *self, PyObject *args)
 {
+  PyObject *ofixed, *ofree, *otracks;
+  int max_num_iters = 5;
+  if (!PyArg_ParseTuple(args, "OOOi", &ofixed, &ofree, &otracks, &max_num_iters)) return NULL;
+
 #if JDC_DEBUG==1  // commented out by jdc
 #else
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
@@ -577,16 +584,15 @@ PyObject *sba(PyObject *self, PyObject *args)
   CvMat dispToCart;
   pe->getProjectionMatrices(&cartToDisp, &dispToCart);
 
-  int full_free_window_size  = 1;
-  int full_fixed_window_size = 1;
-  int max_num_iters = 5;
+  int full_free_window_size  = PyList_Size(ofree);
+  int full_fixed_window_size = PyList_Size(ofixed);
+
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+
 #endif
 
-  PyObject *ofixed, *ofree, *otracks;
-  if (!PyArg_ParseTuple(args, "OOO", &ofixed, &ofree, &otracks)) return NULL;
   vector<FramePose*> fixed_frames = fpl_p2c(ofixed);
   vector<FramePose*> free_frames = fpl_p2c(ofree);
   PointTracks tracks;

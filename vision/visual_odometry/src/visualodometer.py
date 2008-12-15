@@ -190,7 +190,7 @@ class FeatureDetector4x4:
 class FeatureDetectorHarris(FeatureDetector):
 
   default_thresh = 1e-3
-  threshrange = (5,127)
+  threshrange = (1e-4,1e-2)
 
   def get_features(self, frame, target_points):
     return VO.harris(frame.rawdata, frame.size[0], frame.size[1], int(target_points * 1.2), self.thresh, 2.0)
@@ -276,7 +276,7 @@ class Track:
     self.id = [p0id, p1id]
     self.lastpt = p1
     self.alive = True
-    print p0id,p0,p1id,p1,p1pose.xform(*cam.pix2cam(*p1)),uniq_track_id
+    #print p0id,p0,p1id,p1,p1pose.xform(*cam.pix2cam(*p1)),uniq_track_id
     self.sba_track = VO.point_track(p0id, p0, p1id, p1, p1pose.xform(*cam.pix2cam(*p1)), uniq_track_id)
     uniq_track_id += 1
   def kill(self):
@@ -312,11 +312,11 @@ class VisualOdometer:
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
     self.scavenge = kwargs.get('scavenge', False)
-    self.sba = kwargs.get('sba', False)
+    self.sba = kwargs.get('sba', None)
     self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
 
   def name(self):
-    return "VisualOdometer (%s %s iet=%.1f)" % (self.feature_detector.name(), self.descriptor_scheme.name(), self.inlier_error_threshold)
+    return "VisualOdometer (%s %s iet=%.1f sba=%s)" % (self.feature_detector.name(), self.descriptor_scheme.name(), self.inlier_error_threshold, str(self.sba))
 
   def reset_timers(self):
     for n,t in self.timer.items():
@@ -383,7 +383,7 @@ class VisualOdometer:
     #return pr * ps
 
   def proximity(self, f0, f1):
-    """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame int f0's frame.)"""
+    """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame to f0's frame.)"""
     self.num_frames += 1
     pairs = self.temporal_match(f0, f1)
     if len(pairs) > 10:
@@ -413,23 +413,13 @@ class VisualOdometer:
     solution = self.solve(af0.kp, af1.kp, self.pairs)
     return solution
 
-  def handle_frame(self, frame):
-    self.find_keypoints(frame)
-    self.find_disparities(frame)
-    self.collect_descriptors(frame)
-    frame.id = self.num_frames
-    return self.handle_frame_0(frame)
-
   def maintain_tracks(self, f0, f1):
-    fpairs = set(self.temporal_match(f0, f1))
-    rpairs = set([ (i1,i0) for (i0,i1) in self.temporal_match(f1, f0)])
-    pairs = fpairs & rpairs
-    self.pairs = pairs
-    myinl = set([p0 for (p0,p1) in self.pe.inliers()])
-    for (i0,i1) in pairs:
-      if f1.kp[i1] == (113, 300, 11.9375):
-        print (f0.kp[i0], f1.kp[i1])
-    pairmap = dict([(f0.kp[i0], f1.kp[i1]) for (i0,i1) in pairs if f1.kp[i1] in myinl])
+    pairs = self.temporal_match(f0, f1)
+    solution = self.solve(f0.kp, f1.kp, pairs)
+    if solution and solution[0] > 5:
+      (inl, rot, shift) = solution
+    # for points x in f0, inlmap[x] has corresponding point in f1
+    pairmap = dict([(p1,p0) for (p0,p1) in self.pe.inliers()])
 
     for t in self.tracks:
       if not (t.lastpt in pairmap):
@@ -438,7 +428,7 @@ class VisualOdometer:
     # Only keep tracks that have a recent frame
     oldest_useful_frame = f0.id - 3
     self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= t.id[-1]])
-
+    
     oldtails = set([t.lastpt for t in self.tracks])
     for t in self.tracks:
       if t.alive:
@@ -447,13 +437,49 @@ class VisualOdometer:
     print len(self.tracks), [ len(t.p) for t in self.tracks ]
     for p0 in set(pairmap) - oldtails:
       p1 = pairmap[p0]
-      #if not (p1 in [t.lastpt for t in self.tracks]):
       self.tracks.add(Track(p0, f0.id, p1, f1.id, f1.pose, self.cam))
+
+    # Run through all tracks.  If two tracks share an endpoint, delete the shorter track
+    by_lastpt = [e[1] for e in sorted([(t.lastpt, t) for t in self.tracks])]
+    tocull = set()
+    for (t0,t1) in zip(by_lastpt, by_lastpt[1:]):
+      if t0.lastpt == t1.lastpt:
+        if len(t0.p) < len(t1.p):
+          tocull.add(t0)
+        else:
+          tocull.add(t1)
+    self.tracks -= tocull
 
   def sba_handle_frame(self, frame):
     self.posechain.append(VO.frame_pose(frame.id, frame.pose.tolist()))
     #topleft = [ p.M[0] for p in self.posechain ]
-    self.pe.sba(self.posechain[-2:-1], self.posechain[-1:], [ t.sba_track for t in self.tracks ])
+    (fix_sz, free_sz, niter) = self.sba
+    self.pe.sba(self.posechain[-(fix_sz + free_sz):-(free_sz)], self.posechain[-(free_sz):], [ t.sba_track for t in self.tracks ], 10)
+    # copy these corrected poses back into the VO's key and current frames
+    to_correct = [ self.keyframe, frame ]
+    if self.prev_frame:
+      to_correct.append(self.prev_frame)
+    for fp in self.posechain[-(fix_sz + free_sz):]:
+      for dst in to_correct:
+        if fp.id == dst.id:
+          dst.pose.fromlist(fp.M)
+          print "SBA corrected pose of frame", dst.id, "to", dst.pose.M
+
+  def handle_frame(self, frame):
+    self.find_keypoints(frame)
+    self.find_disparities(frame)
+    self.collect_descriptors(frame)
+    frame.id = self.num_frames
+    return self.handle_frame_0(frame)
+
+  def change_keyframe(self, newkey):
+    self.log_keyframes.append(newkey.id)
+    oldkey = self.keyframe
+    self.keyframe = newkey
+
+    if self.sba:
+      self.maintain_tracks(oldkey, newkey)
+      self.sba_handle_frame(newkey)
 
   def handle_frame_0(self, frame):
     if self.prev_frame:
@@ -472,33 +498,64 @@ class VisualOdometer:
       else:
         inl = 0
         diff_pose = Pose()
+      diff_pose.assert_sane()
       self.inl = inl
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
       is_far = self.inl < self.inlier_thresh
       if (self.keyframe != self.prev_frame) and is_far:
-        self.keyframe = self.prev_frame
-        self.log_keyframes.append(self.keyframe.id)
+        self.change_keyframe(self.prev_frame)
         return self.handle_frame_0(frame)
       Tok = ref.pose
       Tkp = diff_pose
       Top = Tok * Tkp
       frame.pose = Top
       frame.inl = self.inl
-      if self.prev_frame and self.sba:
-        self.maintain_tracks(self.prev_frame, frame)
     else:
       frame.pose = Pose()
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
       frame.inl = 999
     self.pose.assert_sane()
-    if self.sba:
-      self.sba_handle_frame(frame)
 
     self.pose = frame.pose
     self.prev_frame = frame
 
     self.num_frames += 1
 
+    return self.pose
+
+  def lock_handle_frame(self, frame):
+    self.find_keypoints(frame)
+    self.find_disparities(frame)
+    self.collect_descriptors(frame)
+    frame.id = self.num_frames
+    if not self.prev_frame:
+      frame.inl = 999
+      frame.pose = Pose()
+      self.keyframe = frame
+    else:
+      ref = self.keyframe
+      self.pairs = self.temporal_match(ref, frame)
+      solution = self.solve(ref.kp, frame.kp, self.pairs)
+      (inl, rot, shift) = solution
+      diff_pose = self.mkpose(rot, shift)
+      if self.scavenge:
+        (inl, rot, shift) = self.scavenger(diff_pose, frame)
+        diff_pose = self.mkpose(rot, shift)
+      self.inl = inl
+      self.outl = len(self.pairs) - inl
+      frame.diff_pose = diff_pose
+      Tok = ref.pose
+      Tkp = diff_pose
+      Top = Tok * Tkp
+      frame.pose = Top
+      frame.inl = self.inl
+      if self.sba:
+        self.maintain_tracks(self.prev_frame, frame)
+    if self.sba:
+      self.sba_handle_frame(frame)
+    self.prev_frame = frame
+    self.pose = frame.pose
+    self.num_frames += 1
     return self.pose

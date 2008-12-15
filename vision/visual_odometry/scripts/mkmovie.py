@@ -77,11 +77,11 @@ for topic, msg in rosrecord.logplayer(filename):
     #vo2 = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
     #vos = [vo1,vo2]
     vos = [
-      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
+      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = True),
 #      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
     ]
 
-  start,end = 0,10
+  start,end = 0,2
 
   if cam and topic.endswith("videre/images"):
     print framecounter

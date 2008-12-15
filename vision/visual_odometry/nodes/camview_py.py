@@ -84,7 +84,7 @@ class VODemo:
     self.mymarkertrail = [ Marker(11 + i) for i in range(10) ]
     self.trail = []
 
-    self.vis = Vis()
+    self.vis = Vis("title")
 
   def display_params(self, iar):
     if not self.vo:

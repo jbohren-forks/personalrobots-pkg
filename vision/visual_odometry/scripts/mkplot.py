@@ -89,11 +89,16 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
-      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
+      VisualOdometer(cam, feature_detector = FeatureDetectorHarris(), descriptor_scheme = DescriptorSchemeSAD(), sba = None),
+      VisualOdometer(cam, feature_detector = FeatureDetectorHarris(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
+
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True, inlier_thresh = 100),
+
       #VisualOdometer(cam, feature_detector = FeatureDetectorHarris(), descriptor_scheme = DescriptorSchemeSAD()),
-      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), inlier_error_threshold=1.0),
-      #VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast), descriptor_scheme = DescriptorSchemeSAD())
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
+      #VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast), descriptor_scheme = DescriptorSchemeSAD()),
     ]
     vo_x = [ [] for i in vos]
     vo_y = [ [] for i in vos]
@@ -102,10 +107,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,20000
+  start,end = 0,10000
 
   if cam and topic.endswith("videre/images"):
-    print framecounter
     if framecounter == end:
       break
     if start <= framecounter and (framecounter % 1) == 0:
@@ -124,10 +128,15 @@ for topic, msg, t in rosrecord.logplayer(filename):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
-      framecounter += 1
+      print framecounter
+    framecounter += 1
   if topic.endswith("odom_estimation"):
     oe_x.append(-msg.pose.position.y)
     oe_y.append(msg.pose.position.x)
+
+print "There are", len(vo.tracks), "tracks"
+print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
+print "There are", len(set([t.p[-1] for t in vo.tracks if t.alive])), "unique endpoints on live tracks"
 
 # Attempt to compute best possible end-to-end pose
 vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True)
@@ -147,28 +156,11 @@ for i in range(len(vos)):
   xp = xs * cos(f) - ys * sin(f)
   yp = ys * cos(f) + xs * sin(f)
   pylab.plot(xp, yp, c = colors[i], label = vos[i].name())
-  pylab.quiver(xp, yp, vo_u[i], vo_v[i], color = colors[i]) #, label = '_nolegend_')
+  #pylab.quiver(xp, yp, vo_u[i], vo_v[i], color = colors[i]) #, label = '_nolegend_')
+
   #xk = [ x for j,x in enumerate(vo_x[i]) if j in vos[i].log_keyframes ]
   #yk = [ y for j,y in enumerate(vo_y[i]) if j in vos[i].log_keyframes ]
   #pylab.scatter(xk, yk, c = colors[i], label = '_nolegend_')
-
-if vos[0].sba:
-  CX = []
-  CY = []
-  for sbap in vos[0].posechain:
-    p = Pose()
-    p.fromlist(sbap.M)
-    x,y,z = p.xform(0,0,0)
-    CX.append(x)
-    CY.append(z)
-
-  xs = numpy.array(CX)
-  ys = numpy.array(CY)
-  xs -= 4.5 * 1e-3
-  f = -0.06
-  xp = xs * cos(f) - ys * sin(f)
-  yp = ys * cos(f) + xs * sin(f)
-  pylab.plot(xp, yp, c = 'magenta', label = 'with SBA')
 
 pylab.plot(oe_x, oe_y, c = 'green', label = 'wheel + IMU odometry')
 xlim = pylab.xlim()
@@ -181,7 +173,7 @@ pylab.xlim(mid - 0.5 * r, mid + 0.5 * r)
 mid = sum(ylim) / 2
 pylab.ylim(mid - 0.5 * r, mid + 0.5 * r)
 pylab.legend()
-#pylab.show()
+pylab.show()
 
 for vo in vos:
   print vo.feature_detector.name(), vo.descriptor_scheme.__class__.__name__
