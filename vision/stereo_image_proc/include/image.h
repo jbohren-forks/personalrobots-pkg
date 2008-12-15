@@ -242,6 +242,7 @@ namespace cam
     bool doDisparity();		// calculate disparity image
     bool doCalcPts();		// calculate 3D points
     bool calcPt(int x, int y, float *fx, float *fy, float *fz); // single point
+    bool setRangeMax(double thresh);
 
     // valid stereo data rectangle
     int imDtop, imDleft;
@@ -279,11 +280,13 @@ namespace cam
     int uniqueThresh;		// percent
     int speckleDiff;		// max difference between adjacent disparities in a region
     int speckleRegionSize;	// minimum size of region to be not a speckle
+    double rangeMax;		// max Z value returned in pt cloud
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
     bool setSpeckleDiff(int diff);
     bool setSpeckleRegionSize(int size);
+    bool setCorrSize(int size);
 
     // buffers for stereo
     uint8_t *buf, *flim, *frim;

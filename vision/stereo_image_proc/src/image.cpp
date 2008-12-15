@@ -278,6 +278,7 @@ StereoData::StereoData()
   uniqueThresh = 12;
   speckleDiff = 8;
   speckleRegionSize = 100;
+  rangeMax = 0.0;
 
   hasRectification = false;
 
@@ -336,6 +337,15 @@ StereoData::setNumDisp(int val)
   if (val > 256) val = 256;
   numDisp = val;
   printf("[StereoData] Num disp set to %d\n", val);
+  return true;
+}
+
+
+bool
+StereoData::setRangeMax(double val)
+{
+  if (val < 0.0) val = 0.0;
+  rangeMax = val;
   return true;
 }
 
@@ -538,6 +548,7 @@ StereoData::doCalcPts()
   int iw = imDwidth;
   int w = imWidth;
   int h = imHeight;
+  int dmax = 0;
 
   if (imPtsSize < 4*w*h*sizeof(float))
     {
@@ -557,6 +568,14 @@ StereoData::doCalcPts()
   itx *= 1.0 / (float)dpp; // adjust for subpixel interpolation
   pt = imPts;
       
+  // set up range max disparity
+  if (rangeMax > 0.0)
+    {
+      double dm = f / (rangeMax*itx);
+      dmax = (int)dm;
+      printf("Dmax: %d; f = %f, Tx = %f\n", dmax, f, (float)dpp/itx);
+    }
+
   for (int j=0; j<ih; j++, y++)
     {
       int x = ix;
@@ -564,7 +583,7 @@ StereoData::doCalcPts()
 
       for (int i=0; i<iw; i++, x++, p++)
 	{
-	  if (*p > 0) 
+	  if (*p > dmax) 
 	    {
 	      float ax = (float)x + cx;
 	      float ay = (float)y + cy;
@@ -589,7 +608,7 @@ StereoData::doCalcPts()
 
 	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
 	    {
-	      if (*p > 0) 
+	      if (*p > dmax) 
 		{
 		  *pcout++ = *pc;
 		  *pcout++ = *(pc+1);
