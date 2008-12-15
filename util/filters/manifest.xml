@@ -9,7 +9,6 @@ implementations of commonly used filters.
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
-<!--depend package="newmat10"/-->
 <export>
 <cpp cflags="-I${prefix}/include"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
 </export>
