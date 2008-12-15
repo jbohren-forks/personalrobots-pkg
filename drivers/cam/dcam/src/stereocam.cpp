@@ -467,6 +467,7 @@ bool
 StereoDcam::setHoropter(int val)
 {
   stIm->setHoropter(val);
+  stIm->setDispOffsets();	// reset offsets
   return Dcam::setHoropter(val);
 }
 
@@ -495,6 +496,14 @@ bool
 StereoDcam::setCorrsize(int val)
 {
   stIm->corrSize = val;
+  stIm->setDispOffsets();	// reset offsets
+  return true;
+}
+
+bool
+StereoDcam::setRangeMax(double val)
+{
+  stIm->setRangeMax(val);	// set max range in pt cloud
   return true;
 }
 

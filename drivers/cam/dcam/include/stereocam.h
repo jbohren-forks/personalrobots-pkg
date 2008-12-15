@@ -117,19 +117,21 @@ namespace cam
     void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
     void setRegister(uint64_t offset, uint32_t value);
-
+    
+    // processing parameters
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
     bool setHoropter(int thresh);
     bool setSpeckleSize(int size);
     bool setSpeckleDiff(int diff);
     bool setCorrsize(int size);
+    bool setNumDisp(int ndisp);
+    bool setRangeMax(double thresh);
 
     // visible calls to StereoData functions
     bool doRectify();
     bool doDisparity();
     bool doCalcPts();
-    bool setNumDisp(int ndisp);
 
   protected:
     // Videre camera de-interlacing

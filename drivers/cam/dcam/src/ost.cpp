@@ -288,6 +288,9 @@ main(int argc, char **argv)	// no arguments
   debug_message("[Dcam] Finding first available camera");
   dev = initcam(dcam::getGuid(0));
 
+  // set range max value
+  dev->setRangeMax(4.0);	// in meters
+
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
 
   while (fltk_check() && !isExit) // process GUI commands, serve video
