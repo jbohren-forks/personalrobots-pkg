@@ -67,6 +67,8 @@ class DcamNode : public ros::node
   int count_;
   double desired_freq_;
 
+  string frame_id_;
+
 
 public:
 
@@ -101,6 +103,8 @@ public:
       dc1394speed_t speed;
 
       param("~speed", str_speed, string("S400"));
+
+      param("~frame_id", frame_id_, string("stereo"));
 
       if (str_speed == string("S100"))
         speed = DC1394_ISO_SPEED_100;
@@ -302,7 +306,7 @@ public:
       if (do_calc_points_)
       {
         cloud_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-        cloud_.header.frame_id = "stereo";
+        cloud_.header.frame_id = frame_id_;
         cloud_.pts.resize(stcam->stIm->numPts);
         cloud_.chan.resize(1);
         cloud_.chan[0].name = "rgb";
