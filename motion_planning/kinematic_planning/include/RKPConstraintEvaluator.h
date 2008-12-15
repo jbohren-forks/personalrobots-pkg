@@ -105,33 +105,30 @@ class PoseConstraintEvaluator : public KinematicConstraintEvaluator
     void evaluate(double *distPos, double *distAng)
     {
 	if (m_link)
-	{	    
-	    switch (m_pc.type)
+	{	
+	    if (distPos)
 	    {
-	    case robot_msgs::PoseConstraint::ONLY_POSITION:
-		if (distPos)
-		{
-		    libTF::Position bodyPos;
-		    m_link->globalTrans.getPosition(bodyPos);
-		    
-		    double dx = bodyPos.x - m_pc.pose.position.x;
-		    double dy = bodyPos.y - m_pc.pose.position.y;
-		    double dz = bodyPos.z - m_pc.pose.position.z;
-		    
-		    *distPos = dx * dx + dy * dy + dz * dz;		    
+		if ((m_pc.type == robot_msgs::PoseConstraint::ONLY_POSITION || m_pc.type == robot_msgs::PoseConstraint::COMPLETE_POSE))
+		{		    
+		    btVector3 bodyPos = m_link->globalTrans.getOrigin();
+		    double dx = bodyPos.getX() - m_pc.pose.position.x;
+		    double dy = bodyPos.getY() - m_pc.pose.position.y;
+		    double dz = bodyPos.getZ() - m_pc.pose.position.z;
+		    *distPos = dx * dx + dy * dy + dz * dz;
 		}
-		if (distAng)
-		    *distAng = 0.0;
-		break;
-		
-	    case robot_msgs::PoseConstraint::ONLY_ORIENTATION:
-	    case robot_msgs::PoseConstraint::COMPLETE_POSE:		
-	    default:
-		if (distPos)
+		else
 		    *distPos = 0.0;
-		if (distAng)
+	    }
+	    
+	    if (distAng)
+	    {
+		if ((m_pc.type == robot_msgs::PoseConstraint::ONLY_ORIENTATION || m_pc.type == robot_msgs::PoseConstraint::COMPLETE_POSE))
+		{
+		    btQuaternion quat(m_pc.pose.orientation.x, m_pc.pose.orientation.y, m_pc.pose.orientation.z, m_pc.pose.orientation.w);
+		    *distAng = quat.angle(m_link->globalTrans.getRotation());
+		}
+		else
 		    *distAng = 0.0;
-		break;
 	    }
 	}
 	else

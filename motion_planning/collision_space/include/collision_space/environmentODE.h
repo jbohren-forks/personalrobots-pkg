@@ -40,9 +40,6 @@
 #include <collision_space/environment.h>
 #include <ode/ode.h>
 
-// check() is apparently defined as a macro on OS X (?)
-#undef check
-
 /** @htmlinclude ../../manifest.html
 
     A class describing an environment for a kinematic robot using ODE */
@@ -195,8 +192,8 @@ namespace collision_space
 	    std::vector<Geom*> m_geomsY;
 	    std::vector<Geom*> m_geomsZ;
 	    
-	    void check(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-		       Geom *g, void *data, dNearCallback *nearCallback);
+	    void checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
+			   Geom *g, void *data, dNearCallback *nearCallback);
 	};
 
 	struct kGeom

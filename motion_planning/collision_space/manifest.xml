@@ -8,19 +8,9 @@
   <review status="unreviewed" notes=""/>
 
   <depend package="rosthread"/>
-  <depend package="planning_models_with_libTF"/>
-
-<!--
- We currently disable Octree collision checking since dependency on
- scan_utils means a lot of compile time and collision checking with
- octrees is not capable of certain operations. Octrees could be used
- in a combined collision checker (combined with ODE, for example).
-
- <depend package="scan_utils"/>
--->
-
+  <depend package="planning_models"/>
   <depend package="opende"/>
-  <depend package="profiling_utils"/>
+  <depend package="bullet"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcollision_space"/>

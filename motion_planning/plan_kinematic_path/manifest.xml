@@ -7,6 +7,6 @@
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
   <depend package="planning_node_util" />
-  <depend package="planning_models_with_libTF" />
+  <depend package="planning_models" />
   <depend package="pr2_mechanism_controllers" />
 </package>
