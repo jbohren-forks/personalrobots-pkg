@@ -152,8 +152,10 @@ namespace MS_3DMGX2
     /*!
      * This call determines the initial offset of the imu relative to 
      * system clock time, and resets the kalman filter state.
+     *
+     * \param fix_off this fixed offset will be added to the timestamp of the imu
      */
-    void init_time();
+    void init_time(double fix_off);
 
     //! Initial gyros
     /*! 
@@ -217,6 +219,11 @@ namespace MS_3DMGX2
      */
     void receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9]);
 
+    //! Set the fixed time offset
+    /*! 
+     * \param fix_off  Fixed time offset in seconds
+     */
+    void set_fixed_offset(double fix_off) {fixed_offset = fix_off;};
 
   private:
     //! Send a command to the IMU and wait for a reply
@@ -271,7 +278,7 @@ namespace MS_3DMGX2
     unsigned int counter;
 
     //! Variables used by the kalman computation
-    double offset, d_offset, sum_meas;
+    double fixed_offset, offset, d_offset, sum_meas;
   };
 
 }

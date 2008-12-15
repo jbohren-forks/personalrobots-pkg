@@ -96,6 +96,7 @@ Reads the following parameters from the parameter server
 #include "std_msgs/PoseWithRatesStamped.h"
 
 #include "tf/transform_datatypes.h"
+#include "imu_node/AddOffset.h"
 
 using namespace std;
 
@@ -120,9 +121,13 @@ public:
 
   string frameid_;
   
+  double offset_;
+
   ImuNode() : ros::node("imu"), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
+
+    advertise_service("imu/add_offset", &ImuNode::addOffset, this);
 
     param("~port", port, string("/dev/ttyUSB0"));
 
@@ -133,6 +138,8 @@ public:
     running = false;
 
     param("~frameid", frameid_, string("imu"));
+
+    param("~time_offset", offset_, 0.0);
 
     self_test_.setPretest(&ImuNode::pretest);
     self_test_.addTest(&ImuNode::InterruptionTest);
@@ -159,22 +166,22 @@ public:
     {
       imu.open_port(port.c_str());
 
-      printf("initializing gyros...\n");
+      ROS_INFO("Initializing IMU sensor.");
 
       imu.init_gyros();
 
-      printf("initializing time...\n");
+      ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
-      imu.init_time();
+      imu.init_time(offset_);
 
-      printf("READY!\n");
+      ROS_INFO("IMU sensor initialized.");
 
       imu.set_continuous(cmd);
 
       running = true;
 
     } catch (MS_3DMGX2::exception& e) {
-      printf("Exception thrown while starting imu.\n %s\n", e.what());
+      ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
 
@@ -189,7 +196,7 @@ public:
       {
         imu.close_port();
       } catch (MS_3DMGX2::exception& e) {
-        printf("Exception thrown while stopping imu.\n %s\n", e.what());
+        ROS_INFO("Exception thrown while stopping IMU.\n %s", e.what());
       }
       running = false;
     }
@@ -231,7 +238,7 @@ public:
       publish("imu_data", reading);
         
     } catch (MS_3DMGX2::exception& e) {
-      printf("Exception thrown while trying to get the reading.\n%s\n", e.what());
+      ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
 
@@ -471,6 +478,31 @@ public:
 
     count_ = 0;
   }
+
+
+
+  bool addOffset(imu_node::AddOffset::request &req, imu_node::AddOffset::response &resp)
+  {
+    double offset = req.add_offset;
+    offset_ += offset;
+
+    ROS_INFO("Adding %f to existing IMU time offset.", offset);
+    ROS_INFO("Total IMU time offset is now %f.", offset_);
+
+    // send changes to inu driver
+    imu.set_fixed_offset(offset_);
+
+    // write changes to param server
+    set_param("~time_offset", offset_);
+
+    // set response
+    resp.total_offset = offset_;
+
+    return true;
+  }
+
+
+
 };
 
 int

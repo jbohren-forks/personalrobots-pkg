@@ -154,7 +154,7 @@ MS_3DMGX2::IMU::close_port()
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize time information
 void
-MS_3DMGX2::IMU::init_time()
+MS_3DMGX2::IMU::init_time(double fix_off)
 {
   wraps = 0;
 
@@ -174,6 +174,9 @@ MS_3DMGX2::IMU::init_time()
   d_offset = 0;
   sum_meas = 0;
   counter = 0;
+
+  // fixed offset
+  fixed_offset = fix_off;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -514,7 +517,6 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
   return bytes;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Kalman filter for time estimation
 uint64_t MS_3DMGX2::IMU::filter_time(uint64_t imu_time, uint64_t sys_time)
@@ -537,7 +539,7 @@ uint64_t MS_3DMGX2::IMU::filter_time(uint64_t imu_time, uint64_t sys_time)
     // reset counter and average
     counter = 0; sum_meas = 0;
   }
-  return imu_time - to_uint64_t( offset );
+  return imu_time - to_uint64_t( offset ) + to_uint64_t( fixed_offset );
 }
 
 
