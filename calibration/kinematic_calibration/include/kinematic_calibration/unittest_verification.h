@@ -32,55 +32,21 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Vijay Pradeep
-
-#ifndef KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
-#define KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
-
-
-#include "kinematic_calibration/link_param_jacobian.h"
-#include "kinematic_calibration/link_param_jacobian_solver.h"
-#include "kinematic_calibration/jac_newmat_bridge.h"
-#include "kinematic_calibration/active_link_params.h"
-
 
 #include "kdl/chain.hpp"
-#include "kdl/jntarray.hpp"
-#include "kdl/frames.hpp"
-
-#include <vector>
-
-using namespace std ;
 
 namespace kinematic_calibration
 {
 
-class ParameterEstimator
+/**
+ * Has a variety of functions that are used by unit testing in order to
+ * check that the outputs of functions match expected values
+ */
+class UnitTestVerification
 {
-
-public:
-
-  /**
-   * Stores a single data point used for calibration. Generally a vector of
-   * MarkerData3d will be passed into a calibration routine
-   */
-  struct MarkerData3d
-  {
-    MarkerData3d(unsigned int num_joints) : joint_states(num_joints), marker_sensed(0,0,0) { }
-    KDL::JntArray joint_states ;          //!< The joint angles recorded
-    KDL::Vector marker_sensed ;           //!< The sensed position of a marker
-  } ;
-
-  int estimateParametersMarker3d( const KDL::Chain& chain_in, KDL::Chain& chain_out,
-                                  const vector<MarkerData3d>& input_data, const ActiveLinkParams& active) ;
-  int buildJacobianMat(const KDL::Chain& chain, const vector<MarkerData3d>& input_data,
-                       const ActiveLinkParams& active, NEWMAT::Matrix& mat, const JacNewmatBridge::JacTerms::JacTerms jac_terms) ;
-  int buildErrorVecMarker3d(const KDL::Chain& chain, const vector<MarkerData3d>& input_data, NEWMAT::ColumnVector& vec,
-                            const JacNewmatBridge::JacTerms::JacTerms jac_terms) ;
-
-
+public :
+  static int ComputeChainError(const KDL::Chain& chain1, const KDL::Chain& chain2, double& max_error) ;
+  static int ComputeFrameError(const KDL::Frame& frame1, const KDL::Frame& frame2, double& error) ;
 } ;
 
 }
-
-#endif /* KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_ */

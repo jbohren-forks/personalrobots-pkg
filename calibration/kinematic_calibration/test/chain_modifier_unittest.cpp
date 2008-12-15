@@ -38,7 +38,8 @@
 
 #include "kinematic_calibration/chain_modifier.h"
 #include "kinematic_calibration/active_link_params.h"
-#include "kinematic_calibration/verify_jacobian.h"
+#include "kinematic_calibration/unittest_io.h"
+#include "kinematic_calibration/unittest_verification.h"
 
 using namespace kinematic_calibration ;
 using namespace std ;
@@ -64,17 +65,17 @@ public:
 
     ModelGetter model_getter ;
     KDL::Chain chain_before, chain_after ;
-    result = model_getter.OpenFile(path + "/model_before.txt") ;
+    result = model_getter.openFile(path + "/model_before.txt") ;
     EXPECT_EQ(result, 0) ;
-    chain_before = model_getter.GetModel() ;
+    chain_before = model_getter.getModel() ;
     EXPECT_EQ(chain_before.getNrOfSegments(), num_links) ;
-    model_getter.CloseFile() ;
+    model_getter.closeFile() ;
 
-    result = model_getter.OpenFile(path + "/model_after.txt") ;
+    result = model_getter.openFile(path + "/model_after.txt") ;
     EXPECT_EQ(result, 0) ;
-    chain_after = model_getter.GetModel() ;
+    chain_after = model_getter.getModel() ;
     EXPECT_EQ(chain_after.getNrOfSegments(), num_links) ;
-    model_getter.CloseFile() ;
+    model_getter.closeFile() ;
 
     vector<double> corrections ;
     result = LoadCorrectionParams(path + "/corrections.txt", corrections, num_links) ;
@@ -106,7 +107,7 @@ public:
     EXPECT_EQ(result, 0) ;
 
     double chain_error = 100000.0 ;
-    result = ComputeChainError(chain_after, chain_corrected, chain_error) ;
+    result = UnitTestVerification::ComputeChainError(chain_after, chain_corrected, chain_error) ;
     EXPECT_EQ(result, 0) ;
 
     EXPECT_NEAR(chain_error, 0.00, epsilon) ;
@@ -188,47 +189,6 @@ public:
       params.push_back(cur_param) ;
       result = fscanf(infile, "%lf", &cur_param) ;
     }
-
-    return 0 ;
-  }
-
-  static int ComputeChainError(const KDL::Chain& chain1, const KDL::Chain& chain2, double& max_error)
-  {
-    max_error = 0.00 ;
-
-    if (chain1.getNrOfSegments() != chain2.getNrOfSegments())
-      return -1 ;
-
-    for (unsigned int i=0; i<chain1.getNrOfSegments(); i++)
-    {
-      int result ;
-      double cur_seg_error ;
-
-      result = ComputeFrameError(chain1.getSegment(i).getFrameToTip(),  chain2.getSegment(i).getFrameToTip(), cur_seg_error) ;
-
-      if (result < 0)
-        return result ;
-
-      if (cur_seg_error > max_error)
-        max_error = cur_seg_error ;
-    }
-    return 0 ;
-  }
-
-  static int ComputeFrameError(const KDL::Frame& frame1, const KDL::Frame& frame2, double& error)
-  {
-    double frame_error = 0.0 ;
-    for (int i=0; i<3; i++)
-    {
-      frame_error += abs( frame1.p.data[i] - frame2.p.data[i] ) ;
-    }
-
-    for (int i=0; i<9; i++)
-    {
-      frame_error += abs( frame1.M.data[i] - frame2.M.data[i] ) ;
-    }
-
-    error = frame_error ;
 
     return 0 ;
   }

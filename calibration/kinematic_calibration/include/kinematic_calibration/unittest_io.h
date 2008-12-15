@@ -57,11 +57,11 @@ public:
   ModelGetter() { }
   ~ModelGetter() { }
 
-  int OpenFile(const std::string& filename) ;
+  int openFile(const std::string& filename) ;
 
-  KDL::Chain GetModel() ;
+  KDL::Chain getModel() ;
 
-  void CloseFile() ;
+  void closeFile() ;
 private:
   std::ifstream infile_ ;
 
@@ -76,13 +76,27 @@ public:
   JointStatesGetter() { }
   ~JointStatesGetter() { }
 
-  int OpenFile(const std::string& filename) ;
+  int openFile(const std::string& filename) ;
    //! brief Extracts the next joint array from the text file
-  int GetNextJointArray(KDL::JntArray& joint_array) ;
-  void CloseFile() ;
+  int getNextJointArray(KDL::JntArray& joint_array) ;
+  void closeFile() ;
 private:
   std::ifstream infile_ ;
 } ;
+
+class KDLVectorGetter
+{
+public:
+  KDLVectorGetter() { }
+  ~KDLVectorGetter() { }
+
+  int openFile(const std::string& filename) ;
+   //! brief Extracts the next KDL::Vector from the text file
+  int getNextVec(KDL::Vector& vec) ;
+  void closeFile() ;
+private:
+  std::ifstream infile_ ;
+};
 
 /**
  * \brief Used to incrementally extract LinkParamJacobians from a text file.
@@ -93,31 +107,11 @@ public:
   JacobiansGetter() { }
   ~JacobiansGetter() { }
 
-  int OpenFile(const std::string& filename) ;
-  int GetNextJacobian(LinkParamJacobian& jac ) ;
-  void CloseFile() ;
+  int openFile(const std::string& filename) ;
+  int getNextJacobian(LinkParamJacobian& jac ) ;
+  void closeFile() ;
 private:
   std::ifstream infile_ ;
-} ;
-
-/**
- * \brief The main piece of the LinkParamJacobian test harness
- * Combines the JacobiansGetter, JointStatesGetter, and ModelGetter to create a more streamlined way to manipulate
- * LinkParamJacobian stored in files.
- */
-class VerifyJacobian
-{
-public:
-  VerifyJacobian() ;
-  ~VerifyJacobian() ;
-  /**
-   * \brief Computes the max error between the LinkParamJacobian in a text file and the LinkParamJacobian calculated by KDL
-   */
-  int ComputeMaxError(const std::string& model_file, const std::string& joint_params_file, const std::string& jacobians_file, double& max_error) ;
-private:
-  ModelGetter model_getter_ ;
-  JointStatesGetter joint_params_getter_ ;
-  JacobiansGetter jacobians_getter_ ;
 } ;
 
 }

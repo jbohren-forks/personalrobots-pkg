@@ -32,55 +32,47 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Vijay Pradeep
+#include "kinematic_calibration/unittest_verification.h"
 
-#ifndef KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
-#define KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
+using namespace kinematic_calibration ;
 
-
-#include "kinematic_calibration/link_param_jacobian.h"
-#include "kinematic_calibration/link_param_jacobian_solver.h"
-#include "kinematic_calibration/jac_newmat_bridge.h"
-#include "kinematic_calibration/active_link_params.h"
-
-
-#include "kdl/chain.hpp"
-#include "kdl/jntarray.hpp"
-#include "kdl/frames.hpp"
-
-#include <vector>
-
-using namespace std ;
-
-namespace kinematic_calibration
+int UnitTestVerification::ComputeChainError(const KDL::Chain& chain1, const KDL::Chain& chain2, double& max_error)
 {
+  max_error = 0.00 ;
 
-class ParameterEstimator
-{
+  if (chain1.getNrOfSegments() != chain2.getNrOfSegments())
+    return -1 ;
 
-public:
-
-  /**
-   * Stores a single data point used for calibration. Generally a vector of
-   * MarkerData3d will be passed into a calibration routine
-   */
-  struct MarkerData3d
+  for (unsigned int i=0; i<chain1.getNrOfSegments(); i++)
   {
-    MarkerData3d(unsigned int num_joints) : joint_states(num_joints), marker_sensed(0,0,0) { }
-    KDL::JntArray joint_states ;          //!< The joint angles recorded
-    KDL::Vector marker_sensed ;           //!< The sensed position of a marker
-  } ;
+    int result ;
+    double cur_seg_error ;
 
-  int estimateParametersMarker3d( const KDL::Chain& chain_in, KDL::Chain& chain_out,
-                                  const vector<MarkerData3d>& input_data, const ActiveLinkParams& active) ;
-  int buildJacobianMat(const KDL::Chain& chain, const vector<MarkerData3d>& input_data,
-                       const ActiveLinkParams& active, NEWMAT::Matrix& mat, const JacNewmatBridge::JacTerms::JacTerms jac_terms) ;
-  int buildErrorVecMarker3d(const KDL::Chain& chain, const vector<MarkerData3d>& input_data, NEWMAT::ColumnVector& vec,
-                            const JacNewmatBridge::JacTerms::JacTerms jac_terms) ;
+    result = ComputeFrameError(chain1.getSegment(i).getFrameToTip(),  chain2.getSegment(i).getFrameToTip(), cur_seg_error) ;
 
+    if (result < 0)
+      return result ;
 
-} ;
-
+    if (cur_seg_error > max_error)
+      max_error = cur_seg_error ;
+  }
+  return 0 ;
 }
 
-#endif /* KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_ */
+int UnitTestVerification::ComputeFrameError(const KDL::Frame& frame1, const KDL::Frame& frame2, double& error)
+{
+  double frame_error = 0.0 ;
+  for (int i=0; i<3; i++)
+  {
+    frame_error += fabs( frame1.p.data[i] - frame2.p.data[i] ) ;
+  }
+
+  for (int i=0; i<9; i++)
+  {
+    frame_error += fabs( frame1.M.data[i] - frame2.M.data[i] ) ;
+  }
+
+  error = frame_error ;
+
+  return 0 ;
+}

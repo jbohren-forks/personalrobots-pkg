@@ -5,9 +5,11 @@ genmsg()
 gensrv()
 rospack_add_library(kinematic_calibration src/link_param_jacobian.cpp
                                           src/link_param_jacobian_solver.cpp
-                                          src/verify_jacobian.cpp
                                           src/jac_newmat_bridge.cpp
                                           src/chain_modifier.cpp
+                                          src/parameter_estimator.cpp
+                                          src/unittest_io.cpp
+                                          src/unittest_verification.cpp
                                           )
 
 rospack_add_executable(arm_phasespace_grabber src/arm_phasespace_grabber.cpp)
@@ -27,3 +29,9 @@ target_link_libraries(bridge_unittest kinematic_calibration)
 rospack_add_gtest(chain_modifier_unittest test/chain_modifier_unittest.cpp)
 target_link_libraries(chain_modifier_unittest kinematic_calibration)
 set_target_properties(chain_modifier_unittest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+
+rospack_add_gtest(error_vec_marker_3d_unittest test/error_vec_marker_3d_unittest.cpp)
+target_link_libraries(error_vec_marker_3d_unittest kinematic_calibration)
+
+rospack_add_gtest(estimator_marker_3d_unittest test/estimator_marker_3d_unittest.cpp)
+target_link_libraries(estimator_marker_3d_unittest kinematic_calibration)

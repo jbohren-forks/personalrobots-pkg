@@ -34,7 +34,7 @@
 
 #include <iostream>
 
-#include "kinematic_calibration/verify_jacobian.h"
+#include "kinematic_calibration/unittest_io.h"
 #include "kinematic_calibration/link_param_jacobian_solver.h"
 
 using namespace KDL ;
@@ -44,7 +44,7 @@ using namespace std ;
 
 // ********* MODEL GETTER *********
 
-int ModelGetter::OpenFile(const string& filename)
+int ModelGetter::openFile(const string& filename)
 {
   infile_.open(filename.c_str(), ios::in) ;
 
@@ -54,12 +54,12 @@ int ModelGetter::OpenFile(const string& filename)
   return -1 ;
 }
 
-void ModelGetter::CloseFile()
+void ModelGetter::closeFile()
 {
   infile_.close() ;
 }
 
-Chain ModelGetter::GetModel()
+Chain ModelGetter::getModel()
 {
   const int MAX_LEN = 1024 ;
   char cur_line[1024] ;
@@ -87,7 +87,7 @@ Chain ModelGetter::GetModel()
 
 // ********* JOINT STATES GETTER *********
 
-int JointStatesGetter::OpenFile(const string& filename)
+int JointStatesGetter::openFile(const string& filename)
 {
   infile_.open(filename.c_str(), ios::in) ;
 
@@ -97,26 +97,26 @@ int JointStatesGetter::OpenFile(const string& filename)
   return -1 ;
 }
 
-void JointStatesGetter::CloseFile()
+void JointStatesGetter::closeFile()
 {
   infile_.close() ;
 }
 
-int JointStatesGetter::GetNextJointArray(JntArray& joint_array)
+int JointStatesGetter::getNextJointArray(JntArray& joint_array)
 {
-  if (infile_.eof())
-    return -1 ;
-
   const unsigned int N = joint_array.rows() ;
 
   for (unsigned int i=0; i<N; i++)
     infile_ >> joint_array(i) ;
 
+  if (infile_.eof())
+    return -1 ;
+
   return 0 ;
 }
 
-// ********* JACOBIANS GETTER *********
-int JacobiansGetter::OpenFile(const string& filename)
+// ********* KDLVectorGetter GETTER *********
+int KDLVectorGetter::openFile(const string& filename)
 {
   infile_.open(filename.c_str(), ios::in) ;
 
@@ -126,12 +126,45 @@ int JacobiansGetter::OpenFile(const string& filename)
   return -1 ;
 }
 
-void JacobiansGetter::CloseFile()
+void KDLVectorGetter::closeFile()
 {
   infile_.close() ;
 }
 
-int JacobiansGetter::GetNextJacobian(LinkParamJacobian& jac )
+int KDLVectorGetter::getNextVec(KDL::Vector& vec)
+{
+
+  double x, y, z ;
+
+  infile_ >> x ;
+  infile_ >> y ;
+  infile_ >> z ;
+
+  if (infile_.eof())
+    return -1 ;
+
+  vec = KDL::Vector(x,y,z) ;
+
+  return 0 ;
+}
+
+// ********* JACOBIANS GETTER *********
+int JacobiansGetter::openFile(const string& filename)
+{
+  infile_.open(filename.c_str(), ios::in) ;
+
+  if (infile_)
+    return 0 ;
+
+  return -1 ;
+}
+
+void JacobiansGetter::closeFile()
+{
+  infile_.close() ;
+}
+
+int JacobiansGetter::getNextJacobian(LinkParamJacobian& jac )
 {
   if (infile_.eof())
     return -1 ;
@@ -146,75 +179,6 @@ int JacobiansGetter::GetNextJacobian(LinkParamJacobian& jac )
         infile_ >> jac.links_[i].trans_[j].vel(h) ;
       for (unsigned int j=0; j<3; j++)                    // Iterate over xyz rotational movement
         infile_ >> jac.links_[i].rot_[j].vel(h) ;
-    }
-  }
-
-  return 0 ;
-}
-
-
-VerifyJacobian::VerifyJacobian()
-{
-
-}
-
-VerifyJacobian::~VerifyJacobian()
-{
-
-}
-
-int VerifyJacobian::ComputeMaxError(const std::string& model_file, const std::string& joint_params_file, const std::string& jacobians_file, double& max_error)
-{
-  int result ;
-
-  result = model_getter_.OpenFile(model_file) ;
-  if (result < 0)
-    return -1 ;
-
-  result = joint_params_getter_.OpenFile(joint_params_file) ;
-  if (result < 0)
-    return -1 ;
-
-  result = jacobians_getter_.OpenFile(jacobians_file) ;
-  if (result < 0)
-    return -1 ;
-
-  Chain chain = model_getter_.GetModel() ;
-
-  const unsigned int J = chain.getNrOfJoints() ;
-  JntArray joint_array(J) ;
-  result = joint_params_getter_.GetNextJointArray(joint_array) ;
-  if (result < 0)
-    return -1 ;
-
-  LinkParamJacobian jac_actual ;
-  jac_actual.links_.resize(J) ;
-  result = jacobians_getter_.GetNextJacobian(jac_actual) ;
-
-  // Compute the jacobian using KDL functions
-
-  LinkParamJacobian jac_computed ;
-  jac_computed.links_.resize(J) ;
-
-  LinkParamJacobianSolver jac_solver ;
-  jac_solver.JointsToCartesian(chain, joint_array, jac_computed) ;
-
-  max_error = 0.0 ;
-  for (unsigned int i=0; i < jac_computed.links_.size(); i++)
-  {
-    for (unsigned int j=0; j<3; j++)
-    {
-      for (unsigned int k=0; k<3; k++)
-      {
-        double cur_error ;
-        cur_error = fabs( jac_computed.links_[i].trans_[j].vel(k) - jac_actual.links_[i].trans_[j].vel(k) ) ;
-        if (cur_error > max_error)
-          max_error = cur_error ;
-
-        cur_error = fabs( jac_computed.links_[i].rot_[j].vel(k) - jac_actual.links_[i].rot_[j].vel(k) ) ;
-        if (cur_error > max_error)
-          max_error = cur_error ;
-      }
     }
   }
 

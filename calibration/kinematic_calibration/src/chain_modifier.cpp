@@ -50,12 +50,15 @@ void LinkModifier::specifyRotationParams(double x, double y, double z)
   KDL::Vector rot_axis(x,y,z) ;
   double rot_angle ;
 
-  if (rot_axis.Norm() < 1e-6)           // Deal with the unstable case
+  ///printf("Specifying params: %f %f %f\n", x, y, z) ;
+
+  if (rot_axis.Norm() < 1e-12)           // Deal with the unstable case
   {
     rot_axis[0] = 0 ;
     rot_axis[1] = 0 ;
     rot_axis[2] = 1 ;
     rot_angle = 0.0 ;
+    //printf("***** Detected unstable rotation *****\n") ;
   }
   else
   {
@@ -63,7 +66,7 @@ void LinkModifier::specifyRotationParams(double x, double y, double z)
     rot_axis = rot_axis / rot_angle ;           // normalize the axis
   }
 
-  rot_ = KDL::Rotation::Rot(rot_axis, rot_angle) ;
+  rot_ = KDL::Rotation::Rot2(rot_axis, rot_angle) ;
 }
 
 void LinkModifier::modifyLink(KDL::Segment& segment) const
