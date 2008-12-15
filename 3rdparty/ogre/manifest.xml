@@ -8,6 +8,7 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
 <license>LGPL</license>
 <review status="3rdparty" notes=""/>
 <url>http://ogre3d.org</url>
+<depend package="opende"/>
 <depend package="freeimage"/>
 <depend package="Cg"/>
 <depend package="boost"/>
