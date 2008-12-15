@@ -40,7 +40,7 @@
 #include <unistd.h>
 
 namespace costmap_2d {
-  class ObstacleMapAccessor;
+  class CostMap2D;
 }
 
 namespace sfl {
@@ -105,10 +105,10 @@ namespace ompl {
   typedef GenericIndexTransformWrap<ssize_t> IndexTransformWrap;
   
   
-  CostmapWrap * createCostmapWrap(costmap_2d::ObstacleMapAccessor const * oma);
+  CostmapWrap * createCostmapWrap(costmap_2d::CostMap2D const * cm);
   CostmapWrap * createCostmapWrap(sfl::RDTravmap const * rdt);
   
-  IndexTransformWrap * createIndexTransformWrap(costmap_2d::ObstacleMapAccessor const * oma);
+  IndexTransformWrap * createIndexTransformWrap(costmap_2d::CostMap2D const * cm);
   IndexTransformWrap * createIndexTransformWrap(sfl::GridFrame const * gf);
   
 }
