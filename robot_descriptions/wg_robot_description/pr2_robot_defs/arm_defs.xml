@@ -22,7 +22,7 @@
       <limit effort="10" min="0" max="${gripper_max_angle}"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.5" />
+      <joint_properties damping="0.2" />
     </joint>
 
     <link name="${prefix}_l_finger_link">
@@ -69,6 +69,8 @@
       </map>
       <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -81,12 +83,12 @@
       <limit effort="10" min="${-gripper_max_angle}" max="0"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.5" />
+      <joint_properties damping="0.2" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp">12.0</elem>
+        <elem key="mimicKp">10.0</elem>
         <elem key="mimicKd">0.0</elem>
-        <elem key="mimicFMax">1000.0</elem>
+        <elem key="mimicFMax">100.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
       </map>
     </joint>
 
@@ -134,6 +136,8 @@
       </map>
       <map name="${prefix}_r_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -146,10 +150,10 @@
       <limit effort="10" min="${-gripper_max_angle}" max="0"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.02" />
+      <joint_properties damping="0.05" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">8.0</elem>
+        <elem key="mimicKp">1.0</elem>
         <elem key="mimicKd">0.0</elem>
         <elem key="mimicFMax">100.0</elem>
       </map>
@@ -199,6 +203,8 @@
       </map>
       <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -211,10 +217,10 @@
       <limit effort="10" min="0" max="${gripper_max_angle}"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.02" />
+      <joint_properties damping="0.05" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">8.0</elem>
+        <elem key="mimicKp">1.0</elem>
         <elem key="mimicKd">0.0</elem>
         <elem key="mimicFMax">100.0</elem>
       </map>
@@ -264,6 +270,8 @@
       </map>
       <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -890,11 +898,11 @@
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_roll_joint" />
       <inertial>
-        <mass value="0.001" />
+        <mass value="0.1" />
         <com xyz="0 0 0" />
-        <inertia ixx="0.0001" ixy="0" ixz="0"
-                 iyy="0.0001" iyz="0"
-                 izz="0.0001" />
+        <inertia ixx="0.01" ixy="0" ixz="0"
+                 iyy="0.01" iyz="0"
+                 izz="0.01" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
