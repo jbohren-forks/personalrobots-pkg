@@ -1,5 +1,5 @@
 <launch>
   <node pkg="mechanism_control" type="spawner.py" args="head_pan_tilt_controller.xml" />
-  <node pkg="pr2_mechanism_controllers" type="pointhead.py" args="0 0.05"/>
+  <node pkg="pr2_mechanism_controllers" type="pointhead.py" args="0 0.15"/>
 </launch>
 
