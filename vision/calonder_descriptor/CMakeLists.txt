@@ -18,4 +18,4 @@ target_link_libraries(calonder cblas)
 #rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers)
 
 
-rospack_add_pyunit(test/directed.py)
+#rospack_add_pyunit(test/directed.py)
