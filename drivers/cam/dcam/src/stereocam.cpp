@@ -507,6 +507,12 @@ StereoDcam::setRangeMax(double val)
   return true;
 }
 
+bool
+StereoDcam::setRangeMin(double val)
+{
+  stIm->setRangeMin(val);	// set min range in pt cloud
+  return true;
+}
 
 
 //

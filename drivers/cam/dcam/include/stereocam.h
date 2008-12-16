@@ -127,6 +127,7 @@ namespace cam
     bool setCorrsize(int size);
     bool setNumDisp(int ndisp);
     bool setRangeMax(double thresh);
+    bool setRangeMin(double thresh);
 
     // visible calls to StereoData functions
     bool doRectify();

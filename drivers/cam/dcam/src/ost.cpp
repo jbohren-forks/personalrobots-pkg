@@ -290,6 +290,7 @@ main(int argc, char **argv)	// no arguments
 
   // set range max value
   dev->setRangeMax(4.0);	// in meters
+  dev->setRangeMin(0.5);	// in meters
 
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
 
