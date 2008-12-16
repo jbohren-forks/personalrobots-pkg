@@ -162,9 +162,15 @@ namespace collision_space
 		    return false;
 		
 		double pB1 = v.dot(m_normalB1);
-		double pB2 = v.dot(m_normalB2);
+		double remaining = m_radius2 - pB1 * pB1;
 		
-		return pB1 * pB2 < m_radius2;
+		if (remaining < 0.0)
+		    return false;
+		else
+		{
+		    double pB2 = v.dot(m_normalB2);
+		    return pB2 * pB2 < remaining;
+		}		
 	    }
 	    
 	protected:
@@ -183,7 +189,7 @@ namespace collision_space
 
 		const btMatrix3x3& basis = m_pose.getBasis();
 		m_normalB1 = basis.getColumn(0);
-		m_normalB1 = basis.getColumn(1);
+		m_normalB2 = basis.getColumn(1);
 		m_normalH  = basis.getColumn(2);
 	    }
 	    
