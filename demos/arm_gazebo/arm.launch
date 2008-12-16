@@ -15,10 +15,10 @@
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
 
     <!-- start arm controller -->
-    <!--node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/controllers.xml" respawn="false"  /--> <!-- load default arm controller -->
+    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/l_arm_default_controller.xml" respawn="false"  /> <!-- load default arm controller -->
 
     <!-- send arm a command -->
-    <!--node pkg="robot_mechanism_controllers" type="control.py" args="set l_gripper_controller 0.5" respawn="false" output="screen" /--> <!-- open gripper .5 radians -->
+    <node pkg="robot_mechanism_controllers" type="control.py" args="set l_gripper_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 
     <!-- for visualization -->
     <!-- node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" / -->
