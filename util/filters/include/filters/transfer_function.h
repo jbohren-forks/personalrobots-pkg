@@ -38,9 +38,26 @@
 #include "filters/filter_base.h"
 #include "misc_utils/ring_buffer.h"
 
-/** \brief A digital filter.
- *
- */
+/***************************************************/
+/*! \class TransferFunctionFilter
+    \brief One-dimensional digital filter class.
+
+    This class calculates the output for \f$N\f$ one-dimensional
+    digital filters. Where the input, \f$x\f$, is a (\f$N\f$ x 1) vector
+    of inputs and the output, \f$y\f$, is a (\f$N\f$ x 1) vector of outputs.
+    The filter is described by vectors \f$a\f$ and \f$b\f$ and 
+    implemented using the standard difference equation:<br> 
+    
+    \f{eqnarray*}{
+    a[0]*y[n] = b[0]*x[n] &+& b[1]*x[n-1]+ ... + b[nb]*x[n-nb-1]\\
+                          &-& a[1]*y[n-1]+ ... + a[na]*y[n-na-1]
+     \f}<br>
+
+
+    If \f$a[0]\f$ is not equal to 1, the coefficients are normalized by \f$a[0]\f$.
+
+*/
+/***************************************************/
 template <typename T>
 class TransferFunctionFilter: public FilterBase <T>
 {
