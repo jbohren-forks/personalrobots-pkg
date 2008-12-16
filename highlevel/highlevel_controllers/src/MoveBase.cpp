@@ -168,10 +168,10 @@ namespace ros {
       double accLimit_y(1.0);
       double accLimit_th(1.0);
       const double SIM_TIME = 1.0;
-      const unsigned int SIM_STEPS = 40;
+      const unsigned int SIM_STEPS = 20;
       const unsigned int SAMPLES_PER_DIM = 25;
       const double DFAST_SCALE = 0;
-      const double OCCDIST_SCALE = 0.0;
+      const double OCCDIST_SCALE = 0.2;
       param("/trajectory_rollout/map_size", mapSize, 2.0);
       param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
       param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
