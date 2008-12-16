@@ -20,8 +20,8 @@ numrays = size(rays,2);
 req.rays = cell(numrays,1);
 for i = 1:numrays
     req.rays{i} = openraveros_Ray();
-    req.rays{i}.position(1:3) = {rays(1,i),rays(2,i),rays(3,i)};
-    req.rays{i}.direction(1:3) = {rays(4,i),rays(5,i),rays(6,i)};
+    req.rays{i}.position(1:3) = rays(1:3,i);
+    req.rays{i}.direction(1:3) = rays(4:6,i);
 end
 
 if( exist('bodyid','var') )

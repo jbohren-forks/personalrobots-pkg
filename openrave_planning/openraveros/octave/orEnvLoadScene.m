@@ -8,7 +8,7 @@
 %              scene alone and loads in addition to it.
 
 function success = orEnvLoadScene(filename, ClearScene)
-session = openraveros_getglobalsession();
+session = openraveros_getglobalsession()
 req = openraveros_env_loadscene();
 req.filename = filename;
 if( exist('ClearScene','var') )

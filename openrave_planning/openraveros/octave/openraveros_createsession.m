@@ -49,13 +49,18 @@ if( exist('cloneuuid','var') )
 end
 
 session = [];
-[localid,res] = rosoct_create_session(sessionserver,req);
-
-if( ~isempty(localid) && ~isempty(res) )
-    if( res.sessionid==0 )
-        error('bad session id');
+while(1)
+    [localid,res] = rosoct_create_session(sessionserver,req);
+    
+    if( ~isempty(localid) && ~isempty(res) )
+        if( res.sessionid==0 )
+            error('bad session id');
+        end
+        session.id = localid;
+        session.server = sessionserver;
+        session.uuid = res.sessionid;
+        return;
     end
-    session.id = localid;
-    session.server = sessionserver;
-    session.uuid = res.sessionid;
+
+    sleep(0.2); % give some time
 end

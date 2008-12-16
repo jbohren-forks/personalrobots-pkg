@@ -57,15 +57,20 @@ end
 if( createsession && isempty(openraveros_globalsession) )
     req = openraveros_openrave_session();
     req.viewer = viewer; % default viewer
-    [localid,res] = rosoct_create_session(sessionserver,req);
-    
-    if( ~isempty(localid) && ~isempty(res) )
-        if( res.sessionid==0 )
-            error('bad session id');
+    while(1)
+        [localid,res] = rosoct_create_session(sessionserver,req);
+        
+        if( ~isempty(localid) && ~isempty(res) )
+            if( res.sessionid==0 )
+                error('bad session id');
+            end
+            openraveros_globalsession.id = localid;
+            openraveros_globalsession.server = sessionserver;
+            openraveros_globalsession.uuid = res.sessionid;
+            %%display(sprintf('created openraveros session uuid %d',res.sessionid));
+            return;
         end
-        openraveros_globalsession.id = localid;
-        openraveros_globalsession.server = sessionserver;
-        openraveros_globalsession.uuid = res.sessionid;
-        %display(sprintf('created openraveros session uuid %d',res.sessionid));
+
+        sleep(0.2); % give some time
     end
 end
