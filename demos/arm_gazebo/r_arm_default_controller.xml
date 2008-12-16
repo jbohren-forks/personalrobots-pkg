@@ -64,7 +64,7 @@
   </controller>
   <controller name="r_gripper_controller" topic="r_gripper_controller" type="JointPositionControllerNode">
     <joint name="r_gripper_l_finger_joint">
-      <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
+      <pid p="1.0" d="1.00" i="0.00" iClamp="0.00" />
     </joint>
   </controller>
 </controllers>
