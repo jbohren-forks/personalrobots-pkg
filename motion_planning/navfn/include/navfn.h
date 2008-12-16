@@ -48,14 +48,34 @@
 
 // cost defs
 #define COST_OBS 254		// Conor uses 255 and 254 for forbidden regions
-#define COST_NEUTRAL 50
-#define COSTTYPE uint16_t
+#define COST_NEUTRAL 50		// Set this to "open space" value
+#define COSTTYPE uint8_t	// Whatever is used...
 
 // potential defs
 #define POT_HIGH 1.0e10		// unassigned cell potential
 
 // priority buffers
 #define PRIORITYBUFSIZE 10000
+
+
+/**
+   Navigation function call.
+    \param costmap Cost map array, of type COSTTYPE; origin is upper left
+        NOTE: will be modified to have a border of obstacle costs
+    \param nx Width of map in cells
+    \param ny Height of map in cells
+    \param goal X,Y position of goal cell
+    \param start X,Y position of start cell
+    
+   Returns length of plan if found, and fills an array with x,y interpolated 
+     positions at about 1/2 cell resolution; else returns 0.
+
+*/
+
+int create_nav_plan_astar(COSTTYPE *costmap, int nx, int ny,
+			   int* goal, int* start,
+			   float *plan, int nplan);
+
 
 
 /**
@@ -118,7 +138,7 @@ class NavFn
   float *pathx, *pathy;		/**< path points, as subpixel cell coordinates */
   int npath;			/**< number of path points */
   int npathbuf;			/**< size of pathx, pathy buffers */
-  bool calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns true if good path */
+  int calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns path length, 0 if none */
   void gradCell(int n);		/**< calculates gradient at cell <n> */
 
   /** display callback */

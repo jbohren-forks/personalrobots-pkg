@@ -41,6 +41,61 @@
 
 
 //
+// function to perform nav fn calculation
+// keeps track of internal buffers, will be more efficient
+//   if the size of the environment does not change
+//
+
+int
+create_nav_plan_astar(COSTTYPE *costmap, int nx, int ny,
+		      int* goal, int* start,
+		      float *plan, int nplan)
+{
+  static NavFn *nav = NULL;
+  
+  if (nav == NULL)
+    nav = new NavFn(nx,ny);
+
+  if (nav->nx != nx || nav->ny != ny) // check for compatibility with previous call
+    {
+      delete nav;
+      nav = new NavFn(nx,ny);      
+    }
+
+  nav->setGoal(goal);
+  nav->setStart(start);
+
+  nav->costarr = costmap;
+  nav->setupNavFn(true);
+
+  // calculate the nav fn and path
+  nav->priInc = 2*COST_NEUTRAL;
+  nav->propNavFnAstar(nx*ny/20);
+  
+  // path
+  int len = nav->calcPath(nplan);
+
+  if (len > 0)			// found plan
+    printf("[NavFn] Path found, %d steps\n", len);
+  else
+    printf("[NavFn] No path found\n");
+
+  if (len > 0)
+    {
+      for (int i=0; i<len; i++)
+	{
+	  plan[i*2] = nav->pathx[i];
+	  plan[i*2+1] = nav->pathy[i];
+	}
+    }
+
+  return len;
+}
+
+
+
+
+//
 // create nav fn buffers 
 //
 
@@ -58,7 +113,9 @@ NavFn::NavFn(int xs, int ys)
   pb2 = new int[PRIORITYBUFSIZE];
   pb3 = new int[PRIORITYBUFSIZE];
   
-  priInc = COST_NEUTRAL;	// <= COST_NEUTRAL is not breadth-first
+  // for Dijkstra (breadth-first), set to COST_NEUTRAL
+  // for A* (best-first), set to COST_NEUTRAL
+  priInc = 2*COST_NEUTRAL;	
 
   // goal and start
   goal[0] = goal[1] = 0;
@@ -69,7 +126,7 @@ NavFn::NavFn(int xs, int ys)
   displayInt = 0;
 
   // path buffers
-  npathbuf = 0;
+  npathbuf = npath = 0;
   pathx = pathy = NULL;
 }
 
@@ -602,7 +659,7 @@ NavFn::propNavFnAstar(int cycles)
 // Use step size of one pixel - should we use 1/2 pixel?
 //
 
-bool
+int
 NavFn::calcPath(int n, int *st)
 {
   // check path arrays
@@ -630,10 +687,14 @@ NavFn::calcPath(int n, int *st)
     {
       // check if near goal
       if (potarr[stc] < COST_OBS)
-	return true;		// done!
+	{
+	  pathx[npath] = (float)goal[0];
+	  pathy[npath] = (float)goal[1];
+	  return npath+1;	// done!
+	}
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
-	return false;
+	return 0;
 
       // add to path
       pathx[npath] = stc%nx + dx;
@@ -657,11 +718,11 @@ NavFn::calcPath(int n, int *st)
 
       // check for zero gradient, failed
       if (x == 0.0 && y == 0.0)
-	return false;
+	return 0;
 
       // move in the right direction
-      dx += x;
-      dy += y;
+      dx += x*0.5;
+      dy += y*0.5;
 
       // check for overflow
       if (dx > 1.0) { stc++; dx -= 1.0; }
@@ -673,7 +734,7 @@ NavFn::calcPath(int n, int *st)
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
     }
 
-  return true;			// out of cycles
+  return npath;			// out of cycles
 }
 
 

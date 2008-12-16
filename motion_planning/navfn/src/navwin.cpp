@@ -30,6 +30,7 @@ void
 NavWin::drawPot(NavFn *nav)
 {
   float *pot = nav->potarr;
+  COSTTYPE *cst = nav->costarr;
   int width = nav->nx;
   int height = nav->ny;
 
@@ -58,12 +59,14 @@ NavWin::drawPot(NavFn *nav)
 	}
 
       if (im == NULL)
-	im = new uchar[nw*nh];
+	im = new uchar[nw*nh*3];
 
+
+      // draw potential
       for (int i=0; i<height-dec+1; i+=dec)
 	{
 	  float *pp = pot + i*width;
-	  uchar *ii = im + i/dec * nw;
+	  uchar *ii = im + 3*i/dec * nw;
 	  for (int j=0; j<width-dec+1; j+=dec, pp+=dec)
 	    {
 	      int v;
@@ -72,8 +75,28 @@ NavWin::drawPot(NavFn *nav)
 	      else
 		v = (int)((*pp/maxval) * 255.0);
 	      *ii++ = v;
+	      *ii++ = v;
+	      *ii++ = v;
 	    }
 	}
+
+
+      // draw obstacles
+      for (int i=0; i<height-dec+1; i+=dec)
+	{
+	  COSTTYPE *pp = cst + i*width;
+	  uchar *ii = im + 3*i/dec * nw;
+	  for (int j=0; j<width-dec+1; j+=dec, pp+=dec, ii+=3)
+	    {
+	      if (*pp >= COST_OBS)
+		{
+		  *ii =     120;
+		  *(ii+1) = 60;
+		  *(ii+2) = 60;
+		}
+	    }
+	}
+
     }
 
   else				// expand
@@ -93,12 +116,12 @@ NavWin::drawPot(NavFn *nav)
 	}
 
       if (im == NULL)
-	im = new uchar[nw*nh];
+	im = new uchar[nw*nh*3];
 
       for (int i=0; i<height; i++)
 	{
 	  float *pp = pot + i*width;
-	  uchar *ii = im + i*inc * nw;
+	  uchar *ii = im + 3*i*inc * nw;
 	  for (int j=0; j<width; j++, pp++)
 	    {
 	      int v;
@@ -108,9 +131,13 @@ NavWin::drawPot(NavFn *nav)
 		v = (int)((*pp/maxval) * 255.0);
 	      for (int k=0; k<inc; k++)
 		{
-		  uchar *iii = ii + j*inc + k*nw;
+		  uchar *iii = ii + 3*j*inc + 3*k*nw;
 		  for (int kk=0; kk<inc; kk++)
-		    *iii++ = v;
+		    {
+		      *iii++ = v;
+		      *iii++ = v;
+		      *iii++ = v;
+		    }
 		}
 	    }
 	}
@@ -118,7 +145,7 @@ NavWin::drawPot(NavFn *nav)
 
 
   make_current();
-  fl_draw_image_mono(im, 0,0,nw,nh);
+  fl_draw_image(im, 0,0,nw,nh);
 
   if (pc)
     delete [] pc;
@@ -232,7 +259,7 @@ NavWin::drawOverlay()
     fl_rectf(x*inc-2,y*inc-2,5,5);      
 
   // draw the start
-  fl_color(200,255,0);
+  fl_color(0,255,0);
   x = start[0];
   y = start[1];
   if (inc == 1)
@@ -261,7 +288,7 @@ NavWin::drawOverlay()
 void NavWin::draw()
 {
   if (im)
-    fl_draw_image_mono(im, 0,0,nw,nh);
+    fl_draw_image(im, 0,0,nw,nh);
   drawOverlay();
 }
 

@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
   int res = 50;			// 50 mm resolution
   double size = 40.0;		// 40 m on a side
-  int inc = COST_OBS+10;	// thin wavefront
+  int inc = 2*COST_NEUTRAL;	// thin wavefront
   
   // get resolution (mm) and perhaps size (m)
   if (argc > 1)
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   start[1] = sy/2;
 
   // display
-  nwin = new NavWin(sx/2,sy/2,"Potential Field");
+  nwin = new NavWin(sx,sy,"Potential Field");
   nwin->maxval = 2*sx*COST_NEUTRAL;
   Fl::visual(FL_RGB);
   nwin->show();
@@ -131,6 +131,7 @@ int main(int argc, char **argv)
 
   // calculate the nav fn and path
   nav->priInc = inc;
+  printf("[NavTest] priority increment: %d\n", inc);
   double t0 = get_ms();
   //  nav->propNavFnDijkstra(sx*sy/20);
   nav->propNavFnAstar(sx*sy/20);
