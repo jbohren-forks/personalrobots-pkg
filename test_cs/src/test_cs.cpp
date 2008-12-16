@@ -32,14 +32,20 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \author Ioan Sucan */
+
 #include <ros/node.h>
 #include <collision_space/environmentODE.h>
 #include <algorithm>
 #include <std_msgs/VisualizationMarker.h>
 #include <rostools/Time.h>
-#include "tf/transform_broadcaster.h"
-
+#include <tf/transform_broadcaster.h>
+#include <collision_space/util.h>
+#include <random_utils/random_utils.h>
 using namespace collision_space;
+
+const int TEST_TIMES  = 3;
+const int TEST_POINTS = 50000;
 
 class TestVM : public ros::node
 {
@@ -47,9 +53,9 @@ public:
     
     TestVM(void) : ros::node("TVM")
     {
-	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 1);	
-	advertise<rostools::Time>("time", 1);
+	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);	
 	m_tfServer = new tf::TransformBroadcaster(*this);	
+	m_id = 1;
     }
 
     virtual ~TestVM(void)
@@ -58,57 +64,174 @@ public:
 	    delete m_tfServer; 
     }
     
-    void test1(void)
+    void setupTransforms(void)
     {
-
-	// Set ROS time:
-      ros::Time tm = ros::Time::now();
-
-	// Send a transform
-	// 'map' is assumed to be the fixed frame in ROS, right?
+	m_tm = ros::Time::now();
 	tf::Transform t;
 	t.setIdentity();
-	
-	//	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, tm.rostime, "base", "map"));
-	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, tm, "base", "map"));
-	sleep(1);
-	
-
-	// send my marker:
+	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, m_tm, "base", "map"));
+    }
+    
+    void sendPoint(double x, double y, double z)
+    {
 	std_msgs::VisualizationMarker mk;
 
-	mk.header.stamp = tm;
+	mk.header.stamp = m_tm;
 	
 	mk.header.frame_id = "map";
 
-	mk.id = 52;
+	mk.id = m_id++;
 	mk.type = std_msgs::VisualizationMarker::SPHERE;
 	mk.action = std_msgs::VisualizationMarker::ADD;
-	mk.x = 0;
-	mk.y = 1;
-	mk.z = 0;
+	mk.x = x;
+	mk.y = y;
+	mk.z = z;
 
 	mk.roll = 0;
 	mk.pitch = 0;
 	mk.yaw = 0;
 	
-	mk.xScale = 10;
-	mk.yScale = 10;
-	mk.zScale = 10;
+	mk.xScale = 0.2;
+	mk.yScale = 0.2;
+	mk.zScale = 0.2;
 		
-	mk.alpha = 150;
-	mk.r = 100;
-	mk.g = 100;
-	mk.b = 250;
+	mk.alpha = 255;
+	mk.r = 255;
+	mk.g = 10;
+	mk.b = 10;
 	
 	publish("visualizationMarker", mk);
-	
     }
 
+    void testShape(collision_space::bodies::Shape *s)
+    {
+	for (int i = 0 ; i < TEST_POINTS ; ++i)
+	{
+	    double x = random_utils::uniform(-5.0, 5.0);
+	    double y = random_utils::uniform(-5.0, 5.0);
+	    double z = random_utils::uniform(-5.0, 5.0);
+	    if (!s->containsPoint(x, y, z))
+		continue;
+	    sendPoint(x, y, z);
+	}
+    }
+    
+    void setShapeTransformAndMarker(collision_space::bodies::Shape *s,
+				    std_msgs::VisualizationMarker &mk)
+    {
+	btTransform t;
+	
+	double yaw   = random_utils::uniform(-M_PI, M_PI);
+	double pitch = random_utils::uniform(-M_PI, M_PI);
+	double roll  = random_utils::uniform(-M_PI, M_PI);
+	
+	double x = random_utils::uniform(-3.0, 3.0);
+	double y = random_utils::uniform(-3.0, 3.0);
+	double z = random_utils::uniform(-3.0, 3.0);
+	
+	t.setRotation(btQuaternion(yaw, pitch, roll));
+	t.setOrigin(btVector3(btScalar(x), btScalar(y), btScalar(z)));
+	
+	s->setPose(t);
+	s->setScale(0.99);
+	
+	mk.header.stamp = m_tm;	
+	mk.header.frame_id = "map";
+	mk.id = m_id++;
+	
+	mk.action = std_msgs::VisualizationMarker::ADD;
+	
+	mk.x = x;
+	mk.y = y;
+	mk.z = z;
+	
+	mk.roll = roll;
+	mk.pitch = pitch;
+	mk.yaw = yaw;
+	
+	mk.alpha = 150;
+	mk.r = 0;
+	mk.g = 100;
+	mk.b = 255;
+    }
+    
+    void testSphere(void)
+    {
+	collision_space::bodies::Shape *s = new collision_space::bodies::Sphere();
+	double radius[1] = {2.0};
+	s->setDimensions(radius);
+
+	for (int i = 0 ; i < TEST_TIMES ; ++i)
+	{
+	    std_msgs::VisualizationMarker mk;
+	    setShapeTransformAndMarker(s, mk);	
+	    
+	    mk.type = std_msgs::VisualizationMarker::SPHERE;
+	    mk.xScale = radius[0]*2.0;
+	    mk.yScale = radius[0]*2.0;
+	    mk.zScale = radius[0]*2.0;
+	    
+	    publish("visualizationMarker", mk);
+	
+	    testShape(s);
+	}
+	
+	delete s;
+    }
+
+    void testBox(void)
+    {
+	collision_space::bodies::Shape *s = new collision_space::bodies::Box();
+	double dims[3] = {2.0, 1.33, 1.5};
+	s->setDimensions(dims);
+	
+	for (int i = 0 ; i < TEST_TIMES ; ++i)
+	{
+	    std_msgs::VisualizationMarker mk;
+	    setShapeTransformAndMarker(s, mk);	
+	    
+	    mk.type = std_msgs::VisualizationMarker::CUBE;
+	    mk.xScale = dims[0]; // length
+	    mk.yScale = dims[1]; // width
+	    mk.zScale = dims[2]; // height
+	    
+	    publish("visualizationMarker", mk);
+	    
+	    testShape(s);
+	}
+	
+	delete s;
+    }
+    
+    void testCylinder(void)
+    {
+	collision_space::bodies::Shape *s = new collision_space::bodies::Cylinder();
+	double dims[2] = {2.5, 0.5};
+	s->setDimensions(dims);
+	
+	for (int i = 0 ; i < TEST_TIMES ; ++i)
+	{
+	    std_msgs::VisualizationMarker mk;
+	    setShapeTransformAndMarker(s, mk);	
+	    
+	    mk.type = std_msgs::VisualizationMarker::CUBE;
+	    mk.xScale = dims[1] * 2.0; // radius
+	    mk.yScale = dims[1] * 2.0; // radius
+	    mk.zScale = dims[0]; //length
+	    
+	    publish("visualizationMarker", mk);
+	    
+	    testShape(s);
+	}
+	
+	delete s;
+    }
+    
 protected:
 
     tf::TransformBroadcaster *m_tfServer;
-    
+    ros::Time                 m_tm;  
+    int                       m_id;
 };
 
     
@@ -117,13 +240,17 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     TestVM tvm;
+    sleep(1);    
+    tvm.setupTransforms();    
     sleep(1);
     
-    tvm.test1();    
-
-    sleep(3);
+    
+    tvm.testSphere();
+    tvm.testBox();
+    tvm.testCylinder();
+    
+    tvm.spin();    
     tvm.shutdown();
 
     return 0;    
 }
-
