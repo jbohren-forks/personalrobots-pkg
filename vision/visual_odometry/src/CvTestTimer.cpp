@@ -8,7 +8,11 @@
 CvTestTimer CvTestTimer::_singleton;
 
 CvTestTimer::CvTestTimer():
+#if USECLOCK==1
   mFrequency(CLOCKS_PER_SEC/1000)  // make it milli seconds. Go with clock()
+#else
+  mFrequency(1)  // make it milli seconds. Go with getrusuage()
+#endif
 //	mFrequency(cvGetTickFrequency()*1000)  // make it milli seconds. cvGetTickFrequency()
 	// returns the number of ticks in one micro second.
 {
@@ -24,11 +28,17 @@ CvTestTimer::~CvTestTimer()
 
 #define PRINTSTAT2(title, name) do {printStat((title), m##name.mTime, m##name.mCount);} while(0)
 
-#define PRINTSTATSBA(title, name) do {printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
+#define PRINTSTATSBA2(title, name) do {printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
 
 // using rusage
 #define PRINTSTATSBA3(title, name) do { m##name.mTime = m##name.time_val_.tv_sec*1000+m##name.time_val_.tv_usec/1000;\
   printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
+
+#if USECLOCK==1
+#define PRINTSTATSBA(title, name) PRINTSTATSBA2(title, name)
+#else
+#define PRINTSTATSBA(title, name) PRINTSTATSBA3(title, name)
+#endif
 
 void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
   fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f\n",

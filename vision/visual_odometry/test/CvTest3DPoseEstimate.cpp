@@ -50,8 +50,8 @@ using namespace std;
 #define TIMERSTART2(x)
 #define TIMEREND2(x)
 #else
-#define TIMERSTART(x)  CvTestTimerStart(x)
-#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART(x)  CvTestTimerStart1(x)
+#define TIMEREND(x)    CvTestTimerEnd1(x)
 #define TIMERSTART2(x) CvTestTimerStart2(x)
 #define TIMEREND2(x)   CvTestTimerEnd2(x)
 #endif
@@ -208,13 +208,13 @@ bool CvTest3DPoseEstimate::test() {
 //    string point_file("cartesianPoints.xml");
     string frame_file("frames101.xml");
     string point_file("points260.xml");
-    int num_free_frames  = 5;
-    int num_fixed_frames = 5;
+    int num_free_frames  = 10;
+    int num_fixed_frames = 10;
     int num_iterations = 300;
-    int num_repeats = 1;
+    int num_repeats = 10;
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
-        true, false, false);
+        true, true, true);
     break;
   }
   default:
@@ -777,7 +777,7 @@ void CvTest3DPoseEstimate::disturbFrames(
   if (verbose_)
     printf("Disturbed Free Frames\n");
 
-  double disturb_scale = .001;
+  double disturb_scale = .0001;
   double sigma = disturb_scale/2.0; // ~ 95%
   int numFreeFrames = free_frames.size();
   CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
@@ -814,7 +814,7 @@ void CvTest3DPoseEstimate::disturbFrames(
 }
 
 void CvTest3DPoseEstimate::disturbPoints(PointTracks* tracks) {
-  double disturb_scale = .001;
+  double disturb_scale = .0001;
   double sigma = disturb_scale/2.0; // ~ 95%
   int numPoints = tracks->tracks_.size();
   CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
@@ -841,12 +841,14 @@ void CvTest3DPoseEstimate::disturbObsvs(PointTracks* tracks) {
   CvRNG rng_state = cvRNG(0xffffffff);
   double disturb[3];
   CvMat mat_disturb = cvMat(1, 1, CV_64FC3, disturb);
+//  double sigma = 1.0; // 99.99% within [-3. , +3]
+  double sigma = .5; // 99.99% within [-1.5 , +1.5]
 
   BOOST_FOREACH(PointTrack* pt, tracks->tracks_) {
     BOOST_FOREACH(PointTrackObserv* obsv, *pt) {
-      cvRandArr(&rng_state, &mat_disturb, CV_RAND_UNI,
-          cvScalar(-.5,-.5,-.5,0), // inclusive lower bound
-          cvScalar(.5,.5,.5,0) // exclusive upper bound
+      cvRandArr(&rng_state, &mat_disturb, CV_RAND_NORMAL,
+          cvScalar(0.,0.,0.,0.), // mean
+          cvScalar(sigma,sigma,sigma,0) // sigma
       );
       obsv->disp_coord_.x += disturb[0];
       obsv->disp_coord_.y += disturb[1];
