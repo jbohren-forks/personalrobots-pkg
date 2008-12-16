@@ -70,6 +70,10 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
 {
     SmartScan full_scan;
 
+    ROS_INFO("Remove: Plane point: %f %f %f",point_plane.x, point_plane.y,point_plane.z);
+    ROS_INFO("Remove: Plane normal: %f %f %f",normal_plane.x, normal_plane.y,normal_plane.z);
+    ROS_INFO("Threshold: %f",remove_distance);
+
     full_scan.setFromRosCloud(baseFrameCloud);
     full_scan.removePlane (point_plane, normal_plane, remove_distance);
 

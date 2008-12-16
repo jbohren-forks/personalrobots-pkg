@@ -44,7 +44,7 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
 
   this->param<double>("ransac_ground_plane_extraction/min_ignore_distance",min_ignore_distance_,-0.01);
   this->param<double>("ransac_ground_plane_extraction/max_ignore_distance",max_ignore_distance_,0.01);
-  this->param<double>("ransac_ground_plane_extraction/distance_threshold",distance_threshold_,0.01);
+  this->param<double>("ransac_ground_plane_extraction/distance_threshold",distance_threshold_,0.03);
 
   this->param<double>("ransac_ground_plane_extraction/filter_delta",filter_delta_,0.5);
   this->param<int>("ransac_ground_plane_extraction/max_ransac_iterations",max_ransac_iterations_,500);
@@ -77,6 +77,7 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
   {
     ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
     obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
+    obstacle_cloud_->header = cloud_msg_.header;
 //  publish(publish_ground_plane_topic_,ground_plane_msg_);
     publish(publish_obstacle_topic_,*obstacle_cloud_);
   }
