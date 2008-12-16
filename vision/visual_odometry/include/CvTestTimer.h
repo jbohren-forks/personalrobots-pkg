@@ -1,9 +1,13 @@
 #include <opencv/cxtypes.h>
 #include <opencv/cxcore.h>
 #include <string>
+#include <sys/time.h>
+#include <sys/resource.h>
 using namespace std;
 #ifndef CVTESTTIMER_H_
 #define CVTESTTIMER_H_
+
+#define USECLOCK 0  // use getrusuage otherwise
 
 #define DECLARE(timerName) RecordType m##timerName;
 #define RESET(timerName)   do {m##timerName.reset();} while(0)
@@ -30,6 +34,8 @@ public:
 		void reset() {
 			mTime = 0;
 			mCount = 0;
+			time_val_.tv_sec  = 0;
+			time_val_.tv_usec = 0;
 		}
 	};
 
@@ -151,11 +157,11 @@ public:
 //#define GETTICKCOUNT cvGetTickCount
 #define GETTICKCOUNT clock
 
-#define CvTestTimerStart(timerName) \
+#define CvTestTimerStart1(timerName) \
 	{ int64 _CvTestTimer_##timerName = GETTICKCOUNT(); \
 	  CvTestTimer::getTimer().mCount##timerName++;
 
-#define CvTestTimerEnd(timerName) \
+#define CvTestTimerEnd1(timerName) \
 	CvTestTimer::getTimer().m##timerName += GETTICKCOUNT() - _CvTestTimer_##timerName;}
 
 #define CvTestTimerStart2(timerName) \
@@ -174,9 +180,17 @@ public:
 #define CvTestTimerEnd3(timerName) \
   do { rusage end; getrusage(RUSAGE_SELF, &end);\
   CvTestTimer::getTimer().m##timerName.time_val_.tv_sec += \
-  end.ru_utime.tv_sec - CvTestTimer::getTimer().m##timerName.time_val_.tv_sec;\
+  end.ru_utime.tv_sec - CvTestTimer::getTimer().m##timerName.time_val_start_.tv_sec;\
   CvTestTimer::getTimer().m##timerName.time_val_.tv_usec += \
-  end.ru_utime.tv_sec - CvTestTimer::getTimer().m##timerName.time_val_.tv_usec;\
+  end.ru_utime.tv_usec - CvTestTimer::getTimer().m##timerName.time_val_start_.tv_usec;\
   } while (0)
+
+#if USECLOCK==1
+#define CvTestTimerStart(timerName) CvTestTimerStart2(timerName)
+#define CvTestTimerEnd(timerName) CvTestTimerEnd2(timerName)
+#else
+#define CvTestTimerStart(timerName) CvTestTimerStart3(timerName)
+#define CvTestTimerEnd(timerName) CvTestTimerEnd3(timerName)
+#endif
 
 #endif /*CVTESTTIMER_H_*/
