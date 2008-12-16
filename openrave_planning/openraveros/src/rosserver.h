@@ -860,8 +860,6 @@ public:
                 r.pos = Vector(itray->position[0], itray->position[1], itray->position[2]);
                 r.dir = Vector(itray->direction[0], itray->direction[1], itray->direction[2]);
 
-                RAVELOG_WARN("%d: %f %f %f, %f %f %f\n", index++,r.pos.x,r.pos.y,r.pos.z,r.dir.x,r.dir.y,r.dir.z);
-                
                 uint8_t bCollision = 0;
 
                 if( r.dir.lengthsqr3() > 1e-7 ) {
@@ -873,7 +871,7 @@ public:
                         bCollision = GetEnv()->CheckCollision(r,&report);
                 }
                 else
-                    RAVELOG_WARN("ray has zero direction\n");
+                    RAVELOG_WARNA("ray has zero direction\n");
                 
                 res.collision.push_back(bCollision);
                 if( bCollision && req.request_contacts ) {
