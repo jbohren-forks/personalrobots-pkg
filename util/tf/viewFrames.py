@@ -56,10 +56,12 @@ from tf.srv import *
 
 
 def generate(node_name):
-    rospy.wait_for_service('listener/tf_frames')
+    print "Waiting for service %s/tf_frames"%node_name
+    rospy.wait_for_service('%s/tf_frames'%node_name)
 
     try:
-        tf_frames_proxy = rospy.ServiceProxy('listener/tf_frames', FrameGraph)
+        print "Polling service"
+        tf_frames_proxy = rospy.ServiceProxy('%s/tf_frames'%node_name, FrameGraph)
 
         output = tf_frames_proxy.call(FrameGraphRequest())
 ##        print output.dot_graph
