@@ -72,7 +72,7 @@ namespace random_utils
   double bounded_gaussian(rngState *state, double mean, double stddev, 
       double max_stddev);
 
-  /** Random quaternion generator */	
+  /** Random quaternion generator. The returned value has the order (x,y,z,w) */	
   void quaternion(double value[4]);
   void quaternion(rngState* state, double value[4]);
 
