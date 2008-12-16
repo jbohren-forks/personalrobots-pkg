@@ -51,7 +51,7 @@ public:
   
   T& operator[](int i);
   
-  void push(T &element);
+  void push(T const &element);
   
 protected:
   std::vector<T> buffer_;
@@ -73,7 +73,7 @@ T& RingBuffer<T>::operator[](int i)
   return buffer_[(buffer_ptr_+i)%length_];
 }
 template <typename T>
-void RingBuffer<T>::push(T &element)
+void RingBuffer<T>::push(T const &element)
 {
   buffer_[buffer_ptr_]=element;
   buffer_ptr_=(buffer_ptr_+1)%length_;
