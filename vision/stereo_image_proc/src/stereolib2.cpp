@@ -576,4 +576,253 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 
 
 
+//Scanline-optimization along horizontal directions
+void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
+	  int16_t *disp,	// disparity output
+	  int16_t *text,	// texture output
+	  int xim, int yim,	// size of images
+	  uint8_t ftzero,	// feature offset from zero
+	  int xwin, int ywin,	// size of corr window, usually square
+	  int dlen,		// size of disparity search, multiple of 8
+	  int tfilter_thresh,	// texture filter threshold
+	  int ufilter_thresh,	// uniqueness filter threshold, percent
+	  uint8_t *buf		// buffer storage
+	  )
+{
+
+xwin = 5; //bad hack to deal with small window sizes (e.g. 3x3)
+
+int maxdisp = dlen;
+int r = (xwin-1)/2;
+int n = xwin;
+//note: ywim is currently deprecated
+
+int w = xim;
+int h = yim;
+
+unsigned char *L = lim;
+unsigned char *R = rim;
+//short int* disp = disp;
+	
+//Parameters for regularization
+int w1 = tfilter_thresh*4;
+//int pi2a = tfilter_thresh*4;	
+//int pi2b = tfilter_thresh;
+//int pi1 = tfilter_thresh;
+//int Tp = 10;
+
+//temp variables
+int x,y,d,i,j;
+int dbest=0;
+int c_min, cost;
+
+//printf("%d %d\r", w, h);
+
+//FILTERS
+//int sqn = n*n;
+//Reliability filter is currently deprecated
+//int rel_filter = sqn * par.rel_filter;
+
+//Uniqueness-2 filter is currently deprecated
+//int *min_scores = (int *)malloc(w * sizeof(int ));
+
+int ratio_filter = 100-ufilter_thresh;
+//int peak_filter = tfilter_thresh;
+int peak_filter = 10;
+
+int sad_second_min;
+int da, db, s1, s2, s3;
+
+//data structured for Dynamic Programming
+int **S;
+int **B;
+
+//int *diff;
+S = (int **)calloc(w, sizeof(int *));
+B = (int **)calloc(w, sizeof(int *));
+//diff = (int *)calloc(w, sizeof(int));
+
+for(x=0; x<w; x++){
+	S[x] = (int *)calloc(maxdisp, sizeof(int));
+	B[x] = (int *)calloc(maxdisp, sizeof(int));
+}
+
+//BEGIN INCREMENTAL COMPUTATION FOR RADIUS >0
+int **acc = (int **)calloc(w, sizeof(int *));
+int **V = (int **)calloc(w, sizeof(int*));
+for(d=0; d<w; d++){
+	V[d] = (int *)calloc(maxdisp, sizeof(int)); 
+	acc[d] = (int *)calloc(maxdisp, sizeof(int)); 	
+}
+
+//FIRST ROW
+//STAGE 1 - init acc
+for(d=0; d<maxdisp; d++){
+	for(i=maxdisp; i<maxdisp+n; i++){
+		for(j=0; j<n; j++)
+			V[i][d] += abs( L[j*w+i] - R[j*w+i-d] );
+		//acc[d] += V[i][d];			
+	}		
+}
+
+//STAGE 2: other positions
+for(x=maxdisp+r+1; x<w-r; x++){
+	for(d=0; d<maxdisp; d++){
+		for(j=0; j<n; j++)
+			V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d] );
+		//acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
+	}//d
+}//x
+unsigned char *lp, *rp, *lpp, *rpp;
+int ind1 = r+r+maxdisp;
+//END INCREMENTAL COMPUTATION FOR RADIUS >0
+
+for(y=r+1; y<h-r; y++){
+
+	//first position
+	for(d=0; d<maxdisp; d++){
+		acc[maxdisp+r][d] = 0;
+		for(i=maxdisp; i<maxdisp+n; i++){
+			V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d] );
+			acc[maxdisp+r][d] += V[i][d];			
+		}	
+	}
+		
+	//compute ACC for all other positions
+	lp = (unsigned char *) L + (y+r)*w + ind1;
+	rp =  (unsigned char *) R + (y+r)*w + ind1;
+	lpp = (unsigned char *) L + (y-r-1)*w + ind1;
+	rpp = (unsigned char *) R + (y-r-1)*w + ind1;
+		
+	for(x=maxdisp+r+1; x<w-r; x++){
+			
+		lp++;
+		rp++;
+		lpp++;
+		rpp++;
+				
+		//int dbestprev = dbest;
+		for(d=0; d<maxdisp; d++){
+				
+			V[x+r][d] = V[x+r][d] + abs( *lp - *rp ) - abs( *lpp - *rpp ); 
+			rp--;
+			rpp--;
+			acc[x][d] = acc[x-1][d] + V[x+r][d] - V[x-r-1][d];
+		}//d
+		rp += maxdisp;
+		rpp += maxdisp;
+	}//x to compute ACC
+
+	//Stage 1 ->forward
+	//Border
+	for(d=0; d<maxdisp; d++)
+		S[maxdisp+r][d] = acc[maxdisp+r][d];
+	
+	for(x=maxdisp+r+1; x<w-r; x++){
+		c_min = S[x-1][0];
+		dbest = 0;
+		for(d=1; d<maxdisp; d++)
+		if(S[x-1][d] < c_min){
+			c_min = S[x-1][d];
+			dbest = d;
+		}
+	
+		for(d=0; d<maxdisp; d++){
+			S[x][d] = acc[x][d];
+			if( S[x-1][d]<c_min+w1 ){
+				S[x][d] += S[x-1][d];
+				B[x][d] = d;
+			}
+			else{
+				S[x][d] += c_min+w1;
+				B[x][d] = dbest;
+			}
+		} //d
+	}//x
+
+	//Stage 2 -> backward
+	//Border
+	x = w-r-1;
+	c_min = 32000;
+	for(d=0; d<maxdisp; d++){
+		cost = S[x][d];
+		if(cost < c_min){
+			c_min = cost;
+			dbest = d;
+		}
+	}
+	disp[y*w+x] = dbest;
+	
+	for(x=w-r-2; x>=maxdisp+r; x--){
+		dbest = B[x+1][dbest];
+		disp[y*w+x] = dbest;	
+		
+		//******* FILTERS ********
+		//1) rel filter
+		//if(c_min > rel_filter)
+		//	disp[y*w + x] = -2;
+
+		//( 2)needed for uniqueness constraint filter )
+		//min_scores[x] = c_min;
+	
+		//3) uniqueness filter
+		/*
+		sad_second_min = 32000;
+		for(d=0; d<dbest-1; d++){
+			cost = S[x][d];
+			if(cost<sad_second_min){
+				sad_second_min = cost;
+			}
+		}
+		for(d=dbest+2; d<maxdisp; d++){
+			cost = S[x][d];
+			if(cost<sad_second_min){
+				sad_second_min = cost;
+			}
+		}	
+		if( c_min*100  > ratio_filter*sad_second_min)
+			disp[y*w + x] = FILTERED;
+		*/
+		//4) Peak Filter
+		s1 = S[x][dbest-1];
+		s2 = S[x][dbest];
+		s3 = S[x][dbest+1];
+		da = (dbest>1) ? ( s1 - s2 ) : (s3 - s2);
+		db =  (dbest<maxdisp-2) ? (s3 - s2) : (s1 - s2);		
+		if(da + db < peak_filter)
+			disp[y*w + x] = FILTERED;
+		//******* FILTERS ********
+		
+		//subpixel refinement
+		if(disp[y*w + x] != FILTERED){
+			double v = dbest + ( (s1-s3)/(2.0*(s1+s3-2.0*s2)) );
+			disp[y*w + x] = (int)(0.5 + 16*v);
+		}
+		
+	}
+	//if(par.unique == 1)
+	//	uniqueness_constraint_reducedrange(par, min_scores, y);
+}
+
+for(x=0; x<w; x++){
+	free(acc[x]);
+	free(S[x]);
+	free(B[x]);
+	free(V[x]);
+}
+
+free(S);
+free(B);
+//free(diff);
+free(acc);
+
+//free(min_scores);
+
+}
+
+
+
+
+
+
 
