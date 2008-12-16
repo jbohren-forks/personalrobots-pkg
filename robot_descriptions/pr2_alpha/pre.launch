@@ -38,7 +38,11 @@
   </node>
 
 <!-- imu -->
-  <node machine="four" pkg="imu_node" type="imu_node"/>
+  <param name="imu/time_offset" value="-0.040" />
+  <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
+  <param name="imu/autostart" type="bool" value="true" />
+  <param name="imu/frameid"  type="string" value="imu" />
+  <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- Runtime Diagnostics Logging -->
 <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
