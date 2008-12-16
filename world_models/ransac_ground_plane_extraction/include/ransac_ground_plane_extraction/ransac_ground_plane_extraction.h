@@ -48,7 +48,7 @@ namespace ransac_ground_plane_extraction {
   
    RansacGroundPlaneExtraction();
   
-  void findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
+  int findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
 
   std_msgs::PointCloud *removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
 

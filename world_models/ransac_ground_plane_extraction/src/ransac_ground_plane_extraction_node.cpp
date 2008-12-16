@@ -73,12 +73,13 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
   std_msgs::Point32 estimated_plane_point;
   std_msgs::Point32 estimated_plane_normal;
 
-  ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal);
-  ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
-  obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
-
+  if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
+  {
+    ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
+    obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
 //  publish(publish_ground_plane_topic_,ground_plane_msg_);
-  publish(publish_obstacle_topic_,*obstacle_cloud_);
+    publish(publish_obstacle_topic_,*obstacle_cloud_);
+  }
 }
 
 

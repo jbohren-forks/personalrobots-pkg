@@ -1,5 +1,7 @@
 #include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
 
+#define MIN_POINTS 10
+
 using namespace ransac_ground_plane_extraction;
 
 RansacGroundPlaneExtraction::RansacGroundPlaneExtraction(){
@@ -14,7 +16,7 @@ RansacGroundPlaneExtraction::RansacGroundPlaneExtraction(){
   max_iterations_ = 500;
 }
 
-void RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal) 
+int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal) 
 {
     SmartScan smart_scan;
 
@@ -36,6 +38,12 @@ void RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFra
     }
     copy->set_pts_size(j);
 
+    if(j < MIN_POINTS)
+    {
+      ROS_WARN("RansacGroundPlaneExtraction:: Too few points in candidate ground plane: %d",j);
+      return -1;
+    }
+
     smart_scan.setFromRosCloud(*copy);
 
     ROS_INFO("***************");
@@ -44,10 +52,18 @@ void RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFra
     ROS_INFO("***************");
     smart_scan.ransacPlane (planePoint, planeNormal, max_iterations_, distance_threshold);
 
+    if(planeNormal.z < 0)//turn the ground normal so its always facing up
+    {
+      planeNormal.x = -planeNormal.x;
+      planeNormal.y = -planeNormal.y;
+      planeNormal.z = -planeNormal.z;
+    }
+
     ROS_INFO("Plane point: %f %f %f",planePoint.x,planePoint.y,planePoint.z);
     ROS_INFO("Plane normal: %f %f %f",planeNormal.x,planeNormal.y,planeNormal.z);
-
     ROS_INFO("Done RANSAC %f seconds",(ros::Time::now()-time).toSec());
+
+    return 1;
 }
 
 std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &point_plane, std_msgs::Point32 &normal_plane) 
@@ -71,6 +87,9 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
 
 void RansacGroundPlaneExtraction::updateGround(const std_msgs::Point32 &new_plane_point, const std_msgs::Point32 &new_plane_normal, std_msgs::Point32 &return_plane_point, std_msgs::Point32 &return_plane_normal)
 {
+
+  if(fabs(new_plane_normal.z) >= 0.8)
+  {
     point_plane_.x = point_plane_.x + filter_delta_ * (new_plane_point.x - point_plane_.x);
     point_plane_.y = point_plane_.y + filter_delta_ * (new_plane_point.y - point_plane_.y);
     point_plane_.z = point_plane_.z + filter_delta_ * (new_plane_point.z - point_plane_.z);
@@ -84,7 +103,7 @@ void RansacGroundPlaneExtraction::updateGround(const std_msgs::Point32 &new_plan
     normal_plane_.x = normal_plane_.x/mag;
     normal_plane_.y = normal_plane_.y/mag;
     normal_plane_.z = normal_plane_.z/mag;
-
+  }
     return_plane_point.x = point_plane_.x;
     return_plane_point.y = point_plane_.y;
     return_plane_point.z = point_plane_.z;
