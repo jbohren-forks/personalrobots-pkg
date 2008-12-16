@@ -17,7 +17,7 @@ else
 end
 
 if( exist('excludeid', 'var') )
-    req.excludeids = mat2cell(excludeids(:)',1,ones(length(excludeids),1));
+    req.excludeids = excludeids;
 end
 if( exist('req_contacts','var') && req_contacts )
     req.options = req.options + req.CO_Contacts();
@@ -35,14 +35,13 @@ if(~isempty(res))
     if( ~isempty(res.contacts) )
         contacts = zeros(6,length(res.contacts));
         for i = 1:length(res.contacts)
-            contacts(1:3,i) = cell2mat(res.contacts{i}.position);
-            contacts(4:6,i) = cell2mat(res.contacts{i}.normal);
+            contacts(:,i) = [res.contacts{i}.position;res.contacts{i}.normal];
         end
     else
         contacts = [];
     end
 
-    hitbodies = [];%cell2mat(res.hitbodies);
+    hitbodies = [];%res.hitbodies;
     mindist = res.mindist;
 else
     collision = [];

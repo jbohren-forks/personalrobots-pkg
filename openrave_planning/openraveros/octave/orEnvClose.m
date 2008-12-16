@@ -6,7 +6,7 @@ function success=orEnvClose(figureids)
 session = openraveros_getglobalsession();
 req = openraveros_env_closefigures();
 if( exist('figureids','var') && ~isempty(figureids) )
-    req.figureids = mat2cell(figureids(:)',1,ones(1,length(figureids)));    
+    req.figureids = figureids(:);
 end
 
 res = rosoct_session_call(session.id,'env_closefigures',req);

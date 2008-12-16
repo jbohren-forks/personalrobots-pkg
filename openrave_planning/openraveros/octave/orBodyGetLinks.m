@@ -17,7 +17,7 @@ if( ~isempty(res) )
 
     links = zeros(12,length(res.bodies{1}.links));
     for i = 1:size(links,2)
-        links(:,i) = cell2mat(res.bodies{1}.links{i}.m);
+        links(:,i) = res.bodies{1}.links{i}.m;
     end
 else
     links = [];

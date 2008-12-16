@@ -10,9 +10,9 @@ function success = orBodySetJointValues(bodyid, values, indices)
 session = openraveros_getglobalsession();
 req = openraveros_body_setjointvalues();
 req.bodyid = bodyid;
-req.jointvalues = mat2cell(values(:)',1,ones(1,length(values)));
+req.jointvalues = values;
 if( exist('indices','var') )
-    req.indices = mat2cell(indices(:)',1,ones(1,length(indices)));
+    req.indices = indices(:);
 end
 res = rosoct_session_call(session.id,'body_setjointvalues',req);
 success = ~isempty(res);

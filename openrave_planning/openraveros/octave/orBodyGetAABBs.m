@@ -14,7 +14,7 @@ res = rosoct_session_call(session.id,'body_getaabbs',req);
 if(~isempty(res))
     aabbs = zeros(6,length(res.boxes));
     for i = 1:length(res.boxes)
-        aabbs(:,i) = cell2mat([res.boxes{i}.center; res.boxes{i}.extents]);
+        aabbs(:,i) = [res.boxes{i}.center; res.boxes{i}.extents];
     end
 else
     aabbs = [];

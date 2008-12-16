@@ -11,14 +11,14 @@ body.filename = bodyinfo.filename;
 %% extra
 body.enabled = bodyinfo.enabled;
 body.dof = bodyinfo.dof;
-body.T = reshape(cell2mat(bodyinfo.transform.m),[3 4]);
+body.T = reshape(bodyinfo.transform.m,[3 4]);
 
-body.jointvalues = cell2mat(bodyinfo.jointvalues);
+body.jointvalues = bodyinfo.jointvalues;
 body.links = zeros(12,length(bodyinfo.links));
 for i = 1:length(bodyinfo.links)
-    body.links(:,i) = cell2mat(bodyinfo.links{i}.m);
+    body.links(:,i) = bodyinfo.links{i}.m;
 end
 
 body.linknames = bodyinfo.linknames;
-body.lowerlimit = cell2mat(bodyinfo.lowerlimit);
-body.upperlimit = cell2mat(bodyinfo.upperlimit);
+body.lowerlimit = bodyinfo.lowerlimit;
+body.upperlimit = bodyinfo.upperlimit;

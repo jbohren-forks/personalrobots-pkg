@@ -20,17 +20,17 @@ if( exist('inclusive','var') )
     req.inclusive = inclusive;
 end
 if( exist('ids','var') )
-    req.bodyids = mat2cell(ids(:)',1,ones(length(ids),1));
+    req.bodyids = ids(:);
 end
 
 res = rosoct_session_call(session.id,'env_triangulate',req);
 
 if(~isempty(res))
     numpoints = length(res.points);
-    tripoints = reshape(cell2mat(res.points),[3 numpoints/3]);
+    tripoints = reshape(res.points,[3 numpoints/3]);
     
     numinds = length(res.indices);
-    triindices = reshape(cell2mat(res.indices),[3 numinds/3]);
+    triindices = reshape(res.indices,[3 numinds/3]);
 else
     tripoints = [];
     triindices = [];

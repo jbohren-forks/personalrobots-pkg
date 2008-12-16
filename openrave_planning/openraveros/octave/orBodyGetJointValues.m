@@ -8,13 +8,13 @@ function values = orBodyGetJointValues(bodyid, indices)
 session = openraveros_getglobalsession();
 req = openraveros_body_getjointvalues();
 req.bodyid = bodyid;
-if( exist('indices','var') && length(indices)>0 )
-    req.indices = mat2cell(indices(:)',1,ones(1,length(indices)));
+if( exist('indices','var') )
+    req.indices = indices(:);
 end
 res = rosoct_session_call(session.id,'body_getjointvalues',req);
 
 if(~isempty(res))
-    values = cell2mat(res.values);
+    values = res.values;
 else
     values = [];
 end

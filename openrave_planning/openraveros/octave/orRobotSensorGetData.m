@@ -29,17 +29,17 @@ data.type = res.type;
 switch(data.type)
     case 'laser'
         numrange = length(res.laserrange);
-        data.laserrange = reshape(cell2mat(res.laserrange),[3 numrange/3]);
+        data.laserrange = reshape(res.laserrange,[3 numrange/3]);
 
         numpos = length(res.laserpos);
-        data.laserpos = reshape(cell2mat(res.laserpos),[3 numpos/3]);
+        data.laserpos = reshape(res.laserpos,[3 numpos/3]);
 
         numint = length(res.laserint);
-        data.laserint = reshape(cell2mat(res.laserint),[3 numint/3]);
+        data.laserint = reshape(res.laserint,[3 numint/3]);
     case 'camera'
         error('camera not supported yet');
-        data.KK = reshape(cell2mat(res.KK),[3 3]);
-        data.T = reshape(cell2mat(res.T.m),[3 4]);
+        data.KK = reshape(res.KK,[3 3]);
+        data.T = reshape(res.T.m,[3 4]);
         data.rawimage = res.image;
         display('image decoding not implemented yet');
     otherwise

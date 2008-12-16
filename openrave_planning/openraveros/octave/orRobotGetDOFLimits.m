@@ -16,15 +16,7 @@ if( ~isempty(res) )
         error('wrong robot id');
     end
 
-    lowerlimit = res.robots{1}.activelowerlimit;
-    upperlimit = res.robots{1}.activeupperlimit;
-    if( length(lowerlimit) ~= length(upperlimit) )
-        error('limits not same size');
-    end
-
-    values = zeros(length(lowerlimit),2);
-    values(:,1) = cell2mat(lowerlimit);
-    values(:,2) = cell2mat(upperlimit);
+    values = [res.robots{1}.activelowerlimit res.robots{1}.activeupperlimit];
 else
     values = [];
 end

@@ -12,12 +12,12 @@ session = openraveros_getglobalsession();
 req = openraveros_robot_getactivevalues();
 req.bodyid = robotid;
 if( exist('indices','var') )
-    req.indices = mat2cell(indices(:)',1,ones(length(indices),1));
+    req.indices = indices(:);
 end
 res = rosoct_session_call(session.id,'robot_getactivevalues',req);
 
 if(~isempty(res))
-    values = cell2mat(res.values);
+    values = res.values;
 else
     values = [];
 end

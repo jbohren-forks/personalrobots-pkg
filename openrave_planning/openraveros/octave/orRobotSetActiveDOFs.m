@@ -21,10 +21,10 @@ if( exist('affinedofs','var') )
     req.active.affine = affinedofs;
 end
 if( exist('indices','var') )
-    req.active.joints = mat2cell(indices(:)',1,ones(length(indices),1));
+    req.active.joints = indices(:);
 end
 if( exist('rotationaxis','var') )
-    req.active.rotationaxis(1:3) = mat2cell(rotationaxis(:)',1,[1 1 1]);
+    req.active.rotationaxis(1:3) = rotationaxis(:);
 end
 
 res = rosoct_session_call(session.id,'robot_setactivedofs',req);

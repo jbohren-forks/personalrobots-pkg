@@ -12,12 +12,11 @@ req.bodyid = varargin{1};
 
 if(nargin >= 3)
     R = openraveros_rotfromquat(varargin{3});
-    req.transform.m(1:9) = mat2cell(R(:)',1,ones(9,1));
-    trans = varargin{2};
-    req.transform.m(10:12) = mat2cell(trans(:)',1,ones(3,1));
+    req.transform.m(1:9) = R(:);
+    req.transform.m(10:12) = trans(:);
 elseif(nargin == 2)
     t = varargin{2};
-    req.transform.m(1:12) = mat2cell(t(:)',1,ones(12,1));
+    req.transform.m(1:12) = t(:);
 else
     error('orBodySetTransform not enough arguments');
 end

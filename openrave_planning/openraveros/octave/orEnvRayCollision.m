@@ -38,7 +38,7 @@ end
 res = rosoct_session_call(session.id,'env_raycollision',req);
 
 if(~isempty(res))
-    collision = cell2mat(res.collision);
+    collision = res.collision;
 
     if( req.request_contacts )
         if( length(res.contacts) ~= numrays )
@@ -46,14 +46,13 @@ if(~isempty(res))
         end
         colinfo = zeros(6,numrays);
         for i = 1:numrays
-            colinfo(1:3,i) = cell2mat(res.contacts{i}.position);
-            colinfo(4:6,i) = cell2mat(res.contacts{i}.normal);
+            colinfo(:,i) = [res.contacts{i}.position;res.contacts{i}.normal];
         end
     else
         colinfo = [];
     end
 
-    hitbodies = cell2mat(res.hitbodies);
+    hitbodies = res.hitbodies;
 else
     collision = [];
     colinfo = [];

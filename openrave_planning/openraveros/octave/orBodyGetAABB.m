@@ -11,7 +11,7 @@ req.bodyid = bodyid;
 res = rosoct_session_call(session.id,'body_getaabb',req);
 
 if(~isempty(res))
-    aabb = [cell2mat(res.box.center) cell2mat(res.box.extents)];
+    aabb = [res.box.center res.box.extents];
 else
     aabb = [];
 end

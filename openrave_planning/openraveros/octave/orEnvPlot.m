@@ -18,7 +18,7 @@ req = openraveros_env_plot();
 
 points = varargin{1}';
 numpoints = size(points,2);
-req.points = mat2cell(points(:)',1,ones(numel(points),1));
+req.points = points(:);
 
 req.size = 0.5;
 req.drawtype = req.Draw_Point();
@@ -29,7 +29,7 @@ while(i <= nargin)
     if( strcmp(varargin{i},'color') )
         i = i + 1;
         colors = varargin{i}';
-        req.colors = mat2cell(colors(:)',1,ones(numel(colors'),1));
+        req.colors = colors(:);
     elseif( strcmp(varargin{i},'size') )
         i = i + 1;
         req.size = varargin{i};
