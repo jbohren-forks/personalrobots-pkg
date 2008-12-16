@@ -333,7 +333,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	  )
 {
 
-	xwin = 15; //bad hack to deal with small window sizes (e.g. 3x3)
+	xwin = 11; //bad hack to deal with small window sizes (e.g. 3x3)
 
 	int maxdisp = dlen;
 	int r = (xwin-1)/2;
