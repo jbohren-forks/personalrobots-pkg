@@ -17,5 +17,6 @@ in a way that can be managed by the ROS dependency system.
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="cvs"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="cvs"/>
+<versioncontrol type="svn" url="https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/latest_tested_snapshot/opencv"/>
 </package>
 
