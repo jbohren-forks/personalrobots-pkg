@@ -412,6 +412,7 @@ public:
   {
 
     dc1394_cam::FrameSet fs = cd.cam->getFrames(DC1394_CAPTURE_POLICY_POLL);
+    ros::Time ts = ros::Time::now() + ros::Duration().fromSec(-.125);
 
     if (fs.size() > 0)
     {
@@ -470,8 +471,8 @@ public:
 
           int goodPixCount = 0;
 
-          uint8_t *buf      = &(img_.images[0].data[0]);
-          uint8_t *buf1     = &(img_.images[1].data[0]);
+          uint8_t *buf      = (uint8_t*)&(img_.images[0].data[0]);
+          uint8_t *buf1     = (uint8_t*)&(img_.images[1].data[0]);
           uint32_t width    = img_.images[0].width;
           uint32_t height   = img_.images[0].height;
           uint32_t buf_size = width * height;
@@ -511,7 +512,7 @@ public:
                 j++;
               }
 
-            cloud_.header.stamp = ros::Time::now();
+            cloud_.header.stamp = ts;
             cloud_.header.frame_id = cd.frameid_cloud;
 
             publish(cd.name + "/cloud", cloud_);

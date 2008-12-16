@@ -73,8 +73,9 @@ public:
   double getSteerPosition() { return caster_->position_; }
   double getSteerVelocity() { return caster_->velocity_; }
 
-private:
   mechanism::JointState *caster_;
+
+private:
   JointVelocityController caster_vel_, wheel_l_vel_, wheel_r_vel_;
 };
 

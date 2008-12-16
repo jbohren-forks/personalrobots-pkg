@@ -13,6 +13,7 @@ to just call 'wget' over and over. This is what the 'axis_cam_wget' and
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)
 Modified by Gary Bradski 9/15/08</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>

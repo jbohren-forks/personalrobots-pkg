@@ -5,10 +5,12 @@ VenusDeMiles venusDeMiles = new VenusDeMiles();
 WorkingStatus workingStatus = new WorkingStatus();
 Navigator navigator = new Navigator();
 
-// Base
+// Base. An upper bound of 10 minutes bfore timing out the
+// effort to move the base to a target location
 BaseState baseState = new BaseState(External);
-MoveBase moveBase = new MoveBase(External);
+MoveBase moveBase = new MoveBase(External, 600);
 
 // Battery and Plug In Control
 RechargeController rechargeController = new RechargeController(External);
-BatteryState batteryState = new BatteryState(External);
+BatteryState batteryState = new BatteryState(External, .7, .8);
+BatteryState bogusBatteryState = new BatteryState(External, .5, .6, false);

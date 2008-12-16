@@ -37,14 +37,27 @@
 #include "poll.h"
 
 
+//! Macro for throwing an exception with a message
+#define IMU_EXCEPT(except, msg, ...) \
+  { \
+    char buf[100]; \
+    snprintf(buf, 100, "MS_3DMGX2::IMU::%s: " msg, __FUNCTION__,##__VA_ARGS__); \
+    throw except(buf); \
+  }
+
+
+//! Code to swap bytes since IMU is big endian
 static inline unsigned short bswap_16(unsigned short x) {
   return (x>>8) | (x<<8);
 }
 
+//! Code to swap bytes since IMU is big endian
 static inline unsigned int bswap_32(unsigned int x) {
   return (bswap_16(x&0xffff)<<16) | (bswap_16(x>>16));
 }
 
+
+//! Code to extract a floating point number from the IMU
 static float extract_float(uint8_t* addr) {
 
   float tmp;
@@ -57,6 +70,8 @@ static float extract_float(uint8_t* addr) {
   return tmp;
 }
 
+
+//! Helper function to get system time in nanoseconds.
 static unsigned long long time_helper()
 {
 #if POSIX_TIMERS > 0
@@ -72,21 +87,28 @@ static unsigned long long time_helper()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-MS_3DMGX2::IMU::IMU() : fd(-1), continuous(false)  { }
+// Constructor
+MS_3DMGX2::IMU::IMU() : fd(-1), continuous(false)
+{ }
 
 
 ////////////////////////////////////////////////////////////////////////////////
-MS_3DMGX2::IMU::~IMU() { }
+// Destructor
+MS_3DMGX2::IMU::~IMU()
+{
+  close_port();
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Open the IMU port
 void
 MS_3DMGX2::IMU::open_port(const char *port_name)
 {
   // Open the port
   fd = open(port_name, O_RDWR | O_SYNC , S_IRUSR | S_IWUSR );
   if (fd < 0)
-    IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "Unable to open serial port [%s]; [%s]", port_name, strerror(errno));
+    IMU_EXCEPT(MS_3DMGX2::exception, "Unable to open serial port [%s]; [%s]", port_name, strerror(errno));
 
   // Change port settings
   struct termios term;
@@ -110,6 +132,7 @@ MS_3DMGX2::IMU::open_port(const char *port_name)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Close the IMU port
 void
 MS_3DMGX2::IMU::close_port()
 {
@@ -122,15 +145,16 @@ MS_3DMGX2::IMU::close_port()
   
   if (fd != -1)
     if (close(fd) != 0)
-      IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "Unable to close serial port; [%s]", strerror(errno));
+      IMU_EXCEPT(MS_3DMGX2::exception, "Unable to close serial port; [%s]", strerror(errno));
 
 }
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Initialize time information
 void
-MS_3DMGX2::IMU::init_time()
+MS_3DMGX2::IMU::init_time(double fix_off)
 {
   wraps = 0;
 
@@ -138,16 +162,25 @@ MS_3DMGX2::IMU::init_time()
   uint8_t rep[31];
   cmd[0] = CMD_RAW;
 
-  start_time = time_helper();
-
   transact(cmd, sizeof(cmd), rep, sizeof(rep));
+  start_time = time_helper();
 
   int k = 25;
   offset_ticks = bswap_32(*(uint32_t*)(rep + k));
   last_ticks = offset_ticks;
+
+  // reset kalman filter state
+  offset = 0;
+  d_offset = 0;
+  sum_meas = 0;
+  counter = 0;
+
+  // fixed offset
+  fixed_offset = fix_off;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Initialize IMU gyros
 void
 MS_3DMGX2::IMU::init_gyros(double* bias_x, double* bias_y, double* bias_z)
 {
@@ -175,6 +208,7 @@ MS_3DMGX2::IMU::init_gyros(double* bias_x, double* bias_y, double* bias_z)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Put the IMU into continuous mode
 bool
 MS_3DMGX2::IMU::set_continuous(cmd command)
 {
@@ -218,15 +252,17 @@ MS_3DMGX2::IMU::stop_continuous()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Receive packet containing acceleration, angrate, and orientations
-// This assumes that the IMU is in continuous mode and the data is already being sent
+// Receive ACCEL_ANGRATE_MAG message
 void
 MS_3DMGX2::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3], double angrate[3], double mag[3])
 {
   int i, k;
   uint8_t rep[43];
 
-  receive(CMD_ACCEL_ANGRATE_MAG, rep, sizeof(rep), 0, time);
+  uint64_t sys_time;
+  uint64_t imu_time;
+
+  receive(CMD_ACCEL_ANGRATE_MAG, rep, sizeof(rep), 0, &sys_time);
 
   // Read the acceleration:
   k = 1;
@@ -251,12 +287,12 @@ MS_3DMGX2::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3], doubl
     k += 4;
   }
 
-  *time = extract_time(rep+37);
+  imu_time = extract_time(rep+37);
+  *time = filter_time(imu_time, sys_time);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Receive packet containing acceleration, angrate, and orientations
-// This assumes that the IMU is in continuous mode and the data is already being sent
+// Receive ACCEL_ANGRATE_ORIENTATION message
 void
 MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9])
 {
@@ -292,19 +328,22 @@ MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3
   }
 
   imu_time = extract_time(rep+61);
-
-  *time = imu_time;
+  *time = filter_time(imu_time, sys_time);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Receive ACCEL_ANGRATE message
 void
 MS_3DMGX2::IMU::receive_accel_angrate(uint64_t *time, double accel[3], double angrate[3])
 {
   int i, k;
   uint8_t rep[31];
 
-  receive(CMD_ACCEL_ANGRATE, rep, sizeof(rep), 0, time);
+  uint64_t sys_time;
+  uint64_t imu_time;
+
+  receive(CMD_ACCEL_ANGRATE, rep, sizeof(rep), 0, &sys_time);
 
   // Read the acceleration:
   k = 1;
@@ -322,26 +361,34 @@ MS_3DMGX2::IMU::receive_accel_angrate(uint64_t *time, double accel[3], double an
     k += 4;
   }
 
-  *time = extract_time(rep+25);
+  imu_time = extract_time(rep+25);
+  *time = filter_time(imu_time, sys_time);
 }
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+// Receive EULER message
 void
 MS_3DMGX2::IMU::receive_euler(uint64_t *time, double *roll, double *pitch, double *yaw)
 {
   uint8_t rep[19];
 
-  receive(CMD_EULER, rep, sizeof(rep), 0, time);
+  uint64_t sys_time;
+  uint64_t imu_time;
+
+  receive(CMD_EULER, rep, sizeof(rep), 0, &sys_time);
 
   *roll  = extract_float(rep + 1);
   *pitch = extract_float(rep + 5);
   *yaw   = extract_float(rep + 9);
-  *time  = extract_time(rep + 13);
+
+  imu_time  = extract_time(rep + 13);
+  *time = filter_time(imu_time, sys_time);
 }
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+// Extract time and process rollover
 uint64_t
 MS_3DMGX2::IMU::extract_time(uint8_t* addr)
 {
@@ -382,7 +429,7 @@ MS_3DMGX2::IMU::send(void *cmd, int cmd_len)
   // Write the data to the port
   bytes = write(this->fd, cmd, cmd_len);
   if (bytes < 0)
-    IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "error writing to IMU [%s]", strerror(errno));
+    IMU_EXCEPT(MS_3DMGX2::exception, "error writing to IMU [%s]", strerror(errno));
 
   if (bytes != cmd_len)
     IMU_EXCEPT(MS_3DMGX2::exception, "whole message not written to IMU");
@@ -413,19 +460,19 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
   // Skip everything until we find our "header"
   *(uint8_t*)(rep) = 0;
   
-  while (*(uint8_t*)(rep) != command && skippedbytes < MS_3DMGX2::MAX_BYTES_SKIPPED)
+  while (*(uint8_t*)(rep) != command && skippedbytes < MAX_BYTES_SKIPPED)
   {
     if (timeout > 0)
     {
       if ( (retval = poll(ufd, 1, timeout)) < 0 )
-        IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "poll failed  [%s]", strerror(errno));
+        IMU_EXCEPT(MS_3DMGX2::exception, "poll failed  [%s]", strerror(errno));
       
       if (retval == 0)
         IMU_EXCEPT(MS_3DMGX2::timeout_exception, "timeout reached");
     }
 	
     if (read(this->fd, (uint8_t*) rep, 1) <= 0)
-      IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "read failed [%s]", strerror(errno));
+      IMU_EXCEPT(MS_3DMGX2::exception, "read failed [%s]", strerror(errno));
 
     skippedbytes++;
   }
@@ -442,7 +489,7 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
     if (timeout > 0)
     {
       if ( (retval = poll(ufd, 1, timeout)) < 0 )
-        IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "poll failed  [%s]", strerror(errno));
+        IMU_EXCEPT(MS_3DMGX2::exception, "poll failed  [%s]", strerror(errno));
       
       if (retval == 0)
         IMU_EXCEPT(MS_3DMGX2::timeout_exception, "timeout reached");
@@ -451,7 +498,7 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
     nbytes = read(this->fd, (uint8_t*) rep + bytes, rep_len - bytes);
 
     if (nbytes < 0)
-      IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "read failed  [%s]", strerror(errno));
+      IMU_EXCEPT(MS_3DMGX2::exception, "read failed  [%s]", strerror(errno));
     
     bytes += nbytes;
   }
@@ -463,9 +510,52 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
     checksum += ((uint8_t*)rep)[i];
   }
 
-  // If correct, return bytes
+  // If wrong throw exception
   if (checksum != bswap_16(*(uint16_t*)((uint8_t*)rep+rep_len-2)))
     IMU_EXCEPT(MS_3DMGX2::corrupted_data_exception, "invalid checksum");
   
   return bytes;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Kalman filter for time estimation
+uint64_t MS_3DMGX2::IMU::filter_time(uint64_t imu_time, uint64_t sys_time)
+{
+  // first calculate the sum of KF_NUM_SUM measurements
+  if (counter < KF_NUM_SUM){
+    counter ++;
+    sum_meas += (to_double(imu_time) - to_double(sys_time));
+  }
+  // update kalman filter with fixed innovation
+  else{
+    // system update
+    offset += d_offset;
+
+    // measurement update
+    double meas_diff = (sum_meas/KF_NUM_SUM) - offset;
+    offset   += KF_K_1 * meas_diff;
+    d_offset += KF_K_2 * meas_diff;
+
+    // reset counter and average
+    counter = 0; sum_meas = 0;
+  }
+  return imu_time - to_uint64_t( offset ) + to_uint64_t( fixed_offset );
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// convert uint64_t time to double time
+double MS_3DMGX2::IMU::to_double(uint64_t time)
+{
+  double res = trunc(time/1e9);
+  res += (((double)time)/1e9) - res;
+  return res;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// convert double time to uint64_t time
+uint64_t  MS_3DMGX2::IMU::to_uint64_t(double time)
+{
+  return (uint64_t)(time * 1e9);
 }

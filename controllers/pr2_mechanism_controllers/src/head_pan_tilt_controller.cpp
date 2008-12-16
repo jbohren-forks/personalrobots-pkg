@@ -188,7 +188,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   guard_set_command_array_.set(service_prefix_ + "/set_command_array");
   node_->subscribe(service_prefix_ + "/head_track_point", head_track_point_, &HeadPanTiltControllerNode::headTrackPoint, this, 1);
   guard_head_track_point_.set(service_prefix_ + "/head_track_point");
- 
+
   node_->subscribe(service_prefix_ + "/frame_track_point", frame_track_point_, &HeadPanTiltControllerNode::frameTrackPoint, this, 1);
   guard_frame_track_point_.set(service_prefix_ + "/frame_track_point");
   //services
@@ -222,13 +222,20 @@ void HeadPanTiltControllerNode::headTrackPoint()
   point.setX(head_track_point_.point.x);
   point.setY(head_track_point_.point.y);
   point.setZ(head_track_point_.point.z);
-  point.stamp_ =0.0;
+  point.stamp_ = ros::Time();
   point.frame_id_ = head_track_point_.header.frame_id;
+
+  std::string pan_parent;
+  TF.getParent("head_pan_link", ros::Time(), pan_parent);
+  std::string tilt_parent("head_pan_link");
+
+  //     Pan angle
 
   tf::Stamped<tf::Point> pan_point;
 
   try{
-    TF.transformPoint("head_pan",point, pan_point);
+    //TF.transformPoint("head_pan_link",point, pan_point);
+    TF.transformPoint(pan_parent, point, pan_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -236,16 +243,18 @@ void HeadPanTiltControllerNode::headTrackPoint()
   }
   int id = c_->getJointControllerByName("head_pan_joint");
   assert(id>=0);
-  double meas_pan_angle = c_->joint_position_controllers_[id]->joint_state_->position_;
-  double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x());
+  double head_pan_angle = atan2(pan_point.y(), pan_point.x());
 
   names.push_back("head_pan_joint");
   pos.push_back(head_pan_angle);
 
+
+  //     Tilt angle
+
   tf::Stamped<tf::Point> tilt_point;
 
   try{
-    TF.transformPoint("head_tilt",point,tilt_point);
+    TF.transformPoint(tilt_parent, point, tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -254,14 +263,12 @@ void HeadPanTiltControllerNode::headTrackPoint()
 
   id = c_->getJointControllerByName("head_tilt_joint");
   assert(id>=0);
-  double meas_tilt_angle= c_->joint_position_controllers_[id]->joint_state_->position_;
-  double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z(), tilt_point.x());
+  double head_tilt_angle = atan2(-tilt_point.z(), tilt_point.x());
 
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);
 
   c_->setJointCmd(pos,names);
-
 }
 
 
@@ -275,12 +282,12 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   point.setX(frame_track_point_.point.x);
   point.setY(frame_track_point_.point.y);
   point.setZ(frame_track_point_.point.z);
-  point.stamp_ = 0.0;//get the latest transform
+  point.stamp_ = ros::Time();//get the latest transform
   point.frame_id_ = frame_track_point_.header.frame_id;
 
   try
   {
-    TF.lookupTransform(point.frame_id_,"head_pan",ros::Time(0.0),frame);
+    TF.lookupTransform(point.frame_id_,"head_pan_link",ros::Time(),frame);
   }
   catch(tf::TransformException& ex)
   {
@@ -292,7 +299,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   try
   {
-    TF.transformPoint("head_pan",point, pan_point);
+    TF.transformPoint("head_pan_link",point, pan_point);
   }
   catch(tf::TransformException& ex)
   {
@@ -312,7 +319,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   tf::Stamped<tf::Point> tilt_point;
   try{
-    TF.transformPoint("head_tilt",point,tilt_point);
+    TF.transformPoint("head_tilt_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -336,7 +343,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   std_msgs::VisualizationMarker marker;
   marker.header.frame_id = "stereo";
   marker.id = 0;
-  marker.type = 0; 
+  marker.type = 0;
   marker.action = 0;
   marker.x = 0;
   marker.y = 0;
@@ -353,9 +360,9 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   marker.b = 0;
   node_->publish("visualizationMarker", marker );
 
-  marker.header.frame_id = "head_pan";
+  marker.header.frame_id = "head_pan_link";
   marker.id = 1;
-  marker.type = 2; 
+  marker.type = 2;
   marker.action = 0;
   marker.x = pan_point.x();
   marker.y = pan_point.y();
@@ -370,7 +377,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   marker.r = 255;
   marker.g = 0;
   marker.b = 0;
-  node_->publish("visualizationMarker", marker ); 
+  node_->publish("visualizationMarker", marker );
 
 
 }

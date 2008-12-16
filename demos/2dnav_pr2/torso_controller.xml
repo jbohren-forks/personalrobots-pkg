@@ -1,5 +1,5 @@
 <controller type="JointPositionControllerNode" name="torso_controller" topic="torso_controller">
-  <joint name="torso_joint">
+  <joint name="torso_lift_joint">
     <pid p="100000.0" i="0.0" d="0.0" iClamp="20000.0" />
   </joint>
 </controller>

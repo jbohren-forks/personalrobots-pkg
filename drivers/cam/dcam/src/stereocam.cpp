@@ -85,6 +85,10 @@ StereoCam::doDisparity()
   // first do any rectification necessary
   doRectify();
 
+  // check if disparity is already present
+  if (stIm->hasDisparity)
+    return true;
+
   // check if the rectified images are present
   if (stIm->imLeft->imRectType == COLOR_CODING_NONE ||
       stIm->imRight->imRectType == COLOR_CODING_NONE)
@@ -105,7 +109,7 @@ StereoCam::doDisparity()
 
   // allocate buffers
   if (!stIm->imDisp)
-    stIm->imDisp = (uint16_t *)MEMALIGN(xim*yim*2);
+    stIm->imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
   if (!buf)
     buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
@@ -119,7 +123,7 @@ StereoCam::doDisparity()
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
   // stereo
-  do_stereo(flim, frim, (int16_t *)stIm->imDisp, NULL, xim, yim, 
+  do_stereo(flim, frim, stIm->imDisp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
 
   stIm->hasDisparity = true;
@@ -141,6 +145,124 @@ StereoCam::setUniqueThresh(int thresh)
   return true;
 }
 
+bool
+StereoCam::setHoropter(int val)
+{
+  stIm->offx = val;
+  return true;
+}
+
+
+
+
+//
+// Conversion to 3D points
+// Convert to vector or image array of pts
+// Should we do disparity automatically here?
+//
+
+
+bool
+StereoCam::doCalcPts()
+{
+  stIm->numPts = 0;
+  doDisparity();
+  if (!stIm->hasDisparity)
+    return false;
+
+  int ix = stIm->imDleft;
+  int iy = stIm->imDtop;
+  int ih = stIm->imDheight;
+  int iw = stIm->imDwidth;
+  int w = stIm->imWidth;
+  int h = stIm->imHeight;
+
+  if (stIm->imPtsSize < 4*w*h*sizeof(float))
+    {
+      MEMFREE(stIm->imPts);
+      stIm->imPtsSize = 4*w*h*sizeof(float);
+      stIm->imPts = (float *)MEMALIGN(stIm->imPtsSize);
+      MEMFREE(stIm->imPtsColor);
+      stIm->imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
+    }
+
+  float *pt;
+  int y = iy;
+  float cx = (float)stIm->RP[3];
+  float cy = (float)stIm->RP[7];
+  float f  = (float)stIm->RP[11];
+  float itx = (float)stIm->RP[14];
+  itx *= 1.0 / (float)stIm->dpp; // adjust for subpixel interpolation
+  pt = stIm->imPts;
+      
+  for (int j=0; j<ih; j++, y++)
+    {
+      int x = ix;
+      int16_t *p = stIm->imDisp + x + y*w;
+
+      for (int i=0; i<iw; i++, x++, p++)
+	{
+	  if (*p > 0) 
+	    {
+	      float ax = (float)x + cx;
+	      float ay = (float)y + cy;
+	      float aw = 1.0 / (itx * (float)*p);
+	      *pt++ = ax*aw;	// X
+	      *pt++ = ay*aw;	// Y
+	      *pt++ = f*aw;	// Z
+	      stIm->numPts++;
+	    }
+	}
+    }
+
+  if (stIm->imLeft->imRectColorType != COLOR_CODING_NONE) // ok, have color
+    {
+      y = iy;
+      uint8_t *pcout = stIm->imPtsColor;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = stIm->imDisp + x + y*w;
+	  uint8_t *pc = stIm->imLeft->imRectColor + (x + y*w)*3;
+
+	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *(pc+1);
+		  *pcout++ = *(pc+2);
+		}
+	    }
+	}
+    }
+  else if (stIm->imLeft->imRectType != COLOR_CODING_NONE) // ok, have mono
+    {
+      y = iy;
+      uint8_t *pcout = stIm->imPtsColor;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = stIm->imDisp + x + y*w;
+	  uint8_t *pc = stIm->imLeft->imRect + (x + y*w);
+
+	  for (int i=0; i<iw; i++, p++, pc++)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
+		}
+	    }
+	}
+    }
+
+
+  //  printf("[Calc Pts] Number of pts: %d\n", stIm->numPts);
+  return true;
+}
+
 
 
 
@@ -151,7 +273,10 @@ StereoCam::setUniqueThresh(int thresh)
 StereoDcam::StereoDcam(uint64_t guid, size_t buffersize)
   : Dcam(guid,buffersize)
 {
-  // currently just set up a Videre stereo cam
+  // set up stereo image data
+  stIm = new StereoData();
+  
+  // set up a Videre stereo cam
   if (isVidereStereo)
     {
       char *params;
@@ -169,8 +294,10 @@ StereoDcam::StereoDcam(uint64_t guid, size_t buffersize)
 
 StereoDcam::~StereoDcam()
 {
+  delete stIm;
 }
  
+
 // format of image
 
 void 
@@ -252,6 +379,8 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 			    &stIm->imRight->imRaw, &stIm->imRight->imRawSize);
 	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->doBayerColorRGB();
+	  stIm->imRight->doBayerColorRGB();
 	  break;
 
 
@@ -266,6 +395,7 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->im, &stIm->imLeft->imSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
+	  stIm->imLeft->doBayerMono();
 	  stIm->hasDisparity = true;
 	  break;
 
@@ -273,6 +403,7 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->doBayerColorRGB();
 	  stIm->hasDisparity = true;
 	  break;
 
@@ -321,15 +452,66 @@ StereoDcam::setRegister(uint64_t offset, uint32_t value)
 bool
 StereoDcam::setTextureThresh(int thresh)
 {
-  StereoCam::setTextureThresh(thresh);
+  stIm->setTextureThresh(thresh);
   return Dcam::setTextureThresh(thresh);
 }
 
 bool
 StereoDcam::setUniqueThresh(int thresh)
 {
-  StereoCam::setUniqueThresh(thresh);
+  stIm->setUniqueThresh(thresh);
   return Dcam::setUniqueThresh(thresh);
+}
+
+bool
+StereoDcam::setHoropter(int val)
+{
+  stIm->setHoropter(val);
+  stIm->setDispOffsets();	// reset offsets
+  return Dcam::setHoropter(val);
+}
+
+bool
+StereoDcam::setNumDisp(int val)
+{
+  stIm->setNumDisp(val);	
+  return false;			// can't set number of disparities in STOC
+}
+
+bool
+StereoDcam::setSpeckleSize(int val)
+{
+  stIm->speckleRegionSize = val;
+  return true;
+}
+
+bool
+StereoDcam::setSpeckleDiff(int val)
+{
+  stIm->speckleDiff = val;
+  return true;
+}
+
+bool
+StereoDcam::setCorrsize(int val)
+{
+  stIm->corrSize = val;
+  stIm->setDispOffsets();	// reset offsets
+  return true;
+}
+
+bool
+StereoDcam::setRangeMax(double val)
+{
+  stIm->setRangeMax(val);	// set max range in pt cloud
+  return true;
+}
+
+bool
+StereoDcam::setRangeMin(double val)
+{
+  stIm->setRangeMin(val);	// set min range in pt cloud
+  return true;
 }
 
 
@@ -341,7 +523,7 @@ StereoDcam::setUniqueThresh(int thresh)
 // de-interlace stereo data, reserving storage if necessary
 
 void
-StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, 
+StereoDcam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, 
 			     uint8_t **d2, size_t *s2)
 {
   size_t size = stIm->imWidth*stIm->imHeight;
@@ -372,8 +554,8 @@ StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1,
 // second buffer is 16-bit disparity data
 
 void
-StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
-			      uint16_t **d2, size_t *s2)
+StereoDcam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
+			      int16_t **d2, size_t *s2)
 {
   int w = stIm->imWidth;
   int h = stIm->imHeight;
@@ -388,12 +570,12 @@ StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
   if (*s2 < size*2)
     {
       MEMFREE(*d2);
-      *d2 = (uint16_t *)MEMALIGN(size*2);
+      *d2 = (int16_t *)MEMALIGN(size*2);
       *s2 = size*2;
     }
   
   uint8_t *dd1 = *d1;
-  uint16_t *dd2 = *d2;
+  int16_t *dd2 = *d2;
 
   int dt = stIm->imDtop;
   int dl = stIm->imDleft;
@@ -430,4 +612,10 @@ StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
     }
 }
 
+
+
+// visible calls
+bool StereoDcam::doDisparity() { return stIm->doDisparity(); }
+bool StereoDcam::doRectify() { return stIm->doRectify(); }
+bool StereoDcam::doCalcPts() { return stIm->doCalcPts(); }
 

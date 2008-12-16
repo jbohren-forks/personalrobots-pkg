@@ -1,5 +1,0 @@
-  <controller name="shoulder_pan_controller" topic="shoulder_pan_controller" type="JointPositionControllerNode">
-    <joint name="shoulder_pan_joint">
-      <pid p="0.0" i="0" d="0" iClamp="0" />
-    </joint>
-  </controller>

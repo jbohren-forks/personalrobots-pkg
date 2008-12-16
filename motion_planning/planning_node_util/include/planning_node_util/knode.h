@@ -48,7 +48,7 @@
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
 #include <std_msgs/RobotBase2DOdom.h>
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
 #include <cmath>
 
 #include <robot_msgs/MechanismState.h>
@@ -88,8 +88,9 @@ namespace planning_node_util
 
     public:
 	
-        NodeRobotModel(ros::node *node, const std::string &robot_model) : m_tf(*node, true, 1 * 1000000000ULL, 0ULL)
+        NodeRobotModel(ros::node *node, const std::string &robot_model) : m_tf(*node, true, 1000000000ULL)
 	{
+          m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
 	    m_kmodelSimple = NULL;
@@ -190,7 +191,7 @@ namespace planning_node_util
 	void waitForState(void)
 	{
 	    while (m_node->ok() && (m_haveState ^ loadedRobot()))
-		ros::Duration(0.05).sleep();
+		ros::Duration().fromSec(0.05).sleep();
 	}
 	
     protected:
@@ -198,46 +199,46 @@ namespace planning_node_util
 	void localizedPoseCallback(void)
 	{
 	    bool success = true;
-	    libTF::TFPose2D pose;
-	    pose.x = m_localizedPose.pos.x;
-	    pose.y = m_localizedPose.pos.y;
-	    pose.yaw = m_localizedPose.pos.th;
-	    pose.time = m_localizedPose.header.stamp.to_ull();
-	    pose.frame = m_localizedPose.header.frame_id;
-	    
+	    tf::Stamped<tf::Pose> pose (tf::Transform(tf::Quaternion(m_localizedPose.pos.th, 0, 0),
+                                                      tf::Point(m_localizedPose.pos.x,
+                                                                m_localizedPose.pos.y, 0)),
+                                        m_localizedPose.header.stamp,
+                                        m_localizedPose.header.frame_id);
 	    try
 	    {
-		pose = m_tf.transformPose2D("map", pose);
+              m_tf.transformPose("map", pose, pose);
 	    }
-	    catch(libTF::TransformReference::LookupException& ex)
+	    catch(tf::LookupException& ex)
 	    {
-	        fprintf(stderr, "Discarding pose: from %s, Transform reference lookup exception: %s\n", pose.frame.c_str(), ex.what());
+	        fprintf(stderr, "Discarding pose: from %s, Transform reference lookup exception: %s\n", pose.frame_id_.c_str(), ex.what());
 		success = false;
 	    }
-	    catch(libTF::TransformReference::ExtrapolateException& ex)
+	    catch(tf::ExtrapolationException& ex)
 	    {
-		fprintf(stderr, "Discarding pose: from %s, Extrapolation exception: %s\n", pose.frame.c_str(), ex.what());
+		fprintf(stderr, "Discarding pose: from %s, Extrapolation exception: %s\n", pose.frame_id_.c_str(), ex.what());
 		success = false;
 	    }
-	    catch(libTF::TransformReference::ConnectivityException& ex)
+	    catch(tf::ConnectivityException& ex)
 	    {
-		fprintf(stderr, "Discarding pose: from %s, Connectivity exception: %s\n", pose.frame.c_str(), ex.what());
+		fprintf(stderr, "Discarding pose: from %s, Connectivity exception: %s\n", pose.frame_id_.c_str(), ex.what());
 		success = false;
 	    }
-	    catch(...)
+	    catch(tf::TransformException)
 	    {
-		fprintf(stderr, "Discarding pose: from %s, Exception in pose computation\n", pose.frame.c_str());
+		fprintf(stderr, "Discarding pose: from %s, Exception in pose computation\n", pose.frame_id_.c_str());
 		success = false;
 	    }
 	    
 	    if (success)
 	    {
-		if (isfinite(pose.x))
-		    m_basePos[0] = pose.x;
-		if (isfinite(pose.y))
-		    m_basePos[1] = pose.y;
-		if (isfinite(pose.yaw))
-		    m_basePos[2] = pose.yaw;
+		if (isfinite(pose.getOrigin().x()))
+		    m_basePos[0] = pose.getOrigin().x();
+		if (isfinite(pose.getOrigin().y()))
+		    m_basePos[1] = pose.getOrigin().y();
+                double yaw, pitch, roll;
+                pose.getBasis().getEulerZYX(yaw, pitch, roll);
+		if (isfinite(yaw))
+		    m_basePos[2] = yaw;
 		m_haveBasePos = true;
 		baseUpdate();
 	    }
@@ -292,7 +293,7 @@ namespace planning_node_util
 	    m_haveState = m_haveBasePos && m_haveMechanismState;
 	}
 	
-	rosTFClient                                   m_tf; 
+	tf::TransformListener                         m_tf; 
 	ros::node                                    *m_node;
 	std_msgs::RobotBase2DOdom                     m_localizedPose;
 	bool                                          m_haveBasePos;	

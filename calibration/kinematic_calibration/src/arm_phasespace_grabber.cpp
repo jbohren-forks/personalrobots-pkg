@@ -100,7 +100,6 @@ public:
       printf("Error opening state_data file\n") ;
       return false ;
     }
-    fclose(state_data_out) ;
     
     while (ok())
     {
@@ -113,17 +112,22 @@ public:
           printf("Capturing...\n") ;
           phase_space::PhaseSpaceMarker cur_marker ;
           
-          GetMarker(cur_marker, marker_id_) ;
+          //GetMarker(cur_marker, marker_id_) ;
 
           vector<double> joint_angles ;
           GetJointAngles(joint_names, joint_angles) ;
           
           // Print Marker Location
           printf("% 15.10f  % 15.10f  % 15.10f  ", cur_marker.location.x, cur_marker.location.y, cur_marker.location.z) ;
+          fprintf(state_data_out, "% 15.10f  % 15.10f  % 15.10f  ", cur_marker.location.x, cur_marker.location.y, cur_marker.location.z) ;
+
           
           // Print Joint Angles
           for (unsigned int i=0; i<joint_angles.size(); i++)
+          {
             printf("% 15.10f  ", joint_angles[i]) ;
+            fprintf(state_data_out, "% 15.10f  ", joint_angles[i]) ;
+          }
           printf("\n") ;
           
           break ;
@@ -147,7 +151,7 @@ public:
 
           chain = serial_chain->chain ;
           printf("Extracted KDL Chain with %u Joints and %u segments\n", chain.getNrOfJoints(), chain.getNrOfSegments()) ;
-          const string model_filename("./model.txt") ;
+          const string model_filename("./matlab_model.txt") ;
           printf("Writing chain to file: %s\n", model_filename.c_str()) ;
           FILE* model_out ;
           model_out = fopen(model_filename.c_str(), "w") ;
@@ -178,9 +182,18 @@ public:
             printf("     Angle:     % 15.10f\n", rot_ang) ;
 
             KDL::Vector rot_vec = rot_ang * rot_axis ; 
-            printf("     Product:   ") ;
+            
             for (unsigned int j=0; j<3; j++)
-              printf("% 15.10f  ", rot_vec(j)) ;
+              fprintf(model_out, "% 15.10f  ", chain.getSegment(i).getFrameToTip().p(j) ) ;
+            for (unsigned int j=0; j<3; j++)
+              fprintf(model_out, "% 15.10f  ", rot_vec(j)) ;
+            fprintf(model_out, "\n") ;
+            
+
+            
+            //printf("     Product:   ") ;
+            //for (unsigned int j=0; j<3; j++)
+            //  printf("% 15.10f  ", rot_vec(j)) ;
             printf("\n\n") ;
           }
           fclose(model_out) ;
@@ -194,6 +207,7 @@ public:
       usleep(1000) ;
       fflush(stdout) ;
     }
+    fclose(state_data_out) ;
     printf("\n") ;
     tcsetattr(fd,TCSANOW, &prev_flags) ;         // Undo any terminal changes that we made
     return true ;
@@ -228,10 +242,10 @@ public:
     bool marker_found = false ;
     
     // Grab phasespace marker
-    while (!marker_found)
+    printf("  Looking for marker %u...", id) ;
+    fflush(stdout) ;
+    while (ok() && !marker_found)
     {
-      printf("  Looking for marker %u...", id) ;
-      fflush(stdout) ;
       
       snapshot_lock_.lock() ;
       for (unsigned int i=0; i < safe_snapshot_.get_markers_size(); i++)

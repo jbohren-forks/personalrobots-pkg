@@ -6,10 +6,16 @@
   </description>
   <author>Timothy Hunter/tjhunter@willowgarage.com</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/rospy_wx</url>
   <depend package="rospy" />
   <depend package="std_msgs" />
   <depend package="matplotlib"/>
   <depend package="numpy"/>
   <depend package="scipy"/>
+  <depend package="joy" />
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev" />
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev" />
+
 </package>

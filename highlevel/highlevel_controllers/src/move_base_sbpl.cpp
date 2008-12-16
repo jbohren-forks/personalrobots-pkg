@@ -65,9 +65,10 @@
 
 #include <MoveBase.hh>
 #include <sbpl_util.hh>
+#include <environment_wrap.h>
+#include <plan_wrap.h>
 
-//sbpl headers file
-#include <headers.h>
+#include <sbpl/headers.h>
 #include <err.h>
 
 
@@ -106,12 +107,6 @@ namespace ros {
     protected:
 
       /**
-       * @brief Called during update of cost map. Will just buffer and handle in batch.
-       * @see applyMapUpdates
-       */
-      virtual void handleMapUpdates(const std::vector<unsigned int>& updates);
-
-      /**
        * @brief Builds a plan from current state to goal state
        */
       virtual bool makePlan();
@@ -120,13 +115,14 @@ namespace ros {
       virtual void updateGoalMsg();
       
     private:
+      typedef list<ompl::SBPLPlannerStatsEntry> plannerStats_t;
 
       bool isMapDataOK();
 
       MDPConfig mdpCfg_;
       ompl::EnvironmentWrapper * env_;
       ompl::SBPLPlannerManager * pMgr_;
-      ompl::SBPLPlannerStatistics pStat_;
+      plannerStats_t pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
       std::string planStatsFile_;
       size_t goalCount_;
@@ -167,7 +163,9 @@ namespace ros {
 	  // obstacles set to the inscribed obstacle threshold. These,
 	  // lethal obstacles, and cells with no information will thus
 	  // be regarded as obstacles
-	  env_ = new ompl::EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0,
+	  env_ = new ompl::EnvironmentWrapper2D(ompl::createCostmapWrap(&getCostMap()), true,
+						ompl::createIndexTransformWrap(&getCostMap()), true,
+						0, 0, 0, 0,
 						CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 	}
 	else if ("3DKIN" == environmentType) {
@@ -179,8 +177,6 @@ namespace ros {
 	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
 	  else if ("inscribed" == obst_cost_thresh_str)
 	    obst_cost_thresh = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
-	  else if ("circumscribed" == obst_cost_thresh_str)
-	    obst_cost_thresh = costmap_2d::CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE;
 	  else {
 	    ROS_ERROR("invalid env3d/obst_cost_thresh \"%s\"\n"
 		      "  valid options: lethal, inscribed, or circumscribed",
@@ -195,7 +191,9 @@ namespace ros {
 	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
-	  env_ = new ompl::EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
+	  env_ = new ompl::EnvironmentWrapper3DKIN(ompl::createCostmapWrap(&getCostMap()), true,
+						   ompl::createIndexTransformWrap(&getCostMap()), true,
+						   obst_cost_thresh,
 						   0, 0, 0, // start (x, y, th)
 						   0, 0, 0, // goal (x, y, th)
 						   goaltol_x, goaltol_y, goaltol_theta,
@@ -233,7 +231,6 @@ namespace ros {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
 	}
-	pStat_.pushBack(plannerType, environmentType);
       }
       catch (int ii) {
 	delete env_;
@@ -248,20 +245,6 @@ namespace ros {
     MoveBaseSBPL::~MoveBaseSBPL(){
       delete env_;
       delete pMgr_;
-    }
-
-    /**
-     * @brief This is called during a cost map update. Will insert new updates, possibly overwriting prior values
-     */
-    void MoveBaseSBPL::handleMapUpdates(const std::vector<unsigned int>& updates){
-      
-      const CostMap2D& cm = getCostMap();
-
-      for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
-	unsigned int x, y; // Cell coordinates
-	cm.IND_MC(*it, x, y);
-	env_->UpdateCost(x, y, cm.getCost(x, y));
-      }
     }
 
     bool MoveBaseSBPL::isMapDataOK() {
@@ -286,11 +269,30 @@ namespace ros {
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
       
-      ompl::SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
-      
+      ompl::SBPLPlannerStatsEntry statsEntry(pMgr_->getName(), env_->getName());      
       try {
+	// Update costs
+	lock();
 	const CostMap2D& cm = getCostMap();
+	unsigned int x = cm.getWidth();
+	while(x > 0){
+	  x--;
+	  unsigned int y = cm.getHeight();
+	  while(y > 0){
+	    y--;
+	    // Note that ompl::EnvironmentWrapper::UpdateCost() will
+	    // check if the cost has actually changed, and do nothing
+	    // if it hasn't.
+	    env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
+	  }
+	}
+	unlock();
 	
+	// Tell the planner about the changed costs. Again, the called
+	// code checks whether anything has really changed before
+	// embarking on expensive computations.
+	pMgr_->flush_cost_changes(*env_);
+
 	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
 	// planner and controller were running on the same thread and the only contention was for cost map updates on call
 	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
@@ -335,49 +337,31 @@ namespace ros {
 	// Invoke the planner, updating the statistics in the process.
 	std::vector<int> solutionStateIDs;
 	statsEntry.allocated_time_sec = plannerTimeLimit_;
-	statsEntry.status = pMgr_->replan(statsEntry.allocated_time_sec,
+	statsEntry.stop_at_first_solution = false;
+	statsEntry.plan_from_scratch = false;
+	statsEntry.status = pMgr_->replan(statsEntry.stop_at_first_solution,
+					  statsEntry.plan_from_scratch,
+					  statsEntry.allocated_time_sec,
 					  &statsEntry.actual_time_wall_sec,
 					  &statsEntry.actual_time_user_sec,
 					  &statsEntry.actual_time_system_sec,
+					  &statsEntry.number_of_expands,
+					  &statsEntry.solution_cost,
+					  &statsEntry.solution_epsilon,
 					  &solutionStateIDs);
-	
+
 	// Extract the solution, if available, and update statistics (as usual).
 	statsEntry.plan_length_m = 0;
 	statsEntry.plan_angle_change_rad = 0;
-	if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
-	  std::list<std_msgs::Pose2DFloat32> plan;
-	  double prevx(0), prevy(0), prevth(0);
-	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
-	  for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
-	    std_msgs::Pose2DFloat32 const waypoint(env_->GetPoseFromState(*it));
-	    
-	    // update stats:
-	    // - first round, nothing to do
-	    // - second round, update path length only
-	    // - third round, update path length and angular change
-	    if (plan.empty()) {
-	      prevx = waypoint.x;
-	      prevy = waypoint.y;
-	    }
-	    else {
-	      double const dx(waypoint.x - prevx);
-	      double const dy(waypoint.y - prevy);
-	      statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
-	      double const th(atan2(dy, dx));
-	      if (42 > prevth) // see 42.17 above
-		statsEntry.plan_angle_change_rad += fabs(mod2pi(th - prevth));
-	      prevx = waypoint.x;
-	      prevy = waypoint.y;
-	      prevth = th;
-#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
-	    }
-	    
-	    plan.push_back(waypoint);
-	  }
-	  // probably we should add the delta from the last theta to
-	  // the goal theta onto statsEntry.plan_angle_change_rad here, but
-	  // that depends on whether our planner handles theta for us,
-	  // and needs special handling if we have no plan...
+	if (1 == statsEntry.status) {
+	  ompl::waypoint_plan_t plan;
+	  ompl::convertPlan(*env_,
+			    solutionStateIDs,
+			    &plan,
+			    &statsEntry.plan_length_m,
+			    &statsEntry.plan_angle_change_rad,
+			    0	// should be non-null for 3DKIN planning...
+			    );
 	  {
 	    ostringstream prefix_os;
 	    prefix_os << "[" << goalCount_ << "] ";
@@ -390,7 +374,7 @@ namespace ros {
 	    statsEntry.logFile(planStatsFile_.c_str(), title, prefix_os.str().c_str());
 	  }
 	  ////	  statsEntry.logInfo("move_base_sbpl: ");
-	  pStat_.pushBack(pMgr_->getName(), env_->getName());
+	  pStat_.push_back(statsEntry);
 	  
 	  updatePlan(plan);
 	  return true;

@@ -10,16 +10,9 @@ rospack(highlevel_controllers)
 
 genmsg()
 
-
-#uncomment for profiling
-#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
-#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
-#set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
-#set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
-
 # Library
-rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
-target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
+rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cpp)
+target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util)
 
 # MoveArm
 rospack_add_executable(move_arm src/MoveArm.cpp)
@@ -29,7 +22,10 @@ rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
 target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
 
 # MoveArmEndEffector
-rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
+# rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
+
+#Joystick Sleep Button
+rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
 
 # PlugIn and Unplug
 rospack_add_executable(plug_in src/PlugInController.cpp)

@@ -11,16 +11,17 @@
 all: depend external svllibs svlapps
 
 external: external/lbfgs/*.cpp external/xmlParser/*.cpp
-	cd external/lbfgs && make && cd ../..
-	cd external/xmlParser && make && cd ../..
+	cd external/lbfgs && make $(PARALLEL_JOBS) && cd ../..
+	cd external/xmlParser && make $(PARALLEL_JOBS) && cd ../..
 
 svlapps:
-	cd svl/apps && make && cd ../..
+	cd svl/apps && make $(PARALLEL_JOBS) && cd ../..
 
 svllibs:
-	cd svl/lib && make && cd ../..
+	cd svl/lib && make $(PARALLEL_JOBS) && cd ../..
 
 depend:
+	-mkdir bin
 	cd svl/lib && make depend && cd ../..
 	cd svl/apps && make depend && cd ../..
 

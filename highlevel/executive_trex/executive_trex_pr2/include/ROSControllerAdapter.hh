@@ -44,12 +44,12 @@ namespace TREX {
       if(stateMsg.active && state != ACTIVE){
 	state = ACTIVE;
 	lastUpdated = getCurrentTick();
-	debugMsg("ROS:", "Received transition to INACTIVE");
+	ROS_DEBUG("Received transition to ACTIVE");
       }
       else if(!stateMsg.active && state != INACTIVE){
 	state = INACTIVE;
 	lastUpdated = getCurrentTick();
-	debugMsg("ROS:", "Received transition to INACTIVE");
+	ROS_DEBUG("Received transition to INACTIVE");
       }
     }
 
@@ -72,6 +72,7 @@ namespace TREX {
       // initialize, which will likely be a message subscription error or an absence of an expected publisher
       // to initialize state.
       if(state == UNDEFINED){
+	ROS_DEBUG("ROSControllerAdapter <%s> failed to get an observation with no initial state set yet", timelineName.c_str());
 	throw "ROSControllerAdapter: Tried to get an observation on with no initial state set yet.";
       }
 
@@ -97,14 +98,14 @@ namespace TREX {
      * The predicate can be active or inactive
      */
     bool dispatchRequest(const TokenId& goal, bool enabled){
-      debugMsg("ROS:", "Received dispatch request for " << goal->toString());
+      ROS_DEBUG("Received dispatch request for %s",goal->toString().c_str());
 
       bool enableController = enabled;
 
       // If the request to move into the inactive state, then evaluate the time bound and only process
       // if it is a singleton
       if(goal->getPredicateName() != activePredicate){
-	if(goal->start()->lastDomain().getUpperBound() > (getCurrentTick() + 1))
+	if(goal->start()->lastDomain().getUpperBound() > getCurrentTick())
 	  return false;
 
 	enableController = false;
@@ -113,8 +114,19 @@ namespace TREX {
       G goalMsg;
       fillRequestParameters(goalMsg, goal);
       goalMsg.enable = enableController;
-      debugMsg("ROS:", "Dispatching " << goal->toString());
+      ROS_DEBUG("[%d}Dispatching %s", getCurrentTick(), goal->toString().c_str());
       m_node->publishMsg<G>(goalTopic, goalMsg);
+
+      // Ensure pre-emption is controllable. We do not want to rely on the asynchronous
+      // call back since it could in theory fail to publish the new state prior to
+      // synchronizing
+      if(!enableController){
+	stateMsg.lock();
+	stateMsg.active = false;
+	handleCallback();
+	stateMsg.unlock();
+      }
+
       return true;
     }
 

@@ -1,0 +1,7 @@
+
+<launch>
+  
+  <node  pkg="fake_localization" type="ground_truth_controller" name="ground_truth_controller" args="" output="screen">
+  <param name="xml_config" command="$(find xacro)/xacro.py '$(find fake_localization)/ground_truth_controller.xml'" />
+  </node>
+</launch>

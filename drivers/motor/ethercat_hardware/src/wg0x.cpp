@@ -199,7 +199,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 
   if (sh_->get_product_code() == WG05::PRODUCT_CODE)
   {
-    if (major != 1 || minor != 7)
+    if (major != 1 || minor < 7)
     {
       ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
       ROS_BREAK();
@@ -235,9 +235,35 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   crc32.process_bytes(&actuator_info_, sizeof(actuator_info_)-sizeof(actuator_info_.crc32_));
   if (actuator_info_.crc32_ == crc32.checksum())
   {
+    if (actuator_info_.major_ != 0 || actuator_info_.minor_ != 2)
+    {
+      if (allow_unprogrammed)
+        ROS_WARN("Unsupported actuator info version (%d.%d != 0.2).  Please reprogram device #%02d", actuator_info_.major_, actuator_info_.minor_, sh_->get_ring_position());
+      else
+      {
+        ROS_FATAL("Unsupported actuator info version (%d.%d != 0.2).  Please reprogram device #%02d", actuator_info_.major_, actuator_info_.minor_, sh_->get_ring_position());
+        ROS_BREAK();
+        return -1;
+      }
+    }
+
     actuator->name_ = actuator_info_.name_;
     backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
     ROS_INFO("            Name: %s", actuator_info_.name_);
+#if 0
+    ROS_INFO("            major: %d", actuator_info_.major_);              // Major revision
+    ROS_INFO("            minor: %d", actuator_info_.minor_);              // Minor revision
+    ROS_INFO("            id: %d", actuator_info_.id_);                 // Actuator ID
+    ROS_INFO("            robot: %s", actuator_info_.robot_name_);         // Robot name
+    ROS_INFO("            motor: %s", actuator_info_.motor_make_);         // Motor manufacturer
+    ROS_INFO("            motor: %s", actuator_info_.motor_model_);        // Motor model #
+    ROS_INFO("            max: %f", actuator_info_.max_current_);          // Maximum current
+    ROS_INFO("            speed: %f", actuator_info_.speed_constant_);       // Speed constant
+    ROS_INFO("            resistance: %f", actuator_info_.resistance_);           // Resistance
+    ROS_INFO("            motor torque: %f", actuator_info_.motor_torque_constant_); // Motor torque constant
+    ROS_INFO("            encoder reduction: %f", actuator_info_.encoder_reduction_);    // Reduction and sign between motor and encoder
+    ROS_INFO("            pulses per revolution: %d", actuator_info_.pulses_per_revolution_); // # of encoder ticks per revolution
+#endif
   }
   else if (allow_unprogrammed)
   {

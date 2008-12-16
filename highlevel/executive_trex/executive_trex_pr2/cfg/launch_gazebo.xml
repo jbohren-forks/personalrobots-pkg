@@ -2,9 +2,7 @@
   <master auto="start"/>
   <group name="wg">
 
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
-
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
+    <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
 
@@ -21,6 +19,7 @@
     <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />
 
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
+
 
     <node pkg="nav_view" type="nav_view" respawn="false" />
 

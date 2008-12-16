@@ -1,0 +1,19 @@
+<package>
+
+  <description brief="The scripts to run the arm mounted on a stand.">
+    
+    This package contains XML descriptions of the arm mounted on the stand.
+    
+  </description>
+  <author>Sachin Chitta</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  
+  <depend package="wg_robot_description" />
+  <depend package="pr2_etherCAT"/>
+  <depend package="pr2_power_board"/>
+  <depend package="IBPSBatteryInterface"/>
+  <depend package="joy"/>
+  <depend package="rosrecord"/>
+
+</package>

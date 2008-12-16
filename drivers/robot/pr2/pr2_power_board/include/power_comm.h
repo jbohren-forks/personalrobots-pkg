@@ -30,7 +30,7 @@
 #ifndef POWER_COMM_H
 #define POWER_COMM_H
 
-static const unsigned CURRENT_MESSAGE_REVISION = 1;
+static const unsigned CURRENT_MESSAGE_REVISION = 2;
 static const unsigned MESSAGE_ID_POWER = 0;
 static const unsigned MESSAGE_ID_COMMAND = 1;
 static const unsigned MESSAGE_ID_TRANSITION = 2;
@@ -79,6 +79,8 @@ typedef struct
   unsigned char   pcb_rev;
   unsigned char   major_rev;
   unsigned char   minor_rev;
+  float           min_input_voltage;
+  float           max_input_current;
 
 } __attribute__((__packed__)) StatusStruct;
 
@@ -87,6 +89,9 @@ typedef struct
 	MessageHeader header;
 	StatusStruct  status;
 } __attribute__((__packed__)) PowerMessage;
+
+#define COMMAND_FLAG_RESET_STATS            0x1   //reset main statistics
+#define COMMAND_FLAG_RESET_TRANSITION_STATS 0x2   //reset the transition statistics
 
 typedef struct
 {
@@ -98,7 +103,7 @@ typedef struct
   unsigned char   fan1_command;
   unsigned char   fan2_command;
   unsigned char   fan3_command;
-  unsigned int    reserved;
+  unsigned int    flags;  //see COMMAND_FLAGS above
 } __attribute__((__packed__)) CommandStruct;
 
 typedef struct

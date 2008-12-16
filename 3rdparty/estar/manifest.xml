@@ -9,6 +9,7 @@
   </description>
   <author>Roland Philippsen</author>
   <license>GPL</license>
+  <review status="3rdparty" notes=""/>
   <url>http://estar.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lestar" />
@@ -17,6 +18,7 @@
   <depend package="boost"/>
 <!--   <depend package="std_msgs"/> -->
 <!--   <depend package="std_srvs"/> -->
+<versioncontrol type="svn" url="https://estar.svn.sourceforge.net/svnroot/estar/trunk/estar"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

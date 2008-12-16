@@ -8,6 +8,7 @@ FreeImage is an Open Source library project for developers who would like to sup
 </description>
 <author>Hervé Drolon , Floris van den Berg</author>
 <license>GPL</license>
+<review status="3rdparty" notes=""/>
 <url>http://freeimage.sourceforge.net</url>
 <export>
   <cpp cflags="-I${prefix}/freeimage/include" lflags="-Wl,-rpath,${prefix}/freeimage/lib -L${prefix}/freeimage/lib -lfreeimage"/>

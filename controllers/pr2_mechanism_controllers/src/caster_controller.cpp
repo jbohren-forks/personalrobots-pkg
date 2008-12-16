@@ -172,6 +172,8 @@ bool CasterControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *c
 
 void CasterControllerNode::update()
 {
+  if (!c_.caster_->calibrated_)
+    return;
   c_.update();
 }
 

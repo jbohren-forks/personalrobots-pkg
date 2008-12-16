@@ -51,7 +51,8 @@
 #include "robot_mechanism_controllers/cartesian_effort_controller.h"
 #include "control_toolbox/pid.h"
 #include "mechanism_model/controller.h"
-#include "LinearMath/btVector3.h"
+#include "tf/tf.h"
+#include "tf/transform_listener.h"
 #include "misc_utils/realtime_publisher.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
@@ -67,8 +68,9 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  btVector3 command_;
-  void getTipPosition(btVector3 *p);
+  tf::Vector3 command_;
+  void getTipPosition(tf::Vector3 *p);
+  std::string rootFrame();
 
 private:
   mechanism::RobotState *robot_;
@@ -89,20 +91,20 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_srvs::SetVector::request &req,
-                  robot_srvs::SetVector::response &resp);
+  void setCommand();
   bool getActual(robot_srvs::GetVector::request &req,
                  robot_srvs::GetVector::response &resp);
-  void command();
 
 private:
+  mechanism::RobotState *robot_;
   CartesianPositionController c_;
-  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
-  SubscriptionGuard guard_command_;
+  AdvertisedServiceGuard guard_get_actual_;
 
-  std_msgs::Vector3 command_msg_;
+  SubscriptionGuard guard_set_command_;
+  std_msgs::PointStamped command_msg_;
 
-  misc_utils::RealtimePublisher<std_msgs::Vector3> *pos_publisher_;
+  misc_utils::RealtimePublisher<std_msgs::PointStamped> *pos_publisher_;
+  tf::TransformListener TF;
   int loop_count_;
 };
 

@@ -457,7 +457,7 @@ public:
 	  // the unit of the raw disparity image is 1/4 pixel
 	  //double dispUnitScale = .25;
 	  //computeDepthMask(dispImg, depthmask_, dispUnitScale, minZ, maxZ);
-	  camModel_->getDepthMask(dispImg, depthmask_, minZ, maxZ);
+	  camModel_->getDepthMask(dispImg, depthmask_, minZ, maxZ, CvStereoCamModel::NOISE_REMOVAL);
 	  mask = depthmask_;
 	}
 
@@ -679,16 +679,16 @@ public:
     int numGoodPoints=0;
     for (int x = centerBox.x; x < centerBox.x+centerBox.width; x++) {
       for (int y = centerBox.y; y < centerBox.y+centerBox.height; y++) {
-	double disp = cvGetReal2D(dispImg, y, x);
-	if (disp>0) {
-	  // The disparity map we get from the camera is in raw form.
-	  // In raw form, the unit in the disparity is 1/4 of a pixel.
-	  // disp /=4.0;
-	  _uvds[numGoodPoints*3    ] = x;
-	  _uvds[numGoodPoints*3 + 1] = y;
-	  _uvds[numGoodPoints*3 + 2] = disp;
-	  numGoodPoints++;
-	}
+        double disp = cvGetReal2D(dispImg, y, x);
+        if (disp>0) {
+          // The disparity map we get from the camera is in raw form.
+          // In raw form, the unit in the disparity is 1/4 of a pixel.
+          // disp /=4.0;
+          _uvds[numGoodPoints*3    ] = x;
+          _uvds[numGoodPoints*3 + 1] = y;
+          _uvds[numGoodPoints*3 + 2] = disp;
+          numGoodPoints++;
+        }
       }
     }
     if (blobPts_) {
@@ -707,7 +707,7 @@ public:
 
 #if 0
       printf("centroid %f, %f, %f\n",
-	     blobCentroid.val[0], blobCentroid.val[1], blobCentroid.val[2]);
+          blobCentroid.val[0], blobCentroid.val[1], blobCentroid.val[2]);
 #endif
 
       // compute the min and max if the blob points in 3D
@@ -744,10 +744,20 @@ public:
     target.header.frame_id = "stereo" ;
     target.header.stamp=image_msg_.header.stamp;
 
+    // copy over the time stamp of the input images, as this
+    // point is derived from that input.
+    target.header.stamp = image_msg_.header.stamp;
 #if 0
     cout << "Requesting to move to: " << point_stamped_.point.x << ","
 	 << point_stamped_.point.y << ","
 	 << point_stamped_.point.z << endl ;
+#endif
+
+#if 1
+    cout << " publishing to head_controller/track_point ";
+    cout << target.point.x<<"," <<
+    target.point.y<<"," <<
+    target.point.z<< endl;
 #endif
 
     static int count = 0;

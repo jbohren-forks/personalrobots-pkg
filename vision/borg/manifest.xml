@@ -1,0 +1,11 @@
+<package>
+  <author>Morgan Quigley, Quoc Le, Sid Batra, Jeremy Leibs, Ashley Wellman, Aaron Rosekind</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="libdc1394v2"/>
+  <depend package="roscpp"/>
+  <depend package="sdl"/>
+  <depend package="opencv_latest"/>
+  <depend package="newmat10"/>
+  <depend package="cloud_viewer"/>
+</package>

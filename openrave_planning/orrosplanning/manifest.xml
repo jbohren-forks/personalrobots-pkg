@@ -1,0 +1,12 @@
+<package>
+  <description brief="OpenRAVE Plugin for ROS Planning">
+    Contains robot ik solvers, planners, and commonly used functions that integrate with the ROS framework.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="openrave"/>
+  <depend package="openrave_robot_description"/>
+  <depend package="libKinematics"/>
+  <depend package="boost"/>
+</package>

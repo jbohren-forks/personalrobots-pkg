@@ -34,11 +34,15 @@
 
 @htmlinclude manifest.html
 
-@b 3dmgx-node
+@b The imu_node is designed to make use of the microstrain inertialink
+or 3dmgx2 IMUs and makes use of the 3dmgx2_driver.
 
 <hr>
 
 @section information Information
+
+The IMU provides a single message PoseWithRatesStamped messaged at 100Hz
+which is taken from the 3DMGX2 ACCEL_ANGRATE_ORIENTATION message.
 
 <hr>
 
@@ -47,7 +51,7 @@
 @par Example
 
 @verbatim
-$ 3dmgx2_node
+$ imu_node
 @endverbatim
 
 <hr>
@@ -58,13 +62,23 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- None
+- @b "imu_data"/<a href="../../std_msgs/html/classstd__msgs_1_1PoseWithRatesStamped.html">std_msgs/PoseWithRatesStamped</a> : the imu data
+- @b "/diagnostics"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
+
+<hr>
+
+@section services
+ - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
 
 <hr>
 
 @section parameters ROS parameters
 
 Reads the following parameters from the parameter server
+
+ - @b "~port"      : @b [string] the port the imu is running on
+ - @b "~frame_id"  : @b [string] the frame in which imu readings will be returned (Default: "imu")
+ - @b "~autostart" : @b [bool] whether the imu starts on its own (this is only useful for bringing up an imu in test mode)
 
  **/
 
@@ -77,11 +91,12 @@ Reads the following parameters from the parameter server
 #include "ros/node.h"
 #include "ros/time.h"
 #include "self_test/self_test.h"
+#include "diagnostic_updater/diagnostic_updater.h"
 
 #include "std_msgs/PoseWithRatesStamped.h"
-#include "std_msgs/EulerAngles.h"
 
 #include "tf/transform_datatypes.h"
+#include "imu_node/AddOffset.h"
 
 using namespace std;
 
@@ -90,25 +105,29 @@ class ImuNode: public ros::node
 public:
   MS_3DMGX2::IMU imu;
   std_msgs::PoseWithRatesStamped reading;
-  std_msgs::EulerAngles euler;
 
   string port;
 
   MS_3DMGX2::IMU::cmd cmd;
 
-  int count;
-  ros::Time next_time;
+  int count_;
 
   SelfTest<ImuNode> self_test_;
+  DiagnosticUpdater<ImuNode> diagnostic_;
 
   bool running;
 
   bool autostart;
+
+  string frameid_;
   
-  ImuNode() : ros::node("imu"), count(0), self_test_(this)
+  double offset_;
+
+  ImuNode() : ros::node("imu"), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
-    advertise<std_msgs::EulerAngles>("euler_angles", 100);
+
+    advertise_service("imu/add_offset", &ImuNode::addOffset, this);
 
     param("~port", port, string("/dev/ttyUSB0"));
 
@@ -118,6 +137,10 @@ public:
     
     running = false;
 
+    param("~frameid", frameid_, string("imu"));
+
+    param("~time_offset", offset_, 0.0);
+
     self_test_.setPretest(&ImuNode::pretest);
     self_test_.addTest(&ImuNode::InterruptionTest);
     self_test_.addTest(&ImuNode::ConnectTest);
@@ -126,6 +149,8 @@ public:
     self_test_.addTest(&ImuNode::GravityTest);
     self_test_.addTest(&ImuNode::DisconnectTest);
     self_test_.addTest(&ImuNode::ResumeTest);
+
+    diagnostic_.addUpdater( &ImuNode::freqStatus );
   }
 
   ~ImuNode()
@@ -141,26 +166,24 @@ public:
     {
       imu.open_port(port.c_str());
 
-      printf("initializing gyros...\n");
+      ROS_INFO("Initializing IMU sensor.");
 
       imu.init_gyros();
 
-      printf("initializing time...\n");
+      ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
-      imu.init_time();
+      imu.init_time(offset_);
 
-      printf("READY!\n");
+      ROS_INFO("IMU sensor initialized.");
 
       imu.set_continuous(cmd);
 
       running = true;
 
     } catch (MS_3DMGX2::exception& e) {
-      printf("Exception thrown while starting imu.\n %s\n", e.what());
+      ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
-
-    next_time = ros::Time::now();
 
     return(0);
   }
@@ -173,7 +196,7 @@ public:
       {
         imu.close_port();
       } catch (MS_3DMGX2::exception& e) {
-        printf("Exception thrown while stopping imu.\n %s\n", e.what());
+        ROS_INFO("Exception thrown while stopping IMU.\n %s", e.what());
       }
       running = false;
     }
@@ -201,32 +224,25 @@ public:
       reading.vel.ang_vel.vy = angrate[1];
       reading.vel.ang_vel.vz = angrate[2];
       
-      //      for (int i = 0; i < 9; i++)
-      // reading.orientation[i] = orientation[i];
       btTransform pose(btMatrix3x3(orientation[0], orientation[1], orientation[2],
                                    orientation[3], orientation[4], orientation[5],
                                    orientation[6], orientation[7], orientation[8]), 
                        btVector3(0,0,0));
+
       tf::PoseTFToMsg(pose, reading.pos);
       
       
-      reading.header.stamp = ros::Time(time);
-      //      reading.header.frame_id = "imu"
+      reading.header.stamp = ros::Time().fromNSec(time);
+      reading.header.frame_id = frameid_;
 
       publish("imu_data", reading);
         
     } catch (MS_3DMGX2::exception& e) {
-      printf("Exception thrown while trying to get the reading.\n%s\n", e.what());
+      ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
 
-    count++;
-    ros::Time now_time = ros::Time::now();
-    if (now_time > next_time) {
-      std::cout << count << " scans/sec at " << now_time << std::endl;
-      count = 0;
-      next_time = next_time + ros::Duration(1,0);
-    }
+    count_++;
 
     return(0);
   }
@@ -242,10 +258,12 @@ public:
           if(publish_datum() < 0)
             break;
           self_test_.checkTest();
+          diagnostic_.update();
         }
       } else {
         usleep(1000000);
         self_test_.checkTest();
+        diagnostic_.update();
       }
     }
 
@@ -268,7 +286,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (num_subscribers("imu_data") == 0 && num_subscribers("euler_angles") == 0)
+    if (num_subscribers("imu_data") == 0 )
     {
       status.level = 0;
       status.message = "No operation interrupted.";
@@ -431,6 +449,60 @@ public:
     status.level = 0;
     status.message = "Previous operation resumed successfully.";    
   }
+
+  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frequency Status";
+
+    double desired_freq = 100.0;
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Scans in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    count_ = 0;
+  }
+
+
+
+  bool addOffset(imu_node::AddOffset::request &req, imu_node::AddOffset::response &resp)
+  {
+    double offset = req.add_offset;
+    offset_ += offset;
+
+    ROS_INFO("Adding %f to existing IMU time offset.", offset);
+    ROS_INFO("Total IMU time offset is now %f.", offset_);
+
+    // send changes to inu driver
+    imu.set_fixed_offset(offset_);
+
+    // write changes to param server
+    set_param("~time_offset", offset_);
+
+    // set response
+    resp.total_offset = offset_;
+
+    return true;
+  }
+
+
+
 };
 
 int

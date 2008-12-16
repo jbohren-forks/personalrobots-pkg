@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="rosrecord" type="rosplay" args="/u/prdata/videre-bags/meeting_loop.bag" output="log" />
+  <!-- <node pkg="rosrecord" type="rosrecord" args="/mechanism_state /odom /videre/cal_params /videre/images /vo imu_data /TransformArray" output="screen" /> -->
+  <node pkg="visual_odometry" type="vo.py" args="1" output="screen" />
+</launch>
+

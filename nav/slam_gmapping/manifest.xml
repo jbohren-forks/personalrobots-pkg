@@ -2,6 +2,7 @@
   <description>A SLAM system, using GMapping</description>
   <author>Brian Gerkey</author>
   <license>CreativeCommons-by-nc-sa-2.0</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
   <depend package="std_msgs"/>

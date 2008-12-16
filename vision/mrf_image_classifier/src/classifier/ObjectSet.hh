@@ -113,6 +113,8 @@ public:
     string sbuf;
     istr >> sbuf;
 
+    cout << "OSET " << sbuf << std::endl;
+
     if (sbuf.compare("objset") != 0) 
       throw DeserializationError();
 

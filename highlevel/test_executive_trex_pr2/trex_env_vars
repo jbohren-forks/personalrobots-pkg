@@ -1,0 +1,6 @@
+
+export TREX_PACKAGE=executive_trex_pr2
+export TREX_EXE=trexfast
+export TREX_DIR=bin
+export TREX_PACKAGE_PATH=`rospack find $TREX_PACKAGE`
+

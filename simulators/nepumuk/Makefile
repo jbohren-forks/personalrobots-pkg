@@ -22,9 +22,9 @@ all: svn-all
 
 VERSION=     r912
 
-TARBALL=     nepumuk-$(VERSION).tar.gz
-TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
-SOURCE_DIR=  $(PWD)/nepumuk-$(VERSION)
+TARBALL=     build/nepumuk-$(VERSION).tar.gz
+TARBALL_URL= http://downloads.sourceforge.net/libsunflower/nepumuk-$(VERSION).tar.gz
+SOURCE_DIR=  $(PWD)/build/nepumuk-$(VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
@@ -32,14 +32,14 @@ ESTAR_DIR=   `rospack find estar`/local
 SFL_DIR=     `rospack find libsunflower`/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
-SVN_DIR=     $(PWD)/nepumuk-svn
+SVN_DIR=     $(PWD)/build/nepumuk-svn
 SVN_REV=     HEAD
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
 
 SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.expo layout.expo
 
 
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 .PHONY: svn-all
 svn-all: checkout_or_update
@@ -57,7 +57,7 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) symlinks
 
 checkout_or_update:
-	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+	- test -d $(SVN_DIR) && svn up $(SVN_DIR)
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
 symlinks:

@@ -36,6 +36,7 @@
 *********************************************************************/
 
 #include <iostream>
+#include <cstdlib>
 #include <fstream>
 //#include "elphel_cam/elphel_cam.h"
 #include "ros/node.h"
@@ -51,8 +52,6 @@
 
 #include "blob_tracker/blob_tracker.h"
 #include <string.h>
-#include <stdlib.h>
-#include <iostream.h>
 
 
 using namespace std;

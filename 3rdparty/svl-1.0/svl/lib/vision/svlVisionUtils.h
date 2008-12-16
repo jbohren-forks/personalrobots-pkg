@@ -40,9 +40,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "cv.h"
-#include "cxcore.h"
-#include "highgui.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
+#include "opencv/highgui.h"
 
 #include "svlBase.h"
 #include "svlPoint3d.h"

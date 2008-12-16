@@ -7,10 +7,11 @@
   </description>
   <author>Ioan Sucan/isucan@willowgarage.com, Ken Conley/kwc@willowgarage.com</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
   <depend package="tinyxml"/>
-  <depend package="math_utils"/>
+  <depend package="math_expr"/>
   <depend package="string_utils"/>
   <depend package="stl_utils" />
 

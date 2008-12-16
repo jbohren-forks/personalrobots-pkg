@@ -34,84 +34,117 @@
 
 
 #include <MoveBase.hh>
+#include <costmap_2d/basic_observation_buffer.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
-#include <deque>
-#include <set>
+#include <algorithm>
+#include <iterator>
 
 namespace ros {
   namespace highlevel_controllers {
 
     MoveBase::MoveBase()
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
-	tf_(*this, true, 10000000000ULL, 0ULL), // cache for 10 sec, no extrapolation
-	controller_(NULL),
-	costMap_(NULL),
-	ma_(NULL),
-	baseLaserMaxRange_(10.0),
-	tiltLaserMaxRange_(10.0),
-	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0) {
+      tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
+      controller_(NULL),
+      costMap_(NULL),
+      ma_(NULL),
+      baseLaserMaxRange_(10.0),
+      tiltLaserMaxRange_(10.0),
+      minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+    {
       // Initialize global pose. Will be set in control loop based on actual data.
-      global_pose_.x = 0;
-      global_pose_.y = 0;
-      global_pose_.yaw = 0;
+      global_pose_.setIdentity();
 
       // Initialize odometry
       base_odom_.vel.x = 0;
       base_odom_.vel.y = 0;
       base_odom_.vel.th = 0;
 
-      // Initialize state message parameters that are unsused
+      // Initialize state message parameters that are unused
       stateMsg.waypoint.x = 0.0;
       stateMsg.waypoint.y = 0.0;
       stateMsg.waypoint.th = 0.0;
       stateMsg.set_waypoints_size(0);
       stateMsg.waypoint_idx = -1;
 
-      // This should become a static transform. For now we will simply allow it to be provided
-      // as a parameter until we hear how static transforms are to be handled.
-      double laser_x_offset(0.275);
-      param("/laser_x_offset", laser_x_offset, laser_x_offset);
-      //tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      // Update rate for the cost map
+      local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
 
       // Costmap parameters
-      double windowLength(1.0);
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double freeSpaceProjectionHeight(0.5);
-      double inflationRadius(0.50);
+      double freeSpaceProjectionHeight(0.19);
+      double inflationRadius(0.55);
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
+      double weight(0.1); // Scale costs down by a factor of 10
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
-      param("/costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
-      param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
-      param("/costmap_2d/no_information_value", noInformation, noInformation);
+
+      // Unsigned chars cannot be stored in parameter server
+      int tmpLethalObstacleThreshold;
+      param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
+      if (tmpLethalObstacleThreshold > 255)
+        tmpLethalObstacleThreshold = 255;
+      else if (tmpLethalObstacleThreshold < 0)
+        tmpLethalObstacleThreshold = 0;
+
+      lethalObstacleThreshold = tmpLethalObstacleThreshold;
+
+      int tmpNoInformation;
+      param("/costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
+      if (tmpNoInformation > 255)
+        tmpNoInformation = 255;
+      else if (tmpNoInformation < 0)
+        tmpNoInformation = 0;
+
+      noInformation = tmpNoInformation;
+
       param("/costmap_2d/z_threshold", maxZ_, maxZ_);
       param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
+
+      // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
+      double base_laser_update_rate(2.0);
+      double tilt_laser_update_rate(2.0);
+      double stereo_update_rate(2.0);
+      param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
+      param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
+      param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      // Then allocate observation buffers
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
+							       inscribedRadius, minZ_, maxZ_);
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
+							       inscribedRadius, minZ_, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), 
+								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
+								  inscribedRadius, minZ_, maxZ_);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
       std_srvs::StaticMap::response resp;
       ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("static_map", req, resp))
-	{
-	  ROS_INFO("Request failed; trying again...\n");
-	  usleep(1000000);
-	}
+      {
+        ROS_INFO("Request failed; trying again...\n");
+        usleep(1000000);
+      }
 
       ROS_INFO("Received a %d X %d map at %f m/pix\n",
-	       resp.map.width, resp.map.height, resp.map.resolution);
+          resp.map.width, resp.map.height, resp.map.resolution);
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
       // our planner and controller do not reason about the no obstacle case
@@ -123,34 +156,34 @@ namespace ros {
 
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-                               inputData , resp.map.resolution, 
-			       windowLength, lethalObstacleThreshold, maxZ_, freeSpaceProjectionHeight,
-			       inflationRadius, circumscribedRadius, inscribedRadius);
+          inputData , resp.map.resolution, 
+          lethalObstacleThreshold, maxZ_, 0.10, .20,
+          inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
       // Allocate Velocity Controller
       double mapSize(2.0);
-      double pathDistanceBias(0.4);
-      double goalDistanceBias(0.6);
-      double accLimit_x(0.15);
+      double pathDistanceBias(0.0);
+      double goalDistanceBias(1.0);
+      double accLimit_x(1.0);
       double accLimit_y(1.0);
       double accLimit_th(1.0);
       const double SIM_TIME = 1.0;
-      const unsigned int SIM_STEPS = 30;
+      const unsigned int SIM_STEPS = 40;
       const unsigned int SAMPLES_PER_DIM = 25;
       const double DFAST_SCALE = 0;
-      const double OCCDIST_SCALE = 0;
+      const double OCCDIST_SCALE = 0.0;
       param("/trajectory_rollout/map_size", mapSize, 2.0);
-      param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
-      param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
-      param("/trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
-      param("/trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
+      param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
+      param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
+      param("/trajectory_rollout/acc_limit_x", accLimit_x, 1.0);
+      param("/trajectory_rollout/acc_limit_y", accLimit_y, 1.0);
       param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
 
       ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
-      
+
       std_msgs::Point2DFloat32 pt;
       //create a square footprint
       pt.x = robotRadius;
@@ -172,17 +205,17 @@ namespace ros {
       footprint_.push_back(pt);
 
       controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
-										SIM_TIME,
-										SIM_STEPS,
-										SAMPLES_PER_DIM,
-										pathDistanceBias,
-										goalDistanceBias,
-										DFAST_SCALE,
-										OCCDIST_SCALE,
-										accLimit_x,
-										accLimit_y,
-										accLimit_th, 
-										footprint_);
+          SIM_TIME,
+          SIM_STEPS,
+          SAMPLES_PER_DIM,
+          pathDistanceBias,
+          goalDistanceBias,
+          DFAST_SCALE,
+          OCCDIST_SCALE,
+          accLimit_x,
+          accLimit_y,
+          accLimit_th, 
+          footprint_);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
@@ -193,96 +226,120 @@ namespace ros {
 
       // Advertize message to publish local plan
       advertise<std_msgs::Polyline2D>("local_path", 1);
-      
+
       // Advertize message to publish robot footprint
       advertise<std_msgs::Polyline2D>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", 1);
-      
-      //Advertize message to publis local goal for head to track
+
+      //Advertize message to publish local goal for head to track
       advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
-      subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
       subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
 
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
+
+      // Spawn map update thread
+      map_update_thread_ = ros::thread::member_thread::startMemberFunctionThread<MoveBase>(this, &MoveBase::mapUpdateLoop);
 
       // Note: derived classes must initialize.
     }
 
     MoveBase::~MoveBase(){
 
+      active_ = false;
+
+      pthread_join(*map_update_thread_, NULL);
+
       if(controller_ != NULL)
-	delete controller_;
+        delete controller_;
 
       if(ma_ != NULL)
-	delete ma_;
+        delete ma_;
 
       if(costMap_ != NULL)
-	delete costMap_;
+        delete costMap_;
+
+      delete baseScanBuffer_;
+      delete tiltScanBuffer_;
+      delete stereoCloudBuffer_;
     }
 
-    void MoveBase::updateGlobalPose(){
-      libTF::TFPose2D robotPose;
-      robotPose.x = 0;
-      robotPose.y = 0;
-      robotPose.yaw = 0;
-      robotPose.frame = "base";
-      robotPose.time = 0; 
+    void MoveBase::updateGlobalPose(){ 
+      tf::Stamped<tf::Pose> robotPose;
+      robotPose.setIdentity();
+      robotPose.frame_id_ = "base_link";
+      robotPose.stamp_ = ros::Time();
 
       try{
-	global_pose_ = this->tf_.transformPose2D("map", robotPose);
+        tf_.transformPose("map", robotPose, global_pose_);
       }
-      catch(libTF::TransformReference::LookupException& ex){
-	ROS_INFO("No Transform available Error\n");
+      catch(tf::LookupException& ex) {
+        ROS_INFO("No Transform available Error\n");
       }
-      catch(libTF::TransformReference::ConnectivityException& ex){
-	ROS_INFO("Connectivity Error\n");
+      catch(tf::ConnectivityException& ex) {
+        ROS_INFO("Connectivity Error\n");
       }
-      catch(libTF::TransformReference::ExtrapolateException& ex){
-	ROS_INFO("Extrapolation Error\n");
+      catch(tf::ExtrapolationException& ex) {
+        ROS_INFO("Extrapolation Error\n");
       }
 
       // Update the cost map window
-      ma_->updateForRobotPosition(global_pose_.x, global_pose_.y);
+
+
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      ROS_DEBUG("Received new position (x=%f, y=%f, th=%f)", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
+
+      ma_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
     }
 
 
+    /**
+     * @brief Called by the main control loop in the base class. Lock already aquired
+     */
     void MoveBase::updateGoalMsg(){
-      libTF::TFPose2D goalPose, transformedGoalPose;
-      goalPose.x = goalMsg.goal.x;
-      goalPose.y = goalMsg.goal.y;
-      goalPose.yaw = goalMsg.goal.th;
-      goalPose.frame = goalMsg.header.frame_id;
-      goalPose.time = 0;
-	  
+      // Revert to static map on new goal. May result in oscillation, but requested by Eitan for the milestone
+      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+
+      tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
+      btQuaternion qt;
+      qt.setEulerZYX(goalMsg.goal.th, 0, 0);
+      goalPose.setData(btTransform(qt, btVector3(goalMsg.goal.x, goalMsg.goal.y, 0)));
+      goalPose.frame_id_ = goalMsg.header.frame_id;
+      goalPose.stamp_ = ros::Time();
+
       try{
-	transformedGoalPose = this->tf_.transformPose2D("map", goalPose);
+        tf_.transformPose("map", goalPose, transformedGoalPose);
       }
-      catch(libTF::TransformReference::LookupException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
-	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      catch(tf::LookupException& ex){
+        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
-      catch(libTF::TransformReference::ConnectivityException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
-	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      catch(tf::ConnectivityException& ex){
+        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
-      catch(libTF::TransformReference::ExtrapolateException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
-	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      catch(tf::ExtrapolationException& ex){
+        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
 
-      stateMsg.goal.x = goalPose.x;
-      stateMsg.goal.y = goalPose.y;
-      stateMsg.goal.th = goalPose.yaw;
+      stateMsg.goal.x = transformedGoalPose.getOrigin().x();
+      stateMsg.goal.y = transformedGoalPose.getOrigin().y();
+      double uselessPitch, uselessRoll, yaw;
+      transformedGoalPose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      stateMsg.goal.th = (float)yaw;
 
-      ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
+      ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
     }
 
     void MoveBase::updateStateMsg(){
@@ -290,20 +347,22 @@ namespace ros {
       updateGlobalPose();
 
       // Assign state data 
-      stateMsg.pos.x = global_pose_.x;
-      stateMsg.pos.y = global_pose_.y;
-      stateMsg.pos.th = global_pose_.yaw;
+      stateMsg.pos.x = global_pose_.getOrigin().x();
+      stateMsg.pos.y = global_pose_.getOrigin().y();
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      stateMsg.pos.th = (float)yaw;
     }
-    
+
     void MoveBase::baseScanCallback()
     {
-      ROS_INFO("Base Scan Callback");
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
-      ROS_INFO("Projected");
-      processData(local_cloud);
+      lock();
+      baseScanBuffer_->buffer_cloud(local_cloud);
+      unlock();
     }
 
     void MoveBase::tiltScanCallback()
@@ -312,162 +371,67 @@ namespace ros {
       std_msgs::PointCloud local_cloud;
       local_cloud.header = tiltScanMsg_.header;
       projector_.projectLaser(tiltScanMsg_, local_cloud, tiltLaserMaxRange_);
-      processData(local_cloud);
+      lock();
+      tiltScanBuffer_->buffer_cloud(local_cloud);
+      unlock();
+    }
+
+    void MoveBase::tiltCloudCallback()
+    {
+      lock();
+      tiltScanBuffer_->buffer_cloud(tiltCloudMsg_);
+      unlock();
     }
 
     void MoveBase::stereoCloudCallback()
     {
-      processData(stereoCloudMsg_);
-    }
-    
-    void MoveBase::processData(const std_msgs::PointCloud& local_cloud)
-    {
-      bufferMutex_.lock();
-
-      point_clouds_.push_back(local_cloud);
-
-      std_msgs::PointCloud * newData = NULL;
-
-      while(!point_clouds_.empty()){
-
-	const std_msgs::PointCloud& point_cloud = point_clouds_.front();
-
-	if(local_cloud.header.stamp - point_cloud.header.stamp > ros::Duration(9, 0)){
-	  point_clouds_.pop_front();
-	  continue;
-	}
-
-	std_msgs::PointCloud base_cloud;
-	std_msgs::PointCloud map_cloud;
-	
-	/* Transform to the base frame */
-	try
-	  {
-	    tf_.transformPointCloud("base", base_cloud, point_cloud);
-	    newData = extractFootprintAndGround(base_cloud);
-	    tf_.transformPointCloud("map", map_cloud, *newData);
-	  }
-	catch(libTF::TransformReference::LookupException& ex)
-	  {
-	    ROS_ERROR("Lookup exception: %s\n", ex.what());
-	    break;
-	  }
-	catch(libTF::TransformReference::ExtrapolateException& ex)
-	  {
-	    ROS_DEBUG("No transform available yet - have to try later: %s . Buffer size is %d\n", ex.what(), point_clouds_.size());
-	    break;
-	  }
-	catch(libTF::TransformReference::ConnectivityException& ex)
-	  {
-	    ROS_ERROR("Connectivity exception: %s\n", ex.what());
-	    break;
-	  }
-	catch(...)
-	  {
-	    ROS_ERROR("Exception in point cloud computation\n");
-	    break;
-	  }
-
-	point_clouds_.pop_front();
-
-	if (newData == NULL){
-	    delete newData;
-	    newData = NULL;
-	}
-
-	// Is the time stamp copied when we do a tranform?
-	// Verify what happens if we get many updates in the same update time step?
-	// How can interleaving effect things?
-	ROS_INFO("Processing point cloud with %d points\n", map_cloud.get_pts_size());
-        updateDynamicObstacles(point_cloud.header.stamp.to_double(), map_cloud);
-      }
-
-      // In case we get thrown out on the second transform - clean up
-      if (newData == NULL){
-	delete newData;
-	newData = NULL;
-      }
-
-      bufferMutex_.unlock();
+      lock();
+      stereoCloudBuffer_->buffer_cloud(stereoCloudMsg_);
+      unlock();
     }
 
     /**
-     * The point is in the footprint if its x and y values are in the range [0 robotWidth] in
-     * the base frame.
-     */
-    bool MoveBase::inFootprint(double x, double y) const {
-      bool result = fabs(x) <= robotWidth_/2 && fabs(y) <= robotWidth_/2;
-
-      if(result){
-	ROS_DEBUG("Discarding point <%f, %f> in footprint\n", x, y);
-      }
-      return result;
-    }
-
-    std_msgs::PointCloud * MoveBase::extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const {
-      std_msgs::PointCloud *copy = new std_msgs::PointCloud();
-      copy->header = baseFrameCloud.header;
-
-      unsigned int n = baseFrameCloud.get_pts_size();
-      unsigned int j = 0;
-      copy->set_pts_size(n);
-      for (unsigned int k = 0 ; k < n ; ++k){
-
-	ROS_DEBUG("Evaluating <%f, %f, %f>\n", 
-		  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z);
-
-	bool ok = baseFrameCloud.pts[k].z > minZ_ &&   baseFrameCloud.pts[k].z < maxZ_;
-	ROS_DEBUG("Discarding point for height %f\n", baseFrameCloud.pts[k].z);
-	if (ok && !inFootprint(baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y))
-	  copy->pts[j++] = baseFrameCloud.pts[k];
-
-      }
-
-      copy->set_pts_size(j);
-	
-      ROS_DEBUG("Filter discarded %d points (%d left) \n", n - j, j);
-
-      return copy;
-    }
-
-    /**
-     * The odomMsg_ will be updates and we will do the transform to update the odom in the base frame
+     * The odomMsg_ will be updated and we will do the transform to update the odometry data in the base frame
      */
     void MoveBase::odomCallback(){
       if(isTerminated())
-	return;
+        return;
 
       base_odom_.lock();
 
       try
-	{
-	  libTF::TFVector v_in, v_out;
-	  v_in.x = odomMsg_.vel.x;
-	  v_in.y = odomMsg_.vel.y;
-	  v_in.z = odomMsg_.vel.th;	  
-	  v_in.time = 0; // Gets the latest
-	  v_in.frame = "odom";
-	  v_out = tf_.transformVector("base", v_in);
-	  base_odom_.vel.x = v_in.x;
-	  base_odom_.vel.y = v_in.y;
-	  base_odom_.vel.th = v_in.z;
-	}
-      catch(libTF::TransformReference::LookupException& ex)
-	{
-	  puts("no odom->base Tx yet");
-	  ROS_DEBUG("%s\n", ex.what());
-	}
-      catch(libTF::TransformReference::ConnectivityException& ex)
-	{
-	  puts("no odom->base Tx yet");
-	  ROS_DEBUG("%s\n", ex.what());
-	}
-      catch(libTF::TransformReference::ExtrapolateException& ex)
-	{
-	  puts("Extrapolation exception");
-	}
+      {
+        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, 0), ros::Time(), odomMsg_.header.frame_id), v_out;
+        tf_.transformVector("base_link", ros::Time(), v_in, odomMsg_.header.frame_id, v_out);	 
+        base_odom_.vel.x = v_in.x();
+        base_odom_.vel.y = v_in.y();
+        base_odom_.vel.th = odomMsg_.vel.th;
+      }
+      catch(tf::LookupException& ex)
+      {
+        puts("no odom->base Tx yet");
+        ROS_DEBUG("%s\n", ex.what());
+      }
+      catch(tf::ConnectivityException& ex)
+      {
+        puts("no odom->base Tx yet");
+        ROS_DEBUG("%s\n", ex.what());
+      }
+      catch(tf::ExtrapolationException& ex)
+      {
+        puts("Extrapolation exception");
+      }
 
       base_odom_.unlock();
+    }
+
+    /**
+     * A lock will already be aquired here, so just revert the cost map
+     */
+    void MoveBase::handlePlanningFailure(){
+      ROS_DEBUG("No plan found. Handling planning failure");
+      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+      stopRobot();
     }
 
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
@@ -475,26 +439,36 @@ namespace ros {
 
       // If we have a valid plan then only swap in the new plan if it is shorter.
       if(!isValid() || plan_.size() > newPlan.size()){
-	plan_.clear();
-	plan_ = newPlan;
-	publishPath(true, plan_);
+        plan_.clear();
+        plan_ = newPlan;
+        publishPath(true, plan_);
       }
 
       unlock();
     }
-    
+
+    /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>&). */
+    void MoveBase::updatePlan(ompl::waypoint_plan_t const & newPlan) {
+      sentry<MoveBase> guard(this);
+      if (!isValid() || plan_.size() > newPlan.size()){
+        plan_.clear();
+        std::copy(newPlan.begin(), newPlan.end(), std::back_inserter(plan_));
+        publishPath(true, plan_);
+      }
+    }
+
     /**
      * This is used as a validation check and is only called from within dispatchCommands where the lock has already been
      * applied to protect access to the plan.
      */
     bool MoveBase::inCollision() const {
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
-	const std_msgs::Pose2DFloat32& w = *it;
-	unsigned int ind = costMap_->WC_IND(w.x, w.y);
-	if((*costMap_)[ind] > CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE){
-	  ROS_DEBUG("path in collision at <%f, %f>\n", w.x, w.y);
-	  return true;
-	}
+        const std_msgs::Pose2DFloat32& w = *it;
+        unsigned int ind = costMap_->WC_IND(w.x, w.y);
+        if((*costMap_)[ind] >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
+          ROS_DEBUG("path in collision at <%f, %f>\n", w.x, w.y);
+          return true;
+        }
       }
 
       return false;
@@ -518,82 +492,79 @@ namespace ros {
     void MoveBase::publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
- 
+
       unsigned int i = 0;
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = path.begin(); it != path.end(); ++it){
-	const std_msgs::Pose2DFloat32& w = *it;
-	guiPathMsg.points[i].x = w.x;
-	guiPathMsg.points[i].y = w.y;
-	i++;
+        const std_msgs::Pose2DFloat32& w = *it;
+        guiPathMsg.points[i].x = w.x;
+        guiPathMsg.points[i].y = w.y;
+        i++;
       }
 
       if(isGlobal){
-	guiPathMsg.color.r = 0;
-	guiPathMsg.color.g = 1.0;
-	guiPathMsg.color.b = 0;
-	guiPathMsg.color.a = 0;
-	publish("gui_path", guiPathMsg);
+        guiPathMsg.color.r = 0;
+        guiPathMsg.color.g = 1.0;
+        guiPathMsg.color.b = 0;
+        guiPathMsg.color.a = 0;
+        publish("gui_path", guiPathMsg);
       }
       else {
-	guiPathMsg.color.r = 0;
-	guiPathMsg.color.g = 0;
-	guiPathMsg.color.b = 1.0;
-	guiPathMsg.color.a = 0;
-	publish("local_path", guiPathMsg);
+        guiPathMsg.color.r = 0;
+        guiPathMsg.color.g = 0;
+        guiPathMsg.color.b = 1.0;
+        guiPathMsg.color.a = 0;
+        publish("local_path", guiPathMsg);
       }
 
     }
 
     bool MoveBase::goalReached(){
+      // We assume the plan is valid if we are checking the goal. This should be ensured in the base class
+      ROS_ASSERT(isValid());
+
       // Publish the global plan
       publishPath(true, plan_);
 
       // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
       // and we have stopped the robot, then we are done
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       if(plan_.empty() && 
-	 fabs(global_pose_.yaw - stateMsg.goal.th) < 0.1){
+          fabs(yaw - stateMsg.goal.th) < 0.1){
 
-	ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-		  global_pose_.x, global_pose_.y, global_pose_.yaw,
-		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+        ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+            global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
-	// The last act will issue stop command
-	stopRobot();
+        // The last act will issue stop command
+        stopRobot();
 
-	return true;
+        return true;
       }
 
       // If we have reached the end of the path then clear the plan
       if(!plan_.empty() &&
-	 withinDistance(global_pose_.x, global_pose_.y, global_pose_.yaw,
-			stateMsg.goal.x, stateMsg.goal.y, global_pose_.yaw)){
-	ROS_DEBUG("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-	       global_pose_.x, global_pose_.y, global_pose_.yaw,
-	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+          withinDistance(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, yaw)){
+        ROS_DEBUG("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+            global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
-	plan_.clear();
+        plan_.clear();
       }
 
       return false;
     }
 
-    void MoveBase::petTheWatchDog(){
-      gettimeofday(&lastUpdated_, NULL);
-    }
-
     /**
-     * At most one second between updates
+     * The conjunction of all observation buffers must be current
      */
     bool MoveBase::checkWatchDog() const {
-      struct timeval curr;
-      gettimeofday(&curr,NULL);
-      double curr_t, last_t, t_diff;
-      last_t = lastUpdated_.tv_sec + lastUpdated_.tv_usec / 1e6;
-      curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-      t_diff = curr_t - last_t;
-      bool ok = t_diff < 1.0;
+      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent();
+
       if(!ok) 
-	ROS_DEBUG("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+        ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+
       return ok;
     }
 
@@ -605,79 +576,87 @@ namespace ros {
      * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint. 
      */
     bool MoveBase::dispatchCommands(){
-      bool planOk = checkWatchDog();
+      // First criteria is that we have had a sufficiently recent sensor update to trust perception and that we have a valid plan. This latter
+      // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
+      // We want to be able to stop the robot in that case
+      bool planOk = checkWatchDog() && isValid();
       std_msgs::BaseVel cmdVel; // Commanded velocities      
+
+      // Update the cost map window
+      ma_->updateForRobotPosition(global_pose_.getOrigin().getX(), global_pose_.getOrigin().getY());
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
-      if(plan_.empty()){
-	ROS_DEBUG("Moving to desired goal orientation\n");
-	cmdVel.vx = 0;
-	cmdVel.vy = 0;
-        cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
-	cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
+      if(planOk && plan_.empty()){
+        double uselessPitch, uselessRoll, yaw;
+        global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+        ROS_DEBUG("Moving to desired goal orientation\n");
+        cmdVel.vx = 0;
+        cmdVel.vy = 0;
+        cmdVel.vw =  stateMsg.goal.th - yaw;
+        cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
       }
       else {
-	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
-	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
-	// by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
-	// path
-	std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
-	while(it != plan_.end()){
-	  const std_msgs::Pose2DFloat32& w = *it;
-	  // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
-	  if(fabs(global_pose_.x - w.x) < 2 && fabs(global_pose_.y - w.y) < 2){
-	    ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.x, global_pose_.y, w.x, w.y);
-	    break;
-	  }
+        // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
+        // the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
+        // by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
+        // path
+        std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
+        while(it != plan_.end()){
+          const std_msgs::Pose2DFloat32& w = *it;
+          // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
+          if(fabs(global_pose_.getOrigin().x() - w.x) < 2 && fabs(global_pose_.getOrigin().y() - w.y) < 2){
+            ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
+            break;
+          }
 
-	  it = plan_.erase(it);
-	}
+          it = plan_.erase(it);
+        }
 
-	// The plan is bogus if it is empty
-	if(planOk && plan_.empty()){
-	  planOk = false;
-	  ROS_ASSERT(inCollision());
-	  ROS_DEBUG("No path points in local window.\n");
-	}
+        // The plan is bogus if it is empty
+        if(planOk && plan_.empty()){
+          planOk = false;
+          ROS_DEBUG("No path points in local window.\n");
+        }
 
-	// Set current velocities from odometry
-	std_msgs::BaseVel currentVel;
-	currentVel.vx = base_odom_.vel.x;
-	currentVel.vy = base_odom_.vel.y;
-	currentVel.vw = base_odom_.vel.th;
+        // Set current velocities from odometry
+        std_msgs::BaseVel currentVel;
+        currentVel.vx = base_odom_.vel.x;
+        currentVel.vy = base_odom_.vel.y;
+        currentVel.vw = base_odom_.vel.th;
 
-	struct timeval start;
-	struct timeval end;
-	double start_t, end_t, t_diff;
-	// Create a window onto the global cost map for the velocity controller
-	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-	gettimeofday(&start,NULL);
-	if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
-	  ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
-	  planOk = false;
-	}
-	gettimeofday(&end,NULL);
-	start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-	end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-	t_diff = end_t - start_t;
-	ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
+        struct timeval start;
+        struct timeval end;
+        double start_t, end_t, t_diff;
+        // Create a window onto the global cost map for the velocity controller
+        std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+        gettimeofday(&start,NULL);
+        if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
+          ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
+          planOk = false;
+        }
 
-	if(!planOk){
-	  // Zero out the velocities
-	  cmdVel.vx = 0;
-	  cmdVel.vy = 0;
-	  cmdVel.vw = 0;
-	}
-	else {
-	  publishPath(false, localPlan);
-	}
+        gettimeofday(&end,NULL);
+        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+        t_diff = end_t - start_t;
+        ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
+
+        if(!planOk){
+          // Zero out the velocities
+          cmdVel.vx = 0;
+          cmdVel.vy = 0;
+          cmdVel.vw = 0;
+        }
+        else {
+          publishPath(false, localPlan);
+        }
       }
 
-      ROS_INFO("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
-
       publish("cmd_vel", cmdVel);
-      publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      publishFootprint(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
 
       //publish a point that the head can track
       double ptx, pty;
@@ -697,8 +676,8 @@ namespace ros {
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
       if(fabs(x1 - x2) < 4 * getCostMap().getResolution() &&
-	 fabs(y1 - y2) < 4 * getCostMap().getResolution())
-	return true;
+          fabs(y1 - y2) < 4 * getCostMap().getResolution())
+        return true;
 
       return false;
     }
@@ -708,25 +687,28 @@ namespace ros {
      * render the obstacles.
      */
     void MoveBase::publishLocalCostMap() {
+ 
+
+
       double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
-      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.x, global_pose_.y);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
       double origin_x, origin_y;
       cm.getOriginInWorldCoordinates(origin_x, origin_y);
       for(unsigned int i = 0; i<cm.getWidth(); i++){
-	for(unsigned int j = 0; j<cm.getHeight();j++){
-	  double wx, wy;
-	  wx = i * cm.getResolution() + origin_x;
-	  wy = j * cm.getResolution() + origin_y;
-	  std::pair<double, double> p(wx, wy);
+        for(unsigned int j = 0; j<cm.getHeight();j++){
+          double wx, wy;
+          wx = i * cm.getResolution() + origin_x;
+          wy = j * cm.getResolution() + origin_y;
+          std::pair<double, double> p(wx, wy);
 
-	  if(cm.getCost(i, j) == CostMap2D::LETHAL_OBSTACLE)
-	    rawObstacles.push_back(p);
-	  else if(cm.getCost(i, j) == CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
-	    inflatedObstacles.push_back(p);
-	}
+          if(cm.getCost(i, j) == CostMap2D::LETHAL_OBSTACLE)
+            rawObstacles.push_back(p);
+          else if(cm.getCost(i, j) == CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
+            inflatedObstacles.push_back(p);
+        }
       }
 
       // First publish raw obstacles in red
@@ -739,8 +721,73 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = rawObstacles[i].first;
-	pointCloudMsg.points[i].y = rawObstacles[i].second;
+        pointCloudMsg.points[i].x = rawObstacles[i].first;
+        pointCloudMsg.points[i].y = rawObstacles[i].second;
+      }
+
+      if (!this->ok()) { 
+	return; 
+      }
+      publish("raw_obstacles", pointCloudMsg);
+
+      // Now do inflated obstacles in blue
+      pointCount = inflatedObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 0.0;
+      pointCloudMsg.color.b = 1.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+        pointCloudMsg.points[i].x = inflatedObstacles[i].first;
+        pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+      }
+
+      if (!this->ok()) { 
+	return; 
+      }
+      publish("inflated_obstacles", pointCloudMsg);
+    }
+
+
+    /**
+     * @brief Utility to output local obstacles. Make the local cost map accessor. It is very cheap :-) Then
+     * render the obstacles.
+     */
+    void MoveBase::publishFreeSpaceAndObstacles() {
+      double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+
+      // Publish obstacle data for each obstacle cell
+      std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
+      double origin_x, origin_y;
+      cm.getOriginInWorldCoordinates(origin_x, origin_y);
+      for(unsigned int i = 0; i<cm.getWidth(); i++){
+        for(unsigned int j = 0; j<cm.getHeight();j++){
+          double wx, wy;
+          wx = i * cm.getResolution() + origin_x;
+          wy = j * cm.getResolution() + origin_y;
+          std::pair<double, double> p(wx, wy);
+
+          if(cm.getCost(i, j) > 0)
+            rawObstacles.push_back(p);
+          else if(cm.getCost(i, j) == 0)
+            inflatedObstacles.push_back(p);
+        }
+      }
+
+      // First publish raw obstacles in red
+      std_msgs::Polyline2D pointCloudMsg;
+      unsigned int pointCount = rawObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 1.0;
+      pointCloudMsg.color.b = 0.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+        pointCloudMsg.points[i].x = rawObstacles[i].first;
+        pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
       publish("raw_obstacles", pointCloudMsg);
@@ -754,15 +801,15 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = inflatedObstacles[i].first;
-	pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+        pointCloudMsg.points[i].x = inflatedObstacles[i].first;
+        pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
       publish("inflated_obstacles", pointCloudMsg);
     }
 
     void MoveBase::stopRobot(){
-      ROS_INFO("Stopping the robot now!\n");
+      ROS_DEBUG("Stopping the robot now!\n");
       std_msgs::BaseVel cmdVel; // Commanded velocities
       cmdVel.vx = 0.0;
       cmdVel.vy = 0.0;
@@ -774,32 +821,51 @@ namespace ros {
       stopRobot();
     }
 
-    void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud){
-      //Avoids laser race conditions.
-      if (!isInitialized()) {
-	return;
-      }
-
-      std::vector<unsigned int> updates;
-      lock();
-      petTheWatchDog();
-      struct timeval curr;
-      gettimeofday(&curr,NULL);
-      double curr_t, last_t, t_diff;
-      curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);
-      gettimeofday(&curr,NULL);
-      last_t = curr.tv_sec + curr.tv_usec / 1e6;
-      t_diff = last_t - curr_t;
-      handleMapUpdates(updates);
-      publishLocalCostMap();
-      unlock();
-      ROS_INFO("Updated map in %f seconds/n", t_diff);
-    }
-    
     MoveBase::footprint_t const & MoveBase::getFootprint() const{
       return footprint_;
     }
 
+    /**
+     * Each update loop will query all observations and aggregate them and then apply
+     * a batch update to the cost map
+     */
+    void MoveBase::mapUpdateLoop()
+    {
+      ros::Duration *d = new ros::Duration();
+      d->fromSec(1.0/map_update_frequency_);
+
+      while (active_){
+        //Avoids laser race conditions.
+        if (isInitialized()) {
+
+          ROS_DEBUG("Starting cost map update/n");
+          lock();
+
+          // Aggregate buffered observations across 3 sources
+          std::vector<costmap_2d::Observation> observations;
+          baseScanBuffer_->get_observations(observations);
+          tiltScanBuffer_->get_observations(observations);
+          stereoCloudBuffer_->get_observations(observations);
+
+          ROS_DEBUG("Applying update with %d observations/n", observations.size());
+          // Apply to cost map
+          struct timeval curr;
+          gettimeofday(&curr,NULL);
+          double curr_t, last_t, t_diff;
+          curr_t = curr.tv_sec + curr.tv_usec / 1e6;
+          costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
+          gettimeofday(&curr,NULL);
+          last_t = curr.tv_sec + curr.tv_usec / 1e6;
+          t_diff = last_t - curr_t;
+          publishLocalCostMap();
+          unlock();
+          ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+        }
+
+        d->sleep();
+      }
+
+      delete d;
+    }
   }
 }

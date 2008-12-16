@@ -44,9 +44,10 @@
 
 #include <sys/stat.h>
 
-#include "colorcalib.h"
+#include "color_calib.h"
 
 using namespace std;
+using namespace color_calib;
 
 class ColorCalib : public ros::node
 {
@@ -55,22 +56,21 @@ public:
 
   ros::thread::mutex cv_mutex;
 
-  CvMat* color_cal;
+  bool first;
 
-  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME)
+  Calibration color_cal;
+
+  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), first(true), color_cal(this)
   { 
     subscribe("images", image_msg, &ColorCalib::image_cb, 1);
-    color_cal = cvCreateMat( 3, 3, CV_32FC1);
-  }
-
-  ~ColorCalib()
-  {
-    cvReleaseMat(&color_cal);
   }
 
   void image_cb()
   {
-    unsubscribe("images");
+    if (!first) 
+      return;
+    else
+      first = false;
 
     cv_mutex.lock();
 
@@ -89,28 +89,13 @@ public:
 
           decompand(img, img2);
 
-          find_calib(img2, color_cal, COLOR_CAL_BGR);
+          find_calib(img2, color_cal, COLOR_CAL_BGR | COLOR_CAL_COMPAND_DISPLAY);
           
-          printf("Color calibration:\n");
-          for (int i = 0; i < 3; i ++)
-          {
-            for (int j = 0; j < 3; j++)
-            {
-              printf("%f ", cvmGet(color_cal, i, j));
-            }
-            printf("\n");
-          }
-
           IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
-          cvTransform(img2, corrected_img, color_cal);
 
-          XmlRpc::XmlRpcValue xml_color_cal;
-          for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-              xml_color_cal[3*i + j] = cvmGet(color_cal, i, j);
-          
-          set_param(map_name("images") + std::string("/") + l + std::string("/color_cal"), xml_color_cal);
-          
+          cvTransform(img2, corrected_img, color_cal.getCal(COLOR_CAL_BGR));
+
+          color_cal.setParam(map_name("images") + std::string("/") + l);
 
           cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
           cvShowImage("color_rect", corrected_img);

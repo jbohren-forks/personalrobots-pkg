@@ -21,10 +21,10 @@
  *  Note: This class is for testing purposes only and will be obsoleted by a node that sends kinematic states
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <math.h>
-#include <iostream.h>
+#include <iostream>
 
 #include "ringbuffer.h"
 
@@ -35,6 +35,8 @@
 
 #include <time.h>
 #include <signal.h>
+
+using namespace std;
 
 // Our node
 class ArmTrajectoryNode : public ros::node

@@ -5,6 +5,7 @@
 
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
+  <review status="deprecated" notes=""/>
 
   <depend package="collision_space"/>
   <depend package="display_ode_spaces"/>

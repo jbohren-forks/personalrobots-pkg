@@ -2,6 +2,7 @@
   <description>A library, utility standalone executables, and ROS node for the iRobot Create</description>
   <author>Xuwen Cao and Morgan Quigley</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="serial_port"/>
   <depend package="roscpp"/>
   <export>

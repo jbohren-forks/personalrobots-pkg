@@ -44,6 +44,7 @@
 // Services
 #include <pr2_mechanism_controllers/SetBaseCommand.h>
 #include <pr2_mechanism_controllers/GetBaseCommand.h>
+#include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
 
 #include <libTF/Pose3D.h>
 #include <urdf/URDF.h>
@@ -55,11 +56,11 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
 #include <pr2_msgs/Odometer.h>
+#include <pr2_msgs/Covariance2D.h>
 
 #include <misc_utils/realtime_publisher.h>
 
-#include <rosTF/rosTF.h>
-#include <rosTF/TransformEuler.h>
+#include <tf/TransformArray.h>
 
 #include <pthread.h>
 
@@ -254,6 +255,14 @@ namespace controller
 
     double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
 
+    double wheel_radius_multiplier_front_;
+
+    double wheel_radius_multiplier_rear_;
+
+//    NEWMAT::Matrix odometry_residual_;
+
+    double odometry_residual_max_;
+
     private:
 
     bool new_cmd_available_; /** true when new command received by node */
@@ -360,6 +369,8 @@ namespace controller
 
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
+    std::vector<double> steer_angle_stored_; /** vector of stored caster steer angles */
+
     std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
 
     double last_time_; /** time corresponding to when update was last called */
@@ -381,6 +392,8 @@ namespace controller
     double odometer_distance_;
 
     double odometer_angle_;
+
+    double max_trans_vel_magnitude_;
 
     friend class BaseControllerNode;
   };
@@ -430,6 +443,12 @@ namespace controller
     bool getCommand(pr2_mechanism_controllers::GetBaseCommand::request &req,
                     pr2_mechanism_controllers::GetBaseCommand::response &resp);
 
+    bool getWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
+
+    bool setWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
+
     /*
      * \brief callback function for setting the desired velocity using a topic 
      */
@@ -463,14 +482,11 @@ namespace controller
            
     misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
-    misc_utils::RealtimePublisher <rosTF::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+    misc_utils::RealtimePublisher <tf::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
-  };
-
-    /** \brief A namespace ostream overload for displaying parameters */
-  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+    misc_utils::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     /*
      * \brief pointer to ros node
@@ -480,6 +496,11 @@ namespace controller
      * \brief save service name prefix for unadvertise on exit
      */
     std::string service_prefix;
+  };
+
+    /** \brief A namespace ostream overload for displaying parameters */
+  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+
 }
 
 

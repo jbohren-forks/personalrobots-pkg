@@ -79,8 +79,8 @@ PyObject *make_wrapped_XXX(PyObject *self, PyObject *args)
 """
 
 o = {
-   'SparseSignature' : { 'meths' : [ 'dump' ] },
-   'BruteForceMatcher' : { 'init' : '<SparseSignature, int>', 'meths' : ['addSignature', 'findMatch'] }
+#   'SparseSignature' : { 'meths' : [ 'dump' ] },
+   'BruteForceMatcher' : { 'init' : '<int>', 'meths' : ['addSignature', 'findMatch'] }
 }
 
 import re

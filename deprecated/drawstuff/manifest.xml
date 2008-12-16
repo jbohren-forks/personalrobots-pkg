@@ -7,6 +7,7 @@ This package contains a library for displaying ODE spaces.
 </description>
 <author>Russel Smith</author>
 <license>LGPL</license>
+<review status="deprecated" notes=""/>
 <url>http://opende.sf.net</url>
 <depend package="opende" />
 <sysdepend os="ubuntu" version="8.04-hardy" package="freeglut3-dev"/>

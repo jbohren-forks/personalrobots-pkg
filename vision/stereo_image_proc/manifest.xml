@@ -1,0 +1,15 @@
+<package>
+  <description>Stereo and single image rectification and disparity processing.</description>
+  <author>Kurt Konolige, Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lstereoproc"/>
+  </export>
+  <depend package="opencv_latest"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+
+  <url></url>
+</package>

@@ -85,7 +85,7 @@ typedef struct ARASEARCHSTATESPACE
     double eps_satisfied;
 	CHeap* heap;
 	CList* inconslist;
-	short unsigned int iteration;
+	short unsigned int searchiteration;
 	short unsigned int callnumber;
 	CMDPSTATE* searchgoalstate;
 	CMDPSTATE* searchstartstate;
@@ -94,6 +94,7 @@ typedef struct ARASEARCHSTATESPACE
 
 	bool bReevaluatefvals;
     bool bReinitializeSearchStateSpace;
+	bool bNewSearchIteration;
 
 } ARASearchStateSpace_t;
 
@@ -105,12 +106,20 @@ class ARAPlanner : public SBPLPlanner
 
 public:
 	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V);
+	int replan(double allocated_time_sec, vector<int>* solution_stateIDs_V, int* solcost);
 
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);
+    void costs_changed(ChangedCellsGetter const & changedcells);
     void costs_changed();
     int force_planning_from_scratch(); 
 
+	int set_search_mode(bool bSearchUntilFirstSolution);
+
+
+	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
+    virtual int get_n_expands() const { return searchexpands; }
+	virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
 
 	//constructors & destructors
     ARAPlanner(DiscreteSpaceInformation* environment, bool bforwardsearch);
@@ -126,6 +135,7 @@ private:
 
 	bool bforwardsearch; //if true, then search proceeds forward, otherwise backward
 
+	bool bsearchuntilfirstsolution; //if true, then search until first solution only (see planner.h for search modes)
 
     ARASearchStateSpace_t* pSearchStateSpace_;
 

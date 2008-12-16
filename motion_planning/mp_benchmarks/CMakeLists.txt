@@ -5,11 +5,33 @@ cmake_minimum_required (VERSION 2.6)
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
 set (ROS_BUILD_TYPE Release)
+#set (ROS_BUILD_TYPE Debug)
 include (rosbuild)
 add_definitions (-Wall)
 rospack (mp_benchmarks)
 
 ##################################################
+
+LIST (APPEND MPBENCH_LIBS
+      mp_benchmarks
+      costmap_2d
+      sunflower
+      sbpl_util
+      nepumuk
+      png)
+
+SET (CMAKE_REQUIRED_INCLUDES /usr/local/include)
+INCLUDE_DIRECTORIES (/usr/local/include)
+LINK_DIRECTORIES (/usr/local/lib)
+
+INCLUDE (CheckIncludeFile)
+CHECK_INCLUDE_FILE (pgm.h MPBENCH_HAVE_NETPGM)
+IF (${MPBENCH_HAVE_NETPGM})
+  # should probably also check for libnetpbm existance...
+  MESSAGE (STATUS "found pgm.h")
+  ADD_DEFINITIONS (-DMPBENCH_HAVE_NETPGM)
+  LIST (APPEND MPBENCH_LIBS netpbm)
+ENDIF (${MPBENCH_HAVE_NETPGM})
 
 INCLUDE (FindOpenGL)
 IF (OPENGL_FOUND)
@@ -18,8 +40,8 @@ IF (OPENGL_FOUND)
   MESSAGE (STATUS "  OPENGL_gl_LIBRARY  ${OPENGL_gl_LIBRARY}")
   MESSAGE (STATUS "  OPENGL_glu_LIBRARY ${OPENGL_glu_LIBRARY}")
   INCLUDE_DIRECTORIES (${OPENGL_INCLUDE_DIR})
-ELSE (OPENGL_FOUND)
-  MESSAGE (FATAL_ERROR "OpenGL not found")
+  ADD_DEFINITIONS (-DMPBENCH_HAVE_OPENGL)
+  LIST (APPEND MPBENCH_LIBS ${OPENGL_glu_LIBRARY} ${OPENGL_gl_LIBRARY})
 ENDIF (OPENGL_FOUND)
 
 INCLUDE (FindGLUT)
@@ -27,11 +49,23 @@ IF (GLUT_FOUND)
   MESSAGE (STATUS "Found GLUT in ${GLUT_INCLUDE_DIR}")
   MESSAGE (STATUS "  GLUT_LIBRARIES    ${GLUT_LIBRARIES}")
   MESSAGE (STATUS "  GLUT_glut_LIBRARY ${GLUT_glut_LIBRARY}")
-  MESSAGE (STATUS "  GLUT_Xmu_LIBRARY  ${GLUT_Xmu_LIBRARY}")
-  MESSAGE (STATUS "  GLUT_Xi_LIBRARY   ${GLUT_Xi_LIBRARY}")
   INCLUDE_DIRECTORIES (${GLUT_INCLUDE_DIR})
+  ADD_DEFINITIONS (-DMPBENCH_HAVE_GLUT)
+  LIST (APPEND MPBENCH_LIBS ${GLUT_glut_LIBRARY})
+  IF (${GLUT_Xmu_LIBRARY} MATCHES NOTFOUND)
+    MESSAGE (STATUS "  GLUT_Xmu_LIBRARY  not found")
+  ELSE ($GLUT_Xmu_LIBRARY MATCHES NOTFOUND)
+    MESSAGE (STATUS "  GLUT_Xmu_LIBRARY  ${GLUT_Xmu_LIBRARY}")
+    LIST (APPEND MPBENCH_LIBS ${GLUT_Xmu_LIBRARY})
+  ENDIF (${GLUT_Xmu_LIBRARY} MATCHES NOTFOUND)
+  IF (${GLUT_Xi_LIBRARY} MATCHES NOTFOUND)
+    MESSAGE (STATUS "  GLUT_Xi_LIBRARY   not found")
+  ELSE (${GLUT_Xi_LIBRARY} MATCHES NOTFOUND)
+    MESSAGE (STATUS "  GLUT_Xi_LIBRARY   ${GLUT_Xi_LIBRARY}")
+    LIST (APPEND MPBENCH_LIBS ${GLUT_Xi_LIBRARY})
+  ENDIF (${GLUT_Xi_LIBRARY} MATCHES NOTFOUND)
 ELSE (GLUT_FOUND)
-  MESSAGE (FATAL_ERROR "GLUT not found")
+  MESSAGE (FATAL_ERROR "GLUT not found (currently this is not optional)")
 ENDIF (GLUT_FOUND)
 
 IF (WIN32)
@@ -58,9 +92,13 @@ ENDIF(WIN32)
 
 ##################################################
 
-rospack_add_library (mp_benchmarks src/setup.cpp)
+rospack_add_library (mp_benchmarks src/setup.cpp src/gfx.cpp)
 
-rospack_add_executable (mpbench src/main.cpp)
-target_link_libraries (mpbench mp_benchmarks costmap_2d sunflower sbpl_util nepumuk
-                               ${GLUT_glut_LIBRARY} ${GLUT_Xmu_LIBRARY} ${GLUT_Xi_LIBRARY}
-			       ${OPENGL_glu_LIBRARY} ${OPENGL_gl_LIBRARY})
+rospack_add_executable (mpbench src/mpbench.cpp)
+target_link_libraries (mpbench ${MPBENCH_LIBS})
+
+rospack_add_executable (mpbench-incremental src/mpbench-incremental.cpp)
+target_link_libraries (mpbench-incremental ${MPBENCH_LIBS})
+
+rospack_add_executable (costmap2ascii src/costmap2ascii.cpp)
+target_link_libraries (costmap2ascii ${MPBENCH_LIBS})

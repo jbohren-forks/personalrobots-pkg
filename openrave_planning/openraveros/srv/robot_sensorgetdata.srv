@@ -1,0 +1,30 @@
+# Gets the sensor data. The format returned is dependent on the type of sensor. 
+
+int32 bodyid
+uint32 sensorindex
+---
+
+# data.type - contains the id of the data type (see SensorBase::SensorType)
+string type
+
+## laser
+
+#  data.laserrange - 3xN array where each column is the direction * distance
+float32[] laserrange
+
+#  data.laserpos - 3xN array where each column is the corresponding origin of each range measurement
+float32[] laserpos
+
+#  data.laserint - 1xN optional laser intensity array
+float32[] laserint
+
+## camera
+
+#  data.KK - 3x3 intrinsic matrix
+float32[9] KK
+
+#  data.T - 3x4 camera matrix (to project a point multiply by KK*inv(T))
+AffineTransformMatrix T
+
+#  data.I - the rgb image size(I) = [height width 3]
+std_msgs/Image image

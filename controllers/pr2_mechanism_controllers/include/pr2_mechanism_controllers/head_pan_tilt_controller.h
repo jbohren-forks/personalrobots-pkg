@@ -52,7 +52,6 @@
 #include <std_msgs/VisualizationMarker.h>
 
 // Math utils
-#include <math_utils/angles.h>
 #include <math.h>
 #include <tf/transform_listener.h>
 

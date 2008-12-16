@@ -8,6 +8,7 @@
   </description>
   <author>Tully Foote</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   
   <depend package="wg_robot_description" />
   <depend package="teleop_base"/>
@@ -16,7 +17,8 @@
   <depend package="IBPSBatteryInterface"/>
   <depend package="joy"/>
   <depend package="rosrecord"/>
-
+  <depend package="hokuyo_node"/>
+  <depend package="imu_node"/>
 
 
 </package>

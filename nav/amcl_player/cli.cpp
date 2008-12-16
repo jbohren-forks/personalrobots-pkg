@@ -31,8 +31,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   AmclCLI amcl_cli;
   ros::Time t_start(ros::Time::now());
-  while (amcl_cli.ok() && ros::Time::now() - t_start < 2.0 && !amcl_cli.done)
-    ros::Duration(0.1).sleep();
+  while (amcl_cli.ok() && ros::Time::now() - t_start < ros::Duration().fromSec(2.0) && !amcl_cli.done)
+    ros::Duration().fromSec(0.1).sleep();
   if (!amcl_cli.done)
     printf("failed\n");
   ros::fini();

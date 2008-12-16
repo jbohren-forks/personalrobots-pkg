@@ -1992,8 +1992,8 @@ bool cal_poseEstimation() {
 	peErrMeas.setTransform(RotStlrf, ShiftStlrf);
 	peErrMeas.measureMixed(xyzs0z, uvds1);
 
-	printf("Waiting key...\n");
-	cvWaitKey(0);
+	//printf("Waiting key...\n");
+	//cvWaitKey(0);
 	return status;
 }
 

@@ -54,7 +54,7 @@ void Trajectory::clear()
 
 int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
 {
-  if(tp.size() <= 1)
+  if(tp.size() < 2)
   {
     ROS_WARN("Trying to set trajectory with number of points <= 0");
     return -1;
@@ -65,6 +65,8 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
     return -1;
   }
 
+//  ROS_INFO("Initializing trajectory with %d points",tp.size());
+
   num_points_ = tp.size();
 
   tp_.resize(num_points_);
@@ -73,6 +75,11 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
   {
     tp_[i].setDimension(dimension_);
     tp_[i] = tp[i];
+//    ROS_INFO("Input point: %d is ",i);
+//    for(int j=0; j < dimension_; j++)
+//      ROS_INFO("%f ",tp_[i].q_[j]);
+
+//    ROS_INFO(" ");
   }
 
   parameterize();
@@ -98,8 +105,14 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
     for(int j=0; j<dimension_; j++)
     {
       tp_[i].q_[j] = p[i*dimension_+j];
-//      ROS_INFO("tp_: %d %d %f",i,j,tp_[i].q_[j]);
+      tp_[i].qdot_[j] = 0.0;
     }
+
+//    ROS_INFO("Input point: %d is ",i);
+//    for(int j=0; j < dimension_; j++)
+//      ROS_INFO("%f ",tp_[i].q_[j]);
+
+//    ROS_INFO(" ");
 
   }
   parameterize();
@@ -130,7 +143,6 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
     for(int j=0; j<dimension_; j++)
     {
       tp_[i].q_[j] = p[i*(dimension_)+j];
-//      ROS_INFO("tp_: %d %d %f",i,j,tp_[i].q_[j]);
     }
   }
 
@@ -191,7 +203,8 @@ inline int Trajectory::findTrajectorySegment(double time)
   return result;
 }
 
-inline double Trajectory::getTotalTime()
+//inline double Trajectory::getTotalTime()
+double Trajectory::getTotalTime()
 {
   if(tp_.size() == 0)
     return 0.0;
@@ -201,11 +214,19 @@ inline double Trajectory::getTotalTime()
 
 int Trajectory::sample(TPoint &tp, double time)
 {
-  if(time > tp_.back().time_ || time < tp_.front().time_)
+//  ROS_INFO("Trajectory has %d points",tp_.size());
+//  ROS_INFO("Time: %f, %f, %f",time,tp_.front().time_,tp_.back().time_);
+  if(time > tp_.back().time_)
   {
-    ROS_WARN("Invalid input sample time.");
-    return -1;
+//    ROS_WARN("Invalid input sample time.");
+    time = tp_.back().time_;
   }
+  else if( time < tp_.front().time_)
+  {
+    time = tp_.front().time_;
+//    ROS_WARN("Invalid input sample time.");
+  }
+
   if((int) tp.q_.size() != dimension_ || (int) tp.qdot_.size() != dimension_)
   {
     ROS_WARN("Dimension of sample point passed in = %d does not match dimension of trajectory = %d",tp.q_.size(),dimension_);
@@ -304,6 +325,8 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
 
+  tc_.clear();
+
   if(max_rate_.empty() || (int) max_rate_.size() < 0)
   {
     ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
@@ -341,6 +364,8 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
 
+  tc_.clear();
+
     if(max_rate_.empty() || (int) max_rate_.size() < 1)
     {
       ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
@@ -371,7 +396,7 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 
 int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 {
-  double dT(0);
+   double dT(0),acc(0.0),tb(0.0);
   TCoeff tc;
 
   std::vector<double> temp;
@@ -380,6 +405,8 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+
+  tc_.clear();
 
     if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
     {
@@ -396,12 +423,18 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 
     for(int j=0; j < dimension_; j++)
     {
+       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+          acc = max_acc_[j];
+       else
+          acc = -max_acc_[j];
+      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
-      temp[2] = 1/2*max_acc_[j];
-      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
-      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
-
+      temp[2] = 0.5*acc;
+      temp[3] = tb;
+      temp[4] = std::max(tc.duration_-2*tb,0.0);
+     
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -409,16 +442,32 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
   return 1;
 }
 
+double Trajectory::blendTime(double aa,double bb,double cc)
+{
+   double disc = (pow(bb,2) - 4*aa*cc);
+   if(disc < 0)
+      return 0.0;
+
+   double tb1 = (-bb + sqrt(disc))/(2*aa);
+   double tb2 = (-bb - sqrt(disc))/(2*aa);
+   if(isnan(tb1))
+     tb1 = 0.0;
+   if(isnan(tb2))
+     tb2 = 0.0;
+   return std::min(tb1,tb2);
+}
 
 
 void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
 {
   double segment_time = time - segment_start_time;
+//  ROS_INFO("Coeff size: %d",tc.coeff_.size());
+//  ROS_INFO("Coeff internal size: %d", tc.coeff_[0].size());
   for(int i =0; i < dimension_; i++)
   {
+//    ROS_INFO("Coeffs: %f %f", tc.coeff_[i][0], tc.coeff_[i][1]);
     tp.q_[i]    =  tc.coeff_[i][0] + segment_time * tc.coeff_[i][1];
     tp.qdot_[i] =  tc.coeff_[i][1];
-//    ROS_INFO("sample: %f %f",tc.coeff_[i][0],tc.coeff_[i][1]);
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -535,11 +584,12 @@ double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
+//    ROS_INFO("Min time: %f",minJointTime);
+
     if(minTime < minJointTime)
       minTime = minJointTime;
 
   }
-
   return minTime;
 }
 
@@ -547,16 +597,22 @@ double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double
 {
   double t1(MAX_ALLOWABLE_TIME), t2(MAX_ALLOWABLE_TIME), result(MAX_ALLOWABLE_TIME);
   double dq = q1 - q0;
-  double a = 3*(v0+v1)*vmax - 3* (v0+v1)*v0 + pow((2*v0+v1),2);
-  double b = -6*dq*vmax + 6 * v0 *dq - 6*dq*(2*v0+v1);
-  double c = 9 * pow(dq,2);
+  double v(0.0);
+  if(dq > 0)
+     v = vmax;
+  else
+     v = -vmax;
+
+  double a = 3.0*(v0+v1)*v - 3.0* (v0+v1)*v0 + pow((2.0*v0+v1),2.0);
+  double b = -6.0*dq*v + 6.0 * v0 *dq - 6.0*dq*(2.0*v0+v1);
+  double c = 9.0 * pow(dq,2);
 
   if (fabs(a) > EPS_TRAJECTORY)
   {
-    if((pow(b,2)-4*a*c) >= 0)
+    if((pow(b,2)-4.0*a*c) >= 0)
     {
-      t1 = (-b + sqrt(pow(b,2)-4*a*c))/(2*a);
-      t2 = (-b - sqrt(pow(b,2)-4*a*c))/(2*a);
+      t1 = (-b + sqrt(pow(b,2)-4.0*a*c))/(2.0*a);
+      t2 = (-b - sqrt(pow(b,2)-4.0*a*c))/(2.0*a);
     }
   }
   else
@@ -598,18 +654,23 @@ double Trajectory::calculateMinimumTimeLSPB(const TPoint &start, const TPoint &e
 double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, double amax)
 {
   double tb = std::min(fabs(vmax/amax),sqrt(fabs(q1-q0)/amax));
-  double dist_tb = amax*tb*tb;
-  double ts = (fabs(q1-q0) - dist_tb)/(amax*tb);
+  double acc(0);
+  if((q1-q0)>0)
+    acc = amax;
+  else
+    acc = -amax;
+  double dist_tb = acc*tb*tb;
+  double ts = (q1-q0 - dist_tb)/(acc*tb);
   if(ts < 0)
     ts = 0;
   return (2*tb+ts);
 }
 
 
-
 void Trajectory::setInterpolationMethod(std::string interp_method)
 {
   interp_method_ = interp_method;
+  ROS_INFO("Trajectory:: interpolation type %s",interp_method_.c_str());
 }
 
 int Trajectory::parameterize()
@@ -640,6 +701,7 @@ int Trajectory::parameterizeLinear()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
@@ -666,7 +728,11 @@ int Trajectory::parameterizeLinear()
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
-      //ROS_INFO("coeff: %d %d %f %f",i,j,temp[0],temp[1]);
+      if(isnan(temp[1]))
+        {
+         temp[1] = 0.0;
+//         ROS_WARN("Zero duration between two trajectory points");
+        }
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -699,6 +765,7 @@ int Trajectory::parameterizeCubic()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
@@ -728,6 +795,10 @@ int Trajectory::parameterizeCubic()
       temp[1] = tp_[i-1].qdot_[j];
       temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
       temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+      if(isnan(temp[2]))
+        temp[2] = 0.0;
+      if(isnan(temp[3]))
+        temp[3] = 0.0;
 
       tc.coeff_.push_back(temp);
     }
@@ -744,7 +815,7 @@ int Trajectory::parameterizeCubic()
 
 int Trajectory::parameterizeBlendedLinear()
 {
-  double dT(0);
+   double dT(0.0),acc(0.0),tb(0.0);
   TCoeff tc;
 
   std::vector<double> temp;
@@ -753,6 +824,7 @@ int Trajectory::parameterizeBlendedLinear()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
@@ -778,12 +850,20 @@ int Trajectory::parameterizeBlendedLinear()
 
     for(int j=0; j < dimension_; j++)
     {
+       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+          acc = max_acc_[j];
+       else
+          acc = -max_acc_[j];
+
+      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
-      temp[2] = 1/2*max_acc_[j];
-      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
-      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
+      temp[2] = 0.5*acc;
+      temp[3] = tb;
+      temp[4] = std::max(tc.duration_-2*tb,0.0);
 
+      //ROS_DEBUG("coeff: %d %d %f %f %f %f %f %f\n", i,j,tc.duration_,temp[0],temp[1],temp[2],temp[3],temp[4]);
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -793,5 +873,32 @@ int Trajectory::parameterizeBlendedLinear()
   for(int i=1; i < (int) tp_.size(); i++)
     tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
 
+  return 1;
+}
+
+int Trajectory::write(std::string filename, double dT)
+{
+  FILE *f = fopen(filename.c_str(),"w");
+  double time = tp_.front().time_;
+  TPoint tp;
+  tp.setDimension(dimension_);
+
+  while(time < tp_.back().time_)
+  {
+    sample(tp,time);
+    fprintf(f,"%f ",time);
+    for(int j=0; j < dimension_; j++)
+    {
+      fprintf(f,"%f ",tp.q_[j]);
+    }
+    for(int j=0; j < dimension_; j++)
+    {
+      fprintf(f,"%f ",tp.qdot_[j]);
+    }
+    fprintf(f,"\n");
+    time += dT;
+//    printf("%f \n",time);
+  }
+  fclose(f);
   return 1;
 }

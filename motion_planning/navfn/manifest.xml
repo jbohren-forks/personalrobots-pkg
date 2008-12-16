@@ -1,0 +1,13 @@
+<package>
+ <description brief="a fast interpolated navigation function">
+ </description>
+ <author>Kurt Konolige</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+<!--
+ <depend package="some_package_or_other"/>
+-->
+ <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
+ <sysdepend os="ubuntu" version="7.04-feisty" package="libnetpbm10-dev"/> <!-- could be optional? -->
+</package>

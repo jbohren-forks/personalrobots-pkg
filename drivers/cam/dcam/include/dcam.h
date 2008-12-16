@@ -180,12 +180,26 @@ namespace dcam
     virtual bool getImage(int ms); // gets the next image, with timeout
     virtual void setCapturePolicy(dc1394capture_policy_t policy = DC1394_CAPTURE_POLICY_WAIT);
 
+    // general DC1394 interface
     virtual bool hasFeature(dc1394feature_t feature);
     virtual void getFeatureBoundaries(dc1394feature_t feature, uint32_t& min, uint32_t& max);
     virtual void setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2 = 0);
     virtual void setFeatureAbsolute(dc1394feature_t feature, float value);
     virtual void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
+    // particular features of importance
+    virtual void setExposure(int val, bool isauto);
+    virtual void setGain(int val, bool isauto);
+    virtual void setBrightness(int val, bool isauto);
+    // feature boundaries
+    uint32_t expMax, expMin;
+    uint32_t gainMax, gainMin;
+    uint32_t brightMax, brightMin;
+
+
+    // low-level register access
+    // implicitly assumes CCR base, so that DCAM register are at offsets
+    //   e.g., for EXPOSURE use 0x804
     virtual void setRegister(uint64_t offset, uint32_t value);
     virtual uint32_t getRegister(uint64_t offset);
 
@@ -195,10 +209,15 @@ namespace dcam
     virtual bool setHDR(bool on); // high dynamic range
     virtual bool setUniqueThresh(int val); // uniqueness threshold
     virtual bool setTextureThresh(int val); // texture threshold
+    virtual bool setHoropter(int val); // horopter offset, 0-63 for STOC
 
     virtual char *getParameters(); // download from device
-    virtual bool setParameters(char *params); // upload to device
+    virtual bool setParameters(); // upload to device
+    virtual bool setSTOCParams(uint8_t *cbuf, int cn, // upload to STOC device
+			       uint8_t *lbuf, int ln, // STOC firmware, left and right warp tables
+			       uint8_t *rbuf, int rn);
 
+    virtual int  getIncRectTable(uint8_t *buf);	// make a warp table for a STOC device
     uint64_t camGUID;		// our own GUID
     uint32_t imFirmware, camFirmware, stocFirmware;
     bool isSTOC, isVidereStereo, isColor; // true if a STOC, Videre stereo, color device
@@ -215,6 +234,7 @@ namespace dcam
     videre_proc_mode_t procMode; // STOC mode, if applicable
     dc1394color_filter_t bayerMode; // bayer color encoding 
     color_coding_t rawType;	// what type of raw image we receive
+    virtual bool store_eeprom_bytes(int addr, uint8_t *buf, int count);
   };
 
 };

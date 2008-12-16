@@ -11,7 +11,7 @@
 #include <trajectory_rollout/trajectory_controller.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
 
 using namespace costmap_2d;
 
@@ -30,7 +30,7 @@ namespace ros {
        * @brief Compute velocities for x, y and theta based on an obstacle map, and a current path
        */
       virtual bool computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& globalPlan,
-					   const libTF::TFPose2D& pose,
+					   const tf::Stamped<tf::Pose>& pose,
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
 					   std::list<std_msgs::Pose2DFloat32>& localPlan) = 0;
@@ -44,7 +44,7 @@ namespace ros {
      */
     class TrajectoryRolloutController: public VelocityController {
     public:
-      TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,
+      TrajectoryRolloutController(tf::TransformListener* tf, const CostMapAccessor& ma,
 				  double sim_time, int sim_steps, int samples_per_dim,
 				  double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
 				  double acc_lim_x, double acc_lim_y, double acc_lim_th, std::vector<std_msgs::Point2DFloat32> footprint_spec);
@@ -52,7 +52,7 @@ namespace ros {
       virtual ~TrajectoryRolloutController(){}
 
       virtual bool computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& globalPlan, 
-					   const libTF::TFPose2D& pose, 
+					   const tf::Stamped<tf::Pose>& pose, 
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
 					   std::list<std_msgs::Pose2DFloat32>& localPlan);
@@ -63,7 +63,7 @@ namespace ros {
     private:
 
       //transform client
-      rosTFClient* tf_;
+      tf::TransformListener* tf_;
 
       // Cost map accessor
       const costmap_2d::ObstacleMapAccessor& ma_;

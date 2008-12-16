@@ -120,7 +120,7 @@ class SparseLLT<MatrixType,Cholmod> : public SparseLLT<MatrixType>
     }
 
     SparseLLT(const MatrixType& matrix, int flags = 0)
-      : Base(matrix, flags), m_cholmodFactor(0)
+      : Base(flags), m_cholmodFactor(0)
     {
       cholmod_start(&m_cholmod);
       compute(matrix);
@@ -155,6 +155,7 @@ void SparseLLT<MatrixType,Cholmod>::compute(const MatrixType& a)
   }
 
   cholmod_sparse A = const_cast<MatrixType&>(a).asCholmodMatrix();
+  // TODO
   if (m_flags&IncompleteFactorization)
   {
     m_cholmod.nmethods = 1;
@@ -195,19 +196,13 @@ template<typename MatrixType>
 template<typename Derived>
 void SparseLLT<MatrixType,Cholmod>::solveInPlace(MatrixBase<Derived> &b) const
 {
+  if (m_status & MatrixLIsDirty)
+    matrixL();
+
   const int size = m_matrix.rows();
   ei_assert(size==b.rows());
 
-  if (m_status & MatrixLIsDirty)
-  {
-//     ei_assert(!(m_status & SupernodalFactorIsDirty));
-//     taucs_supernodal_solve_llt(m_taucsSupernodalFactor,double* b);
-    matrixL();
-  }
-//   else
-  {
-    Base::solveInPlace(b);
-  }
+  Base::solveInPlace(b);
 }
 
 #endif // EIGEN_CHOLMODSUPPORT_H

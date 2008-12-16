@@ -1,1 +1,0 @@
-trexfast `rospack find executive_trex_pr2`/cfg/$1.cfg

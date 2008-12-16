@@ -200,7 +200,6 @@ bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXml
 {
   assert(robot);
   robot_ = robot;
-  ros::node *node = ros::node::instance();
 
   std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")

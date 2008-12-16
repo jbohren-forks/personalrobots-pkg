@@ -10,7 +10,9 @@
 
 #include <vector>
 #include <deque>
+#include <boost/unordered_map.hpp>
 using namespace std;
+#include <limits.h>
 
 #include <opencv/cxtypes.h>
 
@@ -144,7 +146,11 @@ public:
       Keypoints*& keypoints
   );
 
-  virtual vector<FramePose>* getFramePoses();
+  virtual vector<FramePose*>* getFramePoses();
+
+  /// \brief setting the camera parameters
+  virtual void setCameraParams(double Fx, double Fy, double Tx,
+      double Clx, double Crx, double Cy, double dispUnitScale);
 
   /// A routine to visualize the keypoints, tracks, disparity images
   /// etc. By default, it shows on the screen and save to disk.
@@ -160,9 +166,12 @@ public:
   static const double defMaxShift = 300.;
 
   PoseEstimateStereo mPoseEstimator;
-  /// global transformation matrix up to the last key frame
+  /// global transformation matrix up to the last key frame, in Cartesian space.
   CvMat mTransform;
-  vector<FramePose> mFramePoses;
+  /// a list of FramePose objects representing the processed frames.
+  vector<FramePose *> mFramePoses;
+  /// a map from frame index to its object of FramePose
+  boost::unordered_map<int, FramePose*> map_index_to_FramePose_;
 
   FrameSeq mFrameSeq;
   virtual FrameSeq& getFrameSeq() {return mFrameSeq;}
@@ -179,7 +188,7 @@ public:
     assert(keyFrame);
     // make a copy of the current transformation in the record
     // this key frame.
-    cvCopy(&mTransform, &keyFrame->mGlobalTransform);
+    cvCopy(&mTransform, &keyFrame->transf_local_to_global_);
     // enter this key frame into the queue of active key frames
     mActiveKeyFrames.push_back(keyFrame);
   }
@@ -219,7 +228,7 @@ public:
     /// of the errors in transformation estimation. Used mostly
     /// for debugging / analysis purposes.
     CvPoseEstErrMeasDisp mErrMeas;
-    FramePose mFinalPose;
+    FramePose* mFinalPose;
   };
   Stat   mStat; //< Statistics of the visual odometry process
 
@@ -243,7 +252,6 @@ protected:
   CvMat mRT;
   double _tempMat[16];
   CvMat _mTempMat;
-
 };
 } // willow
 } // cv

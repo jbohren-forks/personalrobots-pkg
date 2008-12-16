@@ -4,12 +4,12 @@
   </description>
   <author>Caroline Pantofaru, Jeremy Leibs, Vijay Pradeep</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Point_clouds_from_scanning_URG</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="laser_scan_utils"/>
-  <depend package="rosTF"/>
-  <depend package="libTF"/>
+  <depend package="laser_scan"/>
+  <depend package="tf"/>
   <depend package="pr2_mechanism_controllers"/>
 </package>
 

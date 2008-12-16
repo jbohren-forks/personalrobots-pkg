@@ -18,6 +18,19 @@ public:
    */
   typedef pair<double,double> Range;
 
+  struct Params {
+    IplImage* image;
+    Range histRange;
+    int numBins;
+  };
+
+  static void histogram(const Params& hparam, 
+			const coordList& coords, 
+			double *bins) {
+    histogram(hparam.image, hparam.histRange, coords,
+	      hparam.numBins, bins);
+  }
+
   /**
      @brief Computes an image histogram
      @param image The input image
@@ -31,6 +44,8 @@ public:
      Divides histRange into numBins uniformly-sized bins 
      and computes the histogram of values at the specified 
      coordinates of the image.
+
+     Histogram is normalized.
   */
   static void histogram(const IplImage* image,
 			const Range& histRange,

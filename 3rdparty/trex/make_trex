@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ `uname` = Darwin ]; then
+  export DYLD_BIND_AT_LAUNCH=YES
+fi
+
 # PLASMA_HOME is required to build the PLASMA NDDL.jar
 source devConfig
 
@@ -14,7 +18,11 @@ if [ $? -ne 0 ] ; then
 fi
 
 # Build the debug version
-jam -q libTREX_g.so
+if [ `uname` = Darwin ]; then
+  jam -q libTREX_g.dylib
+else
+  jam -q libTREX_g.so
+fi
 
 if [ $? -ne 0 ] ; then
     echo "Jam of libTREX_g.so failed."
@@ -22,7 +30,11 @@ if [ $? -ne 0 ] ; then
 fi
 
 # Build the optimized version
-jam -sVARIANTS=OPTIMIZED -q libTREX_o.so
+if [ `uname` = Darwin ]; then
+  jam -sVARIANTS=OPTIMIZED -q libTREX_o.dylib
+else
+  jam -sVARIANTS=OPTIMIZED -q libTREX_o.so
+fi
 
 if [ $? -ne 0 ] ; then
     echo "Jam of libTREX_o.so failed."

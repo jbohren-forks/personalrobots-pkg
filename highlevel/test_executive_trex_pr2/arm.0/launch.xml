@@ -1,0 +1,16 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+
+    <!-- Launch the node collection for a gazebo sim -->
+    <include file="$(find executive_trex_pr2)/cfg/launch_gazebo.xml"/>
+
+    <param name="/trex/input_file" value="pr2.cfg"/>
+    <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find test_executive_trex_pr2)/arm.0"/>
+    <param name="/trex/time_limit" value="20"/>
+    <param name="/trex/log_dir" value="$(find test_executive_trex_pr2)/arm.0"/>
+    <param name="/trex/play_back" value="0"/>
+    <node pkg="executive_trex_pr2" type="trexfast" args="" respawn="false" />
+
+  </group>
+</launch>

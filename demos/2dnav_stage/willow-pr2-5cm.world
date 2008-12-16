@@ -50,7 +50,7 @@ interval_real 100  # real-time interval between simulation updates in millisecon
 window
 ( 
   size [ 745.000 448.000 ] 
-  center [621.990 394.960] 
+  center [275.990 494.960] 
   rotate [ 0.000 -1.560 ]
   scale 18.806 
 )
@@ -60,10 +60,10 @@ floorplan
 ( 
   name "willow"
   bitmap "willow-full-0.05.pgm"
-  size3 [48.1 54.4 1.0]
-  pose [-27.200 24.050 90.000]
+  size3 [58.25 47.25 1.0]
+  pose [-23.625 29.125 90.000]
 )
 
 # throw in a robot
-pr2( pose [-10.773 20.602 180.000] name "pr2" color "blue")
-block( pose [-10.965 23.233 180.000] color "red")
+pr2( pose [-28.610 13.562 99.786] name "pr2" color "blue")
+block( pose [-25.062 12.909 180.000] color "red")

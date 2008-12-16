@@ -80,7 +80,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
 #include <robot_srvs/PlanNames.h>
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
 static const unsigned int LEFT_ARM_JOINTS_BASE_INDEX = 12;
@@ -120,7 +120,7 @@ private:
   robot_msgs::MechanismState mechanismState;
   robot_srvs::NamedKinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
-  rosTFClient tf_; /**< Used to do transforms */
+  tf::TransformListener tf_; /**< Used to do transforms */
 
 protected:
   std::vector<std::string> jointNames_; /*< The collection of joint names of interest. Instantiate in the  derived class.*/
@@ -162,6 +162,8 @@ MoveArm::~MoveArm(){}
 void MoveArm::handleArmConfigurationCallback(){
   initialize();
 
+  lock();
+
   // Read available name value pairs
   std::vector<std::pair< std::string, double> > nameValuePairs;
   for(std::vector< std::string >::const_iterator it = jointNames_.begin(); it != jointNames_.end(); ++it){
@@ -170,8 +172,6 @@ void MoveArm::handleArmConfigurationCallback(){
     if(readJointValue(mechanismState, name, value))
       nameValuePairs.push_back(std::pair<std::string, double>(name, value));
   }
-
-  lock();
 
   // Now set the state msg up for publication
   stateMsg.set_configuration_size(nameValuePairs.size());
@@ -191,7 +191,8 @@ void MoveArm::updateGoalMsg(){
 
 bool MoveArm::makePlan(){
   std::cout << "Invoking Kinematic Planner\n";
-
+  //lock();
+  ROS_INFO("Locked");
 
   robot_srvs::PlanNames::request namesReq;
   robot_srvs::PlanNames::response names;
@@ -217,28 +218,26 @@ bool MoveArm::makePlan(){
 
 
   //Get the pose of the robot:
-  libTF::TFPose2D robotPose, globalPose;
-  globalPose.x = robotPose.x = 0;
-  globalPose.y = robotPose.y = 0;
-  globalPose.yaw = robotPose.yaw = 0;
-  robotPose.frame = "base";
-  globalPose.time = robotPose.time = 0;
+  tf::Stamped<tf::Pose> robotPose, globalPose;
+  robotPose.setIdentity();
+  robotPose.frame_id_ = "base_link";
+  robotPose.stamp_ = ros::Time();
+
   try{
-    globalPose = this->tf_.transformPose2D("map", robotPose);
+    tf_.transformPose("map", robotPose, globalPose);
   }
-  catch(libTF::TransformReference::LookupException& ex){
-    std::cout << "No Transform available Error\n";
+  catch(tf::LookupException& ex) {
+    ROS_INFO("No Transform available Error\n");
   }
-  catch(libTF::TransformReference::ConnectivityException& ex){
-    std::cout << "Connectivity Error\n";
+  catch(tf::ConnectivityException& ex) {
+    ROS_INFO("Connectivity Error\n");
   }
-  catch(libTF::TransformReference::ExtrapolateException& ex){
-    std::cout << "Extrapolation Error\n";
+  catch(tf::ExtrapolationException& ex) {
+    ROS_INFO("Extrapolation Error\n");
   }
-  
 
 
-
+  ROS_INFO("Get the start state.");
   //initializing full value state
   req.start_state.set_names_size(names.get_names_size());
   req.start_state.set_joints_size(names.get_names_size());
@@ -247,10 +246,12 @@ bool MoveArm::makePlan(){
     //std::cout << req.start_state.names[i] << ": " << names.num_values[i] << std::endl;
     req.start_state.joints[i].set_vals_size(names.num_values[i]);
     if (names.names[i] == "base_joint") {
-      std::cout << "Base: " << i << ", " << globalPose.x << ", " << globalPose.y << ", " << globalPose.yaw << std::endl;
-      req.start_state.joints[i].vals[0] = globalPose.x;
-      req.start_state.joints[i].vals[1] = globalPose.y;
-      req.start_state.joints[i].vals[2] = globalPose.yaw;
+      double yaw, pitch, roll;
+      globalPose.getBasis().getEulerZYX(yaw, pitch, roll);
+      std::cout << "Base: " << i << ", " << globalPose.getOrigin().getX() << ", " << globalPose.getOrigin().getY() << ", " << yaw << std::endl;
+      req.start_state.joints[i].vals[0] = globalPose.getOrigin().getX();
+      req.start_state.joints[i].vals[1] = globalPose.getOrigin().getY();
+      req.start_state.joints[i].vals[2] = yaw;
     } else {
       for (int k = 0 ; k < names.num_values[i]; k++) {
 	req.start_state.joints[i].vals[k] = 0;
@@ -261,27 +262,26 @@ bool MoveArm::makePlan(){
   // TODO: Adjust based on parameters for left vs right arms
 
   // Fill out the start state from current arm configuration
-  mechanismState.lock();
   setStartState(req);
-  mechanismState.unlock();
 
   // Filling out goal state from data in the goal message
-  goalMsg.lock();
+  ROS_INFO("Set the goal state.");
   req.goal_state.set_names_size(goalMsg.get_configuration_size());
   req.goal_state.set_joints_size(goalMsg.get_configuration_size());
   for(unsigned int i = 0; i<goalMsg.get_configuration_size(); i++) {
     req.goal_state.names[i] = goalMsg.configuration[i].name;
     req.goal_state.joints[i].set_vals_size(1); //FIXME: multi-part joints?
     req.goal_state.joints[i].vals[0] = goalMsg.configuration[i].position;
+    ROS_INFO("Joint: %s = %f", goalMsg.configuration[i].name.c_str(), goalMsg.configuration[i].position);
   }
 
-  goalMsg.unlock();
 
   req.allowed_time = 10.0;
   req.params.volumeMin.x = -1.0; req.params.volumeMin.y = -1.0; req.params.volumeMin.z = -1.0;
   req.params.volumeMax.x = -1.0; req.params.volumeMax.y = -1.0; req.params.volumeMax.z = -1.0;
 
   // Invoke kinematic motion planner
+  ROS_INFO("Running the service.");
   ros::service::call("plan_kinematic_path_named", req, plan);
   unsigned int nstates = plan.path.get_states_size();
 
@@ -302,6 +302,7 @@ bool MoveArm::makePlan(){
   dpath.path = plan.path;
   publish("display_kinematic_path", dpath);*/
 
+  unlock();
 
   return foundPlan;
 }
@@ -332,13 +333,13 @@ bool MoveArm::goalReached(){
  */
 bool MoveArm::withinBounds(unsigned waypointIndex){
   double sum_joint_diff = 0.0;
-  mechanismState.lock();
+
   for(unsigned int i=0; i<plan.path.states[waypointIndex].get_joints_size(); i++){
     double value;
     if(readJointValue(mechanismState, plan.path.states[waypointIndex].names[i], value))
        sum_joint_diff += fabs(value - plan.path.states[waypointIndex].joints[i].vals[0]);
   }
-  mechanismState.unlock();
+
 
   if(L1_JOINT_DIFF_MAX > sum_joint_diff)
     return true;
@@ -409,13 +410,13 @@ void MoveArm::setStartState(robot_srvs::NamedKinematicPlanState::request& req){
 class MoveRightArm: public MoveArm {
 public:
   MoveRightArm(): MoveArm("rightArmController", "right_arm_state", "right_arm_goal", "mechanism_state", "right_arm_commands", "pr2::right_arm"){
-    jointNames_.push_back("shoulder_pan_right_joint");
-    jointNames_.push_back("shoulder_pitch_right_joint");
-    jointNames_.push_back("upperarm_roll_right_joint");
-    jointNames_.push_back("elbow_flex_right_joint");
-    jointNames_.push_back("forearm_roll_right_joint");
-    jointNames_.push_back("wrist_flex_right_joint");
-    jointNames_.push_back("gripper_roll_right_joint");
+    jointNames_.push_back("r_shoulder_pan_joint");
+    jointNames_.push_back("r_shoulder_lift_joint");
+    jointNames_.push_back("r_upper_arm_roll_joint");
+    jointNames_.push_back("r_elbow_flex_joint");
+    jointNames_.push_back("r_forearm_roll_joint");
+    jointNames_.push_back("r_wrist_flex_joint");
+    jointNames_.push_back("r_wrist_roll_joint");
   };
 
 protected:
@@ -425,13 +426,13 @@ class MoveLeftArm: public MoveArm {
 public:
   MoveLeftArm(): MoveArm("leftArmController", "left_arm_state", "left_arm_goal", "mechanism_state", "left_arm_commands", "pr2::left_arm"){
     // Instantiate joint vector
-    jointNames_.push_back("shoulder_pan_left_joint");
-    jointNames_.push_back("shoulder_pitch_left_joint");
-    jointNames_.push_back("upperarm_roll_left_joint");
-    jointNames_.push_back("elbow_flex_left_joint");
-    jointNames_.push_back("forearm_roll_left_joint");
-    jointNames_.push_back("wrist_flex_left_joint");
-    jointNames_.push_back("gripper_roll_left_joint");
+    jointNames_.push_back("l_shoulder_pan_joint");
+    jointNames_.push_back("l_shoulder_lift_joint");
+    jointNames_.push_back("l_upper_arm_roll_joint");
+    jointNames_.push_back("l_elbow_flex_joint");
+    jointNames_.push_back("l_forearm_roll_joint");
+    jointNames_.push_back("l_wrist_flex_joint");
+    jointNames_.push_back("l_wrist_roll_joint"); 
   }
 };
 

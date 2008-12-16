@@ -3,14 +3,15 @@
   <description brief="Robot Descriptions">
     
     This package contains XML descriptions of robots in the format
-    defined at Willow Garage.
+    defined at Willow Garage along with the triangle meshes of each of the links (in stl format).
     
   </description>
   <author>Sachin Chitta, John Hsu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   
   <depend package="wg_robot_description_parser" />
-  
+  <depend package="xacro"/>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
 </package>

@@ -57,7 +57,7 @@ bool Robot::initXml(TiXmlElement *root)
        xit = xit->NextSiblingElement("transmission"))
   {
     const char *type = xit->Attribute("type");
-    Transmission *t = type ? TransmissionFactory::instance().create(type) : NULL;
+    Transmission *t = type ? TransmissionFactory::Instance().CreateObject(type) : NULL;
     if (!t)
       fprintf(stderr, "Unknown transmission type: \"%s\"\n", type);
     else if (!t->initXml(xit, this))
@@ -209,6 +209,12 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
 
 
 JointState *RobotState::getJointState(const std::string &name)
+{
+  int i = model_->getJointIndex(name);
+  return i >= 0 ? &joint_states_[i] : NULL;
+}
+
+const JointState *RobotState::getJointState(const std::string &name) const
 {
   int i = model_->getJointIndex(name);
   return i >= 0 ? &joint_states_[i] : NULL;

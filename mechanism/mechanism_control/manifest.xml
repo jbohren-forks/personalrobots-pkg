@@ -3,6 +3,7 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="rosthread"/>
 <depend package="roscpp" />
@@ -14,9 +15,10 @@
 <depend package="tf" />
 <depend package="robot_msgs" />
 <depend package="robot_srvs" />
+<depend package="rosconsole" />
 <export>
     <cpp cflags='-I${prefix}/include'
-	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>
+	       lflags='${prefix}/lib/libmechanism_control.a'/>
 </export>
 </package>
 

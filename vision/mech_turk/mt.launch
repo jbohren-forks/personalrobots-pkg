@@ -1,0 +1,7 @@
+<launch>
+  <group name="wg">
+    <node pkg="dc1394_cam_server" type="dc1394_cam_server" args="" respawn="false" output="screen" />
+    <node pkg="mech_turk" type="cv_mturk" args="image:=cam0/image" respawn="false" output="screen" />
+  </group>
+</launch>
+

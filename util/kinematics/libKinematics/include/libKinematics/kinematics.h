@@ -176,7 +176,7 @@ namespace kinematics
 
 
    /*! \fn
-\brief Solution of the first form of the Paden-Kahan subproblems. This formulation solves for theta in exp(xi1 theta1) exp(xi2 theta2) p  = q
+\brief Solution of the second form of the Paden-Kahan subproblems. This formulation solves for theta in exp(xi1 theta1) exp(xi2 theta2) p  = q
 \param p NEWMAT matrix representation of a point on which the exponential operates
 \param q NEWMAT matrix representation of the resultant point after rotation through thets
 \param r point on the axis about which the rotation is happening
@@ -194,7 +194,7 @@ namespace kinematics
    void PrintMatrix(NEWMAT::Matrix m, std::string c);
 
 
-/*! \enum PR2_JOINT_TYPE
+/*! \enum robot_JOINT_TYPE
  * Joint types
 */
    enum PR2_JOINT_TYPE{ 
@@ -222,7 +222,11 @@ namespace kinematics
 
       NEWMAT::Matrix linkPose; /**< link pose */
 
-      NEWMAT::Matrix twist;; /**< link twist */
+      NEWMAT::Matrix twist; /**< link twist */
+
+      NEWMAT::Matrix axis;
+
+      NEWMAT::Matrix anchor;
    };
 
    /*! \class 
@@ -265,6 +269,12 @@ namespace kinematics
         \param joint - twist vector corresponding to the joint
       */
       void AddJoint(double p[], double axis[], int jointType);
+
+      /*! \fn
+        \brief Add a new joint to the serial robot,
+        \param joint - twist vector corresponding to the joint
+      */
+      void AddJoint(NEWMAT::Matrix p, NEWMAT::Matrix axis, string joint_type);
 
       /*! \fn
         \brief Compute the inverse kinematics for a serial manipulator (NOT IMPLEMENTED YET)
@@ -353,19 +363,19 @@ namespace kinematics
 
       /*! \fn
         \brief Return the default/home position of the end-effector. 
-        \return Homogeneous matrix representation of the default/home position of the PR2
+        \return Homogeneous matrix representation of the default/home position of the robot
       */
       NEWMAT::Matrix GetHomePosition();
 
       /*! \fn
         \brief Set the default/home position of the end-effector. 
-        \return Homogeneous matrix representation of the default/home position of the PR2
+        \return Homogeneous matrix representation of the default/home position of the robot
       */
       void SetHomePosition(NEWMAT::Matrix g);
 
      protected:
       
-      NEWMAT::Matrix homePosition; /**< Homogeneous matrix representation of the default/home position of the PR2 */ 
+      NEWMAT::Matrix homePosition; /**< Homogeneous matrix representation of the default/home position of the robot */ 
 
      private: 
 

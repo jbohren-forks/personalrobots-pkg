@@ -270,6 +270,11 @@ void Robot::createCollisionForLink( LinkInfo* info, robot_desc::URDF::Link* link
 
 void Robot::createVisualForLink( LinkInfo* info, robot_desc::URDF::Link* link )
 {
+	if (!link->visual || !link->visual->geometry || !link->visual->geometry->shape)
+	{
+		return;
+	}
+
   robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
   if ( mesh->filename.empty() )
   {
@@ -616,15 +621,18 @@ void Robot::update( tf::TransformListener* tf, const std::string& target_frame )
       continue;
     }
 
-    tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( 0, 0, 0 ), btVector3( 0, 0, 0 ) ), ros::Time((uint64_t)0ULL), name );
+    tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( 0, 0, 0 ), btVector3( 0, 0, 0 ) ), ros::Time(), name );
 
-    try
+    if (tf->canTransform(target_frame, name, ros::Time()))
     {
-      tf->transformPose( target_frame, pose, pose );
-    }
-    catch(tf::TransformException& e)
-    {
-      ROS_ERROR( "Error transforming from frame '%s' to frame '%s'\n", name.c_str(), target_frame.c_str() );
+      try
+      {
+        tf->transformPose( target_frame, pose, pose );
+      }
+      catch(tf::TransformException& e)
+      {
+        ROS_ERROR( "Error transforming from frame '%s' to frame '%s'\n", name.c_str(), target_frame.c_str() );
+      }
     }
 
     //printf( "Link %s:\npose: %6f %6f %6f,\t%6f %6f %6f\n", name.c_str(), pose.data_.getOrigin().x(), pose.data_.getOrigin().y(), pose.data_.getOrigin().z(), pose.data_.getOrigin().y()aw, pose.pitch, pose.roll );
@@ -658,17 +666,17 @@ void Robot::update( planning_models::KinematicModel* kinematic_model, const std:
       continue;
     }
 
-    libTF::Position robot_visual_position = link->globalTransFwd.getPosition();
-    libTF::Quaternion robot_visual_orientation = link->globalTransFwd.getQuaternion();
-    Ogre::Vector3 visual_position( robot_visual_position.x, robot_visual_position.y, robot_visual_position.z );
-    Ogre::Quaternion visual_orientation( robot_visual_orientation.w, robot_visual_orientation.x, robot_visual_orientation.y, robot_visual_orientation.z );
+    btVector3 robot_visual_position = link->globalTransFwd.getOrigin();
+    btQuaternion robot_visual_orientation = link->globalTransFwd.getRotation();
+    Ogre::Vector3 visual_position( robot_visual_position.getX(), robot_visual_position.getY(), robot_visual_position.getZ() );
+    Ogre::Quaternion visual_orientation( robot_visual_orientation.getW(), robot_visual_orientation.getX(), robot_visual_orientation.getY(), robot_visual_orientation.getZ() );
     robotToOgre( visual_position );
     robotToOgre( visual_orientation );
 
-    libTF::Position robot_collision_position = link->globalTrans.getPosition();
-    libTF::Quaternion robot_collision_orientation = link->globalTrans.getQuaternion();
-    Ogre::Vector3 collision_position( robot_collision_position.x, robot_collision_position.y, robot_collision_position.z );
-    Ogre::Quaternion collision_orientation( robot_collision_orientation.w, robot_collision_orientation.x, robot_collision_orientation.y, robot_collision_orientation.z );
+    btVector3 robot_collision_position = link->globalTrans.getOrigin();
+    btQuaternion robot_collision_orientation = link->globalTrans.getRotation();
+    Ogre::Vector3 collision_position( robot_collision_position.getX(), robot_collision_position.getY(), robot_collision_position.getZ() );
+    Ogre::Quaternion collision_orientation( robot_collision_orientation.getW(), robot_collision_orientation.getX(), robot_collision_orientation.getY(), robot_collision_orientation.getZ() );
     robotToOgre( collision_position );
     robotToOgre( collision_orientation );
 

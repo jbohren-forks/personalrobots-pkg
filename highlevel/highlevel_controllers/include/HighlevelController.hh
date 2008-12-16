@@ -158,10 +158,16 @@ public:
       if(isInitialized() && isActive()){
 
 	// If the plannerCycleTime is 0 then we only call the planner when we need to
-	if(plannerCycleTime_ != 0 || !isValid())
+	if(plannerCycleTime_ != 0 || !isValid()){
 	  setValid(makePlan());
+	  if(!isValid()){
+	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
+	    lock();
+	    handlePlanningFailure();
+	    unlock();
+	  }
+	}
       }
-
 
       if(plannerCycleTime_ >= 0)
 	sleep(currentTime, std::max(plannerCycleTime_, controllerCycleTime_));
@@ -170,7 +176,7 @@ public:
     }
   }
 
-private:
+protected:
 
   /**
    * @brief Accessor for state of the controller
@@ -179,13 +185,39 @@ private:
     return this->state == ACTIVE;
   }
 
-protected:
-
   /**
    * @brief Access for valid status of the controller
    */
   bool isValid() {
     return this->stateMsg.valid;
+  }
+
+  /**
+   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
+   * goal has not yet been accomplished and that no plan has been constructed yet.
+   */
+  void activate(){
+    ROS_INFO("Activating controller\n");
+
+    this->state = ACTIVE;
+    this->stateMsg.active = 1;
+    this->stateMsg.valid = 0;
+    this->stateMsg.done = 0;
+
+    handleActivation();
+  }
+
+  /**
+   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
+   */
+  void deactivate(){
+    ROS_INFO("Deactivating controller\n");
+
+    this->state = INACTIVE;
+    this->stateMsg.active = 0;
+    this->stateMsg.valid = 0;
+
+    handleDeactivation();
   }
 
   /**
@@ -238,6 +270,10 @@ protected:
    */
   virtual void handleActivation(){}
 
+  /**
+   * @brief A hook to handle the case when global planning fails
+   */
+  virtual void handlePlanningFailure(){}
 
   /**
    * @brief Aquire node level lock
@@ -325,34 +361,6 @@ private:
   }
 
   /**
-   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
-   * goal has not yet been accomplished and that no plan has been constructed yet.
-   */
-  void activate(){
-    ROS_INFO("Activating controller\n");
-
-    this->state = ACTIVE;
-    this->stateMsg.active = 1;
-    this->stateMsg.valid = 0;
-    this->stateMsg.done = 0;
-
-    handleActivation();
-  }
-
-  /**
-   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
-   */
-  void deactivate(){
-    ROS_INFO("Deactivating controller\n");
-
-    this->state = INACTIVE;
-    this->stateMsg.active = 0;
-    this->stateMsg.valid = 0;
-
-    handleDeactivation();
-  }
-
-  /**
    * @brief Sleep for remaining time of the cycle
    */
   void sleep(double loopstart, double loopDuration)
@@ -383,10 +391,13 @@ private:
     // is active, even if it transitions in the first cycle to an inactive state
     publish(stateTopic, this->stateMsg);
 
-    // If we are pursuing a goal, and thus we have a plan, we should check for
-    // the goal being reached, in which case we update the state
-    if(isActive() && isValid()){
-	if(goalReached()){
+    // If we are in an active state, we want to evalaute what to do whether we have a plan or not. In
+    // the latter case, commands may be given to maintain a fail-safe state. The structure here ensures
+    // the controller has an opportunity to command appropriately whether in a valid state or not. If this were
+    // not the case, for example, on a mobil robot, it could just maintain prior commanded values
+    // when the planner invalidates the plan, which can happen since planning is interleaved.
+    if(isActive()){
+      if(isValid() && goalReached()){
 	  setDone(true);
 	  deactivate();
 	}

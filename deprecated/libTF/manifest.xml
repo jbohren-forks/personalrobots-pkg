@@ -1,0 +1,20 @@
+<package>
+<description brief='Transform Library'>
+
+Library for doing transformations.
+
+</description>
+<author>Tully Foote</author>
+<license>BSD</license>
+<review status="deprecated" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="newmat10"/>
+<depend package="ros_exception"/>
+<depend package="rosthread"/>
+<depend package="angles"/>
+<depend package="std_msgs"/>
+<depend package="roscpp"/>
+<export>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF"/>
+</export>
+</package>

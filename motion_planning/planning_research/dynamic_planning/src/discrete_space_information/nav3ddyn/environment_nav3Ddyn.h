@@ -29,14 +29,27 @@
 #ifndef __ENVIRONMENT_NAV3DDYN_H_
 #define __ENVIRONMENT_NAV3DDYN_H_
 
+//shrink footprint
+#define NAV3DDYN_SHRINK_FOOTPRINT 0
 
 //eight-connected grid
 #define NAV3DDYN_DXYWIDTH 1
+
+//number of theta directions
+#define NAV3DDYN_THETADIRS 8
 
 //number of actions per x,y,theta state
 #define NAV3DDYN_ACTIONWIDTH 5 //decrease, increase, same angle while moving plus decrease, increase angle while standing.
 
 #define NAV3DDYN_COSTMULT 1000
+
+#define NAV3DDYN_MAXRV 1.57 //max rotational velocity - radians per second
+#define NAV3DDYN_NUMRV 5 //number of rotational velocity values to try
+
+//seconds
+#define NAV3DDYN_SHORTDUR 0.5
+#define NAV3DDYN_LONGDUR 2
+#define NAV3DDYN_DURDISC 0.1
 
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
@@ -95,23 +108,11 @@ typedef struct
 } EnvNAV3DDYNAction_t;
 
 
+
 //configuration parameters
 typedef struct ENV_NAV3DDYN_CONFIG
 {
-  double MaxRv;  //max rotational velocity - radians per second
-  double Tv;  //translational velocity - meters per second
-  unsigned int NumRv;  //number of rotational velocity values to try
-  unsigned int NumTheta; //definition of theta orientations
   
-  //minimum and maximum duration for actions
-  double ShortDur; //seconds
-  double LongDur; //seconds
-  double DurDisc; //seconds - discritization factor for time parameter when generating velocities
- 
-
-  //footprint of robot
-  vector <EnvNAV3DDYN2Dpt_t> FootprintPolygon; //real world coordinates
-
   int EnvWidth_c;
   int EnvHeight_c;
   int StartX_c;
@@ -120,12 +121,17 @@ typedef struct ENV_NAV3DDYN_CONFIG
   int EndX_c;
   int EndY_c;
   int EndTheta;
+  
   char** Grid2D;
 
-  double nominalvel_mpersecs;
+  double nominalvel_mpersecs; //translational velocity
+  double timetoturnoneunitinplace_secs;
   double cellsize_m;
   
   int dXY[NAV3DDYN_DXYWIDTH][2];
+
+  //footprint of robot
+  vector <EnvNAV3DDYN2Dpt_t> FootprintPolygon; //real world coordinates
   
   EnvNAV3DDYNAction_t** ActionsV; //array of actions, ActionsV[i][j] - jth action for sourcetheta = i
   vector<EnvNAV3DDYNAction_t*>* PredActionsV;
@@ -175,18 +181,21 @@ public:
   //environment initialization functions
   bool InitializeEnv(const char* sEnvFile);
   bool InitializeEnv(int width, int height,
-		     char* mapdata,
+		     const unsigned char* mapdata,
 		     double startx, double starty, double starttheta,
 		     double goalx, double goaly, double goaltheta,
 		     double goaltol_x, double goaltol_y, double goaltol_theta,
-		     vector<EnvNAV3DDYN2Dpt_t> perimeterptsV,
-		     double cellsize_m, double nominalvel_mpersecs);
-  void PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions);
+		     const vector<sbpl_2Dpt_t> & perimeterptsV,
+		     double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs);
+
+  void PrecomputeActions();
   void CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint);
   void CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint);
   void RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>* path);
   void RemoveDuplicatesFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* footprint);
+  void DiscretizeAndShrinkFootprintBoundary();
   
+
   //planning initialization functions
   bool InitializeMDPCfg(MDPConfig *MDPCfg);
   int SetStart(double x, double y, double theta);
@@ -202,13 +211,14 @@ public:
   bool IsObstacle(int x, int y);
 
   //debugging functions
-  void PrintActionsToFile(char* logFile);
+  void PrintConfigurationToFile(const char* logFile);
+  void PrintActionsToFile(const char* logFile);
   void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
   void PrintTimeStat(FILE* fOut);
   int	 SizeofCreatedEnv();
   void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
 		   double* cellsize_m);
-
+  void GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPose_t>* path);
 
   //functions updated but not tested  
   int  GetGoalHeuristic(int stateID);
@@ -235,11 +245,13 @@ public:
 
 	//Initialization functions
 	void ReadConfiguration(FILE* fCfg);
+
 	void SetConfiguration(int width, int height,
-			      char* mapdata,
+			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
-			      double cellsize_m);
+			      double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV);
+	
 
 	bool InitGeneral();
 	void InitializeEnvConfig();

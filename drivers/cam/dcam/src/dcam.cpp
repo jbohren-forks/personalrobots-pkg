@@ -299,7 +299,7 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
       int minor = (qval & 0x000000ff);
 
       if ((qval >> 16) != 0 || major < 2 || minor > 10)	// check for local parameters
-	PRINTF("[dcam] No local parameters");
+	PRINTF("[dcam] No local parameters\n");
       else
 	{
 	  // Camera and imager firmware
@@ -349,6 +349,69 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
     PRINTF("[dcam] Monochrome device\n");
 
   setRawType();
+
+  // check registers
+  uint32_t qval;
+  qval = getRegister(0x404);
+  printf("[Dcam] Feature register hi: %08x\n", qval);
+  qval = getRegister(0x408);
+  printf("[Dcam] Feature register lo: %08x\n", qval);
+
+  // set up max/min values
+  // NOTE: on Videre cameras with FW firmware < 6.0, control reg
+  //   does not have presence switch on
+  //
+
+  expMin = expMax = 0;
+  gainMin = gainMax = 0;
+  brightMin = brightMax = 0;
+
+  if (isVidereStereo && camFirmware < 0x0600)
+    {
+      expMax = 530;
+      gainMax = 48;
+      brightMax = 255;
+
+      uint32_t qval;
+      qval = getRegister(0x504); // exposure inquiry reg
+      expMax = qval & 0x3ff;
+      PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
+
+      qval = getRegister(0x520); // exposure inquiry reg
+      gainMax = qval & 0x3ff;
+      PRINTF("[Dcam] Gain min/max: [%d,%d]\n",gainMin,gainMax);
+
+      qval = getRegister(0x500); // brightness inquiry reg
+      brightMax = qval & 0x3ff;
+      PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+    }
+
+  else
+    {
+      if (hasFeature(DC1394_FEATURE_EXPOSURE))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_EXPOSURE,expMin,expMax);
+	  PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
+	}
+      else
+	PRINTF("[Dcam] No exposure feature\n");
+
+      if (hasFeature(DC1394_FEATURE_GAIN))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_GAIN,gainMin,gainMax);
+	  PRINTF("[Dcam] Gain min/max: [%d,%d]\n",expMin,expMax);
+	}
+      else
+	PRINTF("[Dcam] No gain feature\n");
+
+      if (hasFeature(DC1394_FEATURE_BRIGHTNESS))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,gainMin,gainMax);
+	  PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+	}
+      else
+	PRINTF("[Dcam] No brightness feature\n");
+    }
 
   //  dc1394_iso_release_bandwidth(dcCam, 10000000);
 
@@ -468,6 +531,7 @@ dcam::Dcam::stop()
   if (camFrame)
     CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, camFrame), "Could not release frame");    
 
+  camFrame = NULL;
   CHECK_READY();
   CHECK_ERR_CLEAN( dc1394_video_set_transmission(dcCam, DC1394_OFF),
 		   "Could not stop camera iso transmission");
@@ -593,21 +657,13 @@ void
 dcam::Dcam::setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2)
 {
   CHECK_READY();
-  dc1394bool_t present;
-  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), 
-		   "Could not check if feature was present");
-  if (present == DC1394_TRUE)
+  if (feature == DC1394_FEATURE_WHITE_BALANCE)
   {
-    if (feature == DC1394_FEATURE_WHITE_BALANCE)
-    {
-      CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value(dcCam, value, value2), 
-		       "Could not set feature");
-    }
-    else
-    {
-      CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), 
-		       "Could not set feature");
-    }
+    CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value_blind(dcCam, value, value2), "Could not set feature");
+  }
+  else
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_set_value_blind(dcCam, feature, value), "Could not set feature");
   }
 }
 
@@ -645,14 +701,7 @@ void
 dcam::Dcam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode)
 {
   CHECK_READY();
-  dc1394bool_t present;
-  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present),
-		   "Could not check if feature was present");
-  if (present == DC1394_TRUE)
-  {
-    CHECK_ERR_CLEAN( dc1394_feature_set_mode(dcCam, feature, mode),
-		     "Could not set feature");
-  }
+  CHECK_ERR_CLEAN( dc1394_feature_set_mode_blind(dcCam, feature, mode), "Could not set feature");
 }
 
 
@@ -788,15 +837,175 @@ dcam::Dcam::getParameters()
 	}
       *bb = 0;	       // just in case we missed the last zero
       camIm->params = buf;
-//    PRINTF(buf);
     }
   return camIm->params;
 }
 
+
+// set the calibration and image parameters on a camera
+
 bool
-dcam::Dcam::setParameters(char *params)
+dcam::Dcam::setParameters()
 {
-  return false;
+  if (!camIm->params)
+    return false;
+
+  PRINTF(camIm->params);
+
+  // check firmware version
+  if (camFirmware < 0x0201)
+    {
+      PRINTF("Firmware version absent or too low");
+      return false;
+    }
+
+  // erase any previous calibration
+  uint32_t qval;
+  qval = getRegister(VIDERE_LOCAL_BASE+VIDERE_CALIB_OFFSET);
+  //  PRINTF("[Dcam] Calibration start: 0x%08X\n", qval);
+  if (qval == 0xffffffff)
+    { PRINTF("No calibration parameters\n"); }
+  else
+    {
+      PRINTF("[Dcam] Erasing calibration parameters\n");
+      int i;
+      for (i=0; i<VIDERE_CALIB_SIZE; i+=512)
+	{
+	  setRegister(VIDERE_LOCAL_BASE,VIDERE_CAM_STORE_MAGIC_NUM);
+	  setRegister(VIDERE_LOCAL_BASE+VIDERE_CALIB_OFFSET+i, ~VIDERE_CAM_STORE_MAGIC_NUM);
+	  usleep(100000);
+	}
+    }
+
+
+  // write out each byte
+  int pos = 0;
+  uint32_t quad = 0;
+  char *bb = camIm->params;
+  int n = strlen(bb);
+
+  while (n--)
+    {
+      int b = *bb++;
+      if (pos > VIDERE_CALIB_SIZE-10)
+	{
+	  PRINTF("[SetCalib] Calibration file too large\n");
+	  return false;
+	}
+      int n = pos % 4;
+      int p = (3-n)*8;
+      quad |= b<<p;
+      if (n==3)
+	{
+	  setRegister(VIDERE_LOCAL_BASE+VIDERE_CALIB_OFFSET+pos-3, quad);    
+	  quad = 0;
+	}
+      pos++;
+    }
+  PRINTF("[SetCalib] Wrote %d bytes\n", pos);
+  pos = pos - (pos % 4);
+  setRegister(VIDERE_LOCAL_BASE+VIDERE_CALIB_OFFSET+pos, quad);  
+  setRegister(VIDERE_LOCAL_BASE+VIDERE_CALIB_OFFSET+pos+4, 0x0);  
+  return true;
+}
+
+
+// upload the parameters and firmware to a STOC device
+// erases EEPROM first
+
+// #define VERIFY_EEPROM
+bool store_eeprom_bytes(int addr, unsigned char *buf, int count);
+
+bool
+dcam::Dcam::setSTOCParams(uint8_t *cbuf, int cn, uint8_t *lbuf, int ln,
+			  uint8_t *rbuf, int rn)
+{
+  if (!isSTOC)
+    return false;
+
+  uint32_t qval;
+  int v;
+
+  // turn off FPGA
+  qval = 0x0D100000;		// switch off FPGA
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  qval = 0x0D120000;		// switch on EEPROM
+
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  PRINTF("[Device] Switched off FPGA; switched on EEPROM\n");
+
+  // erase the flash
+  PRINTF("[Device] Erasing flash\n");
+  qval = 0x0D030000; // erase command
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+
+  for (int i=0; i<20; i++)
+    {
+      usleep(1000000);		// wait
+      qval = 0x0F000000;
+      setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+      usleep(10000);
+      qval = getRegister(VIDERE_LOCAL_PARAM_BASE);
+      v = qval & 0xff;
+      PRINTF("[Device] Read: %02x\n", v);
+      if (v == 0xff) break;
+    }
+
+  if (v != 0xff)
+    {
+      PRINTF("[Device] Couldn't erase flash!\n");
+      return false;
+    }
+
+  PRINTF("[Device] Flash erased\n");
+
+  // write and verify at addr 0
+  bool success = store_eeprom_bytes(0, cbuf, cn);
+  if (!success)
+    {
+      PRINTF("[Device] Failed on FPGA configuration\n");
+      goto failconfig;
+    }
+
+  // check for warping
+  if (ln == 0)			// no warping, return
+    {
+      PRINTF("[Device] No warp table, exiting\n");
+      return true;
+    }
+
+  // now do left warp table
+  PRINTF("[Device] Saving %d bytes to STOC\n", ln);
+  success = store_eeprom_bytes(0x040000, lbuf, ln);
+  if (!success)
+    {
+      PRINTF("[Device] Failed to save warp table to STOC\n");
+      goto failwarp;
+    }
+
+
+  // right warp table
+  PRINTF("[Device] Saving %d bytes to STOC\n", rn);
+  success = store_eeprom_bytes(0x060000, rbuf, rn);
+  if (!success)
+    {
+      PRINTF("[Device] Failed to save warp table to STOC\n");
+      goto failwarp;
+    }
+
+  // restore FPGA operation
+ failconfig:
+ failwarp:
+  qval = 0x0D130000;		// switch off EEPROM
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  qval = 0x0D110000;		// switch on FPGA
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  PRINTF("[Device] Re-configured FPGA\n");
+  usleep(2000000);
+  qval = 0x0D120000;		// switch on EEPROM
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+
+  return true;
 }
 
 
@@ -861,4 +1070,401 @@ dcam::Dcam::setUniqueThresh(int thresh)
   setRegister(0xFF000, u_thresh);
 
   return true;
+}
+
+
+bool
+dcam::Dcam::setHoropter(int val)
+{
+  usleep(50000);
+
+  if (val < 0)
+    val = 0;
+  if (val > 63)
+    val = 63;
+
+  uint32_t u_val = 0x08000000 | (0xC0 << 16) | ( val << 16);
+  setRegister(0xFF000, u_val);
+
+  return true;
+}
+
+
+//
+// value boundaries are given by the max/min variables
+//
+
+void
+dcam::Dcam::setExposure(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < expMin)
+    v = expMin;
+  if (v > expMax)
+    v = expMax;
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_EXPOSURE,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_EXPOSURE,v);      // ??? do we have to set manual here ???
+}
+
+
+void
+dcam::Dcam::setGain(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < gainMin)
+    v = gainMin;
+  if (v > gainMax)
+    v = gainMax;
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_GAIN,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_GAIN,v);      // ??? do we have to set manual here ???
+}
+
+void
+dcam::Dcam::setBrightness(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < brightMin)
+    v = brightMin;
+  if (v > brightMax)
+    v = brightMax;
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_BRIGHTNESS,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_BRIGHTNESS,v);   //   ??? do we have to set manual here ???
+}
+
+
+//
+// upload bytes to on-camera EEPROM
+//
+
+volatile int xx = 0x1a2b3c4d;
+
+bool
+dcam::Dcam::store_eeprom_bytes(int addr, uint8_t *buf, int count)
+{
+  unsigned long qval;
+  int addrhigh = addr & 0x00ff0000;
+  int addrlow  = (addr & 0x0000ffff) << 8;
+  int progress;
+  int totprog = count / (200*16);
+  unsigned char *cptr = buf;
+  int v;
+
+  PRINTF("[Device] Writing %d bytes to address %06x\n", count, addr);
+
+  setRegister(VIDERE_LOCAL_PARAM_BASE,0x0D120000); // turn on EEPROM
+
+  // set up addr
+  qval = 0x09000000 | addrhigh;
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  qval = 0x0A000000 | addrlow;
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+
+  // write out bytes
+  progress = 0;
+  for (int i=count; i>0; i-=16)
+    {
+      int b0, b1;
+      if (i < 16)
+	{
+	  // last bytes
+	  while (i > 1)
+	    {
+	      // get next 2 bytes
+	      b0 = *cptr++;
+	      b1 = *cptr++;
+	      // write them out and save them in buffer for verify
+	      usleep(1000);
+	      qval = 0x0B000000 | (b0 << 16) | (b1 << 8);
+	      setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+	      i -= 2;
+	    }
+	  break;
+	}
+      for (int j=0; j<8; j++)
+	{
+	  // get next 2 bytes
+	  b0 = *cptr++;
+	  b1 = *cptr++;
+	  // write them out and save them in buffer for verify
+	  qval = 0x0C000000 | (b0 << 16) | (b1 << 8);
+	  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+	}
+      // check that we've completed
+      bool success = false;
+      for (int j=0; j<5; j++)
+	{
+	  qval = getRegister(VIDERE_LOCAL_PARAM_BASE);
+	  v = qval & 0xff000000;
+	  if (v == 0)
+	    {
+	      v = qval & 0x00ff0000;
+	      if (v == 0)
+		success = true;
+	      else
+		success = false;
+	      break;
+	    }
+	  usleep(1000);
+	}
+      if (!success)
+	{
+	  PRINTF("[Device] Failed to complete flash write\n");
+	  setRegister(VIDERE_LOCAL_PARAM_BASE,0x0D130000); // turn off EEPROM
+	  return false;
+	}
+      progress++;
+      if ((progress % 200) == 0)
+	{
+	  PRINTF("[Device] Count %d of %d\n", progress/200, totprog);	
+	}
+    }
+  PRINTF("[Device] Finished storing at address %06x, verifying...\n", addr+count/2);
+
+  // Now do a verify
+  usleep(10000);
+
+#ifdef VERIFY_EEPROM
+  // reset the read address
+  qval = 0x09000000 | addrhigh;
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  usleep(10000);
+  qval = 0x0A000000 | addrlow;
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  usleep(10000);
+  
+  // set up read addr in eeprom
+  qval = 0x0E000000;
+  setRegister(VIDERE_LOCAL_PARAM_BASE, qval);
+  usleep(10000);
+
+  // ok, now read each 2 bytes, compare them
+  cptr = buf;
+  int errcnt = 0;
+  for (int i=0; i<count; i+=2)
+    {
+      // do a read
+      setRegister(VIDERE_LOCAL_PARAM_BASE, 0x0F000000);
+      // get result
+      int pcount = 200;
+      //      usleep(3000);
+      for (int j=0; j<5; j++)
+	{
+	  usleep(pcount);	// usleep doesn't work well here, need a 
+                                // good way to chew up a short amount of time
+                                // need something like udelay()
+	  pcount += 500;
+	  qval = getRegister(VIDERE_LOCAL_PARAM_BASE);
+	  v = qval & 0xff000000;
+	  if (v == 0)
+	    break;
+	  //	  usleep(10000);
+	}
+
+      if (v != 0)
+	{
+	  PRINTF("[Device] Time out on verify read: %d %x\n", xx, v);
+	  setRegister(VIDERE_LOCAL_PARAM_BASE,0x0D130000); // turn off EEPROM
+	  return false;
+	}
+      // done, get result
+      v = (qval & 0xff00) >> 8;
+      if (v != *cptr)
+	{
+	  PRINTF("[Device] Wrote %02x, read %02x at addr 0x%06x (byte %d)\n",
+		       *cptr, v, i/2+addr, i+addr*2);
+	  errcnt++;
+	  //	  return;	  
+	}
+      cptr++;
+      v = qval & 0xff;
+      if (v != *cptr)
+	{
+	  PRINTF("[Device] Wrote %02x, read %02x at addr 0x%06x (%d)\n",
+		       *cptr, v, i/2+addr, i+1+addr*2);
+	  errcnt++;
+	  //	  return;	  
+	}
+      cptr++;
+
+      if (errcnt > 20)
+	{
+	  PRINTF("[Device] Errcnt >20, failing verify %d", xx);
+	  setRegister(VIDERE_LOCAL_PARAM_BASE,0x0D130000); // turn off EEPROM
+	  return false;
+	}
+
+      if (i != 0 && (i%(200*16)) == 0)
+	{
+	  PRINTF("[Device] Verified %d of %d\n", i/(200*16), totprog);
+	}
+    }  
+  PRINTF("[Device] Verified!\n");
+#endif
+
+  setRegister(VIDERE_LOCAL_PARAM_BASE,0x0D130000); // turn off EEPROM
+  return true;
+}
+
+
+//
+// generate an incremental rectification table, 
+//   suitable for loading onto a STOC device
+//
+
+#define SUBPIX 64.0
+
+int
+dcam::Dcam::getIncRectTable(uint8_t *dest)
+{
+#if 0
+  // pixskip is the number of bytes between pixels in the same image.  
+  // by default, pixels are 8-bit, non-interleaved
+  int pixskip = 1;
+
+  int width = sp->linelen;
+  int height = sp->lines;
+
+  // output file size
+  int outx = width;
+  int outy = height;
+
+  // hold pixel increment bits
+  int pixinc, pcnt;
+
+  PRINTF("[Warp Table]  Input image size: %d %d", width, height);
+  PRINTF("[Warp Table] Output image size: %d %d", outx, outy);
+
+  int count = 0;		// count of bytes
+  int i, j;
+  float x, y, rnd;
+  int ox, oy, odx, ody, dx, dy, hx, hy;
+  //  int xmax = 0, ymax = 0, xmin = 0, ymin = 0;
+  int px, py;
+  double xmax = 0, ymax = 0;
+  double ex,ey;
+
+  for (i=0; i<outy; i++)
+    {
+      dx = dy = 0;
+      hx = hy = 0;
+      pixinc = 0;
+      pcnt = 0;
+      for (j=0; j<outx; j++)
+	{
+	  origAddr(&x, &y, (float)j, (float)i, sp, which);
+	  if (x > 0) rnd = 0.5; else rnd = -0.5;
+	  px = (int)(x*SUBPIX + rnd);
+	  if (y > 0) rnd = 0.5; else rnd = -0.5;
+	  py = (int)(y*SUBPIX + rnd);
+	  if (j > 0)		// first data point
+	    {
+	      dx = px - ox;
+	      dy = py - oy;
+	      if (j > 1)
+		{
+		  // restrict to +-1
+		  
+		  ex = x - ((double)(ox+odx))/SUBPIX;
+		  if (ex > 0)
+		    hx = 1;
+		  else
+		    hx = -1;
+
+		  ey = y - ((double)(oy+ody))/SUBPIX;
+		  if (ey > 0)
+		    hy = 1;
+		  else
+		    hy = -1;
+
+		  ex = ex - (double)hx/SUBPIX;
+		  if (fabs(ex) > xmax) xmax = fabs(ex);
+		  ey = ey - (double)hy/SUBPIX;
+		  if (fabs(ey) > ymax) ymax = fabs(ey);
+
+		  dx = odx + hx;
+		  dy = ody + hy;
+
+		  // accumulate pixel increment shift
+		  pixinc = (pixinc << 2);
+		  if (hx == 1)
+		    pixinc = pixinc | 0x02;
+		  if (hy == 1)
+		    pixinc = pixinc | 0x01;
+		  // check for writing out
+		  pcnt++;
+		  if (pcnt >= 4)
+		    {
+		      *dest++ = pixinc;
+		      count++;
+		      pcnt = 0;
+		      pixinc = 0;
+		    }
+		}               // j > 1
+	      else
+		{		// j = 1
+		  *dest++ = dx;
+		  *dest++ = dy;
+		  count += 2;
+		}
+	      odx = dx;
+	      ody = dy;
+	      ox = ox + dx;
+	      oy = oy + dy;
+	    }                   // j > 0
+	  else
+	    {			// j = 0, start of line
+	      ox = px;
+	      oy = py;
+	      *dest++ = (px & 0xff00) >> 8;
+	      *dest++ = px & 0xff;
+	      *dest++ = (py & 0xff00) >> 8;
+	      *dest++ = py & 0xff;
+//	      PRINTF("%03d %04x %04x", i, px, py);
+	      count += 4;
+	    }
+	  if (hx > 1 || hx < -1 || hy > 1 || hy < -1)
+	    PRINTF("[Warp Table] Increment too large");
+
+	} // end of loop over line pixels
+
+      // check if the last pixinc gets written out
+      if (pcnt > 0)
+	{
+	  while (pcnt++ < 4)
+	    pixinc = pixinc << 2;
+	  *dest++ = pixinc;
+	  count++;
+	}
+    }
+
+  PRINTF("[Warp Table] Max X change: %f", xmax);
+  PRINTF("[Warp Table] Max Y change: %f", ymax);
+  PRINTF("[Warp Table] Size is %d bytes", count);
+  return count;
+#endif
+  return 0;
 }

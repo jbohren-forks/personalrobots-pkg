@@ -68,7 +68,18 @@ public:
 	  RESET(ColinearCheck);
     RESET(RandTripletGenerator);
     RESET(SparseStereo);
-	}
+    RESET(SparseBundleAdj);
+    RESET(SBACostFunction);
+    RESET(SBADerivatives);
+    RESET(SBADerivativesHpp);
+    RESET(SBADerivativesHppInv);
+    RESET(SBADerivativesJc);
+    RESET(SBADerivativesHccHpc);
+    RESET(SBAFwdTransfMats);
+    RESET(SBAOuterProdOfTrack);
+    RESET(SBALinearSolving);
+    RESET(SBABackSubstitution);
+}
 	int64 mNumIters;
 	int64 mFrequency;
 
@@ -112,9 +123,21 @@ public:
   DECLARE(ColinearCheck);
   DECLARE(RandTripletGenerator);
   DECLARE(SparseStereo);
+  DECLARE(SparseBundleAdj);
+  DECLARE(SBACostFunction);
+  DECLARE(SBADerivatives);
+  DECLARE(SBADerivativesHpp);
+  DECLARE(SBADerivativesHppInv);
+  DECLARE(SBADerivativesJc);
+  DECLARE(SBADerivativesHccHpc);
+  DECLARE(SBAFwdTransfMats);
+  DECLARE(SBAOuterProdOfTrack);
+  DECLARE(SBALinearSolving);
+  DECLARE(SBABackSubstitution);
 
 	void printStat();
-	void printStat(const char* title, int64 val, int64 count);
+  void printStat(const char* title, int64 val, int64 count);
+  void printStatSBA(const char* title, int64 val, int64 count);
 	static inline CvTestTimer& getTimer() {
 		return _singleton;
 	}

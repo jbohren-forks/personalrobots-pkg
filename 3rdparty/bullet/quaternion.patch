@@ -1,8 +1,26 @@
+Index: src/LinearMath/btTransformUtil.h
+===================================================================
+--- src/LinearMath/btTransformUtil.h	(revision 1497)
++++ src/LinearMath/btTransformUtil.h	(working copy)
+@@ -115,12 +115,9 @@
+ 		}
+ 	}
+ 
+-	static void calculateDiffAxisAngleQuaternion(const btQuaternion& orn0,const btQuaternion& orn1a,btVector3& axis,btScalar& angle)
++	static void calculateDiffAxisAngleQuaternion(const btQuaternion& orn0,const btQuaternion& orn1,btVector3& axis,btScalar& angle)
+ 	{
+-		btQuaternion orn1 = orn0.farthest(orn1a);
+ 		btQuaternion dorn = orn1 * orn0.inverse();
+-		///floating point inaccuracy can lead to w component > 1..., which breaks 
+-		dorn.normalize();
+ 		angle = dorn.getAngle();
+ 		axis = btVector3(dorn.x(),dorn.y(),dorn.z());
+ 		axis[3] = btScalar(0.);
 Index: src/LinearMath/btQuaternion.h
 ===================================================================
---- src/LinearMath/btQuaternion.h	(revision 1458)
+--- src/LinearMath/btQuaternion.h	(revision 1497)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -198,7 +198,12 @@
+@@ -199,15 +199,28 @@
  	{
  		btScalar s = btSqrt(length2() * q.length2());
  		assert(s != btScalar(0.0));
@@ -16,7 +34,24 @@ Index: src/LinearMath/btQuaternion.h
  	}
    /**@brief Return the angle of rotation represented by this quaternion */
  	btScalar getAngle() const 
-@@ -262,10 +267,17 @@
+ 	{
+-		btScalar s = btScalar(2.) * btAcos(m_floats[3]);
++		btScalar s = btScalar(2.) * btAcos(GEN_clamped(m_floats[3], (btScalar)-1.0, (btScalar)1.0));
+ 		return s;
+ 	}
+ 
++  /**@brief Return the axis of the rotation represented by this quaternion */
++	btVector3 getAxis() const
++	{
++		btScalar s = btSqrt(btScalar(1.) - btPow(m_floats[3], 2.));
++		if (s == btScalar(0.0))
++			return btVector3(1.0, 0.0, 0.0);  // Arbitrary
++		return btVector3(m_floats[0] / s, m_floats[1] / s, m_floats[2] / s);
++	}
+ 
+   /**@brief Return the inverse of this quaternion */
+ 	btQuaternion inverse() const
+@@ -263,10 +274,17 @@
  			btScalar d = btScalar(1.0) / btSin(theta);
  			btScalar s0 = btSin((btScalar(1.0) - t) * theta);
  			btScalar s1 = btSin(t * theta);   
@@ -38,3 +73,27 @@ Index: src/LinearMath/btQuaternion.h
  		}
  		else
  		{
+Index: src/LinearMath/btMatrix3x3.h
+===================================================================
+--- src/LinearMath/btMatrix3x3.h	(revision 1497)
++++ src/LinearMath/btMatrix3x3.h	(working copy)
+@@ -159,16 +159,15 @@
+ 		}
+ 
+ 	/** @brief Set the matrix from euler angles YPR around ZYX axes
+-	 * @param eulerX Roll about X axis
+-         * @param eulerY Pitch around Y axis
+          * @param eulerZ Yaw aboud Z axis
++         * @param eulerY Pitch around Y axis
++	 * @param eulerX Roll about X axis
+          * 
+ 	 * These angles are used to produce a rotation matrix. The euler
+ 	 * angles are applied in ZYX order. I.e a vector is first rotated 
+ 	 * about X then Y and then Z
+ 	 **/
+-	void setEulerZYX(btScalar eulerX,btScalar eulerY,btScalar eulerZ) { 
+-  ///@todo proposed to reverse this since it's labeled zyx but takes arguments xyz and it will match all other parts of the code
++	void setEulerZYX(btScalar eulerZ, btScalar eulerY,btScalar eulerX) { 
+ 		btScalar ci ( btCos(eulerX)); 
+ 		btScalar cj ( btCos(eulerY)); 
+ 		btScalar ch ( btCos(eulerZ)); 

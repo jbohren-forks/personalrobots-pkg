@@ -1,0 +1,14 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b cloud_io is a simple library for I/O (input/output) PCD file processing.
+
+@section summary Summary
+
+The cloud_io methods read/write data to PCD (Point Cloud Data) format.
+Currently only ASCII type files are supported, where each point 
+represents a new line entry in the file.
+
+*/

@@ -1,4 +1,4 @@
-#include "iostream.h"
+#include <iostream>
 
 #include "opencv/cv.h"
 
@@ -168,7 +168,7 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
     TIMEREND2(SVD);
 
-    this->constructRT(&R, &T, &RT);
+    CvMatUtils::transformFromRotationAndShift(R, T, RT);
 
     CvTestTimerStart(CheckInliers);
     // scoring against all points
@@ -207,7 +207,7 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
   inlierIndices = new int[maxNumInLiers];
 
   // construct homography matrix
-  constructRT(rot, trans, &RT);
+  CvMatUtils::transformFromRotationAndShift(*rot, *trans, RT);
 
   numInLiers0 = getInLiers(points0, points1, &RT, maxNumInLiers, points0Inlier, points1Inlier, inlierIndices);
 
@@ -221,7 +221,7 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
   }
   updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
 
-  this->constructRT(rot, trans, &mT);
+  CvMatUtils::transformFromRotationAndShift(*rot, *trans, mT);
   return maxNumInLiers;
 }
 
@@ -360,31 +360,16 @@ bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, 
 	return status;
 }
 
-bool PoseEstimate::constructRT(CvMat *R, CvMat *T, CvMat *RT){
+/// @todo remove this function
+#if 0
+bool PoseEstimate::constructRT(const CvMat *R, const CvMat *T, CvMat *RT){
 	if (R == NULL || T == NULL) {
 		return false;
 	}
-	return constructTransform(*R, *T, *RT);
+	CvMatUtils::transformFromRotationAndShift(*R, *T, *RT);
+	return true;
 }
-
-bool PoseEstimate::constructTransform(
-		const CvMat& rot, const CvMat& shift, CvMat& transform) {
-	bool status = true;
-    // construct RT
-    for (int r=0; r<3; r++) {
-        for (int c=0; c<3; c++) {
-            cvSetReal2D(&transform, r, c, cvmGet(&rot, r, c));
-        }
-        cvSetReal2D(&transform, r, 3, cvmGet(&shift, r, 0));
-    }
-
-    // last row
-    cvSetReal2D(&transform, 3, 0, 0.0);
-    cvSetReal2D(&transform, 3, 1, 0.0);
-    cvSetReal2D(&transform, 3, 2, 0.0);
-    cvSetReal2D(&transform, 3, 3, 1.0);
-	return status;
-}
+#endif
 
 int PoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
   // check if we can use a faster implementation

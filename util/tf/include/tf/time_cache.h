@@ -43,6 +43,7 @@
 
 namespace tf
 {
+enum ExtrapolationMode {  ONE_VALUE, INTERPOLATE, EXTRAPOLATE_BACK, EXTRAPOLATE_FORWARD };
 
 /** \brief Storage for transforms and their parent */
 class  TransformStorage : public Stamped<btTransform>
@@ -51,6 +52,7 @@ public:
   TransformStorage(){};
   TransformStorage(const Stamped<btTransform>& data, unsigned int parent_id): Stamped<btTransform>(data), parent_frame_id(parent_id){};
   unsigned int parent_frame_id;
+  ExtrapolationMode mode_;
 };
 
 
@@ -64,18 +66,18 @@ class TimeCache
   static const int MIN_INTERPOLATION_DISTANCE = 5; //!< Number of nano-seconds to not interpolate below.
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
   static const int64_t DEFAULT_MAX_STORAGE_TIME = 1ULL * 1000000000LL; //!< default value of 10 seconds storage
-  static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000LL; //!< default max extrapolation of 10 seconds
+  static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 0LL; //!< default max extrapolation of 0 nanoseconds \todo remove and make not optional??
 
 
-  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME),
-            ros::Duration  max_extrapolation_time = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_TIME)):
+  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration().fromNSec(DEFAULT_MAX_STORAGE_TIME),
+            ros::Duration  max_extrapolation_time = ros::Duration().fromNSec(DEFAULT_MAX_EXTRAPOLATION_TIME)):
     interpolating_(interpolating),
     max_storage_time_(max_storage_time),
     max_extrapolation_time_(max_extrapolation_time)
     {};
 
 
-  ros::Duration getData(ros::Time time, TransformStorage & data_out); //returns distance in time to nearest value
+  bool getData(ros::Time time, TransformStorage & data_out); //returns false if data unavailable (should be thrown as lookup exception
 
   void insertData(const TransformStorage& new_data)
     {
@@ -110,7 +112,7 @@ class TimeCache
 
   /// A helper function for getData
   //Assumes storage is already locked for it
-  uint8_t findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff);
+  uint8_t findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ExtrapolationMode& mode);
 
   void pruneList()
     {

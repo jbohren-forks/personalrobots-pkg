@@ -1,8 +1,0 @@
-
-<launch>
-  <master auto="start"/>
-  <group name="wg">
-    <include file="$(find highlevel_controllers)/test/stage.xml"/>
-  </group>
-</launch>
-

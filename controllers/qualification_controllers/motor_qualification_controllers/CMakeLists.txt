@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(motor_qualification_controllers)
-genmsg()
-gensrv()
-rospack_add_library(motor_qualification_controllers src/motor_test1.cpp)

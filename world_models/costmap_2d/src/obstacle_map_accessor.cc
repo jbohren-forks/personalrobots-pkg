@@ -35,6 +35,7 @@
 
 #include "costmap_2d/obstacle_map_accessor.h"
 #include <stdio.h>
+#include <cstring>
 
 namespace costmap_2d {
 	
@@ -42,49 +43,56 @@ namespace costmap_2d {
   const unsigned char ObstacleMapAccessor::NO_INFORMATION(255);
   const unsigned char ObstacleMapAccessor::LETHAL_OBSTACLE(254);
   const unsigned char ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE(253);
-  const unsigned char ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE(252);
 
   ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution)
-    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution){}
+    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution), costData_(NULL), costLB_(0){
+    costData_ = new unsigned char[width_*height_];
+    memset(costData_, 0, width_*height_);
+  }
+
+
+  ObstacleMapAccessor::~ObstacleMapAccessor(){
+    if(costData_ != NULL) 
+      delete[] costData_;
+  }
 
   void ObstacleMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const{
     wx = origin_x_;
     wy = origin_y_;
   }
 
-
   /**
-   * @brief Get index of given world (x,y) point in map indexes
-   * 
-   * @param wx world x location of the cell
-   * @param wy world y location of the cell
-   * @param mx map x index return value
-   * @param my map y index return value
+   * Modify because we no longer utilize a quick check on inscribed radius.
    */
-  bool ObstacleMapAccessor::WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const {
+  bool ObstacleMapAccessor::isCircumscribedCell(unsigned int mx, unsigned int my) const{
+    const unsigned char cost = getCost(mx, my);
+    return /*cost < INSCRIBED_INFLATED_OBSTACLE && */ cost >= costLB_;
+  }
 
-    if(wx < 0 || wy < 0) {
-      mx = 0;
-      my = 0;
-      return false;
+  std::string ObstacleMapAccessor::toString() const {
+    std::stringstream ss;
+    ss << std::endl;
+    for(unsigned j = 0; j < getHeight(); j++){
+      for (unsigned int i = 0; i < getWidth(); i++){
+        unsigned char cost = getCost(i, j);
+        if(cost == LETHAL_OBSTACLE)
+          ss << "O";
+        else if (cost == INSCRIBED_INFLATED_OBSTACLE)
+          ss << "I";
+        else if (isCircumscribedCell(i, j))
+          ss << "C";
+        else if (cost == NO_INFORMATION)
+          ss << "?";
+        else if (cost > 0)
+          ss << "f";
+        else
+          ss << "F";
+
+        ss << ",";
+      }
+
+      ss << std::endl;
     }
-
-    //not much for now
-    mx = (int) ((wx - origin_x_)/resolution_);
-    my = (int) ((wy - origin_y_)/resolution_);
-
-    //printf("x: %.2f y: %.2f or_x: %.2f, or_y: %.2f, resolution: %.2f\n   ", wx, wy, origin_x_, origin_y_, resolution_);
-    if(mx >= width_) {
-      mx = 0;
-      return false;
-    } 
-
-    if(my >= height_) {
-      //printf("WC_MC converted  %d greater than height %d\n", my, height_);
-      my = 0;
-      return false;
-    }
-
-    return true;
+    return ss.str();
   }
 }

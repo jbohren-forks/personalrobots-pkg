@@ -9,12 +9,12 @@
   </description>
   <author>Roland Philippsen</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <url>http://libsunflower.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
     <doxymaker external="http://libsunflower.sourceforge.net/"/>
   </export>
-  <depend package="estar"/>
 <versioncontrol type="svn" url="https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>

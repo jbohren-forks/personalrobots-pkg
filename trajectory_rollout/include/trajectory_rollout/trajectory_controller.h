@@ -43,9 +43,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <rosconsole/rosconsole.h>
 
 //For transform support
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 #include <trajectory_rollout/map_cell.h>
 #include <trajectory_rollout/map_grid.h>
@@ -61,7 +62,8 @@
 //for computing path distance
 #include <queue>
 
-#define HEADING_LOOKAHEAD .2
+#define HEADING_LOOKAHEAD .325
+#define OSCILLATION_RESET_DIST .05
 
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
@@ -69,12 +71,12 @@ class TrajectoryController {
     //create a controller given a map and a path
     TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-        double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
+        double acc_lim_x, double acc_lim_y, double acc_lim_theta, tf::TransformListener* tf,
         const costmap_2d::ObstacleMapAccessor& ma, std::vector<std_msgs::Point2DFloat32> footprint_spec);
     
     //given the current state of the robot, find a good trajectory
-    Trajectory findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
-        libTF::TFPose2D& drive_velocities);
+    Trajectory findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel,
+			    tf::Stamped<tf::Pose>& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
     void computePathDistance(std::queue<MapCell*>& dist_queue);
@@ -82,7 +84,7 @@ class TrajectoryController {
     void computeGoalDistance(std::queue<MapCell*>& dist_queue);
     
     //given a trajectory in map space get the drive commands to send to the robot
-    libTF::TFPose2D getDriveVelocities(int t_num);
+    tf::Stamped<tf::Pose> getDriveVelocities(int t_num);
 
     //create the trajectories we wish to score
     Trajectory createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta, 
@@ -127,6 +129,9 @@ class TrajectoryController {
     bool stuck_left, stuck_right;
     bool rotating_left, rotating_right;
 
+    bool stuck_left_strafe, stuck_right_strafe;
+    bool strafe_right, strafe_left;
+
     double goal_x_,goal_y_;
 
   private:
@@ -135,9 +140,10 @@ class TrajectoryController {
     int samples_per_dim_;
     double pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_;
     double acc_lim_x_, acc_lim_y_, acc_lim_theta_;
+    double prev_x_, prev_y_;
 
     //transform client
-    rosTFClient* tf_;
+    tf::TransformListener* tf_;
     
     //so that we can access obstacle information
     const costmap_2d::ObstacleMapAccessor& ma_;
@@ -154,7 +160,7 @@ class TrajectoryController {
       check_cell->path_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.isDefinitelyBlocked(check_cell->cx, check_cell->cy)){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -172,7 +178,7 @@ class TrajectoryController {
       check_cell->goal_mark = true;
 
       //if the cell is an obstacle set the max goal distance
-      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.isDefinitelyBlocked(check_cell->cx, check_cell->cy)){
         check_cell->goal_dist = map_.map_.size();
         return;
       }

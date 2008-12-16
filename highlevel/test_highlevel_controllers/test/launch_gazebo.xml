@@ -1,0 +1,24 @@
+
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+
+    <!-- start up gazebo with gazebo_robot_description/world/robot_floorobj.world and startup default mechanism controllers -->
+    <include file="$(find pr2_gazebo)/pr2_floorobj.launch" />
+
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" />
+    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
+    <param name="max_publish_frequency" value="20.0"/>
+    <!--node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" /-->
+    <node pkg="fake_localization" type="fake_localization" args="" respawn="false" />
+
+    <!-- Load parameters for moving the base. -->
+    <param name="costmap_2d/inflation_radius" type="double" value="0.35" />
+
+    <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
+
+    <!-- Now launch controller node required -->
+    <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml"/>
+  </group>
+</launch>
+

@@ -42,7 +42,7 @@
  */
 /***************************************************/
 
-#include <misc_utils/factory.h>
+#include <loki/Factory.h>
 #include <mechanism_model/robot.h>
 
 #include <tinyxml/tinyxml.h>
@@ -71,12 +71,17 @@ namespace controller
 
 
 class Controller;
-typedef misc_utils::Factory<Controller> ControllerFactory;
+typedef Loki::SingletonHolder
+<
+  Loki::Factory< Controller, std::string >,
+  Loki::CreateUsingNew,
+  Loki::LongevityLifetime::DieAsSmallObjectChild
+> ControllerFactory;
 
 #define ROS_REGISTER_CONTROLLER(c) \
   controller::Controller *ROS_New_##c() { return new c(); }             \
   bool ROS_CONTROLLER_##c = \
-    controller::ControllerFactory::instance().registerType(#c, ROS_New_##c);
+    controller::ControllerFactory::Instance().Register(#c, ROS_New_##c);
 
 class Controller
 {

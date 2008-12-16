@@ -6,6 +6,7 @@
 #include <vector>
 #include <ctime>
 #include <cstdio>
+#include <cstdlib>
 
 using namespace features;
 
@@ -33,8 +34,7 @@ int main(int argc, char** argv)
   for (int i = 0; i < num_corners; ++i)
     base_set.push_back( BaseKeypoint(kp[i].x, kp[i].y, im.Ipl()) );
   
-  RTreeClassifier cl;
-  cl.setThreshold(0.0);
+  RTreeClassifier cl(true);
   //Rng rng( std::time(0) );
   Rng rng( 0 );
   /*
@@ -45,14 +45,19 @@ int main(int argc, char** argv)
   make_patch.setPhiBounds(-TWENTY_DEG, TWENTY_DEG);
   make_patch.setLambdaBounds(0.85, 1.15);
   */
-  
-  cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000); // Only 20 views?
+
+  size_t sig_size = num_corners;
+  cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000, num_corners); // Only 20 views?
   cl.write(tree_name);
 
-  BruteForceMatcher<SparseSignature, CvPoint> matcher;
+  BruteForceMatcher<CvPoint> matcher(cl.classes());
+  float* sig_buffer = NULL;
+  posix_memalign((void**)&sig_buffer, 16, sig_size * sizeof(float) * base_set.size());
+  float* sig = sig_buffer;
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    SparseSignature sig = cl.getSparseSignature(patch.Ipl());
+    cl.getFloatSignature(patch.Ipl(), sig);
+    
     float sum = 0;
     for (int i = 0; i < num_corners; ++i) {
       float elem = sig[i];
@@ -61,16 +66,20 @@ int main(int argc, char** argv)
     }
     printf("sum = %f\n", sum);
     matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+    sig += sig_size;
   }
 
+  sig = (float*) malloc(sig_size * sizeof(float));
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    SparseSignature sig = cl.getSparseSignature(patch.Ipl());
+    cl.getFloatSignature(patch.Ipl(), sig);
     float distance = 0;
     int match = matcher.findMatch(sig, &distance);
     printf("match = %d, distance = %f\n", match, distance);
   }
-  
+  free(sig);
+
+  free(sig_buffer);
   free(kp);
   return 0;
 }

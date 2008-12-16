@@ -34,8 +34,8 @@
 #include "std_srvs/StaticMap.h"
 #include "tf/transform_listener.h"
 
-#include "gridfastslam/gridslamprocessor.h"
-#include "sensor/sensor_base/sensor.h"
+#include "gmapping/gridfastslam/gridslamprocessor.h"
+#include "gmapping/sensor/sensor_base/sensor.h"
 
 class SlamGMapping
 {

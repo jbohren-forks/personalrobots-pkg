@@ -3,6 +3,8 @@
 </description>
 <author>Advait Jain, Sachin Chitta</author>
 <license>BSD</license>
+<review status="3rdparty" notes=""/>
+<depend package="boost" />
 <url>http://pr.willowgarage.net</url>
 <export>
   <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>
@@ -11,11 +13,13 @@
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-sip4-dev"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-sip4"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="sip4"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="python-sip4-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-sip4"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="sip4"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-sip4-dev"/>
+<!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/-->
 <versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl"/>
 </package>
 

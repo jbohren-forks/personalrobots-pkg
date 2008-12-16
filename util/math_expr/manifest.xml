@@ -1,0 +1,12 @@
+<package>
+  <description brief="Symbolic Mathematical Expression Evaluation Package">
+      This package provides simple symbolic mathematical expression evaluations.
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (John)"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmath_expr"/>
+  </export>
+</package>
+

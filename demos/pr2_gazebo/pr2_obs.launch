@@ -1,14 +1,20 @@
 <launch>
   <group name="wg">
-    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2/pr2.xml $(find gazebo_robot_description)/world/pr2_xml.model" />
-    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2/pr2.xml $(find gazebo_robot_description)/world/pr2_xml_nolimit.model 1" />
-    <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
-    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_obstacle.world" respawn="false">
-      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
+    <!-- send pr2.xml to param server -->
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
+
+    <!-- start gazebo -->
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/obstacle.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$(env LD_LIBRARY_PATH)" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
+
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+
+    <!-- load controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
   </group>
 </launch>

@@ -33,7 +33,7 @@ using namespace std;
 
 #include <stdlib.h>
 
-#define DEBUG 0
+#undef DEBUG
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)

@@ -1,9 +1,0 @@
-<controller name="upperarm_calibration" topic="upperarm_calibration" type="JointBlindCalibrationControllerNode">
-  <param joint_name="upperarm_roll_left_joint" actuator_name="upperarm_roll_left_motor" transmission_name="upperarm_roll_left_trans" velocity="-0.15"/>
-  <controller name="upperarm_controller" topic="upperarm_controller" type="JointVelocityController">
-    <filter smoothing_factor="0.1" />
-    <joint name="upperarm_roll_left_joint">
-      <pid p="13" i="600" d="0.02" iClamp="1" />
-    </joint>
-  </controller>
-</controller>

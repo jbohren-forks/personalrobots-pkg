@@ -4,6 +4,7 @@
   </description>
   <author>Alex Teichman</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="boost"/>
   <depend package="opencv_latest"/>

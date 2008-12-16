@@ -3,13 +3,10 @@ include(rosbuild)
 rospack(tf)
 
 genmsg()
-
-find_package(Boost 0 REQUIRED COMPONENTS thread)
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
+gensrv()
 
 rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
-target_link_libraries(tf ${Boost_LIBRARIES})
+#target_link_libraries(tf boost_thread-mt)
 
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)

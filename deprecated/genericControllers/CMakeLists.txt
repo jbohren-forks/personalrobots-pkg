@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(genericControllers)
-add_definitions(-Wall)
-rospack_add_library(genericControllers src/Pid.cpp src/Controller.cpp src/JointController.cpp)

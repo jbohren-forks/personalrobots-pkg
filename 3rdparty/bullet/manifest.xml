@@ -6,13 +6,14 @@ The Bullet Physics Engine
 </description>
 <author>Erwin Coumans</author>
 <license>ZLib</license>
+<review status="3rdparty" notes=""/>
 <url>http://code.google.com/p/bullet/</url>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libXext-dev"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libXext-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libglut3-dev"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libglut3-dev"/>
 <export>
-<cpp cflags="-I${prefix}/bullet_svn/src -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/bullet_svn/src/LinearMath/ -lLinearMath" />
+<cpp cflags="-I${prefix}/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
 </export>
 </package>

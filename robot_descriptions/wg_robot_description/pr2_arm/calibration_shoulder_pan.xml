@@ -1,9 +1,0 @@
-<controller name="shoulder_pan_calibration" topic="shoulder_pan_calibration" type="JointCalibrationControllerNode">
-  <param joint_name="shoulder_pan_right_joint" actuator_name="shoulder_pan_right_act" transmission_name="shoulder_pan_right_trans" velocity="0.2"/>
-  <controller name="shoulder_pan_controller" topic="shoulder_pan_controller" type="JointVelocityController">
-    <filter smoothing_factor="0.1" />
-    <joint name="shoulder_pan_right_joint">
-      <pid p="30" i="1000" d="0.03" iClamp="1" />
-    </joint>
-  </controller>
-</controller>

@@ -17,7 +17,7 @@ using namespace boost::lambda;
 
 using namespace std;
 
-#define N_TRAINING_THREADS 8
+#define N_TRAINING_THREADS 2
 
 class TrainingThreadSyncData {
 public:
@@ -98,7 +98,7 @@ public:
 
       cerr << "Spawned children" << endl;
 
-      // run the classifier at this node
+      // train the classifier at this node
       { 
 	boost::mutex::scoped_lock lock(syncData->ioMutex);
 	cout << "Training node with scope... ";
@@ -204,7 +204,7 @@ makeRandomBCTree(const ObjectSet& objset,
   //  objset.serialize(cout);
 
   BinaryClassifierTree* tree = 
-    new BinaryClassifierTree(new ClassifierNode(wvec0, objset));
+    new BinaryClassifierTree(new ClassifierNode(wvec0, wvec0, HUGE_VAL, objset));
 
   if (classes.size() > 1) {
     vector<ObjectClass> permuted = 
@@ -637,10 +637,12 @@ evaluate(const IplImage* image, const IplImage* trueSegmentation,
   return evaluateErrors(image, trueSegmentation, errors);
 }
 
-// also returns vector of per-blob labels and per-blob statistics
+// also returns vector of per-blob labels and per-blob statistics (and edges)
 void NaryImageClassifier::
 evaluate(const IplImage* image, IplImage* segmented, 
-	 vector<int>& labeling, vector<blobStat>& blobStats) {
+	 vector<int>& labeling, 
+	 vector<blobStat>& blobStats,
+	 vector<std::pair<int,int> >& edges) {
 
   boost::timer totalTimer;
 
@@ -661,6 +663,7 @@ evaluate(const IplImage* image, IplImage* segmented,
 
   //  *blobStats = fgx.getBlobber()->getBlobStats();
   blobStats = fgx.getBlobber()->getBlobStatsCopy();
+  fg->getEdgeListCopy(edges);
 
   SegmentationLoader::
     writeBlobSegmentation(*fgx.getBlobber(), labeling, segmented);

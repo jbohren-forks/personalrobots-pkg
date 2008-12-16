@@ -7,6 +7,10 @@
 #include "features/Blobber.hh"
 #include "classifier/ObjectSet.hh"
 #include <string>
+#include <utility>
+
+#define TEXT_WIDTH_SCALE 0.5
+#define TEXT_STROKE 4
 
 //#define MAX(A,B) ((A) > (B) ? (A) : (B))
 
@@ -151,6 +155,70 @@ public:
   }
 
   /**
+     Colors each pixel, assigning each label a different color.     
+   */
+  static void colorSegmentedImage(int nLabels, 
+				  CvSize outsize,
+				  const IplImage* segmentation,
+				  IplImage** outImage) {
+    IplImage* segColors = cvCreateImage(cvGetSize(segmentation), 8, 3);
+
+    for (int xx = 0; xx < segmentation->width; xx++) {
+      for (int yy = 0; yy < segmentation->height; yy++) {
+	int label = ((int*)(segmentation->imageData + 
+			    yy*segmentation->widthStep))[xx];
+	unsigned char* pr = 
+	  (unsigned char*)(segColors->imageData + yy*segColors->widthStep);
+	pr[3*xx] =   getHue(nLabels, label);
+	pr[3*xx+1] = getSat(nLabels, label);
+	pr[3*xx+2] = 0;
+	//	pr[3*xx+1] = 200;
+	//	pr[3*xx+2] = getVal(nLabels, label);
+	//	pr[3*xx+2] = 150;
+      }
+    }
+
+    *outImage = cvCreateImage(outsize, 8, 3);
+    cvResize(segColors, *outImage, CV_INTER_NN);
+
+    cvReleaseImage(&segColors);
+  }
+
+  /**
+     Copies src to dst, converting src to HSV, 
+     overwriting hue and saturation channels with data from hsv,
+     and converting dst back to BGR.
+   */
+  static void overwriteBGR2HSV(const IplImage *src,
+			       const IplImage *hsv,
+			       IplImage *dst) {
+    IplImage* hsvSrc = cvCreateImage(cvGetSize(src), 8, 3);
+    cvCvtColor(src, hsvSrc, CV_BGR2HSV);
+
+    for (int xx = 0; xx < src->width; xx++) {
+      for (int yy = 0; yy < src->height; yy++) {
+	/*
+	int label = ((int*)(src->imageData + 
+			    yy*src->widthStep))[xx];
+	*/
+	unsigned char* prOut = 
+	  (unsigned char*)(hsvSrc->imageData + yy*hsvSrc->widthStep);
+	unsigned char* prCol = 
+	  (unsigned char*)(hsv->imageData + yy*hsv->widthStep);
+	prOut[3*xx] = prCol[3*xx];
+	prOut[3*xx+1] = prCol[3*xx+1];
+	//	prOut[3*xx+2] = prOut[3*xx+2];
+	//	pr[3*xx+1] = 200;
+	//	pr[3*xx+2] = getVal(nLabels, label);
+	//	pr[3*xx+2] = 150;
+      }
+    }
+
+    cvCvtColor(hsvSrc, dst, CV_HSV2BGR);
+    cvReleaseImage(&hsvSrc);
+  }
+
+  /**
      @param wname The window name
      @param nLabels The maximum label
      @param rgbImage The original RGB image
@@ -170,54 +238,69 @@ public:
 	       const IplImage* segmentation,
 	       const ObjectSet& objSet,
 	       const std::vector<int>& labeling, 
-	       const std::vector<blobStat>& blobStats) {
+	       const std::vector<blobStat>& blobStats,
+	       const std::vector<std::pair<int,int> > edges) {
     static int counter = 0;
 
-    IplImage* hsvResult = cvCreateImage(cvGetSize(rgbImage), 8, 3);
-
-    cvCvtColor(rgbImage, hsvResult, CV_BGR2HSV);
+    //    IplImage* hsvResult = cvCreateImage(cvGetSize(rgbImage), 8, 3);
+    //    cvCvtColor(rgbImage, hsvResult, CV_BGR2HSV);
     
-    for (int xx = 0; xx < hsvResult->width; xx++) {
-      for (int yy = 0; yy < hsvResult->height; yy++) {
-	int label = ((int*)(segmentation->imageData + 
-			    yy*segmentation->widthStep))[xx];
-	unsigned char* pr = 
-	  (unsigned char*)(hsvResult->imageData + yy*hsvResult->widthStep);
-	pr[3*xx] =   getHue(nLabels, label);
-	pr[3*xx+1] = getSat(nLabels, label);
-	//	pr[3*xx+1] = 200;
-	//	pr[3*xx+2] = getVal(nLabels, label);
-	//	pr[3*xx+2] = 150;
-      }
-    }
+    IplImage* segColors;
 
-    IplImage* rgbResult = cvCreateImage(cvGetSize(hsvResult), 8, 3);
+    colorSegmentedImage(nLabels, cvGetSize(rgbImage), segmentation, &segColors);
 
-    cvCvtColor(hsvResult, rgbResult, CV_HSV2BGR);
+    IplImage* rgbResult = cvCreateImage(cvGetSize(rgbImage), 8, 3);
 
+    overwriteBGR2HSV(rgbImage, segColors, rgbResult);
 
+    //    cvCvtColor(hsvResult, rgbResult, CV_HSV2BGR);
 
-    cvNamedWindow("Sans labels", 0);
-    cvShowImage("Sans labels", rgbResult);
+    //    cvNamedWindow("Sans labels", 0);
+    //    cvShowImage("Sans labels", rgbResult);
 
-
+    // figure out the scale ratio between segmented and output images
+    CvSize segSize = cvGetSize(segmentation);
+    CvSize outSize = cvGetSize(rgbImage);
+    double out2inRatio = (double)outSize.width / segSize.width;
+    double fontScale = (double)outSize.width / 1024;
 
     // add text labels
     CvFont font;
-    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 1.0);
+    
+    std::vector<blobStat> mergedBlobs;
+    mergeBlobs(edges, blobStats, labeling, mergedBlobs);
 
-    for (int bi = 0; bi < (int)labeling.size(); bi++) {
+    /// fixme assumes mergedBlobs will be same size as labels
+    for (int bi = 0; bi < (int)mergedBlobs.size(); bi++) {
       int label = labeling[bi];
 
       // FIXME: hacky
       if (label == 0)
 	continue;
 
+      cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 
+		 fontScale * (sqrt(mergedBlobs[bi].area+1)) / 6.0 * 
+		 TEXT_WIDTH_SCALE, 
+		 fontScale * (sqrt(mergedBlobs[bi].area+1)) / 6.0 * 1.0, 0,
+		 fontScale * TEXT_STROKE);
+
+
       std::string name = objSet.findName(label);
-      CvPoint blobMean = 
-	cvPoint(blobStats[bi].mx, blobStats[bi].my);
+      CvSize textSize;
+      int baseline;
+      cvGetTextSize(name.c_str(), &font, &textSize, &baseline);
+      CvPoint textLLPos = 
+	cvPoint(out2inRatio * mergedBlobs[bi].mx - textSize.width/2.0, 
+		out2inRatio * mergedBlobs[bi].my + textSize.height/2.0);
+      CvPoint textLLPosShift = 
+	cvPoint(out2inRatio * mergedBlobs[bi].mx - 
+		textSize.width/2.0+TEXT_STROKE, 
+		out2inRatio * mergedBlobs[bi].my + textSize.height/2.0);
+
       cvPutText(rgbResult, name.c_str(), 
-		blobMean, &font, cvScalar(255, 255, 255));
+		textLLPosShift, &font, cvScalar(0,0,0));
+      cvPutText(rgbResult, name.c_str(), 
+		textLLPos, &font, cvScalar(255, 255, 255));
     }
 
     if (getenv("oSaveLabelings")) {
@@ -232,8 +315,9 @@ public:
     cvNamedWindow(wname, 0);
     cvShowImage(wname, rgbResult);
 
-    cvReleaseImage(&hsvResult);
+    //    cvReleaseImage(&hsvResult);
     cvReleaseImage(&rgbResult);
+    cvReleaseImage(&segColors);
   }
 
   /**
@@ -276,20 +360,96 @@ public:
   }
 
 
-  static unsigned char getHue(int nLabels, int label) {
+  static inline unsigned char getHue(int nLabels, int label) {
     return (unsigned char)(180 * (double)label / (nLabels - 1));
   }
 
-  static unsigned char getVal(int nLabels, int label) {
+  static inline unsigned char getVal(int nLabels, int label) {
     return (unsigned char)(100 * (double)label / (nLabels - 1));
     //    return 255;
     //    return 0;
   }
 
-  static unsigned char getSat(int nLabels, int label) {
+  static inline unsigned char getSat(int nLabels, int label) {
     return (unsigned char)(100 + 150 * (double)label / (nLabels - 1));
   }
 
+  /// find master and path to master (master not in path)
+  static int findMasterPath(int ii, int masters[], std::vector<int>& path) {
+    if (masters[ii] == ii) return ii;
+    else {
+      //      printf("%d -> %d\n", ii, masters[ii]);
+      path.push_back(ii);
+      return findMasterPath(masters[ii], masters, path);
+    }
+  }
+
+  /// find master with path compression
+  static int findMaster(int ii, int masters[]) {
+    std::vector<int> path;
+    int master = findMasterPath(ii, masters, path);
+    //    printf("\n");
+    
+    for (std::vector<int>::iterator it = path.begin();
+	 it != path.end(); 
+	 it++) {
+      masters[*it] = master;
+    }
+    return master;
+  }
+
+  /// Merges adjacent blobs with same label
+  static void mergeBlobs(const std::vector<std::pair<int,int> >& edges, 
+			 const std::vector<blobStat>& blobStats,
+			 const std::vector<int>& labels,
+			 std::vector<blobStat>& mergedBlobs) {
+
+    blobStat blobArr[blobStats.size()];
+    int masterBlobs[blobStats.size()];
+    for (int ii = 0; ii < (int)blobStats.size(); ii++) {
+      blobArr[ii] = blobStats[ii];
+      masterBlobs[ii] = ii;
+
+      assert(blobArr[ii].area >= 0);
+    }
+
+    // for each edge, merge the linked blobs if they have the same label
+    for (std::vector<std::pair<int,int> >::const_iterator it = edges.begin();
+	 it != edges.end(); 
+	 it++) {
+      std::pair<int,int> edge = *it;
+
+      if (labels[edge.first] == labels[edge.second]) {
+	int master1 = findMaster(edge.first, masterBlobs),
+	  master2 = findMaster(edge.second, masterBlobs);
+	masterBlobs[master2] = master1;
+
+	if (master1 != master2) {
+	  double a1 = blobArr[master1].area;
+	  double a2 = blobArr[master2].area;
+	  double asum = a1 + a2;
+	  
+	  assert(a1 >= 0);
+	  assert(a2 >= 0);
+	  
+	  blobArr[master1].area += a2;
+	  
+	  blobArr[master1].mx = 
+	    (a1 / asum) * blobArr[master1].mx +
+	    (a2 / asum) * blobArr[master2].mx;
+	  blobArr[master1].my = 
+	    (a1 / asum) * blobArr[master1].my +
+	    (a2 / asum) * blobArr[master2].my;
+	}
+      }
+    }
+    
+    /// fixme remove duplicate blobs, but make sure callers don't break
+    for (int ii = 0; ii < (int)blobStats.size(); ii++) {
+      mergedBlobs.push_back(blobArr[findMaster(ii, masterBlobs)]);
+      //      mergedBlobs.push_back(blobStats[ii]);
+    }
+  }
 
 private:
   Blobber &blobber;

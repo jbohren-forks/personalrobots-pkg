@@ -113,13 +113,15 @@ void estimateWithLevMarq(
 bool FrameSeq::backTrack(){
   bool status;
   assert(mNextFrame.get() == NULL);
-#ifdef DEBUG
+#if DEBUG==1
   if (mCurrentFrame) {
-    cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
+    cout << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
   } else {
-    cerr << "Going back to last good frame  from off the end"<<endl;
+    cout << "Going back to last good frame  from off the end"<<endl;
   }
-  cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
+  if (mLastGoodFrame) {
+    cout << "Last good frame is "<<(mLastGoodFrame?mLastGoodFrame->mFrameIndex:-1) << endl;
+  }
 #endif
   if (mLastGoodFrame == NULL) {
     // nothing the backtrack to, may at the begining
@@ -137,6 +139,14 @@ void FrameSeq::releasePoseEstFrameEntry( PoseEstFrameEntry** frameEntry ) {
   delete *frameEntry;
   *frameEntry = NULL;
 }
+
+void FrameSeq::print() {
+  printf("FrameSeq:  NumFrames=%d, LastGoodFrame=%d, CurrentFrame=%d, NextFrame=%d\n",
+      mNumFrames, (mLastGoodFrame)?mLastGoodFrame->mFrameIndex:-1,
+      (mCurrentFrame)?mCurrentFrame->mFrameIndex:-1,
+      mNextFrame.get()? mNextFrame.get()->mFrameIndex:-1);
+}
+
 void PoseEstFrameEntry::clear() {
   if (mInliers0) cvReleaseMat(&mInliers0);
   if (mInliers1) cvReleaseMat(&mInliers1);
@@ -158,19 +168,27 @@ PoseEstFrameEntry::~PoseEstFrameEntry(){
   clear();
 }
 
-void saveFramePoses(const string& dirname, vector<FramePose>& framePoses) {
-  // TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
-  double _poses[framePoses.size()*7];
+void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses) {
+
+  // @TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
+    double _poses[framePoses.size()*7];
   CvMat  _framePoses = cvMat(framePoses.size(), 7, CV_64FC1, _poses);
   int i=0;
-  for (vector<FramePose>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
-    _poses[i*7 + 0] = iter->mIndex;
-    _poses[i*7 + 1] = iter->mRod.x;
-    _poses[i*7 + 2] = iter->mRod.y;
-    _poses[i*7 + 3] = iter->mRod.z;
-    _poses[i*7 + 4] = iter->mShift.x;
-    _poses[i*7 + 5] = iter->mShift.y;
-    _poses[i*7 + 6] = iter->mShift.z;
+  for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
+    FramePose* fp = *iter;
+
+    // make sure the transformation matrix and the rodrigues and shift vectors are in sync
+    double params_local_to_global_data[6];
+    CvMat  params_local_to_global = cvMat(6, 1, CV_64FC1, params_local_to_global_data);
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
+
+    _poses[i*7 + 0] = fp->mIndex;
+    _poses[i*7 + 1] = params_local_to_global_data[0];
+    _poses[i*7 + 2] = params_local_to_global_data[1];
+    _poses[i*7 + 3] = params_local_to_global_data[2];
+    _poses[i*7 + 4] = params_local_to_global_data[3];
+    _poses[i*7 + 5] = params_local_to_global_data[4];
+    _poses[i*7 + 6] = params_local_to_global_data[5];
   }
   if (i>0) {
     string framePosesFilename("framePoses.xml");
@@ -223,10 +241,10 @@ bool FileSeq::getNextFrame() {
   if (mInputImageQueue.size()==0) {
     mCurrentFrameIndex += mFrameStep;
 
-    if (mCurrentFrameIndex < mEndFrameIndex ) {
+    if (mCurrentFrameIndex <= mEndFrameIndex ) {
       return getCurrentFrame();
     } else {
-      if (mCurrentFrameIndex < mEndFrameIndex + mFrameStep) {
+      if (mCurrentFrameIndex <= mEndFrameIndex + mFrameStep) {
         // signaling the end of the seq
         StereoFrame stereoFrame;
         stereoFrame.mFrameIndex = -1;

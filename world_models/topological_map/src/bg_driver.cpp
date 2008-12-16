@@ -29,28 +29,104 @@
 
 
 #include <iostream>
+#include <getopt.h>
+#include <sysexits.h>
 #include "topological_map/bottleneck_graph.h"
 
 using std::cout;
 using std::endl;
 
 
-int main (int, char* argv[])
+int main (int argc, char* argv[])
 {
+  int bottleneckSize=-1;
+  int bottleneckSkip=-1;
+  int inflationRadius=0;
+  int domain=0;
+  char* outputFilename=0;
+  char* inputFilename=0;
   
-  // Initialize grid
-  topological_map::GridArray grid(boost::extents[4][5]);
-  grid[0][2] = true;
-  grid[2][2] = true;
-  grid[3][2] = true;
+  while (1) {
+    static struct option options[] =
+      {{"bottleneck-size", required_argument, 0, 'b'},
+       {"bottleneck-skip", required_argument, 0, 'k'},
+       {"inflation-radius", required_argument, 0, 'r'},
+       {"domain", required_argument, 0, 'd'},
+       {"outfile", required_argument, 0, 'o'},
+       {"infile", required_argument, 0, 'i'},
+       {0, 0, 0, 0}};
 
-  printBottleneckGraph (topological_map::makeBottleneckGraph (grid, atoi(argv[1]), atoi(argv[2])));
- 
-  cout << "done " << endl;
+    int option_index=0;
+    int c = getopt_long (argc, argv, "b:k:r:d:o:i:", options, &option_index);
+    if (c==-1) {
+      break;
+    }
+    else {
+      switch (c) {
+      case 'b':
+        bottleneckSize = atoi(optarg);
+        if (bottleneckSkip<0) {
+          bottleneckSkip = 1+bottleneckSize/3;
+        }
+        break;
+      case 'k':
+        bottleneckSkip=atoi(optarg);
+        break;
+      case 'r':
+        inflationRadius=atoi(optarg);
+        break;
+      case 'd':
+        domain=atoi(optarg);
+        break;
+      case 'o':
+        outputFilename=optarg;
+        break;
+      case 'i':
+        inputFilename=optarg;
+        break;
+      default:
+        exit(EX_USAGE);
+      }
+    }
+  }
+  topological_map::GridArray *grid;
+  topological_map::IndexedBottleneckGraph g;
+  if (inputFilename) {
+    g = topological_map::readBottleneckGraphFromFile(inputFilename);
+  }
+  else {
+
+    if ((bottleneckSize<0) || (domain>1)) {
+      exit(EX_USAGE);
+    }
+  
+    if (domain==0) {
+      // Initialize grid
+      grid = new topological_map::GridArray(boost::extents[4][5]);
+      (*grid)[0][2] = true;
+      (*grid)[2][2] = true;
+      (*grid)[3][2] = true;
+    }
+    else {
+      grid = new topological_map::GridArray(boost::extents[41][41]);
+      for (int i=0; i<20; i++) {
+        (*grid)[10][i] = true;
+        (*grid)[10][40-i] = true;
+      }
+    }
+      
+    g = topological_map::makeBottleneckGraph (*grid, bottleneckSize, bottleneckSkip, inflationRadius);
+  }
+
+
+  //g.printBottleneckGraph ();
+
+  cout << "Bottlenecks:" << endl;
+  g.printBottlenecks();
+  if (outputFilename) {
+    g.printBottlenecks(outputFilename);
+  }
 }
-
-
-
 
   
   

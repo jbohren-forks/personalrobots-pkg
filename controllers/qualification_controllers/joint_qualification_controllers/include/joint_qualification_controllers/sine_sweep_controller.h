@@ -42,7 +42,7 @@
 */
 /***************************************************/
 
-#include <std_msgs/ChannelFloat32.h>
+#include <robot_msgs/TestData.h>
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
@@ -77,7 +77,7 @@ public:
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot);
+  void init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   void analysis();
@@ -91,17 +91,9 @@ private:
   double initial_time_;                     /**< Start time of the sweep. */
   int count_;
   bool done_;
-  
-  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
-  misc_utils::RealtimePublisher<std_msgs::ChannelFloat32> data_publisher_;
-
+  ros::node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
-  
-  std_msgs::ChannelFloat32 test_effort_;
-  std_msgs::ChannelFloat32 test_velocity_;
-  std_msgs::ChannelFloat32 test_cmd_;
-  std_msgs::ChannelFloat32 test_position_;
-  std_msgs::ChannelFloat32 test_time_;
+  robot_msgs::TestData test_data_;
 };
 
 /***************************************************/

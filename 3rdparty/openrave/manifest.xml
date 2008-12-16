@@ -1,0 +1,22 @@
+<package>
+  <description brief="OpenRAVE">
+    Check out the CMU Tech Report: "OpenRAVE: A Planning Architecture For Autonomous Robotics" for a brief description.
+
+    For successful compilation, remove Qt3 development tools (qt3-dev-tools,libqt3-headers) to prevent conflict with Qt4.
+  </description>
+  <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
+  </export>
+  <depend package="soqt"/>
+  <depend package="bullet"/>
+  <depend package="opende"/>
+  <depend package="std_msgs"/>
+  <depend package="boost"/>
+  <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libglew-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libglew1.5-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libxml2-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
+</package>

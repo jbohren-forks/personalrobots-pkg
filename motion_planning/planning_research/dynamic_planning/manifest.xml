@@ -5,6 +5,7 @@
   </description>
   <author>Maxim Likhachev/maximl@seas.upenn.edu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url></url>
 
   <depend package="sbpl"/>

@@ -2,6 +2,7 @@
 <description>Simple grasp planner based on object centroid and principal components</description>
 <author>Matei Ciocarlie</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="libTF" />
 <depend package="newmat10" />
 <depend package="object_detector" />

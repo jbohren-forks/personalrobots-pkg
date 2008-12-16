@@ -2,6 +2,7 @@
   <description>A demo of  2-D navigation.</description>
   <author>Brian Gerkey</author>
   <license>BSD</license>
+  <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="nav_view"/>
   <depend package="roslaunch"/>

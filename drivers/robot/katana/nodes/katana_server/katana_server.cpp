@@ -12,8 +12,8 @@
 #include "std_srvs/ArmCSpaceSeqString.h"
 #include "std_srvs/UInt32String.h"
 #include "std_srvs/Float32String.h"
-#include "std_srvs/KatanaIK.h"
-#include "std_srvs/KatanaPose.h"
+#include "katana/KatanaIK.h"
+#include "katana/KatanaPose.h"
 
 using std::vector;
 using std::cout;
@@ -42,8 +42,8 @@ class KatanaServer : public ros::node
     }
     virtual ~KatanaServer() { delete katana; }
     
-    bool get_current_pose(std_srvs::KatanaPose::request &req,
-                    std_srvs::KatanaPose::response &res)
+    bool get_current_pose(katana::KatanaPose::request &req,
+                    katana::KatanaPose::response &res)
     {
       vector<double> katana_pose = katana->get_pose();
       res.pose.x = katana_pose[0];
@@ -55,8 +55,8 @@ class KatanaServer : public ros::node
       return true;
     }
 
-    bool move_robot_linear(std_srvs::KatanaPose::request &req,
-                    std_srvs::KatanaPose::response &res)
+    bool move_robot_linear(katana::KatanaPose::request &req,
+                    katana::KatanaPose::response &res)
     {
       vector<double> dst_pose;
       dst_pose.push_back(req.pose.x);
@@ -83,8 +83,8 @@ class KatanaServer : public ros::node
  *        in the positive and negative direction in order to find a solution if one is
  *        not found for the specified wrist orientation.
 */
-    bool ik_calculate_srv(std_srvs::KatanaIK::request &req,
-                    std_srvs::KatanaIK::response &res)
+    bool ik_calculate_srv(katana::KatanaIK::request &req,
+                    katana::KatanaIK::response &res)
     {
       cout << "Using ik calculate for pose: " << req.pose.x << " " << req.pose.y << " "
             << req.pose.z << " " << req.theta << " " << req.psi << endl;

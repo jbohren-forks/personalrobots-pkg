@@ -5,12 +5,13 @@
   </description>
   <author>Morgan Quigley</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="kni-3.9.2"/>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lkatana"/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp" lflags="-L${prefix}/lib -lkatana"/>
   </export>
 </package>
 

@@ -1,0 +1,22 @@
+#include "exec.init.nddl"
+
+rejectable(moveRightEndEffector.Inactive rightEndEffectorGoal_0);
+rightEndEffectorGoal_0.des_shoulder_pan = -1.0;
+rightEndEffectorGoal_0.des_shoulder_pitch= 0.0;
+rightEndEffectorGoal_0.des_upperarm_roll = 0.0;
+rightEndEffectorGoal_0.des_elbow_flex = 0.0;
+rightEndEffectorGoal_0.des_forearm_roll = 0.0;
+rightEndEffectorGoal_0.des_wrist_flex = 0.0;
+rightEndEffectorGoal_0.des_gripper_roll = 0.0;
+
+rejectable(moveRightEndEffector.Inactive rightEndEffectorGoal_1);
+rightEndEffectorGoal_1.des_shoulder_pan = 0.0;
+rightEndEffectorGoal_1.des_shoulder_pitch= 0.0;
+rightEndEffectorGoal_1.des_upperarm_roll = 0.0;
+rightEndEffectorGoal_1.des_elbow_flex = 0.0;
+rightEndEffectorGoal_1.des_forearm_roll = 0.0;
+rightEndEffectorGoal_1.des_wrist_flex = 0.0;
+rightEndEffectorGoal_1.des_gripper_roll = 0.0;
+
+rightEndEffectorGoal_0 before rightEndEffectorGoal_1;
+

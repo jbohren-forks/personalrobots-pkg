@@ -1,0 +1,5 @@
+<controller name="hhc" topic="hc" type="JointVelocityControllerNode">
+      <joint name="head_tilt_joint" >
+        <pid p="6.0" d="0.0" i="100.0" iClamp="0.5" />
+      </joint>
+</controller>

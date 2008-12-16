@@ -33,7 +33,6 @@
  *********************************************************************/
 
 #include <robot_mechanism_controllers/joint_pd_controller.h>
-#include <math_utils/angles.h>
 
 using namespace std;
 using namespace controller;

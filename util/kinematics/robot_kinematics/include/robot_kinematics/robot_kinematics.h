@@ -49,7 +49,6 @@
 #include <math.h>
 
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
 #include <robot_kinematics/serial_chain.h>
 
 namespace robot_kinematics
@@ -133,6 +132,8 @@ namespace robot_kinematics
 
     private:
 
+    int num_chains_; /*< num of chains in the Robot Kinematics class */
+
     SerialChain *chains_; /*< pointer to array of serial chains inside RobotKinematics */
 
     /*!
@@ -208,7 +209,6 @@ namespace robot_kinematics
      */
     robot_desc::URDF::Link* findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group);
     
-    int num_chains_; /*< num of chains in the Robot Kinematics class */
 
     int chain_counter_; /*< chain count */
 

@@ -2,6 +2,7 @@
   <description>A ROS node to store roslaunch scrips related to the breadboard robot.</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="dc1394_cam_server" />
   <depend package="hokuyo_node" />
   <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>

@@ -247,6 +247,8 @@ namespace robot_desc
 		    velocityLimit = 0.0;
 		    effortLimit = 0.0;
 		    type = UNKNOWN;
+                    pjointMimic = NULL;
+                    fMimicMult = 1.0; fMimicOffset = 0.0;
 		    isSet["name"] = false;
 		    isSet["type"] = false;
 		    isSet["axis"] = false;
@@ -257,6 +259,9 @@ namespace robot_desc
 		    isSet["safetyLengthMin"] = false;
 		    isSet["safetyLengthMax"] = false;
 		    isSet["effortLimit"] = false;
+		    isSet["pjointMimic"] = false;
+		    isSet["fMimicMult"] = false;
+		    isSet["fMimicOffset"] = false;
 		    isSet["velocityLimit"] = false;
 		    isSet["calibration"] = false;
 		}
@@ -283,6 +288,11 @@ namespace robot_desc
 		std::string                 calibration;
 		Map                         data;
 		std::map<std::string, bool> isSet;
+
+                // only valid for joints that mimic other joint's values
+                Joint* pjointMimic;                     // if not NULL, this joint mimics pjointMimic
+                double fMimicMult, fMimicOffset;        // the multiplication and offset coeffs. Ie, X = mult*Y+offset
+                                                        // where Y is pjointMimic's joint value, X is this joint's value.
 	    };
 	    
 	    /** Class for link collision component instances */
@@ -642,7 +652,10 @@ namespace robot_desc
 
 	/** Get the data that was defined at top level */
 	const Map& getMap(void) const;
-
+	
+	/** Get the defined resource path for this document */
+	std::string getResourceLocation(void) const;
+	
 	/** Try to evaluate the constant as a double value */
 	double getConstantValue(const std::string &name, bool *error = NULL) const;
 
@@ -732,7 +745,6 @@ namespace robot_desc
 
 	/** Extract and return the value of the name attribute from a list of attributes */
 	std::string extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName) const;
-	
 
 	/** Behaviour for unknown nodes. Default is to output a message letting the user know that a specific node is unknown */
 	virtual void unknownNode(const TiXmlNode* node);
@@ -751,7 +763,10 @@ namespace robot_desc
 
 	/** The name of the file where the parsing started */
 	std::string                             m_source;
-	
+
+	/** A string that defines the base path for resources pointed to from the loaded document */
+	std::string                             m_resourceLocation;
+		
 	/** The list of paths the parser knows about when it sees an <include> directive */
 	std::vector<std::string>                m_paths;
         

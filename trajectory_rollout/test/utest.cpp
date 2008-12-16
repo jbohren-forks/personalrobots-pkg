@@ -51,7 +51,8 @@ using namespace std;
 using namespace std_msgs;
 
 TrajectoryController* tc = NULL;
-
+MapGrid mg(10, 10, 1, 0, 0);
+WavefrontMapAccessor wa(mg, .25);
 
 TEST(TrajectoryController, correctFootprint){
   //just create a basic footprint
@@ -121,7 +122,9 @@ TEST(TrajectoryController, correctFootprint){
 TEST(TrajectoryController, footprintObstacles){
   //place an obstacle
   tc->map_(4, 6).occ_state = 1;
+  wa.synchronize();
   Trajectory traj(0, 0, 0, 30);
+  //tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj, 2, 30);
   tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj);
   //we expect this path to hit the obstacle
   EXPECT_FLOAT_EQ(traj.cost_, -1.0);
@@ -133,8 +136,10 @@ TEST(TrajectoryController, footprintObstacles){
   tc->map_(7, 5).occ_state = 1;
   tc->map_(7, 6).occ_state = 1;
   tc->map_(7, 7).occ_state = 1;
+  wa.synchronize();
 
   //try to rotate into it
+  //tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 0, 0, M_PI_2, 0, 0, M_PI_4, 100, traj, 2, 30);
   tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 0, 0, M_PI_2, 0, 0, M_PI_4, 100, traj);
   //we expect this path to hit the obstacle
   EXPECT_FLOAT_EQ(traj.cost_, -1.0);
@@ -151,6 +156,7 @@ TEST(TrajectoryController, checkGoalDistance){
   tc->map_(3, 1).occ_state = 1;
   tc->map_(3, 2).occ_state = 1;
   tc->map_(2, 2).occ_state = 1;
+  wa.synchronize();
 
   //set a goal
   tc->map_.resetPathDist();
@@ -229,13 +235,6 @@ TEST(MapGrid, properGridConstruction){
 
 //test some stuff
 int main(int argc, char** argv){
-
-  MapGrid mg(10, 10);
-  mg.scale = 1;
-  mg.origin_x = 0;
-  mg.origin_y = 0;
-
-  WavefrontMapAccessor wa(mg, .25);
   const costmap_2d::ObstacleMapAccessor& ma = wa;
   std::vector<std_msgs::Point2DFloat32> footprint_spec;
   std_msgs::Point2DFloat32 pt;

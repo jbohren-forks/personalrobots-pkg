@@ -34,7 +34,7 @@
 
 #include "std_msgs/BaseActualMsg.h"
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 
 void odom_callback(std::string name, std_msgs::BaseActualMsg* baseActual, ros::Time t, void* f)
 {
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  LogPlayer player;
+  ros::record::Player player;
 
   player.open(std::string(argv[1]), ros::Time(0));
 

@@ -192,8 +192,8 @@ namespace collision_space
 	    std::vector<Geom*> m_geomsY;
 	    std::vector<Geom*> m_geomsZ;
 	    
-	    void check(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-		       Geom *g, void *data, dNearCallback *nearCallback);
+	    void checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
+			   Geom *g, void *data, dNearCallback *nearCallback);
 	};
 
 	struct kGeom

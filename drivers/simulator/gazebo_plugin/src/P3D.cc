@@ -104,19 +104,23 @@ void P3D::InitChild()
 // Update the controller
 void P3D::UpdateChild()
 {
+  Pose3d pose;
   Quatern rot;
   Vector3 pos;
 
-  // apply xyz offsets
-  pos = this->myBody->GetPosition() + this->xyzOffsets;
+  // Get Pose/Orientation ///@todo: verify correctness
+  pose = this->myBody->GetPose(); // - this->myBody->GetCoMPose();
+
+  // apply xyz offsets and get position and rotation components
+  pos = pose.pos + this->xyzOffsets;
+  rot = pose.rot;
+  // std::cout << " --------- P3D rot " << rot.x << ", " << rot.y << ", " << rot.z << ", " << rot.u << std::endl;
 
   // apply rpy offsets
-  Vector3 rpyTotal;
-  rot = this->myBody->GetRotation();
-  rpyTotal.x = this->rpyOffsets.x + rot.GetRoll();
-  rpyTotal.y = this->rpyOffsets.y + rot.GetPitch();
-  rpyTotal.z = this->rpyOffsets.z + rot.GetYaw();
-  rot.SetFromEuler(rpyTotal);
+  Quatern qOffsets;
+  qOffsets.SetFromEuler(this->rpyOffsets);
+  rot = qOffsets*rot;
+  rot.Normalize();
 
   double cur_time = Simulator::Instance()->GetSimTime();
   

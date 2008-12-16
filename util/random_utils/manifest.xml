@@ -1,5 +1,6 @@
 <package>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Brian)"/>
   <author>Morgan Quigley, Ioan Sucan</author>
   <depend package="rosthread" />
   <export>

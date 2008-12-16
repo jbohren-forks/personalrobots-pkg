@@ -1,0 +1,9 @@
+<launch>
+
+<!-- Arm wrench controller -->
+  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/controllers_wrench.xml" />
+
+<!-- Test script -->
+  <node pkg="arm_cart" type="random_wrenches.py" />
+
+</launch>

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <utility>
+#include <set>
 #include <ext/hash_map>
 #include <ext/hash_set>
 
@@ -20,6 +21,17 @@ typedef int NodeId;
 typedef __gnu_cxx::hash_map<int,int> Int2IntMap;
 
 typedef __gnu_cxx::hash_set<int> NodeSet;
+
+/*
+class EdgeComparer {
+public:
+  bool operator()(std::pair<int,int> e0, std::pair<int,int> e1) {
+    return (e0.first + e0.second) < (e1.first + e1.second);
+  }
+};
+
+typedef std::set<std::pair<int,int>, EdgeComparer> EdgeSet;
+*/
 
 //using namespace std;
 
@@ -82,6 +94,24 @@ class UndirectedFeatureGraph {
 
   const std::vector<std::pair<int,int> >* 
     getEdgeList() const { return &edges; }
+
+  const void getEdgeListCopy(std::vector<std::pair<int,int> >& vec) const { 
+    for (std::vector<std::pair<int,int> >::const_iterator it = edges.begin();
+	 it != edges.end();
+	 it++) {
+      vec.push_back(*it);
+    }
+  }
+
+  /*
+  void getEdgeSet(EdgeSet& eset) { 
+    for (vector<std::pair<int,int> >::iterator it = edges.begin();
+	 it != edges.end();
+	 it++) {
+      eset.insert(*it);
+    }
+  }
+  */
 
   // masks out references to nodes not in the set, re-number nodes, 
   // make everything consistent with renumbering 

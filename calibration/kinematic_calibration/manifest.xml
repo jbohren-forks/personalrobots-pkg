@@ -2,9 +2,16 @@
   <description>Tools for calibrating kinematics chains</description>
   <author>Vijay Pradeep</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="kdl" />
-  <depend package="robot_kinematics" />
   <depend package="phase_space" />
   <depend package="robot_msgs" />
+  <depend package="std_msgs" />
   <depend package="robot_kinematics" />
+  <depend package="topic_synchronizer" />
+  <depend package="image_msgs" />
+  <depend package="newmat10"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 </package>

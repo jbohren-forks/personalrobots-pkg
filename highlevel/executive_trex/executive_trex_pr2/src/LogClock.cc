@@ -1,11 +1,12 @@
 #include "Clock.hh"
-#include <errno.h>
-#include <time.h>
-#include <signal.h>
 #include "LogClock.hh"
 #include "Agent.hh"
 #include "LogManager.hh"
 #include "Components.hh"
+#include "Utilities.hh"
+#include <errno.h>
+#include <time.h>
+#include <signal.h>
 
 namespace TREX {
  /**
@@ -14,9 +15,9 @@ namespace TREX {
   LogClock::LogClock(double secondsPerTick, bool stats)
     : Clock(secondsPerTick/1000, stats),
       m_gets(0), m_tick(0),
-      m_secondsPerTick(secondsPerTick) {
+      m_secondsPerTick(secondsPerTick),
+      m_file(LogManager::instance().file_name("clock.log").c_str()){
     pthread_mutex_init(&m_lock, NULL);
-    m_file = fopen("./latest/clock.log", "w");
   }
 
   void LogClock::start(){
@@ -45,7 +46,7 @@ namespace TREX {
       Clock::sleep(sleepTime);
       pthread_mutex_lock(&This->m_lock);
       This->advanceTick(This->m_tick);
-      fprintf(This->m_file, "%u\n", This->m_gets);
+      This->m_file << This->m_gets << std::endl;
       This->m_gets = 0;
       pthread_mutex_unlock(&This->m_lock);
     }
@@ -61,7 +62,7 @@ namespace TREX {
     : Clock(0, stats),
       m_gets(0), m_finalTick(finalTick), m_tick(0), m_stopTick(0), m_root(root), m_timedOut(false) {
     if (m_finalTick < 2) { m_finalTick = 100; }
-    m_file = fopen("clock.log", "r");
+    m_file = fopen(findFile("clock.log").c_str(), "r");
     if (!m_file) {
       std::cerr << "No clock.log file for playback." << std::endl;
       exit(-1);

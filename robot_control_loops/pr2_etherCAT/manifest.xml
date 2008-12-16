@@ -4,7 +4,8 @@ Main loop that runs the robot.
   </description>
   <author>Rob Wheeler/wheeler@willowgarage.com</author>
   <license>BSD</license>
-  <depend package="mechanism_control_rt"/>
+  <review status="unreviewed" notes=""/>
+  <depend package="mechanism_control"/>
   <depend package="roscpp" />
   <depend package="ethercat_hardware"/>
   <depend package="hardware_interface"/>
@@ -12,8 +13,7 @@ Main loop that runs the robot.
   <depend package="robot_mechanism_controllers"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="joint_qualification_controllers"/>
-  <depend package="gripper_qualification_controllers"/>
-  
+  <depend package="xenomai"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
 </package>

@@ -589,6 +589,18 @@ Index: CMakeLists.txt
 ===================================================================
 --- CMakeLists.txt	(revision 29562)
 +++ CMakeLists.txt	(working copy)
+@@ -11,1 +11,10 @@
+-
++###################################################
++#                                                 #
++#       include path and link libraries           #
++#                                                 #
++###################################################
++MESSAGE(" John ----------------- ${BOOST_INCLUDEDIR}" )
++
++INCLUDE_DIRECTORIES( ${BOOST_INCLUDEDIR} )
++LINK_LIBRARIES( ${BOOST_LIBRARYDIR} )
++
 @@ -29,7 +29,6 @@
  SET( PROJ_SOURCE_DIR ${Orocos-KDL_SOURCE_DIR} )
  SET( PROJ_BINARY_DIR ${Orocos-KDL_BINARY_DIR} )

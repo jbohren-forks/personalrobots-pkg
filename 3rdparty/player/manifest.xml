@@ -10,13 +10,15 @@ system.
 </description>
 <author>Brian Gerkey, with contributions from many others. See web page for a full credits llist.</author>
 <license>LGPL</license>
+<review status="3rdparty" notes=""/>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers -Wl,-rpath,${prefix}/player-svn/build/rtk2 -L${prefix}/player-svn/build/rtk2 -lrtk" cflags="-I${prefix}/player/include/player-2.2"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers -Wl,-rpath,${prefix}/build/player-svn/build/rtk2 -L${prefix}/build/player-svn/build/rtk2 -lrtk" cflags="-I${prefix}/player/include/player-2.2"/>
   <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
+<!-- <sysdepend os="debian" version="4.0-etch" package="libasound2-dev"/> -->
 </package>
 
 

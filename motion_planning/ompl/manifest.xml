@@ -5,13 +5,15 @@
   </description>
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url></url>
 
-  <depend package="math_utils"/>
+  <depend package="angles"/>
   <depend package="random_utils"/>
 
   <export>
     <cpp cflags="-I${prefix}/code" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lompl -lpthread -lrt"/>
+    <cpp os="osx" cflags="-I${prefix}/code" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lompl -lpthread"/>
   </export>
   
 </package>

@@ -59,15 +59,16 @@ class App(wx.App):
     # Configure the plot panel
     self.plot = wxmpl.PlotApp('Sine Sweep Plot')
 
-    self.plot.set_crosshairs(False)
-    self.plot.set_selection(False)
-    self.plot.set_zoom(False)
+    self.plot.set_crosshairs(True)
+    self.plot.set_selection(True)
+    self.plot.set_zoom(True)
     return True
     
   def OnData(self,msg):
     print 'Got data named %s' % (msg.name)
     self.data_dict[msg.name] = msg.vals
     self.count=self.count+1
+    print self.count
     if self.count > 3:
       self.Plot()
     
@@ -80,20 +81,29 @@ class App(wx.App):
     axes2 = fig.add_subplot(212)
     axes2.clear()
     #axes1.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['effort']), 'r--')
+    axes1.psd(numpy.array(self.data_dict['effort']), NFFT=16384, Fs=1000, Fc=0, color='r')
     axes1.psd(numpy.array(self.data_dict['position']), NFFT=16384, Fs=1000, Fc=0)
-    #axes1.axis([0, 100, 0, 200])
+    axes1.axis([0, 50, 0, -100])
 
     axes1.set_xlabel('Position PSD')
     #axes1.set_ylabel('Effort')
 
     #axes2.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['velocity']), 'b--')
-    axes2.psd(numpy.array(self.data_dict['velocity']), NFFT=16384, Fs=1000, Fc=0)
-    axes2.axis([0, 100, 0, 200])
+    pxx, f = axes2.psd(numpy.array(self.data_dict['velocity']), NFFT=16384, Fs=1000, Fc=0)
+    axes2.clear()
+    axes2.plot(f,pxx)
+    index = numpy.argmax(pxx)
+    max_value=max(pxx)
+
+   
+    axes2.plot([f[index]],[pxx[index]],'r.', markersize=10);
+
+    axes2.axis([0, 50, 0, 1])
     axes2.set_xlabel('Velocity PSD')
     #axes2.set_ylabel('Velocity')
-    
+    self.count=0
     self.plot.draw()
-    self.data_topic.unregister()
+
     
 if __name__ == "__main__":
   try:
@@ -102,4 +112,5 @@ if __name__ == "__main__":
   except Exception, e:
     print e
     
+  self.data_topic.unregister() 
   print 'quit'

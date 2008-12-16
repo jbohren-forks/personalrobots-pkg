@@ -1,9 +1,11 @@
 <launch>
   <group name="wg">
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" output="screen"/>
-    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/pr2_prototype1/laser_controller_config.xml" output="screen"/>
-    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" output="screen"/>
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 1 .45 .40" />
+    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" />
+    <node pkg="2dnav_pr2" type="spine_levitation.py" />-->
 
     <param name="axis_vx" value="3" type="int"/>
     <param name="axis_vy" value="2" type="int"/>
@@ -14,9 +16,15 @@
     <param name="max_vx" value="0.6" />
     <param name="max_vy" value="0.6" />
     <param name="deadman_button" value="4" type="int"/>
-    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" />
 
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />
+    <param name="odom_estimation/freq" value="30.0"/>
+    <param name="odom_estimation/sensor_timeout" value="1.0"/>
+    <param name="odom_estimation/exact_time_mode" value="true"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" respawn="true" />
+
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="true" />
+    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
@@ -27,19 +35,40 @@
     <param name="pf_odom_drift_xa" value="0.2"/>
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
-    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
+    <param name="pf_odom_frame_id" value="odom_combined"/>
+    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" />
 
-    <param name="world_3d_map/max_publish_frequency" type="double" value="20" /> <!-- Hz -->
-    <param name="world_3d_map/base_laser_range" type="double" value="10.0" /> <!-- Meters -->
-    <param name="world_3d_map/tilt_laser_range" type="double" value="4.0" /> <!-- Meters -->
-    <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.25" /> <!-- percentage (between 0 and 1) -->
-    <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
-    <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
-    <param name="world_3d_map/laser_x_offset" type="double" value=".275" />
-    <node pkg="world_3d_map" type="world_3d_map" args="/robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" respawn="false" /> 
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ARAPlanner"/>
+    <param name="move_base/environmentType" value="2D"/>
+    <param name="move_base/controller_frequency" value="15.0"/>
+    <param name="move_base/planner_frequency" value="0.0"/>
+    <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+    <param name="/costmap_2d/no_information_value" value="255"/>
+    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
+    <param name="/costmap_2d/inflation_radius" value="0.55"/>
+    <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
+    <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/weight" value="0.1"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" />
 
-    <param name="costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
-    <param name="move_base_sbpl/controller_frequency" value="20.0" />
-    <node pkg="highlevel_controllers" type="move_base_sbpl" args="cloud:=world_3d_map" respawn="false"/>
+    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
+    <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
+    <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
+    <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
+    <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
+    <param name="recharge/mail_client" value="mailx -s"/>
+    <node pkg="highlevel_controllers" type="recharge_controller" respawn="true" />
+
+    <!-- For logging distance traveled -->
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+
+    <!-- For telling the robot to go charge -->
+    <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />
   </group>
 </launch>

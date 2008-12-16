@@ -1,0 +1,10 @@
+<package>
+<description>Package to track the position of people, based on camera and laser information.</description>
+<author>Wim Meeussen</author>
+<license>BSD</license>
+<depend package="roscpp" />
+<depend package="bfl_latest" />
+<depend package="std_msgs" />
+<depend package="robot_msgs" />
+<depend package="tf" />
+</package>

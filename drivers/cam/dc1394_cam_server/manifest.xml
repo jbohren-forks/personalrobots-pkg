@@ -2,6 +2,7 @@
   <description>A node to serve images from multiple firewire cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="newmat10"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

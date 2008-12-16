@@ -42,11 +42,12 @@ int runExternalProcess(const std::string &executable, const std::string &args)
     return system((executable + " " + args).c_str());
 }
 
-TEST(URDF, CorrectVersion)
-{
-    int result = runExternalProcess("diff", "pr2/pr2.xml pr2/backup/pr2.xml");    
-    EXPECT_TRUE(result == 0);
-}
+// this test doesn't make sense
+//TEST(URDF, CorrectVersion)
+//{
+//    int result = runExternalProcess("diff", "pr2/pr2.xml pr2/backup/pr2.xml");    
+//    EXPECT_TRUE(result == 0);
+//}
 
 TEST(URDF, CorrectFormat)
 {

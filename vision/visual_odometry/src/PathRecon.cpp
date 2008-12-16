@@ -28,7 +28,12 @@ using namespace cv::willow;
 
 #define DISPLAY 0
 
-#define DEBUG 0
+#define SHOWKEYPOINTS    0
+#define SHOWDISPARITYMAP 0
+
+#define ALLKEYFRAMES 0
+
+#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -62,8 +67,10 @@ PathRecon::PathRecon(const CvSize& imageSize):
 }
 
 PathRecon::~PathRecon() {
-	// TODO Auto-generated destructor stub
   delete mVisualizer;
+  BOOST_FOREACH(FramePose* fp, mFramePoses ) {
+    delete fp;
+  }
 }
 
 void PathRecon::_init() {
@@ -111,6 +118,8 @@ PathRecon::keyFrameEval(
 	//
 	if (numInliers < 3) {
 	  kfd = KeyFrameSkip;
+	} else if (ALLKEYFRAMES==1) {
+	  keyFrameNeeded = true;
 	} else if (numInliers < defMinNumInliersForGoodFrame) {
 		// Too few inliers to ensure good tracking
 	  // This one overides mMinNumInliers as the absolute minimum guard.
@@ -124,7 +133,11 @@ PathRecon::keyFrameEval(
 		keyFrameNeeded = true;
 	} else {
 		CvPoint3D64f eulerAngles;
-		CvMatUtils::eulerAngle(rot, eulerAngles);
+		CvMatUtils::rotMatToEuler(rot, eulerAngles);
+		// convert the euler angles to degree
+    eulerAngles.x *= 180./CV_PI;
+    eulerAngles.y *= 180./CV_PI;
+    eulerAngles.z *= 180./CV_PI;
 		if (fabs(eulerAngles.x) > mMaxAngleAlpha ||
 			fabs(eulerAngles.y) > mMaxAngleBeta  ||
 			fabs(eulerAngles.z) > mMaxAngleGamma ){
@@ -149,11 +162,12 @@ PathRecon::keyFrameEval(
 
 /**
  * Keep track of the trajectory
- * store the current transformation from starting point to current position
+ * store the current transformation from current position to starting position
  * in transform as transform = transform * rt
  */
 bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
-	PoseEstimate::constructTransform(rot, shift, mRT);
+	CvMatUtils::transformFromRotationAndShift(rot, shift, mRT);
+	/// @todo Check if cvMatMul can be done in place.
 	cvCopy(&mTransform, &_mTempMat);
 	cvMatMul(&_mTempMat, &mRT, &mTransform);
 	return true;
@@ -163,18 +177,18 @@ bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
  * Store the current key frame to key frame transformation with w.r.t to starting frame
  */
 bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIndex){
-	CvMat rotGlobal;
-	CvMat shiftGlobal;
-	cvGetSubRect(&mTransform, &rotGlobal,   cvRect(0, 0, 3, 3));
-	cvGetSubRect(&mTransform, &shiftGlobal, cvRect(3, 0, 1, 3));
-	FramePose* fp = new FramePose(frameIndex);
-	CvMat rodGlobal2   = cvMat(1,3, CV_64FC1, &(fp->mRod));
-	CvMat shiftGlobal2 = cvMat(1,3, CV_64FC1, &(fp->mShift));
-	// make a copy
-	cvRodrigues2(&rotGlobal, &rodGlobal2);
-	cvTranspose(&shiftGlobal,  &shiftGlobal2);
+  FramePose* fp = new FramePose(frameIndex);
+  cvCopy(&mTransform, &(fp->transf_local_to_global_));
 
-	mFramePoses.push_back(*fp);
+  mFramePoses.push_back(fp);
+
+	// enter in to an index map
+	map_index_to_FramePose_[frameIndex] = fp;
+#if DEBUG==1
+	printf("store frame %d in mFramePoses\n", frameIndex, fp->mIndex);
+
+#endif
+
 
 	// update the path length as well
 	mPathLength += cvNorm((const CvMat *)&shift);
@@ -186,6 +200,8 @@ void PathRecon::dispToGlobal(const CvMat& uvds, CvMat& xyzs){
 }
 void PathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& xyzs) {
   double _xyz[3*uvds.rows];
+  /// @todo The two transformations, disp to local xyz, and local xyz to global xyz
+  /// shall be concatenated.
   CvMat localxyz = cvMat(uvds.rows, 3, CV_64FC1, _xyz);
   // Convert from disparity coordinates to Cartesian coordinates
   mPoseEstimator.dispToCart(&uvds, &localxyz);
@@ -257,18 +273,25 @@ void PathRecon::updateTrajectory() {
     // save the inliers into a file
     char inliersFilename[256];
     char outputDir = "test/Output/indoor1";
-    sprintf(inliersFilename, "%s/inliers1_%04d.xml", outputDir, mFrameSeq.mCurrentFrame->mFrameIndex);
+    sprintf(inliersFilename, "%s/inliers1_%04d.xml", outputDir, mFrameSeq.mCurrentFrame->frame_index_);
     saveKeyPoints(*mFrameSeq.mCurrentFrame->mInliers1, string(inliersFilename));
 #endif
 
     // stores rotation mat and shift vector in rods and shifts
     storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
-        mFrameSeq.mCurrentFrame->mFrameIndex - mFrameSeq.mStartFrameIndex);
+        mFrameSeq.mCurrentFrame->mFrameIndex);
 
 #if DEBUG==1
     // measure the errors
     measureErr(mFrameSeq.mCurrentFrame->mInliers1, mFrameSeq.mCurrentFrame->mInliers0);
 #endif
+  } else {
+    // first key frame
+    cvSetIdentity(&mTransform);
+    cvSetIdentity(&mFrameSeq.mCurrentFrame->mRot);
+    cvSetZero(&mFrameSeq.mCurrentFrame->mShift);
+    storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
+        mFrameSeq.mCurrentFrame->mFrameIndex);
   }
   // getting ready for next iteration
   setLastKeyFrame(mFrameSeq.mCurrentFrame);
@@ -308,6 +331,10 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
   // currFrame is a reference to frameSeq.mCurrentFrame;
   PoseEstFrameEntry*& currFrame = frameSeq.mCurrentFrame;
   bool stop = false;
+
+#if DEBUG==1
+  frameSeq.print();
+#endif
 
   if (frameSeq.mNextFrame.get()){
     // do not need to load new images nor compute the key points again
@@ -350,6 +377,13 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
     inputImageQueue.pop();
   }
 
+#if DEBUG==1
+  if (stop==true){
+    cout << "stopping ...."<<endl;
+    frameSeq.print();
+  }
+#endif
+
   KeyFramingDecision kfd = KeyFrameBackTrack;
 
   if (stop == false) {
@@ -388,10 +422,12 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       }
 #endif
 
+#if SHOWKEYPOINTS==1
       // if applicable, pass a reference of the current frame for visualization
       if (mVisualizer) {
         mVisualizer->drawKeypoints(*getLastKeyFrame(), *currFrame, trackablePairs);
       }
+#endif
 
       if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
 #if DEBUG==1
@@ -433,13 +469,14 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
               currFrame->mNumInliers,
               currFrame->mRot, currFrame->mShift);
 
-        // key frame action
-//        insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
       }
     } // not first frame;
+    insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
   } // stop == false
-
-  insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+  else {
+    // stop = true
+    insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+  }
 
   TIMEREND(Total);
   return insertNewKeyFrame;
@@ -454,6 +491,9 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
     break;
   }
   case KeyFrameBackTrack:   {
+#if DEBUG==1
+    cout << "keyFrameAction: backtrack"<<endl;
+#endif
     // go back to the last good frame
     // do smoothing
     if (frameSeq.backTrack()== true) {
@@ -461,30 +501,42 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
       mPoseEstimator.estimateWithLevMarq(*(currFrame->mInliers1),
           *(currFrame->mInliers0), currFrame->mRot, currFrame->mShift);
       TIMEREND2(PoseEstimateLevMarq);
+      updateTrajectory();
+      insertNewKeyFrame = true;
     }
-    updateTrajectory();
-    insertNewKeyFrame = true;
     break;
   }
   case KeyFrameKeep:   {
+#if DEBUG==1
+    cout << "keyFrameAction: keep"<<endl;
+#endif
     // keep current frame as last good frame.
     frameSeq.keepCurrentAsGoodFrame();
     break;
   }
   case KeyFrameUse:  {
+#if DEBUG==1
+    cout << "keyFrameAction: use"<<endl;
+#endif
     // use currFrame as key frame
     // do smoothing
-    if (mFrameSeq.mNumFrames>1) {
-      TIMERSTART2(PoseEstimateLevMarq);
-      mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
-          *currFrame->mInliers0, currFrame->mRot, currFrame->mShift);
-      TIMEREND2(PoseEstimateLevMarq);
+    if (currFrame) {
+      if (mFrameSeq.mNumFrames>1 && currFrame->mInliers0) {
+	TIMERSTART2(PoseEstimateLevMarq);
+	mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
+					   *currFrame->mInliers0,
+					   currFrame->mRot, currFrame->mShift);
+	TIMEREND2(PoseEstimateLevMarq);
+      }
+      updateTrajectory();
+      insertNewKeyFrame = true;
     }
-    updateTrajectory();
-    insertNewKeyFrame = true;
     break;
   }
   default:
+#if DEBUG==1
+    cout << "keyFrameAction: none"<<endl;
+#endif
     break;
   }
   return insertNewKeyFrame;
@@ -507,13 +559,17 @@ F2FVisualizer::F2FVisualizer(PoseEstimateDisp& pe):
   {
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
+#if SHOWKEYPOINTS==1
   cvNamedWindow(leftCamWinName.c_str(), CV_WINDOW_AUTOSIZE);
-//  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+  cvMoveWindow(leftCamWinName.c_str(), 650, 0);
+#endif
+#if SHOWDISPARITYMAP==1
+  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+  cvMoveWindow(dispWindowName.c_str(), 650, 530);
+#endif
 //  cvNamedWindow(lastTrackedLeftCam.c_str(), CV_WINDOW_AUTOSIZE);
 
   cvMoveWindow(poseEstWinName.c_str(), 0, 0);
-  cvMoveWindow(leftCamWinName.c_str(), 650, 0);
-//  cvMoveWindow(dispWindowName.c_str(), 650, 530);
 //  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
 
@@ -580,7 +636,11 @@ void F2FVisualizer::drawTrackingCanvas(
 
 
     CvPoint3D64f euler;
-    CvMatUtils::eulerAngle(frame.mRot, euler);
+    CvMatUtils::rotMatToEuler(frame.mRot, euler);
+    // convert the euler angles to degrees for ease of display
+    euler.x *= 180.*CV_PI;
+    euler.y *= 180.*CV_PI;
+    euler.z *= 180.*CV_PI;
     char info[256];
     CvPoint org = cvPoint(0, 475);
     CvFont font;
@@ -597,11 +657,13 @@ void F2FVisualizer::drawTrackingCanvas(
 }
 
 void VOVisualizer::show() {
+#if SHOWKEYPOINTS==1 // do not show key point matching
   if (canvasKeypointRedrawn && canvasKeypoint.Ipl())
     cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
+#endif
   if (canvasTrackingRedrawn && canvasTracking.Ipl())
     cvShowImage(poseEstWinName.c_str(), canvasTracking.Ipl());
-#if 0 // do not draw disparity map
+#if SHOWDISPARITYMAP==1 // do not draw disparity map
   if (canvasDispMapRedrawn && canvasDispMap.Ipl())
     cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
 #endif
@@ -657,7 +719,16 @@ bool PathRecon::track(queue<StereoFrame>& inputImageQueue)
   return status;
 }
 
-vector<FramePose>* PathRecon::getFramePoses() {
+void PathRecon::setCameraParams(
+    double Fx, double Fy, double Tx,
+    double Clx, double Crx, double Cy, double dispUnitScale) {
+  // parameterize the pose estimator
+  mPoseEstimator.setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  // parameterize the stat object
+  mStat.mErrMeas.setCameraParams((const CvStereoCamModel&)(mPoseEstimator));
+}
+
+vector<FramePose*>* PathRecon::getFramePoses() {
   return &mFramePoses;
 }
 
@@ -702,6 +773,9 @@ void PathRecon::Stat::print(){
   BOOST_FOREACH(Pair& p, mHistoKeyFrameTrackablePairs) {
     numTotalKeyFrameTrackablePairs += p.second;
   }
+  double rod_shift[6];
+  CvMat params = cvMat(6, 1, CV_64FC1, rod_shift);
+  CvMatUtils::transformToRodriguesAndShift(mFinalPose->transf_local_to_global_, params);
   double scale   = 1. / (double)(numFrames);
   double kfScale = 1. / (double)(numKeyFrames);
   fprintf(stdout, "Num of frames skipped:    %d\n", numFrames-numKeyFrames);
@@ -716,11 +790,10 @@ void PathRecon::Stat::print(){
   fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", numTotalKeyFrameTrackablePairs, (double)(numTotalKeyFrameTrackablePairs) * kfScale);
   fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", numTotalKeyFrameInliers,        (double)(numTotalKeyFrameInliers) *kfScale);
   fprintf(stdout, "Last pose, rod = (%f, %f, %f), shift = (%f,%f, %f)\n",
-      mFinalPose.mRod.x, mFinalPose.mRod.y, mFinalPose.mRod.z,
-      mFinalPose.mShift.x, mFinalPose.mShift.y, mFinalPose.mShift.z);
-
+      rod_shift[0], rod_shift[1], rod_shift[2], rod_shift[3], rod_shift[4], rod_shift[5]);
 }
 
+#if 0 // delete this constructor
 // See CvPathRecon.h for documentation
 PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
     WImageBuffer1_16s* dispMap,
@@ -746,4 +819,5 @@ PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
   mInliers0 = inliers0;
   mInliers1 = inliers1;
 }
+#endif
 

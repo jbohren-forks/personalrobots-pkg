@@ -2,6 +2,7 @@
   <description>Start a PR2 in 3D simulation environment.</description>
   <author>John Hsu</author>
   <license>BSD</license>
+  <review status="na" notes="demo scripts"/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="roslaunch"/>
   <depend package="gazebo_plugin"/>

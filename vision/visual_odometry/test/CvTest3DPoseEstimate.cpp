@@ -1,8 +1,10 @@
 #include "CvTest3DPoseEstimate.h"
 
 #include <iostream>
+#include <limits>
 #include <vector>
 #include <queue>
+#include <boost/foreach.hpp>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
@@ -12,8 +14,6 @@
 #include <opencv/cvwimage.h>
 
 #include <opencv/cxcore.hpp>
-
-#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
 
 // WG Ext of OpenCV
 #include <CvPoseEstErrMeasDisp.h>
@@ -44,7 +44,7 @@ using namespace std;
 #define DEBUG 1
 #define DISPLAY 1
 
-#if CHECKTIMING == 0
+#if CHECKTIMING == 1
 #define TIMERSTART(x)
 #define TIMEREND(x)
 #define TIMERSTART2(x)
@@ -59,6 +59,9 @@ using namespace std;
 
 CvTest3DPoseEstimate::CvTest3DPoseEstimate():
   Parent(),
+  verbose_(true),
+  img_size_(cvSize(640, 480)),
+  input_file_sequence_(NULL),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -69,6 +72,9 @@ CvTest3DPoseEstimate::CvTest3DPoseEstimate():
 };
 CvTest3DPoseEstimate::CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
   Parent(Fx, Fy, Tx, Clx, Crx, Cy),
+  verbose_(true),
+  img_size_(cvSize(640, 480)),
+  input_file_sequence_(NULL),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -191,6 +197,26 @@ bool CvTest3DPoseEstimate::test() {
   case VideoBundleAdj:
     return testVideoBundleAdj();
     break;
+  case BundleAdjUTest: {
+    string frame_file("frames.xml");
+    string point_file("cartesianPoints.xml");
+    return testBundleAdj(point_file, frame_file, 5, 5, 10, 1, true, true, false);
+    break;
+  }
+  case BundleAdj: {
+//    string frame_file("frames.xml");
+//    string point_file("cartesianPoints.xml");
+    string frame_file("frames101.xml");
+    string point_file("points260.xml");
+    int num_free_frames  = 5;
+    int num_fixed_frames = 5;
+    int num_iterations = 300;
+    int num_repeats = 1;
+    return testBundleAdj(point_file, frame_file, num_free_frames,
+        num_fixed_frames, num_iterations, num_repeats,
+        true, false, false);
+    break;
+  }
   default:
     cout << "Unknown test type: "<<  mTestType << endl;
   }
@@ -210,104 +236,105 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
     rightImage.SetIpl(rightimg);
 }
 
+void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
+  switch(data_set) {
+  case James4: {
+    img_size_ = cvSize(640, 480);
+    // The following parameters are from indoor1/proj.txt
+    // note that B (or Tx) is in mm
+    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    // now Tx is in meters
+//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
+//    string dirname("/u/prdata/videre-bags/james4");
+    string leftimgfmt("/im.%06d.left_rectified.tiff");
+    string rightimgfmt("/im.%06d.right_rectified.tiff");
+    string dispimgfmt(".dispmap-%06d.xml");
+    int start = 0;
+    int end   = 2324;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/james4/");
+
+    break;
+  }
+
+  default:
+  case Indoor1: {
+    img_size_ = cvSize(640, 480);
+    // The following parameters are from indoor1/proj.txt
+    // note that B (or Tx) is in mm
+    setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+    string dirname("Data/indoor1");
+    string leftimgfmt("/left-%04d.ppm");
+    string rightimgfmt("/right-%04d.ppm");
+    string dispimgfmt(".dispmap-%04d.xml");
+    int start = 0;
+    int end   = 1508;
+    int step  = 1;
+
+//    step = 1508;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/indoor1/");
+    break;
+  }
+  }
+}
+
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
-  CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj sba(imgSize);
-  // PathRecon pathRecon(imgSize);
-  // The following parameters are from indoor1/proj.txt
-  // note that B (or Tx) is in mm
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+
+//  setInputData(Indoor1);
+  setInputData(James4);
+
+  VOSparseBundleAdj sba(img_size_, 8, 3);
+//  VOSparseBundleAdj sba(img_size_, 1, 1);
+
   // parameterize the post estimator
-  sba.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_, this->Clx_,
-      this->Crx_, this->Cy_, 1.0);
-  // parameterize the error measure object in the stat obj
-  sba.mStat.mErrMeas.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, 1.0);
+  sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
 
-  string dirname("Data/indoor1");
-  string leftimgfmt("/left-%04d.ppm");
-  string rightimgfmt("/right-%04d.ppm");
-  string dispimgfmt(".dispmap-%04d.xml");
-  int start = 0;
-  int end   = 1509;
-  int step  = 1;
-
-  // set up a FileSeq
-  FileSeq fileSeq;
-  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
-  vector<FramePose>* fp = sba.getFramePoses();
+  vector<FramePose*>* fp = sba.getFramePoses();
   const PointTracks& tracks = sba.getTracks();
 
-  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks);
+  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, fp, (PointTracks *)&tracks,
+      &sba.map_index_to_FramePose_);
+  sba.mVisualizer->outputDirname = output_data_path_;
 #endif
 
-  if (fileSeq.getStartFrame() == false) {
+  if (input_file_sequence_ == NULL ||
+      input_file_sequence_->getStartFrame() == false) {
     return false;
   }
 
   do {
-    StereoFrame& sf = fileSeq.mInputImageQueue.front();
-#if 0
-    sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
-    getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
-#endif
-    sba.track(fileSeq.mInputImageQueue);
-  } while(fileSeq.getNextFrame() == true);
+   sba.track(input_file_sequence_->mInputImageQueue);
+  } while(input_file_sequence_->getNextFrame() == true);
 
-  vector<FramePose>* framePoses = sba.getFramePoses();
+  vector<FramePose*>* framePoses = sba.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+  timer.mNumIters = input_file_sequence_->mNumFrames/input_file_sequence_->mFrameStep;
 
-  saveFramePoses(string("Output/indoor1/"), *framePoses);
+  saveFramePoses(output_data_path_, *framePoses);
 
   sba.printStat();
+  sba.mStat2.print();
 
   CvTestTimer::getTimer().printStat();
-  return status;
-}
-
-static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightImage, WImageBuffer1_16s& dispMap) {
-  bool status = true;
-
-  int w = leftImage.Width();
-  int h = leftImage.Height();
-
-  if (w != rightImage.Width() || h != rightImage.Height()) {
-    cerr << __PRETTY_FUNCTION__ <<"(): size of images incompatible. "<< endl;
-    return false;
-  }
-
-  //
-  // Try Kurt's dense stereo pair
-  //
-  const uint8_t *lim = leftImage.ImageData();
-  const uint8_t *rim = rightImage.ImageData();
-
-  int16_t* disp    = dispMap.ImageData();
-  int16_t* textImg = NULL;
-
-  static const int mFTZero       = 31;    //< max 31 cutoff for prefilter value
-  static const int mDLen         = 64;    //< 64 disparities
-  static const int mCorr         = 15;    //< correlation window size
-  static const int mTextThresh   = 10;    //< texture threshold
-  static const int mUniqueThresh = 15;    //< uniqueness threshold
-
-  // scratch images
-  uint8_t *mBufStereoPairs     = new uint8_t[h*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
-  uint8_t *mFeatureImgBufLeft  = new uint8_t[w*h];
-  uint8_t *mFeatureImgBufRight = new uint8_t[w*h];
-
-  // prefilter
-  do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, w, h, mFTZero, mBufStereoPairs);
-  do_prefilter((uint8_t *)rim, mFeatureImgBufRight, w, h, mFTZero, mBufStereoPairs);
-
-  // stereo
-  do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, w, h,
-      mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
-
   return status;
 }
 
@@ -317,12 +344,9 @@ bool CvTest3DPoseEstimate::testVideo() {
   PathRecon pathRecon(imgSize);
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95, 1.0);
   // parameterize the pose estimator
-  pathRecon.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_,
-      this->Clx_, this->Crx_, this->Cy_);
-  // parameterize the stat object
-  pathRecon.mStat.mErrMeas.setCameraParams((const CvStereoCamModel&)(pathRecon.mPoseEstimator));
+  pathRecon.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -346,16 +370,11 @@ bool CvTest3DPoseEstimate::testVideo() {
   }
 
   do {
-    StereoFrame& sf = fileSeq.mInputImageQueue.front();
-#if 0
-    sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
-    getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
-#endif
     pathRecon.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = pathRecon.getFramePoses();
+  vector<FramePose*>* framePoses = pathRecon.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -395,7 +414,7 @@ bool CvTest3DPoseEstimate::testVideo2() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -452,7 +471,7 @@ bool CvTest3DPoseEstimate::testVideo3() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -518,8 +537,8 @@ bool CvTest3DPoseEstimate::testVideo4OneFrame(queue<StereoFrame> inputImageQueue
           char dispfilename[256];
           char dispname[256];
           sprintf(dispfilename, "Output/indoor1/dispmap-%04d.xml",
-              currFrame->mFrameIndex);
-          sprintf(dispname, "dispmap-%04d.xml", currFrame->mFrameIndex);
+              currFrame->frame_index_);
+          sprintf(dispname, "dispmap-%04d.xml", currFrame->frame_index_);
           cvSave(dispfilename, currFrame->mDispMap, dispname, "disparity map 16s");
         }
 #endif
@@ -652,7 +671,7 @@ bool CvTest3DPoseEstimate::testVideo4() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -665,6 +684,401 @@ bool CvTest3DPoseEstimate::testVideo4() {
   tracker->printStat();
 
   CvTestTimer::getTimer().printStat();
+  return status;
+}
+
+void synthesizePoints(const string& data_path) {
+  int num_points = 260;
+  double points[num_points*3];
+  CvMat threeDPoints = cvMat(num_points, 3, CV_64FC1, points);
+  CvRNG rng_state = cvRNG(0xffffffff);
+
+  CvMat values;
+  cvReshape(&threeDPoints, &values, 3, 0);
+  cvRandArr(&rng_state, &values, CV_RAND_UNI,
+      cvScalar(-5,-5,2,0), // inclusive lower bound
+      cvScalar(5,5,32,0) // exclusive upper bound
+  );
+
+  string file_path = data_path+string("randomPoints.xml");
+  cvSave(file_path.c_str(), &threeDPoints, "randomPoitns", "random 3d points");
+}
+
+void synthesizeFrames(const string& data_path) {
+  int num_frames = 101;
+  double frames[num_frames*7];
+  CvMat  mat_frames = cvMat(num_frames, 7, CV_64FC1, frames);
+  cvSetZero(&mat_frames);
+  for (int i=0; i<num_frames; i++ ) {
+    // frame id
+    cvmSet(&mat_frames, i, 0, (double)i);
+    // set z value
+    cvmSet(&mat_frames, i, 6, (double)i*.01);
+  }
+
+  string file_path = data_path+string("frames101.xml");
+  cvSave(file_path.c_str(), &mat_frames, "frames101",
+      "frames in euler/meter, straight forward, .01 meter each step");
+}
+
+void setUpTracks(const vector<FramePose* >& frame_poses,
+    const CvMat* frames, const CvMat *points,
+    const CvMat& cartToDisp, int oldest_index,
+    PointTracks* tracks)
+{
+  CvPoint3D64f coord;
+  CvPoint3D64f disp_coord0;
+  CvPoint3D64f disp_coord1;
+  CvMat global_point = cvMat(1, 1, CV_64FC3, &coord);
+  CvMat disp_point0 = cvMat(1, 1, CV_64FC3, &disp_coord0);
+  CvMat disp_point1 = cvMat(1, 1, CV_64FC3, &disp_coord1);
+  CvMat* global_to_local = cvCreateMat(4, 4, CV_64FC1);
+  CvMat* global_to_disp = cvCreateMat(4, 4, CV_64FC1);
+  for (int ipt = 0; ipt < points->rows; ipt++) {
+    coord.x = cvmGet(points, ipt, 0);
+    coord.y = cvmGet(points, ipt, 1);
+    coord.z = cvmGet(points, ipt, 2);
+    // convert from coord to disp_coord0 and disp_coord1
+    CvMatUtils::invertRigidTransform(&frame_poses[0]->transf_local_to_global_, global_to_local);
+    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+    cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+    CvMatUtils::invertRigidTransform(&frame_poses[1]->transf_local_to_global_, global_to_local);
+    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+    cvPerspectiveTransform(&global_point, &disp_point1, global_to_disp);
+
+    PointTrackObserv* obsv0 = new PointTrackObserv(frame_poses[0]->mIndex, disp_coord0, ipt);
+    PointTrackObserv* obsv1 = new PointTrackObserv(frame_poses[1]->mIndex, disp_coord1, ipt);
+    PointTrack* point = new PointTrack(obsv0, obsv1, coord, ipt);
+
+    for (int iframe = 2; iframe < frames->rows; iframe++) {
+      // extend the track
+      CvMatUtils::invertRigidTransform(&frame_poses[iframe]->transf_local_to_global_, global_to_local);
+      cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+      cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+      PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, ipt);
+      point->extend(obsv);
+    }
+
+    tracks->tracks_.push_back(point);
+    tracks->oldest_frame_index_in_tracks_ = oldest_index;
+  }
+  cvReleaseMat(&global_to_disp);
+  cvReleaseMat(&global_to_local);
+}
+
+/// disturb the frame parameters
+void CvTest3DPoseEstimate::disturbFrames(
+    vector<FramePose*>& free_frames) {
+  double rod_shift[6];
+  CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
+  double transpose_transl_data[3];
+  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
+  if (verbose_)
+    printf("Disturbed Free Frames\n");
+
+  double disturb_scale = .001;
+  double sigma = disturb_scale/2.0; // ~ 95%
+  int numFreeFrames = free_frames.size();
+  CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+  cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+  int iFrames = 0;
+  BOOST_FOREACH(FramePose *fp, free_frames){
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
+    for (int i=0; i<6; i++) {
+      CV_MAT_ELEM( mat_rod_shift, double, i, 0 )
+        += CV_MAT_ELEM(*xyzsNoised, double, iFrames, i);
+    }
+    // update the transformation matrix of fp
+    CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+
+    if (verbose_) {
+      printf("transf of frame: %d\n", fp->mIndex);
+      CvMatUtils::printMat(&fp->transf_local_to_global_);
+      // in Euler angle and translation
+      CvMat rot, transl;
+      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+      CvPoint3D64f euler;
+      CvMatUtils::rotMatToEuler(rot, euler);
+      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+      printf("In Euler angle and translation:\n");
+      printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+      cvTranspose(&transl, &transpose_transl);
+      CvMatUtils::printMat(&transpose_transl, "%9.4f");
+    }
+
+    iFrames++;
+  }
+
+  cvReleaseMat(&xyzsNoised);
+}
+
+void CvTest3DPoseEstimate::disturbPoints(PointTracks* tracks) {
+  double disturb_scale = .001;
+  double sigma = disturb_scale/2.0; // ~ 95%
+  int numPoints = tracks->tracks_.size();
+  CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
+  cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+  int iPoints = 0;
+  BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+    p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
+    p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
+    p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
+    if (verbose_)
+      printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
+          p->coordinates_.y, p->coordinates_.z);
+    iPoints++;
+  }
+  cvReleaseMat(&xyzsNoised);
+
+  if (verbose_) {
+    printf("Disturbed Points:\n");
+    tracks->print();
+  }
+}
+
+void CvTest3DPoseEstimate::disturbObsvs(PointTracks* tracks) {
+  CvRNG rng_state = cvRNG(0xffffffff);
+  double disturb[3];
+  CvMat mat_disturb = cvMat(1, 1, CV_64FC3, disturb);
+
+  BOOST_FOREACH(PointTrack* pt, tracks->tracks_) {
+    BOOST_FOREACH(PointTrackObserv* obsv, *pt) {
+      cvRandArr(&rng_state, &mat_disturb, CV_RAND_UNI,
+          cvScalar(-.5,-.5,-.5,0), // inclusive lower bound
+          cvScalar(.5,.5,.5,0) // exclusive upper bound
+      );
+      obsv->disp_coord_.x += disturb[0];
+      obsv->disp_coord_.y += disturb[1];
+      obsv->disp_coord_.z += disturb[2];
+    }
+  }
+}
+
+
+bool CvTest3DPoseEstimate::testBundleAdj(
+    string& points_file, string& frames_file,
+    int num_free_frames, int num_fixed_frames, int num_iterations,
+    int num_repeats,
+    bool disturb_frames, bool disturb_points, bool disturb_obsvs) {
+  bool status = true;
+
+#if 0 // set it to 1 to generate a set of random 3d points
+  synthesizePoints(input_data_path_);
+#endif
+
+#if 0 // set it to 1 to generate a set of random 3d points
+  synthesizeFrames(input_data_path_);
+#endif
+
+  // rows of 3d points in Cartesian space
+  string points_file_path(input_data_path_);
+//  point_file.append("cartesianPoints.xml");
+  points_file_path.append(points_file);
+  CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
+  // rows of euler angle and shift
+  string frames_file_path(input_data_path_);
+//  frames_file.append("frames.xml");
+  frames_file_path.append(frames_file);
+  CvMat *frames = (CvMat *)cvLoad(frames_file_path.c_str());
+  CvMat cartToDisp;
+  CvMat dispToCart;
+
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->getProjectionMatrices(&cartToDisp, &dispToCart);
+
+  // set up cameras
+  vector<FramePose* > frame_poses;
+//  int index_offset = 9;
+  int oldest_index = numeric_limits<int>::max();
+  for (int r=0; r<frames->rows; r++) {
+    CvMat param1x6;
+    CvMat param6x1;
+    cvGetSubRect(frames, &param1x6, cvRect(1,r,6,1));
+//    cvGetRow(frames, &param1x6, r);
+    cvReshape(&param1x6, &param6x1, 1, 6);
+    int frame_index = cvmGet(frames, r, 0);
+    if (frame_index<oldest_index) {
+      oldest_index = frame_index;
+    }
+
+    FramePose* fp = new FramePose(frame_index);
+    CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
+    frame_poses.push_back(fp);
+  }
+
+  // set up tracks
+  PointTracks tracks;
+  setUpTracks(frame_poses, frames, points, cartToDisp, oldest_index, &tracks);
+
+  int full_free_window_size  = num_free_frames;
+  int full_fixed_window_size = num_fixed_frames;
+  int max_num_iters = num_iterations;
+  double epsilon = DBL_EPSILON;
+//  epsilon = FLT_EPSILON;
+//  epsilon = LDBL_EPSILON;
+//  epsilon = .1e-12;
+  CvTermCriteria term_criteria =
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
+
+  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
+      full_free_window_size, full_fixed_window_size, term_criteria);
+
+  vector<FramePose*> free_frames;
+  vector<FramePose*> fixed_frames;
+
+  // the fixed windows
+  int fi=0;
+  for (fi=0; fi<full_fixed_window_size; fi++) {
+    fixed_frames.push_back(frame_poses[fi]);
+  }
+  // the free windows
+  for (; fi < full_fixed_window_size + full_free_window_size; fi++) {
+    free_frames.push_back(frame_poses[fi]);
+  }
+
+  for (int k=0; k < num_repeats; k++ ) {
+    // disturb the point parameters.
+    if (disturb_points == true) {
+      disturbPoints(&tracks);
+    }
+
+    string output_dir(output_data_path_);
+    tracks.save(output_dir);
+
+    int numFreeFrames = free_frames.size();
+    CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+    CvMat* frame_params_est   = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+
+    // make a copy of the input params
+    {
+      int iFrames = 0;
+      BOOST_FOREACH(FramePose *fp, free_frames){
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvmSet(frame_params_input, iFrames, 0, euler.x );
+        cvmSet(frame_params_input, iFrames, 1, euler.y );
+        cvmSet(frame_params_input, iFrames, 2, euler.z );
+        cvmSet(frame_params_input, iFrames, 3, cvmGet(&transl, 0, 0));
+        cvmSet(frame_params_input, iFrames, 4, cvmGet(&transl, 1, 0));
+        cvmSet(frame_params_input, iFrames, 5, cvmGet(&transl, 2, 0));
+        iFrames++;
+      }
+    }
+
+    double transpose_transl_data[3];
+    CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
+    if (disturb_frames == true) {
+      disturbFrames(free_frames);
+    }
+
+    if (disturb_obsvs == true) {
+      disturbObsvs(&tracks);
+    }
+
+    sba.optimize(&free_frames, &fixed_frames, &tracks);
+
+    if (verbose_) {
+      // print some output
+      BOOST_FOREACH(const FramePose* fp, free_frames) {
+        printf("transf of frame: %d\n", fp->mIndex);
+        CvMatUtils::printMat(&fp->transf_local_to_global_);
+        // in Euler angle and translation
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        printf("In Euler angle and translation:\n");
+        printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+        cvTranspose(&transl, &transpose_transl);
+        CvMatUtils::printMat(&transpose_transl, "%9.4f");
+      }
+    }
+
+    // compare frame params
+    double error_norm_frames;
+    {
+      int iFrames = 0;
+      BOOST_FOREACH(FramePose *fp, free_frames){
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvmSet(frame_params_est, iFrames, 0, euler.x );
+        cvmSet(frame_params_est, iFrames, 1, euler.y );
+        cvmSet(frame_params_est, iFrames, 2, euler.z );
+        cvmSet(frame_params_est, iFrames, 3, cvmGet(&transl, 0, 0));
+        cvmSet(frame_params_est, iFrames, 4, cvmGet(&transl, 1, 0));
+        cvmSet(frame_params_est, iFrames, 5, cvmGet(&transl, 2, 0));
+        iFrames++;
+      }
+
+      error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
+
+      status = status && (error_norm_frames < 1.e-8);
+
+    }
+
+    CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
+    int iPoints=0;
+    BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
+      if (verbose_) {
+        printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
+            p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+      }
+      cvmSet(points_est, iPoints, 0, p->coordinates_.x);
+      cvmSet(points_est, iPoints, 1, p->coordinates_.y);
+      cvmSet(points_est, iPoints, 2, p->coordinates_.z);
+      iPoints++;
+    }
+
+    // compare input points and estimated points.
+    double error_norm_points = cvNorm(points, points_est, CV_RELATIVE_L2);
+
+    status = status && (error_norm_points < 1.e-8);
+
+    if (verbose_ == true) {
+      if (status == true) {
+        printf("testBundleAdj() passed\n");
+      } else {
+        printf("testBundleAdj() failed\n");
+      }
+      printf("Number of good updates: %d\n", sba.num_good_updates_);
+      printf("Number of retractions:  %d\n", sba.num_retractions_);
+
+      printf("Relative L2 Norm of Error vector for frames: %e\n", error_norm_frames);
+      printf("Relative L2 Norm of Error vector for points: %e\n", error_norm_points);
+    }
+
+    // cleanup
+    cvReleaseMat(&frame_params_input);
+    cvReleaseMat(&frame_params_est  );
+    cvReleaseMat(&points_est);
+  } // num_tries
+
+  // clean up
+  /// @todo remove the points;
+
+  // remove the frames
+  BOOST_FOREACH(FramePose* fp, frame_poses) {
+    delete fp;
+  }
+
+  cvReleaseMat(&frames);
+  cvReleaseMat(&points);
+
+  if (verbose_ == true) {
+    CvTestTimer& timer = CvTestTimer::getTimer();
+    timer.mNumIters = 1;
+    CvTestTimer::getTimer().printStat();
+  }
+
   return status;
 }
 
@@ -742,6 +1156,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
   } else if (this->mTestType == Disparity){
     cout << "Testing in disparity space"<<endl;
+    this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
     uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
     this->cartToDisp(points0, uvds0);
@@ -759,6 +1174,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     peDisp.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
   } else if (this->mTestType == CartAndDisp) {
     cout << "testing mixed of cartesian and disparity space"<<endl;
+    this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
     cvAvgSdv(points0, &mean, &std);
     cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
@@ -849,7 +1265,6 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       numInLiers = peDisp.estimateMixedPointClouds(points0, uvds1, 0, NULL, rot, trans, true);
 
       peDisp.getInliers(inliers0, inliers1);
-
       CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
       TransformBestBeforeLevMarq = peDisp.getBestTWithoutNonLinearOpt();
       TransformAfterLevMarq      = peDisp.getFinalTransformation();
@@ -1002,42 +1417,6 @@ bool CvTest3DPoseEstimate::testPointClouds(){
   cvReleaseMat(&points1d);
   cvReleaseMat(&points1r);
 
-    return status;
-}
-
-int main(int argc, char **argv){
-  CvTest3DPoseEstimate test3DPoseEstimate;
-
-  if (argc >= 2) {
-    char *option = argv[1];
-    if (strcasecmp(option, "cartesian")==0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
-    } else if (strcasecmp(option, "disparity")==0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Disparity;
-    } else if (strcasecmp(option, "cartanddisp") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::CartAndDisp;
-    } else if (strcasecmp(option, "video") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video;
-    } else if (strcasecmp(option, "video2") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video2;
-    } else if (strcasecmp(option, "video3") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video3;
-    } else if (strcasecmp(option, "bundle") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::VideoBundleAdj;
-    } else {
-      cerr << "Unknown option: "<<option<<endl;
-      exit(1);
-    }
-  } else {
-    test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
-  }
-
-  cout << "Testing wg3DPoseEstimate ..."<<endl;
-
-
-    test3DPoseEstimate.test();
-
-  cout << "Done testing wg3DPoseEstimate ..."<<endl;
-  return 0;
+  return status;
 }
 

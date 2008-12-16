@@ -1,5 +1,4 @@
 #include <math.h>
-#include <pr2Core/pr2Core.h>
 #include <libKinematics/kinematics.h>
 
 #define EPS 0.000001
@@ -187,10 +186,6 @@ void kinematics::MatrixToEuler(NEWMAT::Matrix matrix_in, double &roll, double &p
   
 }
 
-
-
-
-
 NEWMAT::Matrix kinematics::Transform(double p[], double roll, double pitch, double yaw)
 {
    NEWMAT::Matrix tM(4,4);
@@ -331,6 +326,7 @@ NEWMAT::Matrix SerialRobot::GetHomePosition()
 void SerialRobot::AddJoint(NEWMAT::Matrix jin, double p[])
 {
 //   *(joints[jointCount]) = new NEWMAT::Matrix(6,1);
+
    joints[jointCount].twist = jin;
    joints[jointCount].jointId = jointCount;
    joints[jointCount].linkPose = Translate(p);
@@ -399,6 +395,55 @@ void SerialRobot::AddJoint(double p[], double axis[], int jointType)
    };
    AddJoint(jj,p);
 };
+
+
+
+void SerialRobot::AddJoint(NEWMAT::Matrix p, NEWMAT::Matrix axis, string joint_type)
+{
+  NEWMAT::Matrix jj(6,1);
+  double p1[3];
+
+  p1[0] = p(1,1);
+  p1[1] = p(2,1);
+  p1[2] = p(3,1);
+
+  if(joint_type == std::string("PRISMATIC"))
+  {
+    jj(1,1) = axis(1,1);
+    jj(2,1) = axis(2,1);
+    jj(3,1) = axis(3,1);
+    jj(4,1) = 0;
+    jj(5,1) = 0;
+    jj(6,1) = 0;
+#ifdef DEBUG
+    printf("Joint type: PRISMATIC\n");
+    cout << jj << endl;
+#endif
+  }
+  else if(joint_type == std::string("ROTARY"))
+  {
+    NEWMAT::Matrix q;
+    q = cross(p,axis);
+    jj(1,1) = q(1,1);
+    jj(2,1) = q(2,1);
+    jj(3,1) = q(3,1);
+    jj(4,1) = axis(1,1);
+    jj(5,1) = axis(2,1);
+    jj(6,1) = axis(3,1);
+#ifdef DEBUG
+    printf("Joint type: ROTARY\n");
+    cout << jj << endl;
+#endif
+  }
+  else
+  {
+    printf("SerialRobot::AddJoint - unrecognized joint type");
+    return;
+  };
+  AddJoint(jj,p1);
+};
+
+
 
 NEWMAT::Matrix SerialRobot::GetLinkPose(int id, double angles[])
 {

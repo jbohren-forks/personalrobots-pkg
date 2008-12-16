@@ -47,6 +47,7 @@
 
 #include "std_msgs/Transform.h"
 #include "std_msgs/RobotBase2DOdom.h"
+#include "std_msgs/PoseWithRatesStamped.h"
 
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
@@ -54,67 +55,112 @@
 
 namespace pr2_phase_space
 {
-  class PhaseSpaceLocalization : public ros::node
+
+/**
+ * \brief Repackages phase_space_snapshot data as odometry and ground truth data
+ *
+ * Parameters
+ * - @b "~base_id"                : @b [int] the PhaseSpace ID of the rigid body corresponding to the base
+ * - @b "~publish_transform"      : @b [bool] true: Publish the map-base transform. false: Don't publish this
+ * - @b "~publish_localized_pose" : @b [bool] true: Publish the localized_pose.     false: Don't publish this
+ **/
+class PhaseSpaceLocalization : public ros::node
+{
+public :
+
+  PhaseSpaceLocalization() : ros::node("phase_space_fake_localization")
   {
-    public :
-  
-      PhaseSpaceLocalization() : ros::node("phase_space_fake_localization")
+    param("~publish_localized_pose", publish_localized_pose_, true) ;
+    param("~publish_transform", publish_transform_, true) ;
+    param("~base_id", base_id_, 1) ;
+
+    advertise<std_msgs::RobotBase2DOdom>("localizedpose");
+    advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth") ;
+
+    m_tfServer = new tf::TransformBroadcaster(*this);
+
+    subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceLocalization::snapshotCallback, 10) ;
+
+    publish_success_count_ = 0 ;
+    publish_attempt_count_ = 0 ;
+  }
+
+  ~PhaseSpaceLocalization()
+  {
+    unsubscribe("phase_space_snapshot") ;
+    unadvertise("localizedpose") ;
+    unadvertise("base_pose_ground_truth") ;
+    if (m_tfServer)
+      delete m_tfServer; 
+  }
+
+  void snapshotCallback()
+  {
+    //printf("%u  ", snapshot_.frameNum) ;
+    for (unsigned int i=0; i<snapshot_.get_bodies_size(); i++)                      // Iterate over every rigid body we see in PhaseSpace
+    {
+      if (snapshot_.bodies[i].id == base_id_)                                       // Check if we found the robot base in the list of rigid bodies
       {
-	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
+        const phase_space::PhaseSpaceBody& body = snapshot_.bodies[0] ;
 
-        m_tfServer = new tf::TransformBroadcaster(*this);
+        // Build Transform Message
+        tf::Transform mytf;
+        tf::TransformMsgToTF(body.pose,mytf);
 
-        subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceLocalization::snapshotCallback, 10) ;
-        publish_count_ = 0 ;
-      }
-  
-      ~PhaseSpaceLocalization()
-      {
-        unsubscribe("phase_space_snapshot") ;
-        unadvertise("localizedpose") ;
-	if (m_tfServer)
-	    delete m_tfServer; 
-      }
-  
-      void snapshotCallback()
-      {
-        if (snapshot_.get_bodies_size() > 0)                        // Only execute if we have at least 1 body in the scene
-        {
-          m_currentPos.header = snapshot_.header;
-          m_currentPos.header.frame_id = "map";
+        if (publish_transform_)
+          m_tfServer->sendTransform(mytf,m_currentPos.header.stamp,"base","map");
 
-          m_currentPos.pos.x = snapshot_.bodies[0].pose.translation.x;
-          m_currentPos.pos.y = snapshot_.bodies[0].pose.translation.y;
+        // Build Localized Pose Message
+        m_currentPos.header = snapshot_.header;
+        m_currentPos.header.frame_id = "map";
 
-          double yaw,pitch,roll;
+        m_currentPos.pos.x = body.pose.translation.x;
+        m_currentPos.pos.y = body.pose.translation.y;
 
-          tf::Transform mytf;
+        double yaw,pitch,roll;
+        mytf.getBasis().getEulerZYX(yaw,pitch,roll);
+        m_currentPos.pos.th = yaw;
 
-          tf::TransformMsgToTF(snapshot_.bodies[0].pose,mytf);
-
-          mytf.getBasis().getEulerZYX(yaw,pitch,roll);
- 
-          m_currentPos.pos.th = yaw;
-
+        if (publish_localized_pose_)
           publish("localizedpose", m_currentPos) ;
 
-          m_tfServer->sendTransform(mytf,m_currentPos.header.stamp,"base","map");
-      
-          if (publish_count_% 480 == 0)
-            printf("Published %u messages\n", publish_count_) ;
-      
-          publish_count_++ ;  
-        }
+        // Build Ground Truth Message
+        std_msgs::PoseWithRatesStamped m_pose_with_rates ;
+        m_pose_with_rates.header = snapshot_.header ;
+        m_pose_with_rates.pos.position.x = body.pose.translation.x ;
+        m_pose_with_rates.pos.position.y = body.pose.translation.y ;
+        m_pose_with_rates.pos.position.z = body.pose.translation.z ;
+        m_pose_with_rates.pos.orientation = body.pose.rotation ;
+
+        publish("base_pose_ground_truth", m_pose_with_rates) ;
+
+        publish_success_count_++ ;
+
+        break ;                                                                       // Can exit the for loop, since we already found the base
       }
-  
-    private:
-  
-      phase_space::PhaseSpaceSnapshot snapshot_;
-      std_msgs::RobotBase2DOdom m_currentPos;
-      tf::TransformBroadcaster *m_tfServer;
-      int publish_count_ ;
-  
-  } ;
+    }
+    publish_attempt_count_++ ;
+    if (snapshot_.frameNum % 480 == 0)
+    {
+      printf("Saw the base and published in %3u/%3u of the most recent messages\n", publish_success_count_, publish_attempt_count_) ;
+      publish_success_count_ = 0 ;
+      publish_attempt_count_ = 0 ;
+    }
+  }
+
+private:
+
+  phase_space::PhaseSpaceSnapshot snapshot_;
+  std_msgs::RobotBase2DOdom m_currentPos;
+  tf::TransformBroadcaster *m_tfServer;
+  unsigned int publish_success_count_ ;
+  unsigned int publish_attempt_count_ ;
+
+  int base_id_ ;
+  bool publish_localized_pose_ ;
+  bool publish_transform_ ;
+
+} ;
 
 }
 

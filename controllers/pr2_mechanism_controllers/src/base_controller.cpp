@@ -33,23 +33,24 @@
  *********************************************************************/
 
 #include <pr2_mechanism_controllers/base_controller.h>
-#include <math_utils/angles.h>
-#include <math_utils/math_utils.h>
+#include <angles/angles.h>
+#include <control_toolbox/filters.h>
 #include "ros/node.h"
 
 #define NUM_TRANSFORMS 2
 #define EPS 1e-5
+#define CMD_VEL_TRANS_EPS 1e-5
+#define CMD_VEL_ROT_EPS 1e-5
+static const double MIN_BASE_CONTROLLER_COVARIANCE = 0.000001;
+
 using namespace ros;
 using namespace std;
 using namespace controller;
 using namespace control_toolbox;
 using namespace libTF;
 using namespace NEWMAT;
-using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
-
-
 
 BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
@@ -103,9 +104,23 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
 {
 
   pthread_mutex_lock(&base_controller_lock_);
-  cmd_vel_t_.x = clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
-  cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
-  cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
+
+  double vel_mag = sqrt(cmd_vel.x*cmd_vel.x+cmd_vel.y*cmd_vel.y);
+  double clamped_vel_mag = filters::clamp(vel_mag,-max_trans_vel_magnitude_,max_trans_vel_magnitude_);
+
+  if(vel_mag > EPS)
+  {
+    cmd_vel_t_.x = cmd_vel.x * clamped_vel_mag/vel_mag;
+    cmd_vel_t_.y = cmd_vel.y * clamped_vel_mag/vel_mag;
+  }
+  else
+  {
+    cmd_vel_t_.x = 0.0;
+    cmd_vel_t_.y = 0.0;
+  }
+//  cmd_vel_t_.x = filters::clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
+//  cmd_vel_t_.y = filters::clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
+  cmd_vel_t_.z = filters::clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 #if 0
 
@@ -128,9 +143,9 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
 libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT)
 {
   libTF::Vector result;
-  result.x = start.x + clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
-  result.y = start.y + clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
-  result.z = start.z + clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
+  result.x = start.x + filters::clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
+  result.y = start.y + filters::clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
+  result.z = start.z + filters::clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
   return result;
 }
 */
@@ -202,6 +217,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     usleep(100000);
   }
 
+
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
     joint_name = jcp_iter->joint_name;
@@ -221,12 +237,13 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 
     base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
-    if(joint_name.find("caster") != string::npos)
+    if(joint_name.find("rotation") != string::npos)
     {
 //         std::cout << " assigning casters " << joint_name << std::endl;
       base_object.local_id_ = num_casters_;
       base_casters_.push_back(base_object);
       steer_angle_actual_.push_back(0);
+      steer_angle_stored_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
 //      cout << "base_casters" << "::  " << base_object;
@@ -270,7 +287,13 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   {
     link = urdf_model_.getJointLink(base_wheels_[0].name_);
     robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
-    wheel_radius_ = wheel_geom->radius;
+    if (wheel_geom)
+      wheel_radius_ = wheel_geom->radius;
+    else
+    {
+      ROS_WARN("Wheel geom is not found in URDF, base controller will set wheel_radius_ for %s to DEFAULT_WHEEL_RADIUS %f\n.",base_wheels_[0].name_.c_str(),DEFAULT_WHEEL_RADIUS);
+      wheel_radius_ = DEFAULT_WHEEL_RADIUS;
+    }
   }
   else
   {
@@ -334,7 +357,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     elt = config->NextSiblingElement("map");
   }
 
-
+  max_trans_vel_magnitude_  = fabs(max_vel_.x);
+ 
   ROS_INFO("BaseController:: kp_speed %f",kp_speed_);
   ROS_INFO("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
   ROS_INFO("BaseController:: timeout %f",timeout_);
@@ -456,16 +480,24 @@ void BaseController::computeDesiredCasterSteer()
 
   double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
   double error_steer(0.0),error_steer_m_pi(0.0);
-
+  double trans_vel = sqrt(cmd_vel_.x * cmd_vel_.x + cmd_vel_.y * cmd_vel_.y);
   for(int i=0; i < num_casters_; i++)
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
 
-    steer_angle_desired = atan2(result.y,result.x);
-    steer_angle_desired_m_pi = normalize_angle(steer_angle_desired+M_PI);
+    if( trans_vel < CMD_VEL_TRANS_EPS && fabs(cmd_vel_.z) < CMD_VEL_ROT_EPS)
+    {
+      steer_angle_desired = steer_angle_stored_[i];
+    }
+    else
+    {
+      steer_angle_desired = atan2(result.y,result.x);
+      steer_angle_stored_[i] = steer_angle_desired;
+    }
+    steer_angle_desired_m_pi = angles::normalize_angle(steer_angle_desired+M_PI);
 
-    error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
-    error_steer_m_pi = shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
+    error_steer = angles::shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
+    error_steer_m_pi = angles::shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
 
     if(fabs(error_steer_m_pi) < fabs(error_steer))
     {
@@ -473,6 +505,7 @@ void BaseController::computeDesiredCasterSteer()
       steer_angle_desired = steer_angle_desired_m_pi;
     }
     steer_velocity_desired_[i] =  -kp_speed_*error_steer;
+
   }
 }
 
@@ -502,7 +535,7 @@ void BaseController::computeDesiredWheelSpeeds()
 
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
-    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
+    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/(wheel_radius_);
   }
 }
 
@@ -531,7 +564,7 @@ void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
 
   odom_msg_.pos.x  = base_odom_position_.x;
   odom_msg_.pos.y  = base_odom_position_.y;
-  odom_msg_.pos.th = math_utils::normalize_angle(base_odom_position_.z);
+  odom_msg_.pos.th = angles::normalize_angle(base_odom_position_.z);
 
   odom_msg_.vel.x  = base_odom_velocity_.x;
   odom_msg_.vel.y  = base_odom_velocity_.y;
@@ -577,6 +610,8 @@ void BaseController::computeOdometry(double time)
   odometer_angle_ += base_odom_delta.z;
 }
 
+
+
 void BaseController::computeBaseVelocity()
 {
   Matrix A(2*num_wheels_,1);
@@ -587,29 +622,43 @@ void BaseController::computeBaseVelocity()
   libTF::Vector caster_2d_velocity;
   libTF::Vector wheel_caster_steer_component;
 
+  NEWMAT::Matrix odometry_residual(2*num_wheels_,1);
+
   caster_2d_velocity.x = 0;
   caster_2d_velocity.y = 0;
 
   for(int i = 0; i < num_wheels_; i++) {
     caster_2d_velocity.z = base_wheels_[i].parent_->joint_state_->velocity_;
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/wheel_radius_;
+    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/(wheel_radius_);
 
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
-    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
-    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*wheel_speed;
-  }
 
-  for(int i = 0; i < num_wheels_; i++) {
-    C.element(i*2, 0)   = 1;
-    C.element(i*2, 1)   = 0;
-    C.element(i*2, 2)   = -base_wheels_position_[i].y;
-    C.element(i*2+1, 0) = 0;
-    C.element(i*2+1, 1) = 1;
-    C.element(i*2+1, 2) =  base_wheels_position_[i].x;
+//    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
+//    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*wheel_speed;
+
+    A.element(i*2,0)   = wheel_radius_*wheel_speed;
+    A.element(i*2+1,0) = 0;
+
+
+//  }
+//  for(int i = 0; i < num_wheels_; i++) {
+
+    C.element(i*2, 0)   = cos(steer_angle);
+    C.element(i*2, 1)   = sin(steer_angle);
+    C.element(i*2, 2)   = -cos(steer_angle) * base_wheels_position_[i].y + sin(steer_angle) *  base_wheels_position_[i].x;
+    C.element(i*2+1, 0)   = -sin(steer_angle);
+    C.element(i*2+1, 1)   = cos(steer_angle);
+    C.element(i*2+1, 2)   = sin(steer_angle) * base_wheels_position_[i].y + cos(steer_angle) *  base_wheels_position_[i].x;
   }
   //   D = pseudoInverse(C)*A;
   D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
+
+  odometry_residual = C*D-A;
+  odometry_residual_max_ = odometry_residual.MaximumAbsoluteValue();
+
+//  cout << "Residual " << endl << odometry_residual << endl;
+
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
@@ -737,19 +786,27 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
   publisher_ = NULL;
   transform_publisher_ = NULL;
   odometer_publisher_ = NULL;
+  covariance_publisher_ = NULL;
 }
 
 BaseControllerNode::~BaseControllerNode()
 {
   node->unadvertise_service(service_prefix + "/set_command");
   node->unadvertise_service(service_prefix + "/get_actual");
+  node->unadvertise_service(service_prefix + "/set_wheel_radius_multiplier");
+  node->unadvertise_service(service_prefix + "/get_wheel_radius_multiplier");
+
   node->unsubscribe("cmd_vel");
 
   publisher_->stop();
   transform_publisher_->stop();
+  odometer_publisher_->stop();
+  covariance_publisher_->stop();
+
   delete publisher_;
   delete transform_publisher_;
   delete odometer_publisher_;
+  delete covariance_publisher_;
   delete c_;
 }
 
@@ -777,11 +834,41 @@ void BaseControllerNode::update()
       last_time_message_sent_ = time;
     }
 
+    if (covariance_publisher_->trylock())
+    {
+      double base_odom_velocity_mag = sqrt(c_->base_odom_velocity_.x*c_->base_odom_velocity_.x+c_->base_odom_velocity_.y*c_->base_odom_velocity_.y+c_->base_odom_velocity_.z*c_->base_odom_velocity_.z);
+      double dirn_x(0),dirn_y(0),dirn_z(0);
+
+      if (base_odom_velocity_mag > EPS)
+      {
+        dirn_x = fabs(c_->base_odom_velocity_.x/base_odom_velocity_mag);
+        dirn_y = fabs(c_->base_odom_velocity_.y/base_odom_velocity_mag);   
+        dirn_z = fabs(c_->base_odom_velocity_.z/base_odom_velocity_mag);
+      }
+      else
+      {
+        dirn_x = 0.0;
+        dirn_y = 0.0;
+        dirn_z = 0.0;
+      }
+      //     covariance_publisher_->msg_.Cxx = c_->odometry_residual_max_;
+
+      covariance_publisher_->msg_.Cxx = std::max<double>(c_->odometry_residual_max_*dirn_x,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cyy = std::max<double>(c_->odometry_residual_max_*dirn_y,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Czz = std::max<double>(c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+
+      covariance_publisher_->msg_.Cxy = std::max<double>(c_->odometry_residual_max_*dirn_x+c_->odometry_residual_max_*dirn_y,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cxz = std::max<double>(c_->odometry_residual_max_*dirn_x+c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cyz = std::max<double>(c_->odometry_residual_max_*dirn_y+c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+
+      covariance_publisher_->unlockAndPublish() ;
+    }
+
     if (transform_publisher_->trylock())
     {
       double x=0,y=0,yaw=0,vx,vy,vyaw;
       this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
+      tf::TransformEuler &out = transform_publisher_->msg_.eulers[0];
       out.header.stamp.from_double(time);
       out.header.frame_id = "odom";
       out.parent = "base_footprint";
@@ -790,13 +877,13 @@ void BaseControllerNode::update()
       out.z = 0;
       out.roll = 0;
       out.pitch = 0;
-      out.yaw = math_utils::normalize_angle(-yaw);
+      out.yaw = angles::normalize_angle(-yaw);
 
 
-      rosTF::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
+      tf::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
       out2.header.stamp.from_double(time);
       out2.header.frame_id = "base_footprint";
-      out2.parent = "base";
+      out2.parent = "base_link";
       out2.x = 0;
       out2.y = 0;
       out2.z = -c_->wheel_radius_;
@@ -849,6 +936,34 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
+bool BaseControllerNode::getWheelRadiusMultiplier(
+  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+{
+  double param_multiplier;
+  node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
+  resp.radius_multiplier = param_multiplier;
+
+  return true;
+}
+
+bool BaseControllerNode::setWheelRadiusMultiplier(
+  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+{
+  double calibration_multiplier = req.radius_multiplier;
+  ROS_INFO("Received radius multiplier %f ",calibration_multiplier); 
+  c_->wheel_radius_ *= calibration_multiplier;
+
+  double param_multiplier;
+  node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
+
+  node->set_param("base_controller/wheel_radius_multiplier",param_multiplier*calibration_multiplier);
+
+  return true;
+}
+
+
 bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   service_prefix = config->Attribute("name");
@@ -858,8 +973,14 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   if(!c_->initXml(robot_state, config))
     return false;
 
+  node->advertise_service(service_prefix + "/set_wheel_radius_multiplier", &BaseControllerNode::setWheelRadiusMultiplier,this);
+  node->advertise_service(service_prefix + "/get_wheel_radius_multiplier", &BaseControllerNode::getWheelRadiusMultiplier,this);
+
+
   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+
+  node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
 
@@ -873,9 +994,18 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <tf::TransformArray> ("TransformArray", 5) ;
+
+  if (covariance_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete covariance_publisher_ ;
+  covariance_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
+
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
+
+  double multiplier;
+  node->param<double>("base_controller/wheel_radius_multiplier",multiplier,1.0);
+  c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
 

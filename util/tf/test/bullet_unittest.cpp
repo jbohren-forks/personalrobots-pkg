@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 #include <sys/time.h>
 #include "LinearMath/btTransform.h"
+#include "LinearMath/btTransformUtil.h"
 #include "LinearMath/btVector3.h"
 
 void seed_rand()
@@ -334,6 +335,84 @@ TEST(Bullet, TransformOrder )
 
   
 }
+
+
+TEST(Bullet, SlerpOppositeSigns)
+{
+  //  btQuaternion q1 (M_PI/2,0,0);
+  btQuaternion q1 (M_PI/4,0,0);
+  btQuaternion q2(-q1.x(), -q1.y(), -q1.z()-.0001, -q1.w()+.0001);
+  q2.normalize();
+  btQuaternion q3 = q2.slerp(q1, .5);
+
+  //  printf("%f %f %f %f,%f %f %f %f\n", q2.x(), q2.y(), q2.z(), q2.w(), q3.x(), q3.y(), q3.z(), q3.w());
+
+  EXPECT_NEAR(q2.x(), q3.x(), 0.01);
+  EXPECT_NEAR(q2.y(), q3.y(), 0.01);
+  EXPECT_NEAR(q2.z(), q3.z(), 0.01);
+  EXPECT_NEAR(q2.w(), q3.w(), 0.01);
+
+}
+
+TEST(Bullet, SetEulerZYX)
+{
+  btMatrix3x3 mat;
+  mat.setEulerZYX(M_PI/2, 0, 0);
+  double yaw, pitch, roll;
+  mat.getEulerZYX(yaw, pitch, roll);
+  EXPECT_NEAR(yaw, M_PI/2, 0.1);
+  EXPECT_NEAR(pitch, 0, 0.1);
+  EXPECT_NEAR(roll, 0, 0.1);
+//  printf("%f %f %f\n", yaw, pitch, roll);
+  btQuaternion q;
+  mat.getRotation(q);
+  EXPECT_NEAR(q.z(), sqrt(2)/2, 0.1);
+  EXPECT_NEAR(q.y(), 0, 0.1);
+  EXPECT_NEAR(q.x(), 0, 0.1);
+  EXPECT_NEAR(q.w(), sqrt(2)/2, 0.1);
+  //  printf("%f %f %f %f\n", q.x(), q.y(), q.z(), q.w());
+}
+
+
+TEST(Bullet, calculateDiffAxisAngleQuaternion)
+{
+  btVector3 vec;
+  btScalar ang;
+  for (unsigned int i = 0 ; i < 1000 ; i++)
+  {
+    btQuaternion q1(M_PI*2 *(double) i / 1000, 0, 0);
+    btQuaternion q2(M_PI/2*0, 0,0);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q1, q2, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q2, q1, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+  }
+  for (unsigned int i = 0 ; i < 1000 ; i++)
+  {
+    btQuaternion q1(0, M_PI*2 *(double) i / 1000,1);
+    btQuaternion q2(0, 0, 1);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q1, q2, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q2, q1, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+  }
+  for (unsigned int i = 0 ; i < 1000 ; i++)
+  {
+    btQuaternion q1(0, 0, M_PI*2 *(double) i / 1000);
+    btQuaternion q2(0, 0,0);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q1, q2, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+    btTransformUtil::calculateDiffAxisAngleQuaternion(q2, q1, vec, ang);
+    //    printf("%f %f %f, ang %f\n", vec.x(), vec.y(), vec.z(), ang);
+    EXPECT_NEAR(M_PI*2 *(double) i / 1000, ang, 0.001);
+  }
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

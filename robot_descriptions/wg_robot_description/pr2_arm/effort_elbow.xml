@@ -1,4 +1,0 @@
-  <controller name="elbow_controller" topic="elbow_controller" type="JointEffortControllerNode">
-    <joint name="elbow_right_joint">
-    </joint>
-  </controller>

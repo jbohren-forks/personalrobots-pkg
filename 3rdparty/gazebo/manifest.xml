@@ -5,11 +5,13 @@
   </description>
   <author>Nate Koenig, with contributions from many others. See web page for a full credits llist.</author>
   <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
   <depend package="opende" />
   <depend package="ogre" />
+  <depend package="opencv_latest" />
   <url>http://playerstage.sf.net</url>
   <export>
-    <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn/server/controllers -I${prefix}/gazebo-svn/server/controllers/camera/generic -I${prefix}/gazebo-svn/server/physics -I${prefix}/gazebo-svn/server/sensors -I${prefix}/gazebo-svn/server/sensors/ray -I${prefix}/gazebo-svn/server/sensors/camera -I${prefix}/gazebo-svn/server -I${prefix}/gazebo-svn/server/rendering"/>
+    <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers/camera/generic -I${prefix}/gazebo-svn-ogre-v1.4.9/server/physics -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/ray -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/camera -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/contact -I${prefix}/gazebo-svn-ogre-v1.4.9/server -I${prefix}/gazebo-svn-ogre-v1.4.9/server/rendering"/>
     <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
   </export>
   <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
@@ -19,8 +21,10 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+  <!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-signals1.34.1"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-signals-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals1.34.1"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/-->
 </package>
 
 

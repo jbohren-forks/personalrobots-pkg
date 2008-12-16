@@ -31,6 +31,7 @@
 #include "mechanism_control/mechanism_control.h"
 #include "rosthread/member_thread.h"
 #include "misc_utils/mutex_guard.h"
+#include "rosconsole/rosconsole.h"
 
 using namespace mechanism;
 
@@ -136,9 +137,14 @@ bool MechanismControl::spawnController(const std::string &type,
                                        const std::string &name,
                                        TiXmlElement *config)
 {
-  controller::Controller *c = controller::ControllerFactory::instance().create(type);
+  controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
   if (c == NULL)
+  {
+    ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
+              name.c_str(), type.c_str());
     return false;
+  }
+
   printf("Spawning %s: %p\n", name.c_str(), &model_);
 
 
@@ -182,7 +188,8 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), mechanism_state_topic_("mechanism_state"),
+  : mc_(mc), cycles_since_publish_(0),
+    mechanism_state_topic_("mechanism_state"),
     publisher_(mechanism_state_topic_, 1),
     transform_publisher_("TransformArray", 5)
 {
@@ -234,9 +241,9 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  static double last_publish_time = 0.0;
-  if (mc_->hw_->current_time_ - last_publish_time > STATE_PUBLISHING_PERIOD)
+  if (++cycles_since_publish_ >= CYCLES_PER_STATE_PUBLISH)
   {
+    cycles_since_publish_ = 0;
     if (publisher_.trylock())
     {
       assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
@@ -249,6 +256,7 @@ void MechanismControlNode::update()
         out->velocity = in->velocity_;
         out->applied_effort = in->applied_effort_;
         out->commanded_effort = in->commanded_effort_;
+        out->is_calibrated = in->calibrated_;
       }
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
@@ -287,6 +295,7 @@ void MechanismControlNode::update()
     if (transform_publisher_.trylock())
     {
       //assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
+      transform_publisher_.msg_.header.stamp.fromSec(mc_->hw_->current_time_);
       int ti = 0;
       for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
       {
@@ -295,9 +304,9 @@ void MechanismControlNode::update()
 
         tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
         tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
-        rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[ti++];
+        tf::TransformQuaternion &out = transform_publisher_.msg_.quaternions[ti++];
 
-        out.header.stamp.from_double(mc_->hw_->current_time_);
+        out.header.stamp.fromSec(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;
         out.parent = mc_->model_.links_[i]->parent_name_;
         out.xt = pos.x();
@@ -311,8 +320,6 @@ void MechanismControlNode::update()
 
       transform_publisher_.unlockAndPublish();
     }
-
-    last_publish_time = mc_->hw_->current_time_;
   }
 }
 
@@ -320,10 +327,8 @@ bool MechanismControlNode::listControllerTypes(
   robot_srvs::ListControllerTypes::request &req,
   robot_srvs::ListControllerTypes::response &resp)
 {
-  std::vector<std::string> types;
-
   (void) req;
-  controller::ControllerFactory::instance().getTypes(&types);
+  std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
   resp.set_types_vec(types);
   return true;
 }
@@ -340,10 +345,17 @@ bool MechanismControlNode::spawnController(
 
   TiXmlElement *config = doc.RootElement();
   if (!config)
+  {
+    ROS_ERROR("The XML given to SpawnController could not be parsed");
     return false;
+  }
   if (config->ValueStr() != "controllers" &&
       config->ValueStr() != "controller")
+  {
+    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
+\"controllers\" as the root tag");
     return false;
+  }
 
   if (config->ValueStr() == "controllers")
   {
@@ -355,16 +367,22 @@ bool MechanismControlNode::spawnController(
     bool ok = true;
 
     if (!config->Attribute("type"))
+    {
+      ROS_ERROR("Could not spawn a controller because no type was given");
       ok = false;
+    }
     else if (!config->Attribute("name"))
+    {
+      ROS_ERROR("Could not spawn a controller because no name was given");
       ok = false;
+    }
     else
     {
       ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
     }
 
     oks.push_back(ok);
-    names.push_back(config->Attribute("name") ? config->Attribute("name") : "");
+    names.push_back(config->Attribute("name") ? config->Attribute("name") : "<unnamed>");
   }
 
   resp.set_ok_vec(oks);

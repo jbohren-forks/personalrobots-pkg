@@ -1,6 +1,0 @@
-  <controller name="upperarm_controller" topic="upperarm_controller" type="JointPositionControllerNode">
-    <filter smoothing_factor="0.1" />
-    <joint name="upperarm_roll_right_joint">
-      <pid p="30" i="1000" d="2" iClamp="0.75" />
-    </joint>
-  </controller>

@@ -78,7 +78,9 @@ Publishes to (name / type):
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
 
-#include <math_utils/angles.h>
+#include <angles/angles.h>
+
+#include "rosconsole/rosconsole.h"
 
 #include "tf/transform_broadcaster.h"
 
@@ -94,14 +96,12 @@ public:
       m_tfServer = new tf::TransformBroadcaster(*this);	
 
       m_lastUpdate = ros::Time::now();
+      
+      m_base_pos_received = false;
 
       m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
       m_particleCloud.set_particles_size(1);
-
-      param("max_publish_frequency", m_maxPublishFrequency, 0.5);
-
-      subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived,2);
-      subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived,2);
+      subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived,1);
     }
     
     ~FakeOdomNode(void)
@@ -109,70 +109,73 @@ public:
       if (m_tfServer)
         delete m_tfServer; 
     }
-    
+   
+
+  // Just kill time as spin is not working!
+    void run(void)
+    {
+      // A duration for sleeping will be 100 ms
+      ros::Duration snoozer(0, 100000000);
+
+      while(true){
+	snoozer.sleep();
+      }
+    }  
     
 private:
     
     tf::TransformBroadcaster       *m_tfServer;
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
+    bool                           m_base_pos_received;
     
     std_msgs::PoseWithRatesStamped  m_basePosMsg;
     std_msgs::ParticleCloud2D      m_particleCloud;
     std_msgs::RobotBase2DOdom      m_currentPos;
     std_msgs::Pose2DFloat32        m_iniPos;
-
-    
-    void initialPoseReceived(void)
-    {
-	update();
-    }
     
     void basePosReceived(void)
     {
-	update();
+      update();
     }
 
-    void update(void)
-    {
-      if ((ros::Time::now() - m_lastUpdate).to_double() < 1.0/m_maxPublishFrequency)
-        return;
+  void update(){
+    tf::Transform txi(tf::Quaternion(m_basePosMsg.pos.orientation.x,
+				     m_basePosMsg.pos.orientation.y, 
+				     m_basePosMsg.pos.orientation.z, 
+				     m_basePosMsg.pos.orientation.w),
+		      tf::Point(m_basePosMsg.pos.position.x,
+				m_basePosMsg.pos.position.y, 0.0));
 
-      m_lastUpdate = ros::Time::now();
+    double x = txi.getOrigin().x() + m_iniPos.x;
+    double y = txi.getOrigin().y() + m_iniPos.y;
+    double z = txi.getOrigin().z();
 
-      tf::Transform txi(tf::Quaternion(m_basePosMsg.pos.orientation.x,
-                                       m_basePosMsg.pos.orientation.y, 
-                                       m_basePosMsg.pos.orientation.z, 
-                                       m_basePosMsg.pos.orientation.w),
-                             tf::Point(m_basePosMsg.pos.position.x,
-                                       m_basePosMsg.pos.position.y, 0.0));
+    double yaw, pitch, roll;
+    txi.getBasis().getEulerZYX(yaw, pitch, roll);
+    yaw = angles::normalize_angle(yaw + m_iniPos.th);
 
-      double x = txi.getOrigin().x() + m_iniPos.x;
-      double y = txi.getOrigin().y() + m_iniPos.y;
-      double z = txi.getOrigin().z();
-      double yaw, pitch, roll;
-      txi.getBasis().getEulerZYX(yaw, pitch, roll);
-      yaw = math_utils::normalize_angle(yaw + m_iniPos.th);
+    tf::Transform txo(tf::Quaternion(yaw, pitch, roll), tf::Point(x, y, z));
 
-      tf::Transform txo(tf::Quaternion(yaw, pitch, roll),
-                        tf::Point(x, y, z));
+    // Here we directly publish a transform from Map to base_link. We will skip the intermediate step of publishing a transform
+    // to the base footprint, as it seems unnecessary. However, if down the road we wish to use the base footprint data,
+    // and some other component is publishing it, this should change to publish the map -> base_footprint instead
+    m_tfServer->sendTransform(tf::Stamped<tf::Transform>
+			      (txo.inverse(),
+			       m_basePosMsg.header.stamp,
+			       "map", "base_link"));
 
-      m_tfServer->sendTransform(tf::Stamped<tf::Transform>
-                                (txo.inverse(),
-                                 m_basePosMsg.header.stamp,
-                                 "map", "base"));
+    // Publish localized pose
+    m_currentPos.header = m_basePosMsg.header;
+    m_currentPos.pos.x = x;
+    m_currentPos.pos.y = y;
+    m_currentPos.pos.th = yaw;
+    publish("localizedpose", m_currentPos);
 
-      m_currentPos.header = m_basePosMsg.header;
-      m_currentPos.pos.x = x;
-      m_currentPos.pos.y = y;
-      m_currentPos.pos.th = yaw;
-
-      publish("localizedpose", m_currentPos);
-
-      m_particleCloud.particles[0] = m_currentPos.pos;
-      publish("particlecloud", m_particleCloud);
-    }
-    
+    // The particle cloud is the current position. Quite convenient.
+    m_particleCloud.particles[0] = m_currentPos.pos;
+    publish("particlecloud", m_particleCloud);
+  }   
 };
 
 int main(int argc, char** argv)
@@ -181,7 +184,8 @@ int main(int argc, char** argv)
     
     FakeOdomNode odom;
     odom.spin();
-    odom.shutdown();    
+
+    ros::fini();
     
     return 0;
 }

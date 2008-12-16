@@ -2,6 +2,7 @@
   <description>A clone of  2-D navigation stack \b rosstage using a 3D simulation environment.</description>
   <author>John Hsu</author>
   <license>BSD</license>
+  <review status="NA" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="nav_view"/>
   <depend package="roslaunch"/>
@@ -14,5 +15,15 @@
   <depend package="teleop_arm_keyboard"/>
   <depend package="laser_view"/>
   <depend package="pr2_gui"/>
+  <!--depend package="world_3d_map"/  Commented due to breaking 12/9/08 Tully-->
+  <depend package="highlevel_controllers"/>
   <depend package="executive_trex_pr2"/>
+  <depend package="robot_pose_ekf"/>
+  <depend package="pr2_gazebo"/>
+  <depend package="pr2_prototype1_gazebo"/>
+  <depend package="transformations"/>
+  <depend package="scan_shadows_filter"/>
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>

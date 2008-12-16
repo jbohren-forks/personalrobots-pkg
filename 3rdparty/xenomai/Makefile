@@ -4,12 +4,12 @@ XENOMAI_REVISION = 4220
 SVN_DIR = xenomai-svn
 SVN_URL = http://svn.gna.org/svn/xenomai/tags/v2.4.5 
 SVN_REVISION = -r $(XENOMAI_REVISION)
-#SVN_PATCH = xenomai-r$(XENOMAI_REVISION).patch
+SVN_PATCH = ipipe.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
-build: SVN_UP xenomai
+build: SVN_UP_REVERT_PATCH xenomai
 
-configured: $(SVN_DIR) linux Makefile
+xenomai: changelist.txt linux
 	cd $(SVN_DIR) && mkdir -p build && cd build && ../configure --prefix=$(PWD)/xenomai --enable-x86-sep --enable-x86-tsc --enable-smp --disable-dox-doc
 	cd $(SVN_DIR) && \
 	./scripts/prepare-kernel.sh --linux=../linux --arch=i386 \
@@ -17,15 +17,12 @@ configured: $(SVN_DIR) linux Makefile
 	cd linux && \
 	cp ../config-$(LINUX_VERSION)-AOpen .config && \
 	make oldconfig && make prepare scripts
-	touch configured $(SVN_DIR)
-
-.PHONY: xenomai
-xenomai: configured
 	cd $(SVN_DIR)/build && make $(PARALLEL_JOBS) SUDO=false install
+	touch xenomai
 
 clean:
 	-cd $(SVN_DIR)/build && make clean
-	rm -rf xenomai configured
+	rm -rf xenomai 
 
 wipe: 
 	rm -rf xenomai-svn xenomai
@@ -39,7 +36,7 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 
 download_kernel: $(LINUX_ARCHIVE)
 
-kernel: configured
+kernel: xenomai
 	make  $(PARALLEL_JOBS) -C linux
 
 install_kernel: xenomai
@@ -58,6 +55,6 @@ linux: $(LINUX_ARCHIVE)
 clean_kernel:
 	cd linux && make clean
 
-wipe_kernel:
+wipe_kernel: wipe
 	rm -rf $(LINUX_ARCHIVE) linux
 

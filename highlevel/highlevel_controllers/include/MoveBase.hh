@@ -40,6 +40,10 @@
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/basic_observation_buffer.h>
+
+// Generic OMPL plan representation (will move into <sbpl_util/...> or <ompl_tools/...> later)
+#include <plan_wrap.h>
 
 // Message structures used
 #include <std_msgs/Planner2DState.h>
@@ -49,10 +53,15 @@
 #include <std_msgs/RobotBase2DOdom.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 
 // Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
+
+// Thread suppport
+#include <rosthread/member_thread.h>
+#include <rosthread/mutex.h>
 
 #include <list>
 
@@ -91,11 +100,23 @@ namespace ros {
       virtual void handleMapUpdates(const std::vector<unsigned int>& updates){}
 
       /**
+       * @brief When planning has failed should reset the cost map to clear persistent
+       * dynamic obstacles. This is important to provide some hysterisis when interleaving planning
+       */
+      virtual void handlePlanningFailure();
+
+      /**
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
        * @see publishPlan
        */
       void updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan);
-
+      
+      /**
+       * @brief Overwrites the current plan with a new one. Will handle suitable publication
+       * @see publishPlan
+       */
+      void updatePlan(ompl::waypoint_plan_t const & newPlan);
+      
       /**
        * @brief test the current plan for collisions with obstacles
        */
@@ -138,6 +159,7 @@ namespace ros {
        */
       void baseScanCallback();
       void tiltScanCallback();
+      void tiltCloudCallback();
       void stereoCloudCallback();
 
       /**
@@ -145,18 +167,7 @@ namespace ros {
        */
       void odomCallback();
 
-      /**
-       * @brief Process point cloud data
-       * @todo migrate to costmap
-       */
-      void processData(const std_msgs::PointCloud& local_cloud);
-
       void updateGlobalPose();
-
-      /**
-       * @brief Helper method to update the costmap and conduct other book-keeping
-       */
-      void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
 
       /**
        * @brief Issue zero velocity commands
@@ -173,39 +184,39 @@ namespace ros {
       void publishLocalCostMap();
 
       /**
+       * @brief Utility to publish updates in terms of cells with cost (red) and new free space (blue)
+       */
+      void publishFreeSpaceAndObstacles();
+
+      /**
        * @brief Utility for comparing 2 points to be within a required distance, which is specified as a
        * configuration parameter of the object.
        */
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
       /**
-       * @brief Test if point in the square footprint of the robot
+       * @brief Tests if all the buffers are appropriately up to date
        */
-      bool inFootprint(double x, double y) const;
-
-      /**
-       * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
-       * filter based on the min and max z values
-       */
-      std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
-
-      /**
-       * @brief Watchdog Handling
-       */
-      void petTheWatchDog();
-
       bool checkWatchDog() const;
-
-      struct timeval lastUpdated_;
 
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
       std_msgs::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
+      std_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
 
-      rosTFClient tf_; /**< Used to do transforms */
+      tf::TransformListener tf_; /**< Used to do transforms */
+
+      // Observation Buffers are dynamically allocated since their constructors take
+      // arguments bound by lookup to the param server. This could be chnaged with some reworking of how paramaters
+      // are looked up. If we wanted to generalize this node further, we could use a factory pattern to dynamically
+      // load specific derived classes. For that we would need a hand-shaking pattern to register subscribers for them
+      // with this node
+      costmap_2d::BasicObservationBuffer* baseScanBuffer_;
+      costmap_2d::BasicObservationBuffer* tiltScanBuffer_;
+      costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
 
       /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
       VelocityController* controller_;
@@ -214,7 +225,7 @@ namespace ros {
 
       CostMapAccessor* ma_; /**< Sliding read-only window on the cost map */
 
-      libTF::TFPose2D global_pose_; /**< The global pose in the map frame */
+      tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
       std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
 
@@ -224,13 +235,16 @@ namespace ros {
 
       std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
-      std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
-      ros::thread::mutex bufferMutex_;
-
       // Filter parameters
       double minZ_;
       double maxZ_;
       double robotWidth_;
+
+      // Thread control
+      void mapUpdateLoop();
+      pthread_t *map_update_thread_; /*<! Thread to process laser data and apply to the map */
+      bool active_; /*<! Thread control parameter */
+      double map_update_frequency_;
     };
   }
 }

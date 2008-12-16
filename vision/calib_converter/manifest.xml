@@ -3,10 +3,10 @@
 </description>
 <author>Alex Teichman</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url></url>
-<depend package="megamaid"/>
-<depend package="logging"/>
-<depend package="opencv"/>
+<depend package="rosrecord"/>
+<depend package="opencv_latest"/>
 <depend package="std_msgs"/>
 <depend package="image_utils"/>
 <depend package="roscpp"/>

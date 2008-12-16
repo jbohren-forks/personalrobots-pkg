@@ -189,8 +189,10 @@ template<typename Derived> class MatrixBase
                      >::ret ConjugateReturnType;
     /** \internal the return type of MatrixBase::real() */
     typedef CwiseUnaryOp<ei_scalar_real_op<Scalar>, Derived> RealReturnType;
+    /** \internal the return type of MatrixBase::imag() */
+    typedef CwiseUnaryOp<ei_scalar_imag_op<Scalar>, Derived> ImagReturnType;
     /** \internal the return type of MatrixBase::adjoint() */
-    typedef Transpose<NestByValue<typename ei_cleantype<ConjugateReturnType>::type> >
+    typedef Eigen::Transpose<NestByValue<typename ei_cleantype<ConjugateReturnType>::type> >
             AdjointReturnType;
     /** \internal the return type of MatrixBase::eigenvalues() */
     typedef Matrix<typename NumTraits<typename ei_traits<Derived>::Scalar>::Real, ei_traits<Derived>::ColsAtCompileTime, 1> EigenvaluesReturnType;
@@ -330,13 +332,15 @@ template<typename Derived> class MatrixBase
 
     template<typename OtherDerived>
     Scalar dot(const MatrixBase<OtherDerived>& other) const;
+    RealScalar squaredNorm() const;
     RealScalar norm2() const;
     RealScalar norm()  const;
     const EvalType normalized() const;
     void normalize();
 
-    Transpose<Derived> transpose();
-    const Transpose<Derived> transpose() const;
+    Eigen::Transpose<Derived> transpose();
+    const Eigen::Transpose<Derived> transpose() const;
+    void transposeInPlace();
     const AdjointReturnType adjoint() const;
 
 
@@ -494,6 +498,7 @@ template<typename Derived> class MatrixBase
 
     ConjugateReturnType conjugate() const;
     const RealReturnType real() const;
+    const ImagReturnType imag() const;
 
     template<typename CustomUnaryOp>
     const CwiseUnaryOp<CustomUnaryOp, Derived> unaryExpr(const CustomUnaryOp& func = CustomUnaryOp()) const;
@@ -554,6 +559,8 @@ template<typename Derived> class MatrixBase
     template<typename ElseDerived>
     inline const Select<Derived, NestByValue<typename ElseDerived::ConstantReturnType>, ElseDerived >
     select(typename ElseDerived::Scalar thenScalar, const MatrixBase<ElseDerived>& elseMatrix) const;
+
+    template<int p> RealScalar lpNorm() const;
 
 /////////// LU module ///////////
 

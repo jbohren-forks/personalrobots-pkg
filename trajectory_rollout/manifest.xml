@@ -6,12 +6,14 @@
   </description>
   <author>Eitan Marder-Eppstein</author>
   <license>BSD</license>
+  <review status="proposal cleared" notes=""/>
   <!-- <depend package="stl_utils" /> -->
   <depend package="std_msgs" />
+  <depend package="rosconsole" />
   <!-- <depend package="newmat10" /> -->
   <!-- <depend package="boost" /> -->
   <!-- <depend package="xmlparam" /> -->
-  <depend package="rosTF" />
+  <depend package="tf" />
   <depend package="rospy" />
   <depend package="costmap_2d" />
   <url>http://pr.willowgarage.com</url>

@@ -8,14 +8,13 @@ the SVN version of GMapping, and also removes its GSL dependency.
 </description>
 <author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard</author>
 <license>CreativeCommons-by-nc-sa-2.0</license>
+<review status="3rdparty" notes=""/>
 <url>http://openslam.org/</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/gmapping_export/lib -L${prefix}/gmapping_export/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/gmapping_export/"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/include -I${prefix}/include/gmapping"/>
   <doxymaker external="http://openslam.org"/>
 </export>
 
-<sysdepend os="ubuntu" version="7.04-feisty"  package="libqt3-mt-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy"  package="libqt3-mt-dev"/>
 </package>
 
 

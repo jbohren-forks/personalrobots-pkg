@@ -4,7 +4,9 @@
 float XY_ERROR = 1.0;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
+int WAIT_TIME_AFTER_UNPLUGGING = 5;
 typedef float [0.0 1.0] UNIT_FLOAT;
+
 
 /**
  * Monitors battery state information
@@ -13,6 +15,7 @@ typedef float [0.0 1.0] UNIT_FLOAT;
 class BatteryState extends AgentTimeline {
   float discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
   float recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
+  bool actual_value; // If true this is the real battery state
 
   predicate Holds {
     float energy_remaining; // Remaining energy in Joules
@@ -22,16 +25,25 @@ class BatteryState extends AgentTimeline {
     mulEq(energy_capacity, percentage_remaining, energy_remaining);
   }
 
+  BatteryState(Mode _mode, float ds, float rc, bool av){
+    super(_mode, "Holds");
+    discharge_limit = ds;
+    recharge_level = rc;
+    actual_value = av;
+  }
+
   BatteryState(Mode _mode, float ds, float rc){
     super(_mode, "Holds");
     discharge_limit = ds;
     recharge_level = rc;
+    actual_value = true;
   }
 
   BatteryState(Mode _mode){
     super(_mode, "Holds");
     discharge_limit = 0.1;
     recharge_level = 0.9;
+    actual_value = true;
   }
 };
 
@@ -139,10 +151,12 @@ VenusDeMiles::Holds{
     precedes(start, n.start);
 
     // Carry forward parameters
-    meets(Holds s);
-    addEq(iterationCount, 1, s.iterationCount);
-    eq(iterationLimit, s.iterationLimit);
-    eq(alwaysBusy, s.alwaysBusy);
+    if(end){
+      meets(Holds s);
+      addEq(iterationCount, 1, s.iterationCount);
+      eq(iterationLimit, s.iterationLimit);
+      eq(alwaysBusy, s.alwaysBusy);
+    }
   }
 }
 
@@ -155,10 +169,10 @@ class RechargeController extends Behavior {
    * The recharge controller has an expected pose when in an inactive state
    */
   predicate Inactive{
-    float desX;
-    float desY;
-    float desTh;
-    UNIT_FLOAT goal_recharge_level;
+    float x;
+    float y;
+    float th;
+    UNIT_FLOAT recharge_level;
   }
 
   /**
@@ -180,7 +194,7 @@ class RechargeController extends Behavior {
 BatteryState::Holds {
   // If below the threshold, transition working status to recharge
   // if(discharge_limit > (energy_remaining / energy_capacity))
-  //  workingStatus[start+1, end] == Holds(true);
+  //  workingStatus(start+1) == Holds(true);
   bool mustRecharge;
   testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
   if(mustRecharge == true){
@@ -194,38 +208,49 @@ BatteryState::Holds {
 WorkingStatus::Holds{
   // We should toggle between recharging and not recharging
   // this[end] == Holds(!recharging); 
-  meets(Holds s);
-  neq(s.recharging, recharging);
+  if(end){
+    meets(Holds s);
+    neq(s.recharging, recharging);
+  }
 
   // By default we are not recharging
   defaultOnCommit(recharging, false);
 
   // Do the recharging if appropriate
   if(recharging == true){
-    // Note: this is a good example of where the semantics of waiting until a start event are important. If we simply constrain
-    // the token where start is a singleton then we end up with a plan that will not bind to grounded execution values.
-
-    // Actual charging station should be selected by the planner in principle, if we were using some optimization
-    // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
-    // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
+    // Selection of a charging station can happen in principle in a number of ways. The ideal scenario is that actual obstacle data
+    // is used as a constraint on the available charging station. This could occur where we would say something like:
+    //   collissionFree(cs);
+    // However, no such integration is available and it is an open question how to interpret that constraint given a temporal
+    // context.
+    //
+    // We can select from the available set via the planner. This would allow branching over the decision. This could yield a very
+    // high branching factor.
+    // We can pick the nearest available - which is simple and efficient. However, it may force a situation where we  re-commit to an
+    // unreachable location. This would look like what we had implemented before:
+    //   met_by(BaseState.Holds bs);
+    //   nearestReachableLocation(bs.x, bs.y, cs);
+    //
+    // Instead we will use the randomSelect again, and revisit this later
     ChargingStation cs;
-    met_by(BaseState.Holds bs);
-    nearestReachableLocation(bs.x, bs.y, cs);
+    randomSelect(cs);
 
-    // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
-    any(RechargeController.Active rc);
+    // allow a delay after recharging before releasing the robot
+    any(RechargeController.Inactive rc);
     eq(rc.x, cs.x);
     eq(rc.y, cs.y);
     eq(rc.th, cs.th);
-    concurrent(rc.end, end);
+    temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
 
     // check expected end conditions. Notation assumes a single predicate, otherwise it would be
     // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. At run
     // time this can resolve to a token that cannot be inserted. At compile time, it must resolve unabiguously
     // to a token
     // where w = batteryState[level] : (w.energy_remaining/w.energy_capacity) >= recharge_level;
-    if(end){
-      meets(BatteryState.Holds bs_e);
+    if(rc.end){
+      any(BatteryState.Holds bs_e);
+      eq(bs_e.object.actual_value, true);
+      concurrent(rc.end, bs_e.start);
       leq(rc.recharge_level, bs_e.percentage_remaining);
     }
   }
@@ -236,15 +261,21 @@ WorkingStatus::Holds{
  */
 RechargeController::Inactive{
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  // this[start-1] == Active(desX, desY, desTh, goal_recharge_level)
-  if(desX){
-    if(desY){
-      if(desTh){
+  // previous() == Active(x, y, th, recharge_level)
+  if(x){
+    if(y){
+      if(th){
 	met_by(Active p);
-	eq(p.x, desX);
-	eq(p.y, desY);
-	eq(p.th, desTh);
-	eq(p.recharge_level, goal_recharge_level);
+	eq(p.x, x);
+	eq(p.y, y);
+	eq(p.th, th);
+	eq(p.recharge_level, recharge_level);
+
+
+	// Derive the recharge level from battery state configuration
+	BatteryState bs;
+	eq(bs.actual_value, true);
+	eq(recharge_level, bs.recharge_level);
       }
     }
   }
@@ -256,15 +287,15 @@ RechargeController::Inactive{
   // baseState[start] == Holds( desX + [-0.25, 0.25], desY + [-0.25, 0.25], desTh + [-0.25, 0.25])
   if(start){
     starts(BaseState.Holds bs);
-    addEq(bs.x, [-0.25, 0.25], desX);
-    addEq(bs.y, [-0.25, 0.25], desY);
-    addEq(bs.th, [-0.25, 0.25], desTh);
+    addEq(bs.x, [-0.25, 0.25], x);
+    addEq(bs.y, [-0.25, 0.25], y);
+    addEq(bs.th, [-0.25, 0.25], th);
   }
 }
 
 RechargeController::Active{
-  BatteryState bs;
-  eq(recharge_level, bs.recharge_level);
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, true);
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station. This is derived by the given parameters
@@ -301,13 +332,18 @@ Navigator::Active{
   leq(mb.duration, ws.duration);
 
   // Check end conditions. Note that this formulation should always be resolved in implementation
-  // by binding to an existing token.
+  // by binding to an existing token. We allow for the fact that an effort to achieve the goal may have timed out,
+  // in which case we will not check the end condition (which would force a replan). Insetad we will simply let it go.
   // s = baseState[end];
   // distance(s.x, s.y, w.x, w.y) <= XY_ERROR
+  bool temp_t;
+  eq(mb.timed_out, temp_t);
   if(end){
-    ends(BaseState.Holds s);
-    float distance;
-    calcDistance(distance, s.x, s.y, w.x, w.y);
-    leq(distance, XY_ERROR);
+    if(temp_t == false){
+      ends(BaseState.Holds s);
+      float distance;
+      calcDistance(distance, s.x, s.y, w.x, w.y);
+      leq(distance, XY_ERROR);
+    }
   }
 }

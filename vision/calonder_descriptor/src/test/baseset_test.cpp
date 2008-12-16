@@ -2,9 +2,6 @@
 #include "calonder_descriptor/rng.h"
 #include "detectors.h"
 #include "timer.h"
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_sparse.hpp>
-#include <boost/numeric/ublas/io.hpp>
 #include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -19,6 +16,7 @@
 #include <fstream>
 #include <map>
 #include <cmath>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -61,10 +59,9 @@ selectBaseSet(std::vector<BaseKeypoint> &candidate_set,
 
 int main( int argc, char** argv )
 {
-  int classes = 300, samples = 200;
+  int classes = 300, reduced_classes = 0, samples = 200;
   int trees = 0, depth = 0, views = 0;
   unsigned long seed = std::time(NULL);
-  float threshold = 0;
   string patch_dir;
   double theta_min, theta_max, phi_min, phi_max, lambda_min, lambda_max;
 
@@ -78,7 +75,8 @@ int main( int argc, char** argv )
   tree_options.add_options()
     ("trees,t", po::value<int>(&trees)->default_value(20), "number of trees")
     ("depth,d", po::value<int>(&depth)->default_value(12), "tree depth")
-    ("classes,c", po::value<int>(&classes)->default_value(300), "number of classes");
+    ("classes,c", po::value<int>(&classes)->default_value(300), "number of classes")
+    ("reduced,r", po::value<int>(&reduced_classes), "reduced number of classes");
 
   po::options_description view_options("View options");
   view_options.add_options()
@@ -111,7 +109,6 @@ int main( int argc, char** argv )
   config_options.add_options()
     ("samples", po::value<int>(&samples)->default_value(200),
      "number of keypoints sampled from each source image")
-    ("thresh", po::value<float>(&threshold)->default_value(0), "signature threshold")
     ("sift", "use SIFT for detection")
     ("seed", po::value<unsigned long>(&seed), "set PRNG seed");
 
@@ -156,7 +153,7 @@ int main( int argc, char** argv )
     patch_dir = vm["patches"].as<string>();
   }
 
-  RTreeClassifier classifier;
+  RTreeClassifier classifier(true);
   std::vector< IplImage* > sources;
   std::vector< BaseKeypoint > base_set;
   Rng rng(seed);
@@ -215,11 +212,14 @@ int main( int argc, char** argv )
       }
       base_set_file.close();
     }
+
+    if (!vm.count("reduced"))
+      reduced_classes = classes;
     
     printf("Training classifier\n");
     {
       Timer timer("Training time");
-      classifier.train(base_set, rng, make_patch, trees, depth, views);
+      classifier.train(base_set, rng, make_patch, trees, depth, views, reduced_classes);
     }
   }
   else {
@@ -235,8 +235,6 @@ int main( int argc, char** argv )
     std::cout << "Wrote classifier to " << file_name << std::endl;
   }
   
-  classifier.setThreshold(threshold);
-
   printf("Smoothing source images\n");
   BOOST_FOREACH( IplImage* source, sources ) {
     cvSmooth(source, source);
@@ -247,51 +245,57 @@ int main( int argc, char** argv )
   if (save_sigs)
     sig_file.open( vm["save-sigs"].as<string>().c_str() );
 
-  printf("Calculating performance\n");
-  int size = RandomizedTree::PATCH_SIZE;
-  int correct = 0;
-  for (int i = 0; i < classes; ++i) {
-    BaseKeypoint key = base_set[i];
-    cv::WImageView1_b image(key.image);
-    cv::WImageView1_b patch(&image, key.x - size/2, key.y - size/2, size, size);
-    ublas::vector<float> post = classifier.getDenseSignature( patch.Ipl() );
-    //ublas::compressed_vector<float> sparse_sig = classifier.getSparseSignature( patch.Ipl() );
-
-    float max_prob = 0.0;
-    int best_class = -1;
-    for (int c = 0; c < classes; ++c) {
-      float prob = post[c];
-      if (prob > max_prob) {
-        max_prob = prob;
-        best_class = c;
+  if (reduced_classes < classes) {
+    printf("Compressive sensing used, so skipping sanity check diagnostic\n");
+  } else {
+    printf("Calculating performance\n");
+    int size = RandomizedTree::PATCH_SIZE;
+    int correct = 0;
+    float* post;
+    posix_memalign(reinterpret_cast<void**>(&post), 16, reduced_classes * sizeof(float));
+    for (int i = 0; i < classes; ++i) {
+      BaseKeypoint key = base_set[i];
+      cv::WImageView1_b image(key.image);
+      cv::WImageView1_b patch(&image, key.x - size/2, key.y - size/2, size, size);
+      classifier.getFloatSignature(patch.Ipl(), post);
+      
+      float max_prob = 0.0;
+      int best_class = -1;
+      for (int c = 0; c < reduced_classes; ++c) {
+        float prob = post[c];
+        if (prob > max_prob) {
+          max_prob = prob;
+          best_class = c;
+        }
+      }
+      
+      if (save_sigs) {
+        for (int c = 0; c < reduced_classes; ++c)
+          sig_file << post[c] << ' ';
+        sig_file << std::endl;
+      }
+      
+      if (save_patches) {
+        char file_name[128];
+        sprintf(file_name, "%s/base%i.pgm", patch_dir.c_str(), i);
+        cvSaveImage(file_name, patch.Ipl());
+      }
+      
+      if (best_class == i) {
+        ++correct;
+        printf("Y");
+      } else {
+        printf("N");
       }
     }
+    free(post);
 
-    if (save_sigs) {
-      BOOST_FOREACH( float prob, post )
-        sig_file << prob << ' ';
-      sig_file << std::endl;
-    }
+    printf("\nCorrect: %i\n", correct);
 
-    if (save_patches) {
-      char file_name[128];
-      sprintf(file_name, "%s/base%i.pgm", patch_dir.c_str(), i);
-      cvSaveImage(file_name, patch.Ipl());
-    }
-
-    if (best_class == i) {
-      ++correct;
-      printf("Y");
-    } else {
-      printf("N");
-    }
+    if (save_sigs)
+      sig_file.close();
   }
 
-  printf("\nCorrect: %i\n", correct);
-
-  if (save_sigs)
-    sig_file.close();
-  
   BOOST_FOREACH( IplImage* img, sources )
     cvReleaseImage(&img);
   

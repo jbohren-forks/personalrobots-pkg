@@ -65,7 +65,7 @@ public:
    * \param jac (output) Stores the computed jacobian
    * \return negative on error
    */
-  int JointsToCartesian(const KDL::Chain& chain, const KDL::JntArray& joint_states, LinkParamJacobian& jac) ;
+  static int JointsToCartesian(const KDL::Chain& chain, const KDL::JntArray& joint_states, LinkParamJacobian& jac) ;
   
 } ;
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(mrf_image_classifier)
 
-include_directories(src)
+include_directories(src /opt/boost/include/boost-1_35)
 
 # FIXME: build unit tests
 
@@ -24,7 +24,11 @@ rospack_add_library(mrf_image_classifier
 rospack_add_executable(naryTrainBatch
   src/input/naryTrainBatch.cc)
 
+rospack_add_executable(evalErrors
+  src/input/evalErrors.cc)
+
 target_link_libraries(naryTrainBatch mrf_image_classifier)
+target_link_libraries(evalErrors mrf_image_classifier)
 
 rospack_add_executable(mrf_image_classifier_ros 
   src/ros/mrf_image_classifier.cpp)

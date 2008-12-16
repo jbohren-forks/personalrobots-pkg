@@ -314,12 +314,111 @@ void warnOnSecondary(int sig)
   }
 }
 
+static int
+lock_fd(int fd)
+{
+  struct flock lock;
+  int rv;
+
+  lock.l_type = F_WRLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
+
+  rv = fcntl(fd, F_SETLK, &lock);
+  printf("rv = %d\n", rv);
+  return rv;
+}
+
+#define PIDFILE "/var/run/pr2_etherCAT.pid"
+static int setupPidFile(void)
+{
+  int rv = -1;
+  pid_t pid;
+  int fd;
+  FILE *fp = NULL;
+
+  fd = open(PIDFILE, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+  if (fd == -1)
+  {
+    if (errno != EEXIST)
+    {
+      ROS_FATAL("Unable to create pid file '%s': %s", PIDFILE, strerror(errno));
+      goto end;
+    }
+    
+    if ((fd = open(PIDFILE, O_RDWR)) < 0)
+    {
+      ROS_FATAL("Unable to open pid file '%s': %s", PIDFILE, strerror(errno));
+      goto end;
+    }
+
+    if ((fp = fdopen(fd, "rw")) == NULL)
+    {
+      ROS_FATAL("Can't read from '%s': %s", PIDFILE, strerror(errno));
+      goto end;
+    }
+    pid = -1;
+    if ((fscanf(fp, "%d", &pid) != 1) || (pid == getpid()) || (lock_fd(fileno(fp)) == 0))
+    {
+      int rc;
+
+      if ((rc = unlink(PIDFILE)) == -1)
+      {
+        ROS_FATAL("Can't remove stale pid file '%s': %s", PIDFILE, strerror(errno));
+        goto end;
+      }
+    } else {
+      ROS_FATAL("Another instance of pr2_etherCAT is already running with pid: %d\n", pid);
+      goto end;
+    }
+  }
+
+  unlink(PIDFILE);
+  fd = open(PIDFILE, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+
+  if (fd == -1)
+  {
+    ROS_FATAL("Unable to open pid file '%s': %s", PIDFILE, strerror(errno));
+    goto end;
+  }
+
+  if (lock_fd(fd) == -1)
+  {
+    ROS_FATAL("Unable to lock pid file '%s': %s", PIDFILE, strerror(errno));
+    goto end;
+  }
+
+  if ((fp = fdopen(fd, "w")) == NULL)
+  {
+    ROS_FATAL("fdopen failed: %s", strerror(errno));
+    goto end;
+  }
+
+  fprintf(fp, "%d\n", getpid());
+
+  /* We do NOT close fd, since we want to keep the lock. */
+  fflush(fp);
+  fcntl(fd, F_SETFD, (long) 1);
+  rv = 0;
+end:
+  return rv;
+}
+
+static int cleanupPidFile(void)
+{
+  unlink(PIDFILE);
+}
+
 static pthread_t rtThread, clockThread;
 static pthread_attr_t rtThreadAttr;
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  // Setup single instance
+  if (setupPidFile() < 0) return -1;
 
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
@@ -405,6 +504,9 @@ int main(int argc, char *argv[])
   }
 
   pthread_join(rtThread, 0);
+
+  // Cleanup pid file
+  cleanupPidFile();
 
   ros::fini();
   delete node;

@@ -33,9 +33,11 @@
 
 #include <ogre_tools/arrow.h>
 #include <ogre_tools/super_ellipsoid.h>
+#include <ogre_tools/billboard_line.h>
 
 #include <ros/node.h>
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
@@ -56,11 +58,15 @@ MarkerDisplay::MarkerDisplay( const std::string& name, VisualizationManager* man
 
   kinematic_model_ = new planning_models::KinematicModel();
   kinematic_model_->setVerbose( false );
+
+  notifier_ = new tf::MessageNotifier<std_msgs::VisualizationMarker>(tf_, ros_node_, boost::bind(&MarkerDisplay::incomingMarker, this, _1), "", "", 100);
 }
 
 MarkerDisplay::~MarkerDisplay()
 {
   unsubscribe();
+
+  delete notifier_;
 
   delete urdf_;
   delete kinematic_model_;
@@ -89,6 +95,7 @@ void MarkerDisplay::onEnable()
   std::string content;
   /// @todo pass this in
   ros_node_->get_param("robotdesc/pr2", content);
+  urdf_->clear();
   urdf_->loadString(content.c_str());
 
   kinematic_model_->build( *urdf_ );
@@ -98,6 +105,7 @@ void MarkerDisplay::onEnable()
 void MarkerDisplay::onDisable()
 {
   unsubscribe();
+  notifier_->clear();
 
   clearMarkers();
 
@@ -111,50 +119,48 @@ void MarkerDisplay::subscribe()
     return;
   }
 
-  ros_node_->subscribe("visualizationMarker", current_message_, &MarkerDisplay::incomingMarker, this, 0);
+  notifier_->setTopic("visualizationMarker");
 }
 
 void MarkerDisplay::unsubscribe()
 {
-  ros_node_->unsubscribe( "visualizationMarker", &MarkerDisplay::incomingMarker, this );
+  notifier_->setTopic("");
 }
 
-void MarkerDisplay::incomingMarker()
+void MarkerDisplay::incomingMarker( const MarkerPtr& message )
 {
-  message_queue_.push_back( current_message_ );
+  boost::mutex::scoped_lock lock(queue_mutex_);
+
+  message_queue_.push_back( message );
 }
 
-void MarkerDisplay::processMessage( const std_msgs::VisualizationMarker& message )
+void MarkerDisplay::processMessage( const MarkerPtr& message )
 {
-  switch ( message.action )
+  switch ( message->action )
   {
-  case MarkerActions::Add:
+  case std_msgs::VisualizationMarker::ADD:
     processAdd( message );
     break;
 
-  case MarkerActions::Modify:
-    processModify( message );
-    break;
-
-  case MarkerActions::Delete:
+  case std_msgs::VisualizationMarker::DELETE:
     processDelete( message );
     break;
 
   default:
-    ROS_ERROR( "Unknown marker action: %d\n", message.action );
+    ROS_ERROR( "Unknown marker action: %d\n", message->action );
   }
 }
 
-void MarkerDisplay::processAdd( const std_msgs::VisualizationMarker& message )
+void MarkerDisplay::processAdd( const MarkerPtr& message )
 {
   ogre_tools::Object* object = NULL;
   bool create = true;
 
-  M_IDToMarker::iterator it = markers_.find( message.id );
+  M_IDToMarker::iterator it = markers_.find( message->id );
   if ( it != markers_.end() )
   {
     MarkerInfo& info = it->second;
-    if ( message.type == info.message_.type )
+    if ( message->type == info.message_->type )
     {
       object = info.object_;
 
@@ -170,9 +176,9 @@ void MarkerDisplay::processAdd( const std_msgs::VisualizationMarker& message )
 
   if ( create )
   {
-    switch ( message.type )
+    switch ( message->type )
     {
-    case MarkerTypes::Cube:
+    case std_msgs::VisualizationMarker::CUBE:
       {
         ogre_tools::SuperEllipsoid* cube = new ogre_tools::SuperEllipsoid( scene_manager_, scene_node_ );
         cube->create( ogre_tools::SuperEllipsoid::Cube, 10, Ogre::Vector3( 1.0f, 1.0f, 1.0f ) );
@@ -181,7 +187,7 @@ void MarkerDisplay::processAdd( const std_msgs::VisualizationMarker& message )
       }
       break;
 
-    case MarkerTypes::Sphere:
+    case std_msgs::VisualizationMarker::SPHERE:
       {
         ogre_tools::SuperEllipsoid* sphere = new ogre_tools::SuperEllipsoid( scene_manager_, scene_node_ );
         sphere->create( ogre_tools::SuperEllipsoid::Sphere, 20, Ogre::Vector3( 1.0f, 1.0f, 1.0f ) );
@@ -190,13 +196,13 @@ void MarkerDisplay::processAdd( const std_msgs::VisualizationMarker& message )
       }
       break;
 
-    case MarkerTypes::Arrow:
+    case std_msgs::VisualizationMarker::ARROW:
       {
         object = new ogre_tools::Arrow( scene_manager_, scene_node_, 0.8, 0.5, 0.2, 1.0 );
       }
       break;
 
-    case MarkerTypes::Robot:
+    case std_msgs::VisualizationMarker::ROBOT:
       {
         Robot* robot = new Robot( scene_manager_ );
         robot->load( urdf_, false, true );
@@ -206,43 +212,33 @@ void MarkerDisplay::processAdd( const std_msgs::VisualizationMarker& message )
       }
       break;
 
+    case std_msgs::VisualizationMarker::LINE_STRIP:
+      {
+        ogre_tools::BillboardLine* line = new ogre_tools::BillboardLine( scene_manager_, scene_node_ );
+        object = line;
+      }
+      break;
     default:
-      ROS_ERROR( "Unknown marker type: %d\n", message.type );
+      ROS_ERROR( "Unknown marker type: %d\n", message->type );
     }
 
     if ( object )
     {
-      markers_.insert( std::make_pair( message.id, MarkerInfo(object, message) ) );
+      markers_.insert( std::make_pair( message->id, MarkerInfo(object, message) ) );
     }
   }
 
   if ( object )
   {
-    setCommonValues( message, object );
+    setValues( message, object );
 
     causeRender();
   }
 }
 
-void MarkerDisplay::processModify( const std_msgs::VisualizationMarker& message )
+void MarkerDisplay::processDelete( const MarkerPtr& message )
 {
-  M_IDToMarker::iterator it = markers_.find( message.id );
-  if ( it == markers_.end() )
-  {
-    ROS_ERROR( "Tried to modify marker with id %d that does not exist\n", message.id );
-    return;
-  }
-
-  MarkerInfo& info = it->second;
-  info.message_ = message;
-  setCommonValues( message, info.object_ );
-
-  causeRender();
-}
-
-void MarkerDisplay::processDelete( const std_msgs::VisualizationMarker& message )
-{
-  M_IDToMarker::iterator it = markers_.find( message.id );
+  M_IDToMarker::iterator it = markers_.find( message->id );
   if ( it != markers_.end() )
   {
     delete it->second.object_;
@@ -252,23 +248,23 @@ void MarkerDisplay::processDelete( const std_msgs::VisualizationMarker& message 
   causeRender();
 }
 
-void MarkerDisplay::setCommonValues( const std_msgs::VisualizationMarker& message, ogre_tools::Object* object )
+void MarkerDisplay::setValues( const MarkerPtr& message, ogre_tools::Object* object )
 {
-  std::string frame_id = message.header.frame_id;
+  std::string frame_id = message->header.frame_id;
   if ( frame_id.empty() )
   {
     frame_id = fixed_frame_;
   }
 
-  tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( message.yaw, message.pitch, message.roll ), btVector3( message.x, message.y, message.z ) ),
-                              message.header.stamp, frame_id );
+  tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( message->yaw, message->pitch, message->roll ), btVector3( message->x, message->y, message->z ) ),
+                              message->header.stamp, frame_id );
   try
   {
     tf_->transformPose( fixed_frame_, pose, pose );
   }
   catch(tf::TransformException& e)
   {
-    ROS_ERROR( "Error transforming marker '%d' from frame '%s' to frame '%s'\n", message.id, frame_id.c_str(), fixed_frame_.c_str() );
+    ROS_ERROR( "Error transforming marker '%d' from frame '%s' to frame '%s': %s\n", message->id, frame_id.c_str(), fixed_frame_.c_str(), e.what() );
   }
 
   Ogre::Vector3 position( pose.getOrigin().x(), pose.getOrigin().y(), pose.getOrigin().z() );
@@ -281,24 +277,46 @@ void MarkerDisplay::setCommonValues( const std_msgs::VisualizationMarker& messag
   orientation = Ogre::Quaternion( quat.w(), quat.x(), quat.y(), quat.z() ) * orientation;
   robotToOgre( orientation );
 
-  Ogre::Vector3 scale( message.xScale, message.yScale, message.zScale );
+  Ogre::Vector3 scale( message->xScale, message->yScale, message->zScale );
   scaleRobotToOgre( scale );
 
   object->setPosition( position );
   object->setOrientation( orientation );
   object->setScale( scale );
-  object->setColor( message.r / 255.0f, message.g / 255.0f, message.b / 255.0f, message.alpha / 255.0f );
+  object->setColor( message->r / 255.0f, message->g / 255.0f, message->b / 255.0f, message->alpha / 255.0f );
   object->setUserData( Ogre::Any( (void*)this ) );
+
+  if ( message->type == std_msgs::VisualizationMarker::LINE_STRIP )
+  {
+    ogre_tools::BillboardLine* line = dynamic_cast<ogre_tools::BillboardLine*>(object);
+    ROS_ASSERT( line );
+
+    line->clear();
+    line->setLineWidth( message->xScale );
+
+    std::vector<std_msgs::Position>::iterator it = message->points.begin();
+    std::vector<std_msgs::Position>::iterator end = message->points.end();
+    for ( ; it != end; ++it )
+    {
+      std_msgs::Position& p = *it;
+
+      Ogre::Vector3 v( p.x, p.y, p.z );
+      robotToOgre( v );
+
+      line->addPoint( v );
+    }
+  }
 }
 
 void MarkerDisplay::update( float dt )
 {
-  current_message_.lock();
-
   V_MarkerMessage local_queue;
-  local_queue.swap( message_queue_ );
 
-  current_message_.unlock();
+  {
+    boost::mutex::scoped_lock lock(queue_mutex_);
+
+    local_queue.swap( message_queue_ );
+  }
 
   if ( !local_queue.empty() )
   {
@@ -306,28 +324,17 @@ void MarkerDisplay::update( float dt )
     V_MarkerMessage::iterator message_end = local_queue.end();
     for ( ; message_it != message_end; ++message_it )
     {
-      std_msgs::VisualizationMarker& marker = *message_it;
+      MarkerPtr& marker = *message_it;
 
       processMessage( marker );
     }
   }
 }
 
-#if 0
-void MarkerDisplay::targetFrameChanged();
+void MarkerDisplay::targetFrameChanged()
 {
-  M_IDToMarker::iterator marker_it = markers_.begin();
-  M_IDToMarker::iterator marker_end = markers_.end();
-  for ( ; marker_it != marker_end; )
-  {
-    MarkerInfo& info = marker_it->second;
-
-    ++marker_it;
-
-    processMessage( info.message_ );
-  }
+  notifier_->setTargetFrame( target_frame_ );
 }
-#endif
 
 void MarkerDisplay::fixedFrameChanged()
 {

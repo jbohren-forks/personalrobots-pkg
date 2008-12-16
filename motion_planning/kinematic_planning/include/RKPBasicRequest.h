@@ -269,11 +269,7 @@ class RKPBasicRequest
 	double                                           bestDifference = 0.0;	
 
 	m->collisionSpace->lock();
-	profiling_utils::Profiler::Start();
-
 	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
-
-	profiling_utils::Profiler::Stop();
 	m->collisionSpace->unlock();
 	
 	/* fill in the results */

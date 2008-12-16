@@ -41,6 +41,17 @@
 #include <sfl/util/numeric.hpp>
 #include <errno.h>
 #include <cstring>
+#include <err.h>
+
+#ifdef MPBENCH_HAVE_NETPGM
+extern "C" {
+#include <stdio.h>
+// pgm.h is not very friendly with system headers... need to undef max() and min() afterwards
+#include <pgm.h>
+#undef max
+#undef min
+}
+#endif // MPBENCH_HAVE_NETPGM
 
 using sfl::minval;
 using sfl::maxval;
@@ -53,11 +64,12 @@ namespace {
 		double hall, double door,
 		std::ostream * progress_os)
   {
-    setup.drawPoint(       0,         0, progress_os);
-    setup.drawPoint(       0,  hall, progress_os);
-    setup.drawPoint(hall,         0, progress_os);
+    setup.drawPoint(   0,     0, progress_os);
+    setup.drawPoint(   0,  hall, progress_os);
+    setup.drawPoint(hall,     0, progress_os);
     setup.drawPoint(hall,  hall, progress_os);
-
+    setup.drawPoint(door,  door, progress_os);
+    
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.addTask("left to right", true,
@@ -81,10 +93,10 @@ namespace {
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.addTask("left to right", true,
-		         door, 0.5 * hall, 0,
+		         door, 0.5 * hall,   M_PI / 4,
 		  hall - door, 0.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("right to left", false,
-		  hall - door, 0.5 * hall, 0,
+		  hall - door, 0.5 * hall, - M_PI / 4,
 		         door, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
@@ -153,6 +165,165 @@ namespace {
 		         hall,       hall, 0, tol_xy, tol_th);
   }
   
+  
+  void drawCubicle(ompl::SBPLBenchmarkSetup & setup,
+		   double hall, double door,
+		   size_t ncube,
+		   std::ostream * progress_os)
+  {
+    if (ncube < 2)
+      ncube = 2;
+    
+    double const alpha(M_PI / (4 * (ncube - 1)));
+    double const R0(hall / alpha);
+    double const R1(R0 + hall);
+    double const yoff(0.5 * hall * R1 / R0);
+    
+    // lowermost wall
+    setup.drawLine(R0,
+		   - 0.5 * hall + yoff,
+		   R1 * cos( - alpha / 2),
+		   R1 * sin( - alpha / 2) + yoff, progress_os);
+    
+    for (size_t ii(0); ii < ncube; ++ii) {
+      double const ux(cos(ii * alpha));
+      double const uy(sin(ii * alpha));
+      double const nx(-uy);
+      double const ny(ux);
+      
+      // door
+      setup.drawLine(R0 * ux - 0.5 * hall * nx,
+		     R0 * uy - 0.5 * hall * ny + yoff,
+		     R0 * ux - 0.5 * door * nx,
+		     R0 * uy - 0.5 * door * ny + yoff, progress_os);
+      setup.drawLine(R0 * ux + 0.5 * door * nx,
+		     R0 * uy + 0.5 * door * ny + yoff,
+		     R0 * ux + 0.5 * hall * nx,
+		     R0 * uy + 0.5 * hall * ny + yoff, progress_os);
+      // upper wall
+      setup.drawLine(R0 * ux + 0.5 * hall * nx,
+		     R0 * uy + 0.5 * hall * ny + yoff,
+		     R1 * cos((ii + 0.5) * alpha),
+		     R1 * sin((ii + 0.5) * alpha) + yoff, progress_os);
+      // hind wall
+      setup.drawLine(R1 * cos((ii + 0.5) * alpha),
+		     R1 * sin((ii + 0.5) * alpha) + yoff,
+		     R1 * cos((ii - 0.5) * alpha),
+		     R1 * sin((ii - 0.5) * alpha) + yoff, progress_os);
+    }
+    
+    // tasks...
+    if (progress_os)
+      *progress_os << "adding tasks...\n" << flush;
+    
+    double const tol_xy(0.25 * door);
+    double const tol_th(M_PI);
+    double const gx(0.5 * R0 * cos(M_PI / 8));
+    double const gy(0.5 * R0 * sin(M_PI / 8) + yoff);
+    for (size_t ii(0); ii < ncube; ++ii) {
+      ostringstream os;
+      os << "from hall to cubicle " << ii;
+      setup.addTask(os.str(), true, gx, gy, 0,
+		    (R0 + hall / 2) * cos(ii * alpha),
+		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+		    0, tol_xy, tol_th);
+      os << ", return trip";
+      setup.addTask(os.str(), false,
+		    (R0 + hall / 2) * cos(ii * alpha),
+		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+		    0, gx, gy, 0, tol_xy, tol_th);
+    }
+  }
+  
+  
+#ifdef MPBENCH_HAVE_NETPGM
+  void readNetPGM(ompl::SBPLBenchmarkSetup & setup,
+		  FILE * pgmfile,
+		  unsigned int obstacle_gray,
+		  bool invert_gray,
+		  double resolution,
+		  std::ostream * progress_os)
+  {
+    // not sure how to properly handle this, the doc does not say
+    // whether it supports being initialized more than once...
+    static bool pgm_has_been_initialized(false);
+    if ( ! pgm_has_been_initialized) {
+      static int fake_argc(1);
+      static char * fake_arg("foo");
+      pgm_init(&fake_argc, &fake_arg);
+      pgm_has_been_initialized = true;
+    }
+    
+    int ncols, nrows;
+    gray maxval;
+    int format;
+    pgm_readpgminit(pgmfile, &ncols, &nrows, &maxval, &format);
+    gray * row(pgm_allocrow(ncols));
+    for (int ii(nrows - 1); ii >= 0; --ii) {
+      pgm_readpgmrow(pgmfile, row, ncols, maxval, format);
+      for (int jj(ncols - 1); jj >= 0; --jj)
+	if ((       invert_gray  && (obstacle_gray >= row[jj]))
+	    || (( ! invert_gray) && (obstacle_gray <= row[jj])))
+	  setup.drawPoint(jj * resolution, ii * resolution, progress_os);
+    }
+    pgm_freerow(row);
+  }
+#endif // MPBENCH_HAVE_NETPGM
+  
+  
+  class OfficeBenchmark
+    : public ompl::SBPLBenchmarkSetup
+  {
+  protected:
+    OfficeBenchmark(std::string const & name,
+		    double resolution,
+		    double inscribed_radius,
+		    double circumscribed_radius,
+		    double inflation_radius,
+		    int obstacle_cost,
+		    bool use_sfl_cost,
+		    double door_width,
+		    double hall_width);
+    
+  public:
+    /**
+       Valid names are:
+       - dots: 4 dots in a square of hall_width side length
+       - square: a square of hall_width side length
+       - office1: two offices, two hallways, some doors
+    */
+    static OfficeBenchmark * create(std::string const & name,
+				    double resolution,
+				    double inscribed_radius,
+				    double circumscribed_radius,
+				    double inflation_radius,
+				    int obstacle_cost,
+				    bool use_sfl_cost,
+				    double door_width,
+				    double hall_width,
+				    std::ostream * progress_os,
+				    std::ostream * travmap_os);
+    
+    virtual void dumpSubDescription(std::ostream & os,
+				    std::string const & prefix) const;
+    
+    double const door_width;
+    double const hall_width;
+  };
+  
+  
+  ompl::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
+						   unsigned int obstacle_gray,
+						   bool invert_gray,
+						   double resolution,
+						   double inscribed_radius,
+						   double circumscribed_radius,
+						   double inflation_radius,
+						   int obstacle_cost,
+						   bool use_sfl_cost,
+						   std::ostream * progress_os,
+						   std::ostream * travmap_os);
+  
 }
 
 
@@ -160,14 +331,15 @@ namespace ompl {
   
   
   SBPLBenchmarkSetup::
-  SBPLBenchmarkSetup(std::string const & name,
+  SBPLBenchmarkSetup(std::string const & _name,
 		     double _resolution,
 		     double _inscribed_radius,
 		     double _circumscribed_radius,
 		     double _inflation_radius,
 		     int _obstacle_cost,
 		     bool _use_sfl_cost)
-    : resolution(_resolution),
+    : name(_name),
+      resolution(_resolution),
       inscribed_radius(_inscribed_radius),
       circumscribed_radius(_circumscribed_radius),
       inflation_radius(_inflation_radius),
@@ -181,11 +353,14 @@ namespace ompl {
     sfl::GridFrame const gframe(resolution);
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
       growstrategy(new sfl::Mapper2d::always_grow());
-    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
+    //    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
+    double const buffer_zone(sfl::maxval(0.0, circumscribed_radius - inscribed_radius));
     double const padding_factor(0);
     m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
 				 inscribed_radius, buffer_zone, padding_factor,
 				 0, obstacle_cost,
+				 // costmap_2d seems to use a quadratic decay in r7215
+				 sfl::exponential_travmap_cost_decay(2),
 				 name, sfl::RWlock::Create(name), growstrategy));
     
 
@@ -201,7 +376,7 @@ namespace ompl {
   void SBPLBenchmarkSetup::
   dumpTravmap(std::ostream & os) const
   {
-    getRDTravmap()->DumpMap(&os);
+    getRawSFLTravmap()->DumpMap(&os);
   }
   
   
@@ -251,7 +426,7 @@ namespace ompl {
   
   
   boost::shared_ptr<sfl::RDTravmap> SBPLBenchmarkSetup::
-  getRDTravmap() const
+  getRawSFLTravmap() const
   {
     if ( ! rdtravmap_)
       rdtravmap_ = m2d_->CreateRDTravmap();
@@ -260,7 +435,7 @@ namespace ompl {
   
   
   costmap_2d::CostMap2D const & SBPLBenchmarkSetup::
-  getCostmap() const
+  getRaw2DCostmap() const
   {
     if ( ! costmap_)
       costmap_.reset(createCostMap2D());
@@ -303,26 +478,32 @@ namespace ompl {
 	  data.push_back(0);	// suppose 0 means freespace
       }
     
-    // whatever, we won't update dynamic obstacles anyway (???)
-    double const window_length(0);
-    
     // hm... what if our obstacle cost needs more than 8 bits?    
     unsigned char const threshold(obstacle_cost & 0xff);
-    double const maxZ(1);
-    double const freeSpaceProjectionHeight(1);
+    double const maxZ(0.5);
+    double const zLB(0.10);
+    double const zUB(0.15);
+    double const weight(1);
     costmap_2d::CostMap2D * cm;
     if (use_sfl_cost)
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
-				     threshold, maxZ, freeSpaceProjectionHeight,
-				     0, 0, 0);
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
+				     threshold, maxZ, zLB, zUB,
+				     0,	// inflationRadius
+				     0,	// circumscribedRadius
+				     0,	// inscribedRadius
+				     weight);
     else
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
-				     threshold, maxZ, freeSpaceProjectionHeight,
-				     inflation_radius, circumscribed_radius, inscribed_radius);
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
+				     threshold, maxZ, zLB, zUB,
+				     inflation_radius, circumscribed_radius, inscribed_radius,
+				     weight);
     return cm;
   }
     
-    
+}
+
+namespace {
+  
   OfficeBenchmark::
   OfficeBenchmark(std::string const & name,
 		  double resolution,
@@ -369,6 +550,8 @@ namespace ompl {
       drawSquare(*setup, hall_width, door_width, progress_os);
     else if ("office1" == name)
       drawOffice1(*setup, hall_width, door_width, progress_os);
+    else if ("cubicle" == name)
+      drawCubicle(*setup, hall_width, door_width, 3, progress_os);
     else {
       delete setup;
       if (progress_os)
@@ -388,26 +571,44 @@ namespace ompl {
   
   
   void OfficeBenchmark::
+  dumpSubDescription(std::ostream & os,
+		     std::string const & prefix) const
+  {
+    os << prefix << "door_width:           " << door_width << "\n"
+       << prefix << "hall_width:           " << hall_width << "\n";
+  }
+
+}
+
+namespace ompl {  
+  
+  void SBPLBenchmarkSetup::
   dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "name:                 OfficeBenchmark1\n"
+    os << prefix << "name:                 " << name << "\n"
        << prefix << "resolution:           " << resolution << "\n"
        << prefix << "inscribed_radius:     " << inscribed_radius << "\n"
        << prefix << "circumscribed_radius: " << circumscribed_radius << "\n"
        << prefix << "inflation_radius:     " << inflation_radius << "\n"
        << prefix << "obstacle_cost:        " << obstacle_cost << "\n"
-       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n")
-       << prefix << "door_width:           " << door_width << "\n"
-       << prefix << "hall_width:           " << hall_width << "\n"
-       << prefix << "tasks:\n";
+       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n");
+    dumpSubDescription(os, prefix);
+    os << prefix << "tasks:\n";
     for (size_t ii(0); ii < tasklist_.size(); ++ii)
       os << prefix << "  [" << ii << "] " << tasklist_[ii].description << "\n";
   }
   
-
-
+  
+  void SBPLBenchmarkSetup::
+  dumpSubDescription(std::ostream & os,
+		     std::string const & prefix) const
+  {
+    // nop
+  }
+  
+  
   SBPLBenchmarkSetup::task::
   task(std::string const & _description,
        bool _from_scratch,
@@ -431,40 +632,164 @@ namespace ompl {
   void SBPLBenchmarkSetup::
   getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + resolution;
-    y0 = bby0_ + resolution;
-    x1 = bbx1_ - resolution;
-    y1 = bby1_ - resolution;
+    x0 = bbx0_ - resolution;
+    y0 = bby0_ - resolution;
+    x1 = bbx1_ + resolution;
+    y1 = bby1_ + resolution;
   }
   
   
   void SBPLBenchmarkSetup::
   getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + inscribed_radius;
-    y0 = bby0_ + inscribed_radius;
-    x1 = bbx1_ - inscribed_radius;
-    y1 = bby1_ - inscribed_radius;
+    x0 = bbx0_ - inscribed_radius;
+    y0 = bby0_ - inscribed_radius;
+    x1 = bbx1_ + inscribed_radius;
+    y1 = bby1_ + inscribed_radius;
   }
   
   
   void SBPLBenchmarkSetup::
   getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + circumscribed_radius;
-    y0 = bby0_ + circumscribed_radius;
-    x1 = bbx1_ - circumscribed_radius;
-    y1 = bby1_ - circumscribed_radius;
+    x0 = bbx0_ - circumscribed_radius;
+    y0 = bby0_ - circumscribed_radius;
+    x1 = bbx1_ + circumscribed_radius;
+    y1 = bby1_ + circumscribed_radius;
   }
   
   
   void SBPLBenchmarkSetup::
   getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + inflation_radius;
-    y0 = bby0_ + inflation_radius;
-    x1 = bbx1_ - inflation_radius;
-    y1 = bby1_ - inflation_radius;
+    x0 = bbx0_ - inflation_radius;
+    y0 = bby0_ - inflation_radius;
+    x1 = bbx1_ + inflation_radius;
+    y1 = bby1_ + inflation_radius;
+  }
+  
+  
+  boost::shared_ptr<CostmapWrap> SBPLBenchmarkSetup::
+  getCostmap() const
+  {
+    if (costmapWrap_)
+      return costmapWrap_;
+    if (use_sfl_cost)
+      costmapWrap_.reset(createCostmapWrap(getRawSFLTravmap().get()));
+    else
+      costmapWrap_.reset(createCostmapWrap(&getRaw2DCostmap()));
+    return costmapWrap_;
+  }
+  
+  
+  boost::shared_ptr<IndexTransformWrap> SBPLBenchmarkSetup::
+  getIndexTransform() const
+  {
+    if (indexTransformWrap_)
+      return indexTransformWrap_;
+    if (use_sfl_cost)
+      indexTransformWrap_.reset(createIndexTransformWrap(&getRawSFLTravmap()->GetGridFrame()));
+    else
+      indexTransformWrap_.reset(createIndexTransformWrap(&getRaw2DCostmap()));
+    return indexTransformWrap_;
+  }
+  
+  
+  SBPLBenchmarkOptions::
+  SBPLBenchmarkOptions()
+    : name("office1"),
+      resolution(0.05),
+      inscribed_radius(0.325),	// from highlevel_controllers/test/launch_move_base.xml r7215
+      circumscribed_radius(0.46), // dito
+      inflation_radius(0.55),	// dito
+      obstacle_cost(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE),
+      use_sfl_cost(false),
+      door_width(1.2),
+      hall_width(3),
+      pgm_filename("pgm/willow-clip0-r50.pgm"),
+      obstacle_gray(64),
+      invert_gray(true)
+  {
+  }
+  
+  
+  SBPLBenchmarkSetup * createBenchmark(SBPLBenchmarkOptions const & opt,
+				       std::ostream * progress_os,
+				       std::ostream * travmap_os)
+  {
+    if ("pgm" == opt.name)
+      return createNetPGMBenchmark(opt.pgm_filename,
+				   opt.obstacle_gray,
+				   opt.invert_gray,
+				   opt.resolution,
+				   opt.inscribed_radius,
+				   opt.circumscribed_radius,
+				   opt.inflation_radius,
+				   opt.obstacle_cost,
+				   opt.use_sfl_cost,
+				   progress_os,
+				   travmap_os);
+    return OfficeBenchmark::create(opt.name,
+				   opt.resolution,
+				   opt.inscribed_radius,
+				   opt.circumscribed_radius,
+				   opt.inflation_radius,
+				   opt.obstacle_cost,
+				   opt.use_sfl_cost,
+				   opt.door_width,
+				   opt.hall_width,
+				   progress_os,
+				   travmap_os);
+  }
+  
+}
+
+namespace {
+  
+  ompl::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
+						   unsigned int obstacle_gray,
+						   bool invert_gray,
+						   double resolution,
+						   double inscribed_radius,
+						   double circumscribed_radius,
+						   double inflation_radius,
+						   int obstacle_cost,
+						   bool use_sfl_cost,
+						   std::ostream * progress_os,
+						   std::ostream * travmap_os)
+  {
+    ompl::SBPLBenchmarkSetup * bench(0);
+
+#ifndef MPBENCH_HAVE_NETPGM
+
+    if (progress_os)
+      *progress_os << "ERROR in createNetPGMBenchmark(): no support for netpgm!\n"
+		   << "  Install the netpbm libraries and headers and recompile\n"
+		   << "  mp_benchmarks, for example under Ubuntu Feisty the package\n"
+		   << "  libnetpbm10-dev does the trick.\n";
+    warn("in createNetPGMBenchmark(): no support for netpgm\n");
+    return bench;
+    
+#else // MPBENCH_HAVE_NETPGM
+    
+    FILE * pgmfile(fopen(pgmFileName.c_str(), "rb"));
+    if ( ! pgmfile) {
+      if (progress_os)
+	*progress_os << "ERROR in createNetPGMBenchmark(): fopen(" << pgmFileName << ") failed\n";
+      warn("in createNetPGMBenchmark(): fopen(%s)", pgmFileName.c_str());
+      return bench;
+    }
+    bench = new ompl::SBPLBenchmarkSetup("pgm", resolution, inscribed_radius, circumscribed_radius,
+					 inflation_radius, obstacle_cost, use_sfl_cost);
+    readNetPGM(*bench, pgmfile, obstacle_gray, invert_gray, resolution, progress_os);
+    if (travmap_os) {
+      if (progress_os)
+	*progress_os << "createNetPGMBenchmark(): saving sfl::TraversabilityMap\n";
+      bench->dumpTravmap(*travmap_os);
+    }
+    return bench;
+
+#endif // MPBENCH_HAVE_NETPGM
   }
   
 }

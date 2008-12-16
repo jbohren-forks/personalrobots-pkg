@@ -63,6 +63,8 @@ namespace cam
     StcamException(const char* msg) : std::runtime_error(msg) {}
   };
 
+  // this is now legacy, folded in to StereoData...
+
   class StereoCam
   {
   public:
@@ -77,13 +79,11 @@ namespace cam
 
     virtual bool doRectify();	// rectify images
     virtual bool doDisparity();	// calculate disparity image
+    virtual bool doCalcPts();	// calculate 3D points
 
     virtual bool setTextureThresh(int thresh);
     virtual bool setUniqueThresh(int thresh);
-
-  protected:
-    void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
-    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, uint16_t **d2, size_t *s2);
+    virtual bool setHoropter(int offset);	// set horopter offset
 
   private:
     // buffers for stereo
@@ -94,11 +94,13 @@ namespace cam
   using namespace dcam;
 
   class StereoDcam
-    : public Dcam, public StereoCam
+    : public Dcam
   {
   public:
     StereoDcam(uint64_t guid, size_t buffersize = 8);
     virtual ~StereoDcam();
+
+    StereoData *stIm;		// stereo image and processing
 
     void setFormat(dc1394video_mode_t video = DC1394_VIDEO_MODE_640x480_YUV422,
 			   dc1394framerate_t fps = DC1394_FRAMERATE_30,
@@ -115,10 +117,27 @@ namespace cam
     void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
     void setRegister(uint64_t offset, uint32_t value);
-
+    
+    // processing parameters
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
+    bool setHoropter(int thresh);
+    bool setSpeckleSize(int size);
+    bool setSpeckleDiff(int diff);
+    bool setCorrsize(int size);
+    bool setNumDisp(int ndisp);
+    bool setRangeMax(double thresh);
+    bool setRangeMin(double thresh);
 
+    // visible calls to StereoData functions
+    bool doRectify();
+    bool doDisparity();
+    bool doCalcPts();
+
+  protected:
+    // Videre camera de-interlacing
+    void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
+    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, int16_t **d2, size_t *s2);
 
   protected:
     Dcam *rcam;			// right camera of two-camera setup

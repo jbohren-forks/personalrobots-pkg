@@ -36,7 +36,7 @@
 //-1, 0, 1 per each dX and dY
 #define ENVNAV2D_ACTIONSWIDTH 8
 
-#define ENVNAV2D_DEFAULTOBSTHRESH 1	//see explanation of the value below
+#define ENVNAV2D_DEFAULTOBSTHRESH 253 //253-for willow garage	//see explanation of the value below
 
 //configuration parameters
 typedef struct ENV_NAV2D_CONFIG
@@ -113,15 +113,17 @@ public:
 	void PrintEnv_Config(FILE* fOut);
     
     bool InitializeEnv(int width, int height,
+		       /** if mapdata is NULL the grid is initialized to all freespace */
                        const unsigned char* mapdata,
                        int startx, int starty,
                        int goalx, int goaly, unsigned char obsthresh);
     int SetStart(int x, int y);
     int SetGoal(int x, int y);
     bool UpdateCost(int x, int y, unsigned char newcost);
-	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
+	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
+			      /** if mapdata is NULL the grid is initialized to all freespace */
 			      const unsigned char* mapdata,
 			      int startx, int starty,
 			      int goalx, int goaly);
@@ -134,12 +136,12 @@ public:
 
 	bool IsObstacle(int x, int y);
 	unsigned char GetMapCost(int x, int y);
-	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly);
+	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 
 	EnvironmentNAV2D();
-    ~EnvironmentNAV2D(){};
+    ~EnvironmentNAV2D();
 
     void PrintTimeStat(FILE* fOut);
 	 
@@ -150,7 +152,6 @@ private:
 	//member data
 	EnvNAV2DConfig_t EnvNAV2DCfg;
 	EnvironmentNAV2D_t EnvNAV2D;
-
 
 
 	void ReadConfiguration(FILE* fCfg);

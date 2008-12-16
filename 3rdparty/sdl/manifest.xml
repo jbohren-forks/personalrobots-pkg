@@ -1,0 +1,18 @@
+<package>
+  <description brief="Simple DirectMedia Layer">
+    The Simple DirectMedia Layer is a cross-platform multimedia library
+    designed to provide low level access to audio, keyboard, mouse, joystick,
+    3D hardware via OpenGL, and 2D video framebuffer. 
+  </description>
+  <author>Sam Lantinga, with contributions (see website for details)</author>
+  <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://libsdl.org</url>
+  <install>
+  	<intrepid><apt pkg="libsdl1.2-dev"/></intrepid>
+    <heron><apt pkg="libsdl1.2-dev"/></heron>
+    <gutsy><apt pkg="libsdl1.2-dev"/></gutsy>
+    <feisty><apt pkg="libsdl1.2-dev"/></feisty>
+  </install>
+</package>
+

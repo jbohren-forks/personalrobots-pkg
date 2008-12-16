@@ -34,7 +34,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include <vector>
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 using std::vector;
 using std::string;
 
@@ -118,14 +118,14 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  MultiLogPlayer player;
+  ros::record::MultiPlayer player;
 
   vector<string> files;
 
   for (int i = 1; i < argc; i++)
     files.push_back(argv[i]);
 
-  player.open(files, ros::Time(0.0));
+  player.open(files, ros::Time());
 
   player.addHandler<std_msgs::RobotBase2DOdom>(string("*"), &odom_callback, NULL);
   player.addHandler<std_msgs::LaserScan>(string("*"), &scan_callback, NULL);

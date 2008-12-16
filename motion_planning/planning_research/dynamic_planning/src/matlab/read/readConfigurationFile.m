@@ -9,24 +9,18 @@ cfg.height = c{2};
 c = textscan(fid, 'cellsize(meters): %f');
 cfg.cellsize = c{1};
 
-c = textscan(fid, 'num_theta: %d')
-cfg.num_theta = c{1};
+c = textscan(fid, 'nominalvel(mpersecs): %f');
+cfg.nominalvel = c{1};
 
-c = textscan(fid, 'tv(m/s): %d');
-cfg.tv = c{1};
+c = textscan(fid, 'timetoturn45degsinplace(secs): %f');
+cfg.timetoturn45degsinplace_secs = c{1};
 
-c = textscan(fid, 'max_rv(rad/s): %f');
-cfg.max_rv = c{1};
-    
-c = textscan(fid, 'num_rv: %d');
-cfg.num_rv = c{1};
-
-c = textscan(fid, 'short_long_dur_for_actions: %f %f');
-cfg.short_dur = c{1};
-cfg.long_dur = c{2};
-
-c = textscan(fid, 'dur_disc(s): %f');
-cfg.dur_disc = c{1};
+cfg.num_theta = 8;
+cfg.max_rv = 1.57;
+cfg.num_rv = 5;
+cfg.short_dur = 0.5;
+cfg.long_dur = 2;
+cfg.dur_disc = 0.1;
 
 c = textscan(fid, 'start(m,rad): %f %f %f');
 cfg.start_x = c{1};
@@ -50,6 +44,7 @@ end
 
 c = textscan(fid, 'environment:');
 for i=1:cfg.height
+    fprintf('%d ', i);
     c = textscan(fid, '%d ', cfg.width);
     cfg.environment(i,:) = c{:};
 end

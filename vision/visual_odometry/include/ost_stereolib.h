@@ -40,6 +40,12 @@ extern "C" {
 
 // kernel size is fixed
 #define KSIZE 7
+#if defined(XKERN)
+#undef XKERN
+#endif
+#if defined(YKERN)
+#undef YKERN
+#endif
 #define XKERN KSIZE
 #define YKERN KSIZE
 

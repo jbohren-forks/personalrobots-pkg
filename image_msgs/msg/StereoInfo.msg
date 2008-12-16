@@ -11,7 +11,7 @@ uint32 width
 
 float64[3]  T  # Pose of right camera in left camera coords
 float64[3]  Om # rotation vector
-float64[12] RP # Reprojection Matrix
+float64[16] RP # Reprojection Matrix
 
 int32 dpp
 int32 numDisp

@@ -158,11 +158,6 @@ public:
     mInlierIndices = NULL;
     return inliers;
   }
-	/**
-	 *  A convenient utility to construct a 4x4 transformation matrix
-	 *  from a 3x3 rotation matrix and a 3x1 translation matrix
-	 */
-	static bool constructTransform(const CvMat& rot, const CvMat& shift, CvMat& transform);
 
 protected:
 	/// a utility function to decide if the 3 points are too close to be
@@ -190,7 +185,8 @@ protected:
 	);
 	/// An internal interfacing method that construct the 4x4 homography matrix from
 	/// rotation matrix R and translation matrix T
-	static bool constructRT(CvMat *R, CvMat *T, CvMat *RT);
+	/// @todo remove this function
+	//static bool constructRT(const CvMat *R, const CvMat *T, CvMat *RT);
 	/// Check and return the number of inliers in the 2 corresponding list
 	/// of 3D point clouds.
 	/// @return The number of inliers.

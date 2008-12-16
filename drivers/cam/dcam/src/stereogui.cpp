@@ -7,77 +7,102 @@ Fl_Menu_Item stereogui::menu_[] = {
  {"Load Images...", 0,  (Fl_Callback*)load_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
  {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
  {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Exit", 0,  (Fl_Callback*)do_exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0},
+ {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Calibrate...", 0,  (Fl_Callback*)cal_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Debug...", 0,  (Fl_Callback*)debug_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {0,0,0,0,0,0,0,0,0}
+};
+
+Fl_Menu_Item stereogui::menu_Size[] = {
+ {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {0,0,0,0,0,0,0,0,0}
+};
+
+Fl_Menu_Item stereogui::menu_Rate[] = {
+ {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
 stereogui::stereogui() {
-  { stereo_calibration = new Fl_Window(675, 360, "Open STereo");
+  { stereo_calibration = new Fl_Window(655, 305, "Open STereo");
     stereo_calibration->labelsize(11);
     stereo_calibration->user_data((void*)(this));
-    { Fl_Group* o = new Fl_Group(5, 25, 855, 375);
-      { window_tab = new Fl_Tabs(5, 25, 665, 295);
+    { info_message = new Fl_Output(5, 275, 490, 25);
+      info_message->box(FL_BORDER_BOX);
+      info_message->color(FL_BACKGROUND_COLOR);
+      info_message->labelsize(11);
+      info_message->textsize(11);
+    } // Fl_Output* info_message
+    { Fl_Menu_Bar* o = new Fl_Menu_Bar(0, 0, 680, 20);
+      o->menu(menu_);
+    } // Fl_Menu_Bar* o
+    { Fl_Group* o = new Fl_Group(5, 25, 645, 245);
+      { Fl_Group* o = new Fl_Group(5, 25, 320, 245);
+        { Fl_Box* o = new Fl_Box(5, 25, 320, 240);
+          o->box(FL_EMBOSSED_FRAME);
+          o->labeltype(FL_NO_LABEL);
+        } // Fl_Box* o
+        { mainLeft = new calImageWindow(5, 25, 320, 240);
+          mainLeft->box(FL_NO_BOX);
+          mainLeft->color(FL_BACKGROUND_COLOR);
+          mainLeft->selection_color(FL_BACKGROUND_COLOR);
+          mainLeft->labeltype(FL_NO_LABEL);
+          mainLeft->labelfont(0);
+          mainLeft->labelsize(14);
+          mainLeft->labelcolor(FL_FOREGROUND_COLOR);
+          mainLeft->align(FL_ALIGN_CENTER);
+          mainLeft->when(FL_WHEN_RELEASE);
+        } // calImageWindow* mainLeft
+        o->end();
+      } // Fl_Group* o
+      { Fl_Group* o = new Fl_Group(330, 25, 320, 245);
+        { Fl_Box* o = new Fl_Box(330, 25, 320, 240);
+          o->box(FL_EMBOSSED_FRAME);
+          o->labeltype(FL_NO_LABEL);
+        } // Fl_Box* o
+        { mainRight = new calImageWindow(330, 25, 320, 240);
+          mainRight->box(FL_NO_BOX);
+          mainRight->color(FL_BACKGROUND_COLOR);
+          mainRight->selection_color(FL_BACKGROUND_COLOR);
+          mainRight->labeltype(FL_NO_LABEL);
+          mainRight->labelfont(0);
+          mainRight->labelsize(14);
+          mainRight->labelcolor(FL_FOREGROUND_COLOR);
+          mainRight->align(FL_ALIGN_CENTER);
+          mainRight->when(FL_WHEN_RELEASE);
+        } // calImageWindow* mainRight
+        o->end();
+      } // Fl_Group* o
+      o->end();
+    } // Fl_Group* o
+    stereo_calibration->end();
+  } // Fl_Window* stereo_calibration
+  { cal_images = new Fl_Window(675, 295, "Calibration images");
+    cal_images->user_data((void*)(this));
+    { Fl_Group* o = new Fl_Group(5, 0, 855, 375);
+      { window_tab = new Fl_Tabs(5, 0, 665, 295);
         window_tab->box(FL_UP_BOX);
         window_tab->labeltype(FL_NO_LABEL);
-        { tab0 = new Fl_Group(20, 70, 650, 250, "Main       ");
-          tab0->labelsize(11);
-          tab0->user_data((void*)(0));
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 60, 320, 240);
-                o->box(FL_EMBOSSED_FRAME);
-                o->labeltype(FL_NO_LABEL);
-              } // Fl_Box* o
-              { calLeft0 = new calImageWindow(15, 60, 320, 240);
-                calLeft0->box(FL_NO_BOX);
-                calLeft0->color(FL_BACKGROUND_COLOR);
-                calLeft0->selection_color(FL_BACKGROUND_COLOR);
-                calLeft0->labeltype(FL_NO_LABEL);
-                calLeft0->labelfont(0);
-                calLeft0->labelsize(14);
-                calLeft0->labelcolor(FL_FOREGROUND_COLOR);
-                calLeft0->align(FL_ALIGN_CENTER);
-                calLeft0->when(FL_WHEN_RELEASE);
-              } // calImageWindow* calLeft0
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(340, 60, 320, 240);
-                o->box(FL_EMBOSSED_FRAME);
-                o->labeltype(FL_NO_LABEL);
-              } // Fl_Box* o
-              { calRight0 = new calImageWindow(340, 60, 320, 240);
-                calRight0->box(FL_NO_BOX);
-                calRight0->color(FL_BACKGROUND_COLOR);
-                calRight0->selection_color(FL_BACKGROUND_COLOR);
-                calRight0->labeltype(FL_NO_LABEL);
-                calRight0->labelfont(0);
-                calRight0->labelsize(14);
-                calRight0->labelcolor(FL_FOREGROUND_COLOR);
-                calRight0->align(FL_ALIGN_CENTER);
-                calRight0->when(FL_WHEN_RELEASE);
-              } // calImageWindow* calRight0
-              o->end();
-            } // Fl_Group* o
-            o->end();
-          } // Fl_Group* o
-          tab0->end();
-        } // Fl_Group* tab0
-        { tab1 = new Fl_Group(10, 60, 660, 250, " 1 ");
+        { tab1 = new Fl_Group(10, 35, 660, 250, " 1 ");
           tab1->labelsize(11);
           tab1->user_data((void*)(1));
           tab1->hide();
           tab1->deactivate();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 60, 320, 240);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 35, 320, 240);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft1 = new calImageWindow(15, 60, 320, 240);
+              { calLeft1 = new calImageWindow(15, 35, 320, 240);
                 calLeft1->box(FL_NO_BOX);
                 calLeft1->color(FL_BACKGROUND_COLOR);
                 calLeft1->selection_color(FL_BACKGROUND_COLOR);
@@ -90,12 +115,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft1
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(340, 60, 320, 240);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(340, 35, 320, 240);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight1 = new calImageWindow(340, 60, 320, 240);
+              { calRight1 = new calImageWindow(340, 35, 320, 240);
                 calRight1->box(FL_NO_BOX);
                 calRight1->color(FL_BACKGROUND_COLOR);
                 calRight1->selection_color(FL_BACKGROUND_COLOR);
@@ -112,17 +137,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab1->end();
         } // Fl_Group* tab1
-        { tab2 = new Fl_Group(10, 50, 660, 260, " 2");
+        { tab2 = new Fl_Group(10, 25, 660, 260, " 2");
           tab2->labelsize(11);
           tab2->user_data((void*)(2));
           tab2->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft2 = new calImageWindow(15, 60, 320, 240);
+              { calLeft2 = new calImageWindow(15, 35, 320, 240);
                 calLeft2->box(FL_NO_BOX);
                 calLeft2->color(FL_BACKGROUND_COLOR);
                 calLeft2->selection_color(FL_BACKGROUND_COLOR);
@@ -135,12 +160,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft2
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight2 = new calImageWindow(340, 60, 320, 240);
+              { calRight2 = new calImageWindow(340, 35, 320, 240);
                 calRight2->box(FL_NO_BOX);
                 calRight2->color(FL_BACKGROUND_COLOR);
                 calRight2->selection_color(FL_BACKGROUND_COLOR);
@@ -157,17 +182,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab2->end();
         } // Fl_Group* tab2
-        { tab3 = new Fl_Group(10, 50, 660, 260, " 3");
+        { tab3 = new Fl_Group(10, 25, 660, 260, " 3");
           tab3->labelsize(11);
           tab3->user_data((void*)(3));
           tab3->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft3 = new calImageWindow(15, 60, 320, 240);
+              { calLeft3 = new calImageWindow(15, 35, 320, 240);
                 calLeft3->box(FL_NO_BOX);
                 calLeft3->color(FL_BACKGROUND_COLOR);
                 calLeft3->selection_color(FL_BACKGROUND_COLOR);
@@ -180,12 +205,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft3
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight3 = new calImageWindow(340, 60, 320, 240);
+              { calRight3 = new calImageWindow(340, 35, 320, 240);
                 calRight3->box(FL_NO_BOX);
                 calRight3->color(FL_BACKGROUND_COLOR);
                 calRight3->selection_color(FL_BACKGROUND_COLOR);
@@ -202,17 +227,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab3->end();
         } // Fl_Group* tab3
-        { tab4 = new Fl_Group(10, 50, 660, 260, " 4");
+        { tab4 = new Fl_Group(10, 25, 660, 260, " 4");
           tab4->labelsize(11);
           tab4->user_data((void*)(4));
           tab4->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft4 = new calImageWindow(15, 60, 320, 240);
+              { calLeft4 = new calImageWindow(15, 35, 320, 240);
                 calLeft4->box(FL_NO_BOX);
                 calLeft4->color(FL_BACKGROUND_COLOR);
                 calLeft4->selection_color(FL_BACKGROUND_COLOR);
@@ -225,12 +250,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft4
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight4 = new calImageWindow(340, 60, 320, 240);
+              { calRight4 = new calImageWindow(340, 35, 320, 240);
                 calRight4->box(FL_NO_BOX);
                 calRight4->color(FL_BACKGROUND_COLOR);
                 calRight4->selection_color(FL_BACKGROUND_COLOR);
@@ -247,17 +272,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab4->end();
         } // Fl_Group* tab4
-        { tab5 = new Fl_Group(10, 50, 660, 260, " 5");
+        { tab5 = new Fl_Group(10, 25, 660, 260, " 5");
           tab5->labelsize(11);
           tab5->user_data((void*)(5));
           tab5->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft5 = new calImageWindow(15, 60, 320, 240);
+              { calLeft5 = new calImageWindow(15, 35, 320, 240);
                 calLeft5->box(FL_NO_BOX);
                 calLeft5->color(FL_BACKGROUND_COLOR);
                 calLeft5->selection_color(FL_BACKGROUND_COLOR);
@@ -270,12 +295,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft5
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight5 = new calImageWindow(340, 60, 320, 240);
+              { calRight5 = new calImageWindow(340, 35, 320, 240);
                 calRight5->box(FL_NO_BOX);
                 calRight5->color(FL_BACKGROUND_COLOR);
                 calRight5->selection_color(FL_BACKGROUND_COLOR);
@@ -292,17 +317,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab5->end();
         } // Fl_Group* tab5
-        { tab6 = new Fl_Group(10, 50, 660, 260, " 6");
+        { tab6 = new Fl_Group(10, 25, 660, 260, " 6");
           tab6->labelsize(11);
           tab6->user_data((void*)(6));
           tab6->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft6 = new calImageWindow(15, 60, 320, 240);
+              { calLeft6 = new calImageWindow(15, 35, 320, 240);
                 calLeft6->box(FL_NO_BOX);
                 calLeft6->color(FL_BACKGROUND_COLOR);
                 calLeft6->selection_color(FL_BACKGROUND_COLOR);
@@ -315,12 +340,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft6
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight6 = new calImageWindow(340, 60, 320, 240);
+              { calRight6 = new calImageWindow(340, 35, 320, 240);
                 calRight6->box(FL_NO_BOX);
                 calRight6->color(FL_BACKGROUND_COLOR);
                 calRight6->selection_color(FL_BACKGROUND_COLOR);
@@ -337,17 +362,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab6->end();
         } // Fl_Group* tab6
-        { tab7 = new Fl_Group(10, 50, 660, 260, " 7");
+        { tab7 = new Fl_Group(10, 25, 660, 260, " 7");
           tab7->labelsize(11);
           tab7->user_data((void*)(7));
           tab7->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft7 = new calImageWindow(15, 60, 320, 240);
+              { calLeft7 = new calImageWindow(15, 35, 320, 240);
                 calLeft7->box(FL_NO_BOX);
                 calLeft7->color(FL_BACKGROUND_COLOR);
                 calLeft7->selection_color(FL_BACKGROUND_COLOR);
@@ -360,12 +385,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft7
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight7 = new calImageWindow(340, 60, 320, 240);
+              { calRight7 = new calImageWindow(340, 35, 320, 240);
                 calRight7->box(FL_NO_BOX);
                 calRight7->color(FL_BACKGROUND_COLOR);
                 calRight7->selection_color(FL_BACKGROUND_COLOR);
@@ -382,17 +407,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab7->end();
         } // Fl_Group* tab7
-        { tab8 = new Fl_Group(10, 50, 660, 260, " 8");
+        { tab8 = new Fl_Group(10, 25, 660, 260, " 8");
           tab8->labelsize(11);
           tab8->user_data((void*)(8));
           tab8->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft8 = new calImageWindow(15, 60, 320, 240);
+              { calLeft8 = new calImageWindow(15, 35, 320, 240);
                 calLeft8->box(FL_NO_BOX);
                 calLeft8->color(FL_BACKGROUND_COLOR);
                 calLeft8->selection_color(FL_BACKGROUND_COLOR);
@@ -405,12 +430,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft8
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight8 = new calImageWindow(340, 60, 320, 240);
+              { calRight8 = new calImageWindow(340, 35, 320, 240);
                 calRight8->box(FL_NO_BOX);
                 calRight8->color(FL_BACKGROUND_COLOR);
                 calRight8->selection_color(FL_BACKGROUND_COLOR);
@@ -427,17 +452,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab8->end();
         } // Fl_Group* tab8
-        { tab9 = new Fl_Group(10, 50, 660, 260, " 9");
+        { tab9 = new Fl_Group(10, 25, 660, 260, " 9");
           tab9->labelsize(11);
           tab9->user_data((void*)(9));
           tab9->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft9 = new calImageWindow(15, 60, 320, 240);
+              { calLeft9 = new calImageWindow(15, 35, 320, 240);
                 calLeft9->box(FL_NO_BOX);
                 calLeft9->color(FL_BACKGROUND_COLOR);
                 calLeft9->selection_color(FL_BACKGROUND_COLOR);
@@ -450,12 +475,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft9
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight9 = new calImageWindow(340, 60, 320, 240);
+              { calRight9 = new calImageWindow(340, 35, 320, 240);
                 calRight9->box(FL_NO_BOX);
                 calRight9->color(FL_BACKGROUND_COLOR);
                 calRight9->selection_color(FL_BACKGROUND_COLOR);
@@ -472,17 +497,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab9->end();
         } // Fl_Group* tab9
-        { tab10 = new Fl_Group(10, 50, 660, 260, " 10");
+        { tab10 = new Fl_Group(10, 25, 660, 260, " 10");
           tab10->labelsize(11);
           tab10->user_data((void*)(10));
           tab10->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft10 = new calImageWindow(15, 60, 320, 240);
+              { calLeft10 = new calImageWindow(15, 35, 320, 240);
                 calLeft10->box(FL_NO_BOX);
                 calLeft10->color(FL_BACKGROUND_COLOR);
                 calLeft10->selection_color(FL_BACKGROUND_COLOR);
@@ -495,12 +520,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft10
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight10 = new calImageWindow(340, 60, 320, 240);
+              { calRight10 = new calImageWindow(340, 35, 320, 240);
                 calRight10->box(FL_NO_BOX);
                 calRight10->color(FL_BACKGROUND_COLOR);
                 calRight10->selection_color(FL_BACKGROUND_COLOR);
@@ -517,17 +542,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab10->end();
         } // Fl_Group* tab10
-        { tab11 = new Fl_Group(10, 50, 660, 260, " 11");
+        { tab11 = new Fl_Group(10, 25, 660, 260, " 11");
           tab11->labelsize(11);
           tab11->user_data((void*)(11));
           tab11->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft11 = new calImageWindow(15, 60, 320, 240);
+              { calLeft11 = new calImageWindow(15, 35, 320, 240);
                 calLeft11->box(FL_NO_BOX);
                 calLeft11->color(FL_BACKGROUND_COLOR);
                 calLeft11->selection_color(FL_BACKGROUND_COLOR);
@@ -540,12 +565,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft11
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight11 = new calImageWindow(340, 60, 320, 240);
+              { calRight11 = new calImageWindow(340, 35, 320, 240);
                 calRight11->box(FL_NO_BOX);
                 calRight11->color(FL_BACKGROUND_COLOR);
                 calRight11->selection_color(FL_BACKGROUND_COLOR);
@@ -562,17 +587,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab11->end();
         } // Fl_Group* tab11
-        { tab12 = new Fl_Group(10, 50, 660, 260, " 12");
+        { tab12 = new Fl_Group(10, 25, 660, 260, " 12");
           tab12->labelsize(11);
           tab12->user_data((void*)(12));
           tab12->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft12 = new calImageWindow(15, 60, 320, 240);
+              { calLeft12 = new calImageWindow(15, 35, 320, 240);
                 calLeft12->box(FL_NO_BOX);
                 calLeft12->color(FL_BACKGROUND_COLOR);
                 calLeft12->selection_color(FL_BACKGROUND_COLOR);
@@ -585,12 +610,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft12
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight12 = new calImageWindow(340, 60, 320, 240);
+              { calRight12 = new calImageWindow(340, 35, 320, 240);
                 calRight12->box(FL_NO_BOX);
                 calRight12->color(FL_BACKGROUND_COLOR);
                 calRight12->selection_color(FL_BACKGROUND_COLOR);
@@ -607,17 +632,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab12->end();
         } // Fl_Group* tab12
-        { tab13 = new Fl_Group(10, 50, 660, 260, " 13");
+        { tab13 = new Fl_Group(10, 25, 660, 260, " 13");
           tab13->labelsize(11);
           tab13->user_data((void*)(13));
           tab13->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft13 = new calImageWindow(15, 60, 320, 240);
+              { calLeft13 = new calImageWindow(15, 35, 320, 240);
                 calLeft13->box(FL_NO_BOX);
                 calLeft13->color(FL_BACKGROUND_COLOR);
                 calLeft13->selection_color(FL_BACKGROUND_COLOR);
@@ -630,12 +655,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft13
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight13 = new calImageWindow(340, 60, 320, 240);
+              { calRight13 = new calImageWindow(340, 35, 320, 240);
                 calRight13->box(FL_NO_BOX);
                 calRight13->color(FL_BACKGROUND_COLOR);
                 calRight13->selection_color(FL_BACKGROUND_COLOR);
@@ -652,17 +677,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab13->end();
         } // Fl_Group* tab13
-        { tab14 = new Fl_Group(10, 50, 660, 260, " 14");
+        { tab14 = new Fl_Group(10, 25, 660, 260, " 14");
           tab14->labelsize(11);
           tab14->user_data((void*)(14));
           tab14->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft14 = new calImageWindow(15, 60, 320, 240);
+              { calLeft14 = new calImageWindow(15, 35, 320, 240);
                 calLeft14->box(FL_NO_BOX);
                 calLeft14->color(FL_BACKGROUND_COLOR);
                 calLeft14->selection_color(FL_BACKGROUND_COLOR);
@@ -675,12 +700,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft14
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight14 = new calImageWindow(340, 60, 320, 240);
+              { calRight14 = new calImageWindow(340, 35, 320, 240);
                 calRight14->box(FL_NO_BOX);
                 calRight14->color(FL_BACKGROUND_COLOR);
                 calRight14->selection_color(FL_BACKGROUND_COLOR);
@@ -697,17 +722,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab14->end();
         } // Fl_Group* tab14
-        { tab15 = new Fl_Group(10, 50, 660, 260, " 15");
+        { tab15 = new Fl_Group(10, 25, 660, 260, " 15");
           tab15->labelsize(11);
           tab15->user_data((void*)(15));
           tab15->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft15 = new calImageWindow(15, 60, 320, 240);
+              { calLeft15 = new calImageWindow(15, 35, 320, 240);
                 calLeft15->box(FL_NO_BOX);
                 calLeft15->color(FL_BACKGROUND_COLOR);
                 calLeft15->selection_color(FL_BACKGROUND_COLOR);
@@ -720,12 +745,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft15
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight15 = new calImageWindow(340, 60, 320, 240);
+              { calRight15 = new calImageWindow(340, 35, 320, 240);
                 calRight15->box(FL_NO_BOX);
                 calRight15->color(FL_BACKGROUND_COLOR);
                 calRight15->selection_color(FL_BACKGROUND_COLOR);
@@ -742,17 +767,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab15->end();
         } // Fl_Group* tab15
-        { tab16 = new Fl_Group(10, 50, 660, 260, " 16");
+        { tab16 = new Fl_Group(10, 25, 660, 260, " 16");
           tab16->labelsize(11);
           tab16->user_data((void*)(16));
           tab16->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft16 = new calImageWindow(15, 60, 320, 240);
+              { calLeft16 = new calImageWindow(15, 35, 320, 240);
                 calLeft16->box(FL_NO_BOX);
                 calLeft16->color(FL_BACKGROUND_COLOR);
                 calLeft16->selection_color(FL_BACKGROUND_COLOR);
@@ -765,12 +790,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft16
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight16 = new calImageWindow(340, 60, 320, 240);
+              { calRight16 = new calImageWindow(340, 35, 320, 240);
                 calRight16->box(FL_NO_BOX);
                 calRight16->color(FL_BACKGROUND_COLOR);
                 calRight16->selection_color(FL_BACKGROUND_COLOR);
@@ -787,17 +812,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab16->end();
         } // Fl_Group* tab16
-        { tab17 = new Fl_Group(10, 50, 660, 260, " 17");
+        { tab17 = new Fl_Group(10, 25, 660, 260, " 17");
           tab17->labelsize(11);
           tab17->user_data((void*)(17));
           tab17->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft17 = new calImageWindow(15, 60, 320, 240);
+              { calLeft17 = new calImageWindow(15, 35, 320, 240);
                 calLeft17->box(FL_NO_BOX);
                 calLeft17->color(FL_BACKGROUND_COLOR);
                 calLeft17->selection_color(FL_BACKGROUND_COLOR);
@@ -810,12 +835,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft17
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight17 = new calImageWindow(340, 60, 320, 240);
+              { calRight17 = new calImageWindow(340, 35, 320, 240);
                 calRight17->box(FL_NO_BOX);
                 calRight17->color(FL_BACKGROUND_COLOR);
                 calRight17->selection_color(FL_BACKGROUND_COLOR);
@@ -832,17 +857,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab17->end();
         } // Fl_Group* tab17
-        { tab18 = new Fl_Group(10, 50, 660, 260, " 18");
+        { tab18 = new Fl_Group(10, 25, 660, 260, " 18");
           tab18->labelsize(11);
           tab18->user_data((void*)(18));
           tab18->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft18 = new calImageWindow(15, 60, 320, 240);
+              { calLeft18 = new calImageWindow(15, 35, 320, 240);
                 calLeft18->box(FL_NO_BOX);
                 calLeft18->color(FL_BACKGROUND_COLOR);
                 calLeft18->selection_color(FL_BACKGROUND_COLOR);
@@ -855,12 +880,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft18
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight18 = new calImageWindow(340, 60, 320, 240);
+              { calRight18 = new calImageWindow(340, 35, 320, 240);
                 calRight18->box(FL_NO_BOX);
                 calRight18->color(FL_BACKGROUND_COLOR);
                 calRight18->selection_color(FL_BACKGROUND_COLOR);
@@ -877,17 +902,17 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab18->end();
         } // Fl_Group* tab18
-        { tab19 = new Fl_Group(10, 50, 660, 260, " 19");
+        { tab19 = new Fl_Group(10, 25, 660, 260, " 19");
           tab19->labelsize(11);
           tab19->user_data((void*)(19));
           tab19->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft19 = new calImageWindow(15, 60, 320, 240);
+              { calLeft19 = new calImageWindow(15, 35, 320, 240);
                 calLeft19->box(FL_NO_BOX);
                 calLeft19->color(FL_BACKGROUND_COLOR);
                 calLeft19->selection_color(FL_BACKGROUND_COLOR);
@@ -900,12 +925,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft19
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight19 = new calImageWindow(340, 60, 320, 240);
+              { calRight19 = new calImageWindow(340, 35, 320, 240);
                 calRight19->box(FL_NO_BOX);
                 calRight19->color(FL_BACKGROUND_COLOR);
                 calRight19->selection_color(FL_BACKGROUND_COLOR);
@@ -922,17 +947,16 @@ stereogui::stereogui() {
           } // Fl_Group* o
           tab19->end();
         } // Fl_Group* tab19
-        { tab20 = new Fl_Group(10, 50, 660, 260, " 20");
+        { tab20 = new Fl_Group(10, 25, 660, 260, " 20");
           tab20->labelsize(11);
           tab20->user_data((void*)(20));
-          tab20->hide();
-          { Fl_Group* o = new Fl_Group(15, 60, 645, 245);
-            { Fl_Group* o = new Fl_Group(15, 60, 320, 245);
-              { Fl_Box* o = new Fl_Box(15, 65, 320, 235);
+          { Fl_Group* o = new Fl_Group(15, 35, 645, 245);
+            { Fl_Group* o = new Fl_Group(15, 35, 320, 245);
+              { Fl_Box* o = new Fl_Box(15, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calLeft20 = new calImageWindow(15, 60, 320, 240);
+              { calLeft20 = new calImageWindow(15, 35, 320, 240);
                 calLeft20->box(FL_NO_BOX);
                 calLeft20->color(FL_BACKGROUND_COLOR);
                 calLeft20->selection_color(FL_BACKGROUND_COLOR);
@@ -945,12 +969,12 @@ stereogui::stereogui() {
               } // calImageWindow* calLeft20
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(340, 60, 320, 240);
-              { Fl_Box* o = new Fl_Box(340, 65, 320, 235);
+            { Fl_Group* o = new Fl_Group(340, 35, 320, 240);
+              { Fl_Box* o = new Fl_Box(340, 40, 320, 235);
                 o->box(FL_EMBOSSED_FRAME);
                 o->labeltype(FL_NO_LABEL);
               } // Fl_Box* o
-              { calRight20 = new calImageWindow(340, 60, 320, 240);
+              { calRight20 = new calImageWindow(340, 35, 320, 240);
                 calRight20->box(FL_NO_BOX);
                 calRight20->color(FL_BACKGROUND_COLOR);
                 calRight20->selection_color(FL_BACKGROUND_COLOR);
@@ -971,18 +995,9 @@ stereogui::stereogui() {
       } // Fl_Tabs* window_tab
       o->end();
     } // Fl_Group* o
-    { info_message = new Fl_Output(5, 325, 490, 25);
-      info_message->box(FL_BORDER_BOX);
-      info_message->color(FL_BACKGROUND_COLOR);
-      info_message->labelsize(11);
-      info_message->textsize(11);
-    } // Fl_Output* info_message
-    { Fl_Menu_Bar* o = new Fl_Menu_Bar(0, 0, 680, 20);
-      o->menu(menu_);
-    } // Fl_Menu_Bar* o
-    stereo_calibration->end();
-  } // Fl_Window* stereo_calibration
-  { cal_window = new Fl_Window(305, 260, "Calibration");
+    cal_images->end();
+  } // Fl_Window* cal_images
+  { cal_window = new Fl_Window(305, 340, "Calibration");
     cal_window->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(10, 20, 160, 300);
       { Fl_Button* o = capture_button = new Fl_Button(10, 20, 90, 25, "Capture");
@@ -991,48 +1006,53 @@ stereogui::stereogui() {
         capture_button->callback((Fl_Callback*)cal_capture_cb);
         o->user_data((void *)this);
       } // Fl_Button* capture_button
-      { Fl_Button* o = load_button = new Fl_Button(10, 90, 90, 25, "Load both");
+      { Fl_Button* o = load_button = new Fl_Button(10, 130, 90, 25, "Load both");
         load_button->down_box(FL_DOWN_BOX);
         load_button->labelsize(11);
         load_button->callback((Fl_Callback*)cal_load_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_button
-      { Fl_Button* o = save_button = new Fl_Button(10, 160, 90, 25, "Save");
+      { Fl_Button* o = save_button = new Fl_Button(10, 200, 90, 25, "Save");
         save_button->down_box(FL_DOWN_BOX);
         save_button->labelsize(11);
         save_button->callback((Fl_Callback*)cal_save_image_cb);
         o->user_data((void *)this);
       } // Fl_Button* save_button
-      { Fl_Button* o = save_all_button = new Fl_Button(10, 185, 90, 25, "Save All");
+      { Fl_Button* o = save_all_button = new Fl_Button(10, 225, 90, 25, "Save All");
         save_all_button->down_box(FL_DOWN_BOX);
         save_all_button->labelsize(11);
         save_all_button->callback((Fl_Callback*)cal_save_all_cb);
         o->user_data((void *)this);
       } // Fl_Button* save_all_button
-      { Fl_Button* o = delete_button = new Fl_Button(10, 225, 90, 25, "Delete");
+      { Fl_Button* o = delete_button = new Fl_Button(10, 265, 90, 25, "Delete");
         delete_button->down_box(FL_DOWN_BOX);
         delete_button->labelsize(11);
         delete_button->callback((Fl_Callback*)cal_delete_image);
         o->user_data((void *)this);
       } // Fl_Button* delete_button
-      { Fl_Button* o = load_left_button = new Fl_Button(10, 65, 45, 25, "Load L");
+      { Fl_Button* o = load_left_button = new Fl_Button(10, 105, 45, 25, "Load L");
         load_left_button->down_box(FL_DOWN_BOX);
         load_left_button->labelsize(11);
         load_left_button->callback((Fl_Callback*)cal_load_left_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_left_button
-      { Fl_Button* o = load_right_button = new Fl_Button(55, 65, 45, 25, "Load R");
+      { Fl_Button* o = load_right_button = new Fl_Button(55, 105, 45, 25, "Load R");
         load_right_button->down_box(FL_DOWN_BOX);
         load_right_button->labelsize(11);
         load_right_button->callback((Fl_Callback*)cal_load_right_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_right_button
-      { Fl_Button* o = load_seq_button = new Fl_Button(10, 115, 90, 25, "Load sequence");
+      { Fl_Button* o = load_seq_button = new Fl_Button(10, 155, 90, 25, "Load sequence");
         load_seq_button->down_box(FL_DOWN_BOX);
         load_seq_button->labelsize(11);
         load_seq_button->callback((Fl_Callback*)cal_load_seq_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_seq_button
+      { track_button = new Fl_Light_Button(10, 55, 100, 25, "Track chessboard");
+        track_button->labelsize(11);
+        track_button->callback((Fl_Callback*)do_track_cb);
+        Fl_Group::current()->resizable(track_button);
+      } // Fl_Light_Button* track_button
       o->end();
     } // Fl_Group* o
     { Fl_Group* o = new Fl_Group(130, 200, 175, 55);
@@ -1069,7 +1089,7 @@ stereogui::stereogui() {
       } // Fl_Value_Input* user_check_y
       o->end();
     } // Fl_Group* o
-    { Fl_Group* o = new Fl_Group(120, 20, 165, 65);
+    { Fl_Group* o = new Fl_Group(120, 20, 165, 290);
       { Fl_Button* o = calibrate_button = new Fl_Button(135, 20, 75, 25, "Calibrate");
         calibrate_button->down_box(FL_DOWN_BOX);
         calibrate_button->labelsize(11);
@@ -1094,6 +1114,11 @@ stereogui::stereogui() {
         epi_button->callback((Fl_Callback*)cal_epipolar_cb);
         o->user_data((void *)this);
       } // Fl_Button* epi_button
+      { Fl_Button* o = upload_params_button = new Fl_Button(130, 270, 130, 40, "Upload params");
+        upload_params_button->down_box(FL_DOWN_BOX);
+        upload_params_button->callback((Fl_Callback*)cal_upload_params_cb);
+        o->user_data((void *)this);
+      } // Fl_Button* upload_params_button
       o->end();
     } // Fl_Group* o
     { Fl_Group* o = new Fl_Group(125, 105, 180, 95);
@@ -1135,11 +1160,11 @@ stereogui::stereogui() {
   { stereo_window = new Fl_Window(265, 260, "Stereo");
     stereo_window->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(20, 135, 285, 120);
-      { Fl_Box* o = new Fl_Box(20, 135, 115, 85, "label");
+      { Fl_Box* o = new Fl_Box(20, 135, 140, 110, "label");
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       } // Fl_Box* o
-      { Fl_Counter* o = new Fl_Counter(70, 140, 55, 20, "Unique:");
+      { Fl_Counter* o = new Fl_Counter(90, 140, 55, 20, "UniqueThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1149,7 +1174,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)unique_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(70, 165, 55, 20, "Texture:");
+      { Fl_Counter* o = new Fl_Counter(90, 165, 55, 20, "TextureThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1159,14 +1184,24 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)texture_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(70, 190, 55, 20, "Speckle:");
+      { Fl_Counter* o = new Fl_Counter(90, 190, 55, 20, "SpeckleSize");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
-        o->maximum(100);
+        o->maximum(400);
+        o->step(10);
+        o->value(100);
+        o->callback((Fl_Callback*)speckle_size_cb);
+        o->align(FL_ALIGN_LEFT);
+      } // Fl_Counter* o
+      { Fl_Counter* o = new Fl_Counter(90, 215, 55, 20, "SpeckleDiff");
+        o->type(1);
+        o->labelsize(11);
+        o->minimum(0);
+        o->maximum(20);
         o->step(1);
-        o->value(30);
-        o->callback((Fl_Callback*)speckle_cb);
+        o->value(8);
+        o->callback((Fl_Callback*)speckle_diff_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
       o->end();
@@ -1198,20 +1233,128 @@ stereogui::stereogui() {
       { Fl_Counter* o = new Fl_Counter(75, 85, 55, 20, "X off:");
         o->type(1);
         o->labelsize(11);
-        o->minimum(-40);
-        o->maximum(40);
+        o->minimum(-4);
+        o->maximum(128);
         o->step(1);
         o->callback((Fl_Callback*)xoff_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Button* o = stereo_button = new Fl_Button(160, 30, 90, 25, "Do Stereo");
-        stereo_button->down_box(FL_DOWN_BOX);
+      { Fl_Light_Button* o = rectify_button = new Fl_Light_Button(160, 35, 75, 25, "Do Rectify");
+        rectify_button->box(FL_THIN_UP_BOX);
+        rectify_button->labelsize(11);
+        rectify_button->callback((Fl_Callback*)do_rectify_cb);
+        o->user_data((void *)this);
+      } // Fl_Light_Button* rectify_button
+      { Fl_Light_Button* o = stereo_button = new Fl_Light_Button(160, 65, 75, 25, "Do Stereo");
+        stereo_button->box(FL_THIN_UP_BOX);
         stereo_button->labelsize(11);
         stereo_button->callback((Fl_Callback*)do_stereo_cb);
         o->user_data((void *)this);
-      } // Fl_Button* stereo_button
+      } // Fl_Light_Button* stereo_button
+      { Fl_Light_Button* o = x3d_button = new Fl_Light_Button(160, 95, 75, 25, "Do 3D");
+        x3d_button->box(FL_THIN_UP_BOX);
+        x3d_button->labelsize(11);
+        x3d_button->callback((Fl_Callback*)do_3d_cb);
+        o->user_data((void *)this);
+      } // Fl_Light_Button* x3d_button
       o->end();
     } // Fl_Group* o
     stereo_window->end();
   } // Fl_Window* stereo_window
+  { video_window = new Fl_Window(425, 205, "Video");
+    video_window->user_data((void*)(this));
+    { Fl_Group* o = new Fl_Group(20, 85, 285, 170);
+      { Fl_Box* o = new Fl_Box(20, 125, 135, 70, "label");
+        o->box(FL_ENGRAVED_FRAME);
+        o->labeltype(FL_NO_LABEL);
+      } // Fl_Box* o
+      { Fl_Choice* o = new Fl_Choice(50, 135, 90, 20, "Size");
+        o->down_box(FL_BORDER_BOX);
+        o->labelsize(11);
+        o->callback((Fl_Callback*)video_size_cb);
+        o->menu(menu_Size);
+      } // Fl_Choice* o
+      { Fl_Choice* o = new Fl_Choice(50, 165, 90, 20, "Rate");
+        o->down_box(FL_BORDER_BOX);
+        o->labelsize(11);
+        o->callback((Fl_Callback*)video_rate_cb);
+        o->menu(menu_Rate);
+      } // Fl_Choice* o
+      o->end();
+    } // Fl_Group* o
+    { Fl_Group* o = new Fl_Group(20, 25, 295, 170);
+      { Fl_Box* o = new Fl_Box(20, 25, 200, 85);
+        o->box(FL_ENGRAVED_FRAME);
+        o->labelsize(11);
+      } // Fl_Box* o
+      { video_button = new Fl_Light_Button(30, 70, 50, 25, "Video");
+        video_button->labelsize(11);
+        video_button->callback((Fl_Callback*)do_video_cb);
+      } // Fl_Light_Button* video_button
+      { cam_select = new Fl_Choice(60, 35, 145, 20, "Cam");
+        cam_select->down_box(FL_BORDER_BOX);
+        cam_select->labelsize(11);
+        cam_select->callback((Fl_Callback*)video_dev_cb);
+      } // Fl_Choice* cam_select
+      { color_button = new Fl_Light_Button(100, 70, 45, 25, "Color");
+        color_button->labelsize(11);
+        color_button->callback((Fl_Callback*)do_color_cb);
+      } // Fl_Light_Button* color_button
+      { stoc_button = new Fl_Light_Button(160, 70, 45, 25, "STOC");
+        stoc_button->labelsize(11);
+        stoc_button->callback((Fl_Callback*)do_stoc_cb);
+      } // Fl_Light_Button* stoc_button
+      o->end();
+    } // Fl_Group* o
+    { Fl_Group* o = new Fl_Group(190, 40, 215, 185);
+      { exposure_val = new Fl_Slider(265, 40, 20, 130, "Exposure");
+        exposure_val->type(4);
+        exposure_val->labelsize(11);
+        exposure_val->minimum(100);
+        exposure_val->maximum(0);
+        exposure_val->step(1);
+        exposure_val->value(100);
+        exposure_val->callback((Fl_Callback*)do_exposure_cb);
+        exposure_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* exposure_val
+      { gain_val = new Fl_Slider(320, 40, 20, 130, "Gain");
+        gain_val->type(4);
+        gain_val->labelsize(11);
+        gain_val->maximum(100);
+        gain_val->step(1);
+        gain_val->callback((Fl_Callback*)do_gain_cb);
+        gain_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* gain_val
+      { brightness_val = new Fl_Slider(375, 40, 20, 130, "Bright");
+        brightness_val->type(4);
+        brightness_val->labelsize(11);
+        brightness_val->maximum(100);
+        brightness_val->step(1);
+        brightness_val->callback((Fl_Callback*)do_brightness_cb);
+        brightness_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* brightness_val
+      { exposure_auto_button = new Fl_Light_Button(255, 175, 40, 20, "Auto");
+        exposure_auto_button->value(1);
+        exposure_auto_button->labelsize(11);
+        exposure_auto_button->callback((Fl_Callback*)do_auto_exposure_cb);
+      } // Fl_Light_Button* exposure_auto_button
+      { gain_auto_button = new Fl_Light_Button(310, 175, 40, 20, "Auto");
+        gain_auto_button->value(1);
+        gain_auto_button->labelsize(11);
+        gain_auto_button->callback((Fl_Callback*)do_auto_gain_cb);
+      } // Fl_Light_Button* gain_auto_button
+      { brightness_auto_button = new Fl_Light_Button(365, 175, 40, 20, "Auto");
+        brightness_auto_button->value(1);
+        brightness_auto_button->labelsize(11);
+        brightness_auto_button->callback((Fl_Callback*)do_auto_brightness_cb);
+      } // Fl_Light_Button* brightness_auto_button
+      { gamma_button = new Fl_Light_Button(190, 135, 55, 25, "Gamma");
+        gamma_button->value(1);
+        gamma_button->labelsize(11);
+        gamma_button->callback((Fl_Callback*)do_gamma_cb);
+      } // Fl_Light_Button* gamma_button
+      o->end();
+    } // Fl_Group* o
+    video_window->end();
+  } // Fl_Window* video_window
 }

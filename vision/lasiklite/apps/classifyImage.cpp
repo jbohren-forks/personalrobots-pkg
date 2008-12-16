@@ -42,6 +42,7 @@
 #include <iomanip>
 #include <vector>
 #include <string.h>
+#include <algorithm>
 
 #include "cv.h"
 #include "cxcore.h"

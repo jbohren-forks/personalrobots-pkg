@@ -28,8 +28,13 @@
 
 #include <sys/time.h>
 
-#include "Controller.hh"
-#include "Entity.hh"
+#include <gazebo/Controller.hh>
+#include <gazebo/Entity.hh>
+#include <gazebo/Param.hh>
+
+// ros messages
+#include <ros/node.h>
+#include <std_msgs/String.h>
 
 namespace gazebo
 {
@@ -86,7 +91,20 @@ namespace gazebo
   
     /// The parent Model
     private: ContactSensor *myParent;
-  
+
+
+    /// \brief pointer to ros node
+    private: ros::node *rosnode;
+
+    /// \brief set topic name of broadcast
+    private: ParamT<std::string> *bumperTopicNameP;
+    private: std::string bumperTopicName;
+
+    /// \brief A mutex to lock access to fields that are used in message callbacks
+    private: ros::thread::mutex lock;
+
+    /// \brief broadcast some string for now.
+    private: std_msgs::String bumperMsg;
   };
   
   /** \} */

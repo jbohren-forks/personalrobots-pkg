@@ -312,12 +312,19 @@ projectFeasibleSet(Dvec &wvec) const {
 
   //  nrg.unpackWeights(wvec, w0, w1, w00, w11);
 
-  // FIXME: slow?
-  for (int ii = 0; ii < (int)w00.size(); ii++) 
-    if (w00(ii) < 0) w00(ii) = 0;
-
-  for (int ii = 0; ii < (int)w11.size(); ii++) 
-    if (w11(ii) < 0) w11(ii) = 0;
+  if (getenv("oZeroContext")) {
+    for (int ii = 0; ii < (int)w00.size(); ii++) {
+      w00(ii) = 0;
+      w11(ii) = 0;
+    }
+  } else {
+    // FIXME: slow?
+    for (int ii = 0; ii < (int)w00.size(); ii++) 
+      if (w00(ii) < 0) w00(ii) = 0;
+    
+    for (int ii = 0; ii < (int)w11.size(); ii++) 
+      if (w11(ii) < 0) w11(ii) = 0;
+  }
 
   /*
   // FIXME: a little hacky...

@@ -2,13 +2,13 @@
 <description>Builds a graph containing higher level information from a 2d occupancy grid</description>
 <author>Bhaskara Marthi</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="std_srvs" />
 <depend package="rosconsole" />
+<depend package="boost" />
 <export>
 <cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>
-<sysdepend os="ubuntu" version="7.04-hardy" package="libboost-graph-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-graph-dev"/>
 </package>

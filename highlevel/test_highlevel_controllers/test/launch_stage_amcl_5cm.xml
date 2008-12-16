@@ -1,0 +1,23 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <node pkg="rosstage" type="rosstage" name="rosstage" args="$(find 2dnav_stage)/willow-pr2-5cm.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />
+    <param name="pf_laser_max_beams" value="20"/>
+    <param name="pf_min_samples" value="500"/>
+    <param name="pf_max_samples" value="10000"/>
+    <param name="pf_odom_drift_xx" value="0.2"/>
+    <param name="pf_odom_drift_yy" value="0.2"/>
+    <param name="pf_odom_drift_aa" value="0.2"/>
+    <param name="pf_odom_drift_xa" value="0.2"/>
+    <param name="pf_min_d" value="0.25"/>
+    <param name="pf_min_a" value="0.524"/>
+    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen" args="scan:=base_scan" />
+    <node pkg="nav_view" type="nav_view" respawn="false"/>
+    <param name="move_base/frequency" value="20.0"/>
+    <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
+  </group>
+</launch>

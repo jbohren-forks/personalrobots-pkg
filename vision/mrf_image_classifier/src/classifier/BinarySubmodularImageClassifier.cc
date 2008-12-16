@@ -39,6 +39,9 @@ BinarySubmodularImageClassifier::
   if (wvec != NULL)
     delete wvec;
 
+  if (initialBestSolution != NULL)
+    delete initialBestSolution;
+
   delete objFunc;
 
   delete subgOpt;
@@ -204,6 +207,9 @@ loadTrainingData(const vector<tUndirectedFeatureGraph*>& afgraphs,
   subgOpt = new SubgradientOptimizer(objFunc, &l2reg, *wvec, 
 				     Cp, IIR_COEFF, rate,
 				     logger);
+
+  if (initialBestSolution != NULL)
+    subgOpt->setBestSolution(*initialBestSolution, initialBestObjective);
 }
 
 void BinarySubmodularImageClassifier::
@@ -217,6 +223,7 @@ train(int iterations) {
     //viewLossAugmentedMincuts();
 
 
+    /// @fixme expose this parameter somewhere
     if ((ii % 10) == 0) {
     // FIXME: throttle this
     //    if ((ii % 1) == 0) {
@@ -246,13 +253,16 @@ evaluate(const IplImage* image, IplImage* segmented) {
   GraphCutMinimizer gcut(fg->getEdgeList());
   BinarySubmodularEnergy<tFeatureMatrix> energy(fg);
 
+  //  wvec->assertFinite();
+  Dvec wbest(wvec->size());
 
-  wvec->assertFinite();
-
-
+  if (subgOpt == NULL)
+    wbest = *wvec;
+  else
+    subgOpt->bestSolution(wbest);
 
   vector<int> groundState;
-  energy.groundState(*wvec, groundState, gcut);
+  energy.groundState(wbest, groundState, gcut);
     
   SegmentationLoader::
     writeBlobSegmentation(*fgx.getBlobber(), groundState, segmented);
@@ -262,7 +272,15 @@ void BinarySubmodularImageClassifier::
 evaluate(const tUndirectedFeatureGraph* fgraph, vector<int>& labels) {
   GraphCutMinimizer gcut(fgraph->getEdgeList());
   BinarySubmodularEnergy<tFeatureMatrix> energy(fgraph);
-  energy.groundState(*wvec, labels, gcut);
+
+  Dvec wbest(wvec->size());
+
+  if (subgOpt == NULL)
+    wbest = *wvec;
+  else
+    subgOpt->bestSolution(wbest);
+
+  energy.groundState(wbest, labels, gcut);
 }
 
 void BinarySubmodularImageClassifier::

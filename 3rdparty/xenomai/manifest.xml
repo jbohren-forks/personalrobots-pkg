@@ -9,10 +9,12 @@ over Linux 2.6.24.19 for the AOpen system
 </description>
 <author>Xenomai - Philippe Gerum et al, Linux - Linus Torvaalds et al</author>
 <license>Xenomai: LGPL, Linux: GPL</license>
+<review status="3rdparty" notes=""/>
 <url>http://www.xenomai.org/ http://www.kernel.org</url>
 <export>
   <cpp lflags="`${prefix}/xenomai/bin/xeno-config --posix-ldflags`" cflags="`${prefix}/xenomai/bin/xeno-config --posix-cflags`"/>
   <doxymaker external="http://www.xenomai.org/documentation/trunk/html/api/index.html"/>
+  <status api="cleared" code="under review"/>
 </export>
 <versioncontrol type="svn" url="http://svn.gna.org/svn/xenomai/trunk"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>

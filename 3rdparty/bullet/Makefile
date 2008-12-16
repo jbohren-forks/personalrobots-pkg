@@ -2,8 +2,8 @@ all: build
 
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
-SVN_PATCH = quaternion.patch
-SVN_REVISION=-r1497
+SVN_PATCH = quaternion.patch demos.patch
+SVN_REVISION=-r1555
 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -11,12 +11,14 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 
 build: SVN_UP_REVERT_PATCH
-	cd $(SVN_DIR) && cmake .
-	make $(PARALLEL_JOBS) -C $(SVN_DIR) LinearMath
+	cd $(SVN_DIR) && $(shell rospack find cmake)/cmake/bin/cmake -DCMAKE_INSTALL_PREFIX=$(PWD) .
+	cd $(SVN_DIR) && make $(PARALLEL_JOBS) && make $(PARALLEL_JOBS) install
 	touch bullet
 
 clean:
 	-make -C $(SVN_DIR) clean
 
-wipe: clean
-	rm -rf $(SVN_DIR)
+wipe: 
+	-rm -f bullet patched
+	-rm -rf bullet_svn
+	-rm -rf build

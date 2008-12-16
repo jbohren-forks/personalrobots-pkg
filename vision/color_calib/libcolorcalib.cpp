@@ -34,11 +34,13 @@
 
 #include "ros/node.h"
 
-#include "colorcalib.h"
+#include "color_calib.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+
+using namespace color_calib;
 
 IplImage* g_img;
 IplImage* g_disp_img;
@@ -84,7 +86,7 @@ float g_srgb_colors_dat[] = { 115.0/255.0, 82.0/255.0, 68.0/255.0,
 
 
 
-float srgb2lrgb(float x)
+float color_calib::srgb2lrgb(float x)
 {
   if (x < 0.04045)
   {
@@ -95,7 +97,7 @@ float srgb2lrgb(float x)
   return x;
 }
 
-float lrgb2srgb(float x)
+float color_calib::lrgb2srgb(float x)
 {
   if (x < 0.0031308)
   {
@@ -106,14 +108,8 @@ float lrgb2srgb(float x)
   return x;
 }
 
-void compand(IplImage* src, IplImage* dst)
+void color_calib::compand(IplImage* src, IplImage* dst)
 {
-
-  // TODO: type checking that src is type 8U or else "companding" makes less sense
-
-  int channels = dst->nChannels;
-  int depth = src->depth;
-
   static int compandmap[4096];
   static bool has_map = false;
 
@@ -141,36 +137,34 @@ void compand(IplImage* src, IplImage* dst)
     has_map = true;
   }
   
-  if (depth == IPL_DEPTH_32F)
+  if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_32F)
   {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
         {
           int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*4096.0);
           val = MAX(val, 0);
           val = MIN(val, 4095);
-          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
-            compandmap[ val ] >> 2;
-        }
-  } else {
+          ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
+            (float)(compandmap[ val ])/1024.0;
+         }
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_8U) {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
-          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
-            compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 4] >> 2;
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*4096.0);
+          val = MAX(val, 0);
+          val = MIN(val, 4095);
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[ val ] >> 2;
+        }
   }
 }
 
 
-void decompand(IplImage* src, IplImage* dst)
+void color_calib::decompand(IplImage* src, IplImage* dst)
 {
-
-  // TODO: type checking that src is type 8U or else "companding" makes less sense
-
-  int channels = dst->nChannels;
-  int depth = dst->depth;
-
   static float compandmap[1024];
   static bool has_map = false;
 
@@ -198,19 +192,42 @@ void decompand(IplImage* src, IplImage* dst)
     has_map = true;
   }
   
-  if (depth == IPL_DEPTH_32F)
+  if (src->depth == IPL_DEPTH_8U && dst->depth == IPL_DEPTH_32F)
   {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
           ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
             compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 2];
-  } else {
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_32F)
+  {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*1024.0);
+          val = MAX(val, 0);
+          val = MIN(val, 1024);
+          ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[val];
+        }
+  } else if (src->depth == IPL_DEPTH_8U && dst->depth == IPL_DEPTH_8U)   // This probably shouldn't be allowed (loss of information)
+  {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < src->nChannels; k++)
           ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
             compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 2]*255;
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_8U) // This probably shouldn't be allowed (loss of information)
+  {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*1024.0);
+          val = MAX(val, 0);
+          val = MIN(val, 1024);
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[val]*255;
+        }
   }
 }
 
@@ -304,11 +321,12 @@ void on_mouse(int event, int x, int y, int flags, void *params)
   }
 }
 
-bool find_calib(IplImage* img, CvMat* mat, int flags)
+bool color_calib::find_calib(IplImage* img, Calibration& cal, uint32_t flags)
 {
 
   bool use_bgr = flags & COLOR_CAL_BGR;
   bool use_float = (img->depth == IPL_DEPTH_32F);
+  bool do_compand = flags & COLOR_CAL_COMPAND_DISPLAY;
 
   float mult;
   if (use_float)
@@ -321,11 +339,15 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
 
   if (!use_bgr)
     cvCvtColor(g_disp_img, g_disp_img, CV_RGB2BGR);
+
+  if (do_compand)
+    compand(g_disp_img, g_disp_img); 
  
+
   CvScalar a = cvAvg(g_img);
   printf("Avg value of g: %f %f %f\n", a.val[0], a.val[1], a.val[2]); 
 
-  if (g_img && mat)
+  if (g_img)
   { 
     //Allocate matrices
     g_real_corners = cvCreateMat( 4, 1, CV_32FC2);
@@ -369,8 +391,7 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
 
     g_meas_colors = cvCreateMat( 24, 3, CV_32FC1);
     g_reproj_colors = cvCreateMat( 24, 3, CV_32FC1);
-  
-    g_color_cal = mat;
+    g_color_cal = cvCreateMat( 3, 3, CV_32FC1);
 
     // Create display
     cvNamedWindow("macbeth image", CV_WINDOW_AUTOSIZE);
@@ -383,6 +404,8 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
       usleep(1000);
     }
 
+    cal.setCal(g_color_cal, flags);
+
     cvDestroyWindow("macbeth image");
 
     cvReleaseImage(&g_img);
@@ -392,6 +415,7 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
     cvReleaseMat(&g_real_colors);
     cvReleaseMat(&g_meas_colors);
     cvReleaseMat(&g_reproj_colors);
+    cvReleaseMat(&g_color_cal);
     cvReleaseMat(&g_colors_pos);
     cvReleaseMat(&g_hom);
 

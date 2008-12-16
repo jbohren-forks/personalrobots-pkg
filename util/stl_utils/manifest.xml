@@ -6,6 +6,7 @@
   </description>
   <author>Stuart Glaser &lt;sglaser@willowgarage.com&gt;</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Stu)"/>
   <url>http://pr.willowgarage.com</url>
   <export>
     <cpp cflags="-I${prefix}/include" />

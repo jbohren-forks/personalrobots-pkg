@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-if [ $# -eq 1 ]
-then
-	dot -Tps $1 -o $1.ps
-else
-	echo A single .dot file is required as argument
-fi

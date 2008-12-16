@@ -1,0 +1,20 @@
+<launch>
+  <group name="wg">
+    <!-- send dual_link.xml to param server -->
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find examples_gazebo)/dual_link_defs/dual_link.xml'" />
+
+    <!-- start gazebo -->
+    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$(env LD_LIBRARY_PATH)" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+  </group>
+  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+
+  <!--node pkg="mechanism_control" type="mech.py" args="sp $(find examples_gazebo)/dual_link_defs/controllers_dual_link.xml" respawn="false" output="screen" /--> <!-- load default arm controller -->
+  <!--node pkg="robot_mechanism_controllers" type="control.py" args="set test_controller 0.5" respawn="false" output="screen" /--> <!-- open gripper .5 radians -->
+</launch>
+

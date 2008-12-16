@@ -77,4 +77,16 @@ class VidereCamera(Camera):
     Cx = matrix[0][2]
     Cy = matrix[1][2]
     Tx = -matrix[0][3] / Fx
+    Tx *= 1e-3
+    Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))
+
+class StereoCamera(Camera):
+  def __init__(self, right_cam_info_msg):
+    matrix = numpy.array(right_cam_info_msg.P).reshape((3,4))
+    Fx = matrix[0][0]
+    Fy = matrix[1][1]
+    Cx = matrix[0][2]
+    Cy = matrix[1][2]
+    Tx = -matrix[0][3] / Fx
+    Tx *= 1e-3
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))

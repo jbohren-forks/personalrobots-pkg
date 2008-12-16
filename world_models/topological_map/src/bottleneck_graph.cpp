@@ -27,17 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+
+// Generalities about the code:
+// 1) Often uses the fact that in boost graph adjacency list graphs with nodes stored in a vector,
+// the vertex descriptors are nonnegative integers (so it would all break if a different storage 
+// method was used)
+// 2) Runs really slow if compiled without optimization
+
+
 #include <topological_map/bottleneck_graph.h>
-#include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include <sysexits.h>
 #include <boost/graph/breadth_first_search.hpp>     
 #include <boost/graph/connected_components.hpp>     
+#include <rosconsole/rosconsole.h>
 
-
-using std::cout;
-using std::endl;
 using boost::get;
+using boost::tie;
+using namespace std;
 
 namespace topological_map 
 {
@@ -56,8 +66,17 @@ typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
 typedef boost::graph_traits<Graph>::edge_descriptor Edge;
 typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
 typedef boost::graph_traits<Graph>::out_edge_iterator edge_iter;
-typedef std::map<Vertex,int> VertexCompMap;
-typedef std::list<Coords> CoordsList;
+typedef map<Vertex,int> VertexCompMap;
+
+// Represents a square block from (r,c) to (r+s-1,c+s-1)
+struct Block 
+{
+  int r;
+  int c;
+  int s;
+  Block (int rInit, int cInit, int sInit) : r(rInit), c(cInit), s(sInit) {}
+};
+typedef list<Block> BlockList;
 
 // Struct containing a graph over the vertices of a 2d grid together with a 2d array allowing vertices to be looked up quickly
 typedef boost::multi_array<Vertex, 2> VertexMap;
@@ -71,13 +90,20 @@ struct GridGraph
   GridGraph (const grid_size* dims) : m(boost::extents[dims[0]][dims[1]]), o(boost::extents[dims[0]][dims[1]]) {}
 };
 
+// Forward declarations
+void indexRegions (IndexedBottleneckGraph* g);
 
 
-// We want to have a breadth-first search that terminates
-// when a goal vertex is reached, or a distance threshold is
-// exceeded.  This is done by adding a visitor to the 
-// boost bfs algorithm that throws an exception when one
-// of these things happens. 
+
+
+/************************************************************
+ * We want to have a breadth-first search that terminates
+ * when a goal vertex is reached, or a distance threshold is
+ * exceeded.  This is done by adding a visitor to the 
+ * boost bfs algorithm that throws an exception when one
+ * of these things happens
+ ************************************************************/
+
 struct TerminateBfs
 {
   bool found;
@@ -88,8 +114,7 @@ public:
   void discover_vertex (Vertex u, const Graph& g) const
   {
     int r, c;
-    boost::tie (r, c) = get (coords_t(), g, u);
-    // cout << "Discovering vertex " <<  r << ", " << c << endl;
+    tie (r, c) = get (coords_t(), g, u);
     if ((r == rg_) && (c == cg_))
       throw TerminateBfs (true);
     else if (abs(r-r0_) + abs(c-c0_) > threshold_)
@@ -132,37 +157,11 @@ bool distLessThan (GridGraph* gr, int r0, int c0, int r1, int c1, int threshold)
 
 
 
-  
-GridGraph makeGraphFromGrid (const GridArray& grid)
-{
-  const grid_size* dims = grid.shape();
-  GridGraph gr(dims);
-  Vertex v;
-  CoordsMap coords = get (coords_t(), gr.g);
-  
-  
-  for (grid_size r=0; r!=dims[0]; r++) {
-    for (grid_size c=0; c!=dims[1]; c++) {
-      
-      gr.o[r][c] = false;
-      if (!grid[r][c]) {
-        v = add_vertex(gr.g);
-        gr.o[r][c] = true;
-        gr.m[r][c] = v;
-        boost::put (coords, v, *(new Coords(r,c)));
-        
-        if ((r>0) && !grid[r-1][c]) {
-          boost::add_edge (v, gr.m[r-1][c], gr.g);
-        }
-        if ((c>0) && !grid[r][c-1]) {
-          boost::add_edge (v, gr.m[r][c-1], gr.g);
-        }
-      }
-    }
-  }
 
-  return gr;
-}
+/****************************************
+ * Printing, reading
+ ****************************************/
+
 
 void printGraph (const Graph& g) 
 {
@@ -171,17 +170,17 @@ void printGraph (const Graph& g)
   coords_t coords_key;
   
   cout << endl;
-  for (boost::tie(vi,vg) = boost::vertices(g); vi != vg; vi++)
+  for (tie(vi,vg) = boost::vertices(g); vi != vg; vi++)
   {
     int r, c;
-    boost::tie (r, c) = get (coords_key, g, *vi);
-    std::cout << r << "," << c << " ";
-    for (boost::tie(ei, eg) = boost::out_edges (*vi, g); ei != eg; ei++) {
+    tie (r, c) = get (coords_key, g, *vi);
+    cout << r << "," << c << " ";
+    for (tie(ei, eg) = boost::out_edges (*vi, g); ei != eg; ei++) {
       int r2, c2;
-      boost::tie (r2, c2) = get (coords_key, g, boost::target (*ei, g));
-      std::cout << r2 << "," << c2 << " ";
+      tie (r2, c2) = get (coords_key, g, boost::target (*ei, g));
+      cout << r2 << "," << c2 << " ";
     }
-    std::cout << std::endl;
+    cout << endl;
   }
 }
 
@@ -190,20 +189,20 @@ void printVertexMap (const GridGraph& gr)
   const grid_size* dims = gr.m.shape();  
   for (grid_size i=0; i<dims[0]; i++) {
     for (grid_size j=0; j<dims[1]; j++) {
-      cout << std::setw(2) << gr.m[i][j] << " ";
+      cout << setw(2) << gr.m[i][j] << " ";
     }
-    cout << std::endl;
+    cout << endl;
   }
 }
 
 
-void printBottleneckGraph (const BottleneckGraph& g)
+void IndexedBottleneckGraph::printBottleneckGraph (void)
 {
   BottleneckVertexIterator i, end;
-  for (boost::tie(i, end) = boost::vertices(g); i!=end; ++i) {
+  for (tie(i, end) = boost::vertices(graph); i!=end; ++i) {
     BottleneckVertex v = *i;
-    cout << "Vertex: " << endl << " Type: ";
-    VertexDescription d = get (desc_t(), g, v);
+    VertexDescription d = get (desc_t(), graph, v);
+    cout << "Vertex: " << endl << " Id: " << d.id << endl << " Type: ";
     if (d.type == BOTTLENECK)
       cout << "bottleneck" << endl << " Region: ";
     else
@@ -214,49 +213,211 @@ void printBottleneckGraph (const BottleneckGraph& g)
     int cmax = 0;
     int cmin = 10000000;
 
-    for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
-      int r, c;
-      boost::tie (r, c) = *i;
 
-      rmin = std::min (rmin, r);
-      rmax = std::max (rmax, r);
-      cmin = std::min (cmin, c);
-      cmax = std::max (cmax, c);
-    }
-    cout << d.region.size() << " cells contained in bounding box between (" << rmin << "," << cmin << ") and (" << rmax << "," << cmax << ")" << endl << endl;
+    if (d.region.size () > 20) {
+      for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
+        int r, c;
+        tie (r, c) = *i;
+
+        rmin = min (rmin, r);
+        rmax = max (rmax, r);
+        cmin = min (cmin, c);
+        cmax = max (cmax, c);
+      }
+
     
+      cout << d.region.size() << " cells contained in bounding box between (" << rmin << "," << cmin << ") and (" << rmax << "," << cmax << ")" << endl << endl;
+    }
+    else {
+      for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
+        int r, c;
+        tie (r,c) = *i;
+        cout << "(" << r << ", " << c << ") ";
+      }
+      cout << endl;
+    }
+
+    cout << " Neighbors: ";
+    
+    BottleneckAdjacencyIterator it, end;
+    for (tie(it,end) = boost::adjacent_vertices(v, graph); it!=end; it++) {
+      cout << get(desc_t(), graph, *it).id << " ";
+    }
+    cout << endl;
   }
-  cout << "done" << endl;
 }
 
-void printBottlenecks (const BottleneckGraph& g, const GridArray& gr)
+
+void IndexedBottleneckGraph::printBottlenecks (void)
 {
-  const grid_size* dims = gr.shape();  
-  OccMap b(boost::extents[dims[0]][dims[1]]); 
+  writeToStream (cout);
+}
+
+void IndexedBottleneckGraph::printBottlenecks (const char* filename)
+{
+  ofstream str(filename);
+  if (!str) {
+    ROS_WARN ("Could not open file %s for writing", filename);
+  }
+  else {
+    writeToStream (str);
+    str.close();
+  }
+}
+
+
+
+
+void IndexedBottleneckGraph::writeToStream (ostream& str)
+{
+ 
   BottleneckVertexIterator i, end;
-  for (boost::tie(i, end) = boost::vertices(g); i!=end; ++i) {
+  
+  str << numRows << " " << numCols << endl;
+  str << boost::num_vertices(graph) << endl;
+  for (tie(i, end) = boost::vertices(graph); i!=end; ++i) {
     BottleneckVertex v = *i;
-    VertexDescription d = get (desc_t(), g, v);
-    if (!(d.type == BOTTLENECK))
-      continue;
+    VertexDescription d = get (desc_t(), graph, v);
+    str << d.id << endl;
+    if (d.type == BOTTLENECK)
+      str << "Bottleneck" << endl;
+    else
+      str << "Open" << endl;
 
-
+    str << d.region.size() << endl;
     for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
       int r, c;
-      boost::tie (r, c) = *i;
-      b[r][c] = true;
+      tie (r, c) = *i;
+      str << r << " " << c << endl;
     }
+  }
+}
+
     
+           
+
+void printBlock (const GridGraph& g, int r, int c, int s, int r0, int c0, int r1, int c1, int nr, int nc)
+{
+  int rmin = max(min(r0,r),0);
+  int rmax = min(max(r1,r+s),nr-1);
+  int cmin = max(min(c0,c),0);
+  int cmax = min(max(c1,c+s),nc-1);
+
+  for (int i=rmin; i<=rmax; i++) {
+    for (int j=cmin; j<=cmax; j++) {
+      if ((i==r0) && (j==c0))
+        cout << "S";
+      else if ((i==r1) && (j==c1)) 
+        cout << "G";
+      else if (g.o[i][j])
+        if ((i<r-1) || (i > r+s) || (j<c-1) || (j>c+s))
+          cout << ".";
+        else
+          cout << " ";
+      else
+        if ((i<r-1) || (i > r+s) || (j<c-1) || (j>c+s))
+          cout << "Y";
+        else
+          cout << "X";
+    }
+    cout << endl;
+  }
+}
+
+
+IndexedBottleneckGraph readBottleneckGraphFromFile (const char* filename)
+{
+  ifstream str(filename);
+
+  if (!str) {
+    ROS_FATAL ("Unable to open file %s", filename);
+    exit(EX_NOINPUT);
   }
 
-  for (grid_size r=0; r<dims[0]; r++) {
-    for (grid_size c=0; c<dims[1]; c++) {
-      if (b[r][c] || gr[r][c]) {
-        cout << r << " " << c << endl;
+  int numRows, numCols, numVertices;
+  str >> numRows >> numCols >> numVertices;
+  ROS_DEBUG ("About to read graph with %d vertices.  Grid is %dx%d.", numVertices, numRows, numCols);
+
+  IndexedBottleneckGraph g(numRows, numCols);
+  char buf[100];
+
+  // Skip newline
+  str.getline(buf,99);
+
+  for (int i=0; i<numVertices; i++) {
+    VertexDescription v;
+    int numCells;
+    str.getline(buf,99);
+    v.id = atoi(buf);
+    str.getline(buf, 99);
+    switch (buf[0]) {
+    case 'B': v.type = BOTTLENECK; break;
+    case 'O': v.type = OPEN; break;
+    default: ROS_FATAL ("Unable to parse file %s.  Unexpected line %s", filename, buf); exit(EX_DATAERR);
+    }
+    str.getline(buf,99);
+    numCells = atoi(buf);
+    for (int j=0; j<numCells; j++) {
+      Coords c;
+      str >> c.first;
+      str >> c.second;
+      str.getline(buf,99);
+      v.region.insert (c);
+    }
+
+
+    BottleneckVertex vertex = boost::add_vertex(g.graph);
+    boost::put (desc_t(), g.graph, vertex, v);
+  }
+  indexRegions (&g);
+
+  // Add edges
+  set<Coords > addedEdges; // Abuse of the Coords type 
+  for (int r=0; r<numRows; r++) {
+    for (int c=0; c<numCols; c++) {
+      int id=g.regionId(r,c);
+      if (id<0) {
+        continue;
+      }
+      int idAbove=g.regionId(r-1,c);
+      int idLeft=g.regionId(r,c-1);
+      
+      if ((idAbove>=0) && (id!=idAbove) && (addedEdges.count (Coords(min(id,idAbove), max(id,idAbove)))==0)) {
+        addedEdges.insert (Coords(min(id,idAbove), max(id,idAbove)));
+        add_edge ((*g.regions)[r][c], (*g.regions)[r-1][c], g.graph);
+      }
+      if ((idLeft>=0) && (id!=idLeft) && (addedEdges.count (Coords(min(id,idLeft), max(id,idLeft)))==0)) {
+        addedEdges.insert (Coords(min(id,idLeft), max(id,idLeft)));
+        add_edge ((*g.regions)[r][c], (*g.regions)[r][c-1], g.graph);
       }
     }
   }
-}           
+
+  ROS_DEBUG ("Finished reading bottleneck graph");
+
+  g.printBottleneckGraph();
+
+  return g;
+}
+
+
+/************************************************************
+ * Miscellaneous
+ ************************************************************/
+
+// Each time called, return a different positive number
+int getUniqueId ()
+{
+  static int id=1;
+  return id++;
+}
+
+
+
+
+/*****************************************
+ * Low-level operations on grid graph
+ *****************************************/
 
 
 // If the given vertices both exist in the graph, remove edge between them
@@ -293,7 +454,6 @@ void removeBlock (GridGraph* gr, grid_size r0, grid_size c0, int s)
 
 }
 
-
 // Reconnect the square of size s with top-left corner r0, c0 to the rest of the graph
 void addBlock (GridGraph* gr, grid_size r0, grid_size c0, int s)
 {
@@ -309,6 +469,29 @@ void addBlock (GridGraph* gr, grid_size r0, grid_size c0, int s)
       possiblyAdd (gr, r0+i, c0+s-1, r0+i, c0+s);
   }
 
+}
+
+
+// look for a nonobstacle cell within the grid, within s/2 of (r,c)
+// If found, return true, and set r,c to the new cell.  Else return false.
+bool getFreePointNear (int& r, int& c, const int s, const grid_size* dims, const GridGraph* gr) {
+  
+  bool foundPoint = false;
+
+  int rMin = r-s/2;
+  int rMax = r+s/2;
+  int cMin = c-s/2;
+  int cMax = c+s/2;
+  
+  for (r=rMin; (r<=rMax) && !foundPoint; r++) {
+    for (c=cMin; (c<=cMax) && !foundPoint; c++) {
+      if ((r>=0) && (r<(int)dims[0]) && (c>=0) && (c<(int)dims[1]) && gr->o[r][c])
+        foundPoint = true;
+    }
+  }
+  r--;
+  c--;
+  return foundPoint;
 }
 
 
@@ -358,9 +541,48 @@ void disconnectBottlenecks (GridGraph* gr)
 }
 
 
+// Suppose we know that a block with corner (r,c) disconnects (r0,c0) and (r1,c1).
+// This function searches for a smaller block that also disconnects them.
+// It should be more efficient to do it this way than to search for small blocks from the beginning.
+void addSmallestDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int r, int c, int r0, int c0, int r1, int c1, int threshold, int size)
+{
+  bool someChildDisconnects=false;
+  ROS_DEBUG_NAMED ("bottleneck_finder","Looking for smallest disconnecting subblocks of block from (%d, %d) to (%d, %d)", r, c, r+size-1, c+size-1);
+  if (size > 2) {
+    int blockR=-1;
+    int blockC=-1;
+    int blockSize = size*2/3;
+    for (int i=0; i<2; i++) {
+      for (int j=0; j<2; j++) {
+        bool disconnected;
+        blockR=i*r+(1-i)*(r+size-blockSize);
+        blockC=j*c+(1-j)*(c+size-blockSize);
+        
+        removeBlock (gr, blockR, blockC, blockSize);
+        disconnected = !distLessThan(gr, r0, c0, r1, c1, threshold);
+        addBlock (gr, blockR, blockC, blockSize);
+        if (disconnected) {
+          someChildDisconnects=true;
+          addSmallestDisconnectingBlocks (gr, disconnectingBlocks, blockR, blockC, r0, c0, r1, c1, threshold, blockSize);
+        }
+      }
+    }
+  }
+  if ((size<=2) || !someChildDisconnects) {
+    ROS_DEBUG_NAMED ("bottleneck_finder","Adding disconnecting block at %d, %d of size %d", r, c, size);
+    disconnectingBlocks->push_back(Block(r,c,size));
+  }
+}
+
+
+
+/****************************************
+ * Low-level ops on bottleneck graph
+ ****************************************/
+
 
 // Given two vertices in the occupancy grid, if they correspond to different connected components, add an edge between those components in the bottleneck graph 
-void possiblyAddBottleneckEdge (Vertex v1, Vertex v2, const VertexCompMap& vertexComp, const std::vector<BottleneckVertex>& vertices, BottleneckGraph* g)
+void possiblyAddBottleneckEdge (Vertex v1, Vertex v2, const VertexCompMap& vertexComp, const vector<BottleneckVertex>& vertices, BottleneckGraph* g)
 {
   int r1 = vertexComp.find(v1)->second;
   int r2 = vertexComp.find(v2)->second;
@@ -368,39 +590,11 @@ void possiblyAddBottleneckEdge (Vertex v1, Vertex v2, const VertexCompMap& verte
     add_edge (vertices[vertexComp.find(v1)->second], vertices[vertexComp.find(v2)->second], *g);
 }
   
-void printBlock (const GridGraph& g, int r, int c, int s, int r0, int c0, int r1, int c1, int nr, int nc)
-{
-  cout << r << " " << c << " " << r0 << " " << c0 << " " << r1 << " " << c1 << " " << endl;
-  int rmin = std::max (r-1-s/2, 0);
-  int rmax = std::min (r+s+s/2, nr-1);
-  int cmin = std::max (c-1-s/2, 0);
-  int cmax = std::min (c+s+s/2, nc-1);
-
-  for (int i=rmin; i<=rmax; i++) {
-    for (int j=cmin; j<=cmax; j++) {
-      if ((i==r0) && (j==c0))
-        cout << "S";
-      else if ((i==r1) && (j==c1)) 
-        cout << "G";
-      else if (g.o[i][j])
-        if ((i<r-1) || (i > r+s) || (j<c-1) || (j>c+s))
-          cout << ".";
-        else
-          cout << " ";
-      else
-        if ((i<r-1) || (i > r+s) || (j<c-1) || (j>c+s))
-          cout << "Y";
-        else
-          cout << "X";
-    }
-    cout << endl;
-  }
-}
 
 
 // Find adjacent connected components.  Any such adjacent pair must consist of a
 // bottleneck region and a nonbottleneck region.
-void connectRegions (const GridGraph& gr, const VertexCompMap& vertexComp, const std::vector<BottleneckVertex>& bottleneckVertices, BottleneckGraph* g)
+void connectRegions (const GridGraph& gr, const VertexCompMap& vertexComp, const vector<BottleneckVertex>& bottleneckVertices, BottleneckGraph* g)
 {
   const grid_size* dims = gr.m.shape();
   for (grid_size r=0; r<dims[0]; r++) {
@@ -428,61 +622,178 @@ void connectRegions (const GridGraph& gr, const VertexCompMap& vertexComp, const
   }
 }
 
+  
 
-
-// Find square regions such that removing the region from the graph significantly increases the distance
-// between cells on the boundary
-void findDisconnectingBlocks (GridGraph* gr, CoordsList* disconnectingBlocks, int bottleneckSize, int bottleneckSkip,
-                              int distanceMultMin, int distanceMultMax)
+void removeBottleneck (BottleneckVertex v, IndexedBottleneckGraph* g)
 {
+  // First, figure out the overall union region r of v and its neighbors
+  
+  // Add a new vertex with region r, type Open
 
-  const grid_size* dims = gr->m.shape();
-  int r0, c0, r1, c1;
-  for (grid_size r=1; r<dims[0]-bottleneckSize; r+=bottleneckSkip) {
-    cout << r << endl;
-    for (grid_size c=0; c<=dims[1]-bottleneckSize; c+=bottleneckSkip) {
+  // For each neighbor n of v
+  // Connect newVertex to each neighbor of n except v
+  
+  // Remove v and its neighbors from graph (be mindful of iterator/descriptor stability)
+}
 
-      // Check if the block disconnects either of the diagonally opposite corners
-      bool disconnected = false;
-      for (unsigned int i=0; i<2; i++) {
 
-        r0=r-1+i*(bottleneckSize+1);
-        c0=std::max((int)c-1,0);
-        r1=r-1+(1-i)*(bottleneckSize+1);
-        c1=std::min(c+bottleneckSize,dims[1]-1);
+void pruneIsolatedBottlenecks (const int regionSizeThreshold, IndexedBottleneckGraph* g)
+{
+  bool prunedBottleneck = false;
+  do {
+    // For each node of g
 
-        // cout << r0 << " " << c0 << " " << r1 << " " << c1 << endl;
-        // Check that rows are within range
-        if ((std::min(r0,r1)<0) || (std::max(r0,r1)>=(int)dims[0])) continue;
+    // If not bottleneck continue
 
-        // But what if the cells are obstacles... slide along the box till you have vertices that aren't
-        for (;c0<=c1 && !gr->o[r0][c0];c0++);// cout << r0 << "," << c0 << " ";
-        //cout << " next" << endl;
-        if (c0>c1) continue;
-        for (;c1>=c0 && !gr->o[r1][c1];c1--);// cout << r1 << "," << c1 << " ";
-        //cout << endl;
-        if (c1<c0) continue;
+    // For each neighbor node
+    // Count number of cells in node's region.  If exceeds threshold, increment numLargeNeighbors.
+    // End for
 
-        // Check if the distance is less than lower limit with the block, but greater than upper limit with block removed from graph
-        if (distLessThan(gr, r0, c0, r1, c1, distanceMultMin*bottleneckSize)) {
-          removeBlock (gr, r, c, bottleneckSize);
-          disconnected = !distLessThan(gr, r0, c0, r1, c1, distanceMultMax*bottleneckSize);
-          addBlock (gr, r, c, bottleneckSize);
-          if (disconnected) 
-            break;
+    // If numLargeNeighbors < 2
+    // removeBottleneck (g, n) and prunedBottleneck = true
+
+  } while (prunedBottleneck);
+}
+
+
+// Set up the index from cell coordinates to region id, and the index for occupiedness
+void indexRegions (IndexedBottleneckGraph* g)
+{
+  BottleneckVertexIterator i, end;
+  for (tie(i, end) = boost::vertices(g->graph); i!=end; ++i) {
+    BottleneckVertex v=*i;
+    VertexDescription d = get(desc_t(), g->graph, v);
+    for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
+      int r, c;
+      tie (r, c) = *i;
+      (*g->regions)[r][c] = v;
+      (*g->isFree)[r][c] = true;
+    }
+  }
+}
+
+
+
+
+/************************************************************
+ * Top level
+ ************************************************************/
+
+
+// GridGraph constructor
+GridGraph makeGraphFromGrid (const GridArray& grid, int inflationRadius)
+{
+  const grid_size* dims = grid.shape();
+  GridGraph gr(dims);
+  Vertex v;
+  CoordsMap coords = get (coords_t(), gr.g);
+  int threshold = inflationRadius*inflationRadius;
+
+  ROS_INFO_NAMED ("bottleneck_finder", "Constructing map graph\n");
+  
+  for (int r=0; r!=(int)dims[0]; r++) {
+    ROS_DEBUG_NAMED ("bottleneck_finder"," Row %d", r);
+    for (int c=0; c!=(int)dims[1]; c++) {
+
+      // A point is added to the graph iff there are no obstacles near it
+
+      gr.o[r][c] = true;
+      for (int r2=r-inflationRadius; r2<=r+inflationRadius; r2++) {
+        for (int c2=c-inflationRadius; c2<=c+inflationRadius; c2++) {
+          
+          //ROS_DEBUG_NAMED ("bottleneck_finder","%d %d %d %d %d\n", r, c, r2, c2, (r2-r)*(r2-r) + (c2-c)*(c2-c));
+          
+          if (((r2-r)*(r2-r) + (c2-c)*(c2-c) <= threshold) &&
+              (r2>=0) && (r2<(int)dims[0]) && (c2>=0) && (c2<(int)dims[1]) && grid[r2][c2]) {
+            //ROS_DEBUG_NAMED ("bottleneck_finder","accepted\n");
+            gr.o[r][c] = false;
+          }
         }
       }
+      
+      // If r,c is in the graph, add edges, do the necessary bookkeeping
+      if (gr.o[r][c]) {
+        v = add_vertex(gr.g);
+        gr.m[r][c] = v;
+        boost::put (coords, v, *(new Coords(r,c)));
+        
+        if ((r>0) && gr.o[r-1][c]) {
+          boost::add_edge (v, gr.m[r-1][c], gr.g);
+        }
+        if ((c>0) && gr.o[r][c-1]) {
+          boost::add_edge (v, gr.m[r][c-1], gr.g);
+        }
+      }
+    }
+  }
+  return gr;
+}
 
+
+
+
+
+// Main loop: Iterate over the whole map and find square regions such that removing the region from the graph significantly increases the distance between cells on either side
+void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int bottleneckSize, int bottleneckSkip,
+                              int distanceMultMin, int distanceMultMax)
+{
+  ROS_INFO_NAMED ("bottleneck_finder", "Searching for disconnecting blocks");
+  const grid_size* dims = gr->m.shape();
+  int r0, c0, r1, c1, dist=-1;
+  for (grid_size r=1; r<dims[0]-bottleneckSize; r+=bottleneckSkip) {
+    for (grid_size c=1; c<dims[1]-bottleneckSize; c+=bottleneckSkip) {
+      ROS_DEBUG_NAMED ("bottleneck_finder","Block from (%d, %d) to (%d, %d)\n", r, c, r+bottleneckSize-1, c+bottleneckSize-1);
+      
+      // Will check pairs of cells on opposite sides of this block to see if they become disconnected
+      bool disconnected = false;
+
+      // Loop over which pair of opposite cells we're going to look at
+      for (int vertical=0; vertical<2; vertical++) {
+        if (vertical) {
+          r0 = r-3*bottleneckSize/2;
+          c0 = c+bottleneckSize/2;
+          r1 = r+5*bottleneckSize/2;
+          c1 = c+bottleneckSize/2;
+        }
+        else {
+          r0 = r+bottleneckSize/2; 
+          c0 = c-3*bottleneckSize/2;
+          r1 = r+bottleneckSize/2;
+          c1 = c+5*bottleneckSize/2;
+        }
+
+        if (!getFreePointNear(r0, c0, bottleneckSize, dims, gr) || !getFreePointNear(r1, c1, bottleneckSize, dims, gr))
+            continue;
+
+
+
+        // At this point, (r0,c0) and (r1,c1) are unoccupied legal cells on opposite sides of the block
+        // Check if the distance is less than lower limit with the block, but greater than upper limit with block removed from graph
+        dist = abs(r0-r1) + abs(c0-c1);
+        ROS_DEBUG_NAMED ("bottleneck_finder","Checking if removing block %d, %d changes distance between %d,%d, and %d, %d from < %d to >= %d", 
+                   r, c, r0, c0, r1, c1, dist+distanceMultMin*bottleneckSize, dist+distanceMultMax*bottleneckSize);
+
+
+        if (distLessThan(gr, r0, c0, r1, c1, dist+distanceMultMin*bottleneckSize)) {
+          ROS_DEBUG_NAMED ("bottleneck_finder","Within threshold before removing block");
+          removeBlock (gr, r, c, bottleneckSize);
+          disconnected = !distLessThan(gr, r0, c0, r1, c1, dist+distanceMultMax*bottleneckSize);
+          addBlock (gr, r, c, bottleneckSize);
+          if (disconnected) {
+            ROS_DEBUG_NAMED ("bottleneck_finder","Disconnected because of cells (%d, %d) and (%d, %d)\n", r0, c0, r1, c1);
+            break;
+          }
+        }
+      }
+        
+      //printBlock (*gr, r, c, bottleneckSize, r0, c0, r1, c1, dims[0], dims[1]);
       if (disconnected) {
-        //cout << "Disconnected block " << r << " " << c << endl;
-        //printBlock (*gr, r, c, bottleneckSize, r0, c0, r1, c1, dims[0], dims[1]);
-        disconnectingBlocks->push_back (Coords(r,c));
+        assert (dist>0);
+        addSmallestDisconnectingBlocks (gr, disconnectingBlocks, r, c, r0, c0, r1, c1, dist+distanceMultMax*bottleneckSize, bottleneckSize);
       }
       else {
-        //cout << "Connected block " << r << " " << c << endl;
-        //printBlock (*gr, r, c, bottleneckSize, r0, c0, r1, c1, dims[0], dims[1]);
+        ROS_DEBUG_NAMED ("bottleneck_finder","Block is connected\n");
       }
-
     }
   }
 }
@@ -490,17 +801,18 @@ void findDisconnectingBlocks (GridGraph* gr, CoordsList* disconnectingBlocks, in
 
 
 // The top-level function that returns a topological graph containing bottleneck and open regions, given an occupancy grid
-BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int distanceMultMin, int distanceMultMax)
+IndexedBottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin, int distanceMultMax)
 {
-  GridGraph gr = makeGraphFromGrid(grid);
-  BottleneckGraph g;
-  CoordsList disconnectingBlocks;
-  typedef std::vector<Region> RegionVector;
+  GridGraph gr = makeGraphFromGrid(grid, inflationRadius);
+  const grid_size* dims = gr.m.shape();
+  IndexedBottleneckGraph g (dims[0], dims[1]);
+  BlockList disconnectingBlocks;
+  typedef vector<Region> RegionVector;
 
   // Find disconnecting blocks and disconnect them from rest of graph
   findDisconnectingBlocks (&gr, &disconnectingBlocks, bottleneckSize, bottleneckSkip, distanceMultMin, distanceMultMax);
-  for (CoordsList::iterator i = disconnectingBlocks.begin(); i!=disconnectingBlocks.end(); i++)
-    markBottleneckCells (&gr, i->first, i->second, bottleneckSize);
+  for (BlockList::iterator i = disconnectingBlocks.begin(); i!=disconnectingBlocks.end(); i++)
+    markBottleneckCells (&gr, i->r, i->c, i->s);
   disconnectBottlenecks (&gr);
 
 
@@ -515,24 +827,24 @@ BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bot
 
   // Construct the bottleneck graph
   desc_t vertexDescriptions;
-  std::vector<BottleneckVertex> bottleneckGraphVertices;
+  vector<BottleneckVertex> bottleneckGraphVertices;
   for (unsigned int i=0; i<regions.size(); i++) {
     Coords c = *(regions[i].begin());
-    BottleneckVertex v = add_vertex (g);
+    BottleneckVertex v = add_vertex (g.graph);
     bottleneckGraphVertices.push_back (v);
     VertexDescription d;
     d.type = get (bottleneck_t(), gr.g, gr.m[c.first][c.second]) ? BOTTLENECK : OPEN;
     d.region = regions[i];
-    boost::put (vertexDescriptions, g, v, d);
+    d.id = getUniqueId();
+    boost::put (vertexDescriptions, g.graph, v, d);
   }
-  connectRegions (gr, vertexComp, bottleneckGraphVertices, &g);
+  connectRegions (gr, vertexComp, bottleneckGraphVertices, &(g.graph));
+  pruneIsolatedBottlenecks (-1, &g);
+  indexRegions(&g);
+  
 
   return g;
-  
 }
-
-    
-    
 
 
 } // namespace topological_map

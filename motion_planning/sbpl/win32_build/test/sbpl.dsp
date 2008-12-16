@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -85,6 +85,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\..\src\utils\2Dgridsearch.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\planners\ADStar\adplanner.cpp
 # End Source File
 # Begin Source File
@@ -101,6 +105,10 @@ SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\navxythetalat\environment_navxythetalat.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.cpp
 # End Source File
 # Begin Source File
@@ -111,7 +119,6 @@ SOURCE=..\..\src\discrete_space_information\template\environment_XXX.cpp
 !IF  "$(CFG)" == "sbpl - Win32 Release"
 
 # PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
 
 !ELSEIF  "$(CFG)" == "sbpl - Win32 Debug"
 
@@ -146,6 +153,10 @@ SOURCE=..\..\src\planners\VI\viplanner.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\..\src\utils\2Dgridsearch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\planners\ADStar\adplanner.h
 # End Source File
 # Begin Source File
@@ -154,7 +165,7 @@ SOURCE=..\..\src\planners\ARAStar\araplanner.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\config.h
+SOURCE=..\..\src\sbpl\config.h
 # End Source File
 # Begin Source File
 
@@ -170,18 +181,32 @@ SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\navxythetalat\environment_navxythetalat.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\src\discrete_space_information\template\environment_XXX.h
 # PROP Exclude_From_Scan -1
+
+!IF  "$(CFG)" == "sbpl - Win32 Release"
+
+# PROP BASE Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "sbpl - Win32 Debug"
+
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\headers.h
+SOURCE=..\..\src\sbpl\headers.h
 # End Source File
 # Begin Source File
 

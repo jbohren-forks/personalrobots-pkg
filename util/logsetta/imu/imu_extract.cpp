@@ -32,19 +32,19 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "imu_node/ImuData.h"
+#include "std_msgs/PoseWithRatesStamped.h"
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 
-void imu_callback(std::string name, imu_node::ImuData* imu, ros::Time t, void* f)
+void imu_callback(std::string name, std_msgs::PoseWithRatesStamped* imu, ros::Time t, void* f)
 {
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
           t.to_double(),
           imu->header.stamp.to_double(),
-          imu->accel.ax, imu->accel.ay, imu->accel.az,
-          imu->angrate.vx, imu->angrate.vy, imu->angrate.vz);
+          imu->acc.acc.ax, imu->acc.acc.ay, imu->acc.acc.az,
+          imu->vel.ang_vel.vx, imu->vel.ang_vel.vy, imu->vel.ang_vel.vz);
 }
 
 int main(int argc, char **argv)
@@ -55,15 +55,15 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  LogPlayer player;
+  ros::record::Player player;
 
-  player.open(std::string(argv[1]), ros::Time(0.0));
+  player.open(std::string(argv[1]), ros::Time());
 
   int count;
 
   FILE* file = fopen("imu.txt", "w");
 
-  player.addHandler<imu_node::ImuData>(std::string("*"), &imu_callback, file);
+  player.addHandler<std_msgs::PoseWithRatesStamped>(std::string("*"), &imu_callback, file);
 
   while(player.nextMsg())  {}
 

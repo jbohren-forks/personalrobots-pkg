@@ -265,6 +265,10 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
     {
       if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
         actuators.insert(elt.Attribute("name"));
+      else if (elt.ValueStr() == std::string("rightActuator") && elt.Attribute("name"))
+        actuators.insert(elt.Attribute("name"));
+      else if (elt.ValueStr() == std::string("leftActuator") && elt.Attribute("name"))
+        actuators.insert(elt.Attribute("name"));
       return true;
     }
   } get_actuators;

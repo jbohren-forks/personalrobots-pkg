@@ -116,6 +116,13 @@ class StageNode : public ros::node
 
     tf::TransformBroadcaster tf;
 
+    // Last time that we received a velocity command
+    ros::Time base_last_cmd;
+    ros::Duration base_watchdog_timeout;
+
+    // Current simulation time
+    ros::Time sim_time;
+
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
@@ -161,6 +168,7 @@ StageNode::cmdvelReceived()
   this->lock.lock();
 
   this->positionmodel->SetSpeed(this->velMsg.vx, this->velMsg.vy, this->velMsg.vw);
+  this->base_last_cmd = this->sim_time;
   this->lock.unlock();
 }
 
@@ -170,6 +178,12 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
 {
   this->lasermodel = NULL;
   this->positionmodel = NULL;
+
+  this->sim_time.fromSec(0.0);
+  this->base_last_cmd.fromSec(0.0);
+  double t;
+  param("~base_watchdog_timeout", t, 0.2);
+  this->base_watchdog_timeout.fromSec(t);
 
   // initialize libstage
   Stg::Init( &argc, &argv );
@@ -229,8 +243,11 @@ StageNode::Update()
   // Let the simulator update (it will sleep if there's time)
   this->world->Update();
 
-  ros::Time sim_time;
-  sim_time.fromSec(world->SimTimeNow() / 1e6);
+  this->sim_time.fromSec(world->SimTimeNow() / 1e6);
+
+  if((this->base_watchdog_timeout.toSec() > 0.0) &&
+     ((this->sim_time - this->base_last_cmd) >= this->base_watchdog_timeout))
+    this->positionmodel->SetSpeed(0.0, 0.0, 0.0);
 
   // Get latest laser data
   Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
@@ -261,8 +278,8 @@ StageNode::Update()
   Stg::stg_pose_t lp = this->lasermodel->GetPose();
   tf.sendTransform(tf::Stamped<tf::Transform> 
                    (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
-                                  tf::Point(lp.x, lp.y, 0.0)),
-                    sim_time, "base_laser", "base"));
+                                  tf::Point(lp.x, lp.y, 0.15)),
+                    sim_time, "base_laser", "base_link"));
 
   // Get latest odometry data
   // Translate into ROS message format and publish
@@ -280,7 +297,7 @@ StageNode::Update()
   tf::Stamped<tf::Transform> 
           tx(tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
                            tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
-             sim_time, "odom", "base");
+             sim_time, "odom", "base_link");
   this->tf.sendTransform(tx);
 
   // Also publish the ground truth pose

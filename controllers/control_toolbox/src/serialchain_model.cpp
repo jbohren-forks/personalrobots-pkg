@@ -54,9 +54,9 @@ bool SerialChainModel::init(const robot_kinematics::RobotKinematics & r_kin, rob
   kdl_torque_ = new KDL::Vector[inputs_+1];
   
   //FIXME Get the proper order:
-  typedef std::map<std::string, int>::iterator It;
-  for(It it=chain->joint_id_map_.begin();it!=chain->joint_id_map_.end();++it)
-    ROS_DEBUG_STREAM(it->first<<":\t"<<it->second);
+//   typedef std::map<std::string, int>::iterator It;
+//   for(It it=chain->joint_id_map_.begin();it!=chain->joint_id_map_.end();++it)
+//     ROS_DEBUG_STREAM(it->first<<":\t"<<it->second);
   
   return true;
 }
@@ -146,3 +146,5 @@ bool SerialChainModel::forward(const StateVector & x, const InputVector & u, dou
 {
   return false; // Not implemented
 }
+
+

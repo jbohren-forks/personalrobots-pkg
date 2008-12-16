@@ -38,7 +38,7 @@
 #define KINEMATIC_ROBOT_MODEL_
 
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
+#include <LinearMath/btTransform.h>
 
 #include <iostream>
 #include <vector>
@@ -130,10 +130,12 @@ namespace planning_models
 	/** A joint from the robot. Contains the transform applied by the joint type */
 	class Joint
 	{
+	    friend class KinematicModel;	    
 	public:
 	    Joint(void)
 	    {
 		usedParams = 0;
+		varTrans.setIdentity();
 		before = after = NULL;
 		owner = NULL;
 	    }
@@ -164,7 +166,7 @@ namespace planning_models
 	    std::vector<bool> inGroup;
 	    
 	    /** the local transform (computed by forward kinematics) */
-	    libTF::Pose3D     varTrans;
+	    btTransform       varTrans;
 
 	    /* compute the parameter names from this joint */
 	    unsigned int computeParameterNames(unsigned int pos);
@@ -231,9 +233,8 @@ namespace planning_models
 	{
 	public:
 	    
-	    PrismaticJoint(void) : Joint()
+	    PrismaticJoint(void) : Joint(), axis(0.0, 0.0, 0.0)
 	    {
-		axis[0] = axis[1] = axis[2] = 0.0;
 		limit[0] = limit[1] = 0.0;
 		usedParams = 1;
 	    }
@@ -244,8 +245,8 @@ namespace planning_models
 	    /** Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
-	    double axis[3];
-	    double limit[2];
+	    btVector3 axis;
+	    double    limit[2];
 	};
 	
 	/** A revolute joint */
@@ -253,10 +254,8 @@ namespace planning_models
 	{
 	public:
 	    
-	    RevoluteJoint(void) : Joint()
+	    RevoluteJoint(void) : Joint(), axis(0.0, 0.0, 0.0), anchor(0.0, 0.0, 0.0)
 	    {
-		axis[0] = axis[1] = axis[2] = 0.0;
-		anchor[0] = anchor[1] = anchor[2] = 0.0;
 		limit[0] = limit[1] = 0.0;
 		usedParams = 1;
 	    }
@@ -267,15 +266,16 @@ namespace planning_models
 	    /** Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
-	    double        axis[3];	    
-	    double        anchor[3];
-	    double        limit[2];
+	    btVector3 axis;
+	    btVector3 anchor;
+	    double    limit[2];
 	};
 	
 	
 	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
 	class Link
 	{
+	    friend class KinematicModel;
 	public:
 
 	    Link(void)
@@ -283,6 +283,10 @@ namespace planning_models
 		before = NULL;
 		shape  = NULL;
 		owner  = NULL;
+		constTrans.setIdentity();
+		constGeomTrans.setIdentity();
+		globalTransFwd.setIdentity();
+		globalTrans.setIdentity();		
 	    }
 	    
 	    virtual ~Link(void)
@@ -306,10 +310,10 @@ namespace planning_models
 	    std::vector<Joint*> after;
 	    
 	    /** The constant transform applied to the link (local) */
-	    libTF::Pose3D       constTrans;
+	    btTransform         constTrans;
 	    
 	    /** The constant transform applied to the collision geometry of the link (local) */
-	    libTF::Pose3D       constGeomTrans;
+	    btTransform         constGeomTrans;
 	    
 	    /** The geometry of the link */
 	    Shape              *shape;
@@ -317,10 +321,10 @@ namespace planning_models
 	    /* ----------------- Computed data -------------------*/
 	    
 	    /** The global transform this link forwards (computed by forward kinematics) */
-	    libTF::Pose3D       globalTransFwd;
+	    btTransform         globalTransFwd;
 
 	    /** The global transform for this link (computed by forward kinematics) */
-	    libTF::Pose3D       globalTrans;
+	    btTransform         globalTrans;
 
 	    /* compute the parameter names from this link */
 	    unsigned int computeParameterNames(unsigned int pos);
@@ -452,6 +456,7 @@ namespace planning_models
 	
 	KinematicModel(void)
 	{
+	    rootTransform.setIdentity();
 	    stateDimension = 0;
 	    m_ignoreSensors = false;
 	    m_verbose = false;	    
@@ -499,7 +504,7 @@ namespace planning_models
 	std::string         name;
 	    
 	/** A transform that is applied to the entire model */
-	libTF::Pose3D       rootTransform;
+	btTransform         rootTransform;
 	
 	/** Cumulative list of floating joints */
 	std::vector<int>    floatingJoints;

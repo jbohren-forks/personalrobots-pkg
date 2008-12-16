@@ -1,0 +1,36 @@
+diff -Naur SoQt-1.4.1-old/configure.ac SoQt-1.4.1-new/configure.ac
+--- SoQt-1.4.1-old/configure.ac	2006-10-30 14:09:48.000000000 -0800
++++ SoQt-1.4.1-new/configure.ac	2008-11-13 19:56:03.697881260 -0800
+@@ -568,9 +568,14 @@
+   fi
+ fi
+ 
+-SIM_AC_QT_PROG(MOC, moc)
++# look for moc-qt4 first
++SIM_AC_QT_PROG(MOC, moc-qt4)
+ if test x"$MOC" = x"false"; then
+-  SIM_AC_ERROR([no-moc])
++  SIM_AC_QT_PROG(MOC2, moc)
++  if test x"$MOC2" = x"false"; then
++    SIM_AC_ERROR([no-moc])
++  fi
++  MOC=MOC2
+ fi
+ 
+ # see commented-out restore above
+diff -Naur SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp
+--- SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp	2006-10-30 14:09:20.000000000 -0800
++++ SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp	2008-11-13 19:56:20.237409512 -0800
+@@ -100,7 +100,11 @@
+   this->parent->removeEventFilter(this);
+ }
+ 
+-static void delete_dict_value(unsigned long key, void * value)
++#if ((COIN_MAJOR_VERSION<<16)|(COIN_MINOR_VERSION<<8)|COIN_MICRO_VERSION) > 0x020406
++static void delete_dict_value(SbDict::Key key, void * value)
++#else
++static void delete_dict_value(unsigned long key, void * value)
++#endif
+ {
+   delete (QCursor *)value;
+ }

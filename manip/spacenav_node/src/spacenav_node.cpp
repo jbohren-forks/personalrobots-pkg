@@ -35,6 +35,10 @@
 #include "ros/node.h"
 #include "spnav.h"
 #include "std_msgs/Vector3.h"
+#include "joy/Joy.h"
+
+#define FULL_SCALE (512.0)
+//Used to scale joystick output to be in [-1, 1].  Estimated from data, and not necessarily correct.
 
 int main(int argc, char **argv)
 {
@@ -43,6 +47,7 @@ int main(int argc, char **argv)
   ros::node node("spacenav");
   node.advertise<std_msgs::Vector3>("/spacenav/offset", 2);
   node.advertise<std_msgs::Vector3>("/spacenav/rot_offset", 2);
+  node.advertise<joy::Joy>("/spacenav/joy", 2);
 
   if (spnav_open() == -1)
   {
@@ -55,6 +60,9 @@ int main(int argc, char **argv)
   spnav_event sev;
   int ret;
   int no_motion_count = 0;
+  joy::Joy joystick_msg;
+  joystick_msg.axes.resize(6);
+  joystick_msg.buttons.resize(2);
   while (node.ok())
   {
     ret = spnav_poll_event(&sev);
@@ -64,12 +72,19 @@ int main(int argc, char **argv)
     {
       if (++no_motion_count > 30)
       {
+        no_motion_count = 0;
         std_msgs::Vector3 offset_msg;
         offset_msg.x = offset_msg.y = offset_msg.z = 0;
         node.publish("/spacenav/offset", offset_msg);
         std_msgs::Vector3 rot_offset_msg;
         rot_offset_msg.x = rot_offset_msg.y = rot_offset_msg.z = 0;
         node.publish("/spacenav/rot_offset", rot_offset_msg);
+        joystick_msg.axes[0] = offset_msg.x / FULL_SCALE;
+        joystick_msg.axes[1] = offset_msg.y / FULL_SCALE;
+        joystick_msg.axes[2] = offset_msg.z / FULL_SCALE;
+        joystick_msg.axes[3] = rot_offset_msg.x / FULL_SCALE;
+        joystick_msg.axes[4] = rot_offset_msg.y / FULL_SCALE;
+        joystick_msg.axes[5] = rot_offset_msg.z / FULL_SCALE;
       }
     }
     if (sev.type == SPNAV_EVENT_MOTION)
@@ -85,14 +100,24 @@ int main(int argc, char **argv)
       rot_offset_msg.y = -sev.motion.rx;
       rot_offset_msg.z = sev.motion.ry;
 
-      printf("%lf  %lf  %lf\n", rot_offset_msg.x, rot_offset_msg.y, rot_offset_msg.z);
+      //printf("%lf  %lf  %lf\n", rot_offset_msg.x, rot_offset_msg.y, rot_offset_msg.z);
       node.publish("/spacenav/rot_offset", rot_offset_msg);
+
+      joystick_msg.axes[0] = offset_msg.x / FULL_SCALE;
+      joystick_msg.axes[1] = offset_msg.y / FULL_SCALE;
+      joystick_msg.axes[2] = offset_msg.z / FULL_SCALE;
+      joystick_msg.axes[3] = rot_offset_msg.x / FULL_SCALE;
+      joystick_msg.axes[4] = rot_offset_msg.y / FULL_SCALE;
+      joystick_msg.axes[5] = rot_offset_msg.z / FULL_SCALE;
 
       no_motion_count = 0;
     }
     else if (sev.type == SPNAV_EVENT_BUTTON)
     {
+      //printf("type, press, bnum = <%d, %d, %d>\n", sev.button.type, sev.button.press, sev.button.bnum);
+      joystick_msg.buttons[sev.button.bnum] = sev.button.press;
     }
+    node.publish("/spacenav/joy", joystick_msg);
     usleep(1000);
   }
 

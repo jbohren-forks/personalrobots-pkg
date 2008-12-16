@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../headers.h"
+#include "../../sbpl/headers.h"
 
 
 
@@ -246,7 +246,7 @@ void EnvironmentXXX::AddAllOutcomes(unsigned int SourceX1, unsigned int SourceX2
 			OutHashEntry = CreateNewHashEntry(newX1, newX2, 
 									  newX3, newX4);
 		}
-		double Prob = 0.5; //probability of the outcome
+		float Prob = 0.5; //probability of the outcome
 		action->AddOutcome(OutHashEntry->stateID, cost, Prob); 
 		CumProb += Prob;
 

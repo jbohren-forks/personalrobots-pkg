@@ -4,10 +4,10 @@
   </description>
   <author>Patrick Mihelich</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="rostest"/>
   <depend package="rospy"/>
-  <depend package="boost"/>
   <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>

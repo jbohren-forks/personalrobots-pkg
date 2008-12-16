@@ -77,7 +77,7 @@ class PR2Frame(wx.Frame):
         media_paths.append(media_path + "materials/programs")
         media_paths.append(media_path + "materials/textures")
         media_paths.append(media_path + "models")
-        media_paths.append(media_path + "models/pr2_new")
+        media_paths.append(media_path + "models/pr2")
         
         ogre_tools.initializeResources( media_paths )
         self._visualizer_panel.createDefaultVisualizers()
@@ -99,11 +99,11 @@ class PR2Frame(wx.Frame):
         self._aui_manager.AddPane(self._monitor_panel, wx.aui.AuiPaneInfo().BottomDockable().Bottom().Layer(1).BestSize(wx.Size(700,600)).Name('runtime_monitor').Caption('Runtime Monitor'), 'Runtime Monitor')
         self._aui_manager.AddPane(self._hardware_panel, wx.aui.AuiPaneInfo().BottomDockable().Bottom().Layer(1).BestSize(wx.Size(300,200)).Name('hardware').Caption('Hardware'), 'Hardware')
         
-        self.add_camera_pane("forearm_right", False)
-        self.add_camera_pane("forearm_left", False)
-        self.add_camera_pane("axis_right", True)
-        self.add_camera_pane("axis_left", True)
-        self.add_camera_pane("stereo_left", False)
+        self.add_camera_pane("forearm_r", False)
+        self.add_camera_pane("forearm_l", False)
+        self.add_camera_pane("axis_r", True)
+        self.add_camera_pane("axis_l", True)
+        self.add_camera_pane("stereo_l", False)
         
         self._aui_manager.Update()
         

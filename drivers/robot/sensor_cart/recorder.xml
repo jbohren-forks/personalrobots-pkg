@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="sensor_cart" type="sensor_recorder" respawn="false">
-    <remap from="cam_image" to="flea_image"/>
-  </node>
-</launch>

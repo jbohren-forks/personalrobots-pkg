@@ -42,6 +42,7 @@ CFLAGS += -I$(LIB_PATH)
 all: depend $(LIBLASIK)
 
 $(LIBLASIK): $(LIB_OBJ)
+	-mkdir `dirname $(LIBLASIK)`
 	ar rcs $(LIBLASIK) $(LIB_OBJ)
 
 .cpp.o:

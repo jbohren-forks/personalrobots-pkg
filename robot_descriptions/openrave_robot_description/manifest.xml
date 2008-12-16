@@ -1,0 +1,17 @@
+<package>
+  <description brief="Openrave Robot Description Manager">
+     Base robot files auto-generated from wg_robot_description package.
+     To use in openrave, add this path to the OPENRAVE_DATA environment variable.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+
+  <depend package="wg_robot_description"/>
+  <depend package="wg_robot_description_parser"/>
+  <depend package="openrave"/>
+  <depend package="boost"/>
+  <depend package="resource_locator"/>
+  <depend package="bullet"/>
+</package>

@@ -37,8 +37,8 @@
 
 #include "rosconsole/rosconsole.h"
 
-#include "sensor/sensor_range/rangesensor.h"
-#include "sensor/sensor_odometry/odometrysensor.h"
+#include "gmapping/sensor/sensor_range/rangesensor.h"
+#include "gmapping/sensor/sensor_odometry/odometrysensor.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -57,7 +57,7 @@ SlamGMapping::SlamGMapping()
   /// not urgent for a robot like the PR2, where odometry is being
   /// published several times faster than laser scans.
   tf_ = new tf::TransformListener(*node_, true, 10000000000ULL);
-  tf_->setExtrapolationLimit((int64_t) 200000000ULL );
+  tf_->setExtrapolationLimit( ros::Duration().fromSec(0.2));
   ROS_ASSERT(tf_);
 
   gsp_laser_ = NULL;
@@ -119,7 +119,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
 {
   // Get the robot's pose 
   tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
-                                           btVector3(0,0,0)), t, "base");
+                                           btVector3(0,0,0)), t, "base_link");
   tf::Stamped<btTransform> odom_pose;
   try
   {
@@ -150,7 +150,7 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   ident.stamp_ = scan.header.stamp;
   try
   {
-    this->tf_->transformPose("base", ident, laser_pose);
+    this->tf_->transformPose("base_link", ident, laser_pose);
   }
   catch(tf::TransformException e)
   {

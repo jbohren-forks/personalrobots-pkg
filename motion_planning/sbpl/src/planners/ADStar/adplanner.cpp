@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../headers.h"
+#include "../../sbpl/headers.h"
 
 
 
@@ -39,6 +39,7 @@ ADPlanner::ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch)
     
 	bforwardsearch = bForwardSearch;
 
+	bsearchuntilfirstsolution = false;
     finitial_eps = AD_DEFAULT_INITIAL_EPS;
     searchexpands = 0;
     MaxMemoryCounter = 0;
@@ -119,6 +120,7 @@ CMDPSTATE* ADPlanner::CreateState(int stateID, ADSearchStateSpace_t* pSearchStat
 
 }
 
+
 CMDPSTATE* ADPlanner::GetState(int stateID, ADSearchStateSpace_t* pSearchStateSpace)
 {	
 
@@ -182,7 +184,7 @@ int ADPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ADSearchStateSpace_t* pSear
 	else
 	{	
 		//backward search: heur = distance from searchgoal to state
-		return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
+		return environment_->GetStartHeuristic(MDPstate->StateID);
 	}
 
 }
@@ -266,7 +268,7 @@ void ADPlanner::UpdateSetMembership(ADState* state)
 
     if(state->v != state->g)
     {
-        if(state->iterationclosed != pSearchStateSpace_->iteration)
+        if(state->iterationclosed != pSearchStateSpace_->searchiteration)
         {
 			key = ComputeKey(state);
             if(state->heapindex == 0)
@@ -350,6 +352,17 @@ void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t*
 		//see if we can improve the value of predstate
 		if(predstate->g > state->v + CostV[pind])
 		{
+
+#if DEBUG
+			if(predstate->MDPstate->StateID == 792455)
+			{
+				fprintf(fDeb, "updating pred %d of overcons exp\n", predstate->MDPstate->StateID);
+				PrintSearchState(predstate, fDeb);
+				fprintf(fDeb, "\n");
+			}
+#endif
+
+
 			predstate->g = state->v + CostV[pind];
 			predstate->bestnextstate = state->MDPstate;
 			predstate->costtobestnextstate = CostV[pind];
@@ -358,9 +371,12 @@ void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t*
 			UpdateSetMembership(predstate);
 
 #if DEBUG
-			fprintf(fDeb, "updated pred %d of overcons exp\n", predstate->MDPstate->StateID);
-			PrintSearchState(predstate, fDeb);
-			fprintf(fDeb, "\n");
+			if(predstate->MDPstate->StateID == 792455)
+			{
+				fprintf(fDeb, "updated pred %d of overcons exp\n", predstate->MDPstate->StateID);
+				PrintSearchState(predstate, fDeb);
+				fprintf(fDeb, "\n");
+			}
 #endif
 
 		}
@@ -506,7 +522,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 	//expand states until done
 	minkey = pSearchStateSpace->heap->getminkeyheap();
 	CKey oldkey = minkey;
-	while(!pSearchStateSpace->heap->emptyheap() && (goalkey > minkey || searchgoalstate->g > searchgoalstate->v) &&
+	while(!pSearchStateSpace->heap->emptyheap() && minkey.key[0] < INFINITECOST && (goalkey > minkey || searchgoalstate->g > searchgoalstate->v) &&
 		(clock()-TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC) 
     {
 
@@ -516,11 +532,21 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 
 #if DEBUG
 		CKey debkey = ComputeKey(state);
-		fprintf(fDeb, "expanding state(%d): g=%u v=%u h=%d key=[%d %d] iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
-			state->MDPstate->StateID, state->g, state->v, state->h, (int)debkey[0], (int)debkey[1],  
-			state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
-		environment_->PrintState(state->MDPstate->StateID, true, fDeb);
+		//fprintf(fDeb, "expanding state(%d): g=%u v=%u h=%d key=[%d %d] iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
+		//	state->MDPstate->StateID, state->g, state->v, state->h, (int)debkey[0], (int)debkey[1],  
+		//	state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
+		if(state->MDPstate->StateID == 792455)
+		{
+			fprintf(fDeb, "expanding state %d with key=[%d %d]:\n", state->MDPstate->StateID, (int)debkey[0], (int)debkey[1]);
+			PrintSearchState(state, fDeb);
+			environment_->PrintState(state->MDPstate->StateID, true, fDeb);
+		}
 		fflush(fDeb);
+		if(state->listelem[AD_INCONS_LIST_ID] != NULL)
+		{
+			printf("ERROR: expanding state from INCONS list\n");
+			exit(1);
+		}
 #endif
 
 #if DEBUG
@@ -548,7 +574,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 
 			//recompute state value      
 			state->v = state->g;
-			state->iterationclosed = pSearchStateSpace->iteration;
+			state->iterationclosed = pSearchStateSpace->searchiteration;
 
 			if(!bforwardsearch)
 			{
@@ -562,7 +588,6 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 		else
 		{
 			//underconsistent expansion
-			printf("underconstistent expansion\n");
 
 			//force the state to be overconsistent
 			state->v = INFINITECOST;
@@ -656,6 +681,9 @@ void ADPlanner::BuildNewOPENList(ADSearchStateSpace_t* pSearchStateSpace)
 	    //remove from INCONS
 	    pinconslist->remove(state, AD_INCONS_LIST_ID);
 	  }
+
+	pSearchStateSpace->bRebuildOpenList = false;
+
 }
 
 
@@ -756,12 +784,12 @@ void ADPlanner::ReInitializeSearchStateSpace(ADSearchStateSpace_t* pSearchStateS
 	pSearchStateSpace->callnumber++;
 
 	//reset iteration
-	pSearchStateSpace->iteration = 0;
+	pSearchStateSpace->searchiteration = 0;
 
 
 #if DEBUG
     fprintf(fDeb, "reinitializing search state-space (new call number=%d search iter=%d)\n", 
-            pSearchStateSpace->callnumber,pSearchStateSpace->iteration );
+            pSearchStateSpace->callnumber,pSearchStateSpace->searchiteration );
 #endif
 
 
@@ -786,6 +814,7 @@ void ADPlanner::ReInitializeSearchStateSpace(ADSearchStateSpace_t* pSearchStateS
 
     pSearchStateSpace->bReinitializeSearchStateSpace = false;
 	pSearchStateSpace->bReevaluatefvals = false;
+	pSearchStateSpace->bRebuildOpenList = false;
 }
 
 //very first initialization
@@ -801,9 +830,10 @@ int ADPlanner::InitializeSearchStateSpace(ADSearchStateSpace_t* pSearchStateSpac
 
 	pSearchStateSpace->eps = this->finitial_eps;
     pSearchStateSpace->eps_satisfied = INFINITECOST;
-	pSearchStateSpace->iteration = 0;
+	pSearchStateSpace->searchiteration = 0;
 	pSearchStateSpace->callnumber = 0;
 	pSearchStateSpace->bReevaluatefvals = false;
+	pSearchStateSpace->bRebuildOpenList = false;
 
 
 	//create and set the search start state
@@ -853,10 +883,14 @@ int ADPlanner::SetSearchGoalState(int SearchGoalStateID, ADSearchStateSpace_t* p
 
 int ADPlanner::SetSearchStartState(int SearchStartStateID, ADSearchStateSpace_t* pSearchStateSpace)
 {
+	CMDPSTATE* MDPstate = GetState(SearchStartStateID, pSearchStateSpace); 
 
-	pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
-
-    pSearchStateSpace->bReinitializeSearchStateSpace = true;
+	if(MDPstate !=  pSearchStateSpace->searchstartstate)
+	{	
+		pSearchStateSpace->searchstartstate = MDPstate;
+		pSearchStateSpace->bReinitializeSearchStateSpace = true;
+		pSearchStateSpace->bRebuildOpenList = true;
+	}
 
 	return 1;
 
@@ -876,7 +910,7 @@ int ADPlanner::ReconstructPath(ADSearchStateSpace_t* pSearchStateSpace)
 		ADState *predstateinfo, *stateinfo;
 			
 		int steps = 0;
-		const int max_steps = 10000;
+		const int max_steps = 100000;
 		while(MDPstate != pSearchStateSpace->searchstartstate && steps < max_steps)
 		{
 			steps++;
@@ -926,10 +960,12 @@ int ADPlanner::ReconstructPath(ADSearchStateSpace_t* pSearchStateSpace)
 
 void ADPlanner::PrintSearchState(ADState* searchstateinfo, FILE* fOut)
 {
+
 	CKey key = ComputeKey(searchstateinfo);
-	fprintf(fOut, "g=%d v=%d h = %d heapindex=%d inconslist=%d key=[%d %d]", 
+	fprintf(fOut, "g=%d v=%d h = %d heapindex=%d inconslist=%d key=[%d %d] iterc=%d callnuma=%d expands=%d (current callnum=%d iter=%d)", 
 			searchstateinfo->g, searchstateinfo->v, searchstateinfo->h, searchstateinfo->heapindex, (searchstateinfo->listelem[AD_INCONS_LIST_ID] != NULL),
-			(int)key[0], (int)key[1]);
+			(int)key[0], (int)key[1], searchstateinfo->iterationclosed, searchstateinfo->callnumberaccessed, searchstateinfo->numofexpands,
+				this->pSearchStateSpace_->callnumber, this->pSearchStateSpace_->searchiteration);
 
 }
 
@@ -953,7 +989,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 
 	int costFromStart = 0;
 	int steps = 0;
-	const int max_steps = 10000;
+	const int max_steps = 100000;
 	while(state->StateID != pSearchStateSpace->searchstartstate->StateID && steps < max_steps)
 	{
 		steps++;
@@ -995,6 +1031,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 #if DEBUG
 		if(searchstateinfo->g > searchstateinfo->v){
 			fprintf(fOut, "ERROR: underconsistent state %d is encountered\n", state->StateID);
+			exit(1);
 		}
 
 		if(!bforwardsearch) //otherwise this cost is not even set
@@ -1002,6 +1039,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 			if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
 			{
 				fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
+				exit(1);
 			}
 		}
 #endif
@@ -1071,7 +1109,7 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 
 	FILE* fOut = stdout;
 	int steps = 0;
-	const int max_steps = 10000;
+	const int max_steps = 100000;
 	while(state->StateID != goalstate->StateID && steps < max_steps)
 	{
 		steps++;
@@ -1104,6 +1142,15 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 
         }
         solcost += actioncost;
+
+		if(searchstateinfo->v < searchstateinfo->g)
+		{
+			printf("ERROR: underconsistent state on the path\n");
+			PrintSearchState(searchstateinfo, stdout);
+			//fprintf(fDeb, "ERROR: underconsistent state on the path\n");
+			//PrintSearchState(searchstateinfo, fDeb);
+			exit(1);
+		}
 
         //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
         //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
@@ -1160,10 +1207,10 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
 		//it will be a new search iteration
-		pSearchStateSpace->iteration++;
+		if(pSearchStateSpace->searchiteration == 0) pSearchStateSpace->searchiteration++;
 
 		//decrease eps for all subsequent iterations
-		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
+		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS && !bFirstSolution)
 		{
 			pSearchStateSpace->eps = pSearchStateSpace->eps - AD_DECREASE_EPS;
 			if(pSearchStateSpace->eps < AD_FINAL_EPS)
@@ -1171,11 +1218,15 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 
 			pSearchStateSpace->bReevaluatefvals = true;
+			pSearchStateSpace->bRebuildOpenList = true;
 
+
+			pSearchStateSpace->searchiteration++;
 		}
 
 		//build a new open list by merging it with incons one
-		BuildNewOPENList(pSearchStateSpace);
+		if(pSearchStateSpace->bRebuildOpenList)
+			BuildNewOPENList(pSearchStateSpace);
 		
 		//re-compute f-values if necessary and reorder the heap
 		if(pSearchStateSpace->bReevaluatefvals)
@@ -1220,7 +1271,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 	int solcost = INFINITECOST;
     bool ret = false;
-	if(PathCost == INFINITECOST)
+	if(PathCost == INFINITECOST || pSearchStateSpace_->eps_satisfied == INFINITECOST)
 	{
 		printf("could not find a solution\n");
 		ret = false;
@@ -1239,16 +1290,20 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
     //fprintf(fStat, "%d %d\n", searchexpands, solcost);
 
-	return true;
+	return ret;
 
 }
 
-void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
+void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int> const * statesIDV)
 {
 	printf("updating %d affected states\n", statesIDV->size());
 
 	//it will be a new search iteration
-	pSearchStateSpace_->iteration++;
+	pSearchStateSpace_->searchiteration++;
+
+	//will need to rebuild open list
+	pSearchStateSpace_->bRebuildOpenList = true;
+
 
 	int numofstatesaffected = 0;
 	for(int pind = 0; pind < (int)statesIDV->size(); pind++)
@@ -1266,19 +1321,39 @@ void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
 		//now check that the state is not start state and was created after last search reset
 		if(stateID != pSearchStateSpace_->searchstartstate->StateID && searchstateinfo->callnumberaccessed == pSearchStateSpace_->callnumber)
 		{
+
+#if DEBUG
+			fprintf(fDeb, "updating affected state %d:\n", stateID);
+			PrintSearchState(searchstateinfo, fDeb);
+			fprintf(fDeb, "\n");
+#endif
+
 			//now we really do need to update it
 			Recomputegval(searchstateinfo);
 			UpdateSetMembership(searchstateinfo);
 			numofstatesaffected++;
+
+#if DEBUG
+			fprintf(fDeb, "the state after update\n", stateID);
+			PrintSearchState(searchstateinfo, fDeb);
+			fprintf(fDeb, "\n");
+#endif
+
+
 		}
 	}
 
-	printf("%d states really affected\n", numofstatesaffected);
+	printf("%d states really affected (%d states generated total so far)\n", numofstatesaffected, (int)environment_->StateID2IndexMapping.size());
 
 	//reset eps for which we know a path was computed
 	if(numofstatesaffected > 0)
-	    pSearchStateSpace_->eps_satisfied = INFINITECOST;
+	{
+		//make sure eps is reset appropriately
+		pSearchStateSpace_->eps = this->finitial_eps;
 
+		//reset the satisfied eps
+	    pSearchStateSpace_->eps_satisfied = INFINITECOST;
+	}
 
 }
 
@@ -1287,20 +1362,34 @@ void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
 //returns 1 if found a solution, and 0 otherwise
 int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V)
 {
+	int solcost;
+
+	return replan(allocated_time_secs, solution_stateIDs_V, &solcost);
+	
+}
+
+
+
+//returns 1 if found a solution, and 0 otherwise
+int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* psolcost)
+{
     vector<int> pathIds; 
     int PathCost = 0;
     bool bFound = false;
+	*psolcost = 0;
+	bool bOptimalSolution = false;
 
+	printf("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bsearchuntilfirstsolution, bOptimalSolution);
 
     //plan for the first solution only
-    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, false, false, allocated_time_secs)) == false) 
+    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bsearchuntilfirstsolution, bOptimalSolution, allocated_time_secs)) == false) 
     {
         printf("failed to find a solution\n");
     }
 
     //copy the solution
     *solution_stateIDs_V = pathIds;
-
+	*psolcost = PathCost;
 
 	return (int)bFound;
 
@@ -1309,8 +1398,12 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
 int ADPlanner::set_goal(int goal_stateID)
 {
 
+	printf("planner: setting goal to %d\n", goal_stateID);
+	environment_->PrintState(goal_stateID, true, stdout);
+
 	//it will be a new search iteration
-	pSearchStateSpace_->iteration++;
+	pSearchStateSpace_->searchiteration++;
+	pSearchStateSpace_->bRebuildOpenList = true; //is not really necessary for search goal changes
 
 	if(bforwardsearch)
 	{
@@ -1336,8 +1429,12 @@ int ADPlanner::set_goal(int goal_stateID)
 int ADPlanner::set_start(int start_stateID)
 {
 
+	printf("planner: setting start to %d\n", start_stateID);
+	environment_->PrintState(start_stateID, true, stdout);
+
 	//it will be a new search iteration
-	pSearchStateSpace_->iteration++;
+	pSearchStateSpace_->searchiteration++;
+	pSearchStateSpace_->bRebuildOpenList = true;
 
 
 	if(bforwardsearch)
@@ -1364,22 +1461,43 @@ int ADPlanner::set_start(int start_stateID)
 
 void ADPlanner::update_succs_of_changededges(vector<int>* succstatesIDV)
 {
+	printf("UpdateSuccs called on %d succs\n", succstatesIDV->size());
+
 	Update_SearchSuccs_of_ChangedEdges(succstatesIDV);
 }
+
 void ADPlanner::update_preds_of_changededges(vector<int>* predstatesIDV)
 {
+	printf("UpdatePreds called on %d preds\n", predstatesIDV->size());
+
 	Update_SearchSuccs_of_ChangedEdges(predstatesIDV);
 }
 
 
 int ADPlanner::force_planning_from_scratch()
 {
+	printf("planner: forceplanfromscratch set\n");
 
     pSearchStateSpace_->bReinitializeSearchStateSpace = true;
 
     return 1;
 }
 
+
+int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
+{
+	printf("planner: search mode set to %d\n", bSearchUntilFirstSolution);
+
+	bsearchuntilfirstsolution = bSearchUntilFirstSolution;
+
+	return 1;
+}
+
+
+void ADPlanner::costs_changed(ChangedCellsGetter const & changedcells)
+{
+  Update_SearchSuccs_of_ChangedEdges(changedcells.getPredsOfChangedCells()); //TODO - change as it is assumes backward search
+}
 
 
 //---------------------------------------------------------------------------------------------------------

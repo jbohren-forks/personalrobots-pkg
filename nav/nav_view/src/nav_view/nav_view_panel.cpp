@@ -94,7 +94,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
   {
     int argc = 0;
     ros::init( argc, 0 );
-    ros_node_ = new ros::node( "NavViewPanel", ros::node::DONT_HANDLE_SIGINT );
+    ros_node_ = new ros::node( "nav_view_panel", ros::node::DONT_HANDLE_SIGINT );
   }
   ROS_ASSERT( ros_node_ );
 
@@ -329,6 +329,8 @@ void NavViewPanel::loadMap()
 
   root_node_->setPosition(Ogre::Vector3(-map_width_*map_resolution_/2, -map_height_*map_resolution_/2, 0.0f));
   map_node->setPosition(Ogre::Vector3(0.0f, 0.0f, MAP_DEPTH));
+
+  queueRender();
 }
 
 void NavViewPanel::clearMap()
@@ -429,7 +431,7 @@ void NavViewPanel::updateRadiusPosition()
 {
   try
   {
-    tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time((uint64_t)0ULL), "base");
+    tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(), "base_link");
     tf::Stamped<tf::Pose> map_pose;
 
     tf_client_->transformPose("map", robot_pose, map_pose);

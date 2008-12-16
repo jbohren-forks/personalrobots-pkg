@@ -1,6 +1,7 @@
 <package>
   <author>Morgan Quigley and Brian Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="joy"/>
   <depend package="std_msgs"/>
   <depend package="robot_srvs"/>

@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 
 <robot name="pr2"><!-- name of the robot-->
-  
+
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="ros-pkg://wg_robot_description/models/pr2"/>
+
   <!-- Begin template definitions for ease of reuse -->
   
   <const name="M_PI" value="3.14159" />   <!-- FIXME @todo needed to make M_PI interpreted correctly. -->
@@ -273,7 +276,7 @@
       <elem key="material">PR2/wheel_left</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
-      <mesh filename="wheel_left" scale="1 1 1"/>
+      <mesh filename="wheel" scale="1 1 1"/>
     </geometry>
   </const_block> 
   
@@ -284,7 +287,7 @@
       <elem key="material">PR2/wheel_right</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
-      <mesh filename="wheel_right" />
+      <mesh filename="wheel" />
     </geometry>
   </const_block> 
   
@@ -581,7 +584,7 @@
       <elem key="material">Gazebo/Grey</elem>
     </map>
     <geometry name="pr2_finger_l_mesh_file">
-      <mesh filename="finger-l" />
+      <mesh filename="upper_finger_l" />
     </geometry>
   </const_block> 
   
@@ -617,7 +620,7 @@
       <elem key="material">Gazebo/Green</elem>
     </map>
     <geometry name="pr2_finger_tip_l_mesh_file">
-      <mesh filename="finger-tip-l" />
+      <mesh filename="finger_tip_l" />
     </geometry>
   </const_block> 
   
@@ -652,7 +655,7 @@
       <elem key="material">Gazebo/Blue</elem>
     </map>
     <geometry name="pr2_finger_r_mesh_file">
-      <mesh filename="finger-r" />
+      <mesh filename="upper_finger_r" />
     </geometry>
   </const_block> 
   
@@ -687,7 +690,7 @@
       <elem key="material">Gazebo/Green</elem>
     </map>
     <geometry name="pr2_finger_tip_r_mesh_file">
-      <mesh filename="finger-tip-r" />
+      <mesh filename="finger_tip_r" />
     </geometry>
   </const_block> 
   
@@ -716,24 +719,30 @@
   
   <joint name="finger_tip_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_right_joint" mult="1" offset="0"/>
   </joint>
   <joint name="finger_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_tip_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
   </joint>
   <joint name="finger_tip_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_left_joint" mult="1" offset="0"/>
   </joint>
   <joint name="finger_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_tip_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
@@ -1488,7 +1497,7 @@
     <map name="finger_l_left_gravity" flag="gazebo">
       <elem key="turnGravityOff">true</elem>
     </map>
-   </link>
+  </link>
   <!-- End   left hand l finger proximal digit definition -->
   <!-- Begin left hand l finger tip (distal digit) definition -->
   <link name="finger_tip_l_left">
@@ -1511,22 +1520,22 @@
       <elem key="turnGravityOff">true</elem>
     </map>
     <!--
-    <map name="sensor" flag="gazebo">
-      <verbatim key="contact_sensor">
-        <sensor:contact name="finger_tip_l_left_contact_sensor">
-          <updateRate>15.0</updateRate>
-          <geom>pr2_finger_tip_l_collision_geom</geom>
-          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>15.0</updateRate>
-            <topicName>finger_tip_l_contact</topicName>
-            <frameName>finger_tip_l_contact</frameName>
-            <interface:bumper name="dummy_bumper_iface" />
-          </controller:ros_bumper>
-        </sensor:contact>
-      </verbatim>
-    </map>
-    -->
+        <map name="sensor" flag="gazebo">
+          <verbatim key="contact_sensor">
+            <sensor:contact name="finger_tip_l_left_contact_sensor">
+              <updateRate>15.0</updateRate>
+              <geom>pr2_finger_tip_l_collision_geom</geom>
+              <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>15.0</updateRate>
+                <topicName>finger_tip_l_contact</topicName>
+                <frameName>finger_tip_l_contact</frameName>
+                <interface:bumper name="dummy_bumper_iface" />
+              </controller:ros_bumper>
+            </sensor:contact>
+          </verbatim>
+        </map>
+        -->
   </link>
   <!-- End   left hand l finger tip (distal digit) definition -->
   <!-- Begin left hand r finger proximal digit definition -->

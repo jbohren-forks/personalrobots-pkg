@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot name="pr2">
+
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="ros-pkg://wg_robot_description/models/pr2"/>
+
+  <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/head_defs.xml" />
+  <include filename="../pr2_robot_defs/body_defs.xml" />
+  <include filename="../pr2_robot_defs/base_defs.xml" />
+  <include filename="../pr2_robot_defs/ptz_defs.xml" />
+  <include filename="../pr2_robot_defs/gazebo_defs.xml" />
+
+
+  <pr2_base name="base" >
+    <origin xyz="0 0 0.0408" rpy="0 0 0" />
+  </pr2_base>
+
+
+  <pr2_torso name="torso_lift" parent="base">
+    <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
+  </pr2_torso>
+
+  <pr2_head name="head" parent="torso_lift">
+    <origin xyz="0 0 0.3815" rpy="0 0 0" />
+  </pr2_head>
+
+  <pr2_tilting_laser name="laser_tilt" parent="torso_lift">
+    <origin xyz="0.1 0 0.19525" rpy="0 0 0" />
+  </pr2_tilting_laser>
+
+  <pr2_arm side="r" reflect="-1" parent="torso_lift">
+    <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="r" parent="r_wrist_roll" />
+
+  <pr2_arm side="l" reflect="1" parent="torso_lift">
+    <origin xyz="0.0 0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="l" parent="l_wrist_roll" />
+
+  <pr2_ptz side="r" reflect="-1" parent="torso_lift">
+    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <pr2_ptz side="l" reflect="1" parent="torso_lift">
+    <origin xyz="0.0  0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include filename="./groups.xml" />
+
+  <!-- Kinematic chains -->
+  <chain root="torso_lift_link" tip="l_wrist_roll_link" />
+  <chain root="torso_lift_link" tip="r_wrist_roll_link" />
+
+
+</robot>

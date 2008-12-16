@@ -5,7 +5,8 @@
   </description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
-  <depend package="opencv"/>
+  <review status="unreviewed" notes=""/>
+  <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>

@@ -60,7 +60,7 @@ getFeatureGraph()
   // calculate superpixel features, edge features
   //  FM* nodeFeat = getNodeFeaturesSeparateHistOpenCv(blobber);
   FM* nodeFeat = getNodeFeaturesSeparateHist(blobber);
-  FM* edgeFeat = getEdgeFeatures(blobber, nodeFeat, edgeList);
+  FM* edgeFeat = getEdgeFeaturesMult(blobber, nodeFeat, edgeList);
 
   fgraph = new UndirectedFeatureGraph<FM>(nNodes, edgeList, nodeFeat, edgeFeat);
 
@@ -71,102 +71,7 @@ getFeatureGraph()
   return fgraph;
 }
 
-template <class FM>
-FM* FeatureGraphExtractor<FM>::
-getNodeFeatures(SuperpixelBlobber &blobber) {
-  int nNodeFeat = H_BINS*S_BINS*V_BINS+1;
-
-  // make feature matrix
-  FM *fmat = new FM(blobber.numBlobs(), nNodeFeat);
-  
-  // convert image to HSV
-  const IplImage *sourceImage = blobber.getSourceImage();
-  IplImage *hsv = cvCreateImage(cvGetSize(sourceImage), 8, 3);
-  cvCvtColor(sourceImage, hsv, CV_BGR2HSV);
-  
-  // extract planes for histogram
-  IplImage *hPlane = cvCreateImage(cvGetSize(sourceImage), 8, 1);
-  IplImage *sPlane = cvCreateImage(cvGetSize(sourceImage), 8, 1);
-  IplImage *vPlane = cvCreateImage(cvGetSize(sourceImage), 8, 1);
-  //int nPlanes = 3;
-  
-  IplImage *planes[] = { hPlane, sPlane, vPlane };
-  cvCvtPixToPlane(hsv, hPlane, sPlane, vPlane, 0);
-
-  float h_ranges[] = { 0, 181 }; 
-  float s_ranges[] = { 0, 256 };
-  float v_ranges[] = { 0, 256 };
-  float *ranges[] = { h_ranges, s_ranges, v_ranges };
-
-  int numBins[] = { H_BINS, S_BINS, V_BINS };
-
-  
-  // calculate histogram for each blob, append to feature matrix
-  //  SparseGeMatrix< CRS<double> > *fMatRaw = fmat->getMat();
-  int blobNum = 0;
-  std::vector<IplImage*>::const_iterator masksEnd = 
-    blobber.getBlobMasks()->end();
-  for (std::vector<IplImage*>::const_iterator it = 
-	 blobber.getBlobMasks()->begin();
-       it != masksEnd;
-       it++) {
-    IplImage* blobMask = *it;
-    
-    // create and calculate histogram
-    CvHistogram *hist = 
-      cvCreateHist(3, numBins, CV_HIST_ARRAY, (float**)ranges, 1);
-        
-    cvCalcHist(planes, hist, 0, blobMask);
-
-    cvNormalizeHist(hist, 1.0);
-
-    // FIXME: only works for 3-channel features for now 
-    // lay out histogram into row of feature matrix
-    int fnum = 0;
-    for (int bin0 = 0; bin0 < numBins[0]; bin0++) {
-      for (int bin1 = 0; bin1 < numBins[1]; bin1++) {
-	for (int bin2 = 0; bin2 < numBins[2]; bin2++) {
-	  double histVal = cvQueryHistValue_3D(hist, bin0, bin1, bin2);
-	  if (histVal > HIST_BIN_THRESH) {
-	    fmat->set(blobNum, fnum, histVal);
-	  }
-	  fnum++;
-	}
-      }
-    }
-
-    cvReleaseHist(&hist);
-
-    /*
-    cvNamedWindow("Current blob", 0);
-    cvShowImage("Current blob", blobMask);
-
-    cout << (*fMatRaw)(blobNum,_) << endl;
-    cout << "Blob " << blobNum << ", area " << 
-      cvCountNonZero(blobMask) << endl;
-    int key = cvWaitKey();
-    */
-
-      
-    blobNum++;
-  }
-
-  for (int row = 0; row < fmat->rows(); row++)
-    fmat->set(row, nNodeFeat-1, 1);
-
-  //  cout << *fMatRaw << endl;
-  cvReleaseImage(&hPlane);
-  cvReleaseImage(&sPlane);
-  cvReleaseImage(&vPlane);
-  cvReleaseImage(&hsv);
-
-  blobber.releaseMasks();
-
-  fmat->finalize();
-
-  return fmat;
-}
-
+/*
 // makes a histogram per channel, concatenates them in feature vector
 // FIXME: make less fragile wrt. adding new features
 template <class FM>
@@ -199,35 +104,21 @@ getNodeFeaturesSeparateHistOpenCv(SuperpixelBlobber &blobber) {
     cvCreateImage(cvGetSize(sourceImage), IPL_DEPTH_8U, 1);
   IplImage *mgPlane = 
     cvCreateImage(cvGetSize(sourceImage), IPL_DEPTH_8U, 1);
-  calcImGradientFeatures(vPlane, thPlane, mgPlane);
+  calcGradientImages(vPlane, thPlane, mgPlane);
 
   IplImage *planes[] = { hPlane, sPlane, vPlane, thPlane, mgPlane };
 
   // create and calculate histogram
   //  static int numBins[] = { H_BINS, S_BINS, V_BINS };
-  static int numBins[] = { H_BINS, S_BINS, V_BINS, THETA_BINS, MAG_BINS };
-  static float h_ranges[] = { 0, 181 }; 
-  static float s_ranges[] = { 0, 256 };
-  static float v_ranges[] = { 0, 256 };
+  static int numBins[] = { THETA_BINS, MAG_BINS };
   static float th_ranges[] = { 0, 256 };
   //  static float mg_ranges[] = { 0, log2f(IMAGE_MAX_VAL + 1)+1 };
   static float mg_ranges[] = { 0, 256 };
   //  static float *ranges[] = { h_ranges, s_ranges, v_ranges };
   static float *ranges[] = 
     { h_ranges, s_ranges, v_ranges, th_ranges, mg_ranges };
-
   
 
-
-  /*
-  // TESTING
-  double imin = 0, imax = 0;
-  cvMinMaxLoc(hPlane, &imin, &imax);
-  assert(imax < h_ranges[1]);
-  std::cout << "H RANGE " << imin << " " << imax << std::endl;
-  CvScalar iavg = cvAvg(hPlane);
-  std::cout << "H AVG " << iavg.val[0] << std::endl;
-  */
 
 
 
@@ -299,6 +190,7 @@ getNodeFeaturesSeparateHistOpenCv(SuperpixelBlobber &blobber) {
 
   return fmat;
 }
+*/
 
 template <class FM>
 FM* FeatureGraphExtractor<FM>::
@@ -328,62 +220,29 @@ getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
     cvCreateImage(cvGetSize(sourceImage), IPL_DEPTH_8U, 1);
   IplImage *mgPlane = 
     cvCreateImage(cvGetSize(sourceImage), IPL_DEPTH_8U, 1);
-  calcImGradientFeatures(vPlane, thPlane, mgPlane);
+  calcGradientImages(vPlane, thPlane, mgPlane);
 
-  IplImage *planes[] = { hPlane, sPlane, vPlane, thPlane, mgPlane };
+  ImageHistogram<unsigned char>::Params histH = 
+    { hPlane, pair<double,double>(0,181), H_BINS };
+  ImageHistogram<unsigned char>::Params histS = 
+    { sPlane, pair<double,double>(0,256), S_BINS };
+  ImageHistogram<unsigned char>::Params histV = 
+    { vPlane, pair<double,double>(0,256), V_BINS };
+  ImageHistogram<unsigned char>::Params histTH = 
+    { thPlane, pair<double,double>(0,256), THETA_BINS };
+  ImageHistogram<unsigned char>::Params histMG = 
+    { mgPlane, pair<double,double>(0,256), MAG_BINS };
+  
+  vector<ImageHistogram<unsigned char>::Params> histParams;
+  histParams.push_back(histH);
+  histParams.push_back(histS);
+  histParams.push_back(histV);
+  histParams.push_back(histTH);
+  histParams.push_back(histMG);
 
-  // create and calculate histogram
-  //  static int numBins[] = { H_BINS, S_BINS, V_BINS };
-  static int numBins[] = { H_BINS, S_BINS, V_BINS, THETA_BINS, MAG_BINS };
-  static double h_ranges[] = { 0, 181 }; 
-  static double s_ranges[] = { 0, 256 };
-  static double v_ranges[] = { 0, 256 };
-  static double th_ranges[] = { 0, 256 };
-  static double mg_ranges[] = { 0, 256 };
-  //  static double *ranges[] = { h_ranges, s_ranges, v_ranges };
-  static double *ranges[] = 
-    { h_ranges, s_ranges, v_ranges, th_ranges, mg_ranges };
-
-  // calculate histogram for each blob, append to feature matrix
-
-  int blobNum = 0;
-  std::vector<coordList*>::const_iterator itEnd = 
-    blobber.getBlobCoords()->end();
-  for (std::vector<coordList*>::const_iterator it = 
-	 blobber.getBlobCoords()->begin();
-       it != itEnd;
-       it++) {
-    coordList* coords = *it;
-
-    int featureNum = 0;
-    for (int ci = 0; ci < HIST_DIM; ci++) {
-      double bins[numBins[ci]];
-
-      ImageHistogram<unsigned char>::
-	histogram(planes[ci], 
-		  pair<double,double>((ranges[ci])[0], (ranges[ci])[1]),
-		  *coords, 
-		  numBins[ci],
-		  bins);
-
-      // DEBUGGING!!!
-      // DEBUGGING!!!
-      //      if (ci < 3) continue;
-      //      if (ci >= 3) continue;
-
-      // lay out histogram into row of feature matrix
-      for (int bin = 0; bin < numBins[ci]; bin++) {
-	if (bins[bin] > HIST_BIN_THRESH) {
-	  fmat->set(blobNum, featureNum, bins[bin]);
-	}
-
-	featureNum++;
-      }
-
-    }
-    blobNum++;
-  }
-
+  int nextIndFeatMat = 
+    calculateHistogramFeatures(histParams, 0, fmat);
+  
   /*
   // calculate whole-channel features
   CvScalar hMean = cvAvg(hPlane);
@@ -398,7 +257,7 @@ getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
   */
 
   for (int row = 0; row < fmat->rows(); row++) 
-    fmat->set(row, nNodeFeat-1, 1);
+    fmat->set(row, nextIndFeatMat, 1);
 
   //  cout << *fMatRaw << endl;
   cvReleaseImage(&hPlane);
@@ -420,13 +279,18 @@ getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
   return fmat;
 }
 
-// output argument IplImages should be preallocated
-// maximum magnitude is log of maximum derivative + 1, min is 0
+/**
+   @param src Source image
+   @param thetas Output image of gradient 
+   @fixme Not sure it makes sense to output theta--do something else?
+   @attention Output arguments should be preallocated.
+   Maximum magnitude is log of maximum derivative + 1, min is 0
+*/
 template <class FM> 
 void FeatureGraphExtractor<FM>::
-calcImGradientFeatures(const IplImage *src, 
-		       IplImage *thetas,
-		       IplImage *mags) {
+calcGradientImages(const IplImage *src, 
+		   IplImage *thetas,
+		   IplImage *mags) {
   IplImage *dx = cvCreateImage(cvGetSize(src), IPL_DEPTH_16S, 1);
   IplImage *dy = cvCreateImage(cvGetSize(src), IPL_DEPTH_16S, 1);
 
@@ -567,6 +431,77 @@ getEdgeFeatures(const SuperpixelBlobber &blobber,
 
   for (int row = 0; row < edgeFeat->rows(); row++)
     edgeFeat->set(row, 2*nNodeFeat, 1); 
+  
+  edgeFeat->finalize();
+
+  if (getenv("oDebugOn")) 
+    std::cout << "Edge features took " << timer.elapsed() << std::endl;
+
+  return edgeFeat;
+}
+
+/**
+   These edge features are the product of node features
+ */
+template <class FM>
+FM *FeatureGraphExtractor<FM>::
+getEdgeFeaturesMult(const SuperpixelBlobber &blobber, 
+		    FM* snodeFeat,
+		    vector<pair<int,int> > &edgeList) {
+
+  boost::timer timer;
+
+  // FIXME: don't hard-code this
+  //  int nNodeFeat = H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + 1;
+  int nEdgeFeat = nNodeFeat + 2;
+
+  // make feature matrix
+  FM *edgeFeat = new FM(edgeList.size(), nEdgeFeat);
+
+  // make a dense copy to allow random access
+  // FIXME: unnecessary if snodeFeat is already dense
+  DenseFeatureMatrix<double> nodeFeat(*snodeFeat);
+
+  int edgeNum = 0;
+
+  for (vector<pair<int,int> >::iterator it = edgeList.begin();
+       it != edgeList.end();
+       it++) {
+    pair<int,int> edge = *it;
+
+    // alignment of feature vectors--heuristic for keeping entropy low
+    double cosFeatures = 0;
+    double normSqf0 = 0;
+    double normSqf1 = 0;
+
+    // geometric mean of node features
+    // skip bias feature
+    for (int srcCol = 0; srcCol < nNodeFeat - 1; srcCol++) {
+      double nf0 = nodeFeat.get(edge.first, srcCol);
+      double nf1 = nodeFeat.get(edge.second, srcCol);
+      double ndot = nf0*nf1;
+      edgeFeat->set(edgeNum, srcCol, sqrt(ndot));
+
+      assert(nf0 <= 1);
+      assert(nf1 <= 1);
+
+      cosFeatures += ndot;
+      normSqf0 += nf0*nf0;
+      normSqf1 += nf1*nf1;
+    }
+
+    // feature alignment feature
+    cosFeatures /= sqrt(normSqf0*normSqf1);
+    edgeFeat->set(edgeNum, nEdgeFeat - 2, cosFeatures);
+
+    edgeNum++;
+  }
+
+  //  printf("E %f MAX %f\n", entropy, log(nNodeFeat));
+
+  for (int row = 0; row < edgeFeat->rows(); row++) {
+    edgeFeat->set(row, nEdgeFeat - 1, 1); 
+  }
   
   edgeFeat->finalize();
 
@@ -787,9 +722,15 @@ displayGraph(const IplImage* sourceImage,
 
   IplImage *temp = 
     cvCreateImage(cvGetSize(contourImage), IPL_DEPTH_8U, 3);
-  cvMerge(contourImage, contourImage, contourImage, NULL, temp);    
+  IplImage* contourCopy = 
+    cvCreateImage(cvGetSize(contourImage), IPL_DEPTH_8U, 1);
+  cvCopy(contourImage, contourCopy);
+  cvSet(contourCopy, cvScalar(0), contourCopy);
+  cvMerge(contourCopy, contourCopy, contourImage, NULL, temp);    
 
-  cvAdd(temp, imdisp, imdisp);
+  //  cvMerge(blankImage, blankImage, contourImage, NULL, temp);    
+  //  cvAdd(temp, imdisp, imdisp);
+  cvCopy(temp, imdisp, contourImage);
 
   cvNamedWindow("graph",0);
   int bnum = 0;
@@ -802,7 +743,7 @@ displayGraph(const IplImage* sourceImage,
       continue;
 
     blobStat* bstat = blobStats[ii];
-    cvCircle(imdisp, cvPoint(bstat->mx, bstat->my), 10, 
+    cvCircle(imdisp, cvPoint(bstat->mx, bstat->my), 2, 
 	     CV_RGB(255,0,0), 2);
     bnum++;
   }
@@ -851,5 +792,65 @@ displayGraph(const IplImage* sourceImage,
 
   cvReleaseImage(&imdisp);
   cvReleaseImage(&temp);
+  cvReleaseImage(&contourCopy);
+}
+
+/**
+   @param histParams vector of ImageHistogram::Params
+   @param firstColFeatMat The first column of the feature matrix to use
+   @param featMat The feature matrix
+   @return The index of the first unused column in the feature matrix
+ */
+template <class FM>
+int FeatureGraphExtractor<FM>::
+calculateHistogramFeatures(vector<ImageHistogram<unsigned char>::Params>& 
+			   histParams,
+			   int firstColFeatMat,
+			   FM* featMat) {
+  int blobNum = 0;
+  std::vector<coordList*>::const_iterator itEnd = 
+    blobber.getBlobCoords()->end();
+
+  for (std::vector<coordList*>::const_iterator it = 
+	 blobber.getBlobCoords()->begin();
+       it != itEnd;
+       it++) {
+
+    coordList* coords = *it;
+
+    int featureNum = firstColFeatMat;
+
+    for (vector<ImageHistogram<unsigned char>::Params>::iterator it = histParams.begin();
+	 it != histParams.end();
+	 it++) {
+
+      ImageHistogram<unsigned char>::Params hparm = *it;
+      double bins[hparm.numBins];
+
+      ImageHistogram<unsigned char>::
+	histogram(hparm, *coords, bins);
+
+      // lay out histogram into row of feature matrix
+      for (int bin = 0; bin < hparm.numBins; bin++) {
+	if (bins[bin] > HIST_BIN_THRESH) {
+	  featMat->set(blobNum, featureNum, bins[bin]);
+	}
+
+	featureNum++;
+      }
+
+    }
+    blobNum++;
+  }
+
+  int numCols = 0;
+  for (vector<ImageHistogram<unsigned char>::Params>::iterator it = 
+	 histParams.begin();
+       it != histParams.end();
+       it++) {
+    numCols += (*it).numBins;
+  }
+
+  return firstColFeatMat + numCols;
 }
 

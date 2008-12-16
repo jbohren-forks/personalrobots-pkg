@@ -1,3 +1,37 @@
+/*********************************************************************
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
 /*
  * VOSparseBundleAdj.h
  *
@@ -27,7 +61,12 @@ public:
   typedef PathRecon Parent;
   VOSparseBundleAdj(
       /// Image size. Use for buffer allocation.
-      const CvSize& imageSize);
+      const CvSize& imageSize,
+      /// the number of free frames (cameras)
+      int num_free_frames = DefaultFreeWindowSize,
+      /// the number of fixed frames (cameras)
+      int num_fixed_frames = DefaultFrozenWindowSize
+  );
   virtual ~VOSparseBundleAdj();
 
   /**
@@ -35,6 +74,10 @@ public:
    * camera.
    */
   virtual bool track(queue<StereoFrame>& inputImageQueue);
+
+  /// \brief setting the camera parameters
+  virtual void setCameraParams(double Fx, double Fy, double Tx,
+      double Clx, double Crx, double Cy, double dispUnitScale);
 
   /// Slide down the end mark of the sliding window. Update the
   /// beginning end of applicable. Plus book keeping of the tracks
@@ -46,8 +89,10 @@ public:
       PointTracks& tracks);
   void purgeTracks(int frameIndex);
 
-  /// Default size of the sliding window
-  static const int DefaultSlideWindowSize  = 10;
+  /// Default size of the free window
+  static const int DefaultFreeWindowSize  = 5;
+  /// Default size of the fixed window
+  static const int DefaultFrozenWindowSize = 10;
   /// Default number of iteration
   static const int DefaultNumIteration = 20;
 
@@ -88,15 +133,26 @@ protected:
       /// the index of the inlier,
       int inlierIndex
   );
+
+  static void fillFrames(
+      const vector<FramePose*>* frames,
+      const int lowest_free_frame_index,
+      const int highest_free_frame_index,
+      const int free_window_size,
+      const int max_fixed_window_size,
+      const PointTracks* tracks,
+      vector<FramePose*>* free_frames,
+      vector<FramePose*>* fixed_frames);
+
   PointTracks mTracks;
-  /// size of the sliding window
-  int mSlideWindowSize;
+  /// size of the sliding window of free cameras/frames
+  int full_free_window_size_;
   /// number of frozen cameras in bundle adjustment.  Frozen (or fixed)
   /// frame (cameras) are those fall out of the sliding window, but still share
   /// tracks with frames(cameras) inside the sliding window.
   /// At the beginning when there are not enough frames (cameras) for a full
   /// slide window, we always keep the first frame frozen.
-  int mNumFrozenWindows;
+  int full_fixed_window_size_;
 
   /// number of iteration for bundle adjustment.
   int mNumIteration;
@@ -104,10 +160,9 @@ protected:
   /// unique id of the tracks
   int mTrackId;
 
-  Foo foo_;
-  Foo2 foo2_;
-
-//  LevMarqSparseBundleAdj* levmarq_sba_;
+  /// a pointer to the Levenberge-Marquardt optimizer for
+  /// sparse bundle adjustment.
+  LevMarqSparseBundleAdj* levmarq_sba_;
 };
 
 /// Visualizing the visual odometry process of bundle adjustment.
@@ -115,10 +170,20 @@ class SBAVisualizer: public F2FVisualizer {
   public:
     typedef F2FVisualizer Parent;
     SBAVisualizer(PoseEstimateDisp& poseEstimator,
-        const vector<FramePose>& framePoses,
-        const PointTracks& trcks):
-      Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
-    virtual ~SBAVisualizer(){}
+        vector<FramePose*>* framePoses,
+        PointTracks* trcks,
+        boost::unordered_map<int, FramePose*>* map_index_to_FramePose
+    ):
+      Parent(poseEstimator), framePoses(framePoses), tracks(trcks),
+      map_index_to_FramePose_(map_index_to_FramePose)
+      {
+          CvMat cartToDisp;
+          CvMat dispToCart;
+          poseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
+          threeDToDisparity_ = cvCreateMat(4, 4, CV_64FC1);
+          cvCopy(&cartToDisp, threeDToDisparity_);
+      }
+    virtual ~SBAVisualizer(){ cvReleaseMat(&threeDToDisparity_); }
     /// Draw keypoints, tracks and disparity map on canvases for visualization
     virtual void drawTrackingCanvas(
         const PoseEstFrameEntry& lastFrame,
@@ -133,15 +198,15 @@ class SBAVisualizer: public F2FVisualizer {
     /// For the part that is in the free frames,
     /// a trajectory, or track, is green if the last observation of the track is
     /// on the current frame. Yellow otherwise.
-    virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
-    virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
-
+    virtual void drawTrackTrajectories(int frame_index);
 
     /// a reference to the estimated pose of the frames
-    const vector<FramePose>& framePoses;
+    vector<FramePose*>* framePoses;
     /// a reference to the tracks.
-    const PointTracks& tracks;
+    PointTracks* tracks;
     int   slideWindowFront;
+    CvMat* threeDToDisparity_;
+    boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
 };
 
 

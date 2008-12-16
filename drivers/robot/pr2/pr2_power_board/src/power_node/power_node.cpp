@@ -210,22 +210,13 @@ bool Interface::IsReadSet(fd_set set) const {
   return FD_ISSET(recv_sock,&set);	
 }
 
-int PowerBoard::send_command(const char* input) 
+int PowerBoard::send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags) 
 {	
-  int selected_device=-1;
-  int circuit_breaker=-1;
-  char command[8+1];
-
   if (Devices.size() == 0) {
     fprintf(stderr,"No devices to send command to\n");
     return -1;
   }
 	
-  if (sscanf(input,"%i %i %8s",&selected_device, &circuit_breaker, command) != 3) {
-    printf("Need two values : device# & circuit breaker#, got '%s'\n", input);
-    return -1;
-  }
-
   if ((selected_device < 0) || (selected_device >= (int)Devices.size())) {
     fprintf(stderr, "Device number must be between 0 and %u\n", Devices.size()-1);
     return -1;
@@ -235,33 +226,32 @@ int PowerBoard::send_command(const char* input)
   assert(device != NULL);
 
 	
-  if ((circuit_breaker < 0) || (circuit_breaker >= 3)) {
+  if ((circuit_breaker < 0) || (circuit_breaker > 2)) {
     fprintf(stderr, "Circuit breaker number must be between 0 and 2\n");
     return -1;
   }	
 
-  //printf("command = '%s'\n",command);
+  ROS_DEBUG("circuit=%d command=%s flags=%x\n", circuit_breaker, command.c_str(), flags);
 	
   // Determine what command to send
-  command[sizeof(command)-1] = '\0';	
   char command_enum = NONE;
-  if (strncmp(command, "start",sizeof(command)) == 0) {
+  if (command == "start") {
     command_enum = COMMAND_START;
   }
-  else if (strncmp(command, "stop",sizeof(command)) == 0) {
+  else if (command ==  "stop") {
     command_enum = COMMAND_STOP;
   }
-  else if (strncmp(command, "reset",sizeof(command)) == 0) {
+  else if (command == "reset") {
     command_enum = COMMAND_RESET;		
   }
-  else if (strncmp(command, "disable",sizeof(command)) == 0) {
+  else if (command == "disable") {
     command_enum = COMMAND_DISABLE;
   }
-  else if (strncmp(command, "none",sizeof(command)) == 0) {
+  else if (command == "none") {
     command_enum = NONE;
   }
   else {
-    fprintf(stderr, "invalid command '%s'\n", command);
+    ROS_ERROR("invalid command '%s'", command.c_str());
     return -1;
   }
   //" -c : command to send to device : 'start', 'stop', 'reset', 'disable'\n"	
@@ -292,6 +282,8 @@ int PowerBoard::send_command(const char* input)
     cmdmsg.command.CB1_command = command_enum;
     cmdmsg.command.CB2_command = command_enum;
   }
+
+  cmdmsg.command.flags = flags;
    	
   errno = 0;
   for (unsigned xx = 0; xx < SendInterfaces.size(); ++xx)
@@ -309,7 +301,7 @@ int PowerBoard::send_command(const char* input)
 				
   ROS_DEBUG("Send to Serial=%u, revision=%u", cmdmsg.header.serial_num, cmdmsg.header.message_revision);
   ROS_DEBUG("Sent command %s(%d) to device %d, circuit %d",
-         command, command_enum, selected_device, circuit_breaker);
+         command.c_str(), command_enum, selected_device, circuit_breaker);
 	
   return 0;
 }
@@ -531,9 +523,8 @@ PowerBoard::PowerBoard(): ros::node ("pr2_power_board")
 bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
                      pr2_power_board::PowerBoardCommand::response &res_)
 {
-  std::stringstream ss;
-  ss << " 0 " << req_.breaker_number<<" " << req_.command;
-  res_.retval = send_command(ss.str().c_str());
+  res_.retval = send_command( 0, req_.breaker_number, req_.command, req_.flags);
+
   return true;
 }
 
@@ -674,11 +665,11 @@ void PowerBoard::sendDiagnostic()
       stat.strings.push_back(strval);
       ROS_DEBUG("  estop_button= %x", (status->estop_button_status));
       val.value = status->estop_button_status;
-      val.label = "Estop Button Status";
+      val.label = "RunStop Button Status";
       stat.values.push_back(val);
       ROS_DEBUG("  estop_status= %x", (status->estop_status));
       val.value = status->estop_status;
-      val.label = "Estop Status";
+      val.label = "RunStop Status";
       stat.values.push_back(val);
       
       ROS_DEBUG(" Revisions:");
@@ -706,6 +697,14 @@ void PowerBoard::sendDiagnostic()
       strval.value = ss.str();
       strval.label = "Minor Revision";
       stat.strings.push_back(strval);
+
+      val.value = status->min_input_voltage;
+      val.label = "Min Voltage";
+      stat.values.push_back(val);
+      val.value = status->max_input_current;
+      val.label = "Max Current";
+      stat.values.push_back(val);
+
 
       TransitionMessage *tmsg = &device->tmsg;		
       for(int cb_index=0; cb_index < 3; ++cb_index)

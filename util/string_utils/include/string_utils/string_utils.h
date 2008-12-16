@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef STRING_UTILS_STRING_UTILS_
 #define STRING_UTILS_STRING_UTILS_

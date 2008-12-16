@@ -34,6 +34,8 @@
 
 #include <vector>
 
+#include "image_msgs/CvBridge.h"
+
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -41,7 +43,9 @@
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
-#include "image_msgs/CvBridge.h"
+
+
+#include "color_calib.h"
 
 #include "topic_synchronizer.h"
 
@@ -54,41 +58,143 @@ public:
   image_msgs::Image limage;
   image_msgs::Image rimage;
   image_msgs::Image dimage;
+  image_msgs::StereoInfo stinfo;
 
   image_msgs::CvBridge lbridge;
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
 
+  color_calib::Calibration lcal;
+  color_calib::Calibration rcal;
+
+  IplImage* lcalimage;
+  IplImage* rcalimage;
+
   TopicSynchronizer<StereoView> sync;
 
-  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all)
+  bool subscribe_color_;
+  bool calib_color_;
+  bool recompand_;
+
+  ros::thread::mutex cv_mutex;
+
+  StereoView() : ros::node("stereo_view"), 
+                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
+                 sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
+                 calib_color_(false), recompand_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
-    sync.subscribe("dcam/left/image_rect", limage, 1);
-    sync.subscribe("dcam/right/image_rect", rimage, 1);
+    std::list<std::string> left_list;
+    left_list.push_back(std::string("dcam/left/image_rect_color"));
+    left_list.push_back(std::string("dcam/left/image_rect"));
+
+    std::list<std::string> right_list;
+    right_list.push_back(std::string("dcam/right/image_rect_color"));
+    right_list.push_back(std::string("dcam/right/image_rect"));
+
+    sync.subscribe(left_list,  limage, 1);
+    sync.subscribe(right_list, rimage, 1);
+
     sync.subscribe("dcam/disparity", dimage, 1);
+    sync.subscribe("dcam/stereo_info", stinfo, 1);
   }
 
-  void image_cb_all()
+  ~StereoView()
   {
-    lbridge.fromImage(limage);
-    rbridge.fromImage(rimage);
-    dbridge.fromImage(dimage);
+    if (lcalimage)
+      cvReleaseImage(&lcalimage);
+    if (rcalimage)
+      cvReleaseImage(&rcalimage);
+  }
 
-    // Disparity has to be scaled to be be nicely displayable
-    IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-    cvCvtScale(dbridge.toIpl(), disp, 1/4.0);
+  void image_cb_all(ros::Time t)
+  {
+    cv_mutex.lock();
 
-    cvShowImage("left", lbridge.toIpl());
-    cvShowImage("right", rbridge.toIpl());
-    cvShowImage("disparity", disp);
+    if (lbridge.fromImage(limage, "bgr"))
+    {
+      if (calib_color_)
+      {
+        lbridge.reallocIfNeeded(&lcalimage, IPL_DEPTH_32F);
 
-    cvWaitKey(5);
+        lcal.correctColor(lbridge.toIpl(), lcalimage, true, recompand_, COLOR_CAL_BGR);
 
-    cvReleaseImage(&disp);
+        cvShowImage("left", lcalimage);
+      } else
+        cvShowImage("left", lbridge.toIpl());
+    }
+
+    if (rbridge.fromImage(rimage, "bgr"))
+    {
+      if (calib_color_)
+      {
+        rbridge.reallocIfNeeded(&rcalimage, IPL_DEPTH_32F);
+
+        rcal.correctColor(rbridge.toIpl(), rcalimage, true, recompand_, COLOR_CAL_BGR);
+
+      cvShowImage("right", rcalimage);
+      } else
+        cvShowImage("right", rbridge.toIpl());
+    }
+
+    if (dbridge.fromImage(dimage))
+    {
+      // Disparity has to be scaled to be be nicely displayable
+      IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
+      cvCvtScale(dbridge.toIpl(), disp, 4.0/stinfo.dpp);
+      cvShowImage("disparity", disp);
+      cvReleaseImage(&disp);
+    }
+
+    cv_mutex.unlock();
+
+  }
+
+  void image_cb_timeout(ros::Time t)
+  {
+    if (limage.header.stamp != t)
+      printf("Timed out waiting for left image\n");
+
+    if (rimage.header.stamp != t)
+      printf("Timed out waiting for right image\n");
+
+    if (dimage.header.stamp != t)
+      printf("Timed out waiting for disparity image\n");
+
+    //Proceed to show images anyways
+    image_cb_all(t);
+  }
+  
+  bool spin()
+  {
+    while (ok())
+    {
+      cv_mutex.lock();
+      int key = cvWaitKey(3);
+      
+      switch (key) {
+      case 10:
+        calib_color_ = !calib_color_;
+        break;
+      case 32:
+        recompand_ = !recompand_;
+      }
+
+      // Fetch color calibration parameters as necessary
+      if (calib_color_)
+      {
+        lcal.getFromParam("dcam/left/image_rect_color");
+        rcal.getFromParam("dcam/right/image_rect_color");
+      }
+
+      cv_mutex.unlock();
+      usleep(10000);
+    }
+
+    return true;
   }
 };
 

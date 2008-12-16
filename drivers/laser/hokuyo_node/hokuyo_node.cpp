@@ -71,27 +71,27 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">std_msgs/LaserScan</a> : scan data from the laser.
-- @b "diagnostic"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
+- @b "/diagnostics"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
 
 @section services
  - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
- - @b "~diagnostics"  :  DiagnosticMessage provided by DiagnosticUpdater helper class
 
 @section parameters ROS parameters
 
 Reads the following parameters from the parameter server
 
-- @b "~min_ang"        : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
-- @b "~max_ang"        : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
-- @b "~cluster"        : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
-- @b "~skip"           : @b [int]    the number of scans to skip between each measured scan (Default: 1)
-- @b "~port"           : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
-- @b "~autostart"      : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
-- @b "~calibrate_time" : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
-- @b "~frame_id"       : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
-
+- @b "~min_ang_degrees" : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
+- @b "~max_ang_degrees" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
+- @b "~min_ang"         : @b [double] the angle of the first range measurement in radians (Default: -pi/2)
+- @b "~max_ang"         : @b [double] the angle of the last range measurement in radians (Default: pi/2)
+- @b "~cluster"         : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
+- @b "~skip"            : @b [int]    the number of scans to skip between each measured scan (Default: 1)
+- @b "~port"            : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
+- @b "~autostart"       : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
+- @b "~calibrate_time"  : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
+- @b "~frame_id"        : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
  **/
 
 #include <assert.h>
@@ -110,8 +110,6 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 
 #include "hokuyo.h"
-
-
 
 using namespace std;
 
@@ -147,10 +145,46 @@ public:
   {
     advertise<std_msgs::LaserScan>("scan", 100);
 
-    param("~min_ang", min_ang_, -90.0);
-    min_ang_ *= M_PI/180;
-    param("~max_ang", max_ang_, 90.0);
-    max_ang_ *= M_PI/180;
+    if (has_param("~min_ang_degrees") && has_param("~min_ang"))
+    {
+      ROS_FATAL("Minimum angle is specified in both radians and degrees");
+      self_destruct();
+    }
+
+    if (has_param("~max_ang_degrees") && has_param("~max_ang"))
+    {
+      ROS_FATAL("Maximum angle is specified in both radians and degrees");
+      self_destruct();
+    }
+
+    if (has_param("~min_ang_degrees"))
+    {
+      get_param("~min_ang_degrees", min_ang_);
+      min_ang_ *= M_PI/180;
+    }
+    else if (has_param("~min_ang"))
+    {
+      get_param("~min_ang", min_ang_);
+    }
+    else
+    {
+      min_ang_ = -M_PI/2.0;
+    }
+
+    if (has_param("~max_ang_degrees"))
+    {
+      get_param("~max_ang_degrees", max_ang_);
+      max_ang_ *= M_PI/180;
+    }
+    else if (has_param("~max_ang"))
+    {
+      get_param("~max_ang", max_ang_);
+    }
+    else
+    {
+      max_ang_ = M_PI/2.0;
+    }
+
     param("~cluster", cluster_, 1);
     param("~skip", skip_, 1);
     param("~port", port_, string("/dev/ttyACM0"));
@@ -174,7 +208,7 @@ public:
 
     diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
     diagnostic_.addUpdater( &HokuyoNode::freqStatus );
-    //    diagnostic_.addUpdater( &HokuyoNode::timeDiagnostic );
+
   }
 
   ~HokuyoNode()
@@ -201,6 +235,15 @@ public:
 
       if (calibrate_time_)
         laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
+
+      hokuyo::LaserConfig config;
+     
+      laser_.getConfig(config);
+
+      set_param("~min_ang_limit", (double)(config.min_angle));
+      set_param("~max_ang_limit", (double)(config.max_angle));
+      set_param("~min_range", (double)(config.min_range));
+      set_param("~max_range", (double)(config.max_range));
 
       int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
@@ -239,7 +282,7 @@ public:
   {
     try
     {
-      int status = laser_.serviceScan(&scan_);
+      int status = laser_.serviceScan(scan_);
 
       if(status != 0)
       {
@@ -262,16 +305,10 @@ public:
     scan_msg_.scan_time = scan_.config.scan_time;
     scan_msg_.range_min = scan_.config.min_range;
     scan_msg_.range_max = scan_.config.max_range;
-    scan_msg_.set_ranges_size(scan_.num_readings);
-    scan_msg_.set_intensities_size(scan_.num_readings);
-    scan_msg_.header.stamp = ros::Time((uint64_t)scan_.system_time_stamp);
+    scan_msg_.ranges = scan_.ranges;
+    scan_msg_.intensities = scan_.intensities;
+    scan_msg_.header.stamp = ros::Time().fromNSec((uint64_t)scan_.system_time_stamp);
     scan_msg_.header.frame_id = frameid_;
-
-    for(int i = 0; i < scan_.num_readings; ++i)
-    {
-      scan_msg_.ranges[i]  = scan_.ranges[i];
-      scan_msg_.intensities[i] = scan_.intensities[i];
-    }
 
     publish("scan", scan_msg_);
 
@@ -451,7 +488,7 @@ public:
 
     hokuyo::LaserScan  scan;
 
-    int res = laser_.pollScan(&scan, min_ang_, max_ang_, cluster_, 1000);
+    int res = laser_.pollScan(scan, min_ang_, max_ang_, cluster_, 1000);
 
     if (res != 0)
     {
@@ -485,7 +522,7 @@ public:
 
       for (int i = 0; i < 99; i++)
       {
-        laser_.serviceScan(&scan, 1000);
+        laser_.serviceScan(scan, 1000);
       }
 
       status.level = 0;
@@ -516,7 +553,7 @@ public:
       for (int i = 0; i < 99; i++)
       {
         try {
-          laser_.serviceScan(&scan, 1000);
+          laser_.serviceScan(scan, 1000);
         } catch (hokuyo::CorruptedDataException &e) {
           corrupted_data++;
         }

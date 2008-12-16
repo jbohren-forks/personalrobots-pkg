@@ -2,13 +2,13 @@
 
 <robot name="pr2"><!-- name of the robot-->
   
-  <include>groups_collision.xml</include>
+  <include filename="./groups_collision.xml" />
 
   <!-- Groups needed for motion planning (flag contains "planning") 
        and for kinematics (flag contains "kinematic") -->
 
   <group name="base" flags="planning">
-    base
+    base_link
     <map name="SBL" flag="planning">
       <elem key="projection" value="0 1"/>
       <elem key="celldim" value="1 1"/>
@@ -32,13 +32,13 @@
   </group>
   
   <group name="left_arm" flags="planning kinematic">
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    l_upper_arm_roll_link
+    l_elbow_flex_link
+    l_forearm_roll_link
+    l_wrist_flex_link
+    l_wrist_roll_link
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -56,13 +56,13 @@
   
   <group name="right_arm" flags="planning kinematic">
 
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    r_upper_arm_roll_link
+    r_elbow_flex_link
+    r_forearm_roll_link
+    r_wrist_flex_link
+    r_wrist_roll_link
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -80,27 +80,27 @@
 
 
   <group name="base_left_arm" flags="planning">
-    base
-    torso
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
+    base_link
+    torso_lift_link
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    l_upper_arm_roll_link
+    l_elbow_flex_link
+    l_forearm_roll_link
+    l_wrist_flex_link
+    l_wrist_roll_link
   </group>
   
   <group name="base_right_arm" flags="planning">
-    base
-    torso
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
+    base_link
+    torso_lift_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    r_upper_arm_roll_link
+    r_elbow_flex_link
+    r_forearm_roll_link
+    r_wrist_flex_link
+    r_wrist_roll_link
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -118,39 +118,39 @@
   </group>
   
   <group name="arms" flags="planning">
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    l_upper_arm_roll_link
+    l_elbow_flex_link
+    l_forearm_roll_link
+    l_wrist_flex_link
+    l_wrist_roll_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    r_upper_arm_roll_link
+    r_elbow_flex_link
+    r_forearm_roll_link
+    r_wrist_flex_link
+    r_wrist_roll_link
   </group>
 
   <group name="base_arms" flags="planning">
-    base
-    torso
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
+    base_link
+    torso_lift_link
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    l_upper_arm_roll_link
+    l_elbow_flex_link
+    l_forearm_roll_link
+    l_wrist_flex_link
+    l_wrist_roll_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    r_upper_arm_roll_link
+    r_elbow_flex_link
+    r_forearm_roll_link
+    r_wrist_flex_link
+    r_wrist_roll_link
   </group>
 
 </robot>

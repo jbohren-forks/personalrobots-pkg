@@ -58,7 +58,8 @@ int ScanAssembler::addScan(const std_msgs::LaserScan& scan)
 {
   PointCloud target_frame_cloud ;                                                     // Stores the current scan in the target frame
 
-  tf_.transformLaserScanToPointCloud(cloud_.header.frame_id, target_frame_cloud, scan) ;              //! \todo Add a try/catch block around this TF calls
+
+  projector_.transformLaserScanToPointCloud(cloud_.header.frame_id, target_frame_cloud, scan, tf_) ;              //! \todo Add a try/catch block around this TF calls
   
   cloud_.header.stamp = scan.header.stamp ;                                           // Give the cloud the stamp of the latest scan received
 
@@ -87,8 +88,3 @@ void ScanAssembler::getPointCloud(std_msgs::PointCloud& cloud) const
   cloud.set_pts_size(point_count_) ;
 }
 
-void ScanAssembler::getPointCloudFloat32(std_msgs::PointCloudFloat32& cloud) const
-{
-  cloud = *( (PointCloudFloat32*) &cloud_) ;                                          // Old and new pointclouds have the same memory footprint, so this casting is ok.
-  cloud.set_pts_size(point_count_) ;
-}

@@ -47,6 +47,8 @@ class MapGrid{
   public:
     MapGrid(unsigned int size_x, unsigned int size_y);
 
+    MapGrid(unsigned int size_x, unsigned int size_y, double scale, double x, double y);
+
     //cells will be accessed by (col, row)
     inline MapCell& operator() (unsigned int x, unsigned int y){
       return map_[size_x_ * y + x];
@@ -70,6 +72,9 @@ class MapGrid{
     //check if we need to resize
     void sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y);
 
+    // Utility to share initialization code across constructors
+    void commonInit();
+
     size_t getIndex(int x, int y);
 
     //allow easy creation of messages
@@ -78,11 +83,11 @@ class MapGrid{
     unsigned int size_x_, size_y_;
     std::vector<MapCell> map_;
 
-    //lower left corner of grid in world space
-    double origin_x, origin_y;
-
     //grid scale in meters/cell
     double scale;
+
+    //lower left corner of grid in world space
+    double origin_x, origin_y;
 };
 
 #endif

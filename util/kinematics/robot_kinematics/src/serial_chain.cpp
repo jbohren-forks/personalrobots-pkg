@@ -79,6 +79,14 @@ bool SerialChain::computeFK(const KDL::JntArray &q, KDL::Frame &f)
 		return false;
 }
 
+bool SerialChain::computeFK(const KDL::JntArray &q, KDL::Frame &f, int i)
+{
+   if (this->forwardKinematics->JntToCart(q,f,i) >= 0)
+		return true;
+	else
+		return false;
+}
+
 bool SerialChain::computeIK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out)
 {
   if (this->inverseKinematics->CartToJnt(q_init,f,q_out) >= 0)
@@ -141,9 +149,9 @@ bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_do
 
   if (this->inverseDynamics->InverseDynamics(q,q_dot,q_dotdot,torque) >= 0)
   {
-   for(int i=0; i<q.rows(); i++)
+     for(int i=0; i< (int) q.rows(); i++)
    {
-     fprintf(stderr,"%d:: %f, %f, %f, t:: %f, %f, %f\n",i,q(i),q_dot(i),q_dotdot(i),torque[i][0],torque[i][1],torque[i][2]);
+//     fprintf(stderr,"%d:: %f, %f, %f, t:: %f, %f, %f\n",i,q(i),q_dot(i),q_dotdot(i),torque[i][0],torque[i][1],torque[i][2]);
    }
     return true;
   }

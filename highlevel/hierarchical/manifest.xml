@@ -1,0 +1,9 @@
+<package>
+<description>Hierarchical planning algorithms</description>
+<author>Bhaskara Marthi</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<depend package="roslisp" />
+<depend package="std_msgs" />
+<depend package="std_srvs" />
+</package>

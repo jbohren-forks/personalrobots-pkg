@@ -33,6 +33,8 @@
 //eight-connected grid
 #define NAV3DKIN_DXYWIDTH 8
 
+#define ENVNAV3DKIN_DEFAULTOBSTHRESH 254	//see explanation of the value below
+
 
 //definition of theta orientations
 //0 - is aligned with X-axis in the positive direction (1,0 in polar coordinates)
@@ -43,7 +45,7 @@
 //number of actions per x,y,theta state
 #define NAV3DKIN_ACTIONWIDTH 5 //decrease, increase, same angle while moving plus decrease, increase angle while standing.
 
-#define NAV3DKIN_COSTMULT 1000
+#define NAV3DKIN_COSTMULT_MTOMM 1000
 
 typedef struct{
 	double x;
@@ -57,8 +59,18 @@ typedef struct{
 } EnvNAV3DKIN3Dpt_t;
 
 
+typedef struct EnvNAV3DKIN3DCELL{
+	int x;
+	int y;
+	int theta;
+public:
+	bool operator == (EnvNAV3DKIN3DCELL cell) {return (x==cell.x && y==cell.y && theta==cell.theta);}
+} EnvNAV3DKIN3Dcell_t;
+
+
 typedef struct
 {
+	char starttheta;
 	char dX;
 	char dY;
 	char dTheta;
@@ -78,7 +90,12 @@ typedef struct ENV_NAV3DKIN_CONFIG
 	int EndX_c;
 	int EndY_c;
 	int EndTheta;
-	char** Grid2D;
+	unsigned char** Grid2D;
+
+	//the value at which and above which cells are obstacles in the maps sent from outside
+	//the default is defined above
+	unsigned char obsthresh; 
+
 
 	double nominalvel_mpersecs;
 	double timetoturn45degsinplace_secs;
@@ -87,6 +104,7 @@ typedef struct ENV_NAV3DKIN_CONFIG
 	int dXY[NAV3DKIN_DXYWIDTH][2];
 
 	EnvNAV3DKINAction_t** ActionsV; //array of actions, ActionsV[i][j] - jth action for sourcetheta = i
+	vector<EnvNAV3DKINAction_t*>* PredActionsV; //PredActionsV[i] - vector of pointers to the actions that result in a state with theta = i
 
 
 	vector<sbpl_2Dpt_t> FootprintPolygon;
@@ -120,14 +138,17 @@ typedef struct
 
 }EnvironmentNAV3DKIN_t;
 
-
+class SBPL2DGridSearch;
 
 class EnvironmentNAV3DKIN : public DiscreteSpaceInformation
 {
 
 public:
 
+	EnvironmentNAV3DKIN();
+
 	bool InitializeEnv(const char* sEnvFile);
+	bool InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t> & perimeterptsV);
 
 
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);
@@ -143,18 +164,19 @@ public:
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
 
-    //TODO - add perimeter, goal with tols
     bool InitializeEnv(int width, int height,
+		       /** if mapdata is NULL the grid is initialized to all freespace */
                        const unsigned char* mapdata,
                        double startx, double starty, double starttheta,
                        double goalx, double goaly, double goaltheta,
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
 					   const vector<sbpl_2Dpt_t> & perimeterptsV,
-					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
+					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, 
+					   unsigned char obsthresh);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
-    bool UpdateCost(int x, int y, int new_status);
-	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
+    bool UpdateCost(int x, int y, unsigned char newcost);
+	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 
 	void GetCoordFromState(int stateID, int& x, int& y, int& theta) const;
@@ -162,16 +184,20 @@ public:
 	int GetStateFromCoord(int x, int y, int theta);
 
 	bool IsObstacle(int x, int y);
+	bool IsValidConfiguration(int X, int Y, int Theta);
+
 	void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
-			double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs);
+			double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs, unsigned char* obsthresh);
 
 	const EnvNAV3DKINConfig_t* GetEnvNavConfig();
 
 
-    ~EnvironmentNAV3DKIN(){};
+    ~EnvironmentNAV3DKIN();
 
     void PrintTimeStat(FILE* fOut);
   
+	unsigned char GetMapCost(int x, int y);
+
   
   bool IsWithinMapCell(int X, int Y);
   
@@ -207,10 +233,14 @@ public:
 	//member data
 	EnvNAV3DKINConfig_t EnvNAV3DKINCfg;
 	EnvironmentNAV3DKIN_t EnvNAV3DKIN;
+	vector<EnvNAV3DKIN3Dcell_t> affectedsuccstatesV; //arrays of states whose outgoing actions cross cell 0,0
+	vector<EnvNAV3DKIN3Dcell_t> affectedpredstatesV; //arrays of states whose incoming actions cross cell 0,0
+	
+	//2D search for heuristic computations
+	bool bNeedtoRecomputeStartHeuristics;
+	SBPL2DGridSearch* grid2Dsearch;
 
-
-
-	void ReadConfiguration(FILE* fCfg);
+ 	void ReadConfiguration(FILE* fCfg);
 
 	void InitializeEnvConfig();
 
@@ -220,6 +250,7 @@ public:
 	bool CheckQuant(FILE* fOut);
 
 	void SetConfiguration(int width, int height,
+			      /** if mapdata is NULL the grid is initialized to all freespace */
 			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
@@ -243,8 +274,15 @@ public:
 	bool IsValidCell(int X, int Y);
 
 	void CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint);
+	void RemoveSourceFootprint(EnvNAV3DKIN3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint);
 
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
+
+	double EuclideanDistance_m(int X1, int Y1, int X2, int Y2);
+
+	void ComputeReplanningData();
+	void ComputeReplanningDataforAction(EnvNAV3DKINAction_t* action);
+
 
 
 };

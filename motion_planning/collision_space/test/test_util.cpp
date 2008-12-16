@@ -65,8 +65,9 @@ TEST(SpherePointContainment, ComplexInside)
     double dims = 1.0;
     sphere->setDimensions(&dims);
     sphere->setScale(0.95);
-    libTF::Pose3D pose;
-    pose.setPosition(1,1,1);
+    btTransform pose;
+    pose.setIdentity();    
+    pose.setOrigin(btVector3(btScalar(1),btScalar(1),btScalar(1)));
     sphere->setPose(pose);
     bool contains = sphere->containsPoint(0.5,1,1.0);
     delete sphere;
@@ -79,8 +80,9 @@ TEST(SpherePointContainment, ComplexOutside)
     double dims = 1.0;
     sphere->setDimensions(&dims);
     sphere->setScale(0.95);
-    libTF::Pose3D pose;
-    pose.setPosition(1,1,1);
+    btTransform pose;
+    pose.setIdentity();    
+    pose.setOrigin(btVector3(btScalar(1),btScalar(1),btScalar(1)));
     sphere->setPose(pose);
     bool contains = sphere->containsPoint(0.5,0.0,0.0);
     delete sphere;
@@ -118,9 +120,11 @@ TEST(BoxPointContainment, ComplexInside)
     double dims[3] = {1.0, 1.0, 1.0};    
     box->setDimensions(dims);
     box->setScale(1.01);
-    libTF::Pose3D pose;
-    pose.setPosition(1, 1, 1);
-    pose.setAxisAngle(1, 0, 0, M_PI/3.0);
+    btTransform pose;
+    pose.setIdentity();    
+    pose.setOrigin(btVector3(btScalar(1),btScalar(1),btScalar(1)));
+    btQuaternion quat(btVector3(btScalar(1), btScalar(0), btScalar(0)), M_PI/3.0);
+    pose.setRotation(quat);
     box->setPose(pose);    
 
     bool contains = box->containsPoint(1.5,1.0,1.5);
@@ -134,9 +138,11 @@ TEST(BoxPointContainment, ComplexOutside)
     double dims[3] = {1.0, 1.0, 1.0};    
     box->setDimensions(dims);
     box->setScale(1.01);
-    libTF::Pose3D pose;
-    pose.setPosition(1, 1, 1);
-    pose.setAxisAngle(1, 0, 0, M_PI/3.0);
+    btTransform pose;
+    pose.setIdentity();    
+    pose.setOrigin(btVector3(btScalar(1),btScalar(1),btScalar(1)));
+    btQuaternion quat(btVector3(btScalar(1), btScalar(0), btScalar(0)), M_PI/3.0);
+    pose.setRotation(quat);
     box->setPose(pose);    
 
     bool contains = box->containsPoint(1.5,1.5,1.5);

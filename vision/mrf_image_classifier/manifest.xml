@@ -5,13 +5,14 @@
   </description>
   <author>Paul Vernaza/vernaza@seas.upenn.edu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com</url>
   <depend package="libbk_maxflow"/>
   <depend package="libfz_ht_superpixels"/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>
-  <depend package="boost"/>
+<!--  <depend package="boost"/> -->
   <export>
     <!-- FIXME: move everything under src to a subdir -->
     <!-- FIXME: broken boost dependency! -->

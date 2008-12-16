@@ -1,0 +1,21 @@
+<launch>
+
+<!-- Joystick -->
+<!--
+  <node pkg="spacenav_node" type="spacenav_node" />
+-->
+
+<!-- Arm twist controller -->
+
+  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/trajectory_controllers.xml" />
+
+
+<!-- Gripper controller -->
+  <param name="joint" value="r_gripper_joint"/>
+  <param name="max_effort" value="4000"/>
+  <param name="joy_axis" value="2"/>
+  <param name="joy_dead_zone" value="0.2"/>
+
+  <node pkg="teleop_joint_effort" type="teleop_joint_effort_button.py" output="screen" />
+
+</launch>

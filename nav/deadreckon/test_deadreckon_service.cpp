@@ -27,6 +27,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 /////////////////////////////////////////////////////////////////////////////
 
+#include <cstdlib>
 #include "ros/node.h"
 #include "deadreckon/DriveDeadReckon.h"
 using namespace std;

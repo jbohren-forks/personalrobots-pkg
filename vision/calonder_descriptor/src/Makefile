@@ -12,6 +12,8 @@ CFLAGS += -O3 -DNDEBUG
 # OpenCV
 CFLAGS += `pkg-config opencv --cflags`
 LDFLAGS += `pkg-config opencv --libs`
+# CBLAS
+LDFLAGS += -L/usr/lib -lcblas
 # Boost (headers only)
 CFLAGS += -I$(BOOST_ROOT)/include
 # GSL
@@ -34,3 +36,4 @@ $(OBJECTS): %.lo: %.cpp
 
 clean:
 	rm -rf $(OBJECTS) $(SOURCES:.cpp=.o) .libs $(INSTALL_DIR)/* $(LIBNAME).la
+

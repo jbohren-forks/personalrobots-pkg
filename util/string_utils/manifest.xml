@@ -10,6 +10,7 @@
   </description>
   <author>Ioan Sucan, Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Brian)"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lstring_utils"/>

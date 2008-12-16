@@ -2,12 +2,13 @@
   <description>A graphical interface for 2-D navigation.</description>
   <author>Morgan Quigley, Brian Gerkey and Josh Faust</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_srvs"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_srvs"/>
   <depend package="sdlgl"/>
-  <depend package="rosTF"/>
+  <depend package="tf"/>
   <!-- <depend package="sdl_image"/> -->
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
   

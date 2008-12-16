@@ -1,0 +1,11 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b cloud_geometry is a general library for 3D geometric methods
+operating on point clouds.
+
+@todo write documentation and gtests.
+
+*/

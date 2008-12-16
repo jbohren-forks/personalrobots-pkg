@@ -25,7 +25,7 @@ class GoalDistanceTracker:
     return math.sqrt( (self.goal.point.x - self.base.pos.x)**2 + (self.goal.point.y - self.base.pos.y)**2)
 
 
-dist = GoalDistanceTracker('/head_controller/track_point', '/localizedpose')
+dist = GoalDistanceTracker('/head_controller/head_track_point', '/localizedpose')
 rospy.init_node('torso_levitator', anonymous=True)
 torso_pub = rospy.Publisher('/torso_controller/set_command', Float64)
 while not rospy.is_shutdown():

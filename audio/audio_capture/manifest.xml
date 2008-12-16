@@ -2,6 +2,7 @@
   <description>This package grabs a live audio stream from PortAudio and ships it across the ROS botnet. The program grabs the "default" audio stream. I can't speak for other distros, but on Ubuntu the default stream is settable via the GNOME "System->Preferences->Sound" box. I set the "Sound Capture" field to "ALSA" and use "alsamixer" on the command line to poke around until I get the microphone jack working. Each motherboard seems to be a little different in how the various jacks come up in ALSA.</description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="robot_msgs"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="portaudio19-dev"/>

@@ -1,7 +1,7 @@
 #ifndef MATRIXUTILS_H
 #define MATRIXUTILS_H
 
-#include <vector.h>
+#include <vector>
 
 using namespace std;
 

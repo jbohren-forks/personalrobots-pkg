@@ -2,7 +2,11 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <include file="$(find highlevel_controllers)/test/launch_stage_5cm.xml" />
+    <include file="$(find test_highlevel_controllers)/test/launch_stage_5cm.xml" />
+    <node pkg="highlevel_controllers" type="cli" respawn="false"/>
+
+    <!-- Common parameter settings /-->
+    <param name="/trex/ping_frequency" value="1"/>
   </group>
 </launch>
 

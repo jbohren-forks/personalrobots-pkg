@@ -3,10 +3,11 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes="API review in progress (Eric)"/>
 <depend package="roscpp" />
 <depend package="hardware_interface" />
 <depend package="stl_utils" />
-<depend package="misc_utils" />
+<depend package="loki" />
 <depend package="tinyxml" />
 <depend package="wg_robot_description_parser" />
 <depend package="tf" />

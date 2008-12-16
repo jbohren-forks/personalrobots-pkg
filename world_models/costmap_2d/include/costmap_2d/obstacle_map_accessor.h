@@ -35,6 +35,7 @@
 #ifndef OBSTACLE_MAP_ACCESSOR_H
 #define OBSTACLE_MAP_ACCESSOR_H
 
+#include "ros/common.h"
 
 namespace costmap_2d {
 
@@ -61,20 +62,55 @@ namespace costmap_2d {
     static const unsigned char INSCRIBED_INFLATED_OBSTACLE;
 
     /**
-     * @brief Defines the cell value to indicate an inflated obstacle within the circumscribed circle of the robot
+     * @brief Get pointer into the obstacle map (which contains both static
+     * and dynamic obstacles)
      */
-    static const unsigned char CIRCUMSCRIBED_INFLATED_OBSTACLE;
+    const unsigned char* getMap() const {
+      return costData_;
+    }
 
     /**
-     * @brief Access the cost value of the cell at the given index
-     * @see MC_IND
+     * @brief Accessor for contents of cost map cell by cell index
      */
-    virtual unsigned char operator[](unsigned int ind) const = 0;
+    unsigned char operator [](unsigned int ind) const{
+      return costData_[ind];
+    }
 
     /**
-     * @brief Get the cost for the cell given in map coordinates
+     * @brief Accessor by map coordinates stored cost value integrating dynamic and static data
+     * @param mx the x map index. mx must be in [0, width-1]
+     * @param my the y map index. my must be in [0, height-1]
+     * @return A cost value in the range [0 255]
+     * @note The inputs should always be in bounds. We could add a check for these values to avoid out of range errors
+     * but that should only arise as an error condition and should not burden the code for a common accessor
      */
-    virtual unsigned char getCost(unsigned int mx, unsigned int my) const = 0;
+    unsigned char getCost(unsigned int mx, unsigned int my) const{
+      ROS_ASSERT(mx < width_);
+      ROS_ASSERT(my < height_);
+      unsigned int ind = mx + my * width_;
+      return costData_[ind];
+    }
+
+    /**
+     * @brief Test if the given cell is necessarily in the footprint of the robot. Note that a negative result
+     * does not mean it is not in the footprint of the robot, it just means that we are not certain.
+     * @param mx the x map index. mx must bi in [0, width-1]
+     * @param my the y map index. my must be in [0, height-1]
+     * @return true if the cell is in the inscried circle of the robot, including the raw obstacle point itself.
+     */
+    bool isDefinitelyBlocked(unsigned int mx, unsigned int my) const{
+      const unsigned char cost = getCost(mx, my);
+      return cost == INSCRIBED_INFLATED_OBSTACLE || cost == LETHAL_OBSTACLE;
+    }
+
+    /**
+     * @brief Function to test if a cell is in difference between the circusmcribed radius
+     * and the inscribed radius. This check is used to efficiently test if a client must lay 
+     * down the robot footprint to test for being in collision.
+     * @param mx the x map index. mx must bi in [0, width-1]
+     * @param my the y map index. my must be in [0, height-1]
+     */
+    bool isCircumscribedCell(unsigned int mx, unsigned int my) const;
 
     /**
      * @brief Get the origin
@@ -95,6 +131,18 @@ namespace costmap_2d {
      * @brief the resolution in meters per cell, where cells are square
      */
     double getResolution() const {return resolution_;}
+
+    /**
+     * @brief Sets the bound for testing if in circumscribed circle overflow
+     */
+    void setCircumscribedCostLowerBound(unsigned char c){
+      costLB_ = c;
+    }
+
+    /**
+     * @brief Accessor for lower bound for a cost being in the circumscribed circle
+     */
+    unsigned char getCircumscribedCostLowerBound() const {return costLB_;}
 
     /**
      * @brief Obtain world co-ordinates for the given index
@@ -163,9 +211,38 @@ namespace costmap_2d {
      * @param mx map x index return value
      * @param my map y index return value
      */
-    bool WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+    inline bool WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const{
+      if(wx < 0 || wy < 0) {
+	mx = 0;
+	my = 0;
+	return false;
+      }
 
-    virtual ~ObstacleMapAccessor(){}
+      //not much for now
+      mx = (int) ((wx - origin_x_)/resolution_);
+      my = (int) ((wy - origin_y_)/resolution_);
+
+      //printf("x: %.2f y: %.2f or_x: %.2f, or_y: %.2f, resolution: %.2f\n   ", wx, wy, origin_x_, origin_y_, resolution_);
+      if(mx >= width_) {
+	mx = 0;
+	return false;
+      } 
+
+      if(my >= height_) {
+	//printf("WC_MC converted  %d greater than height %d\n", my, height_);
+	my = 0;
+	return false;
+      }
+
+      return true;
+    }
+
+    virtual ~ObstacleMapAccessor();
+
+    /**
+     * @brief Utility for debugging
+     */
+    std::string toString() const;
 
   protected:
 
@@ -184,6 +261,10 @@ namespace costmap_2d {
     unsigned int width_;
     unsigned int height_;
     double resolution_;
+    unsigned char* costData_; /**< the full cost map data */
+
+  private:
+    unsigned char costLB_; /**< The cost value for the lowest cost cell in the circumscribed radius.*/
   };
 }
 #endif

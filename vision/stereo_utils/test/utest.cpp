@@ -6,7 +6,7 @@
 
 static const double FX  =   7.290000e+02;
 static const double FY  =   7.290000e+02;
-static const double TX  =   4.381214e+004/7.290000e+02;
+static const double TX  =   4.381214e+004/7.290000e+02/1000.;
 
 static const double CLX = 3.239809e+002;
 static const double CRX = 3.239809e+002;
@@ -26,8 +26,8 @@ bool testGetDeltaXAndGetDeltaU() {
     double dx0 = du * TX/(disp*DISPUNITSCALE - (CLX - CRX));
     double diff = 0.;
     if ( dx != dx0 ) {
-      printf("getDeltaX() test failed, du=%f, raw disp=%f, dx=%f\n",
-          du, disp, dx);
+      printf("getDeltaX() test failed, du=%f, raw disp=%f, dx=%f, dx0=%f\n",
+          du, disp, dx, dx0);
       return false;
     }
     double z  = camModel.getZ(disp);
@@ -64,9 +64,10 @@ bool testGetDeltaYAndGetDeltaV() {
     double dy = camModel.getDeltaY(dv, disp);
     double dy0 = dv * TX * FX /(disp*DISPUNITSCALE - (CLX - CRX))/FY;
     double diff = 0.;
-    if ( dy != dy0 ) {
-      printf("getDeltaX() test failed, dv=%f, raw disp=%f, dy=%f\n",
-          dv, disp, dy);
+    diff = fabs(dy-dy0);
+    if ( diff > .1e-10 ) {
+      printf("getDeltaV() test failed, dv=%f, raw disp=%f, dy=%e, dy0=%e\n",
+          dv, disp, dy, dy0);
       return false;
     }
     double z = camModel.getZ(disp);

@@ -2,12 +2,17 @@
   <description>A demo of  2-D navigation.</description>
   <author>Brian Gerkey</author>
   <license>BSD</license>
+  <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="roslaunch"/>
   <depend package="amcl_player"/>
   <depend package="hokuyo_node"/>
+  <depend package="imu_node"/>
+  <depend package="robot_pose_ekf"/>
+  <depend package="rosrecord" />
   <depend package="map_server"/>
-  <depend package="highlevel_controllers"/>
-  <depend package="world_3d_map"/>
+  <depend package="executive_trex_pr2"/>
   <depend package="trajectory_rollout"/>
+  <depend package="highlevel_controllers"/>
+  <depend package="pr2_alpha"/>
 </package>

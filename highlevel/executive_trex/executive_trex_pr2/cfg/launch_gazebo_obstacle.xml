@@ -1,28 +1,27 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <!-- Sends robot description data to the param server -->
+
     <include file="$(find pr2_gazebo)/pr2_obs.launch"/>
 
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
-
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
 
-    <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
+    <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
     <include file="$(find world_3d_map)/run.xml"/>
 
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
 
-    <node pkg="wavefront_player" type="wavefront_player" args="" respawn="false" />
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
     <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
 
-<!-- Until we resolve mechanism state issue - comment out other arm
     <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />
--->
+
+    <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
+
 
     <node pkg="nav_view" type="nav_view" respawn="false" />
+
   </group>
 </launch>

@@ -2,11 +2,17 @@
   <description>A dc1394 camera library with proper support for stereo and image processing.</description>
   <author>Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <sysdepend os="ubuntu" package="libfltk-dev"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
   </export>
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
+  <depend package="stereo_image_proc"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+
   <url></url>
 </package>

@@ -1,0 +1,22 @@
+Index: ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch
+===================================================================
+--- ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch	(revision 4220)
++++ ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch	(working copy)
+@@ -2523,7 +2523,7 @@
+ +	if (!ipipe_root_domain_p &&
+ +	    __ipipe_xlate_signo[vector] >= 0 &&
+ +	    !kgdb_handle_exception(vector, __ipipe_xlate_signo[vector], error_code, regs)) {
+-+		if (!flags)
+++		if (flags & X86_EFLAGS_IF)
+ +			__clear_bit(IPIPE_STALL_FLAG,
+ +				    &ipipe_root_cpudom_var(status));
+ +		return 1;
+@@ -2531,7 +2531,7 @@
+ +#endif /* CONFIG_KGDB */
+ +
+ +	if (unlikely(ipipe_trap_notify(vector, regs))) {
+-+		if (!flags)
+++		if (flags & X86_EFLAGS_IF)
+ +			__clear_bit(IPIPE_STALL_FLAG,
+ +				    &ipipe_root_cpudom_var(status));
+ +		return 1;

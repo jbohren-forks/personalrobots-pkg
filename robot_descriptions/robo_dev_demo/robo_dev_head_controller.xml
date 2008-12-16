@@ -1,0 +1,25 @@
+<controllers>
+<controller name="head_controller" type="HeadServoingControllerNode"> 
+    <controller name="head_pan_controller" topic="head_pan_controller" type="JointVelocityController">
+      <joint name="head_pan_joint" >
+       <pid p="2.0" d="0.0" i="50.0" iClamp="0.75" />
+      </joint>
+    </controller>
+    
+    <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointVelocityController">
+      <joint name=
+"head_tilt_joint" >
+        <pid p="6.0" d="0.0" i="100.0" iClamp="0.5" />
+      </joint>
+    </controller>
+    <controller_defaults max_velocity="5.0" gain="20.0"/>
+</controller>
+
+  <controller name="laser_controller" topic="laser_controller" type="LaserScannerControllerNode">
+    <filter smoothing_factor="0.1" />
+    <joint name="tilt_laser_mount_joint">
+      <pid p="12" i=".1" d="1" iClamp="0.5" />
+    </joint>
+  </controller> 
+    
+</controllers>

@@ -40,9 +40,7 @@
 #include <list>
 #include <limits>
 
-#include "cv.h"
-#include "cxcore.h"
-#include "highgui.h"
+#include "opencv/highgui.h"
 
 #include "xmlParser/xmlParser.h"
 

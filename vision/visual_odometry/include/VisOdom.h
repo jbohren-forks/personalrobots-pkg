@@ -12,12 +12,13 @@
 #include <vector>
 #include <queue>
 #include <iostream>
+#include <memory>
+using namespace std;
 
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include <opencv/cv.h>
 
-using namespace std;
 
 namespace cv { namespace willow {
 
@@ -110,43 +111,18 @@ public:
 };
 
 /// Information of pose estimation for one frame.
+/// @todo consolidate PoseEstFrameEntry and FramePose by making FramePose
+/// a member (or base class) of PoseEstFrameEntry
 class PoseEstFrameEntry: public StereoFrame  {
 public:
   /**
    * The object takes ownership of the images, keypoints and inliers
    */
-  PoseEstFrameEntry(
-      /// left camera image
-      WImageBuffer1_b* image,
-      /// disparity map
-      WImageBuffer1_16s * dispMap,
-      /// key points
-      Keypoints * keypoints,
-      /// rotation matrix
-      CvMat & rot,
-      /// translation matrix
-      CvMat & shift,
-      /// number of trackable pairs
-      int numTrackablePair,
-      /// number of inliers
-      int numInliers,
-      /// index of this frame in the video sequence
-      int frameIndex,
-      /// image buffer for visualization
-      WImageBuffer3_b *imageC3a,
-      /// indices of the inliers in the trackable pairs
-      int   *inlierIndices,
-      /// index pairs of the trackable pairs w.r.t the keypoint list
-      vector<pair<int, int> >* trackableIndexPairs,
-      /// inliers from previous key frame
-      CvMat *inliers0,
-      /// inliers from this frame
-      CvMat *inliers1);
   PoseEstFrameEntry(int frameIndex):
     StereoFrame(frameIndex), mKeypoints(NULL),
     mRot(cvMat(3, 3, CV_64FC1, _mRot)),
     mShift(cvMat(3, 1, CV_64FC1, _mShift)),
-    mGlobalTransform(cvMat(4, 4, CV_64FC1, _mTransform)),
+    transf_local_to_global_(cvMat(4, 4, CV_64FC1, transf_local_to_global_data_)),
     mNumTrackablePairs(0),
     mNumInliers(0),
     mImageC3a(NULL),
@@ -161,9 +137,9 @@ public:
   CvMat mRot;
   /// Estimated translation matrix from this frame to last key frame.
   CvMat mShift;
-  /// Estimated global transformation matrix of this frame to the
-  /// reference frame (this first frame)
-  CvMat mGlobalTransform;
+  /// Estimated global transformation matrix from this frame to the
+  /// reference frame (this first frame), both in Cartesian space.
+  CvMat transf_local_to_global_;
   /// Number of trackable pairs
   int mNumTrackablePairs;
   /// Number of inliers
@@ -176,9 +152,9 @@ public:
   vector<pair<int, int> >* mTrackableIndexPairs;
   /// indices of the inliers in the trackable pairs
   int* mInlierIndices;
-  /// inliers from keypoint0
+  /// inliers from keypoint0, in disparity space.
   CvMat *mInliers0;
-  /// inliers from keypoint1
+  /// inliers from keypoint1, in disparity space.
   CvMat *mInliers1;
 protected:
 
@@ -186,7 +162,7 @@ protected:
   // buffers
   double _mRot[9];
   double _mShift[3];
-  double _mTransform[16];
+  double transf_local_to_global_data_[16];
 };
 
 
@@ -194,29 +170,36 @@ protected:
 class FramePose   {
 public:
   FramePose()
-  :mIndex(-1), mRod(cvPoint3D64f(0., 0., 0.)), mShift(cvPoint3D64f(0., 0., 0.))
+  :mIndex(-1),
+  transf_local_to_global_(cvMat(4,4,CV_64FC1, transf_local_to_global_data_)),
+  transf_global_to_disp_(NULL)
   {}
 
   FramePose(int i)
-  :mIndex(i), mRod(cvPoint3D64f(0., 0., 0.)), mShift(cvPoint3D64f(0., 0., 0.))
+  :mIndex(i),
+  transf_local_to_global_(cvMat(4,4,CV_64FC1, transf_local_to_global_data_)),
+  transf_global_to_disp_(NULL)
   {}
 
-  FramePose(int i, const CvMat & rod, const CvMat & shift)
-  :mIndex(i), mRod(cvPoint3D64f(0., 0., 0.)), mShift(cvPoint3D64f(0., 0., 0.))
-  {
-    cvCopy(&rod, &mRod);
-    cvCopy(&shift, &mShift);
+  ~FramePose() {
+    if (transf_global_to_disp_)
+      cvReleaseMat(&transf_global_to_disp_);
   }
 
   /// Index of the frame
   int mIndex;
-  /// Rodrigues of the rotation
-  CvPoint3D64f mRod;
-  /// translation matrix
-  CvPoint3D64f mShift;
+  /// Transformation matrix from local frame to global frame
+  CvMat transf_local_to_global_;
+  /// data buffer of transf_local_to_global
+  double transf_local_to_global_data_[16];
+private:
+  /// optional matrix to convert from global to disparity space
+  CvMat* transf_global_to_disp_;
+  friend class LevMarqSparseBundleAdj;
+  friend class SBAVisualizer;
 };
 
-void saveFramePoses(const string& dirname, vector<FramePose>& framePoses);
+void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses);
 
 typedef enum {
   Pairwise,
@@ -339,7 +322,7 @@ public:
   /// get a pointer to the pose estimator used by this tracker
   virtual PoseEstimator* getPoseEstimator()=0;
 
-  virtual vector<FramePose>* getFramePoses()=0;
+  virtual vector<FramePose*>* getFramePoses()=0;
   /// Reduce the key frame window size to winSize.
   virtual void reduceWindowSize(unsigned int winSize)=0;
   /// print statistics of the last tracking run to std out.
@@ -477,7 +460,7 @@ void estimateWithLevMarq(
     const CvMat& DispToCart,
     CvMat& rot, CvMat& trans);
 
-/// a data structue for tracking the filenames
+/// A class for tracking the filenames
 class FileSeq {
 public:
   FileSeq():
@@ -490,7 +473,9 @@ public:
     {}
 
   int mNumFrames;
+  /// index of the first frame
   int mStartFrameIndex;
+  /// index of the last frame, inclusive.
   int mEndFrameIndex;
   int mFrameStep;
   bool mStop;
@@ -531,11 +516,6 @@ private:
 class FrameSeq {
 public:
   FrameSeq():
-//    mNumFrames(-1),
-//    mStartFrameIndex(0),
-//    mEndFrameIndex(0),
-//    mFrameStep(1),
-//    mStop(false),
     mNumFrames(0),
     mStartFrameIndex(-1),
     mLastGoodFrame(NULL),
@@ -562,6 +542,7 @@ public:
     releasePoseEstFrameEntry( &mLastGoodFrame);
   }
   void releasePoseEstFrameEntry( PoseEstFrameEntry** frameEntry );
+  void print();
 };
 
 }

@@ -86,7 +86,7 @@ typedef struct ADSEARCHSTATESPACE
     double eps_satisfied;
 	CHeap* heap;
 	CList* inconslist;
-	short unsigned int iteration;
+	short unsigned int searchiteration;
 	short unsigned int callnumber;
 	CMDPSTATE* searchgoalstate;
 	CMDPSTATE* searchstartstate;
@@ -95,6 +95,7 @@ typedef struct ADSEARCHSTATESPACE
 
 	bool bReevaluatefvals;
     bool bReinitializeSearchStateSpace;
+	bool bRebuildOpenList;
 
 } ADSearchStateSpace_t;
 
@@ -106,14 +107,24 @@ class ADPlanner : public SBPLPlanner
 
 public:
 	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V);
+	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* solcost);
 
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);
     int force_planning_from_scratch(); 
+	
+	int set_search_mode(bool bSearchUntilFirstSolution);
+	void costs_changed(ChangedCellsGetter const & changedcells);
+
 
 	void update_succs_of_changededges(vector<int>* succsIDV);
 	void update_preds_of_changededges(vector<int>* predsIDV);
 
+
+	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
+    virtual int get_n_expands() const { return searchexpands; }
+
+	virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
 
 
 	//constructors & destructors
@@ -129,6 +140,7 @@ private:
 	MDPConfig* MDPCfg_;
 
 	bool bforwardsearch;
+	bool bsearchuntilfirstsolution; //if true, then search until first solution (see planner.h for search modes)
 
     ADSearchStateSpace_t* pSearchStateSpace_;
 
@@ -217,9 +229,21 @@ private:
 
 	CKey ComputeKey(ADState* state);
 
-	void Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV);
+	void Update_SearchSuccs_of_ChangedEdges(vector<int> const * statesIDV);
 
 
+};
+
+
+/**
+   See comments in sbpl/src/planners/planner.h about the what and why
+   of this class.
+*/
+class ChangedCellsGetter
+{
+public:
+  virtual ~ChangedCellsGetter() {}
+  virtual std::vector<int> const * getPredsOfChangedCells() const = 0;
 };
 
 

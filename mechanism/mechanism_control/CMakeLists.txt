@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+set(ROS_BUILD_STATIC_LIBS true)
+set(ROS_BUILD_SHARED_LIBS false)
 rospack(mechanism_control)
 rospack_add_library(mechanism_control src/mechanism_control.cpp)
 #rospack_add_executable(ms_publisher_test test/ms_publisher_test.cpp)

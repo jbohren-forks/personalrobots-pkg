@@ -40,8 +40,8 @@
 #include <cassert>
 #include <vector>
 
-#include "cv.h"
-#include "cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
 
 #include "svlBase.h"
 #include "svlVision.h"

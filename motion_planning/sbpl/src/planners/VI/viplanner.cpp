@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../headers.h"
+#include "../../sbpl/headers.h"
 
 static unsigned int g_backups;
 static clock_t g_runtime = 0;
@@ -49,7 +49,7 @@ void VIPlanner::Initialize_vidata(CMDPSTATE* state)
 
 	vi_data->bestnextaction = NULL;
 	vi_data->iteration = 0;
-	vi_data->v = environment_->GetGoalHeuristic(state->StateID); 
+	vi_data->v = (float)environment_->GetGoalHeuristic(state->StateID); 
 
 
 }
@@ -295,7 +295,7 @@ void VIPlanner::backup(CMDPSTATE* state)
 
 	//set state values
 	((VIState*)state->PlannerSpecificData)->bestnextaction = minaction;
-	((VIState*)state->PlannerSpecificData)->v = minactionQ;
+	((VIState*)state->PlannerSpecificData)->v = (float)minactionQ;
 
 }
 

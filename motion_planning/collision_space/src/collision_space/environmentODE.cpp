@@ -128,13 +128,14 @@ void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_i
     
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	libTF::Pose3D &pose = m_kgeoms[model_id].geom[i]->link->globalTrans;
-	dGeomID        geom = m_kgeoms[model_id].geom[i]->geom;
+	btTransform &pose = m_kgeoms[model_id].geom[i]->link->globalTrans;
+	dGeomID      geom = m_kgeoms[model_id].geom[i]->geom;
 	
-	libTF::Position pos = pose.getPosition();
-	dGeomSetPosition(geom, pos.x, pos.y, pos.z);
-	libTF::Quaternion quat = pose.getQuaternion();
-	dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
+	btVector3 pos = pose.getOrigin();
+	dGeomSetPosition(geom, pos.getX(), pos.getY(), pos.getZ());
+	btQuaternion quat = pose.getRotation();
+	dQuaternion q; 
+	q[0] = quat.getW(); q[1] = quat.getX(); q[2] = quat.getY(); q[3] = quat.getZ();
 	dGeomSetQuaternion(geom, q);
     }    
 }
@@ -178,8 +179,8 @@ void collision_space::EnvironmentModelODE::ODECollide2::setup(void)
     }	    
 }
 
-void collision_space::EnvironmentModelODE::ODECollide2::check(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-							      Geom *g, void *data, dNearCallback *nearCallback)
+void collision_space::EnvironmentModelODE::ODECollide2::checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
+								  Geom *g, void *data, dNearCallback *nearCallback)
 {
     /* posStart now identifies the first geom which has an AABB
        that could overlap the AABB of geom on the X axis. posEnd
@@ -235,23 +236,23 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
 			if (d3 > CUTOFF)
 			{
 			    if (d3 <= d2 && d3 <= d1)
-				check(posStart3, posEnd3, &g, data, nearCallback);
+				checkColl(posStart3, posEnd3, &g, data, nearCallback);
 			    else
 				if (d2 <= d3 && d2 <= d1)
-				    check(posStart2, posEnd2, &g, data, nearCallback);
+				    checkColl(posStart2, posEnd2, &g, data, nearCallback);
 				else
-				    check(posStart1, posEnd1, &g, data, nearCallback);
+				    checkColl(posStart1, posEnd1, &g, data, nearCallback);
 			}
 			else
-			    check(posStart3, posEnd3, &g, data, nearCallback);   
+			    checkColl(posStart3, posEnd3, &g, data, nearCallback);   
 		    }
 		}
 		else
-		    check(posStart2, posEnd2, &g, data, nearCallback);   
+		    checkColl(posStart2, posEnd2, &g, data, nearCallback);   
 	    }
 	}
 	else 
-	    check(posStart1, posEnd1, &g, data, nearCallback);
+	    checkColl(posStart1, posEnd1, &g, data, nearCallback);
     }
 }
 
@@ -294,8 +295,6 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     CollisionData cdata;
     cdata.collides = false;
     
-    profiling_utils::Profiler::Begin("Check self collision");
-    
     /* check self collision */
     if (m_selfCollision)
     {
@@ -332,10 +331,6 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     /* check collision with standalone ode bodies */
  OUT1:
 
-    profiling_utils::Profiler::End("Check self collision");
-
-    profiling_utils::Profiler::Begin("Check basic objects collision");
-
     if (!cdata.collides)
     {
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 ; --i)
@@ -364,17 +359,12 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     /* check collision with pointclouds */
  OUT2:
 
-    profiling_utils::Profiler::End("Check basic objects collision");
-
-    profiling_utils::Profiler::Begin("Check pointcloud collision");
     if (!cdata.collides)
     {
 	m_collide2.setup();
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 && !cdata.collides ; --i)
 	    m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
     }
-
-    profiling_utils::Profiler::End("Check pointcloud collision");
 
     return cdata.collides;
 }

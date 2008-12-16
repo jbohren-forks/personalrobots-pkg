@@ -194,7 +194,9 @@ template<typename LhsNested, typename RhsNested, int ProductMode> class Product 
     inline Product(const Lhs& lhs, const Rhs& rhs)
       : m_lhs(lhs), m_rhs(rhs)
     {
-      ei_assert(lhs.cols() == rhs.rows());
+      ei_assert(lhs.cols() == rhs.rows()
+        && "invalid matrix product"
+        && "if you wanted a coeff-wise or a dot product use the respective explicit functions");
     }
 
     /** \internal
@@ -265,6 +267,21 @@ template<typename OtherDerived>
 inline const typename ProductReturnType<Derived,OtherDerived>::Type
 MatrixBase<Derived>::operator*(const MatrixBase<OtherDerived> &other) const
 {
+  enum {
+    ProductIsValid =  Derived::ColsAtCompileTime==Dynamic
+                   || OtherDerived::RowsAtCompileTime==Dynamic
+                   || int(Derived::ColsAtCompileTime)==int(OtherDerived::RowsAtCompileTime),
+    AreVectors = Derived::IsVectorAtCompileTime && OtherDerived::IsVectorAtCompileTime,
+    SameSizes = EIGEN_PREDICATE_SAME_MATRIX_SIZE(Derived,OtherDerived)
+  };
+  // note to the lost user:
+  //    * for a dot product use: v1.dot(v2)
+  //    * for a coeff-wise product use: v1.cwise()*v2
+  EIGEN_STATIC_ASSERT(ProductIsValid || !(AreVectors && SameSizes),
+    invalid_vector_vector_product__if_you_wanted_a_dot_or_coeff_wise_product_you_must_use_the_explicit_functions);
+  EIGEN_STATIC_ASSERT(ProductIsValid || !(SameSizes && !AreVectors),
+    invalid_matrix_product__if_you_wanted_a_coeff_wise_product_you_must_use_the_explicit_function);
+  EIGEN_STATIC_ASSERT(ProductIsValid || SameSizes, invalid_matrix_product);
   return typename ProductReturnType<Derived,OtherDerived>::Type(derived(), other.derived());
 }
 
@@ -312,6 +329,7 @@ struct ei_product_coeff_impl<NoVectorization, Dynamic, Lhs, Rhs>
 {
   inline static void run(int row, int col, const Lhs& lhs, const Rhs& rhs, typename Lhs::Scalar& res)
   {
+    ei_assert(lhs.cols()>0 && "you are using a non initialized matrix");
     res = lhs.coeff(row, 0) * rhs.coeff(0, col);
       for(int i = 1; i < lhs.cols(); i++)
         res += lhs.coeff(row, i) * rhs.coeff(i, col);
@@ -469,6 +487,7 @@ struct ei_product_packet_impl<RowMajor, Dynamic, Lhs, Rhs, PacketScalar, LoadMod
 {
   inline static void run(int row, int col, const Lhs& lhs, const Rhs& rhs, PacketScalar& res)
   {
+    ei_assert(lhs.cols()>0 && "you are using a non initialized matrix");
     res = ei_pmul(ei_pset1(lhs.coeff(row, 0)),rhs.template packet<LoadMode>(0, col));
       for(int i = 1; i < lhs.cols(); i++)
         res =  ei_pmadd(ei_pset1(lhs.coeff(row, i)), rhs.template packet<LoadMode>(i, col), res);
@@ -480,6 +499,7 @@ struct ei_product_packet_impl<ColMajor, Dynamic, Lhs, Rhs, PacketScalar, LoadMod
 {
   inline static void run(int row, int col, const Lhs& lhs, const Rhs& rhs, PacketScalar& res)
   {
+    ei_assert(lhs.cols()>0 && "you are using a non initialized matrix");
     res = ei_pmul(lhs.template packet<LoadMode>(row, 0), ei_pset1(rhs.coeff(0, col)));
       for(int i = 1; i < lhs.cols(); i++)
         res =  ei_pmadd(lhs.template packet<LoadMode>(row, i), ei_pset1(rhs.coeff(i, col)), res);

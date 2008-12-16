@@ -52,7 +52,6 @@
 #include <std_msgs/VisualizationMarker.h>
 
 // Math utils
-#include <math_utils/angles.h>
 #include <math.h>
 #include <tf/transform_listener.h>
 
@@ -144,6 +143,7 @@ private:
 
   double last_time_;            /**< The last time. */
   double max_velocity_;
+  double gain_;
   std::vector<double> set_pts_; /**< The vector of joint set_pts. */
   mechanism::Robot* robot_;     /**< The robot we're controlling. */
 

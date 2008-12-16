@@ -29,11 +29,9 @@
 
 #include <gtest/gtest.h>
 #include <tf/tf.h>
-#include <math_utils/angles.h>
 #include <sys/time.h>
 
 #include "LinearMath/btVector3.h"
-
 
 void seed_rand()
 {
@@ -673,9 +671,9 @@ TEST(tf, TransformThrougRoot)
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
 
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)10 + i, "childA",  "my_parent");
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)1000 + i*100, "childA",  "my_parent");
     mTR.setTransform(tranStamped);
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)10 + i, "childB",  "my_parent");
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)1000 + i*100, "childB",  "my_parent");
     mTR.setTransform(tranStamped2);
   }
 
@@ -685,7 +683,7 @@ TEST(tf, TransformThrougRoot)
   for ( unsigned int i = 0; i < runs ; i++ )
 
   {
-    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), (uint64_t)10 + i, "childA");
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), (uint64_t)1000 + i*100, "childA");
 
     try{
     Stamped<btTransform> outpose;
@@ -833,6 +831,363 @@ TEST(tf, NO_PARENT_SET)
   EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
   EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
   
+}
+
+TEST(tf, Exceptions)
+{
+
+ tf::Transformer mTR(true);
+
+ 
+ Stamped<btTransform> outpose;
+
+ //connectivity when no data
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 10000000ULL));
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10000000ULL , "me"), outpose);
+   EXPECT_FALSE("ConnectivityException Not Thrown");   
+ }
+ catch ( tf::ConnectivityException &ex)
+ {
+   EXPECT_TRUE("Connectivity Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ 
+
+ mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 100000ULL , "me",  "parent"));
+
+ //Extrapolation not valid with one value
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 200000ULL));
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ 
+
+ mTR.setTransform( Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 300000ULL , "me",  "parent"));
+
+ //NO Extration when Interpolating
+ //inverse list
+ EXPECT_TRUE(mTR.canTransform("parent", "me", 200000ULL));
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_FALSE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+
+ //forward list
+ EXPECT_TRUE(mTR.canTransform("me", "parent", 200000ULL));
+ try 
+ {
+   mTR.transformPose("me",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "parent"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_FALSE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+ //Extrapolating backwards
+ //inverse list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 1000ULL));
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "me"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ //forwards list
+ EXPECT_FALSE(mTR.canTransform("me", "parent", 1000ULL));
+ try 
+ {
+   mTR.transformPose("me",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "parent"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+
+ // Test extrapolation inverse and forward linkages FORWARD
+
+ //inverse list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 350000ULL));
+ try 
+ {
+   mTR.transformPose("parent", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "me"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+
+ //forward list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 350000ULL));
+ try 
+ {
+   mTR.transformPose("me", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "parent"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+
+
+}
+
+
+
+TEST(tf, NoExtrapolationExceptionFromParent)
+{
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
+  
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "a",  "parent"));
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "b",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "b",  "parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent's parent",  "parent's parent's parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent",  "parent's parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent's parent",  "parent's parent's parent"));
+
+  Stamped<Point> output;
+
+  try
+  {
+    mTR.transformPoint( "b", Stamped<Point>(Point(1,1,1), ros::Time(2000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    EXPECT_FALSE("Shouldn't have gotten this exception");
+  }
+
+
+
+};
+
+
+
+TEST(tf, ExtrapolationFromOneValue)
+{
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
+  
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
+
+
+  Stamped<Point> output;
+
+  bool excepted = false;
+  //Past time
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  excepted = false;
+  //Future one element
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(100000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  //Past multi link
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(1ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  //Future case multi link
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(20000ULL), "a",  "parent"));
+
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_FALSE(excepted);
+
+};
+
+
+
+TEST(tf, getLatestCommonTime)
+{
+  tf::Transformer mTR(true);
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(2000ULL), "parent",  "parent's parent"));
+  
+  //simple case
+  ros::Time t;
+  mTR.getLatestCommonTime("a", "parent's parent", t);
+  EXPECT_EQ(t, ros::Time(1000ULL));
+
+  //no connection
+  mTR.getLatestCommonTime("a", "not valid", t);
+  EXPECT_EQ(t, ros::Time(0ULL));
+
+  //testing with update
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(3000ULL), "a",  "parent"));
+  mTR.getLatestCommonTime("a", "parent's parent",t);
+  EXPECT_EQ(t, ros::Time(2000ULL));
+
+  //longer chain
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(4000ULL), "b",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(3000ULL), "c",  "b"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(9000ULL), "d",  "c"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(5000ULL), "e",  "f"));
+
+  //shared parent
+  mTR.getLatestCommonTime("a", "b",t);
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //two degrees
+  mTR.getLatestCommonTime("a", "c", t);
+  EXPECT_EQ(t, ros::Time(3000ULL));
+  //reversed
+  mTR.getLatestCommonTime("c", "a", t);
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //three degrees
+  mTR.getLatestCommonTime("a", "d", t);
+  EXPECT_EQ(t, ros::Time(3000ULL));
+  //reversed
+  mTR.getLatestCommonTime("d", "a", t);
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //disconnected tree
+  mTR.getLatestCommonTime("e", "f", t);
+  EXPECT_EQ(t, ros::Time(5000ULL));
+  //reversed order
+  mTR.getLatestCommonTime("f", "e", t);
+  EXPECT_EQ(t, ros::Time(5000ULL));
+
+
+  mTR.setExtrapolationLimit(ros::Duration(20000LL));
+
+  //check timestamps resulting
+  tf::Stamped<tf::Point> output, output2;
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(0ULL), "b"), output);
+    mTR.transformPoint( "a", ros::Time(0ULL),Stamped<Point>(Point(1,1,1), ros::Time(0ULL), "b"), "c",  output2);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("%s\n", ex.what());
+    EXPECT_FALSE("Shouldn't get this Exception");
+  }
+
+  EXPECT_EQ(output.stamp_, ros::Time(4000ULL));
+  EXPECT_EQ(output2.stamp_, ros::Time(3000ULL));
+
+
+
+
 }
 
 int main(int argc, char **argv){

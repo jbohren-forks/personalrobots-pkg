@@ -13,37 +13,36 @@
 #
 #  $ make svn-all
 
-all: tarball-all
+##all: tarball-all
+all: svn-all
 
 VERSION=     r267
 
-TARBALL=     estar-$(VERSION).tar.gz
-TARBALL_URL= http://pr.willowgarage.com/downloads/$(TARBALL)
-SOURCE_DIR=  $(PWD)/estar-$(VERSION)
+TARBALL=     build/estar-$(VERSION).tar.gz
+TARBALL_URL= http://pr.willowgarage.com/downloads/estar-$(VERSION).tar.gz
+SOURCE_DIR=  $(PWD)/build/estar-$(VERSION)
 UNPACK_CMD=  tar xfz
-BUILD_DIR=   $(PWD)/build
+BUILD_DIR=   $(PWD)/build/build
 INST_DIR=    $(PWD)/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
-SVN_DIR=     $(PWD)/estar-svn
+SVN_DIR=     $(PWD)/build/estar-svn
 SVN_REV=     HEAD
 SVN_URL=     https://estar.svn.sourceforge.net/svnroot/estar/trunk/estar
 
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 .PHONY: reall-all
 really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 
 .PHONY: svn-all
-svn-all: checkout
+svn-all: checkout_or_update
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
-checkout:
+checkout_or_update:
+	- test -d $(SVN_DIR) && svn up $(SVN_DIR)
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
-
-update: checkout
-	test -d $(SVN_DIR) && svn up $(SVN_DIR)
 
 .PHONY: tarball-all
 tarball-all: $(SOURCE_DIR)

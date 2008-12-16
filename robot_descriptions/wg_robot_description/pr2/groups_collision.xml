@@ -5,104 +5,104 @@
   <!-- Define the parts of the robot that the robot's scanners can see -->
   
   <group name="self_see" flags="collision">
-    upperarm_roll_left
-    upperarm_roll_right
-    elbow_flex_left
-    elbow_flex_right
-    forearm_roll_left
-    forearm_roll_right
-    wrist_flex_left
-    wrist_flex_right
-    gripper_roll_left
-    gripper_roll_right
-    finger_l_left
-    finger_r_left
-    finger_l_right
-    finger_r_right
-    shoulder_pan_right
-    shoulder_pitch_right 
-    shoulder_pan_left
-    shoulder_pitch_left
-    torso
-    base
+    l_upper_arm_roll_link
+    r_upper_arm_roll_link
+    l_elbow_flex_link
+    r_elbow_flex_link
+    l_forearm_roll_link
+    r_forearm_roll_link
+    l_wrist_flex_link
+    r_wrist_flex_link
+    l_wrist_roll_link
+    r_wrist_roll_link
+    l_gripper_l_finger_link
+    l_gripper_r_finger_link
+    r_gripper_l_finger_link
+    r_gripper_r_finger_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    torso_lift_link
+    base_link
   </group>
   
   <!-- Define the parts of the robot that the collision checker should care about -->
   <group name="collision_check" flags="collision">
-    base
-    torso
-    shoulder_pan_right
-    shoulder_pitch_right 
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    upperarm_roll_right
-    elbow_flex_left
-    elbow_flex_right
-    forearm_roll_left
-    forearm_roll_right
-    wrist_flex_left
-    wrist_flex_right
-    gripper_roll_left
-    gripper_roll_right
-    finger_l_left
-    finger_r_left
-    finger_l_right
-    finger_r_right
-    head_pan
-    head_tilt
+    base_link
+    torso_lift_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    l_shoulder_pan_link
+    l_shoulder_lift_link
+    l_upper_arm_roll_link
+    r_upper_arm_roll_link
+    l_elbow_flex_link
+    r_elbow_flex_link
+    l_forearm_roll_link
+    r_forearm_roll_link
+    l_wrist_flex_link
+    r_wrist_flex_link
+    l_wrist_roll_link
+    r_wrist_roll_link
+    l_gripper_l_finger_link
+    l_gripper_r_finger_link
+    r_gripper_l_finger_link
+    r_gripper_r_finger_link
+    head_pan_link
+    head_tilt_link
   </group>
   
   <!-- Define groups to check for self collision -->
 
   <group name="collisions1" flags="self_collision">
-    upperarm_roll_right
-    torso
+    r_upper_arm_roll_link
+    torso_lift_link
   </group>
 
   <group name="collisions2" flags="self_collision">
-    elbow_flex_right
-    base
+    r_elbow_flex_link
+    base_link
   </group>
 
   <group name="collisions3" flags="self_collision">
-    forearm_roll_right
-    base
+    r_forearm_roll_link
+    base_link
   </group>
 
   <group name="collisions4" flags="self_collision">
-    wrist_flex_right
-    base
+    r_wrist_flex_link
+    base_link
   </group>
 
   <group name="collisions5" flags="self_collision">
-    gripper_roll_right
-    base
+    r_wrist_roll_link
+    base_link
   </group>
 
   <group name="collisions6" flags="self_collision">
-    upperarm_roll_left
-    torso
+    l_upper_arm_roll_link
+    torso_lift_link
   </group>
 
   <group name="collisions7" flags="self_collision">
-    elbow_flex_left
-    base
+    l_elbow_flex_link
+    base_link
   </group>
 
   <group name="collisions8" flags="self_collision">
-    forearm_roll_left
-    base
+    l_forearm_roll_link
+    base_link
   </group>
 
  <group name="collisions9" flags="self_collision">
-    wrist_flex_left
-    base
+    l_wrist_flex_link
+    base_link
   </group>
 
   <group name="collisions10" flags="self_collision">
-    gripper_roll_left
-    base
+    l_wrist_roll_link
+    base_link
   </group>
 
 </robot>

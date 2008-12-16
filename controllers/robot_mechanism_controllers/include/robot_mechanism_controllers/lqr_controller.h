@@ -113,7 +113,7 @@ public:
   
   LQRController();
   
-  virtual ~LQRController();
+  ~LQRController();
   
   //Can be safely called from non real-time code to update the state of the controller
   void add(JobQueueItem * job) { queue_.push(job); }
@@ -124,26 +124,8 @@ public:
   
   void setModel(ModelType *model);
   ModelType * model() { return model_; }
-
-  // FIXME: the API to convert model state  <-> robot parameters is really bad
-  // Need to think about it
-  // Code also used in LQRControllerNode
-  
-  /** @brief fills a state vector from information supplied by n-uplets of (name,position,velocity)
-    */
-  bool toStateVector(const std::vector<std::string> & names, const std::vector<double> & positions, const std::vector<double> & velocities, StateVector & v) const;
-  
-protected:
-
-  virtual void getValues();
-  virtual void setCommands();
   
 private:
-
-  /** @brief Given a joint name, return the index of this joint in joint_states_, or -1 if it not present
-    */
-  //FIXME: should be removed by using a more efficient storage structure for joint_states_ (hash map)
-  int jointIndex(const std::string & name) const;
 
   JobQueue queue_; // Job queue to do I/O with non-RT part
   
@@ -157,17 +139,12 @@ private:
   // Model of the arm
   ModelType * model_;
   
-  std::vector<mechanism::JointState *> joint_states_; // Lets a mapping from the joints (name) to the vector (indexes)
-  
-  StateVector state_, previous_state_;
+  StateVector state_; 
+//   previous_state_;
   
   InputVector commands_;
   
   mechanism::RobotState * robot_;
-  
-  double previous_time_;
-  
-  bool reset_previous_; //Reset the value of previous_state_ to the current state
 
 };
 
@@ -188,6 +165,8 @@ public:
   bool setTargetSrv(robot_srvs::SetJointCmd::request &req,
                 robot_srvs::SetJointCmd::response &resp);
                 
+  bool setTargetAsynchronous(const robot_msgs::JointCmd &cmd);
+                
   void update();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
@@ -203,155 +182,7 @@ private:
   LQRController * c_;
 };
 
-
-// template<typename Scalar = double, int StateSize = Eigen::Dynamic, int InputSize = Eigen::Dynamic>
-// class LQRController
-// {
-//   typedef DynamicsModel<Scalar, StateSize, InputSize> ModelType;
-//   typedef LQRController<Scalar, StateSize, InputSize> _LQRController;
-//   
-// public:
-//   typedef typename ModelType::StateMatrix StateMatrix;
-//   typedef typename ModelType::StateVector StateVector;
-//   typedef typename ModelType::InputMatrix InputMatrix;
-//   typedef typename ModelType::InputVector InputVector;
-//   typedef Eigen::Matrix<Scalar, InputSize, StateSize> GainsMatrix;
-//   
-//   // Queue Jobs
-//   
-//   class UpdateGainsJob : public JobQueueItem
-//   {
-//   private:
-//     _LQRController * c_;
-//     GainsMatrix gains_;
-//     StateVector off_;
-//   public:
-//     UpdateGainsJob(_LQRController * c, const GainsMatrix & g, const StateVector & off) : c_(c),gains_(g),off_(off) {}
-//     void process()
-//     {
-//       std::cout<<"NEW GAINS\n"<<gains_<<std::endl;
-//       c_->gains_=gains_;
-//       c_->offset_=off_;
-//     }
-//     
-//   };
-// 
-//   class UpdateTargetJob : public JobQueueItem
-//   {
-//   private:
-//     _LQRController * c_;
-//     StateVector target_;
-//   public:
-//     UpdateTargetJob(_LQRController * c, const StateVector & t) : c_(c),target_(t) {}
-//     void process()
-//     {
-//       c_->target_=target_;
-//     }
-//     
-//   };
-//   
-//   LQRController()
-//   {
-//     target_.setZero();
-//     cmatrix_.setZero();
-//   }
-//   
-//   ~LQRController()
-//   {
-//     queue_.clear();
-//   }
-//   
-//   //Can be safely called from non real-time code to update the state of the controller
-// //   JobQueue & queue() { return queue_; }
-//   void add(JobQueueItem * job) { queue_.push(job); }
-// 
-//   // To be called in the real time loop
-//   // Processes the queue and updates the commands vector
-//   void updateCommands(const StateVector & current, double dt, InputVector &commands)
-//   {
-//     queue_.processAll();
-//     commands=dt*cmatrix_*(current-target_+offset_);
-// //     std::cout<<"$$$$$ GAINS=\n"<<cmatrix_<<std::endl;
-// //     std::cout<<"$$$$$ current=\n"<<current<<std::endl;
-// //     std::cout<<"$$$$$ COM="<<commands.transpose()<<std::endl;
-//   }
-//   
-// private:
-// 
-//   JobQueue queue_; // Job queue to do I/O with non-RT part
-//   
-//   GainsMatrix cmatrix_;   // The control matrix
-//   
-//   StateVector offset_;
-//   
-//   StateVector target_; // Target state
-// };
-// 
-// 
-// /** @brief non real time interface to the LQR controller
-//   */
-// template<typename Scalar, int StateSize, int InputSize>
-// class LQRControllerInterface
-// {
-// private:
-//   typedef DynamicsModel<Scalar, StateSize, InputSize> ModelType;
-//   typedef LQRController<Scalar,StateSize,InputSize> _LQRController;
-//   
-// public:
-//   typedef typename ModelType::StateMatrix StateMatrix;
-//   typedef typename ModelType::StateVector StateVector;
-//   typedef typename ModelType::InputMatrix InputMatrix;
-//   typedef typename ModelType::InputVector InputVector;
-//   typedef Eigen::Matrix<Scalar, InputSize, StateSize> GainsMatrix;
-//   typedef Eigen::Matrix<Scalar, InputSize, InputSize> InputWeightsMatrix;
-//   typedef int OutputMatrix;
-// private:  
-//   
-// public:
-// 
-//   LQRControllerInterface(_LQRController * controller) : c_(controller)
-//   {
-//   }
-//   
-//   bool init(const InputMatrix & cmatrix, ModelType * model)
-//   {
-//     model_=model;
-//     c_->add(new typename _LQRController::UpdateGainsJob(c_,cmatrix));
-//     return true;
-//   }
-//   
-//   void updateTarget(const StateVector & target)
-//   {
-//     c_->add(new typename _LQRController::UpdateTargetJob(c_,target));
-//   }
-//   
-//   void updateInputMatrix(const StateVector & target_state, const StateMatrix & lqrWeights)
-//   {
-//     // Get new linearization
-//     StateMatrix A;
-//     InputMatrix B;
-//     StateVector c;
-//     model_->getLinearization(target_state, A, B, c);
-//     
-//     // Compute new gains matrix
-//     StateMatrix K;
-//     InputWeightsMatrix R=InutWeightsMatrix::Identity();
-//     LQR::LQRDP<StateMatrix,InputMatrix,StateMatrix,InputWeightsMatrix>::run(A, B, lqrWeights, lqrWeights, R, 0.1, K);
-// 
-//     // Check validity
-//     bool test=SystemTest<StateMatrix,InputMatrix,OutputMatrix>::isConverging(A,B,K);
-//     assert(test);
-//     
-//     // Sends gains matrix to the controller
-//     c_->add(new typename _LQRController::UpdateGainsJob(c_,K,A.inverse()*c));
-//   }
-// 
-// private:
-//   _LQRController * c_;
-//   
-//   ModelType * model_;
-// };
-
 };
 
 #endif
+

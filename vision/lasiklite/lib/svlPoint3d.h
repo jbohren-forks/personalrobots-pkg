@@ -41,6 +41,7 @@
 #pragma once
 
 #include <cassert>
+#include <limits>
 #include <cmath>
 #include <iostream>
 

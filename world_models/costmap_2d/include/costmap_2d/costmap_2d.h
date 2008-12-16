@@ -57,17 +57,13 @@
 // Base class
 #include "obstacle_map_accessor.h"
 
-//c++
-#include <list>
-#include <vector>
-#include <map>
-#include <set>
-#include <string>
-#include <map>
-#include <queue>
+// Need observations
+#include "observation.h"
 
-// For point clouds <Could Make it a template>
-#include "std_msgs/PointCloud.h"
+//c++
+#include <vector>
+#include <string>
+#include <queue>
 
 namespace costmap_2d {
 
@@ -98,9 +94,16 @@ namespace costmap_2d {
 
   typedef std::priority_queue< QueueElement*, std::vector<QueueElement*>, QueueElementComparator > QUEUE;
 
+
   class CostMap2D: public ObstacleMapAccessor 
   {
   public:
+
+    static std::vector<std_msgs::PointCloud*> toVector(std_msgs::PointCloud& cloud){
+      std::vector<std_msgs::PointCloud*> v;
+      v.push_back(&cloud);
+      return v;
+    }
 
     /**
      * @brief Constructor.
@@ -109,72 +112,57 @@ namespace costmap_2d {
      * @param height height of map [cells]
      * @param data row-major obstacle data, each value indicates a cost
      * @param resolution resolution of map [m/cell]
-     * @param window_length how long to hold onto obstacle data [sec]
      * @param threshold The cost threshold where a cell is considered an obstacle
      * @param maxZ gives the cut-off for points in 3D space
-     * @param freeSpaceProjectionHeight gives the upper bound for evaluating points in z for projecting free space
+     * @param zLB lower bound for evaluating points in z for projecting free space
+     * @param zUB upper bound for evaluating points in z for projecting free space
      * @param inflationRadius the radius used to bound inflation - limit of cost propagation
      * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
+     * @param weight the scaling factor in the cost function. Should be <=1. Lower values reduce the effective cost
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
-	      double resolution, double window_length,
-	      unsigned char threshold, 
-	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
-	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0);
+	      double resolution, unsigned char threshold, 
+	      double maxZ = 0.5,  double zLB = 0.15, double zUB = 0.20,
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1, double obstacleRange = 10.0, double raytraceRange = 10.0);
   
     /**
      * @brief Destructor.
      */
     virtual ~CostMap2D();
-  
-    /**
-     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * @param current time stamp
-     * @param cloud holds projected scan data
-     * @param updates holds the updated cell ids and values
-     *
-     * @see removeStaleObstacles
-     */
-    void updateDynamicObstacles(double ts,
-				const std_msgs::PointCloud& cloud,
-				std::vector<unsigned int>& updates);
+
+    // Hack for backward compatability
+    void updateDynamicObstacles(std_msgs::PointCloud& cloud,
+				std::vector<unsigned int>& updates){
+      updateDynamicObstacles(0, 0, toVector(cloud), updates);
+    }
 
     /**
      * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * @param current time stamp
      * @param wx The current x position
      * @param wy The current y position
      * @param cloud holds projected scan data
      * @param updates holds the updated cell ids and values
-     *
-     * @see removeStaleObstacles
      */
-    void updateDynamicObstacles(double ts,
-				double wx, double wy,
-				const std_msgs::PointCloud& cloud,
+    void updateDynamicObstacles(double wx, double wy,
+				const std::vector<std_msgs::PointCloud*>& clouds,
 				std::vector<unsigned int>& updates);
     /**
-     * @brief A convenience method which will skip calculating the diffs
-     * @param current time stamp
-     * @param cloud holds projected scan data
-     *
-     * @see updateDynamicObstacles
+     * @brief Updates dynamic obstacles
+     * @param wx The current x position
+     * @param wy The current y position
+     * @param clouds holds projected scan data
      */
-    void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
+    void updateDynamicObstacles(double wx, double wy,
+				const std::vector<std_msgs::PointCloud*>& clouds);
 
     /**
-     * @brief Updates the cost map, removing stale obstacles based on the new time stamp.
-     * @param current time stamp
-     * @param deletedObstacleCells holds vector for returning newly unoccupied ids
+     * @brief Updates dynamic obstacles based on a buffer of observations
+     * @param wx The current x position
+     * @param wy The current y position
+     * @param observations The collection of observations from all data sources
      */
-    void removeStaleObstacles(double ts, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief Get pointer into the obstacle map (which contains both static
-     * and dynamic obstacles)
-     */
-    const unsigned char* getMap() const;
+    void updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations);
 
     /**
      * @brief Obtain the collection of all occupied cells: the union of static and dynamic obstacles
@@ -182,33 +170,18 @@ namespace costmap_2d {
     void getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const;
 
     /**
-     * @brief Accessor for contents of full map cell by cell index
+     * @brief The weight for scaling in the cost function
      */
-    unsigned char operator [](unsigned int ind) const;
+    double getWeight() const {return weight_;}
 
     /**
-     * @brief Accessor by map coordinates
+     * @brief Will reset the cost data
+     * @param wx the x position in world coordinates
+     * @param wy the y position in world coordinates
      */
-    unsigned char getCost(unsigned int mx, unsigned int my) const;
-
-    /**
-     * @brief Utility for debugging
-     */
-    std::string toString() const;
+    void revertToStaticMap(double wx = 0.0, double wy = 0.0);
 
   private:
-    /**
-     * @brief Internal method that does not clear the updates first
-     */
-    void removeStaleObstaclesInternal(double ts, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief Compute the number of ticks that have elapsed between the given timestamp ts and the last time stamp.
-     * Will update the last time stamp value
-     *
-     * @param ts The current time stamp. Must be >= lastTimeStamp_
-     */
-    TICK getElapsedTime(double ts);
 
     /**
      * @brief Helper method to compute the inflated cells around an obstacle based on resolution and inflation radius
@@ -216,48 +189,28 @@ namespace costmap_2d {
     void computeInflation(unsigned int ind, std::vector< std::pair<unsigned int, unsigned char> >& inflation) const;
 
     /**
-     * @brief Utility to encapsulate dynamic cell updates
-     * @return true if the cell value is updated, otherwise false
-     */
-    void updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief Utility to encapsulate marking cells free.
-     */
-    void markFreeSpace(unsigned int cell, std::vector<unsigned int>& updates);
-
-    /**
      * @brief Utility to propagate costs
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagateCosts(std::vector<unsigned int>& updates);
+    void propagateCosts();
 
     /**
      * @brief Utility to push free space inferred from a laser point hit via ray-tracing
-     * @param ind the cell index of the obstacle detected
-     * @param updates the buffer for updated cells as a result
+     * @param The origin from which to trace out
+     * @param The target in map co-ordinates to trace to
      */ 
-    void updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates);
+    void updateFreeSpace(const std_msgs::Point& origin, double wx, double wy);
 
     /**
      * @brief Simple test for a cell having been marked during current propaagtion
      */
-    bool marked(unsigned int ind) const;
+    bool marked(unsigned int ind) const {return xy_markers_[ind];}
 
     /**
-     * @brief Encapsulate calls to peth the watchdog, which impacts the set of dynamic obstacles
+     * @mark a cell
      */
-    void petWatchDog(unsigned int cell, unsigned char value);
-
-    /**
-     * Added to provide a single update location. Only need to add the update if we have not visitied the cell
-     * with an update already. This case is checked because of the watchdog value. This prevents multiply updating cells
-     * for free space and cost propagation.
-     */
-    inline void addUpdate(unsigned int cell, std::vector<unsigned int>& updates){
-      updates.push_back(cell);
-    }
+    void mark(unsigned int ind){xy_markers_[ind] = true;}
     
     /**
      * Utilities for cost propagation
@@ -269,29 +222,30 @@ namespace costmap_2d {
     double computeDistance(unsigned int a, unsigned int b) const;
 
     unsigned char computeCost(double distance) const;
-			   
-    static const TICK MARKED_FOR_COST = 255; /**< The value used to denote a cell has been marked in the current iteration of cost propagation */
-    static const TICK WATCHDOG_LIMIT = 254; /**< The value for a reset watchdog time for observing dynamic obstacles */
-    const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
+
+    void updateCellCost(unsigned int ind, unsigned char cost);
+
+    bool in_projection_range(double z){return z >= zLB_ && z <= zUB_;}
+
     const double maxZ_; /**< Points above this will be excluded from consideration */
-    const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
-    const unsigned int inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
-    const unsigned int circumscribedRadius_;
-    const unsigned int inscribedRadius_;
-    unsigned char* staticData_; /**< data loaded from the static map */
-    unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
-    unsigned char* heightData_; /**< Stores the z value */
-    TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
-    double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
-    unsigned int mx_; /** < The x position of the robot in the grid */
-    unsigned int my_; /** < The y position of the robot in the grid */
-			   
-    std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
-    std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
+    const double zLB_; /**< Filters points for free space projection */
+    const double zUB_; /**< Filters points for free space projection */
+    const unsigned int inflationRadius_; /**< The radius in cells to propagate cost and obstacle information */
+    const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
+    const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
+    const double weight_;  /**< The weighting to apply to a normalized cost value */
+
+    //used squared distance because square root computations are expensive
+    double sq_obstacle_range_; /** The range out to which we will consider laser hitpoints **/
+    double sq_raytrace_range_; /** The range out to which we will raytrace **/
+
+    unsigned char* staticData_; /**< initial static map */
+    bool* xy_markers_; /**< Records time remaining in ticks before expiration of the observation */
     QUEUE queue_; /**< Used for cost propagation */
 
-    double** cachedDistances; /**< Cached distances indexed by dx, dy */
-    
+    double** cachedDistances; /**< Cached distances indexed by dx, dy */  
+    const unsigned int kernelWidth_; /**< The width of the kernel matrix, which will be square */
+    unsigned char* kernelData_; /**< kernel data structure for cost map updates around the robot */
   };
 
   /**
@@ -307,10 +261,6 @@ namespace costmap_2d {
      * @param the current y position in global coords
      */
     CostMapAccessor(const CostMap2D& costMap, double maxSize, double pose_x, double pose_y);
-
-    /** Implementation for base class interface **/
-    virtual unsigned char operator[](unsigned int ind) const;
-    virtual unsigned char getCost(unsigned int mx, unsigned int my) const;
 
     /**
      * @brief Set the pose for the robot. Will adjust other parameters accordingly.

@@ -1,172 +1,194 @@
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 #include <fstream>
+#include <cstring>
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-#include <boost/random.hpp>
 
 namespace features {
 
-static double sampleNormal(double mean, double sigma)
-{
-    using namespace boost;
-    
-    // Create a Mersenne twister random number generator
-    static mt19937 rng(23);
- 
-    // select Gaussian probability distribution
-    normal_distribution<double> norm_dist(mean, sigma);
- 
-    // bind random number generator to distribution, forming a function
-    variate_generator<mt19937&, normal_distribution<double> >  normal_sampler(rng, norm_dist);
- 
-    // sample from the distribution
-    return normal_sampler();
-}
 
-
-RTreeClassifier::RTreeClassifier()
-  : classes_(0), threshold_(0)
+RTreeClassifier::RTreeClassifier(bool keep_floats)
+  : classes_(0), keep_floats_(keep_floats)
 {
+   //setReducedDim(DEFAULT_RED);
 }
 
 void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
                             Rng &rng, int num_trees, int depth,
-                            int views)
+                            int views, size_t reduced_num_dim,
+                            int num_quant_bits)
 {
   PatchGenerator make_patch(NULL, rng);
-  train(base_set, rng, make_patch, num_trees, depth, views);
+  train(base_set, rng, make_patch, num_trees, depth, views, reduced_num_dim, num_quant_bits);
 }
 
 // Single-threaded version of train(), with progress output
 void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
-                            Rng &rng, PatchGenerator &make_patch,
-                            int num_trees, int depth, int views)
+                            Rng &rng, PatchGenerator &make_patch, int num_trees,
+                            int depth, int views, size_t reduced_num_dim, 
+                            int num_quant_bits)
 {
-  classes_ = base_set.size();
-  trees_.resize(num_trees);
+  if (reduced_num_dim > base_set.size()) {
+    printf("INVALID PARAMS in RTreeClassifier::train: reduced_num_dim > base_set.size()\n");
+    return;
+  }
+  if (!keep_floats_) {
+    printf("WARNING: Cannot release FLOAT posteriors when training, otherwise saving will\n"
+           "         not be possible afterwards. Setting keep_floats_ <- TRUE.\n"
+           "         Releasing float posteriors is possible when you load the classifier\n"
+           "         from the disc.\n");
+    keep_floats_ = true;
+  }
+  
+  classes_ = reduced_num_dim; // base_set.size();
+  original_num_classes_ = base_set.size();
+  trees_.resize(num_trees);  
+  
+  printf("[OK] Training trees: base size=%i, reduced size=%i\n", base_set.size(), reduced_num_dim); 
   
   int count = 1;
-  printf("Trained 0 / %i trees", num_trees);
+  printf("[OK] Trained 0 / %i trees", num_trees);
   fflush(stdout);
   BOOST_FOREACH( RandomizedTree &tree, trees_ ) {
-    tree.train(base_set, rng, make_patch, depth, views);
-    printf("\rTrained %i / %i trees", count++, num_trees);
+    tree.setKeepFloatPosteriors(keep_floats_);
+    tree.train(base_set, rng, make_patch, depth, views, reduced_num_dim, num_quant_bits);
+    printf("\r[OK] Trained %i / %i trees", count++, num_trees);
     fflush(stdout);
   }
-  printf("\n");
+  printf("\n\n");  
 }
 
-// TODO: trivially vectorizable
-DenseSignature RTreeClassifier::getDenseSignature(IplImage* patch) const
-{
-  DenseSignature sig = ublas::zero_vector<float>(classes_);
-
-  std::vector<RandomizedTree>::const_iterator tree_it;
-  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-    const float* post_array = tree_it->getPosterior(patch);
-    // Cram float* into uBLAS-friendly type without copying
-    typedef const ublas::shallow_array_adaptor<float> PostStorage;
-    typedef const ublas::vector<float, PostStorage> PostVec;
-    PostVec post(classes_, PostStorage(classes_, const_cast<float*>(post_array)) );
-    sig += post;
-  }
-
-  // TODO: get rid of this multiply
-  sig *= (1.0 / trees_.size());
-
-  return sig;
-}
-
-DenseSignature RTreeClassifier::getCompressedSignature(IplImage* patch, bool from_sparse)
+// TODO: vectorize
+void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
 { 
-   DenseSignature sig(cs_phi_.size1());
-   if (cs_phi_.size1()==0 || cs_phi_.size2()==0) {
-      printf("Error: Must call RTreeClassifier::setReducedDim() prior to RTreeClassifier::getCompressedSignature().\n");
-      return sig;
-   }   
-   
-   if (from_sparse) {
-      SparseSignature sparse = getSparseSignature(patch);
-      ublas::axpy_prod(cs_phi_, sparse, sig, true);   
-   }
-   else {
-      DenseSignature dense = getDenseSignature(patch);
-      ublas::axpy_prod(cs_phi_, dense, sig, true);
-   }
-   return sig;
-}
-
-void RTreeClassifier::makeRandomMeasMatrix(size_t dim_m, PHI_DISTR_TYPE dt)
-{
-   // set param according to selected distribution
-   float par;
-   switch (dt) {
-      case PHI_GAUSS:
-         par = (float)(1./dim_m); break;
-      case PHI_BERNOULLI:
-         par = (float)(1./sqrt(dim_m)); break;
-      case PHI_DBFRIENDLY:
-         par = (float)sqrt(3./dim_m); break;
-      default: 
-         throw("this is impossible");
-   }
-   
-   // create random measurement matrix
-   Rng rng(23);
-   cs_phi_.resize(dim_m, classes_);
-   for (size_t m=0; m<dim_m; ++m)
-      for (int n=0; n<classes_; ++n)
-         if (dt == PHI_GAUSS)
-            cs_phi_(m,n) = sampleNormal(0., par);
-         else if (dt == PHI_BERNOULLI)
-            cs_phi_(m,n) = (rng(2)==0 ? par : -par);
-         else {
-            int i = rng(6);
-            cs_phi_(m,n) = (i==0 ? par : (i==1 ? -par : 0.f));
-         }
- 
-   printf("[OK] created CS meas matrix - dims %i x %i .\n", dim_m, classes_);
-}
-
-void RTreeClassifier::setMeasMatrix(std::string filename, size_t dim_m)
-{
-   cs_phi_.resize(dim_m, classes_);
-   std::ifstream ifs(filename.c_str());
-   for (size_t i=0; i<dim_m; ++i) {
-      for (int k=0; k<classes_; ++k)
-         ifs >> cs_phi_(i,k);
-      if (!ifs.good() && !(i==dim_m-1 && ifs.eof())) {
-         printf("[WARNING] Not enough values in meas matrix file. Using makeRandomMeasMatrix instead.\n");
-         makeRandomMeasMatrix(dim_m);
-         break;
-      }      
-   }
-   ifs.close();
-}
-
-//SparseSignature RTreeClassifier::getSparseSignature(cv::WImageView1_b const& patch) const
-
-SparseSignature RTreeClassifier::getSparseSignature(IplImage* patch) const
-{
-  DenseSignature dense_sig = getDenseSignature(patch);
-  SparseSignature sparse_sig(classes_, 0);
-
-  for (int i = 0; i < classes_; ++i) {
-    float elem = dense_sig[i];
-    //if (elem > element_threshold_)
-    if (elem > threshold_)
-      sparse_sig.insert_element(i, elem);
+  // Need pointer to 32x32 patch data
+  uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
+  uchar* patch_data;
+  if (patch->widthStep != RandomizedTree::PATCH_SIZE) {
+    //printf("[INFO] patch is padded, data will be copied (%i/%i).\n", 
+    //       patch->widthStep, RandomizedTree::PATCH_SIZE);
+    uchar* data = getData(patch);
+    patch_data = buffer;
+    for (int i = 0; i < RandomizedTree::PATCH_SIZE; ++i) {
+      memcpy((void*)patch_data, (void*)data, RandomizedTree::PATCH_SIZE);
+      data += patch->widthStep;
+      patch_data += RandomizedTree::PATCH_SIZE;
+    }
+    patch_data = buffer;
+  } 
+  else {
+    patch_data = getData(patch);
   }
-  
-  return sparse_sig;
+    
+  memset((void*)sig, 0, classes_ * sizeof(float));
+  std::vector<RandomizedTree>::iterator tree_it;
+ 
+  // get posteriors
+  float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
+  float **pp = posteriors;    
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    *pp = tree_it->getPosterior(patch_data);       
+
+  // sum them up
+  pp = posteriors;
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    add(classes_, sig, *pp, sig);
+
+  delete [] posteriors;
+  posteriors = NULL;
+      
+  // full quantization (experimental)
+  #if 0
+    int n_max = 1<<8 - 1;
+    int sum_max = (1<<4 - 1)*trees_.size();
+    int shift = 0;    
+    while ((sum_max>>shift) > n_max) shift++;
+    
+    for (int i = 0; i < classes_; ++i) {
+      sig[i] = int(sig[i] + .5) >> shift;
+      if (sig[i]>n_max) sig[i] = n_max;
+    }
+
+    static bool warned = false;
+    if (!warned) {
+      printf("[WARNING] Using full quantization (RTreeClassifier::getSignature)! shift=%i\n", shift);
+      warned = true;
+    }
+  #else
+    // TODO: get rid of this multiply (-> number of trees is known at train 
+    // time, exploit it in RandomizedTree::finalize())
+    float normalizer = 1.0f / trees_.size();
+    for (int i = 0; i < classes_; ++i)
+      sig[i] *= normalizer;
+  #endif
 }
+
+
+void RTreeClassifier::getSignature(IplImage* patch, ushort *sig)
+{  
+  // Need pointer to 32x32 patch data
+  uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
+  uchar* patch_data;
+  if (patch->widthStep != RandomizedTree::PATCH_SIZE) {
+    //printf("[INFO] patch is padded, data will be copied (%i/%i).\n", 
+    //       patch->widthStep, RandomizedTree::PATCH_SIZE);
+    uchar* data = getData(patch);
+    patch_data = buffer;
+    for (int i = 0; i < RandomizedTree::PATCH_SIZE; ++i) {
+      memcpy((void*)patch_data, (void*)data, RandomizedTree::PATCH_SIZE);
+      data += patch->widthStep;
+      patch_data += RandomizedTree::PATCH_SIZE;
+    }
+    patch_data = buffer;
+  } else {
+    patch_data = getData(patch);
+  }
+    
+  memset((void*)sig, 0, classes_ * sizeof(sig[0]));
+  std::vector<RandomizedTree>::iterator tree_it;
+ 
+  // get posteriors
+  uchar **posteriors = new uchar*[trees_.size()];  // TODO: move alloc outside this func
+  uchar **pp = posteriors;    
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    *pp = tree_it->getPosterior2(patch_data);       
+
+  // sum them up
+  pp = posteriors;
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    add(classes_, sig, *pp, sig);
+
+  delete [] posteriors;
+  posteriors = NULL;  
+
+  // full quantization (experimental, later implicit)
+  #if 1
+    int n_max = 1<<8 - 1;
+    int sum_max = (1<<4 - 1)*trees_.size();
+    int shift = 0;    
+    while ((sum_max>>shift) > n_max) shift++;
+    
+    for (int i = 0; i < classes_; ++i) {
+      sig[i] = int(sig[i] + .5) >> shift;
+      if (sig[i]>n_max) sig[i] = n_max;
+    }
+  #endif
+}
+
+
+void RTreeClassifier::getSparseSignature(IplImage *patch, float *sig)
+{
+   printf("(%s:%i) ERROR: NOT IMPLEMENTED!\n", __FILE__, __LINE__);
+   exit(1);
+   //getSignature
+}
+
 
 void RTreeClassifier::read(const char* file_name)
 {
   std::ifstream file(file_name, std::ifstream::binary);
   read(file);
+  file.close();
 }
 
 void RTreeClassifier::read(std::istream &is)
@@ -174,11 +196,13 @@ void RTreeClassifier::read(std::istream &is)
   int num_trees = 0;
   is.read((char*)(&num_trees), sizeof(num_trees));
   is.read((char*)(&classes_), sizeof(classes_));
-  is.read((char*)(&threshold_), sizeof(threshold_));
+  is.read((char*)(&original_num_classes_), sizeof(original_num_classes_));
 
   trees_.resize(num_trees);
   std::vector<RandomizedTree>::iterator tree_it;
+
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
+    tree_it->setKeepFloatPosteriors(keep_floats_);
     tree_it->read(is);
   }
 }
@@ -186,7 +210,8 @@ void RTreeClassifier::read(std::istream &is)
 void RTreeClassifier::write(const char* file_name) const
 {
   std::ofstream file(file_name, std::ofstream::binary);
-  write(file);
+  write(file);  
+  file.close();
 }
 
 void RTreeClassifier::write(std::ostream &os) const
@@ -194,7 +219,7 @@ void RTreeClassifier::write(std::ostream &os) const
   int num_trees = trees_.size();
   os.write((char*)(&num_trees), sizeof(num_trees));
   os.write((char*)(&classes_), sizeof(classes_));
-  os.write((char*)(&threshold_), sizeof(threshold_));
+  os.write((char*)(&original_num_classes_), sizeof(original_num_classes_));
 
   std::vector<RandomizedTree>::const_iterator tree_it;
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it)

@@ -3,6 +3,7 @@
   </description>
   <author>John Hsu, David Li, Melonee Wise, Stuart Glaser</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="rospy"/>
   <depend package="mechanism_model" />
   <depend package="control_toolbox" />
@@ -15,11 +16,14 @@
   <depend package="robot_srvs" />
   <depend package="robot_msgs" />
   <depend package="tf" />
+  <depend package="kdl" />
+  <depend package="angles" />
+  <depend package="joy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
-	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_mechanism_controllers" />
+	 lflags="${prefix}/lib/librobot_mechanism_controllers.a" />
   </export>
 
 </package>

@@ -68,7 +68,7 @@
 #define RGB24      1
 #define DISPARITY  2
 
-class imWindow : public Fl_Double_Window
+class imWindow : public Fl_Window
 {
 public:
   IMPORT imWindow(int x, int y, int w, int h, char *name = "Image Window");

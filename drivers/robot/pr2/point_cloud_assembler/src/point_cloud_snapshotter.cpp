@@ -58,12 +58,22 @@ public:
   pr2_mechanism_controllers::LaserScannerSignal prev_signal_;
   pr2_mechanism_controllers::LaserScannerSignal cur_signal_;
     
+  bool first_time_ ;
+  
+  std::string fixed_frame_ ;
+  
   PointCloudSnapshotter() : ros::node("point_cloud_snapshotter")
   {
     prev_signal_.header.stamp.fromNSec(0) ;
     
     advertise<PointCloud> ("full_cloud", 1) ;
     subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
+
+    std::string default_fixed_frame = "torso" ;
+
+    param("~fixed_frame", fixed_frame_, std::string("torso")) ;
+    
+    first_time_ = true ;
   }
   
   ~PointCloudSnapshotter()
@@ -73,21 +83,29 @@ public:
   
   void scannerSignalCallback()
   {
-    BuildCloud::request req ;
-    BuildCloud::response resp ;
-    
-    req.begin = prev_signal_.header.stamp ;
-    req.end   = cur_signal_.header.stamp ;
-    req.target_frame_id = "base" ;
-    
-    printf("Making Service Call...\n") ;
-    ros::service::call("build_cloud", req, resp) ;
-    printf("Done with service call\n") ;
-    
-    publish("full_cloud", resp.cloud) ;
-    printf("Published Cloud size=%u\n", resp.cloud.get_pts_size()) ;
-    
-    prev_signal_ = cur_signal_ ;
+    if (first_time_)
+    {
+      prev_signal_ = cur_signal_ ;
+      first_time_ = false ;
+    }
+    else
+    {
+      BuildCloud::request req ;
+      BuildCloud::response resp ;
+      
+      req.begin = prev_signal_.header.stamp ;
+      req.end   = cur_signal_.header.stamp ;
+      req.target_frame_id = fixed_frame_ ;
+      
+      printf("PointCloudSnapshotter::Making Service Call...\n") ;
+      ros::service::call("build_cloud", req, resp) ;
+      printf("PointCloudSnapshotter::Done with service call\n") ;
+      
+      publish("full_cloud", resp.cloud) ;
+      printf("PointCloudSnapshotter::Published Cloud size=%u\n", resp.cloud.get_pts_size()) ;
+      
+      prev_signal_ = cur_signal_ ;
+    }
   }
 } ;
 

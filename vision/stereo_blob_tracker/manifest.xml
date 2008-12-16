@@ -8,6 +8,7 @@ Stereo Blob tracking by camshift/meanshift.
 <author> Caroline Pantofaru, JD Chen
 </author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>

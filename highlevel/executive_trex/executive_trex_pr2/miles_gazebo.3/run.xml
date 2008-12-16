@@ -1,0 +1,10 @@
+<launch>
+  <master auto="start"/>
+  <!-- Comment this out when running for real, or when you want to run with input from user. Used only for regression testing. -->
+  <node pkg="highlevel_controllers" type="cli" respawn="false"/>
+
+  <param name="/trex/input_file" value="nav.cfg"/>
+  <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find executive_trex_pr2)/miles.3"/>
+  <param name="/trex/log_dir" value="$(find executive_trex_pr2)/miles.3"/>
+  <node pkg="executive_trex_pr2" type="trexfast"/>
+</launch>

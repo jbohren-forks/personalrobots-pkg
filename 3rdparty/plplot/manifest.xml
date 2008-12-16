@@ -4,6 +4,7 @@ PLplot is a library of functions that are useful for making scientific plots.
 </description>
 <author>Maurice J. LeBrun and Geoffrey Furnish</author>
 <license>LGPL</license>
+<review status="3rdparty" notes=""/>
 <url>http://plplot.sourceforge.net/index.html</url>
 <export>
   <cpp lflags="`PKG_CONFIG_PATH=${prefix}/plplot/lib/pkgconfig pkg-config plplotd-c++ --libs`" cflags="`PKG_CONFIG_PATH=${prefix}/plplot/lib/pkgconfig pkg-config plplotd-c++ --cflags`"/>

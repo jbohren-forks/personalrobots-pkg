@@ -8,18 +8,19 @@
 #include <boost/program_options.hpp>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 #include <cassert>
 #include <fstream>
+#include <cstdlib>
 #include <cstdio>
 
 namespace po = boost::program_options;
 using namespace features;
 using std::string;
 
-void writeSignature(std::ostream &os, ublas::vector<float> sig)
+void writeSignature(std::ostream &os, const float* sig, size_t size)
 {
-  BOOST_FOREACH( float prob, sig )
-    os << prob << ' ';
+  std::copy(sig, sig + size, std::ostream_iterator<float>(os, " "));
   os << std::endl;
 }
 
@@ -27,7 +28,6 @@ int main( int argc, char** argv )
 {
   int num_keypts;
   unsigned long seed = std::time(NULL);
-  float threshold;
   string trees_file, source_file, test_file, transform_file;
   string patch_dir;
 
@@ -40,8 +40,6 @@ int main( int argc, char** argv )
     ("transform,x", po::value<string>(), "source->test transform file")
     ("keypoints,k", po::value<int>(&num_keypts)->default_value(300),
      "number of keypoints")
-    ("threshold", po::value<float>(&threshold)->default_value(0.005),
-     "sparse signature threshold")
     ("source-sigs", po::value<string>(), "save signatures from source image")
     ("test-sigs", po::value<string>(), "save signatures from test image")
     ("patches", po::value<string>(), "save patches to directory")
@@ -109,9 +107,8 @@ int main( int argc, char** argv )
     matches_file.open( file_name.c_str() );
   }
   
-  RTreeClassifier classifier;
+  RTreeClassifier classifier(true);
   classifier.read(trees_file.c_str());
-  classifier.setThreshold(threshold);
   Rng rng(seed);
   
   cv::WImageBuffer1_b src_img( cvLoadImage(source_file.c_str(), CV_LOAD_IMAGE_GRAYSCALE) );
@@ -131,20 +128,22 @@ int main( int argc, char** argv )
   std::sort(keypts.begin(), keypts.end());
   assert((int)keypts.size() >= num_keypts);
   keypts.erase(keypts.begin() + num_keypts, keypts.end());
-  
-  BruteForceMatcher<SparseSignature, CvPoint> matcher;
-  //BruteForceMatcher<DenseSignature, CvPoint> matcher;
+
+  size_t sig_size = classifier.classes();
+  BruteForceMatcher<CvPoint> matcher(sig_size);
 
   // Extract patches and add their signatures to matcher database
   int index = 0;
+  float* sig_buffer = NULL;
+  posix_memalign(reinterpret_cast<void**>(&sig_buffer), 16, sig_size * sizeof(float) * keypts.size());
+  float* sig = sig_buffer;
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     cv::WImageView1_b view = extractPatch(src_img.Ipl(), pt);
-    SparseSignature sig = classifier.getSparseSignature(view.Ipl());
-    //DenseSignature sig = classifier.getDenseSignature(view.Ipl());
+    classifier.getFloatSignature(view.Ipl(), sig);
     matcher.addSignature(sig, cvPoint(pt.x, pt.y));
 
     if (save_src_sigs)
-      writeSignature(src_sig_file, sig);
+      writeSignature(src_sig_file, sig, sig_size);
 
     if (save_patches) {
       char file_name[128];
@@ -152,17 +151,18 @@ int main( int argc, char** argv )
       cvSaveImage(file_name, view.Ipl());
       ++index;
     }
+    sig += sig_size;
   }
 
   float d1, d2;
   int correct = 0, second = -1;
   index = 0;
   CvRect window = cvRect(32, 32, 224, 224);
+  posix_memalign(reinterpret_cast<void**>(&sig), 16, sig_size * sizeof(float));
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     CvPoint warped_pt = MapPoint(cvPoint(pt.x, pt.y), transform);
     cv::WImageView1_b view = extractPatch(test_img.Ipl(), warped_pt);
-    SparseSignature sig = classifier.getSparseSignature(view.Ipl());
-    //DenseSignature sig = classifier.getDenseSignature(view.Ipl());
+    classifier.getFloatSignature(view.Ipl(), sig);
     int match = matcher.findMatches(sig, &d1, &second, &d2);
     //int match = matcher.findMatchInWindow(sig, window, &d1);
 
@@ -188,14 +188,16 @@ int main( int argc, char** argv )
     }
 
     if (save_test_sigs)
-      writeSignature(test_sig_file, sig);
+      writeSignature(test_sig_file, sig, sig_size);
     
     ++index;
   }
+  free(sig);
 
   printf("\nCorrect: %i / %i = %f%%\n\n", correct, num_keypts, 100.0f*correct/num_keypts);
 
   cvReleaseMat(&transform);
+  //free(sig_buffer);
   if (save_src_sigs) src_sig_file.close();
   if (save_test_sigs) test_sig_file.close();
   if (save_patches) matches_file.close();

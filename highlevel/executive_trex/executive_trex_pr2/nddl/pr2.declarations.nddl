@@ -122,7 +122,10 @@ class ArmState extends AgentTimeline {
 class Behavior extends AgentTimeline {
 	predicate Inactive{}
 
-	predicate Active{}
+	predicate Active{
+	  int dispatch_time; // The time at which the goal was dispatched
+	  precedes(dispatch_time, start); // This is a <= constraint
+	}
 
 	Behavior(Mode _mode){
 		super(_mode, "Inactive");
@@ -135,6 +138,8 @@ class Behavior extends AgentTimeline {
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
 class MoveBase extends Behavior {
+  int max_duration; // The maximum duration allowed for executing a single move
+
   predicate Inactive{
     float x;
     float y;
@@ -145,14 +150,31 @@ class MoveBase extends Behavior {
   }
 
   // Parameters to get to the target
-  predicate Active{
+  predicate Active {
     float x;
     float y;
     float th;
+    // Should be in the base class
+    int max_duration;
+    bool timed_out;
+    leq(duration, max_duration);
+    testEQ(timed_out, duration, max_duration);
+    precedes(dispatch_time, start); // This is a <= constraint
+
+    // This part is particular to the MoveBase node. It is probably fair that it would apply to all behaviors
+    // in the ROS set up, but not all behaviors more generally. This pattern allows us to impose a bounded
+    // synchronization model
+    temporalDistance(dispatch_time, [0, 2], start);
   }
 
   MoveBase(Mode _mode){
     super(_mode);
+    max_duration = +inf;
+  }
+
+  MoveBase(Mode _mode, int max_duration_){
+    super(_mode);
+    max_duration = max_duration_;
   }
 };
 

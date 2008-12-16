@@ -1,0 +1,18 @@
+<package>
+  <description>
+    A library for Input/Output PCD (Point Cloud Data) processing.
+  </description>
+
+  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="unreviewed" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="string_utils" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_io"/>
+  </export>
+</package>

@@ -4,6 +4,7 @@
   </description>
   <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
@@ -12,17 +13,19 @@
   <depend package="robot_mechanism_controllers" />
   <depend package="rospy" />
   <depend package="libTF" />
-  <depend package="rosTF" />
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
-  <depend package="math_utils" />
   <depend package="robot_kinematics" />
-  <depend package="rosout" />
+  <depend package="rosconsole" />
+  <depend package="trajectory" />
+  <depend package="rosthread" />
+  <depend package="angles" />
+  <depend package="control_toolbox" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp'
-	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_mechanism_controllers'/>
+	 lflags='${prefix}/lib/libpr2_mechanism_controllers.a'/>
   </export>
 
 </package>

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+#set(ROS_BUILD_TYPE Release)
 rospack(executive_trex_pr2)
 
 
@@ -23,7 +24,6 @@ execute_process(
 
 set(TREX_FILES src/Executive.cc 
 	       src/ROSAdapter.cc 
-	       src/ROSNode.cc 
 	       src/Logger.cc 
                src/LogClock.cc 
 	       src/CalcAngleDiffConstraint.cc 
@@ -41,11 +41,21 @@ set(TREX_FILES src/Executive.cc
 # but gives good feedback in discovering problems.
 rospack_add_executable(bin/trexdebug ${TREX_FILES})
 target_link_libraries(bin/trexdebug Utils_g TREX_g)
+rospack_add_gtest_build_flags(bin/trexdebug)
+# rospack_add_gtest_build_flags excludes the target from all, on the
+# assumption that it's only used as a unit test.  In this case that's not
+# true
+set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_executable(bin/trexfast ${TREX_FILES})
 target_link_libraries(bin/trexfast Utils_o TREX_o)
+rospack_add_gtest_build_flags(bin/trexfast)
+# rospack_add_gtest_build_flags excludes the target from all, on the
+# assumption that it's only used as a unit test.  In this case that's not
+# true
+set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
 rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 
 # trexwatchdog is a safety process that will monitor pings from the executive
@@ -53,7 +63,10 @@ rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 # not received in time
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 
-rospack_add_rostest_future(test/test.wpc.0.xml) 
-#rospack_add_rostest(test/test.wpc.1.xml) 
-#rospack_add_rostest(test/test.arm.0.xml) 
+# Integrated test cases for the nav stack running with the pr2 executive and model.
+rospack_add_rostest_future(wpc.0/test.xml)
+rospack_add_rostest_future(wpc.1/test.xml)
+rospack_add_rostest_future(wpc.2/test.xml)
+rospack_add_rostest_future(miles.0/test.xml)
+
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

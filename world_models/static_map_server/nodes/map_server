@@ -97,7 +97,6 @@ class map_server:
 
         rospy.ready(NAME)
         s1 = rospy.Service("static_map", std_srvs.srv.StaticMap, self.map_handler)
-        s1.register()
         rospy.spin()
 
 if __name__ == '__main__':

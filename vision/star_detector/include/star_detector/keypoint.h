@@ -1,6 +1,7 @@
 #ifndef FEATURES_KEYPOINT_H
 #define FEATURES_KEYPOINT_H
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -13,19 +14,16 @@ struct Keypoint
 {
   int x;
   int y;
-  // TODO: remove one of s or scale?
-  int s;
-  // scale may differ from s if scale interpolation is used
-  float scale;
+  int scale;
   // sign of response indicates dark/bright feature
   float response;
 
   Keypoint()
-    : x(0), y(0), s(0), scale(0), response(0)
+    : x(0), y(0), scale(0), response(0)
   {}
 
-  Keypoint(int x, int y, float scale, float response, int s = 0)
-    : x(x), y(y), s(s), scale(scale), response(response)
+  Keypoint(int x, int y, int scale, float response)
+    : x(x), y(y), scale(scale), response(response)
   {};
 
   //! Allow sorting a list of keypoints into descending order

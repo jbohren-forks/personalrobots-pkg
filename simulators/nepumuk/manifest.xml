@@ -7,11 +7,16 @@
   </description>
   <author>Roland Philippsen</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <url>http://libsunflower.sourceforge.net/</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="boost"/>
   <depend package="libsunflower"/>
+  <sysdepend os="debian" version="4.0-etch" package="libpng12-dev"/>
+  <sysdepend os="debian" version="4.0-etch" package="autoconf"/>
+  <sysdepend os="debian" version="4.0-etch" package="automake"/>
+  <sysdepend os="debian" version="4.0-etch" package="libtool"/>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
     <doxymaker external="http://libsunflower.sourceforge.net/"/>

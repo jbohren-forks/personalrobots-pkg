@@ -78,6 +78,7 @@ Publishes to (name / type):
 - @b pf_odom_drift_xa (double) : Element 2,0 of the covariance matrix used in estimating odometric error, default: 0.2
 - @b pf_min_d (double) : Minimum translational change (meters) required to trigger filter update, default: 0.2
 - @b pf_min_a (double) : Minimum rotational change (radians) required to trigger filter update, default: pi/6.0
+- @b odom_frame_id (string) : The desired frame_id to use for odometery
 
 @todo Expose the various amcl parameters via ROS.
 
@@ -169,6 +170,9 @@ class AmclNode: public ros::node, public Driver
     Device* position2d_dev;
     Device* laser_dev;
     Device* map_dev;
+
+    //parameter for what odom to use
+    string odom_frame_id;
 
     char* mapdata;
     int sx, sy;
@@ -359,6 +363,7 @@ AmclNode::AmclNode() :
   param("pf_odom_drift_xa", odom_drift_xa, 0.2);
   param("pf_min_d", d_thresh, 0.2);
   param("pf_min_a", a_thresh, M_PI/6.0);
+  param("pf_odom_frame_id", odom_frame_id, string("odom"));
   // Annoyingly, we have to convert them back to strings for insertion into
   // Player's config file object
   char valbuf[1024];
@@ -465,21 +470,21 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     /*
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
                                                                       tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
-                                                        t, "base","map"));
+                                                        t, "base_link","map"));
                                                         */
 
     //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
     //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
-    //                                                    t, "map", "base"));
+    //                                                    t, "map", "base_link"));
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
-    this->tfL->transformPose("odom",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+    this->tfL->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
-                                                           t, "base"),odom_to_map);
+                                                           t, "base_link"),odom_to_map);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ),
-                                                        t, "map","odom"));
+                                                        t, "map",odom_frame_id));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -495,15 +500,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
-    try
-    {
-	localizedOdomMsg.header.frame_id = "map";
-    }
-    catch(...)
-    {
-      // WTF is this?
-      printf("Somehow could not set frame_id to map\n");
-    }
+    localizedOdomMsg.header.frame_id = "map";
     /*
     printf("O: %.6f %.3f %.3f %.3f\n",
            hdr->timestamp, 
@@ -729,7 +726,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   tf::Stamped<btTransform> odom_pose;
   try
   {
-    this->tfL->transformPose("odom", ident, odom_pose);
+    this->tfL->transformPose(odom_frame_id, ident, odom_pose);
   }
   catch(tf::TransformException e)
   {
@@ -752,11 +749,11 @@ AmclNode::laserReceived()
   {
     tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
                                              btVector3(0,0,0)), 
-                                 ros::Time((uint64_t)0ull), laserMsg.header.frame_id);
+                                 ros::Time(), laserMsg.header.frame_id);
     tf::Stamped<btTransform> laser_pose;
     try
     {
-      this->tfL->transformPose("base", ident, laser_pose);
+      this->tfL->transformPose("base_link", ident, laser_pose);
     }
     catch(tf::TransformException e)
     {
@@ -790,12 +787,12 @@ AmclNode::laserReceived()
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base"))
+    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base_link"))
       break;
 
     laser_scans.pop_front();
 
-    double timestamp = scan.header.stamp.to_double();
+    double timestamp = scan.header.stamp.toSec();
     //printf("I: %.6f %.3f %.3f %.3f\n",
            //timestamp, x, y, yaw);
 
@@ -878,7 +875,7 @@ AmclNode::odomReceived()
   pdata.vel.pa = this->odomMsg.vel.th;
   pdata.stall = this->odomMsg.stall;
 
-  double timestamp = this->odomMsg.header.stamp.to_double();
+  double timestamp = this->odomMsg.header.stamp.toSec();
 
   this->Driver::Publish(this->position2d_addr,
                         PLAYER_MSGTYPE_DATA,

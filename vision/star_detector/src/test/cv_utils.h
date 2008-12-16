@@ -48,7 +48,7 @@ void on_mouse_find_keypts(int event, int x, int y, int flags, void* param)
                         printf("Keypoint: (%f, %f, %f), response = %f\n",
                                pt.x, pt.y, pt.scale, pt.response);
                     } else {
-                        printf("Keypoint: (%d, %d, %f), response = %f\n",
+                        printf("Keypoint: (%d, %d, %d), response = %f\n",
                                i->x, i->y, i->scale, i->response);
                     }
                     break;

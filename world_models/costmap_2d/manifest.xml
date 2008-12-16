@@ -2,11 +2,12 @@
 <description>2D cost map maintenance library</description>
 <author>Conor McGann, E. Gil Jones</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="rosconsole"/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="pr2_msgs" />
-<depend package="rosTF" />
+<depend package="tf" />
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
 </export>

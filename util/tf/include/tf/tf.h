@@ -46,14 +46,17 @@
 
 namespace tf
 {
-  /** \brief An internal representation of transform chains
-   * 
-   * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
-  typedef struct 
-  {
-    std::vector<Stamped<btTransform> > inverseTransforms;
-    std::vector<Stamped<btTransform> > forwardTransforms;
-  } TransformLists;
+
+enum ErrorValues { NO_ERROR = 0, LOOKUP_ERROR, CONNECTIVITY_ERROR, EXTRAPOLATION_ERROR};
+
+/** \brief An internal representation of transform chains
+ * 
+ * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
+typedef struct 
+{
+  std::vector<TransformStorage > inverseTransforms;
+  std::vector<TransformStorage > forwardTransforms;
+} TransformLists;
 
 /** \brief A Class which provides coordinate transforms between any two frames in a system. 
  * 
@@ -77,9 +80,9 @@ class Transformer
 {
 public:
   /************* Constants ***********************/
-  static const unsigned int MAX_GRAPH_DEPTH = 100;   //!< The maximum number of time to recurse before assuming the tree has a loop.
-  static const int64_t DEFAULT_CACHE_TIME = 10 * 1000000000ULL;  //!< The default amount of time to cache data
-  static const int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0; //!< The default amount of time to extrapolate
+  static const unsigned int MAX_GRAPH_DEPTH = 100UL;   //!< The maximum number of time to recurse before assuming the tree has a loop.
+  static const int64_t DEFAULT_CACHE_TIME = 10ULL * 1000000000ULL;  //!< The default amount of time to cache data
+  static const int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0ULL; //!< The default amount of time to extrapolate
 
 
   /** Constructor 
@@ -88,7 +91,7 @@ public:
    * 
    */
   Transformer(bool interpolating = true, 
-              ros::Duration cache_time_ = ros::Duration(DEFAULT_CACHE_TIME));
+              ros::Duration cache_time_ = ros::Duration().fromNSec(DEFAULT_CACHE_TIME));
   virtual ~Transformer(void);
 
   /** \brief Clear all data */
@@ -114,6 +117,18 @@ public:
                        const std::string& source_frame, const ros::Time& source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
   
+  bool canTransform(const std::string& target_frame, const std::string& source_frame, 
+                       const ros::Time& time);
+  //time traveling version
+  bool canTransform(const std::string& target_frame, const ros::Time& target_time, 
+                       const std::string& source_frame, const ros::Time& source_time, 
+                       const std::string& fixed_frame);  
+
+  /**@brief Return the latest rostime which is common across the spanning set 
+   * zero if fails to cross */
+  int getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time& time);
+
+
   /** \brief Transform a Stamped Quaternion into the target frame */
   void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out);
   /** \brief Transform a Stamped Vector3 into the target frame */
@@ -156,6 +171,11 @@ public:
    * Useful for debugging 
    */
   std::string allFramesAsString();
+
+  /** \brief A way to see what frames have been cached 
+   * Useful for debugging 
+   */
+  std::string allFramesAsDot();
 
   /** \brief A way to get a std::vector of available frame ids */
   void getFrameStrings(std::vector<std::string>& ids);
@@ -251,7 +271,9 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame);
+  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string* error_string);
+
+  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string * error_string);
   
   /** Compute the transform based on the list of frames */
   btTransform computeTransformFromList(const TransformLists & list);

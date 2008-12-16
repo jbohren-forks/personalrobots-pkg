@@ -34,7 +34,7 @@
 
 #include "std_msgs/RobotBase2DOdom.h"
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 
 void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, void* f)
 {
@@ -55,9 +55,9 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  LogPlayer player;
+  ros::record::Player player;
 
-  player.open(std::string(argv[1]), ros::Time(0.0));
+  player.open(std::string(argv[1]), ros::Time());
 
   int count;
 

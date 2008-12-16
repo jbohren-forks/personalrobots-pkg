@@ -4,6 +4,7 @@
   </description>
   <author>James Bowman</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Brian)"/>
   <url>http://pr.willowgarage.com/</url>
   <depend package="rospy" />
   <depend package="std_msgs" />  

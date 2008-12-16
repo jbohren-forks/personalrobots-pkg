@@ -1,0 +1,99 @@
+<launch>
+  <!-- Bring up the node we want to test. -->
+  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
+
+  <!-- Run hztest -->
+  <!-- Test for publication of 'base_scan' topic -->
+  <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="base_scan_test">
+    <!-- The topic to listen for -->
+    <param name="topic" value="base_scan" />
+    <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
+    at least one message is received. -->
+    <param name="hz" value="16.828" />
+    <!-- Acceptable error in the publication rate [Hz].  Ignored if hz is set
+    to 0.0. -->
+    <param name="hzerror" value="10.0" />
+    <!-- Time to listen for [seconds] -->
+    <param name="test_duration" value="15.0" />    
+    <!-- Whether each inter-message time interval should be checked against
+    the expected publication rate and error bound [boolean].  If true, then
+    the test will fail if the time elapsed between *any* two consecutive
+    messages exceeded the specified limits.  If false, then we only check
+    the average publication rate over the entire test.  Default: false. -->
+    <param name="check_intervals" value="false" />    
+  </test>
+
+  <!-- Test for publication of 'tilt_scan' topic. -->
+  <test test-name="hztest_test_tilt_scan" pkg="rostest" type="hztest" name="tilt_scan_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (tilt_scan_test vs. scan_test). -->
+    <param name="topic" value="tilt_scan" />
+    <param name="hz" value="16.907" />
+    <param name="hzerror" value="10.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+
+  <!-- Test for publication of 'full_cloud' topic. -->
+  <test test-name="hztest_test_full_cloud" pkg="rostest" type="hztest" name="full_cloud_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (full_cloud_test vs. scan_test). -->
+    <param name="topic" value="full_cloud" />
+    <param name="hz" value="8.661" />
+    <param name="hzerror" value="5.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'base_pose_ground_truth' topic. -->
+  <test test-name="hztest_test_base_pose_ground_truth" pkg="rostest" type="hztest" name="base_pose_ground_truth_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (base_pose_ground_truth_test vs. scan_test). -->
+    <param name="topic" value="base_pose_ground_truth" />
+    <param name="hz" value="807.682" />
+    <param name="hzerror" value="400.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'mechanism_state' topic. -->
+  <test test-name="hztest_test_mechanism_state" pkg="rostest" type="hztest" name="mechanism_state_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (mechanism_state_test vs. scan_test). -->
+    <param name="topic" value="mechanism_state" />
+    <param name="hz" value="79.763" />
+    <param name="hzerror" value="50.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'TransformArray' topic. -->
+  <test test-name="hztest_test_TransformArray" pkg="rostest" type="hztest" name="TransformArray_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (TransformArray_test vs. scan_test). -->
+    <param name="topic" value="TransformArray" />
+    <param name="hz" value="157.240" />
+    <param name="hzerror" value="100.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'time' topic. -->
+  <test test-name="hztest_test_time" pkg="rostest" type="hztest" name="time_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (time_test vs. scan_test). -->
+    <param name="topic" value="time" />
+    <param name="hz" value="796.054" />
+    <param name="hzerror" value="400.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+
+  <!-- Test for publication of 'axis_left_ptz_state' topic. -->
+  <test test-name="hztest_test_axis_left_ptz_state" pkg="rostest" type="hztest" name="axis_left_ptz_state_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (axis_left/ptz_state_test vs. scan_test). -->
+    <param name="topic" value="axis_l/ptz_state" />
+    <param name="hz" value="12.282" />
+    <param name="hzerror" value="10.0" />
+    <param name="test_duration" value="15.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+
+</launch>

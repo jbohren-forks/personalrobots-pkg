@@ -17,13 +17,13 @@ int main(int argc, char **argv)
     return 1;
   }
   vector< vector<CvPoint2D32f> > img_corners;
-  const int horiz = 6, vert = 7;
+  const int horiz = 7, vert = 10;
   const int num_corners = horiz * vert;
-  const double square_size = 29.2; // in millimeters
+  const double square_size = 22.5; // in millimeters
   CvSize img_size;
-  for (int i = 1; i < argc; i++) //argc; i++)
+  for (int i = 1; i < argc; i++)
   {
-    IplImage *img = cvLoadImage(argv[i]);
+    IplImage *img = cvLoadImage(argv[i], CV_LOAD_IMAGE_GRAYSCALE);
     if (!img)
     {
       printf("couldn't load image\n");
@@ -37,9 +37,15 @@ int main(int argc, char **argv)
     CvPoint2D32f corners[num_corners];
     int corner_count;
     int ok = cvFindChessboardCorners(img, pattern_size,
-                                     corners, &corner_count, 0);
+                                     corners, &corner_count, 
+                                     CV_CALIB_CB_ADAPTIVE_THRESH | 
+                                     CV_CALIB_CB_NORMALIZE_IMAGE | 
+                                     CV_CALIB_CB_FILTER_QUADS);
     if (ok)
     {
+      cvFindCornerSubPix(img, corners, corner_count, cvSize(10, 10), 
+                         cvSize(-1, -1), 
+                         cvTermCriteria(CV_TERMCRIT_ITER, 10, 0.1f));
       vector<CvPoint2D32f> c;
       for (int j = 0; j < corner_count; j++)
         c.push_back(corners[j]);

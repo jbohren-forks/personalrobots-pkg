@@ -1,0 +1,25 @@
+/**
+ * This is a a variant of wpc.2 which uses the navigator to generate the move base subgoal. In this case, we will
+ * add a timeout using the timeout parameters in MoveBase through the constructor argument, and will wish to suppress
+ * regeneration of the subgoal because it will have timed out
+ */
+#include "pr2.milo.nddl"
+
+// Internals
+VenusDeMiles venusDeMiles = new VenusDeMiles();
+WorkingStatus workingStatus = new WorkingStatus();
+Navigator navigator = new Navigator();
+
+// Base
+BaseState baseState = new BaseState(External);
+MoveBase moveBase = new MoveBase(External, 3);
+
+// Battery and Plug In Control
+RechargeController rechargeController = new RechargeController(External);
+BatteryState batteryState = new BatteryState(External, .3, .5);
+
+Waypoint w0 = new Waypoint(21.0, 20.8, 3.14);
+close();
+
+rejectable(navigator.Active g0);
+g0.w = w0;

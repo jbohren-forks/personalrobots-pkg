@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="rosrecord" type="rosplay" args="/u/prdata/videre-bags/meeting_loop.bag" output="screen" />
+  <node pkg="visual_odometry" type="lineperf.py" args='send' output="screen" />
+  <node pkg="visual_odometry" type="lineperf.py" args='recv' output="screen" />
+  <!-- <node pkg="cv_view" type="cv_view_array_overlay" args="images:=/videre/images" output="screen" /> -->
+</launch>
+

@@ -34,6 +34,13 @@
 
 /** \file setup.hpp */
 
+#ifndef OMPL_BENCHMARK_SETUP_HPP
+#define OMPL_BENCHMARK_SETUP_HPP
+
+// should say #include <sbpl_util/costmap_wrap.h> but that requires
+// code layout changes there first
+#include <costmap_wrap.h>
+
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
@@ -92,17 +99,24 @@ namespace ompl {
        Print a human-readable description of the setup to a
        std::ostream.
     */
-    virtual void dumpDescription(/** The stream to write the description to. */
-				 std::ostream & os,
-				 /** The title will be printed as-is,
-				     followed by a newline. If the
-				     title is an empty string, nothing
-				     is printed. */
-				 std::string const & title,
-				 /** The prefix is prepended to each
-				     line of the description, except
-				     for the title. */
-				 std::string const & prefix) const = 0;
+    void dumpDescription(/** The stream to write the description to. */
+			 std::ostream & os,
+			 /** The title will be printed as-is, followed
+			     by a newline. If the title is an empty
+			     string, nothing is printed. */
+			 std::string const & title,
+			 /** The prefix is prepended to each line of
+			     the description, except for the title. */
+			 std::string const & prefix) const;
+    
+    /** Default implementation does nothing. */
+    virtual void dumpSubDescription(/** The stream to write the
+					description to. */
+				    std::ostream & os,
+				    /** The prefix is prepended to
+					each line of the description,
+					except for the title. */
+				    std::string const & prefix) const;
     
     /**
        Call sfl::TraversabilityMap::DumpMap() on the instance stored
@@ -132,14 +146,19 @@ namespace ompl {
 		 double goal_x, double goal_y, double goal_th, 
 		 double goal_tol_xy, double goal_tol_th);
     
-    boost::shared_ptr<sfl::RDTravmap> getRDTravmap() const;
-    costmap_2d::CostMap2D const & getCostmap() const;
+    boost::shared_ptr<sfl::RDTravmap> getRawSFLTravmap() const;
+    costmap_2d::CostMap2D const & getRaw2DCostmap() const;
+    
+    boost::shared_ptr<CostmapWrap> getCostmap() const;
+    boost::shared_ptr<IndexTransformWrap> getIndexTransform() const;
+    
     tasklist_t const & getTasks() const;
     void getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const;
     void getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
     void getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
     void getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const;
     
+    std::string const name;
     double const resolution;
     double const inscribed_radius;
     double const circumscribed_radius;
@@ -155,50 +174,36 @@ namespace ompl {
   private:
     mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
     mutable boost::shared_ptr<sfl::RDTravmap> rdtravmap_; // lazy init
+    mutable boost::shared_ptr<CostmapWrap> costmapWrap_; // lazy init
+    mutable boost::shared_ptr<IndexTransformWrap> indexTransformWrap_; // lazy init
     
     costmap_2d::CostMap2D * createCostMap2D() const;
   };
   
   
-  class OfficeBenchmark
-    : public SBPLBenchmarkSetup
-  {
-  protected:
-    OfficeBenchmark(std::string const & name,
-		    double resolution,
-		    double inscribed_radius,
-		    double circumscribed_radius,
-		    double inflation_radius,
-		    int obstacle_cost,
-		    bool use_sfl_cost,
-		    double door_width,
-		    double hall_width);
+  struct SBPLBenchmarkOptions {
+    // fills in some "sensible" default values
+    SBPLBenchmarkOptions();
     
-  public:
-    /**
-       Valid names are:
-       - dots: 4 dots in a square of hall_width side length
-       - square: a square of hall_width side length
-       - office1: two offices, two hallways, some doors
-    */
-    static OfficeBenchmark * create(std::string const & name,
-				    double resolution,
-				    double inscribed_radius,
-				    double circumscribed_radius,
-				    double inflation_radius,
-				    int obstacle_cost,
-				    bool use_sfl_cost,
-				    double door_width,
-				    double hall_width,
-				    std::ostream * progress_os,
-				    std::ostream * travmap_os);
-    
-    virtual void dumpDescription(std::ostream & os,
-				 std::string const & title,
-				 std::string const & prefix) const;
-    
-    double const door_width;
-    double const hall_width;
+    std::string name;
+    double resolution;
+    double inscribed_radius;
+    double circumscribed_radius;
+    double inflation_radius;
+    int obstacle_cost;
+    bool use_sfl_cost;
+    double door_width;
+    double hall_width;
+    std::string pgm_filename;
+    unsigned int obstacle_gray;
+    bool invert_gray;
   };
   
+  
+  SBPLBenchmarkSetup * createBenchmark(SBPLBenchmarkOptions const & opt,
+				       std::ostream * progress_os,
+				       std::ostream * travmap_os);
+  
 }
+
+#endif // OMPL_BENCHMARK_SETUP_HPP

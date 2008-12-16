@@ -47,7 +47,7 @@ import threading, time
 import pr2_power_board
 from pr2_power_board.pr2_power_board_panel import *
 
-NAME = 'pr2_power_board'
+NAME = 'view_power'
 
 class MainWindow(wx.Frame):
     def __init__(self, parent, id, title):

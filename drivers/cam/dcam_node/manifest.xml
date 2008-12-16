@@ -2,6 +2,7 @@
   <description>A node instantiation of the dc1394 camera library.</description>
   <author>Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="dcam"/>
   <depend package="std_msgs"/>

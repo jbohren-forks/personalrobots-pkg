@@ -1,0 +1,11 @@
+/**
+
+@mainpage pr2_phase_space
+
+@htmlinclude manifest.html
+
+@b pr2_phase_space is designed to be a package/place for users to include a
+variety of nodes that can be useful for converting raw phase_space data into
+messages or data that can natively be used by the pr2.
+
+*/

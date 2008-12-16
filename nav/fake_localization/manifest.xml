@@ -2,8 +2,11 @@
   <description>A ROS node that simply forwards odometry information.</description>
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
+  <depend package="rosconsole" />
   <depend package="robot_msgs" />
   <depend package="tf" />
-  <depend package="math_utils" />
+  <depend package="angles" />
+  <depend package="control_toolbox" />
 </package>

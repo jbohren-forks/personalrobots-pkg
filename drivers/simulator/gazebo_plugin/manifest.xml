@@ -5,6 +5,7 @@
   </description>
   <author>Sachin Chitta, Stu Glaser, John Hsu</author>
   <license>BSD</license>
+  <review status="API conditionally cleared" notes="Tully to code review"/>
   <url>http://pr.willowgarage.com/wiki/gazebo_plugin</url>
   <depend package="gazebo"/>
   <depend package="opende"/>
@@ -17,14 +18,15 @@
   <depend package="robot_msgs" />
   <depend package="rosthread"/>
   <depend package="stl_utils" />
-  <depend package="math_utils" />
+  <depend package="angles" />
   <depend package="gazebo_robot_description"/>
   <depend package="hardware_interface" />
   <depend package="mechanism_control" />
   <depend package="mechanism_model" />
-  <depend package="wg_robot_description_parser" />
   <depend package="tinyxml" />
   <depend package="axis_cam" />
+  <depend package="bullet" />
+  <depend package="wg_robot_description_parser" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>

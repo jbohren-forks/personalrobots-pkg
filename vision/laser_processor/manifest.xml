@@ -1,0 +1,12 @@
+<package>
+  <description>A ROS node to filter laser information</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="tf" />
+  <export>
+    <cpp cflags="-I${prefix}" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llaser_processor"/>
+  </export>
+  <url></url>
+</package>

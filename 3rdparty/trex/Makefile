@@ -13,7 +13,7 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-all: trex PlanWorks includes
+all: trex PLASMA PlanWorks includes
 
 includes: trex PlanWorks PLASMA
 	./copyIncludes.sh
@@ -21,24 +21,24 @@ includes: trex PlanWorks PLASMA
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-@cd PLASMA && $(SVN_CMDLINE) up -r 5117 ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5163 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	@-cd PLASMA && $(SVN_CMDLINE) up -r 5163 ;
 
 #install the patch
-patch-PLASMA: PLASMA
-	$(MAKE) PLASMA 
-	patch -f -p0 < PLASMA_PATCH.diff
-	touch patch-PLASMA 
+#patch-PLASMA: PLASMA
+#	$(MAKE) PLASMA 
+#	patch -f -p0 < PLASMA_PATCH.diff
+#	touch patch-PLASMA 
 
 # GET PlanWorks
 PlanWorks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
-	-@cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
+	@-cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
 
 # Get TREX
-trex: patch-PLASMA
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 28 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	@-cd TREX && $(SVN_CMDLINE) up -r 28 ;
+trex: PLASMA
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 45 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
+	@-cd TREX && $(SVN_CMDLINE) up -r 45 ;
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
@@ -51,3 +51,4 @@ test: trex
 clean:
 	rm -rf PLASMA TREX trex EUROPA logs PlanWorks include
 
+wipe: clean

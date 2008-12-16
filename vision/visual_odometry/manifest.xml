@@ -4,11 +4,15 @@
   </description>
   <author>Jindong (JD) Chen</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="rostest"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="image_msgs"/>
   <depend package="boost"/>
+  <depend package="eigen"/>
   <depend package="fast_detector"/>
   <depend package="star_detector"/>
   <depend package="opencv_latest"/>
@@ -16,8 +20,10 @@
   <depend package="vop"/>
   <depend package="rosrecord"/>
   <depend package="calonder_descriptor"/>
+  <depend package="cv_view"/>
+  <depend package="transformations"/>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
@@ -25,4 +31,6 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk-dev"/>
 </package>

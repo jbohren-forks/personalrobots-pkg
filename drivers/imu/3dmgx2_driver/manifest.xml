@@ -7,6 +7,7 @@
   </description>
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
   <export>
     <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib -l3dmgx2"/>
   </export>

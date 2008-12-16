@@ -4,6 +4,8 @@
 #include <vector>
 #include <queue>
 
+#include <boost/foreach.hpp>
+
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvwimage.h>
@@ -31,373 +33,12 @@
 
 using namespace cv::willow;
 
-// star detector
-//#include <detector.h>
-
 using namespace cv;
 using namespace std;
 
-
-bool testVideo(queue <StereoFrame> input) {
-  bool status = false;
-
-  return status;
-}
-/************************************************************************/
-typedef struct {
-  PyObject_HEAD
-  StereoFrame *sf;
-} stereo_frame_t;
-
-static void
-stereo_frame_dealloc(PyObject *self)
-{
-    PyObject_Del(self);
-}
-
-/* Method table */
-static PyMethodDef stereo_frame_methods[] = {
-  //{"detect", detect, METH_VARARGS},
-  {NULL, NULL},
-};
-
-static PyObject *
-stereo_frame_GetAttr(PyObject *self, char *attrname)
-{
-    return Py_FindMethod(stereo_frame_methods, self, attrname);
-}
-
-static PyTypeObject stereo_frame_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,
-    "stereo_frame",
-    sizeof(stereo_frame_t),
-    0,
-    (destructor)stereo_frame_dealloc,
-    0,
-    (getattrfunc)stereo_frame_GetAttr,
-    0,
-    0,
-    0, // repr
-    0,
-    0,
-    0,
-
-    0,
-    0,
-    0,
-    0,
-    0,
-
-    0,
-
-    Py_TPFLAGS_CHECKTYPES,
-
-    0,
-    0,
-    0,
-    0
-
-    /* the rest are NULLs */
-};
-
-static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightImage, WImageBuffer1_16s& dispMap) {
-	bool status = true;
-
-  int w = leftImage.Width();
-  int h = rightImage.Height();
-
-  if (w != rightImage.Width() || h != rightImage.Height()) {
-		cerr << __PRETTY_FUNCTION__ <<"(): size of images incompatible. "<< endl;
-		return false;
-	}
-
-	//
-	// Try Kurt's dense stereo pair
-	//
-	const uint8_t *lim = leftImage.ImageData();
-	const uint8_t *rim = rightImage.ImageData();
-
-	int16_t* disp    = dispMap.ImageData();
-	int16_t* textImg = NULL;
-
-	static const int mFTZero       = 31;		//< max 31 cutoff for prefilter value
-	static const int mDLen         = 64;		//< 64 disparities
-	static const int mCorr         = 15;		//< correlation window size
-	static const int mTextThresh   = 10;		//< texture threshold
-	static const int mUniqueThresh = 15;		//< uniqueness threshold
-
-  // scratch images
-	uint8_t *mBufStereoPairs     = new uint8_t[h*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
-	uint8_t *mFeatureImgBufLeft  = new uint8_t[w*h];
-	uint8_t *mFeatureImgBufRight = new uint8_t[w*h];
-
-	// prefilter
-	do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, w, h, mFTZero, mBufStereoPairs);
-	do_prefilter((uint8_t *)rim, mFeatureImgBufRight, w, h, mFTZero, mBufStereoPairs);
-
-	// stereo
-	do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, w, h,
-			mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
-
-	return status;
-}
-
-// Create a StereoFrame given a framenumber and a pointer to left and right images
-// computes the disparity map
-
-PyObject *stereo_frame(PyObject *self, PyObject *args)
-{
-  stereo_frame_t *object = PyObject_NEW(stereo_frame_t, &stereo_frame_Type);
-  object->sf = new StereoFrame();
-
-  object->sf->mFrameIndex = PyLong_AsLong(PyTuple_GetItem(args, 0));
-  object->sf->mImage = new WImageBuffer1_b();
-  object->sf->mImage->SetIpl(cvLoadImage(PyString_AsString(PyTuple_GetItem(args,1)), CV_LOAD_IMAGE_GRAYSCALE));
-  object->sf->mRightImage = new WImageBuffer1_b();
-  object->sf->mRightImage->SetIpl(cvLoadImage(PyString_AsString(PyTuple_GetItem(args,2)), CV_LOAD_IMAGE_GRAYSCALE));
-
-  int w = object->sf->mImage->Width();
-  int h = object->sf->mImage->Height();
-  object->sf->mDispMap = new WImageBuffer1_16s(w, h);
-
-  getDisparityMap(*object->sf->mImage, *object->sf->mRightImage, *object->sf->mDispMap);
-  return (PyObject*)object;
-}
+#define JDC_DEBUG 0
 
 /************************************************************************/
-
-typedef struct {
-  PyObject_HEAD
-  PathRecon *pr;
-  PoseEstFrameEntry*& currFrame;
-} path_recon_t;
-
-static void
-path_recon_dealloc(PyObject *self)
-{
-    PyObject_Del(self);
-}
-
-/* Method table */
-static PyMethodDef path_recon_methods[] = {
-  {NULL, NULL},
-};
-
-static PyObject *
-path_recon_GetAttr(PyObject *self, char *attrname)
-{
-    return Py_FindMethod(path_recon_methods, self, attrname);
-}
-
-static PyTypeObject path_recon_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,
-    "path_recon",
-    sizeof(path_recon_t),
-    0,
-    (destructor)path_recon_dealloc,
-    0,
-    (getattrfunc)path_recon_GetAttr,
-    0,
-    0,
-    0, // repr
-    0,
-    0,
-    0,
-
-    0,
-    0,
-    0,
-    0,
-    0,
-
-    0,
-
-    Py_TPFLAGS_CHECKTYPES,
-
-    0,
-    0,
-    0,
-    0
-
-    /* the rest are NULLs */
-};
-
-PyObject *mkPathRecon(PyObject *self, PyObject *args)
-{
-  path_recon_t *object = PyObject_NEW(path_recon_t, &path_recon_Type);
-  CvSize imgSize = cvSize(640, 480);
-  object->pr = new PathRecon(imgSize);
-
-  // mFx, mFy, mTx, mClx, mCrx, mCy);
-  object->pr->mPoseEstimator.setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  //object->pr->mOutputDir = string("test/Output/indoor1");
-
-  return (PyObject*)object;
-}
-
-/************************************************************************/
-
-PyObject *visual_odometry(PyObject *self, PyObject *args)
-{
-  queue <StereoFrame> input;
-  PyObject *pi = PyTuple_GetItem(args, 0);
-
-  for (int i = 0; i < PyList_Size(pi); i++) {
-    PyObject *o = PyList_GetItem(pi,i);
-    StereoFrame s = *(((stereo_frame_t *)o)->sf);
-    input.push(s);
-  }
-
-  int numFrames = input.size();
-  CvSize imgSize = cvSize(640, 480);
-  PathRecon pathRecon(imgSize);
-  // The following parameters are from indoor1/proj.txt
-  // note that B (or Tx) is in mm
-
-  // mFx, mFy, mTx, mClx, mCrx, mCy);
-  pathRecon.mPoseEstimator.setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-//  pathRecon.mOutputDir = string("test/Output/indoor1");
-
-  while (!input.empty()) {
-
-    // currFrame is a reference to pathRecon.mFrameSeq.mCurrentFrame;
-    PoseEstFrameEntry*& currFrame = pathRecon.mFrameSeq.mCurrentFrame;
-    bool stop = false;
-
-    if (pathRecon.mFrameSeq.mNextFrame.get()) {
-      // do not need to load new images nor compute the key points again
-      pathRecon.mFrameSeq.mCurrentFrame = pathRecon.mFrameSeq.mNextFrame.release();
-    } else {
-      // process the next stereo pair of images.
-      StereoFrame stereoFrame = input.front();
-      if (stereoFrame.mFrameIndex == -1) {
-        // done
-        stop = true;
-      } else {
-        currFrame = new PoseEstFrameEntry(stereoFrame.mFrameIndex);
-        currFrame->mImage = stereoFrame.mImage;
-        currFrame->mRightImage = stereoFrame.mRightImage;
-        currFrame->mDispMap = stereoFrame.mDispMap;
-
-        // counting how many frames we have processed
-        pathRecon.mFrameSeq.mNumFrames++;
-
-        pathRecon.goodFeaturesToTrack(*currFrame->mImage, currFrame->mDispMap,
-            currFrame->mKeypoints);
-
-        // prepare the keypoint descriptors
-        pathRecon.mPoseEstimator.constructKeypointDescriptors(*currFrame->mImage, *currFrame->mKeypoints);
-      }
-      input.pop();
-    }
-
-    KeyFramingDecision kfd = KeyFrameBackTrack;
-
-    if (stop == false) {
-      if (pathRecon.mFrameSeq.mNumFrames==1) {
-        // First frame ever, do not need to do anything more.
-        pathRecon.mFrameSeq.mStartFrameIndex = currFrame->mFrameIndex;
-        kfd = KeyFrameUse;
-      } else {
-        //
-        // match the good feature points between this iteration and last key frame
-        //
-        vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
-        if (currFrame->mTrackableIndexPairs == NULL) {
-          currFrame->mTrackableIndexPairs = new vector<pair<int, int> >();
-        } else {
-          currFrame->mTrackableIndexPairs->clear();
-        }
-        pathRecon.matchKeypoints(&trackablePairs, currFrame->mTrackableIndexPairs);
-        assert(currFrame->mTrackableIndexPairs->size() == trackablePairs.size());
-
-        cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() << endl;
-        for (size_t i = 0; i < trackablePairs.size(); i++) {
-          printf("(%f,%f,%f), (%f,%f,%f)\n",
-            trackablePairs[i].first.x,
-            trackablePairs[i].first.y,
-            trackablePairs[i].first.z,
-            trackablePairs[i].second.x,
-            trackablePairs[i].second.y,
-            trackablePairs[i].second.z);
-        }
-
-        if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
-          cout << "Too few trackable pairs - backtracking" <<endl;
-          kfd = KeyFrameBackTrack;
-        } else {
-          //  pose estimation given the feature point pairs
-          //  note we do not do Levenberg-Marquardt here, as we are not sure if
-          //  this is key frame yet.
-          currFrame->mNumInliers =
-            pathRecon.mPoseEstimator.estimate(*currFrame->mKeypoints, *pathRecon.getLastKeyFrame()->mKeypoints,
-                *currFrame->mTrackableIndexPairs,
-                currFrame->mRot, currFrame->mShift, false);
-
-          pathRecon.mStat.mHistoInliers.push_back(currFrame->mNumInliers);
-
-          currFrame->mInliers0 = NULL;
-          currFrame->mInliers1 = NULL;
-          pathRecon.fetchInliers(currFrame->mInliers1, currFrame->mInliers0);
-          currFrame->mInlierIndices = pathRecon.fetchInliers();
-          currFrame->mLastKeyFrameIndex = pathRecon.getLastKeyFrame()->mFrameIndex;
-          cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
-          assert(pathRecon.getLastKeyFrame());
-
-          // Decide if we need select a key frame by now
-          kfd =
-            pathRecon.keyFrameEval(currFrame->mFrameIndex, currFrame->mKeypoints->size(),
-                currFrame->mNumInliers,
-                currFrame->mRot, currFrame->mShift);
-        }
-      } // not first frame;
-    } // stop == false
-
-    bool newKeyFrame = pathRecon.keyFrameAction(kfd, pathRecon.mFrameSeq);
-    if (newKeyFrame == true) {
-      // only keep the last frame in the queue
-      pathRecon.reduceWindowSize(1);
-    }
-  }
-
-  // vector<FramePose>* framePoses = pathRecon.getFramePoses();
-  // saveFramePoses(string("test/Output/indoor1/"), *framePoses);
-
-  PyObject *r;
-  r = PyList_New(pathRecon.mFramePoses.size());
-
-  for (size_t i = 0; i < pathRecon.mFramePoses.size(); i++) {
-    FramePose &fp = pathRecon.mFramePoses[i];
-    PyObject *tup = PyTuple_New(3);
-    PyTuple_SetItem(tup, 0, PyInt_FromLong(fp.mIndex));
-
-    PyObject *rod = PyTuple_New(3);
-    PyTuple_SetItem(rod, 0, PyFloat_FromDouble(fp.mRod.x));
-    PyTuple_SetItem(rod, 1, PyFloat_FromDouble(fp.mRod.y));
-    PyTuple_SetItem(rod, 2, PyFloat_FromDouble(fp.mRod.z));
-    PyTuple_SetItem(tup, 1, rod);
-
-    PyObject *shift = PyTuple_New(3);
-    PyTuple_SetItem(shift, 0, PyFloat_FromDouble(fp.mShift.x));
-    PyTuple_SetItem(shift, 1, PyFloat_FromDouble(fp.mShift.y));
-    PyTuple_SetItem(shift, 2, PyFloat_FromDouble(fp.mShift.z));
-    PyTuple_SetItem(tup, 2, shift);
-
-    PyList_SetItem(r, i, tup);
-  }
-
-  pathRecon.printStat();
-
-  CvTestTimer::getTimer().mNumIters = numFrames;
-  CvTestTimer::getTimer().printStat();
-
-  return r;
-}
-
-/************************************************************************/
-
 
 PyObject *do_ost_do_prefilter_norm(PyObject *self, PyObject *args)
 {
@@ -620,12 +261,214 @@ PyObject *harris(PyObject *self, PyObject *args)
 /************************************************************************/
 
 //
+// FramePose
+//
+
+typedef struct {
+  PyObject_HEAD
+  FramePose *fp;
+} frame_pose_t;
+
+static void
+frame_pose_dealloc(PyObject *self)
+{
+  FramePose *fp = ((frame_pose_t*)self)->fp;
+  delete fp;
+  PyObject_Del(self);
+}
+
+/* Method table */
+static PyMethodDef frame_pose_methods[] = {
+  {NULL, NULL},
+};
+
+static PyObject *
+frame_pose_GetAttr(PyObject *self, char *attrname)
+{
+    if (strcmp(attrname, "id") == 0) {
+      FramePose *fp = ((frame_pose_t*)self)->fp;
+      return PyInt_FromLong(fp->mIndex);
+    } else if (strcmp(attrname, "M") == 0) {
+      FramePose *fp = ((frame_pose_t*)self)->fp;
+      PyObject *r = PyList_New(16);
+      for (int i = 0; i < 16; i++)
+        PyList_SetItem(r, i, PyFloat_FromDouble(fp->transf_local_to_global_data_[i]));
+      return r;
+    } else {
+      return Py_FindMethod(frame_pose_methods, self, attrname);
+    }
+}
+
+static PyTypeObject frame_pose_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "frame_pose",
+    sizeof(frame_pose_t),
+    0,
+    (destructor)frame_pose_dealloc,
+    0,
+    (getattrfunc)frame_pose_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    0,
+
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+PyObject *frame_pose(PyObject *self, PyObject *args)
+{
+  frame_pose_t *object = PyObject_NEW(frame_pose_t, &frame_pose_Type);
+
+  int i;
+  double M[16];
+  if (!PyArg_ParseTuple(args, "i(dddddddddddddddd)", &i,
+        &M[0],
+        &M[1],
+        &M[2],
+        &M[3],
+        &M[4],
+        &M[5],
+        &M[6],
+        &M[7],
+        &M[8],
+        &M[9],
+        &M[10],
+        &M[11],
+        &M[12],
+        &M[13],
+        &M[14],
+        &M[15])) return NULL;
+  CvMat m = cvMat(4, 4, CV_64FC1, M);
+  object->fp = new FramePose(i);
+  cvCopy(&m, &object->fp->transf_local_to_global_);
+
+  return (PyObject*)object;
+}
+
+
+/************************************************************************/
+
+//
+// PointTrack
+//
+
+typedef struct {
+  PyObject_HEAD
+  PointTrack *pt;
+} point_track_t;
+
+static void
+point_track_dealloc(PyObject *self)
+{
+  PointTrack *pt = ((point_track_t*)self)->pt;
+  delete pt;
+  PyObject_Del(self);
+}
+
+PyObject *extend(PyObject *self, PyObject *args)
+{
+  PointTrack *pt = ((point_track_t*)self)->pt;
+  int f0;
+  CvPoint3D64f o0;
+  if (!PyArg_ParseTuple(args, "i(ddd)", &f0, &o0.x, &o0.y, &o0.z)) return NULL;
+  PointTrackObserv *pto0 = new PointTrackObserv(f0, o0, 0);
+  pt->extend(pto0);
+  Py_RETURN_NONE;
+}
+
+/* Method table */
+static PyMethodDef point_track_methods[] = {
+  { "extend", extend, METH_VARARGS },
+  { NULL, NULL },
+};
+
+static PyObject *
+point_track_GetAttr(PyObject *self, char *attrname)
+{
+    return Py_FindMethod(point_track_methods, self, attrname);
+}
+
+static PyTypeObject point_track_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "point_track",
+    sizeof(point_track_t),
+    0,
+    (destructor)point_track_dealloc,
+    0,
+    (getattrfunc)point_track_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    0,
+
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+PyObject *point_track(PyObject *self, PyObject *args)
+{
+  point_track_t *object = PyObject_NEW(point_track_t, &point_track_Type);
+
+  int f0, f1, trackid;
+  CvPoint3D64f o0, o1, p;
+  if (!PyArg_ParseTuple(args, "i(ddd)i(ddd)(ddd)i", &f0, &o0.x, &o0.y, &o0.z, &f1, &o1.x, &o1.y, &o1.z, &p.x, &p.y, &p.z, &trackid)) return NULL;
+  PointTrackObserv *pto0 = new PointTrackObserv(f0, o0, 0);
+  PointTrackObserv *pto1 = new PointTrackObserv(f1, o1, 0);
+  object->pt = new PointTrack(pto0, pto1, p, trackid);
+
+  return (PyObject*)object;
+}
+
+
+/************************************************************************/
+
+//
 // Pose Estimator
 //
 
 typedef struct {
   PyObject_HEAD
   PoseEstimateStereo *pe;
+#if JDC_DEBUG==1 // jdc
+  LevMarqSparseBundleAdj *sba_;
+  SBAVisualizer          *vis_;
+  boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
+#endif
 } pose_estimator_t;
 
 static void
@@ -633,6 +476,12 @@ pose_estimator_dealloc(PyObject *self)
 {
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
   delete pe;
+#if JDC_DEBUG==1
+  pose_estimator_t* obj = (pose_estimator_t*)self;
+  delete obj->sba_;
+  delete obj->vis_;
+  delete obj->map_index_to_FramePose_;
+#endif
   PyObject_Del(self);
 }
 
@@ -642,9 +491,10 @@ PyObject *estimate(PyObject *self, PyObject *args)
   vector <Keypoint> kpa;
   vector <Keypoint> kpb;
   vector <pair<int, int> > pairs;
+  int polishing = 1;
 
   PyObject *p_kpa, *p_kpb, *p_pairs;
-  if (!PyArg_ParseTuple(args, "OOO", &p_kpa, &p_kpb, &p_pairs)) return NULL;
+  if (!PyArg_ParseTuple(args, "OOO|i", &p_kpa, &p_kpb, &p_pairs, &polishing)) return NULL;
 
   double x, y, z;
   for (int i = 0; i < PyList_Size(p_kpa); i++) {
@@ -666,7 +516,7 @@ PyObject *estimate(PyObject *self, PyObject *args)
   CvMat rot   = cvMat(3, 3, CV_64FC1, _mRot);
   CvMat shift = cvMat(3, 1, CV_64FC1, _mShift);
 
-  int inliers = pe->estimate(kpa, kpb, pairs, rot, shift, true);
+  int inliers = pe->estimate(kpa, kpb, pairs, rot, shift, polishing);
 
   return Py_BuildValue("(i,(ddddddddd),(ddd))",
                        inliers,
@@ -678,28 +528,139 @@ PyObject *inliers(PyObject *self, PyObject *args)
 {
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
 
-  CvMat *inliers0, *inliers1;
+  CvMat *inliers0 = NULL, *inliers1 = NULL;
   pe->getInliers(inliers0, inliers1);
 
-  PyObject *r = PyList_New(inliers0->rows);
-  for (int i = 0; i < inliers0->rows; i++) {
-    PyList_SetItem(r, i, Py_BuildValue("((ddd),(ddd))",
-        cvGetReal2D(inliers0, i, 0),
-        cvGetReal2D(inliers0, i, 1),
-        cvGetReal2D(inliers0, i, 2),
-        cvGetReal2D(inliers1, i, 0),
-        cvGetReal2D(inliers1, i, 1),
-        cvGetReal2D(inliers1, i, 2)
-        ));
+  PyObject *r;
+  if (inliers0 != NULL && inliers1 != NULL) {
+    r = PyList_New(inliers0->rows);
+    for (int i = 0; i < inliers0->rows; i++) {
+      PyList_SetItem(r, i, Py_BuildValue("((ddd),(ddd))",
+          cvGetReal2D(inliers0, i, 0),
+          cvGetReal2D(inliers0, i, 1),
+          cvGetReal2D(inliers0, i, 2),
+          cvGetReal2D(inliers1, i, 0),
+          cvGetReal2D(inliers1, i, 1),
+          cvGetReal2D(inliers1, i, 2)
+          ));
+    }
+  } else {
+    r = PyList_New(0);
   }
 
   return r;
+}
+
+PyObject *setInlierErrorThreshold(PyObject *self, PyObject *args)
+{
+  PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
+  double thresh;
+  if (!PyArg_ParseTuple(args, "d", &thresh))
+    return NULL;
+  pe->setInlierErrorThreshold(thresh);
+  Py_RETURN_NONE;
+}
+
+static vector<FramePose*> fpl_p2c(PyObject *o)
+{
+  vector<FramePose*> r;
+  for (Py_ssize_t i = 0; i < PyList_Size(o); i++) {
+    PyObject *oi = PyList_GetItem(o, i);
+    r.push_back(((frame_pose_t*)oi)->fp);
+  }
+  return r;
+}
+
+PyObject *sba(PyObject *self, PyObject *args)
+{
+  PyObject *ofixed, *ofree, *otracks;
+  int max_num_iters = 5;
+  if (!PyArg_ParseTuple(args, "OOOi", &ofixed, &ofree, &otracks, &max_num_iters)) return NULL;
+
+#if JDC_DEBUG==1  // commented out by jdc
+#else
+  PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
+  CvMat cartToDisp;
+  CvMat dispToCart;
+  pe->getProjectionMatrices(&cartToDisp, &dispToCart);
+
+  int full_free_window_size  = PyList_Size(ofree);
+  int full_fixed_window_size = PyList_Size(ofixed);
+
+  double epsilon = DBL_EPSILON;
+  CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
+  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+
+#endif
+
+  vector<FramePose*> fixed_frames = fpl_p2c(ofixed);
+  vector<FramePose*> free_frames = fpl_p2c(ofree);
+  PointTracks tracks;
+  tracks.current_frame_index_ = 0;
+  tracks.oldest_frame_index_in_tracks_ = 0;
+  for (Py_ssize_t i = 0; i < PyList_Size(otracks); i++) {
+    PyObject *oi = PyList_GetItem(otracks, i);
+    if (!PyObject_IsInstance(oi, (PyObject*)&point_track_Type)) {
+      PyErr_SetString(PyExc_TypeError, "expecting list of point_track");
+      return NULL;
+    }
+    PointTrack *pt = ((point_track_t*)oi)->pt;
+    tracks.tracks_.push_back(pt);
+  }
+
+#if JDC_DEBUG==1 // jdc
+  LevMarqSparseBundleAdj* sba = ((pose_estimator_t*)self)->sba_;
+  sba->optimize(&free_frames, &fixed_frames, &tracks);
+
+  SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
+  // set frame poses, point tracks and maps from index to frame poses
+  vector<FramePose* > frame_poses;
+  BOOST_FOREACH(FramePose *fp, free_frames) {
+    frame_poses.push_back(fp);
+    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+  }
+  BOOST_FOREACH(FramePose *fp, fixed_frames) {
+    frame_poses.push_back(fp);
+    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
+  }
+  vis->framePoses = &frame_poses;
+  vis->tracks = &tracks;
+  int current_frame_index = free_frames.back()->mIndex;
+
+  // make sure the image buffers is allocated to the right sizes
+  vis->canvasTracking.Allocate(640, 480);
+  // clear the image
+  cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
+  { // annotation on the canvas
+    char info[256];
+    CvPoint org = cvPoint(0, 475);
+    CvFont font;
+    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+    sprintf(info, "%04d, nTrcks=%d",
+        current_frame_index, tracks.tracks_.size());
+
+    cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+  }
+  sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
+      current_frame_index);
+  vis->slideWindowFront = free_frames.front()->mIndex;
+  vis->drawTrackTrajectories(current_frame_index);
+  vis->show();
+  vis->save();
+  vis->reset();
+#else
+  sba.optimize(&free_frames, &fixed_frames, &tracks);
+#endif
+
+  Py_RETURN_NONE;
 }
 
 /* Method table */
 static PyMethodDef pose_estimator_methods[] = {
   {"estimate", estimate, METH_VARARGS},
   {"inliers", inliers, METH_VARARGS},
+  {"sba", sba, METH_VARARGS},
+  {"setInlierErrorThreshold", setInlierErrorThreshold, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -751,17 +712,151 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   double Fx, Fy, Tx, Clx, Crx, Cy;
   if (!PyArg_ParseTuple(args, "dddddd", &Fx, &Fy, &Tx, &Clx, &Crx, &Cy)) return NULL;
   object->pe->setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  object->pe->setInlierErrorThreshold(3.0);
+
+#if JDC_DEBUG==1 // jdc
+  CvMat cartToDisp;
+  CvMat dispToCart;
+  object->pe->getProjectionMatrices(&cartToDisp, &dispToCart);
+  int full_free_window_size  = 1;
+  int full_fixed_window_size = 1;
+  int max_num_iters = 5;
+  double epsilon = DBL_EPSILON;
+  CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
+  object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+
+  object->vis_ = new SBAVisualizer((PoseEstimateDisp&)*object->pe, NULL, NULL, NULL);
+  object->map_index_to_FramePose_ =
+    new boost::unordered_map<int, FramePose*>();
+  // note that SBAVisualizer by design does not own map_index_to_FramePose
+  object->vis_->map_index_to_FramePose_ = object->map_index_to_FramePose_;
+  object->vis_->outputDirname = string("Output/james4/");
+#endif
 
   return (PyObject*)object;
 }
 
+/************************************************************************/
+
+#include "imwin.h"
+
+typedef struct {
+  PyObject_HEAD
+  imWindow *iw;
+  int mouse_x, mouse_y, mouse_b;
+} imWindow_t;
+
+PyObject *iwDisplayImage(PyObject *self, PyObject *args)
+{
+  imWindow *iw = ((imWindow_t*)self)->iw;
+  int imdata_size;
+  unsigned char *imdata;
+  PyObject *pts;
+  if (!PyArg_ParseTuple(args, "s#O", &imdata, &imdata_size, &pts)) return NULL;
+  iw->DisplayImage(imdata, 640, 480, 0, MONOCHROME);
+
+  // fl_color(FL_RED);
+  // fl_line(10, 10, 100, 100);
+  //
+  int c, x, y;
+  for (int i = 0; i < PyList_Size(pts); i++) {
+    PyArg_ParseTuple(PyList_GetItem(pts, i), "iii", &c, &x, &y);
+    if (c == 0)
+      fl_color(FL_RED);
+    else
+      fl_color(FL_GREEN);
+    fl_line(x-4, y, x+4, y);
+    fl_line(x, y-4, x, y+4);
+  }
+
+  fltk_check();
+  Py_RETURN_NONE;
+}
+
+PyObject *iwMouse(PyObject *self, PyObject *args)
+{
+  imWindow_t *iw = ((imWindow_t*)self);
+  return Py_BuildValue("iii", iw->mouse_x, iw->mouse_y, iw->mouse_b);
+}
+
+static void
+imWindow_dealloc(PyObject *self)
+{
+  PyObject_Del(self);
+}
+
+/* Method table */
+static PyMethodDef imWindow_methods[] = {
+  {"DisplayImage", iwDisplayImage, METH_VARARGS},
+  {"mouse", iwMouse, METH_VARARGS},
+  {NULL, NULL},
+};
+
+static PyObject *
+imWindow_GetAttr(PyObject *self, char *attrname)
+{
+    return Py_FindMethod(imWindow_methods, self, attrname);
+}
+
+static PyTypeObject imWindow_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "imWindow",
+    sizeof(imWindow_t),
+    0,
+    (destructor)imWindow_dealloc,
+    0,
+    (getattrfunc)imWindow_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    0,
+
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+int my_bhandler(int e, int x, int y, int b, int mod, imWindow *imw)
+{
+  imWindow_t *object = (imWindow_t *)imw->data;
+  object->mouse_x = x;
+  object->mouse_y = y;
+  object->mouse_b = b;
+  return 0;
+}
+
+PyObject *mkimWindow(PyObject *self, PyObject *args)
+{
+  imWindow_t *object = PyObject_NEW(imWindow_t, &imWindow_Type);
+  char *title = (char*)"None";
+  PyArg_ParseTuple(args, "s", &title);
+  object->iw = new imWindow(640, 480, title);
+  object->iw->data = (void*)object;
+  object->iw->ButtonHandler(my_bhandler);
+  object->iw->show();
+
+  return (PyObject*)object;
+}
 
 /************************************************************************/
 
 static PyMethodDef methods[] = {
-  {"visual_odometry", visual_odometry, METH_VARARGS},
-  {"StereoFrame", stereo_frame, METH_VARARGS},
-  {"PathRecon", mkPathRecon, METH_VARARGS},
   {"ost_do_prefilter_norm", do_ost_do_prefilter_norm, METH_VARARGS},
   {"ost_do_stereo_sparse", do_ost_do_stereo_sparse, METH_VARARGS},
   {"grab_16x16", grab_16x16, METH_VARARGS},
@@ -769,15 +864,18 @@ static PyMethodDef methods[] = {
   {"sad_search", sad_search, METH_VARARGS},
   {"dense_stereo", dense_stereo, METH_VARARGS},
   {"harris", harris, METH_VARARGS},
+  {"point_track", point_track, METH_VARARGS},
+  {"frame_pose", frame_pose, METH_VARARGS},
+  {"imWindow", mkimWindow, METH_VARARGS},
 
   {"pose_estimator", pose_estimator, METH_VARARGS},
   {NULL, NULL, NULL},
 };
 
-extern "C" void initvisual_odometry()
+extern "C" void initvotools()
 {
     PyObject *m, *d;
 
-    m = Py_InitModule("visual_odometry", methods);
+    m = Py_InitModule("votools", methods);
     d = PyModule_GetDict(m);
 }

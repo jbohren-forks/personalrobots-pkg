@@ -60,7 +60,7 @@ MapDisplay::MapDisplay( const std::string& name, VisualizationManager* manager )
 , height_( 0.0f )
 , load_timer_( 2.0f )
 , new_metadata_( false )
-, last_loaded_map_time_( 0.0 )
+, last_loaded_map_time_( ros::Time() )
 , service_property_( NULL )
 , resolution_property_( NULL )
 , width_property_( NULL )
@@ -324,15 +324,18 @@ void MapDisplay::load()
 
 void MapDisplay::transformMap()
 {
-  tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( 0, 0, 0 ), btVector3( 0, 0, 0 ) ), ros::Time((uint64_t)0ULL), "map" );
+  tf::Stamped<tf::Pose> pose( btTransform( btQuaternion( 0, 0, 0 ), btVector3( 0, 0, 0 ) ), ros::Time(), "map" );
 
-  try
+  if ( tf_->canTransform(fixed_frame_, "map", ros::Time()))
   {
-    tf_->transformPose( fixed_frame_, pose, pose );
-  }
-  catch(tf::TransformException& e)
-  {
-    ROS_ERROR( "Error transforming map '%s' to frame '%s'\n", name_.c_str(), fixed_frame_.c_str() );
+    try
+    {
+      tf_->transformPose( fixed_frame_, pose, pose );
+    }
+    catch(tf::TransformException& e)
+    {
+      ROS_ERROR( "Error transforming map '%s' to frame '%s'\n", name_.c_str(), fixed_frame_.c_str() );
+    }
   }
 
   Ogre::Vector3 position( pose.getOrigin().x(), pose.getOrigin().y(), pose.getOrigin().z() );

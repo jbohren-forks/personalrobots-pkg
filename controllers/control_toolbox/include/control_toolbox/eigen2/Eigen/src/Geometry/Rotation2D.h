@@ -100,6 +100,29 @@ public:
     */
   inline Rotation2D slerp(Scalar t, const Rotation2D& other) const
   { return m_angle * (1-t) + other.angle() * t; }
+
+  /** \returns \c *this with scalar type casted to \a NewScalarType
+    *
+    * Note that if \a NewScalarType is equal to the current scalar type of \c *this
+    * then this function smartly returns a const reference to \c *this.
+    */
+  template<typename NewScalarType>
+  inline typename ei_cast_return_type<Rotation2D,Rotation2D<NewScalarType> >::type cast() const
+  { return typename ei_cast_return_type<Rotation2D,Rotation2D<NewScalarType> >::type(*this); }
+
+  /** Copy constructor with scalar type conversion */
+  template<typename OtherScalarType>
+  inline explicit Rotation2D(const Rotation2D<OtherScalarType>& other)
+  {
+    m_angle = other.angle();
+  }
+
+  /** \returns \c true if \c *this is approximately equal to \a other, within the precision
+    * determined by \a prec.
+    *
+    * \sa MatrixBase::isApprox() */
+  bool isApprox(const Rotation2D& other, typename NumTraits<Scalar>::Real prec = precision<Scalar>()) const
+  { return ei_isApprox(m_angle,other.m_angle, prec); }
 };
 
 /** \ingroup GeometryModule

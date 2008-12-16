@@ -53,9 +53,6 @@
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
 
-// Math utils
-#include <math_utils/angles.h>
-
 // #include <libTF/Pose3D.h>
 // #include <urdf/URDF.h>
 

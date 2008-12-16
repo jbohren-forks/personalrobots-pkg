@@ -1,6 +1,0 @@
-  <controller name="shoulder_pan_controller" topic="shoulder_pan_controller" type="JointPositionControllerNode">
-    <filter smoothing_factor="0.5" />
-    <joint name="shoulder_pan_right_joint">
-      <pid p="7" i="0" d="5" iClamp="0" />
-    </joint>
-  </controller>

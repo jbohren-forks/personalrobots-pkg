@@ -32,35 +32,24 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \file sbpl_util.cpp Implementation of sbpl_util.h */
-
-#warning 'TO DO: rename sbpl_util.hh --> sbpl_util.hpp'
-
 #include "sbpl_util.hh"
-#include <rosconsole/rosconsole.h>
-#include <costmap_2d/costmap_2d.h>
-#include <headers.h>
+#include "environment_wrap.h"
+#include <sbpl/headers.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <time.h>
-#include <sstream>
 #include <errno.h>
 #include <cstring>
+
 
 using namespace std;
 
 
 namespace {
   
-  string mk_invalid_state_str(string const & method, int state) {
-    ostringstream os;
-    os << "EnvironmentWrapper::invalid_state in method " << method << ": state = " << state;
-    return os.str();
-  }
-  
   static map<string, string> planner_alias;
   
 }
+
 
 namespace ompl {
   
@@ -168,26 +157,42 @@ namespace ompl {
   
   
   int SBPLPlannerManager::
-  replan(double allocated_time_sec,
+  replan(bool stop_at_first_solution,
+	 bool plan_from_scratch,
+	 double allocated_time_sec,
 	 double * actual_time_wall_sec,
 	 double * actual_time_user_sec,
 	 double * actual_time_system_sec,
+	 int * number_of_expands,
+	 int * solution_cost,
+	 double * solution_epsilon,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)
   {
     if ( ! planner_)
       throw no_planner_selected();
     
+    if (stop_at_first_solution)
+      planner_->set_search_mode(true);
+    else
+      planner_->set_search_mode(false);
+    
+    if (plan_from_scratch)
+      force_planning_from_scratch();
+    
     struct rusage ru_started;
     struct timeval t_started;
     getrusage(RUSAGE_SELF, &ru_started);
     gettimeofday(&t_started, 0);
-
-    int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V));
-
+    
+    int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V, solution_cost));
+    
     struct rusage ru_finished;
     struct timeval t_finished;
     getrusage(RUSAGE_SELF, &ru_finished);
     gettimeofday(&t_finished, 0);
+    
+    *number_of_expands = planner_->get_n_expands();
+    *solution_epsilon = planner_->get_solution_eps();
     
     *actual_time_wall_sec =
       t_finished.tv_sec - t_started.tv_sec
@@ -230,8 +235,17 @@ namespace ompl {
   }
   
   
-  SBPLPlannerStatistics::entry::
-  entry(std::string const & _plannerType, std::string const & _environmentType)
+  void SBPLPlannerManager::
+  flush_cost_changes(EnvironmentWrapper & ewrap) throw(no_planner_selected)
+  {
+    if ( ! planner_)
+      throw no_planner_selected();
+    ewrap.FlushCostUpdates(planner_);
+  }
+  
+  
+  SBPLPlannerStatsEntry::
+  SBPLPlannerStatsEntry(std::string const & _plannerType, std::string const & _environmentType)
     : plannerType(_plannerType),
       environmentType(_environmentType),
       goalState(-1),
@@ -241,55 +255,21 @@ namespace ompl {
   }
   
   
-  void SBPLPlannerStatistics::
-  pushBack(std::string const & plannerType, std::string const & environmentType)
-  {
-    stats_.push_back(entry(plannerType, environmentType));
-  }
-  
-  
-  SBPLPlannerStatistics::entry & SBPLPlannerStatistics::
-  top()
-  {
-    return stats_.back();
-  }
-  
-  
-  SBPLPlannerStatistics::stats_t const & SBPLPlannerStatistics::
-  getAll() const
-  {
-    return stats_;
-  }
-  
-  
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logInfo(char const * prefix) const
   {
-    ROS_INFO("%s\n"
-	     "%splanner:                 %s\n"
-	     "%sgoal (map/grid/state):   %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	     "%sstart (map/grid/state):  %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	     "%stime [s] (actual/alloc): %g / %g\n"
-	     "%sstatus (1 == SUCCESS):   %d\n"
-	     "%splan_length [m]:         %+8.3f\n"
-	     "%splan_rotation [rad]:     %+8.3f\n",
-	     prefix,
-	     prefix, plannerType.c_str(),
-	     prefix, goal.x, goal.y, goal.th, goalIx, goalIy, goalState,
-	     prefix, start.x, start.y, start.th, startIx, startIy, startState,
-	     prefix, actual_time_wall_sec, allocated_time_sec,
-	     prefix, status,
-	     prefix, plan_length_m,
-	     prefix, plan_angle_change_rad);
+    ostringstream os;
+    logStream(os, "ompl::SBPLPlannerStatistics", prefix);
+    ROS_INFO("%s", os.str().c_str());
   }
   
   
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logFile(char const * filename, char const * title, char const * prefix) const
   {
     FILE * ff(fopen(filename, "a"));
     if (0 == ff) {
-      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fopen(%s): %s",
+      ROS_WARN("SBPLPlannerStatsEntry::logFile(): fopen(%s): %s",
 	       filename, strerror(errno));
       return;
     }
@@ -297,285 +277,36 @@ namespace ompl {
     logStream(os, title, prefix);
     fprintf(ff, "%s", os.str().c_str());
     if (0 != fclose(ff))
-      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fclose() on %s: %s",
+      ROS_WARN("SBPLPlannerStatsEntry::logFile(): fclose() on %s: %s",
 	       filename, strerror(errno));
   }
   
   
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logStream(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "planner:               " << plannerType << "\n"
-       << prefix << "environment:           " << environmentType << "\n"
-       << prefix << "goal  map:             " << goal.x << "  " << goal.y << "  " << goal.th << "\n"
-       << prefix << "goal  grid:            " << goalIx << "  " << goalIy << "\n"
-       << prefix << "goal  state:           " << goalState << "\n"
-       << prefix << "start map:             " << start.x << "  " << start.y << "  " << start.th << "\n"
-       << prefix << "start grid:            " << startIx << "  " << startIy << "\n"
-       << prefix << "start state:           " << startState << "\n"
-       << prefix << "time  alloc:           " << allocated_time_sec << "\n"
-       << prefix << "time  actual (wall):   " << actual_time_wall_sec << "\n"
-       << prefix << "time  actual (user):   " << actual_time_user_sec << "\n"
-       << prefix << "time  actual (system): " << actual_time_system_sec << "\n"
-       << prefix << "status (1 == SUCCESS): " << status << "\n"
-       << prefix << "plan_length [m]:       " << plan_length_m << "\n"
-       << prefix << "plan_rotation [rad]:   " << plan_angle_change_rad << "\n";
-  }
-  
-  
-  ////   EnvironmentWrapper::invalid_pose::
-  ////   invalid_pose(std::string const & method, std_msgs::Pose2DFloat32 const & pose)
-  ////     : std::runtime_error(mk_invalid_pose_str(method, pose))
-  ////   {
-  ////   }
-  
-  
-  EnvironmentWrapper::invalid_state::
-  invalid_state(std::string const & method, int state)
-    : std::runtime_error(mk_invalid_state_str(method, state))
-  {
-  }
-  
-  
-  EnvironmentWrapper2D::
-  EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
-		       int startx, int starty,
-		       int goalx, int goaly,
-		       unsigned char obsthresh)
-    : EnvironmentWrapper(costmap),
-      env_(new EnvironmentNAV2D())
-  {
-#warning 'Would be nice to get (at least) start as a pose from current data'
-    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
-		       startx, starty, goalx, goaly, obsthresh);
-  }
-  
-  
-  EnvironmentWrapper2D::
-  ~EnvironmentWrapper2D()
-  {
-    delete env_;
-  }
-  
-  
-  DiscreteSpaceInformation * EnvironmentWrapper2D::
-  getDSI()
-  {
-    return env_;
-  }
-  
-  
-  bool EnvironmentWrapper2D::
-  InitializeMDPCfg(MDPConfig *MDPCfg)
-  {
-    return env_->InitializeMDPCfg(MDPCfg);
-  }
-  
-  
-  bool EnvironmentWrapper2D::
-  UpdateCost(int ix, int iy, unsigned char newcost)
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
-      return false;
-    return env_->UpdateCost(ix, iy, newcost);
-  }
-  
-  
-  bool EnvironmentWrapper2D::
-  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy))
-      return outside_map_is_obstacle;
-    return env_->IsObstacle(ix, iy);
-  }
-  
-  
-  int EnvironmentWrapper2D::
-  SetStart(std_msgs::Pose2DFloat32 const & start)
-  {
-    unsigned int ix, iy;
-    costmap_.WC_MC(start.x, start.y, ix, iy);
-    return env_->SetStart(ix, iy);
-  }
-  
-  
-  int EnvironmentWrapper2D::
-  SetGoal(std_msgs::Pose2DFloat32 const & goal)
-  {
-    unsigned int ix, iy;
-    costmap_.WC_MC(goal.x, goal.y, ix, iy);
-    return env_->SetGoal(ix, iy);
-  }
-  
-  
-  /** \note Always sets pose.th == -42 so people can detect that it is
-      undefined. */
-  std_msgs::Pose2DFloat32 EnvironmentWrapper2D::
-  GetPoseFromState(int stateID) const
-    throw(invalid_state)
-  {
-    if (0 > stateID)
-      throw invalid_state("EnvironmentWrapper2D::GetPoseFromState()", stateID);
-    int ix, iy;
-    env_->GetCoordFromState(stateID, ix, iy);
-    // by construction (ix,iy) is always inside the map (otherwise we
-    // wouldn't have a stateID)
-    double px, py;
-    costmap_.MC_WC(ix, iy, px, py);
-    std_msgs::Pose2DFloat32 pose;
-    pose.x = px;
-    pose.y = py;
-    pose.th = -42;
-    return pose;
-  }
-  
-  
-  int EnvironmentWrapper2D::
-  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
-  {
-    unsigned int ix, iy;
-    costmap_.WC_MC(pose.x, pose.y, ix, iy);
-    if ( ! env_->IsWithinMapCell(ix, iy))
-      return -1;
-    return env_->GetStateFromCoord(ix, iy);
-  }
-  
-  
-  std::string EnvironmentWrapper2D::
-  getName() const
-  {
-    std::string name("2D");
-    return name;
-  }
-  
-  
-  EnvironmentWrapper3DKIN::
-  EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
-			  unsigned char obst_cost_thresh,
-			  double startx, double starty, double starttheta,
-			  double goalx, double goaly, double goaltheta,
-			  double goaltol_x, double goaltol_y, double goaltol_theta,
-			  footprint_t const & footprint,
-			  double nominalvel_mpersecs,
-			  double timetoturn45degsinplace_secs)
-    : EnvironmentWrapper(costmap),
-      obst_cost_thresh_(obst_cost_thresh),
-      env_(new EnvironmentNAV3DKIN())
-  {
-    // Aarghh at least we only do this once at init time.
-    vector<sbpl_2Dpt_t> perimeterptsV;
-    perimeterptsV.reserve(footprint.size());
-    for (size_t ii(0); ii < footprint.size(); ++ii) {
-      sbpl_2Dpt_t pt;
-      pt.x = footprint[ii].x;
-      pt.y = footprint[ii].y;
-      perimeterptsV.push_back(pt);
-    }
-    
-#warning 'Would be nice to get (at least) start as a pose from current data'
-    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
-			startx, starty, starttheta,
-			goalx, goaly, goaltheta,
-			goaltol_x, goaltol_y, goaltol_theta,
-			perimeterptsV, costmap.getResolution(), nominalvel_mpersecs,
-			timetoturn45degsinplace_secs);
-  }
-  
-  
-  EnvironmentWrapper3DKIN::
-  ~EnvironmentWrapper3DKIN()
-  {
-    delete env_;
-  }
-  
-  
-  DiscreteSpaceInformation * EnvironmentWrapper3DKIN::
-  getDSI()
-  {
-    return env_;
-  }
-  
-  
-  bool EnvironmentWrapper3DKIN::
-  InitializeMDPCfg(MDPConfig *MDPCfg)
-  {
-    return env_->InitializeMDPCfg(MDPCfg);
-  }
-  
-  
-  bool EnvironmentWrapper3DKIN::
-  UpdateCost(int ix, int iy, unsigned char newcost)
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
-      return false;
-    if (obst_cost_thresh_ >= newcost)
-      return env_->UpdateCost(ix, iy, 1);
-    return env_->UpdateCost(ix, iy, 0);
-  }
-  
-  
-  bool EnvironmentWrapper3DKIN::
-  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy))
-      return outside_map_is_obstacle;
-    return env_->IsObstacle(ix, iy);
-  }
-  
-  
-  int EnvironmentWrapper3DKIN::
-  SetStart(std_msgs::Pose2DFloat32 const & start)
-  {
-#warning 'transform global to map frame? or is that the same?'
-    return env_->SetStart(start.x, start.y, start.th);
-  }
-  
-  
-  int EnvironmentWrapper3DKIN::
-  SetGoal(std_msgs::Pose2DFloat32 const & goal)
-  {
-#warning 'transform global to map frame? or is that the same?'
-    return env_->SetGoal(goal.x, goal.y, goal.th);
-  }
-  
-  
-  std_msgs::Pose2DFloat32 EnvironmentWrapper3DKIN::
-  GetPoseFromState(int stateID) const
-    throw(invalid_state)
-  {
-    if (0 > stateID)
-      throw invalid_state("EnvironmentWrapper3D::GetPoseFromState()", stateID);
-    int ix, iy, ith;
-    env_->GetCoordFromState(stateID, ix, iy, ith);
-    // we know stateID is valid, thus we can ignore the
-    // PoseDiscToCont() retval
-    double px, py, pth;
-    env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
-    std_msgs::Pose2DFloat32 pose;
-    pose.x = px;
-    pose.y = py;
-    pose.th = pth;
-    return pose;
-  }
-  
-  
-  int EnvironmentWrapper3DKIN::
-  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
-  {
-    int ix, iy, ith;
-    if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
-      return -1;
-    return env_->GetStateFromCoord(ix, iy, ith);
-  }
-  
-  
-  std::string EnvironmentWrapper3DKIN::
-  getName() const
-  {
-    std::string name("3DKIN");
-    return name;
+    os << prefix << "planner:                   " << plannerType << "\n"
+       << prefix << "environment:               " << environmentType << "\n"
+       << prefix << "goal map:                  " << goal.x << "  " << goal.y << "  " << goal.th << "\n"
+       << prefix << "goal grid:                 " << goalIx << "  " << goalIy << "\n"
+       << prefix << "goal state:                " << goalState << "\n"
+       << prefix << "start map:                 " << start.x << "  " << start.y << "  " << start.th << "\n"
+       << prefix << "start grid:                " << startIx << "  " << startIy << "\n"
+       << prefix << "start state:               " << startState << "\n"
+       << prefix << "stop at first solution:    " << (stop_at_first_solution ? "true\n" : "false\n")
+       << prefix << "plan from scratch:         " << (plan_from_scratch ? "true\n" : "false\n")
+       << prefix << "time alloc [ms]:           " << 1.0e3 * allocated_time_sec << "\n"
+       << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall_sec << "\n"
+       << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user_sec << "\n"
+       << prefix << "time actual (system) [ms]: " << 1.0e3 * actual_time_system_sec << "\n"
+       << prefix << "number of expands:         " << number_of_expands << "\n"
+       << prefix << "solution cost:             " << solution_cost << "\n"
+       << prefix << "solution epsilon:          " << solution_epsilon << "\n"
+       << prefix << "status (1 == SUCCESS):     " << status << "\n"
+       << prefix << "plan_length [m]:           " << plan_length_m << "\n"
+       << prefix << "plan_rotation [rad]:       " << plan_angle_change_rad << "\n";
   }
   
 }

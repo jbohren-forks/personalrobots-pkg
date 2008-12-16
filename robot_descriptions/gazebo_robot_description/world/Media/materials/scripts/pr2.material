@@ -55,3 +55,119 @@ material PR2/wheel_left
     }
   }
 }
+
+
+
+material PR2/fr_caster_l_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_right.png
+      }
+    }
+  }
+}
+
+material PR2/fl_caster_l_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
+material PR2/br_caster_l_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_right.png
+      }
+    }
+  }
+}
+
+material PR2/bl_caster_l_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
+
+
+material PR2/fr_caster_r_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_right.png
+      }
+    }
+  }
+}
+
+material PR2/fl_caster_r_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
+material PR2/br_caster_r_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_right.png
+      }
+    }
+  }
+}
+
+material PR2/bl_caster_r_wheel_link
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
+
+
+

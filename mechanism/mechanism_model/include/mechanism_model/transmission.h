@@ -38,7 +38,7 @@
 #define TRANSMISSION_H
 
 #include <tinyxml/tinyxml.h>
-#include <misc_utils/factory.h>
+#include <loki/Factory.h>
 #include "mechanism_model/joint.h"
 #include "hardware_interface/hardware_interface.h"
 
@@ -47,12 +47,17 @@ namespace mechanism {
 class Robot;
 
 class Transmission;
-typedef misc_utils::Factory<Transmission> TransmissionFactory;
+typedef Loki::SingletonHolder
+<
+  Loki::Factory< Transmission, std::string >,
+  Loki::CreateUsingNew,
+  Loki::LongevityLifetime::DieAsSmallObjectChild
+> TransmissionFactory;
 
 #define ROS_REGISTER_TRANSMISSION(c) \
   mechanism::Transmission *ROS_New_##c() { return new c(); }             \
   bool ROS_TRANSMISSION_##c = \
-    mechanism::TransmissionFactory::instance().registerType(#c, ROS_New_##c);
+    mechanism::TransmissionFactory::Instance().Register(#c, ROS_New_##c);
 
 
 class Transmission

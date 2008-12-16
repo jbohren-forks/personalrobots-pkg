@@ -7,6 +7,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
 </description>
 <author>Russel Smith</author>
 <license>LGPL</license>
+<review status="3rdparty" notes=""/>
 <url>http://opende.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/opende/lib `${prefix}/opende/bin/ode-config --libs`" cflags="`${prefix}/opende/bin/ode-config --cflags`"/>
@@ -15,4 +16,5 @@ This package contains Open Dynamics Engine OpenDE or ODE
 </export>
 <versioncontrol type="svn" url="https://opende.svn.sourceforge.net/svnroot/opende/trunk"/>
 <versioncontrol type="svn" url="https://oderutils.svn.sourceforge.net"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
 </package>

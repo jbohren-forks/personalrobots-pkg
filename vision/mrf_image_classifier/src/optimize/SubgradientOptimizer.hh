@@ -27,10 +27,12 @@ public:
     wvec(wvec0),
     deltaPast(obj->getWeightDim()),
     lastSubg(obj->getWeightDim()),
+    bestSoFar(wvec0),
     //    subgradient(obj->getWeightDim()),
     slackPenalty(aslackPenalty),
     iirCoeff(aiirCoeff),
     stepSize(astepsize),
+    bestObjective(HUGE_VAL),
     iteration(0),
     logger(alogger)
   {  
@@ -93,16 +95,16 @@ public:
       " Delta norm " << norm_2(delta) << endl;
     */
 
-    char logmess[1000];
-    snprintf(logmess, sizeof(logmess), 
-	     "Sub. norm %f, Reg. norm %f, Weight norm %f, Delta norm %f",
-	     norm_2(nrgSubg), norm_2(regSubg), norm_2(wvec), norm_2(delta));
+    if (logger != NULL) {
+      char logmess[1000];
+      snprintf(logmess, sizeof(logmess), 
+	       "Sub. norm %f, Reg. norm %f, Weight norm %f, Delta norm %f",
+	       norm_2(nrgSubg), norm_2(regSubg), norm_2(wvec), norm_2(delta));
+      
+      //    cerr << logmess << endl;
 
-    //    cerr << logmess << endl;
-
-    if (logger != NULL)
       logger->log(__PRETTY_FUNCTION__, logmess);
-
+    }
 
     wvec -= delta;
 
@@ -142,7 +144,15 @@ public:
       " Aug.Loss " << augLoss << " Loss " << loss << endl;
     //    cout << "Energy " << energyVal << ", Reg " << regObj;
 
-    return energyVal + regObj;
+    double obj = energyVal + regObj;
+
+    if (obj < bestObjective) {
+      bestObjective = obj;
+      bestSoFar = wvec;
+      cout << "NEW BEST: " << bestObjective << endl;
+    }
+
+    return obj;
   }
 
   /**
@@ -151,6 +161,23 @@ public:
    */
   void currentSolution(Dvec &vec) {
     vec = wvec;
+  }
+
+  /**
+     @brief Returns best solution found so far (approximately)
+   */
+  double bestSolution(Dvec &outvec) {
+    //    cout << "BEST SOL " << bestObjective << std::endl;
+    outvec = bestSoFar;
+    return bestObjective;
+  }
+
+  /**
+     Manually sets best solution
+   */
+  void setBestSolution(Dvec& vec, double val) {
+    bestSoFar = vec;
+    bestObjective = val; 
   }
 
   /**
@@ -186,10 +213,12 @@ private:
   //  Dvec regSubg;
   //  Dvec subgradient;
   Dvec lastSubg;
+  Dvec bestSoFar;
 
   double slackPenalty;
   double iirCoeff;
   double stepSize;
+  double bestObjective;
   
   //  vector<int> targetState;
 

@@ -36,6 +36,8 @@ import re
 
 TAG_PREFIX = ''  # 'xacro:'
 
+class XacroException(Exception): pass
+
 def isnumber(x):
     return hasattr(x, '__int__')
 
@@ -134,15 +136,21 @@ def child_elements(elt):
             yield c
         c = c.nextSibling
 
+## @throws XacroException if a parsing error occurs with an included document
 def process_includes(doc, base_dir):
     previous = doc.documentElement
     elt = next_element(previous)
     while elt:
         if elt.tagName == 'include':
             filename = os.path.join(base_dir, elt.getAttribute('filename'))
-            f = open(filename)
-            included = parse(f)
-            f.close()
+            try:
+                f = open(filename)
+                try:
+                    included = parse(f)
+                except Exception, e:
+                    raise XacroException("included file [%s] generated an error during XML parsing: %s"%(filename, str(e)))
+            finally:
+                f.close()
 
             # Replaces the include tag with the elements of the included file
             for c in child_elements(included.documentElement):

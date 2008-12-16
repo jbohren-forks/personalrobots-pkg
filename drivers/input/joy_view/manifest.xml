@@ -1,6 +1,7 @@
 <package>
   <author>Morgan Quigley</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="joy"/>

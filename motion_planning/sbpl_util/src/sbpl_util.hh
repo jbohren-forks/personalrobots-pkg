@@ -34,25 +34,32 @@
 
 /** \file sbpl_util.hh Utilities for handling SBPL planners independent of the exact subtype. */
 
+#ifndef OMPL_SBPL_UTIL_HPP
+#define OMPL_SBPL_UTIL_HPP
+
 #include <std_msgs/Pose2DFloat32.h>
-#include <std_msgs/Point2DFloat32.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
-class EnvironmentNAV2D;	        /**< see motion_planning/sbpl/src/discrete_space_information/nav2d/environment_nav2D.h */
-class EnvironmentNAV3DKIN;      /**< see motion_planning/sbpl/src/discrete_space_information/nav3dkin/environment_nav3Dkin.h */
 
 // would like to forward-declare, but in mdpconfig.h it's a typedef'ed
 // anonymous struct and GCC chokes on that... great
 //   struct MDPConfig; /**< see motion_planning/sbpl/src/utils/mdpconfig.h */
 #include <utils/mdpconfig.h>
 
-namespace costmap_2d {
-  class CostMap2D;
-}
+// Would like to forward-declare, but nav2dcell_t is used within a
+// std::vector<> ... see also the comments in
+// sbpl/src/planners/planner.h about the ChangedCellsGetter
+// class. Also, environment_nav2D.h needs some other includes to be
+// present and uses std::vector without the std:: prefix, so we
+// unfortunately have to add a using directive here.
+using std::vector;
+#include <utils/mdp.h>
+#include <discrete_space_information/environment.h>
+#include <discrete_space_information/nav2d/environment_nav2D.h>
 
 namespace ompl {
   
@@ -85,64 +92,47 @@ namespace ompl {
 				  std::ostream * opt_err_os);
   
   
-  /**
-     Collection of statistic for SBPL planner runs.
-  */
-  class SBPLPlannerStatistics
-  {
-  public:
-    /** One element of the statistics. Represents one SBPLPlanner::replan() cycle. */
-    struct entry {
-      entry(std::string const & plannerType, std::string const & environmentType);
-      
-      std::string plannerType;         /**< name of the planner (an SBPLPlanner subclass) */
-      std::string environmentType;     /**< name of the environment type (2D, 3DKIN, ...) */
-      std_msgs::Pose2DFloat32 goal;    /**< from the std_msgs::Planner2DGoal we received (map frame) */
-      unsigned int goalIx;             /**< x-index of the goal in the costmap */
-      unsigned int goalIy;             /**< y-index of the goal in the costmap */
-      int goalState;                   /**< stateID of the goal (from costmap indices) */
-      std_msgs::Pose2DFloat32 start;   /**< global pose (map frame) "just before" before planning */
-      unsigned int startIx;            /**< x-index of the start in the costmap */
-      unsigned int startIy;            /**< y-index of the start in the costmap */
-      int startState;                  /**< stateID of the start (from costmap indices) */
-      double allocated_time_sec;       /**< the amount of time we had available for planning */
-      double actual_time_wall_sec;     /**< the amount of time actually used for planning (wallclock) */
-      double actual_time_user_sec;     /**< the amount of time actually used for planning (user time) */
-      double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
-
-      int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
-      double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
-      double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
-      
-      /** Use ROS_INFO() to log this entry to rosconsole.
-	  \todo needs to be unified with the other logXXX() methods
-      */
-      void logInfo(char const * prefix = "") const;
-      
-      /** Append this entry to a logfile (which is opened and closed each time). */
-      void logFile(char const * filename, char const * title, char const * prefix) const;
-      
-      /** Append this entry to a stream. */
-      void logStream(std::ostream & os, std::string const & title, std::string const & prefix) const;
-    };
+  struct SBPLPlannerStatsEntry {
+    SBPLPlannerStatsEntry(std::string const & plannerType, std::string const & environmentType);
     
-    typedef std::vector<entry> stats_t;
+    std::string plannerType;         /**< name of the planner (an SBPLPlanner subclass) */
+    std::string environmentType;     /**< name of the environment type (2D, 3DKIN, ...) */
+    std_msgs::Pose2DFloat32 goal;    /**< from the std_msgs::Planner2DGoal we received (map frame) */
+    unsigned int goalIx;             /**< x-index of the goal in the costmap */
+    unsigned int goalIy;             /**< y-index of the goal in the costmap */
+    int goalState;                   /**< stateID of the goal (from costmap indices) */
+    std_msgs::Pose2DFloat32 start;   /**< global pose (map frame) "just before" before planning */
+    unsigned int startIx;            /**< x-index of the start in the costmap */
+    unsigned int startIy;            /**< y-index of the start in the costmap */
+    int startState;                  /**< stateID of the start (from costmap indices) */
+    bool stop_at_first_solution;     /**< whether to just plan until any plan is found */
+    bool plan_from_scratch;          /**< whether to discard any previous solutions */
+    double allocated_time_sec;       /**< the amount of time we had available for planning */
+    double actual_time_wall_sec;     /**< the amount of time actually used for planning (wallclock) */
+    double actual_time_user_sec;     /**< the amount of time actually used for planning (user time) */
+    double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
     
-    /** Create a fresh entry and append it to the end of the
-	accumulated statistics. */
-    void pushBack(std::string const & plannerType, std::string const & environmentType);
+    int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
+    int number_of_expands;           /**< number of state expansions, or -1 if not available */
+    int solution_cost;               /**< cost of the solution, as given by replan() */
+    double solution_epsilon;         /**< the "epsilon" value used to compute the solution */
+    double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
+    double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
     
-    /** \return The topmost (latest) element, which is only defined if
-	you called pushBack() at least once. */
-    entry & top();
+    /** Use ROS_INFO() to log this entry to rosconsole.
+	\todo needs to be unified with the other logXXX() methods
+    */
+    void logInfo(char const * prefix = "") const;
     
-    /** Read-only access to the entire history. */
-    stats_t const & getAll() const;
+    /** Append this entry to a logfile (which is opened and closed each time). */
+    void logFile(char const * filename, char const * title, char const * prefix) const;
     
-  protected:
-    stats_t stats_;
+    /** Append this entry to a stream. */
+    void logStream(std::ostream & os, std::string const & title, std::string const & prefix) const;
   };
   
+  
+  class EnvironmentWrapper;
   
   /** Wraps around SBPLPlanner subclasses, which you can select by
       name, providing almost the same interface (augmented slightly to
@@ -186,11 +176,32 @@ namespace ompl {
     
     /** Dispatch to the currently select()-ed planner's
 	SBPLPlanner::replan(), measuring the time it actually takes to
-	run it. */
-    int replan(double allocated_time_sec,
+	run it.
+	
+	\note You can use ompl::convertPlan() to translate the
+	solution_stateIDs_V into something more generic.
+	
+	\return The status returned by SBPLPlanner::replan().
+    */
+    int replan(/** in: whether to just return the first feasible solution */
+	       bool stop_at_first_solution,
+	       /** in: whether to forcefully re-initialize the planner */
+	       bool plan_from_scratch,
+	       /** in: how much time is allocated for planning */
+	       double allocated_time_sec,
+	       /** out: how much time was actually used by the planner (wallclock) */
 	       double * actual_time_wall_sec,
+	       /** out: how much time was actually used by the planner (user time) */
 	       double * actual_time_user_sec,
+	       /** out: how much time was actually used by the planner (system time) */
 	       double * actual_time_system_sec,
+	       /** out: number of state expansions (or -1 if not available) */
+	       int * number_of_expands,
+	       /** out: the cost of the planned path */
+	       int * solution_cost,
+	       /** out: the epsilon-value of the planned path */
+	       double * solution_epsilon,
+	       /** out: the planned path, as a succession of state IDs */
 	       std::vector<int>* solution_stateIDs_V) throw(no_planner_selected);
 
     /** Dispatch to the currently select()-ed planner's
@@ -204,6 +215,17 @@ namespace ompl {
     /** Dispatch to the currently select()-ed planner's
 	SBPLPlanner::force_planning_from_scratch(). */
     int force_planning_from_scratch() throw(no_planner_selected);
+        
+    /** Notify the planner that costs have changed.
+	
+	\todo Clarify the roles between SBPLPlannerManager,
+	EnvironmentWrapper, DiscreteSpaceInformation, and
+	SBPLPlanner. Actually, the user should not deal with separate
+	instances, but always combinations of planners and
+	environments, so probably the best way to put this is in a
+	facade.
+    */
+    void flush_cost_changes(EnvironmentWrapper & ewrap) throw(no_planner_selected);
     
   protected:
     DiscreteSpaceInformation* environment_;
@@ -213,127 +235,6 @@ namespace ompl {
     std::string name_;
   };
   
-  
-  /** Helper class for abstracting away the usage (or not) of the
-      robot's heading during planning. Represents a common (tweaked)
-      subset of the DiscreteSpaceInformation-subclasses that are
-      employed by SBPLPlanner subclasses. */
-  class EnvironmentWrapper
-  {
-  public:
-    ////     struct invalid_pose: public std::runtime_error
-    ////     { invalid_pose(std::string const & method, std_msgs::Pose2DFloat32 const & pose); };
-    
-    struct invalid_state: public std::runtime_error
-    { invalid_state(std::string const & method, int state); };
-    
-    explicit EnvironmentWrapper(costmap_2d::CostMap2D const & costmap): costmap_(costmap) {}
-    virtual ~EnvironmentWrapper() {}
-    
-    virtual DiscreteSpaceInformation * getDSI() = 0;
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
-    
-    /** \return false if (ix,iy) is not in the map, or if the
-	delegated cost update failed. */
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost) = 0;
-    
-    /** \return true if there is no obstacle at (ix,iy)... if (ix,iy)
-	is not in the map, then outside_map_is_obstacle is
-	returned. */
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) = 0;
-    
-    /** \return The stateID of the start, or -1 if it lies outside the map. */
-    virtual int SetStart(std_msgs::Pose2DFloat32 const & start) = 0;
-    
-    /** \return The stateID of the goal, or -1 if it lies outside the map. */
-    virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal) = 0;
-    
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state) = 0;
-    
-    /** \return the stateID of a pose, or -1 if the pose lies outside
-	of the map. */
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const = 0;
-    
-    virtual std::string getName() const = 0;
-    
-  protected:
-    costmap_2d::CostMap2D const & costmap_;
-  };
-  
-  
-  /** Wraps an EnvironmentNAV2D instance (which it construct and owns
-      for you). */
-  class EnvironmentWrapper2D
-    : public EnvironmentWrapper
-  {
-  public:
-    EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
-			 int startx, int starty,
-			 int goalx, int goaly,
-			 unsigned char obsthresh);
-    virtual ~EnvironmentWrapper2D();
-    
-    virtual DiscreteSpaceInformation * getDSI();
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
-    
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
-    virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
-    virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
-    
-  protected:
-    /** \note This is mutable because GetStateFromPose() can
-	conceivable change the underlying EnvironmentNAV2D, which we
-	don't care about here. */
-    mutable EnvironmentNAV2D * env_;
-  };
-  
-  
-  /** Wraps an EnvironmentNAV3DKIN instance (which it construct and owns
-      for you). */
-  class EnvironmentWrapper3DKIN
-    : public EnvironmentWrapper
-  {
-  public:
-    typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
-    
-    EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
-			    /** Use
-				costmap_2d::CostMap2D::LETHAL_OBSTACLE
-				for workspace-only obstacles,
-				costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE
-				for obstacles blown up by the
-				inscribed radius, etc */
-			    unsigned char obst_cost_thresh,
-			    double startx, double starty, double starttheta,
-			    double goalx, double goaly, double goaltheta,
-			    double goaltol_x, double goaltol_y, double goaltol_theta,
-			    footprint_t const & footprint,
-			    double nominalvel_mpersecs,
-			    double timetoturn45degsinplace_secs);
-    virtual ~EnvironmentWrapper3DKIN();
-    
-    virtual DiscreteSpaceInformation * getDSI();
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
-    
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
-    virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
-    virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
-    
-  protected:
-    unsigned char obst_cost_thresh_;
-    
-    /** \note This is mutable because GetStateFromPose() can
-	conceivable change the underlying EnvironmentNAV3DKIN, which we
-	don't care about here. */
-    mutable EnvironmentNAV3DKIN * env_;
-  };
-
 }
+
+#endif // OMPL_SBPL_UTIL_HPP

@@ -10,7 +10,8 @@
 
 using namespace std;
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 #include "config.h"
 
 #include <utils/key.h>

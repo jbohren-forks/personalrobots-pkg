@@ -1,0 +1,8 @@
+<launch>
+<param name="odom_estimation/freq" value="30.0"/>
+<param name="odom_estimation/sensor_timeout" value="1.0"/>
+<param name="odom_estimation/exact_time_mode" value="true"/>
+
+<node pkg="people_tracking" type="people_tracking" output="screen"/>
+</launch>
+

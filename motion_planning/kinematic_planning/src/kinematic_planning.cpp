@@ -466,7 +466,5 @@ int main(int argc, char **argv)
     else
 	usage(argv[0]);
     
-    profiling_utils::Profiler::Status();
-    
     return 0;    
 }

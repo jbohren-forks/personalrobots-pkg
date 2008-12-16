@@ -1,39 +1,52 @@
 #include "star_detector/detector.h"
+#include "star_detector/optimized_width.h"
 
 StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_projected,
                            float line_threshold_binarized)
-  : m_n(n), m_W(size.width), m_H(size.height),
-    // Pre-allocate all the memory we need
-    m_responses(new IplImage*[n]),
-    m_projected( cvCreateImage(size, IPL_DEPTH_32F, 1) ),
-    m_scales( cvCreateImage(size, IPL_DEPTH_8U, 1) ),
-    m_filter_sizes(new int[n]),
+  : m_upright(NULL),
+    m_tilted(NULL),
+    m_flat(NULL),
+    m_projected(NULL),
+    m_scales(NULL),
+    m_filter_sizes(NULL),
     m_nonmax(response_threshold,
-             LineSuppressHybrid(m_projected, m_scales, m_filter_sizes,
-                                line_threshold_projected,
+             LineSuppressHybrid(line_threshold_projected,
                                 line_threshold_binarized)),
-    m_interpolate(true)
+    m_filter_params(NULL)
 {
-  int sumwidth = 1777;
-  m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
-  m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
-  m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  // Pre-allocate all the memory we need
+  setScales(n);
+  setImageSize(size);
+}
 
-  m_response_threshold = response_threshold;
+void StarDetector::releaseImages()
+{
+  cvReleaseImage(&m_upright);
+  cvReleaseImage(&m_tilted);
+  cvReleaseImage(&m_flat);
+  cvReleaseImage(&m_projected);
+  cvReleaseImage(&m_scales);
+}
 
-  for (int i = 0; i < n; ++i) {
-    m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
-    cvZero(m_responses[i]);
-  }
-  cvSet(m_scales, cvScalar(1));
-  cvZero(m_projected);
+StarDetector::~StarDetector()
+{
+  releaseImages();
+  delete[] m_filter_sizes;
+  delete[] m_filter_params;
+}
 
+void StarDetector::setScales(int n)
+{
+  delete[] m_filter_sizes;
+  m_n = n;
+  m_filter_sizes = new int[m_n];
+  
   // Filter sizes increase geometrically, rounded to nearest integer
   m_filter_sizes[0] = 1;
   float cur_size = 1;
   int scale = 1;
-  while (scale < n) {
+  while (scale < m_n) {
     cur_size *= SCALE_RATIO;
     int rounded_size = (int)(cur_size + 0.5);
     if (rounded_size == m_filter_sizes[scale - 1])
@@ -41,23 +54,35 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
     m_filter_sizes[scale++] = rounded_size;
   }
 
+  m_nonmax.thresholdFunction().setScaleSizes(m_filter_sizes);
+
   // Set border to size of maximum offset
   m_border = m_filter_sizes[m_n - 1] * 3;
 }
 
-StarDetector::~StarDetector()
+void StarDetector::setImageSize(CvSize size)
 {
-  cvReleaseImage(&m_upright);
-  cvReleaseImage(&m_tilted);
-  cvReleaseImage(&m_flat);
-  cvReleaseImage(&m_projected);
-  cvReleaseImage(&m_scales);
+  releaseImages();
+  
+  m_W = size.width;
+  m_H = size.height;
 
-  for (int i = 0; i < m_n; ++i) {
-    cvReleaseImage(&m_responses[i]);
-  }
-  delete[] m_responses;
-  delete[] m_filter_sizes;
+  // SIMD optimized code requires integral images to have fixed width.
+  int sumwidth = std::max(OPTIMIZED_WIDTH, m_W+1);
+  m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  // Real width is m_W+1, rest is just padding
+  m_upright->width = m_tilted->width = m_flat->width = m_W+1;
+
+  m_projected = cvCreateImage(size, IPL_DEPTH_32F, 1);
+  m_scales = cvCreateImage(size, IPL_DEPTH_8U, 1);
+  
+  cvSet(m_scales, cvScalar(1));
+  cvZero(m_projected);
+
+  m_nonmax.thresholdFunction().setProjectedImage(m_projected);
+  m_nonmax.thresholdFunction().setScaleImage(m_scales);
 }
 
 inline
@@ -70,7 +95,6 @@ int StarDetector::StarAreaSum(CvPoint center, int radius, int offset)
   return upright_area + tilt_area;
 }
 
-// TODO: change this to LUT?
 inline
 int StarDetector::StarPixels(int radius, int offset)
 {
@@ -80,42 +104,38 @@ int StarDetector::StarPixels(int radius, int offset)
   return upright_pixels + tilt_pixels;
 }
 
-// TODO: use fixed point instead of floating point
-void StarDetector::BilevelFilter(IplImage* dst, int scale)
+// Lightly optimized pure C++ version. If possible, one of the SIMD versions
+// in generated.i will be used instead.
+void StarDetector::FilterResponses()
 {
-  int inner_r = m_filter_sizes[scale - 1];
-  int outer_r = 2*inner_r;
-  int inner_offset = inner_r + inner_r / 2;
-  int outer_offset = outer_r + outer_r / 2;
-  int inner_pix = StarPixels(inner_r, inner_offset);
-  int outer_pix = StarPixels(outer_r, outer_offset) - inner_pix;
-  
-  for (int y = outer_offset; y < m_H - outer_offset; ++y) {
-    for (int x = outer_offset; x < m_W - outer_offset; ++x) {
-      int inner_area = StarAreaSum(cvPoint(x, y), inner_r, inner_offset);
-      int outer_area = StarAreaSum(cvPoint(x, y), outer_r, outer_offset);
-      outer_area -= inner_area;
-      // TODO: next line is expensive
-      CV_IMAGE_ELEM(dst, float, y, x) = (float)inner_area/inner_pix -
-        (float)outer_area/outer_pix;
+  if (!m_filter_params) {
+    // Cache constants associated with each scale
+    m_filter_params = new FilterParams[m_n];
+    for (int s = 0; s < m_n; ++s) {
+      FilterParams &fp = m_filter_params[s];
+      fp.inner_r = m_filter_sizes[s];
+      fp.outer_r = 2*fp.inner_r;
+      fp.inner_offset = fp.inner_r + fp.inner_r / 2;
+      fp.outer_offset = fp.outer_r + fp.outer_r / 2;
+      int inner_pix = StarPixels(fp.inner_r, fp.inner_offset);
+      int outer_pix = StarPixels(fp.outer_r, fp.outer_offset) - inner_pix;
+      fp.inner_normalizer = 1.0f / inner_pix;
+      fp.outer_normalizer = 1.0f / outer_pix;
     }
   }
-}
-
-/*inline*/ void StarDetector::FilterResponses()
-{
-  for (int scale = 1; scale <= m_n; ++scale) {
-    BilevelFilter(m_responses[scale-1], scale);
-  }
-
-  // Project responses into single maximal image
-  for (int y = 0; y < m_H; ++y) {
-    for (int x = 0; x < m_W; ++x) {
-      uchar scale = 1;
-      float max_response = CV_IMAGE_ELEM(m_responses[0], float, y, x);
-      float abs_max_response = std::abs(max_response);
-      for (int s = 1; s < m_n; ++s) {
-        float response = CV_IMAGE_ELEM(m_responses[s], float, y, x);
+  
+  // Calculate responses over all scales and project into single maximal image
+  for (int y = m_border; y < m_H - m_border; ++y) {
+    for (int x = m_border; x < m_W - m_border; ++x) {
+      uchar scale = 0;
+      float max_response = 0.0f;
+      float abs_max_response = 0.0f;
+      for (int s = 0; s < m_n; ++s) {
+        FilterParams &fp = m_filter_params[s];
+        int inner_area = StarAreaSum(cvPoint(x, y), fp.inner_r, fp.inner_offset);
+        int outer_area = StarAreaSum(cvPoint(x, y), fp.outer_r, fp.outer_offset);
+        outer_area -= inner_area;
+        float response = inner_area*fp.inner_normalizer - outer_area*fp.outer_normalizer;
         float abs_response = std::abs(response);
         if (abs_response > abs_max_response) {
           max_response = response;
@@ -127,10 +147,6 @@ void StarDetector::BilevelFilter(IplImage* dst, int scale)
       CV_IMAGE_ELEM(m_scales, uchar, y, x) = scale;
     }
   }
-
-  // DEBUG
-  //cvSaveImage("scales.pgm", scales);
-  //SaveResponseImage("projected.pgm", projected);
 }
 
 #include "generated.i"

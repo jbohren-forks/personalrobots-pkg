@@ -1,0 +1,38 @@
+
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+
+
+    <!-- start up gazebo with gazebo_robot_description/world/robot_floorobj.world -->
+    <include file="$(find pr2_gazebo)/pr2_wg.launch" />
+
+
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" />
+    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
+    <param name="max_publish_frequency" value="20.0"/>
+    <!--node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" /-->
+
+    <param name="pf_laser_max_beams" value="6"/>
+    <param name="pf_min_samples" value="100"/>
+    <param name="pf_max_samples" value="1000"/>
+    <param name="pf_odom_drift_xx" value="0.1"/>
+    <param name="pf_odom_drift_yy" value="0.1"/>
+    <param name="pf_odom_drift_aa" value="0.1"/>
+    <param name="pf_odom_drift_xa" value="0.1"/>
+    <param name="pf_min_d" value="0.25"/>  <!-- 25cm -->
+    <param name="pf_min_a" value="0.349"/> <!-- 20 degrees -->
+    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+    </node>
+
+    <!-- Load parameters for moving the base. -->
+    <param name="costmap_2d/inflation_radius" type="double" value="0.35" />
+
+    <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
+
+    <!-- Now launch controller node required -->
+    <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml"/>
+  </group>
+</launch>
+

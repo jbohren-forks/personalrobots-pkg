@@ -1,0 +1,19 @@
+<package>
+ <description brief='Tests for the highlevel_controllers package.'>
+ The tests for highlevel_controllers are separated into a separate package
+ to avoid pulling dependencies like simulators into highlevel_controllers
+ itself.
+ </description>
+ <author>Conor McGann</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+ <depend package="highlevel_controllers"/>
+
+ <depend package="amcl_player"/>
+ <depend package="fake_localization"/>
+ <depend package="map_server"/>
+ <depend package="nav_view"/>
+ <depend package="rosstage"/>
+ <depend package="pr2_gazebo"/>
+</package>

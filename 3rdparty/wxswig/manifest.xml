@@ -8,6 +8,7 @@ http://wxpython.wxcommunity.com/tools/
 </description>
 <author>Many</author>
 <license url="http://swig.sourceforge.net/copyright.html">SWIG</license>
+<review status="3rdparty" notes=""/>
 <url>http://swig.sourceforge.net</url>
 <export>
   <cpp cflags="-DSWIG_TYPE_TABLE=_wxPython_table -DWXP_USE_THREAD=1 `python-config --includes`" lflags="`python-config --ldflags`" />

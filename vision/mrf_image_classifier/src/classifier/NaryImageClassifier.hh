@@ -36,14 +36,19 @@ public:
   
   /**
      @param awvec A weight vector for the classifier for this node
+     @param abestvec The current best solution
+     @param abestobj The curretn best objective value
      @param ascope The objects in the scope of this node
    */
   ClassifierNode(const Dvec& awvec, 
+		 const Dvec& abestvec,
+		 double abestobj,
 		 const ObjectSet& ascope) :
     scope(ascope),
     classifier(&awvec),
     nullity(false)
   {
+    classifier.setInitialBestSolution(abestvec, abestobj);
   }
 
   /**
@@ -69,9 +74,40 @@ public:
       throw DeserializationError();
 
     Dvec* wvec = DvecUtils::deserialize(istr);
+
+    // best weight vector so far
+    string best;
+    istr >> best;
+
+    if (best.compare("best") != 0)
+      throw DeserializationError();
+
+    // best objective value
+    string bestObj;
+    double bestObjVal;
+    istr >> bestObj;
+
+    cerr << "BEST " << bestObj << std::endl;
+
+    if (bestObj.compare("inf") == 0 || getenv("oIgnoreBest"))
+      bestObjVal = HUGE_VAL;
+    else {
+      std::istringstream iss(bestObj);
+      iss >> bestObjVal;
+    }
+
+    Dvec *bestvec = DvecUtils::deserialize(istr);
+
+    // parse scope
     ObjectSet scope(istr);
 
-    return new ClassifierNode(*wvec, scope);
+    ClassifierNode *cnode = 
+      new ClassifierNode(*wvec, *bestvec, bestObjVal, scope);
+
+    delete wvec;
+    delete bestvec;
+
+    return cnode;
   }
 
   /**
@@ -81,8 +117,16 @@ public:
    */
   void serialize(std::ostream& ostr) {
     ostr << "cnode" << endl;
-    // FIXME: make BinarySubmodularImageClassifier serialize itself
+
+    Dvec bestVec(classifier.getWeightVector()->size());
+    double bestObj = classifier.getBestSolution(bestVec);
+
+    /// @fixme make BinarySubmodularImageClassifier serialize itself
     DvecUtils::serialize(*classifier.getWeightVector(), ostr);
+
+    ostr << "best " << bestObj << std::endl;
+    DvecUtils::serialize(bestVec, ostr);
+
     scope.serialize(ostr);
   }
 
@@ -174,9 +218,11 @@ public:
      @param segmented Output argument for segmented image
      @param labeling Output argument for labeling
      @param blobStats Output argument for blob statistics
+     @param edges Output argument for blob-blob edge list
    */
   void evaluate(const IplImage* image, IplImage* segmented, 
-		vector<int>& labeling, vector<blobStat>& blobStats);
+		vector<int>& labeling, vector<blobStat>& blobStats,
+		vector<std::pair<int,int> >& edges);
 
   /**
      @param segmented Segmented image

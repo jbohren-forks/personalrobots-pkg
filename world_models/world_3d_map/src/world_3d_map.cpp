@@ -114,7 +114,7 @@
 #include <random_utils/random_utils.h>
 
 // Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 #include <deque>
 #include <cmath>
@@ -139,15 +139,6 @@ public:
     m_active = true;
     m_acceptScans = false;
     random_utils::init(&m_rng);
-
-    /// @todo Find a way to make this work for pr2, with mechanism control,
-    /// but not break for STAIR.  Somebody needs to be periodically
-    /// publishing the base->base_laser Tx.  Or else we need a more standard
-    /// way of retrieving such Txs;
-    /* Set up the transform client */
-    double laser_x_offset;
-    param("laser_x_offset", laser_x_offset, 0.275);
-    m_tf.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
     /* create a thread that handles the publishing of the data */	
     m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
@@ -193,7 +184,7 @@ private:
   {
     if(!m_robotState)
       {
-	//ROS_WARN("Ignoring state update because I haven't yet received the robot description");
+	ROS_WARN("Ignoring state update because I haven't yet received the robot description");
 	return;
       }
     //m_robotState->print();
@@ -224,25 +215,50 @@ private:
     m_projector.projectLaser(m_baseScanMsg, local_cloud, m_baseLaserMaxRange);
     processData(local_cloud);
   }
-    
+
+
   void publishDataThread(void)
   {
-    ros::Duration *d = new ros::Duration(1.0/m_maxPublishFrequency);
-	
-    /* Pump out buffered, filtered point clouds and clear the buffer */
+    ros::Duration *d = new ros::Duration();
+    d->fromSec(1.0/m_maxPublishFrequency);
+    
+    /* while everything else is running (map building) check if
+       there are any updates to send, but do so at most at the
+       maximally allowed frequency of sending data */
     while (m_active)
+    {
+      d->sleep();
+	
+      m_worldDataMutex.lock();
+      if (m_active && m_currentWorld.size() > 0)
       {
-	for(unsigned int i = 0; i < m_currentWorld.size(); i++){
-	  std_msgs::PointCloud* p = m_currentWorld[i];
-	  publish("world_3d_map", *p);
-	  delete p;
+	std_msgs::PointCloud toPublish;
+	toPublish.header = m_currentWorld.back()->header;
+	
+	unsigned int      npts  = 0;
+	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
+	  npts += m_currentWorld[i]->get_pts_size();
+	
+	toPublish.set_pts_size(npts);
+	
+	unsigned int j = 0;
+	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
+	{
+	  unsigned int n = m_currentWorld[i]->get_pts_size();
+	  for (unsigned int k = 0 ; k < n ; ++k)
+	    toPublish.pts[j++] =  m_currentWorld[i]->pts[k];
 	}
-
-	m_currentWorld.clear();
-
-	d->sleep();
+	
+	toPublish.set_pts_size(j);
+	if (ok())
+	{
+	  if (m_verbose)
+	    ROS_INFO("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
+	  publish("world_3d_map", toPublish);
+	}
       }
-
+      m_worldDataMutex.unlock();
+    }
     delete d;
   }
     
@@ -308,6 +324,7 @@ private:
   void processData(const std_msgs::PointCloud& local_cloud)
   {
     if (!m_acceptScans){
+      ROS_INFO("Rejecting scans\n");
       return;
     }
 
@@ -319,30 +336,25 @@ private:
 
       const std_msgs::PointCloud& point_cloud = point_clouds_.front();
 
-      //make sure that we don't fall to far in the past
-      if(ros::Time::now() - point_cloud.header.stamp > ros::Duration(9, 0)){
-	      point_clouds_.pop_front();
-	      continue;
-      }
 
       std_msgs::PointCloud map_cloud;
 	
       /* Transform to the map frame */
       try
 	{
-	  m_tf.transformPointCloud("map", map_cloud, point_cloud);
+	  m_tf.transformPointCloud("map", point_cloud, map_cloud);
 	}
-      catch(libTF::TransformReference::LookupException& ex)
+      catch(tf::LookupException& ex)
 	{
 	  ROS_ERROR("Lookup exception: %s\n", ex.what());
 	  break;
 	}
-      catch(libTF::TransformReference::ExtrapolateException& ex)
+      catch(tf::ExtrapolationException& ex)
 	{
-	  //ROS_ERROR("Extrapolation exception: %s\n", ex.what());
+	  ROS_ERROR("Extrapolation exception: %s\n", ex.what());
 	  break;
 	}
-      catch(libTF::TransformReference::ConnectivityException& ex)
+      catch(tf::ConnectivityException& ex)
 	{
 	  ROS_ERROR("Connectivity exception: %s\n", ex.what());
 	  break;
@@ -405,7 +417,7 @@ private:
 	  copy->pts[j++] = cloud.pts[k];
     copy->set_pts_size(j);
 	
-    ROS_DEBUG("Filter 0 discarded %d points (%d left) \n", n - j, j);
+    ROS_INFO("Filter 0 discarded %d points (%d left) \n", n - j, j);
 
     return copy;	
   }    
@@ -442,7 +454,7 @@ private:
 	  }
       }
 
-    ROS_DEBUG("Filter 1 discarded %d points (%d left) \n", n - j, j);
+    ROS_INFO("Filter 1 discarded %d points (%d left) \n", n - j, j);
 	
     copy->set_pts_size(j);
 

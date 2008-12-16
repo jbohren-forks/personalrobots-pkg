@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../headers.h"
+#include "../../sbpl/headers.h"
 
 
 
@@ -36,6 +36,8 @@ static clock_t time_gethash = 0;
 static clock_t time_createhash = 0;
 static clock_t time_getsuccs = 0;
 #endif
+
+
 
 
 //-------------------constructor--------------------------------------------
@@ -107,7 +109,8 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
   EnvNAV2DCfg.EnvHeight_c = height;
   EnvNAV2DCfg.StartX_c = startx;
   EnvNAV2DCfg.StartY_c = starty;
- 
+  int x;
+
   if(EnvNAV2DCfg.StartX_c < 0 || EnvNAV2DCfg.StartX_c >= EnvNAV2DCfg.EnvWidth_c) {
     printf("ERROR: illegal start coordinates\n");
     exit(1);
@@ -122,17 +125,28 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
 
   //allocate the 2D environment
   EnvNAV2DCfg.Grid2D = new unsigned char* [EnvNAV2DCfg.EnvWidth_c];
-  for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+  for (x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
     EnvNAV2DCfg.Grid2D[x] = new unsigned char [EnvNAV2DCfg.EnvHeight_c];
   }
   
+
   //environment:
-  for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
-    for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
-      unsigned char cval = mapdata[x+y*width];
-	   EnvNAV2DCfg.Grid2D[x][y] = cval;
+  if (0 == mapdata) {
+    for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+	EnvNAV2DCfg.Grid2D[x][y] = 0;
+      }
     }
   }
+  else {
+    for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+	unsigned char cval = mapdata[x+y*width];
+	EnvNAV2DCfg.Grid2D[x][y] = cval;
+      }
+    }
+  }
+
 }
 
 void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
@@ -205,6 +219,8 @@ void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 			}
 			EnvNAV2DCfg.Grid2D[x][y] = dTemp;
 		}
+
+
 
 }
 
@@ -337,6 +353,25 @@ bool EnvironmentNAV2D::IsWithinMapCell(int X, int Y)
 
 
 
+EnvironmentNAV2D::~EnvironmentNAV2D(){
+  if(EnvNAV2D.Coord2StateIDHashTable != NULL){
+    delete[] EnvNAV2D.Coord2StateIDHashTable;
+  }
+
+  for(unsigned int i = 0; i < EnvNAV2D.StateID2CoordTable.size(); ++i){
+    if(EnvNAV2D.StateID2CoordTable[i] != NULL)
+      delete EnvNAV2D.StateID2CoordTable[i];
+  }
+
+  if(EnvNAV2DCfg.Grid2D != NULL){
+    for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+      if(EnvNAV2DCfg.Grid2D[x] != NULL)
+        delete[] EnvNAV2DCfg.Grid2D[x];
+    }
+    delete[] EnvNAV2DCfg.Grid2D;
+  }
+
+}
 
 void EnvironmentNAV2D::InitializeEnvironment()
 {
@@ -405,6 +440,9 @@ bool EnvironmentNAV2D::InitializeEnv(int width, int height,
 					int startx, int starty,
 					int goalx, int goaly, unsigned char obsthresh)
 {
+
+	printf("env: initialized with width=%d height=%d, start=%d %d, goal=%d %d, obsthresh=%d\n", 
+		width, height, startx, starty, goalx, goaly, obsthresh);
 
 	EnvNAV2DCfg.obsthresh = obsthresh;
 
@@ -506,8 +544,6 @@ int EnvironmentNAV2D::GetStartHeuristic(int stateID)
 #endif
 
     
-
-
 	//define this function if it used in the planner (heuristic backward search would use it)
     return GetFromToHeuristic(EnvNAV2D.startstateid, stateID);
 
@@ -576,7 +612,7 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost);
+            cost = (int)(ceil(1.414214*cost));
 
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
@@ -665,7 +701,7 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost);
+            cost = (int)(ceil(1.414214*cost));
 		 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
@@ -741,7 +777,7 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(predX != HashEntry->X && predY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost);
+            cost = (int)(ceil(1.414214*cost));
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY)) == NULL)
@@ -820,8 +856,17 @@ const EnvNAV2DConfig_t* EnvironmentNAV2D::GetEnvNavConfig() {
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV2D::SetGoal(int x, int y){
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidCell(x,y))
+	{
+		printf("WARNING: goal cell is invalid\n");
+	}
+
 
     EnvNAV2DHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y)) == NULL){
@@ -838,8 +883,17 @@ int EnvironmentNAV2D::SetGoal(int x, int y){
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV2D::SetStart(int x, int y){
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidCell(x,y))
+	{
+		printf("WARNING: start cell is invalid\n");
+	}
+
 
     EnvNAV2DHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y)) == NULL){
@@ -882,7 +936,7 @@ void EnvironmentNAV2D::PrintTimeStat(FILE* fOut)
 }
 
 
-void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV)
+void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
 
@@ -915,7 +969,7 @@ unsigned char EnvironmentNAV2D::GetMapCost(int x, int y)
 
 
 
-void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly)
+void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh)
 {
 	*size_x = EnvNAV2DCfg.EnvWidth_c;
 	*size_y = EnvNAV2DCfg.EnvHeight_c;
@@ -924,6 +978,8 @@ void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* s
 	*starty = EnvNAV2DCfg.StartY_c;
 	*goalx = EnvNAV2DCfg.EndX_c;
 	*goaly = EnvNAV2DCfg.EndY_c;
+
+	*obsthresh = EnvNAV2DCfg.obsthresh;
 }
 
 

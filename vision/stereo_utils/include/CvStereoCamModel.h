@@ -231,13 +231,15 @@ public:
 
 	typedef enum {
 	  NO_POST_PROCESS,
+	  NOISE_REMOVAL,
 	  POLYGONES,
 	  CONVEX_HULLS,
 	} PostProcessOptions;
 	/// \brief compute a depth mask according to the minZ and maxZ.
 	/// This method generates a mask with pixel locations where depth in 3d are
 	/// within the specified range.
-	/// If post_process_opt = NO_POST_PROCESS, no processing is done
+  /// If post_process_opt = NO_POST_PROCESS, no processing is done.
+  /// If post_process_opt = NOISE_REMOVAL, only removal of isolated points.
 	/// If post_process_opt = POLYGONES, small groups of connected components in the mask
 	/// are removed. The rest are merge into larger connected components, and
 	/// grow a certain size.

@@ -1,0 +1,16 @@
+<package>
+  <description>
+    A node which converts 3D point cloud data from BAG log files into PCD (Point Cloud Data) files.
+  </description>
+
+  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="unreviewed" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="tf" />
+  <depend package="cloud_io" />
+
+</package>

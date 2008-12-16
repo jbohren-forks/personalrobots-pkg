@@ -8,6 +8,7 @@
   </description>
   <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://stair.stanford.edu</url>
   <depend package="ijg_libjpeg"/>
   <depend package="std_msgs"/>

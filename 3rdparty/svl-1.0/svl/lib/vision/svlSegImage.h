@@ -44,8 +44,8 @@
 #include <vector>
 #include <set>
 
-#include "cv.h"
-#include "cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
 
 using namespace std;
 

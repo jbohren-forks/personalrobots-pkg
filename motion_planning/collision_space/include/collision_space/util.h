@@ -37,7 +37,7 @@
 #ifndef COLLISION_SPACE_UTIL_
 #define COLLISION_SPACE_UTIL_
 
-#include <libTF/Pose3D.h>
+#include <LinearMath/btTransform.h>
 #include <cmath>
 
 /**
@@ -72,7 +72,7 @@ namespace collision_space
 		updateInternalData();
 	    }
 	    
-	    void setPose(const libTF::Pose3D &pose)
+	    void setPose(const btTransform &pose)
 	    {
 		m_pose = pose;
 		updateInternalData();
@@ -86,20 +86,18 @@ namespace collision_space
 	    
 	    bool containsPoint(double x, double y, double z) const
 	    {
-		libTF::Position pt(x, y, z);
-		return containsPoint(pt);
+		return containsPoint(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Position &p) const = 0;	
+	    virtual bool containsPoint(const btVector3 &p) const = 0;	
 	    
 	protected:
 	    
 	    virtual void updateInternalData(void) = 0;
 	    virtual void useDimensions(const double *dims) = 0;
 	    
-	    libTF::Pose3D m_pose;	
-	    double        m_scale;
-	    
+	    btTransform m_pose;	
+	    double      m_scale;	    
 	};
 	
 	class Sphere : public Shape
@@ -114,12 +112,9 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Position &p) const 
+	    virtual bool containsPoint(const btVector3 &p) const 
 	    {
-		double dx = m_center.x - p.x;
-		double dy = m_center.y - p.y;
-		double dz = m_center.z - p.z;
-		return dx * dx + dy * dy + dz * dz < m_radius2;
+		return (m_center - p).length2() < m_radius2;
 	    }
 	    
 	protected:
@@ -132,20 +127,18 @@ namespace collision_space
 	    virtual void updateInternalData(void)
 	    {
 		m_radius2 = m_radius * m_radius * m_scale * m_scale;
-		
-		m_pose.getPosition(m_center);
+		m_center = m_pose.getOrigin();
 	    }
 	    
-	    libTF::Position m_center;
-	    double          m_radius;	
-	    double          m_radius2;	
-	    
+	    btVector3 m_center;
+	    double    m_radius;	
+	    double    m_radius2;		    
 	};
         
 	class Cylinder : public Shape
 	{
 	public:
-        Cylinder(void) : Shape()
+        Cylinder(void) : Shape(), m_normalH(btScalar(0.0), btScalar(0.0), btScalar(1.0))
 	    {
 		m_length = m_radius = 0.0;
 	    }
@@ -154,19 +147,16 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Position &p) const 
+	    virtual bool containsPoint(const btVector3 &p) const 
 	    {
-		double vx = p.x - m_center.x;
-		double vy = p.y - m_center.y;
-		double vz = p.z - m_center.z;
-		
-		double pH = vx * m_normalH.x + vy * m_normalH.y + vz * m_normalH.z;
+		btVector3 v = p - m_center;		
+		double pH = v.dot(m_normalH);
 		
 		if (fabs(pH) > m_length2)
 		    return false;
 		
-		double pB1 = vx * m_normalB1.x + vy * m_normalB1.y + vz * m_normalB1.z;
-		double pB2 = vx * m_normalB2.x + vy * m_normalB2.y + vz * m_normalB2.z;
+		double pB1 = v.dot(m_normalB1);
+		double pB2 = v.dot(m_normalB2);
 		
 		return pB1 * pB2 < m_radius2;
 	    }
@@ -182,31 +172,28 @@ namespace collision_space
 	    virtual void updateInternalData(void)
 	    {
 		m_radius2 = m_radius * m_radius * m_scale * m_scale;
-		m_length2 = m_scale * m_length / 2.0;
+		m_length2 = m_scale * m_length / 2.0;		
+		m_center = m_pose.getOrigin();
 		
-		m_pose.getPosition(m_center);
+		m_normalH.setValue(btScalar(0.0), btScalar(0.0), btScalar(1.0));
+		m_normalH = m_pose * m_normalH;
 		
-		// this can probably be optimized by simply taking 
-		// the columns of the transform matrix 
-		m_normalH.x = m_normalH.y = 0.0; m_normalH.z = 1.0;
-		m_pose.applyToVector(m_normalH);
-		
-		m_normalB1.y = m_normalB1.z = 0.0; m_normalB1.x = 1.0;
-		m_pose.applyToVector(m_normalB1);
-		
-		m_normalB2.x = m_normalB2.z = 0.0; m_normalB2.y = 1.0;
-		m_pose.applyToVector(m_normalB2);
+		m_normalB1.setValue(btScalar(1.0), btScalar(0.0), btScalar(0.0));
+		m_normalB1 = m_pose * m_normalB1;
+
+		m_normalB2.setValue(btScalar(0.0), btScalar(1.0), btScalar(0.0));
+		m_normalB2 = m_pose * m_normalB2;
 	    }
 	    
-	    libTF::Position m_center;
-	    libTF::Vector   m_normalH;
-	    libTF::Vector   m_normalB1;
-	    libTF::Vector   m_normalB2;
+	    btVector3 m_center;
+	    btVector3 m_normalH;
+	    btVector3 m_normalB1;
+	    btVector3 m_normalB2;
 	    
-	    double          m_length;
-	    double          m_length2;	
-	    double          m_radius;	
-	    double          m_radius2;
+	    double    m_length;
+	    double    m_length2;	
+	    double    m_radius;	
+	    double    m_radius2;
 	};
 	
 	
@@ -222,23 +209,20 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Position &p) const 
+	    virtual bool containsPoint(const btVector3 &p) const 
 	    {
-		double vx = p.x - m_center.x;
-		double vy = p.y - m_center.y;
-		double vz = p.z - m_center.z;
-		
-		double pL = vx * m_normalL.x + vy * m_normalL.y + vz * m_normalL.z;
+		btVector3 v = p - m_center;
+		double pL = v.dot(m_normalL);
 		
 		if (fabs(pL) > m_length2)
 		    return false;
 		
-		double pW = vx * m_normalW.x + vy * m_normalW.y + vz * m_normalW.z;
+		double pW = v.dot(m_normalW);
 		
 		if (fabs(pW) > m_width2)
 		    return false;
 		
-		double pH = vx * m_normalH.x + vy * m_normalH.y + vz * m_normalH.z;
+		double pH = v.dot(m_normalH);
 		
 		if (fabs(pH) > m_height2)
 		    return false;
@@ -261,33 +245,32 @@ namespace collision_space
 		m_width2  = m_scale * m_width / 2.0;
 		m_height2 = m_scale * m_height / 2.0;
 		
-		m_pose.getPosition(m_center);
+		m_center = m_pose.getOrigin();
 		
-		m_normalH.x = m_normalH.y = 0.0; m_normalH.z = 1.0;
-		m_pose.applyToVector(m_normalH);
-		
-		m_normalL.y = m_normalL.z = 0.0; m_normalL.x = 1.0;
-		m_pose.applyToVector(m_normalL);
-		
-		m_normalW.x = m_normalW.z = 0.0; m_normalW.y = 1.0;
-		m_pose.applyToVector(m_normalW);
+		m_normalH.setValue(btScalar(0.0), btScalar(0.0), btScalar(1.0));
+		m_normalH = m_pose * m_normalH;
+
+		m_normalL.setValue(btScalar(1.0), btScalar(0.0), btScalar(0.0));
+		m_normalL = m_pose * m_normalL;
+
+		m_normalW.setValue(btScalar(0.0), btScalar(1.0), btScalar(0.0));
+		m_normalW = m_pose * m_normalW;
 	    }
 	    
-	    libTF::Position m_center;
-	    libTF::Vector   m_normalL;
-	    libTF::Vector   m_normalW;
-	    libTF::Vector   m_normalH;
+	    btVector3 m_center;
+	    btVector3 m_normalL;
+	    btVector3 m_normalW;
+	    btVector3 m_normalH;
 	    
-	    double                  m_length;
-	    double                  m_width;
-	    double                  m_height;	
-	    double                  m_length2;
-	    double                  m_width2;
-	    double                  m_height2;	
+	    double    m_length;
+	    double    m_width;
+	    double    m_height;	
+	    double    m_length2;
+	    double    m_width2;
+	    double    m_height2;	
 	};
 	
     }
 }
 
 #endif
-    

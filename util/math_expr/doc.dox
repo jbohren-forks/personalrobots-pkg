@@ -1,0 +1,9 @@
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+Here contains:
+ \li Symbolic expression interpretor (e.g. meval::EvaluateMathExpression)
+
+**/

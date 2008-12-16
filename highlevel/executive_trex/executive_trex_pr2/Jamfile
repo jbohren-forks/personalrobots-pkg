@@ -8,9 +8,11 @@ if ! $(executive_trex_pr2_READY) {
  # Input files
  local TestInputs = 
 		[ FDirName $(EXEC_HOME) wpc.0 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc.2 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) wpc.3 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) nav.0 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) arm.0 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) arm.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) arm.2 pr2.exec.nddl ]
@@ -18,6 +20,7 @@ if ! $(executive_trex_pr2_READY) {
 		[ FDirName $(EXEC_HOME) miles.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.2 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.3 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) miles_gazebo.3 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.4 pr2.exec.nddl ]
 	;
 

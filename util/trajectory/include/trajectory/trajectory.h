@@ -39,7 +39,7 @@
 #include <sstream>
 #include <map>
 
-#include <ros/node.h>
+#include "rosconsole/rosconsole.h"
 
 namespace trajectory
 {
@@ -148,7 +148,6 @@ namespace trajectory
     */
     int setTrajectory(const std::vector<double> &p, int numPoints);
 
-
     int setTrajectory(const std::vector<double> &p, const std::vector<double> &pdot, const std::vector<double> &time, int numPoints);
 
     int setMaxAcc(std::vector<double> max_acc);
@@ -158,7 +157,8 @@ namespace trajectory
       \brief Get the total time for the trajectory.
       \return the total time for the trajectory.
     */
-    inline double getTotalTime();
+    //inline double getTotalTime();
+    double getTotalTime();
 
     /*!
       \brief Sample the trajectory at a certain point in time.
@@ -205,13 +205,17 @@ namespace trajectory
 
     int getDuration(int index, double &duration);
 
+    int write(std::string filename, double dT);
+
+    protected:
+
+    std::string interp_method_; /** string representation of interpolation method */
+
     private:
 
     int num_points_; /** number of points in the trajectory */
  
     int dimension_; /** dimension of the trajectory */
-
-    std::string interp_method_; /** string representation of interpolation method */
 
     std::vector<TPoint> tp_; /** vector of TPoints in the trajectory */
 
@@ -329,6 +333,7 @@ namespace trajectory
 
     double calculateMinimumTimeCubic(const TPoint &start, const TPoint &end);
 
+    double blendTime(double aa,double bb,double cc);
 
   };
 }

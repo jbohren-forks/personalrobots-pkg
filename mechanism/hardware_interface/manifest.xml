@@ -3,6 +3,7 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes="API review in progress (Eric)"/>
 <url>http://pr.willowgarage.com</url>
 <depend package="stl_utils" />
 <export>

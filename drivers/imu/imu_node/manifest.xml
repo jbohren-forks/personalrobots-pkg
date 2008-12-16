@@ -4,10 +4,12 @@
   </description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="3dmgx2_driver"/>
   <depend package="self_test"/>
+  <depend package="diagnostic_updater"/>
   <depend package="tf"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

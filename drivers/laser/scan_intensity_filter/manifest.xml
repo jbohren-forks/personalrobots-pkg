@@ -7,6 +7,7 @@ This is a package to strip out range readings from a laser scan based on intensi
 </description>
 <author>Vijay Pradeep</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
 </package>

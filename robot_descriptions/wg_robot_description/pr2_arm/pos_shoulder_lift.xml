@@ -1,7 +1,0 @@
-  <controller name="shoulder_lift_controller" topic="shoulder_lift_controller" type="JointPositionControllerNode">
-    <filter smoothing_factor="0.5" />
-    <joint name="shoulder_pitch_right_joint">
-      <pid p="21" i="950" d="0.03" iClamp="1" />
-      <!--<pid p="10" i="0" d="0" iClamp="0" />-->
-    </joint>
-  </controller>

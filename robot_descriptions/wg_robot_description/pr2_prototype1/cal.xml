@@ -7,6 +7,6 @@
   <base_calibrator />
   <head_calibrator />
   <torso_calibrator />
-  <tilting_laser_calibrator name="tilt_laser" />
+  <tilting_laser_calibrator name="laser_tilt" />
 
 </controllers>

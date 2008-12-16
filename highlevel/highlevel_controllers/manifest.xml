@@ -6,7 +6,9 @@
  </description>
  <author>Conor McGann</author>
  <license>BSD</license>
+ <review status="unreviewed" notes=""/>
  <url>http://pr.willowgarage.com</url>
+
  <depend package="roscpp"/>
  <depend package="rosthread"/>
  <depend package="rosconsole"/>
@@ -15,22 +17,13 @@
  <depend package="robot_srvs"/>
  <depend package="pr2_mechanism_controllers"/>
  <depend package="pr2_msgs"/>
- <depend package="kinematic_planning"/>
  <depend package="trajectory_rollout"/>
- <depend package="laser_scan_utils" />
+ <depend package="laser_scan" />
  <depend package="costmap_2d"/>
- <depend package="rosTF"/>
+ <depend package="tf"/>
  <depend package="sbpl"/>
  <depend package="sbpl_util"/>
 
- <!-- for running all examples from test directory we further need: -->
- <depend package="rosstage"/>
- <depend package="map_server"/>
- <depend package="fake_localization"/>
- <depend package="nav_view"/>
- <depend package="gazebo_plugin"/>
-
- 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
  </export>

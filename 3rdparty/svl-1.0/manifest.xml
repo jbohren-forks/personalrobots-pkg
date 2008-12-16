@@ -4,7 +4,8 @@
   </description>
   <author>Stephen Gould, with ROS wrapping by Morgan Quigley</author>
   <license>BSD</license>
-  <depend package="opencv"/>
+  <review status="3rdparty" notes=""/>
+  <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>

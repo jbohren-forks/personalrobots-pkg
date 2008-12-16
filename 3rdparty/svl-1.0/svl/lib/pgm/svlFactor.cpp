@@ -31,7 +31,8 @@
 **
 *****************************************************************************/
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 #include <cassert>
 #include <iostream>
 #include <vector>

@@ -11,20 +11,20 @@
 
 
   <macro name="pr2_wheel" params="suffix parent reflect">
-    <joint name="wheel_${suffix}_joint" type="revolute">
-      <axis xyz=" 0 1 0 " />
+    <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
+      <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="5" />
+      <limit effort="100" velocity="100" k_velocity="10" />
       <calibration values="1.5 -1" />
       <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
-    <link name="wheel_${suffix}">
-      <parent name="${parent}" />
-      <joint name="wheel_${suffix}_joint" />
+    <link name="${parent}_${suffix}_wheel_link">
+      <parent name="${parent}_rotation_link" />
+      <joint name="${parent}_${suffix}_wheel_joint" />
       <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
       <inertial>
-        <mass value="0.44036" />
+        <mass value="0.44036" /> <!-- check jmh 20081205 -->
         <com xyz=" 0 0 0 " />
         <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
                   iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
@@ -33,16 +33,16 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <!-- TODO should be different for left and right wheel-->
-          <elem key="material">Gazebo/Red</elem>
+          <elem key="material">PR2/${parent}_${suffix}_wheel_link</elem>
         </map>
-        <geometry name="pr2_wheel_mesh_file">
-          <mesh filename="wheel_right" />
+        <geometry name="${parent}_${suffix}_wheel_visual">
+          <mesh filename="wheel" />
         </geometry>
 
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_wheel_collision_geom">
+        <geometry name="${parent}_${suffix}_wheel_collision">
           <cylinder radius="${wheel_radius}" length="${wheel_length}" />
         </geometry>
         <map name="friction_coefficients" flag="gazebo">
@@ -52,26 +52,26 @@
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="wheel_${suffix}_trans">
-      <actuator name="wheel_${suffix}_motor" />
-      <joint name="wheel_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
+      <actuator name="${parent}_${suffix}_wheel_motor" />
+      <joint name="${parent}_${suffix}_wheel_joint" />
       <mechanicalReduction>${reflect*75.05}</mechanicalReduction>
     </transmission>
   </macro>
 
   <macro name="pr2_caster" params="suffix parent *origin">
-    <joint name="caster_${suffix}_joint" type="revolute">
+    <joint name="${suffix}_caster_rotation_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="100" k_velocity="10" />
       <calibration values="1.5 -1" />
-      <limit  effort="100" velocity="5" />
-      <joint_properties damping="1.0" friction="0.0" />
+      <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
-    <link name="caster_${suffix}">
-      <parent name="${parent}" />
+    <link name="${suffix}_caster_rotation_link">
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
-      <joint name="caster_${suffix}_joint" />
+      <joint name="${suffix}_caster_rotation_joint" />
 
       <inertial>
         <mass value="3.473082" />
@@ -85,28 +85,28 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_caster_mesh_file">
+        <geometry name="${suffix}_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
         </geometry>
       </visual>
 
       <collision>
-        <origin xyz="0 0 0"
+        <origin xyz="0 0 0.07"
                 rpy="0.0 0.0 0.0 " />
-        <geometry name="caster_collision_geom">
+        <geometry name="${suffix}_caster_rotation_collision">
           <box size="0.192 0.164 0.013" />
         </geometry>
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="caster_${suffix}_trans">
-      <actuator name="caster_${suffix}_motor" />
-      <joint name="caster_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${suffix}_caster_rotation_trans">
+      <actuator name="${suffix}_caster_rotation_motor" />
+      <joint name="${suffix}_caster_rotation_joint" />
       <mechanicalReduction>-75.05</mechanicalReduction>
     </transmission>
 
-    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_l" reflect="1" />
-    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_r" reflect="-1" />
+    <pr2_wheel parent="${suffix}_caster" suffix="l" reflect="1" />
+    <pr2_wheel parent="${suffix}_caster" suffix="r" reflect="-1" />
   </macro>
 
 
@@ -120,13 +120,13 @@
   <property name="base_size_z" value="0.26" />
 
 
-  <macro name="pr2_base" params="name">
+  <macro name="pr2_base" params="name *origin">
 
     <joint name="${name}_joint" type="planar" />
 
-    <link name="${name}">
+    <link name="${name}_link">
       <parent name="world" />
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <insert_block name="origin" />
       <joint name="${name}_joint" />
 
       <inertial>
@@ -141,17 +141,31 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_base_mesh_file">
+        <geometry name="${name}_visual">
           <mesh filename="base" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
-        <geometry name="base_collision_geom">
+        <geometry name="${name}_collision">
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
       </collision>
+      <map name="bumper_sensor" flag="gazebo">
+        <verbatim key="sensor_base_bumper">
+          <sensor:contact name="${name}_contact_sensor">
+            <geom>${name}_collision</geom>
+            <updateRate>100.0</updateRate>
+            <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libRos_Bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>100.0</updateRate>
+              <bumperTopicName>${name}_bumper</bumperTopicName>
+              <interface:bumper name="${name}_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
     </link>
 
 
@@ -162,8 +176,8 @@
 
     <sensor name="base_laser" type="laser">
       <calibration filename="calib_filename" />
-      <parent name="${name}" />
-      <origin xyz="0.275 0 0.182" rpy="0 0 0" />
+      <parent name="${name}_link" />
+      <origin xyz="0.275 0 0.132" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
@@ -176,37 +190,37 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/PioneerBody</elem>
         </map>
-        <geometry name="pr2_base_laser_geom">
+        <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0.12" rpy="0 0 0" />
-        <geometry name="base_laser_collision_geom">
+        <geometry name="base_laser_collision">
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
 
       <map name="sensor" flag="gazebo">
-        <verbatim key="sensor_ray">
+        <verbatim key="sensor_base_laser_ray">
           <sensor:ray name="base_laser">
-            <rayCount>683</rayCount>
-            <rangeCount>683</rangeCount>
+            <rayCount>640</rayCount>
+            <rangeCount>640</rangeCount>
             <laserCount>1</laserCount>
             <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
             <displayRays>false</displayRays>
 
-            <minAngle>-90</minAngle>
-            <maxAngle>90</maxAngle>
+            <minAngle>-100</minAngle> <!-- scans own arms if -135~+135 -->
+            <maxAngle>100</maxAngle>
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
-            <updateRate>10.0</updateRate>
+            <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
-	      <updateRate>10</updateRate>
+	      <updateRate>20.0</updateRate>
 	      <topicName>base_scan</topicName>
 	      <frameName>base_laser</frameName>
 	      <interface:laser name="ros_base_laser_iface" />
@@ -217,18 +231,34 @@
     </sensor>
 
 
-    <pr2_caster suffix="front_left" parent="${name}">
+    <pr2_caster suffix="fl" parent="${name}">
       <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="front_right" parent="${name}">
+    <pr2_caster suffix="fr" parent="${name}">
       <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="rear_left" parent="${name}">
+    <pr2_caster suffix="bl" parent="${name}">
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="rear_right" parent="${name}">
+    <pr2_caster suffix="br" parent="${name}">
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_base_laser_ray">
+        <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>base_link</bodyName>
+          <topicName>base_pose_ground_truth</topicName>
+          <gaussianNoise>0.01</gaussianNoise>
+          <frameName>map</frameName>
+          <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+          <rpyOffsets>0 0 0</rpyOffsets>
+          <interface:position name="p3d_base_position"/>
+        </controller:P3D>
+      </verbatim>
+    </map>
 
   </macro>
 
@@ -239,13 +269,13 @@
   <macro name="caster_calibrator" params="suffix">
     <controller type="CasterCalibrationControllerNode"
                 name="cal_caster_${suffix}" topic="cal_caster_${suffix}">
-      <calibrate joint="caster_${suffix}_joint"
-                 actuator="caster_${suffix}_motor"
-                 transmission="caster_${suffix}_trans"
+      <calibrate joint="${suffix}_caster_rotation_joint"
+                 actuator="${suffix}_caster_rotation_motor"
+                 transmission="${suffix}_caster_rotation_trans"
                  velocity="1.0" />
-      <joints caster="caster_${suffix}_joint"
-              wheel_l="wheel_${suffix}_l_joint"
-              wheel_r="wheel_${suffix}_r_joint" />
+      <joints caster="${suffix}_caster_rotation_joint"
+              wheel_l="${suffix}_caster_l_wheel_joint"
+              wheel_r="${suffix}_caster_r_wheel_joint" />
       <caster_pid p="6" i="0" d="0" iClamp="0" />
       <wheel_pid p="4" i="0" d="0" iClamp="0" />
     </controller>
@@ -253,10 +283,10 @@
 
 
   <macro name="base_calibrator">
-    <caster_calibrator suffix="front_left" />
-    <caster_calibrator suffix="front_right" />
-    <caster_calibrator suffix="rear_left" />
-    <caster_calibrator suffix="rear_right" />
+    <caster_calibrator suffix="fl" />
+    <caster_calibrator suffix="fr" />
+    <caster_calibrator suffix="bl" />
+    <caster_calibrator suffix="br" />
   </macro>
 
 

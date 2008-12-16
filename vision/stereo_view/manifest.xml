@@ -4,10 +4,12 @@
   </description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
   <depend package="image_msgs"/>
   <depend package="roscpp"/>
   <depend package="topic_synchronizer"/>
+  <depend package="color_calib"/>
 </package>

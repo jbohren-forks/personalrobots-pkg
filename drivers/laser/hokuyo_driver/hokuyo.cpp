@@ -53,16 +53,16 @@
 
 
 //! Helper function for querying the system time
-static unsigned long long timeHelper()
+static uint64_t timeHelper()
 {
 #if POSIX_TIMERS > 0
   struct timespec curtime;
   clock_gettime(CLOCK_REALTIME, &curtime);
-  return (unsigned long long)(curtime.tv_sec) * 1000000000 + (unsigned long long)(curtime.tv_nsec);  
+  return (uint64_t)(curtime.tv_sec) * 1000000000 + (uint64_t)(curtime.tv_nsec);  
 #else
   struct timeval timeofday;
   gettimeofday(&timeofday,NULL);
-  return (unsigned long long)(timeofday.tv_sec) * 1000000000 + (unsigned long long)(timeofday.tv_usec) * 1000;  
+  return (uint64_t)(timeofday.tv_sec) * 1000000000 + (uint64_t)(timeofday.tv_usec) * 1000;  
 #endif
 }
 
@@ -70,7 +70,7 @@ static unsigned long long timeHelper()
 ///////////////////////////////////////////////////////////////////////////////
 hokuyo::Laser::Laser() :
                       dmin_(0), dmax_(0), ares_(0), amin_(0), amax_(0), afrt_(0), rate_(0),
-                      wrapped_(0), last_time_(0), offset_(0),
+                      wrapped_(0), last_time_(0), time_repeat_count_(0), offset_(0),
                       laser_port_(NULL), laser_fd_(-1)
 { }
 
@@ -85,7 +85,7 @@ hokuyo::Laser::~Laser ()
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo::Laser::open(const char * port_name, bool use_serial, int baud)
+hokuyo::Laser::open(const char * port_name)
 {
   if (portOpen())
     close();
@@ -101,33 +101,18 @@ hokuyo::Laser::open(const char * port_name, bool use_serial, int baud)
     if (laser_fd_ == -1)
       HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to get file descriptor --  error = %d: %s", errno, strerror(errno));
 
-    int bauds[] = {B115200, B57600, B19200};
+    // Settings for USB?
+    struct termios newtio;
+    memset (&newtio, 0, sizeof (newtio));
+    newtio.c_cflag = CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+    newtio.c_lflag = ICANON;
     
-    if (use_serial)
-    {
-      int i = 0;
-      for (i = 0; i < 3; i++) {
-        if (changeBaud(bauds[i], baud, 100))
-          break;
-      }
-      if (i == 3)
-        HOKUYO_EXCEPT(hokuyo::Exception, "Failed to connect at any baud rate");
-    }
-    else
-    {
-      // Settings for USB?
-      struct termios newtio;
-      memset (&newtio, 0, sizeof (newtio));
-      newtio.c_cflag = CS8 | CLOCAL | CREAD;
-      newtio.c_iflag = IGNPAR;
-      newtio.c_oflag = 0;
-      newtio.c_lflag = ICANON;
-
-      // activate new settings
-      tcflush (laser_fd_, TCIFLUSH);
-      tcsetattr (laser_fd_, TCSANOW, &newtio);
-      usleep (200000);
-    }
+    // activate new settings
+    tcflush (laser_fd_, TCIFLUSH);
+    tcsetattr (laser_fd_, TCSANOW, &newtio);
+    usleep (200000);
 
     // Just in case a previous failure mode has left our Hokuyo
     // spewing data, we send the TM2 and QT commands to be safe.
@@ -203,6 +188,20 @@ hokuyo::Laser::sendCmd(const char* cmd, int timeout)
     return (buf[0] - '0')*10 + (buf[1] - '0');
   else
     HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Hokuyo error code returned. Cmd: %s --  Error: %s", cmd, buf);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void
+hokuyo::Laser::getConfig(LaserConfig& config)
+{
+  config.min_angle  =  (amin_ - afrt_) * (2.0*M_PI)/(ares_);
+  config.max_angle  =  (amax_ - afrt_) * (2.0*M_PI)/(ares_);
+  config.ang_increment =  (2.0*M_PI)/(ares_);
+  config.time_increment = (60.0)/(double)(rate_ * ares_);
+  config.scan_time = 60.0/((double)(rate_));
+  config.min_range  =  dmin_ / 1000.0;
+  config.max_range  =  dmax_ / 1000.0;
 }
 
 
@@ -325,68 +324,8 @@ hokuyo::Laser::querySensorConfig()
   return;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
-bool
-hokuyo::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
-{
-  if (!portOpen())
-    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
-
-  struct termios newtio;
-  int fd;
-  fd = fileno (laser_port_);
-
-  if (tcgetattr (fd, &newtio) < 0)
-    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
-
-  cfmakeraw (&newtio);
-  cfsetispeed (&newtio, curr_baud);
-  cfsetospeed (&newtio, curr_baud);
-
-  if (tcsetattr (fd, TCSAFLUSH, &newtio) < 0 )
-    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
-
-  char buf[100];
-  memset (buf,0,sizeof (buf));
-  
-  switch (new_baud)
-  {
-  case B19200:
-    sprintf(buf,"%s","S019200");
-    break;
-  case B57600:
-    sprintf(buf,"%s","S057600");
-    break;
-  case B115200:
-    sprintf(buf,"%s","S115200");
-    break;
-  default:
-    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "unknown baud rate: %d",new_baud);
-  }
-  
-  try
-  {
-    if (sendCmd(buf, timeout) != 0) {
-      return false;
-    }
-  } catch (hokuyo::TimeoutException& e) { }
-
-  if (tcgetattr (fd, &newtio) < 0)
-    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
-
-  cfmakeraw (&newtio);
-  cfsetispeed (&newtio, new_baud);
-  cfsetospeed (&newtio, new_baud);
-
-  if (tcsetattr (fd, TCSAFLUSH, &newtio) < 0 )
-    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
-
-  usleep (200000);
-  return (0);
-
-}
-
-
 bool
 hokuyo::Laser::checkSum(const char* buf, int buf_len)
 {
@@ -401,7 +340,8 @@ hokuyo::Laser::checkSum(const char* buf, int buf_len)
 }
 
 
-unsigned long long
+///////////////////////////////////////////////////////////////////////////////
+uint64_t
 hokuyo::Laser::readTime(int timeout)
 {
   char buf[100];
@@ -413,19 +353,32 @@ hokuyo::Laser::readTime(int timeout)
   unsigned int laser_time = ((buf[0]-0x30) << 18) | ((buf[1]-0x30) << 12) | ((buf[2]-0x30) << 6) | (buf[3] - 0x30);
 
   if (laser_time == last_time_)
-    fprintf(stderr, "This timestamp is same as the last timestamp.\nSomething is probably going wrong. Try decreasing data rate.");
-  else if (laser_time < last_time_)
+  {
+    if (++time_repeat_count_ > 1)
+    {
+      HOKUYO_EXCEPT_ARGS(hokuyo::RepeatedTimeException, "The timestamp has not changed for %d reads", time_repeat_count_);
+    }
+  }
+  else
+  {
+    time_repeat_count_ = 0;
+  }
+
+  if (laser_time < last_time_)
     wrapped_++;
   
   last_time_ = laser_time;
   
-  return (unsigned long long)((wrapped_ << 24) | laser_time)*(unsigned long long)(1000000);
+  return (uint64_t)((wrapped_ << 24) | laser_time)*(uint64_t)(1000000);
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo::Laser::readData(hokuyo::LaserScan* scan, bool has_intensity, int timeout)
+hokuyo::Laser::readData(hokuyo::LaserScan& scan, bool has_intensity, int timeout)
 {
-  scan->num_readings = 0;
+  scan.ranges.clear();
+  scan.intensities.clear();
 
   int data_size = 3;
   if (has_intensity)
@@ -435,9 +388,12 @@ hokuyo::Laser::readData(hokuyo::LaserScan* scan, bool has_intensity, int timeout
 
   int ind = 0;
 
-  scan->self_time_stamp = readTime(timeout);
+  scan.self_time_stamp = readTime(timeout);
 
   int bytes;
+
+  float range;
+  float intensity;
 
   for (;;)
   {
@@ -454,19 +410,21 @@ hokuyo::Laser::readData(hokuyo::LaserScan* scan, bool has_intensity, int timeout
     // Read as many ranges as we can get
     for (int j = 0; j < bytes - (bytes % data_size); j+=data_size)
     {
-      if (scan->num_readings < MAX_READINGS)
+      if (scan.ranges.size() < MAX_READINGS)
       {
-        scan->ranges[scan->num_readings] = (((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30)) / 1000.0;
-	
+        range = (((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30)) / 1000.0;
+	scan.ranges.push_back(range);
+
         if (has_intensity)
-	  scan->intensities[scan->num_readings] = (((buf[j+3]-0x30) << 12) | ((buf[j+4]-0x30) << 6) | (buf[j+5]-0x30));
-	else
-	  scan->intensities[scan->num_readings] = 0;
-	
-	scan->num_readings++;
+        {
+	  intensity = (((buf[j+3]-0x30) << 12) | ((buf[j+4]-0x30) << 6) | (buf[j+5]-0x30));
+          scan.intensities.push_back(intensity);
+        }
       }
       else
+      {
         HOKUYO_EXCEPT(hokuyo::CorruptedDataException, "Got more readings than expected");
+      }
     }
     // Shuffle remaining bytes to front of buffer to get them on the next loop
     ind = 0;
@@ -478,16 +436,18 @@ hokuyo::Laser::readData(hokuyo::LaserScan* scan, bool has_intensity, int timeout
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo::Laser::pollScan(hokuyo::LaserScan* scan, double min_ang, double max_ang, int cluster, int timeout)
+hokuyo::Laser::pollScan(hokuyo::LaserScan& scan, double min_ang, double max_ang, int cluster, int timeout)
 {
   if (!portOpen())
     HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   int status;
 
-  // Always set num_readings to 0 so we can return easily in case of erro
-  scan->num_readings = 0;
+  // Always clear ranges/intensities so we can return easily in case of erro
+  scan.ranges.clear();
+  scan.intensities.clear();
 
+  // clustering of 0 and 1 are actually the same
   if (cluster == 0)
     cluster = 1;
   
@@ -500,26 +460,26 @@ hokuyo::Laser::pollScan(hokuyo::LaserScan* scan, double min_ang, double max_ang,
   
   status = sendCmd(cmdbuf, timeout);
   
-  scan->system_time_stamp = timeHelper() + offset_;
+  scan.system_time_stamp = timeHelper() + offset_;
   
   if (status != 0)
     return status;
   
   // Populate configuration
-  scan->config.min_angle  =  (min_i - afrt_) * (2.0*M_PI)/(ares_);
-  scan->config.max_angle  =  (max_i - afrt_) * (2.0*M_PI)/(ares_);
-  scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares_);
-  scan->config.time_increment = (60.0)/(double)(rate_ * ares_);
-  scan->config.scan_time = 0.0;
-  scan->config.min_range  =  dmin_ / 1000.0;
-  scan->config.max_range  =  dmax_ / 1000.0;
+  scan.config.min_angle  =  (min_i - afrt_) * (2.0*M_PI)/(ares_);
+  scan.config.max_angle  =  (max_i - afrt_) * (2.0*M_PI)/(ares_);
+  scan.config.ang_increment =  cluster*(2.0*M_PI)/(ares_);
+  scan.config.time_increment = (60.0)/(double)(rate_ * ares_);
+  scan.config.scan_time = 0.0;
+  scan.config.min_range  =  dmin_ / 1000.0;
+  scan.config.max_range  =  dmax_ / 1000.0;
   
   readData(scan, false, timeout);
   
-  long long inc = (long long)(min_i * scan->config.time_increment * 1000000000);
+  long long inc = (long long)(min_i * scan.config.time_increment * 1000000000);
   
-  scan->system_time_stamp += inc;
-  scan->self_time_stamp += inc;
+  scan.system_time_stamp += inc;
+  scan.self_time_stamp += inc;
   
   return 0;
 }
@@ -572,13 +532,14 @@ hokuyo::Laser::requestScans(bool intensity, double min_ang, double max_ang, int 
 
 
 int
-hokuyo::Laser::serviceScan(hokuyo::LaserScan* scan, int timeout)
+hokuyo::Laser::serviceScan(hokuyo::LaserScan& scan, int timeout)
 {
   if (!portOpen())
     HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
-  // Always set num_readings to 0 so we can return easily in case of error
-  scan->num_readings = 0;
+  // Always clear ranges/intensities so we can return easily in case of erro
+  scan.ranges.clear();
+  scan.intensities.clear();
 
   char buf[100];
 
@@ -595,7 +556,7 @@ hokuyo::Laser::serviceScan(hokuyo::LaserScan* scan, int timeout)
 
   do {
     ind = laserReadlineAfter(buf, 100, "M",timeout);
-    scan->system_time_stamp = timeHelper() + offset_;
+    scan.system_time_stamp = timeHelper() + offset_;
 
     if (ind[0] == 'D')
       intensity = false;
@@ -621,20 +582,20 @@ hokuyo::Laser::serviceScan(hokuyo::LaserScan* scan, int timeout)
     
   } while(status != 99);
 
-  scan->config.min_angle  =  (min_i - afrt_) * (2.0*M_PI)/(ares_);
-  scan->config.max_angle  =  (max_i - afrt_) * (2.0*M_PI)/(ares_);
-  scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares_);
-  scan->config.time_increment = (60.0)/(double)(rate_ * ares_);
-  scan->config.scan_time = (60.0 * (skip + 1))/((double)(rate_));
-  scan->config.min_range  =  dmin_ / 1000.0;
-  scan->config.max_range  =  dmax_ / 1000.0;
+  scan.config.min_angle  =  (min_i - afrt_) * (2.0*M_PI)/(ares_);
+  scan.config.max_angle  =  (max_i - afrt_) * (2.0*M_PI)/(ares_);
+  scan.config.ang_increment =  cluster*(2.0*M_PI)/(ares_);
+  scan.config.time_increment = (60.0)/(double)(rate_ * ares_);
+  scan.config.scan_time = (60.0 * (skip + 1))/((double)(rate_));
+  scan.config.min_range  =  dmin_ / 1000.0;
+  scan.config.max_range  =  dmax_ / 1000.0;
 
   readData(scan, intensity, timeout);
 
-  long long inc = (long long)(min_i * scan->config.time_increment * 1000000000);
+  long long inc = (long long)(min_i * scan.config.time_increment * 1000000000);
 
-  scan->system_time_stamp += inc;
-  scan->self_time_stamp += inc;
+  scan.system_time_stamp += inc;
+  scan.self_time_stamp += inc;
 
   return 0;
 }
@@ -688,8 +649,8 @@ hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int c
 
   offset_ = 0;
 
-  unsigned long long comp_time = 0;
-  unsigned long long laser_time = 0;
+  uint64_t comp_time = 0;
+  uint64_t laser_time = 0;
   long long diff_time = 0;
   long long drift_time = 0;
   long long tmp_offset1 = 0;
@@ -705,14 +666,21 @@ hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int c
     usleep(1000);
     sendCmd("TM1",timeout);
     comp_time = timeHelper();
-    laser_time = readTime();
+    try 
+    {
+      laser_time = readTime();
 
-    diff_time = comp_time - laser_time;
+      diff_time = comp_time - laser_time;
 
-    tmp_offset1 += diff_time / count;
+      tmp_offset1 += diff_time / count;
+    } catch (hokuyo::RepeatedTimeException &e)
+    {
+      // We expect to get Repeated Time's when hammering on the time server
+      continue;
+    }
   }
 
-  unsigned long long start_time = timeHelper();
+  uint64_t start_time = timeHelper();
   usleep(5000000);
   sendCmd("TM1;a",timeout);
   sendCmd("TM1;b",timeout);
@@ -734,7 +702,7 @@ hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int c
   {
     try
     {
-      serviceScan(&scan, 1000);
+      serviceScan(scan, 1000);
     } catch (hokuyo::CorruptedDataException &e) {
       continue;
     }
