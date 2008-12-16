@@ -92,6 +92,7 @@ Offers (name/type):
 #include <stdlib.h>
 
 #include "ros/node.h"
+#include "ros/publisher.h"
 #include "map_server/image_loader.h"
 #include "std_msgs/MapMetaData.h"
 
@@ -117,7 +118,7 @@ class MapServer : public ros::node
      */
     std_srvs::StaticMap::response map_resp_;
 
-    void metadataSubscriptionCallback(ros::pub_sub_conn* conn)
+    void metadataSubscriptionCallback(const ros::PublisherPtr& pub)
     {
       publish( "map_metadata", meta_data_message_ );
     }

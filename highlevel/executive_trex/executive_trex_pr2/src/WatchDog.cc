@@ -16,7 +16,7 @@ namespace TREX{
       while(true){
 	if(!watchdogOK_){
 	  highlevel_controllers::Ping shutdownMsg;
-	  publish<highlevel_controllers::Ping>("highlevel_controllers/shutdown", shutdownMsg);
+	  publish("highlevel_controllers/shutdown", shutdownMsg);
 	}
 
 	watchdogOK_ = false;
@@ -41,7 +41,7 @@ namespace TREX{
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv); 
+  ros::init(argc,argv);
 
   TREX::Watchdog node;
 

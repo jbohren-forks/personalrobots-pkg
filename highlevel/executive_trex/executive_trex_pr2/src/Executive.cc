@@ -2,10 +2,10 @@
  * TREX Process
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of the <ORGANIZATION> nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,7 +49,7 @@ $ exec_trex_g_rt cfgFile
 
 @param cfgFile Is the TREX configuration file which defines initial inputs and goals.
 
-@todo 
+@todo
 
 @par Example
 
@@ -101,7 +101,7 @@ Publishes to (name/type):
 #include "TokenVariable.hh"
 #include "Utilities.hh"
 
-// TREX Includes 
+// TREX Includes
 
 // Requirements for watchdog
 #include <highlevel_controllers/Ping.h>
@@ -151,12 +151,12 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive() 
+  Executive::Executive()
     : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(isArg(argc, argv, "--playback"))
   {
-    s_id = m_id; 
+    s_id = m_id;
     m_refCount = 0;
-  
+
     // ROS Parameters for running the agent
     double ping_frequency(1.0);
     std::string input_file;
@@ -213,7 +213,7 @@ namespace TREX {
 
     // Set up  watchdog thread message generation
     ros::node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
-    ros::thread::member_thread::startMemberFunctionThread(this, &Executive::watchDogLoop); 
+    ros::thread::member_thread::startMemberFunctionThread(this, &Executive::watchDogLoop);
 
     ROS_INFO("Executive created.\n");
   }
@@ -249,7 +249,7 @@ namespace TREX {
   void Executive::run(){
     if (playback_) {
       ROS_INFO("Stepping the executive.\n");
-      agent_clock_->doStart();    
+      agent_clock_->doStart();
       TREX::LogManager::instance().handleInit();
       while (!((TREX::PlaybackClock*)agent_clock_)->isTimedOut()) {
 	if (((TREX::PlaybackClock*)agent_clock_)->isAtGoalTick()) {
@@ -273,7 +273,7 @@ namespace TREX {
   void Executive::watchDogLoop(){
     highlevel_controllers::Ping pingMsg;
     while(!Agent::terminated()){
-      publish<highlevel_controllers::Ping>("trex/ping", pingMsg);
+      publish("trex/ping", pingMsg);
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
     }
   }

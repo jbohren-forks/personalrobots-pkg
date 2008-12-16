@@ -28,7 +28,7 @@ namespace TREX{
     /**
      * Releases a reference to the singleton.
      */
-    static void release();    
+    static void release();
 
     Executive();
 
@@ -39,7 +39,7 @@ namespace TREX{
      */
     void run();
 
-    template<class T> 
+    template<class T>
     void registerPublisher(const std::string &topic, size_t max_queue){
       ros::node::advertise<T>(topic, max_queue);
     }
@@ -48,14 +48,14 @@ namespace TREX{
     void registerSubscriber(const std::string &_topic, M &_msg, void (T::*fp)(), T* obj, int max_queue){
       ros::node::subscribe(_topic, _msg, fp, obj, max_queue);
     }
-    
+
     template<class M>
     void publishMsg(const std::string &_topic, M &msg){
-      ros::node::publish<M>(_topic, msg);
+      ros::node::publish(_topic, msg);
     }
-    
+
   private:
-    
+
     /**
      * Adds a reference
      */
