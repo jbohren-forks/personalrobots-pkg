@@ -1,4 +1,4 @@
-#include <cxcore.h>
+#include <opencv/cxcore.h>
 #include "LevMarqTransformDispSpace.h"
 #include "CvMatUtils.h"
 #include "CvMat3X3.h"
@@ -186,6 +186,7 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 	if (numPoints != xyzs1->rows) {
 		cerr << "Fatal Error, num of points unmatched in input"<<endl;
 	}
+
 
 	double delta = defDeltaForNumericDeriv;
 
