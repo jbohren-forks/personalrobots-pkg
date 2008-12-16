@@ -62,13 +62,7 @@ public:
     {
 
 	// Set ROS time:
-	rostools::Time tm;
-	tm.rostime.sec  = 1;
-	tm.rostime.nsec = 0;
-	//	tm.header.frame_id = "base"; 
-	// Do I need to set this?
-	publish("time", tm);
-		
+      ros::Time tm = ros::Time::now();
 
 	// Send a transform
 	// 'map' is assumed to be the fixed frame in ROS, right?
@@ -76,14 +70,14 @@ public:
 	t.setIdentity();
 	
 	//	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, tm.rostime, "base", "map"));
-	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, tm.rostime, "base", "map"));
+	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, tm, "base", "map"));
 	sleep(1);
 	
 
 	// send my marker:
 	std_msgs::VisualizationMarker mk;
 
-	mk.header.stamp = tm.rostime;
+	mk.header.stamp = tm;
 	
 	mk.header.frame_id = "map";
 
@@ -102,7 +96,7 @@ public:
 	mk.yScale = 10;
 	mk.zScale = 10;
 		
-	mk.alpha = 0.1;
+	mk.alpha = 150;
 	mk.r = 100;
 	mk.g = 100;
 	mk.b = 250;
