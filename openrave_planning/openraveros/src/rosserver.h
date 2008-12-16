@@ -854,7 +854,6 @@ public:
             if( !GetEnv()->SetCollisionOptions(req.request_contacts ? CO_Contacts : 0) )
                 RAVELOG_WARNA("failed to set collision options\n");
 
-            int index = 0;
             FOREACHC(itray, req.rays) {
                 RAY r;
                 r.pos = Vector(itray->position[0], itray->position[1], itray->position[2]);

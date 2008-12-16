@@ -242,11 +242,10 @@ public:
         ROS_ASSERT(!_penvViewer);
 
         _strviewer = viewer;
+        if( viewer.size() == 0 || !penv )
+            return false;
+            
         _penvViewer = penv;
-        
-        if( viewer.size() == 0 || !_penvViewer )
-            return true;
-
         _conditionViewer.wait(lock);
         return !!_pviewer;
     }
@@ -281,7 +280,12 @@ private:
                 if( !!_pviewer ) {
                     _penvViewer->AttachViewer(_pviewer.get());
                     _pviewer->ViewerSetSize(1024,768);
+                    usleep(100000); // give it some time to initialize
                 }
+
+                if( !_pviewer )
+                    _penvViewer = NULL;
+
                 _conditionViewer.notify_all();
 
                 if( !_pviewer )
