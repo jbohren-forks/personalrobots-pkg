@@ -66,7 +66,7 @@ void do_stereo_so(uint8_t *lim, uint8_t *rim, // input feature images
 	  )
 {
 
-xwin = 7; //bad hack to deal with small window sizes (e.g. 3x3)
+xwin = 3; //bad hack to deal with small window sizes (e.g. 3x3)
 
 int maxdisp = dlen;
 int r = (xwin-1)/2;
@@ -81,11 +81,11 @@ unsigned char *R = rim;
 //short int* disp = disp;
 	
 //Parameters for regularization
-int pi2;
-int pi2a = tfilter_thresh*4;	
-int pi2b = tfilter_thresh;
-int pi1 = tfilter_thresh/2;
-int Tp = 10;
+int pi2 = tfilter_thresh*4;
+//int pi2a = tfilter_thresh*4;	
+//int pi2b = tfilter_thresh;
+int pi1 = tfilter_thresh;
+//int Tp = 10;
 
 //temp variables
 int x,y,d,i,j;
@@ -112,11 +112,11 @@ int da, db, s1, s2, s3;
 //data structured for Scanline Optimization
 int **F;
 int **B;
-//int **raw;
-int *diff;
+
+//int *diff;
 F = (int **)calloc(w, sizeof(int *));
 B = (int **)calloc(w, sizeof(int *));
-diff = (int *)calloc(w, sizeof(int));
+//diff = (int *)calloc(w, sizeof(int));
 
 for(x=0; x<w; x++){
 	F[x] = (int *)calloc(maxdisp, sizeof(int));
@@ -190,8 +190,8 @@ for(y=r+1; y<h-r; y++){
 	}//x to compute ACC
 		
 	//compute intensity edge (used in the currently adopted modified Potts model) 
-	for(x=maxdisp; x<w; x++)
-		diff[x] = abs(L[w*y+x] - L[w*y+x-1]);
+	//for(x=maxdisp; x<w; x++)
+	//	diff[x] = abs(L[w*y+x] - L[w*y+x-1]);
 
 	//FORWARD
 	//Border
@@ -200,9 +200,9 @@ for(y=r+1; y<h-r; y++){
 
 	for(x=maxdisp+r; x<w-r; x++){
 
-		pi2 = pi2b;
-		if(diff[x] < Tp)	
-			pi2 = pi2a;
+		//pi2 = pi2b;
+		//if(diff[x] < Tp)	
+		//	pi2 = pi2a;
 
 		c_min = F[x-1][0];
 		dbest = 0;
@@ -226,9 +226,9 @@ for(y=r+1; y<h-r; y++){
 	
 	for(x=w-2-r; x>=maxdisp+r; x--){
 
-		pi2 = pi2b;
-		if(diff[x+1] < Tp)	
-			pi2 = pi2a;
+		//pi2 = pi2b;
+		//if(diff[x+1] < Tp)	
+		//	pi2 = pi2a;
 
 		c_min = B[x+1][0];
 		dbest = 0;
@@ -311,7 +311,7 @@ for(x=0; x<w; x++){
 
 free(F);
 free(B);
-free(diff);
+//free(diff);
 free(acc);
 
 //free(min_scores);

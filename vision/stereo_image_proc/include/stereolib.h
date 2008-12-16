@@ -103,8 +103,8 @@ do_prefilter_fast(uint8_t *im,	// input image
 //#define do_stereo do_stereo_y
 //#define do_stereo do_stereo_d
 //#define do_stereo do_stereo_d_fast
-//#define do_stereo do_stereo_so
-#define do_stereo do_stereo_mw
+#define do_stereo do_stereo_so
+//#define do_stereo do_stereo_mw
 
 // inner loop over disparities
 void
