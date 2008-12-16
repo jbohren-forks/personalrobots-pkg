@@ -1,7 +1,7 @@
-%% addexamplesdir(subdir)
+%% exampledir=addexamplesdir(subdir)
 %%
 %% Adds the openrave examples directory
-function addexamplesdir(subdir)
+function exampledir=getexamplesdir(subdir)
 
 basepath = [];
 if( isunix() )
@@ -18,4 +18,4 @@ if( ~exist('subdir','var') )
     subdir = [];
 end
 
-addpath(fullfile(basepath,'share','openrave','examples',subdir));
+exampledir=fullfile(basepath,'share','openrave','examples',subdir);

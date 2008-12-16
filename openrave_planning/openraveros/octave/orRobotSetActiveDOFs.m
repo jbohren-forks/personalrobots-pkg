@@ -17,12 +17,14 @@ function success = orRobotSetActiveDOFs(robotid, indices, affinedofs, rotationax
 session = openraveros_getglobalsession();
 req = openraveros_robot_setactivedofs();
 req.bodyid = robotid;
-req.active.affine = affinedofs;
+if( exist('affinedofs','var') )
+    req.active.affine = affinedofs;
+end
 if( exist('indices','var') )
-    req.active.joints = mat2cell(indices,1,ones(length(indices),1));
+    req.active.joints = mat2cell(indices(:)',1,ones(length(indices),1));
 end
 if( exist('rotationaxis','var') )
-    req.active.rotationaxis(1:3) = mat2cell(rotationaxis,1,[1 1 1]);
+    req.active.rotationaxis(1:3) = mat2cell(rotationaxis(:)',1,[1 1 1]);
 end
 
 res = rosoct_session_call(session.id,'robot_setactivedofs',req);

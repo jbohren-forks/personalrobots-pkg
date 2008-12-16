@@ -11,5 +11,9 @@
 %               effect on the end effector
 %   iksolvername - name of ik solver to use
 function manipulators = orRobotGetManipulators(robotid)
-robotinfo = orEnvGetRobots(robotid);
-sensors = robotinfo.manips;
+robots = orEnvGetRobots(robotid);
+if( isempty(robots) )
+    manipulators = [];
+else
+    manipulators = robots{1}.manips;
+end

@@ -19,16 +19,18 @@ req = openraveros_env_raycollision();
 numrays = size(rays,2);
 req.rays = cell(numrays,1);
 for i = 1:numrays
-    req.rays{i}.position = {rays(1,i),rays(2,i),rays(3,i)};
-    req.rays{i}.direction = {rays(4,i),rays(5,i),rays(6,i)};
+    req.rays{i} = openraveros_Ray();
+    req.rays{i}.position(1:3) = {rays(1,i),rays(2,i),rays(3,i)};
+    req.rays{i}.direction(1:3) = {rays(4,i),rays(5,i),rays(6,i)};
 end
 
 if( exist('bodyid','var') )
     req.bodyid = bodyid;
 end
-if( exist('req_contacts','var') && req_contacts )
-    req.request_contacts = 1;
+if( ~exist('req_contacts','var') )
+    req_contacts = 1;
 end
+req.request_contacts = req_contacts>0;
 if( exist('req_bodyinfo','var') && req_bodyinfo )
     req.request_bodies = req_bodyinfo;
 end

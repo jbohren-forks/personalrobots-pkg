@@ -11,5 +11,5 @@ res = rosoct_session_call(session.id,'env_getbody',req);
 if(~isempty(res))
     id = res.bodyid;
 else
-    id = [];
+    id = 0;
 end

@@ -18,7 +18,7 @@ req = openraveros_env_plot();
 
 points = varargin{1}';
 numpoints = size(points,2);
-req.points = mat2cell(points(:),1,ones(numel(points),1));
+req.points = mat2cell(points(:)',1,ones(numel(points),1));
 
 req.size = 0.5;
 req.drawtype = req.Draw_Point();
@@ -26,13 +26,13 @@ req.transparency = 0;
 
 i = 2;
 while(i <= nargin)
-    if( strcmp(varargin{i},'size') )
+    if( strcmp(varargin{i},'color') )
         i = i + 1;
-        colors = varargin{i};
-        req.size = mat2cell(colors(:),1,ones(numel(colors;),1));
-    elseif( strcmp(varargin{i},'color') )
+        colors = varargin{i}';
+        req.colors = mat2cell(colors(:)',1,ones(numel(colors'),1));
+    elseif( strcmp(varargin{i},'size') )
         i = i + 1;
-        req.colors = varargin{i};
+        req.size = varargin{i};
     elseif( strcmp(varargin{i},'line') | strcmp(varargin{i},'linestrip') )
         req.drawtype = req.Draw_LineStrip();
     elseif( strcmp(varargin{i},'linelist') )
@@ -52,7 +52,7 @@ end
 res = rosoct_session_call(session.id,'env_plot',req);
 
 if(~isempty(res))
-    figureid = req.figureid;
+    figureid = res.figureid;
 else
     figureid = [];
 end

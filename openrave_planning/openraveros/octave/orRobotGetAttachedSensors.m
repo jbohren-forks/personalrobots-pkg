@@ -9,5 +9,9 @@
 %             Tglobal = Tlink * Trelative
 %   type - the xml id of the sensor that is attached
 function sensors = orRobotGetAttachedSensors(robotid)
-robotinfo = orEnvGetRobots(robotid);
-sensors = robotinfo.sensors;
+robots = orEnvGetRobots(robotid);
+if( isempty(robots) )
+    sensors = [];
+else
+    sensors = robots{1}.sensors;
+end

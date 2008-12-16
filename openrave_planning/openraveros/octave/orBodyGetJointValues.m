@@ -9,7 +9,7 @@ session = openraveros_getglobalsession();
 req = openraveros_body_getjointvalues();
 req.bodyid = bodyid;
 if( exist('indices','var') && length(indices)>0 )
-    req.indices = mat2cell(indices,1,ones(1,length(indices)));
+    req.indices = mat2cell(indices(:)',1,ones(1,length(indices)));
 end
 res = rosoct_session_call(session.id,'body_getjointvalues',req);
 

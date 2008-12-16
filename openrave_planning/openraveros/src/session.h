@@ -48,8 +48,6 @@ class SessionServer
     {
     public:
         virtual ~SessionState() {
-            if( !!_penv )
-                _penv->AttachServer(NULL);
             _pserver.reset();
             _penv.reset();
         }
@@ -298,6 +296,7 @@ private:
             _penvViewer->AttachViewer(NULL);
             _pviewer.reset();
             _penvViewer = NULL;
+            usleep(200000); // give some time for destruction
             _conditionViewer.notify_all();
         }
     }
@@ -361,7 +360,7 @@ private:
         }
 
         state._pserver.reset(new ROSServer(new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
-
+        state._penv->AttachServer(state._pserver.get());
         _mapsessions[id] = state;
         res.sessionid = id;
 

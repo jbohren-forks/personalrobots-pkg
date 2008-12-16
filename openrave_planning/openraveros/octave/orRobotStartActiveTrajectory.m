@@ -37,7 +37,7 @@ numpts = size(jointvalues,2);
 req.trajectory.points = cell(numpts,1);
 for i = 1:numpts
     pt = openraveros_TrajectoryPoint();
-    pt.position = mat2cell(jointvalues(:,i),1,arr);
+    pt.position = mat2cell(jointvalues(:,i)',1,arr);
     req.trajectory.points{i} = pt;
 end
 
@@ -54,11 +54,11 @@ if( exist('transformations','var') && ~isempty(transformations) )
         %% convert from quaternions
         for i = 1:numpts
             R = openraveros_rotfromquat(transformations(1:4,i));
-            req.trajectory.points{i}.transform.m(1:12) = mat2cell([R(:);transformations(5:7,i)],1,ones(9,1));
+            req.trajectory.points{i}.transform.m(1:12) = mat2cell([R(:);transformations(5:7,i)]',1,ones(12,1));
         end
     elseif( size(transformations,1) == 12 )
         for i = 1:numpts
-            req.trajectory.points{i}.transform.m(1:12) = mat2cell(transformations(:,i),1,ones(12,1));
+            req.trajectory.points{i}.transform.m(1:12) = mat2cell(transformations(:,i)',1,ones(12,1));
         end
     else
         error('transformations wrong size');

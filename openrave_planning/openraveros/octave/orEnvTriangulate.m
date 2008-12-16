@@ -15,9 +15,12 @@ function [tripoints, triindices] = orEnvTriangulate(inclusive, ids)
 
 session = openraveros_getglobalsession();
 req = openraveros_env_triangulate();
-req.inclusive = inclusive;
+req.inclusive = 0;
+if( exist('inclusive','var') )
+    req.inclusive = inclusive;
+end
 if( exist('ids','var') )
-    req.bodyids = mat2cell(ids,1,ones(length(ids),1));
+    req.bodyids = mat2cell(ids(:)',1,ones(length(ids),1));
 end
 
 res = rosoct_session_call(session.id,'env_triangulate',req);

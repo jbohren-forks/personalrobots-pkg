@@ -55,7 +55,7 @@ switch(cmd)
         req.viewer = strtrim(rem);
     case 'gravity'
         req.setmask = req.Set_Gravity();
-        req.gravity(1:3) = mat2cell(str2num(rem),1,[1 1 1]);
+        req.gravity(1:3) = mat2cell(str2num(rem)',1,[1 1 1]);
     case 'publishanytime'
         req.setmask = req.Set_PublishAnytime();
         req.publishanytime = str2num(rem);

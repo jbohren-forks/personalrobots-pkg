@@ -41,11 +41,45 @@ class ROSServer : public RaveServerBase
     class FIGURE
     {
     public:
-        FIGURE(EnvironmentBase* penv, void* handle) : _handle(handle) {}
+        FIGURE(EnvironmentBase* penv, void* handle) : _penv(penv), _handle(handle) {}
         ~FIGURE() { _penv->closegraph(_handle); }
     private:
+        FIGURE(const FIGURE& r ) { ROS_ASSERT(0); }
         EnvironmentBase* _penv;
         void* _handle;
+    };
+
+    class ServerWorker
+    {
+    public:
+        virtual void work() = 0;
+//        ServerWorker(boost::condition& cond) : _cond(cond) {}
+//        ~ServerWorker() { _cond.notify_all(); }
+//    private:
+//        boost::condition& _cond;
+    };
+
+    class WorkExecutor
+    {
+    public:
+        WorkExecutor(ServerWorker* pworker) : _worker(pworker) {}
+        ~WorkExecutor() { _worker->work(); }
+    private:
+        boost::shared_ptr<ServerWorker> _worker;
+    };
+
+    class SendProblemWorker : public ServerWorker
+    {
+    public:
+        SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out) : _prob(prob), _cmd(cmd), _out(out) {}
+        virtual void work() {
+            _prob->SendCommand(_cmd.c_str(),_out);
+        }
+
+    private:
+        boost::shared_ptr<ProblemInstance> _prob;
+        const string& _cmd;
+        string& _out;
     };
 
 public:
@@ -84,6 +118,8 @@ public:
 
     virtual void Reset()
     {
+        Worker();
+
         _mapFigureIds.clear();
 
         // destroy environment specific state: problems, planners, figures
@@ -99,6 +135,22 @@ public:
     /// worker thread called from the main environment thread
     virtual void Worker()
     {
+        list<boost::shared_ptr<WorkExecutor> > listlocalworkers;
+        {
+            boost::mutex::scoped_lock lock(_mutexWorker);
+            listlocalworkers.swap(_listWorkers);
+        }
+
+        listlocalworkers.clear();
+        _conditionWorkers.notify_all();
+    }
+
+    virtual void AddWorker(ServerWorker* pworker, bool bWait)
+    {
+        boost::mutex::scoped_lock lock(_mutexWorker);
+        _listWorkers.push_back(boost::shared_ptr<WorkExecutor>(new WorkExecutor(pworker)));
+        if( bWait )
+            _conditionWorkers.wait(lock);
     }
 
     virtual bool IsInit()
@@ -267,7 +319,7 @@ public:
             pbody->GetJointValues(vtemp);
 
             res.values.resize(vtemp.size());
-            for(size_t i = 0; i < req.indices.size(); ++i)
+            for(size_t i = 0; i < res.values.size(); ++i)
                 res.values[i] = vtemp[i];
         }
         
@@ -526,7 +578,7 @@ public:
 
     void FillKinBodyInfo(KinBody* pbody, BodyInfo& info, uint32_t options)
     {
-        info.bodyid = pbody->GetDOF();
+        info.bodyid = pbody->GetNetworkId();
         info.transform = GetAffineTransform(pbody->GetTransform());
         info.enabled = pbody->IsEnabled();
 
@@ -619,6 +671,8 @@ public:
     {
         FillKinBodyInfo(probot,info.bodyinfo,options);
 
+        info.activedof = probot->GetActiveDOF();
+
         if( options & RobotInfo::Req_Manipulators ) {
             info.manips.resize(probot->GetManipulators().size()); int index = 0;
             FOREACHC(itmanip, probot->GetManipulators()) {
@@ -658,9 +712,8 @@ public:
         }
         if( options & RobotInfo::Req_ActiveDOFs ) {
             FillActiveDOFs(probot, info.active);
-            info.activedof = probot->GetActiveDOF();
         }
-        if( options & BodyInfo::Req_JointLimits ) {
+        if( options & RobotInfo::Req_ActiveLimits ) {
             vector<dReal> vlower, vupper;
             probot->GetActiveDOFLimits(vlower,vupper);
             ROS_ASSERT( vlower.size() == vupper.size() );
@@ -731,6 +784,8 @@ public:
         float falpha = max(0.0f, 1.0f-req.transparency);
         falpha = min(1.0f,falpha);
         RaveVector<float> vOneColor(1.0f,0.5f,0.5f,falpha);
+        if( req.colors.size() >= 3 )
+            vOneColor = RaveVector<float>(req.colors[0], req.colors[1], req.colors[2],falpha);
         
         void* figure = NULL;
         switch(req.drawtype) {
@@ -754,7 +809,7 @@ public:
             break;
         case env_plot::request::Draw_TriList:
             //if( bOneColor )
-            figure = GetEnv()->drawtrimesh(&req.points[0],3*sizeof(req.points[0]), NULL, req.points.size()/3, vOneColor);
+            figure = GetEnv()->drawtrimesh(&req.points[0],3*sizeof(req.points[0]), NULL, req.points.size()/9, vOneColor);
             //else
                 //figure = GetEnv()->plot3(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,&req.colors[0], 0);
             break;
@@ -799,19 +854,29 @@ public:
             if( !GetEnv()->SetCollisionOptions(req.request_contacts ? CO_Contacts : 0) )
                 RAVELOG_WARNA("failed to set collision options\n");
 
+            int index = 0;
             FOREACHC(itray, req.rays) {
                 RAY r;
                 r.pos = Vector(itray->position[0], itray->position[1], itray->position[2]);
                 r.dir = Vector(itray->direction[0], itray->direction[1], itray->direction[2]);
+
+                RAVELOG_WARN("%d: %f %f %f, %f %f %f\n", index++,r.pos.x,r.pos.y,r.pos.z,r.dir.x,r.dir.y,r.dir.z);
                 
-                uint8_t bCollision;
-                if( pbody != NULL )
-                    bCollision = GetEnv()->CheckCollision(r,pbody,&report);
+                uint8_t bCollision = 0;
+
+                if( r.dir.lengthsqr3() > 1e-7 ) {
+                    r.dir.normalize3();
+                
+                    if( pbody != NULL )
+                        bCollision = GetEnv()->CheckCollision(r,pbody,&report);
+                    else
+                        bCollision = GetEnv()->CheckCollision(r,&report);
+                }
                 else
-                    bCollision = GetEnv()->CheckCollision(r,&report);
+                    RAVELOG_WARN("ray has zero direction\n");
                 
                 res.collision.push_back(bCollision);
-                if( req.request_contacts ) {
+                if( bCollision && req.request_contacts ) {
                     openraveros::Contact rosc;
                     if( report.contacts.size() > 0 ) {
                         COLLISIONREPORT::CONTACT& c = report.contacts.front();
@@ -820,11 +885,16 @@ public:
                     }
                     res.contacts.push_back(rosc);
                 }
+                else
+                    res.contacts.push_back(openraveros::Contact());
+                    
 
-                if( req.request_bodies ) {
+                if( bCollision && req.request_bodies ) {
                     KinBody::Link* plink = report.plink1 != NULL ? report.plink1 : report.plink2;
                     res.hitbodies.push_back(plink != NULL ? plink->GetParent()->GetNetworkId() : 0);
                 }
+                else
+                    res.hitbodies.push_back(0);
             }
 
             GetEnv()->SetCollisionOptions(oldopts);
@@ -1016,8 +1086,8 @@ public:
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
         if( itprob == _mapproblems.end() )
             return false;
-        
-        itprob->second->SendCommand(req.cmd.c_str(),res.output);
+
+        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output), true);
         return true;
     }
 
@@ -1070,7 +1140,7 @@ public:
             probot->GetActiveDOFValues(vtemp);
 
             res.values.resize(vtemp.size());
-            for(size_t i = 0; i < req.indices.size(); ++i)
+            for(size_t i = 0; i < res.values.size(); ++i)
                 res.values[i] = vtemp[i];
         }
 
@@ -1378,4 +1448,9 @@ private:
     boost::thread _threadviewer;
     boost::mutex _mutexViewer;
     boost::condition _conditionViewer;
+    
+    /// workers
+    boost::mutex _mutexWorker;
+    list<boost::shared_ptr<WorkExecutor> > _listWorkers;
+    boost::condition _conditionWorkers;
 };

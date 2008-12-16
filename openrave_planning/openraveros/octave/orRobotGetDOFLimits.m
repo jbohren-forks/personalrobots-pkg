@@ -12,7 +12,7 @@ req.bodyid = robotid;
 req.options = openraveros_RobotInfo().Req_ActiveLimits();
 res = rosoct_session_call(session.id,'env_getrobots',req);
 if( ~isempty(res) )
-    if( res.robots{1}.id ~= robotid )
+    if( res.robots{1}.bodyinfo.bodyid ~= robotid )
         error('wrong robot id');
     end
 
