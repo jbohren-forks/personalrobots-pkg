@@ -30,8 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELPLANE_H_
-#define _SAMPLE_CONSENSUS_SACMODELPLANE_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELCIRCLE_H_
+#define _SAMPLE_CONSENSUS_SACMODELCIRCLE_H_
 
 #include "sample_consensus/sac_model.h"
 #include "sample_consensus/model_types.h"
@@ -39,23 +39,20 @@
 /** \brief Define the maximum number of iterations for collinearity checks */
 #define MAX_ITERATIONS_COLLINEAR 1000
 
-#include "cloud_geometry/lapack.h"
-
-
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for 3D plane segmentation.
+  /** \brief A Sample Consensus Model class for 2D circle segmentation on the X-Y plane.
     */
-  class SACModelPlane : public SACModel
+  class SACModelCircle2D : public SACModel
   {
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelPlane. */
-      SACModelPlane () { }
+      /** \brief Constructor for base SACModelCircle2D. */
+      SACModelCircle2D () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelPlane. */
-      virtual ~SACModelPlane () { }
+      /** \brief Destructor for base SACModelCircle2D. */
+      virtual ~SACModelCircle2D () { }
 
       virtual std::vector<int> getSamples (int &iterations);
 
@@ -78,8 +75,8 @@ namespace sample_consensus
       virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_PLANE). */
-      virtual int getModelType () { return (SACMODEL_PLANE); }
+      /** \brief Return an unique id for this model (SACMODEL_CIRCLE2D). */
+      virtual int getModelType () { return (SACMODEL_CIRCLE2D); }
   };
 }
 
