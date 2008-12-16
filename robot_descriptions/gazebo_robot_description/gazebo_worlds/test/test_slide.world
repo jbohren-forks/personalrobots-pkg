@@ -24,16 +24,15 @@
   <!-- erp is typically .1-.8 -->
   <!-- here's the global contact cfm/erp -->
   <physics:ode>
-    <stepTime>0.001</stepTime>
+    <stepTime>0.0005</stepTime>
     <gravity>0 0 -9.8</gravity>
-    <cfm>0.000000000001</cfm>
+    <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
     <quickStep>true</quickStep>
     <quickStepIters>3</quickStepIters>
     <quickStepW>1.3</quickStepW>
-    <quickStepIters>100</quickStepIters>
-    <quickStepW>1.3</quickStepW>
   </physics:ode>
+
 
   <geo:origin>
     <lat>37.4270909558</lat><lon>-122.077919338</lon>
