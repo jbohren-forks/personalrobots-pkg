@@ -242,11 +242,11 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
     // note that B (or Tx) is in mm
-    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     // now Tx is in meters
-//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
-    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
-//    string dirname("/u/prdata/videre-bags/james4");
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
+    string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
     string dispimgfmt(".dispmap-%06d.xml");
@@ -299,7 +299,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
   setInputData(James4);
 
-  VOSparseBundleAdj sba(img_size_, 8, 3);
+  VOSparseBundleAdj sba(img_size_, 10, 3);
 //  VOSparseBundleAdj sba(img_size_, 1, 1);
 
   // parameterize the post estimator
@@ -790,7 +790,7 @@ void CvTest3DPoseEstimate::disturbFrames(
         += CV_MAT_ELEM(*xyzsNoised, double, iFrames, i);
     }
     // update the transformation matrix of fp
-    CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+    CvMatUtils::transformFromRodriguesAndShift(&mat_rod_shift, &fp->transf_local_to_global_);
 
     if (verbose_) {
       printf("transf of frame: %d\n", fp->mIndex);
@@ -876,6 +876,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 //  point_file.append("cartesianPoints.xml");
   points_file_path.append(points_file);
   CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
+
   // rows of euler angle and shift
   string frames_file_path(input_data_path_);
 //  frames_file.append("frames.xml");

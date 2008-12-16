@@ -163,7 +163,7 @@ public:
   static const double defMaxAngleAlpha = 15.;
   static const double defMaxAngleBeta = 15.;
   static const double defMaxAngleGamma = 15.;
-  static const double defMaxShift = 300.;
+  static const double defMaxShift = .3; // .3 meters or 300 millimeters
 
   PoseEstimateStereo mPoseEstimator;
   /// global transformation matrix up to the last key frame, in Cartesian space.
@@ -206,7 +206,7 @@ public:
   int mMaxAngleAlpha;
   int mMaxAngleBeta;
   int mMaxAngleGamma;
-  int mMaxShift;
+  double mMaxShift;
   double mPathLength;
   /// Statistics of the visual odometry process
   class Stat {

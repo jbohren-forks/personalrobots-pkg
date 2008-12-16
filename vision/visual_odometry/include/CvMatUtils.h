@@ -103,9 +103,9 @@ public:
   static void transformFromRodriguesAndShift(
       /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
       /// vector.
-      const CvMat& param,
+      const CvMat* param,
       /// Output. transformation matrix.
-      CvMat& Transform);
+      CvMat* Transform);
 
   /// Construct rodrigues and shift vectors from 4x4
   /// transformation matrix

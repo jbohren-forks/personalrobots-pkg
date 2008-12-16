@@ -97,7 +97,7 @@ bool LevMarqTransform::constructRTMatrix(const CvMat * param, double _RT[]) cons
 	{
     CvMat rt;
     cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
-		CvMatUtils::transformFromRodriguesAndShift(*param, rt);
+		CvMatUtils::transformFromRodriguesAndShift(param, &rt);
 		break;
 	}
 	default:
@@ -216,7 +216,7 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 		cerr << "Fatal Error, num of points unmatched in input"<<endl;
 	}
 
-	double delta = CV_PI/(180.*10000.);
+	double delta = defDeltaForNumericDeriv;
 
 	double _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);

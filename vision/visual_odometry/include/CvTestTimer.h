@@ -23,6 +23,10 @@ public:
 		int64 mTime;
 		int64 mCount;
 		int64 mTimeStart;
+
+		timeval time_val_;
+		timeval time_val_start_;
+
 		void reset() {
 			mTime = 0;
 			mCount = 0;
@@ -155,11 +159,24 @@ public:
 	CvTestTimer::getTimer().m##timerName += GETTICKCOUNT() - _CvTestTimer_##timerName;}
 
 #define CvTestTimerStart2(timerName) \
-	do { CvTestTimer::getTimer().m##timerName.mTimeStart = GETTICKCOUNT(); \
-	  CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
+  do { CvTestTimer::getTimer().m##timerName.mTimeStart = GETTICKCOUNT(); \
+    CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
 
 #define CvTestTimerEnd2(timerName) \
-	do { CvTestTimer::getTimer().m##timerName.mTime += \
-	  GETTICKCOUNT() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
+  do { CvTestTimer::getTimer().m##timerName.mTime += \
+    GETTICKCOUNT() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
+
+#define CvTestTimerStart3(timerName) \
+  do { rusage start; getrusage(RUSAGE_SELF, &start);\
+       CvTestTimer::getTimer().m##timerName.time_val_start_ = start.ru_utime;\
+       CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
+
+#define CvTestTimerEnd3(timerName) \
+  do { rusage end; getrusage(RUSAGE_SELF, &end);\
+  CvTestTimer::getTimer().m##timerName.time_val_.tv_sec += \
+  end.ru_utime.tv_sec - CvTestTimer::getTimer().m##timerName.time_val_.tv_sec;\
+  CvTestTimer::getTimer().m##timerName.time_val_.tv_usec += \
+  end.ru_utime.tv_sec - CvTestTimer::getTimer().m##timerName.time_val_.tv_usec;\
+  } while (0)
 
 #endif /*CVTESTTIMER_H_*/

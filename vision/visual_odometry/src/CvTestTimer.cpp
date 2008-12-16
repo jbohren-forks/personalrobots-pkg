@@ -26,6 +26,10 @@ CvTestTimer::~CvTestTimer()
 
 #define PRINTSTATSBA(title, name) do {printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
 
+// using rusage
+#define PRINTSTATSBA3(title, name) do { m##name.mTime = m##name.time_val_.tv_sec*1000+m##name.time_val_.tv_usec/1000;\
+  printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
+
 void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
   fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f\n",
       title,

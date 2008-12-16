@@ -95,8 +95,7 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       transf_fwd_data_(new double[NUM_CAM_PARAMS*16*full_free_window_size]),
       lambdaLg10_(0),
       term_criteria_(term_criteria),
-      param_delta_(CV_PI/(180.*100.)) /* this initial value still works even if we
-                                         do not use angle explicitly */
+      param_delta_(defDeltaForNumericDeriv)
       {
 }
 
@@ -285,7 +284,7 @@ inline void LevMarqSparseBundleAdj::JacobianOfPointExact(
 inline void LevMarqSparseBundleAdj::linearSolving() {
   // fill out of lower left part of the matrix
   cvCompleteSymm(&mat_A_, 0);
-#if 0
+#if 0  // set to 1 to use OpenCV
   cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
   // update camera parameters with mat_dC
   cvAdd(&mat_C_, &mat_dC_, &mat_C_);
@@ -294,18 +293,17 @@ inline void LevMarqSparseBundleAdj::linearSolving() {
     Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
     Eigen::VectorXd B0(mat_B_.rows);
     Eigen::VectorXd C0(mat_C_.rows);
+    // setting up left hand side matrix A
     for (int j=0; j<A0.cols(); j++) {
       for (int i=0; i<A0.rows(); i++) {
         A0(i, j) = CV_MAT_ELEM( mat_A_, double, i, j );
       }
     }
+    // setting up right hand side vector B
     for (int i=0; i<B0.size(); i++) {
-//      B0(i) = cvmGet(&mat_B_, i, 0);
       B0(i) = B_data_[i];
     }
-//    TIMERSTART2(SBALinearSolving);
     A0.llt().solve(B0, &C0);
-//    TIMEREND2(SBALinearSolving);
     // update camera/frame parameters with C0
     for (int i=0; i<C0.size(); i++) {
       frame_params_[i] += (frame_params_update_[i]=C0(i));
@@ -466,7 +464,7 @@ bool LevMarqSparseBundleAdj::optimize(
   double scale = 1./param_delta_;
 
   if( term_criteria_.type & CV_TERMCRIT_ITER )
-    term_criteria_.max_iter = MIN(MAX(term_criteria_.max_iter,1),1000);
+    term_criteria_.max_iter = MIN(MAX(term_criteria_.max_iter,0),1000);
   else
     term_criteria_.max_iter = 30;
   if( term_criteria_.type & CV_TERMCRIT_EPS )
@@ -1106,7 +1104,17 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     // copy the parameters out
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
     /// @todo should not tightened to rodrigues!
-    CvMatUtils::transformFromRodriguesAndShift(mat_params_i, transf_global_to_local);
+    switch(mAngleType) {
+    case Rodrigues:
+      CvMatUtils::transformFromRodriguesAndShift(&mat_params_i, &transf_global_to_local);
+      break;
+    case Euler:
+      CvMatUtils::transformFromEulerAndShift(&mat_params_i, &transf_global_to_local);
+      break;
+    default:
+      // unknown angle type
+      assert(0);
+    }
 
     // compute the local to global matrix
     CvMatUtils::invertRigidTransform(&transf_global_to_local,

@@ -187,7 +187,7 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 		cerr << "Fatal Error, num of points unmatched in input"<<endl;
 	}
 
-	double delta = CV_PI/(180.*100.);
+	double delta = defDeltaForNumericDeriv;
 
 	double _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
