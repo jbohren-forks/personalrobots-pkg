@@ -36,7 +36,6 @@
 #include <vector>
 
 /** \brief A ring buffer.
- * TODO(Melonee): write a comment describing what you get from buffer[0].  Most recent, or least recent element?
  */
 template <typename T>
 class RingBuffer
@@ -72,6 +71,8 @@ T& RingBuffer<T>::operator[](int i)
 {
   return buffer_[(buffer_ptr_ + i) % buffer_.size()];
 }
+
+//the push places the most recent input into the first element buffer[0] returns most recent data
 template <typename T>
 void RingBuffer<T>::push(T const &element)
 {
