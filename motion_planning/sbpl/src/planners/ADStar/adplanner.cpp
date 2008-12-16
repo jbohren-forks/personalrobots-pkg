@@ -272,7 +272,13 @@ void ADPlanner::UpdateSetMembership(ADState* state)
         {
 			key = ComputeKey(state);
             if(state->heapindex == 0)
+			{
                 pSearchStateSpace_->heap->insertheap(state, key);
+
+				//need to remove it because it can happen when updating edge costs and state is in incons
+				if(state->listelem[AD_INCONS_LIST_ID] != NULL)
+					pSearchStateSpace_->inconslist->remove(state, AD_INCONS_LIST_ID); 
+			}
             else
 				pSearchStateSpace_->heap->updateheap(state, key);
         }
@@ -354,7 +360,7 @@ void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t*
 		{
 
 #if DEBUG
-			if(predstate->MDPstate->StateID == 792455)
+			if(predstate->MDPstate->StateID == 679256)
 			{
 				fprintf(fDeb, "updating pred %d of overcons exp\n", predstate->MDPstate->StateID);
 				PrintSearchState(predstate, fDeb);
@@ -371,7 +377,7 @@ void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t*
 			UpdateSetMembership(predstate);
 
 #if DEBUG
-			if(predstate->MDPstate->StateID == 792455)
+			if(predstate->MDPstate->StateID == 679256)
 			{
 				fprintf(fDeb, "updated pred %d of overcons exp\n", predstate->MDPstate->StateID);
 				PrintSearchState(predstate, fDeb);
@@ -446,9 +452,12 @@ void ADPlanner::UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t
 			UpdateSetMembership(predstate);
 
 #if DEBUG
-		fprintf(fDeb, "updated pred %d of undercons exp\n", predstate->MDPstate->StateID);
-		PrintSearchState(predstate, fDeb);
-		fprintf(fDeb, "\n");
+			if(predstate->MDPstate->StateID == 679256)
+			{
+				fprintf(fDeb, "updated pred %d of undercons exp\n", predstate->MDPstate->StateID);
+				PrintSearchState(predstate, fDeb);
+				fprintf(fDeb, "\n");
+			}
 #endif
 
 		}		
@@ -535,7 +544,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 		//fprintf(fDeb, "expanding state(%d): g=%u v=%u h=%d key=[%d %d] iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
 		//	state->MDPstate->StateID, state->g, state->v, state->h, (int)debkey[0], (int)debkey[1],  
 		//	state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
-		if(state->MDPstate->StateID == 792455)
+		if(state->MDPstate->StateID == 679256)
 		{
 			fprintf(fDeb, "expanding state %d with key=[%d %d]:\n", state->MDPstate->StateID, (int)debkey[0], (int)debkey[1]);
 			PrintSearchState(state, fDeb);
@@ -549,6 +558,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 		}
 #endif
 
+
 #if DEBUG
 		if(minkey.key[0] < oldkey.key[0] && fabs(this->finitial_eps - 1.0) < ERR_EPS)
 		{
@@ -557,6 +567,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 		}
 		oldkey = minkey;
 #endif
+
 
 		if(state->v == state->g)
 		{
@@ -623,9 +634,11 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 	if(searchgoalstate->g == INFINITECOST && pSearchStateSpace->heap->emptyheap())
 	{
 		printf("solution does not exist: search exited because heap is empty\n");
+
 #if DEBUG
 		fprintf(fDeb, "solution does not exist: search exited because heap is empty\n");
 #endif
+
 		retv = 0;
 	}
 	else if(!pSearchStateSpace->heap->emptyheap() && (goalkey > minkey || searchgoalstate->g > searchgoalstate->v))
@@ -1098,7 +1111,7 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 
 
 #if DEBUG
-		PrintSearchPath(pSearchStateSpace, fDeb);
+		//PrintSearchPath(pSearchStateSpace, fDeb);
 #endif
 
 
@@ -1219,7 +1232,6 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 			pSearchStateSpace->bReevaluatefvals = true;
 			pSearchStateSpace->bRebuildOpenList = true;
-
 
 			pSearchStateSpace->searchiteration++;
 		}
