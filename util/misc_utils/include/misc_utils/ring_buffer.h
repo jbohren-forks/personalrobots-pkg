@@ -36,14 +36,14 @@
 #include <vector>
 
 /** \brief A ring buffer.
- *
+ * TODO(Melonee): write a comment describing what you get from buffer[0].  Most recent, or least recent element?
  */
 template <typename T>
 class RingBuffer
 {
 public:
   /** \brief Construct a buffer of the correct length */
-  RingBuffer(uint32_t number_of_elements);
+  RingBuffer(uint32_t number_of_elements, const T &default_elt = T());
 
   /** \brief Destructor to clean up
    */
@@ -53,30 +53,30 @@ public:
   
   void push(T const &element);
   
+  int size() { return buffer_.size(); }
+  
 protected:
   std::vector<T> buffer_;
-  uint32_t length_;
-  uint32_t buffer_ptr_;
+  uint32_t buffer_ptr_;  // Index of the most recently pushed element
 };
 
 template <typename T>
-RingBuffer<T>::RingBuffer(uint32_t number_of_elements):
-length_(number_of_elements),
-buffer_ptr_(0)
+RingBuffer<T>::RingBuffer(uint32_t number_of_elements, const T &default_elt):
+  buffer_(number_of_elements, default_elt),
+  buffer_ptr_(0)
 {
-  buffer_.resize(number_of_elements);
 };
 
 template <typename T>
 T& RingBuffer<T>::operator[](int i)
 {
-  return buffer_[(buffer_ptr_+i)%length_];
+  return buffer_[(buffer_ptr_ + i) % buffer_.size()];
 }
 template <typename T>
 void RingBuffer<T>::push(T const &element)
 {
-  buffer_[buffer_ptr_]=element;
-  buffer_ptr_=(buffer_ptr_+1)%length_;
+  buffer_ptr_ = (buffer_ptr_ - 1 + buffer_.size()) % buffer_.size();
+  buffer_[buffer_ptr_] = element;
 }
 
 
