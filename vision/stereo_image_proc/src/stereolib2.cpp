@@ -52,6 +52,46 @@ inline int min(int a, int b){
 return (a<b)?a:b;
 }
 
+//Application of the uniqueness constraint
+void uniqueness_constraint_reducedrange(int w, short int* disp, int maxdisp, int r, int* mins, int row){
+
+int x, d, x_oth, d_oth;
+
+// int w = par.w;
+// short int* disp = par.disp;
+// int maxdisp = par.maxdisp;
+// int r = par.radius;
+
+//Init array
+int* unique;
+unique = (int *)malloc(w*sizeof(int));
+for(x=r; x<w-r; x++)
+	unique[x] = -1;
+	
+for(x=maxdisp+r+1; x<w-r; x++){
+	d = disp[row*w + x]/16;
+
+	//UNIQUENESS CONSTRAINT
+	if(d > FILTERED){		//this is needed since previous filters may have already discarded this correspondence
+		if(unique[x-d] == -1)
+			unique[x-d] = d;
+		else{
+			d_oth = unique[x-d];	
+			x_oth = x - d + d_oth;
+			if(mins[x_oth] > mins[x]){
+ 				unique[x-d] = d;
+ 				disp[row*w + x_oth] = FILTERED;
+ 			}
+			else{
+				disp[row*w + x] = FILTERED;
+ 			}
+		}
+	}
+}//y
+
+free(unique);
+}
+
 //Scanline-optimization along horizontal directions
 void do_stereo_so(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
@@ -66,7 +106,7 @@ void do_stereo_so(uint8_t *lim, uint8_t *rim, // input feature images
 	  )
 {
 
-xwin = 3; //bad hack to deal with small window sizes (e.g. 3x3)
+xwin = xwin-4; //bad hack to deal with small window sizes (e.g. 3x3)
 
 int maxdisp = dlen;
 int r = (xwin-1)/2;
@@ -81,10 +121,10 @@ unsigned char *R = rim;
 //short int* disp = disp;
 	
 //Parameters for regularization
-int pi2 = tfilter_thresh*4;
+int pi2 = tfilter_thresh*4*n;
 //int pi2a = tfilter_thresh*4;	
 //int pi2b = tfilter_thresh;
-int pi1 = tfilter_thresh;
+int pi1 = tfilter_thresh*n;
 //int Tp = 10;
 
 //temp variables
@@ -100,11 +140,11 @@ int c_min, cost;
 //int rel_filter = sqn * par.rel_filter;
 
 //Uniqueness-2 filter is currently deprecated
-//int *min_scores = (int *)malloc(w * sizeof(int ));
+int *min_scores = (int *)malloc(w * sizeof(int ));
 
 int ratio_filter = 100-ufilter_thresh;
 //int peak_filter = tfilter_thresh;
-int peak_filter = 30;
+int peak_filter = 15;
 
 int sad_second_min;
 int da, db, s1, s2, s3;
@@ -263,7 +303,7 @@ for(y=r+1; y<h-r; y++){
 		//	disp[y*w + x] = -2;
 
 		//( 2)needed for uniqueness constraint filter )
-		//min_scores[x] = c_min;
+		min_scores[x] = c_min;
 	
 		//3) uniqueness filter
 		sad_second_min = 32000;
@@ -299,7 +339,7 @@ for(y=r+1; y<h-r; y++){
 		}
 	}
 	//if(par.unique == 1)
-	//	uniqueness_constraint_reducedrange(par, min_scores, y);
+		uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 }
 
 for(x=0; x<w; x++){
@@ -314,7 +354,7 @@ free(B);
 //free(diff);
 free(acc);
 
-//free(min_scores);
+free(min_scores);
 
 }
 
@@ -332,8 +372,6 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	  uint8_t *buf		// buffer storage
 	  )
 {
-
-	xwin = 11; //bad hack to deal with small window sizes (e.g. 3x3)
 
 	int maxdisp = dlen;
 	int r = (xwin-1)/2;
@@ -573,9 +611,6 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	//free(min_scores);
 }
 
-
-
-
 //Scanline-optimization along horizontal directions
 void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
@@ -590,7 +625,8 @@ void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  )
 {
 
-xwin = 5; //bad hack to deal with small window sizes (e.g. 3x3)
+
+xwin = xwin-4; //bad hack to deal with small window sizes (e.g. 3x3)
 
 int maxdisp = dlen;
 int r = (xwin-1)/2;
@@ -605,18 +641,13 @@ unsigned char *R = rim;
 //short int* disp = disp;
 	
 //Parameters for regularization
-int w1 = tfilter_thresh*4;
-//int pi2a = tfilter_thresh*4;	
-//int pi2b = tfilter_thresh;
-//int pi1 = tfilter_thresh;
-//int Tp = 10;
+int w2 = tfilter_thresh*4;
+int w1 = tfilter_thresh;
 
 //temp variables
 int x,y,d,i,j;
 int dbest=0;
 int c_min, cost;
-
-//printf("%d %d\r", w, h);
 
 //FILTERS
 //int sqn = n*n;
@@ -702,8 +733,7 @@ for(y=r+1; y<h-r; y++){
 		rpp++;
 				
 		//int dbestprev = dbest;
-		for(d=0; d<maxdisp; d++){
-				
+		for(d=0; d<maxdisp; d++){	
 			V[x+r][d] = V[x+r][d] + abs( *lp - *rp ) - abs( *lpp - *rpp ); 
 			rp--;
 			rpp--;
@@ -727,18 +757,73 @@ for(y=r+1; y<h-r; y++){
 			dbest = d;
 		}
 	
-		for(d=0; d<maxdisp; d++){
+		S[x][0] = acc[x][0];
+		if( S[x-1][0]<c_min+w2 ){
+ 			S[x][0] += S[x-1][0];
+  			B[x][0] = d;
+		}
+		else{
+			S[x][0] += c_min+w2;
+  			B[x][0] = dbest;
+		}
+		S[x][maxdisp-1] = acc[x][maxdisp-1];
+		if( S[x-1][maxdisp-1]<c_min+w2 ){
+ 			S[x][maxdisp-1] += S[x-1][maxdisp-1];
+  			B[x][maxdisp-1] = d;
+		}
+		else{
+			S[x][maxdisp-1] += c_min+w2;
+  			B[x][maxdisp-1] = dbest;
+		}
+
+		for(d=1; d<maxdisp-1; d++){
 			S[x][d] = acc[x][d];
-			if( S[x-1][d]<c_min+w1 ){
-				S[x][d] += S[x-1][d];
-				B[x][d] = d;
-			}
-			else{
-				S[x][d] += c_min+w1;
-				B[x][d] = dbest;
-			}
-		} //d
-	}//x
+			if( S[x-1][d]<c_min+w2 ){
+ 				if( S[x-1][d]<S[x-1][d-1]+w1 ){
+ 					if( S[x-1][d]<S[x-1][d+1]+w1 ){
+   						S[x][d] += S[x-1][d];
+   						B[x][d] = d;
+ 					}
+ 					else{
+ 						S[x][d] += S[x-1][d+1]+w1;
+ 						B[x][d] = d+1;
+ 					}
+ 				}
+ 				else{
+ 					if(S[x-1][d-1] < S[x-1][d+1]){
+ 						S[x][d] += S[x-1][d-1]+w1;
+ 						B[x][d] = d-1;
+ 					}
+ 					else{
+ 						S[x][d] += S[x-1][d+1]+w1;
+ 						B[x][d] = d+1;
+ 					}
+ 				}
+ 			}
+ 			else{
+				if( c_min+w2 < S[x-1][d-1]+w1 ){
+					if( c_min+w2 < S[x-1][d+1]+w1 ){
+  						S[x][d] += c_min+w2;
+  						B[x][d] = dbest;
+					}
+					else{
+						S[x][d] += S[x-1][d+1]+w1;
+						B[x][d] = d+1;
+					}
+				}
+				else{
+					if(S[x-1][d-1] < S[x-1][d+1]){
+						S[x][d] += S[x-1][d-1]+w1;
+						B[x][d] = d-1;
+					}
+					else{
+						S[x][d] += S[x-1][d+1]+w1;
+						B[x][d] = d+1;
+					}
+				}
+ 			}
+ 		} //d
+ 	}//x
 
 	//Stage 2 -> backward
 	//Border
@@ -754,8 +839,19 @@ for(y=r+1; y<h-r; y++){
 	disp[y*w+x] = dbest;
 	
 	for(x=w-r-2; x>=maxdisp+r; x--){
-		dbest = B[x+1][dbest];
-		disp[y*w+x] = dbest;	
+	//for(x=maxdisp+r+1; x<w-r; x++){
+// 		c_min = 32000;
+// 		for(d=0; d<maxdisp; d++){
+// 			cost = acc[x][d];
+// 			if(cost < c_min){
+// 				c_min = cost;
+// 				dbest = d;
+// 			}
+// 		}
+// 		disp[y*w+x] = dbest*16;
+
+ 		dbest = B[x+1][dbest];
+ 		disp[y*w+x] = dbest;	
 		
 		//******* FILTERS ********
 		//1) rel filter
@@ -798,7 +894,6 @@ for(y=r+1; y<h-r; y++){
 			double v = dbest + ( (s1-s3)/(2.0*(s1+s3-2.0*s2)) );
 			disp[y*w + x] = (int)(0.5 + 16*v);
 		}
-		
 	}
 	//if(par.unique == 1)
 	//	uniqueness_constraint_reducedrange(par, min_scores, y);

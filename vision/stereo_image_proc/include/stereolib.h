@@ -101,9 +101,9 @@ do_prefilter_fast(uint8_t *im,	// input image
 // algorithm requires buffers to be passed in
 
 //#define do_stereo do_stereo_y
-#define do_stereo do_stereo_d
+//#define do_stereo do_stereo_d
 //#define do_stereo do_stereo_d_fast
-//#define do_stereo do_stereo_so
+#define do_stereo do_stereo_so
 //#define do_stereo do_stereo_mw
 //#define do_stereo do_stereo_dp
 
@@ -150,7 +150,7 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 
 
 //December 2008 
-//Addition by Federico Tombari
+//Additions by Federico Tombari
 //Stereo matching with regularization (Scanline Optimization)
 void do_stereo_so(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
