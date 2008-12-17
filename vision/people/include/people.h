@@ -50,9 +50,11 @@
 #include "CvStereoCamModel.h"
 
 // Thresholds for the face detection algorithm
-#define FACE_SIZE_MIN_M .1
-#define FACE_SIZE_MAX_M .5
+#define FACE_SIZE_MIN_M 0.1
+#define FACE_SIZE_MAX_M 0.5
+#define FACE_SIZE_DEFAULT_M 0.1
 #define MAX_Z_M 10
+#define FACE_DIST 0.4
 
 using namespace std;
 
@@ -91,6 +93,7 @@ class People
   double getFaceSize3D(int iperson);
 
   // Set a person's 3D face size.
+  // For a size of <=0.0, use FACE_SIZE_DEFAULT_M.
   void setFaceSize3D(double face_size, int iperson);
 
   // Set a person's face.
