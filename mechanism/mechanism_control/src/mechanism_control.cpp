@@ -191,7 +191,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), cycles_since_publish_(0),
     mechanism_state_topic_("mechanism_state"),
     publisher_(mechanism_state_topic_, 1),
-    transform_publisher_("TransformArray", 5)
+    transform_publisher_("tf_message", 5)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -221,7 +221,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
     if (mc_->model_.links_[i]->parent_name_ != std::string("world"))
       ++num_transforms;
   }
-  transform_publisher_.msg_.set_quaternions_size(num_transforms);
+  transform_publisher_.msg_.set_transforms_size(num_transforms);
 
 
   // Advertise services
@@ -295,7 +295,6 @@ void MechanismControlNode::update()
     if (transform_publisher_.trylock())
     {
       //assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
-      transform_publisher_.msg_.header.stamp.fromSec(mc_->hw_->current_time_);
       int ti = 0;
       for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
       {
@@ -304,18 +303,18 @@ void MechanismControlNode::update()
 
         tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
         tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
-        tf::TransformQuaternion &out = transform_publisher_.msg_.quaternions[ti++];
+        std_msgs::TransformStamped &out = transform_publisher_.msg_.transforms[ti++];
 
         out.header.stamp.fromSec(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;
-        out.parent = mc_->model_.links_[i]->parent_name_;
-        out.xt = pos.x();
-        out.yt = pos.y();
-        out.zt = pos.z();
-        out.w = quat.w();
-        out.xr = quat.x();
-        out.yr = quat.y();
-        out.zr = quat.z();
+        out.parent_id = mc_->model_.links_[i]->parent_name_;
+        out.transform.translation.x = pos.x();
+        out.transform.translation.y = pos.y();
+        out.transform.translation.z = pos.z();
+        out.transform.rotation.w = quat.w();
+        out.transform.rotation.x = quat.x();
+        out.transform.rotation.y = quat.y();
+        out.transform.rotation.z = quat.z();
       }
 
       transform_publisher_.unlockAndPublish();
