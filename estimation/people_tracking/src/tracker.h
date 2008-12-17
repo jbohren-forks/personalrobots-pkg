@@ -8,6 +8,7 @@
 *  modification, are permitted provided that the following conditions
 *  are met:
 * 
+*   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
 *     copyright notice, this list of conditions and the following
@@ -46,7 +47,7 @@
 #include <tf/tf.h>
 
 // msgs
-#include <robot_msgs/PositionMeasurement.h>
+#include <std_msgs/PointCloud.h>
 
 // log files
 #include <fstream>
@@ -63,18 +64,21 @@ public:
   /// destructor
   virtual ~Tracker();
 
-  /// update tracker
-  void updatePrediction(const ros::Time& filter_time);
-  void updateCorrection(const tf::Vector3& meas);
-
   /// initialize tracker
-  void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const ros::Time& time);
+  void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time);
 
   /// return if tracker was initialized
-  bool isInitialized() {return tracker_initialized_;};
+  bool isInitialized() const {return tracker_initialized_;};
+
+  /// update tracker
+  void updatePrediction(const double filter_time);
+  void updateCorrection(const tf::Vector3& meas);
+
+  // get evenly spaced particle cloud
+  void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
 
   /// get filter posterior
-  void getEstimate(robot_msgs::PositionMeasurement& estimate);
+  BFL::StatePosVel getEstimate() const;
 
   /// Get histogram from certain area
   MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
@@ -89,7 +93,7 @@ private:
 
   // vars
   bool tracker_initialized_;
-
+  double filter_time_;
   unsigned int num_particles_;
 
 

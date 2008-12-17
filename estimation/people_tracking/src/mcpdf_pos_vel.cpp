@@ -8,6 +8,7 @@
 *  modification, are permitted provided that the following conditions
 *  are met:
 * 
+*   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
 *     copyright notice, this list of conditions and the following
@@ -35,7 +36,7 @@
 #include "mcpdf_pos_vel.h"
 #include <assert.h>
 #include <vector>
-
+#include <std_msgs/Float64.h>
 
   using namespace MatrixWrapper;
   using namespace BFL;
@@ -59,6 +60,68 @@
   }
 
 
+  StatePosVel MCPdfPosVel::ExpectedValueGet() const
+  {
+    tf::Vector3 pos(0,0,0);  tf::Vector3 vel(0,0,0); 
+    double current_weight;
+    std::vector<WeightedSample<StatePosVel> >::const_iterator it_los;
+    for ( it_los = _listOfSamples.begin() ; it_los != _listOfSamples.end() ; it_los++ ){
+      current_weight = it_los->WeightGet();
+      pos += (it_los->ValueGet().pos_ * current_weight);
+      vel += (it_los->ValueGet().vel_ * current_weight);
+    }
+    return StatePosVel(pos, vel);
+  }
+
+
+  /// Get evenly distributed particle cloud
+  void MCPdfPosVel::getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  { 
+    unsigned int num_samples = _listOfSamples.size();
+    assert(num_samples > 0);
+    Vector3 min = _listOfSamples[0].ValueGet().pos_;
+    Vector3 max = _listOfSamples[0].ValueGet().pos_;
+
+    // calculate min and max
+    for (unsigned int s=0; s<num_samples; s++){
+      Vector3 v = _listOfSamples[s].ValueGet().pos_;
+      for (unsigned int i=0; i<3; i++){
+	if (v[i] < min[i]) min[i] = v[i];
+	if (v[i] > max[i]) max[i] = v[i];
+      }
+    }
+
+    // get point cloud from histogram
+    Matrix hist = getHistogramPos(min, max, step);
+    unsigned int row = hist.rows();
+    unsigned int col = hist.columns();
+    unsigned int total = 0;
+    unsigned int t = 0;
+    for (unsigned int r=1; r<= row; r++)
+      for (unsigned int c=1; c<= col; c++)
+	if (hist(r,c) > threshold) total++;
+
+    vector<std_msgs::Point32> points(total);
+    vector<float> weights(total);
+    std_msgs::ChannelFloat32 channel;
+    for (unsigned int r=1; r<= row; r++)
+      for (unsigned int c=1; c<= col; c++)
+	if (hist(r,c) > threshold){
+	  for (unsigned int i=0; i<3; i++)
+	  points[t].x = min[0] + (step[0] * r);
+	  points[t].y = min[1] + (step[1] * c);
+	  points[t].z = min[2];
+	  weights[t] = trunc(hist(r,c)*55*255);
+	  t++;
+	}
+    cloud.header.frame_id = "odom";
+    cloud.pts  = points;
+    channel.name = "rgb";
+    channel.vals = weights;
+    cloud.chan.push_back(channel);
+  }
+
+
   /// Get histogram from pos
   MatrixWrapper::Matrix MCPdfPosVel::getHistogramPos(const Vector3& m, const Vector3& M, const Vector3& step) const
   { 
@@ -74,24 +137,24 @@
 
 
   /// Get histogram from certain area
-MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step, bool pos_hist) const
+  MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step, bool pos_hist) const
   {  
-    unsigned int num_smaples = _listOfSamples.size();
-    unsigned int rows = trunc((M[0]-m[0])/step[0]);
-    unsigned int cols = trunc((M[1]-m[1])/step[1]);
+    unsigned int num_samples = _listOfSamples.size();
+    unsigned int rows = round((M[0]-m[0])/step[0]);
+    unsigned int cols = round((M[1]-m[1])/step[1]);
     Matrix hist(rows, cols);
     hist = 0;
 
     // calculate histogram
-    for (unsigned int i=0; i<num_smaples; i++){
+    for (unsigned int i=0; i<num_samples; i++){
       Vector3 rel;
       if (pos_hist)
 	rel = _listOfSamples[i].ValueGet().pos_ - m;
       else
 	rel = _listOfSamples[i].ValueGet().vel_ - m;
 
-      unsigned int r = trunc(rel[0] * rows / (M[0] - m[0]));
-      unsigned int c = trunc(rel[1] * cols / (M[1] - m[0]));
+      unsigned int r = round(rel[0] / step[0]);
+      unsigned int c = round(rel[1] / step[1]);
       if (r >= 1 && c >= 1 && r <= rows && c <= cols)
 	hist(r,c) += _listOfSamples[i].WeightGet();
     }
