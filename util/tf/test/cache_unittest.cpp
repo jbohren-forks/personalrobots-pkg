@@ -31,6 +31,7 @@
 #include <tf/tf.h>
 #include <sys/time.h>
 #include "LinearMath/btVector3.h"
+#include "LinearMath/btMatrix3x3.h"
 
 
 void seed_rand()
@@ -445,6 +446,33 @@ TEST(TimeCache, AngularInterpolation)
   
 }
 
+TEST(TimeCache, DuplicateEntries)
+{
+
+  TimeCache cache;
+
+  TransformStorage stor;
+  stor.setIdentity();
+  stor.frame_id_ = "a";
+  stor.parent_frame_id = 3;
+  stor.stamp_ = ros::Time().fromSec(1);
+
+  cache.insertData(stor);
+
+  cache.insertData(stor);
+
+
+  cache.getData(ros::Time().fromSec(1), stor);
+  
+  printf(" stor is %f\n", stor.getOrigin().x());
+  EXPECT_TRUE(!isnan(stor.getOrigin().x()));
+  EXPECT_TRUE(!isnan(stor.getOrigin().y()));
+  EXPECT_TRUE(!isnan(stor.getOrigin().z()));
+  EXPECT_TRUE(!isnan(stor.getRotation().x()));
+  EXPECT_TRUE(!isnan(stor.getRotation().y()));
+  EXPECT_TRUE(!isnan(stor.getRotation().z()));
+  EXPECT_TRUE(!isnan(stor.getRotation().w()));
+}
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

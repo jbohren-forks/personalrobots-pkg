@@ -163,9 +163,12 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros
 void TimeCache::interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output)
 { 
 
-  //
+  // Check for zero distance case 
   if( two.stamp_ == one.stamp_ )
+  {
     output = two;
+    return;    
+  }
   //Calculate the ratio
   btScalar ratio = ((time - one.stamp_).to_double()) / ((two.stamp_ - one.stamp_).to_double());
   

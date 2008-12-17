@@ -1190,6 +1190,31 @@ TEST(tf, getLatestCommonTime)
 
 }
 
+TEST(tf, RepeatedTimes)
+{
+  Transformer mTR;
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time(4000ULL), "b",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time(4000ULL), "b",  "parent"));
+
+  tf::Stamped<tf::Transform>  output;
+  try{
+    mTR.lookupTransform("parent", "b" , ros::Time().fromNSec(4000), output);
+    EXPECT_TRUE(!isnan(output.getOrigin().x()));
+    EXPECT_TRUE(!isnan(output.getOrigin().y()));
+    EXPECT_TRUE(!isnan(output.getOrigin().z()));
+    EXPECT_TRUE(!isnan(output.getRotation().x()));
+    EXPECT_TRUE(!isnan(output.getRotation().y()));
+    EXPECT_TRUE(!isnan(output.getRotation().z()));
+    EXPECT_TRUE(!isnan(output.getRotation().w()));
+  }
+  catch (...)
+  {
+    EXPECT_FALSE("Excetion improperly thrown");
+  }
+  
+
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
