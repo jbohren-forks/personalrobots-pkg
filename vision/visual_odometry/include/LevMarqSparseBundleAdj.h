@@ -46,6 +46,7 @@
 #include "PointTracks.h"
 
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 namespace cv { namespace willow {
 
@@ -103,7 +104,7 @@ protected:
       PointTracks* tracks
   );
   /// compute the cost function, for example, the 2-norm of error vector.
-  double costFunction(
+  inline double costFunction(
       /// The window of frames. For a free frame, the transformation matrix
       /// is used as initial value in entry and output in exit.
       vector<FramePose*>* free_frames,
@@ -111,17 +112,17 @@ protected:
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
   );
-  void constructTransfMatrices();
-  void constructFwdTransfMatrices();
-  void constructFwdTransfMatrices(
+  inline void constructTransfMatrices();
+  inline void constructFwdTransfMatrices();
+  inline void constructFwdTransfMatrices(
       const CvMat *param, double delta, double *transf_fwds_data);
-  void constructTransfMatrix(const CvMat* param, double _T[]);
+  inline void constructTransfMatrix(const CvMat* param, double _T[]);
 
   /// compute the relative 2-norm of the difference vector of parameters between last
   /// iteration and this one.
-  double getParamChange(const PointTracks* tracks) const;
+  inline double getParamChange(const PointTracks* tracks) const;
   /// compute the change in point parameters between last iteration and this one.
-  void getPointParamChange(
+  inline void getPointParamChange(
       const PointTracks* tracks,
       double *param_diff_sum_sq,
       double *param_sum_sq) const;
@@ -129,20 +130,22 @@ protected:
       vector<FramePose*>* free_frames,
       PointTracks* tracks);
   inline bool isFreeFrame(int global_frame_index) {
-    if (global_frame_index >= lowest_free_global_index_ &&
-        global_frame_index <= highest_free_global_index_ ) {
-      return true;
-    } else {
+    if (indexmap_free_global_to_local_.find(global_frame_index) ==
+      indexmap_free_global_to_local_.end() ) {
+      // not in the set
       return false;
+    } else {
+      return true;
     }
   }
   /// returns true if it is a fixed camera
   inline bool isFixedFrame(int global_frame_index) {
-    if (global_frame_index >= lowest_fixed_global_index_ &&
-        global_frame_index <= highest_fixed_global_index_ ) {
-      return true;
-    } else {
+    if (indexmap_fixed_global_to_local_.find(global_frame_index) ==
+      indexmap_fixed_global_to_local_.end() ) {
+      // not in the set
       return false;
+    } else {
+      return true;
     }
   }
   /// returns true if neither free camera nor fixed camera. This camera
@@ -165,10 +168,6 @@ protected:
   const int full_free_window_size_;
   /// current free window size. less or equals to full_free_window_size
   int free_window_size_;
-  int lowest_free_global_index_;
-  int highest_free_global_index_;
-  int lowest_fixed_global_index_;
-  int highest_fixed_global_index_;
 
   const int full_fixed_window_size_;
   /// current fixed window size. less or equals to full_fixed_window_size.
@@ -202,7 +201,9 @@ protected:
   CvMat mat_B_;
 
   boost::unordered_map<int, CvMat *> map_global_to_disp_;
-  boost::unordered_map<int, int> map_index_global_to_local_;
+//  boost::unordered_map<int, int> map_index_global_to_local_;
+  boost::unordered_map<int, int> indexmap_free_global_to_local_;
+  boost::unordered_map<int, int> indexmap_fixed_global_to_local_;
   /// camera(frame) parameters. 6 each.
   double* frame_params_;
   /// get the pointer to the parameters of frame i.
@@ -256,7 +257,9 @@ protected:
   inline double * getTransfFwd(int iFrame, int iParam) {
     return &(transf_fwd_data_[iFrame*6*16 + iParam*16]);
   }
-  inline void JacobianOfPointApprox(
+  /// Compute the Jacobian of the point parameters numerically,
+  /// by forward finite difference.
+  inline void JacobianOfPointNumeric(
       double px, double py, double pz,
       double pu, double pv, double pd,
       double rx, double ry, double rz,
@@ -265,7 +268,8 @@ protected:
       double *transf_global_disp,
       double *Jp
   );
-  inline void JacobianOfPointExact(
+  /// Compute the Jacobian of the point parameters analytically.
+  inline void JacobianOfPointAnalytic(
       PointTrackObserv* obsv,
       double *transf_global_disp,
       double *Jp
