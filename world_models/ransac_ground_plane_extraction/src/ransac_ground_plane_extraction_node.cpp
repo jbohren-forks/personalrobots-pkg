@@ -36,8 +36,10 @@
 
 using namespace ransac_ground_plane_extraction;
 
-RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL)
+RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false)
 {
+  std::string publish_obstacle_cloud;
+
   this->param<std::string>("ransac_ground_plane_extraction/listen_topic",listen_topic_,"full_cloud");
   this->param<std::string>("ransac_ground_plane_extraction/publish_ground_plane_topic",publish_ground_plane_topic_,"ground_plane");
   this->param<std::string>("ransac_ground_plane_extraction/publish_obstacle_topic",publish_obstacle_topic_,"obstacle_cloud");
@@ -48,18 +50,25 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
 
   this->param<double>("ransac_ground_plane_extraction/filter_delta",filter_delta_,0.5);
   this->param<int>("ransac_ground_plane_extraction/max_ransac_iterations",max_ransac_iterations_,500);
+  this->param<std::string>("ransac_ground_plane_extraction/publish_obstacle_cloud",publish_obstacle_cloud,"no");
+
+  if(publish_obstacle_cloud == std::string("yes"))
+    publish_obstacle_cloud_ = true;
 
   subscribe(listen_topic_,  cloud_msg_,  &RansacGroundPlaneExtractionNode::cloudCallback,1);
-//advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
-  advertise<pr2_msgs::Plane>(publish_ground_plane_topic_, 1);
+  if(publish_obstacle_cloud_)
+    advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
 
+  advertise<pr2_msgs::PlaneStamped>(publish_ground_plane_topic_, 1);
   ground_plane_extractor_.max_iterations_ = max_ransac_iterations_;
   ground_plane_extractor_.filter_delta_ = filter_delta_;
 }
 
 RansacGroundPlaneExtractionNode::~RansacGroundPlaneExtractionNode()
 {
-//  unadvertise(publish_obstacle_topic_);
+  if(publish_obstacle_cloud_)
+    unadvertise(publish_obstacle_topic_);
+
   unadvertise(publish_ground_plane_topic_);
   unsubscribe(listen_topic_);
 }
@@ -74,13 +83,19 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
   std_msgs::Point32 estimated_plane_point;
   std_msgs::Point32 estimated_plane_normal;
 
-  pr2_msgs::Plane ground_plane_msg;
+  pr2_msgs::PlaneStamped ground_plane_msg;
 
   if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
   {
     ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
-    obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
-    obstacle_cloud_->header = cloud_msg_.header;
+    if(publish_obstacle_cloud_)
+    {
+      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
+      obstacle_cloud_->header = cloud_msg_.header;
+      publish(publish_obstacle_topic_,*obstacle_cloud_);
+    }
+
+    ground_plane_msg.header = cloud_msg_.header;
 
     ground_plane_msg.point.x = estimated_plane_point.x;
     ground_plane_msg.point.y = estimated_plane_point.y;
@@ -91,7 +106,6 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
     ground_plane_msg.normal.z = estimated_plane_normal.z;
 
     publish(publish_ground_plane_topic_,ground_plane_msg);
-//    publish(publish_obstacle_topic_,*obstacle_cloud_);
   }
 }
 

@@ -23,6 +23,7 @@
     <param name="ransac_ground_plane_extraction/distance_threshold" value="0.03"/>
     <param name="ransac_ground_plane_extraction/filter_delta" value="1.0"/>
     <param name="ransac_ground_plane_extraction/max_ransac_iterations" value="500"/>
+    <param name="ransac_ground_plane_extraction/publish_obstacle_cloud" type="string" value="no"/>
 
 
   </group>

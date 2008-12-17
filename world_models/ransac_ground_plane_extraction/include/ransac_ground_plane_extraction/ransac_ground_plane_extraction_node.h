@@ -35,7 +35,7 @@
 #include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
-#include <pr2_msgs/Plane.h>
+#include <pr2_msgs/PlaneStamped.h>
 #include <ros/node.h>
 
 
@@ -76,6 +76,8 @@ namespace ransac_ground_plane_extraction {
   std::string publish_ground_plane_topic_;
 
   std::string publish_obstacle_topic_;
+
+  bool publish_obstacle_cloud_;
 
   void cloudCallback();
 
