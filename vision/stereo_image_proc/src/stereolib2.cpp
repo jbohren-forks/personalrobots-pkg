@@ -32,6 +32,15 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/*
+Stereo Lib "2" for Open Stereo package
+Federico Tombari
+Willow Garage Inc.
+email: tombari@willowgarage.com
+CVLab - University of Bologna
+email: federico.tombari@unibo.it
+*/
+
 #include "stereolib.h"
 #define inline			// use this for Intel Compiler Debug mode
 #include <stdio.h>
@@ -118,14 +127,10 @@ int h = yim;
 
 unsigned char *L = lim;
 unsigned char *R = rim;
-//short int* disp = disp;
 	
 //Parameters for regularization
 int pi2 = tfilter_thresh*4*n;
-//int pi2a = tfilter_thresh*4;	
-//int pi2b = tfilter_thresh;
 int pi1 = tfilter_thresh*n;
-//int Tp = 10;
 
 //temp variables
 int x,y,d,i,j;

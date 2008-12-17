@@ -466,7 +466,7 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   int tthresh = textureThresh; // texture threshold
   int uthresh = uniqueThresh; // uniqueness threshold, percent
 
-  // allocate buffers
+ // allocate buffers
   // TODO: make these consistent with current values
   if (!imDisp)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
@@ -478,14 +478,46 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   if (!frim)
     frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
 
-  // prefilter
+ // prefilter
   do_prefilter(lim, flim, xim, yim, ftzero, buf);
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
-  // stereo
-  do_stereo(flim, frim, imDisp, NULL, xim, yim, 
+switch(alg){
+	case NORMAL_ALGORITHM:  
+//if(alg == NORMAL_ALGORITHM){
+	printf("Normal Algorithm\n");
+	  // stereo
+  	do_stereo(flim, frim, imDisp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	break;
+	
+	case SCANLINE_ALGORITHM:
+//  if(alg == SCANLINE_ALGORITHM){
+	printf("Scanline Algorithm\n");
+	do_stereo_so(flim, frim, imDisp, NULL, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	break;
+	
+	case DP_ALGORITHM:
+ // if(alg == DP_ALGORITHM){
+	printf("DP Algorithm\n");
+	do_stereo_dp(flim, frim, imDisp, NULL, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	break;
 
+	case MW_ALGORITHM:
+	//  if(alg == MW_ALGORITHM){
+	printf("MW Algorithm\n");
+	do_stereo_mw(flim, frim, imDisp, NULL, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	break;
+
+	default:
+	printf("No algorithm has been selected..sorry!\n");
+}
+
+
+ 
   hasDisparity = true;
 
   // speckle filter

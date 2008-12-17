@@ -118,7 +118,8 @@ typedef enum
 {
   NORMAL_ALGORITHM,
   SCANLINE_ALGORITHM,
-  DP_ALGORITHM
+  DP_ALGORITHM,
+  MW_ALGORITHM
 } stereo_algorithm_t; 
 
 
