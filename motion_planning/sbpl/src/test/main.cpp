@@ -1009,8 +1009,8 @@ int main(int argc, char *argv[])
 	}
 
     //2D planning
-    plan2d(argc, argv);
-    //planandnavigate2d(argc, argv);
+    //plan2d(argc, argv);
+    planandnavigate2d(argc, argv);
 
     //3D planning
     //plan3dkin(argc, argv);
