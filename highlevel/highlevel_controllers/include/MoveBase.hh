@@ -42,6 +42,12 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/basic_observation_buffer.h>
 
+//Ransac ground filter used to see small obstacles
+#include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
+#include <pr2_msgs/PlaneStamped.h>
+#include <std_msgs/Point.h>
+#include <std_msgs/Vector3.h>
+
 // Generic OMPL plan representation (will move into <sbpl_util/...> or <ompl_tools/...> later)
 #include <plan_wrap.h>
 
@@ -161,6 +167,7 @@ namespace ros {
       void tiltScanCallback();
       void tiltCloudCallback();
       void stereoCloudCallback();
+      void groundPlaneCallback();
 
       /**
        * @brief Robot odometry call back
@@ -198,6 +205,11 @@ namespace ros {
        * @brief Tests if all the buffers are appropriately up to date
        */
       bool checkWatchDog() const;
+
+      /**
+       * @bried Filters ground hits from point clouds
+       */
+      void filterGroundPlane(const std_msgs::PointCloud& unfiltered, std_msgs::PointCloud* filtered);
 
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
@@ -245,6 +257,11 @@ namespace ros {
       pthread_t *map_update_thread_; /*<! Thread to process laser data and apply to the map */
       bool active_; /*<! Thread control parameter */
       double map_update_frequency_;
+
+      //ground plane extraction
+      ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;
+      pr2_msgs::PlaneStamped groundPlaneMsg_;
+      pr2_msgs::PlaneStamped ground_plane_;
     };
   }
 }

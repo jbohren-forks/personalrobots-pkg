@@ -128,7 +128,7 @@ namespace ros {
 							       inscribedRadius, minZ_, maxZ_);
       tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
-							       inscribedRadius, minZ_, maxZ_);
+							       inscribedRadius, 0.0, maxZ_);
       stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
@@ -243,6 +243,7 @@ namespace ros {
       //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
       subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
       subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
+      subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
 
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
@@ -376,10 +377,60 @@ namespace ros {
       unlock();
     }
 
+    void MoveBase::filterGroundPlane(const std_msgs::PointCloud& unfiltered, std_msgs::PointCloud* filtered){
+      std_msgs::PointStamped frame_point;
+      std_msgs::Vector3Stamped frame_normal;
+      //we want to remove ground hits in the frame of the unfiltered cloud
+      try
+      {
+        std_msgs::PointStamped gp_pt;
+        gp_pt.header = ground_plane_.header;
+        gp_pt.point = ground_plane_.point;
+
+        std_msgs::Vector3Stamped gp_norm;
+        gp_norm.header = ground_plane_.header;
+        gp_norm.vector = ground_plane_.normal;
+
+        tf_.transformPoint(unfiltered.header.frame_id, gp_pt, frame_point);	 
+        tf_.transformVector(unfiltered.header.frame_id, gp_norm, frame_normal);	 
+      }
+      catch(tf::LookupException& ex)
+      {
+        ROS_DEBUG("%s\n", ex.what());
+      }
+      catch(tf::ConnectivityException& ex)
+      {
+        ROS_DEBUG("%s\n", ex.what());
+      }
+      catch(tf::ExtrapolationException& ex)
+      {
+        puts("Extrapolation exception");
+      }
+
+      //TODO:needs to be a param tomorrow
+      double distance_threshold = 0.03;
+
+      filtered = ground_plane_extractor_.removeGround(unfiltered, distance_threshold, frame_point.point, frame_normal.vector);
+      filtered->header = unfiltered.header;
+    }
+
     void MoveBase::tiltCloudCallback()
     {
+      std_msgs::PointCloud *filtered_cloud = NULL;
       lock();
-      tiltScanBuffer_->buffer_cloud(tiltCloudMsg_);
+      filterGroundPlane(tiltCloudMsg_, filtered_cloud);
+      if(filtered_cloud != NULL){
+        tiltScanBuffer_->buffer_cloud(*filtered_cloud);
+        delete filtered_cloud;
+      }
+      unlock();
+    }
+
+    //updates the point and normal that define the ground plane
+    void MoveBase::groundPlaneCallback()
+    {
+      lock();
+      ground_plane_ = groundPlaneMsg_;
       unlock();
     }
 

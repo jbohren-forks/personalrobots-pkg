@@ -12,7 +12,7 @@ genmsg()
 
 # Library
 rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cpp)
-target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util)
+target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util ransac_ground_plane_extraction)
 
 # MoveArm
 rospack_add_executable(move_arm src/MoveArm.cpp)
