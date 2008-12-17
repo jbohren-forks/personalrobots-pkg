@@ -35,6 +35,7 @@
 #include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
+#include <pr2_msgs/Plane.h>
 #include <ros/node.h>
 
 
