@@ -65,7 +65,7 @@ The geometric shape models implemented so far are:
 - 3D cylinder, 4 points (with normals)
 
 Future versions will include:
-- 3D toruses and cones
+- 3D torii and cones
 - localized sampling and pre-shape detection using libcloud_octree.
 
 Additionally, the library contains a few specialized axis-aligned

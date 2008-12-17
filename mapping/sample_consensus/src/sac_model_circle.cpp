@@ -117,15 +117,15 @@ namespace sample_consensus
       // Calculate the distance from the point to the circle as the difference between 
       //dist(point,circle_origin) and circle_radius
       double distance_to_circle = fabs (sqrt (
-                                              ( cloud_->pts.at (indices_.at (i)).x - model_coefficients.at (0) ) *
-                                              ( cloud_->pts.at (indices_.at (i)).x - model_coefficients.at (0) ) +
+                                              ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
+                                              ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) +
 
-                                              ( cloud_->pts.at (indices_.at (i)).y - model_coefficients.at (1) ) *
-                                              ( cloud_->pts.at (indices_.at (i)).y - model_coefficients.at (1) )
+                                              ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) *
+                                              ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) )
                                              ) - model_coefficients.at (2));
       if (distance_to_circle < threshold)
         // Returns the indices of the points whose distances are smaller than the threshold
-        inliers.push_back (indices_.at (i));
+        inliers.push_back (indices_[i]);
     }
     return (inliers);
   }
@@ -144,11 +144,11 @@ namespace sample_consensus
       // Calculate the distance from the point to the circle as the difference between 
       //dist(point,circle_origin) and circle_radius
       distances[i] = fabs (sqrt (
-                                 ( cloud_->pts.at (indices_.at (i)).x - model_coefficients.at (0) ) *
-                                 ( cloud_->pts.at (indices_.at (i)).x - model_coefficients.at (0) ) +
+                                 ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
+                                 ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) +
 
-                                 ( cloud_->pts.at (indices_.at (i)).y - model_coefficients.at (1) ) *
-                                 ( cloud_->pts.at (indices_.at (i)).y - model_coefficients.at (1) )
+                                 ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) *
+                                 ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) )
                                 ) - model_coefficients.at (2));
     return (distances);
   }
@@ -157,6 +157,7 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the 2D circle model.
     * \param inliers the data inliers that we want to project on the 2D circle model
     * \param model_coefficients the coefficients of a 2D circle model
+    * \todo implement this.
     */
   std_msgs::PointCloud
     SACModelCircle2D::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
@@ -169,6 +170,7 @@ namespace sample_consensus
   /** \brief Project inliers (in place) onto the given 2D circle model.
     * \param inliers the data inliers that we want to project on the 2D circle model
     * \param model_coefficients the coefficients of a 2D circle model
+    * \todo implement this.
     */
   void
     SACModelCircle2D::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)

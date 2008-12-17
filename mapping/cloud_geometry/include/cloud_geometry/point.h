@@ -40,6 +40,8 @@
 namespace cloud_geometry
 {
 
+  int getChannelIndex (std_msgs::PointCloud points, std::string channel_name);
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create a quick copy of a point and its associated channels and return the data as a float vector.
     * \param points the point cloud data message
@@ -146,6 +148,17 @@ namespace cloud_geometry
     r.y = p1.z*p2.x - p1.x*p2.z;
     r.z = p1.x*p2.y - p1.y*p2.x;
     return (r);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (std_msgs::Point32 p1, std_msgs::Point32 p2)
+  {
+    return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
