@@ -64,7 +64,7 @@ TEST(TransferFunctionFilter, LowPass)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(11.8008);
-  filter.update( &in1);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);
@@ -95,7 +95,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(2.4088);
-  filter.update( &in1);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);
@@ -153,7 +153,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   out1.push_back(60.6216);
   out1.push_back(33.9829);
   out1.push_back(28.1027);
-  filter.update( &in1);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);
