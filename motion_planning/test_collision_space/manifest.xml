@@ -1,11 +1,12 @@
 <package>
   <description brief="Test collision spaces">
-    A set of robot models that can do collision checking
+    A visualization tool to check whether collision space code is
+    working appropriately
   </description>
 
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
-  <review status="deprecated" notes=""/>
+  <review status="unreviewed" notes=""/>
 
   <depend package="roscpp"/>
   <depend package="tf"/>
