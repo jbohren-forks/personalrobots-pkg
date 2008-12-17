@@ -48,6 +48,9 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
   this->param<double>("ransac_ground_plane_extraction/max_ignore_distance",max_ignore_distance_,0.01);
   this->param<double>("ransac_ground_plane_extraction/distance_threshold",distance_threshold_,0.03);
 
+  this->param<double>("ransac_ground_plane_extraction/far_remove_distance_threshold",far_remove_distance_threshold_,0.05);
+  this->param<double>("ransac_ground_plane_extraction/far_remove_distance",far_remove_distance_,6.0);
+
   this->param<double>("ransac_ground_plane_extraction/filter_delta",filter_delta_,0.5);
   this->param<int>("ransac_ground_plane_extraction/max_ransac_iterations",max_ransac_iterations_,500);
   this->param<std::string>("ransac_ground_plane_extraction/publish_obstacle_cloud",publish_obstacle_cloud,"no");
@@ -85,12 +88,14 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
 
   pr2_msgs::PlaneStamped ground_plane_msg;
 
-  if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
+  std_msgs::PointStamped origin;
+
+  if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal,origin))
   {
     ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
     if(publish_obstacle_cloud_)
     {
-      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
+      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, origin, far_remove_distance_, far_remove_distance_threshold_);
       obstacle_cloud_->header = cloud_msg_.header;
       publish(publish_obstacle_topic_,*obstacle_cloud_);
     }
