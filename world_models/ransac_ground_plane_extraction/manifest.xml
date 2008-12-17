@@ -12,6 +12,6 @@
 <depend package="scan_utils" />
 <depend package="pr2_msgs" />
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lransac_ground_plane_extraction"/>
 </export>
 </package>
