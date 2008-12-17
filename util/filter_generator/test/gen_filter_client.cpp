@@ -22,7 +22,6 @@ public:
     {
       for(uint32_t i=0; i<res.a.size();i++)
       { 
-        printf("got...%d\n",res.a.size());
         a.push_back(res.a[i]);
         b.push_back(res.b[i]);
       }
@@ -56,10 +55,8 @@ int main(int argc, char **argv)
   
   if (a.call_add(argv[1], args, tf_a, tf_b))
   {
-    printf("printing...%d\n",tf_a.size());
     for(uint32_t i=0; i<tf_a.size();i++)
     {
-     
       printf("a[%d]:%f b[%d]:%f \n",i,tf_a[i],i,tf_b[i]);
     }
   }
