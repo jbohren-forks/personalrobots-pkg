@@ -59,9 +59,9 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
       planeNormal.z = -planeNormal.z;
     }
 
-    ROS_INFO("Plane point: %f %f %f",planePoint.x,planePoint.y,planePoint.z);
-    ROS_INFO("Plane normal: %f %f %f",planeNormal.x,planeNormal.y,planeNormal.z);
-    ROS_INFO("Done RANSAC %f seconds",(ros::Time::now()-time).toSec());
+    ROS_DEBUG("Plane point: %f %f %f",planePoint.x,planePoint.y,planePoint.z);
+    ROS_DEBUG("Plane normal: %f %f %f",planeNormal.x,planeNormal.y,planeNormal.z);
+    ROS_DEBUG("Done RANSAC %f seconds",(ros::Time::now()-time).toSec());
 
     return 1;
 }
@@ -85,14 +85,14 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
 {
     SmartScan full_scan;
 
-    ROS_INFO("Remove: Plane point: %f %f %f",point_plane.x, point_plane.y,point_plane.z);
-    ROS_INFO("Remove: Plane normal: %f %f %f",normal_plane.x, normal_plane.y,normal_plane.z);
-    ROS_INFO("Threshold: %f",remove_distance);
+    ROS_DEBUG("Remove: Plane point: %f %f %f",point_plane.x, point_plane.y,point_plane.z);
+    ROS_DEBUG("Remove: Plane normal: %f %f %f",normal_plane.x, normal_plane.y,normal_plane.z);
+    ROS_DEBUG("Threshold: %f",remove_distance);
 
     full_scan.setFromRosCloud(baseFrameCloud);
     full_scan.removePlane (point_plane, normal_plane, remove_distance);
 
-//    ROS_INFO("Done removing plane %f seconds",(ros::Time::now()-time).toSec());
+//    ROS_DEBUG("Done removing plane %f seconds",(ros::Time::now()-time).toSec());
 
     std_msgs::PointCloud *return_copy = new std_msgs::PointCloud();
     return_copy->header = baseFrameCloud.header;
