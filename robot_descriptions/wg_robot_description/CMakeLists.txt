@@ -38,6 +38,13 @@ add_custom_command(
   ARGS ${pr2arm}.xacro.xml > ${pr2arm}.xml
   DEPENDS ${pr2arm}.xacro.xml)
 
+set(pr2gripper "${CMAKE_CURRENT_SOURCE_DIR}/pr2_gripper/pr2_gripper")
+add_custom_command(
+  OUTPUT ${pr2gripper}.xml
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${pr2gripper}.xacro.xml > ${pr2gripper}.xml
+  DEPENDS ${pr2gripper}.xacro.xml)
+
 #iv files
 # iterate through all the stl files and generate *.mesh and *.iv files
 file(GLOB pr2_stl_files ${CMAKE_CURRENT_SOURCE_DIR}/models/pr2/*.stl)
@@ -58,4 +65,4 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2robot}.xml ${pr2prototype1}.xml ${pr2arm}.xml ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2robot}.xml ${pr2prototype1}.xml ${pr2arm}.xml ${pr2gripper}.xml ${pr2_gen_files})

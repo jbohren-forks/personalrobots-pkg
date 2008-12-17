@@ -26,6 +26,7 @@ for i = 1:length(robot.sensors)
                               'type',si.type);
 end
 
+robot.activemanip = robotinfo.activemanip+1;
 robot.activedof = robotinfo.activedof;
 robot.affinedof = robotinfo.active.affine;
 robot.activejoints = robotinfo.active.joints;

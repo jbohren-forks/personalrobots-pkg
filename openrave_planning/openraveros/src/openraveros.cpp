@@ -32,8 +32,76 @@ void sigint_handler(int);
 boost::shared_ptr<ros::node> s_pmasternode;
 boost::shared_ptr<SessionServer> s_sessionserver;
 
+void printhelp()
+{
+    wprintf(L"openraveros [--list] [--debuglevel [level]]\n"
+            "  Starts the OpenRAVE ROS server\n"
+            "--list             List all the loadable interfaces (ie, collision checkers).\n"
+            "-d, --debuglevel [level]    Set a debug level, higher numbers are more verbose (default is 3)\n");
+}
+
+void printinterfaces(EnvironmentBase* penv)
+{
+    PLUGININFO info;
+    penv->GetLoadedInterfaces(info);
+
+    vector<wstring>::const_iterator itnames;     
+    vector<string> names;
+    vector<string>::iterator itname;
+    wstringstream ss;
+            
+    ss << endl << L"Loadable interfaces: " << endl;
+
+    ss << L"Collision Checkers (" << info.collisioncheckers.size() << "):" << endl;
+    for(itnames = info.collisioncheckers.begin(); itnames != info.collisioncheckers.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Controllers (" << info.controllers.size() << "):" << endl;
+    for(itnames = info.controllers.begin(); itnames != info.controllers.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+    
+    ss << L"Inverse Kinematics Solvers (" << info.iksolvers.size() << "):" << endl;
+    for(itnames = info.iksolvers.begin(); itnames != info.iksolvers.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Physics Engines (" << info.physicsengines.size() << "):" << endl;
+    for(itnames = info.physicsengines.begin(); itnames != info.physicsengines.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Planners (" << info.planners.size() << "):" << endl;
+    for(itnames = info.planners.begin(); itnames != info.planners.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Problems (" << info.problems.size() << "):" << endl;
+    for(itnames = info.problems.begin(); itnames != info.problems.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Robots (" << info.robots.size() << "):" << endl;
+    for(itnames = info.robots.begin(); itnames != info.robots.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Sensors (" << info.sensors.size() << "):" << endl;
+    for(itnames = info.sensors.begin(); itnames != info.sensors.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Sensor Systems (" << info.sensorsystems.size() << "):" << endl;
+    for(itnames = info.sensorsystems.begin(); itnames != info.sensorsystems.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    ss << L"Trajectories (" << info.trajectories.size() << "):" << endl;
+    for(itnames = info.trajectories.begin(); itnames != info.trajectories.end(); ++itnames)
+        ss << " " << itnames->c_str() << endl;
+
+    wprintf(ss.str().c_str());
+}
+
 int main(int argc, char ** argv)
 {
+    // Set up the output streams to support wide characters
+    if (fwide(stdout,1) < 0) {
+        printf("Unable to set stdout to wide characters\n");
+    }
+
     signal(SIGINT,sigint_handler); // control C
 
     ros::init(argc,argv);
@@ -46,7 +114,30 @@ int main(int argc, char ** argv)
     if( !s_sessionserver->Init() )
         return -1;
 
-    s_sessionserver->spin();
+    // parse the command line options
+    bool bExit = false;
+    int i = 1;
+    while(i < argc) {
+        if( strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "-?") == 0 || strcmp(argv[i], "/?") == 0 || strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-help") == 0 ) {
+            printhelp();
+            bExit = true;
+            break;
+        }
+        else if( strcmp(argv[i], "--debuglevel") == 0 || strcmp(argv[i], "-d") == 0 ) {
+            RaveSetDebugLevel((DebugLevel)atoi(argv[i+1]));
+            i += 2;
+        }
+        else if( strcmp(argv[i], "--list") == 0 ) {
+            printinterfaces(s_sessionserver->GetParentEnvironment().get());
+            bExit = true;
+            break;
+        }
+        else
+            break;
+    }
+
+    if( !bExit )
+        s_sessionserver->spin();
     s_sessionserver.reset();
     ros::fini();
     s_pmasternode.reset();

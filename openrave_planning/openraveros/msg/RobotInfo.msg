@@ -7,6 +7,9 @@ AttachedSensor[] sensors
 # total active dof
 uint8 activedof
 
+# current active manipulator
+uint8 activemanip
+
 # information about the active dofs
 ActiveDOFs active
 

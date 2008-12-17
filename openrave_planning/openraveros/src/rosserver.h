@@ -158,6 +158,7 @@ public:
     }
     virtual ~ROSServer() {
         Destroy();
+        GetEnv()->AttachServer(NULL);
     }
     
     virtual void Destroy()
@@ -733,6 +734,7 @@ public:
         FillKinBodyInfo(probot,info.bodyinfo,options);
 
         info.activedof = probot->GetActiveDOF();
+        info.activemanip = probot->GetActiveManipulatorIndex();
 
         if( options & RobotInfo::Req_Manipulators ) {
             info.manips.resize(probot->GetManipulators().size()); int index = 0;

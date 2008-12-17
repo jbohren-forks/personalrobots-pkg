@@ -1,0 +1,16 @@
+<KinBody name="willow_table">
+  <Body>
+    <Geom type="box">
+      <extents>0.38 0.62 0.035</extents>
+      <translation>0 0 0.711</translation>
+    </Geom>
+    <Geom type="box">
+      <extents>0.14 0.015 0.35</extents>
+      <translation>0 -0.555 0.35</translation>
+    </Geom>
+    <Geom type="box">
+      <extents>0.14 0.015 0.35</extents>
+      <translation>0 0.555 0.35</translation>
+    </Geom>
+  </Body>
+</KinBody>

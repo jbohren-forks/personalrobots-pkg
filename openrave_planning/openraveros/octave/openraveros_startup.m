@@ -35,7 +35,6 @@ if( ~exist('createsession','var') )
 end
 
 if( isempty(openraveros_initialized))
-    openraveros_initialized = 1;
     [status,rosoctpath] = system('rospack find rosoct');
     rosoctpath = strtrim(rosoctpath);
     addpath(fullfile(rosoctpath,'octave'));
@@ -44,6 +43,7 @@ if( isempty(openraveros_initialized))
     rosoct_add_srvs('openraveros');
 
     rosoct('shutdown'); % restart the client
+    openraveros_initialized = 1;
 end
 
 if( ~exist('sessionserver','var') )
