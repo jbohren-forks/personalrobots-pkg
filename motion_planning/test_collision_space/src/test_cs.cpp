@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <ros/node.h>
+#include <ros/time.h>
 #include <collision_space/environmentODE.h>
 #include <algorithm>
 #include <std_msgs/VisualizationMarker.h>
@@ -53,9 +54,14 @@ public:
     
     TestVM(void) : ros::node("TVM")
     {
-	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);	
+        std_msgs::VisualizationMarker mk;
+	advertise("visualizationMarker", 
+                  mk,
+                  &TestVM::subCb,
+                  10240);	
 	m_tfServer = new tf::TransformBroadcaster(*this);	
 	m_id = 1;
+        m_connected = false;
     }
 
     virtual ~TestVM(void)
@@ -70,6 +76,11 @@ public:
 	tf::Transform t;
 	t.setIdentity();
 	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, m_tm, "base", "map"));
+    }
+
+    void subCb(ros::pub_sub_conn*)
+    {
+      m_connected = true;
     }
     
     void sendPoint(double x, double y, double z)
@@ -226,12 +237,18 @@ public:
 	
 	delete s;
     }
+
+    bool isConnected()
+    {
+      return m_connected;
+    }
     
 protected:
 
     tf::TransformBroadcaster *m_tfServer;
     ros::Time                 m_tm;  
     int                       m_id;
+    bool                      m_connected;
 };
 
     
@@ -240,10 +257,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     TestVM tvm;
-    sleep(1);    
+    ros::Duration d;
+    d.fromSec(0.1);
+
+    while(!tvm.isConnected())
+      d.sleep();
+
     tvm.setupTransforms();    
-    sleep(1);
-    
     
     tvm.testSphere();
     tvm.testBox();

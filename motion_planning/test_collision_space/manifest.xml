@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
 
   <depend package="roscpp"/>
+  <depend package="rostime"/>
   <depend package="tf"/>
   <depend package="std_msgs"/>
   <depend package="collision_space"/>

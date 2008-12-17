@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="ogre_visualizer" type="standalone_visualizer.py"/>
+  <node pkg="test_collision_space" type="test_cs"/>
+</launch>
