@@ -1102,7 +1102,7 @@ void SmartScan::removePlane(const std_msgs::Point32 &planePoint,
 	std_msgs::Point32 dif, p;
         std_msgs::Point32 od;
 	int numNewPoints = 0;
-	float dist, dist_origin_in_plane;
+	float dist, dist_origin;
 	for(int i=0; i<mNumPoints; i++) {
 		p = getPoint(i);
 		dif.x = p.x - planePoint.x;
@@ -1114,9 +1114,9 @@ void SmartScan::removePlane(const std_msgs::Point32 &planePoint,
 		od.z = p.z - origin.point.z;
 		dist = dot(dif,planeNormal);
 
-                dist_origin_in_plane = sqrt(fabs(od.x*od.x + od.y*od.y + od.z*od.z - dist*dist));
+                dist_origin = sqrt(od.x*od.x + od.y*od.y + od.z*od.z);
 
-                if(dist_origin_in_plane <= far_remove_distance)
+                if(dist_origin <= far_remove_distance)
                 {
                   if ( fabs(dist) < thresh ) 
                   {
