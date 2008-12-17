@@ -86,9 +86,9 @@
       <joint_properties damping="0.2" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp">10.0</elem>
-        <elem key="mimicKd">0.0</elem>
-        <elem key="mimicFMax">100.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
+        <elem key="mimicKp">1.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">50.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
       </map>
     </joint>
 
@@ -150,12 +150,12 @@
       <limit effort="10" min="${-gripper_max_angle}" max="0"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.05" />
+      <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">1.0</elem>
-        <elem key="mimicKd">0.0</elem>
-        <elem key="mimicFMax">100.0</elem>
+        <elem key="mimicKp">2.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">10.0</elem>
       </map>
     </joint>
 
@@ -217,12 +217,12 @@
       <limit effort="10" min="0" max="${gripper_max_angle}"
              k_position="0" k_velocity="0"
              safety_length_min="0.0" safety_length_max="0.0" />
-      <joint_properties damping="0.05" />
+      <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">1.0</elem>
-        <elem key="mimicKd">0.0</elem>
-        <elem key="mimicFMax">100.0</elem>
+        <elem key="mimicKp">2.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">10.0</elem>
       </map>
     </joint>
 
