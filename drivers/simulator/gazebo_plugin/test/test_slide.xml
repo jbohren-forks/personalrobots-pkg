@@ -1,7 +1,7 @@
 <launch>
   <master auto="start" />
 
-    <node pkg="gazebo" type="gazebo" args="-r $(find gazebo_robot_description)/gazebo_worlds/test/test_slide.world" respawn="false" output="screen">
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/test/test_slide.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
@@ -12,7 +12,7 @@
     <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
 
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 8 110 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 8 90 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
