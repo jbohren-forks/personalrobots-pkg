@@ -90,9 +90,13 @@ public:
 
 protected:
 
-  uint32_t iterations_;
-  uint32_t  number_of_observations_;
-  uint32_t length_;
+  uint32_t in_iter_;
+  uint32_t number_of_inputs_;
+  uint32_t in_length_;
+  
+  uint32_t out_iter_;
+  uint32_t number_of_outputs_;
+  uint32_t out_length_;
 
   RingBuffer<T> input_buffer_;
   RingBuffer<T> output_buffer_;
@@ -105,23 +109,28 @@ protected:
 
 template <typename T>
 TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a):
-  iterations_(0),
-  length_(0),
-  input_buffer_(a.size(), T(a.size())),
+  in_iter_(0),
+  in_length_(0),
+  out_iter_(0),
+  out_length_(0),
+  input_buffer_(b.size(), T(b.size())),
   output_buffer_(a.size(), T(a.size()))
 {
-  assert(a.size()==b.size());
 
   //order of the filter
-  number_of_observations_=a.size();
+  number_of_inputs_=b.size();
+  number_of_outputs_=a.size();
 
   //normalize the coeffs by a[0]
   if(a[0]!=1)
   {
+    for(uint32_t i=1; i<b.size(); i++)
+    {
+      b[i]=(b[i]/a[0]);
+    } 
     for(uint32_t i=1; i<a.size(); i++)
     {
       a[i]=(a[i]/a[0]);
-      b[i]=(b[i]/a[0]);
     }
     b[0]=(b[0]/a[0]);
     a[0]=(a[0]/a[0]);
@@ -140,25 +149,39 @@ bool TransferFunctionFilter<T>::update(T const* const data_in, T* data_out)
   {
     (*data_out)[i]=b_[0]*(*data_in)[i];
 
-    for (uint32_t row = 0; row < (length_); row ++)
+    for (uint32_t row = 0; row < (in_length_); row ++)
     {
       T temp_in=input_buffer_[row];
+      (*data_out)[i]+=  b_[row+1]*temp_in[i];
+    }
+    for (uint32_t row = 0; row < (out_length_); row ++)
+    {
       T temp_out=output_buffer_[row];
-      (*data_out)[i]+=  b_[row+1]*temp_in[i]-a_[row+1]*temp_out[i];
+      (*data_out)[i]-= a_[row+1]*temp_out[i];
     }
   }
   input_buffer_.push(current_input);
   output_buffer_.push(*data_out);
 
   //keep track of how many things we've observed
-  if (iterations_ < (number_of_observations_ -1) )
+  if (in_iter_ < (number_of_inputs_ -1) )
   {
-    iterations_++;
-    length_ = iterations_;
+    in_iter_++;
+    in_length_ = in_iter_;
   }
   else //all rows are allocated
   {
-    length_ = (number_of_observations_-1);
+    in_length_ = (number_of_inputs_-1);
+  }
+  
+  if (out_iter_ < (number_of_outputs_ -1) )
+  {
+    out_iter_++;
+    out_length_ = out_iter_;
+  }
+  else //all rows are allocated
+  {
+    out_length_ = (number_of_outputs_-1);
   }
 
 
