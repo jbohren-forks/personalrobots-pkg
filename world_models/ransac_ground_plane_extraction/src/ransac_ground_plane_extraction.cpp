@@ -66,6 +66,21 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
     return 1;
 }
 
+std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point &point_plane, std_msgs::Vector3 &normal_plane) {
+  std_msgs::Point32 pt;
+  std_msgs::Point32 norm;
+
+  pt.x = point_plane.x;
+  pt.y = point_plane.y;
+  pt.z = point_plane.z;
+
+  norm.x = normal_plane.x;
+  norm.y = normal_plane.y;
+  norm.z = normal_plane.z;
+
+  return removeGround(baseFrameCloud, remove_distance, pt, norm);
+}
+
 std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &point_plane, std_msgs::Point32 &normal_plane) 
 {
     SmartScan full_scan;
