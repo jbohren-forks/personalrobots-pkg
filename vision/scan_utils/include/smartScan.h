@@ -33,6 +33,7 @@
 #define _smartscan_h_
 
 #include <std_msgs/Point32.h> //ROS native format for a point cloud
+#include <std_msgs/PointStamped.h> //ROS native format for a point cloud
 #include <std_msgs/PointCloud.h>
 #include <dataTypes.h> //my own data types defined in this library; probably just placeholder
 //until ROS gets similar types
@@ -211,6 +212,10 @@ class SmartScan {
 	//! Removes all points that are close to a given plane
 	void removePlane(const std_msgs::Point32 &planePoint, 
 			 const std_msgs::Point32 &planeNormal, float thresh = 0.02);
+
+void removePlane(const std_msgs::Point32 &planePoint, 
+			    const std_msgs::Point32 &planeNormal, float thresh, const std_msgs::PointStamped &origin, float far_remove_distance, float far_remove_distance_threshold);
+
 	//! Computes the normal of a point by looking at its neighbors
 	std_msgs::Point32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 
