@@ -102,6 +102,7 @@ namespace cam
     bool setNumDisp(int ndisp);
     bool setRangeMax(double thresh);
     bool setRangeMin(double thresh);
+    bool setUniqueCheck(bool unique_check);
 
     // visible calls to StereoData functions
     bool doRectify();

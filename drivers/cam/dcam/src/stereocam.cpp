@@ -308,6 +308,12 @@ StereoDcam::setRangeMin(double val)
   return true;
 }
 
+bool
+StereoDcam::setUniqueCheck(bool unique_check)
+{
+  stIm->setUniqueCheck(unique_check);
+  return true;
+}
 
 //
 // utility functions

@@ -976,6 +976,11 @@ class stereogui {open
           callback smoothness_cb
           xywh {230 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
+        Fl_Light_Button unique_check_button {
+          label {Uniqueness check}
+          callback unique_check_cb selected
+          xywh {165 190 115 20} labelsize 11
+        }
       }
       Fl_Group {} {open
         xywh {20 30 320 110}
@@ -1018,7 +1023,7 @@ class stereogui {open
         }
         Fl_Choice {} {
           label {Stereo Algorithm}
-          callback stereo_algorithm_cb open selected
+          callback stereo_algorithm_cb open
           xywh {245 70 90 20} down_box BORDER_BOX labelsize 11 align 5
         } {
           MenuItem {} {

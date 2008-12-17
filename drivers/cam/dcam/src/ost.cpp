@@ -193,6 +193,7 @@ static int sp_sthresh = 30;	// uniqueness threshold, percent
 static int sp_ssize   = 100;	// speckle size, pixels
 static int sp_sdiff   = 8;	// speckle diff, disparities
 static stereo_algorithm_t sp_alg=NORMAL_ALGORITHM; // type of stereo algorithm we're using
+bool is_unique_check = 0;
 
 // printing matrices
 void PrintMat(CvMat *A, FILE *fp = stdout);
@@ -2218,6 +2219,18 @@ speckle_diff_cb(Fl_Counter *w, void *x)
   if (dev)
     dev->setSpeckleDiff(sp_sdiff);
 }
+
+void unique_check_cb(Fl_Light_Button* w, void*)
+{
+  // set flag
+  if (w->value())
+    is_unique_check = true;
+  else
+    is_unique_check = false;
+
+ if (dev)
+    dev->setUniqueCheck(is_unique_check);
+ }
 
 
 //
