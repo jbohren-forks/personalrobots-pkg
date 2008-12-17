@@ -276,6 +276,7 @@ StereoData::StereoData()
 
   textureThresh = 10;
   uniqueThresh = 12;
+  smoothThresh = 30;
   speckleDiff = 8;
   speckleRegionSize = 100;
   rangeMax = 0.0;
@@ -329,6 +330,16 @@ StereoData::setUniqueThresh(int val)
   uniqueThresh = val;
   return true;
 }
+
+bool
+StereoData::setSmoothnessThresh(int val)
+{
+  if (val < 0) val = 0;
+  if (val > 100) val = 10;
+  smoothThresh = val;
+  return true;
+}
+
 
 bool
 StereoData::setNumDisp(int val)
@@ -426,7 +437,7 @@ StereoData::doRectify()
 //
 
 bool 
-StereoData::doDisparity()
+StereoData::doDisparity(stereo_algorithm_t alg)
 {
   uint8_t *lim, *rim;
 
