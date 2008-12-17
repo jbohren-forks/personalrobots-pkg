@@ -12,7 +12,7 @@
   <depend package="std_msgs" />
   <depend package="eigen" />
   
-  <sysdepend os="ubuntu" version="8.04-hardy" package="liblapack-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry"/>

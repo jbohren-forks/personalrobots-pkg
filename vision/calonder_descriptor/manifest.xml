@@ -17,7 +17,7 @@
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.10-intrepid" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="atlas3-base-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libatlas-base-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="atlas3-sse2-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="atlas3-sse2-dev"/>
   <sysdepend os="ubuntu" version="8.10-intrepid" package="libatlas-base-dev"/>
 </package>
