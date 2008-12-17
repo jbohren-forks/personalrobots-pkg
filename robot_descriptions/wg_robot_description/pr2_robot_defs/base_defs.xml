@@ -48,6 +48,8 @@
         <map name="friction_coefficients" flag="gazebo">
           <elem key="mu1" value="50.0" />
           <elem key="mu2" value="50.0" />
+          <elem key="kp"  value="1000000.0" />
+          <elem key="kd"  value="1.0" />
         </map>
       </collision>
     </link>

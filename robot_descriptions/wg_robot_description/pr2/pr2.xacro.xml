@@ -14,7 +14,7 @@
 
 
   <pr2_base name="base" >
-    <origin xyz="0 0 0.0408" rpy="0 0 0" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
   </pr2_base>
 
 
