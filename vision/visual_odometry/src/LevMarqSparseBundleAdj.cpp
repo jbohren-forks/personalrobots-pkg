@@ -405,6 +405,7 @@ inline void LevMarqSparseBundleAdj::linearSolving() {
 ///  - \f$ J_p \f$ and \f$ J_c \f$ are smaller (2x3 and 2x6, instead of 3x3 and
 ///    3x6).
 ///
+/// @return true if optimization is successful. false otherwise.
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
