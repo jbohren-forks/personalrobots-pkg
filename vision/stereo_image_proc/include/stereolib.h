@@ -101,10 +101,11 @@ do_prefilter_fast(uint8_t *im,	// input image
 // algorithm requires buffers to be passed in
 
 //#define do_stereo do_stereo_y
-//#define do_stereo do_stereo_d
+#define do_stereo do_stereo_d
 //#define do_stereo do_stereo_d_fast
-#define do_stereo do_stereo_so
+//#define do_stereo do_stereo_so
 //#define do_stereo do_stereo_mw
+//#define do_stereo do_stereo_dp
 
 // inner loop over disparities
 void
@@ -176,7 +177,18 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	  uint8_t *buf		// buffer storage
 	  );
 
-
+//Stereo matching using Dynamic Programming
+void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
+	  int16_t *disp,	// disparity output
+	  int16_t *text,	// texture output
+	  int xim, int yim,	// size of images
+	  uint8_t ftzero,	// feature offset from zero
+	  int xwin, int ywin,	// size of corr window, usually square
+	  int dlen,		// size of disparity search, multiple of 8
+	  int tfilter_thresh,	// texture filter threshold
+	  int ufilter_thresh,	// uniqueness filter threshold, percent
+	  uint8_t *buf		// buffer storage
+	  );
 //
 // sparse stereo
 // corr window fixed at 15x15

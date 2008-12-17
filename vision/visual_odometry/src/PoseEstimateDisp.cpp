@@ -24,8 +24,8 @@ using namespace cv::willow;
 #define TIMERSTART2(x)
 #define TIMEREND2(x)
 #else
-#define TIMERSTART(x)  CvTestTimerStart(x)
-#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART(x)  CvTestTimerStart1(x)
+#define TIMEREND(x)    CvTestTimerEnd1(x)
 #define TIMERSTART2(x) CvTestTimerStart2(x)
 #define TIMEREND2(x)   CvTestTimerEnd2(x)
 #endif
@@ -348,10 +348,10 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
       CvMatUtils::printMat(&H);
 #endif
 
-      CvTestTimerStart(CheckInliers);
+      CvTestTimerStart1(CheckInliers);
       // scoring against all points
       numInLiers = checkInLiers(uvds0, uvds1, &H);
-      CvTestTimerEnd(CheckInliers);
+      CvTestTimerEnd1(CheckInliers);
 
       // keep the best R and T
       if (maxNumInLiers < numInLiers) {
@@ -433,9 +433,9 @@ bool PoseEstimateDisp::estimateWithLevMarq(
   //initialize the parameters
   levMarq.rotAndShiftMatsToParams(rot, shift, param);
 
-  CvTestTimerStart(LevMarqDoit);
+  CvTestTimerStart1(LevMarqDoit);
   levMarq.optimize(&uvds0Inlier, &uvds1Inlier, param);
-  CvTestTimerEnd(LevMarqDoit);
+  CvTestTimerEnd1(LevMarqDoit);
 
   // TODO: construct matrix with parameters from nonlinear optimization
   levMarq.paramsToRotAndShiftMats(param, rot, shift);

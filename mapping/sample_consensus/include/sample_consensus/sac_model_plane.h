@@ -79,7 +79,7 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return an unique id for this model (SACMODEL_PLANE). */
-      virtual int getModelType () { return SACMODEL_PLANE; }
+      virtual int getModelType () { return (SACMODEL_PLANE); }
   };
 }
 

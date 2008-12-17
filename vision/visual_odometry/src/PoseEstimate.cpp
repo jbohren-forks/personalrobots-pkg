@@ -19,8 +19,8 @@ using namespace cv::willow;
 #define TIMERSTART2(x)
 #define TIMEREND2(x)
 #else
-#define TIMERSTART(x) CvTestTimerStart(x)
-#define TIMEREND(x) CvTestTimerEnd(x)
+#define TIMERSTART(x) CvTestTimerStart1(x)
+#define TIMEREND(x) CvTestTimerEnd1(x)
 #define TIMERSTART2(x) CvTestTimerStart2(x)
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
@@ -170,10 +170,10 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
 
     CvMatUtils::transformFromRotationAndShift(R, T, RT);
 
-    CvTestTimerStart(CheckInliers);
+    CvTestTimerStart1(CheckInliers);
     // scoring against all points
     numInLiers = checkInLiers(points0, points1, &RT);
-    CvTestTimerEnd(CheckInliers);
+    CvTestTimerEnd1(CheckInliers);
 #ifdef DEBUG
     cout << "R, T, and RT: "<<endl;
     CvMatUtils::printMat(&R);

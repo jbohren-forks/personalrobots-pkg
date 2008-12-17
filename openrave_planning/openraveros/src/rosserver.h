@@ -53,10 +53,6 @@ class ROSServer : public RaveServerBase
     {
     public:
         virtual void work() = 0;
-//        ServerWorker(boost::condition& cond) : _cond(cond) {}
-//        ~ServerWorker() { _cond.notify_all(); }
-//    private:
-//        boost::condition& _cond;
     };
 
     class WorkExecutor
@@ -80,6 +76,71 @@ class ROSServer : public RaveServerBase
         boost::shared_ptr<ProblemInstance> _prob;
         const string& _cmd;
         string& _out;
+    };
+
+    class LoadProblemWorker : public ServerWorker
+    {
+    public:
+        LoadProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& args, int& retval) : _prob(prob), _args(args), _retval(retval) {}
+        virtual void work() {
+            _retval = _prob->GetEnv()->LoadProblem(_prob.get(), _args.c_str());
+        }
+    private:
+        boost::shared_ptr<ProblemInstance> _prob;
+        const string& _args;
+        int& _retval;
+    };
+
+    class RemoveProblemWorker : public ServerWorker
+    {
+    public:
+        RemoveProblemWorker(boost::shared_ptr<ProblemInstance> prob, bool& retval) : _prob(prob), _retval(retval) {}
+        virtual void work() {
+            _retval = _prob->GetEnv()->RemoveProblem(_prob.get());
+        }
+    private:
+        boost::shared_ptr<ProblemInstance> _prob;
+        bool& _retval;
+    };
+
+    class SendControllerWorker : public ServerWorker
+    {
+    public:
+        SendControllerWorker(ControllerBase* pcontroller, const string& cmd, bool& retval) : _pcontroller(pcontroller), _cmd(cmd), _retval(retval) {}
+        virtual void work() {
+            _retval = _pcontroller->SendCmd(_cmd.c_str());
+        }
+    private:
+        ControllerBase* _pcontroller;
+        const string& _cmd;
+        bool& _retval;
+    };
+
+    class SetControllerWorker : public ServerWorker
+    {
+    public:
+        SetControllerWorker(RobotBase* probot, const string& type, const string& cmd, bool& retval) : _probot(probot), _type(type), _cmd(cmd), _retval(retval) {}
+        virtual void work() {
+            _retval = _probot->SetController(_ravembstowcs(_type.c_str()).c_str(), _cmd.c_str(), true);
+        }
+    private:
+        RobotBase* _probot;
+        const string &_type, &_cmd;
+        bool& _retval;
+    };
+
+    class SendCmdSensorWorker : public ServerWorker
+    {
+    public:
+        SendCmdSensorWorker(SensorBase* psensor, istream& is, ostream& os, bool& retval) : _psensor(psensor), _is(is), _os(os), _retval(retval) {}
+        virtual void work() {
+            _retval = _psensor->SendCmd(_is,_os);
+        }
+    private:
+        SensorBase* _psensor;
+        istream& _is;
+        ostream& _os;
+        bool& _retval;
     };
 
 public:
@@ -145,7 +206,7 @@ public:
         _conditionWorkers.notify_all();
     }
 
-    virtual void AddWorker(ServerWorker* pworker, bool bWait)
+    virtual void AddWorker(ServerWorker* pworker, bool bWait=true)
     {
         boost::mutex::scoped_lock lock(_mutexWorker);
         _listWorkers.push_back(boost::shared_ptr<WorkExecutor>(new WorkExecutor(pworker)));
@@ -379,15 +440,9 @@ public:
         if( pbody == NULL )
             return false;
 
-        TransformMatrix tm;
-        tm.m[0] = req.transform.m[0]; tm.m[1] = req.transform.m[3]; tm.m[2] = req.transform.m[6];
-        tm.m[4] = req.transform.m[1]; tm.m[5] = req.transform.m[4]; tm.m[6] = req.transform.m[7];
-        tm.m[8] = req.transform.m[2]; tm.m[9] = req.transform.m[5]; tm.m[10] = req.transform.m[8];
-        tm.trans.x = req.transform.m[9]; tm.trans.y = req.transform.m[10]; tm.trans.z = req.transform.m[11];
-
-        Transform t = tm;
+        Transform t = FromAffineTransform(req.transform);
         LockEnvironment envlock(this);
-        pbody->SetTransform(tm);
+        pbody->SetTransform(t);
 
         if( pbody->IsRobot() ) {
             RobotBase* probot = (RobotBase*)pbody;
@@ -533,7 +588,10 @@ public:
             }
         }
 
-        if( GetEnv()->LoadProblem(pproblem.get(), req.args.c_str()) != 0 ) {
+        int retval=0;
+        AddWorker(new LoadProblemWorker(pproblem, req.args, retval), true);
+
+        if( retval != 0 ) {
             RAVELOG_WARNA("failed to load problem %s with args %s\n", req.problemtype.c_str(), req.args.c_str());
             return false;
         }
@@ -569,11 +627,13 @@ public:
         if( itprob == _mapproblems.end() )
             return false;
 
-        if( !GetEnv()->RemoveProblem(itprob->second.get()) )
+        bool bsuccess=false;
+        AddWorker(new RemoveProblemWorker(itprob->second,bsuccess), true);
+        if( !bsuccess )
             RAVELOG_WARNA("failed to remove problem\n");
 
         _mapproblems.erase(itprob);
-        return true;
+        return bsuccess;
     }
 
     void FillKinBodyInfo(KinBody* pbody, BodyInfo& info, uint32_t options)
@@ -621,6 +681,7 @@ public:
     {
         vector<KinBody*> vbodies;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedBodies(vbodies));
+        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             KinBody* pfound = NULL;
@@ -730,6 +791,7 @@ public:
     {
         vector<RobotBase*> vrobots;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedRobots(vrobots));
+        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             RobotBase* pfound = NULL;
@@ -1040,6 +1102,7 @@ public:
         // fill with request
         RAVELOG_ERRORA("need to fill with params!\n");
 
+        LockEnvironment envlock(this);
         return itplanner->second->InitPlan(probot, &params);
     }
 
@@ -1050,6 +1113,7 @@ public:
             return false;
 
         ROS_ASSERT( itplanner->second->GetRobot() != NULL );
+        LockEnvironment envlock(this);
 
         boost::shared_ptr<OpenRAVE::Trajectory> traj(GetEnv()->CreateTrajectory(itplanner->second->GetRobot()->GetActiveDOF()));
         
@@ -1099,7 +1163,9 @@ public:
         if( probot->GetController() == NULL || !probot->GetController()->SupportsCmd(req.cmd.c_str()) )
             return false;
 
-        return probot->GetController()->SendCmd(req.cmd.c_str());
+        bool bsuccess = false;
+        AddWorker(new SendControllerWorker(probot->GetController(), req.cmd, bsuccess), true);
+        return bsuccess;
     }
 
     bool robot_controllerset_srv(robot_controllerset::request& req, robot_controllerset::response& res)
@@ -1108,8 +1174,9 @@ public:
         if( pbody == NULL || !pbody->IsRobot() )
             return false;
 
-        RobotBase* probot = (RobotBase*)pbody;
-        return probot->SetController(_ravembstowcs(req.controllername.c_str()).c_str(), req.controllerargs.c_str(), true);
+        bool bsuccess = false;
+        AddWorker(new SetControllerWorker((RobotBase*)pbody, req.controllername, req.controllerargs, bsuccess), true);
+        return bsuccess;
     }
 
     bool robot_getactivevalues_srv(robot_getactivevalues::request& req, robot_getactivevalues::response& res)
@@ -1275,14 +1342,14 @@ public:
             RAVELOG_ERRORA("Robot %S sensor %d doesn't support command: \"%s\"\n", probot->GetName(), req.sensorindex, req.cmd.c_str());
             return false;
         }
-
+        
         stringstream ss(req.args);
         stringstream sout;
-        if( !sensor.GetSensor()->SendCmd(ss,sout) )
-            return false;
-
-        res.out = sout.str();
-        return true;
+        bool bsuccess = false;
+        AddWorker(new SendCmdSensorWorker(sensor.GetSensor(),ss,sout,bsuccess), true);
+        if( bsuccess )
+            res.out = sout.str();
+        return bsuccess;
     }
 
     void RobotSetActiveDOFs(RobotBase* probot, openraveros::ActiveDOFs& active)
@@ -1292,6 +1359,7 @@ public:
             vjointindices[i] = active.joints[i];
 
         Vector vaxis(active.rotationaxis[0], active.rotationaxis[1], active.rotationaxis[2]);
+        LockEnvironment envlock(this);
         probot->SetActiveDOFs(vjointindices, active.affine, (active.affine&RobotBase::DOF_RotationAxis)?&vaxis:NULL);
     }
     

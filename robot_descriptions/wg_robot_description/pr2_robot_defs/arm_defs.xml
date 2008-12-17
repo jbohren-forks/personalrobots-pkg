@@ -18,9 +18,11 @@
     <joint name="${prefix}_l_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" min="0" max="${gripper_max_angle}" />
-      <calibration reference_position="0" values="0 0" />
-      <joint_properties damping="0.1" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="0" max="${gripper_max_angle}"
+             k_position="0" k_velocity="0"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.2" />
     </joint>
 
     <link name="${prefix}_l_finger_link">
@@ -29,11 +31,11 @@
 
       <joint name="${prefix}_l_finger_joint" />
       <inertial>
-        <mass value="0.1" />
-        <com xyz="0 0 0" />
-        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042"
-                  izz="0.001755089866" />
+        <mass value="0.13894" />
+        <com xyz="0.03688 0.01629 -0.0011" /> <!-- sign / coordinates could be wrong -->
+        <inertia  ixx="0.00005738962"     ixy="0.00000441910"      ixz="-0.00000613376"
+                  iyy="0.00015025775"     iyz="-0.00000155674"
+                  izz="0.00014577390" />  <!-- coordinates could be wrong -->
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -67,6 +69,8 @@
       </map>
       <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -75,14 +79,16 @@
     <joint name="${prefix}_r_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" min="${-gripper_max_angle}" max="0" />
-      <calibration reference_position="0" values="0 0" />
-      <joint_properties damping="0.1" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${-gripper_max_angle}" max="0"
+             k_position="0" k_velocity="0"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.2" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp">1000.0</elem>
-        <elem key="mimicKd"> 0.0</elem>
-        <elem key="mimicFMax">10000.0</elem>
+        <elem key="mimicKp">10.0</elem>
+        <elem key="mimicKd">0.0</elem>
+        <elem key="mimicFMax">100.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
       </map>
     </joint>
 
@@ -92,11 +98,11 @@
 
       <joint name="${prefix}_r_finger_joint" />
       <inertial>
-        <mass value="0.1" />
-        <com xyz="0 0 0" />
-        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042"
-                  izz="0.001755089866" />
+        <mass value="0.13777" />
+        <com xyz="-0.01596 0.03558 0.0006" />
+        <inertia  ixx="0.00014805694" ixy="-0.00000426051" ixz="-0.00000157771"
+                  iyy="0.00005880239" iyz="0.00000539169"
+                  izz="0.00014333130" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -130,6 +136,8 @@
       </map>
       <map name="${prefix}_r_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -138,16 +146,16 @@
     <joint name="${prefix}_l_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" min="${-gripper_max_angle}" max="0" />
-      <calibration reference_position="0" values="0 0" />
-      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
-      <joint_properties damping="0.1" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${-gripper_max_angle}" max="0"
+             k_position="0" k_velocity="0"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.05" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">1000.0</elem>
-        <elem key="mimicKd"> 0.0</elem>
-        <elem key="mimicFMax">10000.0</elem>
+        <elem key="mimicKp">1.0</elem>
+        <elem key="mimicKd">0.0</elem>
+        <elem key="mimicFMax">100.0</elem>
       </map>
     </joint>
 
@@ -157,11 +165,11 @@
 
       <joint name="${prefix}_l_finger_tip_joint" />
       <inertial>
-        <mass value="0.1" />
-        <com xyz=" 0 0 0 " />
-        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042"
-                  izz="0.001755089866" />
+        <mass value="0.03826" />
+        <com xyz="0.00019 0.0051 0.0001" />
+        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
+                  iyy="0.00000576234" iyz="-0.00000007672"
+                  izz="0.00001066429" />
       </inertial>
       <visual>
         <origin xyz="0 0 0 " rpy="0 0 0 " />
@@ -195,6 +203,8 @@
       </map>
       <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -203,16 +213,16 @@
     <joint name="${prefix}_r_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" min="0" max="${gripper_max_angle}" />
-      <calibration reference_position="0" values="0 0" />
-      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
-      <joint_properties damping="0.1" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="0" max="${gripper_max_angle}"
+             k_position="0" k_velocity="0"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.05" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">1000.0</elem>
-        <elem key="mimicKd"> 0.0</elem>
-        <elem key="mimicFMax">10000.0</elem>
+        <elem key="mimicKp">1.0</elem>
+        <elem key="mimicKd">0.0</elem>
+        <elem key="mimicFMax">100.0</elem>
       </map>
     </joint>
 
@@ -222,11 +232,11 @@
 
       <joint name="${prefix}_r_finger_tip_joint" />
       <inertial>
-        <mass value="0.1" />
-        <com xyz=" 0 0 0 " />
-        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042"
-                  izz="0.001755089866" />
+        <mass value="0.03826" />
+        <com xyz="0.00019 -0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
+        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
+                  iyy="0.00000576234" iyz="-0.00000007672"
+                  izz="0.00001066429" />  <!-- nothing was flipped, not sure what to do here -->
       </inertial>
       <visual>
         <origin xyz="0 0 0 " rpy="0 0 0 " />
@@ -260,6 +270,8 @@
       </map>
       <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
       </map>
     </link>
 
@@ -352,10 +364,11 @@
       <joint name="${side}_gripper_palm_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <inertial>
-        <mass value="1.0" />
-        <com xyz="0.179474 -0.000058  0.013779" />
-        <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+        <mass value="0.51645" />
+        <com xyz="0.067340 0.002406 -0.000599" /> <!-- x might be a good guess, but not sure at all about y/z -->
+        <inertia  ixx="0.00317040150" ixy="0.00001165963" ixz="0.00002108306"
+                  iyy="0.00291703860" iyz="-0.00008069583"
+                  izz="0.00036788506" />  <!-- did not switch from function provided at all, definitely wrong -->
       </inertial>
 
       <visual>
@@ -363,34 +376,33 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="${side}_gripper_roll_visual">
+        <geometry name="${side}_gripper_palm_visual">
           <mesh filename="wr_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.05 0 0" rpy="0 0 0" />
-        <geometry name="${side}_gripper_roll_collision">
+        <geometry name="${side}_gripper_palm_collision">
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="${side}_gripper_roll_sensor" flag="gazebo">
-        <verbatim key="${side}_gripper_roll_bumper_sensor">
-          <sensor:contact name="${side}_gripper_roll_contact_sensor">
-            <geom>${side}_gripper_roll_collision</geom>
+      <map name="${side}_gripper_palm_sensor" flag="gazebo">
+        <verbatim key="${side}_gripper_palm_bumper_sensor">
+          <sensor:contact name="${side}_gripper_palm_contact_sensor">
+            <geom>${side}_gripper_palm_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_gripper_roll_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_gripper_palm_ros_bumper_controller" plugin="libRos_Bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
-              <bumperTopicName>${side}_gripper_roll_bumper</bumperTopicName>
-              <interface:bumper name="${side}_gripper_roll_ros_bumper_iface" />
+              <bumperTopicName>${side}_gripper_palm_bumper</bumperTopicName>
+              <interface:bumper name="${side}_gripper_palm_ros_bumper_iface" />
             </controller:ros_bumper>
           </sensor:contact>
         </verbatim>
       </map>
-
-      <map name="${side}_gripper_roll_gravity" flag="gazebo">
+      <map name="${side}_gripper_palm_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -454,9 +466,10 @@
       <joint name="${side}_shoulder_pan_joint" />
       <inertial>
         <mass value="16.29553" />
-        <com xyz="-0.005215 -0.030552 0.0" />
+        <com xyz="-0.005215 -0.030552 -0.175743" />
         <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
-                 iyy="0.818419457224"  iyz="-0.033999499551" izz="0.13915007406" />
+                 iyy="0.818419457224"  iyz="-0.033999499551"
+                 izz="0.13915007406" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -518,7 +531,7 @@
       <joint name="${side}_shoulder_lift_joint" />
       <inertial>
         <mass value="2.41223" />
-        <com xyz="-0.035895  0.014422 -0.0028263" />
+        <com xyz="-0.035895  0.014422 -0.028263" />
         <inertia ixx="0.016640333585" ixy="0.002696462583"  ixz="0.001337742275"
                  iyy="0.017232603914" iyz="-0.003605106514" izz="0.018723553425" />
       </inertial>
@@ -583,9 +596,10 @@
 
       <inertial>
         <mass value="4.9481" />
-        <com xyz=" 0.21227 0.001205 -0.016293  " />
-        <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"
-                  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+        <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- x becomes y, y becomes z, z becomes x, not sure about the signs -->
+        <inertia  ixx="0.01338328491" ixy="0.00011947689"  ixz="0.00154493231"
+                  iyy="0.07306071531"  iyz="0.00054774592"
+                  izz="0.07212451075" /> <!-- x becomes y, y becomes z, z becomes x, not sure about the signs -->
       </inertial>
 
       <visual>
@@ -651,9 +665,10 @@
 
       <inertial>
         <mass value="1.689246" />
-        <com xyz="-0.011638  0.013173 0.001228 " />
-        <inertia  ixx="10.0" ixy="0.000292046674"  ixz="-0.000077359282"
-                  iyy="1.0"  iyz="-0.000001162155" izz="1.0" />
+        <com xyz="0.013173 0.001228 -0.011638" /> <!-- switching y to x, z to y, x to z -->
+        <inertia  ixx="0.00323681521" ixy="-0.00000116216"  ixz="0.00029204667"
+                  iyy="0.00410053774"  iyz="-0.00007735928"
+                  izz="0.00327529855" /> <!-- switching y to x, z to y, x to z -->
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -763,9 +778,10 @@
       <joint name="${side}_forearm_roll_joint" />
       <inertial>
         <mass value="1.804155" />
-        <com xyz="0.179474 -0.000058 0.013779" />
-        <inertia ixx="10.0" ixy="-0.000003671102" ixz="0.000029379389"
-                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+        <com xyz="0.179474 -0.000058 0.013779" /> <!-- z to x, x to y, y to z -->
+        <inertia ixx="0.00175508987" ixy="0.00002937939" ixz="-0.00042767904"
+                 iyy="0.01243055254" iyz="-0.00000367110"
+                 izz="0.01356754885" /> <!-- z to x, x to y, y to z -->
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -826,10 +842,11 @@
       <origin xyz="0.32025 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_flex_joint" />
       <inertial>
-        <mass value="0.1" />
-        <com xyz="0 0 0" />
-        <inertia ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
-                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+        <mass value="0.80305" />
+        <com xyz="0.012193 0.000017 -0.004929" /> <!-- my best guess z to z, y to x, x to y -->
+        <inertia ixx="0.00077829551" ixy="0.00018491414" ixz="-0.00000036897"
+                 iyy="0.00108384500" iyz="0.00000017027"
+                 izz="0.00071460255" /> <!-- my best guess z to z, y to x, x to y -->
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -872,7 +889,7 @@
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="2" />
       <calibration reference_position="1.27" values="1.5 -1" />
-      <joint_properties damping="1.0" />
+      <joint_properties damping="0.1" />
     </joint>
 
 
@@ -881,10 +898,11 @@
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_roll_joint" />
       <inertial>
-        <mass value="1.0" />
-        <com xyz="0.179474 -0.000058  0.013779" />
-        <inertia ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
-                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.01" ixy="0" ixz="0"
+                 iyy="0.01" iyz="0"
+                 izz="0.01" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -896,9 +914,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.05 0 0" rpy="0 0 0" />
+        <origin xyz="0.0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_roll_collision">
-          <box size="0.11 0.10 0.05" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
         <verbose value="Yes" />
       </collision>

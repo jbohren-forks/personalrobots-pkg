@@ -59,7 +59,8 @@ namespace collision_space
 	public:
 	    Shape(void)
 	    {
-		m_scale = 1.0;	    
+		m_scale = 1.0;
+		m_pose.setIdentity();
 	    }
 	    
 	    virtual ~Shape(void)
@@ -76,6 +77,11 @@ namespace collision_space
 	    {
 		m_pose = pose;
 		updateInternalData();
+	    }
+	    
+	    const btTransform& getPose(void) const
+	    {
+		return m_pose;
 	    }
 	    
 	    virtual void setDimensions(const double *dims)
@@ -138,7 +144,7 @@ namespace collision_space
 	class Cylinder : public Shape
 	{
 	public:
-        Cylinder(void) : Shape(), m_normalH(btScalar(0.0), btScalar(0.0), btScalar(1.0))
+        Cylinder(void) : Shape()
 	    {
 		m_length = m_radius = 0.0;
 	    }
@@ -156,9 +162,15 @@ namespace collision_space
 		    return false;
 		
 		double pB1 = v.dot(m_normalB1);
-		double pB2 = v.dot(m_normalB2);
+		double remaining = m_radius2 - pB1 * pB1;
 		
-		return pB1 * pB2 < m_radius2;
+		if (remaining < 0.0)
+		    return false;
+		else
+		{
+		    double pB2 = v.dot(m_normalB2);
+		    return pB2 * pB2 < remaining;
+		}		
 	    }
 	    
 	protected:
@@ -174,15 +186,11 @@ namespace collision_space
 		m_radius2 = m_radius * m_radius * m_scale * m_scale;
 		m_length2 = m_scale * m_length / 2.0;		
 		m_center = m_pose.getOrigin();
-		
-		m_normalH.setValue(btScalar(0.0), btScalar(0.0), btScalar(1.0));
-		m_normalH = m_pose * m_normalH;
-		
-		m_normalB1.setValue(btScalar(1.0), btScalar(0.0), btScalar(0.0));
-		m_normalB1 = m_pose * m_normalB1;
 
-		m_normalB2.setValue(btScalar(0.0), btScalar(1.0), btScalar(0.0));
-		m_normalB2 = m_pose * m_normalB2;
+		const btMatrix3x3& basis = m_pose.getBasis();
+		m_normalB1 = basis.getColumn(0);
+		m_normalB2 = basis.getColumn(1);
+		m_normalH  = basis.getColumn(2);
 	    }
 	    
 	    btVector3 m_center;
@@ -213,7 +221,7 @@ namespace collision_space
 	    {
 		btVector3 v = p - m_center;
 		double pL = v.dot(m_normalL);
-		
+
 		if (fabs(pL) > m_length2)
 		    return false;
 		
@@ -241,20 +249,17 @@ namespace collision_space
 	    
 	    virtual void updateInternalData(void) 
 	    {
-		m_length2 = m_scale * m_length / 2.0;
-		m_width2  = m_scale * m_width / 2.0;
-		m_height2 = m_scale * m_height / 2.0;
+		double s2 = m_scale / 2.0;
+		m_length2 = m_length * s2;
+		m_width2  = m_width * s2;
+		m_height2 = m_height * s2;
 		
-		m_center = m_pose.getOrigin();
+		m_center  = m_pose.getOrigin();
 		
-		m_normalH.setValue(btScalar(0.0), btScalar(0.0), btScalar(1.0));
-		m_normalH = m_pose * m_normalH;
-
-		m_normalL.setValue(btScalar(1.0), btScalar(0.0), btScalar(0.0));
-		m_normalL = m_pose * m_normalL;
-
-		m_normalW.setValue(btScalar(0.0), btScalar(1.0), btScalar(0.0));
-		m_normalW = m_pose * m_normalW;
+		const btMatrix3x3& basis = m_pose.getBasis();
+		m_normalL = basis.getColumn(0);
+		m_normalW = basis.getColumn(1);
+		m_normalH = basis.getColumn(2);
 	    }
 	    
 	    btVector3 m_center;

@@ -47,8 +47,8 @@ using namespace cv::willow;
 #define TIMERSTART2(x)
 #define TIMEREND2(x)
 #else
-#define TIMERSTART(x)  CvTestTimerStart(x)
-#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART(x)  CvTestTimerStart1(x)
+#define TIMEREND(x)    CvTestTimerEnd1(x)
 #define TIMERSTART2(x) CvTestTimerStart2(x)
 #define TIMEREND2(x)   CvTestTimerEnd2(x)
 #endif

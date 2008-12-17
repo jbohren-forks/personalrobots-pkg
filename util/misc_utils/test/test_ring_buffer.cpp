@@ -54,8 +54,8 @@ TEST(RingBuffer, SingleRing)
   buffer.push(in1);
   buffer.push(in2);
   buffer.push(in3);
-  std::vector<double> out=buffer[1];
-  EXPECT_NEAR(out[0], in2[0], epsilon);
+  std::vector<double> out=buffer[0];
+  EXPECT_NEAR(out[0], in3[0], epsilon);
 }
 
 TEST(RingBuffer, SingleRing2)

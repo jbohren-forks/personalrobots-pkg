@@ -344,6 +344,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                     addKeyValue(joint,"mimicOffset", values2str(1, &(link->joint->fMimicOffset)     ));
 
             }
+
+            /* copy gazebo data */
+            copyGazeboMap(link->joint->data, joint);
             
             /* add joint to document */
             root->LinkEndChild(joint);

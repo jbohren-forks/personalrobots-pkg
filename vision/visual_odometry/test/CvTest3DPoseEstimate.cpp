@@ -50,8 +50,8 @@ using namespace std;
 #define TIMERSTART2(x)
 #define TIMEREND2(x)
 #else
-#define TIMERSTART(x)  CvTestTimerStart(x)
-#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART(x)  CvTestTimerStart1(x)
+#define TIMEREND(x)    CvTestTimerEnd1(x)
 #define TIMERSTART2(x) CvTestTimerStart2(x)
 #define TIMEREND2(x)   CvTestTimerEnd2(x)
 #endif
@@ -208,13 +208,13 @@ bool CvTest3DPoseEstimate::test() {
 //    string point_file("cartesianPoints.xml");
     string frame_file("frames101.xml");
     string point_file("points260.xml");
-    int num_free_frames  = 5;
-    int num_fixed_frames = 5;
+    int num_free_frames  = 10;
+    int num_fixed_frames = 10;
     int num_iterations = 300;
-    int num_repeats = 1;
+    int num_repeats = 10;
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
-        true, false, false);
+        true, true, true);
     break;
   }
   default:
@@ -242,11 +242,11 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
     // note that B (or Tx) is in mm
-    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     // now Tx is in meters
-//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
-    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
-//    string dirname("/u/prdata/videre-bags/james4");
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
+    string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
     string dispimgfmt(".dispmap-%06d.xml");
@@ -299,7 +299,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
   setInputData(James4);
 
-  VOSparseBundleAdj sba(img_size_, 8, 3);
+  VOSparseBundleAdj sba(img_size_, 10, 3);
 //  VOSparseBundleAdj sba(img_size_, 1, 1);
 
   // parameterize the post estimator
@@ -777,7 +777,7 @@ void CvTest3DPoseEstimate::disturbFrames(
   if (verbose_)
     printf("Disturbed Free Frames\n");
 
-  double disturb_scale = .001;
+  double disturb_scale = .0001;
   double sigma = disturb_scale/2.0; // ~ 95%
   int numFreeFrames = free_frames.size();
   CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
@@ -790,7 +790,7 @@ void CvTest3DPoseEstimate::disturbFrames(
         += CV_MAT_ELEM(*xyzsNoised, double, iFrames, i);
     }
     // update the transformation matrix of fp
-    CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+    CvMatUtils::transformFromRodriguesAndShift(&mat_rod_shift, &fp->transf_local_to_global_);
 
     if (verbose_) {
       printf("transf of frame: %d\n", fp->mIndex);
@@ -814,7 +814,7 @@ void CvTest3DPoseEstimate::disturbFrames(
 }
 
 void CvTest3DPoseEstimate::disturbPoints(PointTracks* tracks) {
-  double disturb_scale = .001;
+  double disturb_scale = .0001;
   double sigma = disturb_scale/2.0; // ~ 95%
   int numPoints = tracks->tracks_.size();
   CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
@@ -841,12 +841,14 @@ void CvTest3DPoseEstimate::disturbObsvs(PointTracks* tracks) {
   CvRNG rng_state = cvRNG(0xffffffff);
   double disturb[3];
   CvMat mat_disturb = cvMat(1, 1, CV_64FC3, disturb);
+//  double sigma = 1.0; // 99.99% within [-3. , +3]
+  double sigma = .5; // 99.99% within [-1.5 , +1.5]
 
   BOOST_FOREACH(PointTrack* pt, tracks->tracks_) {
     BOOST_FOREACH(PointTrackObserv* obsv, *pt) {
-      cvRandArr(&rng_state, &mat_disturb, CV_RAND_UNI,
-          cvScalar(-.5,-.5,-.5,0), // inclusive lower bound
-          cvScalar(.5,.5,.5,0) // exclusive upper bound
+      cvRandArr(&rng_state, &mat_disturb, CV_RAND_NORMAL,
+          cvScalar(0.,0.,0.,0.), // mean
+          cvScalar(sigma,sigma,sigma,0) // sigma
       );
       obsv->disp_coord_.x += disturb[0];
       obsv->disp_coord_.y += disturb[1];
@@ -876,6 +878,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 //  point_file.append("cartesianPoints.xml");
   points_file_path.append(points_file);
   CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
+
   // rows of euler angle and shift
   string frames_file_path(input_data_path_);
 //  frames_file.append("frames.xml");

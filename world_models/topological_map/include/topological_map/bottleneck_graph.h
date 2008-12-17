@@ -47,8 +47,10 @@ typedef std::set<Coords> Region;
 enum VertexType { BOTTLENECK, OPEN };
 struct VertexDescription
 {
+  VertexDescription () { region = new Region(); id=-2; }
+
   VertexType type;
-  Region region;
+  Region* region;
   int id;
 };
 
@@ -71,28 +73,29 @@ typedef boost::multi_array<bool, 2> GridArray;
 typedef GridArray::index grid_index;
 typedef GridArray::size_type grid_size;
 
-
-
+// Array mapping from grid cell to topological graph node
 typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 
 
+
 // Externally used ops
-struct IndexedBottleneckGraph
+class IndexedBottleneckGraph
 {
-  IndexedBottleneckGraph (int nr, int nc) : numRows(nr), numCols(nc) { regions = new RegionArray(boost::extents[nr][nc]); isFree=new GridArray(boost::extents[nr][nc]); }
+public:
   IndexedBottleneckGraph () : numRows(-1), numCols(-1) {}
+
+  void initializeFromGrid (GridArray g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
+  void readFromFile (const char* filename);
+
+  void setDims (int nr, int nc);
 
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);
   void printBottlenecks (void);
 
-  int regionId (int r, int c) 
-  { 
-    if ((r>=0) && (c>=0) && (r<numRows) && (c<numCols) && (*isFree)[r][c])
-      return boost::get(desc_t(), graph, (*regions)[r][c]).id;
-    else 
-      return -1;
-  }
+  int regionId (int r, int c);
+  bool lookupVertex (int r, int c, BottleneckVertex* v);
+  VertexDescription vertexDescription (BottleneckVertex v) { return boost::get(desc_t(), graph, v); }
 
   BottleneckGraph graph;
   RegionArray* regions;
@@ -103,8 +106,8 @@ private:
   void writeToStream (std::ostream&);
 };
 
-IndexedBottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin=1, int distanceMultMax=3);
-IndexedBottleneckGraph readBottleneckGraphFromFile (const char* filename);
+
+
 
 
 

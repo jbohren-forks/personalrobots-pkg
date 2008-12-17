@@ -512,7 +512,7 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
 
   // If wrong throw exception
   if (checksum != bswap_16(*(uint16_t*)((uint8_t*)rep+rep_len-2)))
-    IMU_EXCEPT(MS_3DMGX2::corrupted_data_exception, "invalid checksum");
+    IMU_EXCEPT(MS_3DMGX2::corrupted_data_exception, "invalid checksum.\n Make sure the IMU sensor is connected to this computer.");
   
   return bytes;
 }

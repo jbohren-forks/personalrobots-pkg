@@ -1185,6 +1185,19 @@ Index: server/physics/Joint.hh
      /// Feedback data for this joint
      private: dJointFeedback *feedback;
  
+Index: server/physics/HingeJoint.cc
+===================================================================
+--- server/physics/HingeJoint.cc	(revision 7168)
++++ server/physics/HingeJoint.cc	(working copy)
+@@ -70,6 +70,8 @@
+   this->SetParam(dParamHiStop, this->hiStopP->GetValue().GetAsRadian());
+   this->SetParam(dParamLoStop, this->loStopP->GetValue().GetAsRadian());
+   this->SetParam(dParamHiStop, this->hiStopP->GetValue().GetAsRadian());
++  this->SetParam(dParamFMax, 0);
++  this->SetTorque(0);
+ 
+   this->SetAxis(**(this->axisP));
+ }
 Index: server/physics/RayGeom.cc
 ===================================================================
 --- server/physics/RayGeom.cc	(revision 7168)
@@ -1497,7 +1510,7 @@ Index: server/physics/Joint.cc
  
    if (**this->provideFeedbackP)
    {
-@@ -147,6 +174,22 @@
+@@ -147,6 +174,25 @@
    {
      this->SetAnchor(anchorVec);
    }
@@ -1515,31 +1528,48 @@ Index: server/physics/Joint.cc
 +    this->mimicFMax   = this->mimicFMaxP->GetValue();
 +    std::cout << this->nameP->GetValue() << " this joint will mimic joint " << this->mimicJointP->GetValue() << std::endl;
 +    if (this->type == Joint::HINGE)
-+      this->SetParam(dParamFMax, this->mimicFMax);
++    {
++      ((HingeJoint*)this)->SetParam(dParamFMax, this->mimicFMax);
++      ((HingeJoint*)this)->SetTorque(0);
++    }
 +  }
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -184,13 +227,26 @@
+@@ -184,13 +230,39 @@
  /// Update the joint
  void Joint::Update()
  {
+-//TODO: Evaluate impact of this code on performance
+-  this->visual->SetVisible(World::Instance()->GetShowJoints());
 +  // enforce mimic
++  double cmd = 0;
 +  // only enforce constraint for same type hinge joints
 +  if (this->enableMimic           == true         &&
 +      this->mimicJoint->GetType() == Joint::HINGE &&
 +      this->type                  == Joint::HINGE )
 +  {
-+    double error = (this->mimicMult*(((HingeJoint*)(this->mimicJoint))->GetAngle()) - this->mimicOffset - ((HingeJoint*)this)->GetAngle());
-+    //std::cout << this->nameP->GetValue() << " error " << error << " " << this->mimicOffset << " " << this->mimicMult << std::endl;
-+    this->SetParam(dParamVel, this->mimicKp*error);
++    cmd = this->mimicKp * (this->mimicMult*(((HingeJoint*)(this->mimicJoint))->GetAngle()) - this->mimicOffset - ((HingeJoint*)this)->GetAngle());
++    ((HingeJoint*)this)->SetParam(dParamVel, cmd);
 +  }
+ 
++  // if (this->type                  == Joint::HINGE )
++  // {
++  //   std::cout <<   " joint name " << this->nameP->GetValue()
++  //             <<          " cmd " << cmd
++  //             << " mimic offset " << this->mimicOffset
++  //             << " mimic multip " << this->mimicMult
++  //             << " mimic     kp " << this->mimicKp
++  //             <<     "    fmax  " << ((HingeJoint*)this)->GetParam(dParamFMax)
++  //             <<     "     vel  " << ((HingeJoint*)this)->GetParam(dParamVel)
++  //             <<     "     ang  " << ((HingeJoint*)this)->GetAngle()
++  //             << std::endl;
++  // }
 +
- //TODO: Evaluate impact of this code on performance
--  this->visual->SetVisible(World::Instance()->GetShowJoints());
++  //TODO: Evaluate impact of this code on performance
 +  if (Simulator::Instance()->GetRenderEngineEnabled())
 +    this->visual->SetVisible(World::Instance()->GetShowJoints());
- 
++
    if (!World::Instance()->GetShowJoints())
      return;
  
@@ -1549,7 +1579,7 @@ Index: server/physics/Joint.cc
  
    Vector3 start;
    if (this->body1)
-@@ -206,6 +262,7 @@
+@@ -206,6 +278,7 @@
      this->line2->SetPoint(0, start);
      this->line2->Update();
    }

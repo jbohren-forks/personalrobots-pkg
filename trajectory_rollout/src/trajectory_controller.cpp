@@ -227,7 +227,8 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
         return;
       }
 
-      occ_cost += footprint_cost;
+      occ_cost += ma_.getCost(cell_x, cell_y);
+      //occ_cost += footprint_cost;
     }
     else{
       occ_cost += ma_.getCost(cell_x, cell_y);
@@ -262,6 +263,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
   }
 
+  //ROS_INFO("OccCost: %f", occ_cost);
   double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ * occ_cost;
 
   traj.cost_ = cost;
@@ -345,6 +347,31 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     vx_samp += dvx;
   }
 
+  //explore trajectories that move forward but also strafe slightly
+  vx_samp = 0.1;
+  vy_samp = 0.1;
+  vtheta_samp = 0.0;
+  generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+  //if the new trajectory is better... let's take it
+  if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+    swap = best_traj;
+    best_traj = comp_traj;
+    comp_traj = swap;
+  }
+
+  vx_samp = 0.1;
+  vy_samp = -0.1;
+  vtheta_samp = 0.0;
+  generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+  //if the new trajectory is better... let's take it
+  if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+    swap = best_traj;
+    best_traj = comp_traj;
+    comp_traj = swap;
+  }
+
   //next we want to generate trajectories for rotating in place
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
@@ -359,8 +386,8 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp_limited, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
-    //if the new trajectory is better... let's take it
-    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0) && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
+    //if the new trajectory is better... let's take it... note if we can legally rotate in place we prefer to do that rather than move with y velocity
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0 || best_traj->yv_ != 0.0) && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
       double x_r, y_r, th_r;
       comp_traj->getPoint(num_steps_ - 1, x_r, y_r, th_r);
       x_r += HEADING_LOOKAHEAD * cos(th_r);
@@ -390,6 +417,54 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
 
     vtheta_samp += dvtheta;
+  }
+
+  
+  //do we have a legal trajectory
+  if(best_traj->cost_ >= 0){
+    if(!(best_traj->xv_ > 0)){
+      if(best_traj->thetav_ < 0){
+        if(rotating_right){
+          stuck_right = true;
+        }
+        rotating_left = true;
+      }
+      else if(best_traj->thetav_ > 0){
+        if(rotating_left){
+          stuck_left = true;
+        }
+        rotating_right = true;
+      }
+      else if(best_traj->yv_ > 0){
+        if(strafe_right){
+          stuck_right_strafe = true;
+        }
+        strafe_left = true;
+      }
+      else if(best_traj->yv_ < 0){
+        if(strafe_left){
+          stuck_left_strafe = true;
+        }
+        strafe_right = true;
+      }
+    }
+
+    double dist = sqrt((x - prev_x_) * (x - prev_x_) + (y - prev_y_) * (y - prev_y_));
+    if(dist > OSCILLATION_RESET_DIST){
+      rotating_left = false;
+      rotating_right = false;
+      strafe_left = false;
+      strafe_right = false;
+      stuck_left = false;
+      stuck_right = false;
+      stuck_left_strafe = false;
+      stuck_right_strafe = false;
+    }
+
+    prev_x_ = x;
+    prev_y_ = y;
+
+    return *best_traj;
   }
 
 
@@ -490,11 +565,19 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
   //if the new trajectory is better... let's take it
+  /*
   if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
 	  swap = best_traj;
 	  best_traj = comp_traj;
 	  comp_traj = swap;
   }
+  */
+  
+  //we'll allow moving backwards slowly even when the static map shows it as blocked
+  swap = best_traj;
+  best_traj = comp_traj;
+  comp_traj = swap;
+  best_traj->cost_ = 1;
 
   strafe_left = false;
   strafe_right = false;
@@ -652,7 +735,7 @@ double TrajectoryController::lineCost(int x0, int x1,
     if(point_cost < 0)
       return -1;
 
-    if(point_cost < line_cost)
+    if(line_cost < point_cost)
       line_cost = point_cost;
 
     num += numadd;              // Increase the numerator by the top of the fraction

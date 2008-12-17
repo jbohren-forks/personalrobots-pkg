@@ -245,28 +245,28 @@ void CvMatUtils::invertRigidTransform(const CvMat* transf, CvMat* inv_transf) {
   }
 }
 
-void CvMatUtils::transformFromRodriguesAndShift(const CvMat& param, CvMat& transform) {
+void CvMatUtils::transformFromRodriguesAndShift(const CvMat* param, CvMat* transform) {
   CvMat rod;
   CvMat rot;
   CvMat shift;
   CvMat shiftInParam;
-  assert(param.rows==6 && param.cols==1);
-  cvGetRows(&param, &rod, 0, 3);
-  cvGetRows(&param, &shiftInParam, 3, 6);
+  assert(param->rows==6 && param->cols==1);
+  cvGetRows(param, &rod, 0, 3);
+  cvGetRows(param, &shiftInParam, 3, 6);
   // get a view to the 3x3 sub matrix for rotation
-  cvGetSubRect(&transform,  &rot, cvRect(0,0, 3, 3));
+  cvGetSubRect(transform,  &rot, cvRect(0,0, 3, 3));
 
   cvRodrigues2(&rod, &rot);
 
   // get a view to the 3x1 submatrix for translation
-  cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
+  cvGetSubRect(transform, &shift, cvRect(3, 0, 1, 3));
   cvCopy(&shiftInParam, &shift);
 
-  if (transform.rows==4) {
-    cvmSet(&transform, 3, 0, 0.);
-    cvmSet(&transform, 3, 1, 0.);
-    cvmSet(&transform, 3, 2, 0.);
-    cvmSet(&transform, 3, 3, 1.);
+  if (transform->rows==4) {
+    cvmSet(transform, 3, 0, 0.);
+    cvmSet(transform, 3, 1, 0.);
+    cvmSet(transform, 3, 2, 0.);
+    cvmSet(transform, 3, 3, 1.);
   }
 }
 

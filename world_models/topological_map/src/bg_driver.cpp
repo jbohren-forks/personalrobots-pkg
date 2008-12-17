@@ -92,7 +92,7 @@ int main (int argc, char* argv[])
   topological_map::GridArray *grid;
   topological_map::IndexedBottleneckGraph g;
   if (inputFilename) {
-    g = topological_map::readBottleneckGraphFromFile(inputFilename);
+    g.readFromFile (inputFilename);
   }
   else {
 
@@ -115,13 +115,10 @@ int main (int argc, char* argv[])
       }
     }
       
-    g = topological_map::makeBottleneckGraph (*grid, bottleneckSize, bottleneckSkip, inflationRadius);
+    g.initializeFromGrid(*grid, bottleneckSize, bottleneckSkip, inflationRadius, 1, 2);
   }
 
 
-  //g.printBottleneckGraph ();
-
-  cout << "Bottlenecks:" << endl;
   g.printBottlenecks();
   if (outputFilename) {
     g.printBottlenecks(outputFilename);

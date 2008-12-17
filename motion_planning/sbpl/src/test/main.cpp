@@ -78,7 +78,7 @@ int plan2d(int argc, char *argv[])
             exit(1);
         }
 
-	planner.set_initialsolution_eps(1.0);
+	planner.set_initialsolution_eps(5.0);
 
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);

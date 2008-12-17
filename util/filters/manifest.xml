@@ -5,10 +5,11 @@ A library to provide a generic base class for filters as well as
 implementations of commonly used filters.  
 
 </description>
-<author>Tully Foote/tfoote@willowgarage.com</author>
+<author>Tully Foote/tfoote@willowgarage.com, Melonee Wise/mwise@willowgarage.com</author>
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
+<depend package="misc_utils" />
 <export>
 <cpp cflags="-I${prefix}/include"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
 </export>

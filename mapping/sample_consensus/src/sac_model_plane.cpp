@@ -87,7 +87,7 @@ namespace sample_consensus
 
       if (iter > MAX_ITERATIONS_COLLINEAR )
       {
-        std::cerr << "WARNING: Could not select 3 non collinear points in " << MAX_ITERATIONS_COLLINEAR << " iterations!!!" << std::endl;
+        std::cerr << "[SACModelPlane::getSamples] WARNING: Could not select 3 non collinear points in " << MAX_ITERATIONS_COLLINEAR << " iterations!!!" << std::endl;
         break;
       }
       iterations++;
@@ -257,33 +257,33 @@ namespace sample_consensus
 
     // Compute the plane coefficients from the 3 given points in a straightforward manner
     // calculate the plane normal n = (p2-p1) x (p3-p1) = cross (p2-p1, p3-p1)
-    model_coefficients_.at (0) = (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
-                                 (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z) -
-                                 (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
-                                 (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y);
+    model_coefficients_[0] = (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
+                             (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z) -
+                             (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
+                             (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y);
 
-    model_coefficients_.at (1) = (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
-                                 (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x) -
-                                 (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
-                                 (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z);
+    model_coefficients_[1] = (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
+                             (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x) -
+                             (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
+                             (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z);
 
-    model_coefficients_.at (2) = (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
-                                 (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y) -
-                                 (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
-                                 (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x);
+    model_coefficients_[2] = (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
+                             (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y) -
+                             (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
+                             (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x);
     // calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
     // nx ny nz (aka: ax + by + cz ...
-    double n_norm = sqrt (model_coefficients_.at (0) * model_coefficients_.at (0) +
-                          model_coefficients_.at (1) * model_coefficients_.at (1) +
-                          model_coefficients_.at (2) * model_coefficients_.at (2));
-    model_coefficients_.at (0) /= n_norm;
-    model_coefficients_.at (1) /= n_norm;
-    model_coefficients_.at (2) /= n_norm;
+    double n_norm = sqrt (model_coefficients_[0] * model_coefficients_[0] +
+                          model_coefficients_[1] * model_coefficients_[1] +
+                          model_coefficients_[2] * model_coefficients_[2]);
+    model_coefficients_[0] /= n_norm;
+    model_coefficients_[1] /= n_norm;
+    model_coefficients_[2] /= n_norm;
 
     // ... + d = 0
-    model_coefficients_.at (3) = -1 * (model_coefficients_.at (0) * cloud_->pts.at (indices.at (0)).x +
-                                       model_coefficients_.at (1) * cloud_->pts.at (indices.at (0)).y +
-                                       model_coefficients_.at (2) * cloud_->pts.at (indices.at (0)).z);
+    model_coefficients_[3] = -1 * (model_coefficients_[0] * cloud_->pts.at (indices.at (0)).x +
+                                   model_coefficients_[1] * cloud_->pts.at (indices.at (0)).y +
+                                   model_coefficients_[2] * cloud_->pts.at (indices.at (0)).z);
 
     return (true);
   }

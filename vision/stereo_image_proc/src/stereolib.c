@@ -386,6 +386,8 @@ do_stereo_d(uint8_t *lim, uint8_t *rim, // input feature images
   int16_t *intbuf, *textbuf, *accbuf;
   int8_t *corrbuf;
 
+  int pfilter_thresh = 2*ywin*xwin;
+
 #define INTBUFSIZE ((yim-YKERN+ywin)*dlen+64)
   intbuf  = (int16_t *)buf;	// integration buffer
 #define TEXTBUFSIZE (yim+64)
@@ -536,8 +538,16 @@ do_stereo_d(uint8_t *lim, uint8_t *rim, // input feature images
 		  c = (double)*accminp;
 		  p = (double)*(accminp+1);
 		  n = (double)*(accminp-1);
-		  v = (double)dval + (p-n)/(2*(p+n-2*c));
-		  *disppp = (int)(0.5 + 16*v);
+		
+		  //Peak filter
+		  if( *(accminp+1) + *(accminp-1) - 2*(*accminp) < pfilter_thresh){	
+		  	*disppp = FILTERED;
+		  }	
+		  else
+		  {
+			v = (double)dval + (p-n)/(2*(p+n-2*c));
+		  	*disppp = (int)(0.5 + 16*v);
+		  }
 		}
 	    } // end of row loop
 

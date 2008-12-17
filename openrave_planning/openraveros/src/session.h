@@ -36,7 +36,7 @@ using namespace ros;
     { \
         SessionState state = getstate(req); /* need separate copy in order to guarantee thread safety */ \
         if( !state._pserver ) { \
-            ROS_INFO("failed to find session for service %s\n", #srvname); \
+            ROS_INFO("failed to find session for service %s", #srvname); \
             return false; \
         } \
         return state._pserver->srvname##_srv(req,res); \
@@ -280,7 +280,6 @@ private:
                 if( !!_pviewer ) {
                     _penvViewer->AttachViewer(_pviewer.get());
                     _pviewer->ViewerSetSize(1024,768);
-                    usleep(100000); // give it some time to initialize
                 }
 
                 if( !_pviewer )
@@ -300,7 +299,6 @@ private:
             _penvViewer->AttachViewer(NULL);
             _pviewer.reset();
             _penvViewer = NULL;
-            usleep(200000); // give some time for destruction
             _conditionViewer.notify_all();
         }
     }

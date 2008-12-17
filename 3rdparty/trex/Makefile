@@ -13,14 +13,14 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-all: trex PLASMA PlanWorks includes
+all: trex plasma planworks includes
 
 includes: trex PlanWorks PLASMA
 	./copyIncludes.sh
 
 
-# GET PLASMA
-PLASMA:
+# GET plasma
+plasma:
 	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5163 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
 	@-cd PLASMA && $(SVN_CMDLINE) up -r 5163 ;
 
@@ -31,12 +31,12 @@ PLASMA:
 #	touch patch-PLASMA 
 
 # GET PlanWorks
-PlanWorks:
+planworks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
 	@-cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
 
 # Get TREX
-trex: PLASMA
+trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 45 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
 	@-cd TREX && $(SVN_CMDLINE) up -r 45 ;
 	@if [ ! -d logs ]; then mkdir logs; fi
@@ -49,6 +49,6 @@ test: trex
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else cd TREX && jam agent-inputs && jam run-agent-module-tests; fi
 
 clean:
-	rm -rf PLASMA TREX trex EUROPA logs PlanWorks include
+	rm -rf PLASMA plasma TREX trex EUROPA logs PlanWorks planworks include
 
 wipe: clean

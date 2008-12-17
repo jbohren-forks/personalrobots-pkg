@@ -351,6 +351,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
 
             }
             
+            /* copy gazebo data */
+            copyGazeboMap(link->joint->data, joint);
+
             /* add joint to document */
             root->LinkEndChild(joint);
         }

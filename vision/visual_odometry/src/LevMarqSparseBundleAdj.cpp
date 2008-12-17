@@ -56,12 +56,12 @@
 #define CHECKTIMING 1
 
 #if CHECKTIMING == 0
-#define TIMERSTART2(x)
-#define TIMEREND2(x)
+#define TIMERSTART(x)
+#define TIMEREND(x)
 #else
 #include "CvTestTimer.h"
-#define TIMERSTART2(x) CvTestTimerStart2(x)
-#define TIMEREND2(x)   CvTestTimerEnd2(x)
+#define TIMERSTART(x) CvTestTimerStart(x)
+#define TIMEREND(x)   CvTestTimerEnd(x)
 #endif
 
 namespace cv {
@@ -95,8 +95,7 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       transf_fwd_data_(new double[NUM_CAM_PARAMS*16*full_free_window_size]),
       lambdaLg10_(0),
       term_criteria_(term_criteria),
-      param_delta_(CV_PI/(180.*100.)) /* this initial value still works even if we
-                                         do not use angle explicitly */
+      param_delta_(defDeltaForNumericDeriv)
       {
 }
 
@@ -185,7 +184,7 @@ inline void LevMarqSparseBundleAdj::constructTransfMatrices(){
 
 
 void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
-  TIMERSTART2(SBAFwdTransfMats);
+  TIMERSTART(SBAFwdTransfMats);
   for (int iFrame=0; iFrame < free_window_size_; iFrame++) {
 #if DEBUG2==1
     printf("construct matrices for frame of local index: %d\n", iFrame);
@@ -196,7 +195,7 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
     constructFwdTransfMatrices((const CvMat *)&mat_params_i,
         param_delta_, transf_fwd_data_i);
   }
-  TIMEREND2(SBAFwdTransfMats);
+  TIMEREND(SBAFwdTransfMats);
 }
 
 inline void LevMarqSparseBundleAdj::JacobianOfPointApprox(
@@ -285,7 +284,7 @@ inline void LevMarqSparseBundleAdj::JacobianOfPointExact(
 inline void LevMarqSparseBundleAdj::linearSolving() {
   // fill out of lower left part of the matrix
   cvCompleteSymm(&mat_A_, 0);
-#if 0
+#if 0  // set to 1 to use OpenCV
   cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
   // update camera parameters with mat_dC
   cvAdd(&mat_C_, &mat_dC_, &mat_C_);
@@ -294,18 +293,17 @@ inline void LevMarqSparseBundleAdj::linearSolving() {
     Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
     Eigen::VectorXd B0(mat_B_.rows);
     Eigen::VectorXd C0(mat_C_.rows);
+    // setting up left hand side matrix A
     for (int j=0; j<A0.cols(); j++) {
       for (int i=0; i<A0.rows(); i++) {
         A0(i, j) = CV_MAT_ELEM( mat_A_, double, i, j );
       }
     }
+    // setting up right hand side vector B
     for (int i=0; i<B0.size(); i++) {
-//      B0(i) = cvmGet(&mat_B_, i, 0);
       B0(i) = B_data_[i];
     }
-//    TIMERSTART2(SBALinearSolving);
     A0.llt().solve(B0, &C0);
-//    TIMEREND2(SBALinearSolving);
     // update camera/frame parameters with C0
     for (int i=0; i<C0.size(); i++) {
       frame_params_[i] += (frame_params_update_[i]=C0(i));
@@ -466,7 +464,7 @@ bool LevMarqSparseBundleAdj::optimize(
   double scale = 1./param_delta_;
 
   if( term_criteria_.type & CV_TERMCRIT_ITER )
-    term_criteria_.max_iter = MIN(MAX(term_criteria_.max_iter,1),1000);
+    term_criteria_.max_iter = MIN(MAX(term_criteria_.max_iter,0),1000);
   else
     term_criteria_.max_iter = 30;
   if( term_criteria_.type & CV_TERMCRIT_EPS )
@@ -504,7 +502,7 @@ bool LevMarqSparseBundleAdj::optimize(
   for (int iUpdates = 0;
     iUpdates < term_criteria_.max_iter && converged == false;
     iUpdates++ ) {
-    TIMERSTART2(SparseBundleAdj);
+    TIMERSTART(SparseBundleAdj);
     // 3. Clear the left hand side matrix A and right hand side vector B
     cvSetZero(&mat_A_);
     cvSetZero(&mat_B_);
@@ -532,7 +530,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("point %d: [%f, %f, %f]\n", p->id_, px, py, pz);
 #endif
 
-      TIMERSTART2(SBADerivatives);
+      TIMERSTART(SBADerivatives);
       // - Compute derivatives.  For each camera c on track p.
       //   {
       BOOST_FOREACH( PointTrackObserv* obsv, *p) {
@@ -544,7 +542,7 @@ bool LevMarqSparseBundleAdj::optimize(
         if (isDontCareFrame(obsv->frame_index_) == true) {
           continue;
         }
-//        TIMERSTART2(SBADerivativesHpp);
+//        TIMERSTART(SBADerivativesHpp);
 
         double rx, ry, rz;
         double pu = obsv->disp_coord_.x;
@@ -590,7 +588,7 @@ bool LevMarqSparseBundleAdj::optimize(
           bp[d0] -= Jpx * rx + Jpy * ry + Jpz * rz;
         }
 
-//        TIMEREND2(SBADerivativesHpp);
+//        TIMEREND(SBADerivativesHpp);
         //     If camera c is free
         if (isFreeFrame(obsv->frame_index_) == true){
           // Add \f$ J_c^TJ_c \f$ (optionally with an augmented diagonal)
@@ -605,7 +603,7 @@ bool LevMarqSparseBundleAdj::optimize(
           // in each parameter.
           int frame_li = obsv->local_frame_index_;
 
-//          TIMERSTART2(SBADerivativesJc);
+//          TIMERSTART(SBADerivativesJc);
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
 
@@ -619,7 +617,7 @@ bool LevMarqSparseBundleAdj::optimize(
             Jc[  NUM_CAM_PARAMS + k] = (ry1-ry)*scale;
             Jc[2*NUM_CAM_PARAMS + k] = (rz1-rz)*scale;
           }
-//          TIMEREND2(SBADerivativesJc);
+//          TIMEREND(SBADerivativesJc);
 #if DEBUG2==1
           {
             printf("Jacobian Jc of point %d, on frame %d,%d, error=[%f,%f,%f]\n",
@@ -628,7 +626,7 @@ bool LevMarqSparseBundleAdj::optimize(
           }
 #endif
 
-//          TIMERSTART2(SBADerivativesHccHpc);
+//          TIMERSTART(SBADerivativesHccHpc);
           // update the JtJ entry corresponding to it, block (c, c)
           double *A_data_cc = getABlock(frame_li, frame_li);
           double *mat_B_data_c  = getBBlock(frame_li);
@@ -658,7 +656,7 @@ bool LevMarqSparseBundleAdj::optimize(
             printf("row %d of B=%f, %f\n", k, mat_B_data_c[k], -(Jcx*rx + Jcy*ry + Jcz*rz));
 #endif
           }
-//          TIMEREND2(SBADerivativesHccHpc);
+//          TIMEREND(SBADerivativesHccHpc);
 #if DEBUG2==1
           {
             CvMat mat_Hpc = cvMat(3, 6, CV_64FC1, Hpc);
@@ -687,7 +685,7 @@ bool LevMarqSparseBundleAdj::optimize(
       CvMatUtils::printMat(&mat_Hpp);
 #endif
 
-//      TIMERSTART2(SBADerivativesHppInv);
+//      TIMERSTART(SBADerivativesHppInv);
       // Augment diagonal of Hpp.
       for (int i=0; i<NUM_POINT_PARAMS; i++) {
         Hpp[i*NUM_POINT_PARAMS+i] *= lambda_plus_one;
@@ -713,8 +711,8 @@ bool LevMarqSparseBundleAdj::optimize(
         tp[i] = Hpp_inv[i*NUM_POINT_PARAMS +0] * bp[0] +
           Hpp_inv[i*NUM_POINT_PARAMS +1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS +2]*bp[2];
       }
-//      TIMEREND2(SBADerivativesHppInv);
-      TIMEREND2(SBADerivatives);
+//      TIMEREND(SBADerivativesHppInv);
+      TIMEREND(SBADerivatives);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_B before Outer Product of Tracks\n");
@@ -722,7 +720,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("bp=[%f, %f, %f]\n", bp[0], bp[1], bp[2]);
       printf("tp=[%f, %f, %f]\n", tp[0], tp[1], tp[2]);
 #endif
-      TIMERSTART2(SBAOuterProdOfTrack);
+      TIMERSTART(SBAOuterProdOfTrack);
 
       // (Outer product of track) For each free camera c on track p
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
@@ -818,7 +816,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
         }
       } // (Outer product of track)
-      TIMEREND2(SBAOuterProdOfTrack);
+      TIMEREND(SBAOuterProdOfTrack);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_A after Outer Product of Tracks\n");
@@ -833,11 +831,11 @@ bool LevMarqSparseBundleAdj::optimize(
     // solve for dC.
     // (Alternatively, we may use a special SVD for symmetric square matrix
     // in OpenCV, which is slower than the Cholesky in eigen2)
-    TIMERSTART2(SBALinearSolving);
+    TIMERSTART(SBALinearSolving);
     linearSolving();
-    TIMEREND2(SBALinearSolving);
+    TIMEREND(SBALinearSolving);
 
-    TIMERSTART2(SBABackSubstitution);
+    TIMERSTART(SBABackSubstitution);
     //
     // 7. (Backsubstitution)  for each track p
     //
@@ -890,7 +888,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
     } // for each point track p, backsubstitution
-    TIMEREND2(SBABackSubstitution);
+    TIMEREND(SBABackSubstitution);
     //
     // 8. Compute the cost function for the updated camera and point configuration
     //
@@ -960,7 +958,7 @@ bool LevMarqSparseBundleAdj::optimize(
       /// With this, we may be able to save parameter backing off in last step.
 
     }
-    TIMEREND2(SparseBundleAdj);
+    TIMEREND(SparseBundleAdj);
   } // next iteration
 
   // copy the optimized parameters back
@@ -1106,7 +1104,17 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     // copy the parameters out
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
     /// @todo should not tightened to rodrigues!
-    CvMatUtils::transformFromRodriguesAndShift(mat_params_i, transf_global_to_local);
+    switch(mAngleType) {
+    case Rodrigues:
+      CvMatUtils::transformFromRodriguesAndShift(&mat_params_i, &transf_global_to_local);
+      break;
+    case Euler:
+      CvMatUtils::transformFromEulerAndShift(&mat_params_i, &transf_global_to_local);
+      break;
+    default:
+      // unknown angle type
+      assert(0);
+    }
 
     // compute the local to global matrix
     CvMatUtils::invertRigidTransform(&transf_global_to_local,
@@ -1131,7 +1139,7 @@ double LevMarqSparseBundleAdj::costFunction(
     vector<FramePose *>* free_frames,
     PointTracks* tracks
 ) {
-  TIMERSTART2(SBACostFunction);
+  TIMERSTART(SBACostFunction);
   double err_norm = 0;
 
   /// For each tracks
@@ -1167,7 +1175,7 @@ double LevMarqSparseBundleAdj::costFunction(
     }
   }
 
-  TIMEREND2(SBACostFunction);
+  TIMEREND(SBACostFunction);
   return err_norm;
 }
 

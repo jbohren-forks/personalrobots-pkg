@@ -36,7 +36,7 @@ import cairo
 import array
 
 import rosrecord
-import visualize
+#import visualize
 
 
 def planar(x, y, z):

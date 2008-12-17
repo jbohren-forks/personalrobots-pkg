@@ -106,6 +106,11 @@ public:
   std::vector<JointState> joint_states_;
   std::vector<LinkState> link_states_;
 
+ /**
+  * Each transmission refers to the actuators and joints it connects by name.
+  * Since name lookup is slow, for each transmission in the robot model we
+  * cache pointers to the actuators and joints that it connects.
+  **/ 
   std::vector<std::vector<Actuator*> > transmissions_in_;
   std::vector<std::vector<JointState*> > transmissions_out_;
 
