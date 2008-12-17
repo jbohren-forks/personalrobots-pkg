@@ -51,220 +51,6 @@
 
 using namespace cam;
 
-StereoCam::StereoCam()
-{
-  stIm = new StereoData();
-  buf = NULL;
-  flim = NULL;
-  frim = NULL;
-}
-
-StereoCam::~StereoCam()
-{
-  // should free all buffers
-  MEMFREE(buf);
-  MEMFREE(flim);
-  MEMFREE(frim);
-  free(stIm);
-}
-
-bool
-StereoCam::doRectify()
-{
-  bool res = stIm->imLeft->doRectify();
-  res = res && stIm->imRight->doRectify();
-  return res;
-}
-
-
-bool 
-StereoCam::doDisparity()
-{
-  uint8_t *lim, *rim;
-
-  // first do any rectification necessary
-  doRectify();
-
-  // check if disparity is already present
-  if (stIm->hasDisparity)
-    return true;
-
-  // check if the rectified images are present
-  if (stIm->imLeft->imRectType == COLOR_CODING_NONE ||
-      stIm->imRight->imRectType == COLOR_CODING_NONE)
-    return false;
-
-  // variables
-  lim = (uint8_t *)stIm->imLeft->imRect;
-  rim = (uint8_t *)stIm->imRight->imRect;
-  int xim = stIm->imWidth;
-  int yim = stIm->imHeight;
-
-  // some parameters
-  int ftzero = 31;		// max 31 cutoff for prefilter value (31 default)
-  int dlen   = stIm->numDisp;	// number of disparities
-  int corr   = stIm->corrSize;	// correlation window size
-  int tthresh = stIm->textureThresh; // texture threshold
-  int uthresh = stIm->uniqueThresh; // uniqueness threshold, percent
-
-  // allocate buffers
-  if (!stIm->imDisp)
-    stIm->imDisp = (int16_t *)MEMALIGN(xim*yim*2);
-
-  if (!buf)
-    buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
-  if (!flim)
-    flim = (uint8_t *)MEMALIGN(xim*yim); // feature image
-  if (!frim)
-    frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
-
-  // prefilter
-  do_prefilter(lim, flim, xim, yim, ftzero, buf);
-  do_prefilter(rim, frim, xim, yim, ftzero, buf);
-
-  // stereo
-  do_stereo(flim, frim, stIm->imDisp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
-
-  stIm->hasDisparity = true;
-  return true;
-}
-
-
-bool
-StereoCam::setTextureThresh(int thresh)
-{
-  stIm->textureThresh = thresh;
-  return true;
-}
-
-bool
-StereoCam::setUniqueThresh(int thresh)
-{
-  stIm->uniqueThresh = thresh;
-  return true;
-}
-
-bool
-StereoCam::setHoropter(int val)
-{
-  stIm->offx = val;
-  return true;
-}
-
-
-
-
-//
-// Conversion to 3D points
-// Convert to vector or image array of pts
-// Should we do disparity automatically here?
-//
-
-
-bool
-StereoCam::doCalcPts()
-{
-  stIm->numPts = 0;
-  doDisparity();
-  if (!stIm->hasDisparity)
-    return false;
-
-  int ix = stIm->imDleft;
-  int iy = stIm->imDtop;
-  int ih = stIm->imDheight;
-  int iw = stIm->imDwidth;
-  int w = stIm->imWidth;
-  int h = stIm->imHeight;
-
-  if (stIm->imPtsSize < 4*w*h*sizeof(float))
-    {
-      MEMFREE(stIm->imPts);
-      stIm->imPtsSize = 4*w*h*sizeof(float);
-      stIm->imPts = (float *)MEMALIGN(stIm->imPtsSize);
-      MEMFREE(stIm->imPtsColor);
-      stIm->imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
-    }
-
-  float *pt;
-  int y = iy;
-  float cx = (float)stIm->RP[3];
-  float cy = (float)stIm->RP[7];
-  float f  = (float)stIm->RP[11];
-  float itx = (float)stIm->RP[14];
-  itx *= 1.0 / (float)stIm->dpp; // adjust for subpixel interpolation
-  pt = stIm->imPts;
-      
-  for (int j=0; j<ih; j++, y++)
-    {
-      int x = ix;
-      int16_t *p = stIm->imDisp + x + y*w;
-
-      for (int i=0; i<iw; i++, x++, p++)
-	{
-	  if (*p > 0) 
-	    {
-	      float ax = (float)x + cx;
-	      float ay = (float)y + cy;
-	      float aw = 1.0 / (itx * (float)*p);
-	      *pt++ = ax*aw;	// X
-	      *pt++ = ay*aw;	// Y
-	      *pt++ = f*aw;	// Z
-	      stIm->numPts++;
-	    }
-	}
-    }
-
-  if (stIm->imLeft->imRectColorType != COLOR_CODING_NONE) // ok, have color
-    {
-      y = iy;
-      uint8_t *pcout = stIm->imPtsColor;
-      for (int j=0; j<ih; j++, y++)
-	{
-	  int x = ix;
-	  int16_t *p = stIm->imDisp + x + y*w;
-	  uint8_t *pc = stIm->imLeft->imRectColor + (x + y*w)*3;
-
-	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
-	    {
-	      if (*p > 0) 
-		{
-		  *pcout++ = *pc;
-		  *pcout++ = *(pc+1);
-		  *pcout++ = *(pc+2);
-		}
-	    }
-	}
-    }
-  else if (stIm->imLeft->imRectType != COLOR_CODING_NONE) // ok, have mono
-    {
-      y = iy;
-      uint8_t *pcout = stIm->imPtsColor;
-      for (int j=0; j<ih; j++, y++)
-	{
-	  int x = ix;
-	  int16_t *p = stIm->imDisp + x + y*w;
-	  uint8_t *pc = stIm->imLeft->imRect + (x + y*w);
-
-	  for (int i=0; i<iw; i++, p++, pc++)
-	    {
-	      if (*p > 0) 
-		{
-		  *pcout++ = *pc;
-		  *pcout++ = *pc;
-		  *pcout++ = *pc;
-		}
-	    }
-	}
-    }
-
-
-  //  printf("[Calc Pts] Number of pts: %d\n", stIm->numPts);
-  return true;
-}
-
-
-
 
 // StereoDcam class
 // Conjoins image grabbing and stereo
@@ -464,6 +250,14 @@ StereoDcam::setUniqueThresh(int thresh)
 }
 
 bool
+StereoDcam::setSmoothnessThresh(int thresh)
+{
+  stIm->setSmoothnessThresh(thresh);
+  return true;
+}
+
+
+bool
 StereoDcam::setHoropter(int val)
 {
   stIm->setHoropter(val);
@@ -615,7 +409,7 @@ StereoDcam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
 
 
 // visible calls
-bool StereoDcam::doDisparity() { return stIm->doDisparity(); }
+bool StereoDcam::doDisparity(stereo_algorithm_t alg) { return stIm->doDisparity(alg); }
 bool StereoDcam::doRectify() { return stIm->doRectify(); }
 bool StereoDcam::doCalcPts() { return stIm->doCalcPts(); }
 

@@ -50,6 +50,7 @@ extern void unique_cb(Fl_Counter*, void*);
 extern void texture_cb(Fl_Counter*, void*);
 extern void speckle_size_cb(Fl_Counter*, void*);
 extern void speckle_diff_cb(Fl_Counter*, void*);
+extern void smoothness_cb(Fl_Counter*, void*);
 extern void disparity_cb(Fl_Counter*, void*);
 extern void corrsize_cb(Fl_Counter*, void*);
 extern void xoff_cb(Fl_Counter*, void*);
@@ -57,6 +58,7 @@ extern void do_rectify_cb(Fl_Light_Button*, void*);
 extern void do_stereo_cb(Fl_Light_Button*, void*);
 extern void do_3d_cb(Fl_Light_Button*, void*);
 #include <FL/Fl_Choice.H>
+extern void stereo_algorithm_cb(Fl_Choice*, void*);
 extern void video_size_cb(Fl_Choice*, void*);
 extern void video_rate_cb(Fl_Choice*, void*);
 extern void do_video_cb(Fl_Light_Button*, void*);
@@ -75,7 +77,7 @@ extern void do_gamma_cb(Fl_Light_Button*, void*);
 class stereogui {
 public:
   stereogui();
-  Fl_Window *stereo_calibration;
+  Fl_Window *ost_main;
   Fl_Output *info_message;
   static Fl_Menu_Item menu_[];
   calImageWindow *mainLeft;
@@ -169,6 +171,7 @@ public:
   Fl_Light_Button *rectify_button;
   Fl_Light_Button *stereo_button;
   Fl_Light_Button *x3d_button;
+  static Fl_Menu_Item menu_Stereo[];
   Fl_Window *video_window;
   static Fl_Menu_Item menu_Size[];
   static Fl_Menu_Item menu_Rate[];

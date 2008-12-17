@@ -189,10 +189,10 @@ static int sp_xoff    =  0;	// no offset
 static int sp_corr    = 15;	// correlation window size
 static int sp_tthresh = 30;	// texture threshold
 static int sp_uthresh = 30;	// uniqueness threshold, percent
+static int sp_sthresh = 30;	// uniqueness threshold, percent
 static int sp_ssize   = 100;	// speckle size, pixels
 static int sp_sdiff   = 8;	// speckle diff, disparities
-
-
+static stereo_algorithm_t sp_alg=NORMAL_ALGORITHM; // type of stereo algorithm we're using
 
 // printing matrices
 void PrintMat(CvMat *A, FILE *fp = stdout);
@@ -253,7 +253,7 @@ main(int argc, char **argv)	// no arguments
 
   // start up dialog window
   stg = new stereogui;
-  gwin = stg->stereo_calibration;
+  gwin = stg->ost_main;
   set_current_tab_index(1);
   gwin->show();
   stg->cal_window->hide();	// have to request cal window
@@ -346,7 +346,7 @@ main(int argc, char **argv)	// no arguments
 	      if (isRectify)	// rectify images
 		dev->doRectify();
 	      if (isStereo)	// get stereo disparity
-		dev->doDisparity();
+		dev->doDisparity(sp_alg);
 	      if (is3D)		// get 3D points
 		{
 		  dev->doCalcPts();
@@ -2113,6 +2113,26 @@ void stereo_window_cb(Fl_Menu_ *w, void *u)
   stg->stereo_window->show();
 }
 
+// video size
+void
+stereo_algorithm_cb(Fl_Choice *w, void *u)
+{
+  Fl_Menu_ *mw = (Fl_Menu_ *)w;
+  const Fl_Menu_Item* m = mw->mvalue();
+  
+  printf("Label: %s\n", m->label());
+
+  if (!strcmp(m->label(), "Normal"))
+    {
+      printf("Normal algorithm\n");
+    }
+  if (!strcmp(m->label(), "Scanline"))
+    {
+      printf("Scanline algorithm\n");
+    }
+}
+
+
 void
 disparity_cb(Fl_Counter *w, void *x)
 {
@@ -2135,6 +2155,14 @@ texture_cb(Fl_Counter *w, void *x)
   sp_tthresh = (int)w->value();
   if (dev)
     dev->setTextureThresh(sp_tthresh);
+}
+
+void
+smoothness_cb(Fl_Counter *w, void *x)
+{
+  sp_sthresh = (int)w->value();
+  if (dev)
+    dev->setSmoothnessThresh(sp_sthresh);
 }
 
 void

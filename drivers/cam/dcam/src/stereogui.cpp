@@ -17,6 +17,13 @@ Fl_Menu_Item stereogui::menu_[] = {
  {0,0,0,0,0,0,0,0,0}
 };
 
+Fl_Menu_Item stereogui::menu_Stereo[] = {
+ {"Normal", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"Scanline", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"DP", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {0,0,0,0,0,0,0,0,0}
+};
+
 Fl_Menu_Item stereogui::menu_Size[] = {
  {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
@@ -32,9 +39,9 @@ Fl_Menu_Item stereogui::menu_Rate[] = {
 };
 
 stereogui::stereogui() {
-  { stereo_calibration = new Fl_Window(655, 305, "Open STereo");
-    stereo_calibration->labelsize(11);
-    stereo_calibration->user_data((void*)(this));
+  { ost_main = new Fl_Window(655, 305, "Open STereo");
+    ost_main->labelsize(11);
+    ost_main->user_data((void*)(this));
     { info_message = new Fl_Output(5, 275, 490, 25);
       info_message->box(FL_BORDER_BOX);
       info_message->color(FL_BACKGROUND_COLOR);
@@ -83,8 +90,8 @@ stereogui::stereogui() {
       } // Fl_Group* o
       o->end();
     } // Fl_Group* o
-    stereo_calibration->end();
-  } // Fl_Window* stereo_calibration
+    ost_main->end();
+  } // Fl_Window* ost_main
   { cal_images = new Fl_Window(675, 295, "Calibration images");
     cal_images->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(5, 0, 855, 375);
@@ -1157,14 +1164,14 @@ stereogui::stereogui() {
     } // Fl_Group* o
     cal_window->end();
   } // Fl_Window* cal_window
-  { stereo_window = new Fl_Window(265, 260, "Stereo");
+  { stereo_window = new Fl_Window(340, 295, "Stereo");
     stereo_window->user_data((void*)(this));
-    { Fl_Group* o = new Fl_Group(20, 135, 285, 120);
-      { Fl_Box* o = new Fl_Box(20, 135, 140, 110, "label");
+    { Fl_Group* o = new Fl_Group(15, 155, 285, 120);
+      { Fl_Box* o = new Fl_Box(15, 155, 280, 110, "label");
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       } // Fl_Box* o
-      { Fl_Counter* o = new Fl_Counter(90, 140, 55, 20, "UniqueThresh");
+      { Fl_Counter* o = new Fl_Counter(85, 160, 55, 20, "UniqueThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1174,7 +1181,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)unique_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(90, 165, 55, 20, "TextureThresh");
+      { Fl_Counter* o = new Fl_Counter(85, 185, 55, 20, "TextureThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1184,7 +1191,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)texture_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(90, 190, 55, 20, "SpeckleSize");
+      { Fl_Counter* o = new Fl_Counter(85, 210, 55, 20, "SpeckleSize");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1194,7 +1201,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)speckle_size_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(90, 215, 55, 20, "SpeckleDiff");
+      { Fl_Counter* o = new Fl_Counter(85, 235, 55, 20, "SpeckleDiff");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1204,9 +1211,19 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)speckle_diff_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
+      { Fl_Counter* o = new Fl_Counter(230, 160, 55, 20, "Smoothness");
+        o->type(1);
+        o->labelsize(11);
+        o->minimum(0);
+        o->maximum(100);
+        o->step(1);
+        o->value(30);
+        o->callback((Fl_Callback*)smoothness_cb);
+        o->align(FL_ALIGN_LEFT);
+      } // Fl_Counter* o
       o->end();
     } // Fl_Group* o
-    { Fl_Group* o = new Fl_Group(20, 30, 285, 170);
+    { Fl_Group* o = new Fl_Group(20, 30, 320, 170);
       { Fl_Box* o = new Fl_Box(20, 30, 120, 85);
         o->box(FL_ENGRAVED_FRAME);
       } // Fl_Box* o
@@ -1257,6 +1274,13 @@ stereogui::stereogui() {
         x3d_button->callback((Fl_Callback*)do_3d_cb);
         o->user_data((void *)this);
       } // Fl_Light_Button* x3d_button
+      { Fl_Choice* o = new Fl_Choice(245, 70, 90, 20, "Stereo Algorithm");
+        o->down_box(FL_BORDER_BOX);
+        o->labelsize(11);
+        o->callback((Fl_Callback*)stereo_algorithm_cb);
+        o->align(FL_ALIGN_TOP_LEFT);
+        o->menu(menu_Stereo);
+      } // Fl_Choice* o
       o->end();
     } // Fl_Group* o
     stereo_window->end();
