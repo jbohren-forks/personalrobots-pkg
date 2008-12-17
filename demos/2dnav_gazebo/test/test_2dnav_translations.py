@@ -56,12 +56,11 @@ from rostools.msg import *
 from transformations import *
 from numpy import *
 
-TARGET_DURATION = 2.0
 TARGET_TOL      = 1.0
-TEST_TIMEOUT    = 1200.0
+TEST_TIMEOUT    = 120.0
 
 # goal position
-TARGET_X = 100.0
+TARGET_X =  10.0
 TARGET_Y =  10.0
 TARGET_T =  0.0
 
