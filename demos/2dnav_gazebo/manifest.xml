@@ -5,7 +5,6 @@
   <review status="NA" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="nav_view"/>
-  <depend package="roslaunch"/>
   <depend package="gazebo_plugin"/>
   <depend package="map_server"/>
   <depend package="amcl_player"/>

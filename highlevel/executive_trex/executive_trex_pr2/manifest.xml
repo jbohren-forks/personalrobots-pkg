@@ -5,7 +5,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="trex" />
   <depend package="rospy" />
-  <depend package="rostest" />
   <depend package="highlevel_controllers" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>

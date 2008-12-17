@@ -4,7 +4,6 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
-  <depend package="roslaunch"/>
   <depend package="amcl_player"/>
   <depend package="hokuyo_node"/>
   <depend package="imu_node"/>
