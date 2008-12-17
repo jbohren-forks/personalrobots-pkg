@@ -153,6 +153,12 @@ public:
 
   // Position message callback.
   void pos_cb() {
+
+    // Check that the message came from the person filter, not one of the individual trackers.
+    if (pos_.name != "person_filter") {
+      return;
+    }
+
     cv_mutex_.lock();
     int iperson;
     if (pos_.initialization == 1) {
@@ -246,15 +252,23 @@ public:
 	  cam_model_->dispToCart(uvd,xyz);
 	  
 	  bool do_publish = true;
+	  std::string id = "-1";
 	  if (external_init_) {
 	    // Check if this person's face is close enough to one of the previously known faces and associate it.
 	    // If not, don't publish it.
+	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
+	    if (close_person < 0) {
+	      do_publish = false;
+	    }
+	    else {
+	      id = people_->getID(close_person);
+	    }
 	  }
 
 	  if (do_publish) {
 	    pos.header.stamp = limage_.header.stamp;
 	    pos.name = "face_detection";
-	    pos.object_id = "-1";
+	    pos.object_id = id;
 	    pos.pos.x = cvmGet(xyz,0,2);
 	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
 	    pos.pos.z = -1.0*cvmGet(xyz,0,1);
