@@ -113,7 +113,7 @@
 	  points[t].x = m[0] + (step[0] * r);
 	  points[t].y = m[1] + (step[1] * c);
 	  points[t].z = m[2];
-	  weights[t] = rgb[999-(int)trunc(max(0.0,min(999.0,hist(r,c)*20*_listOfSamples.size())))];
+	  weights[t] = rgb[999-(int)trunc(max(0.0,min(999.0,hist(r,c)*2*total*total)))];
 	  t++;
 	}
     cloud.header.frame_id = "odom";
