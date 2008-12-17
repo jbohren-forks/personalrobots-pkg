@@ -281,6 +281,7 @@ StereoData::StereoData()
   speckleRegionSize = 100;
   rangeMax = 0.0;
   rangeMin = 0.0;
+  unique_check = 0;
 
   hasRectification = false;
 
@@ -370,6 +371,12 @@ StereoData::setRangeMin(double val)
   return true;
 }
 
+bool
+StereoData::setUniqueCheck(bool val)
+{
+  unique_check = !unique_check;
+  return true;
+}
 
 void
 StereoData::setDispOffsets()
@@ -465,6 +472,10 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   int corr   = corrSize;	// correlation window size
   int tthresh = textureThresh; // texture threshold
   int uthresh = uniqueThresh; // uniqueness threshold, percent
+  int sthresh = smoothThresh;
+  bool unique_c = unique_check;
+
+ // printf("Unique check: %d\r", unique_check);	
 
  // allocate buffers
   // TODO: make these consistent with current values
@@ -485,7 +496,7 @@ StereoData::doDisparity(stereo_algorithm_t alg)
 switch(alg){
 	case NORMAL_ALGORITHM:  
 //if(alg == NORMAL_ALGORITHM){
-	printf("Normal Algorithm\n");
+	//printf("Normal Algorithm\n");
 	  // stereo
   	do_stereo(flim, frim, imDisp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
@@ -493,23 +504,23 @@ switch(alg){
 	
 	case SCANLINE_ALGORITHM:
 //  if(alg == SCANLINE_ALGORITHM){
-	printf("Scanline Algorithm\n");
-	do_stereo_so(flim, frim, imDisp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	//printf("Scanline Algorithm\n");
+	do_stereo_so(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
 	
 	case DP_ALGORITHM:
  // if(alg == DP_ALGORITHM){
-	printf("DP Algorithm\n");
-	do_stereo_dp(flim, frim, imDisp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	//printf("DP Algorithm\n");
+	do_stereo_dp(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
 
 	case MW_ALGORITHM:
 	//  if(alg == MW_ALGORITHM){
-	printf("MW Algorithm\n");
-	do_stereo_mw(flim, frim, imDisp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	//printf("MW Algorithm\n");
+	do_stereo_mw(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
 	break;
 
 	default:

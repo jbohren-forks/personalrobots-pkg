@@ -292,6 +292,7 @@ namespace cam
     int speckleRegionSize;	// minimum size of region to be not a speckle
     double rangeMax;		// max Z value returned in pt cloud
     double rangeMin;		// max Z value returned in pt cloud
+    bool unique_check;    
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
@@ -299,6 +300,7 @@ namespace cam
     bool setSpeckleDiff(int diff);
     bool setSpeckleRegionSize(int size);
     bool setCorrSize(int size);
+    bool setUniqueCheck(bool val);
 
     // buffers for stereo
     uint8_t *buf, *flim, *frim;

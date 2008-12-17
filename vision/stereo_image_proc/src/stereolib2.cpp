@@ -104,15 +104,15 @@ free(unique);
 //Scanline-optimization along horizontal directions
 void do_stereo_so(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
-	  int16_t *text,	// texture output
 	  int xim, int yim,	// size of images
 	  uint8_t ftzero,	// feature offset from zero
 	  int xwin, int ywin,	// size of corr window, usually square
 	  int dlen,		// size of disparity search, multiple of 8
-	  int tfilter_thresh,	// texture filter threshold
+	  int pfilter_thresh,	// texture filter threshold
 	  int ufilter_thresh,	// uniqueness filter threshold, percent
-	  uint8_t *buf		// buffer storage
-	  )
+	  int smooth_thresh,    // smoothness threshold
+	  int unique_c         // uniqueness check
+	)
 {
 
 xwin = xwin-4; //bad hack to deal with small window sizes (e.g. 3x3)
@@ -129,8 +129,8 @@ unsigned char *L = lim;
 unsigned char *R = rim;
 	
 //Parameters for regularization
-int pi2 = tfilter_thresh*4*n;
-int pi1 = tfilter_thresh*n;
+int pi2 = smooth_thresh*4*n;
+int pi1 = smooth_thresh*n;
 
 //temp variables
 int x,y,d,i,j;
@@ -140,29 +140,19 @@ int c_min, cost;
 //printf("%d %d\r", w, h);
 
 //FILTERS
-//int sqn = n*n;
-//Reliability filter is currently deprecated
-//int rel_filter = sqn * par.rel_filter;
-
-//Uniqueness-2 filter is currently deprecated
 int *min_scores = (int *)malloc(w * sizeof(int ));
 
 int ratio_filter = 100-ufilter_thresh;
-//int peak_filter = tfilter_thresh;
-int peak_filter = 15;
+int peak_filter = pfilter_thresh*n;
+
+printf("RF: %d, PF: %d, ST: %d\r", ufilter_thresh, pfilter_thresh, smooth_thresh);
 
 int sad_second_min;
 int da, db, s1, s2, s3;
 
 //data structured for Scanline Optimization
-int **F;
-int **B;
-
-//int *diff;
-F = (int **)calloc(w, sizeof(int *));
-B = (int **)calloc(w, sizeof(int *));
-//diff = (int *)calloc(w, sizeof(int));
-
+int **F = (int **)calloc(w, sizeof(int *));
+int **B = (int **)calloc(w, sizeof(int *));
 for(x=0; x<w; x++){
 	F[x] = (int *)calloc(maxdisp, sizeof(int));
 	B[x] = (int *)calloc(maxdisp, sizeof(int));
@@ -234,20 +224,12 @@ for(y=r+1; y<h-r; y++){
 		rpp += maxdisp;
 	}//x to compute ACC
 		
-	//compute intensity edge (used in the currently adopted modified Potts model) 
-	//for(x=maxdisp; x<w; x++)
-	//	diff[x] = abs(L[w*y+x] - L[w*y+x-1]);
-
 	//FORWARD
 	//Border
 	for(d=0; d<maxdisp; d++)
 		F[maxdisp+r][d] = acc[maxdisp+r][d];
 
 	for(x=maxdisp+r; x<w-r; x++){
-
-		//pi2 = pi2b;
-		//if(diff[x] < Tp)	
-		//	pi2 = pi2a;
 
 		c_min = F[x-1][0];
 		dbest = 0;
@@ -270,10 +252,6 @@ for(y=r+1; y<h-r; y++){
 		B[w-1-r][d] = acc[w-1-r][d];
 	
 	for(x=w-2-r; x>=maxdisp+r; x--){
-
-		//pi2 = pi2b;
-		//if(diff[x+1] < Tp)	
-		//	pi2 = pi2a;
 
 		c_min = B[x+1][0];
 		dbest = 0;
@@ -303,10 +281,6 @@ for(y=r+1; y<h-r; y++){
 		disp[y*w+x] = dbest;	
 		
 		//******* FILTERS ********
-		//1) rel filter
-		//if(c_min > rel_filter)
-		//	disp[y*w + x] = -2;
-
 		//( 2)needed for uniqueness constraint filter )
 		min_scores[x] = c_min;
 	
@@ -343,7 +317,7 @@ for(y=r+1; y<h-r; y++){
 			disp[y*w + x] = (int)(0.5 + 16*v);
 		}
 	}
-	//if(par.unique == 1)
+	if(unique_c)
 		uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 }
 
@@ -367,14 +341,13 @@ free(min_scores);
 //Scanline-optimization along horizontal directions
 void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
-	  int16_t *text,	// texture output
 	  int xim, int yim,	// size of images
 	  uint8_t ftzero,	// feature offset from zero
 	  int xwin, int ywin,	// size of corr window, usually square
 	  int dlen,		// size of disparity search, multiple of 8
-	  int tfilter_thresh,	// texture filter threshold
+	  int pfilter_thresh,	// peak filter threshold
 	  int ufilter_thresh,	// uniqueness filter threshold, percent
-	  uint8_t *buf		// buffer storage
+	  int unique_c         // uniqueness check
 	  )
 {
 
@@ -388,8 +361,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	
 	unsigned char *L = lim;
 	unsigned char *R = rim;
-	//short int* disp = disp;
-
+	
 	int x,y,i,j,d;
 	int sqn = n*n;
 
@@ -401,16 +373,16 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 		acc[d] = (int *)calloc(maxdisp, sizeof(int)); 
 	}
 
-	int sad_min, dbest=0, temp;
+	int sad_min, dbest=0, temp, cost;
 	int sad_max = 255 * sqn;
 
 	//FILTERS
-	//int rel_filter = sqn * par.rel_filter;
-	//int *min_scores = (int *)malloc(w * sizeof(int ));
+	int *min_scores = (int *)malloc(w * sizeof(int ));
+	
 	int sad_second_min;
 	int da, db;
 	int ratio_filter = 100-ufilter_thresh;
-	int peak_filter = tfilter_thresh;
+	int peak_filter = pfilter_thresh;
 
 	//INIT - FIRST ROW
 	//STAGE 1 - init acc
@@ -459,20 +431,22 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			rpp++;
 
 			for(d=0; d<maxdisp; d++){
-				
-				//V[x+r][d] = V[x+r][d] + abs( L[(y+r)*w + x+r] - R[ (y+r)*w + x+r-d] ) - abs( L[ (y-r-1)*w+ x+r] - R[ (y-r-1)*w+ x+r-d] ); 
-				//V[x+r][d] = V[x+r][d] + abs( *lp - *rp ) - abs( L[ (y-r-1)*w+ x+r] - R[ (y-r-1)*w+ x+r-d] ); 
 				V[x+r][d] = V[x+r][d] + abs( *lp - *rp ) - abs( *lpp - *rpp ); 
-				
 				rp--;
 				rpp--;
-				
 				acc[x][d] = acc[x-1][d] + V[x+r][d] - V[x-r-1][d];				
 			}//d
 			
 			rp += maxdisp;
 			rpp += maxdisp;
-		}
+		}			sad_second_min = sad_max;
+			for(d=0; d<maxdisp; d++){
+				if(d != dbest && acc[x][d]<sad_second_min){
+					sad_second_min = acc[x][d];
+				}
+			}	
+			if( sad_min*100  > ratio_filter*sad_second_min)
+				disp[y*w + x] = FILTERED;
 	
 		//only right term exists
 		for(x=maxdisp+r; x<maxdisp+n; x++){
@@ -486,17 +460,24 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			}
 			disp[y*w + x] = dbest;
 			
-			//#ifdef FILTERS
-			//min_scores[x] = sad_min;
+			min_scores[x] = sad_min;
 			// 3) uniqueness filter
-			sad_second_min = sad_max;
-			for(d=0; d<maxdisp; d++){
-				if(d != dbest && acc[x][d]<sad_second_min){
-					sad_second_min = acc[x][d];
+			sad_second_min = 32000;
+			for(d=0; d<dbest-1; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
+				}
+			}
+			for(d=dbest+2; d<maxdisp; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
 				}
 			}	
 			if( sad_min*100  > ratio_filter*sad_second_min)
-				disp[y*w + x] = FILTERED;
+				disp[y*w + x] = FILTERED;			
+
 		
 			//4) Peak Filter
 			da = (dbest>1) ? ( acc[x][dbest-2] - acc[x][dbest] ) : (acc[x][dbest+2] - acc[x][dbest]);
@@ -527,21 +508,24 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			}
 			disp[y*w + x] = dbest;
 			
-			//#ifdef FILTERS
 			//******* FILTERS ********
-			// No reliability filter is applied
-			// 2)needed for uniqueness constraint filter )
-			//min_scores[x] = sad_min;
-		
+			min_scores[x] = sad_min;
 			// 3) uniqueness filter
-			sad_second_min = sad_max;
-			for(d=0; d<maxdisp; d++){
-				if(d != dbest && acc[x][d]<sad_second_min){
-					sad_second_min = acc[x][d];
+			sad_second_min = 32000;
+			for(d=0; d<dbest-1; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
+				}
+			}
+			for(d=dbest+2; d<maxdisp; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
 				}
 			}	
 			if( sad_min*100  > ratio_filter*sad_second_min)
-				disp[y*w + x] = FILTERED;
+				disp[y*w + x] = FILTERED;			
 		
 			//4) Peak Filter
 			da = (dbest>1) ? ( acc[x][dbest-2] - acc[x][dbest] ) : (acc[x][dbest+2] - acc[x][dbest]);
@@ -572,17 +556,24 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 				}
 			}
 			disp[y*w + x] = dbest;
-			//min_scores[x] = sad_min;
+			min_scores[x] = sad_min;
 			// 3) uniqueness filter
-			sad_second_min = sad_max;
-			for(d=0; d<maxdisp; d++){
-				if(d != dbest && acc[x][d]<sad_second_min){
-					sad_second_min = acc[x][d];
+			sad_second_min = 32000;
+			for(d=0; d<dbest-1; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
+				}
+			}
+			for(d=dbest+2; d<maxdisp; d++){
+				cost = acc[x][d];
+				if(cost<sad_second_min){
+					sad_second_min = cost;
 				}
 			}	
 			if( sad_min*100  > ratio_filter*sad_second_min)
-				disp[y*w + x] = FILTERED;
-		
+				disp[y*w + x] = FILTERED;			
+
 			//4) Peak Filter
 			da = (dbest>1) ? ( acc[x][dbest-2] - acc[x][dbest] ) : (acc[x][dbest+2] - acc[x][dbest]);
 			db =  (dbest<maxdisp-2) ? (acc[x][dbest+2] - acc[x][dbest]) : (acc[x][dbest-2] - acc[x][dbest]);		
@@ -599,11 +590,8 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 				disp[y*w + x] = (int)(0.5 + 16*v);
 			}
 		}
-
-		
-		
-		//if(par.unique == 1)
-		//	uniqueness_constraint_reducedrange(par, min_scores, y);
+		if(unique_c == 1)
+			uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 	}//y
 
 	for(d=0; d<w;d++){
@@ -613,21 +601,21 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	free(V);
 	free(acc);
 
-	//free(min_scores);
+	free(min_scores);
 }
 
 //Scanline-optimization along horizontal directions
 void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
-	  int16_t *text,	// texture output
 	  int xim, int yim,	// size of images
 	  uint8_t ftzero,	// feature offset from zero
 	  int xwin, int ywin,	// size of corr window, usually square
 	  int dlen,		// size of disparity search, multiple of 8
-	  int tfilter_thresh,	// texture filter threshold
+	  int pfilter_thresh,	// texture filter threshold
 	  int ufilter_thresh,	// uniqueness filter threshold, percent
-	  uint8_t *buf		// buffer storage
-	  )
+	  int smooth_thresh,	//smoothness penalty term			
+          int unique_c         // uniqueness check
+	)
 {
 
 
@@ -643,11 +631,10 @@ int h = yim;
 
 unsigned char *L = lim;
 unsigned char *R = rim;
-//short int* disp = disp;
-	
+
 //Parameters for regularization
-int w2 = tfilter_thresh*4;
-int w1 = tfilter_thresh;
+int w2 = smooth_thresh*n*4;
+int w1 = smooth_thresh*n;
 
 //temp variables
 int x,y,d,i,j;
@@ -655,29 +642,17 @@ int dbest=0;
 int c_min, cost;
 
 //FILTERS
-//int sqn = n*n;
-//Reliability filter is currently deprecated
-//int rel_filter = sqn * par.rel_filter;
-
-//Uniqueness-2 filter is currently deprecated
-//int *min_scores = (int *)malloc(w * sizeof(int ));
+int *min_scores = (int *)malloc(w * sizeof(int ));
 
 int ratio_filter = 100-ufilter_thresh;
-//int peak_filter = tfilter_thresh;
-int peak_filter = 10;
+int peak_filter = pfilter_thresh;
 
 int sad_second_min;
 int da, db, s1, s2, s3;
 
 //data structured for Dynamic Programming
-int **S;
-int **B;
-
-//int *diff;
-S = (int **)calloc(w, sizeof(int *));
-B = (int **)calloc(w, sizeof(int *));
-//diff = (int *)calloc(w, sizeof(int));
-
+int **S = (int **)calloc(w, sizeof(int *));
+int **B = (int **)calloc(w, sizeof(int *));
 for(x=0; x<w; x++){
 	S[x] = (int *)calloc(maxdisp, sizeof(int));
 	B[x] = (int *)calloc(maxdisp, sizeof(int));
@@ -844,46 +819,31 @@ for(y=r+1; y<h-r; y++){
 	disp[y*w+x] = dbest;
 	
 	for(x=w-r-2; x>=maxdisp+r; x--){
-	//for(x=maxdisp+r+1; x<w-r; x++){
-// 		c_min = 32000;
-// 		for(d=0; d<maxdisp; d++){
-// 			cost = acc[x][d];
-// 			if(cost < c_min){
-// 				c_min = cost;
-// 				dbest = d;
-// 			}
-// 		}
-// 		disp[y*w+x] = dbest*16;
 
  		dbest = B[x+1][dbest];
  		disp[y*w+x] = dbest;	
 		
 		//******* FILTERS ********
-		//1) rel filter
-		//if(c_min > rel_filter)
-		//	disp[y*w + x] = -2;
-
-		//( 2)needed for uniqueness constraint filter )
-		//min_scores[x] = c_min;
+		min_scores[x] = c_min;
 	
 		//3) uniqueness filter
-		/*
-		sad_second_min = 32000;
-		for(d=0; d<dbest-1; d++){
-			cost = S[x][d];
-			if(cost<sad_second_min){
-				sad_second_min = cost;
-			}
-		}
-		for(d=dbest+2; d<maxdisp; d++){
-			cost = S[x][d];
-			if(cost<sad_second_min){
-				sad_second_min = cost;
-			}
-		}	
-		if( c_min*100  > ratio_filter*sad_second_min)
-			disp[y*w + x] = FILTERED;
-		*/
+// 		c_min = S[x][dbest];
+// 		sad_second_min = 32000;
+// 		for(d=0; d<dbest-1; d++){
+// 			cost = S[x][d];
+// 			if(cost<sad_second_min){
+// 				sad_second_min = cost;
+// 			}
+// 		}
+// 		for(d=dbest+2; d<maxdisp; d++){
+// 			cost = S[x][d];
+// 			if(cost<sad_second_min){
+// 				sad_second_min = cost;
+// 			}
+// 		}	
+// 		if( c_min*100  > ratio_filter*sad_second_min)
+// 			disp[y*w + x] = FILTERED;
+		
 		//4) Peak Filter
 		s1 = S[x][dbest-1];
 		s2 = S[x][dbest];
@@ -900,8 +860,8 @@ for(y=r+1; y<h-r; y++){
 			disp[y*w + x] = (int)(0.5 + 16*v);
 		}
 	}
-	//if(par.unique == 1)
-	//	uniqueness_constraint_reducedrange(par, min_scores, y);
+	if(unique_c == 1)
+		uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 }
 
 for(x=0; x<w; x++){
@@ -913,10 +873,9 @@ for(x=0; x<w; x++){
 
 free(S);
 free(B);
-//free(diff);
 free(acc);
 
-//free(min_scores);
+free(min_scores);
 
 }
 
