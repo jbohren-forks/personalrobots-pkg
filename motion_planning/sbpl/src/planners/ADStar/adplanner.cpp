@@ -691,7 +691,10 @@ void ADPlanner::BuildNewOPENList(ADSearchStateSpace_t* pSearchStateSpace)
 		key = ComputeKey(state);
 	    
 	    //insert into OPEN
-	    pheap->insertheap(state, key);
+        if(state->heapindex == 0)
+            pheap->insertheap(state, key);
+        else
+            pheap->updateheap(state, key); //should never happen, but sometimes it does - somewhere there is a bug TODO
 	    //remove from INCONS
 	    pinconslist->remove(state, AD_INCONS_LIST_ID);
 	  }
