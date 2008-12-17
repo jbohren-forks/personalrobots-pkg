@@ -36,8 +36,6 @@
 #include "ros/node.h"
 #include "tf/tf.h"
 #include "tf/tfMessage.h"
-///\todo only for backwards compatabilty, remove!
-#include "tf/TransformArray.h"
 
 namespace tf
 {
@@ -53,8 +51,6 @@ public:
     node_(anode)
   {
     node_.advertise<tfMessage>("/tf_message", 100);
-    ///\todo remove when no longer backwards compatable
-      node_.advertise<tf::TransformArray>("TransformArray", 100);
   };
   /** \brief Send a Stamped<Transform> with parent parent_id 
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
@@ -65,25 +61,6 @@ public:
     TransformStampedTFToMsg(transform, msgtf);
     message.transforms.push_back(msgtf);
     node_.publish("/tf_message", message);
-
-    ///\todo only for backwards compatabilty, remove!
-    tf::TransformArray tfArray;
-    tfArray.set_quaternions_size(1);
-
-    tfArray.quaternions[0].header.frame_id = transform.frame_id_;
-    tfArray.quaternions[0].parent = transform.parent_id_;
-    Quaternion q = transform.getRotation();
-    tfArray.quaternions[0].xt = transform.getOrigin().x();
-    tfArray.quaternions[0].yt = transform.getOrigin().y();
-    tfArray.quaternions[0].zt = transform.getOrigin().z();
-    tfArray.quaternions[0].xr = q.x();
-    tfArray.quaternions[0].yr = q.y();
-    tfArray.quaternions[0].zr = q.z();
-    tfArray.quaternions[0].w = q.w();
-    tfArray.quaternions[0].header.stamp = ros::Time(transform.stamp_);
-
-    //node_.publish("TransformArray", tfArray);
-
   } 
   
   /** \brief Send a Transform, stamped with time, frame_id and parent_id */
@@ -96,25 +73,7 @@ public:
     msgtf.parent_id = parent_id;
     TransformTFToMsg(transform, msgtf.transform);
     message.transforms.push_back(msgtf);
-    ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
-
-    ///\todo only for backwards compatabilty, remove!
-    tf::TransformArray tfArray;
-    tfArray.set_quaternions_size(1);
-
-    tfArray.quaternions[0].header.frame_id = frame_id;
-    tfArray.quaternions[0].parent = parent_id;
-    Quaternion q = transform.getRotation();
-    tfArray.quaternions[0].xt = transform.getOrigin().x();
-    tfArray.quaternions[0].yt = transform.getOrigin().y();
-    tfArray.quaternions[0].zt = transform.getOrigin().z();
-    tfArray.quaternions[0].xr = q.x();
-    tfArray.quaternions[0].yr = q.y();
-    tfArray.quaternions[0].zr = q.z();
-    tfArray.quaternions[0].w = q.w();
-    tfArray.quaternions[0].header.stamp = ros::Time(time);
-
-    node_.publish("TransformArray", tfArray);
+    node_.publish("/tf_message", message);
   }
   
 private:

@@ -39,10 +39,6 @@
 
 #include "tf/FrameGraph.h" //frame graph service
 
-/// \todo remove backward compatability only
-#include "tf/TransformArray.h"
-// end remove
-
 namespace tf{
 
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
@@ -50,10 +46,6 @@ class TransformListener : public Transformer { //subscribes to message and autom
 
 private:
   ros::node& node_;
-
-  /// \todo remove backward compatability only
-  //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
-  tf::TransformArray tfArrayIn;
 
 public:
   /**@brief Constructor for transform listener
@@ -70,17 +62,12 @@ public:
     //  printf("Constructed rosTF\n");
     node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
 
-    /// \todo remove backward compatability only
-    node_.subscribe("/TransformArray", tfArrayIn, &TransformListener::receiveArray, this,100);
-
     node_.advertise_service("~tf_frames", &TransformListener::getFrames, this);
   };
 
   ~TransformListener()
   {
     node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
-    /// \todo remove backward compatability only
-    node_.unsubscribe("/TransformArray", &TransformListener::receiveArray, this);
   };
 
   /* Methods from transformer unhiding them here */
@@ -145,10 +132,6 @@ private:
 
   /** @brief a helper function to be used for both transfrom pointCloud methods */
   void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
-
-
-  ///\todo Remove : for backwards compatability only
-  void receiveArray();
 
 
 };

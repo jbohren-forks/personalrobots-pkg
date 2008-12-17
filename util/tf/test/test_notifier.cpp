@@ -149,7 +149,7 @@ TEST(MessageNotifier, noTransforms)
 TEST(MessageNotifier, preexistingTransforms)
 {
 	Notification n(1);
-	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::tfMessage> c("tf_message", 1); 
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 
@@ -281,7 +281,7 @@ TEST(MessageNotifier, queueSize)
 TEST(MessageNotifier, setTopic)
 {
 	Notification n(1);
-	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::tfMessage> c("tf_message", 1); 
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTopic("test_message2");
@@ -323,7 +323,7 @@ TEST(MessageNotifier, setTopic)
 TEST(MessageNotifier, setTargetFrame)
 {
 	Notification n(1);
-	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::tfMessage> c("tf_message", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTargetFrame("frame1000");
