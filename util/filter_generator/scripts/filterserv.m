@@ -7,13 +7,6 @@ req = req._deserialize(reqdata);
 method = req.name;
 
 switch method
-  case{'besself'}
-    if(length(req.args)==2) %lowpass
-      [b,a]=besself(str2num(req.args{1}),str2num(req.args{2}));
-    else %wrong number of arguments
-      a=[];
-      b=[];
-    end
   case{'butter'} 
     if(length(req.args)==2) %defualt lowpass
       [b,a]=butter(str2num(req.args{1}),str2num(req.args{2}));
@@ -70,21 +63,7 @@ switch method
     else %wrong number of arguments
       a=[];
       b=[];
-    end
-  case{'maxflat'}
-    if(length(req.args)==3) %butterworth with different nom and denom order
-      [b,a]=maxflat(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}));
-    else %wrong number of arguments
-      a=[];
-      b=[];
     end  
-  case{'prony'}
-    if(length(req.args)==3) %IIR filter
-      [b,a]=prony(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}));
-    else %wrong number of arguments
-      a=[];
-      b=[];
-    end
   otherwise %filter doesn't exist
     a=[];
     b=[];
