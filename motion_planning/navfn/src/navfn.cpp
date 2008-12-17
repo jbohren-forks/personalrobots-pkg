@@ -128,6 +128,7 @@ NavFn::NavFn(int xs, int ys)
   // path buffers
   npathbuf = npath = 0;
   pathx = pathy = NULL;
+  pathStep = 0.5;
 }
 
 
@@ -210,6 +211,102 @@ NavFn::setNavArr(int xs, int ys)
   grady = new float[ns];
 }
 
+
+//
+// set up cost array, usually from ROS
+//
+
+#define COST_FACTOR 3
+
+void
+NavFn::setCostMap(COSTTYPE *cmap, bool isROS)
+{
+  COSTTYPE *cm = costarr;
+  if (isROS)			// ROS-type cost array
+    {
+      for (int i=0; i<ny; i++)
+	{
+	  int k=i*nx;
+	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
+	    {
+	      *cm = COST_OBS;
+	      int v = *cmap;
+	      if (v < COST_OBS_ROS)
+		{
+		  v = COST_NEUTRAL+COST_FACTOR*v;
+		  if (v >= COST_OBS)
+		    v = COST_OBS-1;
+		  *cm = v;
+		}
+	    }
+	}
+    }
+
+  else				// not a ROS map, just a PGM
+    {
+      for (int i=0; i<ny; i++)
+	{
+	  int k=i*nx;
+	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
+	    {
+	      *cm = COST_OBS;
+	      if (i<7 || i > ny-8 || j<7 || j > nx-8)
+		continue;	// don't do borders
+	      int v = *cmap;
+	      if (v < COST_OBS_ROS)
+		{
+		  v = COST_NEUTRAL+COST_FACTOR*v;
+		  if (v >= COST_OBS)
+		    v = COST_OBS-1;
+		  *cm = v;
+		}
+	    }
+	}
+
+    }
+}
+
+
+//
+// calculate navigation function, given a costmap, goal, and start
+//
+
+bool
+NavFn::calcNavFnAstar()
+{
+  setupNavFn(true);
+
+  // calculate the nav fn and path
+  propNavFnAstar(nx*ny/20);
+  
+  // path
+  int len = calcPath(nx*4);
+
+  if (len > 0)			// found plan
+    {
+      printf("[NavFn] Path found, %d steps\n", len);
+      return true;
+    }
+  else
+    {
+      printf("[NavFn] No path found\n");
+      return false;
+    }
+}
+
+
+//
+// returning values
+//
+
+float *NavFn::getPathX() { return pathx; }
+float *NavFn::getPathY() { return pathy; }
+int    NavFn::getPathLen() { return npath; }
+
+
+//
+// simple obstacle setup for tests
+//
 
 void
 NavFn::setObs()
@@ -694,7 +791,10 @@ NavFn::calcPath(int n, int *st)
 	}
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
-	return 0;
+	{
+	  printf("[PathCalc] Out of bounds\n");
+	  return 0;
+	}
 
       // add to path
       pathx[npath] = stc%nx + dx;
@@ -708,6 +808,11 @@ NavFn::calcPath(int n, int *st)
       gradCell(stcnx);
       gradCell(stcnx+1);
       
+      // show gradients
+      //      printf("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f\n",
+      //	     gradx[stc], grady[stc], gradx[stc+1], grady[stc+1], 
+      //	     gradx[stcnx], grady[stcnx], gradx[stcnx+1], grady[stcnx+1]);
+
       // get interpolated gradient
       float x1 = (1.0-dx)*gradx[stc] + dx*gradx[stc+1];
       float x2 = (1.0-dx)*gradx[stcnx] + dx*gradx[stcnx+1];
@@ -718,11 +823,14 @@ NavFn::calcPath(int n, int *st)
 
       // check for zero gradient, failed
       if (x == 0.0 && y == 0.0)
-	return 0;
+	{
+	  printf("[PathCalc] Zero gradient\n");	  
+	  return 0;
+	}
 
       // move in the right direction
-      dx += x*0.5;
-      dy += y*0.5;
+      dx += x*pathStep;
+      dy += y*pathStep;
 
       // check for overflow
       if (dx > 1.0) { stc++; dx -= 1.0; }
@@ -744,31 +852,47 @@ NavFn::calcPath(int n, int *st)
 
 // calculate gradient at a cell
 // positive value are to the right and down
-void				
+float				
 NavFn::gradCell(int n)
 {
   if (gradx[n]+grady[n] > 0.0)	// check this cell
-    return;			
+    return 1.0;			
 
   if (n < nx || n > ns-nx)	// would be out of bounds
-    return;
+    return 0.0;
 
   float cv = potarr[n];
-  if (cv >= POT_HIGH) return;	// can't work in obstacles
-
-  // dx calc, average to sides
   float dx = 0.0;
-  if (potarr[n-1] < POT_HIGH)
-    dx += potarr[n-1]- cv;	
-  if (potarr[n+1] < POT_HIGH)
-    dx += cv - potarr[n+1]; 
-
-  // dy calc, average to sides
   float dy = 0.0;
-  if (potarr[n-nx] < POT_HIGH)
-    dy += potarr[n-nx]- cv;	
-  if (potarr[n+nx] < POT_HIGH)
-    dy += cv - potarr[n+nx]; 
+
+  // check for in an obstacle
+  if (cv >= POT_HIGH) 
+    {
+      if (potarr[n-1] < POT_HIGH)
+	dx = -COST_OBS;
+      else if (potarr[n+1] < POT_HIGH)
+	dx = COST_OBS;
+
+      if (potarr[n-nx] < POT_HIGH)
+	dy = -COST_OBS;
+      else if (potarr[nx+1] < POT_HIGH)
+	dy = COST_OBS;
+    }
+
+  else				// not in an obstacle
+    {
+      // dx calc, average to sides
+      if (potarr[n-1] < POT_HIGH)
+	dx += potarr[n-1]- cv;	
+      if (potarr[n+1] < POT_HIGH)
+	dx += cv - potarr[n+1]; 
+
+      // dy calc, average to sides
+      if (potarr[n-nx] < POT_HIGH)
+	dy += potarr[n-nx]- cv;	
+      if (potarr[n+nx] < POT_HIGH)
+	dy += cv - potarr[n+nx]; 
+    }
 
   // normalize
   float norm = sqrtf(dx*dx+dy*dy);
@@ -778,6 +902,7 @@ NavFn::gradCell(int n)
       gradx[n] = norm*dx;
       grady[n] = norm*dy;
     }
+  return norm;
 }
 
 

@@ -47,7 +47,8 @@
 #include <stdio.h>
 
 // cost defs
-#define COST_OBS 254		// Conor uses 255 and 254 for forbidden regions
+#define COST_OBS 254		// 255 and 254 for forbidden regions
+#define COST_OBS_ROS 253	// ROS values of 253 are obstacles
 #define COST_NEUTRAL 50		// Set this to "open space" value
 #define COSTTYPE uint8_t	// Whatever is used...
 
@@ -96,6 +97,12 @@ class NavFn
   void setNavArr(int nx, int ny); /**< sets or resets the size of the map */
   int nx, ny, ns;		/**< size of grid, in pixels */
 
+  void setCostMap(COSTTYPE *cmap, bool isROS=true); /**< sets up the cost map */
+  bool calcNavFnAstar();	/**< calculates a plan, returns true if found */
+  float *getPathX();		/**< x-coordinates of path */
+  float *getPathY();		/**< x-coordinates of path */
+  int   getPathLen();		/**< length of path, 0 if not found */
+
   /** cell arrays */
   COSTTYPE *obsarr;		/**< obstacle array, to be expanded to cost array */
   COSTTYPE *costarr;		/**< cost array in 2D configuration space */
@@ -139,7 +146,8 @@ class NavFn
   int npath;			/**< number of path points */
   int npathbuf;			/**< size of pathx, pathy buffers */
   int calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns path length, 0 if none */
-  void gradCell(int n);		/**< calculates gradient at cell <n> */
+  float gradCell(int n);	/**< calculates gradient at cell <n>, returns norm */
+  float pathStep;		/**< step size for following gradient */
 
   /** display callback */
   void display(void fn(NavFn *nav), int n = 100); /**< <n> is the number of cycles between updates  */

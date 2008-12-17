@@ -16,8 +16,6 @@ extern "C" {
 #undef max
 #undef min
 }
-#define unknown_gray 0xCC	// seems to be the value of "unknown" in maps
-
 
 int goal[2];
 int start[2];
@@ -40,7 +38,9 @@ dispPot(NavFn *nav)
   Fl::check();
 }
 
-COSTTYPE *readPGM(char *fname, int *width, int *height);
+
+// <raw> is true for ROS-generated raw cost maps
+COSTTYPE *readPGM(char *fname, int *width, int *height, bool raw = false);
 
 int main(int argc, char **argv)
 {
@@ -68,22 +68,38 @@ int main(int argc, char **argv)
   // try reading in a file
   int sx,sy;
   COSTTYPE *cmap = NULL;
-  cmap = readPGM("willow-full-0.05.pgm",&sx,&sy);
+  //  cmap = readPGM("willow-full-0.05.pgm",&sx,&sy);
+  //  cmap = readPGM("initial_cost_map_1165_945.pgm",&sx,&sy,true);
+  cmap = readPGM("initial_cost_map_2332_1825.pgm",&sx,&sy,true);
   if (cmap)
     {
       nav = new NavFn(sx,sy);
+
       // find goal
-      COSTTYPE *cm = cmap + sy/2 * sx + sx - 10;
+      COSTTYPE *cm = cmap + sy/6 * sx + sx - 10;
       for (int i=0; i<sx-20; i++, cm--)
 	{
-	  if (*cm == COST_NEUTRAL)
+	  if (*cm == 0)
 	    {
 	      goal[0] = sx-10-i;
 	      printf("[NavTest] Found goal at X = %d\n", sx - 10 -i);
 	      break;
 	    }
 	}
-      goal[1] = sy/2;
+      goal[1] = sy/6;
+
+      // find start
+      cm = cmap + 5*sy/6 * sx + 10;
+      for (int i=0; i<sx-20; i++, cm++)
+	{
+	  if (*cm == 0)
+	    {
+	      start[0] = 10+i;
+	      printf("[NavTest] Found start at X = %d\n", start[0]);
+	      break;
+	    }
+	}
+      start[1] = 5*sy/6;
     }
   else
     {
@@ -92,14 +108,9 @@ int main(int argc, char **argv)
       nav = new NavFn(sx,sy); // size in pixels
       goal[0] = sx-10;
       goal[1] = sy/2;
+      start[0] = 20;
+      start[1] = sy/2;
     }
-
-  // start point, for A*
-  if (cmap)
-    start[0] = 100;
-  else
-    start[0] = 20;
-  start[1] = sy/2;
 
   // display
   nwin = new NavWin(sx,sy,"Potential Field");
@@ -117,10 +128,17 @@ int main(int argc, char **argv)
   // set display function
   nav->display(dispPot,dispn);
 
+
+  nav->priInc = inc;
+  printf("[NavTest] priority increment: %d\n", inc);
+
+#if 0
+  // calculate the nav fn and path
+  double t0 = get_ms();
   // set up cost map from file, if it exists
   if (cmap)
     {
-      nav->costarr = cmap;
+      nav->setCostMap(cmap);
       nav->setupNavFn(true);
     }
   else
@@ -128,11 +146,6 @@ int main(int argc, char **argv)
       nav->setupNavFn(false);
       nav->setObs();		// simple obstacles
     }
-
-  // calculate the nav fn and path
-  nav->priInc = inc;
-  printf("[NavTest] priority increment: %d\n", inc);
-  double t0 = get_ms();
   //  nav->propNavFnDijkstra(sx*sy/20);
   nav->propNavFnAstar(sx*sy/20);
   double t1 = get_ms();
@@ -140,7 +153,27 @@ int main(int argc, char **argv)
   printf("Time for plan calculation: %d ms\n", (int)(t1-t0));
   
   // path
-  nav->calcPath(1000);
+  nav->calcPath(4000);
+
+#else
+  double t0 = get_ms();
+  // set up cost map from file, if it exists
+  if (cmap)
+    {
+      nav->setCostMap(cmap);
+      nav->setupNavFn(true);
+    }
+  else
+    {
+      nav->setupNavFn(false);
+      nav->setObs();		// simple obstacles
+    }
+  double t1 = get_ms();
+  nav->calcNavFnAstar();
+  double t2 = get_ms();
+  printf("Setup: %d ms  Plan: %d ms  Total: %d ms\n", 
+	 (int)(t1-t0), (int)(t2-t1), (int)(t2-t0));
+#endif
 
   // draw potential field
   float mmax = 0.0;
@@ -204,8 +237,10 @@ void setcostunk(COSTTYPE *cmap, int n, int w)
   cmap[n] = COST_OBS;
 }
 
+#define unknown_gray 0xCC	// seems to be the value of "unknown" in maps
+
 COSTTYPE *
-readPGM(char *fname, int *width, int *height)
+readPGM(char *fname, int *width, int *height, bool raw)
 {
   int fake_argc(1);
   char * fake_arg("foo");
@@ -227,32 +262,49 @@ readPGM(char *fname, int *width, int *height)
   printf("[NavTest] Size: %d x %d\n", ncols, nrows);
 
   // set up cost map
-  COSTTYPE *cmap = (COSTTYPE *)malloc(ncols*nrows*2);
-  for (int i=0; i<ncols*nrows; i++)
-    cmap[i] = COST_NEUTRAL;
+  COSTTYPE *cmap = (COSTTYPE *)malloc(ncols*nrows*sizeof(COSTTYPE));
+  if (!raw)
+    for (int i=0; i<ncols*nrows; i++)
+      cmap[i] = COST_NEUTRAL;
 
   gray * row(pgm_allocrow(ncols));
   int otot = 0;
   int utot = 0;
+  int ftot = 0;
   for (int ii(nrows - 1); ii >= 0; --ii) {
     pgm_readpgmrow(pgmfile, row, ncols, maxval, format);
-    for (int jj(ncols - 1); jj >= 0; --jj)
+    if (raw)			// raw costmap from ROS
       {
-	if (row[jj] < unknown_gray && ii < nrows-7 && ii > 7)
+	for (int jj(ncols - 1); jj >= 0; --jj)
 	  {
-	    setcostobs(cmap,ii*ncols+jj,ncols);
-	    otot++;
+	    int v = row[jj];
+	    cmap[ii*ncols+jj] = v;
+	    if (v >= COST_OBS_ROS)
+	      otot++;
+	    if (v == 0)
+	      ftot++;
 	  }
+      }
+    else
+      {
+	for (int jj(ncols - 1); jj >= 0; --jj)
+	  {
+	    if (row[jj] < unknown_gray && ii < nrows-7 && ii > 7)
+	      {
+		setcostobs(cmap,ii*ncols+jj,ncols);
+		otot++;
+	      }
 #if 1
-	else if (row[jj] <= unknown_gray)
-	  {
-	    setcostunk(cmap,ii*ncols+jj,ncols);
-	    utot++;
-	  }
+	    else if (row[jj] <= unknown_gray)
+	      {
+		setcostunk(cmap,ii*ncols+jj,ncols);
+		utot++;
+	      }
 #endif
+	  }
       }
   }
-  printf("[NavTest] Found %d obstacle cells, %d unknown cells\n", otot, utot);
+  printf("[NavTest] Found %d obstacle cells, %d free cells\n", otot, ftot);
   pgm_freerow(row);
   *width = ncols;
   *height = nrows;
