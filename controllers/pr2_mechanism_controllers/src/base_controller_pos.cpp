@@ -981,28 +981,33 @@ void BaseControllerPosNode::update()
     {
       double x=0,y=0,yaw=0,vx,vy,vyaw;
       this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      tf::TransformEuler &out = transform_publisher_->msg_.eulers[0];
-      out.header.stamp.from_double(time);
+      std_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+      out.header.stamp.fromSec(time);
       out.header.frame_id = "odom";
-      out.parent = "base_footprint";
-      out.x = -x*cos(yaw) - y*sin(yaw);
-      out.y = +x*sin(yaw) - y*cos(yaw);
-      out.z = 0;
-      out.roll = 0;
-      out.pitch = 0;
-      out.yaw = angles::normalize_angle(-yaw);
+      out.parent_id = "base_footprint";
+      out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
+      out.transform.translation.y = +x*sin(yaw) - y*cos(yaw);
+      out.transform.translation.z = 0;
+      out.transform.rotation.x = 0;
+      out.transform.rotation.y = 0;
+      double angle = angles::normalize_angle(-yaw);
+      out.transform.rotation.z = sqrt(1/(1 + pow(angle, 2)));
+      out.transform.rotation.w = sqrt(pow(angle, 2) / (1 + pow(angle, 2)));
+      //      out.pitch = 0;
+      //out.yaw = 
 
 
-      tf::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
-      out2.header.stamp.from_double(time);
+      std_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+      out2.header.stamp.fromSec(time);
       out2.header.frame_id = "base_footprint";
-      out2.parent = "base_link";
-      out2.x = 0;
-      out2.y = 0;
-      out2.z = -c_->wheel_radius_;
-      out2.roll = 0;
-      out2.pitch = 0;
-      out2.yaw = 0;
+      out2.parent_id = "base_link";
+      out2.transform.translation.x = 0;
+      out2.transform.translation.y = 0;
+      out2.transform.translation.z = -c_->wheel_radius_;
+      out2.transform.rotation.x = 0;
+      out2.transform.rotation.y = 0;
+      out2.transform.rotation.z = 0;
+      out2.transform.rotation.w = 1;
 
       transform_publisher_->unlockAndPublish() ;
     }
@@ -1111,7 +1116,7 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <tf::TransformArray> ("TransformArray", 5) ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
 
   if (covariance_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete covariance_publisher_ ;
@@ -1127,7 +1132,7 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
   node->param<double>("base_controller/wheel_radius_multiplier",multiplier,1.0);
   c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
-  transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
+  transform_publisher_->msg_.set_transforms_size(NUM_TRANSFORMS);
   residuals_publisher_->msg_.set_names_size(c_->num_wheels_);
   residuals_publisher_->msg_.set_residuals_size(c_->num_wheels_);
 
