@@ -17,10 +17,6 @@ Initargs
 "))
 
 
-;; Note, at the moment none of the code actually uses this function, except the default method for applicable-refinements, so if that's being overridden, this doesn't need to be implemented.
-(defgeneric refinements (h a)
-  (:documentation "Return the set of legal refinements of high-level action A."))
-
 (defun action-type (a h)
   "action-type ACTION-NAME HIERARCHY.  Returns one of 'high-level, 'primitive, or 'unknown-action."
   (cond
@@ -39,30 +35,6 @@ Initargs
   (:documentation "valid-plan? HIERARCHY PLAN.  Return t iff the PLAN is valid according to HIERARCHY.  This is used to specify global constraints about plans generated from this hierarchy.  An <abstract-planning-problem> may also be used as the first argument, in which case it just forwards to the underlying hierarchy.")
   (:method (h plan) 
 	   (funcall (valid-plan-fn h) plan)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; getting immediate refinements of a sequence
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun get-immediate-refinements (h actions)
-  "get-immediate-refinements HIERARCHY ACTION-SEQ
-Get all refinements of ACTION-SEQ obtained by selecting one of the abstract actions in it and choosing one of its refinements."
-  ;; This is never actually used...
-  (disjoint-union-list
-   (mapset 
-    'list
-    #'(lambda (i)
-	(let ((a (elt actions i)))
-	  (when (eq (action-type a h) 'high-level)
-	    (make-image-set 
-	     (refinements h a) 
-	     #'(lambda (ref) 
-		 (substitute-ref 'list actions i ref))
-	     #'(lambda (seq)
-		 (let ((l (1+ (- (length seq) (length actions)))))
-		   (coerce (subseq seq i (+ i l)) 'vector)))))))
-    (length actions))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,10 +78,7 @@ Can also be called on <abstract-planning-problems> in which case the request is 
   (:method :around ((h <hierarchy>) a cset)
 	   "A debugging check that the action is in fact refinable."
 	   (assert (is-refinable h a cset) nil "Attempted to find applicable refinements of ~a at ~a, but the action is not refinable at this set." a cset)
-	   (call-next-method))
-  (:method ((h <hierarchy>) a cset)
-	   (declare (ignore cset))
-	   (refinements h a)))
+	   (call-next-method)))
 			       
 
 (defgeneric applicable-top-level-actions (h hset)

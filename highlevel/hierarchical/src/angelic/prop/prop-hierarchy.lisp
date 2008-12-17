@@ -97,33 +97,6 @@ Initargs (in addition to those of <hierarchy>)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defmethod refinements ((h <prop-hierarchy>) a)
-  (let* ((schema (mapping:evaluate (hla-schemas h) (car a)))
-	 (bindings (mapcar #'cons (mapcar #'car (hs-var-domains schema)) (cdr a)))
-	 (prob (planning-problem h)))
-    (assert (eq (action-type a h) 'high-level) ()
-      "~a is not a high-level action in ~a.  Its type is ~a" a h (action-type a h))
-    (disjoint-union-list
-     (mapcar 
-      #'(lambda (imp)
-	  (let ((actions (imp-actions imp))
-		(arg-bindings (imp-arg-bindings imp)))
-
-	    (let ((s
-	    (set:make-image-set 
-	     (filter ':list arg-bindings
-		     #'(lambda (args)
-			 (holds-background prob (bind (imp-precond imp) (append args bindings)))))
-	     #'(lambda (args)
-		 (let ((b (append args bindings)))
-		   (map 'vector #'(lambda (a) (prop-logic:bind a b)) actions)))
-	     )))
-	      (set-equality-test #'equalp s)
-	      s)))
-      (hs-implementations schema)))))
-
-
-
 (defmethod applicable-refinements ((h <prop-hierarchy>) a hset)
   
   (let* ((schema (mapping:evaluate (hla-schemas h) (car a)))

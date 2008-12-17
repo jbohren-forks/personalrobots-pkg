@@ -149,27 +149,31 @@
    (:module "decomp"
 	    :depends-on ("angelic")
 	    :components
-	    ((:module "dependency"
+	    ((:file "decomp")
+	     (:module "dependency"
 		      :components ((:file "dep-package")
 				   (:file "macros" :depends-on ("dep-package"))
 				   (:file "diffs" :depends-on ("macros"))
 				   (:file "update-fn" :depends-on ("dep-package"))
 				   (:file "dependency-graph" :depends-on ("macros" "diffs" "update-fn"))))
-	     (:module "valuation-bound-nodes"
+	     (:module "valuation-bounds"
 		      :depends-on ("dependency")
 		      :components ((:file "vb-package")
 				   (:file "node" :depends-on ("vb-package"))
-				   (:file "primitive" :depends-on ("node"))
-				   (:file "or-node" :depends-on ("node"))
-				   (:file "sequence" :depends-on ("node"))))))
+				   ;;(:file "primitive" :depends-on ("node"))
+				   ;;(:file "or-node" :depends-on ("node"))
+				   ;;(:file "sequence" :depends-on ("node"))
+				   ))))
 					    
-   (:module "envs" :depends-on ("angelic" "motion-planning" "hybrid")
+   (:module "envs" :depends-on ("angelic" "motion-planning" "hybrid" "decomp")
 	    :components
 	    ((:file "grid-world")
 	     (:module "blocks"
 	      :components ((:file "blocks-ceiling")
 			   (:file "hierarchy" :depends-on ("blocks-ceiling"))
-			   (:file "descriptions" :depends-on ("blocks-ceiling"))
+			   (:file "state-set" :depends-on ("blocks-ceiling"))
+			   (:file "descriptions" :depends-on ("blocks-ceiling" "state-set"))
+			   (:file "decomp-hierarchy" :depends-on ("state-set" "blocks-ceiling"))
 			   (:file "subsumption" :depends-on ("blocks-ceiling"))))
 	     (:module "nav-switch" 
 	      :components ((:file "nav-switch")

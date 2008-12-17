@@ -1,34 +1,34 @@
-(defpackage test-lookahead
-  (:use lookahead
-	utils
-	tree
-	blocks
-	cl
-	mapping
-	env-user
-	set
-	prop-logic)
-  (:import-from lookahead
-		precond
-		succ-state
-		high-level-actions
-		action-type
-		is-primitive-sequence
-		instantiate
-		active
-		inactive
-		complete-desc
-		sound-desc
-		complete-result
-		sound-result
-		succeeds-complete
-		get-immediate-refinements
-		succeeds-sound
-		regress-clause-nstrips
-		top-level-plans
+(defpackage :test-lookahead
+  (:use :lookahead
+	:utils
+	:tree
+	:blocks
+	:cl
+	:decomp
+	:mapping
+	:env-user
+	:set
+	:prop-logic)
+  (:import-from :lookahead
+		:precond
+		:succ-state
+		:high-level-actions
+		:action-type
+		:is-primitive-sequence
+		:instantiate
+		:active
+		:inactive
+		:complete-desc
+		:sound-desc
+		:complete-result
+		:sound-result
+		:succeeds-complete
+		:succeeds-sound
+		:regress-clause-nstrips
+		:top-level-plans
 		))
 
-(in-package test-lookahead)
+(in-package :test-lookahead)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,7 +87,7 @@
 ;; Blocks world
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvars nr nc d s s2 acts h hlas refs)
+(defvars nr nc d s s2 acts h hlas)
 
 (setf nr 4
       nc 4
@@ -135,33 +135,11 @@
 
 
 (setf h (make-blocks-hierarchy d)
-      s (refinements h '(move-block baz a c 0 1 3 2 3))
-      s2 (refinements h '(move-block c baz a 0 1 2 2 3))
-      hlas (high-level-actions h)
-      refs (get-immediate-refinements h #((navigate 3 1 1 1) (pickupL baz a 0 1 1) (navigate 1 1 2 2) (stackR baz c 3 2 2 3))))
+      hlas (high-level-actions h))
 
 
 (do-tests
     "Blocks-ceiling hierarchy"
-  (to-list (refinements h '(nav-right 0 3 1))) '(#((right 0 1 1) (nav-right 1 3 1)))
-  (to-list (refinements h '(nav-left 2 2 1))) '(#())
-  (to-list (refinements h '(nav-left 2 3 1))) nil
-  (to-list (refinements h '(nav-up 1 2 3))) '(#((up 1 2 3) (nav-up 1 3 3)))
-  (to-list (refinements h '(nav-down 3 2 0))) '(#((down 3 2 1) (nav-down 3 1 0)))
-  (to-list (refinements h '(navigate 1 1 3 0)))
-  '(#((nav-up 1 1 3) (nav-right 1 3 3) (nav-down 3 3 0))
-    #((nav-up 1 1 2) (nav-right 1 3 2) (nav-down 3 2 0))
-    #((nav-up 1 1 1) (nav-right 1 3 1) (nav-down 3 1 0))
-    #((nav-up 1 1 3) (turnr 1) (nav-right 1 3 3) (nav-down 3 3 0))
-    #((nav-up 1 1 3) (turnl 1) (nav-right 1 3 3) (nav-down 3 3 0))
-    )
-  (size s) 16
-  (size s2) 32
-  (item 0 s) #((navigate 3 3 1 1) (pickupL baz a 0 1 1) (navigate 1 1 2 3) (stackR baz c 3 2 2 3))
-  (to-boolean (member? #((navigate 2 3 1 1) (pickupL c baz 0 1 1) (navigate 1 1 3 3) (stackL c a 2 2 3 3)) s2)) t
-  (member? #((navigate 1 3 1 1) (pickupL c baz 0 1 1) (navigate 1 1 3 3) (stackR c a 2 2 3 3)) s2) nil
-  (member? #((navigate 1 3 1 1) (pickupL baz a 0 1 1) (navigate 1 1 3 3) (stackL baz c 2 2 3 3)) s) nil
-  
   (size hlas) 151040
   (action-type '(nav-right 1 2 3) h) 'high-level
   (action-type '(right 2 3 2) h) 'primitive
@@ -169,9 +147,6 @@
   (action-type '(move-block :t1 :t2 baz 0 1 3 2 3) h) 'unknown-action
   (to-boolean (is-primitive-sequence '((right 2 3 2) (pickupl baz a 1 2 3)) h)) t
   (to-boolean (is-primitive-sequence '((nav-right 1 3 3) (pickupl baz a 1 2 3)) h)) nil
-  (size refs) 9
-  (member? '((NAV-UP 3 1 2) (NAV-LEFT 3 1 2) (NAV-DOWN 1 2 1) (PICKUPL BAZ A 0 1 1) (NAVIGATE 1 1 2 2) (STACKR BAZ C 3 2 2 3)) refs) t
-  (member? '((NAV-UP 3 1 2) (NAV-LEFT 3 1 2) (NAV-DOWN 1 2 1) (PICKUPL BAZ A 0 1 1) (NAV-UP 1 1 2) (NAV-RIGHT 1 2 2) (NAV-DOWN 2 2 2) (STACKR BAZ C 3 2 2 3)) refs) nil
   )
 
 

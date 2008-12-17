@@ -1,4 +1,4 @@
-(in-package blocks)
+(in-package :blocks)
 
 (defun make-complete-descriptions (d)
   (let ((max-row (1- (num-rows d))))
@@ -202,27 +202,6 @@
 		(push (cddr lit) occupied)))
 	    (each pos #'(lambda (p) (member p occupied :test #'equal))))))
      pos)))
-
-(defun possible-gripper-positions (cset)
-  (let* ((d (pss-domain cset))
-	 (nr (1+ (length (lookup-type d 'rows))))
-	 (nc (lookup-type d 'columns)))
-    (let ((a (make-array (list nc nr) :element-type 'boolean)))
-      (ndunion ((clause (disjuncts (formula cset))))
-	(dotimes (r nr)
-	  (dotimes (c nc)
-	    (setf (aref a c r) t)))
-	(do-elements (c (conjuncts clause) 
-			(filter ':implicit (direct-product 'list nc nr)
-				#'(lambda (x) (apply #'aref a x))))
-	  (if (typep c 'negation)
-	      (let ((prop (negatee c)))
-		(when (eq (prop-symbol prop) 'gripper-pos)
-		  (setf (apply #'aref a (prop-args prop)) nil)))
-	    (when (eq (prop-symbol c) 'block-pos)
-	      (setf (apply #'aref a (cdr (prop-args c))) nil))))))))
-	      
-	    
 
 (defun move-reward-upper-bound (xb yb xc yt max-row complete-set)
   "First the gripper has to move beside the block.  After this, each action decreases the distance by at most 1."
@@ -434,7 +413,6 @@ There is one case handled differently, when all the destinations are absolute.  
 		       
 	       
 
-
 	
 	     
 
@@ -472,7 +450,6 @@ There is one case handled differently, when all the destinations are absolute.  
 	       (iwhen (eq (car c) 'on)
 		 (dsbind (b1 b2) (cdr c)
 		   (my- 0 (my/ (distance b1 b2 s) 2))))))))))
-
 
 
 
