@@ -51,10 +51,14 @@ namespace estimation
       vel_(0,0,0),
       move_(Vector3(0,0,0), Vector3(0.002,0.002,0.000000001))
   {
-    param(node_name_+"/freq", freq_, 20.0);
+    param(node_name_+"/freq", freq_, 1.0);
+    Vector3 prior_mu_pos;
+    param(node_name_+"/prior/x", prior_mu_pos[0] , 0.0);
+    param(node_name_+"/prior/y", prior_mu_pos[1] , 0.0);
+    param(node_name_+"/prior/z", prior_mu_pos[2] , 0.0);
 
     // create sample tracker
-    StatePosVel prior_mu(Vector3(3, 3, 3), Vector3(0, 0, 0));
+    StatePosVel prior_mu(prior_mu_pos, Vector3(0, 0, 0));
     StatePosVel prior_sigma(Vector3(0.3, 0.3, 0.00001), Vector3(0.00001, 0.00001, 0.00001));
     StatePosVel sys_sigma(Vector3(0.1, 0.1, 0.00001), Vector3(0.1, 0.1, 0.00001));
     Vector3 meas_sigma(0.3, 0.3, 1000);
@@ -122,7 +126,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   // get node name from arguments
-  string node_name("people_tracking_node");
+  string node_name("people_tracking");
 
   // create tracker node
   PeopleTrackingNode my_tracking_node(node_name);

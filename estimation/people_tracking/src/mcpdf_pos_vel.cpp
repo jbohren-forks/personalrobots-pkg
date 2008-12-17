@@ -37,6 +37,8 @@
 #include <assert.h>
 #include <vector>
 #include <std_msgs/Float64.h>
+#include "rgb.h"
+
 
   using namespace MatrixWrapper;
   using namespace BFL;
@@ -79,20 +81,20 @@
   { 
     unsigned int num_samples = _listOfSamples.size();
     assert(num_samples > 0);
-    Vector3 min = _listOfSamples[0].ValueGet().pos_;
-    Vector3 max = _listOfSamples[0].ValueGet().pos_;
+    Vector3 m = _listOfSamples[0].ValueGet().pos_;
+    Vector3 M = _listOfSamples[0].ValueGet().pos_;
 
     // calculate min and max
     for (unsigned int s=0; s<num_samples; s++){
       Vector3 v = _listOfSamples[s].ValueGet().pos_;
       for (unsigned int i=0; i<3; i++){
-	if (v[i] < min[i]) min[i] = v[i];
-	if (v[i] > max[i]) max[i] = v[i];
+	if (v[i] < m[i]) m[i] = v[i];
+	if (v[i] > M[i]) M[i] = v[i];
       }
     }
 
     // get point cloud from histogram
-    Matrix hist = getHistogramPos(min, max, step);
+    Matrix hist = getHistogramPos(m, M, step);
     unsigned int row = hist.rows();
     unsigned int col = hist.columns();
     unsigned int total = 0;
@@ -108,10 +110,10 @@
       for (unsigned int c=1; c<= col; c++)
 	if (hist(r,c) > threshold){
 	  for (unsigned int i=0; i<3; i++)
-	  points[t].x = min[0] + (step[0] * r);
-	  points[t].y = min[1] + (step[1] * c);
-	  points[t].z = min[2];
-	  weights[t] = trunc(hist(r,c)*55*255);
+	  points[t].x = m[0] + (step[0] * r);
+	  points[t].y = m[1] + (step[1] * c);
+	  points[t].z = m[2];
+	  weights[t] = rgb[999-(int)trunc(max(0.0,min(999.0,hist(r,c)*20*_listOfSamples.size())))];
 	  t++;
 	}
     cloud.header.frame_id = "odom";
