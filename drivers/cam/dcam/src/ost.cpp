@@ -2120,15 +2120,27 @@ stereo_algorithm_cb(Fl_Choice *w, void *u)
   Fl_Menu_ *mw = (Fl_Menu_ *)w;
   const Fl_Menu_Item* m = mw->mvalue();
   
-  printf("Label: %s\n", m->label());
+  //printf("Label: %s\n", m->label());
 
   if (!strcmp(m->label(), "Normal"))
     {
-      printf("Normal algorithm\n");
+	sp_alg = NORMAL_ALGORITHM;      
+	//printf("Normal algorithm\n");
     }
-  if (!strcmp(m->label(), "Scanline"))
+  if (!strcmp(m->label(), "Scanline Opt"))
     {
-      printf("Scanline algorithm\n");
+      sp_alg = SCANLINE_ALGORITHM;    
+      //printf("Scanline algorithm\n");
+    }
+ if (!strcmp(m->label(), "DP"))
+    {
+      sp_alg = DP_ALGORITHM;    
+     // printf("DP algorithm\n");
+    }
+ if (!strcmp(m->label(), "Multiple Windows"))
+    {
+      sp_alg = MW_ALGORITHM;    
+     // printf("MW algorithm\n");
     }
 }
 

@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0108 
+version 1.0107 
 header_name {stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
@@ -8,7 +8,7 @@ class stereogui {open
   } {
     Fl_Window ost_main {
       label {Open STereo}
-      xywh {506 166 655 305} type Single labelsize 11 visible
+      xywh {451 255 655 305} type Single labelsize 11 visible
     } {
       Fl_Output info_message {
         xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
@@ -942,7 +942,7 @@ class stereogui {open
     }
     Fl_Window stereo_window {
       label Stereo open
-      xywh {709 947 340 295} type Single visible
+      xywh {508 827 340 295} type Single visible
     } {
       Fl_Group {} {open
         xywh {15 155 285 120}
@@ -978,7 +978,7 @@ class stereogui {open
         }
       }
       Fl_Group {} {open
-        xywh {20 30 320 170}
+        xywh {20 30 320 110}
       } {
         Fl_Box {} {
           xywh {20 30 120 85} box ENGRAVED_FRAME
@@ -1018,7 +1018,7 @@ class stereogui {open
         }
         Fl_Choice {} {
           label {Stereo Algorithm}
-          callback stereo_algorithm_cb open
+          callback stereo_algorithm_cb open selected
           xywh {245 70 90 20} down_box BORDER_BOX labelsize 11 align 5
         } {
           MenuItem {} {
@@ -1026,11 +1026,15 @@ class stereogui {open
             xywh {10 10 30 20} labelsize 11
           }
           MenuItem {} {
-            label Scanline
+            label {Scanline Opt}
             xywh {10 10 30 20} labelsize 11
           }
           MenuItem {} {
-            label DP selected
+            label DP
+            xywh {20 20 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label {Multiple Windows}
             xywh {20 20 30 20} labelsize 11
           }
         }
