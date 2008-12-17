@@ -91,8 +91,9 @@ public:
 
   ros::thread::mutex cv_mutex_;
 
-  FaceDetector(const char *haar_filename, bool use_depth, bool do_display, bool external_init) : 
-    ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
+  // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
+  FaceDetector(std::string node_name, const char *haar_filename, bool use_depth, bool do_display, bool external_init) : 
+    ros::node(node_name ),
     sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
@@ -332,18 +333,21 @@ int main(int argc, char **argv)
   bool external_init = false;
 
   if (argc < 3) {
-    cerr << "Path to cascade file required.\n" << endl;
+    cerr << "Node name ending and path to cascade file required.\n" << endl;
     return 0;
   }
-  char *haar_filename = argv[1]; 
-  if (argc >= 3) {
-    do_display = atoi(argv[2]);
-    if (argc >= 4) {
-      external_init = atoi(argv[3]);
+  char *haar_filename = argv[2];
+  if (argc >= 4) {
+    do_display = atoi(argv[3]);
+    if (argc >= 5) {
+      external_init = atoi(argv[4]);
     }
   }
-  FaceDetector fd(haar_filename, use_depth, do_display, external_init);
- 
+  ostringstream node_name;
+  node_name << "face_detection_" << argv[1];
+  FaceDetector fd(node_name.str(), haar_filename, use_depth, do_display, external_init);
+  
+
   fd.spin();
   ros::fini();
   return 0;
