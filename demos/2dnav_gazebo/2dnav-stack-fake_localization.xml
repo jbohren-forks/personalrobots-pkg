@@ -4,7 +4,7 @@
     <!-- publish mapping between odom and base_footprint -->
     <param name="odom_estimation/sensor_timeout" value="1.0"/>
     <param name="odom_estimation/exact_time_mode" value="true"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" />
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" output="screen"/>
 
     <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
     <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
@@ -30,6 +30,9 @@
     <param name="dist_penalty" value="2.0" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     -->
+
+    <!-- starting ransac node -->
+    <node pkg="ransac_ground_plane_extraction" type="ransacnode" output="screen" />
 
     <!-- move_base_sbpl settings -->
     <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->

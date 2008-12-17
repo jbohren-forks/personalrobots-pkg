@@ -36,6 +36,9 @@
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     -->
 
+    <!-- starting ransac node -->
+    <node pkg="ransac_ground_plane_extraction" type="ransacnode" output="screen" />
+
     <!-- filter out veil effect from range scans -->
     <param name="/scan_shadows_filter/filter_min_angle" value="10"/>
     <param name="/scan_shadows_filter/filter_max_angle" value="170"/>
