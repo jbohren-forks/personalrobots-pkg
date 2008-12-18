@@ -297,7 +297,7 @@ void CvMatUtils::transformToQuaternionAndShift(
   CvMat rot;
   CvMat shift;
   CvMat shift1;
-  cvGetRows(params, &shift1, 3, 6);
+  cvGetRows(params, &shift1, 4, 7);
   cvGetSubRect(&transform, &rot, cvRect(0, 0, 3, 3));
 
   double Qxx = cvmGet(&rot, 0, 0);

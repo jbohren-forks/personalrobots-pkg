@@ -14,6 +14,10 @@
 
 using namespace cv::willow;
 
+#include <Eigen/Geometry>
+// import most common Eigen types
+USING_PART_OF_NAMESPACE_EIGEN
+
 #include <iostream>
 #include <fstream>
 using namespace std;
@@ -209,10 +213,24 @@ void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& frame
     CvMat  params_local_to_global = cvMat(7, 1, CV_64FC1, params_local_to_global_data);
     CvMatUtils::transformToQuaternionAndShift(fp->transf_local_to_global_, &params_local_to_global);
 
+    Eigen::Matrix3d rot; // from global to local
+    for (int s=0; s<3; s++) {
+      for (int t=0; t<3; t++ ) {
+	rot(s, t) = cvmGet(&fp->transf_local_to_global_, t, s);
+      }
+    }
+    Eigen::Quaterniond quatd(rot);
+    out<<quatd.w()<<" "<<quatd.x()<<" "<<quatd.y()<<" "<<quatd.z()<<" ";
+    out<<params_local_to_global_data[4] << " ";
+    out<<params_local_to_global_data[5] << " ";
+    out<<params_local_to_global_data[6] << endl;
+      
+#if 0
     for (int j=0; j<7; j++) {
       out << params_local_to_global_data[j] << " ";
     }
     out << std::endl;
+#endif
   }
 }
 

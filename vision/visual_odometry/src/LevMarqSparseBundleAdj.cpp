@@ -418,7 +418,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
   if (free_frames->size()<1 || fixed_frames->size()<1) {
-    return false;
+    return true;
   }
 
   // set up matrices, and others

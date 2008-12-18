@@ -142,9 +142,10 @@ void PointTracks::save(string& dir) const  {
     cvmSet(tracks_mat, 0, 3, p->coordinates_.z);
     int row=1;
     BOOST_FOREACH( const PointTrackObserv* obsv, *p ){
-      cvmSet(tracks_mat, row, 0, obsv->disp_coord_.x);
-      cvmSet(tracks_mat, row, 1, obsv->disp_coord_.y);
-      cvmSet(tracks_mat, row, 2, obsv->disp_coord_.z);
+      cvmSet(tracks_mat, row, 0, obsv->frame_index_);
+      cvmSet(tracks_mat, row, 1, obsv->disp_coord_.x);
+      cvmSet(tracks_mat, row, 2, obsv->disp_coord_.y);
+      cvmSet(tracks_mat, row, 3, obsv->disp_coord_.z);
     }
     // save it to a file
     char point_track_index_str[16];
