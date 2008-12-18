@@ -295,7 +295,7 @@ class VisualOdometer:
   def __init__(self, cam, **kwargs):
     self.cam = cam
     self.timer = {}
-    for t in ['feature', 'disparity', 'descriptor_collection', 'temporal_match', 'solve' ]:
+    for t in ['feature', 'disparity', 'descriptor_collection', 'temporal_match', 'solve', 'tracks', 'sba' ]:
       self.timer[t] = Timer()
     self.pe = VO.pose_estimator(*self.cam.params)
     self.prev_frame = None
@@ -307,6 +307,7 @@ class VisualOdometer:
     self.log_keyframes = []
     self.pairs = []
     self.tracks = set()
+    self.all_tracks = set()
     self.posechain = []
 
     self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
@@ -417,6 +418,7 @@ class VisualOdometer:
     return solution
 
   def maintain_tracks(self, f0, f1):
+    self.timer['tracks'].start()
     pairs = self.temporal_match(f0, f1)
     solution = self.solve(f0.kp, f1.kp, pairs)
     if solution and solution[0] > 5:
@@ -431,7 +433,7 @@ class VisualOdometer:
     # Only keep tracks that have a recent frame
     oldest_useful_frame = f0.id - 3
     self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= t.id[-1]])
-    
+
     oldtails = set([t.lastpt for t in self.tracks])
     for t in self.tracks:
       if t.alive:
@@ -440,7 +442,9 @@ class VisualOdometer:
     print len(self.tracks), [ len(t.p) for t in self.tracks ]
     for p0 in set(pairmap) - oldtails:
       p1 = pairmap[p0]
-      self.tracks.add(Track(p0, f0.id, p1, f1.id, f1.pose, self.cam))
+      newtrack = Track(p0, f0.id, p1, f1.id, f1.pose, self.cam)
+      self.tracks.add(newtrack)
+      self.all_tracks.add(newtrack)
 
     # Run through all tracks.  If two tracks share an endpoint, delete the shorter track
     by_lastpt = [e[1] for e in sorted([(t.lastpt, t) for t in self.tracks])]
@@ -455,20 +459,32 @@ class VisualOdometer:
           tocull.add(t1)
     self.tracks -= tocull
 
+    for t in self.tracks:
+      for (x,y,d) in t.p:
+        assert d != 0
+    self.timer['tracks'].stop()
+
   def sba_handle_frame(self, frame):
+    self.timer['sba'].start()
     self.posechain.append(VO.frame_pose(frame.id, frame.pose.tolist()))
     #topleft = [ p.M[0] for p in self.posechain ]
     (fix_sz, free_sz, niter) = self.sba
+    if (fix_sz + free_sz) > len(self.posechain):
+      fix_sz = 1
+      free_sz = len(self.posechain) - 1
+    print "SBA:", "fixed", [f.id for f in self.posechain[-(fix_sz + free_sz):-(free_sz)]], "free", [f.id for f in self.posechain[-(free_sz):]]
     self.pe.sba(self.posechain[-(fix_sz + free_sz):-(free_sz)], self.posechain[-(free_sz):], [ t.sba_track for t in self.tracks ], 10)
     # copy these corrected poses back into the VO's key and current frames
     to_correct = [ self.keyframe, frame ]
     if self.prev_frame:
       to_correct.append(self.prev_frame)
+    #print "Copying poses", [ fp.id for fp in self.posechain ], "to", [ f.id for f in to_correct ]
     for fp in self.posechain[-(fix_sz + free_sz):]:
-      for dst in to_correct:
+      for dst in set(to_correct):
         if fp.id == dst.id:
           dst.pose.fromlist(fp.M)
           print "SBA corrected pose of frame", dst.id, "to", dst.pose.M
+    self.timer['sba'].stop()
 
   def handle_frame(self, frame):
     self.find_keypoints(frame)
@@ -521,6 +537,8 @@ class VisualOdometer:
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
       frame.inl = 999
+      if self.sba:
+        self.sba_handle_frame(frame)
     self.pose.assert_sane()
 
     self.pose = frame.pose
