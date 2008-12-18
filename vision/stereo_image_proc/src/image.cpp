@@ -139,12 +139,15 @@ ImageData::releaseBuffers()
 // rectification
 
 bool
-ImageData::initRectify()
+ImageData::initRectify(bool force)
 {
+  if (force)
+    hasRectification = true;
+
   if (!hasRectification || imWidth == 0 || imHeight == 0)
     return false;
 
-  if (initRect)
+  if (initRect && !force)
     return true;		// already done
 
   // set values of cal matrices
@@ -1044,6 +1047,18 @@ PrintMatStr(double *mat, int n, int m, char *str)
   return c;
 }
 
+static void
+PrintMat(double *mat, int n, int m)
+{
+  for (int i=0; i<n; i++)
+    {
+      for (int j=0; j<m; j++)
+	printf("%8.5f ", mat[i*m+j]);
+      printf("\n");
+    }
+}
+
+
 static int
 PrintStr(int val, char *str)
 {
@@ -1073,7 +1088,7 @@ StereoData::createParams()
   n += PrintStr(filterSize,&str[n]);
 
   // externals
-  n += sprintf(&str[n],"\n[externals]\n");
+  n += sprintf(&str[n],"\n\n[externals]\n");
 
   n += sprintf(&str[n],"\ntranslation\n");
   n += PrintMatStr(T,1,3,&str[n]);

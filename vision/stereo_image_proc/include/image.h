@@ -182,7 +182,7 @@ namespace cam
     // rectification
     bool hasRectification;	// true if valid rectification present
     bool doRectify();		// try to rectify images
-    bool initRectify();		// initializes the rectification internals from the
+    bool initRectify(bool force=false);	// initializes the rectification internals from the
                                 //   calibration parameters
 
     // color conversion
