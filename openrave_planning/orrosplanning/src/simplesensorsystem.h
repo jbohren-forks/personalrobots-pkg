@@ -280,6 +280,8 @@ protected:
             it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
             it->first->lastupdated = curtime;
 
+            RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+            
             if( !it->first->IsPresent() )
                 RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
             it->first->SetPresent(true);

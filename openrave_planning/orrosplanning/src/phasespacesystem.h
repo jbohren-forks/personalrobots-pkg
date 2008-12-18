@@ -116,7 +116,7 @@ private:
         _bSubscribed = false;
         ros::node* pnode = check_roscpp();
         if( pnode != NULL ) {
-            _bSubscribed = pnode->subscribe(_phasespacetopic, _snapshot, &PhaseSpaceMocapClient::newdatacb, this, 1);
+            _bSubscribed = pnode->subscribe(_phasespacetopic, _snapshot, &PhaseSpaceMocapClient::newdatacb, this, 10);
             if( _bSubscribed )
                 RAVELOG_DEBUGA("subscribed to %s\n", _phasespacetopic.c_str());
             else
