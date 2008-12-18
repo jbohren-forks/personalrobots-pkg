@@ -18,4 +18,5 @@
 (defmethod compute-cycle ((n <primitive-node>))
   (do-all-updates n))
 
-
+(defmethod action-node-type ((c (eql :primitive)))
+  '<primitive-node>)

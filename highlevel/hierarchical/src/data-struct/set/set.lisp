@@ -61,11 +61,13 @@ Exported Operations
 - reduce-set
 - sum-over
 - subset
+- binary-intersection
 - intersect
 - intersects
 - <implicit-intersection>
+- implicit-intersection
 - implicit-union
-- union-sets
+- binary-union
 - <implicit-union>
 - disjoint-union
 - disjoint-union-list
@@ -154,11 +156,13 @@ Other symbols
 	   reduce-set
 	   sum-over
 	   subset
+
+	   binary-intersection
 	   intersect
 	   intersects
 	   <implicit-intersection>
+	   binary-union
 	   implicit-union
-	   union-sets
 	   <implicit-union>
 	   disjoint-union
 	   disjoint-union-list
@@ -535,48 +539,47 @@ If initial value is not provided:
   "Macro addf SET ITEM &optional (POS nil).  Add ITEM to SET if it doesn't already exist."
   `(_f add ,s ,item ,pos))
 
-(defgeneric intersect (s1 s2)
-  (:documentation "intersect S1 S2.  Return a set that is the intersection of S1 and S2.  Nondestructive."))
 
 
-(def-symmetric-method intersect ((s1 null) s2) (declare (ignore s2)) nil)
-(def-symmetric-method intersect ((s1 <numbered-set>) s2)
+
+
+(defgeneric binary-intersection (s1 s2)
+  (:documentation "binary-intersection S1 S2.  Return a set that is the intersection of S1 and S2.  Nondestructive."))
+
+
+(def-symmetric-method binary-intersection ((s1 null) s2) (declare (ignore s2)) nil)
+(def-symmetric-method binary-intersection ((s1 <numbered-set>) s2)
     (filter ':list s1
 	    #'(lambda (x)
 		(member? x s2))))   
 
+(defun intersect (s &rest sets)
+  (if sets
+      (apply #'intersect (binary-intersection s (car sets)) (cdr sets))
+      s))
+
 (defgeneric intersects (s1 s2)
   (:documentation "intersects S1 S2.  Do S1 and S2 have nonempty intersection?")
-  (:method (s1 s2) (not (is-empty (intersect s1 s2)))))
-  
+  (:method (s1 s2) (not (is-empty (binary-intersection s1 s2)))))
 
-; ; (defgeneric binary-union (s1 s2)
-; ;   (:documentation "binary-union S1 S2.  Return a new set that is the union of S1 and S2."))
 
-; (defgeneric destructive-union (s s2)
-;   (:documentation "destructive-union S1 S2.  Add the elements of S2 to S1.  There is a default method that works for all sets by repeatedly calling addf.")
-;   (:method (s s2)
-; 	   (do-elements (x s2 s)
-; 	     (addf s x))))
-  
 
-; (defmacro unionf (s1 s2)
-;   "Macro unionf S1 S2.  Set S1 to the union of S1 and S2."
-;   `(_f destructive-union ,s1 ,s2))
 
-(defun unite (sets)
-  "unite SETS.
 
-SETS is a list of sets.
-  
-Nondestructive operation that returns the union of the sets.  Takes time and space proportional to the total size of the sets.  
+(defgeneric binary-union (s1 s2)
+  (:documentation "binary-union S1 S2.  Return a new set that is the union of S1 and S2.  Nondestructive."))
 
-TODO: Requires that all sets have #'equal as their equality predicate."
-  (let ((l nil))
-    (dolist (s sets l)
-      (assert (eq (equality-test s) #'equal))
-      (do-elements (x s)
-	(adjoinf l x :test #'equal)))))
+(def-symmetric-method binary-union ((s1 null) s2) s2)
+(defmethod binary-union (s1 s2)
+  (implicit-union s1 s2))
+
+(defun unite (s &rest sets)
+  (if sets
+      (apply #'unite (binary-union s (car sets)) (cdr sets))
+      s))
+      
+
+
 
 
 (defgeneric set-eq (s1 s2)
@@ -704,7 +707,7 @@ pprint-set SET (where STREAM defaults to t)"
        (unless (zerop i)
 	 (format str ", "))
        (pprint-newline :fill str)
-       (pprint-pop)
+       ;; (pprint-pop)
        (write x :stream str)
        ))))
       

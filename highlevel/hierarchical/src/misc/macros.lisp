@@ -212,8 +212,7 @@ If ARGS has length 1, bind STR to t, OBJ to (FIRST ARGS).  Otherwise, bind STR t
       `(let ((,gseq ,seq))
 	 ,(dbind-ex (destruc pat gseq #'atom) body))))
 
-
-(defmacro with-struct ((name . fields) s &body body)
+(defmacro with-struct ((name &rest fields) s &body body)
   "with-struct (CONC-NAME . FIELDS) S &rest BODY
 
 Example:

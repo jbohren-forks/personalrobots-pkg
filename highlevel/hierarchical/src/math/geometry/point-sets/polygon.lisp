@@ -157,7 +157,7 @@ Properties of polygons
 (defmethod intersects ((p <polygon>) (h <half-space>))
   (intersects h p))
 
-(def-symmetric-method intersect ((p <polygon>) (l <line-segment>))
+(def-symmetric-method binary-intersection ((p <polygon>) (l <line-segment>))
   (let ((a (a l))
 	(b (b l))
 	(side-intersections nil))
@@ -169,7 +169,7 @@ Properties of polygons
 	  (typecase int
 	    (vector (pushnew int side-intersections :test #'close-to)
 		    (when (length-exceeds side-intersections 1) (return)))
-	    (<line-segment> (return-from intersect int)))))
+	    (<line-segment> (return-from binary-intersection int)))))
       (when side-intersections
 	(if (cdr side-intersections)
 	    (make-instance '<line-segment> :a (first side-intersections) :b (second side-intersections))

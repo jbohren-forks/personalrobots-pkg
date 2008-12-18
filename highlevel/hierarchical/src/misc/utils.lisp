@@ -559,6 +559,7 @@ The macro is useful to protect against situations when the standard semantics of
 	  (remove-if #'(lambda (x) (member x '(&key &aux &rest &optional))) lambda-list)))
 
 (defmacro defstub (name arg-list &rest args)
+  "defstub NAME ARG-LIST [DOC-STRING] &rest BODY.  Like defun, except allows the arguments to be ignored by default, and serves as a textual reminder that this a stub."
   (condlet
    (((stringp (first args)) (doc (first args)) (body (rest args)))
     (t (doc "") (body args)))

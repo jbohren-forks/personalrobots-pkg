@@ -3,6 +3,7 @@
 	:lookahead
 	:utils
 	:decomp
+	:vb-node
 	:graph
 	:prop-logic
 	:set
@@ -89,6 +90,8 @@
    :right-turn-and-navigate
    :put
    :move
+   :pickup
+   :stack
 
    ;; descriptions
    :make-complete-descriptions

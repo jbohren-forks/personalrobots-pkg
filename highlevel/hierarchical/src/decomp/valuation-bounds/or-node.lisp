@@ -1,16 +1,15 @@
 (in-package :vb-node)
 
 (defclass <or-node> (<node>)
-  ())
-
+  ((status :accessor status)))
 
 (defmethod initialize-instance :after ((n <or-node>) &rest args)
   (declare (ignorable args))
   ;; Aggregated inputs from children
-  (add-variable n 'children-progressed-optimistic :internal :simple-update-fn (aggregator #'set-union) :dependants '(progressed-optimistic))
-  (add-variable n 'children-progressed-pessimistic :internal :simple-update-fn (aggregator #'set-union) :dependants '(progressed-pessimistic))
-  (add-variable n 'children-regressed-optimistic :internal :simple-update-fn (aggregator #'set-union) :dependants '(regressed-optimistic))
-  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (aggregator #'set-union) :dependants '(regressed-pessimistic)))
+  (add-variable n 'children-progressed-optimistic :internal :simple-update-fn (aggregator #'unite) :dependants '(progressed-optimistic))
+  (add-variable n 'children-progressed-pessimistic :internal :simple-update-fn (aggregator #'unite) :dependants '(progressed-pessimistic))
+  (add-variable n 'children-regressed-optimistic :internal :simple-update-fn (aggregator #'unite) :dependants '(regressed-optimistic))
+  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (aggregator #'unite) :dependants '(regressed-pessimistic)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Children outputs are aggregated together
@@ -57,19 +56,19 @@
 
 (defmethod optimistic-progressor ((n <or-node>))
   (make-simple-alist-updater (my-progressed-optimistic child-progressed-optimistic)
-    (set-intersection my-progressed-optimistic child-progressed-optimistic)))
+    (binary-intersection my-progressed-optimistic child-progressed-optimistic)))
 
 (defmethod pessimistic-progressor ((n <or-node>))
   (make-simple-alist-updater (my-progressed-pessimistic child-progressed-pessimistic)
-    (set-union my-progressed-pessimistic child-progressed-pessimistic)))
+    (binary-union my-progressed-pessimistic child-progressed-pessimistic)))
 
 (defmethod optimistic-regressor ((n <or-node>))
   (make-simple-alist-updater (my-regressed-optimistic child-regressed-optimistic)
-    (set-intersection my-regressed-optimistic child-regressed-optimistic)))
+    (binary-intersection my-regressed-optimistic child-regressed-optimistic)))
 
 (defmethod pessimistic-regressor ((n <or-node>))
   (make-simple-alist-updater (my-regressed-pessimistic child-regressed-pessimistic)
-    (set-union my-regressed-pessimistic child-regressed-pessimistic)))
+    (binary-union my-regressed-pessimistic child-regressed-pessimistic)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -77,10 +76,14 @@
 ;; child (like A*)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defmethod action-node-type ((c (eql :or)))
+  '<or-node>)
+
 (defmethod compute-cycle ((n <or-node>))
   (ecase (status n)
     (:initial (do-all-updates n) (setf (status n) :create-children))
-    (:create-children (create-all-children) (setf (status n) :children-created))
+    (:create-children (or-node-create-children n) (setf (status n) :children-created))
     (:children-created
        (do-all-updates n)
        (let ((i (maximizing-element (child-ids n) (or-node-child-evaluator n))))
@@ -89,6 +92,14 @@
 
 (defun or-node-child-evaluator (n)
   #'(lambda (i)
-      (maximum-value (sum-valuations (current-value (list 'child-progressed-optimistic i) n) (current-value 'final-regressed-optimstic n)))))
+      (max-achievable-value (make-sum-valuation (current-value (list 'child-progressed-optimistic i) n) (current-value 'final-regressed-optimistic n)))))
 
 
+(defun or-node-create-children (n)
+  (with-accessors ((action action) (h hierarchy)) n
+    (do-elements (ref (refinements action h :init-opt-set (current-value n 'initial-optimistic)) nil i)
+      (assert (= 1 (length ref)))
+      (create-child-for-action h n i (sfirst ref)))))
+
+    
+    

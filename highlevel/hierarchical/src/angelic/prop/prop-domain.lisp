@@ -291,14 +291,14 @@ Note that this class is a descendant of <env>, so all operations that can be don
 (defmethod formula ((s <prop-state-set>))
   (formula (base-set s)))
 
-(defmethod intersect ((s <prop-state-set>) (s2 <prop-state-set>))
+(defmethod binary-intersection ((s <prop-state-set>) (s2 <prop-state-set>))
   (let ((d (pss-domain s))
 	(d2 (pss-domain s2)))
     (assert (eq d d2) nil
       "Can't intersect prop-state-sets with different domains ~a and ~a"
       d d2)
     (make-instance '<prop-state-set>
-      :s (intersect (base-set s) (base-set s2))
+      :s (binary-intersection (base-set s) (base-set s2))
       :f #'(lambda (x) (make-prop-domain-state :domain d :props x))
       :f-inv #'pds-props
       :domain d)))

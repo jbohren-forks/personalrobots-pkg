@@ -27,6 +27,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Valuations and reward bounds
+;; There are two kinds of valuations: forward and backward
+;; - (forward) valuations map each state to a bound on 
+;;   how much reward can be attained for an action sequence
+;;   that ends at that state
+;; - backward valuations map each state to a bound on 
+;;   how much reward can be attained in future starting at
+;;   this state
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defstruct (simple-valuation (:conc-name sv-) (:constructor make-simple-valuation (s v)))
@@ -40,6 +47,12 @@
 (defgeneric progress-complete-valuation (desc val)
   (:documentation "progress-complete-valuation DESC V.  Suppose V is an upper-bound on the current valuation.  Returns a new valuation guaranteed to be an upper-bound on the result of progressing V through DESC.")
   (:method ((desc function) val) (funcall desc val)))
+
+(defgeneric regress-sound-valuation (desc val)
+  (:documentation "regress-sound-valuation DESC V.  If V is a lower-bound on backward valuation, return a lower bound on backward valuation before doing an action with description DESC."))
+
+(defgeneric regress-complete-valuation (desc val)
+  (:documentation "regress-sound-valuation DESC V.  If V is an upper-bound on backward valuation, return an upper bound on backward valuation before doing an action with description DESC."))
 
 (defgeneric evaluate-valuation (v s)
   (:documentation "evaluate-valuation VALUATION STATE.  Returns an extended real.")
@@ -67,7 +80,6 @@
 
 
 
-;; TODO: Are these next two necessary?
 (defgeneric reachable-set (v)
   (:documentation "reachable-set VALUATION.  Return the set of states for which this valuation is greater than '-infty.")
   (:method ((val simple-valuation))
@@ -81,6 +93,34 @@
 	   (if (is-empty (sv-s val))
 	       '-infty
 	     (sv-v val))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; sum valuations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstruct (sum-valuation (:constructor create-sum-valuation))
+  vals)
+
+(defun make-sum-valuation (&rest vals)
+  (create-sum-valuation :vals vals))
+
+(defmethod max-achievable-value ((v sum-valuation))
+  (with-struct (sum-valuation- vals) v
+    (assert (= 2 (length vals)) nil "max-achievable-value currently only implemented for sums of two valuations (easy to extend using DP if necessary)")
+    (let ((s1 (sv-s (first vals)))
+	  (v1 (sv-v (first vals)))
+	  (s2 (sv-s (second vals)))
+	  (v2 (sv-v (second vals)))
+	  (achievable nil))
+      (unless (and (is-empty s1) (is-empty s2)) (push (my+ v1 v2) achievable))
+      (when (intersects s1 s2) (push (my- (my+ v1) (my+ v2)) achievable))
+      (unless (subset s1 s2) (push v1 achievable))
+      (unless (subset s1 s2) (push v2 achievable))
+      (apply #'mymax achievable))))
+
+
+
+  
 
 	       
 
