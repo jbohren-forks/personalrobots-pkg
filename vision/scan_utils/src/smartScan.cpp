@@ -1095,7 +1095,7 @@ void SmartScan::removePlane(const std_msgs::Point32 &planePoint,
   defined by \a planePoint and \a planeNormal. Applies two different thresholds, \a thresh for points that are closer than a \a far_remove_threshold_distance_ to the \a origin and \a far_remove_threshold_ for points that are farther than away. 
  */
 void SmartScan::removePlane(const std_msgs::Point32 &planePoint, 
-			    const std_msgs::Point32 &planeNormal, float thresh, const std_msgs::PointStamped &origin, float far_remove_distance, float far_remove_distance_threshold)
+			    const std_msgs::Point32 &planeNormal, float thresh, const std_msgs::PointStamped &origin, float far_remove_distance_threshold, float far_remove_distance)
 {
 	//remove points that are close to plane
 	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints];
