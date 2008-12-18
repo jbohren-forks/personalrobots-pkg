@@ -276,35 +276,29 @@ namespace estimation
   {
     while (ok()){
       odom_mutex_.lock();  imu_mutex_.lock();  vo_mutex_.lock();
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      time_file_ << (Time::now() - odom_time_).toSec() << " " << (Time::now() - imu_time_).toSec()  << " " << (Time::now() - vo_time_).toSec()   << " "
-		 << (Time::now() - odom_stamp_).toSec() << " " << (Time::now() - imu_stamp_).toSec()  << " " << (Time::now() - vo_stamp_).toSec()   << " "
-		 << (odom_time_ - imu_time_).toSec()   << " " << (odom_time_ - vo_time_).toSec()   << " " << (imu_time_  - vo_time_).toSec()   << " "
-		 << (odom_stamp_ - imu_stamp_).toSec()   << " " << (odom_stamp_ - vo_stamp_).toSec()   << " " << (imu_stamp_  - vo_stamp_).toSec()   << endl;
-#endif
-      // initial value for filter stamp
-      filter_stamp_ = Time::now();
 
-      // update filter when one of the sensors is active
+      // check which sensors are still active
+      if ((odom_active_ || odom_initializing_) && 
+	  (Time::now() - odom_time_).toSec() > timeout_){
+	odom_active_ = false; odom_initializing_ = false;
+	ROS_INFO((node_name_+"  Odom sensor not active any more").c_str());
+      }
+      if ((imu_active_ || imu_initializing_) && 
+	  (Time::now() - imu_time_).toSec() > timeout_){
+	imu_active_ = false;  imu_initializing_ = false;
+	ROS_INFO((node_name_+"  Imu sensor not active any more").c_str());
+      }
+      if ((vo_active_ || vo_initializing_) && 
+	  (Time::now() - vo_time_).toSec() > timeout_){
+	vo_active_ = false;  vo_initializing_ = false;
+	ROS_INFO((node_name_+"  VO sensor not active any more").c_str());
+      }
+
+      // only update filter when one of the sensors is active
       if (odom_active_ || imu_active_ || vo_active_){
 
-	// check which sensors are still active
-	if ((odom_active_ || odom_initializing_) && 
-	    (Time::now() - odom_time_).toSec() > timeout_){
-	  odom_active_ = false; odom_initializing_ = false;
-	  ROS_INFO((node_name_+"  Odom sensor not active any more").c_str());
-	}
-	if ((imu_active_ || imu_initializing_) && 
-	    (Time::now() - imu_time_).toSec() > timeout_){
-	  imu_active_ = false;  imu_initializing_ = false;
-	  ROS_INFO((node_name_+"  Imu sensor not active any more").c_str());
-	}
-	if ((vo_active_ || vo_initializing_) && 
-	    (Time::now() - vo_time_).toSec() > timeout_){
-	  vo_active_ = false;  vo_initializing_ = false;
-	  ROS_INFO((node_name_+"  VO sensor not active any more").c_str());
-	}
+	// initial value for filter stamp
+	filter_stamp_ = Time::now();
 
 	// update filter at time where all sensor measurements are available
 	if (odom_active_)  filter_stamp_ = min(filter_stamp_, odom_stamp_);
