@@ -15,7 +15,7 @@
 <depend package="string_utils"/>
 <depend package="image_utils"/>
 <depend package="stereo_utils"/>
-<depend package="visual_odometry"/>
+<!--<depend package="visual_odometry"/>-->
 <depend package="pyrob"/>
 <depend package="rosrecord"/>
 <depend package="rospy"/>
@@ -23,6 +23,7 @@
 <depend package="topic_synchronizer"/>
 <depend package="laser_processor"/>
 <depend package="tf"/>
+<depend package="color_calib"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
 </package>

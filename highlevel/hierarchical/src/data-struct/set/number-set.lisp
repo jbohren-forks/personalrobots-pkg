@@ -34,5 +34,5 @@
 (defmethod subset ((s1 integer) (s2 integer))
   (<= s1 s2))
 
-(defmethod intersect ((s1 integer) (s2 integer))
+(defmethod binary-intersection ((s1 integer) (s2 integer))
   (min s1 s2))

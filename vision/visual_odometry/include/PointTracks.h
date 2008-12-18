@@ -21,9 +21,6 @@ public:
   PointTrackObserv(const int fi, const CvPoint3D64f& coord, const int keypointIndex):
     frame_index_(fi),
     disp_coord_(coord),
-#if 0 // removed
-    disp_coord_est_(coord),
-#endif
     disp_res_(cvPoint3D64f(0.,0.,0.)),
     keypoint_index_(keypointIndex),
     local_frame_index_(-1),
@@ -37,28 +34,38 @@ public:
   int           frame_index_;
   /// observed disparity coordinates of the point in this frame
   CvPoint3D64f  disp_coord_;
-// private: - XXX jcb ought to be private past this point - JD take a look?
-#if 0 // removed
-  /// @todo replace disp_coord_est by disp_res
-  /// re-projected disparity coordinate of the point from global estimation,
-  /// initially set the same as disp_coord_
-  CvPoint3D64f  disp_coord_est_;
-#endif
+
   /// residue between observation and estimation (re-projected disparity coordinates)
+  /// Filled in by sba for analytical purpose.
   CvPoint3D64f  disp_res_;
+
+  /// the index of this point in the keypoint list of the frame.
+  /// An optional convenient field for track management. Not used by sba.
+  int           keypoint_index_;
+
+private:
+  /// a private type to distinguish the roles of frames in bundle adjustment.
+  typedef enum {
+    FREE_FRAME    = 0,
+    FIXED_FRAME   = 1,
+    IGNORED_FRAME = 2
+  } FrameType;
+
   /// The dot product between the point and the rows of the matrix global_to_disp
   double        T_p_[4];
-  /// the index of this point in the keypoint list of the frame
-  int           keypoint_index_;
 
   /// "local" index of the frame in each the free window or the fixed window.
   int           local_frame_index_;
+  /// the role of this frame in bundle adjustment.
+  FrameType     frame_type_;
   /// Hessian between point parameter vector p and camera parameter vector c
   /// usually approximated as /f$ J_p^T J_c /f$
   double        Hpc_[3*6];
   CvMat         mat_Hpc_;
   double        Tcp_[6*3];
   CvMat         mat_Tcp_;
+  friend class LevMarqSparseBundleAdj;
+  friend class PointTrack;
 };
 /// A sequence of observations of a 3D feature over a sequence of
 /// video images.
@@ -130,7 +137,25 @@ public:
   /// that are older than oldestFrameIndex
   void purge(int oldestFrameIndex);
   void print() const;
+  /// \brief Save the tracks in disk files.
+  /// Save the tracks as individual opencv xml files in the
+  /// specified directory.
   void save(string& dir) const;
+  /// \brief Save the tracks in one file (non xml).
+  /// Save all the tracks in on file, one line for each track in the following
+  /// format:
+  ///
+  ///  X Y Z  nframes  frame0 u0 v0 [d0] frame1 u1 v1 [d1]...
+  ///
+  /// where [X, Y, Z] is the Cartesian coordinate of the point,
+  /// [u, v, d] is the disparity coordinates of the point in a frame.
+  /// if left_image_only is true, disparity d is omitted.
+  ///
+  /// The monocular case of this format is the same as that is used by
+  /// the demo program of the Greek sba.
+  ///    http://www.ics.forth.gr/~lourakis/sba/
+  ///
+  void saveInOneFile(string& filename, bool left_image_only) const;
   static PointTracks* load(string& dir, int start, int end);
   /// collection stats of the tracks
   void stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,

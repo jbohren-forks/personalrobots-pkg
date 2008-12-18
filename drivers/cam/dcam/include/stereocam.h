@@ -63,33 +63,6 @@ namespace cam
     StcamException(const char* msg) : std::runtime_error(msg) {}
   };
 
-  // this is now legacy, folded in to StereoData...
-
-  class StereoCam
-  {
-  public:
-    StereoCam();
-    virtual ~StereoCam();
-
-    StereoData *stIm;		// holds all the image data and parameters
-    void setDistortion(stereo_side_t which, double *dparams); // 5x1 distortion vector, k1,k2,t1,t2,k3
-    void setCameraMatrix(stereo_side_t which, double *cparams); // 3x3 camera matrix, row major
-    void setRectMatrix(stereo_side_t which, double *rparams); // 3x3 rectification matrix, row major
-    void setProjMatrix(double *pparams); // 3x4 projection matrix, row major
-
-    virtual bool doRectify();	// rectify images
-    virtual bool doDisparity();	// calculate disparity image
-    virtual bool doCalcPts();	// calculate 3D points
-
-    virtual bool setTextureThresh(int thresh);
-    virtual bool setUniqueThresh(int thresh);
-    virtual bool setHoropter(int offset);	// set horopter offset
-
-  private:
-    // buffers for stereo
-    uint8_t *buf, *flim, *frim;
-  };
-
 
   using namespace dcam;
 
@@ -121,6 +94,7 @@ namespace cam
     // processing parameters
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
+    bool setSmoothnessThresh(int thresh);
     bool setHoropter(int thresh);
     bool setSpeckleSize(int size);
     bool setSpeckleDiff(int diff);
@@ -128,10 +102,11 @@ namespace cam
     bool setNumDisp(int ndisp);
     bool setRangeMax(double thresh);
     bool setRangeMin(double thresh);
+    bool setUniqueCheck(bool unique_check);
 
     // visible calls to StereoData functions
     bool doRectify();
-    bool doDisparity();
+    bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM);
     bool doCalcPts();
 
   protected:

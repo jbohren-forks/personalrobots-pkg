@@ -45,7 +45,7 @@ Initargs
 (defun interval-length (i)
   (my- (right-bound i) (left-bound i)))
 
-(defmethod intersect ((s <interval>) (s2 <interval>))
+(defmethod binary-intersection ((s <interval>) (s2 <interval>))
   (let ((a (left-bound s))
 	(a2 (left-bound s2))
 	(b (right-bound s))

@@ -394,9 +394,19 @@ PyObject *extend(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *set3d(PyObject *self, PyObject *args)
+{
+  PointTrack *pt = ((point_track_t*)self)->pt;
+  CvPoint3D64f p0;
+  if (!PyArg_ParseTuple(args, "ddd", &p0.x, &p0.y, &p0.z)) return NULL;
+  cvCopy(&p0, &pt->coordinates_);
+  Py_RETURN_NONE;
+}
+
 /* Method table */
 static PyMethodDef point_track_methods[] = {
   { "extend", extend, METH_VARARGS },
+  { "set3d", set3d, METH_VARARGS },
   { NULL, NULL },
 };
 

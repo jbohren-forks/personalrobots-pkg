@@ -8,7 +8,7 @@
   </description>
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
-  <review status="API conditionally cleared" notes="Tully to code review"/>
+  <review status="API cleared" notes="Tully to code review"/>
   <export>
     <cpp cflags="-I${prefix}" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lhokuyo"/>
   </export>

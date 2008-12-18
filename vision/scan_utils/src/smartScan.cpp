@@ -1090,6 +1090,57 @@ void SmartScan::removePlane(const std_msgs::Point32 &planePoint,
 	delete [] newPoints;
 }
 
+
+/*!  Removes all points that are closer than \a thresh to the plane
+  defined by \a planePoint and \a planeNormal. Applies two different thresholds, \a thresh for points that are closer than a \a far_remove_threshold_distance_ to the \a origin and \a far_remove_threshold_ for points that are farther than away. 
+ */
+void SmartScan::removePlane(const std_msgs::Point32 &planePoint, 
+			    const std_msgs::Point32 &planeNormal, float thresh, const std_msgs::PointStamped &origin, float far_remove_distance_threshold, float far_remove_distance)
+{
+	//remove points that are close to plane
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints];
+	std_msgs::Point32 dif, p;
+        std_msgs::Point32 od;
+	int numNewPoints = 0;
+	float dist, dist_origin;
+	for(int i=0; i<mNumPoints; i++) {
+		p = getPoint(i);
+		dif.x = p.x - planePoint.x;
+		dif.y = p.y - planePoint.y;
+		dif.z = p.z - planePoint.z;
+
+		od.x = p.x - origin.point.x;
+		od.y = p.y - origin.point.y;
+		od.z = p.z - origin.point.z;
+		dist = dot(dif,planeNormal);
+
+                dist_origin = sqrt(od.x*od.x + od.y*od.y + od.z*od.z);
+
+                if(dist_origin <= far_remove_distance)
+                {
+                  if ( fabs(dist) < thresh ) 
+                  {
+                    continue;
+                  }
+                }
+                else
+                {
+                  if ( fabs(dist) <= far_remove_distance_threshold ) 
+                  {
+                    continue;
+                  }
+                }
+		//keep this point
+		newPoints[numNewPoints] = getPoint(i);
+		numNewPoints++;
+	}
+
+	fprintf(stderr,"Kept %d out of %d points\n",numNewPoints,mNumPoints);
+	setPoints(numNewPoints,newPoints);
+	delete [] newPoints;
+}
+
+
 /*!  Returns all the points in this cloud that are within \a radius of
   the 3D point at( \a x \a y \a z ). Result is returned as a \a
   std::vector<Point32>* - it is the responsability of the

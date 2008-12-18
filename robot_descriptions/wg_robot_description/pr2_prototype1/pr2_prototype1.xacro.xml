@@ -7,7 +7,7 @@
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
 
   <pr2_base name="base" >
-    <origin xyz="0 0 0.0408" rpy="0 0 0" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" />
   </pr2_base>
 
   <pr2_torso name="torso_lift" parent="base">

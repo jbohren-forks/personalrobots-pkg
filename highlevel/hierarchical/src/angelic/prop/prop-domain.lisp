@@ -258,6 +258,16 @@ Note that this class is a descendant of <env>, so all operations that can be don
 
 (set-pprint-dispatch 'prop-domain-state #'pprint-prop-domain-state)
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; csp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun make-and-solve-csp (dom conjuncts var-domains s)
+  "DOM is of type <prop-domain>.  CONJUNCTS is a list of propositions with free variables.  VAR-DOMAINS is an association from those free variables to sets (or to symbols, which are taken to name types in DOM.  In addition, each proposition has a set of allowed values in each slot, determined by DOM.  S is an optimistic (complete) set.  This determines a csp to find the assignments to the variables that make the conjuncts true.  This function returns the list of solutions, each of which is a list of variable values."
+  (let ((actual-domains (mapcar #'(lambda (pair) (cons (car pair) (let ((vals (cdr pair))) (if (symbolp vals) (lookup-type dom vals) vals)))) var-domains)))
+    (solve-csp-complete (make-csp actual-domains conjuncts (prop-domains dom) (functional-deps dom)) s)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; internal
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -281,14 +291,14 @@ Note that this class is a descendant of <env>, so all operations that can be don
 (defmethod formula ((s <prop-state-set>))
   (formula (base-set s)))
 
-(defmethod intersect ((s <prop-state-set>) (s2 <prop-state-set>))
+(defmethod binary-intersection ((s <prop-state-set>) (s2 <prop-state-set>))
   (let ((d (pss-domain s))
 	(d2 (pss-domain s2)))
     (assert (eq d d2) nil
       "Can't intersect prop-state-sets with different domains ~a and ~a"
       d d2)
     (make-instance '<prop-state-set>
-      :s (intersect (base-set s) (base-set s2))
+      :s (binary-intersection (base-set s) (base-set s2))
       :f #'(lambda (x) (make-prop-domain-state :domain d :props x))
       :f-inv #'pds-props
       :domain d)))

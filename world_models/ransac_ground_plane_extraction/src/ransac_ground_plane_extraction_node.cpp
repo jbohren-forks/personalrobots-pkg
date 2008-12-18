@@ -36,8 +36,11 @@
 
 using namespace ransac_ground_plane_extraction;
 
-RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL)
+RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false),
+           tf_(*this, true, 10000000000ULL) // cache for 10 sec, no extrapolation
 {
+  std::string publish_obstacle_cloud;
+
   this->param<std::string>("ransac_ground_plane_extraction/listen_topic",listen_topic_,"full_cloud");
   this->param<std::string>("ransac_ground_plane_extraction/publish_ground_plane_topic",publish_ground_plane_topic_,"ground_plane");
   this->param<std::string>("ransac_ground_plane_extraction/publish_obstacle_topic",publish_obstacle_topic_,"obstacle_cloud");
@@ -46,20 +49,31 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
   this->param<double>("ransac_ground_plane_extraction/max_ignore_distance",max_ignore_distance_,0.01);
   this->param<double>("ransac_ground_plane_extraction/distance_threshold",distance_threshold_,0.03);
 
+  this->param<double>("ransac_ground_plane_extraction/far_remove_distance_threshold",far_remove_distance_threshold_,0.05);
+  this->param<double>("ransac_ground_plane_extraction/far_remove_distance",far_remove_distance_,6.0);
+
   this->param<double>("ransac_ground_plane_extraction/filter_delta",filter_delta_,0.5);
   this->param<int>("ransac_ground_plane_extraction/max_ransac_iterations",max_ransac_iterations_,500);
+  this->param<std::string>("ransac_ground_plane_extraction/publish_obstacle_cloud",publish_obstacle_cloud,"no");
+
+  if(publish_obstacle_cloud == std::string("yes"))
+    publish_obstacle_cloud_ = true;
 
   subscribe(listen_topic_,  cloud_msg_,  &RansacGroundPlaneExtractionNode::cloudCallback,1);
-  advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
-//  advertise<std_msgs::>(publish_topic_, plane_msg_);
+  if(publish_obstacle_cloud_)
+    advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
 
+  advertise<pr2_msgs::PlaneStamped>(publish_ground_plane_topic_, 1);
   ground_plane_extractor_.max_iterations_ = max_ransac_iterations_;
   ground_plane_extractor_.filter_delta_ = filter_delta_;
 }
 
 RansacGroundPlaneExtractionNode::~RansacGroundPlaneExtractionNode()
 {
-  unadvertise(publish_obstacle_topic_);
+  if(publish_obstacle_cloud_)
+    unadvertise(publish_obstacle_topic_);
+
+  unadvertise(publish_ground_plane_topic_);
   unsubscribe(listen_topic_);
 }
 
@@ -73,13 +87,61 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
   std_msgs::Point32 estimated_plane_point;
   std_msgs::Point32 estimated_plane_normal;
 
+  pr2_msgs::PlaneStamped ground_plane_msg;
+
+  std_msgs::PointStamped sensor_origin, transformed_sensor_origin;
+
+  sensor_origin.header.stamp = cloud_msg_.header.stamp;
+  sensor_origin.header.frame_id = "base_link";
+  sensor_origin.point.x = 0.0;
+  sensor_origin.point.y = 0.0;
+  sensor_origin.point.z = 0.0;
+
+  try{
+    tf_.transformPoint(cloud_msg_.header.frame_id, sensor_origin, transformed_sensor_origin);
+  }
+  catch(tf::LookupException& ex) {
+    ROS_INFO("No Transform available Error\n");
+    return;
+  }
+  catch(tf::ConnectivityException& ex) {
+    ROS_INFO("Connectivity Error\n");
+    return;
+  }
+  catch(tf::ExtrapolationException& ex) {
+    ROS_INFO("Extrapolation Error\n");
+    return;
+  }
+  catch(tf::TransformException e) {
+    return;
+  }
+
   if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
   {
     ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
-    obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal);
-    obstacle_cloud_->header = cloud_msg_.header;
-//  publish(publish_ground_plane_topic_,ground_plane_msg_);
-    publish(publish_obstacle_topic_,*obstacle_cloud_);
+    if(publish_obstacle_cloud_)
+    {
+     
+      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, transformed_sensor_origin, far_remove_distance_threshold_, far_remove_distance_);
+
+      if(obstacle_cloud_ != NULL){
+        obstacle_cloud_->header = cloud_msg_.header;
+        publish(publish_obstacle_topic_,*obstacle_cloud_);
+        delete obstacle_cloud_;
+      }
+    }
+
+    ground_plane_msg.header = cloud_msg_.header;
+
+    ground_plane_msg.point.x = estimated_plane_point.x;
+    ground_plane_msg.point.y = estimated_plane_point.y;
+    ground_plane_msg.point.z = estimated_plane_point.z;
+
+    ground_plane_msg.normal.x = estimated_plane_normal.x;
+    ground_plane_msg.normal.y = estimated_plane_normal.y;
+    ground_plane_msg.normal.z = estimated_plane_normal.z;
+
+    publish(publish_ground_plane_topic_,ground_plane_msg);
   }
 }
 

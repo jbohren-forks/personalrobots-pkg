@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!-- a list of transformation parameters, frame index, euler angels and translation vectors.
+ one set each row.
+ all coordinates are in double
+ This file contains non monotonic frame index.
+-->
+<opencv_storage>
+<A type_id="opencv-matrix">
+  <rows>10</rows>
+  <cols>7</cols>
+  <dt>d</dt>
+  <data>
+    999  0.       0.    0.   0.  0.   0.
+    11   0.        .11  1.  20.  1.  10.
+    23   0.       1.26  0.   0. 10. 200.
+    3    0.        .15  0.  10.  1. 100.
+    40   0.        .16  0.  20.  1. 100.
+    55   0.11     1.    0. 100.  0.   0.
+    6    1.26     0.    0. 100. 10.   0.
+    77    .15     0.    0. 100.  0.  10.
+    800  0.2600   1.    0. 100. 20.   0.
+    9    1.2000   0.    1. 100.  0.  30.
+  </data>
+</A>
+</opencv_storage>

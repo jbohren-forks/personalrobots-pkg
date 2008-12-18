@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,7 +44,10 @@
 using namespace std_msgs ;
 
 /***
- * This uses the point_cloud_assembler's build_cloud service call to grab all the laser scans between two tilt-laser shutters
+ * This uses the point_cloud_assembler's build_cloud service call to grab all the scans/clouds between two tilt-laser shutters
+ * params
+ *  * "~fixed_frame" (string) - This is the frame that the scanned data is assumed to be stationary in.  The
+ *                                  output clouds are also published in this frame.
  */
 
 namespace point_cloud_assembler
@@ -52,35 +55,34 @@ namespace point_cloud_assembler
 
 class PointCloudSnapshotter : public ros::node
 {
-  
+
 public:
 
   pr2_mechanism_controllers::LaserScannerSignal prev_signal_;
   pr2_mechanism_controllers::LaserScannerSignal cur_signal_;
-    
+
   bool first_time_ ;
-  
+
   std::string fixed_frame_ ;
-  
+
   PointCloudSnapshotter() : ros::node("point_cloud_snapshotter")
   {
     prev_signal_.header.stamp.fromNSec(0) ;
-    
+
     advertise<PointCloud> ("full_cloud", 1) ;
     subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
 
-    std::string default_fixed_frame = "torso" ;
+    param("~fixed_frame", fixed_frame_, std::string("NO_FRAME_DEFINED")) ;
 
-    param("~fixed_frame", fixed_frame_, std::string("torso")) ;
-    
     first_time_ = true ;
   }
-  
+
   ~PointCloudSnapshotter()
   {
+    unsubscribe("laser_scanner_signal") ;
     unadvertise("full_cloud") ;
   }
-  
+
   void scannerSignalCallback()
   {
     if (first_time_)
@@ -92,18 +94,18 @@ public:
     {
       BuildCloud::request req ;
       BuildCloud::response resp ;
-      
+
       req.begin = prev_signal_.header.stamp ;
       req.end   = cur_signal_.header.stamp ;
       req.target_frame_id = fixed_frame_ ;
-      
-      printf("PointCloudSnapshotter::Making Service Call...\n") ;
+
+      //printf("PointCloudSnapshotter::Making Service Call...\n") ;
       ros::service::call("build_cloud", req, resp) ;
-      printf("PointCloudSnapshotter::Done with service call\n") ;
-      
+      //printf("PointCloudSnapshotter::Done with service call\n") ;
+
       publish("full_cloud", resp.cloud) ;
-      printf("PointCloudSnapshotter::Published Cloud size=%u\n", resp.cloud.get_pts_size()) ;
-      
+      ROS_INFO("Snapshotter::Published Cloud size=%u", resp.cloud.get_pts_size()) ;
+
       prev_signal_ = cur_signal_ ;
     }
   }

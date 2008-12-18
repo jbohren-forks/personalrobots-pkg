@@ -43,7 +43,7 @@ DNF sets support many of the standard set operations.  One thing to note is that
      (each item  #'(lambda (x) (member? x props)))
      (holds item (formula s)))))
 
-(defmethod intersect ((s <dnf-set>) (s2 <dnf-set>))
+(defmethod binary-intersection ((s <dnf-set>) (s2 <dnf-set>))
   (let ((p (props s))
 	(p2 (props s2)))
     (when *strict*

@@ -137,19 +137,19 @@
 ;   (nconc s s2))
 
 
-(defmethod intersect ((s1 cons) s2)
+(defmethod binary-intersection ((s1 cons) s2)
   (if (nonlist s1)
       (dsbind (test &rest v) s1
 	(cons test (filter ':vector v (membership-predicate s2))))
     (filter ':list s1 (membership-predicate s2))))
 
-(defmethod intersect ((s1 vector) s2)
+(defmethod binary-intersection ((s1 vector) s2)
   (filter ':vector s1 (membership-predicate s2)))
 
-(defmethod intersect (s1 (s2 cons))
+(defmethod binary-intersection (s1 (s2 cons))
   (intersect s2 s1))
 
-(defmethod intersect (s1 (s2 vector))
+(defmethod binary-intersection (s1 (s2 vector))
   (intersect s2 s1))
 
 (defmethod equality-test ((s cons))

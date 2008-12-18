@@ -15,6 +15,7 @@
 
   
   <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/gripper_defs.xml" />
 
   <joint name="base_joint" type="planar" />
   <link name="torso_lift">

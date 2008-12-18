@@ -271,10 +271,10 @@ Initargs
   (apply #'disjoint-union 
 	 (mapset 'list #'(lambda (comp) (intersect comp s)) (sets ds))))
 
-(defmethod intersect ((ds <disjoint-union>) s)
+(defmethod binary-intersection ((ds <disjoint-union>) s)
   (intersect-ds ds s))
 
-(defmethod intersect (s (ds <disjoint-union>))
+(defmethod binary-intersection (s (ds <disjoint-union>))
   (intersect-ds ds s))
 
 (defmethod print-object ((s <disjoint-union>) str)
@@ -297,6 +297,9 @@ Initargs
 
 Initargs
 :sets - set of <set> objects"))
+
+(defun implicit-intersection (&rest sets)
+  (make-instance '<implicit-intersection> :sets sets))
 
 (defmethod member? (x (s <implicit-intersection>))
   (each (sets s) #'(lambda (comp) (member? x comp))))

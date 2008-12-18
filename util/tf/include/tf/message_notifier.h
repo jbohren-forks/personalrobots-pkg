@@ -41,8 +41,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-/// \todo remove backward compatability
-#include "tf/TransformArray.h"
 
 namespace tf
 {
@@ -129,8 +127,6 @@ public:
 
     node_->subscribe("/tf_message", transforms_message_,
         &MessageNotifier::incomingTFMessage, this, 1);
-    node_->subscribe("/TransformArray", old_transforms_message_,
-        &MessageNotifier::incomingOldTFMessage, this, 1);
 
     thread_handle_ = new boost::thread(boost::bind(
         &MessageNotifier::workerThread, this));
@@ -144,8 +140,6 @@ public:
     unsubscribeFromMessage();
 
     node_->unsubscribe("/tf_message", &MessageNotifier::incomingTFMessage, this);
-    node_->unsubscribe("/TransformArray",
-        &MessageNotifier::incomingOldTFMessage, this);
 
     // Tell the worker thread that we're destructing
     destructing_ = true;
@@ -412,17 +406,6 @@ private:
     ++transform_message_count_;
   }
 
-  /**
-   * \brief Callback that happens when we receive a message on the old TF TransformArray message topic
-   */
-  void incomingOldTFMessage()
-  {
-    ////printf("incoming transforms\n");
-    // Notify the worker thread that there is new data available
-    new_data_.notify_all();
-    new_transforms_ = true;
-    ++transform_message_count_;
-  }
 
   Transformer* tf_; ///< The Transformer used to determine if transformation data is available
   ros::node* node_; ///< The node used to subscribe to the topic
@@ -438,7 +421,6 @@ private:
   Message message_; ///< The incoming message
 
   tfMessage transforms_message_; ///< The incoming TF transforms message
-  tf::TransformArray old_transforms_message_; ///< The incoming old TF (rosTF) TransformArray message
 
   bool destructing_; ///< Used to notify the worker thread that it needs to shutdown
   boost::thread* thread_handle_; ///< Thread handle for the worker thread

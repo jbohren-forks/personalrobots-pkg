@@ -139,12 +139,15 @@ ImageData::releaseBuffers()
 // rectification
 
 bool
-ImageData::initRectify()
+ImageData::initRectify(bool force)
 {
+  if (force)
+    hasRectification = true;
+
   if (!hasRectification || imWidth == 0 || imHeight == 0)
     return false;
 
-  if (initRect)
+  if (initRect && !force)
     return true;		// already done
 
   // set values of cal matrices
@@ -276,10 +279,12 @@ StereoData::StereoData()
 
   textureThresh = 10;
   uniqueThresh = 12;
+  smoothThresh = 30;
   speckleDiff = 8;
   speckleRegionSize = 100;
   rangeMax = 0.0;
   rangeMin = 0.0;
+  unique_check = 0;
 
   hasRectification = false;
 
@@ -331,6 +336,16 @@ StereoData::setUniqueThresh(int val)
 }
 
 bool
+StereoData::setSmoothnessThresh(int val)
+{
+  if (val < 0) val = 0;
+  if (val > 100) val = 10;
+  smoothThresh = val;
+  return true;
+}
+
+
+bool
 StereoData::setNumDisp(int val)
 {
   val = (val/16)*16;		// set to multiple of 16
@@ -359,6 +374,12 @@ StereoData::setRangeMin(double val)
   return true;
 }
 
+bool
+StereoData::setUniqueCheck(bool val)
+{
+  unique_check = !unique_check;
+  return true;
+}
 
 void
 StereoData::setDispOffsets()
@@ -426,7 +447,7 @@ StereoData::doRectify()
 //
 
 bool 
-StereoData::doDisparity()
+StereoData::doDisparity(stereo_algorithm_t alg)
 {
   uint8_t *lim, *rim;
 
@@ -454,8 +475,12 @@ StereoData::doDisparity()
   int corr   = corrSize;	// correlation window size
   int tthresh = textureThresh; // texture threshold
   int uthresh = uniqueThresh; // uniqueness threshold, percent
+  int sthresh = smoothThresh;
+  bool unique_c = unique_check;
 
-  // allocate buffers
+ // printf("Unique check: %d\r", unique_check);	
+
+ // allocate buffers
   // TODO: make these consistent with current values
   if (!imDisp)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
@@ -467,14 +492,46 @@ StereoData::doDisparity()
   if (!frim)
     frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
 
-  // prefilter
+ // prefilter
   do_prefilter(lim, flim, xim, yim, ftzero, buf);
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
-  // stereo
-  do_stereo(flim, frim, imDisp, NULL, xim, yim, 
+switch(alg){
+	case NORMAL_ALGORITHM:  
+//if(alg == NORMAL_ALGORITHM){
+	//printf("Normal Algorithm\n");
+	  // stereo
+  	do_stereo(flim, frim, imDisp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+	break;
+	
+	case SCANLINE_ALGORITHM:
+//  if(alg == SCANLINE_ALGORITHM){
+	//printf("Scanline Algorithm\n");
+	do_stereo_so(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
+	break;
+	
+	case DP_ALGORITHM:
+ // if(alg == DP_ALGORITHM){
+	//printf("DP Algorithm\n");
+	do_stereo_dp(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
+	break;
 
+	case MW_ALGORITHM:
+	//  if(alg == MW_ALGORITHM){
+	//printf("MW Algorithm\n");
+	do_stereo_mw(flim, frim, imDisp, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
+	break;
+
+	default:
+	printf("No algorithm has been selected..sorry!\n");
+}
+
+
+ 
   hasDisparity = true;
 
   // speckle filter
@@ -990,6 +1047,18 @@ PrintMatStr(double *mat, int n, int m, char *str)
   return c;
 }
 
+static void
+PrintMat(double *mat, int n, int m)
+{
+  for (int i=0; i<n; i++)
+    {
+      for (int j=0; j<m; j++)
+	printf("%8.5f ", mat[i*m+j]);
+      printf("\n");
+    }
+}
+
+
 static int
 PrintStr(int val, char *str)
 {
@@ -1019,7 +1088,7 @@ StereoData::createParams()
   n += PrintStr(filterSize,&str[n]);
 
   // externals
-  n += sprintf(&str[n],"\n[externals]\n");
+  n += sprintf(&str[n],"\n\n[externals]\n");
 
   n += sprintf(&str[n],"\ntranslation\n");
   n += PrintMatStr(T,1,3,&str[n]);

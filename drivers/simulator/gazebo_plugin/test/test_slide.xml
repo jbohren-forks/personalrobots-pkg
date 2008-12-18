@@ -12,7 +12,7 @@
     <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
 
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 8 110 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 8 90 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />

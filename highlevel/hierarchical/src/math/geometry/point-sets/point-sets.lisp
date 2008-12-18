@@ -282,7 +282,7 @@ Initargs
 (defmethod is-empty ((s <line-segment>))
   nil)
 
-(defmethod intersect ((s1 <line-segment>) (s2 <line-segment>))
+(defmethod binary-intersection ((s1 <line-segment>) (s2 <line-segment>))
   (let ((a1 (a s1))
 	(a2 (a s2))
 	(v1 (v s1))
@@ -307,12 +307,12 @@ Initargs
 		    (setf t1 (/ (- a21 a11) v11)
 			  t2 (/ (- (sfirst (b s2)) a11) v11))
 		    (unless (< (abs-diff (+ a12 (* t1 v12)) a22) 1e-8)
-		      (return-from intersect nil)))
+		      (return-from binary-intersection nil)))
 		   (t
 		    (setf t1 (/ (- a22 a12) v12)
 			  t2 (/ (- (ssecond (b s2)) a12) v12))
 		    (unless (< (abs-diff (+ a11 (* t1 v11)) a21) 1e-8)
-		      (return-from intersect nil))))
+		      (return-from binary-intersection nil))))
 		  
 		  (when (> t1 t2) (rotatef t1 t2))
 		  (unless (or (< t2 -1e-8) (> t1 (1+ 1e-8)))

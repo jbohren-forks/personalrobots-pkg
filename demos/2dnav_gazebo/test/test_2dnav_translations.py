@@ -56,19 +56,14 @@ from rostools.msg import *
 from transformations import *
 from numpy import *
 
-TARGET_DURATION = 2.0
-TARGET_TOL      = 1.0
-TEST_TIMEOUT    = 1200.0
+NAV_TOL      = 1.0
+ODOM_TOL     = 1.0    #allowable odometry drift from ground truth
+TEST_TIMEOUT = 120.0
 
 # goal position
-TARGET_X = 100.0
+TARGET_X =  10.0
 TARGET_Y =  10.0
 TARGET_T =  0.0
-
-# starting position
-#TARGET_X = 20.0
-#TARGET_Y = 10.0
-
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
@@ -178,7 +173,7 @@ class NavStackTest(unittest.TestCase):
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
             pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(TARGET_X,TARGET_Y,TARGET_T),1))
-            time.sleep(1.0)
+            time.sleep(2.0)
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
             print "========================"
@@ -212,9 +207,9 @@ class NavStackTest(unittest.TestCase):
             nav_error  =  abs(self.p3d_x - TARGET_X) \
                         + abs(self.p3d_y - TARGET_Y) \
                         + abs(current_yaw -  TARGET_T)
-            print "nav error:" + str(nav_error) + " tol:" + str(TARGET_TOL) + " odom error:" + str(odom_error)
+            print "nav error:" + str(nav_error) + " nav_tol:" + str(NAV_TOL) + " odom error:" + str(odom_error) + " odom_tol: " + str(ODOM_TOL)
 
-            if nav_error < TARGET_TOL and self.bumped == False:
+            if nav_error < NAV_TOL and self.bumped == False and odom_error < ODOM_TOL:
                 self.success = True
 
         self.assert_(self.success)

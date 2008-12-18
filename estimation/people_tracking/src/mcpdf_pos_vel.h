@@ -37,6 +37,7 @@
 #include <pdf/mcpdf.h>
 #include "state_pos_vel.h"
 #include <tf/tf.h>
+#include <std_msgs/PointCloud.h>
 
 namespace BFL
 {
@@ -50,21 +51,26 @@ namespace BFL
       /// Destructor
       virtual ~MCPdfPosVel();
 
+      /// Get evenly distributed particle cloud
+      void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
+
       /// Get pos histogram from certain area
       MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
       /// Get vel histogram from certain area
       MatrixWrapper::Matrix getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
+      virtual StatePosVel ExpectedValueGet() const;
       virtual WeightedSample<StatePosVel> SampleGet(unsigned int particle) const;
       virtual unsigned int numParticlesGet() const;
-      virtual MCPdfPosVel* PostGet() {return (MCPdfPosVel*)PostGet();};
 
     private:
       /// Get histogram from certain area
       MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step, bool pos_hist) const;
 
     };
+
+
 
 } // end namespace
 #endif

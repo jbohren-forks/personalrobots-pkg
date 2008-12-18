@@ -495,6 +495,7 @@ void LaserScannerControllerNode::update()
   {
     if (publisher_->trylock())
     {
+      publisher_->msg_.header.stamp = ros::Time((uint64_t) (c_->getTime()*1000000000)) ;
       publisher_->msg_.signal = m_scanner_signal_.signal ;
       publisher_->unlockAndPublish() ;
       need_to_send_msg_ = false ;
@@ -547,6 +548,7 @@ bool LaserScannerControllerNode::setProfileCall(
 
 bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+
   service_prefix_ = config->Attribute("name");
 
   if (!c_->initXml(robot, config))

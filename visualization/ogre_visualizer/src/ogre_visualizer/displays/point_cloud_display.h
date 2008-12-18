@@ -30,13 +30,18 @@
 #ifndef OGRE_VISUALIZER_POINT_CLOUD_DISPLAY_H
 #define OGRE_VISUALIZER_POINT_CLOUD_DISPLAY_H
 
-#include "display.h"
+#include "point_cloud_base.h"
 #include "helpers/color.h"
 #include "ogre_tools/point_cloud.h"
 
 #include "std_msgs/PointCloud.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+
+#include <deque>
+#include <queue>
+#include <vector>
 
 namespace ros
 {
@@ -51,12 +56,7 @@ template<class Message> class MessageNotifier;
 namespace ogre_vis
 {
 
-class IntProperty;
-class FloatProperty;
-class StringProperty;
 class ROSTopicStringProperty;
-class ColorProperty;
-class EnumProperty;
 
 /**
  * \class PointCloudDisplay
@@ -66,56 +66,22 @@ class EnumProperty;
  * If you set the channel's name to "rgb", it will interpret the channel as an integer rgb value, with r, g and b
  * all being 8 bits.
  */
-class PointCloudDisplay : public Display
+class PointCloudDisplay : public PointCloudBase
 {
 public:
-  /**
-   * \enum Style
-   * \brief The different styles of pointcloud drawing
-   */
-  enum Style
-  {
-    Points,    ///< Points -- points are drawn as a fixed size in 2d space, ie. always 1 pixel on screen
-    Billboards,///< Billboards -- points are drawn as camera-facing quads in 3d space
-
-    StyleCount,
-  };
-
   PointCloudDisplay( const std::string& name, VisualizationManager* manager );
   ~PointCloudDisplay();
+
+  // Overrides from Display
+  virtual void createProperties();
+  virtual void targetFrameChanged();
 
   /**
    * Set the incoming PointCloud topic
    * @param topic The topic we should listen to
    */
   void setTopic( const std::string& topic );
-  /**
-   * Set the primary color of this point cloud.  This color is used verbatim for the highest intensity points, and interpolates
-   * down to black for the lowest intensity points
-   */
-  void setColor( const Color& color );
-  /**
-   * \brief Set the rendering style
-   * @param style The rendering style
-   */
-  void setStyle( int style );
-  /**
-   * \brief Sets the size each point will be when drawn in 3D as a billboard
-   * @note Only applicable if the style is set to Billboards (default)
-   * @param size The size
-   */
-  void setBillboardSize( float size );
-
   const std::string& getTopic() { return topic_; }
-  float getBillboardSize() { return billboard_size_; }
-  const Color& getColor() { return color_; }
-  int getStyle() { return style_; }
-
-  // Overrides from Display
-  virtual void targetFrameChanged();
-  virtual void fixedFrameChanged();
-  virtual void createProperties();
-  virtual void reset();
 
   static const char* getTypeStatic() { return "Point Cloud"; }
   virtual const char* getType() { return getTypeStatic(); }
@@ -139,27 +105,10 @@ protected:
    */
   void incomingCloudCallback(const boost::shared_ptr<std_msgs::PointCloud>& cloud);
 
-  /**
-   * \brief Transforms the cloud into the correct frame, and sets up our renderable cloud
-   */
-  void transformCloud(const boost::shared_ptr<std_msgs::PointCloud>& cloud);
-
-
-
-  ogre_tools::PointCloud* cloud_;             ///< Handles actually drawing the point cloud
-  Ogre::SceneNode* scene_node_;
-
   std::string topic_;                         ///< The PointCloud topic set by setTopic()
 
-  Color color_;
-
-  int style_;                                 ///< Our rendering style
-  float billboard_size_;                      ///< Size to draw our billboards
 
   ROSTopicStringProperty* topic_property_;
-  FloatProperty* billboard_size_property_;
-  ColorProperty* color_property_;
-  EnumProperty* style_property_;
 
   tf::MessageNotifier<std_msgs::PointCloud>* notifier_;
 };

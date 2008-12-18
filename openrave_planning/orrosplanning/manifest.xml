@@ -6,6 +6,7 @@
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="openrave"/>
+  <depend package="phase_space"/>
   <depend package="openrave_robot_description"/>
   <depend package="libKinematics"/>
   <depend package="boost"/>

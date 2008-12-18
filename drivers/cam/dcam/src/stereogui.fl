@@ -1,19 +1,19 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0108 
+version 1.0107 
 header_name {stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
 } {
   Function {stereogui()} {open
   } {
-    Fl_Window stereo_calibration {
-      label {Open STereo} open
-      xywh {554 140 655 305} type Single labelsize 11 hide
+    Fl_Window ost_main {
+      label {Open STereo}
+      xywh {451 255 655 305} type Single labelsize 11 visible
     } {
       Fl_Output info_message {
         xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
-      Fl_Menu_Bar {} {open
+      Fl_Menu_Bar {} {
         xywh {0 0 680 20}
       } {
         Submenu {} {
@@ -67,7 +67,7 @@ class stereogui {open
           xywh {20 20 30 20}
         }
       }
-      Fl_Group {} {open
+      Fl_Group {} {
         xywh {5 25 645 245}
       } {
         Fl_Group {} {open
@@ -942,38 +942,48 @@ class stereogui {open
     }
     Fl_Window stereo_window {
       label Stereo open
-      xywh {549 261 265 260} type Single visible
+      xywh {508 827 340 295} type Single visible
     } {
       Fl_Group {} {open
-        xywh {20 135 285 120}
+        xywh {15 155 285 120}
       } {
         Fl_Box {} {
           label label
-          xywh {20 135 140 110} box ENGRAVED_FRAME labeltype NO_LABEL
+          xywh {15 155 280 110} box ENGRAVED_FRAME labeltype NO_LABEL
         }
         Fl_Counter {} {
           label UniqueThresh
           callback unique_cb
-          xywh {90 140 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+          xywh {85 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
         Fl_Counter {} {
           label TextureThresh
           callback texture_cb
-          xywh {90 165 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+          xywh {85 185 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
         Fl_Counter {} {
           label SpeckleSize
           callback speckle_size_cb
-          xywh {90 190 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 400 step 10 value 100
+          xywh {85 210 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 400 step 10 value 100
         }
         Fl_Counter {} {
           label SpeckleDiff
-          callback speckle_diff_cb selected
-          xywh {90 215 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 20 step 1 value 8
+          callback speckle_diff_cb
+          xywh {85 235 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 20 step 1 value 8
+        }
+        Fl_Counter {} {
+          label Smoothness
+          callback smoothness_cb
+          xywh {230 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+        }
+        Fl_Light_Button unique_check_button {
+          label {Uniqueness check}
+          callback unique_check_cb selected
+          xywh {165 190 115 20} labelsize 11
         }
       }
       Fl_Group {} {open
-        xywh {20 30 285 170}
+        xywh {20 30 320 110}
       } {
         Fl_Box {} {
           xywh {20 30 120 85} box ENGRAVED_FRAME
@@ -1011,6 +1021,28 @@ class stereogui {open
           xywh {160 95 75 25} box THIN_UP_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
+        Fl_Choice {} {
+          label {Stereo Algorithm}
+          callback stereo_algorithm_cb open
+          xywh {245 70 90 20} down_box BORDER_BOX labelsize 11 align 5
+        } {
+          MenuItem {} {
+            label Normal
+            xywh {10 10 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label {Scanline Opt}
+            xywh {10 10 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label DP
+            xywh {20 20 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label {Multiple Windows}
+            xywh {20 20 30 20} labelsize 11
+          }
+        }
       }
     }
     Fl_Window video_window {
@@ -1026,7 +1058,7 @@ class stereogui {open
         }
         Fl_Choice {} {
           label Size
-          callback video_size_cb
+          callback video_size_cb open
           xywh {50 135 90 20} down_box BORDER_BOX labelsize 11
         } {
           MenuItem {} {
@@ -1061,7 +1093,7 @@ class stereogui {open
           }
         }
       }
-      Fl_Group {} {
+      Fl_Group {} {open
         xywh {20 25 295 170}
       } {
         Fl_Box {} {

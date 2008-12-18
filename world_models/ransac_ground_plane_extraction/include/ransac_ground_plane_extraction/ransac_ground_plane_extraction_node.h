@@ -35,7 +35,10 @@
 #include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
+#include <std_msgs/PointStamped.h>
+#include <pr2_msgs/PlaneStamped.h>
 #include <ros/node.h>
+#include <tf/transform_listener.h>
 
 
 namespace ransac_ground_plane_extraction {
@@ -60,6 +63,10 @@ namespace ransac_ground_plane_extraction {
 
   double distance_threshold_;
 
+  double far_remove_distance_threshold_;
+
+  double far_remove_distance_;
+
   double filter_delta_;
 
   int max_ransac_iterations_;
@@ -76,7 +83,11 @@ namespace ransac_ground_plane_extraction {
 
   std::string publish_obstacle_topic_;
 
+  bool publish_obstacle_cloud_;
+
   void cloudCallback();
+
+  tf::TransformListener tf_; /**< Used to do transforms */
 
   };
 }

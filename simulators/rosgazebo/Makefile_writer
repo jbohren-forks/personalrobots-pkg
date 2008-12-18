@@ -1,5 +1,0 @@
-SRC = rosgazebowriter.cc
-OUT = rosgazebowriter
-PKG = rosgazebo
-CFLAGS = -g -Wall
-include $(shell rospack find mk)/node.mk

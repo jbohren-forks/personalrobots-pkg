@@ -219,9 +219,36 @@ namespace costmap_2d {
 
     void enqueue(unsigned int source, unsigned int mx, unsigned int my);
 
-    double computeDistance(unsigned int a, unsigned int b) const;
 
-    unsigned char computeCost(double distance) const;
+    /**
+     * Euclidean distance
+     */
+    inline double computeDistance(unsigned int a, unsigned int b) const{
+      unsigned int mx_a, my_a, mx_b, my_b;
+      IND_MC(a, mx_a, my_a);
+      IND_MC(b, mx_b, my_b);
+      unsigned int dx = abs((int)(mx_a) - (int) mx_b);
+      unsigned int dy = abs((int)(my_a) - (int) my_b);
+
+      ROS_ASSERT((dx <= inflationRadius_) && (dy <= inflationRadius_));
+      double distance = cachedDistances[dx][dy];
+
+      return distance;
+    }
+
+    inline unsigned char computeCost(double distance) const{
+      unsigned char cost = 0;
+      if(distance == 0)
+	cost = LETHAL_OBSTACLE;
+      else if(distance <= inscribedRadius_)
+	cost = INSCRIBED_INFLATED_OBSTACLE;
+      else {
+	// The cost for a non-lethal obstacle should be in the range of [0, inscribed_inflated_obstacle - 1].
+	double factor = weight_ / (1 + pow(distance - inscribedRadius_, 2));
+	cost = (unsigned char) ( (INSCRIBED_INFLATED_OBSTACLE -1) * factor);
+      }
+      return cost;
+    }
 
     void updateCellCost(unsigned int ind, unsigned char cost);
 

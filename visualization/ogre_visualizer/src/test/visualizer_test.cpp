@@ -95,25 +95,25 @@ public:
 
     PointCloudDisplay* pointCloud = manager->createDisplay<PointCloudDisplay>( "Stereo Full Cloud", false );
     pointCloud->setTopic( "videre/cloud" );
-    pointCloud->setColor( Color( 1.0, 1.0, 1.0 ) );
+    pointCloud->setMaxColor( Color( 1.0, 1.0, 1.0 ) );
 
     pointCloud = manager->createDisplay<PointCloudDisplay>( "Head Full Cloud", false );
     pointCloud->setTopic( "full_cloud" );
-    pointCloud->setColor( Color( 1.0, 1.0, 0.0 ) );
+    pointCloud->setMaxColor( Color( 1.0, 1.0, 0.0 ) );
 
     pointCloud = manager->createDisplay<PointCloudDisplay>( "World 3D Map", false );
     pointCloud->setTopic( "world_3d_map" );
-    pointCloud->setColor( Color( 1.0f, 0.0f, 0.0f ) );
+    pointCloud->setMaxColor( Color( 1.0f, 0.0f, 0.0f ) );
     pointCloud->setBillboardSize( 0.01 );
 
     LaserScanDisplay* laserScan = manager->createDisplay<LaserScanDisplay>( "Head Scan", false );
-    laserScan->setScanTopic( "tilt_scan" );
-    laserScan->setColor( Color( 1.0, 0.0, 0.0 ) );
+    laserScan->setTopic( "tilt_scan" );
+    laserScan->setMaxColor( Color( 1.0, 0.0, 0.0 ) );
     laserScan->setDecayTime( 30.0f );
 
     laserScan = manager->createDisplay<LaserScanDisplay>( "Floor Scan", false );
-    laserScan->setScanTopic( "base_scan" );
-    laserScan->setColor( Color( 0.0f, 1.0f, 0.0f ) );
+    laserScan->setTopic( "base_scan" );
+    laserScan->setMaxColor( Color( 0.0f, 1.0f, 0.0f ) );
     laserScan->setDecayTime( 0.0f );
 
     manager->createDisplay<OctreeDisplay>( "Octree", false )->setOctreeTopic( "full_octree" );

@@ -2,11 +2,13 @@
 
 #include "std_msgs/PointCloud.h"
 
+#include <tf/transform_broadcaster.h>
+
 int main( int argc, char** argv )
 {
   ros::init( argc, argv );
 
-  ros::node* node = new ros::node( "RGBCloudTest", ros::node::DONT_HANDLE_SIGINT );
+  ros::node* node = new ros::node( "RGBCloudTest" );
 
   while ( !node->ok() )
   {
@@ -15,13 +17,47 @@ int main( int argc, char** argv )
 
   node->advertise<std_msgs::PointCloud>( "rgb_cloud_test", 0 );
   node->advertise<std_msgs::PointCloud>( "rgb_cloud_test2", 0 );
+  node->advertise<std_msgs::PointCloud>( "intensity_cloud_test", 0 );
+  node->advertise<std_msgs::PointCloud>( "million_points_cloud_test", 0 );
+
+  tf::TransformBroadcaster tf_broadcaster(*node);
 
   usleep( 1000000 );
 
-  while (1)
+  int i = 0;
+  while (node->ok())
   {
+    ros::Time tm(ros::Time::now());
+    tf::Transform t;
+    t.setIdentity();
+    tf_broadcaster.sendTransform(tf::Stamped<tf::Transform>(t, tm, "base", "map"));
+
     {
       std_msgs::PointCloud cloud;
+      cloud.header.stamp = tm;
+      cloud.header.frame_id = "map";
+
+      cloud.pts.resize(100000);
+      cloud.chan.resize(1);
+      cloud.chan[0].name = "intensities";
+      cloud.chan[0].vals.resize(100000);
+      for ( int j = 0; j < 100000; ++j )
+      {
+        cloud.pts[j].x = j;
+        cloud.pts[j].y = 3.0f;
+        cloud.pts[j].z = i % 10;
+
+        cloud.chan[0].vals[j] = 1000.0f;
+      }
+
+      node->publish( "million_points_cloud_test", cloud );
+    }
+
+    {
+      std_msgs::PointCloud cloud;
+      cloud.header.stamp = tm;
+      cloud.header.frame_id = "map";
+
       cloud.pts.resize(5);
       cloud.chan.resize(1);
       for ( int i = 0; i < 5; ++i )
@@ -50,6 +86,9 @@ int main( int argc, char** argv )
 
     {
       std_msgs::PointCloud cloud;
+      cloud.header.stamp = tm;
+      cloud.header.frame_id = "map";
+
       cloud.pts.resize(5);
       cloud.chan.resize(3);
       for ( int i = 0; i < 5; ++i )
@@ -88,6 +127,34 @@ int main( int argc, char** argv )
 
       node->publish( "rgb_cloud_test2", cloud );
     }
+
+    {
+      std_msgs::PointCloud cloud;
+      cloud.header.stamp = tm;
+      cloud.header.frame_id = "map";
+
+      cloud.pts.resize(5);
+      cloud.chan.resize(1);
+      for ( int j = 0; j < 5; ++j )
+      {
+        cloud.pts[j].x = (float)j;
+        cloud.pts[j].y = 2.0f;
+        cloud.pts[j].z = i % 10;
+      }
+
+      cloud.chan[0].name = "intensities";
+      cloud.chan[0].vals.resize(5);
+
+      cloud.chan[0].vals[0] = 0.0f;
+      cloud.chan[0].vals[1] = 1000.0f;
+      cloud.chan[0].vals[2] = 2000.0f;
+      cloud.chan[0].vals[3] = 3000.0f;
+      cloud.chan[0].vals[4] = 4000.0f;
+
+      node->publish( "intensity_cloud_test", cloud );
+    }
+
+    ++i;
 
     usleep( 1000000 );
   }

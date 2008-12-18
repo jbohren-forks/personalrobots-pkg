@@ -78,8 +78,6 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       num_retractions_(0),
       num_good_updates_(0),
       full_free_window_size_(full_free_window_size),
-      lowest_free_global_index_(-1),
-      highest_free_global_index_(-1),
       full_fixed_window_size_(full_fixed_window_size),
       A_data_(new double[full_free_window_size*NUM_CAM_PARAMS*full_free_window_size*NUM_CAM_PARAMS]),
       A_step_(full_free_window_size*NUM_CAM_PARAMS),
@@ -156,7 +154,7 @@ inline void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, do
 #endif
 }
 
-void LevMarqSparseBundleAdj::constructFwdTransfMatrices(
+inline void LevMarqSparseBundleAdj::constructFwdTransfMatrices(
     const CvMat *param, double delta,
     double *transf_fwds_data){
   double _param1[numParams];
@@ -183,7 +181,7 @@ inline void LevMarqSparseBundleAdj::constructTransfMatrices(){
 }
 
 
-void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
+inline void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
   TIMERSTART(SBAFwdTransfMats);
   for (int iFrame=0; iFrame < free_window_size_; iFrame++) {
 #if DEBUG2==1
@@ -198,7 +196,7 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
   TIMEREND(SBAFwdTransfMats);
 }
 
-inline void LevMarqSparseBundleAdj::JacobianOfPointApprox(
+inline void LevMarqSparseBundleAdj::JacobianOfPointNumeric(
     double px, double py, double pz,
     double pu, double pv, double pd,
     double rx, double ry, double rz,
@@ -235,7 +233,7 @@ inline void LevMarqSparseBundleAdj::JacobianOfPointApprox(
 }
 
 /// \brief Exact estimation of the Jacobian of a point.
-inline void LevMarqSparseBundleAdj::JacobianOfPointExact(
+inline void LevMarqSparseBundleAdj::JacobianOfPointAnalytic(
     PointTrackObserv* obsv,
     double *transf_global_disp,
     double *Jp
@@ -407,6 +405,7 @@ inline void LevMarqSparseBundleAdj::linearSolving() {
 ///  - \f$ J_p \f$ and \f$ J_c \f$ are smaller (2x3 and 2x6, instead of 3x3 and
 ///    3x6).
 ///
+/// @return true if optimization is successful. false otherwise.
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
@@ -419,7 +418,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
   if (free_frames->size()<1 || fixed_frames->size()<1) {
-    return false;
+    return true;
   }
 
   // set up matrices, and others
@@ -439,8 +438,6 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
   }
 
-  lowest_free_global_index_  = free_frames->front()->mIndex;
-  highest_free_global_index_ = free_frames->back()->mIndex;
   cvGetSubRect(&mat_A_full_, &mat_A_, cvRect(0, 0,
       free_window_size_*NUM_CAM_PARAMS, free_window_size_*NUM_CAM_PARAMS));
   // for CvMat's that are actually one columns vectors, we do not need to use
@@ -558,10 +555,10 @@ bool LevMarqSparseBundleAdj::optimize(
         rz = obsv->disp_res_.z;
 
 #if 0
-        JacobianOfPointApprox(px, py, pz, pu, pv, pd, rx, ry, rz, scale,
+        JacobianOfPointNumeric(px, py, pz, pu, pv, pd, rx, ry, rz, scale,
             transf_global_disp, Jp);
 #else
-        JacobianOfPointExact(obsv, transf_global_disp, Jp);
+        JacobianOfPointAnalytic(obsv, transf_global_disp, Jp);
 #endif
 #if DEBUG==1
         {
@@ -590,7 +587,7 @@ bool LevMarqSparseBundleAdj::optimize(
 
 //        TIMEREND(SBADerivativesHpp);
         //     If camera c is free
-        if (isFreeFrame(obsv->frame_index_) == true){
+        if (obsv->frame_type_ == PointTrackObserv::FREE_FRAME) {
           // Add \f$ J_c^TJ_c \f$ (optionally with an augmented diagonal)
           // to upper triangular part of block (c, c) of
           // left hand side matrix A (in our case 6x6 matrix).
@@ -725,7 +722,7 @@ bool LevMarqSparseBundleAdj::optimize(
       // (Outer product of track) For each free camera c on track p
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
         PointTrackObserv* obsv = *iObsv;
-        if (isFreeFrame(obsv->frame_index_) == false) {
+        if (obsv->frame_type_ != PointTrackObserv::FREE_FRAME) {
           continue;
         }
         int local_index1 = obsv->local_frame_index_;
@@ -744,7 +741,6 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
         //   Subtract \f$ H_{pc}^T t_p = H_{pc}^T H_{pp}^{-1} b_p \f$ from part c
         //   of right hand side vector B.
-        CvMat&  mat_Hpc = obsv->mat_Hpc_;
         for (int i=0; i<NUM_CAM_PARAMS; i++) {
           Bc[i] -= Hpc[i]*tp[0] + Hpc[i + NUM_CAM_PARAMS]*tp[1] +
             Hpc[i + NUM_CAM_PARAMS*2]*tp[2];
@@ -769,6 +765,7 @@ bool LevMarqSparseBundleAdj::optimize(
         }
 
 #if DEBUG2==1
+        CvMat&  mat_Hpc = obsv->mat_Hpc_;
         printf("matrix Hpc, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index1);
         CvMatUtils::printMat(&mat_Hpc);
         printf("matrix Hpp_inv of p=%d\n", p->id_);
@@ -784,7 +781,7 @@ bool LevMarqSparseBundleAdj::optimize(
         //   For each free camera c2 >= c on track p
         for (PointTrack::iterator iObsv2 = iObsv; iObsv2 != p->end(); iObsv2++) {
           PointTrackObserv* obsv2 = *iObsv2;
-          if (isFreeFrame(obsv2->frame_index_)  == false) {
+          if (obsv2->frame_type_ != PointTrackObserv::FREE_FRAME) {
             continue;
           }
           int local_index2 = obsv2->local_frame_index_;
@@ -853,7 +850,7 @@ bool LevMarqSparseBundleAdj::optimize(
       // for  each free camera c on track p
       // {
       BOOST_FOREACH( PointTrackObserv* obsv, *p ) {
-        if (isFreeFrame(obsv->frame_index_)  == false) {
+        if (obsv->frame_type_ != PointTrackObserv::FREE_FRAME) {
           continue;
         }
         //    Subtract T_{cp}^T dc from dp (where dc is the update for camera c).
@@ -980,6 +977,8 @@ void LevMarqSparseBundleAdj::initParams(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
     PointTracks* tracks) {
+  indexmap_free_global_to_local_.clear();
+  indexmap_fixed_global_to_local_.clear();
 
 #if DEBUG2==1
   cout << "initCameraParams(): oldest frame index in track: "<<
@@ -1007,7 +1006,7 @@ void LevMarqSparseBundleAdj::initParams(
     transfToParams(global_to_local, frame_params_i);
 
     // enter the mapping between global index and local index to the map.
-    map_index_global_to_local_[free_frame->mIndex] = local_index;
+    indexmap_free_global_to_local_[free_frame->mIndex] = local_index;
 
     local_index++;
   }
@@ -1022,11 +1021,7 @@ void LevMarqSparseBundleAdj::initParams(
 #endif
 
   // compute and enter the transformations of the fixed frames/cameras.
-//  int lowest_index_in_window = free_frames->front()->mFrameIndex;
-  // compute the size of the fixed camera window.
   fixed_window_size_ = fixed_frames->size();
-  lowest_fixed_global_index_ = fixed_frames->front()->mIndex;
-  highest_fixed_global_index_ = fixed_frames->back()->mIndex;
 
   CvMat* transf_from_global = cvCreateMat(4, 4, CV_64FC1);
   int reverse_index=0;
@@ -1055,7 +1050,7 @@ void LevMarqSparseBundleAdj::initParams(
         fp->mIndex, local_index);
     CvMatUtils::printMat(&mat_transf);
 #endif
-    map_index_global_to_local_[fp->mIndex] = local_index;
+    indexmap_fixed_global_to_local_[fp->mIndex] = local_index;
 
     reverse_index++;
     assert(reverse_index<=fixed_window_size_);
@@ -1064,22 +1059,24 @@ void LevMarqSparseBundleAdj::initParams(
   // loop thru the tracks to
   // 1) initialize the parameters
   // 2) fill out the field of local_frame_index_
-  // according to map_index_global_to_local_
+  // according to the index maps
   BOOST_FOREACH( PointTrack* p, tracks->tracks_) {
     /// initialize prev_coordinates to the same as initial point params.
     p->param_      = p->coordinates_;
     p->prev_param_ = p->param_;
     BOOST_FOREACH( PointTrackObserv* obsv, *p ) {
-      boost::unordered_map<int, int>::const_iterator iter =
-        map_index_global_to_local_.find(obsv->frame_index_);
-      if (iter != map_index_global_to_local_.end()) {
-        obsv->local_frame_index_ = iter->second;
-#if DEBUG2==1
-        printf("store local index %d for frame %d in track %d\n",
-            obsv->local_frame_index_, obsv->frame_index_, p->id_);
-#endif
+      if ( isFreeFrame(obsv->frame_index_) == true ) {
+        obsv->local_frame_index_ =
+          indexmap_free_global_to_local_[obsv->frame_index_];
+        obsv->frame_type_ = PointTrackObserv::FREE_FRAME;
+      } else if ( isFixedFrame(obsv->frame_index_) == true ) {
+        obsv->local_frame_index_ =
+          indexmap_fixed_global_to_local_[obsv->frame_index_];
+        obsv->frame_type_ = PointTrackObserv::FIXED_FRAME;
       } else {
+        // don't care about this frame
         obsv->local_frame_index_ = -1;
+        obsv->frame_type_ = PointTrackObserv::IGNORED_FRAME;
       }
     }
 #if DEBUG2==1
@@ -1100,7 +1097,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
   double params_local_to_global_data[NUM_CAM_PARAMS];
   CvMat  params_local_to_global = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, params_local_to_global_data);
   BOOST_FOREACH(FramePose* fp, *free_frames) {
-    int local_index = map_index_global_to_local_[fp->mIndex];
+    int local_index = indexmap_free_global_to_local_[fp->mIndex];
     // copy the parameters out
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
     /// @todo should not tightened to rodrigues!
@@ -1135,7 +1132,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
 
 }
 
-double LevMarqSparseBundleAdj::costFunction(
+inline double LevMarqSparseBundleAdj::costFunction(
     vector<FramePose *>* free_frames,
     PointTracks* tracks
 ) {
@@ -1152,8 +1149,8 @@ double LevMarqSparseBundleAdj::costFunction(
 
     /// For each observation of the track
     BOOST_FOREACH(PointTrackObserv* obsv, *p) {
-      if (isDontCareFrame(obsv->frame_index_) == true) {
-        // we do not consider this frame anymore.
+      if (obsv->frame_type_ == PointTrackObserv::IGNORED_FRAME) {
+        // we do not consider this frame in this adjustment
         continue;
       }
 
@@ -1179,7 +1176,7 @@ double LevMarqSparseBundleAdj::costFunction(
   return err_norm;
 }
 
-double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) const {
+inline double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) const {
   // 2-norm of the camera parameters
   double frame_param_diff_sum_sq;
   double frame_param_norm_sq;
@@ -1202,7 +1199,7 @@ double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) const {
   return param_diff_norm;
 }
 
-void LevMarqSparseBundleAdj::getPointParamChange(
+inline void LevMarqSparseBundleAdj::getPointParamChange(
     const PointTracks* tracks,
     double *param_diff_sum_sq,
     double *param_sum_sq) const {

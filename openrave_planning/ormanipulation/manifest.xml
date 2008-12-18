@@ -1,0 +1,10 @@
+<package>
+  <description brief="OpenRAVE Manipulation">
+    Scripts to perform manipulation tasks and other contains data resources.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <license>BSD</license>
+  <depend package="boost"/>
+  <depend package="openraveros"/>
+  <depend package="orplugins"/>
+</package>

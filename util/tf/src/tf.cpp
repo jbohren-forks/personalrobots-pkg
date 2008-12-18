@@ -285,8 +285,10 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
 
   }
   else
+  {
     time.fromNSec(0);
-
+    retval = CONNECTIVITY_ERROR;
+  }
 
   return retval;
 };

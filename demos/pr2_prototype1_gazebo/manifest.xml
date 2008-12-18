@@ -4,7 +4,6 @@
   <license>BSD</license>
   <review status="na" notes="demo scripts"/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
-  <depend package="roslaunch"/>
   <depend package="gazebo_plugin"/>
   <depend package="teleop_base_keyboard"/>
   <depend package="teleop_arm_keyboard"/>

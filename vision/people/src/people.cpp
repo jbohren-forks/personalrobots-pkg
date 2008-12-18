@@ -189,7 +189,12 @@ double People::getFaceSize3D(int iperson) {
 
 // Set a person's 3D face size.
 void People::setFaceSize3D(double face_size, int iperson) {
-  list_[iperson].face_size_3d = face_size;
+  if (face_size <= 0.0) {
+    list_[iperson].face_size_3d = FACE_SIZE_DEFAULT_M;
+  }
+  else {
+    list_[iperson].face_size_3d = face_size;
+  }
 }
 
 
@@ -660,13 +665,18 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       //bbox = cvRect(u1, v1, u2-u1+1, v2-v1+1);
       denom = kernel_mult*t_person->face_size_3d;
       denom *= denom;
+#if __PEOPLE_DEBUG__
+      printf("ds ");
+#endif
       for (int v=v1; v<=v2; v++) {
 	xptr = (float*)(cft_X_->imageData + v*cft_X_->widthStep) + u1;
 	yptr = (float*)(cft_Y_->imageData + v*cft_Y_->widthStep) + u1;
 	zptr = (float*)(cft_Z_->imageData + v*cft_Z_->widthStep) + u1;
 	rptr = (uchar*)(cft_r_plane_norm_->imageData + v*cft_r_plane_norm_->widthStep) + u1;
 	gptr = (uchar*)(cft_g_plane_norm_->imageData + v*cft_g_plane_norm_->widthStep) + u1;
-
+#if __PEOPLE_DEBUG__
+	printf("\n");
+#endif
 	for (int u = u1; u<=u2; u++) {
 	  if ((*zptr) != 0.0) {
 
@@ -674,6 +684,9 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	    dy = (*yptr)-cp[1];
 	    dz = (*zptr)-cp[2];
 	    d = (dx*dx + dy*dy + dz*dz)/denom;
+#if __PEOPLE_DEBUG__
+	    printf("%f ",(*zptr));
+#endif
 	    r_bin = (int)(floor((float)(*rptr)/2.0));
 	    g_bin = (int)(floor((float)(*gptr)/2.0));
 	    if (d <= 1.0 && 5 < r_bin && r_bin < 123 && 5 < g_bin && g_bin < 123) {
@@ -696,6 +709,9 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	  rptr++; gptr++;
 	}
       }
+#if __PEOPLE_DEBUG__
+      printf("\n\n\n");
+#endif
 
       // If no points in this kernel, don't move the point.
       if (total_weight == 0.0) {
@@ -809,7 +825,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     }
     cvShowImage("Real face hist",hist_im_real);
     cvShowImage("Current face hist",hist_im);
-    //cvWaitKey(3);
 #endif
 
   }

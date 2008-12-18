@@ -38,7 +38,7 @@
 //
 
 #include"navfn.h"
-
+#include "rosconsole/rosconsole.h"
 
 //
 // function to perform nav fn calculation
@@ -76,9 +76,9 @@ create_nav_plan_astar(COSTTYPE *costmap, int nx, int ny,
   int len = nav->calcPath(nplan);
 
   if (len > 0)			// found plan
-    printf("[NavFn] Path found, %d steps\n", len);
+    ROS_INFO("[NavFn] Path found, %d steps\n", len);
   else
-    printf("[NavFn] No path found\n");
+    ROS_INFO("[NavFn] No path found\n");
 
   if (len > 0)
     {
@@ -128,6 +128,7 @@ NavFn::NavFn(int xs, int ys)
   // path buffers
   npathbuf = npath = 0;
   pathx = pathy = NULL;
+  pathStep = 0.5;
 }
 
 
@@ -161,7 +162,7 @@ NavFn::setGoal(int *g)
 {
   goal[0] = g[0];
   goal[1] = g[1];
-  printf("[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
+  ROS_INFO("[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
 }
 
 void
@@ -169,7 +170,7 @@ NavFn::setStart(int *g)
 {
   start[0] = g[0];
   start[1] = g[1];
-  printf("[NavFn] Setting start to %d,%d\n", start[0], start[1]);
+  ROS_INFO("[NavFn] Setting start to %d,%d\n", start[0], start[1]);
 }
 
 //
@@ -179,7 +180,7 @@ NavFn::setStart(int *g)
 void
 NavFn::setNavArr(int xs, int ys)
 {
-  printf("[NavFn] Array is %d x %d\n", xs, ys);
+  ROS_INFO("[NavFn] Array is %d x %d\n", xs, ys);
 
   nx = xs;
   ny = ys;
@@ -202,7 +203,7 @@ NavFn::setNavArr(int xs, int ys)
   obsarr = new COSTTYPE[ns];	// obstacles, 255 is obstacle
   memset(obsarr, 0, ns*sizeof(COSTTYPE));
   costarr = new COSTTYPE[ns]; // cost array, 2d config space
-  memset(costarr, 0, ns*sizeof(uint16_t));
+  memset(costarr, 0, ns*sizeof(COSTTYPE));
   potarr = new float[ns];	// navigation potential array
   pending = new bool[ns];
   memset(pending, 0, ns*sizeof(bool));
@@ -211,12 +212,108 @@ NavFn::setNavArr(int xs, int ys)
 }
 
 
+//
+// set up cost array, usually from ROS
+//
+
+#define COST_FACTOR 3
+
+void
+NavFn::setCostMap(const COSTTYPE *cmap, bool isROS)
+{
+  COSTTYPE *cm = costarr;
+  if (isROS)			// ROS-type cost array
+    {
+      for (int i=0; i<ny; i++)
+	{
+	  int k=i*nx;
+	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
+	    {
+	      *cm = COST_OBS;
+	      int v = *cmap;
+	      if (v < COST_OBS_ROS)
+		{
+		  v = COST_NEUTRAL+COST_FACTOR*v;
+		  if (v >= COST_OBS)
+		    v = COST_OBS-1;
+		  *cm = v;
+		}
+	    }
+	}
+    }
+
+  else				// not a ROS map, just a PGM
+    {
+      for (int i=0; i<ny; i++)
+	{
+	  int k=i*nx;
+	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
+	    {
+	      *cm = COST_OBS;
+	      if (i<7 || i > ny-8 || j<7 || j > nx-8)
+		continue;	// don't do borders
+	      int v = *cmap;
+	      if (v < COST_OBS_ROS)
+		{
+		  v = COST_NEUTRAL+COST_FACTOR*v;
+		  if (v >= COST_OBS)
+		    v = COST_OBS-1;
+		  *cm = v;
+		}
+	    }
+	}
+
+    }
+}
+
+
+//
+// calculate navigation function, given a costmap, goal, and start
+//
+
+bool
+NavFn::calcNavFnAstar()
+{
+  setupNavFn(true);
+
+  // calculate the nav fn and path
+  propNavFnAstar(nx*ny/20);
+  
+  // path
+  int len = calcPath(nx*4);
+
+  if (len > 0)			// found plan
+    {
+      ROS_INFO("[NavFn] Path found, %d steps\n", len);
+      return true;
+    }
+  else
+    {
+      ROS_INFO("[NavFn] No path found\n");
+      return false;
+    }
+}
+
+
+//
+// returning values
+//
+
+float *NavFn::getPathX() { return pathx; }
+float *NavFn::getPathY() { return pathy; }
+int    NavFn::getPathLen() { return npath; }
+
+
+//
+// simple obstacle setup for tests
+//
+
 void
 NavFn::setObs()
 {
 #if 0
   // set up a simple obstacle
-  printf("[NavFn] Setting simple obstacle\n");
+  ROS_INFO("[NavFn] Setting simple obstacle\n");
   int xx = nx/3;
   for (int i=ny/3; i<ny; i++)
     costarr[i*nx + xx] = COST_OBS;
@@ -335,9 +432,9 @@ NavFn::updateCell(int n)
   r = potarr[n+1];		
   u = potarr[n-nx];
   d = potarr[n+nx];
-  //  printf("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
+  //  ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
   //	 potarr[n], l, r, u, d);
-  //  printf("[Update] cost: %d\n", costarr[n]);
+  //  ROS_INFO("[Update] cost: %d\n", costarr[n]);
 
   // find lowest, and its lowest neighbor
   float ta, tc;
@@ -369,7 +466,7 @@ NavFn::updateCell(int n)
 	  pot = ta + hf*v;
 	}
 
-      //      printf("[Update] new pot: %d\n", costarr[n]);
+      //      ROS_INFO("[Update] new pot: %d\n", costarr[n]);
 
       // now add affected neighbors to priority blocks
       if (pot < potarr[n])
@@ -420,9 +517,9 @@ NavFn::updateCellAstar(int n)
   r = potarr[n+1];		
   u = potarr[n-nx];
   d = potarr[n+nx];
-  //  printf("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
+  //  ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
   //	 potarr[n], l, r, u, d);
-  //  printf("[Update] cost: %d\n", costarr[n]);
+  //  ROS_INFO("[Update] cost: %d\n", costarr[n]);
 
   // find lowest, and its lowest neighbor
   float ta, tc;
@@ -454,7 +551,7 @@ NavFn::updateCellAstar(int n)
 	  pot = ta + hf*v;
 	}
 
-      //      printf("[Update] new pot: %d\n", costarr[n]);
+      //      ROS_INFO("[Update] new pot: %d\n", costarr[n]);
 
       // now add affected neighbors to priority blocks
       if (pot < potarr[n])
@@ -562,7 +659,7 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
 	  break;
     }
 
-  printf("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
+  ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
   if (cycle < cycles) return true; // finished up here
@@ -645,7 +742,7 @@ NavFn::propNavFnAstar(int cycles)
 
     }
 
-  printf("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
+  ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
   if (potarr[startCell] < POT_HIGH) return true; // finished up here
@@ -694,7 +791,10 @@ NavFn::calcPath(int n, int *st)
 	}
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
-	return 0;
+	{
+	  ROS_INFO("[PathCalc] Out of bounds\n");
+	  return 0;
+	}
 
       // add to path
       pathx[npath] = stc%nx + dx;
@@ -708,6 +808,11 @@ NavFn::calcPath(int n, int *st)
       gradCell(stcnx);
       gradCell(stcnx+1);
       
+      // show gradients
+      //      ROS_INFO("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f\n",
+      //	     gradx[stc], grady[stc], gradx[stc+1], grady[stc+1], 
+      //	     gradx[stcnx], grady[stcnx], gradx[stcnx+1], grady[stcnx+1]);
+
       // get interpolated gradient
       float x1 = (1.0-dx)*gradx[stc] + dx*gradx[stc+1];
       float x2 = (1.0-dx)*gradx[stcnx] + dx*gradx[stcnx+1];
@@ -718,11 +823,14 @@ NavFn::calcPath(int n, int *st)
 
       // check for zero gradient, failed
       if (x == 0.0 && y == 0.0)
-	return 0;
+	{
+	  ROS_INFO("[PathCalc] Zero gradient\n");	  
+	  return 0;
+	}
 
       // move in the right direction
-      dx += x*0.5;
-      dy += y*0.5;
+      dx += x*pathStep;
+      dy += y*pathStep;
 
       // check for overflow
       if (dx > 1.0) { stc++; dx -= 1.0; }
@@ -730,7 +838,7 @@ NavFn::calcPath(int n, int *st)
       if (dy > 1.0) { stc+=nx; dy -= 1.0; }
       if (dy < -1.0) { stc-=nx; dy += 1.0; }
 
-      //      printf("[Path] Pot: %0.1f  grad: %0.1f,%0.1f  pos: %0.1f,%0.1f\n",
+      //      ROS_INFO("[Path] Pot: %0.1f  grad: %0.1f,%0.1f  pos: %0.1f,%0.1f\n",
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
     }
 
@@ -744,31 +852,47 @@ NavFn::calcPath(int n, int *st)
 
 // calculate gradient at a cell
 // positive value are to the right and down
-void				
+float				
 NavFn::gradCell(int n)
 {
   if (gradx[n]+grady[n] > 0.0)	// check this cell
-    return;			
+    return 1.0;			
 
   if (n < nx || n > ns-nx)	// would be out of bounds
-    return;
+    return 0.0;
 
   float cv = potarr[n];
-  if (cv >= POT_HIGH) return;	// can't work in obstacles
-
-  // dx calc, average to sides
   float dx = 0.0;
-  if (potarr[n-1] < POT_HIGH)
-    dx += potarr[n-1]- cv;	
-  if (potarr[n+1] < POT_HIGH)
-    dx += cv - potarr[n+1]; 
-
-  // dy calc, average to sides
   float dy = 0.0;
-  if (potarr[n-nx] < POT_HIGH)
-    dy += potarr[n-nx]- cv;	
-  if (potarr[n+nx] < POT_HIGH)
-    dy += cv - potarr[n+nx]; 
+
+  // check for in an obstacle
+  if (cv >= POT_HIGH) 
+    {
+      if (potarr[n-1] < POT_HIGH)
+	dx = -COST_OBS;
+      else if (potarr[n+1] < POT_HIGH)
+	dx = COST_OBS;
+
+      if (potarr[n-nx] < POT_HIGH)
+	dy = -COST_OBS;
+      else if (potarr[nx+1] < POT_HIGH)
+	dy = COST_OBS;
+    }
+
+  else				// not in an obstacle
+    {
+      // dx calc, average to sides
+      if (potarr[n-1] < POT_HIGH)
+	dx += potarr[n-1]- cv;	
+      if (potarr[n+1] < POT_HIGH)
+	dx += cv - potarr[n+1]; 
+
+      // dy calc, average to sides
+      if (potarr[n-nx] < POT_HIGH)
+	dy += potarr[n-nx]- cv;	
+      if (potarr[n+nx] < POT_HIGH)
+	dy += cv - potarr[n+nx]; 
+    }
 
   // normalize
   float norm = sqrtf(dx*dx+dy*dy);
@@ -778,6 +902,7 @@ NavFn::gradCell(int n)
       gradx[n] = norm*dx;
       grady[n] = norm*dy;
     }
+  return norm;
 }
 
 

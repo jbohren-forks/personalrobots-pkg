@@ -35,6 +35,9 @@
 
 #include <smartScan.h>
 #include <std_msgs/Point32.h>
+#include <std_msgs/Point.h>
+#include <std_msgs/PointStamped.h>
+#include <std_msgs/Vector3.h>
 
 namespace ransac_ground_plane_extraction {
 
@@ -48,9 +51,10 @@ namespace ransac_ground_plane_extraction {
   
    RansacGroundPlaneExtraction();
   
-  int findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
+   int findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
 
-  std_msgs::PointCloud *removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal);
+  std_msgs::PointCloud *removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal, const std_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance);
+  std_msgs::PointCloud *removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point &point_plane, std_msgs::Vector3 &normal_plane, const std_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance);
 
   void updateGround(const std_msgs::Point32 &new_plane_point, const std_msgs::Point32 &new_plane_normal, std_msgs::Point32 &return_plane_point, std_msgs::Point32 &return_plane_normal);
 
@@ -63,7 +67,7 @@ namespace ransac_ground_plane_extraction {
   std_msgs::Point32 point_plane_;
 
   std_msgs::Point32 normal_plane_;
-
+  
   };
 }
 #endif

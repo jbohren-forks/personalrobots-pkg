@@ -64,7 +64,7 @@ TEST(TransferFunctionFilter, LowPass)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(11.8008);
-  filter.update( &in1);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);
@@ -95,7 +95,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(2.4088);
-  filter.update( &in1);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);
@@ -153,7 +153,67 @@ TEST(TransferFunctionFilter, LowPassMulti)
   out1.push_back(60.6216);
   out1.push_back(33.9829);
   out1.push_back(28.1027);
-  filter.update( &in1);
+  filter.update(&in1);
+  filter.update(&in2);
+  filter.update(&in3);
+  filter.update(&in4);
+  filter.update(&in5);
+  filter.update(&in6);
+  filter.update(&in7);
+  
+  for(int i=0; i<out1.size(); i++)
+  {
+    EXPECT_NEAR(out1[i], in7[i], epsilon);
+  }
+}
+
+TEST(TransferFunctionFilter, LowPassIrrational)
+{
+  double epsilon = 1e-4;
+  std::vector<double> a;
+  std::vector<double> b;
+  std::vector<double> in1,in2,in3,in4,in5,in6,in7;
+  std::vector<double> out1;
+  a.push_back(1.0);
+  a.push_back(-1.760041880343169);
+  a.push_back(1.182893262037831);
+  b.push_back(0.018098933007514);
+  b.push_back(0.054296799022543);
+  b.push_back(0.054296799022543);
+  b.push_back(0.018098933007514);
+  TransferFunctionFilter<std::vector<double> > filter(b,a);
+  in1.push_back(10.0);
+  in1.push_back(10.0);
+  in1.push_back(10.0);
+  //
+  in2.push_back(70.0);
+  in2.push_back(30.0);
+  in2.push_back(8.0);
+  //
+  in3.push_back(-1.0);
+  in3.push_back(5.0);
+  in3.push_back(22.0);
+  //
+  in4.push_back(44.0);
+  in4.push_back(23.0);
+  in4.push_back(8.0);
+  //
+  in5.push_back(10.0);
+  in5.push_back(10.0);
+  in5.push_back(10.0);
+  //
+  in6.push_back(5.0);
+  in6.push_back(-1.0);
+  in6.push_back(5.0);
+  //
+  in7.push_back(6.0);
+  in7.push_back(-30.0);
+  in7.push_back(2.0);
+  //
+  out1.push_back(17.1112);
+  out1.push_back(9.0285);
+  out1.push_back(8.3102);
+  filter.update(&in1);
   filter.update(&in2);
   filter.update(&in3);
   filter.update(&in4);

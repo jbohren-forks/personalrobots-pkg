@@ -3,6 +3,7 @@
   (:nicknames :dep-graph)
   (:export 
    :make-dependency-graph
+   :<dependency-graph>
    :add-variable
    :add-dependency
    :update-external-variable

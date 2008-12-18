@@ -114,6 +114,14 @@ typedef enum {
 #endif
 
 
+typedef enum
+{
+  NORMAL_ALGORITHM,
+  SCANLINE_ALGORITHM,
+  DP_ALGORITHM,
+  MW_ALGORITHM
+} stereo_algorithm_t; 
+
 
 namespace cam
 {
@@ -174,7 +182,7 @@ namespace cam
     // rectification
     bool hasRectification;	// true if valid rectification present
     bool doRectify();		// try to rectify images
-    bool initRectify();		// initializes the rectification internals from the
+    bool initRectify(bool force=false);	// initializes the rectification internals from the
                                 //   calibration parameters
 
     // color conversion
@@ -239,7 +247,7 @@ namespace cam
 
     // disparity and rectification functions
     bool doRectify();		// rectify images
-    bool doDisparity();		// calculate disparity image
+    bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM); // calculate disparity image
     bool doCalcPts();		// calculate 3D points
     bool calcPt(int x, int y, float *fx, float *fy, float *fz); // single point
     bool setRangeMax(double thresh);
@@ -279,16 +287,20 @@ namespace cam
     // filter thresholds
     int textureThresh;		// percent
     int uniqueThresh;		// percent
+    int smoothThresh;		// percent
     int speckleDiff;		// max difference between adjacent disparities in a region
     int speckleRegionSize;	// minimum size of region to be not a speckle
     double rangeMax;		// max Z value returned in pt cloud
     double rangeMin;		// max Z value returned in pt cloud
+    bool unique_check;    
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
+    bool setSmoothnessThresh(int thresh);
     bool setSpeckleDiff(int diff);
     bool setSpeckleRegionSize(int size);
     bool setCorrSize(int size);
+    bool setUniqueCheck(bool val);
 
     // buffers for stereo
     uint8_t *buf, *flim, *frim;

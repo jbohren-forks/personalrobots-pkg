@@ -14,9 +14,8 @@
 %           move. This is useful when visualizing internal C++ states. When off, the GUI
 %           will only reflect the state of robots after all calls to stepsimulation and
 %           server send messages have been done. The default is off.
-% - debug [debug level] - toggles debugging messages by RAVELOG.
-%                         0  - only RAVEPRINT statements show
-%                         1+ - RAVELOG statements with various debug levels show
+% - debug [debuglevel] - toggles debugging messages by RAVELOG_X. Can be one of
+%%                        fatal, error, warn, info, debug, verbose
 % - quit - closes the openrave instance
 function success = orEnvSetOptions(options)
 

@@ -1,0 +1,22 @@
+<KinBody name="willow_table">
+  <Body name="base">
+    <Geom type="box">
+      <extents>0.38 0.62 0.035</extents>
+      <translation>0 0 0.711</translation>
+    </Geom>
+    <Geom type="box">
+      <extents>0.14 0.015 0.35</extents>
+      <translation>0 -0.555 0.35</translation>
+    </Geom>
+    <Geom type="box">
+      <extents>0.14 0.015 0.35</extents>
+      <translation>0 0.555 0.35</translation>
+    </Geom>
+  </Body>
+  <phasespace>
+    <offsetlink>base</offsetlink>
+    <id>1</id>
+    <pretranslation>0.27 0.3425 -0.75</pretranslation>
+    <prerotationaxis>0 0 1 -90</prerotationaxis>
+  </phasespace>
+</KinBody>

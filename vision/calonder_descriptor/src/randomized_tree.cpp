@@ -80,9 +80,9 @@ void RandomizedTree::allocPosteriorsAligned(int num_leaves, int num_classes)
   for (int i=0; i<num_leaves; ++i)
     posix_memalign((void**)&posteriors_[i], 16, num_classes*sizeof(float));  //(float*)malloc(num_classes*sizeof(float));
      
-  posteriors2_ = new uchar*[num_leaves];
+  posteriors2_ = new uint8_t*[num_leaves];
   for (int i=0; i<num_leaves; ++i)
-    posix_memalign((void**)&posteriors2_[i], 16, classes_*sizeof(uchar));
+    posix_memalign((void**)&posteriors2_[i], 16, classes_*sizeof(uint8_t));
 }
 
 void RandomizedTree::freePosteriors()
@@ -160,47 +160,56 @@ void RandomizedTree::finalize(size_t reduced_num_dim, int num_quant_bits)
    leaf_counts_.clear();
 
    // apply compressive sensing
-   if ((int)reduced_num_dim != classes_) {
-      float *cs_phi = new float[reduced_num_dim * classes_];           // reduced_num_dim x classes_ matrix
-      makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
-
-      float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // num_leaves_ x reduced_num_dim
-      for (int i=0; i<num_leaves_; ++i) {
-         float *post = getPosteriorByIndex(i);
-         float *prod = &cs_posteriors[i*reduced_num_dim];
-         cblas_sgemv(CblasRowMajor, CblasNoTrans, reduced_num_dim, classes_, 1.f, cs_phi,
-                     classes_, post, 1, 0.f, prod, 1);       
-      }
-
-      // copy new posteriors
-      freePosteriors();
-      allocPosteriorsAligned(num_leaves_, reduced_num_dim);
-      for (int i=0; i<num_leaves_; ++i)         
-         memcpy(posteriors_[i], &cs_posteriors[i*reduced_num_dim], reduced_num_dim*sizeof(float));
-      classes_ = reduced_num_dim;
-      
-      delete [] cs_posteriors;
-   }
+   if ((int)reduced_num_dim != classes_)
+      compressLeaves(reduced_num_dim);
   
    // quantize
    if (num_quant_bits > 0)
-      quantize_leaves(num_quant_bits, .05f, .95f, 0);
+      quantizeLeaves(num_quant_bits, .05f, .95f, 0);
 
    // convert float-posteriors to char-posteriors
    makePosteriors2();
 }
 
+void RandomizedTree::compressLeaves(size_t reduced_num_dim)
+{
+   float *cs_phi = new float[reduced_num_dim * classes_];         // reduced_num_dim x classes_
+   makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
+
+   float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // temp, num_leaves_ x reduced_num_dim
+   for (int i=0; i<num_leaves_; ++i) {
+      float *post = getPosteriorByIndex(i);
+      float *prod = &cs_posteriors[i*reduced_num_dim];
+      cblas_sgemv(CblasRowMajor, CblasNoTrans, reduced_num_dim, classes_, 1.f, cs_phi,
+                  classes_, post, 1, 0.f, prod, 1);       
+   }
+
+   // copy new posteriors
+   freePosteriors();
+   allocPosteriorsAligned(num_leaves_, reduced_num_dim);
+   for (int i=0; i<num_leaves_; ++i)         
+      memcpy(posteriors_[i], &cs_posteriors[i*reduced_num_dim], reduced_num_dim*sizeof(float));
+   classes_ = reduced_num_dim;
+
+   delete [] cs_posteriors;
+   delete [] cs_phi;
+}
 
 void RandomizedTree::makePosteriors2() 
 {   
    for (int i=0; i<num_leaves_; ++i) {
       float* posterior = posteriors_[i];
-      uchar* posterior2 = posteriors2_[i];
+      uint8_t* posterior2 = posteriors2_[i];
       for (int k=0; k<classes_; ++k) {
-         *posterior2 = (uchar)(*posterior);
-         posterior++;
-         posterior2++;
+         *posterior2 = (uint8_t)(*posterior);
+         ++posterior;
+         ++posterior2;
       }
+   }
+
+   static bool warned=false;
+   if (!warned) {
+      printf("[OK] converted posteriors from float to uint8_t\n");      
    }
 
    // free posteriors_
@@ -209,54 +218,53 @@ void RandomizedTree::makePosteriors2()
          free(posteriors_[i]);
       delete [] posteriors_;
       posteriors_ = NULL;
+      if (!warned) printf("[NOTE] RT: float posteriors freed\n");
    }
    
-   static bool warned=false;
-   if (!warned) {
-      printf("[OK] converted posteriors from float to uchar\n");
-      warned = true;
-   }
+   warned = true;
 }
 
-void RandomizedTree::quantize_leaves(int num_quant_bits, float p1, float p2, int clamp_mode)
+void RandomizedTree::quantizeLeaves(int num_quant_bits, float p1, float p2, int clamp_mode)
 {         
    int N = (1<<num_quant_bits) - 1;
-   
-   static bool warned = false;
-   if (!warned) {
-      printf("[WARNING] RandomizedTree: Quantazing leaves, N=%i\n", N);
-      warned = true;
-   }
-   
-   // estimate percentiles (approximative but fair enough)
-   static float perc[2];
-   static float last_p2 = -1.f;
-   if (p2 != last_p2) {
+      
+   // estimate percentiles for this tree
+   float perc[2];
+   //float last_p2 = -1.f;
+   //if (p2 != last_p2) {
+      perc[0] = 0.f;
+      perc[1] = 0.f;
       for (int i=0; i<num_leaves_; i++) {
          perc[0] += percentile(posteriors_[i], classes_, p1);
          perc[1] += percentile(posteriors_[i], classes_, p2);
       }
       perc[0] /= num_leaves_;
       perc[1] /= num_leaves_;
-   }  
+   //}  
+
+   static bool warned = false;
+   if (!warned) {
+      printf("[NOTE] RT: Leaf quantization, percentiles [%.3e,%.3e], %i bits --> N=%i\n", perc[0], perc[1], num_quant_bits, N);
+      warned = true;
+   }
 
    for (int i=0; i<num_leaves_; ++i)
-      quantize_vector(posteriors_[i], classes_, N, perc, clamp_mode);
+      quantizeVector(posteriors_[i], classes_, N, perc, clamp_mode);
 }
 
-void RandomizedTree::quantize_vector(float *vec, int dim, int N, float bnds[2], int clamp_mode)
-{
+void RandomizedTree::quantizeVector(float *vec, int dim, int N, float bnds[2], int clamp_mode)
+{   
    float map_bnd[2] = {0.f,(float)N};          // bounds of quantized target interval we're mapping to
    for (int k=0; k<dim; ++k, ++vec) {
-      int p = int((*vec - bnds[0])/(bnds[1] - bnds[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]);
-      *vec = (float)p;
-      if (clamp_mode == 0)  // clamp both, lower and upper values
-         *vec = (*vec<map_bnd[0]) ? map_bnd[0] : ((*vec>map_bnd[1]) ? map_bnd[1] : *vec);
-      else if (clamp_mode == 1)  // clamp lower values only
-         *vec = (*vec<map_bnd[0]) ? map_bnd[0] : *vec;
-      else if (clamp_mode == 2)  // clamp upper values only
-         *vec = (*vec>map_bnd[1]) ? map_bnd[1] : *vec;
-      else if (clamp_mode == 4) ; // NO clamping (yes, nothing to do here)
+      *vec = float(int((*vec - bnds[0])/(bnds[1] - bnds[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]));
+      // 0: clamp both, lower and upper values
+      if (clamp_mode == 0)      *vec = (*vec<map_bnd[0]) ? map_bnd[0] : ((*vec>map_bnd[1]) ? map_bnd[1] : *vec);
+      // 1: clamp lower values only
+      else if (clamp_mode == 1) *vec = (*vec<map_bnd[0]) ? map_bnd[0] : *vec;
+      // 2: clamp upper values only
+      else if (clamp_mode == 2) *vec = (*vec>map_bnd[1]) ? map_bnd[1] : *vec;
+      // 4: no clamping
+      else if (clamp_mode == 4) ;
       else {
          printf("clamp_mode == %i is not valid (%s:%i).\n", clamp_mode, __FILE__, __LINE__);
          exit(1);
@@ -275,7 +283,7 @@ const float* RandomizedTree::getPosterior(uchar* patch_data) const
   return getPosteriorByIndex( getIndex(patch_data) );
 }
 
-uchar* RandomizedTree::getPosterior2(uchar* patch_data)
+uint8_t* RandomizedTree::getPosterior2(uchar* patch_data)
 {
    return getPosteriorByIndex2( getIndex(patch_data) );
 }
@@ -322,6 +330,10 @@ void RandomizedTree::write(std::ostream &os) const
     printf("WARNING: Cannot write posteriors (posteriors_ = NULL).\n");
     return;
   }
+  if (!keep_float_posteriors_) {
+    printf("WARNING: Probably writing nonsense (keep_float_posteriors_ == false).\n");
+    return;
+  }
   
   os.write((char*)(&classes_), sizeof(classes_));
   os.write((char*)(&depth_), sizeof(depth_));
@@ -334,6 +346,24 @@ void RandomizedTree::write(std::ostream &os) const
 
 void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
 {
+const char *phi = "/u/calonder/temp/debug_phi.txt";
+std::ifstream ifs(phi);
+for (size_t i=0; i<reduced_num_dim*classes_; ++i) {
+   if (!ifs.good()) {
+      printf("[ERROR] RandomizedTree::makeRandomMeasMatrix: problem reading '%s'\n", phi);
+      exit(0);
+   }
+   ifs >> cs_phi[i];
+}   
+ifs.close(); 
+
+static bool warned=false;
+if (!warned) {
+   printf("[NOTE] RT: reading %ix%i PHI matrix from '%s'...\n", reduced_num_dim, classes_, phi);
+   warned=true;
+}
+return;   
+
    if ((int)reduced_num_dim == classes_) {
       // special case - will not make use of Compressive Sensing AT ALL (set to 0 for safety)
       memset(cs_phi, 0, reduced_num_dim*classes_*sizeof(float));
@@ -402,7 +432,7 @@ void RandomizedTree::savePosteriors2(std::string url)
 {   
    std::ofstream file(url.c_str());
    for (int i=0; i<num_leaves_; i++) {
-      uchar *post = posteriors2_[i];      
+      uint8_t *post = posteriors2_[i];      
       for (int i=0; i<classes_; i++)
          file << int(*post++) << (i<classes_-1?" ":"");
       file << std::endl;

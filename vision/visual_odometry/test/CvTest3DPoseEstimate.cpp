@@ -43,6 +43,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
+#define SAVE_FRAMES_POINTS 0
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
@@ -210,8 +211,8 @@ bool CvTest3DPoseEstimate::test() {
     string point_file("points260.xml");
     int num_free_frames  = 10;
     int num_fixed_frames = 10;
-    int num_iterations = 300;
-    int num_repeats = 10;
+    int num_iterations   = 300;
+    int num_repeats      = 1;
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
         true, true, true);
@@ -299,6 +300,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
   setInputData(James4);
 
+//  VOSparseBundleAdj sba(img_size_, 100, 100);
   VOSparseBundleAdj sba(img_size_, 10, 3);
 //  VOSparseBundleAdj sba(img_size_, 1, 1);
 
@@ -940,14 +942,22 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     free_frames.push_back(frame_poses[fi]);
   }
 
+  string track_file("tracks.txt");
   for (int k=0; k < num_repeats; k++ ) {
     // disturb the point parameters.
     if (disturb_points == true) {
       disturbPoints(&tracks);
     }
 
+#if SAVE_FRAMES_POINTS==1
     string output_dir(output_data_path_);
     tracks.save(output_dir);
+
+    tracks.saveInOneFile(string(output_dir).append(track_file), true);
+
+    // for experimental purpose, save all framepose here
+    saveFramePosesNonXML(output_dir, frame_poses);
+#endif
 
     int numFreeFrames = free_frames.size();
     CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);

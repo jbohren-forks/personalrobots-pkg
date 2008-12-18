@@ -5,6 +5,7 @@
   <resource location="ros-pkg://wg_robot_description/models/pr2"/>
 
   <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/gripper_defs.xml" />
   <include filename="../pr2_robot_defs/head_defs.xml" />
   <include filename="../pr2_robot_defs/body_defs.xml" />
   <include filename="../pr2_robot_defs/base_defs.xml" />
@@ -13,7 +14,7 @@
 
 
   <pr2_base name="base" >
-    <origin xyz="0 0 0.0408" rpy="0 0 0" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
   </pr2_base>
 
 

@@ -44,7 +44,8 @@ ROS_REGISTER_CONTROLLER(LaserScannerTrajController)
 
 LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
-
+  tracking_offset_ = 0 ;
+  track_link_enabled_ = false ;
 }
 
 LaserScannerTrajController::~LaserScannerTrajController()
@@ -92,6 +93,32 @@ void LaserScannerTrajController::update()
 {
   //if (!joint_state_->calibrated_)
   //  return;
+
+
+  // ***** Compute the offset from tracking a link *****
+  //! \todo replace this link tracker with a KDL inverse kinematics solver
+  if(track_link_lock_.trylock())
+  {
+    if (track_link_enabled_  && target_link_ && mount_link_)
+    {
+      // Compute the position of track_point_ in the world frame
+      tf::Pose link_pose(target_link_->abs_orientation_, target_link_->abs_position_) ;
+      tf::Point link_point_world ;
+      link_point_world = link_pose*track_point_ ;
+
+      // We're hugely approximating our inverse kinematics. This is probably good enough for now...
+      double dx = link_point_world.x() - mount_link_->abs_position_.x() ;
+      double dz = link_point_world.z() - mount_link_->abs_position_.z() ;
+      tracking_offset_ = atan2(-dz,dx) ;
+    }
+    else
+    {
+      tracking_offset_ = 0.0 ;
+    }
+    track_link_lock_.unlock() ;
+  }
+
+  // ***** Compute the current command from the trajectory profile *****
   if (traj_lock_.trylock())
   {
     if (traj_duration_ > 1e-6)                                   // Short trajectories could make the mod_time calculation unstable
@@ -107,7 +134,7 @@ void LaserScannerTrajController::update()
       result = traj_.sample(sampled_point, profile_time) ;
       if (result > 0)
       {
-        joint_position_controller_.setCommand(sampled_point.q_[0]) ;
+        joint_position_controller_.setCommand(sampled_point.q_[0] + tracking_offset_) ;
         joint_position_controller_.update() ;
       }
     }
@@ -151,13 +178,13 @@ void LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Tra
   traj_lock_.unlock() ;
 }
 
-void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd_)
+void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd)
 {
-  if (cmd_.profile == "linear" ||
-      cmd_.profile == "blended_linear")
+  if (cmd.profile == "linear" ||
+      cmd.profile == "blended_linear")
   {
-    double high_pt = cmd_.amplitude + cmd_.offset ;
-    double low_pt = -cmd_.amplitude + cmd_.offset ;
+    double high_pt = cmd.amplitude + cmd.offset ;
+    double low_pt = -cmd.amplitude + cmd.offset ;
 
     std::vector<trajectory::Trajectory::TPoint> tpoints ;
 
@@ -170,14 +197,14 @@ void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers:
     tpoints.push_back(cur_point) ;
 
     cur_point.q_[0] = high_pt ;
-    cur_point.time_ = cmd_.period/2.0 ;
+    cur_point.time_ = cmd.period/2.0 ;
     tpoints.push_back(cur_point) ;
 
     cur_point.q_[0] = low_pt ;
-    cur_point.time_ = cmd_.period ;
+    cur_point.time_ = cmd.period ;
     tpoints.push_back(cur_point) ;
 
-    setTrajectory(tpoints, max_rate_, max_acc_, cmd_.profile) ;
+    setTrajectory(tpoints, max_rate_, max_acc_, cmd.profile) ;
     ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
   }
   else
@@ -185,6 +212,41 @@ void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers:
     ROS_WARN("Unknown Periodic Trajectory Type. Not setting command.") ;
   }
 }
+
+void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
+{
+  while (!track_link_lock_.trylock())
+    usleep(100) ;
+
+  if (track_link_cmd.enable)
+  {
+    ROS_INFO("LaserScannerTrajController:: Tracking link %s", track_link_cmd.link_name.c_str()) ;
+    track_link_enabled_ = true ;
+    string mount_link_name = "laser_tilt_mount_link" ;
+    target_link_ = robot_->getLinkState(track_link_cmd.link_name) ;
+    mount_link_  = robot_->getLinkState(mount_link_name) ;
+    tf::PointMsgToTF(track_link_cmd.point, track_point_) ;
+
+    if (target_link_ == NULL)
+    {
+      ROS_ERROR("LaserScannerTrajController:: Could not find target link:%s", track_link_cmd.link_name.c_str()) ;
+      track_link_enabled_ = false ;
+    }
+    if (mount_link_ == NULL)
+    {
+      ROS_ERROR("LaserScannerTrajController:: Could not find mount link:%s", mount_link_name.c_str()) ;
+      track_link_enabled_ = false ;
+    }
+  }
+  else
+  {
+    track_link_enabled_ = false ;
+    ROS_INFO("LaserScannerTrajController:: No longer tracking link") ;
+  }
+
+  track_link_lock_.unlock() ;
+}
+
 
 ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
 LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::node::instance()), c_()
@@ -196,8 +258,10 @@ LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::nod
 LaserScannerTrajControllerNode::~LaserScannerTrajControllerNode()
 {
   node_->unsubscribe(service_prefix_ + "/set_periodic_cmd") ;
+  node_->unsubscribe(service_prefix_ + "/set_track_link_cmd") ;
 
   publisher_->stop() ;
+
   delete publisher_ ;    // Probably should wait on publish_->is_running() before exiting. Need to
                          //   look into shutdown semantics for realtime_publisher
 }
@@ -250,6 +314,7 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   }
 
   node_->subscribe(service_prefix_ + "/set_periodic_cmd", cmd_, &LaserScannerTrajControllerNode::setPeriodicCmd, this, 1) ;
+  node_->subscribe(service_prefix_ + "/set_track_link_cmd", track_link_cmd_, &LaserScannerTrajControllerNode::setTrackLinkCmd, this, 1) ;
 
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
@@ -263,4 +328,9 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
 void LaserScannerTrajControllerNode::setPeriodicCmd()
 {
   c_.setPeriodicCmd(cmd_) ;
+}
+
+void LaserScannerTrajControllerNode::setTrackLinkCmd()
+{
+  c_.setTrackLinkCmd(track_link_cmd_) ;
 }

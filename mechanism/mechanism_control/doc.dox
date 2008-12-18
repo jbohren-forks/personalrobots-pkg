@@ -10,7 +10,7 @@ Mechanism Controls.
   - mechanism state:
    - \b mechanism_state, mechanism_control::MechanismState, mechanism_control.h
   - frame transforms:
-   - \b TransformArray, rosTF::TransformArray, mechanism_control.h
+   - \b tf_message, tf::tfMessage, mechanism_control.h
 
 
 @section services PR2 Mechanism Control Node ROS Services

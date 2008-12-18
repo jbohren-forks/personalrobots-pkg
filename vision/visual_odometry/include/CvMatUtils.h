@@ -110,10 +110,18 @@ public:
   /// Construct rodrigues and shift vectors from 4x4
   /// transformation matrix
   static void transformToRodriguesAndShift(
+      /// 4x4 matrix or 3x4 matrix of transformation
       const CvMat& transform,
       /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
       /// vector.
       CvMat& params);
+
+  static void transformToQuaternionAndShift(
+      /// 4x4 matrix or 3x4 matrix of transformation
+      const CvMat& transform,
+      /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
+      /// vector.
+      CvMat* params);
 
   /// given Euler angle and shift vector, construct a transformation matrix
   static void transformFromEulerAndShift(

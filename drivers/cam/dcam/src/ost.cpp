@@ -189,10 +189,11 @@ static int sp_xoff    =  0;	// no offset
 static int sp_corr    = 15;	// correlation window size
 static int sp_tthresh = 30;	// texture threshold
 static int sp_uthresh = 30;	// uniqueness threshold, percent
+static int sp_sthresh = 30;	// uniqueness threshold, percent
 static int sp_ssize   = 100;	// speckle size, pixels
 static int sp_sdiff   = 8;	// speckle diff, disparities
-
-
+static stereo_algorithm_t sp_alg=NORMAL_ALGORITHM; // type of stereo algorithm we're using
+bool is_unique_check = 0;
 
 // printing matrices
 void PrintMat(CvMat *A, FILE *fp = stdout);
@@ -253,7 +254,7 @@ main(int argc, char **argv)	// no arguments
 
   // start up dialog window
   stg = new stereogui;
-  gwin = stg->stereo_calibration;
+  gwin = stg->ost_main;
   set_current_tab_index(1);
   gwin->show();
   stg->cal_window->hide();	// have to request cal window
@@ -346,7 +347,7 @@ main(int argc, char **argv)	// no arguments
 	      if (isRectify)	// rectify images
 		dev->doRectify();
 	      if (isStereo)	// get stereo disparity
-		dev->doDisparity();
+		dev->doDisparity(sp_alg);
 	      if (is3D)		// get 3D points
 		{
 		  dev->doCalcPts();
@@ -737,12 +738,40 @@ cal_load_left_cb(Fl_Button* b, void* arg)
 }
 
 
+bool
+set_cal_image(IplImage *img, IplImage **imgs, int ind, CvPoint2D32f **corners, 
+	       CvPoint2D32f **rectcorners, int *ncorners, bool *good)
+{
+  imgs[ind] = img;
+  if (ind < 1) return false;	// not a calibration image
+
+  // find corners
+  if (corners[ind])
+    delete [] corners[ind];
+  corners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
+  rectcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
+  int numc = 0;
+  int ret = cvFindChessboardCorners(img, cvSize(num_x_ints, num_y_ints),
+	     corners[ind], &numc, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
+  ncorners[ind] = numc;
+  debug_message("Found %d corners", numc);
+
+  // do subpixel calculation, if corners have been found
+  if (ret)
+    cvFindCornerSubPix(img, corners[ind], numc, 
+		       cvSize(5,5),cvSize(-1,-1), 
+		       cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
+
+  // set good/bad image
+  good[ind] = ret;
+  return ret;
+}
+
+
+
 int
 load_left(char *fname)
 {
-  IplImage *dbg_corners = 0;
-
-
   // get window tab
   int ind = get_current_tab_index();
   
@@ -757,43 +786,19 @@ load_left(char *fname)
     {
       // make grayscale, display
       IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
-      dbg_corners = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3 );
       cvConvertImage(im,img);
-      imgs_left[ind] = img;
-      imsize_left = cvGetSize(im);
-      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
-      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-
-      if (ind < 1) return ind;	// not a calibration image
-
       // find corners
-      if (leftcorners[ind])
-	delete [] leftcorners[ind];
-      leftcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
-      rectleftcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
-      int numc = 0;
-      int ret = cvFindChessboardCorners(img, cvSize(num_x_ints, num_y_ints),
-		leftcorners[ind], &numc, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
-      nleftcorners[ind] = numc;
-      debug_message("Found %d corners", numc);
-      cwin->display2DFeatures(leftcorners[ind],numc,ret);
-
-      // do subpixel calculation, if corners have been found
-      if (ret)
-	{
-	  cvFindCornerSubPix(img, leftcorners[ind], numc, 
-			     cvSize(5,5),cvSize(-1,-1), 
-			     cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
-	}
-
-      // set good/bad image
-      goodleft[ind] = ret;
-
+      bool ret = set_cal_image(img,imgs_left,ind,leftcorners,rectleftcorners,
+			       nleftcorners,goodleft);
+      imsize_left = cvGetSize(img);
+      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
+      cwin->display2DFeatures(leftcorners[ind],nleftcorners[ind],ret);
       cvReleaseImage(&im);
       return ind;
     }
   return -1;
 }
+
 
 
 // Load right image into image pair
@@ -828,40 +833,15 @@ load_right(char *fname)
     debug_message("Can't load file %s\n", fname);
   else
     {
-      // convert to grayscale
+      // make grayscale, display
       IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
       cvConvertImage(im,img);
-      imgs_right[ind] = img;
-      imsize_right = cvGetSize(im);
-      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
-      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-
-      if (ind < 1) return ind;	// not a calibration image
-
       // find corners
-      if (rightcorners[ind])
-	delete [] rightcorners[ind];
-      rightcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
-      rectrightcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
-      int numc = 0;
-      int ret = cvFindChessboardCorners(img, cvSize(num_x_ints, num_y_ints),
-					rightcorners[ind], &numc,
-					CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
-      nrightcorners[ind] = numc;
-      debug_message("Found %d corners", numc);
-      cwin->display2DFeatures(rightcorners[ind],numc,ret);
-
-      // do subpixel calculation, if corners have been found
-      if (ret)
-	{
-	  cvFindCornerSubPix(img, rightcorners[ind], numc, 
-			   cvSize(5,5),cvSize(-1,-1), 
-			   cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
-	}
-
-      // set good/bad image
-      goodright[ind] = ret;
-
+      bool ret = set_cal_image(img,imgs_right,ind,rightcorners,rectrightcorners,
+			       nrightcorners,goodright);
+      imsize_right = cvGetSize(img);
+      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
+      cwin->display2DFeatures(rightcorners[ind],nrightcorners[ind],ret);
       cvReleaseImage(&im);
       return ind;
     }
@@ -1283,6 +1263,54 @@ void cal_calibrate_cb(Fl_Button*, void*)
     // compute and show epipolar line RMS error
     double err = epi_scanline_error(is_horz);
     debug_message("RMS error from scanline: %f pixels\n\n", err);
+
+    // transfer to active camera, if present
+    if (dev)
+      {
+	// stereo params
+	double *arr = dev->stIm->RP;
+	//	for (int i=0; i<16; i++)
+	//	  arr[i] = RP[i];
+
+	arr = dev->stIm->T;
+	for (int i=0; i<3; i++)
+	  arr[i] = T[i];
+	arr = dev->stIm->Om;
+	for (int i=0; i<3; i++)
+	  arr[i] = OM[i];
+
+	// left camera params
+	arr = dev->stIm->imLeft->K;
+	for (int i=0; i<9; i++)
+	  arr[i] = ((double *)K1)[i];
+	arr = dev->stIm->imLeft->R;
+	for (int i=0; i<9; i++)
+	  arr[i] = ((double *)rl)[i];
+	arr = dev->stIm->imLeft->P;
+	for (int i=0; i<12; i++)
+	  arr[i] = ((double *)pl)[i];
+	arr = dev->stIm->imLeft->D;
+	for (int i=0; i<5; i++)
+	  arr[i] = D1[i];
+
+	// right camera params
+	arr = dev->stIm->imRight->K;
+	for (int i=0; i<9; i++)
+	  arr[i] = ((double *)K2)[i];
+	arr = dev->stIm->imRight->R;
+	for (int i=0; i<9; i++)
+	  arr[i] = ((double *)rr)[i];
+	arr = dev->stIm->imRight->P;
+	for (int i=0; i<12; i++)
+	  arr[i] = ((double *)pr)[i];
+	arr = dev->stIm->imRight->D;
+	for (int i=0; i<5; i++)
+	  arr[i] = D2[i];
+
+	// set up rectification tables
+	dev->stIm->imLeft->initRectify(true); // force rectification
+	dev->stIm->imRight->initRectify(true);
+      }
 }
 
 
@@ -1744,7 +1772,11 @@ void cal_capture_cb(Fl_Button*, void*)
     img1 = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1);
   cvInitImageHeader(img1, cvSize(w,h), IPL_DEPTH_8U, 1);
   if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
-    cvSetData(img1,dev->stIm->imLeft->im,w);  
+    {
+      uint8_t *data = (uint8_t *)memalign(16,w*h); // feature image
+      memcpy(data,dev->stIm->imLeft->im,w*h);
+      cvSetData(img1,data,w);  
+    }
   else
     {
       debug_message("[Capture] No image to capture");
@@ -1758,15 +1790,21 @@ void cal_capture_cb(Fl_Button*, void*)
   // convert to grayscale, should just do a clone
   // TBD: release previous image
   IplImage* img=cvCloneImage(img1);
-  imgs_left[calInd] = img;
+
+  // find corners
+  bool ret = set_cal_image(img, imgs_left, calInd, leftcorners, 
+			   rectleftcorners, nleftcorners, goodleft);
   imsize_left = cvGetSize(img);
   cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-  bool ret = FindCorners(&leftcorners[calInd], &nleftcorners[calInd], &goodleft[calInd], img);
   cwin->display2DFeatures(leftcorners[calInd],nleftcorners[calInd],ret);
 
   // right image
   if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
-    cvSetData(img1,dev->stIm->imRight->im,w);  
+    {
+      uint8_t *data = (uint8_t *)memalign(16,w*h); // feature image
+      memcpy(data,dev->stIm->imRight->im,w*h);
+      cvSetData(img1,data,w);  
+    }
   else
     {
       debug_message("[Capture] No image to capture");
@@ -1776,11 +1814,12 @@ void cal_capture_cb(Fl_Button*, void*)
   cwin = get_current_right_win();
   // convert to grayscale
   img = cvCloneImage(img1);
-  imgs_right[calInd] = img;
+  // find corners
+  ret = set_cal_image(img, imgs_right, calInd, rightcorners, 
+			   rectrightcorners, nrightcorners, goodright);
   imsize_right = cvGetSize(img);
   debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
   cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-  ret = FindCorners(&rightcorners[calInd], &nrightcorners[calInd], &goodright[calInd], img);
   cwin->display2DFeatures(rightcorners[calInd],nrightcorners[calInd],ret);
 
   calInd++;
@@ -1816,6 +1855,8 @@ void cal_save_all_cb(Fl_Button*, void*)
 
 
 // get parameter string from current parameters
+// TBD: use the createParams() method of StereoData
+
 char *
 cal_get_param_string()
 {
@@ -1917,10 +1958,18 @@ void cal_upload_params_cb(Fl_Button*, void*)
 {
   FILE *fp;
   int fd;
+
+  int ret = fl_choice("Really upload, erasing current parameters?",
+		      "Continue", "Abort","");
+
+  if (ret > 0)			// not selected
+    return;
+
   if (dev)
     {
       cal_set_dev_params();	// set the parameters from the current values
-      debug_message("[oST] Setting FW parameters");
+      printf("[Cal] %s\n", dev->camIm->params);
+      debug_message("[oST] Uploading calibration parameters");
       dev->setParameters();	// set the parameters in FW firmware
 
       debug_message("[oST] Setting STOC parameters");
@@ -2113,6 +2162,38 @@ void stereo_window_cb(Fl_Menu_ *w, void *u)
   stg->stereo_window->show();
 }
 
+// video size
+void
+stereo_algorithm_cb(Fl_Choice *w, void *u)
+{
+  Fl_Menu_ *mw = (Fl_Menu_ *)w;
+  const Fl_Menu_Item* m = mw->mvalue();
+  
+  //printf("Label: %s\n", m->label());
+
+  if (!strcmp(m->label(), "Normal"))
+    {
+	sp_alg = NORMAL_ALGORITHM;      
+	//printf("Normal algorithm\n");
+    }
+  if (!strcmp(m->label(), "Scanline Opt"))
+    {
+      sp_alg = SCANLINE_ALGORITHM;    
+      //printf("Scanline algorithm\n");
+    }
+ if (!strcmp(m->label(), "DP"))
+    {
+      sp_alg = DP_ALGORITHM;    
+     // printf("DP algorithm\n");
+    }
+ if (!strcmp(m->label(), "Multiple Windows"))
+    {
+      sp_alg = MW_ALGORITHM;    
+     // printf("MW algorithm\n");
+    }
+}
+
+
 void
 disparity_cb(Fl_Counter *w, void *x)
 {
@@ -2135,6 +2216,14 @@ texture_cb(Fl_Counter *w, void *x)
   sp_tthresh = (int)w->value();
   if (dev)
     dev->setTextureThresh(sp_tthresh);
+}
+
+void
+smoothness_cb(Fl_Counter *w, void *x)
+{
+  sp_sthresh = (int)w->value();
+  if (dev)
+    dev->setSmoothnessThresh(sp_sthresh);
 }
 
 void
@@ -2178,6 +2267,18 @@ speckle_diff_cb(Fl_Counter *w, void *x)
   if (dev)
     dev->setSpeckleDiff(sp_sdiff);
 }
+
+void unique_check_cb(Fl_Light_Button* w, void*)
+{
+  // set flag
+  if (w->value())
+    is_unique_check = true;
+  else
+    is_unique_check = false;
+
+ if (dev)
+    dev->setUniqueCheck(is_unique_check);
+ }
 
 
 //

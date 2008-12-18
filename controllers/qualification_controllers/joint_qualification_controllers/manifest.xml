@@ -12,7 +12,6 @@
   <depend package="robot_msgs" />
 
   <depend package="robot_mechanism_controllers" />
-  <depend package="wxmpl" />
   <depend package="rospy" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />

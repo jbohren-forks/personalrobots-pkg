@@ -71,6 +71,7 @@ ARAPlanner::~ARAPlanner()
     DeleteSearchStateSpace(pSearchStateSpace_);
     delete pSearchStateSpace_;
   }
+  fclose(fDeb);
 }
 
 

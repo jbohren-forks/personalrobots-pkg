@@ -201,6 +201,8 @@ private:
 
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses);
 
+void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses);
+
 typedef enum {
   Pairwise,
   BundleAdjust

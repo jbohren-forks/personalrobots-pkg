@@ -81,7 +81,7 @@ void on_mouse(int event, int x, int y, int flags, void *params){
     gxys.push_back(p);
     g_do_cb = true;
     g_selection_mutex.unlock();
-
+    
     break;
     
   default:
@@ -123,7 +123,7 @@ public:
     cv_image_(NULL),
     cv_disp_image_(NULL),
     cv_disp_image_out_(NULL),
-    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(0.05), &TrackStarterGUI::image_cb_timeout)
+    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(10), &TrackStarterGUI::image_cb_timeout)
   {
     
 
@@ -142,7 +142,7 @@ public:
     sync_.subscribe("dcam/disparity",dimage_,1);
     sync_.subscribe("dcam/stereo_info", stinfo_,1);
     sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
-    subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
+    //subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
 
@@ -176,6 +176,8 @@ public:
       cv_mutex_.unlock();
       return;
     }
+
+    cv_mutex_.unlock();///
 
     bool do_calib = false;
     if (limage_.encoding != "mono") {
@@ -219,6 +221,9 @@ public:
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
 
+
+    //cv_mutex_.lock(); ///
+    g_selection_mutex.lock();
     for (uint i = 0; i<gxys.size(); i++) {
 
       if (cam_model_ && !gxys[i].published) {
@@ -277,13 +282,13 @@ public:
       cvCircle(cv_image_, gxys[i].xy, 2 , cvScalar(255,0,0) ,4);
     }
 
+    g_last_image_time = limage_.header.stamp;
+    g_selection_mutex.unlock();
+
+    cv_mutex_.lock();
     cvShowImage("Track Starter: Left Image", cv_image_);
     cvShowImage("Track Starter: Disparity", cv_disp_image_out_);
-    
-    g_last_image_time = limage_.header.stamp;
-
     cv_mutex_.unlock();
-    
   }
 
   void image_cb_timeout(ros::Time t) {   
@@ -298,7 +303,6 @@ public:
     while (ok() && !quit_) {
       // Display the image
       cv_mutex_.lock();
-
       int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"

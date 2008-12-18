@@ -103,7 +103,7 @@ public:
 	const static int numParams = 6;	      ///< Total num of parameters
 	const static int defNumMaxIter = 50;  ///< Maximum num of iterations
 	const static int defMaxTimesOfUpdates = 800; //<maximum num of times update() or updateAlt() is called
-	const static double defDeltaForNumericDeriv = 1.e-10;
+	const static double defDeltaForNumericDeriv = 1.e-9;
 
 	/**
 	 *  A routine that performs optimization.

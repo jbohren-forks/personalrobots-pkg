@@ -17,12 +17,14 @@
  <depend package="robot_srvs"/>
  <depend package="pr2_mechanism_controllers"/>
  <depend package="pr2_msgs"/>
+ <depend package="ransac_ground_plane_extraction"/>
  <depend package="trajectory_rollout"/>
  <depend package="laser_scan" />
  <depend package="costmap_2d"/>
  <depend package="tf"/>
  <depend package="sbpl"/>
  <depend package="sbpl_util"/>
+ <depend package="navfn"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

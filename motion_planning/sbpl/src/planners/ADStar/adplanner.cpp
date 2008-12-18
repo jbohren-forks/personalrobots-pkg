@@ -273,11 +273,12 @@ void ADPlanner::UpdateSetMembership(ADState* state)
 			key = ComputeKey(state);
             if(state->heapindex == 0)
 			{
-                pSearchStateSpace_->heap->insertheap(state, key);
-
 				//need to remove it because it can happen when updating edge costs and state is in incons
 				if(state->listelem[AD_INCONS_LIST_ID] != NULL)
 					pSearchStateSpace_->inconslist->remove(state, AD_INCONS_LIST_ID); 
+
+                pSearchStateSpace_->heap->insertheap(state, key);
+
 			}
             else
 				pSearchStateSpace_->heap->updateheap(state, key);
@@ -690,7 +691,10 @@ void ADPlanner::BuildNewOPENList(ADSearchStateSpace_t* pSearchStateSpace)
 		key = ComputeKey(state);
 	    
 	    //insert into OPEN
-	    pheap->insertheap(state, key);
+        if(state->heapindex == 0)
+            pheap->insertheap(state, key);
+        else
+            pheap->updateheap(state, key); //should never happen, but sometimes it does - somewhere there is a bug TODO
 	    //remove from INCONS
 	    pinconslist->remove(state, AD_INCONS_LIST_ID);
 	  }
