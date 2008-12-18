@@ -51,8 +51,13 @@ $ ./filter_generator_client [name args]
 \par Example
 
 \verbatim
+octave command: [b,a] = butter(n, Wc) low pass filter with cutoff pi*Wc radians
 $ rosrun filter_generator filter_generator_client butter 2 .1
+
+octave command: [b,a] = butter(n, Wc, 'high') high pass filter with cutoff pi*Wc radians
 $ rosrun filter_generator filter_generator_client butter 2 .1 high
+
+octave command: [b,a] = butter(n, [Wl, Wh], 'stop') band reject filter with edges pi*Wl and pi*Wh radians
 $ rosrun filter_generator filter_generator_client butter 2 .1 .5 stop
 \endverbatim
 

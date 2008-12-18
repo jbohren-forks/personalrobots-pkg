@@ -6,7 +6,7 @@ Generates the transfer function coefficients for filters using octave.
 </description>
 <author>Melonee Wise/mwise@willowgarage.com</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="API cleared" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="misc_utils" />
 <depend package="filters" />
