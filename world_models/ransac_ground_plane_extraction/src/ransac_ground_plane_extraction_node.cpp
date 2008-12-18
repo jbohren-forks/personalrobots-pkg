@@ -102,12 +102,15 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
   }
   catch(tf::LookupException& ex) {
     ROS_INFO("No Transform available Error\n");
+    return;
   }
   catch(tf::ConnectivityException& ex) {
     ROS_INFO("Connectivity Error\n");
+    return;
   }
   catch(tf::ExtrapolationException& ex) {
     ROS_INFO("Extrapolation Error\n");
+    return;
   }
 
   if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
