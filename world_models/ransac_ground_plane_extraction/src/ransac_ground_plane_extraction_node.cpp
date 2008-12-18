@@ -112,6 +112,9 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
     ROS_INFO("Extrapolation Error\n");
     return;
   }
+  catch(tf::TransformException e) {
+    return;
+  }
 
   if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
   {
@@ -121,8 +124,11 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
      
       obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, transformed_sensor_origin, far_remove_distance_threshold_, far_remove_distance_);
 
-      obstacle_cloud_->header = cloud_msg_.header;
-      publish(publish_obstacle_topic_,*obstacle_cloud_);
+      if(obstacle_cloud_ != NULL){
+        obstacle_cloud_->header = cloud_msg_.header;
+        publish(publish_obstacle_topic_,*obstacle_cloud_);
+        delete obstacle_cloud_;
+      }
     }
 
     ground_plane_msg.header = cloud_msg_.header;
