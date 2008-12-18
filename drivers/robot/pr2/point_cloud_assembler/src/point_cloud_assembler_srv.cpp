@@ -88,7 +88,7 @@ public:
 
     // **** Set TF Extrapolation Limit ****
     double tf_extrap_limit_secs ;
-    param("~tf_extrap_limit", tf_extrap_limit_secs, 0.01) ;
+    param("~tf_extrap_limit", tf_extrap_limit_secs, 0.00) ;
     if (tf_extrap_limit_secs < 0.0)
       ROS_ERROR("Parameter tf_extrap_limit<0 (%f)", tf_extrap_limit_secs) ;
 
