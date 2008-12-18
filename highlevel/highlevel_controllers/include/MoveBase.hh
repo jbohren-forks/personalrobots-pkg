@@ -166,6 +166,7 @@ namespace ros {
       void baseScanCallback();
       void tiltScanCallback();
       void tiltCloudCallback();
+      void groundPlaneCloudCallback();
       void stereoCloudCallback();
       void groundPlaneCallback();
 
@@ -206,15 +207,11 @@ namespace ros {
        */
       bool checkWatchDog() const;
 
-      /**
-       * @bried Filters ground hits from point clouds
-       */
-      void filterGroundPlane(const std_msgs::PointCloud& unfiltered, std_msgs::PointCloud* filtered);
-
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
       std_msgs::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
+      std_msgs::PointCloud groundPlaneCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
@@ -228,6 +225,7 @@ namespace ros {
       // with this node
       costmap_2d::BasicObservationBuffer* baseScanBuffer_;
       costmap_2d::BasicObservationBuffer* tiltScanBuffer_;
+      costmap_2d::BasicObservationBuffer* lowObstacleBuffer_;
       costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
 
       /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
@@ -262,6 +260,8 @@ namespace ros {
       ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;
       pr2_msgs::PlaneStamped groundPlaneMsg_;
       pr2_msgs::PlaneStamped ground_plane_;
+      std_msgs::PointCloud *filtered_cloud_;
+      double ransac_distance_threshold_;
     };
   }
 }

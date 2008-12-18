@@ -55,7 +55,7 @@ namespace ros {
       ma_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
-      minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.setIdentity();
@@ -86,6 +86,9 @@ namespace ros {
       double weight(0.1); // Scale costs down by a factor of 10
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
+       
+      //thresholds for ground plane detection
+      param("/ransac_ground_plane_extraction/distance_threshold", ransac_distance_threshold_, 0.03);
 
       // Unsigned chars cannot be stored in parameter server
       int tmpLethalObstacleThreshold;
@@ -106,7 +109,8 @@ namespace ros {
 
       noInformation = tmpNoInformation;
 
-      param("/costmap_2d/z_threshold", maxZ_, maxZ_);
+      param("/costmap_2d/z_threshold_max", maxZ_, maxZ_);
+      param("/costmap_2d/z_threshold_min", minZ_, minZ_);
       param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
@@ -118,18 +122,23 @@ namespace ros {
       // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
       double base_laser_update_rate(2.0);
       double tilt_laser_update_rate(2.0);
+      double low_obstacle_update_rate(0.2);
       double stereo_update_rate(2.0);
       param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
       param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
+      param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
       param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
       // Then allocate observation buffers
       baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), 
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(3, 0), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
-							       inscribedRadius, 0.0, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), 
+							       inscribedRadius, minZ_, maxZ_);
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, ros::Duration(3, 0), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
+							       inscribedRadius, -0.1, minZ_ + 0.01);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, ros::Duration(0, 0), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
 
@@ -242,8 +251,9 @@ namespace ros {
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
       //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
       subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
-      subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
+      subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
       subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
+      subscribe("obstacle_cloud",  groundPlaneCloudMsg_,  &MoveBase::groundPlaneCloudCallback, 1);
 
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
@@ -270,6 +280,7 @@ namespace ros {
         delete costMap_;
 
       delete baseScanBuffer_;
+      delete lowObstacleBuffer_;
       delete tiltScanBuffer_;
       delete stereoCloudBuffer_;
     }
@@ -377,52 +388,10 @@ namespace ros {
       unlock();
     }
 
-    void MoveBase::filterGroundPlane(const std_msgs::PointCloud& unfiltered, std_msgs::PointCloud* filtered){
-      std_msgs::PointStamped frame_point;
-      std_msgs::Vector3Stamped frame_normal;
-      //we want to remove ground hits in the frame of the unfiltered cloud
-      try
-      {
-        std_msgs::PointStamped gp_pt;
-        gp_pt.header = ground_plane_.header;
-        gp_pt.point = ground_plane_.point;
-
-        std_msgs::Vector3Stamped gp_norm;
-        gp_norm.header = ground_plane_.header;
-        gp_norm.vector = ground_plane_.normal;
-
-        tf_.transformPoint(unfiltered.header.frame_id, gp_pt, frame_point);	 
-        tf_.transformVector(unfiltered.header.frame_id, gp_norm, frame_normal);	 
-      }
-      catch(tf::LookupException& ex)
-      {
-        ROS_DEBUG("%s\n", ex.what());
-      }
-      catch(tf::ConnectivityException& ex)
-      {
-        ROS_DEBUG("%s\n", ex.what());
-      }
-      catch(tf::ExtrapolationException& ex)
-      {
-        puts("Extrapolation exception");
-      }
-
-      //TODO:needs to be a param tomorrow
-      double distance_threshold = 0.03;
-
-      filtered = ground_plane_extractor_.removeGround(unfiltered, distance_threshold, frame_point.point, frame_normal.vector);
-      filtered->header = unfiltered.header;
-    }
-
     void MoveBase::tiltCloudCallback()
     {
-      std_msgs::PointCloud *filtered_cloud = NULL;
       lock();
-      filterGroundPlane(tiltCloudMsg_, filtered_cloud);
-      if(filtered_cloud != NULL){
-        tiltScanBuffer_->buffer_cloud(*filtered_cloud);
-        delete filtered_cloud;
-      }
+      tiltScanBuffer_->buffer_cloud(tiltCloudMsg_);
       unlock();
     }
 
@@ -431,6 +400,13 @@ namespace ros {
     {
       lock();
       ground_plane_ = groundPlaneMsg_;
+      unlock();
+    }
+
+    void MoveBase::groundPlaneCloudCallback()
+    {
+      lock();
+      lowObstacleBuffer_->buffer_cloud(groundPlaneCloudMsg_);
       unlock();
     }
 
@@ -611,7 +587,7 @@ namespace ros {
      * The conjunction of all observation buffers must be current
      */
     bool MoveBase::checkWatchDog() const {
-      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent();
+      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent() && lowObstacleBuffer_->isCurrent();
 
       if(!ok) 
         ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
@@ -896,6 +872,7 @@ namespace ros {
           std::vector<costmap_2d::Observation> observations;
           baseScanBuffer_->get_observations(observations);
           tiltScanBuffer_->get_observations(observations);
+          lowObstacleBuffer_->get_observations(observations);
           stereoCloudBuffer_->get_observations(observations);
 
           ROS_DEBUG("Applying update with %d observations/n", observations.size());
