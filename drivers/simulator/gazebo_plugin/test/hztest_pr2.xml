@@ -60,17 +60,17 @@
     for this test (mechanism_state_test vs. scan_test). -->
     <param name="topic" value="mechanism_state" />
     <param name="hz" value="79.763" />
-    <param name="hzerror" value="50.0" />
+    <param name="hzerror" value="100.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
-  <!-- Test for publication of 'TransformArray' topic. -->
-  <test test-name="hztest_test_TransformArray" pkg="rostest" type="hztest" name="TransformArray_test">
+  <!-- Test for publication of 'tf_message' topic. -->
+  <test test-name="hztest_test_tf_message" pkg="rostest" type="hztest" name="tf_message_test">
     <!-- Note how we use a different parameter namespace and node name
-    for this test (TransformArray_test vs. scan_test). -->
-    <param name="topic" value="TransformArray" />
+    for this test (tf_message_test vs. scan_test). -->
+    <param name="topic" value="tf_message" />
     <param name="hz" value="157.240" />
-    <param name="hzerror" value="100.0" />
+    <param name="hzerror" value="150.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
