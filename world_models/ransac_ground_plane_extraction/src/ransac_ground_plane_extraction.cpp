@@ -42,6 +42,7 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
     if(j < MIN_POINTS)
     {
       ROS_WARN("RansacGroundPlaneExtraction:: Too few points in candidate ground plane: %d",j);
+      delete copy;
       return -1;
     }
 
@@ -63,6 +64,8 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
     ROS_DEBUG("Plane point: %f %f %f",planePoint.x,planePoint.y,planePoint.z);
     ROS_DEBUG("Plane normal: %f %f %f",planeNormal.x,planeNormal.y,planeNormal.z);
     ROS_DEBUG("Done RANSAC %f seconds",(ros::Time::now()-time).toSec());
+
+    delete copy;
 
     return 1;
 }
