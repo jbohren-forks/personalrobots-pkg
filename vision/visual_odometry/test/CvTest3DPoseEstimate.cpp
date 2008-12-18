@@ -43,7 +43,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
-#define SAVE_FRAMES_POINTS 1
+#define SAVE_FRAMES_POINTS 0
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
