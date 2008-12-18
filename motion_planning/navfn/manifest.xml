@@ -5,9 +5,10 @@
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
  <url>http://pr.willowgarage.com</url>
-<!--
- <depend package="some_package_or_other"/>
--->
+ <depend package="rosconsole"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libnetpbm10-dev"/> <!-- could be optional? -->
+ <export>
+  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+ </export>
 </package>

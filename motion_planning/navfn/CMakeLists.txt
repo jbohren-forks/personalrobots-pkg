@@ -12,17 +12,16 @@ include (rosbuild)
 add_definitions (-Wall)
 rospack (navfn)
 
-include (CheckIncludeFile)
-check_include_file (pgm.h NAVFN_HAVE_NETPGM)
-if (${NAVFN_HAVE_NETPGM})
-  # should probably also check for libnetpbm existance...
-  message (STATUS "OK found pgm.h")
-else (${NAVFN_HAVE_NETPGM})
-  message (FATAL_ERROR "pgm.h not found (this could probably be made optional)")
-endif (${NAVFN_HAVE_NETPGM})
+#include (CheckIncludeFile)
+#check_include_file (pgm.h NAVFN_HAVE_NETPGM)
+#if (${NAVFN_HAVE_NETPGM})
+  # should probably also check for libnetpbm existence...
+ # message (STATUS "OK found pgm.h")
+#else (${NAVFN_HAVE_NETPGM})
+ # message (FATAL_ERROR "pgm.h not found (this could probably be made optional)")
+#endif (${NAVFN_HAVE_NETPGM})
 
-rospack_add_library (navfn src/navfn.cpp src/navwin.cpp)
-target_link_libraries (navfn -lfltk -lnetpbm)
+rospack_add_library (navfn src/navfn.cpp)
 
-rospack_add_executable (navtest src/navtest.cpp)
-target_link_libraries (navtest navfn)
+rospack_add_executable (navtest src/navtest.cpp src/navwin.cpp)
+target_link_libraries (navtest navfn -lfltk -lnetpbm)
