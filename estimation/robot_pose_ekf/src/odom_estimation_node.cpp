@@ -277,6 +277,9 @@ namespace estimation
     while (ok()){
       odom_mutex_.lock();  imu_mutex_.lock();  vo_mutex_.lock();
 
+      // initial value for filter stamp; keep this stamp when no sensors are active
+      filter_stamp_ = Time::now();
+
       // check which sensors are still active
       if ((odom_active_ || odom_initializing_) && 
 	  (Time::now() - odom_time_).toSec() > timeout_){
@@ -296,9 +299,6 @@ namespace estimation
 
       // only update filter when one of the sensors is active
       if (odom_active_ || imu_active_ || vo_active_){
-
-	// initial value for filter stamp
-	filter_stamp_ = Time::now();
 
 	// update filter at time where all sensor measurements are available
 	if (odom_active_)  filter_stamp_ = min(filter_stamp_, odom_stamp_);
