@@ -479,10 +479,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
-    try {
+    try
+    {
       this->tfL->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
-    }                                                  t, "base_link"),odom_to_map);
+                                                      t, "base_link"),odom_to_map);
+    }
     catch(tf::TransformException e){
       return(0);
     }
