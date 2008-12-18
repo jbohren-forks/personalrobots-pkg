@@ -702,8 +702,8 @@ namespace ros {
      * @todo Make based on loaded tolerances
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      if(fabs(x1 - x2) < 4 * getCostMap().getResolution() &&
-          fabs(y1 - y2) < 4 * getCostMap().getResolution())
+      static const double XY_ERROR = robotWidth_ / 2;
+      if(fabs(x1 - x2) < XY_ERROR && fabs(y1 - y2) < XY_ERROR)
         return true;
 
       return false;

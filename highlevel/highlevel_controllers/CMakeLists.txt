@@ -12,14 +12,18 @@ genmsg()
 
 # Library
 rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cpp)
-target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util)
+target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm
 rospack_add_executable(move_arm src/MoveArm.cpp)
 
-# MoveBase
+# move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
 target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
+
+# move_base_navfn
+rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)
+target_link_libraries(move_base_navfn highlevel_controllers navfn)
 
 # MoveArmEndEffector
 # rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
