@@ -77,7 +77,7 @@ private:
         // start roscpp
         ros::node* pnode = ros::node::instance();
 
-        if( pnode && !pnode->checkMaster() ) {
+        if( pnode && !pnode->check_master() ) {
             ros::fini();
             delete pnode;
             return NULL;
@@ -93,7 +93,7 @@ private:
             
             pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME|ros::node::DONT_ADD_ROSOUT_APPENDER);
             
-            bool bCheckMaster = pnode->checkMaster();
+            bool bCheckMaster = pnode->check_master();
             ros::fini();
             delete pnode;
 
@@ -128,7 +128,7 @@ private:
     {
         if( _bSubscribed ) {
             ros::node* pnode = ros::node::instance();
-            if( pnode && pnode->checkMaster() ) {
+            if( pnode && pnode->check_master() ) {
                 pnode->unsubscribe(_phasespacetopic.c_str());
                 RAVELOG_DEBUGA("unsubscribe from %s\n", _phasespacetopic.c_str());
             }
