@@ -116,7 +116,7 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
     if(publish_obstacle_cloud_)
     {
      
-      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, origin, far_remove_distance_threshold_, far_remove_distance_);
+      obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, transformed_sensor_origin, far_remove_distance_threshold_, far_remove_distance_);
 
       obstacle_cloud_->header = cloud_msg_.header;
       publish(publish_obstacle_topic_,*obstacle_cloud_);
