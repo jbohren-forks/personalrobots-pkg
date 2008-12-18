@@ -589,8 +589,6 @@ class VisualOdometer:
       Top = Tok * Tkp
       frame.pose = Top
       frame.inl = self.inl
-      if self.sba:
-        self.maintain_tracks(self.prev_frame, frame)
     if self.sba:
       self.sba_handle_frame(frame)
     self.prev_frame = frame
