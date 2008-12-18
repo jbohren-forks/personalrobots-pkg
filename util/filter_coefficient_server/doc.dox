@@ -1,0 +1,68 @@
+/** 
+@mainpage
+@htmlinclude manifest.html
+
+\section commandline Command-line tools
+
+\subsection gen_filter
+gen_filter is a standalone service that computes the transfer function coefficients using 
+digital filter functions provided by octave. This service only implements the [B,A]= filter(args)
+methods for each octave function.<br>
+
+Currently implemeneted filter functions are:<br>
+
+\li <a href="http://octave.sourceforge.net/doc/f/butter.html">butter</a> - 
+Generates a Butterworth filter. Default is a discrete space (Z) filter.
+\li <a href="http://octave.sourceforge.net/doc/f/cheby1.html">cheby1</a> - 
+Generates a Chebyshev type I filter with Rp dB of pass band ripple.
+\li <a href="http://octave.sourceforge.net/doc/f/cheby2.html">cheby2</a> - 
+Generates a Chebyshev type II filter with Rs dB of stop band attenuation.
+\li <a href="http://octave.sourceforge.net/doc/f/ellip.html">ellip</a> - 
+Generate an Elliptic or Cauer filter (discrete).
+\li <a href="http://octave.sourceforge.net/doc/f/invfreqz.html">invfreqz</a> - 
+Generates a Fit filter B(z)/A(z) to the complex frequency response H at frequency
+points F.
+
+\verbatim
+$ ./gen_filter.m
+\endverbatim
+
+\par Example
+
+\verbatim
+$ rosrun filter_generator gen_filter.m
+\endverbatim
+
+
+\subsubsection topics ROS services
+
+Advertises to:
+- \b "/gen_filter": [filter_generator/Filter] The filter name and args
+
+<hr>
+
+\subsection gen_filter_client
+gen_filter_client is an example client that uses the gen_filter service. 
+
+\verbatim
+$ ./filter_generator_client [name args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ rosrun filter_generator filter_generator_client butter 2 .1
+$ rosrun filter_generator filter_generator_client butter 2 .1 high
+$ rosrun filter_generator filter_generator_client butter 2 .1 .5 stop
+\endverbatim
+
+
+\subsubsection topics ROS services
+
+Subscribes to:
+- \b "/gen_filter": [filter_generator/Filter] Returns vectors a and b for transfer_function filter
+
+<hr>
+
+
+**/
