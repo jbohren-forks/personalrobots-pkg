@@ -10,6 +10,8 @@
 #include <PointTracks.h>
 #include <boost/foreach.hpp>
 
+#include <fstream>
+
 namespace cv {
 namespace willow {
 PointTracks::~PointTracks(){
@@ -205,6 +207,35 @@ PointTracks* PointTracks::load(string& dir, int start, int end) {
   }
   return tracks;
 }
+
+void PointTracks::saveInOneFile(string& filename, bool left_image_only) const {
+  std::fstream output_stream(filename.c_str(), ios::out);
+
+  if (left_image_only == true) {
+    output_stream << "# X Y Z  nframes  frame0 x0 y0  frame1 x1 y1 ..."<<std::endl;
+  }
+
+  BOOST_FOREACH( const PointTrack* p, tracks_ ) {
+    // cartesian points in 3d
+    output_stream << p->coordinates_.x << " ";
+    output_stream << p->coordinates_.y << " ";
+    output_stream << p->coordinates_.z << " ";
+    // num of frames
+    output_stream << p->size() << " ";
+    BOOST_FOREACH( const PointTrackObserv* obsv, *p ){
+      // frame id u v [d]
+      output_stream << obsv->frame_index_ << " ";
+      output_stream << obsv->disp_coord_.x << " ";
+      output_stream << obsv->disp_coord_.y << " ";
+      if (left_image_only == false ) {
+        // save the disparity as well
+        output_stream << obsv->disp_coord_.z << " ";
+      }
+    }
+    output_stream << std::endl;
+  }
+} // saveAsOneFile
+
 }
 }
 

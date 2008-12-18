@@ -289,6 +289,45 @@ void CvMatUtils::transformToRodriguesAndShift(
 }
 
 
+void CvMatUtils::transformToQuaternionAndShift(
+    const CvMat& transform,
+    /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
+    /// vector.
+    CvMat* params) {
+  CvMat rot;
+  CvMat shift;
+  CvMat shift1;
+  cvGetRows(params, &shift1, 3, 6);
+  cvGetSubRect(&transform, &rot, cvRect(0, 0, 3, 3));
+
+  double Qxx = cvmGet(&rot, 0, 0);
+  double Qxy = cvmGet(&rot, 0, 1);
+  double Qxz = cvmGet(&rot, 0, 2);
+  double Qyx = cvmGet(&rot, 1, 0);
+  double Qyy = cvmGet(&rot, 1, 1);
+  double Qyz = cvmGet(&rot, 1, 2);
+  double Qzx = cvmGet(&rot, 2, 0);
+  double Qzy = cvmGet(&rot, 2, 1);
+  double Qzz = cvmGet(&rot, 2, 2);
+
+  double t = Qxx+Qyy+Qzz;
+  double r = sqrt(1+t);
+  double s = 0.5/r;
+  double w = 0.5*r;
+  double x = (Qzy-Qyz)*s;
+  double y = (Qxz-Qzx)*s;
+  double z = (Qyx-Qxy)*s;
+
+  cvmSet(params, 0, 0, w);
+  cvmSet(params, 1, 0, x);
+  cvmSet(params, 2, 0, y);
+  cvmSet(params, 3, 0, z);
+
+  cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
+  cvCopy(&shift, &shift1);
+}
+
+
 CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
   CvPoint3D64f coord;
   coord.x = cvmGet(&mat, row, 0);

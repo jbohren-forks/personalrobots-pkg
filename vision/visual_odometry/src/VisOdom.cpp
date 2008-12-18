@@ -14,7 +14,8 @@
 
 using namespace cv::willow;
 
-#include "iostream"
+#include <iostream>
+#include <fstream>
 using namespace std;
 
 namespace cv { namespace willow {
@@ -171,7 +172,7 @@ PoseEstFrameEntry::~PoseEstFrameEntry(){
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses) {
 
   // @TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
-    double _poses[framePoses.size()*7];
+  double _poses[framePoses.size()*7];
   CvMat  _framePoses = cvMat(framePoses.size(), 7, CV_64FC1, _poses);
   int i=0;
   for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
@@ -193,6 +194,25 @@ void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses)
   if (i>0) {
     string framePosesFilename("framePoses.xml");
     cvSave((dirname+framePosesFilename).c_str(), &_framePoses, "index-rod3-shift3", "indices, rodrigues and shifts w.r.t. starting frame");
+  }
+}
+
+void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses) {
+  std::fstream out((dirname+string("framePoses.txt")).c_str(), ios::out);
+  out << "# quaternion translation"<<std::endl;
+  int i=0;
+  for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
+    FramePose* fp = *iter;
+
+    // make sure the transformation matrix and the rodrigues and shift vectors are in sync
+    double params_local_to_global_data[7];
+    CvMat  params_local_to_global = cvMat(7, 1, CV_64FC1, params_local_to_global_data);
+    CvMatUtils::transformToQuaternionAndShift(fp->transf_local_to_global_, &params_local_to_global);
+
+    for (int j=0; j<7; j++) {
+      out << params_local_to_global_data[j] << " ";
+    }
+    out << std::endl;
   }
 }
 

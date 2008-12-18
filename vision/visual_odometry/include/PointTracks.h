@@ -137,7 +137,25 @@ public:
   /// that are older than oldestFrameIndex
   void purge(int oldestFrameIndex);
   void print() const;
+  /// \brief Save the tracks in disk files.
+  /// Save the tracks as individual opencv xml files in the
+  /// specified directory.
   void save(string& dir) const;
+  /// \brief Save the tracks in one file (non xml).
+  /// Save all the tracks in on file, one line for each track in the following
+  /// format:
+  ///
+  ///  X Y Z  nframes  frame0 u0 v0 [d0] frame1 u1 v1 [d1]...
+  ///
+  /// where [X, Y, Z] is the Cartesian coordinate of the point,
+  /// [u, v, d] is the disparity coordinates of the point in a frame.
+  /// if left_image_only is true, disparity d is omitted.
+  ///
+  /// The monocular case of this format is the same as that is used by
+  /// the demo program of the Greek sba.
+  ///    http://www.ics.forth.gr/~lourakis/sba/
+  ///
+  void saveInOneFile(string& filename, bool left_image_only) const;
   static PointTracks* load(string& dir, int start, int end);
   /// collection stats of the tracks
   void stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
