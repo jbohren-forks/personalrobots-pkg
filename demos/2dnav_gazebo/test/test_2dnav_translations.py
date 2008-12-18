@@ -56,22 +56,12 @@ from rostools.msg import *
 from transformations import *
 from numpy import *
 
-NAV_TOL      = 1.0
-ODOM_TOL     = 1.0    #allowable odometry drift from ground truth
-TEST_TIMEOUT = 120.0
-
-# goal position
-TARGET_X =  10.0
-TARGET_Y =  10.0
-TARGET_T =  0.0
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
         super(NavStackTest, self).__init__(*args)
         self.bumped  = False
         self.success = False
-        self.reached_target_vw = False
-        self.duration_start = 0
 
         self.odom_xi = 0
         self.odom_yi = 0
@@ -90,6 +80,18 @@ class NavStackTest(unittest.TestCase):
         self.p3d_x = 0
         self.p3d_y = 0
         self.p3d_q = [0,0,0,0]
+
+        # parameters
+        self.nav_tol      = 1.0
+        self.odom_tol     = 1.0    #allowable odometry drift from ground truth
+        self.test_timeout = 120.0
+
+        # goal position
+        self.target_x =  10.0
+        self.target_y =  10.0
+        self.target_t =  0.0
+
+        print " sys arg0", args
 
     def printBaseOdom(self, odom):
         print "odom received"
@@ -164,15 +166,17 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper"           , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper"     , String              , self.bumpedInput)
+
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + TEST_TIMEOUT
+
+        timeout_t = time.time() + self.test_timeout
         # wait for result
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             # send goal
             h = Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
-            pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(TARGET_X,TARGET_Y,TARGET_T),1))
+            pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1))
             time.sleep(2.0)
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
@@ -204,12 +208,12 @@ class NavStackTest(unittest.TestCase):
             current_euler_angles = euler_from_quaternion(self.p3d_q)
             current_yaw = current_euler_angles[2]
 
-            nav_error  =  abs(self.p3d_x - TARGET_X) \
-                        + abs(self.p3d_y - TARGET_Y) \
-                        + abs(current_yaw -  TARGET_T)
-            print "nav error:" + str(nav_error) + " nav_tol:" + str(NAV_TOL) + " odom error:" + str(odom_error) + " odom_tol: " + str(ODOM_TOL)
+            nav_error  =  abs(self.p3d_x - self.target_x) \
+                        + abs(self.p3d_y - self.target_y) \
+                        + abs(current_yaw -  self.target_t)
+            print "nav error:" + str(nav_error) + " nav_tol:" + str(self.nav_tol) + " odom error:" + str(odom_error) + " odom_tol: " + str(self.odom_tol)
 
-            if nav_error < NAV_TOL and self.bumped == False and odom_error < ODOM_TOL:
+            if nav_error < self.nav_tol and self.bumped == False and odom_error < self.odom_tol:
                 self.success = True
 
         self.assert_(self.success)

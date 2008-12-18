@@ -78,13 +78,14 @@
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
     <!-- due to sim time wall clock time difference, use .5Hz for now until rostime is organized -->
-    <param name="/costmap_2d/base_laser_update_rate" value="0.5"/> <!-- base_laser -->
-    <param name="/costmap_2d/tilt_laser_update_rate" value="14.0"/> <!-- laser_tilt_link -->
+    <param name="/costmap_2d/base_laser_update_rate" value="0.0"/> <!-- base_laser -->
+    <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/> <!-- laser_tilt_link -->
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/> <!-- stereo_link -->
     <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>  <!-- odom_combined -->
 
     <!-- start node to move base -->
-    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
+    <!--node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" /-->
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
