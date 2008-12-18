@@ -3,7 +3,10 @@ import Image as Image
 
 scratch = " " * (640 * 480)
 
-class ComputedDenseStereoFrame:
+class Frame:
+  pass
+
+class ComputedDenseStereoFrame(Frame):
   def __init__(self, lf, rf):
     self.rawdata = lf.tostring()
     self.size = lf.size
@@ -20,7 +23,7 @@ class ComputedDenseStereoFrame:
     else:
       return v / 16.
 
-class DenseStereoFrame:
+class DenseStereoFrame(Frame):
   """ Dense Stereo directly from the camera.  lf is the left frame, rf is the disparity frame """
 
   def __init__(self, lf, rf):
@@ -55,8 +58,9 @@ def do_stereo_sparse(refpat, rgrad, x, y, xim, yim, ftzero, dlen, tfilter_thresh
   v = float(dlen-ind-1) + (p-n)/(2*(p+n-2*c))
   return (0.5 + 16*v)
 
-class SparseStereoFrame:
+class SparseStereoFrame(Frame):
   def __init__(self, lf, rf, use_grad_img = True):
+    self.externals = []
     self.lf = lf
     self.rf = rf
     self.rawdata = lf.tostring()

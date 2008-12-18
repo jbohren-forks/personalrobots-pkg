@@ -303,6 +303,7 @@ class VisualOdometer:
     self.inl = 0
     self.outl = 0
     self.num_frames = 0
+    self.ext_frames = 1000000
     self.keyframe = None
     self.log_keyframes = []
     self.pairs = []
@@ -432,14 +433,16 @@ class VisualOdometer:
 
     # Only keep tracks that have a recent frame
     oldest_useful_frame = f0.id - 3
-    self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= t.id[-1]])
+    def age(t):
+      return max([ i for i in t.id if i < 1000000])
+    self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
 
     oldtails = set([t.lastpt for t in self.tracks])
     for t in self.tracks:
       if t.alive:
         t.extend(pairmap[t.lastpt], f1.id)
 
-    print len(self.tracks), [ len(t.p) for t in self.tracks ]
+    #print len(self.tracks), [ len(t.p) for t in self.tracks ]
     for p0 in set(pairmap) - oldtails:
       p1 = pairmap[p0]
       newtrack = Track(p0, f0.id, p1, f1.id, f1.pose, self.cam)
@@ -466,25 +469,37 @@ class VisualOdometer:
 
   def sba_handle_frame(self, frame):
     self.timer['sba'].start()
-    self.posechain.append(VO.frame_pose(frame.id, frame.pose.tolist()))
-    #topleft = [ p.M[0] for p in self.posechain ]
+    self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
     (fix_sz, free_sz, niter) = self.sba
-    if (fix_sz + free_sz) > len(self.posechain):
+    if (1 + free_sz) > len(self.posechain):
       fix_sz = 1
       free_sz = len(self.posechain) - 1
-    print "SBA:", "fixed", [f.id for f in self.posechain[-(fix_sz + free_sz):-(free_sz)]], "free", [f.id for f in self.posechain[-(free_sz):]]
-    self.pe.sba(self.posechain[-(fix_sz + free_sz):-(free_sz)], self.posechain[-(free_sz):], [ t.sba_track for t in self.tracks ], 10)
+    fixed = self.posechain[-(fix_sz + free_sz):-(free_sz)]
+    free = self.posechain[-(free_sz):]
+    externals = sum([ f.externals for (f,_) in (fixed + free)], [])
+    print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
+    fixed += externals
+    print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
+    self.pe.sba([fp for (_,fp) in fixed], [fp for (_,fp) in free], [ t.sba_track for t in self.tracks ], niter)
     # copy these corrected poses back into the VO's key and current frames
     to_correct = [ self.keyframe, frame ]
     if self.prev_frame:
       to_correct.append(self.prev_frame)
     #print "Copying poses", [ fp.id for fp in self.posechain ], "to", [ f.id for f in to_correct ]
-    for fp in self.posechain[-(fix_sz + free_sz):]:
+    for (_,fp) in self.posechain[-(fix_sz + free_sz):]:
       for dst in set(to_correct):
         if fp.id == dst.id:
           dst.pose.fromlist(fp.M)
           print "SBA corrected pose of frame", dst.id, "to", dst.pose.M
     self.timer['sba'].stop()
+
+  def add_external_frame(self, frame, fext):
+    self.find_keypoints(fext)
+    self.find_disparities(fext)
+    self.collect_descriptors(fext)
+    fext.id = self.ext_frames
+    self.ext_frames += 1
+    frame.externals.append((fext, VO.frame_pose(fext.id, fext.pose.tolist())))
 
   def handle_frame(self, frame):
     self.find_keypoints(frame)
