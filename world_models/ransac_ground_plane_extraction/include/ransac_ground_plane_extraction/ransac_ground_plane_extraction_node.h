@@ -38,6 +38,7 @@
 #include <std_msgs/PointStamped.h>
 #include <pr2_msgs/PlaneStamped.h>
 #include <ros/node.h>
+#include <tf/transform_listener.h>
 
 
 namespace ransac_ground_plane_extraction {
@@ -85,6 +86,8 @@ namespace ransac_ground_plane_extraction {
   bool publish_obstacle_cloud_;
 
   void cloudCallback();
+
+  tf::TransformListener tf_; /**< Used to do transforms */
 
   };
 }

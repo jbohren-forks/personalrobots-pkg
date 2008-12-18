@@ -4,7 +4,8 @@
 
 using namespace ransac_ground_plane_extraction;
 
-RansacGroundPlaneExtraction::RansacGroundPlaneExtraction(){
+RansacGroundPlaneExtraction::RansacGroundPlaneExtraction()
+{
   point_plane_.x = 0.0;
   point_plane_.y = 0.0;
   point_plane_.z = 0.0;
@@ -16,7 +17,7 @@ RansacGroundPlaneExtraction::RansacGroundPlaneExtraction(){
   max_iterations_ = 500;
 }
 
-int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal,std_msgs::PointStamped &sensor_origin) 
+int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal) 
 {
     SmartScan smart_scan;
 
@@ -58,11 +59,6 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
       planeNormal.y = -planeNormal.y;
       planeNormal.z = -planeNormal.z;
     }
-
-    sensor_origin.header = baseFrameCloud.header;
-    sensor_origin.point.x = 0.0;
-    sensor_origin.point.y = 0.0;
-    sensor_origin.point.z = 0.0;
 
     ROS_DEBUG("Plane point: %f %f %f",planePoint.x,planePoint.y,planePoint.z);
     ROS_DEBUG("Plane normal: %f %f %f",planeNormal.x,planeNormal.y,planeNormal.z);

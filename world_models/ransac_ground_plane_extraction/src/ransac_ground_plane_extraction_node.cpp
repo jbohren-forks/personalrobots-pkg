@@ -36,7 +36,8 @@
 
 using namespace ransac_ground_plane_extraction;
 
-RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false)
+RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false),
+           tf_(*this, true, 10000000000ULL) // cache for 10 sec, no extrapolation
 {
   std::string publish_obstacle_cloud;
 
@@ -88,14 +89,35 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
 
   pr2_msgs::PlaneStamped ground_plane_msg;
 
-  std_msgs::PointStamped origin;
+  std_msgs::PointStamped sensor_origin, transformed_sensor_origin;
 
-  if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal,origin))
+  sensor_origin.header.stamp = cloud_msg_.header.stamp;
+  sensor_origin.header.frame_id = "base_link";
+  sensor_origin.point.x = 0.0;
+  sensor_origin.point.y = 0.0;
+  sensor_origin.point.z = 0.0;
+
+  try{
+    tf_.transformPoint(cloud_msg_.header.frame_id, sensor_origin, transformed_sensor_origin);
+  }
+  catch(tf::LookupException& ex) {
+    ROS_INFO("No Transform available Error\n");
+  }
+  catch(tf::ConnectivityException& ex) {
+    ROS_INFO("Connectivity Error\n");
+  }
+  catch(tf::ExtrapolationException& ex) {
+    ROS_INFO("Extrapolation Error\n");
+  }
+
+  if(ground_plane_extractor_.findGround(cloud_msg_,min_ignore_distance_,max_ignore_distance_,distance_threshold_,plane_point,plane_normal))
   {
     ground_plane_extractor_.updateGround(plane_point,plane_normal,estimated_plane_point,estimated_plane_normal);
     if(publish_obstacle_cloud_)
     {
+     
       obstacle_cloud_ =  ground_plane_extractor_.removeGround(cloud_msg_, distance_threshold_, estimated_plane_point,estimated_plane_normal, origin, far_remove_distance_threshold_, far_remove_distance_);
+
       obstacle_cloud_->header = cloud_msg_.header;
       publish(publish_obstacle_topic_,*obstacle_cloud_);
     }
