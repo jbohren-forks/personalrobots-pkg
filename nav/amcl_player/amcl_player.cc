@@ -470,12 +470,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     /*
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
                                                                       tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
-                                                        t, "base_link","map"));
+                                                        t, "base_footprint","map"));
                                                         */
 
     //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
     //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
-    //                                                    t, "map", "base_link"));
+    //                                                    t, "map", "base_footprint"));
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
@@ -483,7 +483,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     {
       this->tfL->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
-                                                      t, "base_link"),odom_to_map);
+                                                      t, "base_footprint"),odom_to_map);
     }
     catch(tf::TransformException e){
       return(0);
@@ -759,7 +759,7 @@ AmclNode::laserReceived()
     tf::Stamped<btTransform> laser_pose;
     try
     {
-      this->tfL->transformPose("base_link", ident, laser_pose);
+      this->tfL->transformPose("base_footprint", ident, laser_pose);
     }
     catch(tf::TransformException e)
     {
@@ -793,7 +793,7 @@ AmclNode::laserReceived()
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base_link"))
+    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base_footprint"))
       break;
 
     laser_scans.pop_front();
