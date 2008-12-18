@@ -5,7 +5,7 @@ genmsg()
 gensrv()
 
 rospack_add_library( filter_generator
-  test/gen_filter_client.cpp)
+  src/gen_filter_client.cpp)
   
-rospack_add_executable(test_gen_filter test/gen_filter_client.cpp)
-target_link_libraries(test_gen_filter filter_generator)
+rospack_add_executable(filter_generator_client src/gen_filter_client.cpp)
+target_link_libraries(filter_generator_client filter_generator)

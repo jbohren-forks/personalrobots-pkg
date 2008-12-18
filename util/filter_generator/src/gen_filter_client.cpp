@@ -16,8 +16,6 @@ public:
     filter_generator::Filter::response res;
     req.name = name;
     req.args = args;
-
-    
     if (ros::service::call("gen_filter", req, res))
     {
       for(uint32_t i=0; i<res.a.size();i++)
