@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 
 #ifdef _MSC_VER
 #include <boost/typeof/std/string.hpp>
@@ -141,7 +142,21 @@ inline int wcsicmp(const wchar_t* s1, const wchar_t* s2)
 
 #endif
 
+inline std::wstring _ravembstowcs(const char* pstr)
+{
+    size_t len = mbstowcs(NULL, pstr, 0);
+    std::wstring w; w.resize(len);
+    mbstowcs(&w[0], pstr, len);
+    return w;
+}
+
 #include <rave/rave.h>
 using namespace OpenRAVE;
+
+#include <ros/node.h>
+#include <ros/time.h>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 #endif

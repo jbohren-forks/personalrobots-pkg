@@ -95,7 +95,7 @@ void addTransform(TiXmlElement *elem, const::btTransform& transform)
     
     // set geometry transform
     addKeyValue(elem, "translation", values2str(3, cpos));
-    addKeyValue(elem, "quaternion", values2str(4, cquat));  
+    addKeyValue(elem, "quat", values2str(4, cquat));  
 }
 
 void copyOpenraveMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const vector<string> *tags = NULL)
@@ -272,8 +272,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
         addKeyValue(joint, "offsetfrom", link->name);
 	    
         if (fixed) {
-            addKeyValue(joint, "lowStop", "0");
-            addKeyValue(joint, "highStop", "0");
+            addKeyValue(joint, "lostop", "0");
+            addKeyValue(joint, "histop", "0");
             addKeyValue(joint, "axis", "1 0 0");
         }
         else {

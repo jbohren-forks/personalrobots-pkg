@@ -1005,6 +1005,7 @@ public:
             mlevels["info"] = Level_Info;
             mlevels["warn"] = Level_Warn;
             mlevels["debug"] = Level_Debug;
+            mlevels["verbose"] = Level_Verbose;
             DebugLevel level = GetEnv()->GetDebugLevel();
             if( mlevels.find(req.debuglevel) != mlevels.end() )
                 level = mlevels[req.debuglevel];

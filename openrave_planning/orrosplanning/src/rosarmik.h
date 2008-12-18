@@ -27,7 +27,6 @@
 #define  OPENRAVE_ROSARMIK_H
 
 #include <libKinematics/pr2_ik.h>
-#include <boost/shared_ptr.hpp>
 
 class ROSArmIK : public IkSolverBase
 {

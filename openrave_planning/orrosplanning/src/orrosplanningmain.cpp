@@ -26,6 +26,8 @@
 #include "plugindefs.h"
 
 #include "rosarmik.h"
+#include "phasespacesystem.h"
+#include "rosplanningproblem.h"
 
 // declaring variables with stdcall can be a little complex
 #ifdef _MSC_VER
@@ -53,7 +55,12 @@ InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, Environme
         if( wcsicmp(name, L"ROSArmIK") == 0 )
             return new ROSArmIK(penv);
         break;
-        
+    case PT_ProblemInstance:
+        if( wcsicmp(name, L"ROSPlanningProblem") == 0 )
+            return new ROSPlanningProblem(penv);
+    case PT_SensorSystem:
+        if( wcsicmp(name, L"PhaseSpace") == 0 )
+            return new PhaseSpaceMocapClient(penv);
     default:
         break;
     }
@@ -70,6 +77,9 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
     }
 
     pinfo->iksolvers.push_back(L"ROSArmIK");
+    pinfo->sensorsystems.push_back(L"PhaseSpace");
+    pinfo->problems.push_back(L"ROSPlanningProblem");
+
     return true;
 }
 
