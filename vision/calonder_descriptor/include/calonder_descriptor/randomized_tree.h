@@ -9,10 +9,10 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/numeric/ublas/matrix.hpp>
+//#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/random.hpp>
 
-namespace ublas = boost::numeric::ublas;
+//namespace ublas = boost::numeric::ublas;
 
 namespace features {
 
@@ -54,13 +54,13 @@ public:
              int num_quant_bits=0);
 
   // following two funcs are EXPERIMENTAL (do not use unless you know exactly what you do)
-  static void quantize_vector(float *vec, int dim, int N, float clamp[2], int clamp_mode=0);
-  void quantize_leaves(int num_quant_bits, float p1, float p2, int clamp_mode=0);
+  static void quantizeVector(float *vec, int dim, int N, float clamp[2], int clamp_mode=0);
+  void quantizeLeaves(int num_quant_bits, float p1, float p2, int clamp_mode=0);
 
   // patch_data must be a 32x32 array (no row padding)
   float* getPosterior(uchar* patch_data);
   const float* getPosterior(uchar* patch_data) const;
-  uchar* getPosterior2(uchar* patch_data);
+  uint8_t* getPosterior2(uchar* patch_data);
 
   void read(const char* file_name);
   void read(std::istream &is);
@@ -76,13 +76,13 @@ public:
   void savePosteriors(std::string url);
   void savePosteriors2(std::string url);
   
-private:
+//private:
   int classes_;
   int depth_;
   int num_leaves_;
   std::vector<RTreeNode> nodes_;  
   float **posteriors_;      // 16 bytes aligned posteriors
-  uchar **posteriors2_;      // 16 bytes aligned posteriors
+  uint8_t **posteriors2_;      // 16 bytes aligned posteriors
   std::vector<int> leaf_counts_;
   bool keep_float_posteriors_;
 
@@ -94,11 +94,12 @@ private:
   void finalize(size_t reduced_num_dim, int num_quant_bits);  
   int getIndex(uchar* patch_data) const;
   inline float* getPosteriorByIndex(int index);
-  inline uchar* getPosteriorByIndex2(int index);
+  inline uint8_t* getPosteriorByIndex2(int index);
   inline const float* getPosteriorByIndex(int index) const;
   void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);  
   void convertPosteriorsToChar();
   void makePosteriors2();
+  void compressLeaves(size_t reduced_num_dim);
 };
 
 
@@ -117,7 +118,7 @@ inline const float* RandomizedTree::getPosteriorByIndex(int index) const
   return posteriors_[index]; 
 }
 
-inline uchar* RandomizedTree::getPosteriorByIndex2(int index)
+inline uint8_t* RandomizedTree::getPosteriorByIndex2(int index)
 {
   return posteriors2_[index];
 }
