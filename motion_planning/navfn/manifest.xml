@@ -8,6 +8,8 @@
  <depend package="rosconsole"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libnetpbm10-dev"/> <!-- could be optional? -->
+ <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+ <sysdepend os="ubuntu" version="8.04-hardy" package="libnetpbm10-dev"/> <!-- could be optional? -->
  <export>
   <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
  </export>
