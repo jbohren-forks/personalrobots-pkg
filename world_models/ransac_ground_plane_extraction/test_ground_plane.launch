@@ -2,7 +2,7 @@
 <launch>
   <group name="wg">
     <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
-    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 2 .45 .40" />
+    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 2 .45 .40" />
 
     <node pkg="point_cloud_assembler" type="point_cloud_assembler" output="screen"  name="assembler">
       <remap from="scan" to="tilt_scan"/>
@@ -10,11 +10,11 @@
     </node>
 
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
-      <remap from="laser_scanner_signal" to="laser_controller/laser_scanner_signal"/>
+      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <param name="fixed_frame" type="string" value="base_link" />
     </node>
 
-    <param name="ransac_ground_plane_extraction/listen_topic" value="full_cloud"/>
+    <param name="ransac_ground_plane_extraction/listen_topic" value="tilt_scan_cloud"/>
     <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
     <param name="ransac_ground_plane_extraction/publish_obstacle_topic" value="obstacle_cloud"/>
 
