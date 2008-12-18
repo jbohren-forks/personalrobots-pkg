@@ -1,0 +1,342 @@
+/**
+ * A rewrite of the current model, assuming the following laguage extensions:
+ * this.next :- meets
+ * this.previous :- met_by
+ * if(x && y && z) :- conjunction of tests for variable binding
+ * infix arithmetic relations
+ * timeline[t] == value :- imposes a constraint that will only be checked
+ * timeline[start, end] :- contained_by
+ * timeline[] :- contains relation (default scope for a slot)
+ * <slot> := value :- operator implies a subgoal for planner to achieve
+ * timeline[t] == Pred(x, y, z) :- implicit argument binding on token allocation
+ * BaseState bs(?, recharge_level, true) :- inline filter for object variable
+ * foo = reandomSelect(ChargingStation()) := inline use of a function with a return type. Assignment.
+ */
+#include "TREX.nddl" // TREX base classes
+
+typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
+typedef float [0.0 1.0] UNIT_FLOAT;
+
+float BASE_POSITION_ERROR = 1.0;
+float ANGLE_ERROR = .2;
+float XY_ERROR = 1.0;
+float THETA_ERROR = 0.1;
+float MIN_RECHARGE = 500.0;
+int WAIT_TIME_AFTER_UNPLUGGING = 5;
+
+/**
+ * BaseState will capture position and orientation.
+ */
+class BaseState extends AgentTimeline {
+	predicate Holds{
+		float x;
+		float y;
+		float th;
+		float accumulatedDistance; // Derived from inputs
+	}
+
+	BaseState(Mode _mode){
+		super(_mode, "Holds");
+	}
+};
+
+
+/**
+ * Encapsulate Behaviors that have a state of active or inactive
+ */
+class Behavior extends AgentTimeline {
+	predicate Inactive{
+	  start <= missionEnd; // Alsways starts before the end of the mission
+	}
+
+	predicate Active{
+	  int dispatch_time; // The time at which the goal was dispatched
+	  dispatch_time <= start;
+	  end <= missionEnd; // should complete before the end of the mission
+	}
+
+	Behavior(Mode _mode){
+		super(_mode, "Inactive");
+	}
+};
+
+
+/**
+ * MoveBase behavior will handle active control of vehicle to accomplish 
+ * a waypoint. This maps to the wave front player in the 2D nav stack.
+ */
+class MoveBase extends Behavior {
+  int max_duration; // The maximum duration allowed for executing a single move
+
+  predicate Inactive{
+    float x;
+    float y;
+    float th;
+    float desX;
+    float desY;
+    float desTh;
+  }
+
+  // Parameters to get to the target
+  predicate Active {
+    float x;
+    float y;
+    float th = 0.0; // A default value
+    dispatch_time + [0, 2] == start;
+
+    // Require actual and desired values to be within some tolerance
+    x + [-1.5, 1.5] == desX;
+    y + [-1.5, 1.5] == desY;
+    th + [-.25, .25] == desTh;
+  }
+
+  MoveBase(Mode _mode){
+    super(_mode);
+  }
+};
+
+BaseState::Holds{
+  defaultOnCommit(accumulatedDistance, 0.0);
+  next s == Holds;
+  s.accumulatedDistance == accumulatedDistance + sqrt( pow(x-s.x, 2) + pow(y - s.y, 2));
+}
+
+/**
+ * All behaviors will oscillate between active and inactive
+ */
+Behavior::Inactive{
+  previous == Active;
+}
+
+Behavior::Active{
+  next == Inactive;
+}
+
+MoveBase::Inactive {
+  // If desired values are set, then they are used to bind parameters of the
+  // predecessor to accomplish the desired position.
+  if(desX && desY && desTh){
+    this.previous := Active(desX, desY, desTh);
+  }
+  
+}
+
+/**
+ * Monitors battery state information
+ * @see BatteryState.msg
+ */
+class BatteryState extends AgentTimeline {
+  float discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
+  float recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
+  bool actual_value; // If true this is the real battery state
+
+  predicate Holds {
+    float energy_remaining; // Remaining energy in Joules
+    float energy_capacity; // Total energy capacity
+    float power_consumption; // Power load in Watts
+    UNIT_FLOAT percentage_remaining; // Derived value - energy_remaining/ energy_capacity
+    energy_remaining = energy_capacity * percentage_remaining;
+  }
+
+  BatteryState(Mode _mode, float ds, float rc, bool av){
+    super(_mode, "Holds");
+    discharge_limit = ds;
+    recharge_level = rc;
+    actual_value = av;
+  }
+
+  BatteryState(Mode _mode, float ds, float rc){
+    super(_mode, "Holds");
+    discharge_limit = ds;
+    recharge_level = rc;
+    actual_value = true;
+  }
+
+  BatteryState(Mode _mode){
+    super(_mode, "Holds");
+    discharge_limit = 0.1;
+    recharge_level = 0.9;
+    actual_value = true;
+  }
+};
+
+/**
+ * This is an abstract state variable internal to the executive which reflects if we are 
+ * able to do useful work or if we should focus on recharging. Tripping this stae variable
+ * into a recharging state will lock out other activities from execution until we are able to
+ * finish recharging.
+ */
+class WorkingStatus extends AgentTimeline {
+
+  predicate Holds{bool recharging;}
+
+  WorkingStatus(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * A waypoint to go to
+ */
+class Location {
+  float x;
+  float y;
+  float th;
+
+  Location(float x_, float y_, float th_){
+    x = x_;
+    y = y_;
+    th = th_;
+  }
+};
+
+/**
+ * The x, y, and theta values for a charging station. These describe the
+ * target base pose for the robot when recharging.
+ */
+class ChargingStation extends Location {
+  ChargingStation(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+class Waypoint extends Location {
+  Waypoint(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+/**
+ * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller (MoveBase). This pattern will allow
+ * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
+ */
+class Navigator extends Behavior {
+
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
+  predicate Active{
+    Waypoint w;
+  }
+
+  Navigator(){
+    super(Internal, "Inactive");
+  }
+};
+
+/**
+ * A top level timeline that will drive navigation goals until a target iteration count is reached.
+ */
+class VenusDeMiles extends AgentTimeline {
+
+  predicate Holds{
+    int iterationCount; // Current iteration count
+    int iterationLimit; // Iteration Limit (when done)
+    bool alwaysBusy; // When true, keep going
+    Waypoint w; // Way point to achieve
+  }
+
+  VenusDeMiles(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * A simple iterator pattern - drives subgoaling on the Navigator Timeline
+ */
+VenusDeMiles::Holds{
+  defaultOnCommit(iterationCount, 0);
+  defaultOnCommit(iterationLimit, 0);
+  defaultOnCommit(alwaysBusy, false);
+
+  if(alwaysBusy == true){
+    iterationLimit == 1;
+  }
+
+  if(iterationLimit > 0){
+    Navigator[start + [0, inf], end] nav := Active(randomSelect(w));
+    nav.end == end;
+    next := Holds(iterationCount + 1, iterationLimit, alwaysBusy);
+  }
+}
+
+/**
+ * Encapsulates the task of unplugging the robot.
+ */
+class RechargeController extends Behavior {
+
+  /**
+   * The recharge controller has an expected pose when in an inactive state
+   */
+  predicate Inactive{
+    float x;
+    float y;
+    float th;
+    UNIT_FLOAT recharge_level;
+  }
+
+  /**
+   * When active, the recharge controller takes care of any local positioning, emailingm waiting etc.,
+   * until such time as the battery has been recharged to the required level
+   */
+  predicate Active {
+    float x;
+    float y;
+    float th;
+    UNIT_FLOAT recharge_level;
+  }
+
+};
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+  if(percentage_remaining <= recharge_limit){
+    workingStatus[end] := Holds(true);
+  }
+}
+
+WorkingStatus::Holds{
+  next := Holds(!foo.recharging);
+
+  // By default we are not recharging
+  defaultOnCommit(recharging, false);
+
+  // Do the recharging if appropriate
+  if(recharging == true){
+    ChargingStation cs = randomSelect(ChargingStation());
+    RechargeController[end - WAIT_TIME_AFTER_UNPLUGGING] := Inactive(cs.x, cs.y, cs.th, r);
+    BatteryState[end] == Holds(p);
+    r <= p;
+  }
+}
+
+/**
+ * Constrain so that the recharge controller switches between plugging on and unplugging
+ */
+RechargeController::Inactive{
+  if(x && y && th){
+    this.previous := Active(x, y, th, recharge_level);
+    BatteryState(?, recharge_level, true);
+  }
+
+  // Constraint on expected values
+  BaseState[start] == Holds(desX + [-0.25, 0.25], desY + [-0.25, 0.25], desTh + [-0.25, 0.25]);
+}
+
+RechargeController::Active{
+  WorkingStatus[start, end] := Holds(true);
+  MoveBase[start, end] := Inactive(?, ?, ?, x, y, th);
+}
+
+Navigator::Active{
+  // Terminates with completion of a move base action to the target location.
+  MoveBase[] mb := Active(w.x, w.y, w.th);
+  mb.end == end;
+  WorkingStatus[mb.start, mb.end] := Holds(false);
+  BaseState[?, end] bs == Holds;
+  sqrt(pow(bs.x - x, 2) + pow(bs.y - y, 2)) <= XY_ERROR;
+}
+
+
