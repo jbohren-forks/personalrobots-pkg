@@ -67,7 +67,7 @@ namespace estimation
     Tracker* tr;
     for (unsigned int i=0; i<num_trackers; i++){
       // tracker
-      tr = new Tracker(5000, sys_sigma, meas_sigma);
+      tr = new TrackerParticle(5000, sys_sigma, meas_sigma);
       tr->initialize(prior_mu, prior_sigma, time_);
       trackers_.push_back(tr);
 
@@ -111,7 +111,7 @@ namespace estimation
 	cout << " - measurement    = " << StatePosVel(meas_[i], Vector3(0,0,0)) << endl;
 	cout << " - quality        = " << trackers_[i]->getQuality() << endl;
 	// publish result
-	trackers_[i]->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
+	((TrackerParticle*)(trackers_[i]))->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
 	publish("people_tracking", cloud);
       }
       // sleep

@@ -39,7 +39,7 @@
 // ros stuff
 #include <ros/node.h>
 #include <tf/tf.h>
-#include "tracker.h"
+#include "tracker_particle.h"
 
 // messages
 #include <robot_msgs/PositionMeasurement.h>

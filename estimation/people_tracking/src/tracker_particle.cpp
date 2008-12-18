@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "tracker.h"
+#include "tracker_particle.h"
 #include "gaussian_pos_vel.h"
 
 using namespace MatrixWrapper;
@@ -45,7 +45,7 @@ using namespace ros;
 namespace estimation
 {
   // constructor
-  Tracker::Tracker(unsigned int num_particles, const StatePosVel& sysnoise, const Vector3& measnoise):
+  TrackerParticle::TrackerParticle(unsigned int num_particles, const StatePosVel& sysnoise, const Vector3& measnoise):
     prior_(num_particles),
     filter_(NULL),
     sys_model_(sysnoise),
@@ -57,13 +57,13 @@ namespace estimation
 
 
   // destructor
-  Tracker::~Tracker(){
+  TrackerParticle::~TrackerParticle(){
     if (filter_) delete filter_;
   };
 
 
   // initialize prior density of filter 
-  void Tracker::initialize(const StatePosVel& mu, const StatePosVel& sigma, const double time)
+  void TrackerParticle::initialize(const StatePosVel& mu, const StatePosVel& sigma, const double time)
   {
     cout << "Initializing tracker with " << num_particles_ << " particles, with covariance " 
 	 << sigma << " around " << mu << endl;
@@ -85,7 +85,7 @@ namespace estimation
 
 
   // update filter prediction
-  bool Tracker::updatePrediction(const double  filter_time)
+  bool TrackerParticle::updatePrediction(const double  filter_time)
   {
     // set time step
     sys_model_.SetDt(filter_time - filter_time_);
@@ -101,7 +101,7 @@ namespace estimation
 
 
   // update filter correction
-  bool Tracker::updateCorrection(const Vector3&  meas)
+  bool TrackerParticle::updateCorrection(const Vector3&  meas)
   {
     // update filter
     bool res = filter_->Update(&meas_model_, meas);
@@ -112,27 +112,27 @@ namespace estimation
 
 
   // get evenly spaced particle cloud
-  void Tracker::getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  void TrackerParticle::getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
   {
     ((MCPdfPosVel*)(filter_->PostGet()))->getParticleCloud(step, threshold, cloud);
   };
 
 
   // get most recent filter posterior 
-  StatePosVel Tracker::getEstimate() const
+  StatePosVel TrackerParticle::getEstimate() const
   {
     return ((MCPdfPosVel*)(filter_->PostGet()))->ExpectedValueGet();
   };
 
 
   /// Get histogram from certain area
-  Matrix Tracker::getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
+  Matrix TrackerParticle::getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
   {
     return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogramPos(min, max, step);
   };
 
 
-  Matrix Tracker::getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
+  Matrix TrackerParticle::getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
   {
     return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogramVel(min, max, step);
   };

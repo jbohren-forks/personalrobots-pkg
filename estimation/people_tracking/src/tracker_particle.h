@@ -32,8 +32,10 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __TRACKER__
-#define __TRACKER__
+#ifndef __TRACKER_PARTICLE__
+#define __TRACKER_PARTICLE__
+
+#include "tracker.h"
 
 // bayesian filtering
 #include <filter/bootstrapfilter.h>
@@ -55,33 +57,35 @@
 namespace estimation
 {
 
-class Tracker
+class TrackerParticle: public Tracker
 {
 public:
   /// constructor
-  Tracker(unsigned int num_particles, const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
+  TrackerParticle(unsigned int num_particles, const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
 
   /// destructor
-  virtual ~Tracker();
+  virtual ~TrackerParticle();
 
   /// initialize tracker
-  void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time);
+  virtual void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time);
 
   /// return if tracker was initialized
-  bool isInitialized() const {return tracker_initialized_;};
+  virtual bool isInitialized() const {return tracker_initialized_;};
 
   /// return measure for tracker quality: 0=bad 1=good
-  double getQuality() {return quality_;};
+  virtual double getQuality() const {return quality_;};
 
   /// update tracker
-  bool updatePrediction(const double filter_time);
-  bool updateCorrection(const tf::Vector3& meas);
+  virtual bool updatePrediction(const double filter_time);
+  virtual bool updateCorrection(const tf::Vector3& meas);
+
+  /// get filter posterior
+  virtual BFL::StatePosVel getEstimate() const;
+
+
 
   // get evenly spaced particle cloud
   void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
-
-  /// get filter posterior
-  BFL::StatePosVel getEstimate() const;
 
   /// Get histogram from certain area
   MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
