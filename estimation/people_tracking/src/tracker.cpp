@@ -77,6 +77,7 @@ namespace estimation
 
     // tracker initialized
     tracker_initialized_ = true;
+    quality_ = 1;
     filter_time_ = time;
   }
 
@@ -84,23 +85,29 @@ namespace estimation
 
 
   // update filter prediction
-  void Tracker::updatePrediction(const double  filter_time)
+  bool Tracker::updatePrediction(const double  filter_time)
   {
     // set time step
     sys_model_.SetDt(filter_time - filter_time_);
     filter_time_ = filter_time;
 
     // update filter
-    filter_->Update(&sys_model_);
+    bool res = filter_->Update(&sys_model_);
+    if (!res) quality_ = 0;
+
+    return res;
   };
 
 
 
   // update filter correction
-  void Tracker::updateCorrection(const Vector3&  meas)
+  bool Tracker::updateCorrection(const Vector3&  meas)
   {
     // update filter
-    filter_->Update(&meas_model_, meas);
+    bool res = filter_->Update(&meas_model_, meas);
+    if (!res) quality_ = 0;
+
+    return res;
   };
 
 

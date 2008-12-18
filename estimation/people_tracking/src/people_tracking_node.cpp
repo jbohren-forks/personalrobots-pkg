@@ -40,6 +40,8 @@ using namespace ros;
 using namespace tf;
 using namespace BFL;
 
+static const unsigned int num_trackers = 1;
+
 
 namespace estimation
 {
@@ -48,8 +50,7 @@ namespace estimation
     : ros::node(node_name),
       node_name_(node_name),
       time_(0),
-      vel_(0,0,0),
-      move_(Vector3(0,0,0), Vector3(0.002,0.002,0.000000001))
+      move_(Vector3(0,0,0), Vector3(0.5,0.5,0.000000001))
   {
     param(node_name_+"/freq", freq_, 1.0);
     Vector3 prior_mu_pos;
@@ -57,20 +58,26 @@ namespace estimation
     param(node_name_+"/prior/y", prior_mu_pos[1] , 0.0);
     param(node_name_+"/prior/z", prior_mu_pos[2] , 0.0);
 
-    // create sample tracker
+    // create sample trackers
     StatePosVel prior_mu(prior_mu_pos, Vector3(0, 0, 0));
     StatePosVel prior_sigma(Vector3(0.3, 0.3, 0.00001), Vector3(0.00001, 0.00001, 0.00001));
     StatePosVel sys_sigma(Vector3(0.1, 0.1, 0.00001), Vector3(0.1, 0.1, 0.00001));
     Vector3 meas_sigma(0.3, 0.3, 1000);
-    Tracker* tr = new Tracker(5000, sys_sigma, meas_sigma);
-    tr->initialize(prior_mu, prior_sigma, time_);
-    trackers_.push_back(tr);
+
+    Tracker* tr;
+    for (unsigned int i=0; i<num_trackers; i++){
+      // tracker
+      tr = new Tracker(5000, sys_sigma, meas_sigma);
+      tr->initialize(prior_mu, prior_sigma, time_);
+      trackers_.push_back(tr);
+
+      // move / vel
+      meas_.push_back(prior_mu.pos_);
+      vel_.push_back(Vector3(0,0,0));
+    }
 
     // advertise
     advertise<std_msgs::PointCloud>("people_tracking",3);
-
-    // init
-    meas_ = prior_mu.pos_;
   }
 
 
@@ -89,20 +96,24 @@ namespace estimation
   {
     while (ok()){
       Sample<Vector3> sample;
-      move_.SampleFrom(sample);
-      vel_ += sample.ValueGet();
-      meas_ += vel_;
       time_ += 1/freq_;
-      trackers_[0]->updatePrediction(time_);
-      trackers_[0]->updateCorrection(meas_);
-      cout << "expected value = " << trackers_[0]->getEstimate() << endl;
-      cout << "measurement    = " << StatePosVel(meas_, Vector3(0,0,0)) << endl;
-
-      // publish result
       std_msgs::PointCloud cloud;
-      trackers_[0]->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
-      publish("people_tracking", cloud);
 
+      for (unsigned int i=0; i<num_trackers; i++){
+	// update trackers
+	move_.SampleFrom(sample);
+	vel_[i] += sample.ValueGet();
+	meas_[i] += (vel_[i] / freq_);
+	trackers_[i]->updatePrediction(time_);
+	trackers_[i]->updateCorrection(meas_[i]);
+	cout << "Tracker " << i << endl;
+	cout << " - expected value = " << trackers_[i]->getEstimate() << endl;
+	cout << " - measurement    = " << StatePosVel(meas_[i], Vector3(0,0,0)) << endl;
+	cout << " - quality        = " << trackers_[i]->getQuality() << endl;
+	// publish result
+	trackers_[i]->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
+	publish("people_tracking", cloud);
+      }
       // sleep
       usleep(1e6/freq_);
     }

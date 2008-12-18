@@ -70,13 +70,11 @@ private:
   /// tracker
   std::vector<Tracker*> trackers_;
 
-  // messages to receive
-
   // messages to send
   std_msgs::PointCloud  point_cloud_; 
 
   double freq_, time_;
-  tf::Vector3 meas_, vel_;
+  std::vector<tf::Vector3> meas_, vel_;
   BFL::GaussianVector move_;
 
 

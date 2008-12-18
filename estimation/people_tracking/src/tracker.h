@@ -70,9 +70,12 @@ public:
   /// return if tracker was initialized
   bool isInitialized() const {return tracker_initialized_;};
 
+  /// return measure for tracker quality: 0=bad 1=good
+  double getQuality() {return quality_;};
+
   /// update tracker
-  void updatePrediction(const double filter_time);
-  void updateCorrection(const tf::Vector3& meas);
+  bool updatePrediction(const double filter_time);
+  bool updateCorrection(const tf::Vector3& meas);
 
   // get evenly spaced particle cloud
   void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
@@ -93,7 +96,7 @@ private:
 
   // vars
   bool tracker_initialized_;
-  double filter_time_;
+  double filter_time_, quality_;
   unsigned int num_particles_;
 
 
