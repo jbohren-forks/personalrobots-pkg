@@ -229,22 +229,17 @@ void RandomizedTree::quantizeLeaves(int num_quant_bits, float p1, float p2, int 
    int N = (1<<num_quant_bits) - 1;
       
    // estimate percentiles for this tree
-   float perc[2];
-   //float last_p2 = -1.f;
-   //if (p2 != last_p2) {
-      perc[0] = 0.f;
-      perc[1] = 0.f;
-      for (int i=0; i<num_leaves_; i++) {
-         perc[0] += percentile(posteriors_[i], classes_, p1);
-         perc[1] += percentile(posteriors_[i], classes_, p2);
-      }
-      perc[0] /= num_leaves_;
-      perc[1] /= num_leaves_;
-   //}  
+   float perc[2] = {0.f,0.f};
+   for (int i=0; i<num_leaves_; i++) {
+      perc[0] += percentile(posteriors_[i], classes_, p1);
+      perc[1] += percentile(posteriors_[i], classes_, p2);
+   }
+   perc[0] /= num_leaves_;
+   perc[1] /= num_leaves_;
 
    static bool warned = false;
    if (!warned) {
-      printf("[NOTE] RT: Leaf quantization, percentiles [%.3e,%.3e], %i bits --> N=%i\n", perc[0], perc[1], num_quant_bits, N);
+      printf("[NOTE] RT: leaf quantization, percentiles [%.3e,%.3e], %i bits --> N=%i\n", perc[0], perc[1], num_quant_bits, N);
       warned = true;
    }
 
@@ -264,7 +259,7 @@ void RandomizedTree::quantizeVector(float *vec, int dim, int N, float bnds[2], i
       // 2: clamp upper values only
       else if (clamp_mode == 2) *vec = (*vec>map_bnd[1]) ? map_bnd[1] : *vec;
       // 4: no clamping
-      else if (clamp_mode == 4) ;
+      else if (clamp_mode == 4) ; // yep, nothing
       else {
          printf("clamp_mode == %i is not valid (%s:%i).\n", clamp_mode, __FILE__, __LINE__);
          exit(1);
@@ -346,23 +341,26 @@ void RandomizedTree::write(std::ostream &os) const
 
 void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
 {
-const char *phi = "/u/calonder/temp/debug_phi.txt";
-std::ifstream ifs(phi);
-for (size_t i=0; i<reduced_num_dim*classes_; ++i) {
-   if (!ifs.good()) {
-      printf("[ERROR] RandomizedTree::makeRandomMeasMatrix: problem reading '%s'\n", phi);
-      exit(0);
-   }
-   ifs >> cs_phi[i];
-}   
-ifs.close(); 
+   #if 0 // debug
+      const char *phi = "/u/calonder/temp/debug_phi.txt";
+      std::ifstream ifs(phi);
+      for (size_t i=0; i<reduced_num_dim*classes_; ++i) {
+         if (!ifs.good()) {
+            printf("[ERROR] RandomizedTree::makeRandomMeasMatrix: problem reading '%s'\n", phi);
+            exit(0);
+         }
+         ifs >> cs_phi[i];
+      }   
+      ifs.close(); 
 
-static bool warned=false;
-if (!warned) {
-   printf("[NOTE] RT: reading %ix%i PHI matrix from '%s'...\n", reduced_num_dim, classes_, phi);
-   warned=true;
-}
-return;   
+      static bool warned=false;
+      if (!warned) {
+         printf("[NOTE] RT: reading %ix%i PHI matrix from '%s'...\n", reduced_num_dim, classes_, phi);
+         warned=true;
+      }
+
+      return;   
+   #endif
 
    if ((int)reduced_num_dim == classes_) {
       // special case - will not make use of Compressive Sensing AT ALL (set to 0 for safety)

@@ -15,7 +15,7 @@ inline void add(int size, const float* src1, const float* src2, float* dst)
   }
 }
 
-inline void add(int size, const uint16_t* src1, const uchar* src2, uint16_t* dst)
+inline void add(int size, const uint16_t* src1, const uint8_t* src2, uint16_t* dst)
 {
   while(--size >= 0) {
     *dst = *src1 + *src2;
