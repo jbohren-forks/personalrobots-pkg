@@ -1,8 +1,6 @@
-function [success,resdata] = filterserv(reqdata)
+function res = filterserv(req)
 
-[req,res] = rosoct_Filter();
-
-req = req._deserialize(reqdata);
+res = req._create_response();
 
 method = req.name;
 
@@ -71,6 +69,5 @@ end
 
 res.a=a;
 res.b=b; 
-success = 1;
-resdata = res._serialize(res,0);
+
 

@@ -1,7 +1,7 @@
 <package>
 <description brief='Filter Generator'>
 
-This generates the transfer function coefficients for filters using octave.  
+Generates the transfer function coefficients for filters using octave.  
 
 </description>
 <author>Melonee Wise/mwise@willowgarage.com</author>
