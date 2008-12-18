@@ -315,6 +315,9 @@ namespace estimation
 
 	  // broadcast most recent estimate to TransformArray
 	  Stamped<Transform> tmp;
+          if(!vo_active_)
+            tmp.getOrigin().setZ(0.0);
+
 	  my_filter_.getEstimate(ros::Time(), tmp);
 	  odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
 
