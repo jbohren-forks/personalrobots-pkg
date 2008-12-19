@@ -205,6 +205,7 @@ TEST(costmap, test15){
   p1->pts[0].y = 50;
   p1->pts[0].z = MAX_Z;
   p1->header.stamp = ros::Time::now();
+  p1->header.frame_id = "map";
   Observation o1(origin, p1);
   buffer.buffer_observation(o1);
   ASSERT_EQ(buffer.isCurrent(), true);
