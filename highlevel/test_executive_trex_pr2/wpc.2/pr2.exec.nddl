@@ -11,6 +11,7 @@ g0.x = 19.5;
 g0.y = 28.5;
 g0.th= 3.14;
 g0.max_duration = 3;
+assertCompleted(g0.state);
 
 // Also a goal that occurs at the end of the move base node which
 // expects to be within a certain distance. This should fail because if the interruption worked correctly, then
