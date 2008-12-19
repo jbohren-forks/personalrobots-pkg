@@ -161,97 +161,107 @@ namespace estimation
 
 
   // update filter
-  void OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
+  bool OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
   {
-    double dt = (filter_time - filter_time_old_).toSec();
-    if (filter_initialized_ && dt > 0){
-
-      // system update filter
-      // --------------------
-      // for now only add system noise
-      ColumnVector vel_desi(2); vel_desi = 0;
-      filter_->Update(sys_model_, vel_desi);
-
-
-      // process odom measurement
-      // ------------------------
-      if (odom_active){
-	transformer_.lookupTransform("base_footprint","wheelodom", filter_time, odom_meas_);
-	if (odom_initialized_){
-	  // convert absolute odom measurements to relative odom measurements in horizontal plane
-	  Transform odom_rel_frame =  Transform(Quaternion(filter_estimate_old_vec_(6),0,0),filter_estimate_old_.getOrigin()) * odom_meas_old_.inverse() * odom_meas_;
-	  ColumnVector odom_rel(3);  double tmp;
-	  decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
-	  angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
-	  // update filter
-	  odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(odom_covar_multiplier_ * dt,2));
-	  filter_->Update(odom_meas_model_, odom_rel);
-	}
-	else odom_initialized_ = true;
-	odom_meas_old_ = odom_meas_;
-      }
-      // sensor not active
-      else odom_initialized_ = false;
-
-
-
-      // process imu measurement
-      // -----------------------
-      if (imu_active){
-	transformer_.lookupTransform("base_footprint","imu", filter_time, imu_meas_);
-	if (imu_initialized_){
-	  // convert absolute imu yaw measurement to relative imu yaw measurement 
-	  Transform imu_rel_frame =  filter_estimate_old_ * imu_meas_old_.inverse() * imu_meas_;
-	  ColumnVector imu_rel(3); double tmp;
-	  decomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
-	  decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
-	  angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
-	  // update filter
-	  imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
-	  filter_->Update(imu_meas_model_,  imu_rel);
-	}
-	else imu_initialized_ = true;
-	imu_meas_old_ = imu_meas_; 
-      }
-      // sensor not active
-      else imu_initialized_ = false;
-
-
-
-      // process vo measurement
-      // ----------------------
-      if (vo_active){
-	transformer_.lookupTransform("base_footprint","vo", filter_time, vo_meas_);
-	if (vo_initialized_){
-	  // convert absolute vo measurements to relative vo measurements
-	  Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * vo_meas_;
-	  ColumnVector vo_rel(6);
-	  decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
-	  angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
-	  // update filter
-	  if (vo_covar_multiplier_ < 100.0){
-	    vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(vo_covar_multiplier_ * dt,2));
-	    filter_->Update(vo_meas_model_,  vo_rel);
-	  }
-	}
-	else vo_initialized_ = true;
-	vo_meas_old_ = vo_meas_;
-      }
-      // sensor not active
-      else vo_initialized_ = false;
-
-
-
-      // remember last estimate
-      filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
-      filter_estimate_old_ = Transform(Quaternion(filter_estimate_old_vec_(6), filter_estimate_old_vec_(5), filter_estimate_old_vec_(4)),
-				       Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
-      filter_time_old_ = filter_time;
-      addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
+    // only update filter when it is initialized
+    if (!filter_initialized_){
+      ROS_INFO("Cannot update filter when filter was not initialized first.");
+      return false;
     }
-    else if (filter_time < filter_time_old_)
-      ROS_INFO("Will not update robot pose with time %f sec in the past.",(filter_time - filter_time_old_).toSec());
-  };
+
+
+    // only update filter for time later than current filter time
+    double dt = (filter_time - filter_time_old_).toSec();
+    if (dt <= 0){
+      ROS_INFO("Will not update robot pose with time %f sec in the past.", dt);
+      return false;
+    }
+
+    // system update filter
+    // --------------------
+    // for now only add system noise
+    ColumnVector vel_desi(2); vel_desi = 0;
+    filter_->Update(sys_model_, vel_desi);
+
+    
+    // process odom measurement
+    // ------------------------
+    if (odom_active){
+      transformer_.lookupTransform("base_footprint","wheelodom", filter_time, odom_meas_);
+      if (odom_initialized_){
+	// convert absolute odom measurements to relative odom measurements in horizontal plane
+	Transform odom_rel_frame =  Transform(Quaternion(filter_estimate_old_vec_(6),0,0), 
+					      filter_estimate_old_.getOrigin()) * odom_meas_old_.inverse() * odom_meas_;
+	ColumnVector odom_rel(3);  double tmp;
+	decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
+	angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
+	// update filter
+	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(odom_covar_multiplier_ * dt,2));
+	filter_->Update(odom_meas_model_, odom_rel);
+      }
+      else odom_initialized_ = true;
+      odom_meas_old_ = odom_meas_;
+    }
+    // sensor not active
+    else odom_initialized_ = false;
+    
+    
+    
+    // process imu measurement
+    // -----------------------
+    if (imu_active){
+      transformer_.lookupTransform("base_footprint","imu", filter_time, imu_meas_);
+      if (imu_initialized_){
+	// convert absolute imu yaw measurement to relative imu yaw measurement 
+	Transform imu_rel_frame =  filter_estimate_old_ * imu_meas_old_.inverse() * imu_meas_;
+	ColumnVector imu_rel(3); double tmp;
+	decomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
+	decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
+	angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
+	// update filter
+	imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
+	filter_->Update(imu_meas_model_,  imu_rel);
+      }
+      else imu_initialized_ = true;
+      imu_meas_old_ = imu_meas_; 
+    }
+    // sensor not active
+    else imu_initialized_ = false;
+    
+    
+    
+    // process vo measurement
+    // ----------------------
+    if (vo_active){
+      transformer_.lookupTransform("base_footprint","vo", filter_time, vo_meas_);
+      if (vo_initialized_){
+	// convert absolute vo measurements to relative vo measurements
+	Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * vo_meas_;
+	ColumnVector vo_rel(6);
+	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
+	angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
+	// update filter
+	if (vo_covar_multiplier_ < 100.0){
+	  vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(vo_covar_multiplier_ * dt,2));
+	  filter_->Update(vo_meas_model_,  vo_rel);
+	}
+      }
+      else vo_initialized_ = true;
+      vo_meas_old_ = vo_meas_;
+    }
+    // sensor not active
+    else vo_initialized_ = false;
+    
+    
+    // remember last estimate
+    filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
+    filter_estimate_old_ = Transform(Quaternion(filter_estimate_old_vec_(6), filter_estimate_old_vec_(5), filter_estimate_old_vec_(4)),
+				     Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
+    filter_time_old_ = filter_time;
+    addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
+
+    return true;
+};
 
 
   void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
