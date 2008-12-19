@@ -135,9 +135,9 @@ namespace ros {
       tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(3, 0), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, ros::Duration(3, 0), 
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, ros::Duration(2, 0), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
-							       inscribedRadius, -0.1, minZ_ + 0.01);
+							       inscribedRadius, -10.0, maxZ_);
       stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, ros::Duration(0, 0), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
@@ -167,7 +167,7 @@ namespace ros {
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
           inputData , resp.map.resolution, 
-          lethalObstacleThreshold, maxZ_, 0.10, .20,
+          lethalObstacleThreshold, maxZ_, 0.15, .25,
           inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
       // Allocate Velocity Controller
