@@ -54,6 +54,10 @@ def distance(a, b):
 def cross(a, b):
   return vec3(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y)
 
+def safedivide(a, b):
+    zeroes = (b == 0)
+    return a / (b + zeroes)
+
 class quat:
     def __init__(self, x, y, z, w):
         self.x = (x)
@@ -158,6 +162,9 @@ def clamp(x, lo, hi):
 
 def frac(x):
     return x - floor(x)
+
+def pt2plane(p, plane):
+    return p.dot(plane) * (1. / abs(plane))
 
 class ray:
     def __init__(self, origin, direction, rand):
@@ -293,7 +300,7 @@ def fog(col, distance, p):
     else:
         return color(where(p,col.r,0),where(p,col.g,0),where(p,col.b,0),where(p,col.a,0))
 
-def raytrace(ray, scene):
+def raytrace(ray, scene, noise):
     # print "raytracing with scene size", len(scene)
     Result = [ o.hit(ray) for o in scene]
     Ps = [ r[0] for r in Result ]
@@ -316,7 +323,7 @@ def raytrace(ray, scene):
         final = Cs[0]
         for i in Cs[1:]:
             final += i
-        rnd = 0.0 * ray.random()
+        rnd = noise * ray.random()
         final.r += rnd
         final.g += rnd
         final.b += rnd
@@ -327,7 +334,7 @@ def raytrace(ray, scene):
 
     return (objects_in_tile, final, final_d)
 
-def render_stereo_scene(imL, imR, imD, cam, scene, time):
+def render_stereo_scene(imL, imR, imD, cam, scene, time, noise = 0.0):
     im = imL
     x1d = (-1. + arrayrange(float(imL.size[0])) / float(im.size[0] / 2))
     y1d = (-1. + arrayrange(float(imL.size[1])) / float(im.size[1] / 2))
@@ -347,7 +354,7 @@ def render_stereo_scene(imL, imR, imD, cam, scene, time):
               xs = xs_dict[x]
 
               ray = cam.genray(xs, ys, time, side)
-              (objects_in_tile, final, final_d) = raytrace(ray, scene)
+              (objects_in_tile, final, final_d) = raytrace(ray, scene, noise)
 
               tup = tuple([ Image.fromstring("L", (tilexd, tileyd), color2string(chan, tilesz)) for chan in final.channels()])
               tile = Image.merge("RGB", tup)
@@ -411,6 +418,40 @@ class isphere:
         pred = pred & (h > 0)
         normal = (r.project(h) - self.center) * (1.0 / self.radius)
         return (pred, where(pred, h, MAXFLOAT), normal)
+
+class disc:
+    def __init__(self, p, n, radius):
+        self.args = (p,n)
+        self.D = -pt2plane(p, n)
+        self.Pn = n
+        self.center = p
+        self.radius = radius
+    def compress(self, mask):
+        return plane(self.args[0].compress(mask), self.args[1].compress(mask))
+    def hit(self, r):
+        # a = mag2(r.d)
+        a = 1.
+        v = r.o - self.center
+        b = 2 * (r.d.x * v.x + r.d.y * v.y + r.d.z * v.z)
+        c = mag2(self.center) + mag2(r.o) + 2 * (-self.center.x * r.o.x - self.center.y * r.o.y - self.center.z * r.o.z) - self.radius * self.radius
+        det = (b * b) - (4 * c)
+        pred = 0 < det
+        if not sometrue(pred):
+            return (pred, MAXFLOAT, dummyNormal)
+
+        Vd = self.Pn.dot(r.d)
+        danger = Vd == 0
+        V0 = -(self.Pn.dot(r.o) + self.D)
+        if sometrue(danger):
+            h = safedivide(V0, Vd)
+            pred = pred & (danger & (0 <= h))
+        else:
+            h = V0 / Vd
+            pred = pred & (0 <= h)
+
+        loc = r.project(h)
+        pred = pred & (mag2(loc - self.center) < (self.radius * self.radius))
+        return (pred, where(pred, h, MAXFLOAT), self.Pn)
 
 def shadeRed(p, n, o, r, args):
     return color(1,0,0)

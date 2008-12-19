@@ -89,8 +89,11 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      VisualOdometer(cam, feature_detector = FeatureDetectorHarris(), descriptor_scheme = DescriptorSchemeSAD(), sba = None),
-      VisualOdometer(cam, feature_detector = FeatureDetectorHarris(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), sba = None),
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = (3,10,10)),
+      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), scavenge = True, inlier_error_threshold = 1.0, sba = (3,10,10)),
+
+      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
@@ -130,6 +133,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
         vo_v[i].append(z1 - z)
       print framecounter
     framecounter += 1
+
   if topic.endswith("odom_estimation"):
     oe_x.append(-msg.pose.position.y)
     oe_y.append(msg.pose.position.x)
@@ -146,6 +150,7 @@ vo.handle_frame(f0)
 vo.handle_frame(f1)
 quality_pose = vo.pose
 
+pylab.figure(figsize=(20,20))
 colors = [ 'blue', 'red', 'black', 'magenta', 'cyan' ]
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
@@ -173,10 +178,11 @@ pylab.xlim(mid - 0.5 * r, mid + 0.5 * r)
 mid = sum(ylim) / 2
 pylab.ylim(mid - 0.5 * r, mid + 0.5 * r)
 pylab.legend()
+pylab.savefig("foo.png", dpi=200)
 pylab.show()
 
 for vo in vos:
-  print vo.feature_detector.name(), vo.descriptor_scheme.__class__.__name__
+  print vo.name()
   print "distance from start:", vo.pose.distance()
   print "planarity", vo.planarity
   print "pose", vo.pose.comparison(quality_pose)

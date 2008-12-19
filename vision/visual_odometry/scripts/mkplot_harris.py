@@ -122,7 +122,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 750,10000
+  start,end = 0,2000
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
