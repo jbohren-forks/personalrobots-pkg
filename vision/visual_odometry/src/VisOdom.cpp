@@ -14,6 +14,7 @@
 
 using namespace cv::willow;
 
+#include <boost/foreach.hpp>
 #include <Eigen/Geometry>
 // import most common Eigen types
 USING_PART_OF_NAMESPACE_EIGEN
@@ -203,7 +204,10 @@ void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses)
 
 void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses) {
   std::fstream out((dirname+string("framePoses.txt")).c_str(), ios::out);
-  out << "# quaternion translation"<<std::endl;
+
+  cout << "saving frames (global to local) in file "<< (dirname+string("framePoses.txt")).c_str() << endl;
+
+  out << "# quaternion (w x y z) translation (x y z)"<<std::endl;
   int i=0;
   for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
     FramePose* fp = *iter;
@@ -211,26 +215,51 @@ void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& frame
     // make sure the transformation matrix and the rodrigues and shift vectors are in sync
     double params_local_to_global_data[7];
     CvMat  params_local_to_global = cvMat(7, 1, CV_64FC1, params_local_to_global_data);
+    /// @todo the following code is duplicated
     CvMatUtils::transformToQuaternionAndShift(fp->transf_local_to_global_, &params_local_to_global);
 
     Eigen::Matrix3d rot; // from global to local
     for (int s=0; s<3; s++) {
       for (int t=0; t<3; t++ ) {
-	rot(s, t) = cvmGet(&fp->transf_local_to_global_, t, s);
+        rot(s, t) = cvmGet(&fp->transf_local_to_global_, t, s);
       }
     }
     Eigen::Quaterniond quatd(rot);
     out<<quatd.w()<<" "<<quatd.x()<<" "<<quatd.y()<<" "<<quatd.z()<<" ";
-    out<<params_local_to_global_data[4] << " ";
-    out<<params_local_to_global_data[5] << " ";
-    out<<params_local_to_global_data[6] << endl;
-      
+    out<<-params_local_to_global_data[4] << " ";
+    out<<-params_local_to_global_data[5] << " ";
+    out<<-params_local_to_global_data[6] << endl;
+
 #if 0
     for (int j=0; j<7; j++) {
       out << params_local_to_global_data[j] << " ";
     }
     out << std::endl;
 #endif
+  }
+}
+
+/// print frame pose to screen
+void printFramePoses(
+    vector<FramePose*>& frames) {
+  double rod_shift[6];
+  CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
+  double transpose_transl_data[3];
+  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
+  BOOST_FOREACH(FramePose *fp, frames){
+    printf("transf of frame: %d\n", fp->mIndex);
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+    // in Euler angle and translation
+    CvMat rot, transl;
+    cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+    CvPoint3D64f euler;
+    CvMatUtils::rotMatToEuler(rot, euler);
+    cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+    printf("In Euler angle and translation:\n");
+    printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+    cvTranspose(&transl, &transpose_transl);
+    CvMatUtils::printMat(&transpose_transl, "%9.4f");
   }
 }
 

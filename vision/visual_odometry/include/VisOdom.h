@@ -200,8 +200,8 @@ private:
 };
 
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses);
-
 void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses);
+void printFramePoses(vector<FramePose*>& frames);
 
 typedef enum {
   Pairwise,

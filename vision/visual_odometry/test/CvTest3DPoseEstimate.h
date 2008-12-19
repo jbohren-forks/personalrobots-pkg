@@ -36,7 +36,8 @@ public:
     } TestType;
     typedef enum {
       Indoor1,
-      James4
+      James4,
+      SyntheticLoop1
     } DataSet;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();

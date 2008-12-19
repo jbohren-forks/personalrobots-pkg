@@ -116,6 +116,13 @@ PathRecon::keyFrameEval(
 	//
 	// check if the frame is good enough for checking
 	//
+#if 1 /// @todo jdc debugging
+	if (numInliers < mMinNumInliers) {
+	    keyFrameNeeded = true;
+	  } else {
+	    keyFrameNeeded = false;
+	  }
+#else
 	if (numInliers < 3) {
 	  kfd = KeyFrameSkip;
 	} else if (ALLKEYFRAMES==1) {
@@ -145,6 +152,7 @@ PathRecon::keyFrameEval(
 			keyFrameNeeded = true;
 		}
 	}
+#endif
 
 	if (keyFrameNeeded == true) {
 		if (mFrameSeq.mLastGoodFrame == NULL) {
@@ -779,7 +787,7 @@ void PathRecon::Stat::print(){
   double scale   = 1. / (double)(numFrames);
   double kfScale = 1. / (double)(numKeyFrames);
   fprintf(stdout, "Num of frames skipped:    %d\n", numFrames-numKeyFrames);
-  fprintf(stdout, "Total distance covered:   %05.2f mm\n",mPathLength);
+  fprintf(stdout, "Total distance covered:   %05.2f Meter\n",mPathLength);
   fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", numTotalKeypoints, (double)(numTotalKeypoints) * scale);
   fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", numTotalTrackablePairs, (double)(numTotalTrackablePairs) * scale);
   fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", numTotalInliers, (double)(numTotalInliers) * scale);

@@ -10,6 +10,7 @@
 #include <PointTracks.h>
 #include <boost/foreach.hpp>
 
+#include <iostream>
 #include <fstream>
 
 namespace cv {
@@ -211,6 +212,8 @@ PointTracks* PointTracks::load(string& dir, int start, int end) {
 
 void PointTracks::saveInOneFile(string& filename, bool left_image_only) const {
   std::fstream output_stream(filename.c_str(), ios::out);
+
+  std::cout << "saving all tracks in file "<< filename.c_str() << std::endl;
 
   if (left_image_only == true) {
     output_stream << "# X Y Z  nframes  frame0 x0 y0  frame1 x1 y1 ..."<<std::endl;
