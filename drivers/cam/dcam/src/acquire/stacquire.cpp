@@ -38,7 +38,7 @@
 //
 
 #include "dcam/dcam.h"
-#include "dcam/stereocam.h"
+#include "dcam/stereodcam.h"
 #include "imwin/imwin.h"
 #include "imwin/im3Dwin.h"
 

@@ -35,7 +35,7 @@
 #include <cstdio>
 
 #include "dcam/dcam.h"
-#include "dcam/stereocam.h"
+#include "dcam/stereodcam.h"
 
 #include "ros/node.h"
 #include "image_msgs/Image.h"
