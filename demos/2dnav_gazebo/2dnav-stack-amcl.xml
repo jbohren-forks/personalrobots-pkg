@@ -44,7 +44,7 @@
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="full_cloud" to="tilt_scan_cloud" />
-      <param name="fixed_frame" type="string" value="base_link" />
+      <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
     <param name="ransac_ground_plane_extraction/listen_topic" value="tilt_scan_cloud"/>
     <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
