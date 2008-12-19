@@ -87,8 +87,8 @@ class FeatureDetectorMine:
     pass
 
   def detect(self, frame, target_points):
-    quality_level = 1e-3
-    min_distance = 2.0
+    quality_level = 0.01
+    min_distance = 10.0
     return VO.harris(frame.rawdata, frame.size[0], frame.size[1], 1000, quality_level, min_distance)
 
 for topic, msg, t in rosrecord.logplayer(filename):
@@ -122,7 +122,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,10000
+  start,end = 750,10000
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -137,6 +137,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
         af = SparseStereoFrame(imgL, imgR)
         vo.handle_frame(af)
         x,y,z = vo.pose.xform(0,0,0)
+        assert abs(x) < 20.0
         trajectory[i].append((x,y,z))
         vo_x[i].append(x)
         vo_y[i].append(z)
