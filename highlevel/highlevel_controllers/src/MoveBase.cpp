@@ -588,8 +588,7 @@ namespace ros {
      * The conjunction of all observation buffers must be current
      */
     bool MoveBase::checkWatchDog() const {
-      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent();
-      // && lowObstacleBuffer_->isCurrent(); //Commented because sachins ground plane stuff is not running in 2d.
+      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent() && lowObstacleBuffer_->isCurrent();
 
       if(!ok) 
         ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
