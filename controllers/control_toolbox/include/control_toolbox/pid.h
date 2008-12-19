@@ -59,7 +59,7 @@ namespace control_toolbox {
     <LI>  i_term_  = i_gain_ * i_error_
     <LI>  d_term_  = d_gain_ * d_error_
     <LI>  i_error_ = i_error_ + p_error_ * dt
-    <LI>  d_error_ = d_error_ + (p_error_ - p_error_last_) / dt
+    <LI>  d_error_ = (p_error_ - p_error_last_) / dt
     </UL>
 
     given:<br>
