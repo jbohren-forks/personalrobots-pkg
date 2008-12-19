@@ -19,3 +19,6 @@ target_link_libraries(acquire dcam fltk)
 
 rospack_add_executable(stacquire src/stacquire.cpp src/imwin.cpp src/im3Dwin.cpp)
 target_link_libraries(stacquire dcam fltk fltk_gl glut)
+
+rospack_add_executable(dcam_node src/dcam_node.cpp)
+target_link_libraries(dcam_node dcam)
