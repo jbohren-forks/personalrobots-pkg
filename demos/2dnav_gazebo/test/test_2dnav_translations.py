@@ -91,6 +91,7 @@ class NavStackTest(unittest.TestCase):
         self.target_x =  25.65
         self.target_y =  25.65
         self.target_t =  0.0
+        self.target_q =  quaternion_from_euler(0,0,self.target_t,'rxyz')
 
         self.args = sys.argv
         
@@ -224,21 +225,24 @@ class NavStackTest(unittest.TestCase):
             tmpdqi = quaternion_from_rotation_matrix(linalg.inv(tmpdri))
             delta = quaternion_multiply(tmpdqi,odom_q_delta)
             delta_euler = euler_from_quaternion(delta)
-            delta_yaw = delta_euler[2]
+            odom_drift_dyaw = delta_euler[2]
             print "odom drift from p3d:" , euler_from_quaternion(delta)
+
+            # compute delta between target and p3d
+            navdq = quaternion_multiply(self.target_q,self.p3d_q)
+            navde = euler_from_quaternion(navdq)
+            nav_dyaw = navde[2]
+            print "nav euler off target:" , navde
 
             # check odom error (odom error from ground truth)
             odom_error =  abs(self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi ) \
                         + abs(self.odom_y - self.p3d_y - self.odom_yi + self.p3d_yi ) \
-                        + abs(delta_yaw)
+                        + abs(odom_drift_dyaw)
 
             # check total error (difference between ground truth and target)
-            current_euler_angles = euler_from_quaternion(self.p3d_q)
-            current_yaw = current_euler_angles[2]
-
             nav_error  =  abs(self.p3d_x - self.target_x) \
                         + abs(self.p3d_y - self.target_y) \
-                        + abs(current_yaw -  self.target_t)
+                        + abs(nav_dyaw)
             print "nav error:" + str(nav_error) + " nav_tol:" + str(self.nav_tol) + " odom error:" + str(odom_error) + " odom_tol: " + str(self.odom_tol)
 
             if nav_error < self.nav_tol and self.bumped == False and odom_error < self.odom_tol:
