@@ -95,8 +95,10 @@
     <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>  <!-- odom_combined -->
 
     <!-- start node to move base -->
+    <!--
+    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
+    -->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
-    <!--node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" /-->
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
@@ -107,7 +109,7 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
 
     <!-- For logging distance traveled -->
-    <node pkg="rosrecord" type="rosrecord" args="-f /tmp/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+    <node pkg="rosrecord" type="rosrecord" args="-f 2dnav-stack-amcl" />
 
     <!-- For telling the robot to go charge -->
     <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />
