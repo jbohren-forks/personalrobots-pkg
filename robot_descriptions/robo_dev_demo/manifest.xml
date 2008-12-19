@@ -13,7 +13,6 @@
   <depend package="wg_robot_description" />
   <depend package="pr2_etherCAT"/>
   <depend package="pr2_power_board"/>
-  <depend package="IBPSBatteryInterface"/>
   <depend package="joy"/>
 
 </package>
