@@ -255,11 +255,10 @@ time remaining per battery pack in minutes"""
                     status_string = "OK" 
                     status_value = 0     
 
-                stat.append(DiagnosticStatus(status_value, "Smart Battery %d.%d"%(c,b), status_string, bval, stringval))
+                stat.append(DiagnosticStatus(status_value, "Smart Battery %d.%d"%(ci,bi), status_string, bval, stringval))
                 ## @todo make the status string represent errors etc
             
         self.pub.publish(DiagnosticMessage(None, stat))
-        print "Sent Diagnostic"
 
         
     ## Send out the state of the controller on a diagnostic message
@@ -278,7 +277,7 @@ time remaining per battery pack in minutes"""
 
         self.full_charge_energy = full_energy
 
-        print "Sent Energy: %.0f (J)  of %.0f (J) Power: %.2f (W)\n"%(energy, full_energy, power)
+        #print "Sent Energy: %.0f (J)  of %.0f (J) Power: %.2f (W)\n"%(energy, full_energy, power)
         self.battery_state_pub.publish(BatteryState(None, energy, full_energy, power))
 
 ################################################################################
@@ -453,7 +452,7 @@ def monitor_main(argv, stdout, env):
             port_list = [] #clear list and load from 
             for i in range(0,len(a)):
                 port_list.append("%s%d"%(port_name_template, int(a[i])))
-        elif o in("v"):
+        elif o in("-v"):
             verbose = True
             
     rospy.init_node(NAME)
@@ -501,7 +500,7 @@ def monitor_main(argv, stdout, env):
             for p in ports: #determine which port it came in on
                 if f == p:
                     port = port_number[p]
-            c = pow.controllers[p]
+		    c = pow.controllers[port]
             line = f.readline()
             # split on %  to string and checksum
             try:
@@ -533,8 +532,7 @@ def monitor_main(argv, stdout, env):
             increment = 1.0
         if time.time() - last_time > increment:
             last_time = last_time + increment
-            print "displaying to screen"
-            if verbose: 
+            if verbose == True: 
                 pow.print_remaining()
             pow.broadcast_diagnostic()
 
@@ -545,9 +543,7 @@ def monitor_main(argv, stdout, env):
         
         if time.time() - last_time_battery_state > increment:
             last_time_battery_state = last_time_battery_state + increment
-            print "displaying to screen"
-            pow.print_remaining()
-            pow.send_battery_state()
+	    pow.send_battery_state()
         
 if __name__ == '__main__':
     monitor_main(sys.argv, sys.stdout, os.environ)
