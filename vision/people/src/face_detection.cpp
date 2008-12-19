@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 
 #include "CvStereoCamModel.h"
 #include <robot_msgs/PositionMeasurement.h>
