@@ -245,6 +245,7 @@ class NavStackTest(unittest.TestCase):
             nav_error  =  abs(self.p3d_x - self.target_x) \
                         + abs(self.p3d_y - self.target_y) \
                         + abs(nav_dyaw)
+            print "time remaining: ", timeout_t - time.time()
             print "nav error:" + str(nav_error) + " nav_tol:" + str(self.nav_tol) + " odom error:" + str(odom_error) + " odom_tol: " + str(self.odom_tol)
 
             if nav_error < self.nav_tol and self.bumped == False and odom_error < self.odom_tol:

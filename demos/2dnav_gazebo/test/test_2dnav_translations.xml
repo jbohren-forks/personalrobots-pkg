@@ -28,10 +28,12 @@
     -->
 
     <!-- test -->
-    <test test-name="2dnav_gazebo_test_2dnav_translations_x1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 26.65 -y 25.65 -t 0      -nav_tol 0.28 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_translations_y1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 26.65 -t 0      -nav_tol 0.28 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_translations_tpi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 25.65 -t 3.1416 -nav_tol 0.28 -odom_tol 1.00" /> <!-- odom drift is not checked here -->
-    <test test-name="2dnav_gazebo_test_2dnav_translations_x10"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 35.65 -y 25.65 -t 0      -nav_tol 0.28 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_translations_y10"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 35.65 -t 0      -nav_tol 0.28 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_translations_t2pi" pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 25.65 -t 6.2832 -nav_tol 0.28 -odom_tol 1.00" /> <!-- odom drift is not checked here -->
+    <test test-name="2dnav_gazebo_test_2dnav_translations_x1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 26.65 -y 25.65 -t 0      -nav_tol 0.55 -odom_tol 0.01" />
+    <test test-name="2dnav_gazebo_test_2dnav_translations_xpi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 28.79 -y 25.65 -t 0      -nav_tol 0.55 -odom_tol 0.01" />
+
+    <test test-name="2dnav_gazebo_test_2dnav_translations_y1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 26.65 -t 0      -nav_tol 0.65 -odom_tol 0.05" />
+    <test test-name="2dnav_gazebo_test_2dnav_translations_ypi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 28.79 -t 0      -nav_tol 0.65 -odom_tol 0.05" />
+
+    <test test-name="2dnav_gazebo_test_2dnav_translations_tpi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 25.65 -t 3.1416 -nav_tol 0.02 -odom_tol 0.02" /> <!-- odom drift is not checked here -->
+    <test test-name="2dnav_gazebo_test_2dnav_translations_t2pi" pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 25.65 -t 6.2832 -nav_tol 0.01 -odom_tol 0.01" /> <!-- odom drift is not checked here -->
 </launch>
