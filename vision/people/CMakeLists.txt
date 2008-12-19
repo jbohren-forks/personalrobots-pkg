@@ -6,9 +6,9 @@ rospack(people)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(face_detection src/face_detection.cpp src/people.cpp)
-rospack_add_executable(stereo_face_color_tracker src/stereo_face_color_tracker.cpp src/people.cpp)
-rospack_add_executable(track_starter_gui src/track_starter_gui.cpp)
+rospack_add_executable(face_detection src/face_detection.cpp src/people.cpp src/utils.cpp)
+rospack_add_executable(stereo_face_color_tracker src/stereo_face_color_tracker.cpp src/people.cpp src/utils.cpp)
+rospack_add_executable(track_starter_gui src/track_starter_gui.cpp src/utils.cpp)
 
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
