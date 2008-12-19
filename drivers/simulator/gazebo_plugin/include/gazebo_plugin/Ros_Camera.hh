@@ -28,6 +28,7 @@
 #define ROS_CAMERA_HH
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/Image.h>
 #include <gazebo/Controller.hh>
 

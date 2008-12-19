@@ -31,6 +31,7 @@
 #include <gazebo/Entity.hh>
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/Vector3Stamped.h>
 
 namespace gazebo

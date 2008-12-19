@@ -34,6 +34,7 @@
 
 // ros messages
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/String.h>
 
 namespace gazebo
