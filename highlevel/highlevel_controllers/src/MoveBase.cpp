@@ -142,6 +142,7 @@ namespace ros {
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
 
+
       // get map via RPC
       std_srvs::StaticMap::request  req;
       std_srvs::StaticMap::response resp;
@@ -587,7 +588,8 @@ namespace ros {
      * The conjunction of all observation buffers must be current
      */
     bool MoveBase::checkWatchDog() const {
-      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent() && lowObstacleBuffer_->isCurrent();
+      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent();
+      // && lowObstacleBuffer_->isCurrent(); //Commented because sachins ground plane stuff is not running in 2d.
 
       if(!ok) 
         ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
