@@ -1,6 +1,6 @@
 # data file for the Fltk User Interface Designer (fluid)
 version 1.0107 
-header_name {ost/stereogui.h} 
+header_name {stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
 } {
@@ -942,7 +942,7 @@ class stereogui {open
     }
     Fl_Window stereo_window {
       label Stereo open
-      xywh {508 827 340 295} type Single visible
+      xywh {457 827 340 295} type Single visible
     } {
       Fl_Group {} {open
         xywh {15 155 285 120}
@@ -978,7 +978,7 @@ class stereogui {open
         }
         Fl_Light_Button unique_check_button {
           label {Uniqueness check}
-          callback unique_check_cb selected
+          callback unique_check_cb
           xywh {165 190 115 20} labelsize 11
         }
       }
@@ -1041,6 +1041,14 @@ class stereogui {open
           MenuItem {} {
             label {Multiple Windows}
             xywh {20 20 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label {Local Smoothness}
+            xywh {30 30 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label NCC selected
+            xywh {40 40 30 20} labelsize 11
           }
         }
       }

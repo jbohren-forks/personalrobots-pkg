@@ -44,7 +44,7 @@
  *#########################################
  */
 
-#include "ost/calwin.h"
+#include "calwin.h"
 
 // 
 // FLTK window definitions
