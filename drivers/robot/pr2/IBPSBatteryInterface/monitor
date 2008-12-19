@@ -437,11 +437,12 @@ def controller_message(c, message):
 ################################################################################
 # MAIN LOOP
 def monitor_main(argv, stdout, env):
+    verbose = False
     port_name_template = "/dev/ttyUSB"
     port_list = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"] # default list of ports that controllers are on
     #check arguments for a help flag
     import getopt
-    optlist, args = getopt.getopt(argv[1:], "h?p:s:t:", ["help","port=","server=","template="])
+    optlist, args = getopt.getopt(argv[1:], "vh?p:s:t:", ["help","port=","server=","template="])
     for o, a in optlist:
         if o in ("-h","-?","--help"):
             usage(stdout, argv[0])
@@ -452,7 +453,9 @@ def monitor_main(argv, stdout, env):
             port_list = [] #clear list and load from 
             for i in range(0,len(a)):
                 port_list.append("%s%d"%(port_name_template, int(a[i])))
-
+        elif o in("v"):
+            verbose = True
+            
     rospy.init_node(NAME)
 
     rospy.logout("opening ports: %s"%','.join(port_list))
@@ -531,7 +534,8 @@ def monitor_main(argv, stdout, env):
         if time.time() - last_time > increment:
             last_time = last_time + increment
             print "displaying to screen"
-            pow.print_remaining()
+            if verbose: 
+                pow.print_remaining()
             pow.broadcast_diagnostic()
 
         try:
