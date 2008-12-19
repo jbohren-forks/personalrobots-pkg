@@ -59,8 +59,8 @@ def display_single(im):
 if __name__ == '__main__':
     hg.cvNamedWindow('channel 1', 1)
     hg.cvNamedWindow('channel 2', 1)
-    rospy.TopicSub('images', ImageArray, display_array)
-    rospy.TopicSub('image', Image, display_single)
-    rospy.ready('camview_py')
+    rospy.Subscriber('images', ImageArray, display_array)
+    rospy.Subscriber('image', Image, display_single)
+    rospy.init_node('camview_py')
     rospy.spin()
 

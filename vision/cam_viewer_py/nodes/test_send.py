@@ -44,8 +44,8 @@ import rospy
 from std_msgs.msg import Image
 
 def main():
-    pub = rospy.TopicPub('image', Image)
-    rospy.ready('test_send')
+    pub = rospy.Publisher('image', Image)
+    rospy.init_node('test_send')
 
     image = cv.cvCreateImage(cv.cvSize(640,480), 8, 1)
     cv.cvSet(image, 133)

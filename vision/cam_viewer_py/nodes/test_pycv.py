@@ -70,7 +70,7 @@ def callback_image(im):
 
 if __name__ == '__main__':
     hg.cvNamedWindow('left', 1)
-    rospy.TopicSub('image', Image, callback_image)
-    rospy.ready('test_pycv')
+    rospy.Subscriber('image', Image, callback_image)
+    rospy.init_node('test_pycv')
     rospy.spin()
 
