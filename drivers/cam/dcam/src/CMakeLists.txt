@@ -1,0 +1,5 @@
+add_subdirectory(libdcam)
+add_subdirectory(libimwin)
+add_subdirectory(ost)
+add_subdirectory(acquire)
+add_subdirectory(nodes)

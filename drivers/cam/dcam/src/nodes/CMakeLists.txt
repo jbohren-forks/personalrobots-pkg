@@ -1,0 +1,2 @@
+rospack_add_executable(dcam_node dcam_node.cpp)
+target_link_libraries(dcam_node dcam)
