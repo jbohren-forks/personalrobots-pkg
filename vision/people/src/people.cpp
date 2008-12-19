@@ -332,7 +332,6 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
   CvScalar color = cvScalar(0,255,0);
   CvRect one_face;
   double avg_disp = 0.0, real_size;
-  int good_pix = 0;
   int r,c;
   bool good_face;
   // For each face...
@@ -343,18 +342,12 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
 
     one_face = *(CvRect*)cvGetSeqElem(face_seq, iface);
 
-    // Get the average disparity in the middle half of the bounding box.
     if (disparity_image && cam_model) {
-      for (r = floor(one_face.y+0.25*one_face.height); r < floor(one_face.y+0.75*one_face.height); r++) {
-	ushort* ptr = (ushort*)(disparity_image->imageData + r*disparity_image->widthStep);
-	for (c = floor(one_face.x+0.25*one_face.width); c < floor(one_face.x+0.75*one_face.width); c++) {
-	  if (ptr[c] > 0) {
-	    avg_disp += ptr[c];
-	    good_pix++;
-	  }
-	}
-      }
-      avg_disp /= (double)good_pix; // Take the average.
+    
+      // Get the median disparity in the middle half of the bounding box.
+      avg_disp = cvMedianNonZeroElIn2DArr(disparity_image,
+					  floor(one_face.y+0.25*one_face.height),floor(one_face.y+0.75*one_face.height),
+					  floor(one_face.x+0.25*one_face.width), floor(one_face.x+0.75*one_face.width)); 
 
       // If the disparity exists but the size is out of bounds, mark it red on the image and don't add it to the output vector.
       if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_M) {
