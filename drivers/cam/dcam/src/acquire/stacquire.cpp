@@ -37,10 +37,10 @@
 // Set up for Videre stereo camera
 //
 
-#include "dcam.h"
-#include "stereocam.h"
-#include "imwin.h"
-#include "im3Dwin.h"
+#include "dcam/dcam.h"
+#include "dcam/stereocam.h"
+#include "imwin/imwin.h"
+#include "imwin/im3Dwin.h"
 
 double get_ms();		// for timing
 double t1,t2,t3,t4;

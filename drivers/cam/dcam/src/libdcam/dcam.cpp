@@ -38,7 +38,7 @@
 // Uses CMU driver under MSW
 //
 
-#include "dcam.h"
+#include "dcam/dcam.h"
 
 #include <errno.h>
 

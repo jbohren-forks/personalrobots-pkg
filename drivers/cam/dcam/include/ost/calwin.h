@@ -32,92 +32,43 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-
-/*#########################################
- * calwin.cpp
- *
- * display functions with feature drawing using FLTK window system
- *
- * (feature drawing should have been more general...
- *  this is very specific to the calibration routine)
- *
- *#########################################
- */
-
-#include "calwin.h"
-
 // 
-// FLTK window definitions
+// FLTK feature window definitions
 //
 
-// construct a double-buffered display window
+#ifndef calwin_h
+#define calwin_h
 
-calImageWindow::calImageWindow(int x, int y, int w, int h)
-  : imWindow(x, y, w, h)
+#include "imwin/imwin.h"
+#ifdef WIN32
+#pragma warning (disable: 4267 4244 4800 4996)
+#include <cv/include/cv.h>
+#include <otherlibs/highgui/highgui.h>
+#else
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#endif
+
+class calImageWindow : public imWindow
 {
-  num_pts2D = 0;
-  goodpts = false;
-}
+public:
+  calImageWindow(int x, int y, int h, int w);
 
+  void display2DFeatures(CvPoint2D32f *pts, int num_pts, bool good);
+  void clear2DFeatures();
 
-void 
-calImageWindow::display2DFeatures(CvPoint2D32f *pts, int num_pts, bool good)
-{
-  pts2D = pts;
-  num_pts2D = num_pts;
-  goodpts = good;
-  redraw();
-}
+  void clearAll();
 
+  void draw();     // drawing routine
 
-void 
-calImageWindow::clear2DFeatures()
-{
-  num_pts2D = 0;
-  redraw();
-}
+ private: 
+  void drawCross(int x, int y, Fl_Color color);
+  void drawBox(int x, int y, Fl_Color color);
 
+  CvPoint2D32f *pts2D;
+  int num_pts2D;
+  bool goodpts;
 
-void 
-calImageWindow::clearAll()
-{
-  DeleteImage();
-  num_pts2D = 0;
-  imWindow::redraw();
-  redraw();
-}
+};
 
-
-// replace this with overlay
-void
-calImageWindow::draw() 
-{
-  int i;
-  imWindow::draw();
-
-  Fl_Color color = FL_GREEN;
-  if (!goodpts)
-    color = FL_RED;
-
-  for(i=0; i<num_pts2D; i++)
-    drawCross(Im2WinX((int)(pts2D[i].x)), Im2WinY((int)(pts2D[i].y)), color);
-  color = FL_RED;
-  if (num_pts2D > 0)
-    drawBox(Im2WinX((int)(pts2D[0].x)), Im2WinY((int)(pts2D[0].y)), color);
-}			
-
-void
-calImageWindow::drawCross(int x, int y, Fl_Color color)
-{
-  fl_color(color);
-  fl_line(x, y-2, x, y+2);
-  fl_line(x-2, y, x+2, y);
-}
-
-void
-calImageWindow::drawBox(int x, int y, Fl_Color color)
-{
-  fl_color(color);
-  fl_rect(x-3,y-3,7,7);
-}
-
+#endif

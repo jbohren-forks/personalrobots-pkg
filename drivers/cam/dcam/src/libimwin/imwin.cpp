@@ -58,7 +58,7 @@
 #include <stdarg.h>
 #include <math.h>
 #define LIBCODE
-#include "imwin.h"
+#include "imwin/imwin.h"
 
 // 
 // FLTK window definitions

@@ -33,8 +33,8 @@
 *********************************************************************/
 
 
-#include "imwin.h"
-#include "im3Dwin.h"
+#include "imwin/imwin.h"
+#include "imwin/im3Dwin.h"
 #include "FL/Fl.H"
 
 

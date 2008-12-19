@@ -67,10 +67,10 @@
 #else
 #include <sys/time.h>
 #endif
-#include "stereogui.h"
-#include "im3Dwin.h"
+#include "ost/stereogui.h"
+#include "imwin/im3Dwin.h"
+#include "dcam/stereocam.h"
 #include "stereolib.h"
-#include "stereocam.h"
 
 #include <cv.h>
 #include <cxmisc.h>

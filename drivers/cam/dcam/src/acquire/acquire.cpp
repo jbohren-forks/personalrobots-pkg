@@ -37,7 +37,7 @@
 // Set up for Videre stereo camera
 //
 
-#include "dcam.h"
+#include "dcam/dcam.h"
 
 using namespace dcam;
 

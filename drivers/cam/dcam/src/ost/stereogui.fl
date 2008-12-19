@@ -1,6 +1,6 @@
 # data file for the Fltk User Interface Designer (fluid)
 version 1.0107 
-header_name {stereogui.h} 
+header_name {ost/stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
 } {
