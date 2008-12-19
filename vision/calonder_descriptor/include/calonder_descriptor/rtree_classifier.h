@@ -34,8 +34,10 @@ public:
   
   // sig must point to a memory block of at least classes()*sizeof(float|ushort) bytes
   void getSignature(IplImage *patch, uint8_t *sig);
-  void getFloatSignature(IplImage *patch, float *sig);  
+  void getSignature(IplImage *patch, float *sig);
   void getSparseSignature(IplImage *patch, float *sig, float thresh);
+  // TODO: deprecated in favor of getSignature overload, remove
+  void getFloatSignature(IplImage *patch, float *sig) { getSignature(patch, sig); }
 
   static int countNonZeroElements(float *vec, int n, double tol=1e-10);
     

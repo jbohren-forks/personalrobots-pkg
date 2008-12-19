@@ -7,8 +7,8 @@ CFLAGS += -I$(CV_LATEST)/include/opencv
 LDFLAGS = -L$(CV_LATEST)/lib -lcv -lhighgui
 # Boost
 CFLAGS += -I$(BOOST_ROOT)/include
-LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-gcc42-mt -lboost_filesystem-gcc42-mt
-#LDFLAGS += -lboost_thread-gcc42-mt
+LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-mt -lboost_filesystem-mt
+#LDFLAGS += -lboost_thread-mt
 # Descriptor
 CALONDER = $(shell rospack find calonder_descriptor)
 CFLAGS += -I/usr/include -I$(CALONDER)/include
@@ -35,7 +35,7 @@ CFLAGS += -DNDEBUG
 #CFLAGS += -O0 -g
 #CFLAGS += -O1
 #CFLAGS += -O2
-CFLAGS += -O3
+CFLAGS += -O3 -msse2
 #CFLAGS += -march=native
 #CFLAGS += -mfpmath=sse
 #CFLAGS += -ffast-math

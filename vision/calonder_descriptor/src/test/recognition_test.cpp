@@ -130,7 +130,7 @@ int main( int argc, char** argv )
   keypts.erase(keypts.begin() + num_keypts, keypts.end());
 
   size_t sig_size = classifier.classes();
-  BruteForceMatcher<CvPoint> matcher(sig_size);
+  BruteForceMatcher<float, CvPoint> matcher(sig_size);
 
   // Extract patches and add their signatures to matcher database
   int index = 0;
@@ -139,7 +139,7 @@ int main( int argc, char** argv )
   float* sig = sig_buffer;
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     cv::WImageView1_b view = extractPatch(src_img.Ipl(), pt);
-    classifier.getFloatSignature(view.Ipl(), sig);
+    classifier.getSignature(view.Ipl(), sig);
     matcher.addSignature(sig, cvPoint(pt.x, pt.y));
 
     if (save_src_sigs)
@@ -162,7 +162,7 @@ int main( int argc, char** argv )
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     CvPoint warped_pt = MapPoint(cvPoint(pt.x, pt.y), transform);
     cv::WImageView1_b view = extractPatch(test_img.Ipl(), warped_pt);
-    classifier.getFloatSignature(view.Ipl(), sig);
+    classifier.getSignature(view.Ipl(), sig);
     int match = matcher.findMatches(sig, &d1, &second, &d2);
     //int match = matcher.findMatchInWindow(sig, window, &d1);
 

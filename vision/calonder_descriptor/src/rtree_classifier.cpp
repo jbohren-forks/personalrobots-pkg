@@ -59,7 +59,7 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 }
 
 // TODO: vectorize
-void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
+void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 { 
   // Need pointer to 32x32 patch data
   uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
