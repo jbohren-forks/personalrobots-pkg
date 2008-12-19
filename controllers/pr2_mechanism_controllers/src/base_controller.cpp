@@ -607,7 +607,7 @@ void BaseController::computeOdometry(double time)
   base_odom_position_ += base_odom_delta;
 
   odometer_distance_ += sqrt(base_odom_delta.x*base_odom_delta.x + base_odom_delta.y*base_odom_delta.y);
-  odometer_angle_ += base_odom_delta.z;
+  odometer_angle_ += fabs(base_odom_delta.z);
 }
 
 
