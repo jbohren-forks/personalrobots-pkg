@@ -319,6 +319,10 @@ namespace estimation
             tmp.getOrigin().setZ(0.0);
 
 	  my_filter_.getEstimate(ros::Time(), tmp);
+
+          if(!vo_active_)
+            tmp.getOrigin().setZ(0.0);
+
 	  odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
 
 #ifdef __EKF_DEBUG_FILE__
