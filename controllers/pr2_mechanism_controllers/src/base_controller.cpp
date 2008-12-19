@@ -286,7 +286,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   if(num_wheels_ > 0)
   {
     link = urdf_model_.getJointLink(base_wheels_[0].name_);
-    robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
+    robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
     if (wheel_geom)
       wheel_radius_ = wheel_geom->radius;
     else
