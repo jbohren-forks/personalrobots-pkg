@@ -49,19 +49,18 @@ Transformer::Transformer(bool interpolating,
 Transformer::~Transformer()
 {
   /* deallocate all frames */
-  frame_mutex_.lock();
+  boost::mutex::scoped_lock(frame_mutex_);
   for (std::vector<TimeCache*>::iterator  cache_it = frames_.begin(); cache_it != frames_.end(); ++cache_it)
   {
     delete (*cache_it);
   }
-  frame_mutex_.unlock();
 
 };
 
 
 void Transformer::clear()
 {
-  frame_mutex_.lock();
+  boost::mutex::scoped_lock(frame_mutex_);
   if ( frames_.size() > 1 )
   {
     for (std::vector< TimeCache*>::iterator  cache_it = frames_.begin() + 1; cache_it != frames_.end(); ++cache_it)
@@ -69,7 +68,6 @@ void Transformer::clear()
       (*cache_it)->clearList();
     }
   }
-  frame_mutex_.unlock();
 }
 
 void Transformer::setTransform(const Stamped<btTransform>& transform)
@@ -642,7 +640,7 @@ std::string Transformer::chainAsString(const std::string & target_frame, ros::Ti
 std::string Transformer::allFramesAsString()
 {
   std::stringstream mstream;
-  frame_mutex_.lock();
+  boost::mutex::scoped_lock(frame_mutex_);
 
   TransformStorage temp;
 
@@ -660,7 +658,6 @@ std::string Transformer::allFramesAsString()
     }
     mstream << "Frame "<< frameIDs_reverse[counter] << " exists with parent " << frameIDs_reverse[parent_id] << "." <<std::endl;
   }
-  frame_mutex_.unlock();
   return mstream.str();
 }
 
@@ -668,7 +665,7 @@ std::string Transformer::allFramesAsDot()
 {
   std::stringstream mstream;
   mstream << "digraph G {" << std::endl;
-  frame_mutex_.lock();
+  boost::mutex::scoped_lock(frame_mutex_);
 
   TransformStorage temp;
 
@@ -686,7 +683,6 @@ std::string Transformer::allFramesAsDot()
     if (parent_id != 0)
       mstream << frameIDs_reverse[counter] << " -> " << frameIDs_reverse[parent_id] << ";" <<std::endl;
   }
-  frame_mutex_.unlock();
   mstream << "}";
   return mstream.str();
 }
@@ -695,7 +691,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
 {
   vec.clear();
 
-  frame_mutex_.lock();
+  boost::mutex::scoped_lock(frame_mutex_);
 
   TransformStorage temp;
 
@@ -704,7 +700,6 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
   {
     vec.push_back(frameIDs_reverse[counter]);
   }
-  frame_mutex_.unlock();
   return;
 }
 

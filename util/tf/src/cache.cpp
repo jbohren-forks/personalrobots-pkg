@@ -39,40 +39,28 @@ bool TimeCache::getData(ros::Time time, TransformStorage & data_out) //returns f
 
   int num_nodes;
   ros::Duration time_diff;
-  storage_lock_.lock();
-  //  try
+  boost::mutex::scoped_lock lock(storage_lock_);
+
+  ExtrapolationMode mode;
+  num_nodes = findClosest(p_temp_1,p_temp_2, time, mode);
+  if (num_nodes == 1)
   {
-    ExtrapolationMode mode;
-    num_nodes = findClosest(p_temp_1,p_temp_2, time, mode);
-    if (num_nodes == 1)
+    data_out = p_temp_1;
+    data_out.mode_ = mode;
+  }
+  else if (num_nodes == 2)
+  {
+    if(interpolating_ && ( p_temp_1.parent_frame_id == p_temp_2.parent_frame_id) ) // if we're interpolating and haven't reparented
+    {
+      interpolate(p_temp_1, p_temp_2, time, data_out);
+      data_out.mode_ = mode;
+    }
+    else
     {
       data_out = p_temp_1;
       data_out.mode_ = mode;
-    }
-    else if (num_nodes == 2)
-    {
-      if(interpolating_ && ( p_temp_1.parent_frame_id == p_temp_2.parent_frame_id) ) // if we're interpolating and haven't reparented
-      {
-        interpolate(p_temp_1, p_temp_2, time, data_out);
-        data_out.mode_ = mode;
-      }
-      else
-       {
-         data_out = p_temp_1;
-         data_out.mode_ = mode;
-       }
-
-        
-    }
+    }       
   }
-  /*  //  catch (TFException &ex)
-  catch (...)
-  {
-    storage_lock_.unlock();
-    throw;
-  }
-  */
-  storage_lock_.unlock();
     
   return (num_nodes > 0);
 

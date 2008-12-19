@@ -41,7 +41,7 @@
 
 #include <tf/exceptions.h>
 #include "tf/time_cache.h"
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 
 namespace tf
@@ -211,7 +211,7 @@ protected:
   std::vector< TimeCache*> frames_;
 
   /** \brief A mutex to protect testing and allocating new frames */
-  ros::thread::mutex frame_mutex_;
+  boost::mutex frame_mutex_;
 
   std::map<std::string, unsigned int> frameIDs_;
   std::vector<std::string> frameIDs_reverse;
@@ -240,7 +240,7 @@ protected:
   unsigned int lookupFrameNumber(const std::string& frameid_str)
   {
     unsigned int retval = 0;
-    frame_mutex_.lock();
+    boost::mutex::scoped_lock(frame_mutex_);
     std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
     if (map_it == frameIDs_.end())
     {
@@ -251,7 +251,6 @@ protected:
     }
     else
       retval = frameIDs_[frameid_str];
-    frame_mutex_.unlock();
     return retval;
   };
 

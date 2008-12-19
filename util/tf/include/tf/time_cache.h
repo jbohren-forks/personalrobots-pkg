@@ -33,7 +33,8 @@
 #define TF_TIME_CACHE_H
 
 #include <list>
-#include "rosthread/mutex.h"
+#include <boost/thread/mutex.hpp>
+
 #include "tf/transform_datatypes.h"
 #include "tf/exceptions.h"
 
@@ -81,7 +82,9 @@ class TimeCache
 
   void insertData(const TransformStorage& new_data)
     {
-      storage_lock_.lock();
+      
+      boost::mutex::scoped_lock lock(storage_lock_);
+
       std::list<TransformStorage >::iterator storage_it = storage_.begin();
       while(storage_it != storage_.end())
       {
@@ -90,16 +93,15 @@ class TimeCache
         storage_it++;
       }
       storage_.insert(storage_it, new_data);
-      storage_lock_.unlock();
 
       pruneList();
     };
 
 
-  void interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output);  //specific implementation for each T
+  void interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output);  
 
 
-  void clearList() { storage_lock_.lock(); storage_.clear(); storage_lock_.unlock();};
+  void clearList() {   boost::mutex::scoped_lock lock(storage_lock_); storage_.clear(); };
 
  private:
   std::list<TransformStorage > storage_;
@@ -108,7 +110,9 @@ class TimeCache
   ros::Duration max_storage_time_;
   ros::Duration max_extrapolation_time_;
 
-  ros::thread::mutex storage_lock_;
+  boost::mutex storage_lock_;  ///!< The mutex to protect the linked list
+
+
 
   /// A helper function for getData
   //Assumes storage is already locked for it
@@ -116,8 +120,6 @@ class TimeCache
 
   void pruneList()
     {
-
-      storage_lock_.lock();
       ros::Time latest_time = storage_.begin()->stamp_;
 
       while(!storage_.empty() && storage_.back().stamp_ + max_storage_time_ < latest_time)
@@ -125,7 +127,6 @@ class TimeCache
         storage_.pop_back();
       }
 
-      storage_lock_.unlock();
     };
 
 
