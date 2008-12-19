@@ -116,10 +116,6 @@ Matrix must be a 2d array of real numbers.  Prints to stream STREAM.  No newline
 
 
 (defvar *debug-level* 0)
-(defvar *debug-indent* 0)
-(defun debug-indent ()
-  (format *query-io* "~&~V,T" *debug-indent*))
-
 (defun string-replace-all (s1 s2 s3)
   ;; Quite inefficient, and only used in the debugging code below
   (let ((n (length s2)))
@@ -130,8 +126,8 @@ Matrix must be a 2d array of real numbers.  Prints to stream STREAM.  No newline
 	  (return-from string-replace-all s1))))))
 
 (defun debug-print (l format-string &rest args)
-  "debug-print L FORMAT-STRING &REST ARGS.  If *debug-level* exceeds L (which is viewed as having been provided iff the first argument is a number), apply format to *query-io* and the remaining arguments.  The formatting respects the current *debug-indent* level (see with-debug-indent).  Always return the last argument."
-  (when (aand l (< it *debug-level*))
+  "debug-print L FORMAT-STRING &REST ARGS.  If *debug-level* exceeds L, apply format to *query-io* and the remaining arguments.  The formatting respects the current *debug-indent* level (see with-debug-indent).  Always return the last argument."
+  (when (aand l (my< it *debug-level*))
     (debug-indent)
     (let ((str *query-io*))
       (pprint-logical-block (str nil)
@@ -165,23 +161,16 @@ Matrix must be a 2d array of real numbers.  Prints to stream STREAM.  No newline
    (awhen format-args (slast it))))
 
 
-(defmacro when-debugging (&rest args)
-  "macro when-debugging [LEVEL] &body BODY
+(defmacro when-debugging (level &body body)
+  "macro when-debugging LEVEL &body BODY
 
-LEVEL  : a fixnum.  Defaults to 0.
+LEVEL  : a fixnum.
 BODY : list of forms
 
 When *debug-level* exceeds LEVEL, execute the body."
-  (condlet
-   (((numberp (first args)) (level (first args)) (body (rest args)))
-    (t (level 0) (body args)))
-   
-   `(when (aand ,level (< it *debug-level*)) ,@body)))
-
-(defmacro with-debug-indent (&body body)
-  `(let ((*debug-indent* (+ 3 *debug-indent*)))
+  `(when (my< ,level *debug-level*)
      ,@body))
-     
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; miscellaneous

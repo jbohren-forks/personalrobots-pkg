@@ -162,6 +162,7 @@
 				   (:file "node" :depends-on ("vb-package"))
 				   (:file "primitive" :depends-on ("node"))
 				   (:file "or-node" :depends-on ("node"))
+				   (:file "sequence" :depends-on ("node"))
 				   (:file "descriptions" :depends-on ("node"))
 				   ))))
 					    
@@ -181,10 +182,11 @@
 			   (:file "hierarchy" :depends-on ("nav-switch"))
 			   (:file "descriptions" :depends-on ("nav-switch"))))
 							      
-	     (:module "pick-place" 
+	     #|(:module "pick-place" 
 	      :components 
 	      ((:file "pick-place")
-	       (:file "state-set" :depends-on ("pick-place"))))))
+	       (:file "state-set" :depends-on ("pick-place"))))|#
+	     ))
 
 		 
    (:module "motion-planning" :depends-on ("math" "prob" "geometry")

@@ -3,7 +3,7 @@
 ;; Define abstract action descriptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(in-package lookahead)
+(in-package :lookahead)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -22,7 +22,7 @@
 
 	   
 (defgeneric regress (s s2 d)
-  (:documentation "regress STATE-SET NEXT-STATE-SET DESC.  Find states in STATE-SET such that progressing them through DESC yields a set that intersects NEXT-STATE-SET."))
+  (:documentation "regress STATE-SET NEXT-STATE-SET DESC.  Return the set of states in STATE-SET such that progressing each of them through DESC yields a set that intersects NEXT-STATE-SET."))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,11 +48,11 @@
   (:documentation "progress-complete-valuation DESC V.  Suppose V is an upper-bound on the current valuation.  Returns a new valuation guaranteed to be an upper-bound on the result of progressing V through DESC.")
   (:method ((desc function) val) (funcall desc val)))
 
-(defgeneric regress-sound-valuation (desc val)
-  (:documentation "regress-sound-valuation DESC V.  If V is a lower-bound on backward valuation, return a lower bound on backward valuation before doing an action with description DESC."))
+(defgeneric regress-sound-valuation (desc val1 val2)
+  (:documentation "regress-sound-valuation DESC V1 V2.  If V2 is a lower-bound on backward valuation, and V1 is a lower bound on the previous forward valuation, return a lower bound on the backward valuation before the action with description DESC happens."))
 
-(defgeneric regress-complete-valuation (desc val)
-  (:documentation "regress-sound-valuation DESC V.  If V is an upper-bound on backward valuation, return an upper bound on backward valuation before doing an action with description DESC."))
+(defgeneric regress-complete-valuation (desc val1 val2)
+  (:documentation "regress-complete-valuation DESC V1 V2.  If V2 is an upper-bound on backward valuation, and V1 is an upper bound on the previous forward valuation, return an upper bound on the backward valuation before the action with description DESC happens."))
 
 (defgeneric evaluate-valuation (v s)
   (:documentation "evaluate-valuation VALUATION STATE.  Returns an extended real.")
@@ -83,9 +83,8 @@
 (defgeneric reachable-set (v)
   (:documentation "reachable-set VALUATION.  Return the set of states for which this valuation is greater than '-infty.")
   (:method ((val simple-valuation))
-	   ;; TODO this isn't quite right the case when v equals '-infty
-	   ;; In any case, get rid of this function eventually
-	   (sv-s val)))
+    (when (my> (sv-v val) '-infty)
+      (sv-s val))))
 
 (defgeneric max-achievable-value (v)
   (:documentation "max-achievable-value VALUATION.  Return the maximum achievable value of this VALUATION.")
@@ -93,6 +92,32 @@
 	   (if (is-empty (sv-s val))
 	       '-infty
 	     (sv-v val))))
+
+(defgeneric binary-pointwise-max-upper-bound (v1 v2)
+  (:method ((v1 simple-valuation) (v2 simple-valuation))
+    ;; For simple valuations, union the sets and take the max value, except in the special case where the set for the max val is empty, in which case return the other valuation
+    (when (my> (sv-v v2) (sv-v v1))
+      (rotatef v1 v2))
+    (if (is-empty (sv-s v1))
+	v2
+	(make-simple-valuation (binary-union (sv-s v1) (sv-s v2)) (sv-v v1)))))
+
+(defgeneric binary-pointwise-min-upper-bound (v1 v2)
+  (:method ((v1 simple-valuation) (v2 simple-valuation))
+    ;; We can do this exactly
+    (make-simple-valuation (binary-intersection (sv-s v1) (sv-s v2)) (mymin (sv-v v1) (sv-v v2)))))
+
+(defgeneric binary-pointwise-max-lower-bound (v1 v2)
+  (:method ((v1 simple-valuation) (v2 simple-valuation))
+    ;; union the sets, take min of valuations.  We don't bother with the special case from the upper bound.
+    (make-simple-valuation (binary-union (sv-s v1) (sv-s v2)) (mymax (sv-v v1) (sv-v v2)))))
+
+
+(defaggregator pointwise-max-lower-bound binary-pointwise-max-lower-bound (make-simple-valuation nil '-infty))
+(defaggregator pointwise-max-upper-bound binary-pointwise-max-upper-bound (make-simple-valuation t '-infty))
+(defaggregator pointwise-min-upper-bound binary-pointwise-min-upper-bound (make-simple-valuation t 'infty))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; sum valuations
@@ -147,7 +172,7 @@ Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
 
 (defmethod successor-set ((d <simple-description>) s)
   (funcall (succ-state-fn d) s))
-			  
+
 
 (defmethod progress-sound-valuation ((d <simple-description>) (val simple-valuation))
   (with-struct (sv- s v) val
@@ -161,3 +186,19 @@ Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
 	   (r (hla-complete-reward d s s2)))
       (make-simple-valuation s2 (my+ r v)))))
   
+
+(defmethod regress-sound-valuation ((d <simple-description>) (val1 simple-valuation) (val2 simple-valuation))
+  (let* ((s2 (sv-s val2))
+	 (s1 (regress (sv-s val1) s2 d))
+	 (r (hla-sound-reward d s1 s2)))
+    (make-simple-valuation s1 (my+ r (sv-v val2)))))
+
+(defmethod regress-complete-valuation ((d <simple-description>) (val1 simple-valuation) (val2 simple-valuation))
+  (let* ((s2 (sv-s val2))
+	 (s1 (regress (sv-s val1) s2 d))
+	 (r (hla-complete-reward d s1 s2)))
+    (make-simple-valuation s1 (my+ r (sv-v val2)))))
+
+
+
+    

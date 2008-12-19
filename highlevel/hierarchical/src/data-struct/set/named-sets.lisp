@@ -66,9 +66,6 @@
 (defmethod intersects ((s1 (eql t)) s2)
   (not (is-empty s2)))
 
-(defmethod binary-intersection ((s1 (eql t)) s2)
+(def-symmetric-method binary-intersection ((s1 (eql t)) s2)
   s2)
-
-(defmethod binary-intersection (s1 (s2 (eql t)))
-  s1)
 

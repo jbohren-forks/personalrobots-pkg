@@ -93,6 +93,11 @@
 	   *debug-level*
 	   when-debugging
 	   with-debug-indent
+	   debug-out
+	   set-debug-level
+	   *debug-topics*
+	   define-debug-topic
+
 	   wait-until
 	   length-exceeds
 	   insert-sorted-list
@@ -197,6 +202,7 @@
 	   rrs
 	   randomized-trials
 	   
+	   defaggregator
 	   compose
 	   fn
 	   arglist-fn

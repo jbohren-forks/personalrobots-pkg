@@ -1,4 +1,4 @@
-(in-package blocks)
+(in-package :blocks)
 
 (defstruct (blocks-subsumption-checker (:constructor create-blocks-subsumption-checker)
 	    (:conc-name bss-))

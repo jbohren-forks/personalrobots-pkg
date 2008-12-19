@@ -61,6 +61,19 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 (defun arglist-fn (f)
   #'(lambda (&rest args) (funcall f args)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Aggregation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro defaggregator (fn-name binary-fn-name default-value-form)
+  "Define a function FN-NAME that takes a variable number of arguments.  If given 0 arguments, return value of default-value-form.  Else, apply binary-fn-name to first argument and recursive value of FN-NAME on remaining arguments."
+  (let ((args (gensym)))
+    `(defun ,fn-name (&rest ,args)
+       (if ,args
+	   (,binary-fn-name (car ,args) (apply #',fn-name (cdr ,args)))
+	   ,default-value-form))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Other
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

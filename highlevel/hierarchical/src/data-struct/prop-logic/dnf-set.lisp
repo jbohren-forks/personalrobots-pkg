@@ -55,6 +55,10 @@ DNF sets support many of the standard set operations.  One thing to note is that
      p)))
 
 
+
+(defmethod binary-union ((s <dnf-set>) (s2 <dnf-set>))
+  (make-dnf-set (dnf-or (formula s) (formula s2)) (props s)))
+ 
 (defmethod is-empty ((s <dnf-set>))
   (not (disjuncts (formula s))))
 

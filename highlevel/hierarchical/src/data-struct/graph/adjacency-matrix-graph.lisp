@@ -16,10 +16,11 @@ OR
 
 :m - a 2d array representing the adjacencies.  M(i,j) = nil means no edge from i to j.  If it is an object of type edge, then that is the edge from i to j.  Otherwise, an edge object is created from i to j having M(i,j) as the label.  Can be left out, in which case an all-nil array will be used.  Even if M is provided, the graph doesn't keep a reference to it, so future modifications to M will not affect the graph."))
 
-(defmethod initialize-instance :after ((g <adjacency-matrix-graph>) &rest args &key (m nil) node-test node)
+(defmethod initialize-instance :after ((g <adjacency-matrix-graph>) &rest args &key (m nil) node-test nodes)
   (declare (ignore args))
-  (assert (xor node node-test))
-  (set-if-unbound 'nodes g (make-instance '<indexed-set> :test node-test))
+  (assert (xor nodes node-test))
+  (unless (slot-boundp g 'nodes)
+    (setf (nodes g) (make-instance '<indexed-set> :test node-test)))
   (let ((nodes (nodes g)))
   (let ((n (size nodes))
 	(table (setf (m g) (make-inf-array :rank 2 :default-val nil))))

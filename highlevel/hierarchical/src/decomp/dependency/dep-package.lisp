@@ -24,5 +24,12 @@
    :make-simple-alist-updater
    :aggregator
    :copier
+
+   :*dep-graph-debug-level*
 )
   (:documentation "Contains the dependency graph ADT.  A dependency graph represents a computational node with a set of variables, some of which are externally set, and others of which the node is responsible for keeping up-to-date.  You can also have multiple communicating dependency graphs.  This implemented by tying external variables of one graph to variables of another graph."))
+
+
+(in-package :dependency-graph)
+
+(define-debug-topic :dep-graph :decomp)

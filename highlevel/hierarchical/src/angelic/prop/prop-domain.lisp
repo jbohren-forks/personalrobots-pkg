@@ -291,17 +291,33 @@ Note that this class is a descendant of <env>, so all operations that can be don
 (defmethod formula ((s <prop-state-set>))
   (formula (base-set s)))
 
-(defmethod binary-intersection ((s <prop-state-set>) (s2 <prop-state-set>))
-  (let ((d (pss-domain s))
-	(d2 (pss-domain s2)))
-    (assert (eq d d2) nil
-      "Can't intersect prop-state-sets with different domains ~a and ~a"
-      d d2)
-    (make-instance '<prop-state-set>
-      :s (binary-intersection (base-set s) (base-set s2))
-      :f #'(lambda (x) (make-prop-domain-state :domain d :props x))
-      :f-inv #'pds-props
-      :domain d)))
+
+(defmacro forward-pss-operation (op-name)
+  (with-gensyms (s s2 d d2 x)
+    `(defmethod ,op-name ((,s <prop-state-set>) (,s2 <prop-state-set>))
+       (let ((,d (pss-domain ,s))
+	     (,d2 (pss-domain ,s2)))
+	 (assert (eq ,d ,d2))
+	 (make-instance '<prop-state-set>
+			:s (,op-name (base-set ,s) (base-set ,s2))
+			:f #'(lambda (,x) (make-prop-domain-state :domain ,d :props ,x))
+			:f-inv #'pds-props
+			:domain ,d)))))
+	 
+(forward-pss-operation binary-intersection)
+(forward-pss-operation binary-union)
+
+
+;; Need to redefine these methods to avoid the one from image-set getting used (indicates poor design)
+(def-symmetric-method binary-intersection ((s <prop-state-set>) (s2 (eql t)))
+  s)
+(def-symmetric-method binary-intersection ((s <prop-state-set>) (s2 null))
+  nil)
+(def-symmetric-method binary-union ((s <prop-state-set>) (s2 (eql t)))
+  t)
+(def-symmetric-method binary-union ((s <prop-state-set>) (s2 null))
+  s)
+
 
 (defmethod is-empty ((s <prop-state-set>))
   (is-empty (base-set s)))
