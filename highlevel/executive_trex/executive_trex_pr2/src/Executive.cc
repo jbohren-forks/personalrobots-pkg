@@ -78,10 +78,12 @@ Publishes to (name/type):
 
  **/
 
-// For integration of testing
+// For integration of testing. Ros console needs to be defined early to avoid conflict in warning
+// declaration somewhere in the include tree.
 #include <gtest/gtest.h>
-
 #include <rosconsole/rosconsole.h>
+
+#include "TestMonitor.hh"
 #include "Nddl.hh"
 #include "Components.hh"
 #include "Logger.hh"
@@ -95,13 +97,13 @@ Publishes to (name/type):
 
 #include "Executive.hh"
 
+
+
 //NDDL includes
 #include "Nddl.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
 #include "Utilities.hh"
-
-// TREX Includes 
 
 // Requirements for watchdog
 #include <highlevel_controllers/Ping.h>
@@ -295,7 +297,12 @@ void cleanup(){
  * Test for validating expected output. This will have to evolve
  */
 TEST(trex, validateOutput){
-  ASSERT_EQ(true, true);
+  bool success = TREX::TestMonitor::success();
+  if(!success){
+    ROS_ERROR("\n%s", TREX::TestMonitor::toString().c_str());
+  }
+
+  ASSERT_EQ(success, true);
 }
 
 int main(int argc, char **argv)
@@ -337,15 +344,16 @@ int main(int argc, char **argv)
     success = -1;
   }
 
+  node->shutdown();
+  delete (ros::node*) node;
+  node = TREX::ExecutiveId::noId();
+
+
   // Parse command line arguments to see if we must apply test case validation
   if(TREX::isArg(argc, argv, "--gtest")){
     testing::InitGoogleTest(&argc, argv);
     success = RUN_ALL_TESTS();
   }
-
-  node->shutdown();
-  delete (ros::node*) node;
-  node = TREX::ExecutiveId::noId();
 
   return success;
 }
