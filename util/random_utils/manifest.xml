@@ -2,7 +2,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes="API review in progress (Brian)"/>
   <author>Morgan Quigley, Ioan Sucan</author>
-  <depend package="rosthread" />
+  <depend package="boost" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrandom_utils"/>
   </export>
