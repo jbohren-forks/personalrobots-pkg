@@ -1,4 +1,5 @@
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <iostream>
 #include <fstream>
 #include "opencv/cxcore.h"
