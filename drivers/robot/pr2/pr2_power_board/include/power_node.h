@@ -4,7 +4,7 @@
 #include <time.h>
 #include "ros/node.h"
 #include "pr2_power_board/PowerBoardCommand.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 
 class Interface 
 {
@@ -55,5 +55,5 @@ class PowerBoard : public ros::node
   private:
     pr2_power_board::PowerBoardCommand::request req_;
     pr2_power_board::PowerBoardCommand::response res_;
-    ros::thread::mutex library_lock_;
+    boost::mutex library_lock_;
 };
