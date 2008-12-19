@@ -30,6 +30,7 @@
 
 // roscpp
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 // roscpp - arm trajectory
 #include <std_msgs/ArmTrajectory.h>
 
@@ -218,9 +219,6 @@ for(;;)
 
   std::cout << "Trajectory Sent on topic arm_trajectory" << std::endl;
   
-  // have to call this explicitly for some reason.  probably interference
-  ros::msg_destruct();
-
   exit(0);
 
 }
