@@ -13,8 +13,7 @@ switch method
     elseif(length(req.args)==4) %bandstop
       [b,a]=butter(str2num(req.args{1}),[str2num(req.args{2}) str2num(req.args{3})], req.args{4});
     else %wrong number of arguments
-      a=[];
-      b=[];
+      res=[];
     end
   case{'cheby1'}
     if(length(req.args)==3) %defualt lowpass
@@ -24,8 +23,7 @@ switch method
     elseif(length(req.args)==5) %bandstop
       [b,a]=cheby1(str2num(req.args{1}),str2num(req.args{2}),[str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
     else %wrong number of arguments
-      a=[];
-      b=[];
+      res=[];
     end
   case{'cheby2'}
     if(length(req.args)==3) %defualt lowpass
@@ -35,8 +33,7 @@ switch method
     elseif(length(req.args)==5) %bandstop
       [b,a]=cheby2(str2num(req.args{1}),str2num(req.args{2}),[str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
     else %wrong number of arguments
-      a=[];
-      b=[];
+      res=[];
     end
   case{'ellip'}
     if(length(req.args)==4) %defualt lowpass
@@ -46,8 +43,7 @@ switch method
     elseif(length(req.args)==6) %bandstop
       [b,a]=ellip(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),[str2num(req.args{4}) str2num(req.args{5})], req.args{6}); 
     else %wrong number of arguments
-      a=[];
-      b=[];
+      res=[];
     end
   case{'invfreqz'}
     if(length(req.args)==4) %defualt 
@@ -59,15 +55,14 @@ switch method
     elseif(length(req.args)==7) %convergence and tolerance
       [b,a]=invfreqz(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),[str2num(req.args{4}) str2num(req.args{5})], str2num(req.args{6}), str2num(req.args{7}));   
     else %wrong number of arguments
-      a=[];
-      b=[];
+      res=[];
     end  
   otherwise %filter doesn't exist
-    a=[];
-    b=[];
+    res=[];
 end
 
 res.a=a;
 res.b=b; 
+
 
 

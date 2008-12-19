@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     }
   }
   else
-    printf("an error occurred\n");
+    printf("The filter name does not exist or the wrong arguments were sent\n");
   ros::fini();
   return 0;
 }
