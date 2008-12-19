@@ -109,7 +109,10 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
 
     <!-- For logging distance traveled -->
+    <!--
     <node pkg="rosrecord" type="rosrecord" args="-f 2dnav-stack-amcl" />
+    <node pkg="rosrecord" type="rosrecord" args="-f /tmp/2dnav-stack-amcl /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+    -->
 
     <!-- For telling the robot to go charge -->
     <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />
