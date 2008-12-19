@@ -1,17 +1,21 @@
 // Base case test that we can drive navigation based on the recharge 
-// controller state. We provide a goal that we are in the inactive recharge state at a given location. This will back-chain
+// controller state. We provide a goal that we are in the active recharge state at a given location. This will back-chain
 // the stages of getting to the required location and charging up. This test is quite contrived since the battery is actually full
 // and we are forcing it to recharge despite this.
 #include "milo.init.nddl";
 
 Waypoint w0 = new Waypoint(0.0, 0.0, 0.0);
+ChargingStation c1 = new ChargingStation(18.8, 29.9, 0.0); // Outside Eitan's office
 
 close();
 
 rejectable(RechargeController.Inactive g0);
-g0.x = 19.5;
-g0.y = 28.5;
-g0.th= 3.14;
+eq(c1.x, g0.x);
+eq(c1.y, g0.y);
+eq(c1.th, g0.th);
+leq(g0.start, 40); // Force a transition to inactive no later than tick 40
+assertCompleted(g0.state);
+
 
 
 

@@ -1,12 +1,23 @@
 /**
  * This is a test of termination behavior. A single navigation goal is constrained to have a very short duration.
- * The goal will be dispatched and pursued. However, the executive will dispatch a request to deactivae the move base node
+ * The goal will be dispatched and pursued. However, the executive will dispatch a request to deactivate the move base node
  * when it should have timed out.
  */
 #include "nav.init.nddl"
 
+// Goal with a duration bound
 rejectable(moveBase.Active g0);
 g0.x = 19.5;
 g0.y = 28.5;
 g0.th= 3.14;
 g0.max_duration = 3;
+
+// Also a goal that occurs at the end of the move base node which
+// expects to be within a certain distance. This should fail because if the interruption worked correctly, then
+// the node will not be at the goal, nor will it even be close
+rejectable(baseState.Holds g1);
+concurrent(g1.start, g0.end);
+float distance;
+calcDistance(distance, g0.x, g0.y, g1.x, g1.y);
+leq(distance, 0.5); 
+assertRejected(g1.state);
