@@ -4,6 +4,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="trex" />
+  <depend package="roscpp"/>
+  <depend package="rosthread"/>
+  <depend package="rosconsole"/>
   <depend package="rospy" />
   <depend package="highlevel_controllers" />
   <depend package="gtest" />
