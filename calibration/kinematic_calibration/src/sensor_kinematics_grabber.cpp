@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "robot_msgs/MechanismState.h"
 #include "phase_space/PhaseSpaceSnapshot.h"
 
