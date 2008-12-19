@@ -1,6 +1,0 @@
-<package>
-  <author>Morgan Quigley</author>
-  <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <depend package="cloud_viewer"/>
-</package>
