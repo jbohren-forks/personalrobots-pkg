@@ -48,6 +48,7 @@
 #include <opencv/cvaux.h>
 
 #include "CvStereoCamModel.h"
+#include "utils.h"
 
 // Thresholds for the face detection algorithm
 #define FACE_SIZE_MIN_M 0.1
