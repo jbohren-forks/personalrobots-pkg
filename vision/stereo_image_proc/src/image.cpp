@@ -498,32 +498,28 @@ StereoData::doDisparity(stereo_algorithm_t alg)
 
 switch(alg){
 	case NORMAL_ALGORITHM:  
-//if(alg == NORMAL_ALGORITHM){
-	//printf("Normal Algorithm\n");
-	  // stereo
-  	do_stereo(flim, frim, imDisp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+  		do_stereo(flim, frim, imDisp, NULL, xim, yim, 
+	    	ftzero, corr, corr, dlen, tthresh, uthresh, buf);
 	break;
-	
 	case SCANLINE_ALGORITHM:
-//  if(alg == SCANLINE_ALGORITHM){
-	//printf("Scanline Algorithm\n");
-	do_stereo_so(flim, frim, imDisp, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
+		do_stereo_so(flim, frim, imDisp, xim, yim, 
+	    	ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
-	
 	case DP_ALGORITHM:
- // if(alg == DP_ALGORITHM){
-	//printf("DP Algorithm\n");
-	do_stereo_dp(flim, frim, imDisp, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
+		do_stereo_dp(flim, frim, imDisp, xim, yim, 
+	    	ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
-
 	case MW_ALGORITHM:
-	//  if(alg == MW_ALGORITHM){
-	//printf("MW Algorithm\n");
-	do_stereo_mw(flim, frim, imDisp, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
+		do_stereo_mw(flim, frim, imDisp, xim, yim, 
+		   ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
+	break;
+	case LS_ALGORITHM:
+		do_stereo_ls(flim, frim, imDisp, xim, yim, 
+		    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
+	break;
+	case NCC_ALGORITHM:
+		do_stereo_ncc(flim, frim, imDisp, xim, yim, 
+	    	ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
 	break;
 
 	default:

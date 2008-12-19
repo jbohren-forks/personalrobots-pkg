@@ -72,8 +72,7 @@ int x, d, x_oth, d_oth;
 // int r = par.radius;
 
 //Init array
-int* unique;
-unique = (int *)malloc(w*sizeof(int));
+int* unique = (int *)malloc(w*sizeof(int));
 for(x=r; x<w-r; x++)
 	unique[x] = -1;
 	
@@ -606,7 +605,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 }
 
 //Scanline-optimization along horizontal directions
-void do_stereo_dp2(uint8_t *lim, uint8_t *rim, // input feature images
+void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
 	  int xim, int yim,	// size of images
 	  uint8_t ftzero,	// feature offset from zero
@@ -1152,6 +1151,12 @@ int temp;
 	 		if(da + db < peak_filter)
 	 			disp[y*w + x] = FILTERED;
 			// ******* FILTERS ********
+
+			//subpixel refinement
+			if(disp[y*w + x] != FILTERED){
+				double v = dbest + ( (acc[dbest-1] - acc[dbest+1])/(2.0*(acc[dbest-1]+acc[dbest+1]-2.0*acc[dbest])) );
+				disp[y*w + x] = (int)(0.5 + 16*v);
+			}
 	
 			temp = bdu[x];
 			if(temp>0)
@@ -1210,7 +1215,7 @@ int temp;
 
 
 //block-based using NCC
-void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
+void do_stereo_ncc(uint8_t *lim, uint8_t *rim, // input feature images
 	  int16_t *disp,	// disparity output
 	  int xim, int yim,	// size of images
 	  uint8_t ftzero,	// feature offset from zero
@@ -1218,7 +1223,6 @@ void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  int dlen,		// size of disparity search, multiple of 8
 	  int pfilter_thresh,	// texture filter threshold
 	  int ufilter_thresh,	// uniqueness filter threshold, percent
-	  int smooth_thresh,	//smoothness penalty term			
           int unique_c         // uniqueness check
 	)
 {
@@ -1239,10 +1243,10 @@ int x,y,d,i,j;
 
 //FILTERS
 // int *min_scores = (int *)malloc(w * sizeof(int ));
-// int ratio_filter = 100-ufilter_thresh;
-// int peak_filter = pfilter_thresh;	
-// int sad_second_min;
-// int da, db;
+ int ratio_filter = 1000-ufilter_thresh;
+ int peak_filter = pfilter_thresh;	
+ double ncc_second_max;
+ int da, db;
 
 int *normR = (int *)calloc(w, sizeof(int));
 int *acc = (int *)calloc(maxdisp, sizeof(int));
@@ -1252,6 +1256,7 @@ for(d=0; d<w; d++){
 }
 int *Vn = (int *)calloc(w, sizeof(int));
 
+double *temp = (double *)calloc(maxdisp, sizeof(double));
 double ncc_max;
 int dbest=0;
 
@@ -1265,14 +1270,11 @@ for(d=0; d<maxdisp; d++){
 	}		
 }
 
-//NORM R - FIRST N COLUMNS, FIRST ROW
-for(i=0; i<n; i++){
-	for(j=0; j<n; j++)
-		Vn[i] += R[j*w+i] * R[j*w+i];
-//	acc[d] += V[i][d];			
-}		
-
-
+//NORM R - FIRST ROW
+for(i=0; i<w; i++)
+for(j=0; j<n; j++)
+	Vn[i] += R[j*w+i] * R[j*w+i];		
+		
 //STAGE 2: other positions
 for(x=maxdisp+r+1; x<w-r; x++){
 	for(d=0; d<maxdisp; d++){
@@ -1280,11 +1282,6 @@ for(x=maxdisp+r+1; x<w-r; x++){
 			V[x+r][d] += L[j*w + x+r] * R[ j*w + x+r-d];
 		acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
 	}//d
-}//x
-
-for(x=r+1; x<w-r; x++){
-	for(j=0; j<n; j++)
-		Vn[x+r] += R[j*w + x+r] * R[ j*w + x+r];
 }//x
 
 unsigned char *lp, *rp, *lpp, *rpp;
@@ -1296,7 +1293,7 @@ for(y=r+1; y<h-r; y++){
 	for(d=0; d<maxdisp; d++){
 		acc[d] = 0;
 		for(i=maxdisp; i<maxdisp+n; i++){
-			V[i][d] = V[i][d] + L[ (y+r)*w+i]*R[ (y+r)*w+i-d] - L[ (y-r-1)*w+i]*R[ (y-r-1)*w+i-d];
+			V[i][d] = V[i][d] + (L[ (y+r)*w+i]*R[ (y+r)*w+i-d]) - (L[ (y-r-1)*w+i]*R[ (y-r-1)*w+i-d]);
 			acc[d] += V[i][d];			
 		}	
 	}
@@ -1304,11 +1301,11 @@ for(y=r+1; y<h-r; y++){
 	//compute normR for the whole row
 	normR[r] = 0;
 	for(i=0; i<n; i++){
-		Vn[i] = Vn[i] + R[ (y+r)*w+i]*R[ (y+r)*w+i] - R[ (y-r-1)*w+i]*R[ (y-r-1)*w+i];
+		Vn[i] = Vn[i] + (R[ (y+r)*w+i]*R[ (y+r)*w+i]) - (R[ (y-r-1)*w+i]*R[ (y-r-1)*w+i]);
 		normR[r] += Vn[i];				
 	}
 	for(x=r+1; x<w-r; x++){
-		Vn[x+r] = Vn[x+r] + R[(y+r)*w + x+r]*R[ (y+r)*w + x+r] - R[ (y-r-1)*w+ x+r]*R[ (y-r-1)*w+ x+r];
+		Vn[x+r] = Vn[x+r] + (R[(y+r)*w + x+r]*R[ (y+r)*w + x+r]) - (R[ (y-r-1)*w+ x+r]*R[ (y-r-1)*w+ x+r]);
 		normR[x] = normR[x-1] + Vn[x+r] - Vn[x-r-1];
 	}
 
@@ -1334,10 +1331,10 @@ for(y=r+1; y<h-r; y++){
 			rpp--;
 			
 			acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
-
-			if( acc[d] / sqrt(normR[x-d]) > ncc_max){
-			//if( acc[d] > ncc_max){
-				ncc_max =  acc[d] / sqrt(normR[x-d]);
+			
+			temp[d] = acc[d] / sqrt((double)(normR[x-d])) ; 
+			if( temp[d] > ncc_max){
+				ncc_max = temp[d];
 				dbest = d;
 			}
 		}//d
@@ -1351,27 +1348,33 @@ for(y=r+1; y<h-r; y++){
 		//min_scores[x] = sad_min;
 	
 		//3) uniqueness filter
-// 		sad_second_min = sad_max;
-// 		for(d=0; d<dbest-1; d++){
-// 			if(acc[d]<sad_second_min){
-// 				sad_second_min = acc[d];
-// 			}
-// 		}
-// 		for(d=dbest+2; d<maxdisp; d++){
-// 			if(acc[d]<sad_second_min){
-// 				sad_second_min = acc[d];
-// 			}
-// 		}
-// 
-// 		if( sad_min*100  > par.ratio_filter*sad_second_min)
-// 			disp[y*w + x] = -1;
-// 	
-// 		//4) Peak Filter
-// 		da = (dbest>1) ? ( acc[dbest-2] - acc[dbest] ) : (acc[dbest+2] - acc[dbest]);
-// 		db =  (dbest<maxdisp-2) ? (acc[dbest+2] - acc[dbest]) : (acc[dbest-2] - acc[dbest]);		
-// 		if(da + db < par.peak_filter)
-// 			disp[y*w + x] = -4;
+ 		ncc_second_max = 0;
+		for(d=0; d<dbest-1; d++){
+ 			if(temp[d]>ncc_second_max){
+ 				ncc_second_max = temp[d];
+ 			}
+ 		}
+ 		for(d=dbest+2; d<maxdisp; d++){
+ 			if(temp[d]>ncc_second_max){
+ 				ncc_second_max = temp[d];
+ 			}
+ 		}
+ 
+ 		if( ncc_second_max*1000  > ratio_filter*ncc_max)
+ 			disp[y*w + x] = FILTERED;
+ 	
+ 		//4) Peak Filter
+ 		da = (dbest>1) ? ( temp[dbest] - temp[dbest-2] ) : (temp[dbest] - temp[dbest+2]);
+ 		db =  (dbest<maxdisp-2) ? (temp[dbest] - temp[dbest+2]) : (temp[dbest] - temp[dbest-2]);		
+ 		if(da + db < peak_filter)
+			disp[y*w + x] = FILTERED;
 		//******* FILTERS ********
+
+		//subpixel refinement
+		if(disp[y*w + x] != FILTERED){
+			double v = dbest + ( (temp[dbest-1] - temp[dbest+1])/(2.0*(temp[dbest-1]+temp[dbest+1]-2.0*temp[dbest])) );
+			disp[y*w + x] = (int)(0.5 + 16*v);
+		}
 	}//x
 	//if(par.unique == 1)
 	//	uniqueness_constraint_reducedrange(par, min_scores, y);
@@ -1384,6 +1387,7 @@ free(V);
 free(acc);
 free(Vn);
 free(normR);
+free(temp);
 
 //free(min_scores);
 }

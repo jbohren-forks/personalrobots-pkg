@@ -188,6 +188,31 @@ void do_stereo_dp(uint8_t *lim, uint8_t *rim, // input feature images
 	  int smooth_thresh,    // smoothness threshold
 	  int unique_c		//uniqueness check
 	);
+
+//Stereo matching using Local Smoothness
+void do_stereo_ls(uint8_t *lim, uint8_t *rim, // input feature images
+	  int16_t *disp,	// disparity output
+	  int xim, int yim,	// size of images
+	  uint8_t ftzero,	// feature offset from zero
+	  int xwin, int ywin,	// size of corr window, usually square
+	  int dlen,		// size of disparity search, multiple of 8
+	  int pfilter_thresh,	// texture filter threshold
+	  int ufilter_thresh,	// uniqueness filter threshold, percent
+	  int smooth_thresh,    // smoothness threshold
+	  int unique_c		//uniqueness check
+	);
+
+//Stereo matching using NCC and block-matching approach
+void do_stereo_ncc(uint8_t *lim, uint8_t *rim, // input feature images
+	  int16_t *disp,	// disparity output
+	  int xim, int yim,	// size of images
+	  uint8_t ftzero,	// feature offset from zero
+	  int xwin, int ywin,	// size of corr window, usually square
+	  int dlen,		// size of disparity search, multiple of 8
+	  int pfilter_thresh,	// texture filter threshold
+	  int ufilter_thresh,	// uniqueness filter threshold, percent
+	  int unique_c		//uniqueness check
+	);
 //
 // sparse stereo
 // corr window fixed at 15x15
