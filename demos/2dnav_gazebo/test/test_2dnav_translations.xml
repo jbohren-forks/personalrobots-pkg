@@ -28,8 +28,8 @@
     -->
 
     <!-- test -->
-    <test test-name="2dnav_gazebo_test_2dnav_translations_x1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 26.65 -y 25.65 -t 0      -nav_tol 0.55 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_translations_xpi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 28.79 -y 25.65 -t 0      -nav_tol 0.55 -odom_tol 0.01" />
+    <test test-name="2dnav_gazebo_test_2dnav_translations_x1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 26.65 -y 25.65 -t 0      -nav_tol 0.60 -odom_tol 0.01" />
+    <test test-name="2dnav_gazebo_test_2dnav_translations_xpi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 28.79 -y 25.65 -t 0      -nav_tol 0.60 -odom_tol 0.01" />
 
     <test test-name="2dnav_gazebo_test_2dnav_translations_y1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 26.65 -t 0      -nav_tol 0.65 -odom_tol 0.05" />
     <test test-name="2dnav_gazebo_test_2dnav_translations_ypi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x 25.65 -y 28.79 -t 0      -nav_tol 0.65 -odom_tol 0.05" />
