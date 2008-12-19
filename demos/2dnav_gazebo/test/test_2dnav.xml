@@ -14,8 +14,8 @@
     <!--
     <node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" />
     <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
-    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
     -->
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
 
     <!--
     <param name="/trex/ping_frequency" value="1"/>

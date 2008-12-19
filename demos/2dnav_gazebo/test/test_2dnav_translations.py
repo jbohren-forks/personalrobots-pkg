@@ -82,16 +82,18 @@ class NavStackTest(unittest.TestCase):
         self.p3d_q = [0,0,0,0]
 
         # parameters
-        self.nav_tol      = 1.0
-        self.odom_tol     = 1.0    #allowable odometry drift from ground truth
-        self.test_timeout = 120.0
+        self.nav_tol      = 0.1
+        self.odom_tol     = 1.0
+        self.test_timeout = 50.0
 
+        # starting position of the robot is 25.65, 25.65 (center of map)
         # goal position
-        self.target_x =  10.0
-        self.target_y =  10.0
+        self.target_x =  25.65
+        self.target_y =  25.65
         self.target_t =  0.0
 
-        print " sys arg0", args
+        self.args = sys.argv
+        
 
     def printBaseOdom(self, odom):
         print "odom received"
@@ -170,6 +172,33 @@ class NavStackTest(unittest.TestCase):
         rospy.init_node(NAME, anonymous=True)
 
         timeout_t = time.time() + self.test_timeout
+
+        # get goal from commandline
+        print "------------------------"
+        for i in range(0,len(self.args)):
+          print " sys argv:", self.args[i]
+          if self.args[i] == '-x':
+            if len(self.args) > i+1:
+              self.target_x = float(self.args[i+1])
+              print "target x set to:",self.target_x
+          if self.args[i] == '-y':
+            if len(self.args) > i+1:
+              self.target_y = float(self.args[i+1])
+              print "target y set to:",self.target_y
+          if self.args[i] == '-t':
+            if len(self.args) > i+1:
+              self.target_t = float(self.args[i+1])
+              print "target t set to:",self.target_t
+          if self.args[i] == '-nav_tol':
+            if len(self.args) > i+1:
+              self.nav_tol = float(self.args[i+1])
+              print "nav_tol set to:",self.nav_tol
+          if self.args[i] == '-odom_tol':
+            if len(self.args) > i+1:
+              self.odom_tol = float(self.args[i+1])
+              print "odom_tol set to:",self.odom_tol
+        print " target:", self.target_x, self.target_y, self.target_t
+        print "------------------------"
         # wait for result
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             # send goal
@@ -197,7 +226,6 @@ class NavStackTest(unittest.TestCase):
             delta_euler = euler_from_quaternion(delta)
             delta_yaw = delta_euler[2]
             print "delta error:" , euler_from_quaternion(delta)
-            print "------------------------"
 
             # check odom error (odom error from ground truth)
             odom_error =  abs(self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi ) \
