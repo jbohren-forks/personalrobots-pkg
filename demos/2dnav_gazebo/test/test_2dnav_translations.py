@@ -91,7 +91,6 @@ class NavStackTest(unittest.TestCase):
         self.target_x =  25.65
         self.target_y =  25.65
         self.target_t =  0.0
-        self.target_q =  quaternion_from_euler(0,0,self.target_t,'rxyz')
 
         self.args = sys.argv
         
@@ -189,6 +188,7 @@ class NavStackTest(unittest.TestCase):
           if self.args[i] == '-t':
             if len(self.args) > i+1:
               self.target_t = float(self.args[i+1])
+              self.target_q =  quaternion_from_euler(0,0,self.target_t,'rxyz')
               print "target t set to:",self.target_t
           if self.args[i] == '-nav_tol':
             if len(self.args) > i+1:
@@ -229,7 +229,9 @@ class NavStackTest(unittest.TestCase):
             print "odom drift from p3d:" , euler_from_quaternion(delta)
 
             # compute delta between target and p3d
-            navdq = quaternion_multiply(self.target_q,self.p3d_q)
+            tmptri = rotation_matrix_from_quaternion(self.target_q)
+            tmptqi = quaternion_from_rotation_matrix(linalg.inv(tmptri))
+            navdq = quaternion_multiply(tmptqi,self.p3d_q)
             navde = euler_from_quaternion(navdq)
             nav_dyaw = navde[2]
             print "nav euler off target:" , navde
