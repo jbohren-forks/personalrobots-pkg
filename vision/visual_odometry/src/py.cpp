@@ -36,7 +36,7 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 0
+#define JDC_DEBUG 1
 
 /************************************************************************/
 
@@ -621,6 +621,8 @@ PyObject *sba(PyObject *self, PyObject *args)
 #if JDC_DEBUG==1 // jdc
   LevMarqSparseBundleAdj* sba = ((pose_estimator_t*)self)->sba_;
   sba->optimize(&free_frames, &fixed_frames, &tracks);
+  cout << "initial cost: " << sba->initial_cost_ << " final cost: " << sba->cost_ << endl;
+  cout << "# good updates: " << sba->num_good_updates_ << " # retractions: " << sba->num_retractions_ << endl;
 
   SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
   // set frame poses, point tracks and maps from index to frame poses
@@ -651,6 +653,8 @@ PyObject *sba(PyObject *self, PyObject *args)
 
     cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
   }
+  cout << "All The Tracks"<<endl;
+  tracks.print();
   sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
       current_frame_index);
   vis->slideWindowFront = free_frames.front()->mIndex;
@@ -728,8 +732,9 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   CvMat cartToDisp;
   CvMat dispToCart;
   object->pe->getProjectionMatrices(&cartToDisp, &dispToCart);
-  int full_free_window_size  = 1;
-  int full_fixed_window_size = 1;
+  // set the window size large enough to accommodate.
+  int full_free_window_size  = 20;
+  int full_fixed_window_size = 20;
   int max_num_iters = 5;
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);

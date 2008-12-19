@@ -51,7 +51,7 @@
 //#define DEBUG2 1
 
 //#define DEBUG 1
-#undef DEBUG
+//#undef DEBUG
 
 #define CHECKTIMING 1
 
@@ -75,6 +75,7 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       /// @todo move file term_criteria_ to Parent
       Parent(disparityTo3D, threeDToDisparity, term_criteria.max_iter, Rodrigues),
       cost_(0.),
+      initial_cost_(0.),
       num_retractions_(0),
       num_good_updates_(0),
       full_free_window_size_(full_free_window_size),
@@ -481,10 +482,10 @@ bool LevMarqSparseBundleAdj::optimize(
   constructTransfMatrices();
 
   cost_ = costFunction(free_frames, tracks);
-  prev_cost_ = DBL_MAX;
-
+  initial_cost_ = cost_;
+  prev_cost_ = cost_;
 #if DEBUG==1
-  printf("Initial cost: %f\n", cost_);
+  cout << "[LevMarqSBA] initial cost: " << initial_cost_ << endl;
 #endif
 
   // 3x6 in stereo case

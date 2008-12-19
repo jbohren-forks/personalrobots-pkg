@@ -92,6 +92,8 @@ public:
   /// The cost of current iteration in optimize(). Or final cost when
   /// optimize() returns.
   double cost_;
+  /// Initial cost.
+  double initial_cost_;
   /// number of retraction (when error/cost has increased).
   int num_retractions_;
   /// number of good update (when error/cost has decreased).
