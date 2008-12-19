@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,6 +32,8 @@
 
 #include "filters/median.h"
 #include "filters/mean.h"
+
+using namespace filters ;
 
 void seed_rand()
 {
@@ -64,7 +66,7 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   for (int i =0; i < rows*10; i++)
   {
     filter.update(input1, input1a);
-    
+
     for (int i = 1; i < length; i++)
     {
       EXPECT_NEAR(input1[i], input1a[i], epsilon);
@@ -86,12 +88,12 @@ TEST(MedianFilter, ThreeRows)
   filter.update(input1, input1a);
   filter.update(input2, input1a);
   filter.update(input3, input1a);
-  
+
   for (int i = 1; i < length; i++)
   {
     EXPECT_NEAR(input2[i], input1a[i], epsilon);
   }
-  
+
 }
 
 TEST(MeanFilter, ConfirmIdentityNRows)
@@ -106,7 +108,7 @@ TEST(MeanFilter, ConfirmIdentityNRows)
   for (int32_t i =0; i < rows*10; i++)
   {
     filter.update(input1, input1a);
-    
+
     for (int i = 1; i < length; i++)
     {
       EXPECT_NEAR(input1[i], input1a[i], epsilon);
@@ -128,12 +130,12 @@ TEST(MeanFilter, ThreeRows)
   filter.update(input1, input1a);
   filter.update(input2, input1a);
   filter.update(input3, input1a);
-  
+
   for (int i = 1; i < length; i++)
   {
     EXPECT_NEAR(input2[i], input1a[i], epsilon);
   }
-  
+
 }
 
 

@@ -32,7 +32,7 @@
 #include <vector>
 #include "filters/transfer_function.h"
 
-
+using namespace filters ;
 
 TEST(TransferFunctionFilter, Compile)
 {
@@ -40,7 +40,7 @@ TEST(TransferFunctionFilter, Compile)
   std::vector<double> b;
   a.push_back(1.0);
   b.push_back(3.0);
-  TransferFunctionFilter<std::vector<double> > compile(b,a);
+  TransferFunctionFilter<double > compile(b,a,7);
 
 }
 
@@ -55,7 +55,7 @@ TEST(TransferFunctionFilter, LowPass)
   a.push_back(-0.509525449494429);
   b.push_back(0.245237275252786);
   b.push_back(0.245237275252786);
-  TransferFunctionFilter<std::vector<double> > filter(b,a);
+  TransferFunctionFilter<double> filter(b,a,1);
   in1.push_back(10.0);
   in2.push_back(70.0);
   in3.push_back(10.0);
@@ -71,7 +71,7 @@ TEST(TransferFunctionFilter, LowPass)
   filter.update(&in5);
   filter.update(&in6);
   filter.update(&in7);
-  
+
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
 
@@ -86,7 +86,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   a.push_back(-0.509525449494429);
   b.push_back(0.245237275252786);
   b.push_back(0.245237275252786);
-  TransferFunctionFilter<std::vector<double> > filter(b,a);
+  TransferFunctionFilter<double> filter(b,a,1);
   in1.push_back(10.0);
   in2.push_back(70.0);
   in3.push_back(10.0);
@@ -102,7 +102,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   filter.update(&in5);
   filter.update(&in6);
   filter.update(&in7);
-  
+
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
 
@@ -121,7 +121,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   b.push_back(0.245237275252786);
   b.push_back(0.054296799022543);
   b.push_back(0.018098933007514);
-  TransferFunctionFilter<std::vector<double> > filter(b,a);
+  TransferFunctionFilter<double> filter(b,a,1);
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);
@@ -160,8 +160,8 @@ TEST(TransferFunctionFilter, LowPassMulti)
   filter.update(&in5);
   filter.update(&in6);
   filter.update(&in7);
-  
-  for(int i=0; i<out1.size(); i++)
+
+  for(unsigned int i=0; i<out1.size(); i++)
   {
     EXPECT_NEAR(out1[i], in7[i], epsilon);
   }
@@ -181,7 +181,7 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   b.push_back(0.054296799022543);
   b.push_back(0.054296799022543);
   b.push_back(0.018098933007514);
-  TransferFunctionFilter<std::vector<double> > filter(b,a);
+  TransferFunctionFilter<double> filter(b,a,3);
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);
@@ -220,8 +220,8 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   filter.update(&in5);
   filter.update(&in6);
   filter.update(&in7);
-  
-  for(int i=0; i<out1.size(); i++)
+
+  for(unsigned int i=0; i<out1.size(); i++)
   {
     EXPECT_NEAR(out1[i], in7[i], epsilon);
   }
