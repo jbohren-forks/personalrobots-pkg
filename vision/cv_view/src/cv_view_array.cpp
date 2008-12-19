@@ -5,6 +5,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "std_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
@@ -48,7 +49,7 @@ public:
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     sprintf(dir_name, "%s_images_%.2d%.2d%.2d_%.2d%.2d%.2d", 
-            name.c_str()+1, timeinfo->tm_mon + 1, timeinfo->tm_mday,
+            get_name().c_str()+1, timeinfo->tm_mon + 1, timeinfo->tm_mday,
             timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min, 
             timeinfo->tm_sec);
   }
