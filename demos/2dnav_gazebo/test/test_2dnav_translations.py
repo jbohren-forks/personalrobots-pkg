@@ -225,7 +225,7 @@ class NavStackTest(unittest.TestCase):
             delta = quaternion_multiply(tmpdqi,odom_q_delta)
             delta_euler = euler_from_quaternion(delta)
             delta_yaw = delta_euler[2]
-            print "delta error:" , euler_from_quaternion(delta)
+            print "odom drift from p3d:" , euler_from_quaternion(delta)
 
             # check odom error (odom error from ground truth)
             odom_error =  abs(self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi ) \
