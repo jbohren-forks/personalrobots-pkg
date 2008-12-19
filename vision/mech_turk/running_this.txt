@@ -3,6 +3,10 @@
 0.2. in .../ros/ros, rosmake roscpp_demo (that  will rebuild all kinds of crap hat you might need)
 
 //TO GET THE NODE RUNNING:
+  //  -- Do everything all at once:
+roslaunch mt.launch   [this will run roscore, start the camera with dc1394 and then run ./cv_mturk image:=cam0/image
+
+  //  -- Do it piece by piece:
 1 RUNNING THE MASTER NDOE: 
 	run roscore.  You just open a window and type roscore. [This is the master node]
 2 RUNNING A 1394 CAMERA: 
