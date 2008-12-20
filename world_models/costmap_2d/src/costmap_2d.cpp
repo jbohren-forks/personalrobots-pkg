@@ -56,6 +56,7 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <fstream>
 #include <assert.h>
 
 namespace costmap_2d {
@@ -303,6 +304,28 @@ namespace costmap_2d {
       delete c;
     }
   }
+
+
+
+  void CostMap2D::saveText(std::string file) { 
+    std::ofstream of_text(file.c_str()); 
+
+    for (unsigned int i = 0; i < getWidth(); i++) {
+      for (unsigned int j = 0; j < getHeight(); j++) {
+	of_text << (int)(getMap()[i + j * getWidth()]) << ",";
+      }
+      of_text << std::endl;
+    }
+  }
+
+  void CostMap2D::saveBinary(std::string file) { 
+    std::ofstream of(file.c_str(), std::ios::out|std::ios::binary);
+    of.write(reinterpret_cast<const char*>(getMap()), getWidth() * getHeight() * sizeof (unsigned char*));
+    of.close(); 
+  }
+
+
+
 
   /**
    * @brief It is arguable if this is the correct update rule. We are trying to avoid
