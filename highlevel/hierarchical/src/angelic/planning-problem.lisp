@@ -78,6 +78,12 @@ The top-level allows initargs :goal, :init-state, :action-descriptions, :reward-
   (:documentation "make-state-set DOMAIN STATE.  Return a representation of the singleton set consisting of this state.")
   (:method ((e <planning-problem>) s) (list s)))
 
+(defgeneric empty-set (d)
+  (:documentation "Return the empty set in the state representation used by this planning problem."))
+
+(defgeneric universal-set (d)
+  (:documentation "Return the set of all states for this planning problem."))
+
   
 
 (defun action-seq-result (e s actions)

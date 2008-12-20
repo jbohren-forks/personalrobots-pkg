@@ -38,6 +38,8 @@
    :fluents
    :make-prop-state-set
    :make-state-set
+   :universal-set
+   :empty-set
    :lookup-action
   
   

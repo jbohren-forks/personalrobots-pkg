@@ -5,7 +5,8 @@
 (defgeneric progress-pessimistic-internal (descs a args v))
 (defgeneric regress-optimistic-internal (descs a args v))
 (defgeneric regress-pessimistic-internal (descs a args v))
-
+(defgeneric desc-domain (descs)
+  (:documentation "Return the planning problem corresponding to a set of descriptions"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Use this when defining descriptions for a domain
@@ -31,25 +32,25 @@
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key progress-optimistic &allow-other-keys) d
-		  (make-desc name 'progress-optimistic-internal progress-optimistic args (universal-set d) ''infty)))
+		  (make-desc name 'progress-optimistic-internal progress-optimistic args `(universal-set (desc-domain ,desc-var)) ''infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key progress-pessimistic &allow-other-keys) d
-		  (make-desc name 'progress-pessimistic-internal progress-pessimistic args (empty-set d) ''-infty)))
+		  (make-desc name 'progress-pessimistic-internal progress-pessimistic args `(empty-set (desc-domain ,desc-var)) ''-infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key regress-optimistic &allow-other-keys) d
-		  (make-desc name 'regress-optimistic-internal regress-optimistic args (universal-set d) ''infty)))
+		  (make-desc name 'regress-optimistic-internal regress-optimistic args `(universal-set (desc-domain ,desc-var)) ''infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key regress-pessimistic &allow-other-keys) d
-		  (make-desc name 'regress-pessimistic-internal regress-pessimistic args (empty-set d) ''-infty)))
+		  (make-desc name 'regress-pessimistic-internal regress-pessimistic args `(empty-set (desc-domain ,desc-var)) ''-infty)))
 	    hla-descriptions)))))
 
 

@@ -5,6 +5,7 @@
 (defclass <node> (<dependency-graph>)
   ((action :initarg :action :reader action)
    (descs :initarg :descs)
+   (domain :initarg :domain)
    (hierarchy :initarg :hierarchy)
    (root-node :writer set-root-node :reader root-node)
    (children :reader children :initform (make-hash-table :test #'eql)) 
@@ -103,10 +104,14 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (debug-out :node 1 t "~&Adding child ~a to node ~a" child-id (action n))
 
   ;; Add output variables for the children and give them initial values
-  (add-variable n (cons 'child-progressed-optimistic child-id) :external :dependants (child-progressed-optimistic-dependants n child-id) :initial-value (make-simple-valuation t 'infty))
-  (add-variable n (cons 'child-progressed-pessimistic child-id) :external :dependants (child-progressed-pessimistic-dependants n child-id) :initial-value (make-simple-valuation nil '-infty))
-  (add-variable n (cons 'child-regressed-optimistic child-id) :external :dependants (child-regressed-optimistic-dependants n child-id) :initial-value (make-simple-valuation t 'infty))
-  (add-variable n (cons 'child-regressed-pessimistic child-id) :external :dependants (child-regressed-pessimistic-dependants n child-id) :initial-value (make-simple-valuation nil '-infty))
+  (add-variable n (cons 'child-progressed-optimistic child-id) :external :dependants (child-progressed-optimistic-dependants n child-id) 
+		:initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+  (add-variable n (cons 'child-progressed-pessimistic child-id) :external :dependants (child-progressed-pessimistic-dependants n child-id) 
+		:initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
+  (add-variable n (cons 'child-regressed-optimistic child-id) :external :dependants (child-regressed-optimistic-dependants n child-id) 
+		:initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+  (add-variable n (cons 'child-regressed-pessimistic child-id) :external :dependants (child-regressed-pessimistic-dependants n child-id) 
+		:initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
   
 
 
@@ -144,6 +149,9 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 
 (defun descs (n)
   (slot-value (root-node n) 'descs))
+
+(defun planning-domain (n)
+  (slot-value (root-node n) 'domain))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; debug

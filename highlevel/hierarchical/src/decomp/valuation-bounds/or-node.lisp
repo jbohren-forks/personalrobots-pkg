@@ -29,7 +29,7 @@
       ;; in optimistic progression and regression
       (if l
 	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation t 'infty))))
+	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 
 (defmethod child-progressed-pessimistic-dependants ((n <or-node>) i)
@@ -38,7 +38,8 @@
 
 (defmethod child-progressed-pessimistic-aggregator ((n <or-node>))
   #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr)))
+      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+	  
 
 
 
@@ -52,7 +53,7 @@
       ;; in optimistic progression and regression
       (if l
 	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation t 'infty))))
+	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 
 (defmethod child-regressed-pessimistic-dependants ((n <or-node>) i)
@@ -61,7 +62,7 @@
 
 (defmethod child-regressed-pessimistic-aggregator ((n <or-node>))
   #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr)))
+      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

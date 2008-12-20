@@ -9,6 +9,7 @@
    :compute-cycle
 
    :make-simple-descriptions
+   :desc-domain
 
    :progress-optimistic
    :progress-pessimistic

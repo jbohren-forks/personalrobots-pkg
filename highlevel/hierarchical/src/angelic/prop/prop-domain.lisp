@@ -210,6 +210,12 @@ Note that this class is a descendant of <env>, so all operations that can be don
 (defmethod make-state-set ((d <propositional-domain>) s)
   (make-prop-state-set d (make-state-dnf (pds-props s) (propositions d))))
 
+(defmethod empty-set ((d <propositional-domain>))
+  (make-prop-state-set d (disjoin)))
+
+(defmethod universal-set ((d <propositional-domain>))
+  (make-prop-state-set d (disjoin (conjoin))))
+
 (defun holds-background (d formula)
   (typecase formula
     (boolean formula)
@@ -306,6 +312,10 @@ Note that this class is a descendant of <env>, so all operations that can be don
 	 
 (forward-pss-operation binary-intersection)
 (forward-pss-operation binary-union)
+
+(defmethod subset ((s <prop-state-set>) (s2 <prop-state-set>))
+  (and (eq (pss-domain s) (pss-domain s2))
+       (subset (base-set s) (base-set s2))))
 
 
 ;; Need to redefine these methods to avoid the one from image-set getting used (indicates poor design)
