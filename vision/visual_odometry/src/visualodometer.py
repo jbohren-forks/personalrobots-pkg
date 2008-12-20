@@ -431,12 +431,21 @@ class VisualOdometer:
       if not (t.lastpt in pairmap):
         t.kill()
 
-    # Only keep tracks that have a recent frame
-    (fix_sz, free_sz, niter) = self.sba
-    oldest_useful_frame = f0.id - (fix_sz + free_sz)
-    def age(t):
-      return max([ i for i in t.id if i < 1000000])
-    self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
+    if self.posechain != []:
+      # Only keep tracks that have a recent frame
+      (fix_sz, free_sz, niter) = self.sba
+      nfr = fix_sz + free_sz
+      print "posechain length", len(self.posechain)
+      print "posechain ", (self.posechain)
+      if len(self.posechain) > nfr:
+        oldest_useful_frame = self.posechain[-nfr][0].id
+      else:
+        oldest_useful_frame = self.posechain[0][0].id
+      #print "oldest_useful_frame", oldest_useful_frame
+
+      def age(t):
+        return max([ i for i in t.id if i < 1000000])
+      self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
 
     oldtails = set([t.lastpt for t in self.tracks])
     for t in self.tracks:
@@ -455,14 +464,13 @@ class VisualOdometer:
     tocull = set()
     for (t0,t1) in zip(by_lastpt, by_lastpt[1:]):
       if t0.lastpt == t1.lastpt:
-        assert t0.lastpt == t1.lastpt
         tocull.add(t0)
         tocull.add(t1)
         if len(t0.p) > len(t1.p):
           tocull.add(t0)
         else:
           tocull.add(t1)
-    print "Killing tracks:", [ t.id for t in tocull]
+    print "Killing tracks because of shared point:", [t.id for t in tocull]
     self.tracks -= tocull
 
     for t in self.tracks:

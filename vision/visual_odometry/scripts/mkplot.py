@@ -89,9 +89,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), sba = None),
-      #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = (3,10,10)),
-      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), scavenge = True, inlier_error_threshold = 1.0, sba = (3,10,10)),
+      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), sba = None),
+      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = (3,10,10)),
+      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 1.0, sba = (3,10,10)),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
