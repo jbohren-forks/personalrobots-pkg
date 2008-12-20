@@ -518,6 +518,8 @@ If initial value is not provided:
 		 (size2 (size s2 t)))
 	     (and (or (symbolp size1) (symbolp size2) (my<= size1 size2))
 		  (call-next-method s1 s2))))
+  (:method (s1 (s2 null))
+    (is-empty s1))
   (:method (s1 s2)
 	   (each s1 #'(lambda (x) (member? x s2)))))
 

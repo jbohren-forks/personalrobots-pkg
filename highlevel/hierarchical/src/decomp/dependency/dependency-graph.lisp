@@ -165,7 +165,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 	(setf (edge-label e) nil)))
     
 
-    (debug-out :dep-graph 1 t "~&Updating variable ~a with value ~a based on parents ~a, whose vals are ~a" 
+    (debug-out :dep-graph 1 t "~&Updating variable ~a~& Value: ~a~& Parents: ~a~& Parent-vals: ~a" 
 	       v (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
 
 

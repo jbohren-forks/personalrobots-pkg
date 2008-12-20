@@ -11,7 +11,7 @@
   (add-variable n 'children-progressed-optimistic :internal :simple-update-fn (child-progressed-optimistic-aggregator n) :dependants '(progressed-optimistic))
   (add-variable n 'children-progressed-pessimistic :internal :simple-update-fn (child-progressed-pessimistic-aggregator n) :dependants '(progressed-pessimistic))
   (add-variable n 'children-regressed-optimistic :internal :simple-update-fn (child-regressed-optimistic-aggregator n) :dependants '(regressed-optimistic))
-  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (child-regressed-optimistic-aggregator n) :dependants '(regressed-pessimistic)))
+  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (child-regressed-pessimistic-aggregator n) :dependants '(regressed-pessimistic)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,7 +127,7 @@
 
 (defun or-node-child-evaluator (n)
   #'(lambda (i)
-      (max-achievable-value (make-sum-valuation (current-value (list 'child-progressed-optimistic i) n) (current-value 'final-regressed-optimistic n)))))
+      (max-achievable-value (make-sum-valuation (current-value n (cons 'child-progressed-optimistic i)) (current-value n 'final-optimistic)))))
 
 
 (defun or-node-create-children (n)

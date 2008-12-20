@@ -292,7 +292,7 @@ There is one case handled differently, when all the destinations are absolute.  
 	  (do-elements (b chain nil i)
 	    (push (cons b (list it i)) known-positions))
 	(push chain groups)))
-    
+
     (if groups
 
 	;; Case when some destinations are not absolute
@@ -328,6 +328,7 @@ There is one case handled differently, when all the destinations are absolute.  
 
 (defun matching-based-heuristic (known on-chains)
   #'(lambda (s)
+      (debug-out :blocks 1 t "~&Computing matching-based heuristic for ~a~&  known: ~a~&  on-chains: ~a" s known on-chains)
       (mvbind (illegal gripper) (illegal-gripper-pos s)
 	(setf gripper (mapset 'list #'identity gripper))
 

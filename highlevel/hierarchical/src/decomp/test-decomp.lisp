@@ -20,7 +20,7 @@
 (setf nr 4
       nc 4
       dom (make-blocks-world-with-ceiling nr nc '((a 0 1) (baz 2 1) (c 2 2))
-					  '(2 3) '(and (block-pos a 1 2) (block-pos c 1 1)))
+					  '(2 3) '(and (on a c) (on c :t1)))
       hier (make-instance '<blocks-hierarchy> :domain dom)
       descs (make-instance '<blocks-descriptions> :domain dom :heuristic (dist-heuristic dom)))
       

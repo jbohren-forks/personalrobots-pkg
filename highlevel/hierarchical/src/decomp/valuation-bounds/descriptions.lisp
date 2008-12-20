@@ -31,25 +31,25 @@
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key progress-optimistic &allow-other-keys) d
-		  (make-desc name 'progress-optimistic-internal progress-optimistic args t ''infty)))
+		  (make-desc name 'progress-optimistic-internal progress-optimistic args (universal-set d) ''infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key progress-pessimistic &allow-other-keys) d
-		  (make-desc name 'progress-pessimistic-internal progress-pessimistic args nil ''-infty)))
+		  (make-desc name 'progress-pessimistic-internal progress-pessimistic args (empty-set d) ''-infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key regress-optimistic &allow-other-keys) d
-		  (make-desc name 'regress-optimistic-internal regress-optimistic args t ''infty)))
+		  (make-desc name 'regress-optimistic-internal regress-optimistic args (universal-set d) ''infty)))
 	    hla-descriptions)
 
 	 ,@(mapcar
 	    #'(lambda (d)
 		(dsbind (name args &key regress-pessimistic &allow-other-keys) d
-		  (make-desc name 'regress-pessimistic-internal regress-pessimistic args nil ''-infty)))
+		  (make-desc name 'regress-pessimistic-internal regress-pessimistic args (empty-set d) ''-infty)))
 	    hla-descriptions)))))
 
 

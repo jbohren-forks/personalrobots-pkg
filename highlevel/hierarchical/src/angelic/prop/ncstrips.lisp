@@ -248,7 +248,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
   (let ((source-clauses (disjuncts f1))
 	(dest-clauses (disjuncts f2))
 	(nclauses (ncstrips-clauses desc)))
-    (do-elements (nc nclauses nil)
+    (do-elements (nc nclauses (disjoin))
       (do-elements (c1 source-clauses)
 	(let ((pre (conjoin-clauses (list (ncc-precond nc) c1))))
 	  (unless (dnf-implies pre nil)
