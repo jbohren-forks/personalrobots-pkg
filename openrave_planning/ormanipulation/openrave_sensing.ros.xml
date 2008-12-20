@@ -7,7 +7,7 @@
 
   <node pkg="phase_space" type="phase_space_node"/>
   <!-- launch octave scripts to start the openrave client -->
-<!--   <node pkg="ormanipulation" type="testscene.m" output="screen">
+  <node pkg="ormanipulation" type="testscene.m" output="screen">
     <env name="OCTAVE_WORKINGDIR" value="$(find ormanipulation)/octave"/>
-  </node> -->
+  </node>
 </launch>
