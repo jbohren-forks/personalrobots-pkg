@@ -49,7 +49,7 @@
 // Performs rectification and disparity calculation
 //
 
-using namespace cam;
+using namespace dcam;
 
 
 // StereoDcam class
@@ -165,8 +165,8 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 			    &stIm->imRight->imRaw, &stIm->imRight->imRawSize);
 	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_RGGB;
-	  stIm->imLeft->doBayerColorRGB();
-	  stIm->imRight->doBayerColorRGB();
+          //	  stIm->imLeft->doBayerColorRGB();
+          //	  stIm->imRight->doBayerColorRGB();
 	  break;
 
 
@@ -181,7 +181,8 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->im, &stIm->imLeft->imSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
-	  stIm->imLeft->doBayerMono();
+          printf("Setting stIm->imLeft->imType to %d\n", stIm->imLeft->imType);
+          //	  stIm->imLeft->doBayerMono();
 	  stIm->hasDisparity = true;
 	  break;
 
@@ -189,7 +190,7 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
-	  stIm->imLeft->doBayerColorRGB();
+          //	  stIm->imLeft->doBayerColorRGB();
 	  stIm->hasDisparity = true;
 	  break;
 
@@ -415,6 +416,9 @@ StereoDcam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
 
 
 // visible calls
+void StereoDcam::doBayerColorRGB() { stIm->doBayerColorRGB(); }
+void StereoDcam::doBayerMono() { stIm->doBayerColorRGB(); }
+
 bool StereoDcam::doDisparity(stereo_algorithm_t alg) { return stIm->doDisparity(alg); }
 bool StereoDcam::doRectify() { return stIm->doRectify(); }
 bool StereoDcam::doCalcPts() { return stIm->doCalcPts(); }

@@ -781,7 +781,7 @@ dcam::Dcam::setRawType()
 	  if (isColor)
 	    rawType = VIDERE_STOC_RAW_DISP_RGGB;
 	  else
-	    rawType = VIDERE_STOC_RAW_DISP_MONO;
+	    rawType = VIDERE_STOC_RECT_DISP; // This is not what it SHOULD be, but what in fact comes out of the camera
 	  break;
 	}
     }

@@ -86,7 +86,7 @@ using namespace std;
 // Calibrate and write out parameters
 //
 
-cam::StereoDcam *dev = NULL;	// camera object
+dcam::StereoDcam *dev = NULL;	// camera object
 int devNum;			// number of devices
 int devIndex;			// camera index in enumeration
 bool isVideo;			// true if video streaming
@@ -209,7 +209,7 @@ void info_message(char *str, ...);	// print in the info line
 void debug_message(char *str, ...);	// print in the info line and to debug window
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
 bool FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
-cam::StereoDcam *initcam(uint64_t guid);
+dcam::StereoDcam *initcam(uint64_t guid);
 int do_button(int e, int x, int y, int b, int m, imWindow *w);
 
 // IPL images for transfers to OpenCV domain
@@ -471,13 +471,13 @@ main(int argc, char **argv)	// no arguments
 // initialize a camera
 //
 
-cam::StereoDcam *
+dcam::StereoDcam *
 initcam(uint64_t guid)
 {
   if (dev)			// get rid of old one
     delete dev;
 
-  dev = new cam::StereoDcam(guid);
+  dev = new dcam::StereoDcam(guid);
   stg->exposure_val->range(dev->expMax,dev->expMin);
 
   return dev;

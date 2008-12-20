@@ -73,7 +73,7 @@ class DcamNode : public ros::node
 public:
 
   static dcam::Dcam* cam_;
-  static cam::StereoDcam* stcam_;
+  static dcam::StereoDcam* stcam_;
 
 
   DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
@@ -209,7 +209,7 @@ public:
       // is definitely wrong.
       if (stereo_cam_)
       {
-        stcam_ = new cam::StereoDcam(guid);
+        stcam_ = new dcam::StereoDcam(guid);
         cam_ = stcam_;
 
         std::string params(cam_->getParameters());
@@ -283,7 +283,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
+      dcam::StereoDcam* stcam = ( (dcam::StereoDcam*)(cam_) );
 
       publishImages("~left/", stcam->stIm->imLeft);
       publishImages("~right/", stcam->stIm->imRight);
@@ -480,7 +480,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
+      dcam::StereoDcam* stcam = ( (dcam::StereoDcam*)(cam_) );
 
       advertise<image_msgs::StereoInfo>("~stereo_info", 1);
 
@@ -546,7 +546,7 @@ public:
 };
 
 dcam::Dcam* DcamNode::cam_ = 0;
-cam::StereoDcam* DcamNode::stcam_ = 0;
+dcam::StereoDcam* DcamNode::stcam_ = 0;
 
 void sigsegv_handler(int sig)
 {
