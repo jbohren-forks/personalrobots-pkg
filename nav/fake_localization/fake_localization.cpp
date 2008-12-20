@@ -156,14 +156,21 @@ private:
     yaw = angles::normalize_angle(yaw + m_iniPos.th);
 
     tf::Transform txo(tf::Quaternion(yaw, pitch, roll), tf::Point(x, y, z));
-
+    
+    tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
+    
     // Here we directly publish a transform from Map to base_link. We will skip the intermediate step of publishing a transform
     // to the base footprint, as it seems unnecessary. However, if down the road we wish to use the base footprint data,
-    // and some other component is publishing it, this should change to publish the map -> base_footprint instead
+    // and some other component is publishing it, this should change to publish the map -> base_footprint instead.
+    // A hack links the two frames.
+    m_tfServer->sendTransform(tf::Stamped<tf::Transform>
+			      (txIdentity.inverse(),
+			       m_basePosMsg.header.stamp,
+			       "base_footprint", "base_link"));
     m_tfServer->sendTransform(tf::Stamped<tf::Transform>
 			      (txo.inverse(),
 			       m_basePosMsg.header.stamp,
-			       "map", "base_link"));
+			       "map", "base_footprint"));
 
     // Publish localized pose
     m_currentPos.header = m_basePosMsg.header;
