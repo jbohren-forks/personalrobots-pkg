@@ -247,6 +247,10 @@ namespace cam
     bool setHoropter(int offset); // set horopter offset
     bool setNumDisp(int ndisp);	// set number of disparities
 
+    // Color conversion:
+    void doBayerColorRGB();
+    void doBayerMono();
+      
     // disparity and rectification functions
     bool doRectify();		// rectify images
     bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM); // calculate disparity image

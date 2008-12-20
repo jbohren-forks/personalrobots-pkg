@@ -6,10 +6,9 @@
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lstereoproc"/>
   </export>
+  <depend package="roscpp"/>
   <depend package="opencv_latest"/>
-
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
-
+  <depend package="image_msgs"/>
+  <depend package="diagnostic_updater"/>
   <url></url>
 </package>

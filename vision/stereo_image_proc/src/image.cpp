@@ -184,17 +184,27 @@ bool
 ImageData::doRectify()
 {
   if (!hasRectification)
+  {
     return false;		// has no rectification
+  }
 
   if (imWidth == 0 || imHeight == 0)
+  {
     return false;
+  }
+
+  doBayerMono();
 
   if (imType == COLOR_CODING_NONE && imColorType == COLOR_CODING_NONE)
+  {
     return false;		// nothing to rectify
+  }
 
   if (!((imType != COLOR_CODING_NONE && imRectType == COLOR_CODING_NONE) ||
 	(imColorType != COLOR_CODING_NONE && imRectColorType == COLOR_CODING_NONE)))
+  {
     return true;		// already done
+  }
 
   initRectify();		// ok to call multiple times
 
@@ -439,6 +449,26 @@ StereoData::doRectify()
   bool res = imLeft->doRectify();
   res = res && imRight->doRectify();
   return res;
+}
+
+//
+// Color processing
+//
+void
+StereoData::doBayerColorRGB()
+{
+  imLeft->doBayerColorRGB();
+  imRight->doBayerColorRGB();
+}
+
+//
+// Mono processing
+//
+void
+StereoData::doBayerMono()
+{
+  imLeft->doBayerMono();
+  imRight->doBayerMono();
 }
 
 
@@ -1140,6 +1170,16 @@ StereoData::createParams()
 void
 ImageData::doBayerColorRGB()
 {
+  if (imRawType == COLOR_CODING_NONE)
+  {
+    return;		// nothing to colorize
+  }
+
+  if (imRawType != COLOR_CODING_NONE && imColorType != COLOR_CODING_NONE)
+  {
+    return;		// already done
+  }
+
   // check allocation
   size_t size = imWidth*imHeight;
   if (imSize < size)
@@ -1163,6 +1203,17 @@ ImageData::doBayerColorRGB()
 void 
 ImageData::doBayerMono()
 {
+
+  if (imRawType == COLOR_CODING_NONE)
+  {
+    return;		// nothing to colorize
+  }
+
+  if (imRawType != COLOR_CODING_NONE && imType != COLOR_CODING_NONE)
+  {
+    return;		// already done
+  }
+
   // check allocation
   size_t size = imWidth*imHeight;
   if (imSize < size)
