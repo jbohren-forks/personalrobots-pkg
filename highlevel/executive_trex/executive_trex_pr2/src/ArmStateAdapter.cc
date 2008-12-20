@@ -32,6 +32,8 @@ namespace TREX {
 	double value;
 	if(readJointValue(stateMsg, rosNames()[i], value))
 	   obs->push_back(nddlNames()[i], new IntervalDomain(value));
+	else
+	  ROS_ERROR("No joint %s.", (rosNames()[i]).c_str());
       }
     }
   };
