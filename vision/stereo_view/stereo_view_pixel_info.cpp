@@ -92,7 +92,7 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
     rgb = cvGet2D(mcbparams->limage,y,x);
     if (mcbparams->disp) {
       double d = ((mcbparams->stinfo->dpp)/4.0)*cvGetReal2D(mcbparams->disp,y,x);    
-      printf("Image (u,v,d): (%d,%d,%f); (R,G,B): (%f,%f,%f); ", x,y,d/(mcbparams->stinfo->dpp), rgb.val[2],rgb.val[1],rgb.val[0] );
+      printf("Image (u,v,d): (%d,%d,%f); (R/gray,G,B): (%f,%f,%f); ", x,y,d/(mcbparams->stinfo->dpp), rgb.val[2],rgb.val[1],rgb.val[0] );
       if (mcbparams->rcaminfo) {
 	CvStereoCamModel* cam_model = new CvStereoCamModel(mcbparams->rcaminfo->P[0], mcbparams->rcaminfo->P[5], 
 							   -(mcbparams->rcaminfo->P[3])/(mcbparams->rcaminfo->P[0]), 
@@ -113,7 +113,7 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
       cvShowImage("disparity",mcbparams->disp);
     }
     else {
-      printf("Image (u,v,d): (%d,%d,0.0); (R,G,B): (%f,%f,%f); Stereo (x,y,z): (?,?,?)\n", x,y,rgb.val[2],rgb.val[1],rgb.val[0] );
+      printf("Image (u,v,d): (%d,%d,0.0); (R/gray,G,B): (%f,%f,%f); Stereo (x,y,z): (?,?,?)\n", x,y,rgb.val[2],rgb.val[1],rgb.val[0] );
     }
     cvCircle(mcbparams->limage, cvPoint(x,y), 2, cvScalar(0,0,255), 4);
     cvShowImage("left",mcbparams->limage);
