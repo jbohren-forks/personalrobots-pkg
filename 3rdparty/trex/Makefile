@@ -37,11 +37,10 @@ planworks:
 
 # Get TREX
 trex: plasma
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 46 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	@-cd TREX && $(SVN_CMDLINE) up -r 46 ;
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 50 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
+	@-cd TREX && $(SVN_CMDLINE) up -r 50 ;
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
-
 
 
 # Build library and run regression tests

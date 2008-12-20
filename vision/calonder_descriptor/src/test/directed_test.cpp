@@ -4,6 +4,8 @@
 #include <cvwimage.h>
 #include <highgui.h>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 #include <ctime>
 #include <cstdio>
 #include <cstdlib>
@@ -50,32 +52,37 @@ int main(int argc, char** argv)
   cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000, num_corners); // Only 20 views?
   cl.write(tree_name);
 
-  BruteForceMatcher<CvPoint> matcher(cl.classes());
-  float* sig_buffer = NULL;
-  posix_memalign((void**)&sig_buffer, 16, sig_size * sizeof(float) * base_set.size());
-  float* sig = sig_buffer;
+  //typedef float SigType;
+  typedef uint8_t SigType;
+  typedef Promote<SigType>::type DistanceType;
+  BruteForceMatcher<SigType, CvPoint> matcher(cl.classes());
+
+  SigType* sig_buffer = NULL;
+  posix_memalign((void**)&sig_buffer, 16, sig_size * sizeof(SigType) * base_set.size());
+  SigType* sig = sig_buffer;
+  std::cout << std::setprecision(3) << std::fixed;
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    cl.getFloatSignature(patch.Ipl(), sig);
+    cl.getSignature(patch.Ipl(), sig);
     
-    float sum = 0;
+    DistanceType sum = 0;
     for (int i = 0; i < num_corners; ++i) {
-      float elem = sig[i];
-      printf("%.3f, ", elem);
+      DistanceType elem = sig[i];
+      std::cout << elem << ", ";
       sum += elem;
     }
-    printf("sum = %f\n", sum);
+    std::cout << "sum = " << sum << std::endl;
     matcher.addSignature(sig, cvPoint(pt.x, pt.y));
     sig += sig_size;
   }
 
-  sig = (float*) malloc(sig_size * sizeof(float));
+  sig = (SigType*) malloc(sig_size * sizeof(SigType));
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    cl.getFloatSignature(patch.Ipl(), sig);
-    float distance = 0;
+    cl.getSignature(patch.Ipl(), sig);
+    DistanceType distance = 0;
     int match = matcher.findMatch(sig, &distance);
-    printf("match = %d, distance = %f\n", match, distance);
+    std::cout << "match = " << match << ", distance = " << distance << std::endl;
   }
   free(sig);
 

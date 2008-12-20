@@ -412,7 +412,7 @@ Behaviour is also affected by
            (ecase *refinement-set-type*
              (:queue 'infty)
              (:stack (reduce #'mymax depths :initial-value '-infty)))
-           (incf depth-limit)))
+           (my+ 1 depth-limit)))
          (nil )
        (loop
            with state = s
@@ -441,7 +441,9 @@ Behaviour is also affected by
 
            do (setf state (action-seq-result d state subplan)
                     refined-plan (nconc refined-plan subplan))
-           finally (return-from decompose refined-plan))))))
+           finally 
+	    (debug-out :hfs 1 t "~&Decomposed ~a with goal ~a~&  and subgoals ~a~&  into ~a" plan goal subgoals refined-plan)
+	    (return-from decompose refined-plan))))))
 
 
 (defun item-equal (item next-plan goal s)

@@ -1057,7 +1057,7 @@ float SmartScan::ransacPlane(std_msgs::Point32 &planePoint, std_msgs::Point32 &p
 		if (it >= iterations) break;
 	}
 	consList.clear();
-	fprintf(stderr,"RANSAC consensus: %d\n",maxConsensus);
+	//fprintf(stderr,"RANSAC consensus: %d\n",maxConsensus);
 	return ((float)maxConsensus) / size();
 }
 

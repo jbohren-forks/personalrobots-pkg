@@ -39,18 +39,17 @@
 #include <cmath>
 #include <ctime>
 #include <climits>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 #include <random_utils/random_utils.h>
 
 /* mutex for random number generation locking */
-static ros::thread::mutex     rMutex;
+static boost::mutex     rMutex;
 static random_utils::rngState rState;
 
 void random_utils::init(void)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     init(&rState);
-    rMutex.unlock();
 }
 
 void random_utils::init(rngState *state)
@@ -71,9 +70,8 @@ void random_utils::init(rngState *state)
 
 double random_utils::uniform(double lower_bound, double upper_bound)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     double r = uniform(&rState, lower_bound, upper_bound);
-    rMutex.unlock();
     return r;
 }
 
@@ -87,9 +85,8 @@ double random_utils::uniform(rngState *state, double lower_bound,
 
 int random_utils::uniformInt(int lower_bound, int upper_bound)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     int r = uniformInt(&rState, lower_bound, upper_bound);
-    rMutex.unlock();
     return r;
 }
 
@@ -101,9 +98,8 @@ int random_utils::uniformInt(rngState *state, int lower_bound, int upper_bound)
 
 bool random_utils::uniformBool(void)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     bool r = uniformBool(&rState);
-    rMutex.unlock();
     return r;
 }
 
@@ -114,9 +110,8 @@ bool random_utils::uniformBool(rngState *state)
 
 double random_utils::gaussian(double mean, double stddev)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     double r = gaussian(&rState, mean, stddev);
-    rMutex.unlock();
     return r;
 }
 
@@ -147,9 +142,8 @@ double random_utils::gaussian(rngState *state, double mean, double stddev)
 double random_utils::bounded_gaussian(double mean, double stddev, 
                                       double max_stddev)
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     double r = bounded_gaussian(&rState, mean, stddev, max_stddev);
-    rMutex.unlock();
     return r;
 }
 
@@ -168,9 +162,8 @@ double random_utils::bounded_gaussian(rngState *state, double mean,
 //       pg. 124-132
 void random_utils::quaternion(double value[4])
 {
-    rMutex.lock();
+    boost::mutex::scoped_lock lock(rMutex);
     quaternion(&rState, value);
-    rMutex.unlock();
 }
 
 void random_utils::quaternion(rngState* state, double value[4])

@@ -31,6 +31,7 @@
 #include <gazebo/Controller.hh>
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/PointCloud.h>
 

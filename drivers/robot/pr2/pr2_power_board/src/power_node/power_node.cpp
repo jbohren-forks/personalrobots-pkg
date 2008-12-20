@@ -355,10 +355,9 @@ int PowerBoard::process_message(const PowerMessage *msg)
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
-      library_lock_.lock();
+      boost::mutex::scoped_lock(library_lock_);
       Devices[i]->message_time = time(0);
       memcpy(&(Devices[i]->pmsg), msg, sizeof(PowerMessage)); 
-      library_lock_.unlock();
       return 0;
     }
   }
@@ -381,9 +380,8 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
-      library_lock_.lock();
+      boost::mutex::scoped_lock(library_lock_);
       memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage)); 
-      library_lock_.unlock();
       return 0;
     }
   }
@@ -548,7 +546,7 @@ void PowerBoard::sendDiagnostic()
   {
     sleep(1);
     //ROS_DEBUG("-");
-    library_lock_.lock();
+    boost::mutex::scoped_lock(library_lock_);
 
     for (unsigned i = 0; i<Devices.size(); ++i) 
     {
@@ -764,7 +762,6 @@ void PowerBoard::sendDiagnostic()
       //ROS_DEBUG("Publishing ");        
       publish("/diagnostics", msg_out);    
     }
-    library_lock_.unlock();
 
   }
 }

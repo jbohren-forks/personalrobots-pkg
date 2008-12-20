@@ -39,6 +39,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "std_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 

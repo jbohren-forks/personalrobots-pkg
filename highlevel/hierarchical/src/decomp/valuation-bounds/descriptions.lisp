@@ -21,10 +21,11 @@
 		  (declare (ignorable ,@args))
 		  (let ((,set-var (sv-s ,valuation-var))
 			(,val-var (sv-v ,valuation-var)))
-		    ,@(if fn
-			  `(mvbind (,s ,r) ,fn
-			     (make-simple-valuation ,s (+ ,r ,val-var)))
-			  `(make-simple-valuation ,default-set ,default-val)))))))
+		    (declare (ignorable ,set-var ,val-var))
+		    ,(if fn
+			 `(mvbind (,s ,r) ,fn
+			    (make-simple-valuation ,s (+ ,r ,val-var)))
+			 `(make-simple-valuation ,default-set ,default-val)))))))
     
       `(progn
 	 ,@(mapcar

@@ -82,6 +82,7 @@ namespace costmap_2d {
 
   private:
     std::list<Observation> buffer_;
+    bool received_obseration_;
     const ros::Duration keep_alive_;
     const ros::Duration refresh_interval_;
     ros::Time last_updated_;

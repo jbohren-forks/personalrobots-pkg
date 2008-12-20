@@ -48,7 +48,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun dnf-or (&rest f)
-  "dnf-or &rest DNF-FORMULAE.  Does no type checking or checking for subsumed clauses."
+  "dnf-or &rest DNF-FORMULAE.  Does no type checking or checking for subsumed clauses, but does remove disjuncts that are eql to nil."
   (disjoin-set
    (mapcan #'(lambda (x) (remove nil (disjuncts x))) f)))
 
@@ -133,7 +133,7 @@
 
 
 (defun pprint-dnf-clause (str clause)
-  (pprint-logical-block (str (if (typep clause 'conjunction) (conjuncts clause) clause) :prefix "(" :suffix ")")
+  (pprint-logical-block (str (if (typep clause 'conjunction) (to-list (conjuncts clause)) (to-list clause)) :prefix "(" :suffix ")")
     (loop
       (pprint-exit-if-list-exhausted)
       (let ((conjunct (pprint-pop)))
@@ -149,10 +149,10 @@
       (pprint-newline :fill str))))
 
 (defun pprint-dnf (str f)
-  (let ((clauses (disjuncts f)))
+  (let ((clauses (to-list (disjuncts f))))
     (if (= 0 (length clauses))
 	(princ nil str)
-      (pprint-logical-block (str (disjuncts f) :prefix "(" :suffix ")")
+      (pprint-logical-block (str (to-list (disjuncts f)) :prefix "(" :suffix ")")
 	(loop
 	  (pprint-exit-if-list-exhausted)
 	  (pprint-dnf-clause str (pprint-pop))

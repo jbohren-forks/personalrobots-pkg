@@ -257,7 +257,7 @@ int main( int argc, char** argv )
       BaseKeypoint key = base_set[i];
       cv::WImageView1_b image(key.image);
       cv::WImageView1_b patch(&image, key.x - size/2, key.y - size/2, size, size);
-      classifier.getFloatSignature(patch.Ipl(), post);
+      classifier.getSignature(patch.Ipl(), post);
       
       float max_prob = 0.0;
       int best_class = -1;

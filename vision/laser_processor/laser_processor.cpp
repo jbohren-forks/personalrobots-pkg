@@ -255,7 +255,7 @@ ScanProcessor::splitConnected(float thresh)
           {
             break;
           }
-          else if (sqrt( pow( (double)(*s_q)->x - (*s_rest)->x, 2.0) + pow( (double)(*s_q)->y - (*s_rest)->y, 2.0)) < thresh)
+          else if (sqrt( pow( (*s_q)->x - (*s_rest)->x, 2.0f) + pow( (*s_q)->y - (*s_rest)->y, 2.0f)) < thresh)
           {
             sample_queue.push_back(*s_rest);
             (*c_iter)->erase(s_rest++);

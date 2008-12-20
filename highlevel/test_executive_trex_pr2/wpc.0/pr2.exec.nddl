@@ -3,3 +3,5 @@
 rejectable(moveBase.Active g0);
 g0.x = 19.5;
 g0.y = 29.0;
+
+assertCompleted(g0.state);

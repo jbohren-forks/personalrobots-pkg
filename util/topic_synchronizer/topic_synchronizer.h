@@ -39,6 +39,7 @@
 #ifndef TOPIC_SYNCHRONIZER_HH
 #define TOPIC_SYNCHRONIZER_HH
 
+#include "rosthread/mutex.h"
 #include "rosthread/condition.h"
 #include "ros/time.h"
 

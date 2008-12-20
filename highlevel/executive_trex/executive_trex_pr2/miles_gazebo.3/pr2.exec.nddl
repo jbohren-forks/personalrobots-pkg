@@ -5,12 +5,12 @@
 #include "milo.init.nddl";
 
 /* Waypoints */
-Waypoint w1 = new Waypoint(20.65, 10.65, 3.083);
-Waypoint w2 = new Waypoint(21.65, 15.65, 2.554);
-Waypoint w3 = new Waypoint(22.65, 13.65, 0.00);
-Waypoint w4 = new Waypoint(23.65, 12.65, 0.00);
-Waypoint w5 = new Waypoint(24.65, 11.65, 1.571);
-Waypoint w6 = new Waypoint(25.65, 15.65, 0.00);
+Waypoint w1 = new Waypoint( 40.8,  42.5, 3.083);
+Waypoint w2 = new Waypoint( 36.0,  34.9, 2.554);
+Waypoint w3 = new Waypoint( 31.3,  45.8, 0.00);
+Waypoint w4 = new Waypoint( 22.2,  20.0, 0.00);
+Waypoint w5 = new Waypoint(  7.5,  45.0, 1.571);
+Waypoint w6 = new Waypoint(  9.4,  11.2, 0.00);
 
 /* Charging Stations */
 ChargingStation c1 = new ChargingStation(33.844, 36.379, -1.571);

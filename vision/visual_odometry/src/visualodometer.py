@@ -432,7 +432,8 @@ class VisualOdometer:
         t.kill()
 
     # Only keep tracks that have a recent frame
-    oldest_useful_frame = f0.id - 3
+    (fix_sz, free_sz, niter) = self.sba
+    oldest_useful_frame = f0.id - (fix_sz + free_sz)
     def age(t):
       return max([ i for i in t.id if i < 1000000])
     self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
@@ -450,26 +451,40 @@ class VisualOdometer:
       self.all_tracks.add(newtrack)
 
     # Run through all tracks.  If two tracks share an endpoint, delete the shorter track
-    by_lastpt = [e[1] for e in sorted([(t.lastpt, t) for t in self.tracks])]
+    by_lastpt = [e[1] for e in sorted([(t.lastpt, t) for t in self.tracks if t.alive])]
     tocull = set()
     for (t0,t1) in zip(by_lastpt, by_lastpt[1:]):
       if t0.lastpt == t1.lastpt:
+        assert t0.lastpt == t1.lastpt
         tocull.add(t0)
         tocull.add(t1)
         if len(t0.p) > len(t1.p):
           tocull.add(t0)
         else:
           tocull.add(t1)
+    print "Killing tracks:", [ t.id for t in tocull]
     self.tracks -= tocull
 
     for t in self.tracks:
       for (x,y,d) in t.p:
         assert d != 0
+
     self.timer['tracks'].stop()
 
   def sba_handle_frame(self, frame):
     self.timer['sba'].start()
+
+    # ids is the list of frameids for which we have observations
+    ids = set()
+    for t in self.tracks:
+      #print len(t.p), t.p
+      ids |= set(t.id)
+    print "have tracks that cover frames", sorted(list(ids))
+
     self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
+    # Only allow frames in the posechain if there exists an observation for that frame
+    self.posechain = [ (f,fp) for (f,fp) in self.posechain if f.id in ids ]
+
     (fix_sz, free_sz, niter) = self.sba
     if (1 + free_sz) > len(self.posechain):
       fix_sz = 1
@@ -478,9 +493,15 @@ class VisualOdometer:
     free = self.posechain[-(free_sz):]
     externals = sum([ f.externals for (f,_) in (fixed + free)], [])
     print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
-    fixed += externals
-    print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
+    if externals != []:
+      fixed += externals
+      print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
     self.pe.sba([fp for (_,fp) in fixed], [fp for (_,fp) in free], [ t.sba_track for t in self.tracks ], niter)
+    if 0:
+      for (f,fp) in free:
+        p = Pose()
+        p.fromlist(fp.M)
+        print f.id, p.xform(0,0,0)
     # copy these corrected poses back into the VO's key and current frames
     to_correct = [ self.keyframe, frame ]
     if self.prev_frame:
@@ -589,8 +610,6 @@ class VisualOdometer:
       Top = Tok * Tkp
       frame.pose = Top
       frame.inl = self.inl
-      if self.sba:
-        self.maintain_tracks(self.prev_frame, frame)
     if self.sba:
       self.sba_handle_frame(frame)
     self.prev_frame = frame

@@ -7,8 +7,8 @@
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
     <param name="move_base/controller_frequency" value="20.0"/>
-    <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <param name="move_base/planner_frequency" value="1.0"/>
+    <param name="move_base/plannerTimeLimit" value="0.5"/>
     <param name="/costmap_2d/base_laser_max_range" value="10.0"/>
     <param name="/costmap_2d/tilt_laser_max_range" value="10.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
@@ -20,14 +20,15 @@
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
 
-    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
-    <param name="/costmap_2d/base_laser_update_rate" value="5.0"/>
+    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
+	 way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
+    <param name="/costmap_2d/base_laser_update_rate" value="2.0"/>
 
-    <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we
+    <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
 	 are not getting any data -->
     <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/>
+    <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
-
-    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true"/>
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false"/>
   </group>
 </launch>

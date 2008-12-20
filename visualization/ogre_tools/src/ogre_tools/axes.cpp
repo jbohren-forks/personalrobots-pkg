@@ -28,7 +28,7 @@
  */
 
 #include "axes.h"
-#include "super_ellipsoid.h"
+#include "shape.h"
 
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
@@ -50,9 +50,9 @@ Axes::Axes( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, flo
 
   scene_node_ = parent_node->createChildSceneNode();
 
-  x_axis_ = new SuperEllipsoid( scene_manager_, scene_node_ );
-  y_axis_ = new SuperEllipsoid( scene_manager_, scene_node_ );
-  z_axis_ = new SuperEllipsoid( scene_manager_, scene_node_ );
+  x_axis_ = new Shape( Shape::Cylinder, scene_manager_, scene_node_ );
+  y_axis_ = new Shape( Shape::Cylinder, scene_manager_, scene_node_ );
+  z_axis_ = new Shape( Shape::Cylinder, scene_manager_, scene_node_ );
 
   set( length, radius );
 }
@@ -68,9 +68,9 @@ Axes::~Axes()
 
 void Axes::set( float length, float radius )
 {
-  x_axis_->create( SuperEllipsoid::Cylinder, 20, Ogre::Vector3( radius, length, radius ) );
-  y_axis_->create( SuperEllipsoid::Cylinder, 20, Ogre::Vector3( radius, length, radius ) );
-  z_axis_->create( SuperEllipsoid::Cylinder, 20, Ogre::Vector3( radius, length, radius ) );
+  x_axis_->setScale(Ogre::Vector3( radius, length, radius ));
+  y_axis_->setScale(Ogre::Vector3( radius, length, radius ));
+  z_axis_->setScale(Ogre::Vector3( radius, length, radius ));
 
   x_axis_->setPosition( Ogre::Vector3( length/2.0f, 0.0f, 0.0f ) );
   x_axis_->setOrientation( Ogre::Quaternion( Ogre::Degree( -90 ), Ogre::Vector3::UNIT_Z ) );

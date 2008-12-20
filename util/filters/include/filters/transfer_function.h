@@ -35,9 +35,12 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#include <vector>
 #include "filters/filter_base.h"
 #include "misc_utils/ring_buffer.h"
 
+namespace filters
+{
 /***************************************************/
 /*! \class TransferFunctionFilter
     \brief One-dimensional digital filter class.
@@ -59,11 +62,16 @@
 */
 /***************************************************/
 template <typename T>
-class TransferFunctionFilter: public FilterBase <T>
+class TransferFunctionFilter: public FilterBase < std::vector<T> >
 {
 public:
-  /** \brief Construct the filter with the expected width and height and filter cutoff */
-  TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a);
+  /**
+   * \brief Construct the filter with the expected width and height and filter cutoff
+   * \param b Difference eq params (See class description)
+   * \param a Difference eq params (See class description)
+   * \param elements_per_observation Defines the number of inputs per observation.
+   */
+  TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int elements_per_observation) ;
 
   /** \brief Destructor to clean up
    */
@@ -75,31 +83,30 @@ public:
    * This will overwrite the results on top of the input
    * \param data This must be an array which is elements_per_observation long
    */
-  virtual bool update(T * data)
+  virtual bool update(std::vector<T> * data)
   {
-    T temp(*data);
+    std::vector<T> temp(*data);
     return update (&temp, data);
   }
-
 
   /** \brief Update the filter and return the data seperately
    * \param data_in vector<T> with n elements
    * \param data_out vector<T> with n elements
    */
-  virtual bool update(T const * const data_in, T* data_out);
+  virtual bool update(std::vector<T> const * const data_in, std::vector<T>* data_out) ;
 
 protected:
 
   uint32_t in_iter_;
   uint32_t number_of_inputs_;
   uint32_t in_length_;
-  
+
   uint32_t out_iter_;
   uint32_t number_of_outputs_;
   uint32_t out_length_;
 
-  RingBuffer<T> input_buffer_;
-  RingBuffer<T> output_buffer_;
+  RingBuffer<std::vector<T> > input_buffer_;
+  RingBuffer<std::vector<T> > output_buffer_;
 
   std::vector<double> a_;
   std::vector<double> b_;
@@ -108,13 +115,13 @@ protected:
 };
 
 template <typename T>
-TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a):
+TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int elements_per_observation):
   in_iter_(0),
   in_length_(0),
   out_iter_(0),
   out_length_(0),
-  input_buffer_(b.size(), T(b.size())),
-  output_buffer_(a.size(), T(a.size()))
+  input_buffer_(b.size(), std::vector<T>(elements_per_observation, (T)0.0)),
+  output_buffer_(a.size(), std::vector<T>(elements_per_observation, (T)0.0))
 {
 
   //order of the filter
@@ -127,7 +134,7 @@ TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::v
     for(uint32_t i=1; i<b.size(); i++)
     {
       b[i]=(b[i]/a[0]);
-    } 
+    }
     for(uint32_t i=1; i<a.size(); i++)
     {
       a[i]=(a[i]/a[0]);
@@ -141,9 +148,10 @@ TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::v
 
 
 template <typename T>
-bool TransferFunctionFilter<T>::update(T const* const data_in, T* data_out)
+bool TransferFunctionFilter<T>::update(std::vector<T> const* const data_in, std::vector<T>* data_out)
 {
-  T current_input = *data_in;
+  //! \todo Probably should have a check to make sure that data_in.size() matches the size of the data in the ring buffers
+  std::vector<T> current_input = *data_in;
 
   for (uint32_t i = 0; i < data_in->size(); i++)
   {
@@ -151,12 +159,12 @@ bool TransferFunctionFilter<T>::update(T const* const data_in, T* data_out)
 
     for (uint32_t row = 0; row < (in_length_); row ++)
     {
-      T temp_in=input_buffer_[row];
+      std::vector<T> temp_in=input_buffer_[row];
       (*data_out)[i]+=  b_[row+1]*temp_in[i];
     }
     for (uint32_t row = 0; row < (out_length_); row ++)
     {
-      T temp_out=output_buffer_[row];
+      std::vector<T> temp_out=output_buffer_[row];
       (*data_out)[i]-= a_[row+1]*temp_out[i];
     }
   }
@@ -173,7 +181,7 @@ bool TransferFunctionFilter<T>::update(T const* const data_in, T* data_out)
   {
     in_length_ = (number_of_inputs_-1);
   }
-  
+
   if (out_iter_ < (number_of_outputs_ -1) )
   {
     out_iter_++;
@@ -186,6 +194,8 @@ bool TransferFunctionFilter<T>::update(T const* const data_in, T* data_out)
 
 
   return true;
+}
+
 }
 
 #endif //#ifndef FILTERS_TRANSFER_FUNCTION_H_

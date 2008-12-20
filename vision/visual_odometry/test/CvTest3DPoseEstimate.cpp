@@ -43,7 +43,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
-#define SAVE_FRAMES_POINTS 0
+#define SAVE_FRAMES_POINTS 1
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
@@ -205,17 +205,19 @@ bool CvTest3DPoseEstimate::test() {
     break;
   }
   case BundleAdj: {
+    string frame_file("frames3.xml");
 //    string frame_file("frames.xml");
 //    string point_file("cartesianPoints.xml");
-    string frame_file("frames101.xml");
+//    string frame_file("frames101.xml");
     string point_file("points260.xml");
-    int num_free_frames  = 10;
-    int num_fixed_frames = 10;
+
+    int num_free_frames  = 2;
+    int num_fixed_frames = 1;
     int num_iterations   = 300;
     int num_repeats      = 1;
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
-        true, true, true);
+        false, false, false);
     break;
   }
   default:
@@ -239,6 +241,26 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 
 void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   switch(data_set) {
+  case SyntheticLoop1: {
+    img_size_ = cvSize(640, 480);
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/SyntheticLoop1");
+    string leftimgfmt("/loop-%06d-L.png");
+    string rightimgfmt("/loop-%06d-R.png");
+    string dispimgfmt("/dispmap-%06d.xml");
+    int start = 0;
+    int end   = 400;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/SyntheticLoop1/");
+    break;
+  }
   case James4: {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
@@ -250,7 +272,7 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
-    string dispimgfmt(".dispmap-%06d.xml");
+    string dispimgfmt("/dispmap-%06d.xml");
     int start = 0;
     int end   = 2324;
     int step  = 1;
@@ -271,7 +293,7 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
     // note that B (or Tx) is in mm
-    setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+    setCameraParams(389.0, 389.0, 89.23*1.e-3, 323.42, 323.42, 274.95);
     string dirname("Data/indoor1");
     string leftimgfmt("/left-%04d.ppm");
     string rightimgfmt("/right-%04d.ppm");
@@ -298,7 +320,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
 
 //  setInputData(Indoor1);
-  setInputData(James4);
+//  setInputData(James4);
+  setInputData(SyntheticLoop1);
 
 //  VOSparseBundleAdj sba(img_size_, 100, 100);
   VOSparseBundleAdj sba(img_size_, 10, 3);
@@ -889,7 +912,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
   CvMat cartToDisp;
   CvMat dispToCart;
 
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->setCameraParams(389.0, 389.0, 89.23*1.e-3, 323.42, 323.42, 274.95);
   this->getProjectionMatrices(&cartToDisp, &dispToCart);
 
   // set up cameras
@@ -942,22 +965,11 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     free_frames.push_back(frame_poses[fi]);
   }
 
-  string track_file("tracks.txt");
   for (int k=0; k < num_repeats; k++ ) {
     // disturb the point parameters.
     if (disturb_points == true) {
       disturbPoints(&tracks);
     }
-
-#if SAVE_FRAMES_POINTS==1
-    string output_dir(output_data_path_);
-    tracks.save(output_dir);
-
-    tracks.saveInOneFile(string(output_dir).append(track_file), true);
-
-    // for experimental purpose, save all framepose here
-    saveFramePosesNonXML(output_dir, frame_poses);
-#endif
 
     int numFreeFrames = free_frames.size();
     CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
@@ -993,7 +1005,24 @@ bool CvTest3DPoseEstimate::testBundleAdj(
       disturbObsvs(&tracks);
     }
 
-    sba.optimize(&free_frames, &fixed_frames, &tracks);
+#if SAVE_FRAMES_POINTS==1
+    string track_file("tracks.txt");
+    string output_dir(output_data_path_);
+    tracks.save(output_dir);
+
+    tracks.saveInOneFile(string(output_dir).append(track_file), true);
+    tracks.print();
+
+    // for experimental purpose, save all framepose here
+    saveFramePosesNonXML(output_dir, frame_poses);
+#endif
+
+    LevMarqSparseBundleAdj::ErrorCode err_code = sba.optimize(&fixed_frames, &free_frames, &tracks);
+
+    if (err_code == LevMarqSparseBundleAdj::InputError) {
+      cout << "Input error: either fixed win or free win is empty" << endl;
+    }
+    cout << "initial cost: " << sba.initial_cost_ << " final cost: " << sba.accepted_cost_ << endl;
 
     if (verbose_) {
       // print some output

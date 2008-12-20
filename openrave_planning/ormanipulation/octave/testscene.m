@@ -1,11 +1,10 @@
 #!/usr/bin/env octave
 global probs
 
-cd('octave')
-
+cd(getenv('OCTAVE_WORKINGDIR'));
 startup;
 orEnvLoadScene('',1); % reset the scene
-orEnvSetOptions('debug debug');
+#orEnvSetOptions('debug debug');
 
 %% create problem before everything so resources can init!
 probs.rosplan = orEnvCreateProblem('ROSPlanningProblem');

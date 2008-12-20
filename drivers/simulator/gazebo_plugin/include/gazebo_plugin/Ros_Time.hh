@@ -32,6 +32,7 @@
 #include <gazebo/World.hh>
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/Image.h>
 // roscpp - used for broadcasting time over ros
 #include <rostools/Time.h>

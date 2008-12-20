@@ -132,15 +132,24 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
           mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
           full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
 
-      status = levmarq_sba_->optimize(&free_frames, &fixed_frames, &mTracks);
+      LevMarqSparseBundleAdj::ErrorCode err_code = levmarq_sba_->optimize(&fixed_frames, &free_frames, &mTracks);
+      if (err_code == LevMarqSparseBundleAdj::InputError) {
+        cout << "Input error: either fixed win or free win is empty" << endl;
+      }
+      cout << "initial cost: " << levmarq_sba_->initial_cost_ << " final cost: " << levmarq_sba_->accepted_cost_ << endl;
+      cout << "# good updates: " << levmarq_sba_->num_good_updates_ << " # retractions: " << levmarq_sba_->num_retractions_ << endl;
 
       // update the current key frame
-      if (status) {
+      if (err_code == LevMarqSparseBundleAdj::Normal ||
+          err_code == LevMarqSparseBundleAdj::NotImproved) {
     	  int fi = mActiveKeyFrames.back()->mFrameIndex;
     	  FramePose* fp = map_index_to_FramePose_[fi];
     	  cvCopy(&fp->transf_local_to_global_,
     			  &(mActiveKeyFrames.back()->transf_local_to_global_) );
     	  cvCopy(&fp->transf_local_to_global_, &(this->mTransform));
+    	  status = true;
+      } else {
+        status = false;
       }
 #endif
 

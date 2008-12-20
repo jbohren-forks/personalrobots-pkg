@@ -67,6 +67,7 @@ Exported Operations
 - <implicit-intersection>
 - implicit-intersection
 - implicit-union
+- union-sets
 - binary-union
 - <implicit-union>
 - disjoint-union
@@ -163,6 +164,7 @@ Other symbols
 	   <implicit-intersection>
 	   binary-union
 	   implicit-union
+	   union-sets
 	   <implicit-union>
 	   disjoint-union
 	   disjoint-union-list
@@ -553,10 +555,7 @@ If initial value is not provided:
 	    #'(lambda (x)
 		(member? x s2))))   
 
-(defun intersect (s &rest sets)
-  (if sets
-      (apply #'intersect (binary-intersection s (car sets)) (cdr sets))
-      s))
+(defaggregator intersect binary-intersection t)
 
 (defgeneric intersects (s1 s2)
   (:documentation "intersects S1 S2.  Do S1 and S2 have nonempty intersection?")
@@ -570,15 +569,11 @@ If initial value is not provided:
   (:documentation "binary-union S1 S2.  Return a new set that is the union of S1 and S2.  Nondestructive."))
 
 (def-symmetric-method binary-union ((s1 null) s2) s2)
+(def-symmetric-method binary-union ((s1 (eql t)) s2) (declare (ignore s2)) t)
 (defmethod binary-union (s1 s2)
   (implicit-union s1 s2))
 
-(defun unite (s &rest sets)
-  (if sets
-      (apply #'unite (binary-union s (car sets)) (cdr sets))
-      s))
-      
-
+(defaggregator unite binary-union nil)
 
 
 
@@ -586,8 +581,7 @@ If initial value is not provided:
   (:documentation "set-eq S1 S2.  Are S1 and S2 equal as sets?")
   (:method :around (s1 s2)
 	   (or (eq s1 s2)
-	       (and (eq (equality-test s1) (equality-test s2))
-		    (call-next-method))))
+	       (call-next-method)))
   (:method ((s1 <numbered-set>) s2)
 	   (and (or (eq (size s1) (size s2)) (eq (size s1) ':unknown) (eq (size s2) ':unknown))
 		(do-elements (x s1 t)

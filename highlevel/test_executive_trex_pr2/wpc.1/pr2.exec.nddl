@@ -1,17 +1,24 @@
 #include "nav.init.nddl"
 
+/**
+ * Tests the orinteerin solver and multi-objective planning. No priorities are used so this
+ * will give all goals equal priority
+ */
+
 rejectable(moveBase.Active g0);
 g0.x = 19.5;
 g0.y = 28.5;
 g0.th= 3.14;
-
+assertCompleted(g0.state);
 
 rejectable(moveBase.Active g1);
 g1.x = 15.0;
 g1.y = 25.2;
 g1.th = 0.0;
+assertCompleted(g1.state);
 
 rejectable(moveBase.Active g2);
 g2.x = 10.6;
 g2.y = 27.15;
 g2.th = 1.0;
+assertCompleted(g2.state);

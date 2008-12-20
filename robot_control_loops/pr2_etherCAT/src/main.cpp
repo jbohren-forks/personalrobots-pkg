@@ -40,6 +40,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>

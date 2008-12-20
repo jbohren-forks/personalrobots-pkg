@@ -51,7 +51,7 @@
 //#define DEBUG2 1
 
 //#define DEBUG 1
-#undef DEBUG
+//#undef DEBUG
 
 #define CHECKTIMING 1
 
@@ -74,7 +74,8 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
     CvTermCriteria term_criteria):
       /// @todo move file term_criteria_ to Parent
       Parent(disparityTo3D, threeDToDisparity, term_criteria.max_iter, Rodrigues),
-      cost_(0.),
+      initial_cost_(0.),
+      accepted_cost_(0.),
       num_retractions_(0),
       num_good_updates_(0),
       full_free_window_size_(full_free_window_size),
@@ -93,7 +94,8 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       transf_fwd_data_(new double[NUM_CAM_PARAMS*16*full_free_window_size]),
       lambdaLg10_(0),
       term_criteria_(term_criteria),
-      param_delta_(defDeltaForNumericDeriv)
+      param_delta_(defDeltaForNumericDeriv),
+      candidate_cost_(0.)
       {
 }
 
@@ -406,9 +408,9 @@ inline void LevMarqSparseBundleAdj::linearSolving() {
 ///    3x6).
 ///
 /// @return true if optimization is successful. false otherwise.
-bool LevMarqSparseBundleAdj::optimize(
+LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
+    const vector<FramePose*>* fixed_frames,
     vector<FramePose*>* free_frames,
-    vector<FramePose*>* fixed_frames,
     PointTracks* tracks
 ) {
   /// @todo add a member field in TrackPointObserv to indicate if the frame is
@@ -418,7 +420,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
   if (free_frames->size()<1 || fixed_frames->size()<1) {
-    return true;
+    return InputError;
   }
 
   // set up matrices, and others
@@ -474,17 +476,17 @@ bool LevMarqSparseBundleAdj::optimize(
   num_good_updates_= 0;
 
   // 2. Compute cost function at initial camera and point configuration.
-  initParams(free_frames, fixed_frames, tracks);
+  initParams(fixed_frames, free_frames, tracks);
 
   // For each camera/frame, compute the transformation matrix
   // from global to disparity
   constructTransfMatrices();
 
-  cost_ = costFunction(free_frames, tracks);
-  prev_cost_ = DBL_MAX;
-
+  candidate_cost_ = costFunction(free_frames, tracks);
+  initial_cost_ = candidate_cost_;
+  accepted_cost_ = candidate_cost_;
 #if DEBUG==1
-  printf("Initial cost: %f\n", cost_);
+  cout << "[LevMarqSBA] initial cost: " << initial_cost_ << endl;
 #endif
 
   // 3x6 in stereo case
@@ -890,18 +892,19 @@ bool LevMarqSparseBundleAdj::optimize(
     // 8. Compute the cost function for the updated camera and point configuration
     //
     constructTransfMatrices();
-    cost_ = costFunction(free_frames, tracks);
+    candidate_cost_ = costFunction(free_frames, tracks);
 #if DEBUG==1
     printf("[LevMarqSBA] cost of iteration %d = %e <=> %e (prev)\n",
-        iUpdates, cost_, prev_cost_);
+        iUpdates, candidate_cost_, accepted_cost_);
 #endif
 
-    if (cost_ <= prev_cost_) {
+    if (candidate_cost_ <= accepted_cost_) {
       // 9. If cost function has improved, accept the update step, decrease
       //    \f$ \lambda \f$ and go to Step 3 (unless converged, in which case quit).
       //    This step increases the influence of Gauss-Newton and decreases the
       //    the influence of gradient descent.
       num_good_updates_++;
+      accepted_cost_ = candidate_cost_;
 
       // check for convergence
       double param_change;
@@ -922,7 +925,6 @@ bool LevMarqSparseBundleAdj::optimize(
             iUpdates, param_change, term_criteria_.epsilon);
 #endif
 
-        prev_cost_ = cost_;
         // accept parameter changes
         cvCopy(&mat_C_, &mat_prev_C_);
         BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
@@ -970,12 +972,17 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
   cvReleaseMat(&mat_Jp);
   cvReleaseMat(&mat_Jc);
-  return true;
+
+  if (num_good_updates_ == 0) {
+    return NotImproved;
+  } else {
+    return Normal;
+  }
 }
 
 void LevMarqSparseBundleAdj::initParams(
+    const vector<FramePose*>* fixed_frames,
     vector<FramePose*>* free_frames,
-    vector<FramePose*>* fixed_frames,
     PointTracks* tracks) {
   indexmap_free_global_to_local_.clear();
   indexmap_fixed_global_to_local_.clear();
@@ -1091,6 +1098,9 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     vector<FramePose *>* free_frames,
     PointTracks* tracks
 ){
+#if DEBUG==1
+  printf("Final cost: %f\n", candidate_cost_);
+#endif
   double transf_global_to_local_data[4*4];
   CvMat transf_global_to_local = cvMat(4, 4, CV_64FC1, transf_global_to_local_data);
 

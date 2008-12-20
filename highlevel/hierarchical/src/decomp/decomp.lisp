@@ -8,6 +8,7 @@
 
 (in-package :decomp)
 
+
 (defgeneric refinements (hla hierarchy &key &allow-other-keys)
   (:documentation "Return the set of refinements of a high level action.  Hierarchy is the overall action hierarchy.  Additionally, depending on the hierarchy type, there may be other required keyword arguments that contain the context of this action.  For example, for <vb-hierarchy> hierarchies, an argument :initial-optimistic-set must be provided, which is an upper bound on the set of reachable states at the start of this HLA."))
 

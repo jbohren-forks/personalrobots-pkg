@@ -44,7 +44,7 @@
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="full_cloud" to="tilt_scan_cloud" />
-      <param name="fixed_frame" type="string" value="base_link" />
+      <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
     <param name="ransac_ground_plane_extraction/listen_topic" value="tilt_scan_cloud"/>
     <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
@@ -89,13 +89,16 @@
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
     <!-- due to sim time wall clock time difference, use .5Hz for now until rostime is organized -->
-    <param name="/costmap_2d/base_laser_update_rate" value="0.5"/> <!-- base_laser -->
-    <param name="/costmap_2d/tilt_laser_update_rate" value="5.0"/> <!-- laser_tilt_link -->
+    <param name="/costmap_2d/base_laser_update_rate" value="0.0"/> <!-- base_laser -->
+    <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/> <!-- laser_tilt_link -->
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/> <!-- stereo_link -->
     <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>  <!-- odom_combined -->
 
     <!-- start node to move base -->
+    <!--
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
+    -->
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
@@ -106,7 +109,10 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
 
     <!-- For logging distance traveled -->
-    <node pkg="rosrecord" type="rosrecord" args="-f /tmp/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+    <!--
+    <node pkg="rosrecord" type="rosrecord" args="-f 2dnav-stack-amcl" />
+    <node pkg="rosrecord" type="rosrecord" args="-f /tmp/2dnav-stack-amcl /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+    -->
 
     <!-- For telling the robot to go charge -->
     <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />

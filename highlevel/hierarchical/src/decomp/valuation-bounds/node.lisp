@@ -1,11 +1,15 @@
 (in-package :valuation-bound-node)
 
+(define-debug-topic :node :vb-node)
+
 (defclass <node> (<dependency-graph>)
   ((action :initarg :action :reader action)
    (descs :initarg :descs)
    (hierarchy :initarg :hierarchy)
    (root-node :writer set-root-node :reader root-node)
-   (children :reader children :initform (make-adjustable-array))
+   (children :reader children :initform (make-hash-table :test #'eql)) 
+
+   (status :accessor status)
    
    (optimistic-progressor :reader optimistic-progressor)
    (pessimistic-progressor :reader pessimistic-progressor)
@@ -35,10 +39,10 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 		  :simple-update-fn (make-alist-function (initial-optimistic) (progress-optimistic descs action initial-optimistic)))
     (add-variable n 'my-progressed-pessimistic :internal :dependees '(initial-pessimistic)
 		  :simple-update-fn (make-alist-function (initial-pessimistic) (progress-pessimistic descs action initial-pessimistic)))
-    (add-variable n 'my-regressed-optimistic :internal :dependees '(initial-optimistic)
-		  :simple-update-fn (make-alist-function (initial-optimistic) (regress-optimistic descs action initial-optimistic)))
-    (add-variable n 'my-regressed-pessimistic :internal :dependees '(initial-pessimistic)
-		  :simple-update-fn (make-alist-function (initial-pessimistic) (regress-pessimistic descs action initial-pessimistic))))
+    (add-variable n 'my-regressed-optimistic :internal :dependees '(final-optimistic)
+		  :simple-update-fn (make-alist-function (final-optimistic) (regress-optimistic descs action final-optimistic)))
+    (add-variable n 'my-regressed-pessimistic :internal :dependees '(final-pessimistic)
+		  :simple-update-fn (make-alist-function (final-pessimistic) (regress-pessimistic descs action final-pessimistic))))
 
   ;; Outputs to parents.  Subclass will define the update functions (progressor/regressor).  Subclass :after method can add additional dependees of these variables.
   (add-variable n 'progressed-optimistic :internal :update-fn (optimistic-progressor n) :dependees '(my-progressed-optimistic))
@@ -78,26 +82,44 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 (defgeneric add-child (n child-id new-node-type &rest args))
 (defgeneric compute-cycle (n))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generic functions defined here just so all subclasses
+;; can use them without namespace collisions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defgeneric child-progressed-optimistic-aggregator (n))
+(defgeneric child-progressed-pessimistic-aggregator (n))
+(defgeneric child-regressed-optimistic-aggregator (n))
+(defgeneric child-regressed-pessimistic-aggregator (n))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Things implemented here
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod add-child ((n <node>) child-id new-node-type &rest args)
   "Add a child node, and set up communication from and to the child.  The dependencies within the child will be set by its initialize-instance :after method."
-  (add-variable n (cons 'child-progressed-optimistic child-id) :external :dependants (child-progressed-optimistic-dependants n child-id))
-  (add-variable n (cons 'child-progressed-pessimistic child-id) :external :dependants (child-progressed-pessimistic-dependants n child-id))
-  (add-variable n (cons 'child-regressed-optimistic child-id) :external :dependants (child-regressed-optimistic-dependants n child-id))
-  (add-variable n (cons 'child-regressed-pessimistic child-id) :external :dependants (child-regressed-pessimistic-dependants n child-id))
+  
+  (debug-out :node 1 t "~&Adding child ~a to node ~a" child-id (action n))
+
+  ;; Add output variables for the children and give them initial values
+  (add-variable n (cons 'child-progressed-optimistic child-id) :external :dependants (child-progressed-optimistic-dependants n child-id) :initial-value (make-simple-valuation t 'infty))
+  (add-variable n (cons 'child-progressed-pessimistic child-id) :external :dependants (child-progressed-pessimistic-dependants n child-id) :initial-value (make-simple-valuation nil '-infty))
+  (add-variable n (cons 'child-regressed-optimistic child-id) :external :dependants (child-regressed-optimistic-dependants n child-id) :initial-value (make-simple-valuation t 'infty))
+  (add-variable n (cons 'child-regressed-pessimistic child-id) :external :dependants (child-regressed-pessimistic-dependants n child-id) :initial-value (make-simple-valuation nil '-infty))
+  
+
+
   (let ((child (apply #'make-instance new-node-type :parent n args)))
     (setf (evaluate (children n) child-id) child)
     
     ;; Set up upward communication
     (tie-variables child 'progressed-optimistic  n (cons 'child-progressed-optimistic child-id))
-    (tie-variables child 'progressed-pessimistic (cons 'child-progressed-pessimistic child-id))
-    (tie-variables child 'regressed-optimistic (cons 'child-regressed-optimistic child-id))
-    (tie-variables child 'regressed-pessimistic (cons 'child-regressed-pessimistic child-id))
+    (tie-variables child 'progressed-pessimistic n (cons 'child-progressed-pessimistic child-id))
+    (tie-variables child 'regressed-optimistic n (cons 'child-regressed-optimistic child-id))
+    (tie-variables child 'regressed-pessimistic n (cons 'child-regressed-pessimistic child-id))
 
-    ;; Set up downward communication if possible (otherwise, subtype should ensure that this happens before use)
+    ;; Set up downward communication if possible (otherwise, parent should ensure that this happens before use)
     (awhen (child-initial-optimistic-tied-to n child-id)
       (tie-variables n it child 'initial-optimistic))
     (awhen (child-initial-pessimistic-tied-to n child-id)
@@ -122,3 +144,12 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 
 (defun descs (n)
   (slot-value (root-node n) 'descs))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun print-children (n)
+  (let ((h (make-hash-table)))
+    (maphash #'(lambda (k v) (setf (gethash k h) (action v))) (children n))
+    (pprint-hash h)))

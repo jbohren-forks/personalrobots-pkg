@@ -167,7 +167,10 @@ Set the value of M at X to equal Y, and return Y.  M may be destructively modifi
 		    (setf (cdr m) (cons (cons x y) (cdr m)))
 		    m))))))
   (:method ((m vector) x y)
-	   (setf (elt m x) y))
+    (assert (< x (length m)) nil "can't set value of index ~a of length-~a vector ~a" x (length m) m)
+    (setf (aref m x) y))
+  
+      
   (:method ((m hash-table) x y)
 	   (setf (gethash x m) y)))
 

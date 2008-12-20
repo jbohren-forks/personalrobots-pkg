@@ -10,6 +10,10 @@
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
   <depend package="stereo_image_proc"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="image_msgs"/>
+  <depend package="diagnostic_updater"/>
 
   <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>

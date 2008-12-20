@@ -40,6 +40,7 @@
 #include <robot_msgs/DiagnosticStatus.h>
 #include <gazebo_plugin/PlugCommand.h>
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 
 namespace gazebo
 {

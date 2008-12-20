@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,8 +36,12 @@
 
 #include "filters/filter_base.h"
 
+
+namespace filters
+{
+
 /** \brief A median filter which works on double arrays.
- * 
+ *
  */
 template <typename T>
 class MeanFilter: public FilterBase <T>
@@ -62,7 +66,7 @@ public:
    * \param data_out T array with length elements_per_observation
    */
   virtual bool update(T const * const data_in, T* data_out);
-  
+
 protected:
   T * data_storage_;                       ///< Storage for data between updates
   uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
@@ -102,16 +106,16 @@ bool MeanFilter<T>::update(T const* const data_in, T* data_out)
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
     last_updated_row_ = 0;
-  else 
+  else
     last_updated_row_++;
 
   //copy incoming data into perminant storage
   memcpy(&data_storage_[elements_per_observation_ * last_updated_row_],
-         data_in, 
+         data_in,
          sizeof(T) * elements_per_observation_);
-  
+
   //Return values
-  
+
   //keep track of number of rows used while starting up
   uint32_t length;
   if (iterations_ < number_of_observations_ )
@@ -133,11 +137,11 @@ bool MeanFilter<T>::update(T const* const data_in, T* data_out)
       data_out[i] += data_storage_[i + row * elements_per_observation_];
     }
     data_out[i] /= length;
-  }    
-  
+  }
+
   return true;
 }
 
-
+}
 
 #endif //#ifndef FILTERS_MEDIAN_H_

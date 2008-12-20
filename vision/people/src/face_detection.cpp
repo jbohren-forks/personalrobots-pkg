@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 
 #include "CvStereoCamModel.h"
 #include <robot_msgs/PositionMeasurement.h>
@@ -55,6 +56,7 @@
 #include "opencv/highgui.h"
 
 #include "people.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -161,24 +163,23 @@ public:
     }
 
     cv_mutex_.lock();
-    int iperson;
-    if (pos_.initialization == 1) {
-      // Create a person with this id and position.
+    // Find the person in my list. If they don't exist, or this is an initialization, create them.
+    // Otherwise, reset the position.
+    int iperson = people_->findID(pos_.object_id);
+    if (pos_.initialization == 1 || iperson < 0) {
+      // Create a person with this id.
       people_->addPerson();
-      iperson = people_->getNumPeople();
+      iperson = people_->getNumPeople()-1;
       people_->setID(pos_.object_id, iperson);
     }
     else {
-      // Find the person in my list. If they don't exist, re-create them as above.
-      // If the message is within a short time of the current image, reset the position.
-      iperson = people_->findID(pos_.object_id);
-      if (iperson < 0) {
-	cv_mutex_.unlock();
-	return;
-      }
+      // Person already exists.
     }
+    // Set the position.
     people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
     cv_mutex_.unlock();
+
+    ///// I'm not currently checking the time of this positioning message, which is a little worrying.
 
   }
 
@@ -223,7 +224,7 @@ public:
       im_size = cvGetSize(cv_image_left_);
       vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
 
-      // Get the average disparity in the middle half of the bounding box, and compute the face center in 3d. 
+      // Get the average (median) disparity in the middle half of the bounding box, and compute the face center in 3d. 
       // Publish the face center as a track point.
       if (cv_image_disp_ && cam_model_) {
 	int r, c, good_pix;
@@ -237,16 +238,12 @@ public:
 	  one_face = &faces_vector[iface];
 	  good_pix = 0;
 	  avg_disp = 0;
-	  for (r = floor(one_face->y+0.25*one_face->height); r < floor(one_face->y+0.75*one_face->height); r++) {
-	    ptr = (ushort*)(cv_image_disp_->imageData + r*cv_image_disp_->widthStep);
-	    for (c = floor(one_face->x+0.25*one_face->width); c < floor(one_face->x+0.75*one_face->width); c++) {
-	      if (ptr[c] > 0) {
-		avg_disp += ptr[c];
-		good_pix++;
-	      }
-	    }
-	  }
-	  avg_disp /= (double)good_pix; // Take the average.
+
+	  // Get the median disparity in the middle half of the bounding box.
+	  avg_disp = cvMedianNonZeroElIn2DArr(cv_image_disp_,
+					      floor(one_face->y+0.25*one_face->height),floor(one_face->y+0.75*one_face->height),
+					      floor(one_face->x+0.25*one_face->width), floor(one_face->x+0.75*one_face->width)); 
+
 	  cvmSet(uvd,0,0,one_face->x+one_face->width/2.0);
 	  cvmSet(uvd,0,1,one_face->y+one_face->height/2.0);
 	  cvmSet(uvd,0,2,avg_disp);
@@ -257,12 +254,14 @@ public:
 	  if (external_init_) {
 	    // Check if this person's face is close enough to one of the previously known faces and associate it.
 	    // If not, don't publish it.
+	    // If yes, set it's new position and publish it.
 	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
 	    if (close_person < 0) {
 	      do_publish = false;
 	    }
 	    else {
 	      id = people_->getID(close_person);
+	      people_->setFaceCenter3D(cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2), close_person);
 	    }
 	  }
 

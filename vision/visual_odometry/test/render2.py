@@ -520,7 +520,7 @@ import camera
 import random
 import math
 import sys
-import visualize
+#import visualize
 
 def rotation(angle, x, y, z):
   return numpy.array([
@@ -580,9 +580,10 @@ class PhonyFrame:
     self.kp = [(x+r(),y+r(),d) for (x,y,d) in self.kp]
 
 vos = [
-  #VisualOdometer(stereo_cam, sba=(1,1,1)),
-  VisualOdometer(stereo_cam, sba=None, inlier_error_threshold = 1.0),
-  VisualOdometer(stereo_cam, feature_detector = FeatureDetectorHarris(), sba=(3,10,10), inlier_error_threshold = 1.0),
+#  VisualOdometer(stereo_cam, sba=(1,1,1)),
+  VisualOdometer(stereo_cam, sba=None, inlier_error_threshold = 1.5),
+  #VisualOdometer(stereo_cam, feature_detector = FeatureDetectorHarris(), sba=(1,20,10), inlier_error_threshold = 1.5),
+  #VisualOdometer(stereo_cam, feature_detector = FeatureDetectorHarris(), sba=(1,49,50), inlier_error_threshold = 1.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
@@ -622,7 +623,7 @@ for i in range(401):
     r = 4.0
     cam = ray_camera(Pose(rotation(theta, 0,1,0), (r - r * math.cos(theta),0,r * math.sin(theta))), stereo_cam)
 
-  if 0:
+  if 1: # set it to 1 for the first time to generate a cache of images. Turn it to 0 afterwards to use the cache
     imL = Image.new("RGB", (640,480))
     imR = Image.new("RGB", (640,480))
     imL = imL.convert("L")
@@ -631,6 +632,8 @@ for i in range(401):
     render_stereo_scene(imL, imR, imD, cam, scene)
     im = Image.merge("RGB", (imL, imR, imR))
     im.save("out%06d.png" % i)
+    imL.save("loop-%06d-L.png" % i)
+    imR.save("loop-%06d-R.png" % i)
     imD[0].save("out%06d-x.tiff" % i)
     imD[1].save("out%06d-y.tiff" % i)
     imD[2].save("out%06d-z.tiff" % i)

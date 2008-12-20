@@ -532,7 +532,7 @@ stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
 
 random.seed(0)
 scene = []
-if 1:
+if 0:
   for obj in range(100):
     theta = random.random() * math.pi * 2
     center = vec3(math.cos(theta), math.sin(theta), obj / 10.)
@@ -580,10 +580,20 @@ class PhonyFrame:
     self.kp = [(x+r(),y+r(),d) for (x,y,d) in self.kp]
 
 vos = [
+  #VisualOdometer(stereo_cam, sba=(1,1,1)),
+  VisualOdometer(stereo_cam, sba=None, inlier_error_threshold = 1.0),
+  VisualOdometer(stereo_cam, feature_detector = FeatureDetectorHarris(), sba=(3,10,10), inlier_error_threshold = 1.0),
+  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
+  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
+  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
+  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.0),
+  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.5),
+  #VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True, sba = None),
+
   #PhonyVisualOdometer(stereo_cam),
   #PhonyVisualOdometer(stereo_cam, sba = (5,5,5))
-  VisualOdometer(stereo_cam, scavenge = True, sba = None),
-  VisualOdometer(stereo_cam, scavenge = True, sba = (5,5,5)),
+  #VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast)),
+  #VisualOdometer(stereo_cam, scavenge = True, sba = (1,1,5)),
 ]
 
 class MagicStereoFrame(SparseStereoFrame):
@@ -599,49 +609,97 @@ class MagicStereoFrame(SparseStereoFrame):
     assert abs(x - px) < 2
     return d
 
-Xs = range(100)
-Ys = [ [] for i in vos ]
-for i in Xs:
+use_magic_disparity = False
+
+trajectory = [ [] for i in vos]
+for i in range(401):
   print i
-  desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
-  if 1:
+  if 0:
+    desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
     cam = ray_camera(desired_pose, stereo_cam)
   else:
     theta = (i / 400.0) * math.pi * 2
     r = 4.0
     cam = ray_camera(Pose(rotation(theta, 0,1,0), (r - r * math.cos(theta),0,r * math.sin(theta))), stereo_cam)
 
-  if 1:
+  if 0:
     imL = Image.new("RGB", (640,480))
     imR = Image.new("RGB", (640,480))
-    imD = [ Image.new("F", (640,480)), Image.new("F", (640,480)), Image.new("F", (640,480)) ]
-    render_stereo_scene(imL, imR, imD, cam, scene)
     imL = imL.convert("L")
     imR = imR.convert("L")
+    imD = [ Image.new("F", (640,480)), Image.new("F", (640,480)), Image.new("F", (640,480)) ]
+    render_stereo_scene(imL, imR, imD, cam, scene)
     im = Image.merge("RGB", (imL, imR, imR))
     im.save("out%06d.png" % i)
     imD[0].save("out%06d-x.tiff" % i)
     imD[1].save("out%06d-y.tiff" % i)
     imD[2].save("out%06d-z.tiff" % i)
-  if 0:
-    im = Image.open("out%06d.png" % i)
+  else:
+    fn = i
+    im = Image.open("out%06d.png" % fn)
     imL,imR,_ = im.split()
-    imD = [ Image.open("out%06d-x.tiff" % i), Image.open("out%06d-y.tiff" % i), Image.open("out%06d-z.tiff" % i) ]
+    if use_magic_disparity:
+      imD = [ Image.open("out%06d-x.tiff" % fn), Image.open("out%06d-y.tiff" % fn), Image.open("out%06d-z.tiff" % fn) ]
+    imL,imR = imR,imL
+    imL = imL.transpose(Image.FLIP_LEFT_RIGHT)
+    imR = imR.transpose(Image.FLIP_LEFT_RIGHT)
   if 1:
     for j,vo in enumerate(vos):
-      #f = SparseStereoFrame(imgStereo(imL), imgStereo(imR))
-      f = MagicStereoFrame(imgStereo(imL), imgStereo(imR), imD, stereo_cam)
+      f = SparseStereoFrame(imgStereo(imL), imgStereo(imR))
+      #f = MagicStereoFrame(imgStereo(imL), imgStereo(imR), imD, stereo_cam)
+
       #f = PhonyFrame(~desired_pose, stereo_cam)
-      vo.lock_handle_frame(f)
+      #vo.lock_handle_frame(f)
+      vo.handle_frame(f)
       #visualize.viz(vo, f)
       (x,y,z) = vo.pose.xform(0,0,0)
-      print vo.name(), (x,y,z)
-      Ys[j].append(z - 0.01 * i)
+      if 0:
+        print vo.name(), (x,y,z)
+        (ex,ey,ez) = desired_pose.xform(0,0,0)
+        Ys[j].append(z - ez)
+      else:
+        trajectory[j].append((x,y,z))
+
+def planar(x, y, z):
+  from scipy import optimize
+
+  def silly(sol, args):
+      a,b,c = sol
+      x,y,z = args
+      return sum((y - (a*x + b*z + c)) ** 2)
+
+  sol = [1.0, 1.0, 1.0]
+  sol = optimize.fmin(silly, sol, args=((x,y,z),))
+
+  a,b,c = sol
+  return sqrt(sum((y - (a*x + b*z + c)) ** 2) / len(x))
 
 colors = [ 'blue', 'red', 'green', 'black', 'magenta', 'cyan' ]
 for i in range(len(vos)):
-  pylab.scatter(Xs, Ys[i], label = vos[i].name(), color = colors[i])
+  pylab.plot([x for (x,y,z) in trajectory[i]], [z for (x,y,z) in trajectory[i]], label = vos[i].name(), color = colors[i])
+
+xlim = pylab.xlim()
+ylim = pylab.ylim()
+xrange = xlim[1] - xlim[0]
+yrange = ylim[1] - ylim[0]
+r = max(xrange, yrange) * 1.5
+mid = sum(xlim) / 2
+pylab.xlim(mid - 0.5 * r, mid + 0.5 * r)
+mid = sum(ylim) / 2
+pylab.ylim(mid - 0.5 * r, mid + 0.5 * r)
 
 pylab.legend()
-#pylab.savefig("foo.jpg")
+#pylab.savefig("foo.png")
 pylab.show()
+
+quality_pose = Pose()
+
+for i,vo in enumerate(vos):
+  vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
+  print vo.name()
+  print "distance from start:", vo.pose.distance()
+  print "planarity", vo.planarity
+  print "pose", vo.pose.comparison(quality_pose)
+  vo.summarize_timers()
+  print vo.log_keyframes
+  print

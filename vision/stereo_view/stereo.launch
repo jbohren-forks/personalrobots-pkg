@@ -1,5 +1,5 @@
 <launch>
-  <node name="dcam" pkg="dcam_node" type="dcam_node" respawn="false">
+  <node name="dcam_node" pkg="dcam" type="stereodcam" respawn="false">
     <!-- video_mode should be one of the following:
          640x480_videre_disparity:     Disparity and rectification done on chip.
                                         Provides: Disparity and left mono image

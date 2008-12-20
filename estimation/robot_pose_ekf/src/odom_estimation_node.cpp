@@ -148,6 +148,8 @@ namespace estimation
 	  odom_initializing_ = false;
 	  ROS_INFO((node_name_+"  Odom sensor activated").c_str());      
 	}
+	else ROS_INFO("Will not activate Odom yet, because Odom measurements are still %f sec in the future.", 
+		      (odom_init_stamp_ - filter_stamp_).toSec());
       }
       
 #ifdef __EKF_DEBUG_FILE__
@@ -189,6 +191,8 @@ namespace estimation
 	  imu_initializing_ = false;
 	  ROS_INFO((node_name_+"  Imu sensor activated").c_str());      
 	}
+	else ROS_INFO("Will not activate IMU yet, because IMU measurements are still %f sec in the future.", 
+		      (imu_init_stamp_ - filter_stamp_).toSec());
       }
       
 #ifdef __EKF_DEBUG_FILE__
@@ -238,6 +242,8 @@ namespace estimation
 	  vo_initializing_ = false;
 	  ROS_INFO((node_name_+"  Vo sensor activated").c_str());      
 	}
+	else ROS_INFO("Will not activate VO yet, because VO measurements are still %f sec in the future.", 
+		      (vo_init_stamp_ - filter_stamp_).toSec());
       }
       
 #ifdef __EKF_DEBUG_FILE__
@@ -307,30 +313,31 @@ namespace estimation
 
 	// update filter
 	if ( my_filter_.isInitialized() )  {
-	  my_filter_.update(odom_active_, imu_active_, vo_active_,  filter_stamp_);
-      
-	  // output most recent estimate and relative covariance
-	  my_filter_.getEstimate(output_);
-	  publish("odom_estimation", output_);
+	  if (my_filter_.update(odom_active_, imu_active_, vo_active_,  filter_stamp_)){
 
-	  // broadcast most recent estimate to TransformArray
-	  Stamped<Transform> tmp;
-          if(!vo_active_)
-            tmp.getOrigin().setZ(0.0);
+	    // output most recent estimate and relative covariance
+	    my_filter_.getEstimate(output_);
+	    publish("odom_estimation", output_);
 
-	  my_filter_.getEstimate(ros::Time(), tmp);
-	  odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
+	    // broadcast most recent estimate to TransformArray
+	    Stamped<Transform> tmp;
+	    my_filter_.getEstimate(ros::Time(), tmp);
+	    if(!vo_active_)
+	      tmp.getOrigin().setZ(0.0);
+	    odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
 
 #ifdef __EKF_DEBUG_FILE__
-	  // write to file
-	  ColumnVector estimate; 
-	  my_filter_.getEstimate(estimate);
-	  for (unsigned int i=1; i<=6; i++)
-	    corr_file_ << estimate(i) << " ";
-	  corr_file_ << endl;
+	    // write to file
+	    ColumnVector estimate; 
+	    my_filter_.getEstimate(estimate);
+	    for (unsigned int i=1; i<=6; i++)
+	      corr_file_ << estimate(i) << " ";
+	    corr_file_ << endl;
 #endif
+	  }
 	}
 
+	  
 	// initialize filer with odometry frame
 	if ( odom_active_ && !my_filter_.isInitialized()){
 	  my_filter_.initialize(odom_meas_, odom_stamp_);

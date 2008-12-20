@@ -100,6 +100,7 @@
    :make-dummy-complete-descriptions
    :pg-heuristic
    :dist-heuristic
+   :<blocks-descriptions>
    
    ;; subsumption
    :make-blocks-subsumption-checker

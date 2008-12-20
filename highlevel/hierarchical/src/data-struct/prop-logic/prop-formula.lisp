@@ -54,6 +54,7 @@ dnf-implies
 dnf-consistent
 make-state-dnf
 *compound-formula-type*
+conjoin-clausess
 
 DNF sets
 --------
@@ -110,6 +111,7 @@ with-dnf-pprint
    dnf-implies
    dnf-consistent
    make-state-dnf
+   conjoin-clauses
    *compound-formula-type*
    
    make-dnf-set

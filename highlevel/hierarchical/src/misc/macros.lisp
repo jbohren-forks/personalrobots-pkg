@@ -618,5 +618,48 @@ Causes the dispatching read macro for CHAR in READTABLE to work by reading the n
 (defmacro make-alist-function ((&rest args) &body body)
   (let ((l (gensym)))
     `#'(lambda (,l)
-	 (let ,(mapcar #'(lambda (a) `(,a (cdr (check-not-null (assoc ',a ,l))))) args)
+	 (let ,(mapcar #'(lambda (a) `(,a (cdr (check-not-null (assoc ',a ,l) "The key ~a in the alist ~a" ',a ,l)))) args)
 	   ,@body))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; debug out
+;; see also the old version debug-print, etc in utils.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar *debug-indent* 0)
+(defun debug-indent ()
+  (format *query-io* "~&~V,T" *debug-indent*))
+(defvar *debug-topic-parents* (make-hash-table :test #'eq))
+
+(defun define-debug-topic (topic parent)
+  (setf (gethash topic *debug-topic-parents*) parent))
+  
+
+(defmacro with-debug-indent (&body body)
+  `(let ((*debug-indent* (+ 3 *debug-indent*)))
+     ,@body))
+
+(defvar *debug-stream* t)
+(defvar *debug-topics* (make-hash-table :test #'equal))
+
+(defun set-debug-level (topic level)
+  (setf (gethash topic *debug-topics*) level))
+
+(defmacro debug-out (topic level cond str &rest args)
+  "debug-out TOPIC LEVEL CONDITION FORMAT-STRING &rest ARGS
+
+When CONDITION is true, see if the level of this TOPIC exceeds LEVEL, and if so, print debugging message to *debug-stream* using format string and args (which are only evaluated in this case).
+The TOPICs are arranged in a forest (using define-debug-topic) and the level of the TOPIC is found by moving up the tree until a topic is found for which the level has been set using set-debug-level."
+  `(when (and ,cond (topic-level-exceeds ',topic ,level))
+     (format *debug-stream* ,str ,@args)))
+
+(defun get-topic-level (topic)
+  (or (gethash topic *debug-topics*)
+      (aif (gethash topic *debug-topic-parents*)
+	   (get-topic-level it)
+	   '-infty)))      
+
+(defun topic-level-exceeds (topic level)
+  (my> (get-topic-level topic) level))
+

@@ -29,8 +29,8 @@
 Make an empty dependency graph"
   (make-instance '<dependency-graph>))
 
-(defun add-variable (g name type &key update-fn simple-update-fn dependees dependants update-hooks )
-  "add-variable DEPENDENCY-GRAPH NAME TYPE &key (UPDATE-FN nil) (DEPENDEES nil) (DEPENDANTS nil) (UPDATE-HOOKS nil)
+(defun add-variable (g name type &key update-fn simple-update-fn dependees dependants update-hooks (initial-value nil val-given))
+  "add-variable DEPENDENCY-GRAPH NAME TYPE &key (UPDATE-FN nil) (DEPENDEES nil) (DEPENDANTS nil) (UPDATE-HOOKS nil) INITIAL-VALUE
 Add a new variable to the graph.  
 
 NAME is of a type that can be distinguished using #'equal.  
@@ -42,7 +42,7 @@ SIMPLE-UPDATE-FN can be provided instead of UPDATE-FN, and calls simple-update-f
 
 UPDATE-HOOKS is a list of functions that will be called whenever the variable is updated (if a sequence of updates happens, they will be called once after all the updates), on the new value and diff.  The functions are expected to not have side effects within the dependency graph.  
 
-A new variable is always uninitialized.  Also, when an internal variable is added, it and all its descendants become out of date, while if an external variable is added, its descendants become out of date."
+If INITIAL-VALUE is supplied, it's used to initialize the variable, which must be external in this case.  Else it's uninitialized.  Also, when an internal variable is added, it and all its descendants become out of date, while if an external variable is added, its descendants become out of date."
 
   (assert (ecase type
 	    (:internal (xor update-fn simple-update-fn))
@@ -63,7 +63,12 @@ A new variable is always uninitialized.  Also, when an internal variable is adde
   (dolist (v dependees)
     (add-dependency g v name))
   (dolist (v dependants)
-    (add-dependency g name v)))
+    (add-dependency g name v))
+
+  (when val-given 
+    (assert (eq type :external) nil "Attempted to provide initial value ~a for internal variable ~a" initial-value name)
+    (update-external-variable g name (new-val-diff initial-value))))
+    
 
 
 (defun add-dependency (g v1 v2)
@@ -113,6 +118,7 @@ Tie variables across dependency graphs: add a hook such that when you update var
 
 If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be uninitialized."
   (assert (not (internal? v2 g2)) nil "Can't tie variable ~a in ~a to internal variable ~a in ~a." v1 g1 v2 g2)
+  (assert (not (eq g1 g2)) nil "Can't tie variables ~a and ~a in the same graph" v1 v2 g1)
   (let ((d (get-var-desc v2 g2)))
     (assert (zerop (num-ties d)) nil "Variable ~a in ~a already tied." v2 g2)
     (incf (num-ties d)))
@@ -138,10 +144,10 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
   (assert (not (up-to-date? v g)))
   (loop
     (let ((out-of-date-parent (do-parents (p v g)
-				(unless (up-to-date? p g)
+				(when (and (internal? p g) (not (up-to-date? p g)))
 				  (return p)))))
       (if out-of-date-parent
-	(setf v out-of-date-parent)
+	(setq v out-of-date-parent)
 	  ;; else
 	(return (values v (update-from-parents v g update-fully)))))))
 
@@ -157,6 +163,12 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 	(push (cons parent (edge-label e)) parent-diffs)
 	(push (cons parent (current-value g parent)) parent-vals)
 	(setf (edge-label e) nil)))
+    
+
+    (debug-out :dep-graph 1 t "~&Updating variable ~a with value ~a based on parents ~a, whose vals are ~a" 
+	       v (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
+
+
     (loop
       (mvbind (new-val diff saved-state done?) (funcall (update-fn desc) parent-vals parent-diffs (current-val desc) (saved-update-state desc))
 	(setf (up-to-date? v g) done?
@@ -169,6 +181,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 (defun change-variable (v new-val diff g)
   (let ((desc (get-var-desc v g)))
     (setf (current-val desc) new-val)
+    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph to ~a" v new-val)
     (propagate-diff v g diff)
     (dolist (h (update-hooks desc))
       (funcall h new-val diff))))

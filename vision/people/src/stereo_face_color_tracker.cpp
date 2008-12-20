@@ -54,6 +54,7 @@
 #include "opencv/highgui.h"
 
 #include "people.h"
+#include "utils.h"
 
 #define __FACE_COLOR_TRACKER_DEBUG__ 0
 #define __FACE_COLOR_TRACKER_DISPLAY__ 1
@@ -170,8 +171,6 @@ public:
 
   // Callback to (re)initialize the location of a face.
   void init_pos_cb() {
-
-    printf("In init cb\n");
 
     // Check that this is the right message, there are multiple people publishing "person_measurement"s.
     if (init_pos_.name != "track_starter_gui") {
@@ -340,11 +339,14 @@ public:
 	  people_->setFaceBbox2D(faces_vector[iface],iface);
 
 	  // Take the average valid Z within the face bounding box. Invalid values are 0.
-	  CvRect tface = cvRect(faces_vector[iface].x+4, faces_vector[iface].y+4, faces_vector[iface].width-8, faces_vector[iface].height-8);
-	  cvSetImageROI(Z_,tface);
-	  avgz = cvSum(Z_);
-	  avgz.val[0] /= cvCountNonZero(Z_);
-	  cvResetImageROI(Z_);
+	  avgz.val[0] = cvMedianNonZeroElIn2DArr(Z_,
+						 faces_vector[iface].y+4,faces_vector[iface].y+faces_vector[iface].height-4,
+						 faces_vector[iface].x+4,faces_vector[iface].x+faces_vector[iface].width-4); 
+	  //CvRect tface = cvRect(faces_vector[iface].x+4, faces_vector[iface].y+4, faces_vector[iface].width-8, faces_vector[iface].height-8);
+	  //cvSetImageROI(Z_,tface);
+	  //avgz = cvSum(Z_);
+	  //avgz.val[0] /= cvCountNonZero(Z_);
+	  //cvResetImageROI(Z_);
 
 	  // Get the two diagonal corners of the bounding box in the camera frame.
 	  // Since not all pts will have x,y,z values, we'll take the average z, convert it to d,
@@ -395,7 +397,7 @@ public:
     }
 
     CvMat *end_points = cvCreateMat(npeople,3,CV_32FC1);
-    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 0.3, 0, NULL, NULL, end_points);
+    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 5.0, 0, NULL, NULL, end_points);//0.3
     if (!did_track) {
       // If tracking failed, just return.
       cv_mutex_.unlock();

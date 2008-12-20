@@ -443,6 +443,9 @@
 		 (eq (second a1) (second a2)))
 	(return nil)))))
 
+
+
+
 (tests "offline lookahead"
        ((mvsetq (plan tree) (aha* q2l :termination ':begins-with-primitive))
 	#((LEFT 2 3 1) (NAV 1 3 1 2) (PICKUPR C BAZ 2 2 1) (NAV 1 2 1 3) (TURNL 1) (NAV 1 3 1 2) (STACKL C A 0 1 1 2) FINISH))
@@ -458,8 +461,6 @@
        
        ((is-well-formed tree q3l) t))
 	
-
-
 
 
 (tests "hfs"

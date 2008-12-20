@@ -577,7 +577,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   swap = best_traj;
   best_traj = comp_traj;
   comp_traj = swap;
-  best_traj->cost_ = 1;
 
   strafe_left = false;
   strafe_right = false;

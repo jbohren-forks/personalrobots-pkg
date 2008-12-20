@@ -1,7 +1,7 @@
 #include "pr2.declarations.nddl"
 #include "pr2.rules.nddl"
 
-float XY_ERROR = 1.0;
+float XY_ERROR = 0.5;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
 int WAIT_TIME_AFTER_UNPLUGGING = 5;
@@ -284,12 +284,12 @@ RechargeController::Inactive{
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
   // syntax in the language to make it more explicit what is going on. All we are really doing here
   // is binding default values from execution
-  // baseState[start] == Holds( desX + [-0.25, 0.25], desY + [-0.25, 0.25], desTh + [-0.25, 0.25])
+  // baseState[start] == Holds( desX + [-0.5, 0.5], desY + [-0.5, 0.5], desTh + [-0.5, 0.5])
   if(start){
     starts(BaseState.Holds bs);
-    addEq(bs.x, [-0.25, 0.25], x);
-    addEq(bs.y, [-0.25, 0.25], y);
-    addEq(bs.th, [-0.25, 0.25], th);
+    addEq(bs.x, [-0.5, 0.5], x);
+    addEq(bs.y, [-0.5, 0.5], y);
+    addEq(bs.th, [-0.5, 0.5], th);
   }
 }
 

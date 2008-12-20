@@ -77,21 +77,31 @@ public:
       CvTermCriteria term_criteria0 =
         cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
   virtual ~LevMarqSparseBundleAdj();
+
+  typedef enum {
+    Normal        = 0,
+    InputError    = 1,
+    NotImproved   = 2,
+    Failure       = 3
+  } ErrorCode;
   // see .cpp file for detailed documentation.
-  bool optimize(
+  ErrorCode optimize(
+      /// The set of fixed frames.
+      const vector<FramePose*>* fixedFrames,
       /// The set of free frames. The transformation matrix
       /// is used as initial value in entry and output in exit.
       vector<FramePose*>* freeFrames,
-      /// The set of fixed frames.
-      vector<FramePose*>* fixedFrames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
   );
 
-  /// The cost of current iteration in optimize(). Or final cost when
-  /// optimize() returns.
-  double cost_;
+  /// Initial cost.
+  double initial_cost_;
+  /// cost of the last accepted update (aka good update).
+  /// When optimize() returns, this stores the final cost.
+  double accepted_cost_;
+
   /// number of retraction (when error/cost has increased).
   int num_retractions_;
   /// number of good update (when error/cost has decreased).
@@ -99,8 +109,8 @@ public:
 
 protected:
   void initParams(
+      const vector<FramePose*>* fixed_frames,
       vector<FramePose*>* free_frames,
-      vector<FramePose*>* fixed_frames,
       PointTracks* tracks
   );
   /// compute the cost function, for example, the 2-norm of error vector.
@@ -288,9 +298,8 @@ protected:
   /// parameter delta value. Used for compute Jacobian numerically.
   const double param_delta_;
 
-  /// cost of previous iteration.
-  double prev_cost_;
-
+  /// The cost of current iteration in optimize().
+  double candidate_cost_;
 };
 
 }

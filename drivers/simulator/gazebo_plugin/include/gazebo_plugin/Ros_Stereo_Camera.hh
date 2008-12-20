@@ -31,6 +31,7 @@
 #include <map>
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Image.h>
 

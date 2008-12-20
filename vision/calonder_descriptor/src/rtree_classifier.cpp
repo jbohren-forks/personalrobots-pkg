@@ -59,7 +59,7 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 }
 
 // TODO: vectorize
-void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
+void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 { 
   // Need pointer to 32x32 patch data
   uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
@@ -98,7 +98,7 @@ void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
   posteriors = NULL;
       
   // full quantization (experimental)
-  #if 1
+  #if 0
     int n_max = 1<<8 - 1;
     int sum_max = (1<<4 - 1)*trees_.size();
     int shift = 0;    
@@ -117,9 +117,9 @@ void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
   #else
     // TODO: get rid of this multiply (-> number of trees is known at train 
     // time, exploit it in RandomizedTree::finalize())
-    float normalizer = 1.0f / trees_.size();
-    for (int i = 0; i < classes_; ++i)
-      sig[i] *= normalizer;
+    //float normalizer = 1.0f / trees_.size();
+    //for (int i = 0; i < classes_; ++i)
+    //  sig[i] *= normalizer;
   #endif
 }
 
@@ -165,7 +165,7 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
 
   // full quantization (experimental, later implicit)
   #if 1
-    // find out the required right-shift needed to fit all sig values an uint8_t
+    // find out the required right-shift needed to fit all sig values into an uint8_t
     int n_max = (1 << (8*sizeof(uint8_t))) - 1;
     int sum_max = ((1<<4) - 1)*trees_.size();
     int shift = 0;    
@@ -186,19 +186,16 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
 
 void RTreeClassifier::getSparseSignature(IplImage *patch, float *sig, float thresh)
 {   
-   printf("(%s:%i) ERROR: NOT IMPLEMENTED!\n", __FILE__, __LINE__);
-   exit(1);
-
    getFloatSignature(patch, sig);
    for (int i=0; i<classes_; ++i, sig++)
-      if (*sig < thresh) *sig = 0;   
+      if (*sig < thresh) *sig = 0.f;
 }
 
 int RTreeClassifier::countNonZeroElements(float *vec, int n, double tol)
 {
    int res = 0;
    while (n-- > 0)
-      res += (*vec>=-tol && *vec++<=tol);
+      res += (fabs(*vec++) > tol);
    return res;
 }
 

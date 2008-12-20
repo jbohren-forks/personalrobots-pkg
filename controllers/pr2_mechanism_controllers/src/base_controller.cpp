@@ -286,7 +286,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   if(num_wheels_ > 0)
   {
     link = urdf_model_.getJointLink(base_wheels_[0].name_);
-    robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
+    robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
     if (wheel_geom)
       wheel_radius_ = wheel_geom->radius;
     else
@@ -607,7 +607,7 @@ void BaseController::computeOdometry(double time)
   base_odom_position_ += base_odom_delta;
 
   odometer_distance_ += sqrt(base_odom_delta.x*base_odom_delta.x + base_odom_delta.y*base_odom_delta.y);
-  odometer_angle_ += base_odom_delta.z;
+  odometer_angle_ += fabs(base_odom_delta.z);
 }
 
 

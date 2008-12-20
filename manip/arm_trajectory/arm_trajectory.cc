@@ -30,6 +30,7 @@
 
 // roscpp
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 // roscpp - arm trajectory
 #include <std_msgs/ArmTrajectory.h>
 
@@ -217,7 +218,6 @@ for(;;)
   gn.SendOneVelocity();
 
   std::cout << "Trajectory Sent on topic arm_trajectory" << std::endl;
-
 
   exit(0);
 

@@ -10,111 +10,119 @@
 
 namespace features {
 
-template < typename Data >
+template < typename SigElem, typename Data >
 class BruteForceMatcher
 {
 public:
-  BruteForceMatcher(size_t signature_size);
+  typedef typename Promote<SigElem>::type distance_type;
+  
+  BruteForceMatcher(size_t signature_dimension);
 
   // TODO: mostly to get Python bindings working, probably don't want size to be changeable
-  BruteForceMatcher() : threshold_(std::numeric_limits<float>::max()), size_(0) {}
-  inline void setSize(size_t size) { size_ = size; }
+  // TODO: get rid of this stuff, currently broken wrt distance function
+  BruteForceMatcher()
+    : threshold_(std::numeric_limits<distance_type>::max()),
+      dimension_(0), distance_func(0)
+  {}
+  inline void setSize(size_t dimension) { dimension_ = dimension; }
   
   // BruteForceMatcher does NOT take ownership of signature's memory
-  void addSignature(float* signature, Data const& data);
+  void addSignature(SigElem* signature, Data const& data);
 
   size_t numSignatures();
   
-  float* getSignature(int index);
-  const float* getSignature(int index) const;
+  SigElem* getSignature(int index);
+  const SigElem* getSignature(int index) const;
   Data& getData(int index);
   const Data& getData(int index) const;
 
-  int findMatch(const float* signature, float *distance) const;
+  int findMatch(const SigElem* signature, distance_type *distance) const;
 
-  int findMatchInWindow(const float* signature, CvRect window,
-                        float *distance) const;
-  int findMatchPredicated(const float* signature, char *predicates, float *distance) const;
+  int findMatchInWindow(const SigElem* signature, CvRect window,
+                        distance_type *distance) const;
+  int findMatchPredicated(const SigElem* signature, char *predicates,
+                          distance_type *distance) const;
 
   // Returns top two matches, useful for ratio test
-  int findMatches(const float* signature, float *d1, int *second,
-                  float *d2) const;
+  int findMatches(const SigElem* signature, distance_type *d1, int *second,
+                  distance_type *d2) const;
 
   // TODO: restore threshold functionality if useful. May depend on #trees.
   
   // FIXME: for testing/debugging only
-  const std::vector<float*>& signatures() { return signatures_; }
+  const std::vector<SigElem*>& signatures() { return signatures_; }
 
 private:
-  std::vector< float* > signatures_;
+  std::vector< SigElem* > signatures_;
   std::vector< Data > data_;
-  float threshold_;
-  size_t size_;
-  float (*distanceFunction)(int size, const float* a, const float* b);
+  distance_type threshold_;
+  size_t dimension_;
+  L1DistanceFunc<SigElem> distance_func;
 };
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-BruteForceMatcher<Data>::BruteForceMatcher(size_t signature_size)
+BruteForceMatcher<SigElem, Data>::BruteForceMatcher(size_t signature_dimension)
   : threshold_(std::numeric_limits<float>::max()),
-    size_(signature_size),
-    distanceFunction(L1Distance)
+    dimension_(signature_dimension),
+    distance_func(signature_dimension)
 {}
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-size_t BruteForceMatcher<Data>::numSignatures()
+size_t BruteForceMatcher<SigElem, Data>::numSignatures()
 {
   return signatures_.size();
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-void BruteForceMatcher<Data>::addSignature(float* signature, Data const& data)
+void BruteForceMatcher<SigElem, Data>::addSignature(SigElem* signature,
+                                                    Data const& data)
 {
   signatures_.push_back(signature);
   data_.push_back(data);
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-float* BruteForceMatcher<Data>::getSignature(int index)
+SigElem* BruteForceMatcher<SigElem, Data>::getSignature(int index)
 {
   return signatures_[index];
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-const float* BruteForceMatcher<Data>::getSignature(int index) const
+const SigElem* BruteForceMatcher<SigElem, Data>::getSignature(int index) const
 {
   return signatures_[index];
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-Data& BruteForceMatcher<Data>::getData(int index)
+Data& BruteForceMatcher<SigElem, Data>::getData(int index)
 {
   return data_[index];
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-const Data& BruteForceMatcher<Data>::getData(int index) const
+const Data& BruteForceMatcher<SigElem, Data>::getData(int index) const
 {
   return data_[index];
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-int BruteForceMatcher<Data>::findMatch(const float* query_sig,
-                                       float *distance) const
+int BruteForceMatcher<SigElem, Data>::findMatch(const SigElem* query_sig,
+                                                distance_type *distance) const
 {
   int match = -1;
   float best_distance = threshold_;
   int index = 0;
 
-  BOOST_FOREACH( const float* stored_sig, signatures_ ) {
-    float next_distance = distanceFunction(size_, query_sig, stored_sig);
+  BOOST_FOREACH( const SigElem* stored_sig, signatures_ ) {
+    float next_distance = distance_func(query_sig, stored_sig);
     if (next_distance < best_distance) {
       best_distance = next_distance;
       match = index;
@@ -126,11 +134,11 @@ int BruteForceMatcher<Data>::findMatch(const float* query_sig,
   return match;
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-int BruteForceMatcher<Data>::findMatchInWindow(const float* signature,
-                                               CvRect window,
-                                               float *distance) const
+int BruteForceMatcher<SigElem, Data>::findMatchInWindow(const SigElem* signature,
+                                                        CvRect window,
+                                                        distance_type *distance) const
 {
   int match = -1;
   float best_distance = threshold_;
@@ -142,7 +150,7 @@ int BruteForceMatcher<Data>::findMatchInWindow(const float* signature,
         data.y >= window.y + window.height)
       continue;
 
-    float next_distance = distanceFunction(size_, signature, signatures_[i]);
+    float next_distance = distance_func(signature, signatures_[i]);
     if (next_distance < best_distance) {
       best_distance = next_distance;
       match = i;
@@ -153,18 +161,18 @@ int BruteForceMatcher<Data>::findMatchInWindow(const float* signature,
   return match;
 }
 
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-int BruteForceMatcher<Data>::findMatchPredicated(const float* signature,
-                                                 char *predicates,
-                                                 float *distance) const
+int BruteForceMatcher<SigElem, Data>::findMatchPredicated(const SigElem* signature,
+                                                          char *predicates,
+                                                          distance_type *distance) const
 {
   int match = -1;
   float best_distance = threshold_;
 
   for (int i = 0; i < (int)signatures_.size(); ++i) {
     if (predicates[i]) {
-      float next_distance = distanceFunction(size_, signature, signatures_[i]);
+      float next_distance = distance_func(signature, signatures_[i]);
       if (next_distance < best_distance) {
         best_distance = next_distance;
         match = i;
@@ -175,11 +183,11 @@ int BruteForceMatcher<Data>::findMatchPredicated(const float* signature,
   *distance = best_distance;
   return match;
 }
-template < typename Data >
+template < typename SigElem, typename Data >
 inline
-int BruteForceMatcher<Data>::findMatches(const float* query_sig,
-                                         float *d1, int *second,
-                                         float *d2) const
+int BruteForceMatcher<SigElem, Data>::findMatches(const SigElem* query_sig,
+                                                  distance_type *d1, int *second,
+                                                  distance_type *d2) const
 {
   int best_match = -1;
   float best_distance = threshold_;
@@ -187,8 +195,8 @@ int BruteForceMatcher<Data>::findMatches(const float* query_sig,
   float second_distance = threshold_;
   int index = 0;
 
-  BOOST_FOREACH( const float* stored_sig, signatures_ ) {
-    float next_distance = distanceFunction(size_, query_sig, stored_sig);
+  BOOST_FOREACH( const SigElem* stored_sig, signatures_ ) {
+    float next_distance = distance_func(query_sig, stored_sig);
     if (next_distance < best_distance) {
       second_distance = best_distance;
       second_match = best_match;

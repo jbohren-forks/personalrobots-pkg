@@ -218,32 +218,43 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 
 
 (defmethod regress (s1 s2 desc)
-  (make-prop-state-set (pss-domain s1) (regress-dnf-ncstrips (formula s1) (formula s2) desc nil)))
+  (make-prop-state-set (pss-domain s1) (regress-dnf-ncstrips (formula s1) (formula s2) desc )))
 
-(defun regress-dnf-ncstrips (f1 f2 desc r)
-  "regress-dnf-ncstrips FORMULA1 FORMULA2 NCSTRIPS-DESC R
-Return a clause that implies FORMULA1, such that progressing any state compatible with the clause yields a formula compatible with FORMULA2."
-  
-  (dolist (clause (disjuncts f1) nil)
-    (awhen (regress-cnj-ncstrips clause f2 (etypecase desc (ncstrips (ncstrips-clauses desc)) (list desc)) r)
-      (return it))))
 
-(defun regress-cnj-ncstrips (clause f2 clauses r)
-  (dolist (nclause clauses nil)
-    (let ((precond (ncc-precond nclause))
-	  (effect (ncc-effect nclause)))
-      (awhen (regress-dnf-nstrips effect (dnf-and clause precond) f2 r)
-	(return it)))))
+(defun regress-dnf-ncstrips (f1 f2 desc)
+  "Implements regress for the sets represented by formulas f1 and f2, and ncstrips description desc."
+  (let ((source-clauses (disjuncts f1))
+	(dest-clauses (disjuncts f2))
+	(nclauses (ncstrips-clauses desc)))
+    (apply #'dnf-or
+	   (mapset 
+	    'list
+	    #'(lambda (l)
+		(let ((pre (conjoin-clauses (list (second l) (ncc-precond (first l)))))
+		      (eff (ncc-effect (first l))))
+		  (unless (dnf-implies pre nil)
+		    (apply #'dnf-or
+			   (mapset 
+			    'list 
+			    #'(lambda (c2) (regress-clause-nstrips eff pre c2))
+			    dest-clauses)))))
+	    (direct-product 'list nclauses source-clauses)))))
+		      
 
-(defun regress-dnf-nstrips (desc clause formula r)
-  (let ((desc-reward (nstrips-reward desc)))
-    (check-type desc-reward extended-real)
-    (if (and r (my> desc-reward r))
-	(return-from regress-dnf-nstrips nil)
-      (dolist (next-clause (disjuncts formula) nil)
-	(awhen (regress-clause-nstrips desc clause next-clause)
-	  (return it))))))
 
+
+(defun regress-dnf-ncstrips-subset (f1 f2 desc )
+  "An approximate version of regress-dnf-ncstrips that returns a clause representing a subset of the true answer."
+  (let ((source-clauses (disjuncts f1))
+	(dest-clauses (disjuncts f2))
+	(nclauses (ncstrips-clauses desc)))
+    (do-elements (nc nclauses nil)
+      (do-elements (c1 source-clauses)
+	(let ((pre (conjoin-clauses (list (ncc-precond nc) c1))))
+	  (unless (dnf-implies pre nil)
+	    (do-elements (c2 dest-clauses)
+	      (awhen (regress-clause-nstrips (ncc-effect nc) pre c2)
+		(return-from regress-dnf-ncstrips-subset it)))))))))
 
 (defun regress-clause-nstrips (desc clause1 clause2)
   "regress-clause-nstrips NSTRIPS-DESC CLAUSE1 CLAUSE2.
@@ -264,7 +275,7 @@ Return a new clause that implies CLAUSE1, such that for any state compatible wit
 	      ((member lit (nstrips-delete-list desc) :test #'equal)
 	       (return-from regress-clause-nstrips nil))
 	      (t (push lit conjuncts)))))
-    (dnf-and (conjoin-set conjuncts) clause1)))
+    (conjoin-clauses (list clause1 (conjoin-set conjuncts)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

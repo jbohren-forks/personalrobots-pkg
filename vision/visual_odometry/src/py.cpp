@@ -620,7 +620,12 @@ PyObject *sba(PyObject *self, PyObject *args)
 
 #if JDC_DEBUG==1 // jdc
   LevMarqSparseBundleAdj* sba = ((pose_estimator_t*)self)->sba_;
-  sba->optimize(&free_frames, &fixed_frames, &tracks);
+  LevMarqSparseBundleAdj::ErrorCode err_code = sba->optimize(&fixed_frames, &free_frames, &tracks);
+  if (err_code == LevMarqSparseBundleAdj::InputError) {
+    cout << "Input error: either fixed win or free win is empty" << endl;
+  }
+  cout << "initial cost: " << sba->initial_cost_ << " final cost: " << sba->accepted_cost_ << endl;
+  cout << "# good updates: " << sba->num_good_updates_ << " # retractions: " << sba->num_retractions_ << endl;
 
   SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
   // set frame poses, point tracks and maps from index to frame poses
@@ -628,10 +633,12 @@ PyObject *sba(PyObject *self, PyObject *args)
   BOOST_FOREACH(FramePose *fp, free_frames) {
     frame_poses.push_back(fp);
     vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+    printf("Inserting free frame: %d\n", fp->mIndex);
   }
   BOOST_FOREACH(FramePose *fp, fixed_frames) {
     frame_poses.push_back(fp);
     vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
+    printf("Inserting fixed frame: %d\n", fp->mIndex);
   }
   vis->framePoses = &frame_poses;
   vis->tracks = &tracks;
@@ -651,6 +658,8 @@ PyObject *sba(PyObject *self, PyObject *args)
 
     cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
   }
+  cout << "All The Tracks"<<endl;
+  tracks.print();
   sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
       current_frame_index);
   vis->slideWindowFront = free_frames.front()->mIndex;
@@ -659,7 +668,12 @@ PyObject *sba(PyObject *self, PyObject *args)
   vis->save();
   vis->reset();
 #else
-  sba.optimize(&free_frames, &fixed_frames, &tracks);
+  LevMarqSparseBundleAdj::ErrorCode err_code = sba.optimize(&fixed_frames, &free_frames, &tracks);
+  if (err_code == LevMarqSparseBundleAdj::InputError) {
+    cout << "Input error: either fixed win or free win is empty" << endl;
+  }
+  cout << "initial cost: " << sba.initial_cost_ << " final cost: " << sba.accepted_cost_ << endl;
+  cout << "# good updates: " << sba.num_good_updates_ << " # retractions: " << sba.num_retractions_ << endl;
 #endif
 
   Py_RETURN_NONE;
@@ -728,9 +742,11 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   CvMat cartToDisp;
   CvMat dispToCart;
   object->pe->getProjectionMatrices(&cartToDisp, &dispToCart);
-  int full_free_window_size  = 1;
-  int full_fixed_window_size = 1;
-  int max_num_iters = 5;
+  // set the window size large enough to accommodate. Although not efficient.
+  int full_free_window_size  = 100;
+  int full_fixed_window_size = 100;
+  int max_num_iters = 50;
+
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
   object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);

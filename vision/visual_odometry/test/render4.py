@@ -20,7 +20,7 @@ import camera
 import random
 import math
 import sys
-import visualize
+#import visualize
 
 def rotation(angle, x, y, z):
   return numpy.array([
@@ -84,8 +84,8 @@ class PhonyFrame:
 vos = [
   #VisualOdometer(stereo_cam, sba=(1,1,1)),
   #VisualOdometer(stereo_cam, scavenge = True, sba=None, inlier_error_threshold = 3.0),
-  VisualOdometer(stereo_cam, scavenge = False, sba=(3,3,10), inlier_error_threshold = 3.0),
-  VisualOdometer(stereo_cam, scavenge = False, sba=(3,3,10), inlier_error_threshold = 3.0),
+  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
+  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
@@ -128,7 +128,7 @@ for i in range(401):
     desired_pose = Pose(rotation(theta, 0,1,0), (r - r * math.cos(theta),0,r * math.sin(theta)))
   cam = ray_camera(desired_pose, stereo_cam)
 
-  if 0:
+  if 0: # set to 1 for the first time to generate cache
     imL = Image.new("RGB", (640,480))
     imR = Image.new("RGB", (640,480))
     imD = [ Image.new("F", (640,480)), Image.new("F", (640,480)), Image.new("F", (640,480)) ]

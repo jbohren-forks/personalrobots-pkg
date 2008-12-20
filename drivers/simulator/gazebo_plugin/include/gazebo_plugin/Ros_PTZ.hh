@@ -33,6 +33,7 @@
 
 // ros messages
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 
 // messages for controlling ptz
 #include <axis_cam/PTZActuatorState.h>

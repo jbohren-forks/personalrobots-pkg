@@ -531,6 +531,7 @@ int main(int argc, char **argv)
     factoryIface->Unlock();
     usleep(1000000);
 
+    rosnode->shutdown();
 
     return 0;
 }

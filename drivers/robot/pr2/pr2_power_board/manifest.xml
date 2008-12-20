@@ -5,7 +5,6 @@
   <review status="API conditionally cleared" notes="API followup in progress (Tully)"/>
   <depend package="roscpp" />
   <depend package="rospy" />
-  <depend package="rosthread" />
   <depend package="robot_msgs" />
   <depend package="boost" />
 </package>
