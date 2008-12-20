@@ -88,18 +88,19 @@ public:
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
-    left_list.push_back(std::string("dcam/left/image_rect"));
+    left_list.push_back(map_name("stereodcam") + std::string("/left/image_rect_color"));
+    left_list.push_back(map_name("stereodcam") + std::string("/left/image_rect"));
+
 
     std::list<std::string> right_list;
-    right_list.push_back(std::string("dcam/right/image_rect_color"));
-    right_list.push_back(std::string("dcam/right/image_rect"));
+    right_list.push_back(map_name("stereodcam") + std::string("/right/image_rect_color"));
+    right_list.push_back(map_name("stereodcam") + std::string("/right/image_rect"));
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe("dcam/disparity", dimage, 1);
-    sync.subscribe("dcam/stereo_info", stinfo, 1);
+    sync.subscribe(map_name("stereodcam") + "/disparity", dimage, 1);
+    sync.subscribe(map_name("stereodcam") + "/stereo_info", stinfo, 1);
   }
 
   ~StereoView()
@@ -186,8 +187,8 @@ public:
       // Fetch color calibration parameters as necessary
       if (calib_color_)
       {
-        lcal.getFromParam("dcam/left/image_rect_color");
-        rcal.getFromParam("dcam/right/image_rect_color");
+        lcal.getFromParam(map_name("stereodcam") + "/left/image_rect_color");
+        rcal.getFromParam(map_name("stereodcam") + "/right/image_rect_color");
       }
 
       cv_mutex.unlock();
