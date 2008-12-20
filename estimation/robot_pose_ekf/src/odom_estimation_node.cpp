@@ -172,9 +172,7 @@ namespace estimation
     if (imu_used_){
       // receive data
       imu_mutex_.lock();
-      
-      // TODO: TMP FIX FOR WRONG DATA IN BAG BRIAN
-      imu_stamp_ = imu_.header.stamp + Duration(0.902);
+      imu_stamp_ = imu_.header.stamp;
       imu_time_  = Time::now();
       PoseMsgToTF(imu_.pos, imu_meas_);
       my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
