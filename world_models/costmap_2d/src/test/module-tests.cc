@@ -683,6 +683,56 @@ TEST(costmap, test11){
     ASSERT_EQ(map.getCost(i, i), 0);
 }
 
+
+
+bool compareFiles(string a, string b) {
+  FILE *test, *compare;
+
+  test = fopen(a.c_str(), "r");
+  compare = fopen(b.c_str(), "r");
+  if (!test) {
+    return false;
+  }
+  if (!compare) {
+    return false;
+  }
+
+  while (1) {
+    char out = getc(test);
+    char com = getc(compare);
+    if (out == EOF && com == EOF) {
+      fclose(test);
+      fclose(compare);
+      return true;
+    }
+    if (out != com) {
+      fclose(test);
+      fclose(compare);
+      return false;
+    }
+    if (out == EOF || com == EOF) {
+      fclose(test);
+      fclose(compare);
+      return false;
+    }
+  }
+
+}
+
+
+/**
+ * Test for saving.
+ */
+
+TEST(costmap, test16){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
+  map.saveText("testmap.txt");
+  map.saveBinary("testmap.bin");
+  
+  ASSERT_EQ(compareFiles("testmap.txt", "testmap_compare.txt"), true);
+  ASSERT_EQ(compareFiles("testmap.bin", "testmap_compare.bin"), true);
+}
+
 int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++){
     EMPTY_10_BY_10.push_back(0);
