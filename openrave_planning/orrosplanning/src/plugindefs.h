@@ -34,6 +34,7 @@
 #define FOREACH(it, v) for(BOOST_TYPEOF(v)::iterator it = (v).begin(); it != (v).end(); (it)++)
 #define FOREACHC(it, v) for(BOOST_TYPEOF(v)::const_iterator it = (v).begin(); it != (v).end(); (it)++)
 #define RAVE_REGISTER_BOOST
+#define TYPEOF BOOST_TYPEOF
 #else
 
 #include <string>
@@ -44,7 +45,7 @@
 
 #define FOREACH(it, v) for(typeof((v).begin()) it = (v).begin(); it != (v).end(); (it)++)
 #define FOREACHC FOREACH
-
+#define TYPEOF typeof
 #endif
 
 #include <fstream>
@@ -159,4 +160,48 @@ using namespace OpenRAVE;
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 
+inline ros::node* check_roscpp()
+{
+    // start roscpp
+    ros::node* pnode = ros::node::instance();
+
+    if( pnode && !pnode->check_master() ) {
+        ros::fini();
+        delete pnode;
+        return NULL;
+    }
+
+    if (!pnode) {
+        int argc = 0;
+        char strname[256] = "nohost";
+        gethostname(strname, sizeof(strname));
+        strcat(strname,"_openrave");
+
+        ros::init(argc,NULL);
+            
+        pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME|ros::node::DONT_ADD_ROSOUT_APPENDER);
+            
+        bool bCheckMaster = pnode->check_master();
+        ros::fini();
+        delete pnode;
+
+        if( !bCheckMaster ) {
+            RAVELOG_ERRORA("ros not present");
+            return NULL;
+        }
+        
+        ros::init(argc,NULL);
+        pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME);
+        RAVELOG_DEBUGA("new roscpp node started");
+    }
+
+    return pnode;
+}
+
+inline ros::node* check_roscpp_nocreate()
+{
+    ros::node* pnode = ros::node::instance();
+    return (pnode && pnode->check_master()) ? pnode : NULL;
+}
+    
 #endif

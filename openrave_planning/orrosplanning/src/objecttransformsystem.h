@@ -23,59 +23,70 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // author: Rosen Diankov
-#ifndef PHASESPACE_MOCAP_SYSTEM
-#define PHASESPACE_MOCAP_SYSTEM
+#ifndef OBJECTTRANSFORM_SENSOR_SYSTEM
+#define OBJECTTRANSFORM_SENSOR_SYSTEM
 
 #include "rossensorsystem.h"
-#include "phase_space/PhaseSpaceSnapshot.h"
+#include "checkerboard_detector/ObjectDetection.h"
 
 using namespace ros;
 
 // used to update objects through a mocap system
-class PhaseSpaceXMLID
+class ObjectTransformXMLID
 {
 public:
-    static const char* GetXMLId() { return "phasespace"; }
+    static const char* GetXMLId() { return "objecttransform"; }
 };
 
-class PhaseSpaceMocapClient : public ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>
+class ObjectTransformSystem : public ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>
 {
 public:
-    PhaseSpaceMocapClient(EnvironmentBase* penv)
-        : ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>(penv)
+    ObjectTransformSystem(EnvironmentBase* penv)
+        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv)
     {
     }
 
     virtual bool Init(istream& sinput)
     {
-        _topic = "phase_space_snapshot";
-        return ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>::Init(sinput);
+        _topic = "ObjectDetection";
+        bool bSuccess = ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::Init(sinput);
+        if( !bSuccess )
+            return false;
+        _fThreshSqr = 0.05*0.05f;
+        sinput >> _fThreshSqr;
+        return true;
     }
 
 private:
     void newdatacb()
     {
         list< SNAPSHOT > listbodies;
-        list< const phase_space::PhaseSpaceBody* > listnewbodies;
+        list< const checkerboard_detector::Object6DPose* > listnewobjs;
 
         {
             boost::mutex::scoped_lock lock(_mutex);
+            TYPEOF(_mapbodies) mapbodies = _mapbodies;
 
-            for (unsigned int i=0; i<_topicmsg.get_bodies_size(); i++) {
-                const phase_space::PhaseSpaceBody& psbody = _topicmsg.bodies[i];
-
+            FOREACHC(itobj, _topicmsg.objects) {
                 boost::shared_ptr<BODY> b;
-                Transform tnew = GetTransform(psbody.pose);
+                Transform tnew = GetTransform(itobj->pose);
 
-                FOREACH(it, _mapbodies) {
-                    if( it->second->_initdata.id == psbody.id ) {
+                FOREACH(it, mapbodies) {
+                    if( it->second->_initdata.sid == itobj->type ) {
+                            
+                        // same type matched, need to check proximity
+                        Transform tbody = it->second->GetOffsetLink()->GetParent()->GetTransform();
+                        if( (tbody.trans-tnew.trans).lengthsqr3() > _fThreshSqr )
+                            break;
+
                         b = it->second;
+                        mapbodies.erase(it);
                         break;
                     }
                 }
 
                 if( !b ) {
-                    listnewbodies.push_back(&psbody);
+                    listnewobjs.push_back(&(*itobj));
                 }
                 else {
                     if( !b->IsEnabled() )
@@ -89,12 +100,42 @@ private:
         }
 
         // try to add the left-over objects
+        if( listnewobjs.size() > 0 ) {
+            GetEnv()->LockPhysics(true);
+            FOREACH(itobj, listnewobjs) {
+
+                KinBody* pbody = GetEnv()->CreateKinBody();
+
+                if( !pbody->Init( (*itobj)->type.c_str(), NULL ) ) {
+                    RAVELOG_ERRORA("failed to create object %s\n", (*itobj)->type.c_str());
+                    delete pbody;
+                    continue;
+                }
+
+                if( !GetEnv()->AddKinBody(pbody) ) {
+                    RAVELOG_ERRORA("failed to add body %S\n", pbody->GetName());
+                    delete pbody;
+                    continue;
+                }
+
+                if( AddKinBody(pbody, NULL) == NULL ) {
+                    delete pbody;
+                    continue;
+                }
+
+                pbody->SetTransform(GetTransform((*itobj)->pose));
+            }
+            GetEnv()->LockPhysics(false);
+        }
     }
 
     Transform GetTransform(const std_msgs::Transform& pose)
     {
         return Transform(Vector(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z), Vector(pose.translation.x, pose.translation.y, pose.translation.z));
     }
+
+    dReal _fThreshSqr;
 };
 
 #endif
+

@@ -29,28 +29,27 @@
 using namespace std;
 
 // used to update objects through a mocap system
+template <typename XMLID>
 class SimpleSensorSystem : public SensorSystemBase
 {
  public:
     class MocapData : public XMLReadable
     {
     public:
-        MocapData(const string& xmlid) : _xmlid(xmlid) {}
-        virtual const char* GetXMLId() { return _xmlid.c_str(); }
+        MocapData() {}
+        virtual const char* GetXMLId() { return XMLID::GetXMLId(); }
     
         string sid; ///< global id for the system id 
         int id;
+        string tfframe; ///< if not empty, the tf frame this object is in
         std::wstring strOffsetLink; ///< the link where the markers are attached (if any)
         Transform transOffset,transPreOffset; // final offset = transOffset * transReturnedFromVision * transPreOffset
-        
-    private:
-        string _xmlid;
     };
 
     class BODY : public BODYBASE
     {
     public:
-        BODY(KinBody* pbody, const MocapData& initdata, const string& xmlid) : BODYBASE(), _initdata(xmlid)
+        BODY(KinBody* pbody, const MocapData& initdata) : BODYBASE()
         {
             assert( pbody != NULL );
             _initdata = initdata;
@@ -69,15 +68,18 @@ class SimpleSensorSystem : public SensorSystemBase
         virtual void* GetInitData(int* psize) { if( psize ) *psize = sizeof(_initdata); return &_initdata; }
         ros::Time lastupdated;
         MocapData _initdata;
+
+    private:
+        friend class SimpleSensorSystem<XMLID>;
     };
 
     class MocapXMLReader : public BaseXMLReader
     {
     public:
-        MocapXMLReader(const string& xmlid, MocapData* pMocap, const char **atts) : _xmlid(xmlid) {
+        MocapXMLReader(MocapData* pMocap, const char **atts) {
             _pMocap = pMocap;
             if( _pMocap == NULL )
-                _pMocap = new MocapData(_xmlid);
+                _pMocap = new MocapData();
         }
         virtual ~MocapXMLReader() { delete _pMocap; }
         
@@ -86,7 +88,7 @@ class SimpleSensorSystem : public SensorSystemBase
         virtual void startElement(void *ctx, const char *name, const char **atts) {}
         virtual bool endElement(void *ctx, const char *name)
         {
-            if( stricmp((const char*)name, _xmlid.c_str()) == 0 )
+            if( stricmp((const char*)name, XMLID::GetXMLId()) == 0 )
                 return true;
 
             if( stricmp((const char*)name, "offsetlink") == 0 ) {
@@ -98,6 +100,8 @@ class SimpleSensorSystem : public SensorSystemBase
                 ss >> _pMocap->id;
             else if( stricmp((const char*)name, "sid") == 0 )
                 ss >> _pMocap->sid;
+            else if( stricmp((const char*)name, "tfframe") == 0 )
+                ss >> _pMocap->tfframe;
             else if( stricmp((const char*)name, "translation") == 0 )
                 ss >> _pMocap->transOffset.trans.x >> _pMocap->transOffset.trans.y >> _pMocap->transOffset.trans.z;
             else if( stricmp((const char*)name, "rotationmat") == 0 ) {
@@ -148,12 +152,24 @@ class SimpleSensorSystem : public SensorSystemBase
     protected:
         MocapData* _pMocap;
         stringstream ss;
-        string _xmlid;
     };
 
-    SimpleSensorSystem(EnvironmentBase* penv, const string& xmlid) : SensorSystemBase(penv), _expirationtime(2,0), _xmlid(xmlid)
+    static void RegisterXMLReader(EnvironmentBase* penv)
     {
+        if( penv != NULL )
+            penv->RegisterXMLReader(XMLID::GetXMLId(), SimpleSensorSystem<XMLID>::CreateMocapReader);
     }
+
+    static BaseXMLReader* CreateMocapReader(KinBody* parent, const char **atts)
+    {
+        return new MocapXMLReader(NULL, atts);
+    }
+
+    SimpleSensorSystem(EnvironmentBase* penv) : SensorSystemBase(penv), _expirationtime(2,0)
+    {
+        RegisterXMLReader(GetEnv()); // just in case, register again
+    }
+
     virtual ~SimpleSensorSystem() {
         Destroy();
     }
@@ -173,7 +189,7 @@ class SimpleSensorSystem : public SensorSystemBase
     {
         // go through all bodies in the environment and check for mocap data
         FOREACHC(itbody, vbodies) {
-            MocapData* pmocapdata = (MocapData*)((*itbody)->GetExtraInterface(GetXMLId()));
+            MocapData* pmocapdata = (MocapData*)((*itbody)->GetExtraInterface(XMLID::GetXMLId()));
             if( pmocapdata != NULL ) {
                 BODY* p = AddKinBody(*itbody, pmocapdata);
                 if( p != NULL ) {
@@ -186,11 +202,18 @@ class SimpleSensorSystem : public SensorSystemBase
 
     virtual BODY* AddKinBody(KinBody* pbody, const void* _pdata)
     {
-        if( _pdata == NULL || pbody == NULL )
+        if( pbody == NULL )
             return false;
         assert( pbody->GetEnv() == GetEnv() );
     
         const MocapData* pdata = (const MocapData*)_pdata;
+        if( pdata == NULL ) {
+            pdata = (const MocapData*)(pbody->GetExtraInterface(XMLID::GetXMLId()));
+            if( pdata == NULL ) {
+                RAVELOG_ERRORA("failed to find mocap data for body %S\n", pbody->GetName());
+                return NULL;
+            }
+        }
 
         boost::mutex::scoped_lock lock(_mutex);
         if( _mapbodies.find(pbody->GetNetworkId()) != _mapbodies.end() ) {
@@ -198,9 +221,9 @@ class SimpleSensorSystem : public SensorSystemBase
             return NULL;
         }
         
-        BODY* b = new BODY(pbody, *pdata, _xmlid);
+        BODY* b = new BODY(pbody, *pdata);
         _mapbodies[pbody->GetNetworkId()].reset(b);
-        RAVELOG_DEBUGA("system adding body %S\n", pbody->GetName());
+        RAVELOG_DEBUGA("system adding body %S, total: %d\n", pbody->GetName(), _mapbodies.size());
         return b;
     }
 
@@ -233,7 +256,7 @@ class SimpleSensorSystem : public SensorSystemBase
             return false;
         assert( pbody->GetEnv() == GetEnv() );
         
-        map<int,boost::shared_ptr<BODY> >::iterator it = _mapbodies.find(pbody->GetNetworkId());
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody->GetNetworkId());
         if( it == _mapbodies.end() ) {
             RAVELOG_WARNA("trying to %s body %S that is not in system\n", bEnable?"enable":"disable", pbody->GetName());
             return false;
@@ -250,11 +273,9 @@ class SimpleSensorSystem : public SensorSystemBase
         assert( pbody->GetEnv() == GetEnv() );
 
         boost::mutex::scoped_lock lock(_mutex);
-        map<int,boost::shared_ptr<BODY> >::iterator it = _mapbodies.find(pbody->GetNetworkId());
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody->GetNetworkId());
         return it != _mapbodies.end() ? it->second.get() : NULL;
     }
-
-    virtual const char* GetXMLId() { return _xmlid.c_str(); }
 
 protected:
 
@@ -276,11 +297,11 @@ protected:
             TransformMatrix tbase = it->first->GetOffsetLink()->GetParent()->GetTransform();
             TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata.transOffset;
             TransformMatrix tfinal = toffset * it->second*it->first->_initdata.transPreOffset;
-
+            
             it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
             it->first->lastupdated = curtime;
 
-            RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+            //RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
             
             if( !it->first->IsPresent() )
                 RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
@@ -289,10 +310,11 @@ protected:
 
         GetEnv()->LockPhysics(false);
 
-        map<int,boost::shared_ptr<BODY> >::iterator itbody = _mapbodies.begin();
+        TYPEOF(_mapbodies.begin()) itbody = _mapbodies.begin();
         while(itbody != _mapbodies.end()) {
             if( curtime-itbody->second->lastupdated > _expirationtime ) {
                 if( !itbody->second->IsLocked() ) {
+                    RAVELOG_DEBUGA("object %S expired %fs\n", itbody->second->GetOffsetLink()->GetParent(), (float)(curtime-itbody->second->lastupdated).toSec());
                     GetEnv()->RemoveKinBody(itbody->second->GetOffsetLink()->GetParent());
                     _mapbodies.erase(itbody++);
                     continue;
@@ -310,14 +332,13 @@ protected:
     map<int,boost::shared_ptr<BODY> > _mapbodies;
     boost::mutex _mutex;
     ros::Duration _expirationtime;
-    string _xmlid;
 };
 
 #ifdef RAVE_REGISTER_BOOST
 #include BOOST_TYPEOF_INCREMENT_REGISTRATION_GROUP()
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::MocapData)
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::BODY)
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::MocapXMLReader)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::MocapData, 1)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::BODY, 1)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::MocapXMLReader, 1)
 #endif
 
 #endif

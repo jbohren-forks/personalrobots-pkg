@@ -36,7 +36,7 @@ using namespace ros;
     { \
         SessionState state = getstate(req); /* need separate copy in order to guarantee thread safety */ \
         if( !state._pserver ) { \
-            RAVELOG_INFOA("failed to find session for service %s", #srvname); \
+            RAVELOG_INFOA("failed to find session for service %s\n", #srvname); \
             return false; \
         } \
         return state._pserver->srvname##_srv(req,res); \
@@ -330,7 +330,7 @@ private:
             boost::mutex::scoped_lock lock(_mutexsession);
             if( _mapsessions.find(req.sessionid) != _mapsessions.end() ) {
                 _mapsessions.erase(req.sessionid);
-                RAVELOG_INFOA("destroyed openrave session: %d", req.sessionid);
+                RAVELOG_INFOA("destroyed openrave session: %d\n", req.sessionid);
                 return true;
             }
             
@@ -352,14 +352,14 @@ private:
             }
 
             if( !clonestate._penv )
-                RAVELOG_INFOA("failed to find session %d", req.clone_sessionid);
+                RAVELOG_INFOA("failed to find session %d\n", req.clone_sessionid);
             else 
                 state._penv.reset(clonestate._penv->CloneSelf(req.clone_options));
         }
 
         if( !state._penv ) {
             // cloning from parent
-            RAVELOG_DEBUGA("cloning from parent");
+            RAVELOG_DEBUGA("cloning from parent\n");
             state._penv.reset(_pParentEnvironment->CloneSelf(0));
         }
 
@@ -368,7 +368,7 @@ private:
         _mapsessions[id] = state;
         res.sessionid = id;
 
-        RAVELOG_INFOA("started openrave session: %d, total: %d", id, _mapsessions.size());
+        RAVELOG_INFOA("started openrave session: %d, total: %d\n", id, _mapsessions.size());
         return true;
     }
 

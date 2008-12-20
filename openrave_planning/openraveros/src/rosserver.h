@@ -544,14 +544,18 @@ public:
         KinBody* pbody = GetEnv()->CreateKinBody();
 
         if( req.file.size() > 0 ) {
-            if( !pbody->Init(req.file.c_str(), NULL) )
+            if( !pbody->Init(req.file.c_str(), NULL) ) {
+                delete pbody;
                 return false;
+            }
         }
 
         pbody->SetName(req.name.c_str());
 
-        if( !GetEnv()->AddKinBody(pbody) )
+        if( !GetEnv()->AddKinBody(pbody) ) {
+            delete pbody;
             return false;
+        }
 
         res.bodyid = pbody->GetNetworkId();
         return true;

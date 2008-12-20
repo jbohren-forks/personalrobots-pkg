@@ -10,4 +10,5 @@
   <depend package="openrave_robot_description"/>
   <depend package="libKinematics"/>
   <depend package="boost"/>
+  <depend package="checkerboard_detector"/>
 </package>
