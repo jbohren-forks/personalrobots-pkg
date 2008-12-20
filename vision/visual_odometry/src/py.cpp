@@ -644,10 +644,15 @@ PyObject *sba(PyObject *self, PyObject *args)
   vis->tracks = &tracks;
   int current_frame_index = free_frames.back()->mIndex;
 
-  // make sure the image buffers is allocated to the right sizes
-  vis->canvasTracking.Allocate(640, 480);
-  // clear the image
-  cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
+  IplImage* im = cvLoadImage("/tmp/mkplot-left.png");
+  if (im) {
+    vis->canvasTracking.SetIpl(im);
+  } else {
+    // make sure the image buffers is allocated to the right sizes
+    vis->canvasTracking.Allocate(640, 480);
+    // clear the image
+    cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
+  }
   { // annotation on the canvas
     char info[256];
     CvPoint org = cvPoint(0, 475);
@@ -662,7 +667,7 @@ PyObject *sba(PyObject *self, PyObject *args)
   tracks.print();
   sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
       current_frame_index);
-  vis->slideWindowFront = free_frames.front()->mIndex;
+  vis->recordFrameIds(&fixed_frames, &free_frames);
   vis->drawTrackTrajectories(current_frame_index);
   vis->show();
   vis->save();

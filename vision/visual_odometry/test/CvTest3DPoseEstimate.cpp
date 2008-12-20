@@ -320,8 +320,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
 
 //  setInputData(Indoor1);
-//  setInputData(James4);
-  setInputData(SyntheticLoop1);
+  setInputData(James4);
+//  setInputData(SyntheticLoop1);
 
 //  VOSparseBundleAdj sba(img_size_, 100, 100);
   VOSparseBundleAdj sba(img_size_, 10, 3);

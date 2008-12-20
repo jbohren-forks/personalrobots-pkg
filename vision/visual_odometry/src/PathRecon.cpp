@@ -116,7 +116,8 @@ PathRecon::keyFrameEval(
 	//
 	// check if the frame is good enough for checking
 	//
-#if 1 /// @todo jdc debugging
+#if 0
+	// use num of inliers only
 	if (numInliers < mMinNumInliers) {
 	    keyFrameNeeded = true;
 	  } else {

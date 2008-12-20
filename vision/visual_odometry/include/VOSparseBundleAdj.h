@@ -200,13 +200,16 @@ class SBAVisualizer: public F2FVisualizer {
     /// on the current frame. Yellow otherwise.
     virtual void drawTrackTrajectories(int frame_index);
 
+    void recordFrameIds(const vector<FramePose*>* fixed_frames, const vector<FramePose*>* free_frames);
+
     /// a reference to the estimated pose of the frames
     vector<FramePose*>* framePoses;
     /// a reference to the tracks.
     PointTracks* tracks;
-    int   slideWindowFront;
     CvMat* threeDToDisparity_;
     boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
+    boost::unordered_set<int> free_frame_id_set_;
+    boost::unordered_set<int> fixed_frame_id_set_;
 };
 
 

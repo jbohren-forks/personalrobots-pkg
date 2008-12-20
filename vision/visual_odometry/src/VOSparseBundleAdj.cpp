@@ -90,10 +90,6 @@ void VOSparseBundleAdj::updateSlideWindow() {
     delete frame;
   }
 
-  if (mVisualizer) {
-    ((SBAVisualizer*)mVisualizer)->slideWindowFront =
-      mActiveKeyFrames.front()->mFrameIndex;
-  }
 #if DEBUG==1
   cout << "Current slide window: [";
   BOOST_FOREACH(const PoseEstFrameEntry* frame, mActiveKeyFrames) {
@@ -160,6 +156,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
         PoseEstFrameEntry& peef = *pee;
         cout << pee->mFrameIndex << endl;
         SBAVisualizer* vis = (SBAVisualizer*)mVisualizer;
+        vis->recordFrameIds(&fixed_frames, &free_frames);
         vis->drawTrack(peef);
       }
     }
@@ -410,10 +407,14 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
       for (iObsv++; iObsv != track->end(); iObsv++) {
         obsv = *iObsv;
         CvScalar color;
-        if (obsv->frame_index_ < slideWindowFront) {
+        if (free_frame_id_set_.find(obsv->frame_index_) != free_frame_id_set_.end()) {
+          color = colorFreeFrame;
+        } else
+        if (fixed_frame_id_set_.find(obsv->frame_index_) != fixed_frame_id_set_.end()) {
           color = colorFixedFrame;
         } else {
-          color = colorFreeFrame;
+          // probably a frame that are ignored
+          color = colorFixedFrame;
         }
         CvPoint pt1     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
         disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
@@ -443,6 +444,18 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
   canvasTrackingRedrawn = true;
   cvReleaseMat(&mat0);
   cvReleaseMat(&mat1);
+}
+
+void SBAVisualizer::recordFrameIds(const vector<FramePose*>* fixed_frames,
+    const vector<FramePose*>* free_frames) {
+  fixed_frame_id_set_.clear();
+  BOOST_FOREACH(const FramePose* fp, *fixed_frames) {
+    fixed_frame_id_set_.insert(fp->mIndex);
+  }
+  free_frame_id_set_.clear();
+  BOOST_FOREACH(const FramePose* fp, *free_frames) {
+    free_frame_id_set_.insert(fp->mIndex);
+  }
 }
 
 void VOSparseBundleAdj::Stat2::print() {
