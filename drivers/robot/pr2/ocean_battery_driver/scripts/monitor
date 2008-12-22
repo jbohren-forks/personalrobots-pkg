@@ -49,10 +49,19 @@ import rospy
 
 from robot_msgs.msg import * 
 
-NAME = 'monitorBatteries'
+NAME = 'monitor'
 
 def usage(stdout, progname):
-    print >>stdout, """%s [-h]
+    print >>stdout, """%s [-h] [-v] [-n] [-tdevice_template] [-p####]
+
+Example:
+  monitor_batteries -t/dev/ttyUSB -p0123
+   Will open ports /dev/ttyUSB0 /dev/ttyUSB1 /dev/ttyUSB2 /dev/ttyUSB3
+
+Options:
+ -h shows this
+ -v displays to screen when sending over ros
+ -n turns off ros broadcasting and just displays to screen
 
 """%progname+rospy.USAGE_ENV
 
@@ -459,8 +468,7 @@ def monitor_main(argv, stdout, env):
         elif o in("-n"):
             using_ros = False
 
-    if using_ros:
-        rospy.init_node(NAME)
+    rospy.init_node(NAME)
 
     rospy.logout("opening ports: %s"%','.join(port_list))
     # set port settings to talk to IBPS and make sure the ports are
@@ -554,6 +562,7 @@ def monitor_main(argv, stdout, env):
         else:
             increment = 1.0
             if time.time() - last_time > increment:
+                last_time = last_time + increment
                 pow.print_remaining()
                 
 if __name__ == '__main__':
