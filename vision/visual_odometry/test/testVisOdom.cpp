@@ -65,6 +65,10 @@ int main(int argc, char **argv){
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::VideoBundleAdj;
     } else if (strcasecmp(option, "bundle1") == 0) {
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::BundleAdj;
+    } else if (strcasecmp(option, "bundleUTest") == 0) {
+      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::BundleAdjUTest;
+    } else if (strcasecmp(option, "bundleSeq") == 0) {
+      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::BundleAdjSeq;
     } else {
       cerr << "Unknown option: "<<option<<endl;
       exit(1);

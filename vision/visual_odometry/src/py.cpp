@@ -36,7 +36,7 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 0
+#define JDC_DEBUG 1
 
 /************************************************************************/
 
@@ -599,7 +599,7 @@ PyObject *sba(PyObject *self, PyObject *args)
 
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
-  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp, full_fixed_window_size, full_free_window_size, term_criteria);
 
 #endif
 
@@ -627,51 +627,53 @@ PyObject *sba(PyObject *self, PyObject *args)
   cout << "initial cost: " << sba->initial_cost_ << " final cost: " << sba->accepted_cost_ << endl;
   cout << "# good updates: " << sba->num_good_updates_ << " # retractions: " << sba->num_retractions_ << endl;
 
-  SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
-  // set frame poses, point tracks and maps from index to frame poses
-  vector<FramePose* > frame_poses;
-  BOOST_FOREACH(FramePose *fp, free_frames) {
-    frame_poses.push_back(fp);
-    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
-    printf("Inserting free frame: %d\n", fp->mIndex);
-  }
-  BOOST_FOREACH(FramePose *fp, fixed_frames) {
-    frame_poses.push_back(fp);
-    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
-    printf("Inserting fixed frame: %d\n", fp->mIndex);
-  }
-  vis->framePoses = &frame_poses;
-  vis->tracks = &tracks;
-  int current_frame_index = free_frames.back()->mIndex;
+  if (free_frames.size()>0 && fixed_frames.size()>0) {
+    SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
+    // set frame poses, point tracks and maps from index to frame poses
+    vector<FramePose* > frame_poses;
+    BOOST_FOREACH(FramePose *fp, free_frames) {
+      frame_poses.push_back(fp);
+      vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+      printf("Inserting free frame: %d\n", fp->mIndex);
+    }
+    BOOST_FOREACH(FramePose *fp, fixed_frames) {
+      frame_poses.push_back(fp);
+      vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
+      printf("Inserting fixed frame: %d\n", fp->mIndex);
+    }
+    vis->framePoses = &frame_poses;
+    vis->tracks = &tracks;
+    int current_frame_index = free_frames.back()->mIndex;
 
-  IplImage* im = cvLoadImage("/tmp/mkplot-left.png");
-  if (im) {
-    vis->canvasTracking.SetIpl(im);
-  } else {
-    // make sure the image buffers is allocated to the right sizes
-    vis->canvasTracking.Allocate(640, 480);
-    // clear the image
-    cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
-  }
-  { // annotation on the canvas
-    char info[256];
-    CvPoint org = cvPoint(0, 475);
-    CvFont font;
-    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
-    sprintf(info, "%04d, nTrcks=%d",
-        current_frame_index, tracks.tracks_.size());
+    IplImage* im = cvLoadImage("/tmp/mkplot-left.png");
+    if (im) {
+      vis->canvasTracking.SetIpl(im);
+    } else {
+      // make sure the image buffers is allocated to the right sizes
+      vis->canvasTracking.Allocate(640, 480);
+      // clear the image
+      cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
+    }
+    { // annotation on the canvas
+      char info[256];
+      CvPoint org = cvPoint(0, 475);
+      CvFont font;
+      cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+      sprintf(info, "%04d, nTrcks=%d",
+          current_frame_index, tracks.tracks_.size());
 
-    cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+      cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+    }
+    cout << "All The Tracks"<<endl;
+    tracks.print();
+    sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
+        current_frame_index);
+    vis->recordFrameIds(&fixed_frames, &free_frames);
+    vis->drawTrackTrajectories(current_frame_index);
+    vis->show();
+    vis->save();
+    vis->reset();
   }
-  cout << "All The Tracks"<<endl;
-  tracks.print();
-  sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
-      current_frame_index);
-  vis->recordFrameIds(&fixed_frames, &free_frames);
-  vis->drawTrackTrajectories(current_frame_index);
-  vis->show();
-  vis->save();
-  vis->reset();
 #else
   LevMarqSparseBundleAdj::ErrorCode err_code = sba.optimize(&fixed_frames, &free_frames, &tracks);
   if (err_code == LevMarqSparseBundleAdj::InputError) {
@@ -754,7 +756,7 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
 
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
-  object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+  object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_fixed_window_size, full_free_window_size, term_criteria);
 
   object->vis_ = new SBAVisualizer((PoseEstimateDisp&)*object->pe, NULL, NULL, NULL);
   object->map_index_to_FramePose_ =

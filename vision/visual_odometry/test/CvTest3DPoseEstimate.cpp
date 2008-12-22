@@ -43,7 +43,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
-#define SAVE_FRAMES_POINTS 1
+#define SAVE_FRAMES_POINTS 0
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
@@ -199,7 +199,7 @@ bool CvTest3DPoseEstimate::test() {
     return testVideoBundleAdj();
     break;
   case BundleAdjUTest: {
-    string frame_file("frames.xml");
+    string frame_file("frames10straight.xml");
     string point_file("cartesianPoints.xml");
     return testBundleAdj(point_file, frame_file, 5, 5, 10, 1, true, true, false);
     break;
@@ -218,6 +218,10 @@ bool CvTest3DPoseEstimate::test() {
     return testBundleAdj(point_file, frame_file, num_free_frames,
         num_fixed_frames, num_iterations, num_repeats,
         false, false, false);
+    break;
+  }
+  case BundleAdjSeq: {
+    testBundleAdjSeq(false, false, false);
     break;
   }
   default:
@@ -241,6 +245,66 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 
 void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   switch(data_set) {
+  case SyntheticDiskLoop: {
+    img_size_ = cvSize(640, 480);
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/SyntheticLoopDisk");
+    string leftimgfmt("/loop-%06d-L.png");
+    string rightimgfmt("/loop-%06d-R.png");
+    string dispimgfmt("/dispmap-%06d.xml");
+    int start = 0;
+    int end   = 400;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/SyntheticDiskLoop/");
+    break;
+  }
+  case SyntheticDiskLoopNoisy: {
+    img_size_ = cvSize(640, 480);
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/SyntheticLoopDiskNoisy");
+    string leftimgfmt("/loop-noisy-%06d-L.png");
+    string rightimgfmt("/loop-noisy-%06d-R.png");
+    string dispimgfmt("/dispmap-%06d.xml");
+    int start = 0;
+    int end   = 400;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/SyntheticDiskLoopNoisy/");
+    break;
+  }
+  case SyntheticDiskLoopNoisy2: {
+    img_size_ = cvSize(640, 480);
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/SyntheticDiskLoopNoisy2");
+    string leftimgfmt("/loop-noisy2-%06d-L.png");
+    string rightimgfmt("/loop-noisy2-%06d-R.png");
+    string dispimgfmt("/dispmap-%06d.xml");
+    int start = 0;
+    int end   = 400;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/SyntheticDiskLoopNoisy2/");
+    break;
+  }
   case SyntheticLoop1: {
     img_size_ = cvSize(640, 480);
     setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
@@ -320,15 +384,19 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
 
 //  setInputData(Indoor1);
-  setInputData(James4);
-//  setInputData(SyntheticLoop1);
+//  setInputData(James4);
+//  setInputData(SyntheticDiskLoop);
+  setInputData(SyntheticDiskLoopNoisy);
+  //  setInputData(SyntheticLoop1);
+
 
 //  VOSparseBundleAdj sba(img_size_, 100, 100);
-  VOSparseBundleAdj sba(img_size_, 10, 3);
+  VOSparseBundleAdj sba(img_size_, 3, 10);
 //  VOSparseBundleAdj sba(img_size_, 1, 1);
 
   // parameterize the post estimator
   sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
+  sba.mPoseEstimator.setInlierErrorThreshold(1.5);
 
   // visualization
 #if DISPLAY
@@ -746,11 +814,71 @@ void synthesizeFrames(const string& data_path) {
       "frames in euler/meter, straight forward, .01 meter each step");
 }
 
+void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
+  double param_data[6];
+  CvMat  param = cvMat(6, 1, CV_64FC1, param_data);
+  double transf_global_to_local_data[16];
+  CvMat  transf_global_to_local = cvMat(4, 4, CV_64FC1, transf_global_to_local_data);
+  int numPtsPerCircle = 36;
+  int numStepsForPts = 72;
+  // make sure that the last pose is back to where it starts.
+  // Hence we need one extra cam.
+  int numCams = 73;
+  CvMat *pt = cvCreateMat(numStepsForPts*numPtsPerCircle, 3, CV_64FC1);
+  *points = pt;
+  double R = 10.0; // 10  meters
+  double r = 1.0;  // 1.0 meters
+  for (int iu= 0; iu < numCams; iu++) {
+    double u = 2.0*CV_PI*(double)iu/(double)(numCams-1);
+
+    // rodrigues: rotate around Y axis for angle of radian u
+    param_data[0] = 0.0;
+    param_data[1] = u;
+    param_data[2] = 0.0;
+
+    // as the camera has been rotated, Z axis points to tangent direction
+    // and x axis is parallel to the line connects origin and camera center.
+    // hence the shift shall be along X only.
+    param_data[3] = R;
+    param_data[4] = 0.;
+    param_data[5] = 0.;
+
+    FramePose* fp = new FramePose();
+    fp->mIndex = iu;
+//    CvMatUtils::transformFromEulerAndShift(&param, &transf_global_to_local);
+    CvMatUtils::transformFromRodriguesAndShift(&param, &transf_global_to_local);
+    CvMatUtils::invertRigidTransform(&transf_global_to_local, &(fp->transf_local_to_global_));
+    frames->push_back(fp);
+    printf("iu %d, fi %d, u=%f, cos=%f, sin=%f\n", iu, fp->mIndex, u, cos(u), sin(u));
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+  }
+
+  int i=0;
+  for (int iu= 0; iu < numStepsForPts; iu++) {
+    double u = 2.*CV_PI*(double)iu/(double)numStepsForPts;
+    for (int iv=0; iv < numPtsPerCircle; iv++) {
+      double v = 2.0*CV_PI*(double)iv/numPtsPerCircle;
+      CvPoint3D64f point;
+      point.x = (R + r * cos(v)) * cos(u);
+      point.y = r * sin(v);
+      point.z = (R + r * cos(v)) * sin(u);
+      cvmSet(pt, i, 0, point.x);
+      cvmSet(pt, i, 1, point.y);
+      cvmSet(pt, i, 2, point.z);
+      i++;
+    }
+  }
+}
+
 void setUpTracks(const vector<FramePose* >& frame_poses,
-    const CvMat* frames, const CvMat *points,
+    const CvMat *points,
     const CvMat& cartToDisp, int oldest_index,
     PointTracks* tracks)
 {
+  double left = 0;
+  double upper = 0;
+  double right = 640;
+  double lower = 480;
   CvPoint3D64f coord;
   CvPoint3D64f disp_coord0;
   CvPoint3D64f disp_coord1;
@@ -771,20 +899,46 @@ void setUpTracks(const vector<FramePose* >& frame_poses,
     cvMatMul(&cartToDisp, global_to_local, global_to_disp);
     cvPerspectiveTransform(&global_point, &disp_point1, global_to_disp);
 
-    PointTrackObserv* obsv0 = new PointTrackObserv(frame_poses[0]->mIndex, disp_coord0, ipt);
-    PointTrackObserv* obsv1 = new PointTrackObserv(frame_poses[1]->mIndex, disp_coord1, ipt);
-    PointTrack* point = new PointTrack(obsv0, obsv1, coord, ipt);
+    int fi1 = 1;
+    // find the first pair that is visible in consecutive frames
 
-    for (int iframe = 2; iframe < frames->rows; iframe++) {
-      // extend the track
-      CvMatUtils::invertRigidTransform(&frame_poses[iframe]->transf_local_to_global_, global_to_local);
-      cvMatMul(&cartToDisp, global_to_local, global_to_disp);
-      cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
-      PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, ipt);
-      point->extend(obsv);
+    PointTrackObserv* obsv0;
+    PointTrackObserv* obsv1;
+    for (fi1=1; fi1<frame_poses.size(); fi1++) {
+      obsv0 = new PointTrackObserv(frame_poses[fi1-1]->mIndex, disp_coord0, ipt);
+      obsv1 = new PointTrackObserv(frame_poses[fi1  ]->mIndex, disp_coord1, ipt);
+      if (left  <= disp_coord0.x && disp_coord0.x < right  &&
+          upper <= disp_coord0.y && disp_coord0.y < lower &&
+          0< disp_coord0.z &&
+          left  <= disp_coord1.x && disp_coord1.x < right  &&
+          upper <= disp_coord1.y && disp_coord1.y < lower &&
+          0 < disp_coord1.z ) {
+        break;
+      }
+    }
+    if (fi1 < frame_poses.size()) {
+      PointTrack* point = new PointTrack(obsv0, obsv1, coord, ipt);
+
+      for (int iframe = fi1+1; iframe < frame_poses.size(); iframe++) {
+        // extend the track
+        CvMatUtils::invertRigidTransform(&frame_poses[iframe]->transf_local_to_global_, global_to_local);
+        cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+        cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+        if (left  <= disp_coord0.x && disp_coord0.x < right  &&
+            upper <= disp_coord0.y && disp_coord0.y < lower &&
+            0 < disp_coord0.z) {
+          PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, ipt);
+          point->extend(obsv);
+        } else {
+          // this track is not visible anymore.
+          break;
+        }
+      }
+      tracks->tracks_.push_back(point);
+    } else {
+      printf("point %d [%5.2f, %5.2f, %5.2f] is not visible\n", ipt, coord.x, coord.y, coord.z);
     }
 
-    tracks->tracks_.push_back(point);
     tracks->oldest_frame_index_in_tracks_ = oldest_index;
   }
   cvReleaseMat(&global_to_disp);
@@ -937,7 +1091,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
   // set up tracks
   PointTracks tracks;
-  setUpTracks(frame_poses, frames, points, cartToDisp, oldest_index, &tracks);
+  setUpTracks(frame_poses, points, cartToDisp, oldest_index, &tracks);
 
   int full_free_window_size  = num_free_frames;
   int full_fixed_window_size = num_fixed_frames;
@@ -950,7 +1104,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
 
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
-      full_free_window_size, full_fixed_window_size, term_criteria);
+      full_fixed_window_size, full_free_window_size, term_criteria);
 
   vector<FramePose*> free_frames;
   vector<FramePose*> fixed_frames;
@@ -973,7 +1127,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
     int numFreeFrames = free_frames.size();
     CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
-    CvMat* frame_params_est   = cvCreateMat(numFreeFrames, 6, CV_64FC1);
 
     // make a copy of the input params
     {
@@ -1044,6 +1197,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
     // compare frame params
     double error_norm_frames;
+    CvMat* frame_params_est   = (CvMat*) cvClone(frame_params_input);
     {
       int iFrames = 0;
       BOOST_FOREACH(FramePose *fp, free_frames){
@@ -1063,20 +1217,22 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
       error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
 
-      status = status && (error_norm_frames < 1.e-8);
+      status = status && (error_norm_frames < 1.e-7);
 
     }
 
-    CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
+    CvMat* points_est = (CvMat*)cvClone(points);
     int iPoints=0;
+    // note: not all the points are in the tracks. Some of them may not
+    // be visible.
     BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
       if (verbose_) {
         printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
             p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
       }
-      cvmSet(points_est, iPoints, 0, p->coordinates_.x);
-      cvmSet(points_est, iPoints, 1, p->coordinates_.y);
-      cvmSet(points_est, iPoints, 2, p->coordinates_.z);
+      cvmSet(points_est, p->id_, 0, p->coordinates_.x);
+      cvmSet(points_est, p->id_, 1, p->coordinates_.y);
+      cvmSet(points_est, p->id_, 2, p->coordinates_.z);
       iPoints++;
     }
 
@@ -1123,6 +1279,115 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
   return status;
 }
+
+bool CvTest3DPoseEstimate::testBundleAdjSeq(
+    bool disturb_frames, bool disturb_points, bool disturb_obsvs) {
+  bool status = true;
+
+  CvMat cartToDisp;
+  CvMat dispToCart;
+
+  this->setCameraParams(389.0, 389.0, 89.23*1.e-3, 323.42, 323.42, 274.95);
+  this->getProjectionMatrices(&cartToDisp, &dispToCart);
+  PoseEstimateDisp peDisp;
+  peDisp.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
+
+  boost::unordered_map<int, FramePose*> map_index_to_framepose;
+  SBAVisualizer vis(peDisp, NULL, NULL, NULL);
+  // note that SBAVisualizer by design does not own map_index_to_FramePose
+  vis.map_index_to_FramePose_ = &map_index_to_framepose;
+  vis.outputDirname = string("/tmp");
+
+  // set up cameras and points
+  vector<FramePose* > frame_poses;
+  CvMat* points;
+
+  setupSceneTorus(&frame_poses, &points);
+
+  int full_fixed_win_size = 3;
+  int full_free_win_size  = 10;
+  int max_num_iters = 10;
+  double epsilon = DBL_EPSILON;
+//  epsilon = FLT_EPSILON;
+//  epsilon = LDBL_EPSILON;
+//  epsilon = .1e-12;
+  CvTermCriteria term_criteria =
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
+
+  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
+      full_fixed_win_size, full_free_win_size, term_criteria);
+
+  vector<FramePose*> free_frames;
+  vector<FramePose*> fixed_frames;
+  vector<FramePose*> active_frames;
+  for (unsigned int i=1; i< frame_poses.size(); i++) {
+    free_frames.clear();
+    fixed_frames.clear();
+    active_frames.clear();
+    active_frames.clear();
+    if (i >= full_fixed_win_size+full_free_win_size-1) {
+      // full windows
+      // first the fixed frames
+      int offset = i-full_fixed_win_size-full_free_win_size+1;
+      for (int j=0; j<full_fixed_win_size; j++) {
+        fixed_frames.push_back(frame_poses[offset+j]);
+        active_frames.push_back(frame_poses[offset+j]);
+      }
+      offset = i-full_free_win_size+1;
+      for (int j=0; j<full_free_win_size; j++) {
+        free_frames.push_back(frame_poses[offset+j]);
+        active_frames.push_back(frame_poses[offset+j]);
+      }
+    } else {
+      // frame 0 shall be in as a fixed frame
+      fixed_frames.push_back(frame_poses[0]);
+      int num_fixed_frames = i+1 - full_free_win_size;
+      if (num_fixed_frames>1) {
+        for (int j=1; j<num_fixed_frames; j++) {
+          fixed_frames.push_back(frame_poses[j]);
+        }
+        for (int j=num_fixed_frames; j<=i; j++) {
+          free_frames.push_back(frame_poses[j]);
+        }
+      } else {
+        for (int j=1; j<=i; j++) {
+          free_frames.push_back(frame_poses[j]);
+        }
+      }
+      for (int j=0; j<=i; j++) {
+        active_frames.push_back(frame_poses[j]);
+      }
+    }
+    cout << "fixed frames size " << fixed_frames.size() << " [";
+    BOOST_FOREACH(FramePose* fp, fixed_frames) {
+      cout << fp->mIndex << " ";
+    }
+    cout << "]"<<endl;
+    cout << "free frames size "<<free_frames.size() <<" [";
+    BOOST_FOREACH(FramePose* fp, free_frames) {
+      cout << fp->mIndex << " ";
+    }
+    cout << "]"<<endl;
+    // set up tracks
+    PointTracks tracks;
+    setUpTracks(active_frames, points, cartToDisp, 0, &tracks);
+
+    sba.optimize(&fixed_frames, &free_frames, &tracks);
+
+    vis.show(NULL, fixed_frames, free_frames, tracks);
+    vis.save();
+
+    //    remove the tracks
+    BOOST_FOREACH(PointTrack* pt, tracks.tracks_) {
+      delete pt;
+    }
+  }
+
+  cout << "Final Pose"<<endl;
+  CvMatUtils::printMat(&frame_poses.back()->transf_local_to_global_);
+  return status;
+}
+
 
 
 bool CvTest3DPoseEstimate::testPointClouds(){

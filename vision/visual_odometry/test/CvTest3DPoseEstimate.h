@@ -32,12 +32,16 @@ public:
     	/// bundle adjustment over a sequence of video images
     	VideoBundleAdj,
     	BundleAdj,
-    	BundleAdjUTest
+    	BundleAdjUTest,
+    	BundleAdjSeq
     } TestType;
     typedef enum {
       Indoor1,
       James4,
-      SyntheticLoop1
+      SyntheticLoop1,
+      SyntheticDiskLoop,
+      SyntheticDiskLoopNoisy,
+      SyntheticDiskLoopNoisy2
     } DataSet;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();
@@ -52,6 +56,8 @@ public:
         string& points_file, string& frames_file,
         int num_free_frames, int num_fixed_frames, int num_iterations,
         int repeats,
+        bool disturb_frames, bool disturb_points, bool disturb_obsvs);
+    bool testBundleAdjSeq(
         bool disturb_frames, bool disturb_points, bool disturb_obsvs);
     bool test();
     TestType mTestType;

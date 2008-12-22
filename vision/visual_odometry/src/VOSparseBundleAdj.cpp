@@ -65,7 +65,7 @@ using namespace boost::accumulators;
 //#define DEBUG 1
 
 VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
-    int num_free_frames, int num_fixed_frames):
+    int num_fixed_frames, int num_free_frames):
   PathRecon(imageSize),
   full_free_window_size_(num_free_frames),
   full_fixed_window_size_(num_fixed_frames),
@@ -458,6 +458,62 @@ void SBAVisualizer::recordFrameIds(const vector<FramePose*>* fixed_frames,
   }
 }
 
+void SBAVisualizer::show(IplImage* im, const vector<FramePose*>& fixed_frames,
+    const vector<FramePose*>& free_frames, const PointTracks& tracks) {
+  reset();
+  // set frame poses, point tracks and maps from index to frame poses
+  vector<FramePose* > frame_poses;
+  BOOST_FOREACH(FramePose *fp, free_frames) {
+    frame_poses.push_back(fp);
+    map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+    printf("Inserting free frame: %d\n", fp->mIndex);
+  }
+  BOOST_FOREACH(FramePose *fp, fixed_frames) {
+    frame_poses.push_back(fp);
+    map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
+    printf("Inserting fixed frame: %d\n", fp->mIndex);
+  }
+  this->framePoses = &frame_poses;
+  this->tracks = &tracks;
+  FramePose* fp = free_frames.back();
+  int current_frame_index = fp->mIndex;
+
+  if (im) {
+    canvasTracking.SetIpl(im);
+  } else {
+    // make sure the image buffers is allocated to the right sizes
+    canvasTracking.Allocate(640, 480);
+    // clear the image
+    cvSet(canvasTracking.Ipl(), cvScalar(0,0,0));
+  }
+  { // annotation on the canvas
+    char info[256];
+    CvPoint org = cvPoint(0, 475);
+    CvFont font;
+    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+    double x = -cvmGet(&fp->transf_local_to_global_, 0, 3);
+    double y = -cvmGet(&fp->transf_local_to_global_, 1, 3);
+    double z = -cvmGet(&fp->transf_local_to_global_, 2, 3);
+    cout << "last frame " << fp->mIndex << " "<<x<<" "<<y<<" "<<z<<endl;
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+
+
+    sprintf(info, "%04d, [%5.2f,%5.2f,%5.2f], nTrcks=%d",
+        current_frame_index, x,y,z, tracks.tracks_.size());
+
+    cvPutText(canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+  }
+  cout << "All The Tracks"<<endl;
+  tracks.print();
+  sprintf(poseEstFilename,  "%s/poseEst-%04d.png", outputDirname.c_str(),
+      current_frame_index);
+  recordFrameIds(&fixed_frames, &free_frames);
+  drawTrackTrajectories(current_frame_index);
+  this->show();
+  save();
+  reset();
+}
+
 void VOSparseBundleAdj::Stat2::print() {
   CvMat mat_num_tracks = cvMat(1, numTracks.size(), CV_32SC1, &(numTracks[0]));
   CvScalar average = cvAvg(&mat_num_tracks);
@@ -526,25 +582,36 @@ void VOSparseBundleAdj::Stat2::print() {
 }
 
 void VOSparseBundleAdj::updateStat2() {
-  int numTracks, maxLen, minLen;
+  mStat2.update(mTracks);
+}
+
+void VOSparseBundleAdj::Stat2::update(const PointTracks& point_track) {
+  int nTracks, maxLen, minLen;
   double avgLen;
   vector<int> lenHisto;
-  mTracks.stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
-  if (numTracks>0) {
-    mStat2.numTracks.push_back(numTracks);
-    mStat2.maxTrackLens.push_back(maxLen);
-    mStat2.minTrackLens.push_back(minLen);
-    mStat2.avgTrackLens.push_back(avgLen);
+  point_track.stats(&nTracks, &maxLen, &minLen, &avgLen, &lenHisto);
+  if (nTracks>0) {
+    numTracks.push_back(nTracks);
+    maxTrackLens.push_back(maxLen);
+    minTrackLens.push_back(minLen);
+    avgTrackLens.push_back(avgLen);
 
-    if (lenHisto.size()>mStat2.trackLenHisto.size()) {
-      mStat2.trackLenHisto.resize(lenHisto.size());
+    if (lenHisto.size()>trackLenHisto.size()) {
+      trackLenHisto.resize(lenHisto.size());
     }
     int len=0;
     BOOST_FOREACH( const int count, lenHisto ) {
-      mStat2.trackLenHisto.at(len) += count;
+      trackLenHisto.at(len) += count;
       len++;
     }
   }
+}
+void VOSparseBundleAdj::Stat2::clear() {
+  numTracks.clear();
+  maxTrackLens.clear();
+  minTrackLens.clear();
+  avgTrackLens.clear();
+  trackLenHisto.clear();
 }
 
 void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
@@ -559,6 +626,6 @@ void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
     cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_updates,DBL_EPSILON);
 
   levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
-      full_free_window_size_, full_fixed_window_size_, term_criteria);
+      full_fixed_window_size_, full_free_window_size_, term_criteria);
 }
 
