@@ -68,7 +68,7 @@ struct MouseCallbackParams {
   image_msgs::CamInfo* rcaminfo;
 };
 
-ros::thread::mutex cv_mutex;
+//ros::thread::mutex cv_mutex;
 ros::thread::mutex g_cv_mutex;
 
 
@@ -157,7 +157,7 @@ public:
 
   MouseCallbackParams mcbparams_;
 
-  //ros::thread::mutex cv_mutex;
+  ros::thread::mutex cv_mutex;
 
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
