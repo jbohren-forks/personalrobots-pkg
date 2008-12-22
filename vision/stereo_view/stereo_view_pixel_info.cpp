@@ -175,19 +175,19 @@ public:
     cvSetMouseCallback("left", on_mouse, &mcbparams_);
 
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
-    left_list.push_back(std::string("dcam/left/image_rect"));
+    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
+    left_list.push_back(std::string("stereodcam/left/image_rect"));
 
     std::list<std::string> right_list;
-    right_list.push_back(std::string("dcam/right/image_rect_color"));
-    right_list.push_back(std::string("dcam/right/image_rect"));
+    right_list.push_back(std::string("stereodcam/right/image_rect_color"));
+    right_list.push_back(std::string("stereodcam/right/image_rect"));
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe("dcam/disparity", dimage, 1);
-    sync.subscribe("dcam/stereo_info", stinfo, 1);
-    sync.subscribe("dcam/right/cam_info", rcaminfo, 1);
+    sync.subscribe("stereodcam/disparity", dimage, 1);
+    sync.subscribe("stereodcam/stereo_info", stinfo, 1);
+    sync.subscribe("stereodcam/right/cam_info", rcaminfo, 1);
   }
 
   ~StereoView()
