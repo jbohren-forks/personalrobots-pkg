@@ -330,7 +330,7 @@ namespace costmap_2d {
       return;
     }
 
-    of.write(reinterpret_cast<const char*>(getMap()), getWidth() * getHeight() * sizeof (unsigned char*));
+    of.write((const char*)(getMap()), getWidth() * getHeight() * sizeof(unsigned char));
     of.close(); 
   }
 
