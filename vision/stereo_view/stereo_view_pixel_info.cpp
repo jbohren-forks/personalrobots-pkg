@@ -32,14 +32,6 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/********************************************************************
- * This is an extension to stereo_view.cpp that allows you to click on a point in the left image and display
- * its image coords, color, and stereo frame coords (the vision-version of real-world coords with z forwards.)
- * Best used while playback is stopped because the selected point is only drawn on one frame, 
- * but it works even during live playback.
- ********************************************************************/
-
-
 #include <vector>
 
 #include "image_msgs/CvBridge.h"
@@ -71,12 +63,16 @@ struct MouseCallbackParams {
 //ros::thread::mutex cv_mutex;
 ros::thread::mutex g_cv_mutex;
 
-
-// Click on a point in the left image to 
-// 1) Draw a red dot;
-// 2) Get the (u,v,d) position;
-// 3) Get the (R,G,B) value;
-// 4) Get the (x,y,z) value in the stereo frame (the vision-version of x,y,z with z pointing forwards.)
+/*!
+ * \brief Click on a point in the left image to get 2d, color and 3d information.
+ *
+ *
+ * Click on a point in the left image to 
+ * 1) Draw a red dot;
+ * 2) Get the (u,v,d) position;
+ * 3) Get the (R,G,B) value;
+ * 4) Get the (x,y,z) value in the stereo frame (the vision-version of x,y,z with z pointing forwards.)
+ */
 void on_mouse(int event, int x, int y, int flags, void *params) {
   
   MouseCallbackParams* mcbparams = (MouseCallbackParams*)params;
@@ -127,37 +123,42 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
 
 }
 
-
+//* StereoView class.
+/********************************************************************
+ * This is an extension to stereo_view.cpp that allows you to click on a point in the left image and display
+ * its image coords, color, and stereo frame coords (the vision-version of real-world coords with z forwards.)
+ * Best used while playback is stopped because the selected point is only drawn on one frame, 
+ * but it works even during live playback.
+ ********************************************************************/
 class StereoView : public ros::node
 {
 public:
 
-  image_msgs::Image limage;
-  image_msgs::Image rimage;
-  image_msgs::Image dimage;
-  image_msgs::StereoInfo stinfo;
-  image_msgs::CamInfo rcaminfo;
+  image_msgs::Image limage; /**< Left camera image msg. */
+  image_msgs::Image rimage; /**< Right camera image msg. */
+  image_msgs::Image dimage; /**< Disparity camera image msg. */
+  image_msgs::StereoInfo stinfo; /**< Stereo info msg. */
+  image_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
-  image_msgs::CvBridge lbridge;
-  image_msgs::CvBridge rbridge;
-  image_msgs::CvBridge dbridge;
+  image_msgs::CvBridge lbridge; /**< CvBridge for the left camera. */
+  image_msgs::CvBridge rbridge; /**< CvBridge for the right camera. */
+  image_msgs::CvBridge dbridge; /**< CvBridge for the disparity image. */
 
-  color_calib::Calibration lcal;
-  color_calib::Calibration rcal;
+  color_calib::Calibration lcal; /**< Color calibration for the left image. */
+  color_calib::Calibration rcal; /**< Color calibration for the right image. */
 
-  IplImage* lcalimage;
-  IplImage* rcalimage;
-  IplImage* disp;
+  IplImage* lcalimage; /**< Color calibrated left image for display. */
+  IplImage* rcalimage; /**< Color calibrated right image for display. */
+  IplImage* disp; /**< Disparity image for display. */
 
-  TopicSynchronizer<StereoView> sync;
+  TopicSynchronizer<StereoView> sync; /**< Topic synchronizer for the stereo msgs. */
 
-  bool subscribe_color_;
-  bool calib_color_;
-  bool recompand_;
+  bool calib_color_; /**< True/false do color calibration. */
+  bool recompand_; /**< True/false recompand the image (gamma correction) for display. */
 
-  MouseCallbackParams mcbparams_;
+  MouseCallbackParams mcbparams_; /**< Parameters for the mouse callback. */
 
-  ros::thread::mutex cv_mutex;
+  ros::thread::mutex cv_mutex; 
 
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
@@ -200,6 +201,13 @@ public:
       cvReleaseImage(&disp);
   }
 
+  /*! 
+   * \brief Image callback for synced msgs. 
+   *
+   * Image callback for a set of synced stereo msgs.
+   * Displays the (possibly color-calibrated, recompanded) images and
+   * copies the necessary pointers for the mouse callback. 
+   */
   void image_cb_all(ros::Time t)
   {
     cv_mutex.lock();
@@ -251,6 +259,14 @@ public:
 
   }
 
+
+  /*! 
+   * \brief Image callback for unsynced msgs.
+   *
+   * Image callback for a set of unsynced messages.
+   * Reports which msg is missing and proceeds to call 
+   * image_cb_all() on the remaining msgs.
+   */
   void image_cb_timeout(ros::Time t)
   {
     if (limage.header.stamp != t)
@@ -266,6 +282,13 @@ public:
     image_cb_all(t);
   }
   
+  /*!
+   * Spin function. 
+   *
+   * This function waits while the other threads execute.
+   * It also allows OpenCV to display the images and 
+   * obtain user input.
+   */
   bool spin()
   {
     while (ok())
@@ -284,8 +307,8 @@ public:
       // Fetch color calibration parameters as necessary
       if (calib_color_)
       {
-        lcal.getFromParam("dcam/left/image_rect_color");
-        rcal.getFromParam("dcam/right/image_rect_color");
+        lcal.getFromParam("stereodcam/left/image_rect_color");
+        rcal.getFromParam("stereodcam/right/image_rect_color");
       }
 
       cv_mutex.unlock();
