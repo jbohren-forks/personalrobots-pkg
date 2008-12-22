@@ -39,7 +39,6 @@
 
 // bayesian filtering
 #include <filter/bootstrapfilter.h>
-#include <model/measurementmodel.h>
 #include "state_pos_vel.h"
 #include "mcpdf_pos_vel.h"
 #include "sysmodel_pos_vel.h"

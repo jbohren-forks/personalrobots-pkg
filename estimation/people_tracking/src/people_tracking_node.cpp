@@ -1,3 +1,4 @@
+
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
@@ -33,6 +34,8 @@
 *********************************************************************/
 
 #include "people_tracking_node.h"
+#include "tracker_particle.h"
+#include "tracker_kalman.h"
 #include "state_pos_vel.h"
 
 using namespace std;
@@ -40,7 +43,7 @@ using namespace ros;
 using namespace tf;
 using namespace BFL;
 
-static const unsigned int num_trackers = 1;
+static const unsigned int num_trackers = 2;
 
 
 namespace estimation
@@ -67,7 +70,11 @@ namespace estimation
     Tracker* tr;
     for (unsigned int i=0; i<num_trackers; i++){
       // tracker
-      tr = new TrackerParticle(5000, sys_sigma, meas_sigma);
+      //tr = new TrackerParticle(5000, sys_sigma, meas_sigma);
+      if (i==0)
+	tr = new TrackerKalman(sys_sigma, meas_sigma);
+      else
+	tr = new TrackerParticle(5000, sys_sigma, meas_sigma);
       tr->initialize(prior_mu, prior_sigma, time_);
       trackers_.push_back(tr);
 
@@ -109,10 +116,11 @@ namespace estimation
 	cout << "Tracker " << i << endl;
 	cout << " - expected value = " << trackers_[i]->getEstimate() << endl;
 	cout << " - measurement    = " << StatePosVel(meas_[i], Vector3(0,0,0)) << endl;
+	cout << " - velocity       = " << StatePosVel(Vector3(0,0,0), vel_[i]) << endl;
 	cout << " - quality        = " << trackers_[i]->getQuality() << endl;
 	// publish result
-	((TrackerParticle*)(trackers_[i]))->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
-	publish("people_tracking", cloud);
+	//((TrackerParticle*)(trackers_[i]))->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
+	//publish("people_tracking", cloud);
       }
       // sleep
       usleep(1e6/freq_);

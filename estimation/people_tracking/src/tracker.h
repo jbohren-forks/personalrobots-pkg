@@ -8,6 +8,7 @@
 *  modification, are permitted provided that the following conditions
 *  are met:
 * 
+*   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
 *     copyright notice, this list of conditions and the following
@@ -31,55 +32,35 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __PEOPLE_TRACKING_NODE__
-#define __PEOPLE_TRACKING_NODE__
+#ifndef __TRACKER__
+#define __TRACKER__
 
-#include <string>
-
-// ros stuff
-#include <ros/node.h>
-#include <tf/tf.h>
-
-// people tracking stuff
-#include "tracker.h"
-#include "gaussian_vector.h"
-
-// messages
-#include <std_msgs/PointCloud.h>
-#include <robot_msgs/PositionMeasurement.h>
- 
-// log files
-#include <fstream>
-
+#include "state_pos_vel.h"
 
 namespace estimation
 {
 
-class PeopleTrackingNode: public ros::node
+class Tracker
 {
 public:
-  /// constructor
-  PeopleTrackingNode(const string& node_name);
-
   /// destructor
-  virtual ~PeopleTrackingNode();
+  virtual ~Tracker() {};
 
-  /// tracker loop
-  void spin();
+  /// initialize tracker
+  virtual void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time) = 0;
 
+  /// return if tracker was initialized
+  virtual bool isInitialized() const = 0;
 
-private:
-  std::string node_name_;
+  /// return measure for tracker quality: 0=bad 1=good
+  virtual double getQuality() const = 0;
 
-  /// tracker
-  std::vector<Tracker*> trackers_;
+  /// update tracker
+  virtual bool updatePrediction(const double filter_time) = 0;
+  virtual bool updateCorrection(const tf::Vector3& meas) = 0;
 
-  // messages to send
-  std_msgs::PointCloud  point_cloud_; 
-
-  double freq_, time_;
-  std::vector<tf::Vector3> meas_, vel_;
-  BFL::GaussianVector move_;
+  /// get filter posterior
+  virtual BFL::StatePosVel getEstimate() const = 0;
 
 
 }; // class

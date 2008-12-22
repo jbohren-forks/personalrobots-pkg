@@ -1,3 +1,4 @@
+
 <launch>
 <param name="people_tracking/freq" value="30.0"/>
 <param name="people_tracking/prior/x" value="1.0"/>

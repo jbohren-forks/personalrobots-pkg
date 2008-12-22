@@ -8,6 +8,7 @@
 *  modification, are permitted provided that the following conditions
 *  are met:
 * 
+*   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
 *     copyright notice, this list of conditions and the following
@@ -31,55 +32,69 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __PEOPLE_TRACKING_NODE__
-#define __PEOPLE_TRACKING_NODE__
+#ifndef __TRACKER_KALMAN__
+#define __TRACKER_KALMAN__
 
-#include <string>
+#include "tracker.h"
 
-// ros stuff
-#include <ros/node.h>
+// bayesian filtering
+#include <filter/extendedkalmanfilter.h>
+#include <model/linearanalyticsystemmodel_gaussianuncertainty.h>
+#include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
+#include <pdf/linearanalyticconditionalgaussian.h>
+
+
+#include "state_pos_vel.h"
+
+// TF
 #include <tf/tf.h>
 
-// people tracking stuff
-#include "tracker.h"
-#include "gaussian_vector.h"
-
-// messages
-#include <std_msgs/PointCloud.h>
-#include <robot_msgs/PositionMeasurement.h>
- 
 // log files
 #include <fstream>
-
 
 namespace estimation
 {
 
-class PeopleTrackingNode: public ros::node
+class TrackerKalman: public Tracker
 {
 public:
   /// constructor
-  PeopleTrackingNode(const string& node_name);
+  TrackerKalman(const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
 
   /// destructor
-  virtual ~PeopleTrackingNode();
+  virtual ~TrackerKalman();
 
-  /// tracker loop
-  void spin();
+  /// initialize tracker
+  virtual void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time);
+
+  /// return if tracker was initialized
+  virtual bool isInitialized() const {return tracker_initialized_;};
+
+  /// return measure for tracker quality: 0=bad 1=good
+  virtual double getQuality() const {return quality_;};
+
+  /// update tracker
+  virtual bool updatePrediction(const double filter_time);
+  virtual bool updateCorrection(const tf::Vector3& meas);
+
+  /// get filter posterior
+  virtual BFL::StatePosVel getEstimate() const;
 
 
 private:
-  std::string node_name_;
+  // pdf / model / filter
+  BFL::Gaussian                                           prior_;
+  BFL::ExtendedKalmanFilter*                              filter_;
+  BFL::LinearAnalyticConditionalGaussian*                 sys_pdf_;
+  BFL::LinearAnalyticSystemModelGaussianUncertainty*      sys_model_;
+  BFL::LinearAnalyticConditionalGaussian*                 meas_pdf_;
+  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* meas_model_;
+  MatrixWrapper::Matrix                                   sys_matrix_;
 
-  /// tracker
-  std::vector<Tracker*> trackers_;
 
-  // messages to send
-  std_msgs::PointCloud  point_cloud_; 
-
-  double freq_, time_;
-  std::vector<tf::Vector3> meas_, vel_;
-  BFL::GaussianVector move_;
+  // vars
+  bool tracker_initialized_;
+  double filter_time_, quality_;
 
 
 }; // class
