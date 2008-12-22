@@ -944,7 +944,7 @@ class stereogui {open
       label Stereo open
       xywh {457 827 340 295} type Single visible
     } {
-      Fl_Group {} {open
+      Fl_Group {} {open selected
         xywh {15 155 285 120}
       } {
         Fl_Box {} {
@@ -975,11 +975,6 @@ class stereogui {open
           label Smoothness
           callback smoothness_cb
           xywh {230 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
-        }
-        Fl_Light_Button unique_check_button {
-          label {Uniqueness check}
-          callback unique_check_cb
-          xywh {165 190 115 20} labelsize 11
         }
       }
       Fl_Group {} {open
@@ -1047,7 +1042,7 @@ class stereogui {open
             xywh {30 30 30 20} labelsize 11
           }
           MenuItem {} {
-            label NCC selected
+            label NCC
             xywh {40 40 30 20} labelsize 11
           }
         }
