@@ -438,11 +438,12 @@ def controller_message(c, message):
 # MAIN LOOP
 def monitor_main(argv, stdout, env):
     verbose = False
+    using_ros = True
     port_name_template = "/dev/ttyUSB"
     port_list = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"] # default list of ports that controllers are on
     #check arguments for a help flag
     import getopt
-    optlist, args = getopt.getopt(argv[1:], "vh?p:s:t:", ["help","port=","server=","template="])
+    optlist, args = getopt.getopt(argv[1:], "nvh?p:s:t:", ["help","port=","server=","template="])
     for o, a in optlist:
         if o in ("-h","-?","--help"):
             usage(stdout, argv[0])
@@ -455,8 +456,11 @@ def monitor_main(argv, stdout, env):
                 port_list.append("%s%d"%(port_name_template, int(a[i])))
         elif o in("-v"):
             verbose = True
-            
-    rospy.init_node(NAME)
+        elif o in("-n"):
+            using_ros = False
+
+    if using_ros:
+        rospy.init_node(NAME)
 
     rospy.logout("opening ports: %s"%','.join(port_list))
     # set port settings to talk to IBPS and make sure the ports are
@@ -526,26 +530,32 @@ def monitor_main(argv, stdout, env):
                 battery_message(c, message)
             elif message[0] == 'S':
                 system_message(c, message)
-                        
-        try:
-            increment = rospy.get_param("diagnostic_rate")
-        except KeyError:
-            increment = 1.0
-        if time.time() - last_time > increment:
-            last_time = last_time + increment
-            if verbose == True: 
-                pow.print_remaining()
-            pow.broadcast_diagnostic()
 
-        try:
-            increment = rospy.get_param("battery_state_rate")
-        except KeyError:
+        if using_ros:
+
+            try:
+                increment = rospy.get_param("diagnostic_rate")
+            except KeyError:
+                increment = 1.0
+            if time.time() - last_time > increment:
+                last_time = last_time + increment
+                if verbose == True: 
+                    pow.print_remaining()
+                pow.broadcast_diagnostic()
+
+            try:
+                increment = rospy.get_param("battery_state_rate")
+            except KeyError:
+                increment = 1.0
+
+            if time.time() - last_time_battery_state > increment:
+                last_time_battery_state = last_time_battery_state + increment
+                pow.send_battery_state()
+        else:
             increment = 1.0
-        
-        if time.time() - last_time_battery_state > increment:
-            last_time_battery_state = last_time_battery_state + increment
-	    pow.send_battery_state()
-        
+            if time.time() - last_time > increment:
+                pow.print_remaining()
+                
 if __name__ == '__main__':
     monitor_main(sys.argv, sys.stdout, os.environ)
     print "exiting"
