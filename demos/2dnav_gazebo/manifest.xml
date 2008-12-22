@@ -23,7 +23,4 @@
   <depend package="transformations"/>
   <depend package="scan_shadows_filter"/>
   <depend package="ransac_ground_plane_extraction"/>
-
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>

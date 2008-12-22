@@ -46,6 +46,7 @@ rostools.update_path('robot_msgs')
 rostools.update_path('rostools')
 rostools.update_path('rospy')
 rostools.update_path('transformations')
+rostools.update_path('numpy')
 
 
 import sys, unittest
