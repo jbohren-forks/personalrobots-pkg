@@ -691,9 +691,11 @@ bool compareFiles(string a, string b) {
   test = fopen(a.c_str(), "r");
   compare = fopen(b.c_str(), "r");
   if (!test) {
+    printf("Could not open: %s\n", a.c_str());
     return false;
   }
   if (!compare) {
+    printf("Could not open: %s\n", b.c_str());
     return false;
   }
 
