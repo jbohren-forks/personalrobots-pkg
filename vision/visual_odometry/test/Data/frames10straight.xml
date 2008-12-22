@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!-- a list of transformation parameters, frame index, euler angels and translation vectors.
+ one set each row.
+ all coordinates are in double
+ The camera goes forward in a straight line.
+-->
+<opencv_storage>
+<A type_id="opencv-matrix">
+  <rows>10</rows>
+  <cols>7</cols>
+  <dt>d</dt>
+  <data>
+    0    0.       0.    0.   0.  0.   0.
+    1    0.       0.    0.   0.  0.   -.1
+    2    0.       0.    0.   0.  0.   -.2
+    3    0.       0.    0.   0.  0.   -.3
+    4    0.       0.    0.   0.  0.   -.4
+    5    0.       0.    0.   0.  0.   -.5
+    6    0.       0.    0.   0.  0.   -.6
+    7    0.       0.    0.   0.  0.   -.7
+    8    0.       0.    0.   0.  0.   -.8
+    9    0.       0.    0.   0.  0.   -.9
+  </data>
+</A>
+</opencv_storage>
