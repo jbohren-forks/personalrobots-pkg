@@ -14,74 +14,9 @@
   (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (child-regressed-pessimistic-aggregator n) :dependants '(regressed-pessimistic)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Children outputs are aggregated together
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod child-progressed-optimistic-dependants ((n <or-node>) i)
-  (declare (ignore i))
-  '(children-progressed-optimistic))
-
-
-(defmethod child-progressed-optimistic-aggregator ((n <or-node>))
-  #'(lambda (l)
-      ;; Note that we're treating the case with no children specially
-      ;; in optimistic progression and regression
-      (if l
-	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
-
-
-(defmethod child-progressed-pessimistic-dependants ((n <or-node>) i)
-  (declare (ignore i))
-  '(children-progressed-pessimistic))
-
-(defmethod child-progressed-pessimistic-aggregator ((n <or-node>))
-  #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
-	  
-
-
-
-(defmethod child-regressed-optimistic-dependants ((n <or-node>) i)
-  (declare (ignore i))
-  '(children-regressed-optimistic))
-
-(defmethod child-regressed-optimistic-aggregator ((n <or-node>))
-  #'(lambda (l)
-      ;; Note that we're treating the case with no children specially
-      ;; in optimistic progression and regression
-      (if l
-	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
-
-
-(defmethod child-regressed-pessimistic-dependants ((n <or-node>) i)
-  (declare (ignore i))
-  '(children-regressed-pessimistic))
-
-(defmethod child-regressed-pessimistic-aggregator ((n <or-node>))
-  #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Node's inputs are just passed over to children
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod child-initial-optimistic-tied-to ((n <or-node>) id)
-  'initial-optimistic)
-
-(defmethod child-initial-pessimistic-tied-to ((n <or-node>) id)
-  'initial-pessimistic)
-
-(defmethod child-final-optimistic-tied-to ((n <or-node>) id)
-  'final-optimistic)
-
-(defmethod child-final-pessimistic-tied-to ((n <or-node>) id)
-  'final-pessimistic)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Within the node:
 ;; Update functions for output variables depend on
 ;; aggregated child outputs, and on node's own
 ;; progressed/regressed valuations
@@ -104,11 +39,71 @@
     (pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Adding child nodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod add-child :after ((n <or-node>) i new-node-type &rest args)
+  (declare (ignore new-node-type args))
+  (let ((child (child i n)))
+
+    ;; Child inputs are tied to node's own inputs
+    (dolist (v '(initial-optimistic initial-pessimistic final-optimistic final-pessimistic))
+      (tie-variables n v child v))
+
+    ;; Add output variables from child and tie them 
+    (add-variable n (cons 'child-progressed-optimistic i) :external :dependants '(children-progressed-optimistic) 
+		  :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+    (tie-variables child 'progressed-optimistic  n (cons 'child-progressed-optimistic i))
+
+    (add-variable n (cons 'child-progressed-pessimistic i) :external :dependants '(children-progressed-pessimistic) 
+		  :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
+    (tie-variables child 'progressed-pessimistic n (cons 'child-progressed-pessimistic i))
+
+    (add-variable n (cons 'child-regressed-optimistic i) :external :dependants '(children-regressed-optimistic) 
+		  :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+    (tie-variables child 'regressed-optimistic n (cons 'child-regressed-optimistic i))
+
+    (add-variable n (cons 'child-regressed-pessimistic i) :external :dependants '(children-regressed-pessimistic) 
+		  :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
+    (tie-variables child 'regressed-pessimistic n (cons 'child-regressed-pessimistic i))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Children outputs are aggregated together
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod child-progressed-optimistic-aggregator ((n <or-node>))
+  #'(lambda (l)
+      ;; Note that we're treating the case with no children specially
+      ;; in optimistic progression and regression
+      (if l
+	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
+	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
+
+(defmethod child-progressed-pessimistic-aggregator ((n <or-node>))
+  #'(lambda (l)
+      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+
+(defmethod child-regressed-optimistic-aggregator ((n <or-node>))
+  #'(lambda (l)
+      ;; Note that we're treating the case with no children specially
+      ;; in optimistic progression and regression
+      (if l
+	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
+	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
+
+(defmethod child-regressed-pessimistic-aggregator ((n <or-node>))
+  #'(lambda (l)
+      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Compute cycle: update self and pass control to best
 ;; child (like A*)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defmethod action-node-type ((c (eql :or)))
   '<or-node>)

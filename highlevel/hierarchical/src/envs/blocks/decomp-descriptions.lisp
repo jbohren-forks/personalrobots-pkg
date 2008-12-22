@@ -3,15 +3,27 @@
 
 (defclass <blocks-descriptions> ()
   ((domain :initarg :domain :reader desc-domain)
-   (heuristic :accessor heuristic :initarg :heuristic)))
+   (heuristic :accessor heuristic :initarg :heuristic)
+   (optimistic-descs :accessor optimistic-descs)
+   (pessimistic-descs :accessor pessimistic-descs)))
 
 (defmethod initialize-instance :after ((d <blocks-descriptions>) &rest args)
   (declare (ignore args))
-  (setf (heuristic d) (dist-heuristic (desc-domain d))))
+  (let ((dom (desc-domain d)))
+    (setf (heuristic d) (dist-heuristic dom)
+	  (optimistic-descs d) (make-complete-descriptions dom)
+	  (pessimistic-descs d) (make-sound-descriptions dom))))
 
-(make-simple-descriptions (d <blocks-descriptions>) (a s v) 
-  (act () 
-       :progress-optimistic (values (goal (desc-domain d)) (funcall (heuristic d) s))
-       :progress-pessimistic (values (intersect s (goal (desc-domain d))) 0)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Descriptions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; By default reuse the old code in descriptions.lisp
+(defmethod action-description ((d <blocks-descriptions>) (type (eql :optimistic)) name args)
+  (lookup-in-ncstrips-schemas (optimistic-descs d) (cons name args)))
+
+(defmethod action-description ((d <blocks-descriptions>) (type (eql :pessimistic)) name args)
+  (lookup-in-ncstrips-schemas (pessimistic-descs d) (cons name args)))
 
 

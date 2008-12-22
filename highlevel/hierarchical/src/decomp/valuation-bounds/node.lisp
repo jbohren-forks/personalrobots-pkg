@@ -35,7 +35,7 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (add-variable n 'final-pessimistic :external)
 
   ;; Progressed/regressed valuations
-  (with-slots (descs action) n
+  (with-accessors ((descs descs) (action action)) n
     (add-variable n 'my-progressed-optimistic :internal :dependees '(initial-optimistic)
 		  :simple-update-fn (make-alist-function (initial-optimistic) (progress-optimistic descs action initial-optimistic)))
     (add-variable n 'my-progressed-pessimistic :internal :dependees '(initial-pessimistic)
@@ -52,30 +52,10 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (add-variable n 'regressed-pessimistic :internal :update-fn (pessimistic-regressor n) :dependees '(my-regressed-pessimistic)))
 
   
-		
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Subtypes with children should override
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defgeneric child-progressed-optimistic-dependants (n child-id))
-(defgeneric child-progressed-pessimistic-dependants (n child-id))
-(defgeneric child-regressed-optimistic-dependants (n child-id))
-(defgeneric child-regressed-pessimistic-dependants (n child-id))
-(defgeneric child-initial-optimistic-tied-to (n child-id) 
-  (:method ((n <node>) child-id) (declare (ignore child-id)) nil))
-(defgeneric child-initial-pessimistic-tied-to (n child-id)
-  (:method ((n <node>) child-id) (declare (ignore child-id)) nil))
-(defgeneric child-final-optimistic-tied-to (n child-id)
-  (:method ((n <node>) child-id) (declare (ignore child-id)) nil))
-(defgeneric child-final-pessimistic-tied-to (n child-id)
-  (:method ((n <node>) child-id) (declare (ignore child-id)) nil))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subtypes must implement action-node-type, compute-cycle, 
-;; and may implement :after methods for add-child to tie the
-;; input variables of child to variables of node
+;; and :after methods for add-child to tie the
+;; variables of child to variables of node
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgeneric action-node-type (action-class)
@@ -99,41 +79,11 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod add-child ((n <node>) child-id new-node-type &rest args)
-  "Add a child node, and set up communication from and to the child.  The dependencies within the child will be set by its initialize-instance :after method."
-  
-  (debug-out :node 1 t "~&Adding child ~a to node ~a" child-id (action n))
-
-  ;; Add output variables for the children and give them initial values
-  (add-variable n (cons 'child-progressed-optimistic child-id) :external :dependants (child-progressed-optimistic-dependants n child-id) 
-		:initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
-  (add-variable n (cons 'child-progressed-pessimistic child-id) :external :dependants (child-progressed-pessimistic-dependants n child-id) 
-		:initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
-  (add-variable n (cons 'child-regressed-optimistic child-id) :external :dependants (child-regressed-optimistic-dependants n child-id) 
-		:initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
-  (add-variable n (cons 'child-regressed-pessimistic child-id) :external :dependants (child-regressed-pessimistic-dependants n child-id) 
-		:initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
-  
-
-
+  "Add a child node.  The dependencies within the child will be set by its initialize-instance :after method.  Subclasses of <node> should add :after or :around methods to this to set up communication with the child."
   (let ((child (apply #'make-instance new-node-type :parent n args)))
     (setf (evaluate (children n) child-id) child)
-    
-    ;; Set up upward communication
-    (tie-variables child 'progressed-optimistic  n (cons 'child-progressed-optimistic child-id))
-    (tie-variables child 'progressed-pessimistic n (cons 'child-progressed-pessimistic child-id))
-    (tie-variables child 'regressed-optimistic n (cons 'child-regressed-optimistic child-id))
-    (tie-variables child 'regressed-pessimistic n (cons 'child-regressed-pessimistic child-id))
-
-    ;; Set up downward communication if possible (otherwise, parent should ensure that this happens before use)
-    (awhen (child-initial-optimistic-tied-to n child-id)
-      (tie-variables n it child 'initial-optimistic))
-    (awhen (child-initial-pessimistic-tied-to n child-id)
-      (tie-variables n it child 'initial-pessimistic))
-    (awhen (child-final-optimistic-tied-to n child-id)
-      (tie-variables n it child 'final-optimistic))
-    (awhen (child-final-pessimistic-tied-to n child-id)
-      (tie-variables n it child 'final-pessimistic))))
-
+    (debug-out :node 1 t "~&Added child ~a to node ~a" (action child) (action n))))
+  
 
 (defun create-child-for-action (hierarchy node id a)
   (add-child node id (action-node-type (action-class a hierarchy)) :action a))

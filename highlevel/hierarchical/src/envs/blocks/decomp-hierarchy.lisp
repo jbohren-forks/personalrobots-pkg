@@ -6,13 +6,11 @@
 (make-hlas (h <blocks-hierarchy>) (init-opt-set) (left up down right pickupL pickupR stackL stackR turnL turnR finish)
   
   (act () :or 
-       (disjoint-union 
-	'((finish))
-	(ndlet-fail ((b (possibly-clear-blocks init-opt-set))
-		     (s (possibly-clear-surfaces init-opt-set)))
-	  (if (eq b s)
-	      'fail
-	      `((move ,b ,s))))))
+       (ndlet-fail ((b (possibly-clear-blocks init-opt-set))
+		    (s (possibly-clear-surfaces init-opt-set)))
+	 (if (eq b s)
+	   'fail
+	   `((move ,b ,s)))))
 
   (move (b s) :sequence `(((get ,b) (put ,b ,s))))
 

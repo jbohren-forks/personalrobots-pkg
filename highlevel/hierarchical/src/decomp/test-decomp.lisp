@@ -11,6 +11,24 @@
 	:set
 	:vb-node
 	:prop-logic)
+  (:import-from
+   :vb-node
+   :children
+   :child
+   
+   :children-progressed-optimistic
+   :children-progressed-pessimistic
+   :children-regressed-optimistic
+   :children-regressed-pessimistic
+   :child-progressed-optimistic
+   :child-progressed-pessimistic
+   :child-regressed-optimistic
+   :child-regressed-pessimistic
+
+   :status)
+  (:import-from
+   :dep-graph 
+   :graph)
   )
 
 (in-package :test-decomp)

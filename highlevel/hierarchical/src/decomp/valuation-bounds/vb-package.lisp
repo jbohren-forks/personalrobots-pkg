@@ -8,7 +8,7 @@
 
    :compute-cycle
 
-   :make-simple-descriptions
+   :action-description
    :desc-domain
 
    :progress-optimistic

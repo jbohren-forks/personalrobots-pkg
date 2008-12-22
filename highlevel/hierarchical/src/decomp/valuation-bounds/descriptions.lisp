@@ -1,16 +1,40 @@
 (in-package :vb-node)
 
 
+(defgeneric action-description (descs type action-name action-args)
+  (:documentation "Retrieve the description (see angelic/description.lisp) of an action of the form (NAME . ARGS).  TYPE is either :optimistic or :pessimistic."))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Called by algorithms to progress/regress using the 
+;; descriptions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro def-valuation-update (name fn type)
+  (with-gensyms (descs a v)
+    `(defun ,name (,descs ,a ,v)
+       (,fn (action-description ,descs ,type (car ,a) (cdr ,a)) ,v))))
+
+(def-valuation-update progress-optimistic progress-complete-valuation :optimistic)
+(def-valuation-update progress-pessimistic progress-sound-valuation :pessimistic)
+(def-valuation-update regress-optimistic regress-complete-valuation :optimistic)
+(def-valuation-update regress-pessimistic regress-sound-valuation :pessimistic)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Previous version
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+#|
+
+
 (defgeneric progress-optimistic-internal (descs a args v))
 (defgeneric progress-pessimistic-internal (descs a args v))
 (defgeneric regress-optimistic-internal (descs a args v))
 (defgeneric regress-pessimistic-internal (descs a args v))
 (defgeneric desc-domain (descs)
   (:documentation "Return the planning problem corresponding to a set of descriptions"))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Use this when defining descriptions for a domain
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defmacro make-simple-descriptions ((desc-var dtype) (action-var set-var val-var) &body hla-descriptions)
@@ -56,25 +80,4 @@
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Called by algorithms to progress/regress using the 
-;; descriptions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun progress-optimistic (descs a v)
-  (dsbind (name &rest args) a
-    (progress-optimistic-internal descs name args v)))
-
-(defun progress-pessimistic (descs a v)
-  (dsbind (name &rest args) a
-    (progress-pessimistic-internal descs name args v)))
-
-(defun regress-optimistic (descs a v)
-  (dsbind (name &rest args) a
-    (regress-optimistic-internal descs name args v)))
-
-(defun regress-pessimistic (descs a v)
-  (dsbind (name &rest args) a
-    (regress-pessimistic-internal descs name args v)))
-
-       
+|#

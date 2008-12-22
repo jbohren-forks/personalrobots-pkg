@@ -133,6 +133,7 @@
    :make-ncstrips
    :make-ncstrips-schema
    :make-ncstrips-schemas
+   :lookup-in-ncstrips-schemas
    :vacuous-sound-ncstrips-descriptions
    :vacuous-complete-ncstrips-descriptions
    
