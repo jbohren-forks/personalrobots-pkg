@@ -27,6 +27,8 @@ Thus send_command requires a power_node to be operating to be useful.
  This will start up a wx based gui to allow viewing and commanding of the power board.  This simply
 provides a graphical interface to the power_node over ROS.  
 
+\image html view_power.png
+
 @section topic ROS topics
 
 Publishes to (name / type):
