@@ -44,7 +44,7 @@ from robot_msgs.msg import JointCmd
 def point_head_client(pan, tilt):
 
     head_angles.publish(JointCmd(['head_pan_joint', 'head_tilt_joint'],[0.0,0.0],[pan, tilt],[0.0, 0.0],[0.0, 0.0]))
-    sleep(1)
+    sleep(0.5)
 
 if __name__ == "__main__":
 
@@ -58,6 +58,5 @@ if __name__ == "__main__":
        tilt = random.uniform(-0.3, 0.8)
        print tilt
        point_head_client(pan, tilt)
-       sleep(1.5)
 
 
