@@ -7,6 +7,8 @@ rospack_add_executable(ivcon src/ivcon)
 
 find_ros_package(wg_robot_description)
 
+file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/pr2_robot_defs/*.xml)
+
 # xacro file generation
 find_ros_package(xacro)
 
@@ -15,7 +17,7 @@ add_custom_command(
   OUTPUT ${pr2robot}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2robot}.xacro.xml > ${pr2robot}.xml
-  DEPENDS ${pr2robot}.xacro.xml)
+  DEPENDS ${pr2robot}.xacro.xml ${def_files})
 
 
 # Replace the COMMAND block with a call to a version of xacro that reads in
@@ -29,21 +31,21 @@ add_custom_command(
   OUTPUT ${pr2prototype1}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2prototype1}.xacro.xml > ${pr2prototype1}.xml
-  DEPENDS ${pr2prototype1}.xacro.xml)
+  DEPENDS ${pr2prototype1}.xacro.xml ${def_files})
 
 set(pr2arm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_arm")
 add_custom_command(
   OUTPUT ${pr2arm}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2arm}.xacro.xml > ${pr2arm}.xml
-  DEPENDS ${pr2arm}.xacro.xml)
+  DEPENDS ${pr2arm}.xacro.xml ${def_files})
 
 set(pr2gripper "${CMAKE_CURRENT_SOURCE_DIR}/pr2_gripper/pr2_gripper")
 add_custom_command(
   OUTPUT ${pr2gripper}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2gripper}.xacro.xml > ${pr2gripper}.xml
-  DEPENDS ${pr2gripper}.xacro.xml)
+  DEPENDS ${pr2gripper}.xacro.xml ${def_files})
 
 #iv files
 # iterate through all the stl files and generate *.mesh and *.iv files
