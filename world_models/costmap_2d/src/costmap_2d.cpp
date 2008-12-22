@@ -310,6 +310,11 @@ namespace costmap_2d {
   void CostMap2D::saveText(std::string file) { 
     std::ofstream of_text(file.c_str()); 
 
+    if (of_text.fail() || !of_text) {
+      printf("Failed to open file %s.\n", file.c_str());
+      return;
+    }
+
     for (unsigned int i = 0; i < getWidth(); i++) {
       for (unsigned int j = 0; j < getHeight(); j++) {
 	of_text << (int)(getMap()[i + j * getWidth()]) << ",";
@@ -320,6 +325,11 @@ namespace costmap_2d {
 
   void CostMap2D::saveBinary(std::string file) { 
     std::ofstream of(file.c_str(), std::ios::out|std::ios::binary);
+    if (of.fail() || !of) {
+      printf("Failed to open file %s.\n", file.c_str());
+      return;
+    }
+
     of.write(reinterpret_cast<const char*>(getMap()), getWidth() * getHeight() * sizeof (unsigned char*));
     of.close(); 
   }
