@@ -140,13 +140,10 @@ double meval::EvaluateMathExpression(const std::string &expression, ExpressionVa
     unsigned int pos = ops[0];
     std::string exp1 = exp.substr(0, pos);
     std::string exp2 = exp.substr(pos + 1);
-    double val1, val2;
-    val1 = EvaluateMathExpression(exp1, var, data);
-    val2 = EvaluateMathExpression(exp2, var, data);
 
-    // Hack: handles unary minus
-    if (exp1.size() == 0)
-      val1 = 0.0;
+    // handles unary minus, unary plus
+    double val1 = (exp1.empty() && (exp[pos] == '+' || exp[pos] == '-')) ? 0.0 : EvaluateMathExpression(exp1, var, data);
+    double val2 = EvaluateMathExpression(exp2, var, data);
 
     switch (exp[pos])
     {
