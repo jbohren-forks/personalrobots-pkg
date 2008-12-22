@@ -102,7 +102,7 @@ public:
   StereoFaceColorTracker(bool detect_faces, const char *haar_filename, bool use_depth, bool calib_color) : 
     ros::node("stereo_face_color_tracker",ros::node::ANONYMOUS_NAME),
     lcolor_cal_(this),
-    sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration().fromSec(10), &StereoFaceColorTracker::image_cb_timeout),
+    sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration().fromSec(0.05), &StereoFaceColorTracker::image_cb_timeout),
     last_image_time_(ros::Time().fromSec(0)),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
@@ -133,10 +133,10 @@ public:
     people_ = new People();
 
     // Subscribe to the images and parameters
-    sync_.subscribe("dcam/left/image_rect_color",limage_,1);
-    sync_.subscribe("dcam/disparity",dimage_,1);
-    sync_.subscribe("dcam/stereo_info",stinfo_,1);
-    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereodcam/left/image_rect_color",limage_,1);
+    sync_.subscribe("stereodcam/disparity",dimage_,1);
+    sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
+    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
 
     // Advertise a 3d position measurement for each head.
     advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
