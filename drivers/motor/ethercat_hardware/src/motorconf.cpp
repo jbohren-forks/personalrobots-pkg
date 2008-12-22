@@ -72,7 +72,7 @@ void init(char *interface)
   EtherCAT_AL *al;
   if ((al = EtherCAT_AL::instance()) == NULL)
   {
-    fprintf(stderr, "Unable to initialize Application Layer (AL): %08x", (int)al);
+    fprintf(stderr, "Unable to initialize Application Layer (AL): %p", al);
     exit(-1);
   }
 
@@ -87,7 +87,7 @@ void init(char *interface)
   EtherCAT_Master *em;
   if ((em = EtherCAT_Master::instance()) == NULL)
   {
-    fprintf(stderr, "Unable to initialize EtherCAT_Master: %08x", int(em));
+    fprintf(stderr, "Unable to initialize EtherCAT_Master: %p", em);
     exit(-1);
   }
 
