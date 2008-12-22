@@ -1,1 +1,0 @@
-# IBPSBatteryInterface initialization file

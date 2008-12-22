@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-PKG = 'IBPSBatteryInterface'
+PKG = 'ocean_battery_driver'
 
 import rostools
 rostools.update_path(PKG)

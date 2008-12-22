@@ -3,7 +3,7 @@
 
 @htmlinclude manifest.html
 
-@b IBPSBatteryInterface provides an interface to the IBPS battery power system used on the PR2 Robot.
+@b ocean_battery_driver provides an interface to the IBPS battery power system used on the PR2 Robot.
 
 
 @section usage Commandline Usage

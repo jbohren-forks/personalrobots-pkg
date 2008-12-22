@@ -35,7 +35,7 @@
 ## A basic node to listen to and display incoming diagnostic messages using wx
 
 import rostools
-rostools.update_path('IBPSBatteryInterface')
+rostools.update_path('ocean_battery_driver')
 
 import sys
 import rospy
@@ -44,8 +44,8 @@ from robot_msgs.msg import *
 import wx
 import threading, time
 
-import IBPSBatteryInterface
-from IBPSBatteryInterface.ibps_panel import *
+import ocean_battery_driver
+from ocean_battery_driver.ibps_panel import *
 
 NAME = 'pr2_batteries'
 

@@ -32,11 +32,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 """
+ocean_battery_driver
 IBPS battery monitor
 
-To run, invoke rosrun IBPSBatteryInterface monitor
+To run, invoke rosrun ocean_battery_driver monitor
 """
-import rostools; rostools.update_path('IBPSBatteryInterface')
+import rostools; rostools.update_path('ocean_battery_driver')
 
 import os
 import sys
