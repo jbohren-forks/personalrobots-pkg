@@ -136,12 +136,12 @@ public:
 
     advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
-    left_list.push_back(std::string("dcam/left/image_rect"));    
+    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
+    left_list.push_back(std::string("stereodcam/left/image_rect"));    
     sync_.subscribe(left_list,limage_,1);
-    sync_.subscribe("dcam/disparity",dimage_,1);
-    sync_.subscribe("dcam/stereo_info", stinfo_,1);
-    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereodcam/disparity",dimage_,1);
+    sync_.subscribe("stereodcam/stereo_info", stinfo_,1);
+    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
     //subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
