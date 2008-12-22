@@ -11,7 +11,7 @@
 				<border>5</border>
 				<object class="wxStaticBoxSizer">
 					<orient>wxVERTICAL</orient>
-					<label>Power Board</label>
+					<label>Power Board Panel</label>
 					<object class="sizeritem">
 						<option>1</option>
 						<flag>wxEXPAND</flag>
@@ -78,7 +78,7 @@
 								<border>5</border>
 								<object class="wxStaticBoxSizer">
 									<orient>wxVERTICAL</orient>
-									<label>Circuit Breaker 1 (Base)</label>
+									<label>Circuit Breaker 1 (Base Spine)</label>
 									<object class="sizeritem">
 										<option>0</option>
 										<flag>wxALL|wxEXPAND</flag>
