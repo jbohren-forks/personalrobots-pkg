@@ -59,11 +59,12 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
   if(publish_obstacle_cloud == std::string("yes"))
     publish_obstacle_cloud_ = true;
 
-  subscribe(listen_topic_,  cloud_msg_,  &RansacGroundPlaneExtractionNode::cloudCallback,1);
   if(publish_obstacle_cloud_)
     advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
-
   advertise<pr2_msgs::PlaneStamped>(publish_ground_plane_topic_, 1);
+
+  subscribe(listen_topic_,  cloud_msg_,  &RansacGroundPlaneExtractionNode::cloudCallback,1);
+
   ground_plane_extractor_.max_iterations_ = max_ransac_iterations_;
   ground_plane_extractor_.filter_delta_ = filter_delta_;
 }
