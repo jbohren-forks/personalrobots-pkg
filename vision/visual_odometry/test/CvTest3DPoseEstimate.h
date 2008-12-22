@@ -66,6 +66,10 @@ public:
         FrameSeq& frameSeq, CamTracker& tracker);
 
     void setInputData(DataSet data_set);
+    void setUpTracks(const vector<FramePose* >& frame_poses,
+        const CvMat *points,
+        const CvMat& cartToDisp, int oldest_index,
+        PointTracks* tracks);
 
     string input_data_path_;
     string output_data_path_;

@@ -870,7 +870,7 @@ void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
   }
 }
 
-void setUpTracks(const vector<FramePose* >& frame_poses,
+void CvTest3DPoseEstimate::setUpTracks(const vector<FramePose* >& frame_poses,
     const CvMat *points,
     const CvMat& cartToDisp, int oldest_index,
     PointTracks* tracks)
@@ -936,7 +936,9 @@ void setUpTracks(const vector<FramePose* >& frame_poses,
       }
       tracks->tracks_.push_back(point);
     } else {
-      printf("point %d [%5.2f, %5.2f, %5.2f] is not visible\n", ipt, coord.x, coord.y, coord.z);
+      if (verbose_) {
+        printf("point %d [%5.2f, %5.2f, %5.2f] is not visible\n", ipt, coord.x, coord.y, coord.z);
+      }
     }
 
     tracks->oldest_frame_index_in_tracks_ = oldest_index;
