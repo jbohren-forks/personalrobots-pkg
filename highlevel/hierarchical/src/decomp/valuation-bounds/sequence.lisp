@@ -18,20 +18,20 @@
 
 (defmethod optimistic-progressor ((n <sequence-node>))
   (make-simple-alist-updater (my-progressed-optimistic children-progressed-optimistic)
-    (pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
+    (binary-pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
 
 (defmethod pessimistic-progressor ((n <sequence-node>))
   (make-simple-alist-updater (my-progressed-pessimistic children-progressed-pessimistic)
-    (pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
+    (binary-pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
 
 
 (defmethod optimistic-regressor ((n <sequence-node>))
   (make-simple-alist-updater (my-regressed-optimistic children-regressed-optimistic)
-    (pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
+    (binary-pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
 
 (defmethod pessimistic-regressor ((n <sequence-node>))
   (make-simple-alist-updater (my-regressed-pessimistic children-regressed-pessimistic)
-    (pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
+    (binary-pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
 
 
  

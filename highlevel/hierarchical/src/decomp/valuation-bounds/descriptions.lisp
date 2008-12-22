@@ -10,15 +10,20 @@
 ;; descriptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmacro def-valuation-update (name fn type)
-  (with-gensyms (descs a v)
-    `(defun ,name (,descs ,a ,v)
-       (,fn (action-description ,descs ,type (car ,a) (cdr ,a)) ,v))))
+(defun progress-optimistic (descs a v)
+  (progress-complete-valuation (action-description descs :optimistic (car a) (cdr a)) v))
 
-(def-valuation-update progress-optimistic progress-complete-valuation :optimistic)
-(def-valuation-update progress-pessimistic progress-sound-valuation :pessimistic)
-(def-valuation-update regress-optimistic regress-complete-valuation :optimistic)
-(def-valuation-update regress-pessimistic regress-sound-valuation :pessimistic)
+(defun progress-pessimistic (descs a v)
+  (progress-sound-valuation (action-description descs :pessimistic (car a) (cdr a)) v))
+
+(defun regress-optimistic (descs a v1 v2)
+  "Return (an upper bound on) the pointwise max of [the regression of valuation V2 through A] with V1."
+  (regress-complete-valuation (action-description descs :optimistic (car a) (cdr a)) v1 v2))
+
+(defun regress-pessimistic (descs a v1 v2)
+  "Return (a lower bound on) the pointwise min of [the regression of valuation V2 through A] with V1."
+  (regress-sound-valuation (action-description descs :pessimistic (car a) (cdr a)) v1 v2))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

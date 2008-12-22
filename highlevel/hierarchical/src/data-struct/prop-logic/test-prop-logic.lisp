@@ -16,7 +16,7 @@
 (setf f4 (disjoin t (conjoin '(foo) '(bar)) (conjoin (negate '(bar)) (negate '(baz)))))
 (setf f5 (negate '(qux)))
 (setf f6 (conjoin '(foo) (disjoin '(bar) '(baz))))
-
+(setq *dnf-or-method* :naive)
 
 (do-boolean-tests 
     "Propositional formula types"
@@ -105,10 +105,15 @@
     (set-eq con1 con2)))
 
 (defun same-dnf-formula (f1 f2)
-  (each (disjuncts f1)
-	#'(lambda (c1)
-	    (any (disjuncts f2)
-		 #'(lambda (c2) (same-clause c1 c2))))))
+  (and
+   (each (disjuncts f1)
+	 #'(lambda (c1)
+	     (any (disjuncts f2)
+		  #'(lambda (c2) (same-clause c1 c2)))))
+   (each (disjuncts f2)
+	 #'(lambda (c2)
+	     (any (disjuncts f1)
+		  #'(lambda (c1) (same-clause c1 c2)))))))
 
     
 
@@ -117,6 +122,10 @@
  "DNF operations"
  ((dnf-or '(or (and (foo) (bar)) (and (baz) (qux))) '(or (and (bar)) (and (qux) (baz))))
   '(or (and (foo) (bar)) (and (baz) (qux)) (and (bar))) #'same-dnf-formula)
+ ((let ((*dnf-or-method* :check-subsumption))
+    (dnf-or '(or (and (foo) (bar)) (and (baz) (qux))) '(or (and (bar)) (and (qux) (baz)))))
+  '(or (and (bar)) (and (baz) (qux)))
+  #'same-dnf-formula)
  ((dnf-or '(or (and)) '(or)) '(or (and)) #'same-dnf-formula)
  ((dnf-and '(or (and (foo) (bar)) (and (not (foo)) (baz))) '(or (and (qux) (foo)) (and (foo) (not (bar)))))
   '(or (and (foo) (qux) (bar))) #'same-dnf-formula)

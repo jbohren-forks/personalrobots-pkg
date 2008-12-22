@@ -49,10 +49,14 @@
   (:method ((desc function) val) (funcall desc val)))
 
 (defgeneric regress-sound-valuation (desc val1 val2)
-  (:documentation "regress-sound-valuation DESC V1 V2.  If V2 is a lower-bound on backward valuation, and V1 is a lower bound on the previous forward valuation, return a lower bound on the backward valuation before the action with description DESC happens."))
+  (:documentation "regress-sound-valuation DESC V1 V2.  If V2 is a lower-bound on backward valuation, and V1 is a lower bound on the previous forward valuation, return a lower bound on the backward valuation before the action with description DESC happens.")
+  (:method ((desc function) val1 val2)
+    (funcall desc val1 val2)))
 
 (defgeneric regress-complete-valuation (desc val1 val2)
-  (:documentation "regress-complete-valuation DESC V1 V2.  If V2 is an upper-bound on backward valuation, and V1 is an upper bound on the previous forward valuation, return an upper bound on the backward valuation before the action with description DESC happens."))
+  (:documentation "regress-complete-valuation DESC V1 V2.  If V2 is an upper-bound on backward valuation, and V1 is an upper bound on the previous forward valuation, return an upper bound on the backward valuation before the action with description DESC happens.")
+  (:method ((desc function) val1 val2)
+    (funcall desc val1 val2)))
 
 (defgeneric evaluate-valuation (v s)
   (:documentation "evaluate-valuation VALUATION STATE.  Returns an extended real.")
@@ -113,11 +117,6 @@
     (make-simple-valuation (binary-union (sv-s v1) (sv-s v2)) (mymax (sv-v v1) (sv-v v2)))))
 
 
-(defaggregator pointwise-max-lower-bound binary-pointwise-max-lower-bound (make-simple-valuation nil '-infty))
-(defaggregator pointwise-max-upper-bound binary-pointwise-max-upper-bound (make-simple-valuation t '-infty))
-(defaggregator pointwise-min-upper-bound binary-pointwise-min-upper-bound (make-simple-valuation t 'infty))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; sum valuations
@@ -155,9 +154,9 @@
 
 (defclass <simple-description> ()
   ((succ-state-fn :initarg :succ-state-fn :reader succ-state-fn)
+   (predecessor-fn :initarg :predecessor-fn :reader predecessor-fn)
    (reward-fn :initarg :reward-fn :reader reward-fn))
-  (:documentation "A simple description has methods for successor-set and hla-reward.  It then progresses valuations by first finding the successor-set, then calling hla-reward.
-Both the successor and reward functions can be provided using the initargs :succ-state-fn and :reward-fn.  Alternatively, subclasses may override successor-set and hla-reward."))
+  (:documentation "A simple description has methods for successor-set and hla-reward.  It then progresses/regresses valuations by first finding the successor/predecessor-set, then calling hla-reward.   The successor, predecessor and reward functions can be provided using the initargs :succ-state-fn, :predecessor-fn and :reward-fn.  Alternatively, subclasses may override successor-set and hla-reward."))
 
 (defgeneric hla-complete-reward (d s s2)
   (:documentation "hla-complete-reward SIMPLE-DESCRIPTION STATE-SET SUCC-STATE-SET.  
@@ -172,6 +171,9 @@ Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
 
 (defmethod successor-set ((d <simple-description>) s)
   (funcall (succ-state-fn d) s))
+
+(defmethod regress (s1 s2 (d <simple-description>))
+  (funcall (predecessor-fn d) s1 s2))
 
 
 (defmethod progress-sound-valuation ((d <simple-description>) (val simple-valuation))

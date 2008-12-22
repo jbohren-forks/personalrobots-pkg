@@ -35,6 +35,8 @@
 
 (defvars nr nc dom hier descs)
 
+(set-debug-level :decomp 2)
+
 (setf nr 4
       nc 4
       dom (make-blocks-world-with-ceiling nr nc '((a 0 1) (baz 2 1) (c 2 2))

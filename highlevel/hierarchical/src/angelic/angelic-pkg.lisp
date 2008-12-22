@@ -111,9 +111,9 @@
    :regress-complete-valuation
    :reachable-set
    :make-sum-valuation
-   :pointwise-max-upper-bound
-   :pointwise-min-upper-bound
-   :pointwise-max-lower-bound
+   :binary-pointwise-max-upper-bound
+   :binary-pointwise-max-lower-bound
+   :binary-pointwise-min-upper-bound
    
    
    :successor-set

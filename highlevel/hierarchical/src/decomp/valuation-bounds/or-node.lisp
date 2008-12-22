@@ -24,19 +24,19 @@
 
 (defmethod optimistic-progressor ((n <or-node>))
   (make-simple-alist-updater (my-progressed-optimistic children-progressed-optimistic)
-    (pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
+    (binary-pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
 
 (defmethod pessimistic-progressor ((n <or-node>))
   (make-simple-alist-updater (my-progressed-pessimistic children-progressed-pessimistic)
-    (pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
+    (binary-pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
 
 (defmethod optimistic-regressor ((n <or-node>))
   (make-simple-alist-updater (my-regressed-optimistic children-regressed-optimistic)
-    (pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
+    (binary-pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
 
 (defmethod pessimistic-regressor ((n <or-node>))
   (make-simple-alist-updater (my-regressed-pessimistic children-regressed-pessimistic)
-    (pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
+    (binary-pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
 
 
 
@@ -80,25 +80,25 @@
   #'(lambda (l)
       ;; Note that we're treating the case with no children specially
       ;; in optimistic progression and regression
-      (if l
-	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
+      (if l 
+	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 (defmethod child-progressed-pessimistic-aggregator ((n <or-node>))
   #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
 
 (defmethod child-regressed-optimistic-aggregator ((n <or-node>))
   #'(lambda (l)
       ;; Note that we're treating the case with no children specially
       ;; in optimistic progression and regression
       (if l
-	  (reduce #'pointwise-max-upper-bound l :key #'cdr)
+	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 (defmethod child-regressed-pessimistic-aggregator ((n <or-node>))
   #'(lambda (l)
-      (reduce #'pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Compute cycle: update self and pass control to best
@@ -109,7 +109,7 @@
   '<or-node>)
 
 (defmethod compute-cycle ((n <or-node>))
-  (debug-out :or-node 1 t "In compute cycle of or-node ~a with status ~a" (action n) (status n))
+  (debug-out :or-node 1 t "~&In compute cycle of or-node ~a with status ~a" (action n) (status n))
   (ecase (status n)
     (:initial (do-all-updates n) (setf (status n) :create-children))
     (:create-children (or-node-create-children n) (setf (status n) :children-created))

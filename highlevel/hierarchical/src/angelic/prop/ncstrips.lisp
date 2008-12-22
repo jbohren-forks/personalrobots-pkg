@@ -217,7 +217,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defmethod regress (s1 s2 desc)
+(defmethod regress ((s1 <prop-state-set>) (s2 <prop-state-set>) (desc ncstrips))
   (make-prop-state-set (pss-domain s1) (regress-dnf-ncstrips (formula s1) (formula s2) desc )))
 
 

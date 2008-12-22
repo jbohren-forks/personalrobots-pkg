@@ -8,6 +8,8 @@
 (defvar *compound-formula-type* 'hash-table
   "For conjunctions or disjunctions, this variable determines how the set of conjuncts/disjuncts will be represented by default in certain DNF operations.  Currently allowed to be 'list or 'hash-table")
 
+(defvar *dnf-or-method* :check-subsumption "Can be either :naive, which just takes all the non-nil clauses and disjoins them, or :check-subsumption, which additionally checks each clause being or-ed in to see if it subsumes/is subsumed by an existing one.  Should only be set by 'top-level' code.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; creation and type checking
 ;; DNF formulae are disjunctions of conjuncts of literals
@@ -48,9 +50,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun dnf-or (&rest f)
-  "dnf-or &rest DNF-FORMULAE.  Does no type checking or checking for subsumed clauses, but does remove disjuncts that are eql to nil."
-  (disjoin-set
-   (mapcan #'(lambda (x) (remove nil (disjuncts x))) f)))
+  "dnf-or &rest DNF-FORMULAE.  Affected by *dnf-or-method*"
+  
+  (ecase *dnf-or-method*
+    (:naive (disjoin-set (mapcan #'(lambda (x) (remove nil (disjuncts x))) f)))
+    (:check-subsumption
+     (let ((clauses nil))
+       (dolist (formula f (disjoin-set clauses))
+	 (do-elements (clause (disjuncts formula))
+	   (when clause
+	     (dolist (cl clauses (push clause clauses))
+	       (cond
+		 ((clause-implies clause cl) (return nil)) ;; skip this clause
+		 ((clause-implies cl clause) (setq clauses (delete cl clauses))))))))))))
+       
+	 
+	 
+	    
 
 (defun dnf-and (&rest f)
   "dnf-and &rest DNF-FORMULAE.  The logical and of the formulae.  Repeatedly uses the 'distributive law'.  Also checks for contradictions or nil within clauses."
@@ -114,6 +130,9 @@
 	       (etypecase lits
 		 (list (pop lits))
 		 (hash-table (remhash l lits))))))))))
+
+(defun clause-implies (cl1 cl2)
+  (subset (conjuncts cl2) (conjuncts cl1)))
       
 
 (defun dnf-consistent (f1 f2)

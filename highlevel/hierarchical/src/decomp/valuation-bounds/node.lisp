@@ -3,12 +3,13 @@
 (define-debug-topic :node :vb-node)
 
 (defclass <node> (<dependency-graph>)
-  ((action :initarg :action :reader action)
+  ((id :initarg :action :reader action)
    (descs :initarg :descs)
    (domain :initarg :domain)
    (hierarchy :initarg :hierarchy)
    (root-node :writer set-root-node :reader root-node)
    (children :reader children :initform (make-hash-table :test #'eql)) 
+   
 
    (status :accessor status)
    
@@ -35,15 +36,18 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (add-variable n 'final-pessimistic :external)
 
   ;; Progressed/regressed valuations
+  ;; Assymetric in that progressed valuations depend on just the initial ones, but regressed valuations depend on
+  ;; not just the final ones but also the initial ones.  This is because otherwise, esp. for higher level actions,
+  ;; theree would be a huge number of irrelevant states in the regressed set
   (with-accessors ((descs descs) (action action)) n
     (add-variable n 'my-progressed-optimistic :internal :dependees '(initial-optimistic)
 		  :simple-update-fn (make-alist-function (initial-optimistic) (progress-optimistic descs action initial-optimistic)))
     (add-variable n 'my-progressed-pessimistic :internal :dependees '(initial-pessimistic)
 		  :simple-update-fn (make-alist-function (initial-pessimistic) (progress-pessimistic descs action initial-pessimistic)))
-    (add-variable n 'my-regressed-optimistic :internal :dependees '(final-optimistic)
-		  :simple-update-fn (make-alist-function (final-optimistic) (regress-optimistic descs action final-optimistic)))
-    (add-variable n 'my-regressed-pessimistic :internal :dependees '(final-pessimistic)
-		  :simple-update-fn (make-alist-function (final-pessimistic) (regress-pessimistic descs action final-pessimistic))))
+    (add-variable n 'my-regressed-optimistic :internal :dependees '(initial-optimistic final-optimistic)
+		  :simple-update-fn (make-alist-function (initial-optimistic final-optimistic) (regress-optimistic descs action initial-optimistic final-optimistic)))
+    (add-variable n 'my-regressed-pessimistic :internal :dependees '(initial-pessimistic final-pessimistic)
+		  :simple-update-fn (make-alist-function (initial-pessimistic final-pessimistic) (regress-pessimistic descs action initial-pessimistic final-pessimistic))))
 
   ;; Outputs to parents.  Subclass will define the update functions (progressor/regressor).  Subclass :after method can add additional dependees of these variables.
   (add-variable n 'progressed-optimistic :internal :update-fn (optimistic-progressor n) :dependees '(my-progressed-optimistic))

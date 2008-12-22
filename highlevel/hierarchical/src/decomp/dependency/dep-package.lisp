@@ -18,6 +18,8 @@
    :new-val-diff
    :new-val
    :tie-variables
+   :id
+   :dep-graph-id
 
    :make-simple-update-fn
    :make-simple-aggregator

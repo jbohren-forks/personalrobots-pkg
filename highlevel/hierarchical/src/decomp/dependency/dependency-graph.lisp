@@ -16,6 +16,7 @@
 (defclass <dependency-graph> ()
   ((var-descs :reader var-descs :initform (make-hash-table :test #'equal))
    (graph :reader graph :initform (make-instance '<adjacency-list-graph> :node-test #'equal))
+   (id :initform (gensym) :initarg :id :reader dep-graph-id)
    (uninitialized-value :reader uninitialized-value :initform (gensym))
    (out-of-date-vars :initform (make-hash-table :test #'equal) :reader out-of-date-vars)))
 
@@ -47,6 +48,8 @@ If INITIAL-VALUE is supplied, it's used to initialize the variable, which must b
   (assert (ecase type
 	    (:internal (xor update-fn simple-update-fn))
 	    (:external (and (not update-fn) (not simple-update-fn) (null dependees)))))
+  (debug-out :decomp 0 t "~&Adding variable ~a of type ~a with dependees ~a and dependants ~a to dependency-graph ~a" name type dependees dependants (dep-graph-id g))
+  
   (when simple-update-fn (setf update-fn (make-simple-update-fn simple-update-fn)))
 
   ;; Add this variable's description
@@ -165,8 +168,8 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 	(setf (edge-label e) nil)))
     
 
-    (debug-out :dep-graph 1 t "~&Updating variable ~a~& Value: ~a~& Parents: ~a~& Parent-vals: ~a" 
-	       v (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
+    (debug-out :dep-graph 1 t "~&Updating variable ~a of dep graph ~a~& Value: ~a~& Parents: ~a~& Parent-vals: ~a" 
+	       v (dep-graph-id g) (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
 
 
     (loop
@@ -181,7 +184,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 (defun change-variable (v new-val diff g)
   (let ((desc (get-var-desc v g)))
     (setf (current-val desc) new-val)
-    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph to ~a" v new-val)
+    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to ~a" v new-val (dep-graph-id g))
     (propagate-diff v g diff)
     (dolist (h (update-hooks desc))
       (funcall h new-val diff))))
