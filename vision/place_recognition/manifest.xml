@@ -1,0 +1,18 @@
+<package>
+  <description>
+    Place recognition using a vocabulary tree.
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="boost"/>
+  <depend package="eigen"/>
+  <depend package="star_detector"/>
+  <depend package="calonder_descriptor"/>
+  <depend package="visual_odometry"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>
+  </export>
+</package>
