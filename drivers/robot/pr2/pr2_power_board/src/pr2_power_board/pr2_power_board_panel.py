@@ -87,7 +87,7 @@ class PowerBoardPanel(wx.Panel):
 
         self.voltages = [0,0,0]
         self.breaker_state = ["", "", ""]
-        self.estop_wireless_status = "uninitialized"
+        self.estop_wireless_status = "uninitialized, no power_node sending data"
         self.estop_button_status = "uninitialized"
 
         self.breaker0_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl1')
