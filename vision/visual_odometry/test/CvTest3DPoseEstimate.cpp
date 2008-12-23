@@ -221,7 +221,7 @@ bool CvTest3DPoseEstimate::test() {
     break;
   }
   case BundleAdjSeq: {
-    testBundleAdjSeq(false, false, false);
+    testBundleAdjSeq(true, true, true);
     break;
   }
   default:
@@ -247,7 +247,8 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   switch(data_set) {
   case SyntheticDiskLoop: {
     img_size_ = cvSize(640, 480);
-    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    setCameraParams(389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95);
+//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     string dirname("/home/jdchen/Data/SyntheticLoopDisk");
     string leftimgfmt("/loop-%06d-L.png");
     string rightimgfmt("/loop-%06d-R.png");
@@ -267,7 +268,8 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   }
   case SyntheticDiskLoopNoisy: {
     img_size_ = cvSize(640, 480);
-    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    setCameraParams(389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95);
+//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     string dirname("/home/jdchen/Data/SyntheticLoopDiskNoisy");
     string leftimgfmt("/loop-noisy-%06d-L.png");
     string rightimgfmt("/loop-noisy-%06d-R.png");
@@ -287,8 +289,9 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   }
   case SyntheticDiskLoopNoisy2: {
     img_size_ = cvSize(640, 480);
-    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
-    string dirname("/home/jdchen/Data/SyntheticDiskLoopNoisy2");
+    setCameraParams(389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95);
+//    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/home/jdchen/Data/SyntheticLoopDiskNoisy2");
     string leftimgfmt("/loop-noisy2-%06d-L.png");
     string rightimgfmt("/loop-noisy2-%06d-R.png");
     string dispimgfmt("/dispmap-%06d.xml");
@@ -307,7 +310,8 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
   }
   case SyntheticLoop1: {
     img_size_ = cvSize(640, 480);
-    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    setCameraParams(389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95);
+
     string dirname("/home/jdchen/Data/SyntheticLoop1");
     string leftimgfmt("/loop-%06d-L.png");
     string rightimgfmt("/loop-%06d-R.png");
@@ -386,7 +390,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
 //  setInputData(James4);
 //  setInputData(SyntheticDiskLoop);
-  setInputData(SyntheticDiskLoopNoisy);
+    setInputData(SyntheticDiskLoopNoisy);
+//    setInputData(SyntheticDiskLoopNoisy2);
   //  setInputData(SyntheticLoop1);
 
 
@@ -1409,17 +1414,17 @@ bool CvTest3DPoseEstimate::testBundleAdjSeq(
     disturbFrames(disturbed_frames);
   }
 
-  // disturb the point parameters.
-  // The disturbed points are to be used as initial guess of the
-  // tracks.
-  CvMat* disturbed_points = (CvMat*)cvClone(points);
   if (disturb_points == true) {
-    disturbPoints(points, disturbed_points);
+    disturbPoints(&all_tracks);
   }
 
-  int full_fixed_win_size = 3;
-  int full_free_win_size  = 10;
-  int max_num_iters = 10;
+  if (disturb_obsvs == true) {
+    disturbObsvs(&all_tracks);
+  }
+
+  int full_fixed_win_size = 1;
+  int full_free_win_size  = 1;
+  int max_num_iters = 100;
   double epsilon = DBL_EPSILON;
 //  epsilon = FLT_EPSILON;
 //  epsilon = LDBL_EPSILON;
@@ -1490,11 +1495,14 @@ bool CvTest3DPoseEstimate::testBundleAdjSeq(
       all_tracks.print();
     }
 
-//    sba.optimize(&fixed_frames, &free_frames, &tracks);
+    sba.optimize(&fixed_frames, &free_frames, &tracks);
 
     vis.show(NULL, fixed_frames, free_frames, tracks);
     vis.save();
 
+    BOOST_FOREACH(PointTrack* pt, tracks.tracks_) {
+      delete pt;
+    }
   }
 
   cout << "Final Pose"<<endl;
@@ -1510,7 +1518,6 @@ bool CvTest3DPoseEstimate::testBundleAdjSeq(
   BOOST_FOREACH(PointTrack* pt, all_tracks.tracks_) {
     delete pt;
   }
-  cvReleaseMat(&disturbed_points);
   return status;
 }
 
