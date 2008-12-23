@@ -89,9 +89,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), sba = None),
+      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
       VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = (3,10,10)),
-      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 1.0, sba = (3,10,10)),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
@@ -118,6 +117,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
     if start <= framecounter and (framecounter % 1) == 0:
       imgR = imgAdapted(msg.images[0])
       imgL = imgAdapted(msg.images[1])
+      # jdc debugging
+      # Image.fromstring("L", imgL.size, imgL.tostring()).save("/tmp/mkplot-left.png")
       if not first_pair:
         first_pair = (imgL, imgR)
 
