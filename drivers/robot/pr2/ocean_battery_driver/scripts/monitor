@@ -300,7 +300,7 @@ def current_value(b, value):
     else:
         val = (intval - 65636.0)
     #print 'current is %f'%(val/1000.0)
-    return val
+    return val/1000
 def voltage_value(b, value):
     return float(hex2dec(value))/1000.0
 def temperature_value(b, value):
@@ -355,7 +355,7 @@ battery_keys = {
     '16': (battery_status, 'battery_status'),
     '17': (float_hex2dec, 'cycle_count'),
     '18': (capacity_mode_float_hex2dec, 'design_capacity'),
-    '19': (capacity_mode_float_hex2dec, 'design_voltage'),
+    '19': (voltage_value, 'design_voltage'),
     ## @todo 0x1A specification info bit field parsing
     ## @todo 0x1B manufacture date bit field parsing
     '1C': (str_hex2dec, 'serial_number'),
