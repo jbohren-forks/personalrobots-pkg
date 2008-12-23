@@ -69,9 +69,9 @@ void Joint::enforceLimits(JointState *s)
     // Computes the velocity bounds based on the absolute limit and the
     // proximity to the joint limit.
     vel_high = min(velocity_limit_,
-                   -k_position_limit_ * min(0.0, s->position_ - pos_high));
+                   -k_position_limit_ * (s->position_ - pos_high));
     vel_low = max(-velocity_limit_,
-                  -k_position_limit_ * max(0.0, s->position_ - pos_low));
+                  -k_position_limit_ * (s->position_ - pos_low));
   }
   else
   {
@@ -83,9 +83,9 @@ void Joint::enforceLimits(JointState *s)
   if (velocity_limit_ >= 0.0)
   {
     effort_high = min(effort_limit_,
-                      -k_velocity_limit_ * min(0.0, s->velocity_ - vel_high));
+                      -k_velocity_limit_ * (s->velocity_ - vel_high));
     effort_low = max(-effort_limit_,
-                     -k_velocity_limit_ * max(0.0, s->velocity_ - vel_low));
+                     -k_velocity_limit_ * (s->velocity_ - vel_low));
   }
   else
   {
