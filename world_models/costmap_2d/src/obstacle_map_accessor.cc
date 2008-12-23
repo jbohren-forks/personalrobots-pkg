@@ -95,4 +95,36 @@ namespace costmap_2d {
     }
     return ss.str();
   }
+
+  double ObstacleMapAccessor::computeWX(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy){
+    unsigned int mx, my;
+    costMap.WC_MC(wx, wy, mx, my);
+
+    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+    unsigned int origin_mx(0);
+
+    if(mx > cellWidth/2)
+      origin_mx = mx - cellWidth/2;
+
+    if(origin_mx + cellWidth > costMap.getWidth())
+      origin_mx = costMap.getWidth() - cellWidth - 1;
+
+    return origin_mx * costMap.getResolution();
+  }
+
+  double ObstacleMapAccessor::computeWY(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy){
+    unsigned int mx, my;
+    costMap.WC_MC(wx, wy, mx, my);
+
+    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+    unsigned int origin_my(0);
+
+    if(my > cellWidth/2)
+      origin_my = my - cellWidth/2;
+
+    if(origin_my + cellWidth > costMap.getHeight())
+      origin_my = costMap.getHeight() - cellWidth - 1;
+
+    return origin_my * costMap.getResolution();
+  }
 }

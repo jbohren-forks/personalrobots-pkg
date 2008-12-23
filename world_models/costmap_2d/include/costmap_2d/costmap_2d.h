@@ -65,6 +65,10 @@
 #include <string>
 #include <queue>
 
+namespace std_msgs {
+  class Point2DFloat32;
+};
+
 namespace costmap_2d {
 
   typedef unsigned char TICK;
@@ -120,11 +124,13 @@ namespace costmap_2d {
      * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
      * @param weight the scaling factor in the cost function. Should be <=1. Lower values reduce the effective cost
+     * @param raytraceWindow the size of the window in which raytracing is done.
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, unsigned char threshold, 
 	      double maxZ = 0.5,  double zLB = 0.15, double zUB = 0.20,
-	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1, double obstacleRange = 10.0, double raytraceRange = 10.0);
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1, double obstacleRange = 10.0, double raytraceRange = 10.0,
+	      double raytraceWindow = 2.5);
   
     /**
      * @brief Destructor.
@@ -192,7 +198,6 @@ namespace costmap_2d {
      * @param name The filename to save.
      */
     void saveBinary(std::string name);
-
   private:
 
     /**
@@ -273,6 +278,7 @@ namespace costmap_2d {
     const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
     const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
     const double weight_;  /**< The weighting to apply to a normalized cost value */
+    const double raytraceWindow_; /**< The window in which statics are raytraced */
 
     //used squared distance because square root computations are expensive
     double sq_obstacle_range_; /** The range out to which we will consider laser hitpoints **/
@@ -285,6 +291,8 @@ namespace costmap_2d {
     double** cachedDistances; /**< Cached distances indexed by dx, dy */  
     const unsigned int kernelWidth_; /**< The width of the kernel matrix, which will be square */
     unsigned char* kernelData_; /**< kernel data structure for cost map updates around the robot */
+    const unsigned int raytraceCells_; /**< Raytracing cells */
+    double robotX_, robotY_; /**< The position of the robot */
   };
 
   /**
@@ -308,8 +316,6 @@ namespace costmap_2d {
 
   private:
 
-    static double computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy);
-    static double computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy);
     static unsigned int computeSize(double maxSize, double resolution);
 
     const CostMap2D& costMap_;

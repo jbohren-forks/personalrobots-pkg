@@ -18,6 +18,7 @@
     <param name="/costmap_2d/inflation_radius" value="0.55"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
 
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
