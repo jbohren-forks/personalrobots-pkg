@@ -82,13 +82,11 @@ class NavStackTest(unittest.TestCase):
         self.p3d_y = 0
         self.p3d_q = [0,0,0,0]
 
-        # parameters
+        # default parameters
         self.nav_tol      = 0.1
         self.odom_tol     = 1.0
         self.test_timeout = 50.0
-
-        # starting position of the robot is 25.65, 25.65 (center of map)
-        # goal position
+        # note: starting position of the robot is 25.65, 25.65 (center of map)
         self.target_x =  25.65
         self.target_y =  25.65
         self.target_t =  0.0
@@ -172,8 +170,6 @@ class NavStackTest(unittest.TestCase):
 
         rospy.init_node(NAME, anonymous=True)
 
-        timeout_t = time.time() + self.test_timeout
-
         # get goal from commandline
         print "------------------------"
         for i in range(0,len(self.args)):
@@ -199,8 +195,15 @@ class NavStackTest(unittest.TestCase):
             if len(self.args) > i+1:
               self.odom_tol = float(self.args[i+1])
               print "odom_tol set to:",self.odom_tol
+          if self.args[i] == '-timeout':
+            if len(self.args) > i+1:
+              self.test_timeout = float(self.args[i+1])
+              print "test_timeout set to:",self.test_timeout
         print " target:", self.target_x, self.target_y, self.target_t
         print "------------------------"
+
+        timeout_t = time.time() + self.test_timeout
+
         # wait for result
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             # send goal
