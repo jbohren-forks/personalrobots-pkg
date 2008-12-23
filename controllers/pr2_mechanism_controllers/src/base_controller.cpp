@@ -890,7 +890,10 @@ void BaseControllerNode::update()
       out2.parent_id = "base_link";
       out2.transform.translation.x = 0;
       out2.transform.translation.y = 0;
-      out2.transform.translation.z = -c_->wheel_radius_;
+
+      // FIXME: this is the offset between base_link origin and the ideal floor
+      out2.transform.translation.z = -0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
+
       out2.transform.rotation.x = 0;
       out2.transform.rotation.y = 0;
       out2.transform.rotation.z = 0;
