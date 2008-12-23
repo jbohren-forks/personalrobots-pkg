@@ -62,7 +62,7 @@ using namespace boost::accumulators;
 #include <queue>
 
 #define DISPLAY 1
-//#define DEBUG 1
+#define DEBUG 1
 
 VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
     int num_fixed_frames, int num_free_frames):
@@ -356,7 +356,13 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
       BOOST_FOREACH(PointTrackObserv* obsv, *track) {
         boost::unordered_map<int, FramePose*>::const_iterator it;
         it = map_index_to_FramePose_->find(obsv->frame_index_);
-        assert(it!=map_index_to_FramePose_->end());
+        if (it == map_index_to_FramePose_->end()) {
+#if DEBUG==1
+          printf("frame %d is missing in frame lists but referenced by track %d\n",
+              obsv->frame_index_, track->id_);
+#endif
+          continue;
+        }
         const FramePose* fp = it->second;
         assert(obsv->frame_index_ == fp->mIndex);
 
@@ -463,16 +469,33 @@ void SBAVisualizer::show(IplImage* im, const vector<FramePose*>& fixed_frames,
   reset();
   // set frame poses, point tracks and maps from index to frame poses
   vector<FramePose* > frame_poses;
+#if DEBUG==1
+  cout << ("Inserting fixed frames [");
+#endif
+  BOOST_FOREACH(FramePose *fp, fixed_frames) {
+    frame_poses.push_back(fp);
+    map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));
+#if DEBUG==1
+    printf("%d ", fp->mIndex);
+#endif
+  }
+#if DEBUG==1
+  cout << endl;
+#endif
+
+#if DEBUG==1
+  cout << ("Inserting free frames [");
+#endif
   BOOST_FOREACH(FramePose *fp, free_frames) {
     frame_poses.push_back(fp);
     map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
-    printf("Inserting free frame: %d\n", fp->mIndex);
+#if DEBUG==1
+    printf("%d ", fp->mIndex);
+#endif
   }
-  BOOST_FOREACH(FramePose *fp, fixed_frames) {
-    frame_poses.push_back(fp);
-    map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
-    printf("Inserting fixed frame: %d\n", fp->mIndex);
-  }
+#if DEBUG==1
+  cout << endl;
+#endif
   this->framePoses = &frame_poses;
   this->tracks = &tracks;
   FramePose* fp = free_frames.back();

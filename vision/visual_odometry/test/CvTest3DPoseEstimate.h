@@ -71,6 +71,9 @@ public:
         const CvMat& cartToDisp, int oldest_index,
         PointTracks* tracks);
 
+    int selectTracks(const vector<FramePose*>* frames,
+        const PointTracks* all_tracks, PointTracks* tracks);
+
     string input_data_path_;
     string output_data_path_;
     bool   verbose_;
@@ -93,6 +96,7 @@ protected:
     void loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
     void disturbFrames(vector<FramePose*>& free_frames);
     void disturbPoints(PointTracks* tracks);
+    void disturbPoints(const CvMat* points, CvMat* disturbPoints);
     void disturbObsvs(PointTracks* tracks);
     CvPoint3D64f mEulerAngle;
     CvPoint3D64f mTranslation;

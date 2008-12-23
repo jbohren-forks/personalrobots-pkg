@@ -181,6 +181,14 @@ public:
   transf_global_to_disp_(NULL)
   {}
 
+  FramePose(const FramePose& fp)
+  :mIndex(fp.mIndex),
+  transf_local_to_global_(cvMat(4,4,CV_64FC1, transf_local_to_global_data_)),
+  transf_global_to_disp_(NULL)
+  {
+    cvCopy(&(fp.transf_local_to_global_), &transf_local_to_global_);
+  }
+
   ~FramePose() {
     if (transf_global_to_disp_)
       cvReleaseMat(&transf_global_to_disp_);

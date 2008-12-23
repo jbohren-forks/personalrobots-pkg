@@ -814,20 +814,15 @@ void synthesizeFrames(const string& data_path) {
       "frames in euler/meter, straight forward, .01 meter each step");
 }
 
-void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
+void setupSceeneTorusFrames(vector <FramePose*>* frames) {
   double param_data[6];
   CvMat  param = cvMat(6, 1, CV_64FC1, param_data);
   double transf_global_to_local_data[16];
   CvMat  transf_global_to_local = cvMat(4, 4, CV_64FC1, transf_global_to_local_data);
-  int numPtsPerCircle = 36;
-  int numStepsForPts = 72;
   // make sure that the last pose is back to where it starts.
   // Hence we need one extra cam.
   int numCams = 73;
-  CvMat *pt = cvCreateMat(numStepsForPts*numPtsPerCircle, 3, CV_64FC1);
-  *points = pt;
   double R = 10.0; // 10  meters
-  double r = 1.0;  // 1.0 meters
   for (int iu= 0; iu < numCams; iu++) {
     double u = 2.0*CV_PI*(double)iu/(double)(numCams-1);
 
@@ -852,12 +847,22 @@ void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
     printf("iu %d, fi %d, u=%f, cos=%f, sin=%f\n", iu, fp->mIndex, u, cos(u), sin(u));
     CvMatUtils::printMat(&fp->transf_local_to_global_);
   }
+}
 
+void setupSceneTorusPointsRegular(CvMat **points) {
+  int numPtsPerCircle = 36;
+  int numStepsForPts = 36;
+  CvMat *pt = cvCreateMat(numStepsForPts*numPtsPerCircle, 3, CV_64FC1);
+  *points = pt;
+  double R = 10.0; // 10  meters
+  double r = 1.0;  // 1.0 meters
   int i=0;
   for (int iu= 0; iu < numStepsForPts; iu++) {
     double u = 2.*CV_PI*(double)iu/(double)numStepsForPts;
+    // the ones on this circle are between those on the last circle in angles.
+    double offset = (iu%2==0)?0.:(.5* 2.*CV_PI/(double)numStepsForPts);
     for (int iv=0; iv < numPtsPerCircle; iv++) {
-      double v = 2.0*CV_PI*(double)iv/numPtsPerCircle;
+      double v = 2.0*CV_PI*(double)iv/numPtsPerCircle + offset;
       CvPoint3D64f point;
       point.x = (R + r * cos(v)) * cos(u);
       point.y = r * sin(v);
@@ -868,6 +873,11 @@ void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
       i++;
     }
   }
+}
+
+void setupSceneTorus(vector<FramePose*>* frames, CvMat** points) {
+  setupSceeneTorusFrames(frames);
+  setupSceneTorusPointsRegular(points);
 }
 
 void CvTest3DPoseEstimate::setUpTracks(const vector<FramePose* >& frame_poses,
@@ -891,28 +901,29 @@ void CvTest3DPoseEstimate::setUpTracks(const vector<FramePose* >& frame_poses,
     coord.x = cvmGet(points, ipt, 0);
     coord.y = cvmGet(points, ipt, 1);
     coord.z = cvmGet(points, ipt, 2);
-    // convert from coord to disp_coord0 and disp_coord1
-    CvMatUtils::invertRigidTransform(&frame_poses[0]->transf_local_to_global_, global_to_local);
-    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
-    cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
-    CvMatUtils::invertRigidTransform(&frame_poses[1]->transf_local_to_global_, global_to_local);
-    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
-    cvPerspectiveTransform(&global_point, &disp_point1, global_to_disp);
 
     int fi1 = 1;
     // find the first pair that is visible in consecutive frames
 
-    PointTrackObserv* obsv0;
-    PointTrackObserv* obsv1;
+    PointTrackObserv* obsv0=NULL;
+    PointTrackObserv* obsv1=NULL;
     for (fi1=1; fi1<frame_poses.size(); fi1++) {
-      obsv0 = new PointTrackObserv(frame_poses[fi1-1]->mIndex, disp_coord0, ipt);
-      obsv1 = new PointTrackObserv(frame_poses[fi1  ]->mIndex, disp_coord1, ipt);
+      // convert from coord to disp_coord0 and disp_coord1
+      CvMatUtils::invertRigidTransform(&frame_poses[fi1-1]->transf_local_to_global_, global_to_local);
+      cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+      cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+      CvMatUtils::invertRigidTransform(&frame_poses[fi1  ]->transf_local_to_global_, global_to_local);
+      cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+      cvPerspectiveTransform(&global_point, &disp_point1, global_to_disp);
       if (left  <= disp_coord0.x && disp_coord0.x < right  &&
           upper <= disp_coord0.y && disp_coord0.y < lower &&
           0< disp_coord0.z &&
           left  <= disp_coord1.x && disp_coord1.x < right  &&
           upper <= disp_coord1.y && disp_coord1.y < lower &&
           0 < disp_coord1.z ) {
+        // found the first pair for a new track.
+        obsv0 = new PointTrackObserv(frame_poses[fi1-1]->mIndex, disp_coord0, -1);
+        obsv1 = new PointTrackObserv(frame_poses[fi1  ]->mIndex, disp_coord1, -1);
         break;
       }
     }
@@ -927,7 +938,7 @@ void CvTest3DPoseEstimate::setUpTracks(const vector<FramePose* >& frame_poses,
         if (left  <= disp_coord0.x && disp_coord0.x < right  &&
             upper <= disp_coord0.y && disp_coord0.y < lower &&
             0 < disp_coord0.z) {
-          PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, ipt);
+          PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, -1);
           point->extend(obsv);
         } else {
           // this track is not visible anymore.
@@ -1016,6 +1027,16 @@ void CvTest3DPoseEstimate::disturbPoints(PointTracks* tracks) {
     printf("Disturbed Points:\n");
     tracks->print();
   }
+}
+
+void CvTest3DPoseEstimate::disturbPoints(const CvMat* points, CvMat* disturbed_points) {
+  double disturb_scale = .0001;
+  double sigma = disturb_scale/2.0; // ~ 95%
+  int numPoints = points->rows;
+  CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
+  cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+  cvAdd(points, xyzsNoised, disturbed_points);
+  cvReleaseMat(&xyzsNoised);
 }
 
 void CvTest3DPoseEstimate::disturbObsvs(PointTracks* tracks) {
@@ -1282,6 +1303,72 @@ bool CvTest3DPoseEstimate::testBundleAdj(
   return status;
 }
 
+int CvTest3DPoseEstimate::selectTracks(const vector<FramePose*>* frames,
+    const PointTracks* all_tracks, PointTracks* tracks){
+  int numSelectedTracks = 0;
+  boost::unordered_set<int> frame_index_set;
+  BOOST_FOREACH(const FramePose* fp, *frames) {
+    frame_index_set.insert(fp->mIndex);
+  }
+  BOOST_FOREACH(const PointTrack* pt, all_tracks->tracks_) {
+    // 0: not finding the first frame in track yet
+    // 1: found the first frame in track
+    // 2: found the next frame in track
+    // 3: found the first frame not in track after some in track
+    //    frames.
+    int state = 0;
+    PointTrackObserv* obsv0 = NULL;
+    PointTrackObserv* obsv1 = NULL;
+    PointTrack* point_track = NULL;
+    BOOST_FOREACH(const PointTrackObserv* obsv, *pt) {
+      if (frame_index_set.find(obsv->frame_index_) == frame_index_set.end()) {
+        switch(state) {
+        case 0:
+          // still not finding the first frame in the track yet.
+          break;
+        case 1:
+          // unfortunately the next frame is not in track.
+          state = 0;
+          delete obsv0;
+          obsv0 = NULL;
+          break;
+        case 2:
+          // found the first frame not in track after some in track.
+          state = 3;
+          break;
+        }
+      } else {
+        switch(state) {
+        case 0:
+          // found the first frame in track
+          state = 1;
+          // make a copy of obsv
+          obsv0 = new PointTrackObserv(obsv->frame_index_, obsv->disp_coord_, obsv->keypoint_index_);
+          break;
+        case 1:
+          // found the next frame in track. Create a track in tracks
+          state = 2;
+          obsv1 = new PointTrackObserv(obsv->frame_index_, obsv->disp_coord_, obsv->keypoint_index_);
+          point_track = new PointTrack(obsv0, obsv1, pt->coordinates_, pt->id_);
+          tracks->tracks_.push_back(point_track);
+          numSelectedTracks++;
+          break;
+        case 2:
+          // extend the track.
+          obsv0 = new PointTrackObserv(obsv->frame_index_, obsv->disp_coord_, obsv->keypoint_index_);
+          point_track->extend(obsv0);
+          break;
+        }
+      }
+      if (state == 3) {
+        // done with this track
+        break;
+      }
+    }
+  }
+  return numSelectedTracks++;
+}
+
 bool CvTest3DPoseEstimate::testBundleAdjSeq(
     bool disturb_frames, bool disturb_points, bool disturb_obsvs) {
   bool status = true;
@@ -1305,6 +1392,30 @@ bool CvTest3DPoseEstimate::testBundleAdjSeq(
   CvMat* points;
 
   setupSceneTorus(&frame_poses, &points);
+
+  // set up all the tracks w.r.t. all the frames
+  PointTracks all_tracks;
+  setUpTracks(frame_poses, points, cartToDisp, 0, &all_tracks);
+
+  cout << "All Tracks"<<endl;
+  all_tracks.print();
+
+  vector<FramePose*> disturbed_frames;
+  BOOST_FOREACH(FramePose* fp, frame_poses){
+    FramePose* fp_disturbed = new FramePose(*fp);
+    disturbed_frames.push_back(fp_disturbed);
+  }
+  if (disturb_frames == true) {
+    disturbFrames(disturbed_frames);
+  }
+
+  // disturb the point parameters.
+  // The disturbed points are to be used as initial guess of the
+  // tracks.
+  CvMat* disturbed_points = (CvMat*)cvClone(points);
+  if (disturb_points == true) {
+    disturbPoints(points, disturbed_points);
+  }
 
   int full_fixed_win_size = 3;
   int full_free_win_size  = 10;
@@ -1370,23 +1481,36 @@ bool CvTest3DPoseEstimate::testBundleAdjSeq(
       cout << fp->mIndex << " ";
     }
     cout << "]"<<endl;
-    // set up tracks
+    // select the tracks that are visible to current frame windows
     PointTracks tracks;
-    setUpTracks(active_frames, points, cartToDisp, 0, &tracks);
+    int numSelectedTracks = selectTracks(&active_frames, &all_tracks, &tracks);
+    cout << "selected "<< numSelectedTracks << " tracks" << endl;
 
-    sba.optimize(&fixed_frames, &free_frames, &tracks);
+    if (numSelectedTracks == 0) {
+      all_tracks.print();
+    }
+
+//    sba.optimize(&fixed_frames, &free_frames, &tracks);
 
     vis.show(NULL, fixed_frames, free_frames, tracks);
     vis.save();
 
-    //    remove the tracks
-    BOOST_FOREACH(PointTrack* pt, tracks.tracks_) {
-      delete pt;
-    }
   }
 
   cout << "Final Pose"<<endl;
   CvMatUtils::printMat(&frame_poses.back()->transf_local_to_global_);
+
+  BOOST_FOREACH(FramePose* fp, frame_poses){
+    delete fp;
+  }
+  BOOST_FOREACH(FramePose* fp, disturbed_frames) {
+    delete fp;
+  }
+  //    remove the tracks
+  BOOST_FOREACH(PointTrack* pt, all_tracks.tracks_) {
+    delete pt;
+  }
+  cvReleaseMat(&disturbed_points);
   return status;
 }
 
