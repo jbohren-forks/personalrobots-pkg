@@ -1,11 +1,8 @@
-/*********************************************************************
-* A ros node to run face detection with images from the videre cameras.
-*
-**********************************************************************
+/**********************************************************************
 *
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Caroline Pantofaru
+*  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -60,36 +57,42 @@
 
 using namespace std;
 
-// FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
-
+//* FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
+/**
+ * This class provides a ROS node wrapper around OpenCV's face detection, plus some use of depth from stereo to restrict the
+ * results presented to plausible face sizes. 
+ * Displayed face detections are colored by:
+ * red - not a plausible face size;
+ * blue - no stereo information available;
+ * green - plausible face size. 
+ */
 class FaceDetector: public ros::node {
 public:
   // Images and conversion
-  image_msgs::Image limage_;
-  image_msgs::Image dimage_;
-  image_msgs::StereoInfo stinfo_;
-  image_msgs::CamInfo rcinfo_;
-  image_msgs::CvBridge lbridge_;
-  image_msgs::CvBridge dbridge_;
-  TopicSynchronizer<FaceDetector> sync_;
+  image_msgs::Image limage_; /**< Left image msg. */
+  image_msgs::Image dimage_; /**< Disparity image msg. */
+  image_msgs::StereoInfo stinfo_; /**< Stereo info msg. */
+  image_msgs::CamInfo rcinfo_; /**< Right camera info msg. */
+  image_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
+  image_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
+  TopicSynchronizer<FaceDetector> sync_; /**< Stereo topic synchronizer. */
 
   // The left and disparity images.
-  IplImage *cv_image_left_;
-  IplImage *cv_image_disp_;
-  bool do_display_;
-  IplImage *cv_image_disp_out_;
+  IplImage *cv_image_left_; /**< Left image. */
+  IplImage *cv_image_disp_; /**< Disparity image. */
+  bool do_display_; /**< True/false display face detections. */
+  IplImage *cv_image_disp_out_; /**< Display image. */
 
-  bool use_depth_;
-  CvStereoCamModel *cam_model_;
+  bool use_depth_; /**< True/false use depth information. */
+  CvStereoCamModel *cam_model_; /**< A model of the stereo cameras. */
+ 
+  People *people_; /**< List of people and associated fcns. */
+  const char *haar_filename_; /**< Training file for the haar cascade classifier. */
 
-  People *people_;
-  const char *haar_filename_;
-
-  bool external_init_;
-  robot_msgs::PositionMeasurement pos_;
+  bool external_init_; 
+  robot_msgs::PositionMeasurement pos_; /**< The person position measurement to publish. */
 
   bool quit_;
-  int detect_;
 
   ros::thread::mutex cv_mutex_;
 
@@ -106,8 +109,7 @@ public:
     people_(NULL),
     haar_filename_(haar_filename),
     external_init_(external_init),
-    quit_(false),
-    detect_(0)
+    quit_(false)
   { 
     
     if (do_display_) {
@@ -154,7 +156,12 @@ public:
 
   }
 
-  // Position message callback.
+  /*!
+   * \brief Position message callback. 
+   *
+   * When hooked into the person tracking filter, this callback will listen to messages 
+   * from the filter with a person id and 3D position and adjust the person's face position accordingly.
+   */ 
   void pos_cb() {
 
     // Check that the message came from the person filter, not one of the individual trackers.
@@ -179,22 +186,28 @@ public:
     people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
     cv_mutex_.unlock();
 
-    ///// I'm not currently checking the time of this positioning message, which is a little worrying.
+    /** @todo Check the time of the position message. If it's too old, ignore it. */
 
   }
 
-  /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
+  /*!
+   * \brief Image callback for unsynced messages.
+   *
+   * If unsynced stereo msgs are received, do nothing. 
+   */
   void image_cb_timeout(ros::Time t) {
   }
 
-  /// The image callback. For each new image, copy it, perform face detection, and draw the rectangles on the image.
+  /*! 
+   * \brief Image callback for synced messages. 
+   *
+   * For each new image:
+   * convert it to OpenCV format, perform face detection using OpenCV's haar filter cascade classifier, and
+   * (if requested) draw rectangles around the found faces.
+   * Only publishes faces which are associated (by proximity, currently) with faces it already has in its list of people.
+   */
   void image_cb_all(ros::Time t)
   {
-
-    detect_++;
-    if (detect_ % 2) {
-      return;
-    }
 
     cv_mutex_.lock();
  
@@ -299,7 +312,9 @@ public:
   }
 
 
-  // Wait for completion, wait for user input, display images.
+  /*!
+   *\brief Wait for completion, wait for user input, display images.
+   */
   bool spin() {
     while (ok() && !quit_) {
 
