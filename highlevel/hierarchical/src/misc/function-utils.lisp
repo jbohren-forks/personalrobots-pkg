@@ -82,3 +82,9 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 
 (defun is-standard-equality-test (f)
   (member f *standard-equality-tests*))
+
+(defun designated-function (x)
+  "If X is a function return it, else return function that always returns X.  Obviously, 1) X should be immutable 2) Make sure it would never make sense to have the desired return value actually be a function."
+  (if (functionp x)
+      x
+      (constantly x)))

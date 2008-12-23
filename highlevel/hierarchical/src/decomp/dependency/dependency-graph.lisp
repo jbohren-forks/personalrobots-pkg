@@ -184,7 +184,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 (defun change-variable (v new-val diff g)
   (let ((desc (get-var-desc v g)))
     (setf (current-val desc) new-val)
-    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to ~a" v new-val (dep-graph-id g))
+    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to ~a" v (dep-graph-id g) new-val)
     (propagate-diff v g diff)
     (dolist (h (update-hooks desc))
       (funcall h new-val diff))))

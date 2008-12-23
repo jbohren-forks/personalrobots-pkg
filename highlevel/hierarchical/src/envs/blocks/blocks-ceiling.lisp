@@ -77,6 +77,7 @@
    :nav
    :move-block
    :move-to
+   :move
 
    ;; Additional, for decomp-hierarchy
    :<blocks-hierarchy>

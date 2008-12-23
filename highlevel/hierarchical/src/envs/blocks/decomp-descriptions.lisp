@@ -22,31 +22,65 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; By default reuse the old code in descriptions.lisp
-(defmethod action-description ((d <blocks-descriptions>) (type (eql :optimistic)) name args)
+(defmethod action-description ((d <blocks-descriptions>) name args (type (eql :optimistic)))
   (lookup-in-ncstrips-schemas (cons name args) (optimistic-descs d)))
 
-(defmethod action-description ((d <blocks-descriptions>) (type (eql :pessimistic)) name args)
+(defmethod action-description ((d <blocks-descriptions>) name args (type (eql :pessimistic)))
   (lookup-in-ncstrips-schemas (cons name args) (pessimistic-descs d)))
 
-
 (defun make-simple-description (succ-state-fn predecessor-fn reward-fn)
-  (make-instance '<simple-description> :succ-state-fn succ-state-fn :predecessor-fn predecessor-fn :reward-fn reward-fn))
+  (make-instance '<simple-description> :succ-state-fn (designated-function succ-state-fn) :predecessor-fn (designated-function predecessor-fn) :reward-fn (designated-function reward-fn)))
 
 
-(defmethod action-description ((d <blocks-descriptions>) (type (eql :optimistic)) (name (eql 'act)) args)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specific actions that are not defined in
+;; the earlier code
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'act)) args (type (eql :optimistic)))
   (make-simple-description
-   (constantly (goal (desc-domain d)))
+   (goal (desc-domain d))
    #'(lambda (s1 s2) (declare (ignore s2)) s1)
    #'(lambda (s1 s2)
        (declare (ignore s2))
        (funcall (heuristic d) s1))))
 
 
-(defmethod action-description ((d <blocks-descriptions>) (type (eql :pessimistic)) (name (eql 'act)) args)
-  (make-simple-description
-   #'(lambda (s) (intersect s (goal (desc-domain d))))
-   #'(lambda (s1 s2) (declare (ignore s2)) (intersect s1 (goal (desc-domain d))))
-   (constantly 0)))
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'act)) args (type (eql :pessimistic)))
+  (let ((dom (desc-domain d)))
+    (make-simple-description
+     #'(lambda (s) (intersect s (goal dom)))
+     #'(lambda (s1 s2) (declare (ignore s2)) (intersect s1 (goal dom)))
+     0)))
 
 
-		 
+
+
+;; Move just has a trivial description
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move)) args (type (eql :pessimistic)))
+  (declare (ignore args))
+  (let ((dom (desc-domain d)))
+    (make-simple-description
+     (empty-set dom)
+     (empty-set dom)
+     '-infty)))
+
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move)) args (type (eql :optimistic)))
+  (declare (ignore args))
+  (let ((dom (desc-domain d)))
+    (make-simple-description
+     (goal dom) 
+     #'(lambda (s1 s2) (declare (ignore s2)) s1)
+     #'(lambda (s1 s2)
+	 (declare (ignore s2))
+	 (funcall (heuristic d) s1)))))
+
+
+
+
+       
+  
+

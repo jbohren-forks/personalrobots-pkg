@@ -1,7 +1,7 @@
 (in-package :vb-node)
 
 
-(defgeneric action-description (descs type action-name action-args)
+(defgeneric action-description (descs action-name action-args type)
   (:documentation "Retrieve the description (see angelic/description.lisp) of an action of the form (NAME . ARGS).  TYPE is either :optimistic or :pessimistic."))
 
 
@@ -11,18 +11,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun progress-optimistic (descs a v)
-  (progress-complete-valuation (action-description descs :optimistic (car a) (cdr a)) v))
+  (progress-complete-valuation (action-description descs (car a) (cdr a) :optimistic) v))
 
 (defun progress-pessimistic (descs a v)
-  (progress-sound-valuation (action-description descs :pessimistic (car a) (cdr a)) v))
+  (progress-sound-valuation (action-description descs (car a) (cdr a) :pessimistic) v))
 
 (defun regress-optimistic (descs a v1 v2)
   "Return (an upper bound on) the pointwise max of [the regression of valuation V2 through A] with V1."
-  (regress-complete-valuation (action-description descs :optimistic (car a) (cdr a)) v1 v2))
+  (regress-complete-valuation (action-description descs (car a) (cdr a) :optimistic) v1 v2))
 
 (defun regress-pessimistic (descs a v1 v2)
   "Return (a lower bound on) the pointwise min of [the regression of valuation V2 through A] with V1."
-  (regress-sound-valuation (action-description descs :pessimistic (car a) (cdr a)) v1 v2))
+  (regress-sound-valuation (action-description descs (car a) (cdr a) :pessimistic) v1 v2))
 
 
 

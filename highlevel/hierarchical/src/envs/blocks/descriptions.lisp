@@ -79,6 +79,19 @@
 						  (gripper-pos ?x ?y)))
 		:poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)) )
 		:add-list ((on ?b ?c) (clear ?a) (block-pos ?b ?xc ?yt) (free ?xb ?yb)))))
+
+    (get
+     :var-domains ((?b actual-blocks) (?a blocks) (?xb columns) (?yb rows) (?xt columns))
+     :effects (:precond (and (clear ?b) (on ?b ?a))
+	       :reward (get-upper-bound ?xb ?yb ?complete-set)
+	       :delete-list ((on ?b ?a) (block-pos ?b ?xb ?yb) (free ?xt ?yb)
+			     (for-all ((?x columns) (?y rows))
+				      (or (not (int= ?y ?yb))
+					  (not (or (r ?x ?xb) (r ?xb ?x)))))
+			     (gripper-pos ?x ?y))
+	       :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xb) (r ?xb ?x)) (gripper-pos ?x ?yb)))
+	       :add-list ((clear ?a) (free ?xb ?yb))))
+
     
     (move-to
      :var-domains ((?b actual-blocks) (?c blocks) (?xc columns) (?yc all-rows) (?yt rows))

@@ -207,6 +207,7 @@
 	   fn
 	   arglist-fn
 	   is-standard-equality-test
+	   designated-function
 	   
 	   infty
 	   -infty

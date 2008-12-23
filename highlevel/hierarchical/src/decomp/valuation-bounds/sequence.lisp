@@ -4,6 +4,7 @@
 
 (defclass <sequence-node> (<node>)
   ((action-sequence :reader action-sequence :writer set-action-sequence)
+   (next-child-to-refine :accessor next-child-to-refine :initform 0)
    (status :initform :initial)))
 
 ;; We don't have an initialize-instance :after method to add the node's variables
@@ -17,22 +18,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod optimistic-progressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-progressed-optimistic children-progressed-optimistic)
-    (binary-pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
+  (make-simple-update-fn 
+   #'(lambda (l)
+       (binary-pointwise-min-upper-bound
+	(evaluate l (cons 'child-progressed-optimistic (1- (sequence-length n))))
+	(evaluate l 'my-progressed-optimistic)))))
 
 (defmethod pessimistic-progressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-progressed-pessimistic children-progressed-pessimistic)
-    (binary-pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
-
+  (make-simple-update-fn 
+   #'(lambda (l)
+       (binary-pointwise-max-lower-bound
+	(evaluate l (cons 'child-progressed-pessimistic (1- (sequence-length n))))
+	(evaluate l 'my-progressed-pessimistic)))))
 
 (defmethod optimistic-regressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-regressed-optimistic children-regressed-optimistic)
-    (binary-pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
+  (make-simple-update-fn 
+   #'(lambda (l)
+       (binary-pointwise-min-upper-bound
+	(evaluate l '(child-regressed-optimistic . 0))
+	(evaluate l 'my-regressed-optimistic)))))
+
 
 (defmethod pessimistic-regressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-regressed-pessimistic children-regressed-pessimistic)
-    (binary-pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
-
+  (make-simple-update-fn 
+   #'(lambda (l)
+       (binary-pointwise-max-lower-bound
+	(evaluate l '(child-regressed-pessimistic . 0))
+	(evaluate l 'my-regressed-pessimistic)))))
 
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,15 +92,15 @@
     (:initial (initialize-sequence-node n) (setf (status n) :ready))
     (:ready 
        (do-all-updates n)
-       (let ((i (maximizing-element (child-ids n) (sequence-node-child-evaluator n))))
-	 (compute-cycle (child i n)))
+       (compute-cycle (child (setf (next-child-to-refine n) (mod-inc (sequence-length n) (next-child-to-refine n))) n))
        (do-all-updates n))))
 
 (defun sequence-node-child-evaluator (n)
-  (declare (ignore n))
+  ;; Roughly speaking, we want to refine the node with the biggest gap between
+  ;; optimistic and pessimistic boundsppp
   #'(lambda (i)
-      (format t "~&Stub: Enter value for child ~a of sequence node: " i)
-      (read)))
+      (let ((c (child i n)))
+	(my- (max-achievable-value (make-sum-valuation (current-value c 'progressed-pessimistic) (current-value c 'final-pessimistic)))))))
 
 
 (defun initialize-sequence-node (n)

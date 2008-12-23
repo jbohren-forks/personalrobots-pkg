@@ -76,7 +76,7 @@ See also [changeable-mapping]."
 (define-condition mapping-undefined ()
   ((item :initarg :item :reader get-item)
    (m :initarg :mapping :reader get-mapping))
-  (:report (lambda (c s) (format s "Value of mapping ~a not defined at ~a" (get-mapping c) (get-item c))))
+  (:report (lambda (c s) (format s "Value of item ~a not defined in mapping ~a" (get-item c) (get-mapping c))))
   (:documentation "Signalled when applying a mapping to an item that it's not defined at."))
 
 
