@@ -44,7 +44,7 @@ using namespace tf;
 
 static const double EPS = 1e-5;
 
-#define __EKF_DEBUG_FILE__
+//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -79,14 +79,17 @@ namespace estimation
     // advertise our estimation
     advertise<robot_msgs::PoseWithCovariance>(node_name_, 10);
 
+    // initialize
+    filter_stamp_ = Time::now();
+
+    // fiexed transform between camera frame and vo frame
+    vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
+
     // subscribe to messages
     subscribe("cmd_vel",      vel_,  &OdomEstimationNode::velCallback,  10);
     subscribe("odom",         odom_, &OdomEstimationNode::odomCallback, 10);
     subscribe("imu_data",     imu_,  &OdomEstimationNode::imuCallback,  10);
 
-    // fiexed transform between camera frame and vo frame
-    vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
-    
 #ifdef __EKF_DEBUG_FILE__
     // open files for debugging
     odom_file_.open("odom_file.txt");
