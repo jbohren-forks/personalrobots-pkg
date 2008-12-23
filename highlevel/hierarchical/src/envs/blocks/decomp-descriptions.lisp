@@ -1,8 +1,6 @@
 (in-package :blocks)
 
 
-
-
 (defclass <blocks-descriptions> ()
   ((domain :initarg :domain :reader desc-domain)
    (heuristic :accessor heuristic :initarg :heuristic)
@@ -33,7 +31,6 @@
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific actions that are not defined in
 ;; the earlier code
@@ -59,8 +56,8 @@
 
 
 
-;; Move just has a trivial description
-(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move)) args (type (eql :pessimistic)))
+;; Move-then-act just has a trivial description
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move-then-act)) args (type (eql :pessimistic)))
   (declare (ignore args))
   (let ((dom (desc-domain d)))
     (make-simple-description
@@ -68,7 +65,7 @@
      (empty-set dom)
      '-infty)))
 
-(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move)) args (type (eql :optimistic)))
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move-then-act)) args (type (eql :optimistic)))
   (declare (ignore args))
   (let ((dom (desc-domain d)))
     (make-simple-description
@@ -79,6 +76,10 @@
 	 (funcall (heuristic d) s1)))))
 
 
+
+
+
+  
 
 
        

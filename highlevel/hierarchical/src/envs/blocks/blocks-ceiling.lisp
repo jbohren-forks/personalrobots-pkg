@@ -77,7 +77,6 @@
    :nav
    :move-block
    :move-to
-   :move
 
    ;; Additional, for decomp-hierarchy
    :<blocks-hierarchy>
@@ -91,8 +90,10 @@
    :right-turn-and-navigate
    :put
    :move
+   :move-then-act
    :pickup
    :stack
+
 
    ;; descriptions
    :make-complete-descriptions

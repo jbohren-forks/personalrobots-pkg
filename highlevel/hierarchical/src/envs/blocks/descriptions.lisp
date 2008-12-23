@@ -6,106 +6,104 @@
 	     (move-reward-upper-bound xb yb xc yt max-row cset))
 	   (move-to-bound (xc yt cset)
 	     (move-to-upper-bound xc yt max-row cset)))
-  (make-ncstrips-schemas d
-    (act
-     :var-domains ()
-     :effects ())
-    (nav-right 
-     :var-domains ((?xs columns) (?xt columns) (?y rows))
-     :effects ((:precond 
-		(and (gripper-pos ?xs ?y) (right-of ?xt ?xs) (free ?xt ?y))
-		:poss-add-list ((gripper-pos ?xt ?y))
-		:poss-delete-list ((gripper-pos ?xs ?y)))))
+      (make-ncstrips-schemas 
+       d
+       (act
+	:var-domains ()
+	:effects ())
+       (nav-right 
+	:var-domains ((?xs columns) (?xt columns) (?y rows))
+	:effects ((:precond 
+		   (and (gripper-pos ?xs ?y) (right-of ?xt ?xs) (free ?xt ?y))
+		   :poss-add-list ((gripper-pos ?xt ?y))
+		   :poss-delete-list ((gripper-pos ?xs ?y)))))
     
-    (nav-left 
-     :var-domains ((?xs columns) (?xt columns) (?y rows))
-     :effects ((:precond 
-		(and (gripper-pos ?xs ?y) (right-of ?xs ?xt) (free ?xt ?y))
-		:poss-add-list ((gripper-pos ?xt ?y) (for-all ((?x columns)) (xbetween ?xt ?x ?xs)
-									    (gripper-pos ?x ?y)))
-		:poss-delete-list ((gripper-pos ?xs ?y) (for-all ((?x columns)) (xbetween ?xt ?x ?xs)
-									       (free ?x ?y))))))
+       (nav-left 
+	:var-domains ((?xs columns) (?xt columns) (?y rows))
+	:effects ((:precond 
+		   (and (gripper-pos ?xs ?y) (right-of ?xs ?xt) (free ?xt ?y))
+		   :poss-add-list ((gripper-pos ?xt ?y) (for-all ((?x columns)) (xbetween ?xt ?x ?xs)
+								 (gripper-pos ?x ?y)))
+		   :poss-delete-list ((gripper-pos ?xs ?y) (for-all ((?x columns)) (xbetween ?xt ?x ?xs)
+								    (free ?x ?y))))))
     
-    (nav-up
-     :var-domains ((?x columns) (?ys rows) (?yt rows))
-     :effects ((:precond 
-		(and (gripper-pos ?x ?ys) (above ?yt ?ys) (free ?x ?yt))
-		:poss-add-list ((gripper-pos ?x ?yt) )
-		:poss-delete-list ((gripper-pos ?x ?ys) ))))
+       (nav-up
+	:var-domains ((?x columns) (?ys rows) (?yt rows))
+	:effects ((:precond 
+		   (and (gripper-pos ?x ?ys) (above ?yt ?ys) (free ?x ?yt))
+		   :poss-add-list ((gripper-pos ?x ?yt) )
+		   :poss-delete-list ((gripper-pos ?x ?ys) ))))
     
-    (nav-down
-     :var-domains ((?x columns) (?ys rows) (?yt rows))
-     :effects ((:precond 
-		(and (gripper-pos ?x ?ys) (above ?ys ?yt) (free ?x ?yt))
-		:poss-add-list ((gripper-pos ?x ?yt) )
-		:poss-delete-list ((gripper-pos ?x ?ys) ))))
+       (nav-down
+	:var-domains ((?x columns) (?ys rows) (?yt rows))
+	:effects ((:precond 
+		   (and (gripper-pos ?x ?ys) (above ?ys ?yt) (free ?x ?yt))
+		   :poss-add-list ((gripper-pos ?x ?yt) )
+		   :poss-delete-list ((gripper-pos ?x ?ys) ))))
 
-    (navigate
-     :var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
-     :effects ((:precond
-		(and (gripper-pos ?xs ?ys) (int= ?xs ?xt) (int= ?ys ?yt))
-		:reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
-		:poss-add-list ((faceR) (faceL))
-		:poss-delete-list ((faceR) (faceL)))
-	       (:precond
-		(and (gripper-pos ?xs ?ys) (free ?xt ?yt))
-		:reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
-		:poss-add-list ((faceR) (faceL)) 
-		:add-list ((gripper-pos ?xt ?yt))
-		:poss-delete-list ((faceR) (faceL)) 
-		:delete-list ((gripper-pos ?xs ?ys)))))
+       (navigate
+	:var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
+	:effects ((:precond
+		   (and (gripper-pos ?xs ?ys) (int= ?xs ?xt) (int= ?ys ?yt))
+		   :reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
+		   :poss-add-list ((faceR) (faceL))
+		   :poss-delete-list ((faceR) (faceL)))
+		  (:precond
+		   (and (gripper-pos ?xs ?ys) (free ?xt ?yt))
+		   :reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
+		   :poss-add-list ((faceR) (faceL)) 
+		   :add-list ((gripper-pos ?xt ?yt))
+		   :poss-delete-list ((faceR) (faceL)) 
+		   :delete-list ((gripper-pos ?xs ?ys)))))
     
-    (nav 
-     :var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
-     :effects ((:precond
-		(and (gripper-pos ?xs ?ys) (int= ?xs ?xt) (int= ?ys ?yt))
-		:reward (negated-manhattan-dist ?xs ?ys ?xt ?yt))
-	       (:precond
-		(and (gripper-pos ?xs ?ys) (free ?xt ?yt))
-		:reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
-		:add-list ((gripper-pos ?xt ?yt))
-		:delete-list ((gripper-pos ?xs ?ys)))))
+       (nav 
+	:var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
+	:effects ((:precond
+		   (and (gripper-pos ?xs ?ys) (int= ?xs ?xt) (int= ?ys ?yt))
+		   :reward (negated-manhattan-dist ?xs ?ys ?xt ?yt))
+		  (:precond
+		   (and (gripper-pos ?xs ?ys) (free ?xt ?yt))
+		   :reward (negated-manhattan-dist ?xs ?ys ?xt ?yt)
+		   :add-list ((gripper-pos ?xt ?yt))
+		   :delete-list ((gripper-pos ?xs ?ys)))))
      
-    (move-block
-     :var-domains ((?b actual-blocks) (?a blocks) (?c blocks) (?xb columns) (?yb rows)
-				      (?xc columns) (?yc all-rows) (?yt rows))
-     :effects ((:precond 
-		(and (clear ?b) (clear ?c) (on ?b ?a))
-		:reward (move-upper-bound ?xb ?yb ?xc ?yt ?complete-set)
-		:delete-list ((on ?b ?a) (clear ?c) (block-pos ?b ?xb ?yb) (free ?xc ?yt)
-					 (for-all ((?x columns) (?y rows))
-						  (or (not (int= ?y ?yt))
-						      (not (or (r ?x ?xc) (r ?xc ?x))))
-						  (gripper-pos ?x ?y)))
-		:poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)) )
-		:add-list ((on ?b ?c) (clear ?a) (block-pos ?b ?xc ?yt) (free ?xb ?yb)))))
+       (move-block
+	:var-domains ((?b actual-blocks) (?a blocks) (?c blocks) (?xb columns) (?yb rows)
+		      (?xc columns) (?yc all-rows) (?yt rows))
+	:effects ((:precond 
+		   (and (clear ?b) (clear ?c) (on ?b ?a))
+		   :reward (move-upper-bound ?xb ?yb ?xc ?yt ?complete-set)
+		   :delete-list ((on ?b ?a) (clear ?c) (block-pos ?b ?xb ?yb) (free ?xc ?yt)
+				 (for-all ((?x columns) (?y rows))
+					  (or (not (int= ?y ?yt))
+					      (not (or (r ?x ?xc) (r ?xc ?x))))
+					  (gripper-pos ?x ?y)))
+		   :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)) )
+		   :add-list ((on ?b ?c) (clear ?a) (block-pos ?b ?xc ?yt) (free ?xb ?yb)))))
 
-    (get
-     :var-domains ((?b actual-blocks) (?a blocks) (?xb columns) (?yb rows) (?xt columns))
-     :effects (:precond (and (clear ?b) (on ?b ?a))
-	       :reward (get-upper-bound ?xb ?yb ?complete-set)
-	       :delete-list ((on ?b ?a) (block-pos ?b ?xb ?yb) (free ?xt ?yb)
-			     (for-all ((?x columns) (?y rows))
-				      (or (not (int= ?y ?yb))
-					  (not (or (r ?x ?xb) (r ?xb ?x)))))
-			     (gripper-pos ?x ?y))
-	       :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xb) (r ?xb ?x)) (gripper-pos ?x ?yb)))
-	       :add-list ((clear ?a) (free ?xb ?yb))))
-
+       (get
+	:var-domains ((?b actual-blocks) (?a blocks) (?xb columns) (?yb rows) (?xt columns))
+	:effects ((:precond (and (clear ?b) (on ?b ?a))
+		   :reward (get-upper-bound ?xb ?yb ?complete-set)
+		   :delete-list ((on ?b ?a) (block-pos ?b ?xb ?yb) (free ?xt ?yb)
+				 (for-all ((?x columns) (?y rows))
+					  (or (not (int= ?y ?yb))
+					      (not (or (r ?x ?xb) (r ?xb ?x))))
+					  (gripper-pos ?x ?y)))
+		   :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xb) (r ?xb ?x)) (gripper-pos ?x ?yb)))
+		   :add-list ((clear ?a) (free ?xb ?yb)))))
     
-    (move-to
-     :var-domains ((?b actual-blocks) (?c blocks) (?xc columns) (?yc all-rows) (?yt rows))
-     :effects ((:precond 
-		(and (gripper-holding ?b) (clear ?c))
-		:reward (move-to-bound ?xc ?yt ?complete-set)
-		:delete-list ((gripper-holding ?b) (clear ?c) (free ?xc ?yt)
-						   (for-all ((?x columns) (?y rows))
-							    (or (not (int= ?y ?yt))
-								(not (or (r ?x ?xc) (r ?xc ?x))))
-							    (gripper-pos ?x ?y)))
-		:poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)) )
-		:add-list ((on ?b ?c) (clear ?b) (block-pos ?b ?xc ?yt) (gripper-holding nothing)))))
-    ))))
+       (move-to
+	:var-domains ((?b actual-blocks) (?c blocks) (?xc columns) (?yc all-rows) (?yt rows))
+	:effects ((:precond (and (gripper-holding ?b) (clear ?c))
+		   :reward (move-to-bound ?xc ?yt ?complete-set)
+		   :delete-list ((gripper-holding ?b) (clear ?c) (free ?xc ?yt)
+				 (for-all ((?x columns) (?y rows))
+					  (or (not (int= ?y ?yt))
+					      (not (or (r ?x ?xc) (r ?xc ?x))))
+					  (gripper-pos ?x ?y)))
+		   :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)))
+		   :add-list ((on ?b ?c) (clear ?b) (block-pos ?b ?xc ?yt) (gripper-holding nothing)))))))))
 
 
 (defun make-sound-descriptions (d)
@@ -234,7 +232,6 @@
 		 (my+ 
 		  
 		  ;; Additional term for turning around
-
 		  (reduce-set 
 		   #'mymin
 		   (disjuncts (formula complete-set))
@@ -254,6 +251,21 @@
 			'-infty
 		      (+ d (if (eql xb (first pos)) -1 1) ;; if we're directly above block, further inefficiency
 			 ))))))))))
+
+
+
+(defun get-upper-bound (xb yb complete-set)
+  (reduce-set 
+   #'mymax (possible-gripper-positions complete-set)
+   :key #'(lambda (pos)
+	    (let ((d (apply #'negated-manhattan-dist xb yb pos)))
+	      ;; if d is zero, this is in fact an inconsistent possibility
+	      (if (zerop d) 
+		  '-infty
+		  (+ d 
+		     ;; if we're directly above block, further inefficiency
+		     (if (eql xb (first pos)) -1 1)))))))
+
 
 
 (defun move-to-upper-bound (xc yt max-row complete-set)

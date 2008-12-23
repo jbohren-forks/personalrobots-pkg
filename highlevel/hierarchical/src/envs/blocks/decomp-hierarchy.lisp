@@ -3,6 +3,11 @@
 (defclass <blocks-hierarchy> ()
   ((domain :reader planning-domain :initarg :domain)))
 
+
+
+
+
+
 (make-hlas (h <blocks-hierarchy>) (init-opt-set) (left up down right pickupL pickupR stackL stackR turnL turnR finish)
   
   (act () :or 
@@ -10,7 +15,9 @@
 		    (s (possibly-clear-surfaces init-opt-set)))
 	 (if (eq b s)
 	   'fail
-	   `((move ,b ,s)))))
+	   `((move-then-act ,b ,s)))))
+
+  (move-then-act (b s) :sequence `(((move ,b ,s) (act))))
 
   (move (b s) :sequence `(((get ,b) (put ,b ,s))))
 
