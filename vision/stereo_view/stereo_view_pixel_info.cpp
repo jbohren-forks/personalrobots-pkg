@@ -32,6 +32,15 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+
+/********************************************************************
+ * This is an extension to stereo_view.cpp that allows you to click on a point in the left image and display
+ * its image coords, color, and stereo frame coords (the vision-version of real-world coords with z forwards.)
+ * Best used while playback is stopped because the selected point is only drawn on one frame, 
+ * but it works even during live playback.
+ ********************************************************************/
+
+
 #include <vector>
 
 #include "image_msgs/CvBridge.h"
@@ -123,13 +132,13 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
 
 }
 
-//* StereoView class.
-/********************************************************************
+/** StereoView class.
+ *
  * This is an extension to stereo_view.cpp that allows you to click on a point in the left image and display
  * its image coords, color, and stereo frame coords (the vision-version of real-world coords with z forwards.)
  * Best used while playback is stopped because the selected point is only drawn on one frame, 
  * but it works even during live playback.
- ********************************************************************/
+ */
 class StereoView : public ros::node
 {
 public:
