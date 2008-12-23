@@ -5,6 +5,8 @@
   <author>James Bowman</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="numpy"/>
+  <depend package="matplotlib"/>
   <depend package="rostest"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>
@@ -15,8 +17,4 @@
   <depend package="rosrecord"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
 </package>
