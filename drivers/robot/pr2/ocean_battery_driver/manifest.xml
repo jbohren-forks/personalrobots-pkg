@@ -2,7 +2,7 @@
   <description>This is an interface to the Ocean Server Technology Intelligent Battery and Power System.</description>
   <author>Tully Foote</author>
   <license>BSD</license>
-  <review status="API conditionally cleared" notes="API followup in progress (Tully)"/>
+  <review status="API cleared" notes=""/>
   <depend package="rospy" />
   <depend package="robot_msgs" />
 </package>

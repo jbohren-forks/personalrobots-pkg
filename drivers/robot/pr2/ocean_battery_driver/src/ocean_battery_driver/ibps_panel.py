@@ -54,7 +54,7 @@ class BatteryPanel(wx.Panel):
         
         self._mutex = threading.Lock()
         
-        xrc_path = rostools.packspec.get_pkg_dir(PKG) + '/pr2_battery_panel.xrc'
+        xrc_path = rostools.packspec.get_pkg_dir(PKG) + '/ui/battery_status_panel.xrc'
         
         self._xrc = xrc.XmlResource(xrc_path)
         self._real_panel = self._xrc.LoadPanel(self, 'BatteryStatusPanel')
