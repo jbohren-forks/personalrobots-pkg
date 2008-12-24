@@ -30,60 +30,60 @@ CC = g++
 
 DEBUG = -g
 
-CFLAGS = -Wall -c $(DEBUG)
+CFLAGS = -IConvexDecomposition -Wall -c $(DEBUG)
 
-LFLAGS = -Wall $(DEBUG)
+LFLAGS = $(DEBUG)
 
 test: $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o test
 
-DecomposeSample.o: $(HEADERS)
-	$(CC) $(CFLAGS) DecomposeSample.cpp
+DecomposeSample.o: DecomposeSample.cpp
+	$(CC) $(CFLAGS) DecomposeSample.cpp -o $@
 
-ConvexDecomposition/bestfit.o: ConvexDecomposition/bestfit.h
-	$(CC) $(CFLAGS) ConvexDecomposition/bestfit.cpp
+ConvexDecomposition/bestfit.o: ConvexDecomposition/bestfit.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/bestfit.cpp -o $@
 
-ConvexDecomposition/bestfitobb.o: ConvexDecomposition/bestfitobb.h
-	$(CC) $(CFLAGS) ConvexDecomposition/bestfitobb.cpp
+ConvexDecomposition/bestfitobb.o: ConvexDecomposition/bestfitobb.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/bestfitobb.cpp -o $@
 
-ConvexDecomposition/cd_hull.o: ConvexDecomposition/cd_hull.h
-	$(CC) $(CFLAGS) ConvexDecomposition/cd_hull.cpp
+ConvexDecomposition/cd_hull.o: ConvexDecomposition/cd_hull.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/cd_hull.cpp -o $@
 
-ConvexDecomposition/cd_wavefront.o: ConvexDecomposition/cd_wavefront.h
-	$(CC) $(CFLAGS) ConvexDecomposition/cd_wavefront.cpp
+ConvexDecomposition/cd_wavefront.o: ConvexDecomposition/cd_wavefront.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/cd_wavefront.cpp -o $@
 
-ConvexDecomposition/concavity.o: ConvexDecomposition/concavity.h
-	$(CC) $(CFLAGS) ConvexDecomposition/concavity.cpp
+ConvexDecomposition/concavity.o: ConvexDecomposition/concavity.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/concavity.cpp -o $@
 
-ConvexDecomposition/ConvexDecomposition.o: ConvexDecomposition/ConvexDecomposition.h
-	$(CC) $(CFLAGS) ConvexDecomposition/ConvexDecomposition.cpp
+ConvexDecomposition/ConvexDecomposition.o: ConvexDecomposition/ConvexDecomposition.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/ConvexDecomposition.cpp -o $@
 
-ConvexDecomposition/fitsphere.o: ConvexDecomposition/fitsphere.h
-	$(CC) $(CFLAGS) ConvexDecomposition/fitsphere.cpp
+ConvexDecomposition/fitsphere.o: ConvexDecomposition/fitsphere.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/fitsphere.cpp -o $@
 
-ConvexDecomposition/float_math.o: ConvexDecomposition/float_math.h
-	$(CC) $(CFLAGS) ConvexDecomposition/float_math.cpp
+ConvexDecomposition/float_math.o: ConvexDecomposition/float_math.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/float_math.cpp -o $@
 
-ConvexDecomposition/meshvolume.o: ConvexDecomposition/meshvolume.h
-	$(CC) $(CFLAGS) ConvexDecomposition/meshvolume.cpp
+ConvexDecomposition/meshvolume.o: ConvexDecomposition/meshvolume.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/meshvolume.cpp -o $@
 
-ConvexDecomposition/planetri.o: ConvexDecomposition/planetri.h
-	$(CC) $(CFLAGS) ConvexDecomposition/planetri.cpp
+ConvexDecomposition/planetri.o: ConvexDecomposition/planetri.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/planetri.cpp -o $@
 
-ConvexDecomposition/raytri.o: ConvexDecomposition/raytri.h
-	$(CC) $(CFLAGS) ConvexDecomposition/raytri.cpp
+ConvexDecomposition/raytri.o: ConvexDecomposition/raytri.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/raytri.cpp -o $@
 
-ConvexDecomposition/splitplane.o: ConvexDecomposition/splitplane.h
-	$(CC) $(CFLAGS) ConvexDecomposition/splitplane.cpp
+ConvexDecomposition/splitplane.o: ConvexDecomposition/splitplane.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/splitplane.cpp -o $@
 
-ConvexDecomposition/triangulate.o: ConvexDecomposition/triangulate.h
-	$(CC) $(CFLAGS) ConvexDecomposition/triangulate.cpp
+ConvexDecomposition/triangulate.o: ConvexDecomposition/triangulate.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/triangulate.cpp -o $@
 
-ConvexDecomposition/vlookup.o: ConvexDecomposition/vlookup.h
-	$(CC) $(CFLAGS) ConvexDecomposition/vlookup.cpp
+ConvexDecomposition/vlookup.o: ConvexDecomposition/vlookup.cpp ConvexDecomposition/vlookup.cpp
+	$(CC) $(CFLAGS) ConvexDecomposition/vlookup.cpp -o $@
 
 clean:
-	\rm */*.o *~ test
+	\rm *.o */*.o test
 
 tar:
 	tar cfv ConvexDecomposition.tar DecomposeSample.cpp test Makefile \

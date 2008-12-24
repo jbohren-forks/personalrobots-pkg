@@ -164,7 +164,7 @@ public:
 };
 
 
-template <class Type> class VertexLess
+template <typename Type> class VertexLess
 {
 public:
 	typedef std::vector< Type > VertexVector;
@@ -188,7 +188,7 @@ private:
 	static VertexVector  *mList;
 };
 
-template <class Type> class VertexPool
+template <typename Type> class VertexPool
 {
 public:
 	typedef std::set<int, VertexLess<Type> > VertexSet;
@@ -197,7 +197,7 @@ public:
 	int GetVertex(const Type& vtx)
 	{
 		VertexLess<Type>::SetSearch(vtx,&mVtxs);
-		VertexSet::iterator found;
+		typename VertexSet::iterator found;
 		found = mVertSet.find( -1 );
 		if ( found != mVertSet.end() )
 		{
@@ -255,8 +255,8 @@ private:
 };
 
 
-VertexPosition VertexLess<VertexPosition>::mFind;
-std::vector<VertexPosition > *VertexLess<VertexPosition>::mList=0;
+template<> VertexPosition VertexLess<VertexPosition>::mFind;
+template<> std::vector<VertexPosition > *VertexLess<VertexPosition>::mList=0;
 
 enum RDIFF
 {
@@ -288,6 +288,7 @@ static RDIFF relativeDiff(const double *a,const double *b,double magnitude)
 }
 
 
+template<>
 bool VertexLess<VertexPosition>::operator()(int v1,int v2) const
 {
   bool ret = false;
