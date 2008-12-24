@@ -254,9 +254,9 @@ private:
 	VertexVector   mVtxs;  // set of vertices.
 };
 
-
-template<> VertexPosition VertexLess<VertexPosition>::mFind;
-template<> std::vector<VertexPosition > *VertexLess<VertexPosition>::mList=0;
+double tmpp[3] = {0,0,0};
+template<> VertexPosition VertexLess<VertexPosition>::mFind = tmpp;
+template<> std::vector<VertexPosition > *VertexLess<VertexPosition>::mList =0;
 
 enum RDIFF
 {

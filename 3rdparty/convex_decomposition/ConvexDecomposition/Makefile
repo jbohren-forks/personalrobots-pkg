@@ -28,7 +28,7 @@ HEADERS = \
 
 CC = g++
 
-DEBUG = -g
+DEBUG = -ggdb
 
 CFLAGS = -IConvexDecomposition -Wall -c $(DEBUG)
 
