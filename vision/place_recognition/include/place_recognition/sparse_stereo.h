@@ -8,6 +8,7 @@
 
 namespace vision {
 
+// TODO: allow memory reuse
 class SparseStereoFrame
 {
 public:

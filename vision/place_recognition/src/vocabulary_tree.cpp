@@ -277,6 +277,7 @@ void VocabularyTree::save(const std::string& file)
   fprintf(out, "Branching factor: %u\n", k_);
   fprintf(out, "Levels: %u\n", levels_);
   fprintf(out, "Dimension: %u\n", dim_);
+  fprintf(out, "Database images: %u\n", db_vectors_.size());
   saveAux(root_, out);
 }
 
@@ -318,12 +319,18 @@ void VocabularyTree::loadAux(Node* node, FILE* in, unsigned int indent_level)
 
 void VocabularyTree::load(const std::string& file)
 {
+  unsigned int db_size;
   FILE* in = fopen(file.c_str(), "r");
   fscanf(in, "Branching factor: %u\n", &k_);
   fscanf(in, "Levels: %u\n", &levels_);
   fscanf(in, "Dimension: %u\n", &dim_);
+  fscanf(in, "Database images: %u\n", &db_size);
   root_ = pool_.construct();
   loadAux(root_, in);
+  if (db_size > 0) {
+    db_vectors_.resize(db_size);
+    calculateDatabaseVectors();
+  }
 }
 
 } // namespace vision

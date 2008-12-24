@@ -40,6 +40,13 @@ public:
   
   VocabularyTree();
 
+  //! Construct a vocabulary tree using a set of training features. Each row of
+  //! features is a training descriptor. objs[i] is the id of the training image
+  //! from which features.row(i) was taken.
+  //! Nister uses k = 10, levels = 6, but for smaller training sets these numbers
+  //! should be reduced.
+  //! If keep_training_images is true, the image database is populated with the
+  //! training images; otherwise the database starts empty.
   void build( const FeatureMatrix& features,
               const std::vector<unsigned int>& objs, // a feature with ID id is from objs[id]
               unsigned int k,  unsigned int levels,
@@ -59,7 +66,6 @@ public:
   
   // File I/O
   void save(const std::string& file);
-  // TODO: recreate database vectors
   void load(const std::string& file);
   
 private:

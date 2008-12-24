@@ -121,6 +121,7 @@ int main(int argc, char** argv)
   }
   */
   tree.save("james4.tree");
+  //tree.load("james4.tree");
   
   // Validation
   int training_correct = 0;
