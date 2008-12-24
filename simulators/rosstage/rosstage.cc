@@ -280,7 +280,11 @@ StageNode::Update()
                    (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
                                   tf::Point(lp.x, lp.y, 0.15)),
                     sim_time, "base_laser", "base_link"));
-
+  // Send the identity transform between base_footprint and base_link
+  tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
+  tf.sendTransform(tf::Stamped<tf::Transform>
+		   (txIdentity.inverse(),
+		    sim_time, "base_footprint", "base_link"));
   // Get latest odometry data
   // Translate into ROS message format and publish
   this->odomMsg.pos.x = this->positionmodel->est_pose.x;
