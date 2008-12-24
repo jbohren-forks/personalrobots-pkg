@@ -661,22 +661,14 @@ namespace ros {
         currentVel.vy = base_odom_.vel.y;
         currentVel.vw = base_odom_.vel.th;
 
-        struct timeval start;
-        struct timeval end;
-        double start_t, end_t, t_diff;
+	ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
         std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-        gettimeofday(&start,NULL);
         if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }
-
-        gettimeofday(&end,NULL);
-        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-        t_diff = end_t - start_t;
-        ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
+        ROS_DEBUG("Cycle Time: %.3f\n", (ros::Time::now() - start).toSec());
 
         if(!planOk){
           // Zero out the velocities
@@ -886,14 +878,9 @@ namespace ros {
 
           ROS_DEBUG("Applying update with %d observations/n", observations.size());
           // Apply to cost map
-          struct timeval curr;
-          gettimeofday(&curr,NULL);
-          double curr_t, last_t, t_diff;
-          curr_t = curr.tv_sec + curr.tv_usec / 1e6;
+	  ros::Time start = ros::Time::now();
           costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
-          gettimeofday(&curr,NULL);
-          last_t = curr.tv_sec + curr.tv_usec / 1e6;
-          t_diff = last_t - curr_t;
+          double t_diff = (ros::Time::now() - start).toSec();
           publishLocalCostMap();
           unlock();
           ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
