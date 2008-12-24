@@ -57,8 +57,8 @@
 
 using namespace std;
 
-//* FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
-/**
+/** FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
+ *
  * This class provides a ROS node wrapper around OpenCV's face detection, plus some use of depth from stereo to restrict the
  * results presented to plausible face sizes. 
  * Displayed face detections are colored by:
