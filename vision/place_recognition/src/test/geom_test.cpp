@@ -110,6 +110,16 @@ int main(int argc, char** argv)
   // Train vocabulary tree
   VocabularyTree tree;
   tree.build(features, objs, 5, 4);
+  /*
+  tree.build(features, objs, 5, 4, false);
+  printf("Adding images to tree dynamically...\n");
+  current_row = 0;
+  for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
+    FeatureMatrix image_features = features.block(current_row, 0, buffer_sizes[i], dimension);
+    current_row += buffer_sizes[i];
+    tree.insert(image_features);
+  }
+  */
   tree.save("james4.tree");
   
   // Validation

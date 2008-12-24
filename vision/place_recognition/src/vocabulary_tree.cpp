@@ -9,7 +9,8 @@ namespace vision {
 // TODO: choose between calculating database vectors or clearing objects
 void VocabularyTree::build( const FeatureMatrix& features,
                             const std::vector<unsigned int>& objs,
-                            unsigned int k, unsigned int levels)
+                            unsigned int k, unsigned int levels,
+                            bool keep_training_images)
 {
   dim_ = features.cols();
   k_ = k;
@@ -32,8 +33,36 @@ void VocabularyTree::build( const FeatureMatrix& features,
   assignWeights();
   
   // step 4: calculate database vectors
-  printf("Calculating database vectors...\n");
-  calculateDatabaseVectors();
+  if (keep_training_images) {
+    printf("Calculating database vectors...\n");
+    calculateDatabaseVectors();
+  }
+  else
+    clearDatabase();
+}
+
+void VocabularyTree::clearDatabaseAux(Node* node)
+{
+  node->inverted_file.clear();
+  BOOST_FOREACH( Node* child, node->children )
+    clearDatabaseAux(child);
+}
+
+void VocabularyTree::clearDatabase()
+{
+  db_vectors_.clear();
+  clearDatabaseAux(root_);
+}
+
+unsigned int VocabularyTree::insert(const FeatureMatrix& image_features)
+{
+  unsigned int id = db_vectors_.size();
+  db_vectors_.resize(id + 1);
+  for (int i = 0; i < image_features.rows(); ++i)
+    addFeatureToDatabaseVector(root_, id, image_features.row(i));
+  normalizeL1(db_vectors_[id]);
+  
+  return id;
 }
 
 // TODO: check if already an existing vocabulary?
@@ -54,7 +83,7 @@ void VocabularyTree::constructVocabularyAux(const FeatureMatrix& features,
 
   ++level;
 
-  // TODO: these allocations should be done once
+  // TODO: these allocations could be done once
   std::vector<int> membership(input.size());
   FeatureMatrix centroids((int)k_, (int)dim_);
 
@@ -77,7 +106,7 @@ void VocabularyTree::constructVocabularyAux(const FeatureMatrix& features,
   for(int i = 0; i < num_clusters; ++i)
   {
     node->children[i] = pool_.construct();
-    node->children[i]->centroid.set( centroids.row(i) ); // copying OK?
+    node->children[i]->centroid.set( centroids.row(i) );
     constructVocabularyAux(features, children_input[i], node->children[i], level);
   }
 }
@@ -98,16 +127,16 @@ VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& featur
   return nearest;
 }
 
+// TODO: next 3 functions basically the same, would be nice to abstract
+//       this a bit
 void VocabularyTree::addFeature(Node* node, unsigned int object_id,
                                 const FeatureMatrix::RowXpr& feature)
 {
-  if ( node->children.empty() )
-  {
+  if ( node->children.empty() ) {
     // leaf node: increment entry for obj in inverted file
     node->inverted_file[object_id]++;
   }
-  else
-  {
+  else {
     Node* nearest = findNearestChild(node, feature);
     addFeature(nearest, object_id, feature);
   }
@@ -121,6 +150,20 @@ void VocabularyTree::addFeatureToQuery(Node* node, ImageVector& vec,
   if ( !node->children.empty() ) {
     Node* nearest = findNearestChild(node, feature);
     addFeatureToQuery(nearest, vec, feature);
+  }
+}
+
+void VocabularyTree::addFeatureToDatabaseVector(Node* node, unsigned int object_id,
+                                                const FeatureMatrix::RowXpr& feature)
+{
+  if (node->weight > 0.0f)
+    db_vectors_[object_id][node] += node->weight;
+  if ( node->children.empty() ) {
+    node->inverted_file[object_id]++;
+  }
+  else {
+    Node* nearest = findNearestChild(node, feature);
+    addFeatureToDatabaseVector(nearest, object_id, feature);
   }
 }
 
@@ -282,18 +325,5 @@ void VocabularyTree::load(const std::string& file)
   root_ = pool_.construct();
   loadAux(root_, in);
 }
-
-// TODO: do we need this at all?
-/*
-void VocabularyTree::getCentroid(const FeatureMatrix& features,
-                                 const std::vector<unsigned int>& input,
-                                 Eigen::VectorXf& centroid)
-{
-  centroid = Eigen::VectorXf::Zero(dim_);
-  for (size_t i = 0; i < input.size(); ++i)
-    centroid += features.row( input[i] );
-  centroid /= input.size();
-}
-*/
 
 } // namespace vision

@@ -42,15 +42,20 @@ public:
 
   void build( const FeatureMatrix& features,
               const std::vector<unsigned int>& objs, // a feature with ID id is from objs[id]
-              unsigned int k,  unsigned int levels);
-  
-  // TODO: return top N results (through output iterator)
+              unsigned int k,  unsigned int levels,
+              bool keep_training_images = true);
+
+  //! Clears inverted files and database vectors
+  void clearDatabase();
+
+  //! Find the top N database vectors matching the query
   template< typename OutputIterator >
   void find(const FeatureMatrix& query, unsigned int N, OutputIterator output);
 
-  // TODO: insertion
-  unsigned int insert(const FeatureMatrix& new_image);
-  // TODO: combined find + insertion for efficiency?
+  //! Save an image represented by its feature descriptors for future lookup
+  unsigned int insert(const FeatureMatrix& image_features);
+
+  // TODO: combined find + insertion for efficiency? findAndRetain & insertRetainedQuery?
   
   // File I/O
   void save(const std::string& file);
@@ -75,10 +80,12 @@ private:
 
   typedef std::map< Node*, float > ImageVector;
 
+  void clearDatabaseAux(Node* node);
+  
   void saveAux(Node* node, FILE* out, std::string indentation = "");
 
   void loadAux(Node* node, FILE* in, unsigned int indent_level = 0);
-  
+
   void constructVocabulary(const FeatureMatrix& features,
                            const std::vector<unsigned int>& input);
   
@@ -93,6 +100,9 @@ private:
   
   void addFeatureToQuery(Node* node, ImageVector& vec,
                          const FeatureMatrix::RowXpr& feature);
+
+  void addFeatureToDatabaseVector(Node* node, unsigned int object_id,
+                                  const FeatureMatrix::RowXpr& feature);
 
   float tfIdfWeight(size_t N_i);
   

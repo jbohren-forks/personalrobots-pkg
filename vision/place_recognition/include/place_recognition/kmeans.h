@@ -17,12 +17,6 @@ inline float distanceL2(const Eigen::MatrixBase< Vector1T >& v1,
 }
 
 // TODO: Generalize matrix types so Eigen can do vectorization?
-int my_kmeans(const FeatureMatrix& features,
-           const std::vector<unsigned int>& input,
-           std::vector<int>& membership,
-           FeatureMatrix& clusters,
-           int k, float threshold = 0.0f);
-
 int kmeans(const FeatureMatrix& features,
            const std::vector<unsigned int>& input,
            std::vector<int>& membership,

@@ -90,30 +90,4 @@ int kmeans(const FeatureMatrix& features,
   return k;
 }
 
-/*
-// Use Liu's parallel implementation
-int kmeans(const FeatureMatrix& features,
-           const std::vector<unsigned int>& input,
-           std::vector<int>& membership,
-           FeatureMatrix& clusters,
-           int k, float threshold)
-{
-  std::vector<float*> pfeatures;
-  pfeatures.reserve(features.rows());
-  float* feature = const_cast<float*>(features.data());
-  for (int i = 0; i < features.rows(); ++i) {
-    pfeatures.push_back(feature);
-    feature += features.cols();
-  }
-  std::vector< std::vector<float> > centroids;
-  // Do clustering
-  ::kmeans(&pfeatures[0], features.cols(), input, k, threshold, membership, centroids);
-  // copy centroids back to matrix
-  for (int i = 0; i < (int)centroids.size(); ++i) {
-    clusters.row(i) = Eigen::Map<Eigen::VectorXf>(&centroids[i][0], centroids[i].size());
-  }
-  return centroids.size();
-}
-*/
-
 } // namespace vision
