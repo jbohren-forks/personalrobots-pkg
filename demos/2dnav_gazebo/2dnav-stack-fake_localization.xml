@@ -74,6 +74,7 @@
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
+    <param name="/trajectory_rollout/occdist_scale" type="double" value="0.005"/>
 
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
