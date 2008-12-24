@@ -771,7 +771,7 @@ TEST(costmap, test17){
     0,   0, 0,   254, 0, 0,   0, 0, 0, 0,
     0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
     0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
-    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 254, 0, 0, 0, 0,
     0,   0, 0,   0,   0, 254, 0, 0, 0, 0,
     0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
     0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
@@ -791,25 +791,32 @@ TEST(costmap, test17){
   vector<std_msgs::PointCloud*> cv2;
   std_msgs::PointCloud c2;
   cv2.push_back(&c2);
-  c2.set_pts_size(2);
-  c2.pts[0].x = 9 - 2;
-  c2.pts[0].y = 9 - 1;
+  c2.set_pts_size(3);
+  //Dynamic obstacle that raytaces.
+  c2.pts[0].x = 7.0;
+  c2.pts[0].y = 8.0;
   c2.pts[0].z = 1.0;
+  //Dynamic obstacle that should not be raytraced the
+  //first update, but should on the second.
   c2.pts[1].x = 3.0;
   c2.pts[1].y = 4.0;
   c2.pts[1].z = 1.0;
+  //Dynamic obstacle that should not be erased.
+  c2.pts[2].x = 6.0;
+  c2.pts[2].y = 3.0;
+  c2.pts[2].z = 1.0;
   map.updateDynamicObstacles(0.0, 0.0, cv2);
 
 
-  const unsigned char MAP_HALL_CHAR_TEST[10 * 10] = {
+  const unsigned char MAP_HALL_CHAR_TEST[10 * 10] = { 
     126, 254, 126,   0,   0,   0,   0,   0,   0,   0,
       0, 126,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0, 126,   0,   0,   0,   0,   0,
       0,   0,   0, 126, 254, 126,   0,   0,   0,   0,
       0,   0,   0,   0, 126,   0,   0, 126,   0,   0,
-      0,   0,   0,   0,   0,   0, 126, 254, 126,   0,
-      0,   0,   0,   0,   0,   0,   0, 126, 126,   0,
-      0,   0,   0,   0,   0,   0,   0, 126, 254, 126,
+      0,   0,   0, 126,   0,   0, 126, 254, 126,   0,
+      0,   0, 126, 254, 126,   0,   0, 126, 126,   0,
+      0,   0,   0, 126,   0,   0,   0, 126, 254, 126,
       0,   0,   0,   0,   0,   0,   0,   0, 126,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
   };
@@ -818,6 +825,36 @@ TEST(costmap, test17){
   for (int i = 0; i < 10 * 10; i++) {
     ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST[i]);
   }
+
+  vector<std_msgs::PointCloud*> cv;
+  std_msgs::PointCloud c;
+  cv.push_back(&c);
+  c.set_pts_size(1);
+  //Dynamic obstacle that raytaces the one at (3.0, 4.0).
+  c.pts[0].x = 4.0;
+  c.pts[0].y = 5.0;
+  c.pts[0].z = 1.0;
+  map.updateDynamicObstacles(0.0, 0.0, cv);
+
+
+  const unsigned char MAP_HALL_CHAR_TEST2[10 * 10] = { 
+    126, 254, 126,   0,   0,   0,   0,   0,   0,   0,
+      0, 126,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0, 126,   0,   0,   0,   0,
+      0,   0,   0,   0, 126, 254, 126, 126,   0,   0,
+      0,   0,   0, 126,   0, 126, 126, 254, 126,   0,
+      0,   0, 126, 254, 126,   0,   0, 126, 126,   0,
+      0,   0,   0, 126,   0,   0,   0, 126, 254, 126,
+      0,   0,   0,   0,   0,   0,   0,   0, 126,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  };
+
+  
+  for (int i = 0; i < 10 * 10; i++) {
+    ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST2[i]);
+  }
+
 
 }
 

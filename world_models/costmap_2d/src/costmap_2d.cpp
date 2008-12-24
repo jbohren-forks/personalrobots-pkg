@@ -310,7 +310,7 @@ namespace costmap_2d {
       for (unsigned int y = rayStartY; y < rayEndY; y++) {
 	unsigned int ind = MC_IND(x, y);
 
-	if (costData_[ind] != 0 && staticData_[ind] == LETHAL_OBSTACLE && !marked(ind)) {
+	if (costData_[ind] == LETHAL_OBSTACLE && !marked(ind)) {
 	  enqueue(ind, x, y);
 	  
 	}
@@ -503,7 +503,7 @@ namespace costmap_2d {
       x += xinc2;                 // Change the x as appropriate
       y += yinc2;                 // Change the y as appropriate
 
-      if(!marked(index) && staticData_[index] == CostMapAccessor::LETHAL_OBSTACLE) {
+      if(!marked(index)) {
         costData_[index] = 0;
       }
 
