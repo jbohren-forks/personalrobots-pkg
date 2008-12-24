@@ -1,0 +1,16 @@
+<package>
+<description brief='Python wrappers for the Transform Library'>
+
+Library for doing transformations.
+
+</description>
+<author>Tully Foote</author>
+<license>BSD</license>
+<review status="experimental" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="rospy"/>
+<depend package="tf"/>
+<export>
+<cpp cflags="-I${prefix}/include " lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+</export>
+</package>
