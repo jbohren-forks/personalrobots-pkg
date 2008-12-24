@@ -5,7 +5,7 @@
 *
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Caroline Pantofaru
+*  Copyright (c) 2008, Willow Garage, Inc
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,10 @@ void on_mouse(int event, int x, int y, int flags, void *params){
   }
 }
 
-
+/**
+ * This node provides a GUI for starting tracker tracks. Press P to pause the playback and click on a point in the image. 
+ * The 3D coords of the point will be published. 
+ */
 class TrackStarterGUI: public ros::node
 {
 public:
@@ -123,7 +126,7 @@ public:
     cv_image_(NULL),
     cv_disp_image_(NULL),
     cv_disp_image_out_(NULL),
-    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(10), &TrackStarterGUI::image_cb_timeout)
+    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(0.05), &TrackStarterGUI::image_cb_timeout)
   {
     
 
