@@ -72,9 +72,7 @@ int main(int argc, char** argv)
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
 
     // Compute descriptors, disparities
-    float* sig_buffer = NULL;
-    posix_memalign(reinterpret_cast<void**>(&sig_buffer), 16,
-                   dimension * sizeof(float) * pts.size());
+    float* sig_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
     buffers.push_back(sig_buffer);
     buffer_sizes.push_back(pts.size());
     float* sig = sig_buffer;
