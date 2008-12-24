@@ -38,9 +38,9 @@ using namespace ros;
 using namespace tf;
 
 
-#define MAX_ROT_VEL    0.5
-#define MAX_TRANS_VEL  0.4
-#define MAX_DURATION   15.0
+static const double MAX_ROT_VEL = 0.5;
+static const double MAX_TRANS_VEL = 0.4;
+static const double MAX_DURATION = 15.0;
 
 namespace calibration
 {
@@ -49,10 +49,7 @@ namespace calibration
     : ros::node("odom_calibration"),
       _odom_active(false),
       _imu_active(false),
-      _mech_active(false),
-      _completed(false),
-      _mech_begin(12),
-      _mech_end(12)
+      _completed(false)
   {
     // advertise the velocity commands
     advertise<std_msgs::BaseVel>("cmd_vel",10);
@@ -60,7 +57,6 @@ namespace calibration
     // subscribe to messages
     subscribe("odom",            _odom, &odom_calib::odom_callback, 10);
     subscribe("imu_data",        _imu,  &odom_calib::imu_callback,  10);
-    subscribe("mechanism_state", _mech,  &odom_calib::mech_callback,  10);
   };
 
 
@@ -112,23 +108,6 @@ namespace calibration
 
 
 
-  // callback function for mech data
-  void odom_calib::mech_callback()
-  {
-    _mech_mutex.lock();
-    if (!_mech_active){
-      for (unsigned int i=0; i<12; i++){
-	_mech_begin[i] = _mech.joint_states[i+2].position;
-	_mech_active = true;
-      }
-    }
-    else
-      for (unsigned int i=0; i<12; i++)
-	_mech_end[i]   = _mech.joint_states[i+2].position;
-    _mech_mutex.unlock();
-  };
-
-
 
   // correct for angle overflow
   void odom_calib::AngleOverflowCorrect(double& a, double ref)
@@ -152,11 +131,14 @@ namespace calibration
     ROS_INFO("(Odometry Calibration)  Will rotate at %f [deg/sec], and translate at %f [m/sec]", _rot_vel*180/M_PI, _trans_vel);
     ROS_INFO("(Odometry Calibration)  Will move during at %f seconds", _duration);
 
-    // wait for sensor measurements from odom, imu and mechanism state
-    while (!(_odom_active && _imu_active && _mech_active)){
+    // wait for sensor measurements from odom and imu
+    while (!(_odom_active && _imu_active)){
       _vel.vx = 0; _vel.vy = 0;  _vel.vw = 0;
       publish("cmd_vel", _vel);
-      ROS_INFO("Waiting for imu sensor and wheel odometry to start");
+      if (!_odom_active)
+	ROS_INFO("Waiting for wheel odometry to start");
+      if (!_imu_active)
+	ROS_INFO("Waiting for imu sensor to start");
       usleep(1e6);
     }
 
@@ -201,7 +183,6 @@ namespace calibration
 
     _imu_mutex.lock();
     _odom_mutex.lock();
-    _mech_mutex.lock();
 
     // rotation
     double d_imu  = _imu_end  - _imu_begin;
@@ -210,11 +191,6 @@ namespace calibration
     ROS_INFO("Rotated wheel odom %f degrees", d_odom*180/M_PI);
     ROS_INFO("Sending correction ratio %f to controller", d_imu / d_odom);
 
-    // wheel rotation
-    for (unsigned int i=0; i<12; i++){
-      ROS_INFO("%s moved %f radians.",_mech.joint_states[i+2].name.c_str(), _mech_end[i] - _mech_begin[i]);
-    }
-
     // send results to base server
     _srv_snd.radius_multiplier =  d_imu / d_odom;
     if (service::call("base_controller/set_wheel_radius_multiplier", _srv_snd, _srv_rsp)) 
@@ -222,7 +198,6 @@ namespace calibration
     else
       ROS_INFO("Failed to send correction ratio");
 
-    _mech_mutex.unlock();
     _odom_mutex.unlock();
     _imu_mutex.unlock();
   }
