@@ -34,8 +34,8 @@ CFLAGS = -IConvexDecomposition -Wall -c $(DEBUG)
 
 LFLAGS = $(DEBUG)
 
-test: $(OBJS)
-	$(CC) $(LFLAGS) $(OBJS) -o test
+convex_decomposition: $(OBJS)
+	$(CC) $(LFLAGS) $(OBJS) -o convex_decomposition
 
 DecomposeSample.o: DecomposeSample.cpp
 	$(CC) $(CFLAGS) DecomposeSample.cpp -o $@
@@ -82,9 +82,12 @@ ConvexDecomposition/triangulate.o: ConvexDecomposition/triangulate.cpp
 ConvexDecomposition/vlookup.o: ConvexDecomposition/vlookup.cpp ConvexDecomposition/vlookup.cpp
 	$(CC) $(CFLAGS) ConvexDecomposition/vlookup.cpp -o $@
 
+install:
+	cp convex_decomposition ../../convex_decomposition/bin/
+
 clean:
-	\rm *.o */*.o test
+	\rm *.o */*.o convex_decomposition
 
 tar:
-	tar cfv ConvexDecomposition.tar DecomposeSample.cpp test Makefile \
+	tar cfv ConvexDecomposition.tar DecomposeSample.cpp convex_decomposition Makefile \
 		ConvexDecomposition
