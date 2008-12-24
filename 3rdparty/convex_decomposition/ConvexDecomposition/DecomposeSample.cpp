@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include "./ConvexDecomposition/convexdecomposition.h"
+#include "./ConvexDecomposition/ConvexDecomposition.h"
 #include "./ConvexDecomposition/cd_wavefront.h"
 
 using namespace ConvexDecomposition;
@@ -227,7 +227,7 @@ public:
 
   	if ( fph )
   	{
-  		printf("Saving convex decomposition of %d hulls to COLLADA file '%s'\r\n", mHulls.size(), scratch );
+  		printf("Saving convex decomposition of %d hulls to COLLADA file '%s'\r\n", (int)mHulls.size(), scratch );
 
       fprintf(fph,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
       fprintf(fph,"<COLLADA version=\"1.4.0\" xmlns=\"http://www.collada.org/2005/11/COLLADASchema\">\r\n");
@@ -537,7 +537,7 @@ public:
 };
 
 
-void main(int argc,const char **argv)
+int main(int argc,const char **argv)
 {
 	if ( argc < 2 )
 	{

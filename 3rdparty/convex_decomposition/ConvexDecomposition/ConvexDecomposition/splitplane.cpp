@@ -67,7 +67,7 @@
 #include "cd_hull.h"
 #include "cd_wavefront.h"
 #include "bestfit.h"
-#include "PlaneTri.h"
+#include "planetri.h"
 #include "vlookup.h"
 #include "meshvolume.h"
 #include "bestfitobb.h"

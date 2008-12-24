@@ -212,8 +212,14 @@ void fm_quatToMatrix(const double *quat,double *matrix) // convert quaterinion r
 	matrix[1*4+2] =     2 * ( yz + wx );
 	matrix[2*4+2] = 1 - 2 * ( xx + yy );
 
-	matrix[3*4+0] =(double) matrix[3*4+1] = matrix[3*4+2] = 0.0f;
-	matrix[0*4+3] =(double) matrix[1*4+3] = matrix[2*4+3] = 0.0f;
+	matrix[3*4+0] = 0.0f;
+	matrix[3*4+1] = 0.0f;
+	matrix[3*4+2] = 0.0f;
+
+	matrix[0*4+3] = 0.0f;
+	matrix[1*4+3] = 0.0f;
+	matrix[2*4+3] = 0.0f;
+
 	matrix[3*4+3] =(double) 1.0f;
 
 }
