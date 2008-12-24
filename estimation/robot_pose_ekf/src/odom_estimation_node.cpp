@@ -318,7 +318,7 @@ namespace estimation
 
 	    // output most recent estimate and relative covariance
 	    my_filter_.getEstimate(output_);
-	    publish("odom_estimation", output_);
+	    publish(node_name_, output_);
 
 	    // broadcast most recent estimate to TransformArray
 	    Stamped<Transform> tmp;
