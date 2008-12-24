@@ -38,6 +38,7 @@
 
 
 (defmethod action-description ((d <blocks-descriptions>) (name (eql 'act)) args (type (eql :optimistic)))
+  (declare (ignore args))
   (make-simple-description
    (goal (desc-domain d))
    #'(lambda (s1 s2) (declare (ignore s2)) s1)
@@ -47,41 +48,25 @@
 
 
 (defmethod action-description ((d <blocks-descriptions>) (name (eql 'act)) args (type (eql :pessimistic)))
+  (declare (ignore args))
   (let ((dom (desc-domain d)))
     (make-simple-description
      #'(lambda (s) (intersect s (goal dom)))
      #'(lambda (s1 s2) (declare (ignore s2)) (intersect s1 (goal dom)))
      0)))
 
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move-then-act)) args (type (eql :optimistic)))
+  (action-description d 'act nil :optimistic))
 
-
-
-;; Move-then-act just has a trivial description
 (defmethod action-description ((d <blocks-descriptions>) (name (eql 'move-then-act)) args (type (eql :pessimistic)))
   (declare (ignore args))
   (let ((dom (desc-domain d)))
+    (make-simple-description (empty-set dom) (empty-set dom) '-infty)))
+
+
+(defmethod action-description ((d <blocks-descriptions>) (name (eql 'navigate-beside)) args (type (eql :optimistic)))
+  (dsbind (x y) args
     (make-simple-description
-     (empty-set dom)
-     (empty-set dom)
-     '-infty)))
-
-(defmethod action-description ((d <blocks-descriptions>) (name (eql 'move-then-act)) args (type (eql :optimistic)))
-  (declare (ignore args))
-  (let ((dom (desc-domain d)))
-    (make-simple-description
-     (goal dom) 
-     #'(lambda (s1 s2) (declare (ignore s2)) s1)
-     #'(lambda (s1 s2)
-	 (declare (ignore s2))
-	 (funcall (heuristic d) s1)))))
-
-
-
-
-
-  
-
-
-       
-  
-
+     #'nav-beside-progressor
+     #'(lambda (s1 s2) (declare (ignore s2)) s1))))
+     

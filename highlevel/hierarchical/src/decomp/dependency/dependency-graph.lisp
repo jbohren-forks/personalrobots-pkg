@@ -238,7 +238,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
   (bind-pprint-args (str g) args
     (pprint-logical-block 
      (str nil :prefix "[" :suffix "]")
-     (format str "Dep graph~:@_ Graph: ~a~:@_" (graph g))
+     (format str "Dep graph ~a~:@_ Graph: ~a~:@_" (dep-graph-id g) (graph g))
      (do-hash (var val (var-descs g))
        (format str " ~a: ~a~:@_" var val)))))
 

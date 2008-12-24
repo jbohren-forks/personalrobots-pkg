@@ -55,7 +55,7 @@
 		   :add-list ((gripper-pos ?xt ?yt))
 		   :poss-delete-list ((faceR) (faceL)) 
 		   :delete-list ((gripper-pos ?xs ?ys)))))
-    
+       
        (nav 
 	:var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
 	:effects ((:precond

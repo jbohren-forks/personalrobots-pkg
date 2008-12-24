@@ -21,4 +21,5 @@
 ;; Just return the first parent val
 (defun copier (&rest args)
   (assert (= (length (car args)) 1))
-  (cdaar args))
+  (let ((val (cdaar args)))
+    (values val (new-val-diff val) nil t)))

@@ -4,7 +4,7 @@
 
 (defclass <sequence-node> (<node>)
   ((action-sequence :reader action-sequence :writer set-action-sequence)
-   (next-child-to-refine :accessor next-child-to-refine :initform 0)
+   (next-child-to-refine :accessor next-child-to-refine :initform -1)
    (status :initform :initial)))
 
 ;; We don't have an initialize-instance :after method to add the node's variables
@@ -114,8 +114,16 @@
     ;; They have dependants within the node only at the ends
     ;; We have to add all these variables before adding the child nodes because of cyclic dependencies
     (dotimes (i l)
-      (add-variable n (cons 'child-progressed-optimistic i) :external :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty)
-		    :dependants (when (= i (1- l)) '(progressed-optimistic)))
+
+      ;; When the child is created, it has to know it's initial optimistic set, because that's what it uses to decide
+      ;; what its refinements are.  So we precompute this here.
+      (let ((init-progressed-opt (if (zerop i)
+				     (current-value n 'initial-optimistic)
+				     (current-value n (cons 'child-progressed-optimistic (1- i))))))
+	(add-variable n (cons 'child-progressed-optimistic i) :external :dependants (when (= i (1- l)) '(progressed-optimistic))
+		      :initial-value (progress-optimistic (descs n) (elt ref i) init-progressed-opt)))
+
+      ;; Everything else gets a default initial value
       (add-variable n (cons 'child-progressed-pessimistic i) :external :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty)
 		    :dependants (when (= i (1- l)) '(progressed-pessimistic)))
       (add-variable n (cons 'child-regressed-optimistic i) :external :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty)
