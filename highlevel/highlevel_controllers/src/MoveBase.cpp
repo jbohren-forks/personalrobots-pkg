@@ -185,17 +185,24 @@ namespace ros {
       double accLimit_x(1.0);
       double accLimit_y(1.0);
       double accLimit_th(1.0);
-      const double SIM_TIME = 1.0;
-      const unsigned int SIM_STEPS = 20;
-      const unsigned int SAMPLES_PER_DIM = 25;
-      const double DFAST_SCALE = 0;
-      const double OCCDIST_SCALE = 0.2;
+      double sim_time = 1.0;
+      //Note: sim_steps and samples_per_dim should be unsigned
+      //ints but the param function does not like it
+      int sim_steps = 20; 
+      int samples_per_dim = 25;
+      double dfast_scale = 0;
+      double occdist_scale = 0.2;
       param("/trajectory_rollout/map_size", mapSize, 2.0);
       param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
       param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
       param("/trajectory_rollout/acc_limit_x", accLimit_x, 1.0);
       param("/trajectory_rollout/acc_limit_y", accLimit_y, 1.0);
       param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
+      param("/trajectory_rollout/occdist_scale", occdist_scale, occdist_scale);
+      param("/trajectory_rollout/dfast_scale", dfast_scale, dfast_scale);
+      param("/trajectory_rollout/samples_per_dim", samples_per_dim, samples_per_dim);
+      param("/trajectory_rollout/sim_steps", sim_steps, sim_steps);
+      param("/trajectory_rollout/sim_time", sim_time, sim_time);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -223,13 +230,13 @@ namespace ros {
       footprint_.push_back(pt);
 
       controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
-          SIM_TIME,
-          SIM_STEPS,
-          SAMPLES_PER_DIM,
+          sim_time,
+          sim_steps,
+	  samples_per_dim,
           pathDistanceBias,
           goalDistanceBias,
-          DFAST_SCALE,
-          OCCDIST_SCALE,
+          dfast_scale,
+          occdist_scale,
           accLimit_x,
           accLimit_y,
           accLimit_th, 
