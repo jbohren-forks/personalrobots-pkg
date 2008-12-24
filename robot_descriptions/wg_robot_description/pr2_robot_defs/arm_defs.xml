@@ -63,7 +63,7 @@
           <sensor:contact name="${side}_shoulder_pan_contact_sensor">
             <geom>${side}_shoulder_pan_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_shoulder_pan_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_shoulder_pan_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_shoulder_pan_bumper</bumperTopicName>
@@ -127,7 +127,7 @@
           <sensor:contact name="${side}_shoulder_lift_contact_sensor">
             <geom>${side}_shoulder_lift_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_shoulder_lift_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_shoulder_lift_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_shoulder_lift_bumper</bumperTopicName>
@@ -195,7 +195,7 @@
           <sensor:contact name="${side}_upper_arm_roll_contact_sensor">
             <geom>${side}_upper_arm_roll_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_upper_arm_roll_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_upper_arm_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_upper_arm_roll_bumper</bumperTopicName>
@@ -262,7 +262,7 @@
           <sensor:contact name="${side}_elbow_flex_contact_sensor">
             <geom>${side}_elbow_flex_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_elbow_flex_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_elbow_flex_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_elbow_flex_bumper</bumperTopicName>
@@ -285,7 +285,7 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${side}_upper_arm">
         <!--
-        <controller:P3D name="p3d_${side}_shoulder_pan_controller" plugin="libP3D.so">
+        <controller:ros_p3d name="p3d_${side}_shoulder_pan_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_shoulder_pan_link</bodyName>
@@ -293,8 +293,8 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_shoulder_pan_position_iface" />
-        </controller:P3D>
-        <controller:P3D name="p3d_${side}_shoulder_lift_controller" plugin="libP3D.so">
+        </controller:ros_p3d>
+        <controller:ros_p3d name="p3d_${side}_shoulder_lift_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_shoulder_lift_link</bodyName>
@@ -302,8 +302,8 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_shoulder_lift_position_iface" />
-        </controller:P3D>
-        <controller:P3D name="p3d_${side}_upper_arm_roll_controller" plugin="libP3D.so">
+        </controller:ros_p3d>
+        <controller:ros_p3d name="p3d_${side}_upper_arm_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_upper_arm_roll_link</bodyName>
@@ -311,8 +311,8 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_upper_arm_roll_position_iface" />
-        </controller:P3D>
-        <controller:P3D name="p3d_${side}_elbow_flex_controller" plugin="libP3D.so">
+        </controller:ros_p3d>
+        <controller:ros_p3d name="p3d_${side}_elbow_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_elbow_flex_link</bodyName>
@@ -320,7 +320,7 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_elbow_flex_position_iface" />
-        </controller:P3D>
+        </controller:ros_p3d>
         -->
       </verbatim>
     </map>
@@ -375,7 +375,7 @@
           <sensor:contact name="${side}_forearm_roll_contact_sensor">
             <geom>${side}_forearm_roll_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_forearm_roll_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_forearm_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_forearm_roll_bumper</bumperTopicName>
@@ -440,7 +440,7 @@
           <sensor:contact name="${side}_wrist_flex_contact_sensor">
             <geom>${side}_wrist_flex_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_wrist_flex_bumper</bumperTopicName>
@@ -497,7 +497,7 @@
           <sensor:contact name="${side}_wrist_roll_contact_sensor">
             <geom>${side}_wrist_roll_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_wrist_roll_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${side}_wrist_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${side}_wrist_roll_bumper</bumperTopicName>
@@ -521,7 +521,7 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${side}_forearm">
         <!--
-        <controller:P3D name="p3d_${side}_forearm_roll_controller" plugin="libP3D.so">
+        <controller:ros_p3d name="p3d_${side}_forearm_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_forearm_roll_link</bodyName>
@@ -529,8 +529,8 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_forearm_roll_position_iface" />
-        </controller:P3D>
-        <controller:P3D name="p3d_${side}_wrist_flex_controller" plugin="libP3D.so">
+        </controller:ros_p3d>
+        <controller:ros_p3d name="p3d_${side}_wrist_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_wrist_flex_link</bodyName>
@@ -538,8 +538,8 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_wrist_flex_position_iface" />
-        </controller:P3D>
-        <controller:P3D name="p3d_${side}_wrist_roll_controller" plugin="libP3D.so">
+        </controller:ros_p3d>
+        <controller:ros_p3d name="p3d_${side}_wrist_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
           <bodyName>${side}_wrist_roll_link</bodyName>
@@ -547,7 +547,7 @@
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_wrist_roll_position_iface" />
-        </controller:P3D>
+        </controller:ros_p3d>
         -->
       </verbatim>
     </map>

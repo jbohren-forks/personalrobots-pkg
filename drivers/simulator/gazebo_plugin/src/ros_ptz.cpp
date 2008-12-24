@@ -28,7 +28,8 @@
 #include <algorithm>
 #include <assert.h>
 
-#include <gazebo/Model.hh>
+#include <gazebo_plugin/ros_ptz.h>
+
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Simulator.hh>
@@ -37,21 +38,19 @@
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/HingeJoint.hh>
 
-#include <gazebo_plugin/Ros_PTZ.hh>
-
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("Ros_PTZ", Ros_PTZ);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_ptz", RosPTZ);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_PTZ::Ros_PTZ(Entity *parent)
+RosPTZ::RosPTZ(Entity *parent)
     : Controller(parent)
 {
   this->myParent = dynamic_cast<Model*>(this->parent);
 
   if (!this->myParent)
-    gzthrow("Ros_PTZ controller requires a Model as its parent");
+    gzthrow("RosPTZ controller requires a Model as its parent");
 
   this->panJoint = NULL;
   this->tiltJoint = NULL;
@@ -83,7 +82,7 @@ Ros_PTZ::Ros_PTZ(Entity *parent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_PTZ::~Ros_PTZ()
+RosPTZ::~RosPTZ()
 {
   //if (this->panJoint)
   //  delete this->panJoint;
@@ -103,7 +102,7 @@ Ros_PTZ::~Ros_PTZ()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_PTZ::LoadChild(XMLConfigNode *node)
+void RosPTZ::LoadChild(XMLConfigNode *node)
 {
 
   this->panJointNameP->Load(node);
@@ -126,7 +125,7 @@ void Ros_PTZ::LoadChild(XMLConfigNode *node)
   std::cout << " subscribing command topic for ptz " << this->commandTopicName << std::endl;
 
   rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName,10);
-  rosnode->subscribe( commandTopicName, PTZControlMessage, &Ros_PTZ::PTZCommandReceived,this,10);
+  rosnode->subscribe( commandTopicName, PTZControlMessage, &RosPTZ::PTZCommandReceived,this,10);
 
   if (!this->panJoint)
     gzthrow("couldn't get pan hinge joint");
@@ -136,7 +135,7 @@ void Ros_PTZ::LoadChild(XMLConfigNode *node)
 
 }
 
-void Ros_PTZ::PTZCommandReceived()
+void RosPTZ::PTZCommandReceived()
 {
   this->lock.lock();
   this->cmdPan  = PTZControlMessage.pan.cmd*M_PI/180.0;
@@ -146,7 +145,7 @@ void Ros_PTZ::PTZCommandReceived()
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Save the controller.
-void Ros_PTZ::SaveChild(std::string &prefix, std::ostream &stream)
+void RosPTZ::SaveChild(std::string &prefix, std::ostream &stream)
 {
   stream << prefix << *(this->panJointNameP) << "\n";
   stream << prefix << *(this->tiltJointNameP) << "\n";
@@ -156,7 +155,7 @@ void Ros_PTZ::SaveChild(std::string &prefix, std::ostream &stream)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_PTZ::InitChild()
+void RosPTZ::InitChild()
 {
   // initialize pan/tilt angles
   this->cmdPan  = 0.0;
@@ -165,14 +164,14 @@ void Ros_PTZ::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reset the controller
-void Ros_PTZ::ResetChild()
+void RosPTZ::ResetChild()
 {
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_PTZ::UpdateChild()
+void RosPTZ::UpdateChild()
 {
   // Apply joint limits to commanded pan/tilt angles
   if (this->cmdTilt > M_PI*0.3)
@@ -210,7 +209,7 @@ void Ros_PTZ::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_PTZ::FiniChild()
+void RosPTZ::FiniChild()
 {
   rosnode->unadvertise(this->stateTopicName);
   rosnode->unsubscribe(commandTopicName); // FIXME: only unsubscribe if subscribed?
@@ -218,7 +217,7 @@ void Ros_PTZ::FiniChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put laser data to the interface
-void Ros_PTZ::PutPTZData()
+void RosPTZ::PutPTZData()
 {
   // Data timestamp, not used
   //double cur_time = Simulator::Instance()->GetSimTime();

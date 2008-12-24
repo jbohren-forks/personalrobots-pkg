@@ -23,14 +23,15 @@
  * Author: John Hsu
  * Date: 24 Sept 2008
  */
-#ifndef ROS_JOINTFORCE_CONTROLLER_HH
-#define ROS_JOINTFORCE_CONTROLLER_HH
+#ifndef ROS_JOINT_FORCE_CONTROLLER_HH
+#define ROS_JOINT_FORCE_CONTROLLER_HH
 
 /// Maximum number of joints that can be watched by one controller
-#define ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS 16
+#define ROS_JOINT_FORCE_CONTROLLER_MAX_FEEDBACKS 16
 
 #include "Controller.hh"
 #include "Entity.hh"
+#include "Model.hh"
 #include <ode/ode.h>
 #include <sys/time.h>
 
@@ -39,20 +40,20 @@ namespace gazebo
 {
 /// \addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// \{
-/** \defgroup Ros_Jointforce Joint Force Controller Plugin
+/** \defgroup RosJointforce Joint Force Controller Plugin
 
   \brief A controller that measures forces and torques exerted by joints
 
   \verbatim
     <model:physical name="test_model">
       <body:empty name="body_name">
-          <controller:ros_jointforce name="ros_ray_sensor_controller" plugin="libRos_Laser.so">
+          <controller:ros_joint_force name="ros_ray_sensor_controller" plugin="libros_joint_force.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>jointfoce_topic_name</topicName>
             <frameName>test_model</frameName>
             <interface:opaque name="jointforce_iface" />
-          </controller:ros_jointforce>
+          </controller:ros_joint_force>
       </body:empty>
     </model:phyiscal>
   \endverbatim
@@ -61,13 +62,13 @@ namespace gazebo
 */
 
 /// \brief A JointForce controller
-class Ros_JointForce : public Controller
+class RosJointForce : public Controller
 {
   /// \brief Constructor
-    public: Ros_JointForce(Entity *parent );
+    public: RosJointForce(Entity *parent );
 
   /// \brief Destructor
-    public: virtual ~Ros_JointForce();
+    public: virtual ~RosJointForce();
 
   /// \brief Load the controller
   /// \param node XML config node
@@ -86,7 +87,7 @@ class Ros_JointForce : public Controller
   private: Model *myParent;
 
   /// \brief The joint feedbacks
-  private: dJointFeedback *jointfeedbacks[ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS];
+  private: dJointFeedback *jointfeedbacks[ROS_JOINT_FORCE_CONTROLLER_MAX_FEEDBACKS];
   /// \brief The number of joints we are watching
   private: int n_joints;
 };

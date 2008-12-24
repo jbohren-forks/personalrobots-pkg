@@ -38,7 +38,7 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup Ros_Camera Ros Camera Plugin XML Reference and Example
+/** \defgroup RosCamera Ros Camera Plugin XML Reference and Example
 
   \brief Ros Camera Plugin Controller.
   
@@ -49,7 +49,7 @@ namespace gazebo
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
       <sensor:camera name="camera_sensor">
-        <controller:ros_camera name="controller-name" plugin="libRos_Camera.so">
+        <controller:ros_camera name="controller-name" plugin="libros_camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>camera_name/image</topicName>
@@ -66,7 +66,7 @@ namespace gazebo
 /**
 
 
-    \brief Ros_Camera Controller.
+    \brief RosCamera Controller.
            \li Starts a ROS node if none exists. \n
            \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS.
            \li Example Usage:
@@ -74,7 +74,7 @@ namespace gazebo
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
       <sensor:camera name="camera_sensor">
-        <controller:ros_camera name="controller-name" plugin="libRos_Camera.so">
+        <controller:ros_camera name="controller-name" plugin="libros_camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>camera_name/image</topicName>
@@ -88,14 +88,14 @@ namespace gazebo
  
 */
 
-class Ros_Camera : public Controller
+class RosCamera : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity, must be a Model or a Sensor
-  public: Ros_Camera(Entity *parent);
+  public: RosCamera(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~Ros_Camera();
+  public: virtual ~RosCamera();
 
   /// \brief Load the controller
   /// \param node XML config node

@@ -20,18 +20,19 @@
  */
 /*
  @mainpage
-   Desc: Ros_Camera plugin for simulating cameras in Gazebo
+   Desc: RosCamera plugin for simulating cameras in Gazebo
    Author: John Hsu
    Date: 24 Sept 2008
    SVN info: $Id$
  @htmlinclude manifest.html
- @b Ros_Camera plugin broadcasts ROS Image messages
+ @b RosCamera plugin broadcasts ROS Image messages
  */
 
 #include <algorithm>
 #include <assert.h>
 
-#include <gazebo_plugin/Ros_Camera.hh>
+#include <gazebo_plugin/ros_camera.h>
+
 #include <gazebo/Sensor.hh>
 #include <gazebo/Model.hh>
 #include <gazebo/Global.hh>
@@ -44,17 +45,17 @@
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", Ros_Camera);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", RosCamera);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Camera::Ros_Camera(Entity *parent)
+RosCamera::RosCamera(Entity *parent)
     : Controller(parent)
 {
   this->myParent = dynamic_cast<MonoCameraSensor*>(this->parent);
 
   if (!this->myParent)
-    gzthrow("Ros_Camera controller requires a Camera Sensor as its parent");
+    gzthrow("RosCamera controller requires a Camera Sensor as its parent");
 
 
   // set parent sensor to active automatically
@@ -88,7 +89,7 @@ Ros_Camera::Ros_Camera(Entity *parent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Camera::~Ros_Camera()
+RosCamera::~RosCamera()
 {
 
 
@@ -96,7 +97,7 @@ Ros_Camera::~Ros_Camera()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Camera::LoadChild(XMLConfigNode *node)
+void RosCamera::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
@@ -107,7 +108,7 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Camera::InitChild()
+void RosCamera::InitChild()
 {
 
 
@@ -115,7 +116,7 @@ void Ros_Camera::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Camera::UpdateChild()
+void RosCamera::UpdateChild()
 {
 
   // do this first so there's chance for sensor to run 1 frame after activate
@@ -126,14 +127,14 @@ void Ros_Camera::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Camera::FiniChild()
+void RosCamera::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put laser data to the interface
-void Ros_Camera::PutCameraData()
+void RosCamera::PutCameraData()
 {
   const unsigned char *src;
 

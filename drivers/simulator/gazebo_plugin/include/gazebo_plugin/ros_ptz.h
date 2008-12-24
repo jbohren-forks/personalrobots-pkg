@@ -30,6 +30,7 @@
 
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
+#include <gazebo/Model.hh>
 
 // ros messages
 #include <ros/node.h>
@@ -45,7 +46,7 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup Ros_PTZ ROS PTZ Camera Controller Plugin
+/** \defgroup RosPTZ ROS PTZ Camera Controller Plugin
 
   \brief ROS pan-tilt-zoom controller.
   
@@ -54,7 +55,7 @@ namespace gazebo
   Example Usage:
   \verbatim
   <model:physical name="ptz_model">
-    <controller:Ros_PTZ name="ptz_controller" plugin="libRos_PTZ.so">
+    <controller:ros_ptz name="ptz_controller" plugin="libros_ptz.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>15.0</updateRate>
       <panJoint>ptz_pan_joint_name</panJoint>
@@ -62,7 +63,7 @@ namespace gazebo
       <commandTopicName>camera_name/ptz_cmd</commandTopicName>
       <stateTopicName>camera_name/ptz_state</stateTopicName>
       <interface:ptz name="ptz_iface" />
-    </controller:Ros_PTZ>
+    </controller:ros_ptz>
   </model:phyiscal>
   \endverbatim
  
@@ -79,7 +80,7 @@ namespace gazebo
              \li Example Usage:
   \verbatim
   <model:physical name="ptz_model">
-    <controller:Ros_PTZ name="ptz_controller" plugin="libRos_PTZ.so">
+    <controller:ros_ptz name="ptz_controller" plugin="libros_ptz.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>15.0</updateRate>
       <panJoint>ptz_pan_joint_name</panJoint>
@@ -87,19 +88,19 @@ namespace gazebo
       <commandTopicName>camera_name/ptz_cmd</commandTopicName>
       <stateTopicName>camera_name/ptz_state</stateTopicName>
       <interface:ptz name="ptz_iface" />
-    </controller:Ros_PTZ>
+    </controller:ros_ptz>
   </model:phyiscal>
   \endverbatim
              .
 */
-  class Ros_PTZ : public Controller
+  class RosPTZ : public Controller
   {
     /// \brief Constructor
     /// \param parent The parent entity, must be a Model or a Sensor
-    public: Ros_PTZ(Entity *parent);
+    public: RosPTZ(Entity *parent);
   
     /// \brief Destructor
-    public: virtual ~Ros_PTZ();
+    public: virtual ~RosPTZ();
   
     /// \brief Load the controller
     /// \param node XML config node

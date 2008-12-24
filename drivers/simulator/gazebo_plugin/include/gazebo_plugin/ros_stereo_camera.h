@@ -48,7 +48,7 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup Ros_Stereo_Camera ROS stereo camera controller plugin
+/** \defgroup RosStereoCamera ROS stereo camera controller plugin
 
   \brief Stereo camera controller.
   
@@ -66,7 +66,7 @@ namespace gazebo
         <saveFramePath>frames</saveFramePath>
         <baseline>0.2</baseline>
         <updateRate>15.0</updateRate>
-        <controller:ros_stereocamera name="stereo_camera_controller" plugin="libRos_Stereo_Camera.so">
+        <controller:ros_stereocamera name="stereo_camera_controller" plugin="libros_stereo_camera.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>15.0</updateRate>
           <interface:stereocamera name="stereo_iface_0" />
@@ -92,14 +92,14 @@ namespace gazebo
 /// \brief Stereo camera controller.
 /// 
 /// This is a controller that simulates a stereo camera
-class Ros_Stereo_Camera : public Controller
+class RosStereoCamera : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity, must be a Model or a Sensor
-  public: Ros_Stereo_Camera(Entity *parent);
+  public: RosStereoCamera(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~Ros_Stereo_Camera();
+  public: virtual ~RosStereoCamera();
 
   /// \brief True if a stereo iface is connected
   public: bool StereoIfaceConnected() const;

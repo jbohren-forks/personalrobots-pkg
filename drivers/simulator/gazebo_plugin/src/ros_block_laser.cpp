@@ -22,11 +22,13 @@
  * Desc: Ros Block Laser controller.
  * Author: Nathan Koenig
  * Date: 01 Feb 2007
- * SVN info: $Id: Ros_Block_Laser.cc 6683 2008-06-25 19:12:30Z natepak $
+ * SVN info: $Id: ros_block_laser.cc 6683 2008-06-25 19:12:30Z natepak $
  */
 
 #include <algorithm>
 #include <assert.h>
+
+#include <gazebo_plugin/ros_block_laser.h>
 
 #include <gazebo/Sensor.hh>
 #include <gazebo/Global.hh>
@@ -38,21 +40,20 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 #include <RaySensor.hh>
-#include <gazebo_plugin/Ros_Block_Laser.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_block_laser", Ros_Block_Laser);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_block_laser", RosBlockLaser);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Block_Laser::Ros_Block_Laser(Entity *parent)
+RosBlockLaser::RosBlockLaser(Entity *parent)
     : Controller(parent)
 {
   this->myParent = dynamic_cast<RaySensor*>(this->parent);
 
   if (!this->myParent)
-    gzthrow("Ros_Block_Laser controller requires a Ray Sensor as its parent");
+    gzthrow("RosBlockLaser controller requires a Ray Sensor as its parent");
 
   // set parent sensor to active automatically
   this->myParent->SetActive(true);
@@ -71,13 +72,13 @@ Ros_Block_Laser::Ros_Block_Laser(Entity *parent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Block_Laser::~Ros_Block_Laser()
+RosBlockLaser::~RosBlockLaser()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Block_Laser::LoadChild(XMLConfigNode *node)
+void RosBlockLaser::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   std::cout << "================= " << this->topicName <<  std::endl;
@@ -103,28 +104,28 @@ void Ros_Block_Laser::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Block_Laser::InitChild()
+void RosBlockLaser::InitChild()
 {
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Block_Laser::UpdateChild()
+void RosBlockLaser::UpdateChild()
 {
     this->PutLaserData();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Block_Laser::FiniChild()
+void RosBlockLaser::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put laser data to the interface
-void Ros_Block_Laser::PutLaserData()
+void RosBlockLaser::PutLaserData()
 {
   int i, hja, hjb;
   int j, vja, vjb;
@@ -253,7 +254,7 @@ void Ros_Block_Laser::PutLaserData()
 
 //////////////////////////////////////////////////////////////////////////////
 // Utility for adding noise
-double Ros_Block_Laser::GaussianKernel(double mu,double sigma)
+double RosBlockLaser::GaussianKernel(double mu,double sigma)
 {
   // using Box-Muller transform to generate two independent standard normally disbributed normal variables
   // see wikipedia

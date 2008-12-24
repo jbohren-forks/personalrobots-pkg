@@ -22,13 +22,14 @@
  * Desc: Stereo camera controller.
  * Author: Nathan Koenig
  * Date: 06 April 2008
- * SVN info: $Id: Ros_Stereo_Camera.cc 4436 2008-03-24 17:42:45Z robotos $
+ * SVN info: $Id: ros_stereo_camera.cpp 4436 2008-03-24 17:42:45Z robotos $
  */
 
 #include <algorithm>
 #include <assert.h>
 
-#include <gazebo_plugin/Ros_Stereo_Camera.hh>
+#include <gazebo_plugin/ros_stereo_camera.h>
+
 #include <gazebo/Sensor.hh>
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
@@ -39,11 +40,11 @@
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", Ros_Stereo_Camera);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Stereo_Camera::Ros_Stereo_Camera(Entity *parent)
+RosStereoCamera::RosStereoCamera(Entity *parent)
     : Controller(parent)
 {
   this->myParent = dynamic_cast<StereoCameraSensor*>(this->parent);
@@ -54,7 +55,7 @@ Ros_Stereo_Camera::Ros_Stereo_Camera(Entity *parent)
   Param::End();
 
   if (!this->myParent)
-    gzthrow("Ros_Stereo_Camera controller requires a Stereo Camera Sensor as its parent");
+    gzthrow("RosStereoCamera controller requires a Stereo Camera Sensor as its parent");
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
@@ -70,7 +71,7 @@ Ros_Stereo_Camera::Ros_Stereo_Camera(Entity *parent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Stereo_Camera::~Ros_Stereo_Camera()
+RosStereoCamera::~RosStereoCamera()
 {
   delete this->leftCameraNameP;
   delete this->rightCameraNameP;
@@ -78,7 +79,7 @@ Ros_Stereo_Camera::~Ros_Stereo_Camera()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Stereo_Camera::LoadChild(XMLConfigNode *node)
+void RosStereoCamera::LoadChild(XMLConfigNode *node)
 {
   std::vector<Iface*>::iterator iter;
 
@@ -97,7 +98,7 @@ void Ros_Stereo_Camera::LoadChild(XMLConfigNode *node)
   this->rightCameraNameP->Load(node);
 
   if (!this->stereoIface)
-    gzthrow("Ros_Stereo_Camera controller requires a StereoCameraIface");
+    gzthrow("RosStereoCamera controller requires a StereoCameraIface");
 
   // set parent sensor to active automatically
   this->myParent->SetActive(true);
@@ -118,7 +119,7 @@ void Ros_Stereo_Camera::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Save the controller.
-void Ros_Stereo_Camera::SaveChild(std::string &prefix, std::ostream &stream)
+void RosStereoCamera::SaveChild(std::string &prefix, std::ostream &stream)
 {
   stream << prefix << *(this->leftCameraNameP) << "\n";
   stream << prefix << *(this->rightCameraNameP) << "\n";
@@ -126,13 +127,13 @@ void Ros_Stereo_Camera::SaveChild(std::string &prefix, std::ostream &stream)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Stereo_Camera::InitChild()
+void RosStereoCamera::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// True if a stereo iface is connected
-bool Ros_Stereo_Camera::StereoIfaceConnected() const
+bool RosStereoCamera::StereoIfaceConnected() const
 {
   // always on
   return true;
@@ -140,7 +141,7 @@ bool Ros_Stereo_Camera::StereoIfaceConnected() const
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Stereo_Camera::UpdateChild()
+void RosStereoCamera::UpdateChild()
 {
   std::map< std::string, CameraIface*>::iterator iter;
 
@@ -174,7 +175,7 @@ void Ros_Stereo_Camera::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Stereo_Camera::FiniChild()
+void RosStereoCamera::FiniChild()
 {
   rosnode->unadvertise(this->leftCloudTopicName);
   rosnode->unadvertise(this->rightCloudTopicName);
@@ -184,7 +185,7 @@ void Ros_Stereo_Camera::FiniChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put stereo data to the interface
-void Ros_Stereo_Camera::PutStereoData()
+void RosStereoCamera::PutStereoData()
 {
   //StereoCameraData* stereo_data = new StereoCameraData();
   StereoCameraData* stereo_data = this->stereoIface->data;
@@ -299,7 +300,7 @@ void Ros_Stereo_Camera::PutStereoData()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put camera data to the interface
-void Ros_Stereo_Camera::PutCameraData(CameraData *camera_data, unsigned int camera)
+void RosStereoCamera::PutCameraData(CameraData *camera_data, unsigned int camera)
 {
   //CameraData *camera_data = new CameraData();
   const unsigned char *rgb_src = NULL;

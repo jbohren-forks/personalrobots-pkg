@@ -29,21 +29,22 @@
 #include <algorithm>
 #include <assert.h>
 
+#include <gazebo_plugin/ros_time.h>
+
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Simulator.hh>
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <gazebo_plugin/Ros_Time.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_time", Ros_Time);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_time", RosTime);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Time::Ros_Time(Entity *parent)
+RosTime::RosTime(Entity *parent)
     : Controller(parent)
 {
 
@@ -55,7 +56,7 @@ Ros_Time::Ros_Time(Entity *parent)
       // this only works for a single camera.
       ros::init(argc,argv);
       rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in Ros_Time \n");
+      printf("-------------------- starting node in RosTime \n");
     }
 
     // for rostime
@@ -65,26 +66,26 @@ Ros_Time::Ros_Time(Entity *parent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Time::~Ros_Time()
+RosTime::~RosTime()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Time::LoadChild(XMLConfigNode *node)
+void RosTime::LoadChild(XMLConfigNode *node)
 {
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Time::InitChild()
+void RosTime::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Time::UpdateChild()
+void RosTime::UpdateChild()
 {
     // pass time to robot
     double currentTime = Simulator::Instance()->GetSimTime();
@@ -104,7 +105,7 @@ void Ros_Time::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Time::FiniChild()
+void RosTime::FiniChild()
 {
   rosnode_->unadvertise("time");
 }

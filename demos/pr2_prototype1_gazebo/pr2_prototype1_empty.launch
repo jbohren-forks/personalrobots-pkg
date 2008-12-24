@@ -15,7 +15,7 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
 
-    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo, the initial coordinates here is in Gazebo format, in the map frame, add offsets from P3D plugin (25.65,25.65) -->
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 0 0 0 0 0" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- use mech.py to spawn all controllers listed in controllers.xml -->

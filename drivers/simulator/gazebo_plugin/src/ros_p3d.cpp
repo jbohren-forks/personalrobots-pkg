@@ -25,32 +25,31 @@
  * SVN info: $Id$
  */
 
+#include <gazebo_plugin/ros_p3d.h>
+
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
-#include <gazebo/Model.hh>
 #include <gazebo/HingeJoint.hh>
-#include <gazebo/Body.hh>
 #include <gazebo/SliderJoint.hh>
 #include <gazebo/Simulator.hh>
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <gazebo_plugin/P3D.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("P3D", P3D);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_p3d", RosP3D);
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-P3D::P3D(Entity *parent )
+RosP3D::RosP3D(Entity *parent )
    : Controller(parent)
 {
    this->myParent = dynamic_cast<Model*>(this->parent);
 
    if (!this->myParent)
-      gzthrow("P3D controller requires a Model as its parent");
+      gzthrow("RosP3D controller requires a Model as its parent");
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
@@ -60,19 +59,19 @@ P3D::P3D(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in P3D \n");
+    printf("-------------------- starting node in RosP3D \n");
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-P3D::~P3D()
+RosP3D::~RosP3D()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void P3D::LoadChild(XMLConfigNode *node)
+void RosP3D::LoadChild(XMLConfigNode *node)
 {
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
@@ -84,14 +83,14 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->rpyOffsets    = node->GetVector3("rpyOffsets", Vector3(0,0,0));
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
-  std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
+  std::cout << "==== topic name for RosP3D ======== " << this->topicName << std::endl;
   if (this->topicName != "")
     rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void P3D::InitChild()
+void RosP3D::InitChild()
 {
   this->last_time = Simulator::Instance()->GetSimTime();
   this->last_vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
@@ -102,7 +101,7 @@ void P3D::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void P3D::UpdateChild()
+void RosP3D::UpdateChild()
 {
   Pose3d pose;
   Quatern rot;
@@ -114,7 +113,7 @@ void P3D::UpdateChild()
   // apply xyz offsets and get position and rotation components
   pos = pose.pos + this->xyzOffsets;
   rot = pose.rot;
-  // std::cout << " --------- P3D rot " << rot.x << ", " << rot.y << ", " << rot.z << ", " << rot.u << std::endl;
+  // std::cout << " --------- RosP3D rot " << rot.x << ", " << rot.y << ", " << rot.z << ", " << rot.u << std::endl;
 
   // apply rpy offsets
   Quatern qOffsets;
@@ -188,7 +187,7 @@ void P3D::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void P3D::FiniChild()
+void RosP3D::FiniChild()
 {
   if (this->topicName != "")
     rosnode->unadvertise(this->topicName);
@@ -196,7 +195,7 @@ void P3D::FiniChild()
 
 //////////////////////////////////////////////////////////////////////////////
 // Utility for adding noise
-double P3D::GaussianKernel(double mu,double sigma)
+double RosP3D::GaussianKernel(double mu,double sigma)
 {
   // using Box-Muller transform to generate two independent standard normally disbributed normal variables
   // see wikipedia

@@ -24,11 +24,13 @@
  * Date: 10 June 2008
  * SVN: $Id$
  */
-#ifndef P3D_HH
-#define P3D_HH
+#ifndef ROS_P3D_HH
+#define ROS_P3D_HH
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
+#include <gazebo/Model.hh>
+#include <gazebo/Body.hh>
 
 #include <ros/node.h>
 #include <rosthread/mutex.h>
@@ -39,16 +41,16 @@ namespace gazebo
 {
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-   /** \defgroup P3D Groud Truth Position Pose and Rates Interface
+   /** \defgroup RosP3D Groud Truth Position Pose and Rates Interface
 
-   \brief P3D controller.
+   \brief RosP3D controller.
 
    This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::PoseWithRatesStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
 
    Example Usage:
    \verbatim
      <model:physical name="some_fancy_model">
-       <controller:P3D name="p3d_controller" plugin="libP3D.so">
+       <controller:ros_p3d name="p3d_controller" plugin="libros_p3d.so">
          <alwaysOn>true</alwaysOn>
          <updateRate>1000.0</updateRate>
          <bodyName>body_name</bodyName>
@@ -57,7 +59,7 @@ namespace gazebo
          <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
          <rpyOffsets>0 0 0</rpyOffsets>
          <interface:position name="p3d_position_iface"/>
-       </controller:P3D>
+       </controller:ros_p3d>
      </model:phyiscal>
    \endverbatim
    
@@ -66,13 +68,13 @@ namespace gazebo
 
 /**
 
-   \brief P3D controller
+   \brief RosP3D controller
           \li Starts a ROS node if none exists.
           \li This controller simulates a 6 dof position and rate sensor, publishes std_msgs::PoseWithRatesStamped.msg ROS topic.
           \li Example Usage:
    \verbatim
      <model:physical name="some_fancy_model">
-       <controller:P3D name="p3d_controller" plugin="libP3D.so">
+       <controller:ros_p3d name="p3d_controller" plugin="libros_p3d.so">
          <alwaysOn>true</alwaysOn>
          <updateRate>1000.0</updateRate>
          <bodyName>body_name</bodyName>
@@ -81,19 +83,19 @@ namespace gazebo
          <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
          <rpyOffsets>0 0 0</rpyOffsets>
          <interface:position name="p3d_position_iface"/>
-       </controller:P3D>
+       </controller:ros_p3d>
      </model:phyiscal>
    \endverbatim
           .
 */
 
-   class P3D : public Controller
+   class RosP3D : public Controller
    {
       /// \brief Constructor
-      public: P3D(Entity *parent );
+      public: RosP3D(Entity *parent );
 
       /// \brief Destructor
-      public: virtual ~P3D();
+      public: virtual ~RosP3D();
 
       /// \brief Load the controller
       /// \param node XML config node

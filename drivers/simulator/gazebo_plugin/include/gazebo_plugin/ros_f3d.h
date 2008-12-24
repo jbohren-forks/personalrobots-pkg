@@ -24,11 +24,13 @@
  * Date: 24 Sept 2008
  * SVN: $Id$
  */
-#ifndef F3D_HH
-#define F3D_HH
+#ifndef ROS_F3D_HH
+#define ROS_F3D_HH
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
+#include <gazebo/Model.hh>
+#include <gazebo/Body.hh>
 
 #include <ros/node.h>
 #include <rosthread/mutex.h>
@@ -39,7 +41,7 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup F3D Applied Force Feedback Plugin XML Reference and Example
+/** \defgroup RosF3D Applied Force Feedback Plugin XML Reference and Example
 
   \brief FIXME: Applied Force Feedback controller.
   
@@ -47,30 +49,30 @@ namespace gazebo
 
   \verbatim
   <model:physical name="camera_model">
-    <controller:F3D name="f3d_finger_tip_l_left_controller" plugin="libF3D.so">
+    <controller:ros_f3d name="f3d_finger_tip_l_left_controller" plugin="libros_f3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>100.0</updateRate>
         <bodyName>finger_tip_l_left</bodyName>
         <topicName>finger_tip_l_left_ground_truth</topicName>
         <frameName>map</frameName>
         <interface:position name="f3d_finger_tip_l_left_position" />
-    </controller:F3D>
+    </controller:ros_f3d>
   </model:phyiscal>
   \endverbatim
  
 \{
 */
 
-/// \brief F3D controller
+/// \brief RosF3D controller
 /// This is a controller that simulates a 6 dof position sensor
-class F3D : public Controller
+class RosF3D : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity must be a Model
-  public: F3D(Entity *parent);
+  public: RosF3D(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~F3D();
+  public: virtual ~RosF3D();
 
   /// \brief Load the controller
   /// \param node XML config node

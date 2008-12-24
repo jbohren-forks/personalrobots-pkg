@@ -82,16 +82,6 @@
     </body:plane>
   </model:physical>
 
-  <!--
-  <model:empty name="ros_model">
-    <body:empty name="ros_body">
-       <controller:ros_node name="ros_node" plugin="libRos_Node.so">
-        <nodeName>simulator_ros_node</nodeName>
-      </controller:ros_node>
-    </body:empty>
-  </model:empty>
-  -->
-
   <!-- The "desk"-->
   <!-- small desks -->
   <model:physical name="../gazebo_objects/desk1_model">

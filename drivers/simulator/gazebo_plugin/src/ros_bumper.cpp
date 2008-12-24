@@ -24,6 +24,8 @@
  * Date: 09 Setp. 2008
  */
 
+#include <gazebo_plugin/ros_bumper.h>
+
 #include "gazebo/Global.hh"
 #include "gazebo/XMLConfig.hh"
 #include "ContactSensor.hh"
@@ -32,15 +34,14 @@
 #include "gazebo/GazeboError.hh"
 #include "gazebo/ControllerFactory.hh"
 #include "gazebo/Simulator.hh"
-#include "gazebo_plugin/Ros_Bumper.hh"
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_bumper", Ros_Bumper);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_bumper", RosBumper);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Bumper::Ros_Bumper(Entity *parent )
+RosBumper::RosBumper(Entity *parent )
   : Controller(parent)
 {
   this->myParent = dynamic_cast<ContactSensor*>(this->parent);
@@ -67,14 +68,14 @@ Ros_Bumper::Ros_Bumper(Entity *parent )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Bumper::~Ros_Bumper()
+RosBumper::~RosBumper()
 {
   delete this->bumperTopicNameP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Bumper::LoadChild(XMLConfigNode *node)
+void RosBumper::LoadChild(XMLConfigNode *node)
 {
   this->bumperTopicNameP->Load(node);
   this->bumperTopicName = this->bumperTopicNameP->GetValue();
@@ -85,13 +86,13 @@ void Ros_Bumper::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Bumper::InitChild()
+void RosBumper::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Bumper::UpdateChild()
+void RosBumper::UpdateChild()
 {
   this->lock.lock();
 
@@ -130,6 +131,6 @@ void Ros_Bumper::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Bumper::FiniChild()
+void RosBumper::FiniChild()
 {
 }

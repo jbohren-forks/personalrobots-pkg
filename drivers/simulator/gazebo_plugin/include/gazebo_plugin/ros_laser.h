@@ -19,21 +19,20 @@
  *
  */
 /*
- * Desc: ros laser controller.
- * Author: Nathan Koenig
- * Date: 01 Feb 2007
- * SVN: $Id: Ros_Block_Laser.hh 6656 2008-06-20 22:52:19Z natepak $
+ * Desc: ROS laser controller.
+ * Author: John Hsu
+ * Date: 24 Sept 2007
+ * SVN: $Id$
  */
 
-#ifndef ROS_BLOCK_LASER_HH
-#define ROS_BLOCK_LASER_HH
+#ifndef ROS_LASER_HH
+#define ROS_LASER_HH
 
 #include <gazebo/Controller.hh>
 
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 #include <std_msgs/LaserScan.h>
-#include <std_msgs/PointCloud.h>
 
 namespace gazebo
 {
@@ -41,44 +40,36 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup Ros_Block_Laser ROS Block Laser Scanner Controller Plugin
+/** \defgroup RosLaser ROS Laser Scanner Controller Plugin
 
-  \brief ROS Block Laser Scanner Controller Plugin
+  \brief ROS Laser Scanner Controller Plugin
   
-  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds.
+  This controller gathers range data from a simulated ray sensor, publishes range data through
+    std_msgs::LaserScan ROS topic.
 
   Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
         <sensor:ray name="ray_sensor">
-          <rayCount>30</rayCount>
-          <rangeCount>30</rangeCount>
+          <origin>0.0 0.0 0.0</origin>
+          <rayCount>683</rayCount>
+          <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
-          
-          <origin>0.0 0.0 0.05</origin>
           <displayRays>false</displayRays>
-          
-          <minAngle>-15</minAngle>
-          <maxAngle> 15</maxAngle>
-          
+          <minAngle>-45</minAngle>
+          <maxAngle> 45</maxAngle>
           <minRange>0.05</minRange>
-          <maxRange>100.0</maxRange>
+          <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-
-          <verticalRayCount>30</verticalRayCount>
-          <verticalRangeCount>30</verticalRangeCount>
-          <verticalMinAngle>-20</verticalMinAngle>
-          <verticalMaxAngle>  0</verticalMaxAngle>
-
-          <controller:ros_block_laser name="ray_block_controller" plugin="libRos_Block_Laser.so">
+          <controller:ros_laser name="ros_ray_sensor_controller" plugin="libros_laser.so">
             <gaussianNoise>0.005</gaussianNoise>
             <alwaysOn>true</alwaysOn>
-            <updateRate>10.0</updateRate>
-            <topicName>full_cloud</topicName>
+            <updateRate>15.0</updateRate>
+            <topicName>ray_scan</topicName>
             <frameName>ray_model</frameName>
-            <interface:laser name="ray_block_iface" />
-          </controller:ros_block_laser>
+            <interface:laser name="ros_ray_sensor_iface" />
+          </controller:ros_laser>
         </sensor:ray>
       </body:empty>
     </model:phyiscal>
@@ -88,57 +79,47 @@ namespace gazebo
 */
 
 /**
- \brief ROS laser block simulation.
-        \li Starts a ROS node if none exists.
-        \li This controller simulates a block of laser range detections.
-            Resulting point cloud (std_msgs::PointCloud.msg) is published as a ROS topic.
-        \li Example Usage:
+    \brief ROS laser scan controller.
+           \li Starts a ROS node if none exists.
+           \li Simulates a laser range sensor and publish std_msgs::LaserScan.msg over ROS.
+           \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
         <sensor:ray name="ray_sensor">
-          <rayCount>30</rayCount>
-          <rangeCount>30</rangeCount>
+          <origin>0.0 0.0 0.0</origin>
+          <rayCount>683</rayCount>
+          <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
-          
-          <origin>0.0 0.0 0.05</origin>
           <displayRays>false</displayRays>
-          
-          <minAngle>-15</minAngle>
-          <maxAngle> 15</maxAngle>
-          
+          <minAngle>-45</minAngle>
+          <maxAngle> 45</maxAngle>
           <minRange>0.05</minRange>
-          <maxRange>100.0</maxRange>
+          <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-
-          <verticalRayCount>30</verticalRayCount>
-          <verticalRangeCount>30</verticalRangeCount>
-          <verticalMinAngle>-20</verticalMinAngle>
-          <verticalMaxAngle>  0</verticalMaxAngle>
-
-          <controller:ros_block_laser name="ray_block_controller" plugin="libRos_Block_Laser.so">
+          <controller:ros_laser name="ros_ray_sensor_controller" plugin="libros_laser.so">
             <gaussianNoise>0.005</gaussianNoise>
             <alwaysOn>true</alwaysOn>
-            <updateRate>10.0</updateRate>
-            <topicName>full_cloud</topicName>
+            <updateRate>15.0</updateRate>
+            <topicName>ray_scan</topicName>
             <frameName>ray_model</frameName>
-            <interface:laser name="ray_block_iface" />
-          </controller:ros_block_laser>
+            <interface:laser name="ros_ray_sensor_iface" />
+          </controller:ros_laser>
         </sensor:ray>
       </body:empty>
     </model:phyiscal>
   \endverbatim
-        .
+           .
 */
 
-class Ros_Block_Laser : public Controller
+class RosLaser : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity, must be a Model or a Sensor
-  public: Ros_Block_Laser(Entity *parent);
+  public: RosLaser(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~Ros_Block_Laser();
+  public: virtual ~RosLaser();
 
   /// \brief Load the controller
   /// \param node XML config node
@@ -163,13 +144,12 @@ class Ros_Block_Laser : public Controller
   private: ros::node *rosnode;
 
   /// \brief ros message
-  private: std_msgs::PointCloud cloudMsg;
+  private: std_msgs::LaserScan laserMsg;
  
   /// \brief topic name
   private: std::string topicName;
 
   /// \brief frame transform name, should match link name
-  /// \brief FIXME: extract link name directly?
   private: std::string frameName;
 
   /// \brief Gaussian noise

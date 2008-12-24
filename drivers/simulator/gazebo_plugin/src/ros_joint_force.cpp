@@ -24,23 +24,23 @@
  * Date: 24 Sept 2008
  */
 
+#include "gazebo_plugin/ros_joint_force.h"
+
 #include "Global.hh"
 #include "XMLConfig.hh"
-#include "Model.hh"
 #include "World.hh"
 #include "gazebo.h"
 #include "GazeboError.hh"
 #include "ControllerFactory.hh"
 #include "Simulator.hh"
-#include "gazebo_plugin/Ros_JointForce.hh"
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_jointforce", Ros_JointForce);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_joint_force", RosJointForce);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_JointForce::Ros_JointForce(Entity *parent )
+RosJointForce::RosJointForce(Entity *parent )
   : Controller(parent)
 {
     this->myParent = dynamic_cast<Model*>(this->parent);
@@ -51,13 +51,13 @@ Ros_JointForce::Ros_JointForce(Entity *parent )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_JointForce::~Ros_JointForce()
+RosJointForce::~RosJointForce()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_JointForce::LoadChild(XMLConfigNode *node)
+void RosJointForce::LoadChild(XMLConfigNode *node)
 {
     XMLConfigNode *jNode;
     Joint *joint;
@@ -66,7 +66,7 @@ void Ros_JointForce::LoadChild(XMLConfigNode *node)
     int i =0;
 
     jNode = node->GetChild("joint");
-    while(jNode && i < ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS)
+    while(jNode && i < RosJOINTFORCE_CONTROLLER_MAX_FEEDBACKS)
     {
         jointName = jNode->GetString("name","",1);
         joint = this->myParent->GetJoint(jointName);
@@ -82,14 +82,14 @@ void Ros_JointForce::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_JointForce::InitChild()
+void RosJointForce::InitChild()
 {
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_JointForce::UpdateChild()
+void RosJointForce::UpdateChild()
 {
   // this->myIface->Lock(1);
   // this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
@@ -113,6 +113,6 @@ void Ros_JointForce::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_JointForce::FiniChild()
+void RosJointForce::FiniChild()
 {
 }

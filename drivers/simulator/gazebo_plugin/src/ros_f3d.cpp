@@ -25,35 +25,34 @@
    Date: 1 June 2008
    SVN info: $Id$
  @htmlinclude manifest.html
- @b F3D plugin broadcasts forces acting on the body specified by name.
+ @b RosF3D plugin broadcasts forces acting on the body specified by name.
  */
+
+#include <gazebo_plugin/ros_f3d.h>
 
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
-#include <gazebo/Model.hh>
 #include <gazebo/HingeJoint.hh>
-#include <gazebo/Body.hh>
 #include <gazebo/SliderJoint.hh>
 #include <gazebo/Simulator.hh>
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <gazebo_plugin/F3D.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("F3D", F3D);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_f3d", RosF3D);
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-F3D::F3D(Entity *parent )
+RosF3D::RosF3D(Entity *parent )
    : Controller(parent)
 {
    this->myParent = dynamic_cast<Model*>(this->parent);
 
    if (!this->myParent)
-      gzthrow("F3D controller requires a Model as its parent");
+      gzthrow("RosF3D controller requires a Model as its parent");
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
@@ -63,19 +62,19 @@ F3D::F3D(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in F3D \n");
+    printf("-------------------- starting node in RosF3D \n");
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-F3D::~F3D()
+RosF3D::~RosF3D()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void F3D::LoadChild(XMLConfigNode *node)
+void RosF3D::LoadChild(XMLConfigNode *node)
 {
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
@@ -84,19 +83,19 @@ void F3D::LoadChild(XMLConfigNode *node)
   this->topicName = node->GetString("topicName", "", 1);
   this->frameName = node->GetString("frameName", "", 1);
 
-  std::cout << "==== topic name for F3D ======== " << this->topicName << std::endl;
+  std::cout << "==== topic name for RosF3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::Vector3Stamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void F3D::InitChild()
+void RosF3D::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void F3D::UpdateChild()
+void RosF3D::UpdateChild()
 {
   Vector3 torque;
   Vector3 force;
@@ -119,7 +118,7 @@ void F3D::UpdateChild()
   this->vector3Msg.vector.y    = force.y;
   this->vector3Msg.vector.z    = force.z;
 
-  //std::cout << "F3D: " << this->topicName
+  //std::cout << "RosF3D: " << this->topicName
   //          << "  f: " << force
   //          << "  t: " << torque << std::endl;
   // publish to ros
@@ -130,7 +129,7 @@ void F3D::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void F3D::FiniChild()
+void RosF3D::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
 }

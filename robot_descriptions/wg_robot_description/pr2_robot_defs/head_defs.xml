@@ -11,11 +11,11 @@
     <joint name="${name}_mount_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
-      <limit min="-0.785" max="1.48" effort="0.5292"
-             velocity="100" k_velocity="0.05"
-             safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
+      <limit min="-0.785" max="1.48" effort="0.5292" velocity="100"
+             k_position="100" k_velocity="0.05"
+             safety_length_min="0.15" safety_length_max="0.15" />
       <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="0.1" />
+      <joint_properties damping="1.0" />
     </joint>
 
     <link name="${name}_mount_link">
@@ -23,7 +23,7 @@
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
       <inertial>
-        <mass value="0.01" />
+        <mass value="0.1" />
         <com xyz="0 0 0" />
         <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
       </inertial>
@@ -97,7 +97,7 @@
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
             <updateRate>20.0</updateRate>
-            <controller:ros_laser name="ros_${name}_controller" plugin="libRos_Laser.so">
+            <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
               <updateRate>20.0</updateRate>
@@ -162,7 +162,7 @@
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
             <updateRate>20.0</updateRate>
-            <controller:ros_camera name="${name}_l_controller" plugin="libRos_Camera.so">
+            <controller:ros_camera name="${name}_l_controller" plugin="libros_camera.so">
               <alwaysOn>true</alwaysOn>
 	      <updateRate>20.0</updateRate>
 	      <topicName>${name}_l/image</topicName>
@@ -194,7 +194,7 @@
             <verticalMinAngle>-20</verticalMinAngle>
             <verticalMaxAngle>  0</verticalMaxAngle>
 
-            <controller:ros_block_laser name="${name}_laser_controller" plugin="libRos_Block_Laser.so">
+            <controller:ros_block_laser name="${name}_laser_controller" plugin="libros_block_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
               <updateRate>10.0</updateRate>

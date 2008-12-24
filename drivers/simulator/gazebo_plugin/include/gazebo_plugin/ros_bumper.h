@@ -43,7 +43,7 @@ namespace gazebo
 
   /// \addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
   /// \{
-  /** \defgroup Ros_Bumper Ros Bumper Plugin
+  /** \defgroup RosBumper Ros Bumper Plugin
   
     \brief A controller that returns bump contacts
 
@@ -53,7 +53,7 @@ namespace gazebo
           <sensor:contact name="finger_tip_l_left_contact_sensor">
           <updateRate>15.0</updateRate>
           <geom>pr2_finger_tip_l_collision_geom</geom>
-          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libros_bumper.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>finger_tip_l_contact</topicName>
@@ -69,13 +69,13 @@ namespace gazebo
   */
   
   /// \brief A Bumper controller
-  class Ros_Bumper : public Controller
+  class RosBumper : public Controller
   {
     /// Constructor
-      public: Ros_Bumper(Entity *parent );
+      public: RosBumper(Entity *parent );
   
     /// Destructor
-      public: virtual ~Ros_Bumper();
+      public: virtual ~RosBumper();
   
     /// Load the controller
     /// \param node XML config node

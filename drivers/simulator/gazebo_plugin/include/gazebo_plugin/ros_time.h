@@ -41,7 +41,7 @@ namespace gazebo
 {
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup Ros_Time ROS time broadcaster.
+/** \defgroup RosTime ROS time broadcaster.
 
   \brief Broadcast simulator time over ROS
   
@@ -51,10 +51,9 @@ namespace gazebo
   \verbatim
     <model:physical name="robot_model1">
 
-      <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+      <controller:ros_time name="ros_time" plugin="libros_time.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
-        <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
       </controller:ros_time>
 
       <xyz>0.0 0.0 0.02</xyz>
@@ -80,10 +79,9 @@ namespace gazebo
           \verbatim
             <model:physical name="robot_model1">
 
-              <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+              <controller:ros_time name="ros_time" plugin="libros_time.so">
                 <alwaysOn>true</alwaysOn>
                 <updateRate>1000.0</updateRate>
-                <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
               </controller:ros_time>
 
               <xyz>0.0 0.0 0.02</xyz>
@@ -99,14 +97,14 @@ namespace gazebo
       .
 
 **/
-class Ros_Time : public Controller
+class RosTime : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity, must be a Model or a Sensor
-  public: Ros_Time(Entity *parent);
+  public: RosTime(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~Ros_Time();
+  public: virtual ~RosTime();
 
   /// \brief Load the controller
   /// \param node XML config node
