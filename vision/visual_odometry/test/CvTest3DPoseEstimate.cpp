@@ -43,7 +43,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
-#define SAVE_FRAMES_POINTS 0
+#define SAVE_FRAMES_POINTS 1
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
@@ -207,9 +207,9 @@ bool CvTest3DPoseEstimate::test() {
   case BundleAdj: {
     string frame_file("frames3.xml");
 //    string frame_file("frames.xml");
-//    string point_file("cartesianPoints.xml");
+    string point_file("cartesianPoints.xml");
 //    string frame_file("frames101.xml");
-    string point_file("points260.xml");
+//    string point_file("points260.xml");
 
     int num_free_frames  = 2;
     int num_fixed_frames = 1;
@@ -1188,11 +1188,12 @@ bool CvTest3DPoseEstimate::testBundleAdj(
 
 #if SAVE_FRAMES_POINTS==1
     string track_file("tracks.txt");
+    string stereo_track_file("stereo_tracks.txt");
     string output_dir(output_data_path_);
     tracks.save(output_dir);
 
     tracks.saveInOneFile(string(output_dir).append(track_file), true);
-    tracks.print();
+    tracks.saveInOneFile(string(output_dir).append(stereo_track_file), false);
 
     // for experimental purpose, save all framepose here
     saveFramePosesNonXML(output_dir, frame_poses);
