@@ -96,9 +96,9 @@
 
     <!-- start node to move base -->
     <!--
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
-    -->
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
+    -->
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
