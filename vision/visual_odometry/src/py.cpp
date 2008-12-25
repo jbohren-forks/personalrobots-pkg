@@ -36,7 +36,7 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 1
+#define JDC_DEBUG 0
 
 /************************************************************************/
 
@@ -631,16 +631,20 @@ PyObject *sba(PyObject *self, PyObject *args)
     SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
     // set frame poses, point tracks and maps from index to frame poses
     vector<FramePose* > frame_poses;
-    BOOST_FOREACH(FramePose *fp, free_frames) {
-      frame_poses.push_back(fp);
-      vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
-      printf("Inserting free frame: %d\n", fp->mIndex);
-    }
+    printf("fixed frames [");
     BOOST_FOREACH(FramePose *fp, fixed_frames) {
       frame_poses.push_back(fp);
       vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
-      printf("Inserting fixed frame: %d\n", fp->mIndex);
+      printf("%d ", fp->mIndex);
     }
+    printf("]\n");
+    printf("free frames [");
+    BOOST_FOREACH(FramePose *fp, free_frames) {
+      frame_poses.push_back(fp);
+      vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+      printf("%d ", fp->mIndex);
+    }
+    printf("]\n");
     vis->framePoses = &frame_poses;
     vis->tracks = &tracks;
     int current_frame_index = free_frames.back()->mIndex;
