@@ -1,0 +1,16 @@
+wiring_tree: { 
+#circuit1: { component: 'pr2_power_board', value: 'breaker_voltage1', tolerance: 10,
+#             children: [fr_caster, fl_caster, br_caster, bl_caster]},
+ circuit0: {component: "pr2_power_board", value: "breaker_voltage0", tolerance: 10,
+             children: [l_shoulder_pan]},
+ circuit2: { component: "pr2_power_board", value: "breaker_voltage2", tolerance: 10 ,
+             children: [r_shoulder_pan]},
+ r_shoulder_pan: { component: "ethercat device r_shoulder_pan", value: "voltage", tolerance: 10,
+                   children: [r_shoulder_tilt]},
+ l_shoulder_pan: { component: "ethercat device l_shoulder_pan", value: "voltage", tolerance: 10,
+                   children: [l_shoulder_tilt]}
+}
+
+root: [ circuit0, circuit2]
+
+
