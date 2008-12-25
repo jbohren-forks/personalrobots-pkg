@@ -36,14 +36,14 @@
     <test test-name="2dnav_gazebo_test_2dnav_empty_ympi"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 25.65 -y 23.51 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_ym1"      pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 25.65 -y 24.65 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_y1"       pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 25.65 -y 26.65 -t 0       -nav_tol 0.70 -odom_tol 0.06 -timeout 80 " time-limit="90" />
-    <test test-name="2dnav_gazebo_test_2dnav_empty_ypi"      pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 25.65 -y 28.79 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 80 " time-limit="90" />
+    <test test-name="2dnav_gazebo_test_2dnav_empty_ypi"      pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 25.65 -y 28.79 -t 0       -nav_tol 0.80 -odom_tol 0.05 -timeout 80 " time-limit="90" />
 
     <test test-name="2dnav_gazebo_test_2dnav_empty_x1y1"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 26.65 -y 26.65 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xm1y1"    pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 24.65 -y 26.65 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_x1ym1"    pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 26.65 -y 24.65 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xm1ym1"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 24.65 -y 24.65 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 50 " time-limit="60" />
 
-    <test test-name="2dnav_gazebo_test_2dnav_empty_xpiypi"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 28.79 -y 28.79 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 110 " time-limit="120" />
+    <test test-name="2dnav_gazebo_test_2dnav_empty_xpiypi"   pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 28.79 -y 28.79 -t 0       -nav_tol 0.80 -odom_tol 0.05 -timeout 110 " time-limit="120" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xmpiypi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 23.51 -y 28.79 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 80 " time-limit="90" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xpiympi"  pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 28.79 -y 23.51 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 80 " time-limit="90" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xmpiympi" pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x 23.51 -y 23.51 -t 0       -nav_tol 0.70 -odom_tol 0.05 -timeout 80 " time-limit="90" />
