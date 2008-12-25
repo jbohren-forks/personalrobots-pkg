@@ -5,7 +5,12 @@
     <!-- Launch the node collection for a gazebo sim -->
     <include file="$(find executive_trex_pr2)/cfg/launch_gazebo_obstacle.xml"/>
 
-    <node pkg="executive_trex_pr2" type="trex_fast" args="$(find executive_trex_pr2)/cfg/pr2.cfg" respawn="false" />
+    <param name="/trex/input_file" value="pr2.cfg"/>
+    <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find test_executive_trex_pr2)/arm.1"/>
+    <param name="/trex/time_limit" value="500"/>
+    <param name="/trex/log_dir" value="$(find test_executive_trex_pr2)/arm.1"/>
+    <param name="/trex/play_back" value="0"/>
+    <node pkg="executive_trex_pr2" type="trexfast" args="$(find executive_trex_pr2)/cfg/pr2.cfg" respawn="false" />
 
   </group>
 </launch>
