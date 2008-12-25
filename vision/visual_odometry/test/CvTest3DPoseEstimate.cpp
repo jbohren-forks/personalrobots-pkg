@@ -30,6 +30,7 @@
 
 using namespace cv::willow;
 
+
 // star detector
 //#include <detector.h>
 
@@ -43,7 +44,7 @@ using namespace std;
 
 #define DEBUG 1
 #define DISPLAY 1
-#define SAVE_FRAMES_POINTS 1
+#define SAVE_SBA_SCENE 0
 
 #if CHECKTIMING == 1
 #define TIMERSTART(x)
@@ -1186,13 +1187,20 @@ bool CvTest3DPoseEstimate::testBundleAdj(
       disturbObsvs(&tracks);
     }
 
-#if SAVE_FRAMES_POINTS==1
+#if SAVE_SBA_SCENE==1
+    string calib_file("CamCalMat.txt");
     string track_file("tracks.txt");
     string stereo_track_file("stereo_tracks.txt");
     string output_dir(output_data_path_);
+
+    CvMatUtils::saveMat(string(output_dir).append(calib_file).c_str(), &cartToDisp,
+        "stereo calibration matrix, 4 by 4");
+
     tracks.save(output_dir);
 
+    // save tracks with projection on left image only.
     tracks.saveInOneFile(string(output_dir).append(track_file), true);
+    // save tracks with projection in disparity space.
     tracks.saveInOneFile(string(output_dir).append(stereo_track_file), false);
 
     // for experimental purpose, save all framepose here
@@ -1860,4 +1868,5 @@ bool CvTest3DPoseEstimate::testPointClouds(){
 
   return status;
 }
+
 
