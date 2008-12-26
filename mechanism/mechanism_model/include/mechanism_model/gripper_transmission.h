@@ -55,7 +55,7 @@ namespace mechanism {
 class GripperTransmission : public Transmission
 {
 public:
-  GripperTransmission() {}
+  GripperTransmission() : A_(1), B_(0) {}
   virtual ~GripperTransmission() {}
 
   bool initXml(TiXmlElement *config, Robot *robot);
@@ -67,6 +67,9 @@ public:
 
   std::vector<double> reductions_;  // Mechanical reduction for each joint
   std::vector<control_toolbox::Pid> pids_;  // For keeping the joint angles aligned in Gazebo
+
+private:
+  double A_, B_; // gripper angle = reduction*acos(A*motor+B)
 };
 
 } // namespace mechanism

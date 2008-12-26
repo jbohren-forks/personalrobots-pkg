@@ -94,7 +94,7 @@ class SimpleSensorSystem : public SensorSystemBase
             if( stricmp((const char*)name, "offsetlink") == 0 ) {
                 string linkname;
                 ss >> linkname;
-                _pMocap->strOffsetLink = _ravembstowcs(linkname.c_str());
+                _pMocap->strOffsetLink = _stdmbstowcs(linkname.c_str());
             }
             else if( stricmp((const char*)name, "id") == 0 )
                 ss >> _pMocap->id;

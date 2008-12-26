@@ -29,8 +29,6 @@
 #include "rossensorsystem.h"
 #include "checkerboard_detector/ObjectDetection.h"
 
-using namespace ros;
-
 // used to update objects through a mocap system
 class ObjectTransformXMLID
 {

@@ -56,7 +56,7 @@ SwitchModelPatterns{end+1} = struct('pattern','^willow_table$','fatfilename','da
 orEnvLoadScene('', 1);
 
 %% create rosproblem before everything so resources can init!
-probs.rosplan = orEnvCreateProblem('ROSPlanningProblem');
+probs.rosplan = orEnvCreateProblem('ROSPlanning');
 if( isempty(probs.rosplan) )
     error('failed to create problem');
 end

@@ -423,20 +423,20 @@
 
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm" />
 
-    <!--transmission type="GripperTransmission" name="${side}_gripper_trans">
+    <!-- cos(angle*reduction) = motor_encoder * A + B -->
+    <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0004268" B="0.72730">
       <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_r_finger_joint" reduction="-1000.0" />
-      <joint name="${side}_gripper_r_finger_tip_joint" reduction="1000.0" />
-      <joint name="${side}_gripper_l_finger_joint" reduction="1000.0" />
-      <joint name="${side}_gripper_l_finger_tip_joint" reduction="-1000.0" />
+      <joint name="${side}_gripper_r_finger_joint" reduction="-1.0" />
+      <joint name="${side}_gripper_r_finger_tip_joint" reduction="1.0" />
+      <joint name="${side}_gripper_l_finger_joint" reduction="1.0" />
+      <joint name="${side}_gripper_l_finger_tip_joint" reduction="-1.0" />
       <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
-    </transmission-->
-    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
+    </transmission>
+<!--     <transmission type="SimpleTransmission" name="${side}_gripper_trans">
       <actuator name="${side}_gripper_motor" />
       <joint name="${side}_gripper_l_finger_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission>
-
+    </transmission> -->
   </macro>
 
   <!--                    Calibration                            -->

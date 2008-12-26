@@ -28,8 +28,6 @@
 
 #include "simplesensorsystem.h"
 
-using namespace ros;
-
 // used to update objects through a mocap system
 template <typename T, typename XMLID>
 class ROSSensorSystem : public SimpleSensorSystem<XMLID>

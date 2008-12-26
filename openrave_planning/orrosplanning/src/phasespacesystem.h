@@ -29,8 +29,6 @@
 #include "rossensorsystem.h"
 #include "phase_space/PhaseSpaceSnapshot.h"
 
-using namespace ros;
-
 // used to update objects through a mocap system
 class PhaseSpaceXMLID
 {

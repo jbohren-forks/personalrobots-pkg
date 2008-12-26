@@ -44,6 +44,13 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   const char *name = config->Attribute("name");
   name_ = name ? name : "";
 
+  const char *pA = config->Attribute("A");
+  if( pA != NULL )
+      A_ = atof(pA);
+  const char *pB = config->Attribute("B");
+  if( pB != NULL )
+      B_ = atof(pB);
+
   TiXmlElement *ael = config->FirstChildElement("actuator");
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || !robot->getActuator(actuator_name))
@@ -91,10 +98,22 @@ void GripperTransmission::propagatePosition(
 {
   assert(as.size() == 1);
   assert(js.size() == reductions_.size());
+
+  // cos(pos*reduction) = A*motor+B
+  // -reduction * sin(pos*reduction) * dpos/dt = A * dmotor/dt
+  double cang = as[0]->state_.position_*A_+B_;
+  double ang;
+  if( cang < -1 ) 
+      ang = M_PI;
+  else if( cang > 1 )
+      ang = 0;
+  else
+      ang = acos(cang);
+
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    js[i]->position_ = as[0]->state_.position_ / reductions_[i];
-    js[i]->velocity_ = as[0]->state_.velocity_ / reductions_[i];
+    js[i]->position_ = ang / reductions_[i];
+    js[i]->velocity_ = - A_*as[0]->state_.velocity_ / (sin(ang)*reductions_[i]);
     js[i]->applied_effort_ = as[0]->state_.last_measured_effort_ * reductions_[i];
   }
 }
@@ -110,8 +129,8 @@ void GripperTransmission::propagatePositionBackwards(
   double mean_effort = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    mean_position += js[i]->position_ * reductions_[i];
-    mean_velocity += js[i]->velocity_ * reductions_[i];
+    mean_position += (cos(js[i]->position_ * reductions_[i])-B_)/A_;
+    mean_velocity += - js[i]->velocity_ * reductions_[i] * sin(js[i]->position_*reductions_[i]) / A_;
     mean_effort += js[i]->applied_effort_ / (reductions_[i]);
   }
   as[0]->state_.position_ = mean_position / js.size();

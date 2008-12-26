@@ -11,4 +11,5 @@
   <depend package="libKinematics"/>
   <depend package="boost"/>
   <depend package="checkerboard_detector"/>
+  <depend package="robot_msgs"/>
 </package>

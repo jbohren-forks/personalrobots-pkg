@@ -4,9 +4,10 @@ global updir probs
 cd(fullfile(rosoct_findpackage('ormanipulation'),'octave'));
 
 startup;
-orEnvSetOptions('debug debug');
+%orEnvSetOptions('debug debug');
 
 robot = SetupTableScene('data/pr2table_real.env.xml');
+orRobotControllerSet(robot.id, 'ROSRobot');
 
 out = orProblemSendCommand('createsystem ObjectTransform /checkerdetector/ObjectDetection 0.1',probs.task);
 if( isempty(out) )
