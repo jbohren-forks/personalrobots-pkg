@@ -2,6 +2,8 @@
 addpath(fullfile(pwd,'..','octave')); % in case launched from test folder
 
 openraveros_restart();
+orEnvSetOptions('debug verbose');
+
 if( isempty(openraveros_getglobalsession()) )
     error('empty session');
 end

@@ -1,4 +1,4 @@
-%% session = openraveros_createsession(sessionserver, cloneuuid)
+%% session = openraveros_createsession(sessionserver, cloneuuid, cloneoptions)
 %
 %% creates a session and returns its id.
 %% clonesession (optional) - if passed in, will clone the new session with this session

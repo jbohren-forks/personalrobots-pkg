@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -277,6 +277,37 @@ class SimpleSensorSystem : public SensorSystemBase
         return it != _mapbodies.end() ? it->second.get() : NULL;
     }
 
+    virtual bool SwitchBody(KinBody* pbody1, KinBody* pbody2)
+    {
+        if( pbody1 == NULL || pbody2 == NULL )
+            return false;
+        assert( pbody1->GetEnv() == GetEnv() && pbody2->GetEnv() == GetEnv() );
+
+        boost::mutex::scoped_lock lock(_mutex);
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody1->GetNetworkId());
+        BODY* pb1 = it != _mapbodies.end() ? it->second.get() : NULL;
+        it = _mapbodies.find(pbody2->GetNetworkId());
+        BODY* pb2 = it != _mapbodies.end() ? it->second.get() : NULL;
+
+        if( pb1 == NULL && pb2 == NULL )
+            return false;
+
+        if( pb1 == NULL ) {
+            if( pb2->GetOffsetLink()->GetIndex() >= (int)pbody1->GetLinks().size() )
+                return false;
+            pb2->pOffsetLink = pbody1->GetLinks()[pb2->GetOffsetLink()->GetIndex()];
+        }
+        else if( pb2 == NULL ) {
+            if( pb1->GetOffsetLink()->GetIndex() >= (int)pbody2->GetLinks().size() )
+                return false;
+            pb1->pOffsetLink = pbody2->GetLinks()[pb1->GetOffsetLink()->GetIndex()];
+        }
+        else
+            swap(pb1->pOffsetLink, pb2->pOffsetLink);
+
+        return true;
+    }
+
 protected:
 
     typedef pair<boost::shared_ptr<BODY>, Transform > SNAPSHOT;
@@ -314,8 +345,10 @@ protected:
         while(itbody != _mapbodies.end()) {
             if( curtime-itbody->second->lastupdated > _expirationtime ) {
                 if( !itbody->second->IsLocked() ) {
-                    RAVELOG_DEBUGA("object %S expired %fs\n", itbody->second->GetOffsetLink()->GetParent(), (float)(curtime-itbody->second->lastupdated).toSec());
+                    RAVELOG_DEBUGA("object %S expired %fs\n", itbody->second->GetOffsetLink()->GetParent()->GetName(), (float)(curtime-itbody->second->lastupdated).toSec());
+                    GetEnv()->LockPhysics(true);
                     GetEnv()->RemoveKinBody(itbody->second->GetOffsetLink()->GetParent());
+                    GetEnv()->LockPhysics(false);
                     _mapbodies.erase(itbody++);
                     continue;
                 }

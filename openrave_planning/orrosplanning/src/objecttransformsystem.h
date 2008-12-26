@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -42,7 +42,7 @@ class ObjectTransformSystem : public ROSSensorSystem<checkerboard_detector::Obje
 {
 public:
     ObjectTransformSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv)
+        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), nNextId(1)
     {
     }
 
@@ -112,6 +112,11 @@ private:
                     continue;
                 }
 
+                // append an id to the body
+                wstringstream ss;
+                ss << pbody->GetName() << nNextId++;
+                pbody->SetName(ss.str().c_str());
+
                 if( !GetEnv()->AddKinBody(pbody) ) {
                     RAVELOG_ERRORA("failed to add body %S\n", pbody->GetName());
                     delete pbody;
@@ -135,6 +140,7 @@ private:
     }
 
     dReal _fThreshSqr;
+    int nNextId;
 };
 
 #endif

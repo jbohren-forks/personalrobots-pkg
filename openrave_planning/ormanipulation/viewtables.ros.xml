@@ -1,0 +1,6 @@
+<!-- View all the various grasps -->
+<launch>
+  <machine name="localhost" address="localhost" default="true"/>  
+  <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
+  <node pkg="ormanipulation" type="rungrasptables.m" output="screen"/>
+</launch>

@@ -1,26 +1,52 @@
-#!/usr/bin/env octave
-global probs
+global updir probs
+cd(fullfile(rosoct_findpackage('ormanipulation'),'octave'));
 
-cd(getenv('OCTAVE_WORKINGDIR'));
 startup;
-openraveros_restart();
-orEnvLoadScene('',1); % reset the scene
-orEnvSetOptions('debug debug');
+[robot, scenedata] = SetupTableScene('data/pr2table.env.xml');
 
-%% create problem before everything so resources can init!
-probs.rosplan = orEnvCreateProblem('ROSPlanningProblem');
-if( isempty(probs.rosplan) )
-    error('failed to create problem');
+RunDynamicGrasping(robot, scenedata, 1,0);
+
+%% squeeze testing
+robot = RobotCreateIntel('BarrettWAM', 1); % create a 4dof robot
+problem = orEnvCreateProblem('Manipulation BarrettWAM');
+
+v = orRobotGetDOFValues(robot.id)
+v(end) = 0;
+orRobotSetDOFValues(robot.id, v);
+
+orProblemSendCommand('squeeze');
+orRobotControllerSend(robot.id, 'ignoreproxy 1');
+
+orRobotSetDOFValues(robot.id, v);
+
+%% run the grasps
+grasps = curobj.grasps;
+TargTrans = reshape(orBodyGetLinks(targetid), [3 4]);
+grasps(:,robothand.grasp.direction) = grasps(:,robothand.grasp.direction) * TargTrans(:,1:3)';
+grasps(:,robothand.grasp.center) = grasps(:,robothand.grasp.center) * TargTrans(:,1:3)' + repmat(TargTrans(:,4)', [size(grasps,1) 1]);
+
+Tobjs = {};
+robothand = robot.CreateHandFn(['hand']);
+for i = 1:length(goodgrasps)
+    contactsraw = RunGrasp(robothand, grasps(goodgrasps(i),:), Target,0,0);
+    Tobjs{end+1}.T = reshape(orBodyGetTransform(robothand.id),[3 4]);
+    Tobjs{end}.V = orBodyGetJointValues(robothand.id);
 end
 
-orEnvLoadScene('data/pr2table_real.env.xml');
-
-out = orProblemSendCommand('createsystem ObjectTransform /checkerdetector/ObjectDetection 0.1',probs.rosplan);
-if( isempty(out) )
-    error('failed to create checkerboard detector');
+%robothand = robot.CreateHandFn(['temp' num2str(i)]);   
+for i = 1:length(Tobjs)
+    robothand = robot.CreateHandFn(['testhand' num2str(i)]);   
+    orBodySetTransform(robothand.id, Tobjs{i}.T);
+    orRobotSetDOFValues(robothand.id, Tobjs{i}.V);
+    pause(0.5);
 end
 
-out = orProblemSendCommand('createsystem PhaseSpace phase_space_snapshot',probs.rosplan);
-if( isempty(out) )
-    error('failed to create phasespace');
+Tobjs = {};
+for i = 1:size(grasps,1)
+    % test the grasp planner
+    %robothand = robot.CreateHandFn(['testhand' num2str(i)]);
+    contactsraw = RunGrasp(robothand, grasps(i,:), Target,0,0);
+    %Tobjs{end+1} = reshape(orBodyGetTransform(robothand.id),[3 4])
+    %orProblemSendCommand(['triangulate hrp2_g' num2str(length(Tobjs)) '.txt']);
+    pause;
 end

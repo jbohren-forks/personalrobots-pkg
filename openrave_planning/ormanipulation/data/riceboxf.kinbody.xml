@@ -1,8 +1,8 @@
 <Kinbody name="ricebox">
   <Body>
     <Geom type="box">
-      <extents>0.04 0.06 0.12</extents>
-      <translation>0 0 0.1125</translation>
+      <extents>0.1175 0.06 0.035</extents>
+      <translation>0 0 0.03</translation>
       <diffusecolor>0.1 0.6 1</diffusecolor>
     </Geom>
   </Body>

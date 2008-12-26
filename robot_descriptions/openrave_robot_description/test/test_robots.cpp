@@ -53,16 +53,24 @@ vector<string> tokenizer(string str, string delims)
 TEST(URDF, LoadRobots)
 {
     boost::shared_ptr<EnvironmentBase> penv(CreateEnvironment());
-    GetXMLErrorCount();
         
     bool bSuccess = true;
     vector<string> files = tokenizer(ROBOT_FILES,":; \r\n");
     for(vector<string>::iterator it = files.begin(); it != files.end(); ++it) {
         cout << "testing: " << *it << "... ";
         penv->Reset();
-        if( !penv->Load(it->c_str()) ) {
+        GetXMLErrorCount();
+
+        RobotBase* probot = penv->CreateRobot("GenericRobot");
+        if( !probot ) {
+            cout << "fail to create a GenericRobot: " << endl;
             bSuccess = false;
-            cout << "fail." << endl;
+            continue;
+        }
+
+        if( !probot->Init(it->c_str(), NULL) ) {
+            cout << "fail to init file" << endl;
+            bSuccess = false;
             continue;
         }
 
@@ -71,6 +79,17 @@ TEST(URDF, LoadRobots)
             cout << "fail: xml error count: " << xmlerror << endl;
             bSuccess = false;
             continue;
+        }
+
+        // check that all velocities are > 0
+        vector<dReal> velocities;
+        probot->GetJointMaxVel(velocities);
+
+        for(size_t i = 0; i < velocities.size(); ++i) {
+            if( velocities[i] == 0 ) {
+                bSuccess = false;
+                cout << "joint " << i << " has 0 max velocity!" << endl;
+            }
         }
 
         cout << "success." << endl;

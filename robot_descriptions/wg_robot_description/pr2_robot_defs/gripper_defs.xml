@@ -5,7 +5,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="gripper_max_angle" value="0.8" />
+  <property name="gripper_max_angle" value="0.5236" />
   <property name="gripper_min_angle" value="0.05" />
 
   <macro name="pr2_finger" params="prefix parent">
@@ -17,7 +17,7 @@
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
       <limit effort="10" min="${gripper_min_angle}" max="${gripper_max_angle}"
-             k_position="0" k_velocity="0"
+             k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
     </joint>
@@ -78,7 +78,7 @@
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
       <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
-             k_position="0" k_velocity="0"
+             k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
@@ -145,7 +145,7 @@
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
       <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
-             k_position="0" k_velocity="0"
+             k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
@@ -212,7 +212,7 @@
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
       <limit effort="10" min="${gripper_min_angle}" max="${gripper_max_angle}"
-             k_position="0" k_velocity="0"
+             k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>

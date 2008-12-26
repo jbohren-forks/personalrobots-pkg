@@ -172,7 +172,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             addKeyValue(geom, "render", ss.str());
 
             ss.str("");
-            ss << mesh->filename << "_low.iv " << mesh->scale[0];
+            ss << mesh->filename << "_hi.iv " << mesh->scale[0]; // don't use low!
             addKeyValue(geom, "data", ss.str());
         }
         break;
@@ -281,14 +281,24 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             addKeyValue(joint, "axis", values2str(3, jaxis));
             addKeyValue(joint, "anchor", values2str(3, link->joint->anchor));
 		
-            if (link->joint->pjointMimic == NULL  && enforce_limits && link->joint->isSet["limit"]) {
-                if (jtype == "slider") {
-                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit             ));
-                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1         ));
-                }
-                else {
-                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit,rad2deg));
-                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1,rad2deg));
+            if (link->joint->pjointMimic == NULL  ) {
+                if( link->joint->isSet["limit"]) {
+
+                    if( enforce_limits ) {
+                        double lostop = link->joint->limit[0] + link->joint->safetyLength[0];
+                        double histop = link->joint->limit[1] + link->joint->safetyLength[1];
+                        if (jtype == "slider") {
+                            addKeyValue(joint, "lostop",  values2str(1, &lostop));
+                            addKeyValue(joint, "histop", values2str(1, &histop));
+                        }
+                        else {
+                            addKeyValue(joint, "lostop",  values2str(1, &lostop,rad2deg));
+                            addKeyValue(joint, "histop", values2str(1, &histop,rad2deg));
+                        }
+                    }
+   
+                    addKeyValue(joint, "maxvel", values2str(1, &link->joint->velocityLimit));
+                    addKeyValue(joint, "maxtorque", values2str(1, &link->joint->effortLimit));
                 }
             }
         }

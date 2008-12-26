@@ -1,0 +1,6 @@
+<!-- Make various grasp tables for the PR2 gripper -->
+<launch>
+  <machine name="localhost" address="localhost" default="true"/>  
+  <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
+  <node pkg="ormanipulation" type="runmaketables.m" output="screen"/>
+</launch>

@@ -5,9 +5,9 @@
     <base>torso_lift_link</base>
     <effector>l_gripper_palm_link</effector>
     <armjoints>l_shoulder_pan_joint l_shoulder_lift_joint l_upper_arm_roll_joint l_elbow_flex_joint l_forearm_roll_joint l_wrist_flex_joint l_wrist_roll_joint</armjoints>
-    <joints>l_gripper_l_finger_joint</joints>
-    <closed>0</closed>
-    <opened>0.8</opened>
+    <joints>l_gripper_palm_joint l_gripper_l_finger_joint</joints>
+    <closed>0 0</closed>
+    <opened>0 0.8</opened>
     <iksolver>rosarmik</iksolver>
   </Manipulator>
 
@@ -16,9 +16,9 @@
     <base>torso_lift_link</base>
     <effector>r_gripper_palm_link</effector>
     <armjoints>r_shoulder_pan_joint r_shoulder_lift_joint r_upper_arm_roll_joint r_elbow_flex_joint r_forearm_roll_joint r_wrist_flex_joint r_wrist_roll_joint</armjoints>
-    <joints>r_gripper_l_finger_joint</joints>
-    <closed>0</closed>
-    <opened>0.8</opened>
+    <joints>r_gripper_palm_joint r_gripper_l_finger_joint</joints>
+    <closed>0 0</closed>
+    <opened>0 0.8</opened>
     <iksolver>rosarmik</iksolver>
   </Manipulator>
 </Robot>

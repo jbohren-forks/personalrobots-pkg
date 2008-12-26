@@ -273,6 +273,9 @@ public:
 
     bool SetViewer(const string& viewer)
     {
+        if( viewer.size() == 0 )
+            return true;
+
         if( !!_psetviewer )
             return _psetviewer->SetViewer(GetEnv(),viewer);
 
@@ -342,7 +345,7 @@ public:
         LockEnvironment envlock(this);
         res.boxes.resize(pbody->GetLinks().size()); int index = 0;
         FOREACHC(itlink, pbody->GetLinks()) {
-            OpenRAVE::AABB ab = (*itlink)->ComputeAABB();
+            OpenRAVE::AABB ab = (*itlink)->ComputeAABB(); 
             openraveros::AABB& resbox = res.boxes[index++];
             resbox.center[0] = ab.pos.x; resbox.center[1] = ab.pos.y; resbox.center[2] = ab.pos.z;
             resbox.extents[0] = ab.extents.x; resbox.extents[1] = ab.extents.y; resbox.extents[2] = ab.extents.z;
@@ -484,6 +487,10 @@ public:
                 res.collision = GetEnv()->CheckCollision(pbody->GetLinks()[req.linkid], setignore, empty, &report);
             }
 
+            if( !res.collision && req.checkselfcollision ) {
+                res.collision = pbody->CheckSelfCollision(&report);
+            }
+
             GetEnv()->SetCollisionOptions(oldopts);
         }
 
@@ -491,8 +498,7 @@ public:
 
         if( res.collision ) {
             KinBody::Link* plinkcol = report.plink1;
-            if( report.plink2 && report.plink2->GetParent() != pbody ) {
-                ROS_ASSERT(report.plink1->GetParent() == pbody);
+            if( report.plink2 && report.plink2->GetParent() != pbody && !pbody->IsAttached(report.plink2->GetParent()) ) {
                 plinkcol = report.plink2;
             }
 
@@ -501,7 +507,7 @@ public:
                 res.collidinglink = plinkcol->GetIndex();
             }
 
-            RAVELOG_INFOA("collision %S:%S with %S:%S\n",
+            RAVELOG_DEBUGA("collision %S:%S with %S:%S\n",
                        report.plink1?report.plink1->GetParent()->GetName():L"(NULL",
                        report.plink1?report.plink1->GetName():L"(NULL)",
                        report.plink2?report.plink2->GetParent()->GetName():L"(NULL)",
@@ -511,11 +517,21 @@ public:
         if( req.options & CO_Distance )
             res.mindist = report.minDistance;
         if( req.options & CO_Contacts ) {
-            res.contacts.resize(report.contacts.size()); int index = 0;
+            res.contacts.resize(report.contacts.size());
+            int negnormals = 0;
+            if( report.plink1 != NULL ) {
+                if( req.linkid < 0 )
+                    negnormals = report.plink1->GetParent() != pbody;
+                else
+                    negnormals = report.plink1->GetParent() != pbody || report.plink1->GetIndex() != req.linkid;
+            }
+            
+            int index = 0;
             FOREACHC(itc, report.contacts) {
                 openraveros::Contact& c = res.contacts[index++];
+                Vector vnorm = negnormals ? -itc->norm : itc->norm;
                 c.position[0] = itc->pos.x; c.position[1] = itc->pos.y; c.position[2] = itc->pos.z;
-                c.normal[0] = itc->norm.x; c.normal[1] = itc->norm.y; c.normal[2] = itc->norm.z;
+                c.normal[0] = vnorm.x; c.normal[1] = vnorm.y; c.normal[2] = vnorm.z;
             }
         }
 
@@ -646,6 +662,7 @@ public:
         info.bodyid = pbody->GetNetworkId();
         info.transform = GetAffineTransform(pbody->GetTransform());
         info.enabled = pbody->IsEnabled();
+        info.dof = pbody->GetDOF();
 
         if( options & BodyInfo::Req_JointValues ) {
             vector<dReal> vvalues; pbody->GetJointValues(vvalues);
@@ -686,7 +703,6 @@ public:
     {
         vector<KinBody*> vbodies;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedBodies(vbodies));
-        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             KinBody* pfound = NULL;
@@ -797,7 +813,6 @@ public:
     {
         vector<RobotBase*> vrobots;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedRobots(vrobots));
-        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             RobotBase* pfound = NULL;
@@ -1025,6 +1040,10 @@ public:
         if( req.setmask & env_set::request::Set_Viewer ) {
             GetEnv()->AttachViewer(NULL);
             SetViewer(req.viewer);
+        }
+        if( req.setmask & env_set::request::Set_ViewerDims ) {
+            if( GetEnv()->GetViewer() != NULL )
+                GetEnv()->GetViewer()->ViewerSetSize(req.viewerwidth,req.viewerheight);
         }
 
         return true;
@@ -1378,7 +1397,6 @@ public:
 
         RobotBase* probot = (RobotBase*)pbody;
 
-        LockEnvironment envlock(this);
         RobotSetActiveDOFs(probot, req.active);
         return true;
     }

@@ -234,7 +234,7 @@ public:
         
         // destroy the old viewer
         if( !!_penvViewer ) {
-            _penvViewer->AttachViewer(NULL);
+             _penvViewer->AttachViewer(NULL);
 
             _conditionViewer.wait(lock);
         }
@@ -298,8 +298,9 @@ private:
             boost::mutex::scoped_lock lockcreate(_mutexViewer);
             RAVELOG_DEBUGA("destroying viewer\n");
             ROS_ASSERT(_penvViewer == _pviewer->GetEnv());
-            _penvViewer->AttachViewer(NULL);
+            _penvViewer->AttachViewer(NULL);            
             _pviewer.reset();
+            usleep(100000); // wait a little
             _penvViewer = NULL;
             _conditionViewer.notify_all();
         }
