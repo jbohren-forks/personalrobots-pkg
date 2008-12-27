@@ -30,4 +30,6 @@
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>

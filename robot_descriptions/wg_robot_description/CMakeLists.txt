@@ -89,14 +89,14 @@ add_custom_command(
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
 
-#convert obj files back to stl, put in directory name convex
+#convert obj files back to stlb, put in directory named convex
 add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}_convex.stl
+  OUTPUT ${basepath}/convex/${basename}_convex.stlb
   COMMAND ivcon
-  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stl
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
   DEPENDS ${it} ivcon)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stl)
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
 
 endforeach(it)
