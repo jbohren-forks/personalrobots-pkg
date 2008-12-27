@@ -20,7 +20,6 @@ add_custom_command(
   ARGS ${pr2robot}.xacro.xml > ${pr2robot}.xml
   DEPENDS ${pr2robot}.xacro.xml ${def_files})
 
-
 # Replace the COMMAND block with a call to a version of xacro that reads in
 # a .deps file and a xacro.xml file, determines the dependencies of the
 # latter, and writes any changed dependencies to the .deps file.
@@ -28,6 +27,7 @@ add_custom_command(
 #  COMMAND touch ${pr2prototype1}.xacro.deps)
 
 set(pr2prototype1 "${CMAKE_CURRENT_SOURCE_DIR}/pr2_prototype1/pr2_prototype1")
+
 add_custom_command(
   OUTPUT ${pr2prototype1}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
@@ -66,32 +66,37 @@ add_custom_command(
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
 
-#create obj files from stl files
-add_custom_command(
-  OUTPUT ${basepath}/${basename}.obj
-  COMMAND ivcon
-  ARGS ${it} ${basepath}/${basename}.obj
-  DEPENDS ${it} ivcon)
-
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.obj)
-
 #convex decomposition obj files
 add_custom_command(
-  OUTPUT ${basepath}/${basename}_convex.obj
-  COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
-  ARGS ${basepath}/${basename}.obj
-  DEPENDS ${basepath}/${basename}.obj)
+  OUTPUT ${basepath}/convex
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+  ARGS ${basepath}/convex)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}_convex.obj)
-
-#convert obj files back to stl, put in directory name convex_decomp
+#create obj files for convex decomposition from stl files
 add_custom_command(
-  OUTPUT ${basepath}/convex_decomp/${basename}_convex.stl
+  OUTPUT ${basepath}/convex/${basename}.obj
   COMMAND ivcon
-  ARGS ${basepath}/${basename}_convex.obj ${basepath}/convex_decomp/${basename}_convex.stl
+  ARGS ${it} ${basepath}/convex/${basename}.obj
+  DEPENDS ${it} ivcon ${basepath}/convex)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
+
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.obj
+  COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
+  ARGS ${basepath}/convex/${basename}.obj
+  DEPENDS ${basepath}/convex/${basename}.obj ${basepath}/convex)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
+
+#convert obj files back to stl, put in directory name convex
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.stl
+  COMMAND ivcon
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stl
   DEPENDS ${it} ivcon)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex_decomp/${basename}_convex.stl)
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stl)
 
 
 endforeach(it)
