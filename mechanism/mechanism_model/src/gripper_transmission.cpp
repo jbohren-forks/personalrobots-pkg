@@ -107,25 +107,22 @@ void GripperTransmission::propagatePosition(
   ROS_ASSERT(as.size() == 1);
   ROS_ASSERT(js.size() == preductions_.size());
 
-  // cos(pos*reduction) = A*motor+B
-  // -reduction * sin(pos*reduction) * dpos/dt = A * dmotor/dt
-  double cang = as[0]->state_.position_*A_+B_;
+  // sin(pos*reduction) = A*motor+B
+  // reduction * cos(pos*reduction) * dpos/dt = A * dmotor/dt
+  double sang = as[0]->state_.position_*A_+B_;
   double ang;
-  if( cang < -1 ) 
-      ang = M_PI;
-  else if( cang > 1 )
-      ang = 0;
+  if( sang <= -1 ) 
+      ang = -M_PI/2;
+  else if( sang >= 1 )
+      ang = M_PI/2;
   else
-      ang = acos(cang);
+      ang = asin(sang);
 
   for (unsigned int i = 0; i < js.size(); ++i)
   {
     js[i]->position_ = ang / preductions_[i];
-    js[i]->velocity_ = - A_*as[0]->state_.velocity_ / (sin(ang)*preductions_[i]);
+    js[i]->velocity_ = A_*as[0]->state_.velocity_ / (cos(ang)*preductions_[i]);
     js[i]->applied_effort_ = as[0]->state_.last_measured_effort_ * ereductions_[i];
-    ROS_INFO("gripper pos %d: %f from %f (%f,%f)\n", i, js[i]->position_, as[0]->state_.position_, (float)A_, (float)B_);
-    js[i]->position_ = as[0]->state_.position_;
-    js[i]->velocity_ = as[0]->state_.velocity_;
   }
 }
 
@@ -140,14 +137,13 @@ void GripperTransmission::propagatePositionBackwards(
   double mean_effort = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    mean_position += (cos(js[i]->position_ * preductions_[i])-B_)/A_;
-    mean_velocity += - js[i]->velocity_ * preductions_[i] * sin(js[i]->position_*preductions_[i]) / A_;
+    mean_position += (sin(js[i]->position_ * preductions_[i])-B_)/A_;
+    mean_velocity += js[i]->velocity_ * preductions_[i] * cos(js[i]->position_*preductions_[i]) / A_;
     mean_effort += js[i]->applied_effort_ / (ereductions_[i]);
   }
   
-  ROS_INFO("gripper motor pos: %f\n", (float)mean_position / js.size());
-  as[0]->state_.position_ = js[0]->position_;//mean_position / js.size();
-  as[0]->state_.velocity_ = js[0]->velocity_;//mean_velocity / js.size();
+  as[0]->state_.position_ = mean_position / js.size();
+  as[0]->state_.velocity_ = mean_velocity / js.size();
   as[0]->state_.last_measured_effort_ = mean_effort / js.size();
 }
 
@@ -164,7 +160,6 @@ void GripperTransmission::propagateEffort(
       strongest = js[i]->commanded_effort_ / ereductions_[i];
   }
   
-  //ROS_INFO("gripper motor eff: %f\n", (float)strongest);
   as[0]->command_.effort_ = strongest;
 }
 
@@ -177,7 +172,7 @@ void GripperTransmission::propagateEffortBackwards(
 
   std::vector<double> scaled_positions(js.size());
   for (unsigned int i = 0; i < js.size(); ++i)
-    scaled_positions[i] = (cos(js[i]->position_ * preductions_[i])-B_)/A_;
+    scaled_positions[i] = (sin(js[i]->position_ * preductions_[i])-B_)/A_;
 
   double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
     / scaled_positions.size();
@@ -187,7 +182,6 @@ void GripperTransmission::propagateEffortBackwards(
     double err = scaled_positions[i] - mean;
     double pid_effort = pids_[i].updatePid(err, 0.001);
 
-    ROS_INFO("gripper commanded eff: %f\n", (float)as[0]->command_.effort_ * ereductions_[i]);
     js[i]->commanded_effort_ =
         /*pid_effort / ereductions_[i] + */as[0]->command_.effort_ * ereductions_[i];
   }

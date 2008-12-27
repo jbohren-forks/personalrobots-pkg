@@ -63,12 +63,12 @@
 -->
 
 <!-- DCAM-->
- <node machine="three" name="dcam" pkg="dcam_node" type="dcam_node" respawn="false">
+<!-- <node machine="three" name="dcam" pkg="dcam_node" type="dcam_node" respawn="false">
    <param name="video_mode" type="str" value="640x480_videre_none"/>
    <param name="do_rectify" type="bool" value="True"/>
    <param name="do_stereo" type="bool" value="True"/>
    <param name="do_calc_points" type="bool" value="False"/>
- </node>
+ </node> -->
 
 
 <!-- Runtime Diagnostics Logging -->

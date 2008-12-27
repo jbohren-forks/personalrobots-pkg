@@ -50,6 +50,8 @@
 #include "robot_msgs/VOPose.h"
 #include "robot_msgs/PoseWithCovariance.h"
 
+#include <rosthread/mutex.h>
+
 // log files
 #include <fstream>
 

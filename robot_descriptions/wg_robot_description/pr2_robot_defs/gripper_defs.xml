@@ -5,7 +5,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="gripper_max_angle" value="0.5236" />
+  <property name="gripper_max_angle" value="0.548" />
   <property name="gripper_min_angle" value="0.05" />
 
   <macro name="pr2_finger" params="prefix parent">
@@ -423,20 +423,20 @@
 
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm" />
 
-    <!-- cos(angle*reduction) = motor_encoder * A + B -->
-<!--     <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.00042803" B="0.97567">
+    <!-- sin(angle*reduction) = motor_encoder * A + B -->
+    <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0002193927" B="0.530981135">
       <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_r_finger_joint" preduction="1.0" ereduction="6.0" />
-      <joint name="${side}_gripper_r_finger_tip_joint" preduction="-1.0" ereduction="-6.0" />
-      <joint name="${side}_gripper_l_finger_joint" preduction="-1.0" ereduction="-6.0"/>
-      <joint name="${side}_gripper_l_finger_tip_joint" preduction="1.0" ereduction="6.0" />
+      <joint name="${side}_gripper_r_finger_joint" preduction="-1.0" ereduction="-6.0" />
+      <joint name="${side}_gripper_r_finger_tip_joint" preduction="1.0" ereduction="6.0" />
+      <joint name="${side}_gripper_l_finger_joint" preduction="1.0" ereduction="6.0"/>
+      <joint name="${side}_gripper_l_finger_tip_joint" preduction="-1.0" ereduction="-6.0" />
       <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
-    </transmission> -->
-    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
+    </transmission>
+<!--     <transmission type="SimpleTransmission" name="${side}_gripper_trans">
       <actuator name="${side}_gripper_motor" />
       <joint name="${side}_gripper_l_finger_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission>
+    </transmission> -->
   </macro>
 
   <!--                    Calibration                            -->
