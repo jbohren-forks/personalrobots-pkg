@@ -42,13 +42,13 @@ class ObjectTransformSystem : public ROSSensorSystem<checkerboard_detector::Obje
 {
 public:
     ObjectTransformSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _probot(NULL), nNextId(1)
+        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _robotid(0), nNextId(1)
     {
     }
 
     virtual bool Init(istream& sinput)
     {
-        _probot = NULL;
+        _robotid = 0;
         _topic = "ObjectDetection";
         _fThreshSqr = 0.05*0.05f;
 
@@ -66,11 +66,16 @@ public:
                 int id;
                 sinput >> id;
                 KinBody* pbody = GetEnv()->GetBodyFromNetworkId(id);
-                if( pbody->IsRobot() )
-                    _probot = (RobotBase*)pbody;
+                if( pbody != NULL )
+                    _robotid = id;
 
-                if( _probot == NULL )
+                if( _robotid == 0 )
                     RAVELOG_WARNA("failed to find robot with id %d\n", id);
+            }
+            else if( stricmp(cmd.c_str(), "matrixoffset") == 0 ) {
+                TransformMatrix tmat;
+                sinput >> tmat;
+                _toffset = tmat;
             }
             else break;
 
@@ -95,21 +100,21 @@ private:
                 double tf_cache_time_secs;
                 pnode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
                 if (tf_cache_time_secs < 0)
-                    RAVELOG_ERRORA("ROSSensorSystem: Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs);
+                    RAVELOG_ERRORA("ROSSensorSystem: Parameter tf_cache_time_secs<0 (%f)\n", tf_cache_time_secs);
                 unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL;
                 _tf.reset(new tf::TransformListener(*pnode, true, tf_cache_time));
-                RAVELOG_INFOA("ROSSensorSystem: TF Cache Time: %f Seconds", tf_cache_time_secs);
+                RAVELOG_INFOA("ROSSensorSystem: TF Cache Time: %f Seconds\n", tf_cache_time_secs);
 
                 // **** Set TF Extrapolation Limit ****
                 double tf_extrap_limit_secs ;
                 pnode->param("~tf_extrap_limit", tf_extrap_limit_secs, 0.00);
                 if (tf_extrap_limit_secs < 0.0)
-                    RAVELOG_ERRORA("ROSSensorSystem: parameter tf_extrap_limit<0 (%f)", tf_extrap_limit_secs);
+                    RAVELOG_ERRORA("ROSSensorSystem: parameter tf_extrap_limit<0 (%f)\n", tf_extrap_limit_secs);
 
                 ros::Duration extrap_limit;
                 extrap_limit.fromSec(tf_extrap_limit_secs);
                 _tf->setExtrapolationLimit(extrap_limit);
-                RAVELOG_INFOA("ROSSensorSystem: tf extrapolation Limit: %f Seconds", tf_extrap_limit_secs);
+                RAVELOG_INFOA("ROSSensorSystem: tf extrapolation Limit: %f Seconds\n", tf_extrap_limit_secs);
             }
         }
     }
@@ -123,17 +128,24 @@ private:
     void newdatacb()
     {
         list< SNAPSHOT > listbodies;
-        list< const checkerboard_detector::Object6DPose* > listnewobjs;
+        list< pair<string,Transform> > listnewobjs;
 
         {
             boost::mutex::scoped_lock lock(_mutex);
             TYPEOF(_mapbodies) mapbodies = _mapbodies;
             std_msgs::PoseStamped posestamped, poseout;
             Transform trobot;
+            string strrobotbaselink;
+            bool bHasRobotTransform = false;
 
-            if( _probot != NULL && _topicmsg.objects.size() > 0 ) {
+            if( _robotid != 0 && _topicmsg.objects.size() > 0 ) {
                 GetEnv()->LockPhysics(true);
-                trobot = _probot->GetTransform();
+                KinBody* pbody = GetEnv()->GetBodyFromNetworkId(_robotid);
+                if( pbody != NULL ) {
+                    bHasRobotTransform = true;
+                    trobot = pbody->GetTransform();
+                    strrobotbaselink = _stdwcstombs(pbody->GetLinks().front()->GetName());
+                }
                 GetEnv()->LockPhysics(false);
             }
 
@@ -143,16 +155,16 @@ private:
                 Transform tnew;
 
                 // if on robot, have to find the global transformation
-                if( _probot != NULL ) {
-                    posestamped.pose = itobj->pose;
+                if( bHasRobotTransform ) {
+                    posestamped.pose = GetPose(_toffset * GetTransform(itobj->pose));
                     posestamped.header = _topicmsg.header;
                     
                     try {
-                        _tf->transformPose(_stdwcstombs(_probot->GetLinks().front()->GetName()), posestamped, poseout);
-                        tnew = trobot * _probot->GetTransform() * GetTransform(poseout.pose);
+                        _tf->transformPose(strrobotbaselink, posestamped, poseout);
+                        tnew = trobot * GetTransform(poseout.pose);
                     }
                     catch(tf::TransformException& ex) {
-                        RAVELOG_WARNA("failed to get tf frames %S for object %s\n",posestamped.header.frame_id.c_str(), _probot->GetLinks().front()->GetName(), b->_initdata->sid.c_str());
+                        RAVELOG_WARNA("failed to get tf frames %s (body link:%s) for object %s\n",posestamped.header.frame_id.c_str(), strrobotbaselink.c_str(), itobj->type.c_str());
                         tnew = GetTransform(itobj->pose);
                     }
                 }
@@ -163,8 +175,7 @@ private:
                     if( it->second->_initdata->sid == itobj->type ) {
                             
                         // same type matched, need to check proximity
-                        Transform tbody = it->second->GetOffsetLink()->GetParent()->GetTransform();
-                        if( (tbody.trans-tnew.trans).lengthsqr3() > _fThreshSqr )
+                        if( (it->second->tnew.trans-tnew.trans).lengthsqr3() > _fThreshSqr )
                             break;
 
                         b = it->second;
@@ -174,7 +185,7 @@ private:
                 }
 
                 if( !b ) {
-                    listnewobjs.push_back(&(*itobj));
+                    listnewobjs.push_back(pair<string,Transform>(itobj->type,tnew));
                 }
                 else {
                     if( !b->IsEnabled() )
@@ -194,8 +205,8 @@ private:
 
                 KinBody* pbody = GetEnv()->CreateKinBody();
 
-                if( !pbody->Init( (*itobj)->type.c_str(), NULL ) ) {
-                    RAVELOG_ERRORA("failed to create object %s\n", (*itobj)->type.c_str());
+                if( !pbody->Init( itobj->first.c_str(), NULL ) ) {
+                    RAVELOG_ERRORA("failed to create object %s\n", itobj->first.c_str());
                     delete pbody;
                     continue;
                 }
@@ -216,7 +227,7 @@ private:
                     continue;
                 }
 
-                pbody->SetTransform(GetTransform((*itobj)->pose));
+                pbody->SetTransform(itobj->second);
             }
             GetEnv()->LockPhysics(false);
         }
@@ -232,12 +243,18 @@ private:
         btVector3 o = bt.getOrigin();
         return Transform(Vector(q.w(),q.x(),q.y(),q.z()),Vector(o.x(),o.y(),o.z()));
     }
+    std_msgs::Pose GetPose(const Transform& t) {
+        std_msgs::Pose p;
+        p.orientation.x = t.rot.y; p.orientation.y = t.rot.z; p.orientation.z = t.rot.w; p.orientation.w = t.rot.x;
+        p.position.x = t.trans.x; p.position.y = t.trans.y; p.position.z = t.trans.z;
+        return p;
+    }
 
     boost::shared_ptr<tf::TransformListener> _tf;
-    RobotBase* _probot; ///< system is attached to this robot
+    int _robotid;
+    Transform _toffset; ///< offset from tf frame
     dReal _fThreshSqr;
     int nNextId;
 };
 
 #endif
-

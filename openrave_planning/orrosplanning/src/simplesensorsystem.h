@@ -53,13 +53,10 @@ public:
     class BODY : public BODYBASE
     {
     public:
-        BODY(KinBody* pbody) : BODYBASE()
+        BODY(KinBody* pbody, MocapData* pdata) : BODYBASE()
         {
-            assert( pbody != NULL );
-            pOffsetLink = pbody->GetLink(_initdata->strOffsetLink.c_str());
-            if( pOffsetLink == NULL )
-                pOffsetLink = pbody->GetLinks().front();
-            
+            assert( pbody != NULL && pdata != NULL);
+            _initdata.reset(pdata);
             bPresent = false;
             bEnabled = true;
             bLock = false;
@@ -70,6 +67,7 @@ public:
 
         virtual void* GetInitData(int* psize) { if( psize ) *psize = sizeof(_initdata); return &_initdata; }
         ros::Time lastupdated;
+        Transform tnew; ///< most recent transform that is was set
         boost::shared_ptr<MocapData> _initdata;
 
     private:
@@ -224,6 +222,10 @@ public:
         
         BODY* b = CreateBODY(pbody);
         b->_initdata->copy((const MocapData*)pdata);
+        b->pOffsetLink = pbody->GetLink(b->_initdata->strOffsetLink.c_str());
+        if( b->pOffsetLink == NULL )
+            b->pOffsetLink = pbody->GetLinks().front();
+            
         _mapbodies[pbody->GetNetworkId()].reset(b);
         RAVELOG_DEBUGA("system adding body %S, total: %d\n", pbody->GetName(), _mapbodies.size());
         return b;
@@ -313,41 +315,41 @@ public:
 protected:
     virtual BODY* CreateBODY(KinBody* pbody)
     {
-        BODY* b = new BODY(pbody);
-        b->_initdata.reset(new MocapData());
-        return b;
+        return new BODY(pbody, new MocapData());
     }
 
     typedef pair<boost::shared_ptr<BODY>, Transform > SNAPSHOT;
     virtual void UpdateBodies(list<SNAPSHOT>& listbodies)
     {
         // assume mutex is already locked
-        if( listbodies.size() == 0 )
-            return;
-
         ros::Time curtime = ros::Time::now();
-        GetEnv()->LockPhysics(true);
 
-        FOREACH(it, listbodies) {
-            assert( it->first->IsEnabled() && it->first->GetOffsetLink() != NULL );
+        if( listbodies.size() > 0 ) {
 
-            // transform with respect to offset link
-            TransformMatrix tlink = it->first->GetOffsetLink()->GetTransform();
-            TransformMatrix tbase = it->first->GetOffsetLink()->GetParent()->GetTransform();
-            TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata->transOffset;
-            TransformMatrix tfinal = toffset * it->second*it->first->_initdata->transPreOffset;
+            GetEnv()->LockPhysics(true);
+
+            FOREACH(it, listbodies) {
+                assert( it->first->IsEnabled() && it->first->GetOffsetLink() != NULL );
+
+                // transform with respect to offset link
+                TransformMatrix tlink = it->first->GetOffsetLink()->GetTransform();
+                TransformMatrix tbase = it->first->GetOffsetLink()->GetParent()->GetTransform();
+                TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata->transOffset;
+                TransformMatrix tfinal = toffset * it->second*it->first->_initdata->transPreOffset;
             
-            it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
-            it->first->lastupdated = curtime;
-
-            //RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+                it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
+                it->first->lastupdated = curtime;
+                it->first->tnew = it->second;
             
-            if( !it->first->IsPresent() )
-                RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
-            it->first->SetPresent(true);
+                //RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+            
+                if( !it->first->IsPresent() )
+                    RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
+                it->first->SetPresent(true);
+            }
+
+            GetEnv()->LockPhysics(false);
         }
-
-        GetEnv()->LockPhysics(false);
 
         TYPEOF(_mapbodies.begin()) itbody = _mapbodies.begin();
         while(itbody != _mapbodies.end()) {
