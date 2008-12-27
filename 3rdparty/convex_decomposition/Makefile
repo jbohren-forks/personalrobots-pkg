@@ -15,7 +15,7 @@ convex_decomposition: $(SOURCE_DIR)
 	@echo "ROOT is: $(ROOT)"
 	-mkdir -p $(ROOT)
 	-mkdir -p $(ROOT)/bin
-	cd $(SOURCE_DIR) ; patch -p0 -N < ../../convex_decomposition.patch
+	cd $(SOURCE_DIR) ; patch -p0 -N < ../../convex_decomposition.patch || echo
 	cd $(SOURCE_DIR) ; make $(PARALLEL_JOBS); make install
 
 clean:
