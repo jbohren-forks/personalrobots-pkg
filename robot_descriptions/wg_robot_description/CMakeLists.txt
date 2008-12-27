@@ -57,6 +57,12 @@ foreach(it ${pr2_stl_files})
 get_filename_component(basepath ${it} PATH)
 get_filename_component(basename ${it} NAME_WE)
 
+IF ( ${basename} MATCHES "_convex" )
+
+  message("ignoring stale .._convex.stl file:",${basename})
+
+ELSE ( ${basename} MATCHES "_convex" )
+
 #convex decomposition obj files
 add_custom_command(
   OUTPUT ${basepath}/convex
@@ -100,8 +106,11 @@ add_custom_command(
   COMMAND ivcon
   ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
   DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj ivcon)
-
+ 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
+
+
+  ENDIF ( ${basename} MATCHES "_convex" )
 
 endforeach(it)
 
