@@ -482,7 +482,7 @@
           <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_wrist_roll_visual">
-          <mesh filename="wr_roll" />
+          <mesh filename="wrist_roll" />
         </geometry>
       </visual>
       <collision>
