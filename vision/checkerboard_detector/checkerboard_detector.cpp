@@ -58,6 +58,7 @@ public:
     image_msgs::Image _imagemsg;
     checkerboard_detector::ObjectDetection _objdetmsg;
     image_msgs::CvBridge _cvbridge;
+    string frame_id; // tf frame id
     
     int display, uidnext;
     vector<CHECKERBOARD> vcheckers; // grid points for every checkerboard
@@ -116,6 +117,8 @@ public:
             maptypes[vstrtypes.back()] = index;
             index++;
         }
+
+        param("frame_id",frame_id,string(""));
 
         if( maptypes.size() == 0 ) {
             ROS_ERROR("no checkerboards to detect");
@@ -245,6 +248,7 @@ public:
         }
         
         _objdetmsg.set_objects_vec(vobjects);
+        _objdetmsg.header.frame_id = frame_id;
         publish("ObjectDetection", _objdetmsg);
 
         ROS_INFO("checkerboard: image: %dx%d (size=%d), num: %d, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
