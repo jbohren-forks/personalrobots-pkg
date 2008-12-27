@@ -57,15 +57,6 @@ foreach(it ${pr2_stl_files})
 get_filename_component(basepath ${it} PATH)
 get_filename_component(basename ${it} NAME_WE)
 
-#iv files
-add_custom_command(
-  OUTPUT ${basepath}/${basename}.iv
-  COMMAND ivcon
-  ARGS ${it} ${basepath}/${basename}.iv
-  DEPENDS ${it} ivcon)
-
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
-
 #convex decomposition obj files
 add_custom_command(
   OUTPUT ${basepath}/convex
@@ -94,10 +85,23 @@ add_custom_command(
   OUTPUT ${basepath}/convex/${basename}_convex.stlb
   COMMAND ivcon
   ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
-  DEPENDS ${it} ${basepath}/convex/${basename}_convex.obj ivcon)
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj ivcon)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
+#iv files
+add_custom_command(
+  OUTPUT ${basepath}/${basename}.iv
+  COMMAND ivcon
+  ARGS ${it} ${basepath}/${basename}.iv
+  DEPENDS ${it} ivcon)
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.iv
+  COMMAND ivcon
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj ivcon)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
 
 endforeach(it)
 
