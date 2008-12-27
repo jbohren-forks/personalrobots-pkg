@@ -1,14 +1,18 @@
 wiring_tree: { 
-#circuit1: { component: 'pr2_power_board', value: 'breaker_voltage1', tolerance: 10,
-#             children: [fr_caster, fl_caster, br_caster, bl_caster]},
- circuit0: {component: "pr2_power_board", value: "breaker_voltage0", tolerance: 10,
-             children: [l_shoulder_pan]},
- circuit2: { component: "pr2_power_board", value: "breaker_voltage2", tolerance: 10 ,
-             children: [r_shoulder_pan]},
- r_shoulder_pan: { component: "ethercat device r_shoulder_pan", value: "voltage", tolerance: 10,
-                   children: [r_shoulder_tilt]},
- l_shoulder_pan: { component: "ethercat device l_shoulder_pan", value: "voltage", tolerance: 10,
-                   children: [l_shoulder_tilt]}
+ circuit1: { component: 'Power board 0', value: 'Breaker 1 Voltage', tolerance: 10,
+             children: []},
+ circuit0: {component: "Power board 0", value: "Breaker 0 Voltage", tolerance: 10,
+             children: ["fr_caster_turret","fl_caster_turret"]},
+ circuit2: { component: "Power board 0", value: "Breaker 2 Voltage", tolerance: 10 ,
+             children: []},
+ fl_caster_turret: { component: "EtherCAT Device #19 (fl_caster_rotation_motor)", 
+  value: "Supply voltage", tolerance: 10, children: []},
+ fr_caster_turret: { component: "EtherCAT Device #10 (fr_caster_rotation_motor)", 
+  value: "Supply voltage", tolerance: 10, children: [fr_caster_l_wheel]},
+ fr_caster_l_wheel: { component: "EtherCAT Device #08 (fr_caster_l_wheel_motor)", 
+  value: "Supply voltage", tolerance: 10, children: [fr_caster_r_wheel]},
+ fr_caster_r_wheel: { component: "EtherCAT Device #09 (fr_caster_r_wheel_motor)", 
+  value: "Supply voltage", tolerance: 10, children: []}
 }
 
 root: [ circuit0, circuit2]

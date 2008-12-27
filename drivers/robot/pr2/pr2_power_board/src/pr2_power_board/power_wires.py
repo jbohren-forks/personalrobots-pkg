@@ -42,22 +42,28 @@ from robot_msgs.msg import *
 
 def recurse_tree(element, messages, wiremap):
     errors = []
+    print "Looking at ", element
     if element in wiremap:
         if "children" in wiremap[element]:
             for child in wiremap[element]["children"]:
-                children_return, errors_return = recurse_tree(child, messages, wiremap)
-                children.extend(children_return)
+                errors_return = recurse_tree(child, messages, wiremap)
                 errors.extend(errors_return)
 
-            try:
-                value = messages[ wiremap[element][component]][wiremap[element][value]]
-                child_value = messages[ wiremap[child][component]][wiremap[child][value]]
-                tolerance = wiremap[element][tolerance]
-                if abs(value - child_value) / value > tolerance/100:
-                    errors.append("difference between %f (%s) and %f (%s) voltages exceeds tolerance %f\%"
-                                  %(value, element, child_value, child, tolerance))
-            except KeyError:
-                errors.append("badly formed parameters");
+                try:
+                    value = float(messages[ wiremap[element]['component']][wiremap[element]['value']])
+                    child_value = float(messages[ wiremap[child]['component']][wiremap[child]['value']])
+                    tolerance = wiremap[element]['tolerance']
+                    if abs(value - child_value) / value > tolerance/100.0:
+                        errors.append("difference between %f (%s) and %f (%s) voltages exceeds tolerance %f percent"%(value, element, child_value, child, tolerance))
+                    else:
+                        rospy.logdebug("%s passed"%child)
+                except KeyError, e:
+                    errors.append("badly formed parameters for element %s: %s"%(element, e));
+        else:
+            print "No children of element: ", element
+    else:
+        errors.append("no element %s"% element)
+        #print "wiremap is", wiremap
     return errors
 
 
@@ -71,10 +77,13 @@ def test(latest_status, parameters):
         results['error'] = ["power_wires: no wiring_tree found"]
         return results
 
-    if "root" in parameters:
+    if 'root' in parameters:
+        results['error'] = []
         for root in parameters["root"]:
-            results.extend( recurse_tree(root, latest_status, parameters))
-            
+            results['error'].extend( recurse_tree(root, latest_status, wiremap))
+        # clean up if no iterations happend
+        if results['error'] == []:
+            del results['error']
     else:
         results['error'] = ["power_wires: no root found"]
         return results
