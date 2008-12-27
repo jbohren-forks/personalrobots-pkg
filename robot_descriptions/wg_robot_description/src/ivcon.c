@@ -9659,8 +9659,8 @@ int obj_write ( FILE *fileout )
   V: vertex coordinates. 
 */
   for ( i = 0; i < cor3_num; i++ ) {
-    fprintf ( fileout, "v %f %f %f %f\n", 
-      cor3[0][i], cor3[1][i], cor3[2][i], w );
+    fprintf ( fileout, "v %f %f %f\n", 
+      cor3[0][i], cor3[1][i], cor3[2][i]);
     text_num = text_num + 1;
   }
 
