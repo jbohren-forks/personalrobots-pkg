@@ -66,7 +66,7 @@ add_custom_command(
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
 
-#obj files
+#create obj files from stl files
 add_custom_command(
   OUTPUT ${basepath}/${basename}.obj
   COMMAND ivcon
@@ -84,14 +84,14 @@ add_custom_command(
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}_convex.obj)
 
-#convert obj files back to stl
+#convert obj files back to stl, put in directory name convex_decomp
 add_custom_command(
-  OUTPUT ${basepath}/${basename}_convex.stl
+  OUTPUT ${basepath}/convex_decomp/${basename}_convex.stl
   COMMAND ivcon
-  ARGS ${basepath}/${basename}_convex.obj ${basepath}/${basename}_convex.stl
+  ARGS ${basepath}/${basename}_convex.obj ${basepath}/convex_decomp/${basename}_convex.stl
   DEPENDS ${it} ivcon)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}_convex.stl)
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex_decomp/${basename}_convex.stl)
 
 
 endforeach(it)
