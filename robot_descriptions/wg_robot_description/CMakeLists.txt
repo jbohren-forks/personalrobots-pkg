@@ -11,6 +11,7 @@ file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/pr2_robot_defs/*.xml)
 
 # xacro file generation
 find_ros_package(xacro)
+find_ros_package(convex_decomposition)
 
 set(pr2robot "${CMAKE_CURRENT_SOURCE_DIR}/pr2/pr2")
 add_custom_command(
@@ -64,6 +65,34 @@ add_custom_command(
   DEPENDS ${it} ivcon)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
+
+#obj files
+add_custom_command(
+  OUTPUT ${basepath}/${basename}.obj
+  COMMAND ivcon
+  ARGS ${it} ${basepath}/${basename}.obj
+  DEPENDS ${it} ivcon)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.obj)
+
+#convex decomposition obj files
+add_custom_command(
+  OUTPUT ${basepath}/${basename}_convex.obj
+  COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
+  ARGS ${basepath}/${basename}.obj
+  DEPENDS ${basepath}/${basename}.obj)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}_convex.obj)
+
+#convert obj files back to stl
+add_custom_command(
+  OUTPUT ${basepath}/${basename}_convex.stl
+  COMMAND ivcon
+  ARGS ${basepath}/${basename}_convex.obj ${basepath}/${basename}_convex.stl
+  DEPENDS ${it} ivcon)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}_convex.stl)
+
 
 endforeach(it)
 

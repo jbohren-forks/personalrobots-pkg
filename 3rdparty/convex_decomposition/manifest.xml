@@ -9,6 +9,6 @@ Convex Mesh Generation Library
 <review status="3rdparty" notes=""/>
 <url>http://www.amillionpixels.us/ConvexDecomposition.zip</url>
 <export>
-  <cpp lflags="-L${prefix}/ConvexDecomposition/lib -lconvex_decomposition" cflags="-I${prefix}/ConvexDecomposition/include"/>
+  <cpp lflags="-L${prefix}/ConvexDecomposition/lib " cflags="-I${prefix}/ConvexDecomposition/include"/>
 </export>
 </package>
