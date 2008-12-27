@@ -65,7 +65,7 @@ public:
   void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
   void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 
-  std::vector<double> reductions_;  // Mechanical reduction for each joint
+  std::vector<double> preductions_, ereductions_;  // Mechanical reduction for each joint, different for position and effort
   std::vector<control_toolbox::Pid> pids_;  // For keeping the joint angles aligned in Gazebo
 
 private:

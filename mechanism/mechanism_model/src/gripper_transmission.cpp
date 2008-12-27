@@ -71,13 +71,21 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     }
     joint_names_.push_back(joint_name);
 
-    const char *joint_red = j->Attribute("reduction");
-    if (!joint_red)
+    const char *joint_pred = j->Attribute("preduction");
+    if (!joint_pred)
     {
       fprintf(stderr, "GripperTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
       return false;
     }
-    reductions_.push_back(atof(joint_red));
+    preductions_.push_back(atof(joint_pred));
+
+    const char *joint_ered = j->Attribute("ereduction");
+    if (!joint_ered)
+    {
+      fprintf(stderr, "GripperTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
+      return false;
+    }
+    ereductions_.push_back(atof(joint_ered));
   }
 
   pids_.resize(joint_names_.size());
@@ -96,8 +104,8 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 void GripperTransmission::propagatePosition(
   std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  assert(as.size() == 1);
-  assert(js.size() == reductions_.size());
+  ROS_ASSERT(as.size() == 1);
+  ROS_ASSERT(js.size() == preductions_.size());
 
   // cos(pos*reduction) = A*motor+B
   // -reduction * sin(pos*reduction) * dpos/dt = A * dmotor/dt
@@ -112,56 +120,64 @@ void GripperTransmission::propagatePosition(
 
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    js[i]->position_ = ang / reductions_[i];
-    js[i]->velocity_ = - A_*as[0]->state_.velocity_ / (sin(ang)*reductions_[i]);
-    js[i]->applied_effort_ = as[0]->state_.last_measured_effort_ * reductions_[i];
+    js[i]->position_ = ang / preductions_[i];
+    js[i]->velocity_ = - A_*as[0]->state_.velocity_ / (sin(ang)*preductions_[i]);
+    js[i]->applied_effort_ = as[0]->state_.last_measured_effort_ * ereductions_[i];
+    ROS_INFO("gripper pos %d: %f from %f (%f,%f)\n", i, js[i]->position_, as[0]->state_.position_, (float)A_, (float)B_);
+    js[i]->position_ = as[0]->state_.position_;
+    js[i]->velocity_ = as[0]->state_.velocity_;
   }
 }
 
 void GripperTransmission::propagatePositionBackwards(
   std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
-  assert(as.size() == 1);
-  assert(js.size() == reductions_.size());
+  ROS_ASSERT(as.size() == 1);
+  ROS_ASSERT(js.size() == preductions_.size());
 
   double mean_position = 0.0;
   double mean_velocity = 0.0;
   double mean_effort = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    mean_position += (cos(js[i]->position_ * reductions_[i])-B_)/A_;
-    mean_velocity += - js[i]->velocity_ * reductions_[i] * sin(js[i]->position_*reductions_[i]) / A_;
-    mean_effort += js[i]->applied_effort_ / (reductions_[i]);
+    mean_position += (cos(js[i]->position_ * preductions_[i])-B_)/A_;
+    mean_velocity += - js[i]->velocity_ * preductions_[i] * sin(js[i]->position_*preductions_[i]) / A_;
+    mean_effort += js[i]->applied_effort_ / (ereductions_[i]);
   }
-  as[0]->state_.position_ = mean_position / js.size();
-  as[0]->state_.velocity_ = mean_velocity / js.size();
+  
+  ROS_INFO("gripper motor pos: %f\n", (float)mean_position / js.size());
+  as[0]->state_.position_ = js[0]->position_;//mean_position / js.size();
+  as[0]->state_.velocity_ = js[0]->velocity_;//mean_velocity / js.size();
   as[0]->state_.last_measured_effort_ = mean_effort / js.size();
 }
 
 void GripperTransmission::propagateEffort(
   std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
-  assert(as.size() == 1);
-  assert(js.size() == reductions_.size());
+  ROS_ASSERT(as.size() == 1);
+  ROS_ASSERT(js.size() == ereductions_.size());
 
   double strongest = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (fabs(js[i]->commanded_effort_ / (reductions_[i])) > fabs(strongest))
-      strongest = js[i]->commanded_effort_ / reductions_[i];
+    if (fabs(js[i]->commanded_effort_ / (ereductions_[i])) > fabs(strongest))
+      strongest = js[i]->commanded_effort_ / ereductions_[i];
   }
+  
+  //ROS_INFO("gripper motor eff: %f\n", (float)strongest);
   as[0]->command_.effort_ = strongest;
 }
 
 void GripperTransmission::propagateEffortBackwards(
   std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  assert(as.size() == 1);
-  assert(js.size() == reductions_.size());
+  ROS_ASSERT(as.size() == 1);
+  ROS_ASSERT(js.size() == ereductions_.size());
+  ROS_ASSERT(js.size() == preductions_.size());
 
   std::vector<double> scaled_positions(js.size());
   for (unsigned int i = 0; i < js.size(); ++i)
-    scaled_positions[i] = js[i]->position_ * reductions_[i];
+    scaled_positions[i] = (cos(js[i]->position_ * preductions_[i])-B_)/A_;
 
   double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
     / scaled_positions.size();
@@ -171,8 +187,9 @@ void GripperTransmission::propagateEffortBackwards(
     double err = scaled_positions[i] - mean;
     double pid_effort = pids_[i].updatePid(err, 0.001);
 
+    ROS_INFO("gripper commanded eff: %f\n", (float)as[0]->command_.effort_ * ereductions_[i]);
     js[i]->commanded_effort_ =
-      pid_effort / reductions_[i] + as[0]->command_.effort_ * reductions_[i];
+        /*pid_effort / ereductions_[i] + */as[0]->command_.effort_ * ereductions_[i];
   }
 }
 
