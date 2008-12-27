@@ -43,10 +43,22 @@ public:
 
     virtual bool Init(istream& sinput)
     {
-        if( !SimpleSensorSystem<XMLID>::Init(sinput) )
-            return false;
+        string cmd;
+        while(!sinput.eof()) {
+            sinput >> cmd;
+            if( !sinput )
+                break;
 
-        sinput >> _topic;
+            if( stricmp(cmd.c_str(), "topic") == 0 )
+                sinput >> _topic;
+            else break;
+
+            if( !sinput ) {
+                RAVELOG_ERRORA("failed\n");
+                return false;
+            }
+        }
+
         startsubscriptions();
         return _bSubscribed;
     }

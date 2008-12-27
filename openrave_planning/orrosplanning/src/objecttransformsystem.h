@@ -26,8 +26,10 @@
 #ifndef OBJECTTRANSFORM_SENSOR_SYSTEM
 #define OBJECTTRANSFORM_SENSOR_SYSTEM
 
+#include <tf/transform_listener.h>
+#include <checkerboard_detector/ObjectDetection.h>
+
 #include "rossensorsystem.h"
-#include "checkerboard_detector/ObjectDetection.h"
 
 // used to update objects through a mocap system
 class ObjectTransformXMLID
@@ -40,22 +42,84 @@ class ObjectTransformSystem : public ROSSensorSystem<checkerboard_detector::Obje
 {
 public:
     ObjectTransformSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), nNextId(1)
+        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _probot(NULL), nNextId(1)
     {
     }
 
     virtual bool Init(istream& sinput)
     {
+        _probot = NULL;
         _topic = "ObjectDetection";
-        bool bSuccess = ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::Init(sinput);
-        if( !bSuccess )
-            return false;
         _fThreshSqr = 0.05*0.05f;
-        sinput >> _fThreshSqr;
-        return true;
+
+        string cmd;
+        while(!sinput.eof()) {
+            sinput >> cmd;
+            if( !sinput )
+                break;
+
+            if( stricmp(cmd.c_str(), "topic") == 0 )
+                sinput >> _topic;
+            else if( stricmp(cmd.c_str(), "thresh") == 0 )
+                sinput >> _fThreshSqr;
+            else if( stricmp(cmd.c_str(), "robot") == 0 ) {
+                int id;
+                sinput >> id;
+                KinBody* pbody = GetEnv()->GetBodyFromNetworkId(id);
+                if( pbody->IsRobot() )
+                    _probot = (RobotBase*)pbody;
+
+                if( _probot == NULL )
+                    RAVELOG_WARNA("failed to find robot with id %d\n", id);
+            }
+            else break;
+
+            if( !sinput ) {
+                RAVELOG_ERRORA("failed\n");
+                return false;
+            }
+        }
+
+        startsubscriptions();
+        return _bSubscribed;
     }
 
 private:
+    virtual void startsubscriptions()
+    {
+        ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::startsubscriptions();
+        
+        if( _bSubscribed ) {
+            ros::node* pnode = check_roscpp_nocreate();
+            if( pnode != NULL ) { 
+                double tf_cache_time_secs;
+                pnode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
+                if (tf_cache_time_secs < 0)
+                    RAVELOG_ERRORA("ROSSensorSystem: Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs);
+                unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL;
+                _tf.reset(new tf::TransformListener(*pnode, true, tf_cache_time));
+                RAVELOG_INFOA("ROSSensorSystem: TF Cache Time: %f Seconds", tf_cache_time_secs);
+
+                // **** Set TF Extrapolation Limit ****
+                double tf_extrap_limit_secs ;
+                pnode->param("~tf_extrap_limit", tf_extrap_limit_secs, 0.00);
+                if (tf_extrap_limit_secs < 0.0)
+                    RAVELOG_ERRORA("ROSSensorSystem: parameter tf_extrap_limit<0 (%f)", tf_extrap_limit_secs);
+
+                ros::Duration extrap_limit;
+                extrap_limit.fromSec(tf_extrap_limit_secs);
+                _tf->setExtrapolationLimit(extrap_limit);
+                RAVELOG_INFOA("ROSSensorSystem: tf extrapolation Limit: %f Seconds", tf_extrap_limit_secs);
+            }
+        }
+    }
+
+    virtual void stopsubscriptions()
+    {
+        ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::stopsubscriptions();
+        _tf.reset();
+    }
+
     void newdatacb()
     {
         list< SNAPSHOT > listbodies;
@@ -64,13 +128,39 @@ private:
         {
             boost::mutex::scoped_lock lock(_mutex);
             TYPEOF(_mapbodies) mapbodies = _mapbodies;
+            std_msgs::PoseStamped posestamped, poseout;
+            Transform trobot;
+
+            if( _probot != NULL && _topicmsg.objects.size() > 0 ) {
+                GetEnv()->LockPhysics(true);
+                trobot = _probot->GetTransform();
+                GetEnv()->LockPhysics(false);
+            }
 
             FOREACHC(itobj, _topicmsg.objects) {
                 boost::shared_ptr<BODY> b;
-                Transform tnew = GetTransform(itobj->pose);
+                
+                Transform tnew;
+
+                // if on robot, have to find the global transformation
+                if( _probot != NULL ) {
+                    posestamped.pose = itobj->pose;
+                    posestamped.header = _topicmsg.header;
+                    
+                    try {
+                        _tf->transformPose(_stdwcstombs(_probot->GetLinks().front()->GetName()), posestamped, poseout);
+                        tnew = trobot * _probot->GetTransform() * GetTransform(poseout.pose);
+                    }
+                    catch(tf::TransformException& ex) {
+                        RAVELOG_WARNA("failed to get tf frames %S for object %s\n",posestamped.header.frame_id.c_str(), _probot->GetLinks().front()->GetName(), b->_initdata->sid.c_str());
+                        tnew = GetTransform(itobj->pose);
+                    }
+                }
+                else
+                    tnew = GetTransform(itobj->pose);
 
                 FOREACH(it, mapbodies) {
-                    if( it->second->_initdata.sid == itobj->type ) {
+                    if( it->second->_initdata->sid == itobj->type ) {
                             
                         // same type matched, need to check proximity
                         Transform tbody = it->second->GetOffsetLink()->GetParent()->GetTransform();
@@ -132,11 +222,19 @@ private:
         }
     }
 
-    Transform GetTransform(const std_msgs::Transform& pose)
+    Transform GetTransform(const std_msgs::Pose& pose)
     {
-        return Transform(Vector(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z), Vector(pose.translation.x, pose.translation.y, pose.translation.z));
+        return Transform(Vector(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z), Vector(pose.position.x, pose.position.y, pose.position.z));
+    }
+    Transform GetTransform(const btTransform& bt)
+    {
+        btQuaternion q = bt.getRotation();
+        btVector3 o = bt.getOrigin();
+        return Transform(Vector(q.w(),q.x(),q.y(),q.z()),Vector(o.x(),o.y(),o.z()));
     }
 
+    boost::shared_ptr<tf::TransformListener> _tf;
+    RobotBase* _probot; ///< system is attached to this robot
     dReal _fThreshSqr;
     int nNextId;
 };

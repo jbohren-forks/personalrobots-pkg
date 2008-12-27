@@ -12,4 +12,5 @@
   <depend package="boost"/>
   <depend package="checkerboard_detector"/>
   <depend package="robot_msgs"/>
+  <depend package="tf"/>
 </package>

@@ -1,22 +1,12 @@
 <launch>
-  <machine name="cameras" address="ahc" default="false" user="rdiankov"/>  
+  <machine name="localhost_cameras" address="localhost" default="false"/>  
 
-  <node machine="cameras" name="dcam" pkg="dcam" type="dcam" respawn="false">
-    <!-- video_mode should be one of the following:
-         640x480_videre_rectified:     Provides rectified images from the hw
-         Provides: left mono image
-         640x480_videre_disparity:     Disparity and rectification done on chip.
-         Provides: Disparity and left mono image
-         640x480_videre_disparity_raw: Disparity done on chip (debayer and rectification in software).
-         Provides: disparity and left color image.
-         640x480_videre_none:          No stereo on chip (all processing done in software).
-         Provides: all 3 images available
-      -->
+<!--   <node machine="cameras" name="dcam" pkg="dcam" type="dcam" respawn="false">
     <param name="video_mode" type="str" value="640x480_videre_rectified"/>
     <param name="do_rectify" type="bool" value="False"/>
     <param name="do_stereo" type="bool" value="False"/>
     <param name="do_calc_points" type="bool" value="False"/>
-  </node>
+  </node> -->
   <group ns="checkerdetector" clear_params="true">
     <param name="display" type="int" value="1"/>
     <param name="rect0_size_x" type="double" value="0.02133"/>
@@ -24,10 +14,10 @@
     <param name="grid0_size_x" type="int" value="4"/>
     <param name="grid0_size_y" type="int" value="3"/>
     <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
-    <node machine="cameras" pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
+    <node pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
       <remap from="CamInfo" to="/dcam/left/cam_info"/>
       <remap from="Image" to="/dcam/left/image_rect"/>
-      <env name="DISPLAY" value=":0.0"/>
+<!--       <env name="DISPLAY" value=":0.0"/> -->
     </node>
   </group>
 </launch>

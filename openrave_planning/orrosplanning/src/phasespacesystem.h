@@ -66,7 +66,7 @@ private:
                 Transform tnew = GetTransform(psbody.pose);
 
                 FOREACH(it, _mapbodies) {
-                    if( it->second->_initdata.id == psbody.id ) {
+                    if( it->second->_initdata->id == psbody.id ) {
                         b = it->second;
                         break;
                     }

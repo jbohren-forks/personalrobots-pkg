@@ -260,8 +260,8 @@ public:
                 CHECKERBOARD& cb = vcheckers[itype];
                 CvSize& s = cb.griddims;
                 Transform tlocal;
-                tlocal.trans = Vector(vobjects[i].pose.translation.x,vobjects[i].pose.translation.y,vobjects[i].pose.translation.z);
-                tlocal.rot = Vector(vobjects[i].pose.rotation.w,vobjects[i].pose.rotation.x,vobjects[i].pose.rotation.y, vobjects[i].pose.rotation.z);
+                tlocal.trans = Vector(vobjects[i].pose.position.x,vobjects[i].pose.position.y,vobjects[i].pose.position.z);
+                tlocal.rot = Vector(vobjects[i].pose.orientation.w,vobjects[i].pose.orientation.x,vobjects[i].pose.orientation.y, vobjects[i].pose.orientation.z);
 
                 CvPoint X[4];
                 
@@ -302,7 +302,7 @@ public:
         }
     }
 
-    std_msgs::Transform FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts)
+    std_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts)
     {
         CvMat *objpoints = cvCreateMat(3,objpts.size(),CV_32FC1);
         for(size_t i=0; i<objpts.size(); ++i) {
@@ -311,11 +311,12 @@ public:
             cvSetReal2D(objpoints, 2,i, objpts[i].z);
         }
         
-        std_msgs::Transform pose;
+        std_msgs::Pose pose;
         float fR3[3];
         CvMat R3, T3;
+        assert(sizeof(pose.position.x) == sizeof(double));
         cvInitMatHeader(&R3, 3, 1, CV_32FC1, fR3);
-        cvInitMatHeader(&T3, 3, 1, CV_64FC1, &pose.translation.x);
+        cvInitMatHeader(&T3, 3, 1, CV_64FC1, &pose.position.x);
         
         // for some reason distortion coeffs are needed
         float kc[4] = {0};
@@ -330,17 +331,17 @@ public:
         
         double fang = sqrt(fR3[0]*fR3[0] + fR3[1]*fR3[1] + fR3[2]*fR3[2]);
         if( fang < 1e-6 ) {
-            pose.rotation.w = 1;
-            pose.rotation.x = 0;
-            pose.rotation.y = 0;
-            pose.rotation.z = 0;
+            pose.orientation.w = 1;
+            pose.orientation.x = 0;
+            pose.orientation.y = 0;
+            pose.orientation.z = 0;
         }
         else {
             double fmult = sin(fang/2)/fang;
-            pose.rotation.w = cos(fang/2);
-            pose.rotation.x = fR3[0]*fmult;
-            pose.rotation.y = fR3[1]*fmult;
-            pose.rotation.z = fR3[2]*fmult;
+            pose.orientation.w = cos(fang/2);
+            pose.orientation.x = fR3[0]*fmult;
+            pose.orientation.y = fR3[1]*fmult;
+            pose.orientation.z = fR3[2]*fmult;
         }
 
         return pose;

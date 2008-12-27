@@ -166,7 +166,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             stringstream ss;
             
             s_listResourceNames.push_back(mesh->filename + "_hi.iv");
-            s_listResourceNames.push_back(mesh->filename + "_low.iv");
+            //s_listResourceNames.push_back(mesh->filename + "_low.iv");
             
             ss << mesh->filename << "_hi.iv " << mesh->scale[0];
             addKeyValue(geom, "render", ss.str());
