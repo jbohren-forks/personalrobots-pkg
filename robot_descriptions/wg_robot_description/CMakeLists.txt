@@ -94,7 +94,7 @@ add_custom_command(
   OUTPUT ${basepath}/convex/${basename}_convex.stlb
   COMMAND ivcon
   ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
-  DEPENDS ${it} ivcon)
+  DEPENDS ${it} ${basepath}/convex/${basename}_convex.obj ivcon)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
