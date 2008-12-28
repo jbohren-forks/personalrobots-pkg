@@ -121,7 +121,7 @@ public:
 
   static void transformToQuaternionAndShift(
       /// 4x4 matrix or 3x4 matrix of transformation
-      const CvMat& transform,
+      const CvMat* transform,
       /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
       /// vector.
       CvMat* params);

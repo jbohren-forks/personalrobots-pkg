@@ -208,7 +208,8 @@ private:
 };
 
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses);
-void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses);
+void saveFramePosesInPlainText(const string& filename, const vector<FramePose*>& framePoses,
+    bool global_to_local=true);
 void printFramePoses(vector<FramePose*>& frames);
 
 typedef enum {

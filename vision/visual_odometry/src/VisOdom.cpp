@@ -202,39 +202,71 @@ void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses)
   }
 }
 
-void saveFramePosesNonXML(const string& dirname, const vector<FramePose*>& framePoses) {
-  std::fstream out((dirname+string("framePoses.txt")).c_str(), ios::out);
+/// save frame poses from global to local, in plain text format.
+void saveFramePosesInPlainText(
+    const string& filename,
+    const vector<FramePose*>& framePoses,
+    bool global_to_local) {
+  std::fstream out(filename.c_str(), ios::out);
 
-  cout << "saving frames (global to local) in file "<< (dirname+string("framePoses.txt")).c_str() << endl;
+  cout << "saving frames (global to local) in file "<< filename.c_str() << endl;
 
+  out << "# global to local transformations." << std::endl;
   out << "# quaternion (w x y z) translation (x y z)"<<std::endl;
   int i=0;
+  double transf_global_to_local_data[16];
+  CvMat transf_global_to_local = cvMat(4,4, CV_64FC1, transf_global_to_local_data);
   for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
     FramePose* fp = *iter;
 
+    double* transf_data=NULL;
+    if (global_to_local) {
+      CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_, &transf_global_to_local);
+      transf_data = transf_global_to_local_data;
+    } else {
+      transf_data = fp->transf_local_to_global_data_;
+    }
+
+    /// @todo why that Matrix is column-major while the RowMajorBit is set?
+    // it seems to me that Matrix is column-major. Hence we need to transpose it.
+//    Eigen::Matrix4d transf_eg = Eigen::Map<Eigen::Matrix4d>(transf_data);
+    Eigen::Matrix4d transf_eg(transf_data);
+    Eigen::Quaterniond quatd(transf_eg.transpose().block<3,3>(0,0));
+
+    // quaternion
+    out<<quatd.w()<<" "<<quatd.x()<<" "<<quatd.y()<<" "<<quatd.z()<<" ";
+    // translation
+    out<< transf_eg.transpose()(0,3) << " ";
+    out<< transf_eg.transpose()(1,3) << " ";
+    out<< transf_eg.transpose()(2,3) << endl;
+
+#if 0 /// @todo remove me. Just to check if eigen matrix is row-major or col-major
+    // it seems to me that it is col-major. However it reports that it is row-major
     // make sure the transformation matrix and the rodrigues and shift vectors are in sync
     double params_local_to_global_data[7];
     CvMat  params_local_to_global = cvMat(7, 1, CV_64FC1, params_local_to_global_data);
-    /// @todo the following code is duplicated
-    CvMatUtils::transformToQuaternionAndShift(fp->transf_local_to_global_, &params_local_to_global);
+    CvMat  transf = cvMat(4, 4, CV_64FC1, transf_data);
 
-    Eigen::Matrix3d rot; // from global to local
-    for (int s=0; s<3; s++) {
-      for (int t=0; t<3; t++ ) {
-        rot(s, t) = cvmGet(&fp->transf_local_to_global_, t, s);
+    cout << "quaternion and shift"<<endl;
+    CvMatUtils::transformToQuaternionAndShift(&transf, &params_local_to_global);
+    CvMatUtils::printMat(&params_local_to_global);
+    cout << endl;
+    CvMatUtils::printMat(&transf_global_to_local);
+    cout << endl;
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<4; j++) {
+        printf("%f ", transf_eg(i,j));
       }
+      cout<<endl;
     }
-    Eigen::Quaterniond quatd(rot);
-    out<<quatd.w()<<" "<<quatd.x()<<" "<<quatd.y()<<" "<<quatd.z()<<" ";
-    out<<-params_local_to_global_data[4] << " ";
-    out<<-params_local_to_global_data[5] << " ";
-    out<<-params_local_to_global_data[6] << endl;
-
-#if 0
-    for (int j=0; j<7; j++) {
-      out << params_local_to_global_data[j] << " ";
+    cout<<endl;
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<4; j++) {
+        printf("%f ", transf_global_to_local_data[i*4+j]);
+      }
+      cout<<endl;
     }
-    out << std::endl;
+    cout<< "Row Major Bit: "<<Eigen::RowMajorBit << endl;
 #endif
   }
 }

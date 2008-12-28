@@ -42,11 +42,11 @@ using namespace std;
 
 #define ShowTemplateMatching 0
 
-#define DEBUG 1
-#define DISPLAY 1
+#define DEBUG 0
+#define DISPLAY 0
 #define SAVE_SBA_SCENE 0
 
-#if CHECKTIMING == 1
+#if CHECKTIMING == 0
 #define TIMERSTART(x)
 #define TIMEREND(x)
 #define TIMERSTART2(x)
@@ -1188,7 +1188,8 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     }
 
 #if SAVE_SBA_SCENE==1
-    string calib_file("CamCalMat.txt");
+    string calib_file("camCalMat.txt");
+    string frame_file("framePoses.txt");
     string track_file("tracks.txt");
     string stereo_track_file("stereo_tracks.txt");
     string output_dir(output_data_path_);
@@ -1204,7 +1205,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(
     tracks.saveInOneFile(string(output_dir).append(stereo_track_file), false);
 
     // for experimental purpose, save all framepose here
-    saveFramePosesNonXML(output_dir, frame_poses);
+    saveFramePosesInPlainText(string(output_dir).append(frame_file), frame_poses);
 #endif
 
     LevMarqSparseBundleAdj::ErrorCode err_code = sba.optimize(&fixed_frames, &free_frames, &tracks);
