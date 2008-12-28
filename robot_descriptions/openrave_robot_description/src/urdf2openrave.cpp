@@ -54,6 +54,7 @@
 
 using namespace std;
 static list<string> s_listResourceNames;
+static string s_inresdir;
 
 string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL)
 {
@@ -166,13 +167,26 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             stringstream ss;
             
             s_listResourceNames.push_back(mesh->filename + "_hi.iv");
+            
+            string collisionfilename = string("convex/") + mesh->filename + string("_hi_convex.iv");
+
+            // check for convex meshes
+            ifstream ifile((s_inresdir + collisionfilename).c_str(), ios_base::binary);
+            if( !ifile ) {
+                cerr << "failed to find convex decomposition file: " << s_inresdir << collisionfilename << endl;
+                collisionfilename = mesh->filename + string("_hi.iv");
+            }
+            else {
+                s_listResourceNames.push_back(collisionfilename);
+            }
+
             //s_listResourceNames.push_back(mesh->filename + "_low.iv");
             
             ss << mesh->filename << "_hi.iv " << mesh->scale[0];
             addKeyValue(geom, "render", ss.str());
 
             ss.str("");
-            ss << mesh->filename << "_hi.iv " << mesh->scale[0]; // don't use low!
+            ss << collisionfilename << " " << mesh->scale[0]; // don't use low!
             addKeyValue(geom, "data", ss.str());
         }
         break;
@@ -353,6 +367,10 @@ int main(int argc, char **argv)
     if( pos != string::npos )
         outresdir = outresdir.substr(0,pos);
 
+    s_inresdir = res_locator::resource2path(wgxml.getResourceLocation());
+    if( s_inresdir.size() > 0 )
+        s_inresdir += "/";
+    
     TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
     
@@ -389,9 +407,6 @@ int main(int argc, char **argv)
         exit(3);
     }
 
-    string inresdir = res_locator::resource2path(wgxml.getResourceLocation());
-    if( inresdir.size() > 0 )
-        inresdir += "/";
     if( outresdir.size() > 0 )
         outresdir += "/";
 
@@ -402,9 +417,16 @@ int main(int argc, char **argv)
         exit(-2);
     }
 
-    cout << "copying resource files from " << inresdir << " to " << outresdir << endl;
+    ret = mkdir((outresdir+string("/convex")).c_str(), 0777);
+
+    if( ret != 0 && errno != EEXIST ) {
+        cerr << "failed to create resource directory " << outresdir << "/convex" << endl;
+        exit(-3);
+    }
+
+    cout << "copying resource files from " << s_inresdir << " to " << outresdir << endl;
     for(list<string>::iterator it = s_listResourceNames.begin(); it != s_listResourceNames.end(); ++it) {
-        ifstream ifile((inresdir+*it).c_str(), ios_base::binary);
+        ifstream ifile((s_inresdir+*it).c_str(), ios_base::binary);
         ofstream ofile((outresdir+*it).c_str(), ios_base::binary);
         ofile << ifile.rdbuf();
     }
