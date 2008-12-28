@@ -359,9 +359,6 @@ Index: DecomposeSample.cpp
  #include "./ConvexDecomposition/cd_wavefront.h"
  
  using namespace ConvexDecomposition;
-@@ -69,1 +69,1 @@
--  	char *dot = strstr(mBaseName,".");
-+  	char *dot = strstr(mBaseName,".obj");
 @@ -227,7 +227,7 @@
  
    	if ( fph )
@@ -380,3 +377,12 @@ Index: DecomposeSample.cpp
  {
  	if ( argc < 2 )
  	{
+Index: DecomposeSample.cpp
+===================================================================
+--- DecomposeSample.cpp	(revision 8299)
++++ DecomposeSample.cpp	(working copy)
+@@ -67,3 +67,3 @@
+  	strcpy(mBaseName,fname);
+-  	char *dot = strstr(mBaseName,".");
++  	char *dot = strstr(mBaseName,".obj");
+  	if ( dot ) *dot = 0;
