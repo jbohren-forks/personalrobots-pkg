@@ -3,7 +3,6 @@ include(rosbuild)
 rospack(wg_robot_description)
 
 rospack_add_gtest(test_update test/test_update.cpp)
-rospack_add_executable(ivcon src/ivcon)
 
 find_ros_package(wg_robot_description)
 
@@ -11,6 +10,7 @@ file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/pr2_robot_defs/*.xml)
 
 # xacro file generation
 find_ros_package(xacro)
+find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
 
 set(pr2robot "${CMAKE_CURRENT_SOURCE_DIR}/pr2/pr2")
@@ -72,9 +72,9 @@ add_custom_command(
 #create obj files for convex decomposition from stl files
 add_custom_command(
   OUTPUT ${basepath}/convex/${basename}.obj
-  COMMAND ivcon
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
   ARGS ${it} ${basepath}/convex/${basename}.obj
-  DEPENDS ${it} ivcon ${basepath}/convex)
+  DEPENDS ${it} ${basepath}/convex)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
 
@@ -89,23 +89,23 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
 #convert obj files back to stlb, put in directory named convex
 add_custom_command(
   OUTPUT ${basepath}/convex/${basename}_convex.stlb
-  COMMAND ivcon
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
   ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
-  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj ivcon)
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
 #iv files
 add_custom_command(
   OUTPUT ${basepath}/${basename}.iv
-  COMMAND ivcon
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
   ARGS ${it} ${basepath}/${basename}.iv
-  DEPENDS ${it} ivcon)
+  DEPENDS ${it})
 add_custom_command(
   OUTPUT ${basepath}/convex/${basename}_convex.iv
-  COMMAND ivcon
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
   ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
-  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj ivcon)
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
  
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
 
