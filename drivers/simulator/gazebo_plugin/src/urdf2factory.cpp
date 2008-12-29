@@ -248,7 +248,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                     if (mesh->filename.empty())
                         addKeyValue(visual, "mesh", "unit_" + type);
                     else
-                        addKeyValue(visual, "mesh", "models/pr2/" + mesh->filename + "_hi.mesh");
+                        addKeyValue(visual, "mesh", "models/pr2/" + mesh->filename + ".mesh");
                     
                 }
                 else
