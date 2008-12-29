@@ -136,7 +136,6 @@ void RosLaser::PutLaserData()
 
 
   double tmp_res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian())/((double)(rangeCount -1)); // for computing yaw
-  int    num_channels = 1;
   this->laserMsg.angle_min = minAngle.GetAsRadian();
   this->laserMsg.angle_max = maxAngle.GetAsRadian();
   this->laserMsg.angle_increment = tmp_res_angle;

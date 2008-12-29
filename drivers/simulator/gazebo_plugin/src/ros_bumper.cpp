@@ -98,8 +98,6 @@ void RosBumper::UpdateChild()
 
   unsigned int num_contacts = this->myParent->GetContactCount();
 
-  double current_time = Simulator::Instance()->GetRealTime();
-
   std::string my_geom_name;
   int i_hit_geom;
   double when_i_hit;
