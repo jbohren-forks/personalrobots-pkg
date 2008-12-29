@@ -7,7 +7,7 @@
   <depend package="std_msgs" />
   <depend package="boost"/>
   <export>
-    <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG" lflags="-lmessageseq"/>
+    <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG" lflags="-L${prefix}/lib -lmessageseq"/>
   </export>
   <url>http://pr.willowgarage.com/wiki/message_sequencing</url>
 </package>
