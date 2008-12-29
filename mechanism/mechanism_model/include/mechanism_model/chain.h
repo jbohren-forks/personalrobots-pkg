@@ -50,6 +50,29 @@ public:
 
   std::vector<int> joint_indices_;
   std::vector<int> link_indices_;
+
+  // Unless the root is a direct ancestor of the tip, the chain likely
+  // goes up the kinematic tree and then back down again.
+  // reversed_index_ indicates where this switch occurs, pointing to
+  // the link which is the ancestor of all the other links in the
+  // chain.
+  //
+  // The switch point is important to keep track of because the Link
+  // and Joint classes specify transforms of the child link in terms
+  // of the parent link.  When we go from reversed_index_ to the tip,
+  // the transforms are correct, but when we go from the root to
+  // reversed_index_, the transforms are reversed.
+  int reversed_index_;
+
+  // The KDL frames are different from our link frames, so we need to
+  // store the transforms between the two of them.
+
+private:
+  // Helper function to get the sequence of links and joints from one
+  // place on the kinematic tree until the top of the kinematic tree.
+  // The specified link is returned as the last link in the results.
+  static bool getAncestors(mechanism::Robot *robot, const std::string &link_name,
+                           std::vector<int> links, std::vector<int> joints);
 };
 
 }
