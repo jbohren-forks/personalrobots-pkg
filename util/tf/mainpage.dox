@@ -124,8 +124,6 @@ uniquely identify coordinate frames.  When the system is operating, if you have 
 it will be in the "videre_camera_frame"  to use it in whatever frame you want simply transform 
 it to the frame id of the frame you want and use it.
 
- - 
-
  - Can I transform a Point Cloud?  
 
 Yes it's in tf package right now it will be moving to a point cloud package soon.  
@@ -153,6 +151,25 @@ all frames that node is aware of.
 A constant offset extrapolation error often is caused by a lack of syncronization of the clocks between computers.  
 One computer thinks it is ahead of the other and consequently the data recieved on a different machine will be off consistently.  
 As new data comes in the closest data will always be the same distance away resulting in the constant ExtrapolationException.  
+
+ - What is the difference between a tf::Transform and a tf::Pose, or for that matter a tf::Point and a tf::Vector3?  They look like the same data type.
+
+Think of it as the difference between time and duration.  Pose is a
+specific location, like time.  You can take the difference between two
+poses, and you get a transform, which is like a duration.  However,
+you can't add two poses.  You can add a duration to a time and get a
+time, likewise you can add a transform to a pose and get a pose.  A
+Point is like Pose, while a Vector3 is like a Transform showing the
+difference between two Points.  
+
+There's also another difference in interpretation in the difference
+between point and vector.  A vector subject to transformation will
+only apply the rotational elements for a vector is always at the
+origin.  Or another way to say it is that a vector subject to
+translation is unchanged.  The same holds for a transform, but you
+usually think of applying a transform to another transform, you chain
+them.  The same goes for vectors.
+
 
 
 */
