@@ -36,6 +36,8 @@
 #define __TRACKER__
 
 #include "state_pos_vel.h"
+#include <robot_msgs/PositionMeasurement.h>
+
 
 namespace estimation
 {
@@ -60,7 +62,8 @@ public:
   virtual bool updateCorrection(const tf::Vector3& meas) = 0;
 
   /// get filter posterior
-  virtual BFL::StatePosVel getEstimate() const = 0;
+  virtual void getEstimate(BFL::StatePosVel& est) const = 0;
+  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const = 0;
 
 
 }; // class

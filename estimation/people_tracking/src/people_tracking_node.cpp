@@ -36,11 +36,15 @@
 #include "tracker_particle.h"
 #include "tracker_kalman.h"
 #include "state_pos_vel.h"
+#include <robot_msgs/PositionMeasurement.h>
+
 
 using namespace std;
 using namespace ros;
 using namespace tf;
 using namespace BFL;
+using namespace robot_msgs;
+
 
 static const unsigned int num_trackers               = 2;
 static const double sequencer_delay                  = 0.2;
@@ -83,15 +87,8 @@ namespace estimation
     param("~/prior_sigma_vel_z", prior_sigma_.vel_[2], 0.0);
 
     // advertise
+    advertise<robot_msgs::PositionMeasurement>("people_tracking_filter",10);
     advertise<std_msgs::PointCloud>("people_tracking",3);
-
-    for (unsigned int i=0; i<3; i++){
-      cout << "sys sigma pos " << sys_sigma_.pos_[i] << endl;
-      cout << "sys sigma vel " << sys_sigma_.vel_[i] << endl;
-      cout << "meas sigma " << meas_sigma_[i] << endl;
-      cout << "prior sigma pos " << prior_sigma_.pos_[i] << endl;
-      cout << "prior sigma vel " << prior_sigma_.vel_[i] << endl;
-    }
   }
 
 
@@ -175,12 +172,18 @@ namespace estimation
       std_msgs::PointCloud cloud;
 
       for (unsigned int i=0; i<trackers_.size(); i++){
-	cout << "Tracker " << i << endl;
-	cout << " - expected value = " << trackers_[i]->getEstimate() << endl;
-	cout << " - quality        = " << trackers_[i]->getQuality() << endl;
+	StatePosVel est_vec;
+	trackers_[i]->getEstimate(est_vec);
+	cout << "Tracker " << i << " - expected value = " << est_vec << endl;
+
+	PositionMeasurement est_pos;
+	trackers_[i]->getEstimate(est_pos);
+	publish("people_tracking_filter", est_pos);
+
 	// publish result
 	//((TrackerParticle*)(trackers_[i]))->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
 	//publish("people_tracking", cloud);
+
       }
       // sleep
       usleep(1e6/freq_);

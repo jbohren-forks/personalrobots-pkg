@@ -40,6 +40,9 @@ using namespace BFL;
 using namespace tf;
 using namespace std;
 using namespace ros;
+using namespace robot_msgs;
+
+
 
 
 namespace estimation
@@ -119,10 +122,26 @@ namespace estimation
 
 
   // get most recent filter posterior 
-  StatePosVel TrackerParticle::getEstimate() const
+  void TrackerParticle::getEstimate(StatePosVel& est) const
   {
-    return ((MCPdfPosVel*)(filter_->PostGet()))->ExpectedValueGet();
+    est = ((MCPdfPosVel*)(filter_->PostGet()))->ExpectedValueGet();
   };
+
+
+  void TrackerParticle::getEstimate(PositionMeasurement& est) const
+  {
+    StatePosVel tmp = filter_->PostGet()->ExpectedValueGet();
+
+    est.pos.x = tmp.pos_[0];
+    est.pos.y = tmp.pos_[1];
+    est.pos.z = tmp.pos_[2];
+
+    est.header.stamp.fromSec( filter_time_ );
+    est.header.frame_id = "odom_combined";
+  }
+
+
+
 
 
   /// Get histogram from certain area

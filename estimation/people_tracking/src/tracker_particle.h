@@ -79,9 +79,8 @@ public:
   virtual bool updateCorrection(const tf::Vector3& meas);
 
   /// get filter posterior
-  virtual BFL::StatePosVel getEstimate() const;
-
-
+  virtual void getEstimate(BFL::StatePosVel& est) const;
+  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
   // get evenly spaced particle cloud
   void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;

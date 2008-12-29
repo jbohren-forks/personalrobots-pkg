@@ -78,8 +78,8 @@ public:
   virtual bool updateCorrection(const tf::Vector3& meas);
 
   /// get filter posterior
-  virtual BFL::StatePosVel getEstimate() const;
-
+  virtual void getEstimate(BFL::StatePosVel& est) const;
+  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
 private:
   // pdf / model / filter

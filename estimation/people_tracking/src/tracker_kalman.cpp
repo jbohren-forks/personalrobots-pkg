@@ -39,6 +39,8 @@ using namespace BFL;
 using namespace tf;
 using namespace std;
 using namespace ros;
+using namespace robot_msgs;
+
 
 
 namespace estimation
@@ -160,16 +162,28 @@ namespace estimation
   };
 
 
-  StatePosVel TrackerKalman::getEstimate() const
+  void TrackerKalman::getEstimate(StatePosVel& est) const
   {
     ColumnVector tmp = filter_->PostGet()->ExpectedValueGet();
-    StatePosVel res;
     for (unsigned int i=0; i<3; i++){
-      res.pos_[i] = tmp(i+1);
-      res.vel_[i] = tmp(i+4);
+      est.pos_[i] = tmp(i+1);
+      est.vel_[i] = tmp(i+4);
     }
-    return res;
+  };
+
+
+  void TrackerKalman::getEstimate(PositionMeasurement& est) const
+  {
+    ColumnVector tmp = filter_->PostGet()->ExpectedValueGet();
+
+    est.pos.x = tmp(1);
+    est.pos.y = tmp(2);
+    est.pos.z = tmp(3);
+
+    est.header.stamp.fromSec( filter_time_ );
+    est.header.frame_id = "odom_combined";
   }
+
 
 }; // namespace
 
