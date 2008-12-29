@@ -59,11 +59,11 @@ $ people/bin/face_detection [node_name] [cascade_file_path] [do_display]
 @param do_display 0/1 whether to display the detections or just publish them.
 
 @verbatim
-people/bin/stereo_face_color_tracker
+$ people/bin/stereo_face_color_tracker
 @endverbatim
 
 @verbatim
-people/bin/track_starter_gui
+$ people/bin/track_starter_gui
 @endverbatim
 
 @todo Incorporate color calibration into each node in a nicer way. Currently you have to turn it on in the code.
