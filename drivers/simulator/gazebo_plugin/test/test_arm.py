@@ -59,7 +59,7 @@ from pr2_mechanism_controllers.msg import *
 
 
 CMD_POS      =  0.5
-TARGET_DURATION = 2.0
+TARGET_DURATION = 3.0
 TARGET_TOL      = 0.08 #empirical test result john - 20081029
 
 # pre-recorded poses for above commands
