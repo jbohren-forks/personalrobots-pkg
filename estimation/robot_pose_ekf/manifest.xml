@@ -7,5 +7,5 @@
 <depend package="std_msgs" />
 <depend package="robot_msgs" />
 <depend package="tf" />
-<depend package="rosthread"/>
+<depend package="boost"/>
 </package>
