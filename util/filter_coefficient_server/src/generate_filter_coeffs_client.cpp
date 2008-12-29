@@ -1,7 +1,6 @@
-#include "ros/node.h"
-#include "filters/transfer_function.h"
 #include <string>
 #include <vector>
+#include "ros/node.h"
 #include "filter_coefficient_server/Filter.h"
 
 class GenFilter : public ros::node
