@@ -1,6 +1,39 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// Original version: Melonee Wise <mwise@willowgarage.com>
+
 #include <math.h>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "ros/node.h"
 #include "filters/transfer_function.h"
@@ -20,6 +53,13 @@ public:
     filter_coefficient_server::Filter::response res;
     req.name = name;
     req.args = args;
+
+    //hack for wait for service
+    while (!ros::service::call("generate_filter_coeffs", req, res))
+    {
+      sleep(1);
+    }
+    
     if (ros::service::call("generate_filter_coeffs", req, res))
     {
       for(uint32_t i=0; i<res.a.size();i++)
@@ -29,10 +69,13 @@ public:
       }
       
       std::vector<double> temp;
-      temp.resize(2);    
-      //create a filter using the coeffs
-      filters::TransferFunctionFilter<double> filter(b,a,1);
+      temp.resize(2);
+      std::ofstream outfile;
 
+      outfile.open ("output.txt");    
+      //create a filter using the coeffs
+      filters::TransferFunctionFilter<double> filter(b,a,2);
+      
       //pass in a simple sinewave
       for(uint32_t i=0; i<100; i++)
       {       
@@ -40,9 +83,10 @@ public:
         temp[1]=cos(2*M_PI*i/20);
         in.push_back(temp);
         filter.update(&temp);
-        out.push_back(temp);
+        out.push_back(temp);       
+        outfile << in[i][0]<<", "<<out[i][0]<<", "<<in[i][1]<<", "<<out[i][1]<<"\n";
       }
-
+      outfile.close();
       return true;
     }
     else
@@ -78,10 +122,6 @@ int main(int argc, char **argv)
 
   if (a.call_srv(argv[1], args, tf_a, tf_b, input, output))
   {
-    for(uint32_t i=0; i<tf_a.size();i++)
-    {
-      printf("a[%d]:%f b[%d]:%f \n",i,tf_a[i],i,tf_b[i]);
-    }
   }
   else
     printf("The filter name does not exist or the wrong arguments were sent\n");
