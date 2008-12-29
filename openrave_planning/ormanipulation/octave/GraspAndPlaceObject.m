@@ -38,6 +38,8 @@ function [graspsuccess, full_solution_index] = GraspAndPlaceObject(robot, curobj
 
 global updir probs
 
+orEnvSetOptions('debug verbose');
+
 test = 0;
 graspsuccess = 0;
 
