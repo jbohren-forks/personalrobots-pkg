@@ -107,8 +107,8 @@ class TrajectoryController {
 
     //for getting the cells for a given footprint
     std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
-    void getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts);
-    void getFillCells(vector<std_msgs::Position2DInt>& footprint);
+    void getLineCells(int x0, int x1, int y0, int y1, std::vector<std_msgs::Position2DInt>& pts);
+    void getFillCells(std::vector<std_msgs::Position2DInt>& footprint);
     
     //update what map cells are considered path based on the global_plan
     void setPathCells();
@@ -208,8 +208,8 @@ class TrajectoryController {
     //compute velocity based on acceleration
     inline double computeNewVelocity(double vg, double vi, double a_max, double dt){
       if(vg >= 0)
-        return min(vg, vi + a_max * dt);
-      return max(vg, vi - a_max * dt);
+        return std::min(vg, vi + a_max * dt);
+      return std::max(vg, vi - a_max * dt);
     }
     
 };
