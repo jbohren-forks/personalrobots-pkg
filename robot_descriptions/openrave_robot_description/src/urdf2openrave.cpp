@@ -166,15 +166,15 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             type = "trimesh";
             stringstream ss;
             
-            s_listResourceNames.push_back(mesh->filename + "_hi.iv");
+            s_listResourceNames.push_back(mesh->filename + ".iv");
             
-            string collisionfilename = string("convex/") + mesh->filename + string("_hi_convex.iv");
+            string collisionfilename = string("convex/") + mesh->filename + string("_convex.iv");
 
             // check for convex meshes
             ifstream ifile((s_inresdir + collisionfilename).c_str(), ios_base::binary);
             if( !ifile ) {
                 cerr << "failed to find convex decomposition file: " << s_inresdir << collisionfilename << endl;
-                collisionfilename = mesh->filename + string("_hi.iv");
+                collisionfilename = mesh->filename + string(".iv");
             }
             else {
                 s_listResourceNames.push_back(collisionfilename);
@@ -182,7 +182,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
 
             //s_listResourceNames.push_back(mesh->filename + "_low.iv");
             
-            ss << mesh->filename << "_hi.iv " << mesh->scale[0];
+            ss << mesh->filename << ".iv " << mesh->scale[0];
             addKeyValue(geom, "render", ss.str());
 
             ss.str("");
