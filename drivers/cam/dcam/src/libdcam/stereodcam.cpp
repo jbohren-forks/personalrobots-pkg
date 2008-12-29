@@ -175,15 +175,17 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imRectType = COLOR_CODING_MONO8;
 	  stIm->hasDisparity = true;
+	  stIm->doSpeckle();	// apply speckle filter
 	  break;
 
 	case VIDERE_STOC_RAW_DISP_MONO:
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->im, &stIm->imLeft->imSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
-          printf("Setting stIm->imLeft->imType to %d\n", stIm->imLeft->imType);
+	  //          printf("Setting stIm->imLeft->imType to %d\n", stIm->imLeft->imType);
           //	  stIm->imLeft->doBayerMono();
 	  stIm->hasDisparity = true;
+	  stIm->doSpeckle();	// apply speckle filter
 	  break;
 
 	case VIDERE_STOC_RAW_DISP_RGGB:
@@ -192,6 +194,7 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
           //	  stIm->imLeft->doBayerColorRGB();
 	  stIm->hasDisparity = true;
+	  stIm->doSpeckle();	// apply speckle filter
 	  break;
 
 	default:
