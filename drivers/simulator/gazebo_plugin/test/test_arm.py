@@ -58,9 +58,10 @@ from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
 
-CMD_POS      =  0.5
-TARGET_DURATION = 3.0
+CMD_POS         =  0.5
+TARGET_DURATION = 1.0
 TARGET_TOL      = 0.08 #empirical test result john - 20081029
+TEST_TIMEOUT    = 30.0
 
 # pre-recorded poses for above commands
 TARGET_ARM_TX         =  0.70167519
@@ -83,8 +84,10 @@ class ArmTest(unittest.TestCase):
     def __init__(self, *args):
         super(ArmTest, self).__init__(*args)
         self.success = False
-        self.reached_target_vw = False
-        self.duration_start = 0
+        self.reached_target_arm = False
+        self.reached_target_gripper = False
+        self.duration_start_gripper = 0
+        self.duration_start_arm = 0
 
 
     def printP3D(self, p3d):
@@ -115,18 +118,19 @@ class ArmTest(unittest.TestCase):
         print " gripper Error: " + str(error)
         #self.printP3D(p3d)
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
-        if self.reached_target_vw:
+        if self.reached_target_gripper:
+          print " gripper duration: " + str(time.time() - self.duration_start_gripper)
           if error < TARGET_TOL:
-            if time.time() - self.duration_start > TARGET_DURATION:
+            if time.time() - self.duration_start_gripper > TARGET_DURATION:
               self.success = True
           else:
             # failed to maintain target vw, reset duration
             self.success = False
-            self.reached_target_vw = False
+            self.reached_target_gripper = False
         else:
           if error < TARGET_TOL:
-            self.reached_target_vw = True
-            self.duration_start = time.time()
+            self.reached_target_gripper = True
+            self.duration_start_gripper = time.time()
 
     def armP3dInput(self, p3d):
         i = 0
@@ -140,18 +144,19 @@ class ArmTest(unittest.TestCase):
         print " arm Error: " + str(error)
         #self.printP3D(p3d)
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
-        if self.reached_target_vw:
+        if self.reached_target_arm:
+          print " arm duration: " + str(time.time() - self.duration_start_arm)
           if error < TARGET_TOL:
-            if time.time() - self.duration_start > TARGET_DURATION:
+            if time.time() - self.duration_start_arm > TARGET_DURATION:
               self.success = True
           else:
             # failed to maintain target vw, reset duration
             self.success = False
-            self.reached_target_vw = False
+            self.reached_target_arm = False
         else:
           if error < TARGET_TOL:
-            self.reached_target_vw = True
-            self.duration_start = time.time()
+            self.reached_target_arm = True
+            self.duration_start_arm = time.time()
     
     def test_arm(self):
         print "LNK\n"
@@ -160,11 +165,11 @@ class ArmTest(unittest.TestCase):
         rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.armP3dInput)
         rospy.Subscriber("l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.gripperP3dInput)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + 30.0
+        timeout_t = time.time() + TEST_TIMEOUT
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             pub_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS],[0,0,0,0,0,0,0],0))
             pub_gripper.publish(Float64(CMD_POS))
-            time.sleep(0.1)
+            time.sleep(0.5)
         self.assert_(self.success)
         
 if __name__ == '__main__':
