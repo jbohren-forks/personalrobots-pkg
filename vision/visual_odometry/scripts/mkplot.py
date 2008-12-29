@@ -78,6 +78,7 @@ oe_y = []
 first_pair = None
 
 for topic, msg, t in rosrecord.logplayer(filename):
+  print topic, msg
   if rospy.is_shutdown():
     break
 
@@ -90,7 +91,6 @@ for topic, msg, t in rosrecord.logplayer(filename):
 
     vos = [
       VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
-      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = (3,10,10)),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
@@ -109,7 +109,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,10000
+  start,end = 0,30
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -151,8 +151,17 @@ vo.handle_frame(f0)
 vo.handle_frame(f1)
 quality_pose = vo.pose
 
+if 0:
+  for t in vos[2].all_tracks:
+    pylab.plot([x for (x,y,d) in t.p], [y for (x,y,d) in t.p])
+  pylab.xlim((0, 640))
+  pylab.ylim((0, 480))
+  pylab.savefig("foo.png", dpi=200)
+  pylab.show()
+  sys.exit(0)
+
 pylab.figure(figsize=(20,20))
-colors = [ 'blue', 'red', 'black', 'magenta', 'cyan' ]
+colors = [ 'blue', 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
   xs = numpy.array(vo_x[i])
@@ -180,7 +189,7 @@ mid = sum(ylim) / 2
 pylab.ylim(mid - 0.5 * r, mid + 0.5 * r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
-pylab.show()
+#pylab.show()
 
 for vo in vos:
   print vo.name()
