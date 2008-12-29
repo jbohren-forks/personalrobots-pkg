@@ -7,6 +7,7 @@ rospack_add_library( mechanism_model
   src/joint.cpp
   src/robot.cpp
   src/link.cpp
+  src/chain.cpp
   src/wrist_transmission.cpp)
 
 rospack_add_gtest(test_FK test/test_FK.cpp)
