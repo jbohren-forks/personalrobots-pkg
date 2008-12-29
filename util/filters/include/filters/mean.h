@@ -54,13 +54,6 @@ public:
    */
   ~MeanFilter();
 
-  /** \brief Update filter mutating data in place
-   * This will overwrite the results on top of the input
-   * \param data This must be an array which is elements_per_observation long
-   */
-  virtual bool update(T * data);
-
-
   /** \brief Update the filter and return the data seperately
    * \param data_in T array with length elements_per_observation
    * \param data_out T array with length elements_per_observation
@@ -94,11 +87,6 @@ MeanFilter<T>::~MeanFilter()
   delete [] data_storage_;
 }
 
-template <typename T>
-bool MeanFilter<T>::update(T * data)
-{
-  return update (data, data);
-}
 
 template <typename T>
 bool MeanFilter<T>::update(T const* const data_in, T* data_out)

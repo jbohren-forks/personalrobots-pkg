@@ -99,15 +99,6 @@ public:
     delete [] temp_storage_;
   }
 
-  /** \brief Update filter mutating data in place
-   * This will overwrite the results on top of the input
-   * \param data This must be an array which is elements_per_observation long
-   */
-  virtual bool update(T * data)
-  {
-    return update (data, data);
-  }
-
 
   /** \brief Update the filter and return the data seperately
    * \param data_in double array with length elements_per_observation
