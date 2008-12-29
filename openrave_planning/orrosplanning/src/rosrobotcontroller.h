@@ -57,6 +57,56 @@ public:
         if( _probot == NULL )
             return false;
 
+        if( args != NULL ) {
+            stringstream ss(args);
+
+            string cmd;
+            while(!ss.eof()) {
+                ss >> cmd;
+                if( !ss )
+                    break;
+
+                if( stricmp(cmd.c_str(), "joints") == 0 ) {
+                    string jointname;
+                    while(1) {
+                        ss >> jointname;
+                        if( !ss )
+                            break;
+
+                        // look for the correct index
+                        int index = -1;
+                        wstring wjointname = _stdmbstowcs(jointname.c_str());
+                        for(int i = 0; i < (int)_probot->GetJoints().size(); ++i) {
+                            if( wjointname == _probot->GetJoints()[i]->GetName() ) {
+                                index = i;
+                                break;
+                            }
+                        }
+
+                        if( index >= 0 )
+                            _setEnabledJoints.insert(pair<string, int>(jointname,index));
+                        else
+                            RAVELOG_WARNA("failed to find joint %s\n", jointname.c_str());
+                    }
+
+                    break;
+                }
+                else break;
+
+                if( !ss ) {
+                    RAVELOG_ERRORA("failed\n");
+                    return false;
+                }
+            }
+        }
+
+        if( _setEnabledJoints.size() == 0 ) {
+            RAVELOG_DEBUGA("controlling using all joints of the robot\n");
+
+            for(int i = 0; i < _probot->GetDOF(); ++i)
+                _setEnabledJoints.insert(pair<string,int>(_stdwcstombs(_probot->GetJoints()[i]->GetName()), i));
+        }
+
         startsubscriptions();
 
         return _bSubscribed;
@@ -68,6 +118,7 @@ public:
         _bCalibrated = false;
         _probot = NULL;
         _bIsDone = false;
+        _setEnabledJoints.clear();
     }
 
     virtual void Reset(int options)
@@ -101,9 +152,9 @@ public:
             boost::mutex::scoped_lock lock(_mutexstate);
             if( _bCalibrated ) {
                 vector<dReal> values;
-                values.reserve(_mstate.get_joint_states_size());
-                FOREACHC(itj, _vjointmap)
-                    values.push_back(_mstate.joint_states[*itj].position);
+                _probot->GetJointValues(values);
+                FOREACHC(itj, _mapjoints)
+                    values[itj->second] = _mstate.joint_states[itj->first].position;
 
                 ROS_ASSERT( (int)values.size() == _probot->GetDOF() );
                 _probot->SetJointValues(NULL, NULL, &values[0], true);
@@ -144,11 +195,10 @@ public:
             return;
 
         boost::mutex::scoped_lock lock(_mutexstate);
-        assert( (int)_vjointmap.size() == _probot->GetDOF() );
 
-        vel.reserve(_mstate.get_joint_states_size());
-        FOREACHC(itj, _vjointmap)
-            vel.push_back(_mstate.joint_states[*itj].velocity);
+        vel.resize(_probot->GetJoints().size());
+        FOREACHC(itj, _mapjoints)
+            vel[itj->second] = _mstate.joint_states[itj->first].velocity;
     }
     
     virtual void GetTorque(std::vector<dReal>& torque) const
@@ -158,11 +208,10 @@ public:
             return;
 
         boost::mutex::scoped_lock lock(_mutexstate);
-        assert( (int)_vjointmap.size() == _probot->GetDOF() );
 
-        torque.reserve(_mstate.get_joint_states_size());
-        FOREACHC(itj, _vjointmap)
-            torque.push_back(_mstate.joint_states[*itj].applied_effort); // commanded_effort?
+        torque.resize(_probot->GetJoints().size());
+        FOREACHC(itj, _mapjoints)
+            torque[itj->second] = _mstate.joint_states[itj->first].applied_effort; // commanded_effort?
     }
 
 private:
@@ -197,33 +246,31 @@ private:
     {
         if( !_bCalibrated ) {
             // check the robot joint/link names
-            GetEnv()->LockPhysics(true);
-            
             do {
-                _vjointmap.resize(0);
-                for(int i = 0; i < _probot->GetDOF(); ++i) {
+                _mapjoints.clear();
+                FOREACH(itj, _setEnabledJoints) {
+                    bool bAdded = false;
                     for(size_t j = 0; j < _mstate_cb.get_joint_states_size(); ++j) {
-                        if( _stdwcstombs(_probot->GetJoints()[i]->GetName()) == _mstate_cb.joint_states[j].name ) {
-                            _vjointmap.push_back(j);
+                        if( itj->first == _mstate_cb.joint_states[j].name ) {
+                            _mapjoints[j] = itj->second;
+                            bAdded = true;
                             break;
                         }
                     }
                     
-                    if( i+1 != (int)_vjointmap.size()) {
-                        RAVELOG_WARNA("could not find robot joint %S in mechanism state\n", _probot->GetJoints()[i]->GetName());
+                    if( !bAdded ) {
+                        RAVELOG_WARNA("could not find robot joint %s in mechanism state\n", itj->first.c_str());
                         break;
                     }
                 }
 
-                if( _probot->GetDOF() != (int)_vjointmap.size() ) {
-                    _vjointmap.resize(0);
+                if( _mapjoints.size() != _setEnabledJoints.size() ) {
+                    _mapjoints.clear();
                     break;
                 }
 
                 _bCalibrated = true;
             } while(0);
-
-            GetEnv()->LockPhysics(false);
         }
         else {
             if( _probot->GetDOF() != (int)_mstate_cb.get_joint_states_size() )
@@ -246,12 +293,13 @@ private:
     string _topic;
     robot_msgs::MechanismState _mstate_cb, _mstate;
     vector<dReal> _vecdesired;
+    set< pair<string, int> > _setEnabledJoints; // set of enabled joints and their indices
     mutable boost::mutex _mutexstate;
 
     ofstream flog;
     int logid;
     
-    vector<int> _vjointmap; ///< maps mechanism state joints to robot joints
+    map<int, int> _mapjoints; ///< maps mechanism state joints to robot joints
 
     double _fTimeCommandStarted;
     const Trajectory* _ptraj;

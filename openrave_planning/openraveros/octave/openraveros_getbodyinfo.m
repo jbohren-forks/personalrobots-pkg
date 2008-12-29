@@ -44,5 +44,6 @@ for i = 1:length(bodyinfo.links)
 end
 
 body.linknames = bodyinfo.linknames;
+body.jointnames = bodyinfo.jointnames;
 body.lowerlimit = bodyinfo.lowerlimit;
 body.upperlimit = bodyinfo.upperlimit;

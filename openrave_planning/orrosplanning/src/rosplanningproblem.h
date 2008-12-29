@@ -35,6 +35,9 @@ public:
     {
         PhaseSpaceMocapClient::RegisterXMLReader(GetEnv());
     }
+    virtual ~ROSPlanningProblem() {
+        Destroy();
+    }
 
     virtual void Destroy()
     {

@@ -53,24 +53,67 @@ public:
     class BODY : public BODYBASE
     {
     public:
-        BODY(KinBody* pbody, MocapData* pdata) : BODYBASE()
+        BODY(KinBody* pbody, MocapData* pdata) : bPresent(false), bEnabled(true), bLock(false)
         {
             assert( pbody != NULL && pdata != NULL);
             _initdata.reset(pdata);
-            bPresent = false;
-            bEnabled = true;
-            bLock = false;
+            SetBody(pbody);
         }
 
-        virtual void SetEnable(bool bNewEnable) { bEnabled = bNewEnable; }
-        virtual void SetPresent(bool bNewPresent) { bPresent = bNewPresent; }
+        virtual void* GetInitData(int* psize) const
+        {
+            if( psize )
+                *psize = sizeof(_initdata);
+            return _initdata.get();
+        }
 
-        virtual void* GetInitData(int* psize) { if( psize ) *psize = sizeof(_initdata); return &_initdata; }
+        virtual KinBody::Link* GetOffsetLink() const
+        {
+            KinBody* pbody = _penv->GetBodyFromNetworkId(_bodyid);
+            if( pbody == NULL || _linkid >= (int)pbody->GetLinks().size() ) {
+                RAVELOG_WARNA("could not find body %d:%S\n", _bodyid, _bodyname.c_str());
+                return NULL;
+            }
+            return pbody->GetLinks()[_linkid];
+        }
+
+        virtual bool IsPresent() const { return bPresent; }
+        virtual bool IsEnabled() const { return bEnabled; }
+        virtual bool IsLocked() const { return bLock; }
+        virtual bool Lock(bool bDoLock) { bLock = bDoLock; return true; }
+
+        virtual const wstring& GetBodyName() const { return _bodyname; }
+
+                
+        virtual void SetBody(KinBody* pbody)
+        {
+            assert( pbody != NULL );
+            _penv = pbody->GetEnv();
+            _bodyname = pbody->GetName();
+            _bodyid = pbody->GetNetworkId();
+
+            _linkid = 0;
+            if( _initdata->strOffsetLink.size() > 0 ) {
+                KinBody::Link* plink = pbody->GetLink(_initdata->strOffsetLink.c_str());
+                if( plink != NULL )
+                    _linkid = plink->GetIndex();
+                else
+                    RAVELOG_WARNA("could not find link %S on body %S\n", _initdata->strOffsetLink.c_str(), pbody->GetName());
+            }
+        }
+
         ros::Time lastupdated;
         Transform tnew; ///< most recent transform that is was set
         boost::shared_ptr<MocapData> _initdata;
 
     private:
+        bool bPresent; 
+        bool bEnabled; 
+        bool bLock;
+
+        EnvironmentBase* _penv;
+        int _bodyid, _linkid;
+        wstring _bodyname;
         friend class SimpleSensorSystem<XMLID>;
     };
 
@@ -220,12 +263,7 @@ public:
             return NULL;
         }
         
-        BODY* b = CreateBODY(pbody);
-        b->_initdata->copy((const MocapData*)pdata);
-        b->pOffsetLink = pbody->GetLink(b->_initdata->strOffsetLink.c_str());
-        if( b->pOffsetLink == NULL )
-            b->pOffsetLink = pbody->GetLinks().front();
-            
+        BODY* b = CreateBODY(pbody, (const MocapData*)pdata);            
         _mapbodies[pbody->GetNetworkId()].reset(b);
         RAVELOG_DEBUGA("system adding body %S, total: %d\n", pbody->GetName(), _mapbodies.size());
         return b;
@@ -266,7 +304,7 @@ public:
             return false;
         }
 
-        it->second->SetEnable(bEnable);
+        it->second->bEnabled = bEnable;
         return true;
     }
 
@@ -296,26 +334,21 @@ public:
         if( pb1 == NULL && pb2 == NULL )
             return false;
 
-        if( pb1 == NULL ) {
-            if( pb2->GetOffsetLink()->GetIndex() >= (int)pbody1->GetLinks().size() )
-                return false;
-            pb2->pOffsetLink = pbody1->GetLinks()[pb2->GetOffsetLink()->GetIndex()];
-        }
-        else if( pb2 == NULL ) {
-            if( pb1->GetOffsetLink()->GetIndex() >= (int)pbody2->GetLinks().size() )
-                return false;
-            pb1->pOffsetLink = pbody2->GetLinks()[pb1->GetOffsetLink()->GetIndex()];
-        }
-        else
-            swap(pb1->pOffsetLink, pb2->pOffsetLink);
+        if( pb1 != NULL )
+            pb1->SetBody(pbody2);
+        if( pb2 != NULL )
+            pb2->SetBody(pbody1);
 
         return true;
     }
 
 protected:
-    virtual BODY* CreateBODY(KinBody* pbody)
+    virtual BODY* CreateBODY(KinBody* pbody, const MocapData* pdata)
     {
-        return new BODY(pbody, new MocapData());
+        MocapData* pnewdata = new MocapData();
+        pnewdata->copy(pdata);
+        BODY* b = new BODY(pbody, pnewdata);
+        return b;
     }
 
     typedef pair<boost::shared_ptr<BODY>, Transform > SNAPSHOT;
@@ -329,23 +362,27 @@ protected:
             GetEnv()->LockPhysics(true);
 
             FOREACH(it, listbodies) {
-                assert( it->first->IsEnabled() && it->first->GetOffsetLink() != NULL );
+                assert( it->first->IsEnabled() );
+
+                KinBody::Link* plink = it->first->GetOffsetLink();
+                if( plink == NULL )
+                    continue;
 
                 // transform with respect to offset link
-                TransformMatrix tlink = it->first->GetOffsetLink()->GetTransform();
-                TransformMatrix tbase = it->first->GetOffsetLink()->GetParent()->GetTransform();
+                TransformMatrix tlink = plink->GetTransform();
+                TransformMatrix tbase = plink->GetParent()->GetTransform();
                 TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata->transOffset;
                 TransformMatrix tfinal = toffset * it->second*it->first->_initdata->transPreOffset;
             
-                it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
+                plink->GetParent()->SetTransform(tfinal);
                 it->first->lastupdated = curtime;
                 it->first->tnew = it->second;
             
                 //RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
             
                 if( !it->first->IsPresent() )
-                    RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
-                it->first->SetPresent(true);
+                    RAVELOG_VERBOSEA("updating body %S\n", plink->GetParent()->GetName());
+                it->first->bPresent = true;
             }
 
             GetEnv()->LockPhysics(false);
@@ -355,17 +392,23 @@ protected:
         while(itbody != _mapbodies.end()) {
             if( curtime-itbody->second->lastupdated > _expirationtime ) {
                 if( !itbody->second->IsLocked() ) {
-                    RAVELOG_DEBUGA("object %S expired %fs\n", itbody->second->GetOffsetLink()->GetParent()->GetName(), (float)(curtime-itbody->second->lastupdated).toSec());
+
                     GetEnv()->LockPhysics(true);
-                    GetEnv()->RemoveKinBody(itbody->second->GetOffsetLink()->GetParent());
+                    KinBody::Link* plink = itbody->second->GetOffsetLink();
+                    if( plink != NULL ) {                        
+                        RAVELOG_DEBUGA("object %S expired %fs\n", plink->GetParent()->GetName(), (float)(curtime-itbody->second->lastupdated).toSec());
+                        GetEnv()->RemoveKinBody(plink->GetParent());
+                    }
+
                     GetEnv()->LockPhysics(false);
+
                     _mapbodies.erase(itbody++);
                     continue;
                 }
                 
                 if( itbody->second->IsPresent() )
-                    RAVELOG_VERBOSEA("body %S not present\n", itbody->second->GetOffsetLink()->GetParent()->GetName());
-                itbody->second->SetPresent(false);
+                    RAVELOG_VERBOSEA("body %S not present\n", itbody->second->GetBodyName().c_str());
+                itbody->second->bPresent = false;
             }
 
             ++itbody;

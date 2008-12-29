@@ -52,6 +52,7 @@ class ROSServer : public RaveServerBase
     class ServerWorker
     {
     public:
+        virtual ~ServerWorker() {}
         virtual void work() = 0;
     };
 
@@ -62,6 +63,18 @@ class ROSServer : public RaveServerBase
         ~WorkExecutor() { _worker->work(); }
     private:
         boost::shared_ptr<ServerWorker> _worker;
+    };
+
+    class ResetEnvironmentWorker : public ServerWorker
+    {
+    public:
+        ResetEnvironmentWorker(EnvironmentBase* penv) : _penv(penv) {}
+        virtual void work() {
+            RAVELOG_INFOA("resetting scene\n");
+            _penv->Reset();
+        }
+    private:
+        EnvironmentBase* _penv;
     };
 
     class SendProblemWorker : public ServerWorker
@@ -94,7 +107,10 @@ class ROSServer : public RaveServerBase
     class RemoveProblemWorker : public ServerWorker
     {
     public:
-        RemoveProblemWorker(boost::shared_ptr<ProblemInstance> prob, bool& retval) : _prob(prob), _retval(retval) {}
+        RemoveProblemWorker(boost::shared_ptr<ProblemInstance>& prob, bool& retval) : _retval(retval) {
+            _prob.swap(prob); // take ownership
+        }
+
         virtual void work() {
             _retval = _prob->GetEnv()->RemoveProblem(_prob.get());
         }
@@ -182,11 +198,14 @@ public:
     {
         Worker();
 
+        // destroy environment specific state: problems, planners, figures
         _mapFigureIds.clear();
 
-        // destroy environment specific state: problems, planners, figures
-        _mapplanners.clear();
+        FOREACH(itprob, _mapproblems)
+            itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
         _mapproblems.clear();
+        
+        _mapplanners.clear();
     }
 
     virtual bool Init(int port)
@@ -649,6 +668,7 @@ public:
             return false;
 
         bool bsuccess=false;
+
         AddWorker(new RemoveProblemWorker(itprob->second,bsuccess), true);
         if( !bsuccess )
             RAVELOG_WARNA("failed to remove problem\n");
@@ -678,7 +698,7 @@ public:
         }
         if( options & BodyInfo::Req_LinkNames ) {
             info.linknames.resize(pbody->GetLinks().size());
-            for(size_t i = 0; i < info.linknames.size(); ++i)
+            for(size_t i = 0; i < pbody->GetLinks().size(); ++i)
                 info.linknames[i] = _stdwcstombs(pbody->GetLinks()[i]->GetName());
         }
         if( options & BodyInfo::Req_JointLimits ) {
@@ -696,6 +716,11 @@ public:
             info.filename = pbody->GetXMLFilename();
             info.name = _stdwcstombs(pbody->GetName());
             info.type = pbody->GetXMLId();
+        }
+        if( options & BodyInfo::Req_JointNames ) {
+            info.jointnames.resize(pbody->GetJoints().size());
+            for(size_t i = 0; i < pbody->GetJoints().size(); ++i)
+                info.jointnames[i] = _stdwcstombs(pbody->GetJoints()[i]->GetName());
         }
     }
 
@@ -848,10 +873,8 @@ public:
 
     bool env_loadscene_srv(env_loadscene::request& req, env_loadscene::response& res)
     {
-        if( req.resetscene ) {
-            RAVELOG_INFOA("resetting scene\n");
-            GetEnv()->Reset();
-        }
+        if( req.resetscene )
+            AddWorker(new ResetEnvironmentWorker(GetEnv()), true);
         
         if( req.filename.size() > 0 ) {
             LockEnvironment envlock(this);
