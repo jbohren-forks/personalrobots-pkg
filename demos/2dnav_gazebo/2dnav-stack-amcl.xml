@@ -78,7 +78,8 @@
     <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
     <param name="/costmap_2d/no_information_value" value="255"/>
-    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/z_threshold_max" value="2.0"/>
+    <param name="/costmap_2d/z_threshold_min" value="0.06"/>
     <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
     <param name="/costmap_2d/inflation_radius" value="0.55"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
