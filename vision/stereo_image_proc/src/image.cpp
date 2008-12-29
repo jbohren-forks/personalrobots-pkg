@@ -560,9 +560,27 @@ switch(alg){
  
   hasDisparity = true;
 
+  doSpeckle();
+  return true;
+}
+
+
+
+//
+// apply speckle filter
+// useful for STOC processing, where it's not done on-camera
+//
+
+bool 
+StereoData::doSpeckle()
+{
+  if (!hasDisparity) return false;
+
   // speckle filter
   if (speckleRegionSize > 0)
     {
+      int xim = imWidth;
+      int yim = imHeight;
       if (!rbuf)
 	rbuf  = (uint8_t *)malloc(xim*yim); // local storage for the algorithm
       if (!lbuf)
@@ -572,9 +590,9 @@ switch(alg){
       do_speckle(imDisp, 0, xim, yim, speckleDiff, speckleRegionSize, 
 		 lbuf, wbuf, rbuf);
     }
-
   return true;
 }
+
 
 
 //
