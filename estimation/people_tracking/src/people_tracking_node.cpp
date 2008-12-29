@@ -58,7 +58,7 @@ namespace estimation
   PeopleTrackingNode::PeopleTrackingNode(const string& node_name)
     : ros::node(node_name),
       node_name_(node_name),
-      message_sequencer_(this, "topicname", 
+      message_sequencer_(this, "people_tracking_measurements", 
 			 boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
