@@ -238,6 +238,9 @@ public:
   void image_cb_all(ros::Time t)
   {
 
+    //double startt, endt;
+    //startt = t.now().toSec();
+
     cv_mutex_.lock();
  
     last_image_time_ = limage_.header.stamp;
@@ -397,15 +400,15 @@ public:
     }
 
     CvMat *end_points = cvCreateMat(npeople,3,CV_32FC1);
-    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 5.0, 0, NULL, NULL, end_points);//0.3
+    double kernel_size_m = 0.4; 
+    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, kernel_size_m, 0, NULL, NULL, end_points);//0.3
     if (!did_track) {
       // If tracking failed, just return.
       cv_mutex_.unlock();
       return;
     }
-    // Copy endpoints to the people. This is temporary, eventually you might have something else sending a new location as well.
-    // Also copy the new 2d bbox to the person.
-    // And draw the points on the image.
+    // Copy endpoints and the new 2d bbox to the people structure.
+    // Draw the points on the image.
     CvMat *four_corners_3d = cvCreateMat(4,3,CV_32FC1);
     CvMat *four_corners_2d = cvCreateMat(4,3,CV_32FC1); 
     CvMat *my_end_point = cvCreateMat(1,3,CV_32FC1);
@@ -459,7 +462,10 @@ public:
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
     cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif
-    cv_mutex_.unlock();        
+    cv_mutex_.unlock();       
+
+    //endt = t.now().toSec();
+    //printf("Start %f End %f Duration %f\n", startt, endt, endt-startt);
   }
 
 
