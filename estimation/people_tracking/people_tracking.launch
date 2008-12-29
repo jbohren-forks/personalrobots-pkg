@@ -1,10 +1,24 @@
 
 <launch>
 <param name="people_tracking/freq" value="30.0"/>
-<param name="people_tracking/prior/x" value="1.0"/>
-<param name="people_tracking/prior/y" value="2.0"/>
-<param name="people_tracking/prior/z" value="3.0"/>
 
+<param name="people_tracking/sys_sigma_pos_x" value="0.1"/>
+<param name="people_tracking/sys_sigma_pos_y" value="0.1"/>
+<param name="people_tracking/sys_sigma_pos_z" value="0.0000001"/>
+<param name="people_tracking/sys_sigma_vel_x" value="0.1"/>
+<param name="people_tracking/sys_sigma_vel_y" value="0.1"/>
+<param name="people_tracking/sys_sigma_vel_z" value="0.0000001"/>
+
+<param name="people_tracking/meas_sigma_x" value="0.3"/>
+<param name="people_tracking/meas_sigma_y" value="0.3"/>
+<param name="people_tracking/meas_sigma_z" value="1000.0"/>
+
+<param name="people_tracking/prior_sigma_pos_x" value="0.3"/>
+<param name="people_tracking/prior_sigma_pos_y" value="0.3"/>
+<param name="people_tracking/prior_sigma_pos_z" value="0.000001"/>
+<param name="people_tracking/prior_sigma_vel_x" value="0.000001"/>
+<param name="people_tracking/prior_sigma_vel_y" value="0.000001"/>
+<param name="people_tracking/prior_sigma_vel_z" value="0.000001"/>
 
 <node pkg="people_tracking" type="people_tracking" output="screen"/>
 </launch>

@@ -39,6 +39,7 @@
 // ros stuff
 #include <ros/node.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 // people tracking stuff
 #include "tracker.h"
@@ -88,9 +89,10 @@ private:
   // messages to send
   std_msgs::PointCloud  point_cloud_; 
 
-  double freq_, time_;
-  std::vector<tf::Vector3> meas_, vel_;
-  BFL::GaussianVector move_;
+  // tf listener
+  tf::TransformListener robot_state_;
+
+  double freq_;
   BFL::StatePosVel sys_sigma_;
   tf::Vector3 meas_sigma_;
   BFL::StatePosVel prior_sigma_;

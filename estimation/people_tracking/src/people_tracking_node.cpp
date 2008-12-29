@@ -55,21 +55,43 @@ namespace estimation
     : ros::node(node_name),
       node_name_(node_name),
       message_sequencer_(this, "topicname", 
-			 boost::bind(&PeopleTrackingNode::callbackRcv, this, _1),
+			 boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
-      time_(0),
-      move_(Vector3(0,0,0), Vector3(0.5,0.5,0.000000001)),
-      sys_sigma_(Vector3(0.1, 0.1, 0.00001), Vector3(0.1, 0.1, 0.00001)),
-      meas_sigma_(0.3, 0.3, 1000),
-      prior_sigma_(Vector3(0.3, 0.3, 0.00001), Vector3(0.00001, 0.00001, 0.00001))
+      robot_state_(*this, true)
   {
     // get parameters
-    param(node_name_+"/freq", freq_, 1.0);
+    param("~/freq", freq_, 1.0);
+
+    param("~/sys_sigma_pos_x", sys_sigma_.pos_[0], 0.0);
+    param("~/sys_sigma_pos_y", sys_sigma_.pos_[1], 0.0);
+    param("~/sys_sigma_pos_z", sys_sigma_.pos_[2], 0.0);
+    param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0);
+    param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
+    param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
+
+    param("~/meas_sigma_x", meas_sigma_[0], 0.0);
+    param("~/meas_sigma_y", meas_sigma_[1], 0.0);
+    param("~/meas_sigma_z", meas_sigma_[2], 0.0);
+
+    param("~/prior_sigma_pos_x", prior_sigma_.pos_[0], 0.0);
+    param("~/prior_sigma_pos_y", prior_sigma_.pos_[1], 0.0);
+    param("~/prior_sigma_pos_z", prior_sigma_.pos_[2], 0.0);
+    param("~/prior_sigma_vel_x", prior_sigma_.vel_[0], 0.0);
+    param("~/prior_sigma_vel_y", prior_sigma_.vel_[1], 0.0);
+    param("~/prior_sigma_vel_z", prior_sigma_.vel_[2], 0.0);
 
     // advertise
     advertise<std_msgs::PointCloud>("people_tracking",3);
+
+    for (unsigned int i=0; i<3; i++){
+      cout << "sys sigma pos " << sys_sigma_.pos_[i] << endl;
+      cout << "sys sigma vel " << sys_sigma_.vel_[i] << endl;
+      cout << "meas sigma " << meas_sigma_[i] << endl;
+      cout << "prior sigma pos " << prior_sigma_.pos_[i] << endl;
+      cout << "prior sigma vel " << prior_sigma_.vel_[i] << endl;
+    }
   }
 
 
@@ -90,7 +112,7 @@ namespace estimation
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
     printf("Got a position measurement from %s at %f with: %f %f %f\n", 
-	   message->name.c_str(), 
+	   message->object_id.c_str(), 
 	   message->header.stamp.toSec(), 
 	   message->pos.x, 
 	   message->pos.y, 
@@ -99,8 +121,14 @@ namespace estimation
 
     // get stuff from message
     double time(message->header.stamp.toSec());
-    Vector3 pos(message->pos.x, message->pos.y, message->pos.z);
-    string name(message->name);
+    string name(message->object_id);
+    Stamped<Vector3> pos_rel, pos_abs;
+    pos_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
+    pos_rel.stamp_    = message->header.stamp;
+    pos_rel.frame_id_ = message->header.frame_id;
+    robot_state_.transformVector("odom_combined", pos_rel, pos_abs);
+    // TODO: REMOVE AFTER DEBUGGING
+    pos_abs = pos_rel;
 
     // search for tracker name in tracker list
     Tracker* tracker = NULL;
@@ -108,19 +136,17 @@ namespace estimation
       if (name == tracker_names_[i])
 	tracker = trackers_[i];
 
-
     // update tracker
     if (tracker != NULL){
       tracker->updatePrediction(time);
-      tracker->updateCorrection(pos);
+      tracker->updateCorrection(pos_abs);
     }
-
 
     // initialize a new tracker
     if (message->initialization == 1){
       ROS_INFO("%s: Initializing a new tracker: %s", node_name_.c_str(), name.c_str());
       Tracker* tracker_new = new TrackerKalman(sys_sigma_, meas_sigma_);
-      tracker_new->initialize(pos, prior_sigma_, time);
+      tracker_new->initialize(pos_abs, prior_sigma_, time);
       trackers_.push_back(tracker_new);
       tracker_names_.push_back(name);
     }
@@ -132,7 +158,7 @@ namespace estimation
   void PeopleTrackingNode::callbackDrop(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
     printf("Dropped a position measurement from %s at %f with: %f %f %f\n", 
-	   message->name.c_str(), 
+	   message->object_id.c_str(), 
 	   message->header.stamp.toSec(), 
 	   message->pos.x, 
 	   message->pos.y, 
@@ -146,20 +172,11 @@ namespace estimation
   {
     while (ok()){
       Sample<Vector3> sample;
-      time_ += 1/freq_;
       std_msgs::PointCloud cloud;
 
-      for (unsigned int i=0; i<num_trackers; i++){
-	// update trackers
-	move_.SampleFrom(sample);
-	vel_[i] += sample.ValueGet();
-	meas_[i] += (vel_[i] / freq_);
-	trackers_[i]->updatePrediction(time_);
-	trackers_[i]->updateCorrection(meas_[i]);
+      for (unsigned int i=0; i<trackers_.size(); i++){
 	cout << "Tracker " << i << endl;
 	cout << " - expected value = " << trackers_[i]->getEstimate() << endl;
-	cout << " - measurement    = " << StatePosVel(meas_[i], Vector3(0,0,0)) << endl;
-	cout << " - velocity       = " << StatePosVel(Vector3(0,0,0), vel_[i]) << endl;
 	cout << " - quality        = " << trackers_[i]->getQuality() << endl;
 	// publish result
 	//((TrackerParticle*)(trackers_[i]))->getParticleCloud(Vector3(0.06, 0.06, 0.06), 0.0001, cloud);
