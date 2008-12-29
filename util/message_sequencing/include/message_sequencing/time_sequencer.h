@@ -63,7 +63,7 @@ namespace message_sequencing
 
  * At construction, the TimeSequencer takes a ros::Duration
  * "delay_time" which specifies how long to queue up messages to
-p * provide a time sequencing over them.  As messages arrive they are
+ * provide a time sequencing over them.  As messages arrive they are
  * sorted according to their timestamps.  A callback for a message is
  * never invoked until the messages time_stamp is out of date by at
  * least delay_time.  However, for all messages which are out of date
