@@ -1,0 +1,13 @@
+<package>
+  <description brief='Filter Demo'>
+
+  Demonstrated the filters and filter coefficient server packages.  
+
+  </description>
+  <author>Melonee Wise/mwise@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="" notes=""/>
+  <url>http://pr.willowgarage.com</url>
+  <depend package="filters" />
+  <depend package="filter_coefficient_server" />
+</package>
