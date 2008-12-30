@@ -103,8 +103,8 @@ StereoDcam::start()
 {
   Dcam::start();
   Dcam::setCompanding(true);	// must be set after starting camera
-  Dcam::setUniqueThresh(stIm->uniqueThresh);
-  Dcam::setTextureThresh(stIm->textureThresh);
+  setUniqueThresh(stIm->uniqueThresh);
+  setTextureThresh(stIm->textureThresh);
 }
 
 void
@@ -243,14 +243,36 @@ bool
 StereoDcam::setTextureThresh(int thresh)
 {
   stIm->setTextureThresh(thresh);
-  return Dcam::setTextureThresh(thresh);
+  if (isSTOC)
+    {
+      thresh = thresh/3;
+      usleep(50000);
+      if (thresh < 0)
+	thresh = 0;
+      if (thresh > 63)
+	thresh = 63;
+      uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( thresh << 16);
+      setRegister(0xFF000, t_thresh);
+    }
+  return true;
 }
 
 bool
 StereoDcam::setUniqueThresh(int thresh)
 {
   stIm->setUniqueThresh(thresh);
-  return Dcam::setUniqueThresh(thresh);
+  if (isSTOC)
+    {
+      thresh = thresh/3;
+      usleep(50000);
+      if (thresh < 0)
+	thresh = 0;
+      if (thresh > 63)
+	thresh = 63;
+      uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( thresh << 16);
+      setRegister(0xFF000, u_thresh);
+    }
+  return true;
 }
 
 bool
@@ -266,7 +288,19 @@ StereoDcam::setHoropter(int val)
 {
   stIm->setHoropter(val);
   stIm->setDispOffsets();	// reset offsets
-  return Dcam::setHoropter(val);
+
+  // set it on STOC
+  if (isSTOC)
+    {
+      usleep(50000);
+      if (val < 0)
+	val = 0;
+      if (val > 63)
+	val = 63;
+      uint32_t u_val = 0x08000000 | (0xC0 << 16) | ( val << 16);
+      setRegister(0xFF000, u_val);
+    }
+  return true;
 }
 
 bool

@@ -207,9 +207,6 @@ namespace dcam
 
     virtual bool setCompanding(bool on); // bring up low light levels
     virtual bool setHDR(bool on); // high dynamic range
-    virtual bool setUniqueThresh(int val); // uniqueness threshold
-    virtual bool setTextureThresh(int val); // texture threshold
-    virtual bool setHoropter(int val); // horopter offset, 0-63 for STOC
 
     virtual char *getParameters(); // download from device
     virtual bool setParameters(); // upload to device

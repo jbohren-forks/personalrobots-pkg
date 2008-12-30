@@ -217,8 +217,8 @@ public:
 
         cam_->setFormat(mode, fps, speed);
         cam_->setProcMode(videre_mode);
-        cam_->setUniqueThresh(12);
-        cam_->setTextureThresh(10);
+        stcam_->setUniqueThresh(30);
+        stcam_->setTextureThresh(30);
         cam_->setCompanding(true);
       } else {
         cam_ = new dcam::Dcam(guid);

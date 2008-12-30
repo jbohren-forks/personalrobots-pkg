@@ -1038,58 +1038,6 @@ dcam::Dcam::setHDR(bool on)
 }
 
 
-// thresholds
-
-bool
-dcam::Dcam::setTextureThresh(int thresh)
-{
-  usleep(50000);
-
-  if (thresh < 0)
-    thresh = 0;
-  if (thresh > 63)
-    thresh = 63;
-
-  uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( thresh << 16);
-  setRegister(0xFF000, t_thresh);
-
-  return true;
-}
-
-bool
-dcam::Dcam::setUniqueThresh(int thresh)
-{
-  usleep(50000);
-
-  if (thresh < 0)
-    thresh = 0;
-  if (thresh > 63)
-    thresh = 63;
-
-  uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( thresh << 16);
-  setRegister(0xFF000, u_thresh);
-
-  return true;
-}
-
-
-bool
-dcam::Dcam::setHoropter(int val)
-{
-  usleep(50000);
-
-  if (val < 0)
-    val = 0;
-  if (val > 63)
-    val = 63;
-
-  uint32_t u_val = 0x08000000 | (0xC0 << 16) | ( val << 16);
-  setRegister(0xFF000, u_val);
-
-  return true;
-}
-
-
 //
 // value boundaries are given by the max/min variables
 //
