@@ -56,7 +56,7 @@ public:
    * \param target_frame the libTF frame that the laser data should be transformed into
    * \param cloud_out (Output) Stores the assembled point cloud
    */
-  void getScansBlocking(const std::string topic, const ros::Duration duration, const string target_frame, std_msgs::PointCloud& cloud_out) ;
+  void getScansBlocking(const std::string topic, const ros::Duration duration, const std::string target_frame, std_msgs::PointCloud& cloud_out) ;
   
 private:
   void scansCallback() ;
