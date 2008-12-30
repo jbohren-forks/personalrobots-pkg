@@ -35,19 +35,19 @@ namespace laser_scan{
   
   void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff, bool preservative)
   {
-    NEWMAT::Matrix ranges(2, scan_in.get_ranges_size());
-    double * matPointer = ranges.Store();
+    boost::numeric::ublas::matrix<double> ranges(2, scan_in.get_ranges_size());
+
     // Fill the ranges matrix
     for (unsigned int index = 0; index < scan_in.get_ranges_size(); index++)
       {
-        matPointer[index] = (double) scan_in.ranges[index];
-        matPointer[index+scan_in.get_ranges_size()] = (double) scan_in.ranges[index];
+        ranges(0,index) = (double) scan_in.ranges[index];
+        ranges(1,index) = (double) scan_in.ranges[index];
       }
     
 
     //Do the projection
-    NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
-    
+    //    NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
+    boost::numeric::ublas::matrix<double> output = element_prod(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
 
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
@@ -62,7 +62,6 @@ namespace laser_scan{
         cloud_out.chan[1].set_vals_size(scan_in.get_ranges_size());
       }
 
-    double* outputMat = output.Store();
 
     if (range_cutoff < 0)
       range_cutoff = scan_in.range_max;
@@ -74,11 +73,11 @@ namespace laser_scan{
     {
       if (!preservative) //Default behaviour will throw out invalid data
       {
-        if ((matPointer[index] < range_cutoff) &&
-            (matPointer[index] > scan_in.range_min)) //only valid
+        if ((ranges(0,index) < range_cutoff) &&
+            (ranges(0,index) > scan_in.range_min)) //only valid
         {
-          cloud_out.pts[count].x = outputMat[index];
-          cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
+          cloud_out.pts[count].x = output(0,index);
+          cloud_out.pts[count].y = output(1,index);
           cloud_out.pts[count].z = 0.0;
 
           //write index to point cloud
@@ -92,8 +91,8 @@ namespace laser_scan{
       }
       else //Keep all points
       {
-        cloud_out.pts[count].x = outputMat[index];
-        cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
+        cloud_out.pts[count].x = output(0,index);
+        cloud_out.pts[count].y = output(1,index);
         cloud_out.pts[count].z = 0.0;
 
         //write index to point cloud
@@ -122,23 +121,23 @@ namespace laser_scan{
  
   };
 
-  NEWMAT::Matrix& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
+  boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
   {
     //construct string for lookup in the map
     std::stringstream anglestring;
     anglestring <<angle_min<<","<<angle_max<<","<<angle_increment;
-    std::map<string, NEWMAT::Matrix*>::iterator it;
+    std::map<std::string, boost::numeric::ublas::matrix<double>* >::iterator it;
     it = unit_vector_map_.find(anglestring.str());
     //check the map for presense
     if (it != unit_vector_map_.end())
       return *((*it).second);     //if present return
     //else calculate
     unsigned int length = (unsigned int) round((angle_max - angle_min)/angle_increment) + 1; ///\todo Codify how this parameter will be calculated in all cases
-    NEWMAT::Matrix * tempPtr = new NEWMAT::Matrix(2,length);
+    boost::numeric::ublas::matrix<double> * tempPtr = new boost::numeric::ublas::matrix<double>(2,length);
     for (unsigned int index = 0;index < length; index++)
       {
-        (*tempPtr)(1,index+1) = cos(angle_min + (double) index * angle_increment);
-        (*tempPtr)(2,index+1) = sin(angle_min + (double) index * angle_increment);
+        (*tempPtr)(0,index) = cos(angle_min + (double) index * angle_increment);
+        (*tempPtr)(1,index) = sin(angle_min + (double) index * angle_increment);
       }
     //store 
     unit_vector_map_[anglestring.str()] = tempPtr;
@@ -149,7 +148,7 @@ namespace laser_scan{
 
   LaserProjection::~LaserProjection()
   {
-    std::map<string, NEWMAT::Matrix*>::iterator it;
+    std::map<std::string, boost::numeric::ublas::matrix<double>*>::iterator it;
     it = unit_vector_map_.begin();
     while (it != unit_vector_map_.end())
       {

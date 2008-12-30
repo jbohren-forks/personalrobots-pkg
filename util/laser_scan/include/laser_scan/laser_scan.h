@@ -34,9 +34,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
-#include <newmat10/newmatap.h>
+#include "boost/numeric/ublas/matrix.hpp"
 
 #include "tf/tf.h"
 
@@ -81,10 +79,10 @@ namespace laser_scan{
        * Return the unit vectors for this configuration.
        * if they have not been calculated yet, calculate them and store them
        * Otherwise it will return them from memory. */
-      NEWMAT::Matrix& getUnitVectors(float angle_max, float angle_min, float angle_increment);
+      boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment);
 
       ///The map of pointers to stored values
-      std::map<std::string,NEWMAT::Matrix*> unit_vector_map_;
+      std::map<std::string,boost::numeric::ublas::matrix<double>* > unit_vector_map_;
       
     };
   
