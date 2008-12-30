@@ -32,7 +32,7 @@
     -->
 
     <!-- starting ransac node -->
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler" output="screen"  name="assembler">
+    <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="assembler">
       <remap from="scan" to="tilt_scan"/>
       <param name="ignore_laser_skew" type="bool" value="true" />
     </node>
