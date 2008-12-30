@@ -23,4 +23,5 @@
   <depend package="transformations"/>
   <depend package="scan_shadows_filter"/>
   <depend package="ransac_ground_plane_extraction"/>
+  <depend package="point_cloud_assembler"/>
 </package>
