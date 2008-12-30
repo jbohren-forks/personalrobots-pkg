@@ -101,6 +101,8 @@ public:
 
     sync.subscribe(map_name("stereodcam") + "/disparity", dimage, 1);
     sync.subscribe(map_name("stereodcam") + "/stereo_info", stinfo, 1);
+
+    sync.ready();
   }
 
   ~StereoView()
