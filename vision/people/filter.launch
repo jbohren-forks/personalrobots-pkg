@@ -16,6 +16,6 @@
 <param name="people_tracking/prior_sigma_vel_y" value="0.000001"/>
 <param name="people_tracking/prior_sigma_vel_z" value="0.000001"/>
 
-<node pkg="people_tracking" type="people_tracking" output="screen"/>
+<node pkg="people" type="people_tracking" output="screen"/>
 </launch>
 

@@ -97,7 +97,7 @@ namespace estimation
 
     // advertise visualization
     advertise<std_msgs::PointCloud>("people_tracking_filter_visualization",10);
-    advertise<std_msgs::PointCloud>("people_tracking_meassurements_visualization",10);
+    advertise<std_msgs::PointCloud>("people_tracking_measurements_visualization",10);
   }
 
 
@@ -172,7 +172,7 @@ namespace estimation
     std_msgs::PointCloud  meas_cloud; 
     meas_cloud.header.frame_id = "odom";
     meas_cloud.pts = meas_vis_;
-    publish("people_tracking_meassurements_visualization", meas_cloud);
+    publish("people_tracking_measurements_visualization", meas_cloud);
 
   }
 
