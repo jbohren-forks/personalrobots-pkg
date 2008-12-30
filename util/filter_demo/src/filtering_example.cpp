@@ -77,12 +77,12 @@ public:
       filters::TransferFunctionFilter<double> filter(b,a,2);
       
       //pass in a simple sinewave
-      for(uint32_t i=0; i<100; i++)
+      for(uint32_t i=0; i<250; i++)
       {       
-        temp[0]=sin(2*M_PI*i/10);
-        temp[1]=cos(2*M_PI*i/20);
+        temp[0]=sin(2*M_PI*i/25);
+        temp[1]=cos(2*M_PI*i/50);
         in.push_back(temp);
-        filter.update(&temp);
+        filter.update(&temp, &temp);
         out.push_back(temp);       
         outfile << in[i][0]<<", "<<out[i][0]<<", "<<in[i][1]<<", "<<out[i][1]<<"\n";
       }
