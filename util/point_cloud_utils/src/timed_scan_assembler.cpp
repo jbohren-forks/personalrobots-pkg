@@ -44,7 +44,7 @@ TimedScanAssembler::~TimedScanAssembler()
 }
 
 void TimedScanAssembler::getScansBlocking(const std::string topic, const ros::Duration duration,
-                                          const string target_frame, std_msgs::PointCloud& cloud_out)
+                                          const std::string target_frame, std_msgs::PointCloud& cloud_out)
 {
   got_first_scan_ = false ;                              // Must occur before subscription to prevent race condition.
   done_getting_scans_ = false ;
