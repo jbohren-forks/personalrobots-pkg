@@ -65,7 +65,7 @@ public:
 
   int feat_count_;
 
-  TrainLegDetector() : mask_count_(0), connected_thresh_(0.05), feat_count_(0)
+  TrainLegDetector() : mask_count_(0), connected_thresh_(0.06), feat_count_(0)
   {
   }
 
@@ -173,14 +173,14 @@ public:
     cvSet( var_type, cvScalarAll(CV_VAR_ORDERED));
     cvSetReal1D( var_type, feat_count_, CV_VAR_CATEGORICAL );
     
-    float priors[] = {1.0, 2.0};
+    float priors[] = {1.0, 1.0};
     
-    CvRTParams fparam(5,10,0,false,20,priors,false,5,100,0.001f,CV_TERMCRIT_ITER);
+    CvRTParams fparam(8,20,0,false,10,priors,false,5,50,0.001f,CV_TERMCRIT_ITER);
     fparam.term_crit = cvTermCriteria(CV_TERMCRIT_ITER, 100, 0.1);
     
     forest.train( cv_data, CV_ROW_SAMPLE, cv_resp, 0, 0, var_type, 0,
                   fparam);
-    
+
 
     cvReleaseMat(&cv_data);
     cvReleaseMat(&cv_resp);
@@ -251,6 +251,7 @@ int main(int argc, char **argv)
   LoadType loading = LOADING_NONE;
 
   char save_file[100];
+  save_file[0] = 0;
 
   printf("Loading data...\n");
   for (int i = 1; i < argc; i++)
@@ -277,7 +278,9 @@ int main(int argc, char **argv)
   printf("Evlauating classifier...\n");
   tld.test();
   
-  printf("Saving classifier as: %s\n", save_file);
   if (strlen(save_file) > 0)
+  {
+    printf("Saving classifier as: %s\n", save_file);
     tld.save(save_file);
+  }
 }

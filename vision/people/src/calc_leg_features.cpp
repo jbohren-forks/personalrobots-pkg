@@ -47,7 +47,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   // Number of points
   int num_points = cluster->size();
-  features.push_back(num_points);
+  //  features.push_back(num_points);
 
   // Compute mean and median points for future use
   float x_mean = 0.0;
@@ -258,8 +258,6 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     if (th < 0)
       th += 2*M_PI;
 
-    th -= M_PI;
-
     ang_diff += th / num_points;
 
     float s = 0.5*(L_ml+L_mr+L_lr);
@@ -285,6 +283,51 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   features.push_back(mean_curvature);
 
   features.push_back(boundary_regularity);
+
+
+  // Mean angular difference
+  first = cluster->begin();
+  mid = cluster->begin();
+  mid++;
+  last = cluster->end();
+  last--;
+  
+  double sum_iav = 0.0;
+  double sum_iav_sq  = 0.0;
+
+  while (mid != last)
+  {
+    float mlx = (*first)->x - (*mid)->x;
+    float mly = (*first)->y - (*mid)->y;
+    float L_ml = sqrt(mlx*mlx + mly*mly);
+
+    float mrx = (*last)->x - (*mid)->x;
+    float mry = (*last)->y - (*mid)->y;
+    float L_mr = sqrt(mrx*mrx + mry*mry);
+
+    float lrx = (*first)->x - (*last)->x;
+    float lry = (*first)->y - (*last)->y;
+    float L_lr = sqrt(lrx*lrx + lry*lry);
+      
+    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2);
+    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2);
+
+    float th = atan2(B,A);
+
+    if (th < 0)
+      th += 2*M_PI;
+
+    sum_iav += th;
+    sum_iav_sq += th*th;
+
+    mid++;
+  }
+
+  float iav = sum_iav / num_points;
+  float std_iav = sqrt( (sum_iav_sq - pow(sum_iav,2)/num_points)/(num_points - 1) );
+
+  features.push_back(iav);
+  features.push_back(std_iav);
 
   return features;
 }
