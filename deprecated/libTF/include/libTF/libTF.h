@@ -43,7 +43,7 @@
 
 #include <libTF/exception.h>
 #include "libTF/Pose3DCache.h"
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 
 namespace libTF
 {
@@ -356,7 +356,7 @@ protected:
   std::vector< RefFrame*> frames_;
 
   /** \brief A mutex to protect testing and allocating new frames */
-  ros::thread::mutex frame_mutex_;
+  boost::mutex frame_mutex_;
 
   std::map<std::string, unsigned int> frameIDs_;
   std::vector<std::string> frameIDs_reverse;
