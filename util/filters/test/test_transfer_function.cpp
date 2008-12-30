@@ -121,7 +121,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   b.push_back(0.245237275252786);
   b.push_back(0.054296799022543);
   b.push_back(0.018098933007514);
-  TransferFunctionFilter<double> filter(b,a,1);
+  TransferFunctionFilter<double> filter(b,a,3);
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);

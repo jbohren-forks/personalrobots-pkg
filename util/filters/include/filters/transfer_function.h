@@ -66,12 +66,12 @@ class TransferFunctionFilter: public FilterBase < std::vector<T> >
 {
 public:
   /**
-   * \brief Construct the filter with the expected width and height and filter cutoff
-   * \param b Difference eq params (See class description)
-   * \param a Difference eq params (See class description)
-   * \param elements_per_observation Defines the number of inputs per observation.
+   * \brief Construct the filter 
+   * \param b Difference eq params for the input (See class description).
+   * \param a Difference eq params for the output (See class description).
+   * \param number_of_channels Defines the number of inputs filtered.
    */
-  TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int elements_per_observation) ;
+  TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int number_of_channels) ;
 
   /** \brief Destructor to clean up
    */
@@ -87,102 +87,67 @@ public:
   virtual bool update(std::vector<T> const * const data_in, std::vector<T>* data_out) ;
 
 protected:
-
-  uint32_t in_iter_;
-  uint32_t number_of_inputs_;
-  uint32_t in_length_;
-
-  uint32_t out_iter_;
-  uint32_t number_of_outputs_;
-  uint32_t out_length_;
-
-  RingBuffer<std::vector<T> > input_buffer_;
+  unsigned int number_of_channels_;
+  
+  RingBuffer<std::vector<T> > input_buffer_;  
   RingBuffer<std::vector<T> > output_buffer_;
-
-  std::vector<double> a_;
-  std::vector<double> b_;
+  
+  std::vector<double> a_;   //Transfer functon coefficients (output)
+  std::vector<double> b_;   //Transfer functon coefficients (input)
 
 
 };
 
 template <typename T>
-TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int elements_per_observation):
-  in_iter_(0),
-  in_length_(0),
-  out_iter_(0),
-  out_length_(0),
-  input_buffer_(b.size(), std::vector<T>(elements_per_observation, (T)0.0)),
-  output_buffer_(a.size(), std::vector<T>(elements_per_observation, (T)0.0))
+TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int number_of_channels):
+  number_of_channels_(number_of_channels),
+  input_buffer_(b.size(), std::vector<T>(number_of_channels, (T)0.0)),
+  output_buffer_(a.size(), std::vector<T>(number_of_channels, (T)0.0)),
+  a_(a), b_(b)
 {
-
-  //order of the filter
-  number_of_inputs_=b.size();
-  number_of_outputs_=a.size();
-
-  //normalize the coeffs by a[0]
-  if(a[0]!=1)
-  {
-    for(uint32_t i=1; i<b.size(); i++)
+  // Prevents divide by zero.
+  assert(a[0] != 0);  
+  
+  // Normalize the coeffs by a[0].
+  if(a[0] != 1)
+  { 
+    for(uint32_t i = 0; i < b.size(); i++)
     {
-      b[i]=(b[i]/a[0]);
+      b_[i] = (b[i] / a[0]);
     }
-    for(uint32_t i=1; i<a.size(); i++)
+    for(uint32_t i = 1; i < a.size(); i++)
     {
-      a[i]=(a[i]/a[0]);
+      a_[i] = (a[i] / a[0]);
     }
-    b[0]=(b[0]/a[0]);
-    a[0]=(a[0]/a[0]);
+    a_[0] = (a[0] / a[0]);
   }
-  a_=a;
-  b_=b;
 };
 
 
 template <typename T>
 bool TransferFunctionFilter<T>::update(std::vector<T> const* const data_in, std::vector<T>* data_out)
 {
-  //! \todo Probably should have a check to make sure that data_in.size() matches the size of the data in the ring buffers
-  std::vector<T> current_input = *data_in;
+  // Ensure the correct number of inputs
+  assert(data_in->size() == number_of_channels_);  
+  
+  // Copy data to prevent mutation if in and out are the same ptr
+  std::vector<T> current_input = *data_in;        
 
-  for (uint32_t i = 0; i < data_in->size(); i++)
+  for (uint32_t i = 0; i < current_input.size(); i++)
   {
-    (*data_out)[i]=b_[0]*(*data_in)[i];
+    (*data_out)[i]=b_[0] * current_input[i];
 
-    for (uint32_t row = 0; row < (in_length_); row ++)
+    for (uint32_t row = 0; row < input_buffer_.size(); row++)
     {
-      std::vector<T> temp_in=input_buffer_[row];
-      (*data_out)[i]+=  b_[row+1]*temp_in[i];
+      (*data_out)[i] += b_[row+1] * input_buffer_[row][i];
     }
-    for (uint32_t row = 0; row < (out_length_); row ++)
+    for (uint32_t row = 0; row < output_buffer_.size(); row++)
     {
-      std::vector<T> temp_out=output_buffer_[row];
-      (*data_out)[i]-= a_[row+1]*temp_out[i];
+      (*data_out)[i] -= a_[row+1] * output_buffer_[row][i];
     }
   }
   input_buffer_.push(current_input);
   output_buffer_.push(*data_out);
-
-  //keep track of how many things we've observed
-  if (in_iter_ < (number_of_inputs_ -1) )
-  {
-    in_iter_++;
-    in_length_ = in_iter_;
-  }
-  else //all rows are allocated
-  {
-    in_length_ = (number_of_inputs_-1);
-  }
-
-  if (out_iter_ < (number_of_outputs_ -1) )
-  {
-    out_iter_++;
-    out_length_ = out_iter_;
-  }
-  else //all rows are allocated
-  {
-    out_length_ = (number_of_outputs_-1);
-  }
-
 
   return true;
 }
