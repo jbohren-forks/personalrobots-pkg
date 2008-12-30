@@ -90,6 +90,7 @@ framecounter = 0
 oe_x = []
 oe_y = []
 first_pair = None
+inliers = []
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -171,7 +172,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
-      print framecounter
+      print framecounter, vo.inl, "inliers"
+      inliers.append(vo.inl)
     framecounter += 1
 
   if topic.endswith("odom_estimation"):
