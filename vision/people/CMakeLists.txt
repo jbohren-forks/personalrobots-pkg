@@ -6,7 +6,7 @@ rospack(people)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(people_tracker
+rospack_add_executable(people_tracking
                        src/filter/gaussian_vector.cpp 
                        src/filter/gaussian_pos_vel.cpp 
                        src/filter/mcpdf_pos_vel.cpp
