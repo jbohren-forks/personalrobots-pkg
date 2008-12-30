@@ -40,7 +40,7 @@ in1=[]
 out0=[]
 out1=[]
 
-for line in  open("output.txt").readlines():
+for line in  open("../output.txt").readlines():
     obj = eval(line)
     in0.append(obj[0])
     out0.append(obj[1])

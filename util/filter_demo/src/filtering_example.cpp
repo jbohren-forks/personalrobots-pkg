@@ -68,11 +68,9 @@ public:
         b.push_back(res.b[i]);
       }
       
-      std::vector<double> temp;
-      temp.resize(2);
-      std::ofstream outfile;
-
-      outfile.open ("output.txt");    
+      std::vector<double> temp(2);
+      std::ofstream outfile("output.txt");  
+        
       //create a filter using the coeffs
       filters::TransferFunctionFilter<double> filter(b,a,2);
       
