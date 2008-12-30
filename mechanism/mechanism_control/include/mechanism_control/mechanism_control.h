@@ -41,7 +41,7 @@
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <mechanism_model/controller.h>
 #include <misc_utils/realtime_publisher.h>
 #include <misc_utils/advertised_service_guard.h>
@@ -80,7 +80,7 @@ private:
   bool initialized_;
 
   const static int MAX_NUM_CONTROLLERS = 100;
-  ros::thread::mutex controllers_lock_;
+  boost::mutex controllers_lock_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
   std::string controller_names_[MAX_NUM_CONTROLLERS];
 
