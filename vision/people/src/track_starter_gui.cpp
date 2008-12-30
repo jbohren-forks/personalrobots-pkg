@@ -72,6 +72,8 @@ using namespace std;
 void on_mouse(int event, int x, int y, int flags, void *params){
   
   switch(event){
+  case CV_EVENT_MOUSEMOVE:
+    break;
   case CV_EVENT_LBUTTONUP:
     // Add a clicked-on point to the list of points, to be published by the image callback on the next image.
     g_selection_mutex.lock();
@@ -137,7 +139,7 @@ public:
     uvd_ = cvCreateMat(1,3,CV_32FC1);
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
-    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
     std::list<std::string> left_list;
     left_list.push_back(std::string("stereodcam/left/image_rect_color"));
     left_list.push_back(std::string("stereodcam/left/image_rect"));    
@@ -145,6 +147,7 @@ public:
     sync_.subscribe("stereodcam/disparity",dimage_,1);
     sync_.subscribe("stereodcam/stereo_info", stinfo_,1);
     sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.ready();
     //subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
@@ -222,6 +225,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
+    //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
 
 
@@ -277,7 +281,7 @@ public:
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
-	  publish("person_measurement",pm);
+	  publish("people_tracking_measurements",pm);
 	  gxys[i].published = true;
 	}	
       }
