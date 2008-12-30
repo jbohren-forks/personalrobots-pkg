@@ -62,7 +62,7 @@ class OdomEstimationNode: public ros::node
 {
 public:
   /// constructor
-  OdomEstimationNode(const string& node_name);
+  OdomEstimationNode(const std::string& node_name);
 
   /// destructor
   virtual ~OdomEstimationNode();
