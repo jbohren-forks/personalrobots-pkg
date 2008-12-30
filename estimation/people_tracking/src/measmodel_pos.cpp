@@ -92,7 +92,12 @@ MeasPdfPos::CovarianceGet() const
 }
 
 
-
+void
+MeasPdfPos::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
+{
+  tf::Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
+  meas_noise_.sigmaSet(cov_vec);
+}
 
 
 

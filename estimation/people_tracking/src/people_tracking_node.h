@@ -86,16 +86,17 @@ private:
   std::vector<Tracker*> trackers_;
   std::vector<std::string> tracker_names_;
 
-  // messages to send
-  std_msgs::PointCloud  point_cloud_; 
-
   // tf listener
   tf::TransformListener robot_state_;
 
+  unsigned int tracker_counter_;
   double freq_;
   BFL::StatePosVel sys_sigma_;
   tf::Vector3 meas_sigma_;
   BFL::StatePosVel prior_sigma_;
+
+  std::vector<std_msgs::Point32> meas_vis_;
+  unsigned int meas_vis_counter_;
 
 
 }; // class

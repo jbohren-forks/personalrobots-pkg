@@ -62,6 +62,11 @@ namespace BFL
     return os;
   }
 
+  void GaussianVector::sigmaSet( const tf::Vector3& sigma )
+  {
+    sigma_ = sigma;
+    sigma_changed_ = true;
+  }
 
   Probability GaussianVector::ProbabilityGet(const Vector3& input) const
   {

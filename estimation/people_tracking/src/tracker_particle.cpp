@@ -104,8 +104,12 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerParticle::updateCorrection(const Vector3&  meas)
+  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
+    // set covariance
+    ((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
+
+
     // update filter
     bool res = filter_->Update(&meas_model_, meas);
     if (!res) quality_ = 0;

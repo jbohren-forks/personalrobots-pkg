@@ -125,14 +125,14 @@ namespace estimation
   // update filter prediction
   bool TrackerKalman::updatePrediction(const double  filter_time)
   {
-    cout << "update prediction" << endl;
+    // TODO: SET COVARIANCE RELATIVE TO TIME
 
     // set time step
     double dt = filter_time - filter_time_;
+    assert(dt >= 0);
     for (unsigned int i=1; i<=3; i++)
       sys_matrix_(i, i+3) = dt;
     sys_pdf_->MatrixSet(0, sys_matrix_);
-    cout << "test  matrix " << ((LinearAnalyticConditionalGaussian*)(sys_model_->SystemPdfGet()))->MatrixGet(0) << endl;
 
     filter_time_ = filter_time;
 
@@ -146,13 +146,17 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerKalman::updateCorrection(const Vector3&  meas)
+  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
-    cout << "update correction" << endl;
+    assert(cov.columns() == 3);
 
+    // copy measurement
     ColumnVector meas_vec(3);
     for (unsigned int i=0; i<3; i++)
       meas_vec(i+1) = meas[i];
+
+    // set covariance
+    ((LinearAnalyticConditionalGaussian*)(meas_model_->MeasurementPdfGet()))->AdditiveNoiseSigmaSet(cov);
 
     // update filter
     bool res = filter_->Update(meas_model_, meas_vec);

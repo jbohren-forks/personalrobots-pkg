@@ -37,6 +37,7 @@
 
 #include "state_pos_vel.h"
 #include <robot_msgs/PositionMeasurement.h>
+#include <wrappers/matrix/matrix_wrapper.h>
 
 
 namespace estimation
@@ -59,7 +60,7 @@ public:
 
   /// update tracker
   virtual bool updatePrediction(const double filter_time) = 0;
-  virtual bool updateCorrection(const tf::Vector3& meas) = 0;
+  virtual bool updateCorrection(const tf::Vector3& meas, const MatrixWrapper::SymmetricMatrix& cov) = 0;
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const = 0;

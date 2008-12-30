@@ -75,7 +75,7 @@ public:
 
   /// update tracker
   virtual bool updatePrediction(const double filter_time);
-  virtual bool updateCorrection(const tf::Vector3& meas);
+  virtual bool updateCorrection(const tf::Vector3& meas, const MatrixWrapper::SymmetricMatrix& cov);
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const;

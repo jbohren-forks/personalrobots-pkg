@@ -59,6 +59,8 @@ namespace BFL
       /// output stream for GaussianVector
       friend std::ostream& operator<< (std::ostream& os, const GaussianVector& g);
     
+      void sigmaSet( const tf::Vector3& sigma );
+
       // Redefinition of pure virtuals
       virtual Probability ProbabilityGet(const tf::Vector3& input) const;
       bool SampleFrom (vector<Sample<tf::Vector3> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;
