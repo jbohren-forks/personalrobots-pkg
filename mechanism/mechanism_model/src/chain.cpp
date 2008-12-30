@@ -79,6 +79,24 @@ bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
   return true;
 }
 
+void Chain::getPositions(std::vector<JointState> &states, std::vector<double> &positions)
+{
+  positions.resize(joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+  {
+    positions[i] = states[i].position_;
+  }
+}
+
+void Chain::getVelocities(std::vector<JointState> &states, std::vector<double> &velocities)
+{
+  velocities.resize(joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+  {
+    velocities[i] = states[i].velocity_;
+  }
+}
+
 void Chain::toKdl(KDL::Chain &chain)
 {
 }

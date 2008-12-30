@@ -41,6 +41,9 @@ class Chain
 public:
   bool init(Robot *robot, const std::string &root, const std::string &tip);
 
+  void getPositions(std::vector<JointState>&, std::vector<double>&);
+  void getVelocities(std::vector<JointState>&, std::vector<double>&);
+
   void toKdl(KDL::Chain &chain);
 
   void positionsToKDL(std::vector<JointState>&, KDL::JntArray&);
