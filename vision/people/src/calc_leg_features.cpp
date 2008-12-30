@@ -82,8 +82,8 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
        i++)
       
   {
-    sum_std_diff += pow( (*i)->x - x_mean, 2.0) + pow((*i)->y - y_mean, 2.0);
-    sum_med_diff += sqrt(pow( (*i)->x - x_median, 2.0) + pow((*i)->y - y_median, 2.0));
+    sum_std_diff += pow( (*i)->x - x_mean, 2) + pow((*i)->y - y_mean, 2);
+    sum_med_diff += sqrt(pow( (*i)->x - x_median, 2) + pow((*i)->y - y_median, 2));
   }
 
   float std = sqrt( 1.0/(num_points - 1.0) * sum_std_diff);
@@ -110,7 +110,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     Sample* prev = Sample::Extract(prev_ind, scan);
     if (prev)
     {
-      prev_jump = sqrt( pow( (*first)->x - prev->x, 2.0) + pow((*first)->y - prev->y, 2.0));
+      prev_jump = sqrt( pow( (*first)->x - prev->x, 2) + pow((*first)->y - prev->y, 2));
       delete prev;
     }
     
@@ -121,7 +121,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     Sample* next = Sample::Extract(next_ind, scan);
     if (next)
     {
-      next_jump = sqrt( pow( (*last)->x - next->x, 2.0) + pow((*last)->y - next->y, 2.0));
+      next_jump = sqrt( pow( (*last)->x - next->x, 2) + pow((*last)->y - next->y, 2));
       delete next;
     }
   }
@@ -130,7 +130,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   features.push_back(next_jump);
 
   // Compute Width
-  float width = sqrt( pow( (*first)->x - (*last)->x, 2.0) + pow((*first)->y - (*last)->y, 2.0));
+  float width = sqrt( pow( (*first)->x - (*last)->x, 2) + pow((*first)->y - (*last)->y, 2));
   features.push_back(width);
 
   // Compute Linearity
@@ -159,7 +159,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   float linearity = 0.0;
   for (int i = 0; i < num_points; i++)
   {
-    linearity += pow(cvmGet(rot_points, i, 1), 2.0);
+    linearity += pow(cvmGet(rot_points, i, 1), 2);
   }
 
   cvReleaseMat(&points);
@@ -186,7 +186,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
       cvmSet(A, j, 1, -2.0*y);
       cvmSet(A, j, 2, 1);
         
-      cvmSet(B, j, 0, -pow(x,2.0)-pow(y,2.0));
+      cvmSet(B, j, 0, -pow(x,2)-pow(y,2));
       j++;
     }
   }
@@ -195,14 +195,14 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   float xc = cvmGet(sol, 0, 0);
   float yc = cvmGet(sol, 1, 0);
-  float rc = sqrt(pow(xc,2.0) + pow(yc,2.0) - cvmGet(sol, 2, 0));
+  float rc = sqrt(pow(xc,2) + pow(yc,2) - cvmGet(sol, 2, 0));
 
   float circularity = 0.0;
   for (SampleSet::iterator i = cluster->begin();
        i != cluster->end();
        i++)
   {
-    circularity += pow( rc - sqrt( pow(xc - (*i)->x, 2.0) + pow( yc - (*i)->y, 2.0) ), 2.0);
+    circularity += pow( rc - sqrt( pow(xc - (*i)->x, 2) + pow( yc - (*i)->y, 2) ), 2);
   }
 
   features.push_back(circularity);
@@ -250,8 +250,8 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     sum_boundary_reg_sq += L_mr*L_mr;
     last_boundary_seg = L_ml;
 
-    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2.0);
-    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2.0);
+    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2);
+    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2);
 
     float th = atan2(B,A);
 
@@ -278,7 +278,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   boundary_length += last_boundary_seg;
   sum_boundary_reg_sq += last_boundary_seg*last_boundary_seg;
 
-  boundary_regularity = sqrt( (sum_boundary_reg_sq - pow(boundary_length,2.0)/num_points)/(num_points - 1) );
+  boundary_regularity = sqrt( (sum_boundary_reg_sq - pow(boundary_length,2)/num_points)/(num_points - 1) );
 
   features.push_back(boundary_length);
   features.push_back(ang_diff);
