@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -54,23 +54,23 @@ namespace point_cloud_assembler
 
 class GrabCloudData : public ros::node
 {
-  
+
 public:
 
   GrabCloudData() : ros::node("grab_cloud_data")
   {
     advertise<PointCloud> ("full_cloud", 1) ;
   }
-  
+
   ~GrabCloudData()
   {
     unadvertise("full_cloud") ;
   }
-  
+
   bool spin()
   {
     ros::Duration period(4,0) ;         // Repeat Every 4 seconds
-        
+
     ros::Time next_time = ros::Time::now() ;
 
     while ( ok() )
@@ -79,18 +79,17 @@ public:
       if (ros::Time::now() >= next_time)
       {
         next_time.from_double(next_time.to_double() + period.to_double()) ;
-        
+
         BuildCloud::request req ;
         BuildCloud::response resp ;
-        
+
         req.begin.from_double(next_time.to_double() - period.to_double() ) ;
         req.end   = next_time ;
-        req.target_frame_id = "base" ;
-        
+
         printf("Making Service Call...\n") ;
         ros::service::call("build_cloud", req, resp) ;
         printf("Done with service call\n") ;
-        
+
         publish("full_cloud", resp.cloud) ;
         printf("Published Cloud size=%u\n", resp.cloud.get_pts_size()) ;
       }

@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="point_cloud_assembler" type="point_cloud_assembler" output="screen"  name="assembler">
-    <remap from="scan" to="tilt_scan"/>
-    <remap from="laser_scanner_signal" to="laser_controller/laser_scanner_signal"/>
-  </node>
-</launch>

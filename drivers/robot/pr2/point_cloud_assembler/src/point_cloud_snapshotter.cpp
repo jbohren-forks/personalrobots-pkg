@@ -46,7 +46,7 @@ using namespace std_msgs ;
 /***
  * This uses the point_cloud_assembler's build_cloud service call to grab all the scans/clouds between two tilt-laser shutters
  * params
- *  * "~fixed_frame" (string) - This is the frame that the scanned data is assumed to be stationary in.  The
+ *  * "~target_frame_id" (string) - This is the frame that the scanned data transformed into.  The
  *                                  output clouds are also published in this frame.
  */
 
@@ -72,8 +72,6 @@ public:
     advertise<PointCloud> ("full_cloud", 1) ;
     subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
 
-    param("~fixed_frame", fixed_frame_, std::string("NO_FRAME_DEFINED")) ;
-
     first_time_ = true ;
   }
 
@@ -97,7 +95,6 @@ public:
 
       req.begin = prev_signal_.header.stamp ;
       req.end   = cur_signal_.header.stamp ;
-      req.target_frame_id = fixed_frame_ ;
 
       //printf("PointCloudSnapshotter::Making Service Call...\n") ;
       ros::service::call("build_cloud", req, resp) ;
