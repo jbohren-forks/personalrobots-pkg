@@ -137,12 +137,13 @@ public:
     sync_.subscribe("stereodcam/disparity",dimage_,1);
     sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
     sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.ready();
 
     // Advertise a 3d position measurement for each head.
-    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
 
     if (!detect_faces_) {
-      subscribe<robot_msgs::PositionMeasurement>("person_measurement",init_pos_, &StereoFaceColorTracker::init_pos_cb,1);
+      subscribe<robot_msgs::PositionMeasurement>("people_tracking_filter",init_pos_, &StereoFaceColorTracker::init_pos_cb,1);
     }
 
   }
@@ -173,9 +174,9 @@ public:
   void init_pos_cb() {
 
     // Check that this is the right message, there are multiple people publishing "person_measurement"s.
-    if (init_pos_.name != "track_starter_gui") {
-      return;
-    }
+    //if (init_pos_.name != "track_starter_gui") {
+    //  return;
+    //}
 
     cv_mutex_.lock();
 
