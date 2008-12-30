@@ -4,8 +4,8 @@
 
 \section commandline Command-line tools
 
-\subsection gen_filter
-gen_filter is a standalone service that computes the transfer function coefficients using 
+\subsection generate_filter_coeffs
+generate_filter_coeffs is a standalone service that computes the transfer function coefficients using 
 digital filter functions provided by octave. This service only implements the [B,A]= filter(args)
 methods for each octave function.<br>
 
@@ -24,48 +24,48 @@ Generates a Fit filter B(z)/A(z) to the complex frequency response H at frequenc
 points F.
 
 \verbatim
-$ ./gen_filter.m
+$ ./generate_filter_coeffs.m
 \endverbatim
 
 \par Example
 
 \verbatim
-$ rosrun filter_generator gen_filter.m
+$ rosrun filter_coefficient_server generate_filter_coeffs.m
 \endverbatim
 
 
 \subsubsection topics ROS services
 
 Advertises to:
-- \b "/gen_filter": [filter_generator/Filter] The filter name and args
+- \b "/generate_filter_coeffs": [filter_coefficient_server/Filter] The filter name and args
 
 <hr>
 
-\subsection gen_filter_client
-gen_filter_client is an example client that uses the gen_filter service. 
+\subsection generate_filter_coeffs_client
+generate_filter_coeffs_client is an example client that uses the generate_filter_coeffs service. 
 
 \verbatim
-$ ./filter_generator_client [name args]
+$ ./generate_filter_coeffs_client [name args]
 \endverbatim
 
 \par Example
 
 \verbatim
 octave command: [b,a] = butter(n, Wc) low pass filter with cutoff pi*Wc radians
-$ rosrun filter_generator filter_generator_client butter 2 .1
+$ rosrun filter_coefficient_server generate_filter_coeffs_client butter 2 .1
 
 octave command: [b,a] = butter(n, Wc, 'high') high pass filter with cutoff pi*Wc radians
-$ rosrun filter_generator filter_generator_client butter 2 .1 high
+$ rosrun filter_coefficient_server generate_filter_coeffs_client butter 2 .1 high
 
 octave command: [b,a] = butter(n, [Wl, Wh], 'stop') band reject filter with edges pi*Wl and pi*Wh radians
-$ rosrun filter_generator filter_generator_client butter 2 .1 .5 stop
+$ rosrun filter_coefficient_server generate_filter_coeffs_client butter 2 .1 .5 stop
 \endverbatim
 
 
 \subsubsection topics ROS services
 
 Subscribes to:
-- \b "/gen_filter": [filter_generator/Filter] Returns vectors a and b for transfer_function filter
+- \b "/generate_filter_coeffs": [filter_coefficient_server/Filter] Returns vectors a and b for transfer_function filter
 
 <hr>
 
