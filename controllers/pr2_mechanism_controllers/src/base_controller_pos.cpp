@@ -710,7 +710,13 @@ void BaseControllerPos::computeOdometry(double time)
 {
   double dt = time-last_time_;
 
+  try{
   computeBaseVelocity();
+  }
+  catch(NEWMAT::ConvergenceException &e)
+  {
+    return;
+  }
 
   libTF::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
 
