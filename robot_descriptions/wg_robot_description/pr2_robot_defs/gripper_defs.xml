@@ -16,9 +16,9 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${gripper_min_angle}" max="${gripper_max_angle}"
-             k_position="0" k_velocity="0" velocity="0.5"
-             safety_length_min="0.0" safety_length_max="0.0" />
+      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
+             k_position="1.0" k_velocity="0.1" velocity="0.5"
+             safety_length_min="0.05" safety_length_max="0.1" />
       <joint_properties damping="0.2" />
     </joint>
 
@@ -77,7 +77,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
+      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
              k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
@@ -144,7 +144,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
+      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
              k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
@@ -211,7 +211,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${gripper_min_angle}" max="${gripper_max_angle}"
+      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
              k_position="0" k_velocity="0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
@@ -432,11 +432,13 @@
       <joint name="${side}_gripper_l_finger_tip_joint" preduction="-1.0" ereduction="-6.0" />
       <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
     </transmission>
-<!--     <transmission type="SimpleTransmission" name="${side}_gripper_trans">
+    <!--
+    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
       <actuator name="${side}_gripper_motor" />
       <joint name="${side}_gripper_l_finger_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission> -->
+    </transmission>
+     -->
   </macro>
 
   <!--                    Calibration                            -->
