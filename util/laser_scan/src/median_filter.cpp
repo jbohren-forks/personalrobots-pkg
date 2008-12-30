@@ -50,7 +50,7 @@ LaserMedianFilter::~LaserMedianFilter()
 
 bool LaserMedianFilter::update(const std_msgs::LaserScan& scan_in, std_msgs::LaserScan& scan_out)
 {
-  data_lock.lock();
+  boost::mutex::scoped_lock lock(data_lock);
   scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
 
   if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
@@ -71,7 +71,6 @@ bool LaserMedianFilter::update(const std_msgs::LaserScan& scan_in, std_msgs::Las
   intensity_filter_->update(&scan_in.intensities[0], &scan_out.intensities[0]);
 
 
-  data_lock.unlock();
   return true;
 }
 
