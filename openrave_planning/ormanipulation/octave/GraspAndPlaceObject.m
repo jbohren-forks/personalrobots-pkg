@@ -38,8 +38,6 @@ function [graspsuccess, full_solution_index] = GraspAndPlaceObject(robot, curobj
 
 global updir probs
 
-orEnvSetOptions('debug verbose');
-
 test = 0;
 graspsuccess = 0;
 
@@ -85,7 +83,7 @@ while(curgrasp < size(grasps,1))
     offset = 0.02;
     
     cmd = ['testallgrasps combinepreshapetraj execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
-           ' target ' curobj.info.name ' robothand ' handrobot.name ' updir ' sprintf('%f ', updir) ...
+           ' target ' curobj.info.name ' robothand ' handrobot.name ...
            ' robothandjoints ' sprintf('%d ', length(handjoints), handjoints) ...
            ' handjoints ' sprintf('%d ', length(handrobot.handjoints), handrobot.handjoints) ...
            ' graspindices ' sprintf('%d ', [gi.direction(1) gi.center(1) gi.roll(1) gi.standoff(1) gi.joints(1)]-1) ...
@@ -105,12 +103,11 @@ while(curgrasp < size(grasps,1))
     end
 
     %% parse the response
-    [goaliksol, rem] = ReadValsFromString(response,length(armjoints));
-    [newhandTm, rem] = ReadValsFromString(rem,12);
-    newhandTm = reshape(newhandTm,[3 4]);
-    
+    [numgoals, rem] = ReadValsFromString(response,1);
+    [destgoals, rem] = ReadValsFromString(rem,12*numgoals);
+    destgoals = reshape(destgoals,[12 numgoals]);
+
     [graspindex,rem] = ReadValsFromString(rem,1);
-    [destindex,rem] = ReadValsFromString(rem,1);
     [searchtime,trajdata] = ReadValsFromString(rem,1);
     curgrasp = curgrasp + graspindex;
 
@@ -118,11 +115,7 @@ while(curgrasp < size(grasps,1))
     grasp = grasps(curgrasp,:);
     display(['grasp: ' sprintf('%d ', [curgrasp order(curgrasp)]) ]);
         
-    %orRobotControllerSend(robotid, 'ignoreproxy'); % make sure nothing is ignored
-
-    % have to set the desired open config here
     open_config = transpose(grasp(handrobot.grasp.joints));
-    %orRobotSetDOFValues(robotid, open_config, handjoints);
 
     curgrasp = curgrasp+1; % want the next grasp
 
@@ -229,82 +222,21 @@ while(curgrasp < size(grasps,1))
 %     end
     
     if( squeezesuccess > 0 )
-        % check if the arm
-        display('planning to table');
-        % set current arm transformation to be grasping the cup initially
-
-        putsuccess = 0;
+        display('planning to destination');
         
-        [trajdata,success] = orProblemSendCommand(['MoveToHandPosition execute 0 outputtraj matrix ' sprintf('%f ', newhandTm)], probs.manip);
+        [trajdata,success] = orProblemSendCommand(['MoveToHandPosition execute 0 outputtraj matrices ' sprintf('%d ', size(goaldests,2)) ' sprintf('%f ', goaldests)], probs.manip);
         if( success )
             success = StartTrajectory(robotid,probs.manip,trajdata);
             if( ~success )
-                warning('failed to move hand');
+                warning('failed to start trajectory');
                 return;
             end
-            putsuccess = 1;
         else
             putsuccess = 0;
+            warning('failed to move hand');
+            return;
         end
 
-        if( putsuccess == 0 )
-            display('planned target inaccessible, trying new plan');
-            curobj.id = orEnvGetBody(curobj.info.name);
-            backuptrans = orBodyGetLinks(curobj.id);
-            objTm = reshape(backuptrans,[3 4]);
-
-            wristtrans = orBodyGetLinks(robotid);
-            wristTm = reshape(wristtrans(:,wristlinkid),[3 4]);
-
-            orProblemSendCommand('releaseall', probs.manip);
-
-            for posi = 1:size(curobj.dests,2)
-
-                T = reshape(curobj.dests(:,posi), [3 4]);
-                goalTm = T;
-                N = 10;
-                for ang = 0:pi/N:pi*(N-1)/N
-                    Rrand = openraveros_rotfromaxisangle([0 0 ang]);
-                    goalTm(1:3,1:3) = Rrand * T(1:3,1:3);
-
-                    newtrans = [goalTm; 0 0 0 1] * inv([objTm; 0 0 0 1]);
-                    newhandTm = newtrans*[wristTm;0 0 0 1];
-
-                    goalTm
-                    newhandTm
-                    
-                    if ~isempty(orProblemSendCommand(['IKtest nocol matrix ' sprintf('%f ', newhandTm)], probs.manip))
-                        putsuccess = 1;
-                        break;
-                    end
-                end
-
-                if( putsuccess )
-                    break;
-                end
-            end
-            
-            orProblemSendCommand(['GrabBody name ' curobj.info.name], probs.manip);
-
-            if( putsuccess )
-                [trajdata,success] = orProblemSendCommand(['MoveToHandPosition execute 0 outputtraj matrix ' sprintf('%f ', newhandTm)], probs.manip);
-                if( ~success )
-                    warning('failed to movehandstraight');
-                    continue;
-                end
-
-                success = StartTrajectory(robotid,probs.manip,trajdata);
-                if( success )
-                    warning('trajectory failed to execute');
-                    break;
-                end
-            end
-        end % putsuccess==0
-
-%         if( MySwitchModels(0) )
-%             curobj.id = orEnvGetBody(curobj.info.name);
-%         end
-        
         % after trajectory is done, check for failure of grasp (could have
         % dropped cup)
 %         if( putsuccess & squeeze )
@@ -340,7 +272,6 @@ while(curgrasp < size(grasps,1))
         
     % move the hand down until collision
     display('moving hand down');
-
     [trajdata, success] = orProblemSendCommand(['MoveHandStraight execute 0 outputtraj direction ' sprintf('%f ', -updir) ...
                              ' maxdist ' sprintf('%f ', 0.3)],probs.manip);
     if( ~success )
@@ -375,17 +306,10 @@ while(curgrasp < size(grasps,1))
     %% now release object
     orProblemSendCommand('releaseall', probs.manip);
     
-%     if( MySwitchModels(0) )
-%         curobj.id = orEnvGetBody(curobj.info.name);
-%     end
-
     if( squeezesuccess > 0 & putsuccess > 0 )
         display('success, putting down');
-        % only break when succeeded
-%         if( MySwitchModels(1) )
-%             curobj.id = orEnvGetBody(curobj.info.name);
-%         end
-        
+
+        % only break when succeeded        
         %orProblemSendCommand(['MoveHandStraight stepsize 0.003 minsteps ' sprintf('%f ', 90) ' maxsteps ' sprintf('%f ', 100) ' direction ' sprintf('%f ', updir')]);
         %RobotGoInitial(robot);
         

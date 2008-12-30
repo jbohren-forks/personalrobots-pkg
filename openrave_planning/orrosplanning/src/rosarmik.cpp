@@ -213,7 +213,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
             COLLISIONREPORT report;
             if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot, &report) ) {
                 if( report.plink1 != NULL && report.plink2 != NULL ) {
-                    RAVELOG(L"WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
+                    RAVELOG_VERBOSEA("WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
                 }
                 continue;
             }
@@ -375,7 +375,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
         COLLISIONREPORT report;
         if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot, &report) ) {
             if( report.plink1 != NULL && report.plink2 != NULL ) {
-                RAVELOG(L"WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
+                RAVELOG_VERBOSEA("WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
             }
             continue;
         }

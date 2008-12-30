@@ -1,4 +1,4 @@
-%% [robot, scenedata] = SetupTableScene(scene,randomize)
+%% [robot, scenedata] = SetupTableScene(scene,realrobot,randomize)
 %%
 %% setup a simple table scene with the objects to be manipulated
 
@@ -25,9 +25,13 @@
 %% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 %% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
-function [robot, scenedata] = SetupTableScene(scene,randomize)
+function [robot, scenedata] = SetupTableScene(scene,realrobot,randomize)
 
 global updir probs robothome
+
+if( ~exist('realrobot','var') )
+    realrobot = 0;
+end
 
 if( ~exist('randomize','var') )
     randomize = 0;
@@ -108,6 +112,15 @@ if( randomize )
     end
 end
 
+if( realrobot )
+    %% enable all but the left arm
+    enabledjoints = 0:(robot.dof-1);
+    enabledjoints([robot.manips{1}.armjoints; robot.manips{1}.handjoints]) = [];
+    jointnames_cell = transpose(robot.jointnames(enabledjoints+1));
+    jointnames_str = cell2mat (cellfun(@(x) [x ' '], jointnames_cell,'uniformoutput',false));
+    orRobotControllerSet(robot.id, 'ROSRobot',  ['joints ' jointnames_str]);
+end
+
 %% dests is a 12xN array where every column is a 3x4 matrix
 function [dests, surfaceplane] = GetDests(tablepattern)
 
@@ -138,13 +151,13 @@ if( isempty(ab) )
     return;
 end
 
-Nx = 3;
-Ny = 4;
+Nx = 4;
+Ny = 5;
 X = [];
 Y = [];
 for x = 0:(Nx-1)
-    X = [X 0.5*rand(1,Ny)/(Nx+1) + (x+0.5)/(Nx+1)];
-    Y = [Y 0.5*rand(1,Ny)/(Ny+1) + ([0:(Ny-1)]+0.5)/(Ny+1)];
+    X = [X 0.5*ones(1,Ny)/(Nx+1) + (x+0.5)/(Nx+1)];
+    Y = [Y 0.5*ones(1,Ny)/(Ny+1) + ([0:(Ny-1)]+0.5)/(Ny+1)];
 end
 
 offset = [ab(1,1)-ab(1,2);ab(2,1); ab(3,1)+ab(3,2)];

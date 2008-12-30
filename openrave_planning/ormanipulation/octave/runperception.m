@@ -6,14 +6,7 @@ cd(fullfile(rosoct_findpackage('ormanipulation'),'octave'));
 startup;
 %orEnvSetOptions('debug debug');
 
-robot = SetupTableScene('data/pr2table_real.env.xml');
-
-%% enable all but the left arm
-enabledjoints = 0:(robot.dof-1);
-enabledjoints([robot.manips{1}.armjoints; robot.manips{1}.handjoints]) = [];
-jointnames_cell = transpose(robot.jointnames(enabledjoints+1));
-jointnames_str = cell2mat (cellfun(@(x) [x ' '], jointnames_cell,'uniformoutput',false));
-orRobotControllerSet(robot.id, 'ROSRobot',  ['joints ' jointnames_str]);
+robot = SetupTableScene('data/pr2table_real.env.xml',1);
 
 Tcamera = [0 0 1 -0.05;
            -1 0 0 -0.05;

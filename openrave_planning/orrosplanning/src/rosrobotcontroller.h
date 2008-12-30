@@ -152,9 +152,16 @@ public:
             boost::mutex::scoped_lock lock(_mutexstate);
             if( _bCalibrated ) {
                 vector<dReal> values;
+                vector<dReal> vlower, vupper;
                 _probot->GetJointValues(values);
-                FOREACHC(itj, _mapjoints)
+                _probot->GetJointLimits(vlower,vupper);
+                FOREACHC(itj, _mapjoints) {
                     values[itj->second] = _mstate.joint_states[itj->first].position;
+                    while(values[itj->second] > vupper[itj->second] )
+                        values[itj->second] -= 2*PI;
+                    while(values[itj->second] < vlower[itj->second] )
+                        values[itj->second] += 2*PI;
+                }
 
                 ROS_ASSERT( (int)values.size() == _probot->GetDOF() );
                 _probot->SetJointValues(NULL, NULL, &values[0], true);

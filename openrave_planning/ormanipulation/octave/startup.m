@@ -15,4 +15,4 @@ setrealsession();
 openraveros_restart();
 orEnvSetOptions('wdims 800 600');
 %orEnvSetOptions('collision bullet');
-%orEnvSetOptions('debug verbose');
+orEnvSetOptions('debug debug');
