@@ -49,8 +49,6 @@ public:
    */
   RingBuffer(uint32_t number_of_elements, const T &default_elt = T());
 
-  /** \brief Destructor to clean up
-   */
   ~RingBuffer(){}
 
   /**
@@ -71,21 +69,21 @@ public:
   void push(T const &element);
 
   /**
-   * \brief Get the capacity of the ring buffer
+   * \brief Return the capacity of the ring buffer
    * \return The length of the ring buffer
    */
   unsigned int capacity() { return buffer_.size(); }
   
   /**
-   * \brief Get how many elements have been pushed onto the ring buffer
+   * \brief Return how many elements have been pushed onto the ring buffer
    * \return The number of elements in the ring buffer
    */
-  unsigned int size() { return (buffer_push_cnt<buffer_.capacity())?buffer_push_cnt:buffer_.capacity(); }
+  unsigned int size() { return (buffer_push_cnt<buffer_.size())?buffer_push_cnt:buffer_.size(); }
 
 protected:
   std::vector<T> buffer_;
-  uint32_t buffer_ptr_;  // Index of the most recently pushed element
-  uint32_t buffer_push_cnt;
+  uint32_t buffer_ptr_;     // Index of the most recently pushed element
+  uint32_t buffer_push_cnt; // Number of elements pushed
 };
 
 template <typename T>
