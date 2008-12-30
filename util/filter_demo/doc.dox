@@ -1,0 +1,27 @@
+/** 
+@mainpage
+@htmlinclude manifest.html
+
+This package provides a bare-bones example of how to
+create a multi-channel digital filter using rosoct and the 
+filters library. This example generates transfer function
+coefficients using rosoct and then filters a 2 channel signal
+using the filter constructed using the calcualted coefficients.
+
+* \li ExampleFilter shows how to construct and use a filter
+
+\section commandline Command-line tools
+
+To run the demo:
+
+\verbatim
+$ roslaunch demo.launch
+\endverbatim
+
+The demo should display this result:
+
+\image html images/demo_result.png
+
+Both channels are filtered using butter 2 .1.
+
+**/
