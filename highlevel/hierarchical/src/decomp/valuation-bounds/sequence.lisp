@@ -8,45 +8,11 @@
    (status :initform :initial)))
 
 ;; We don't have an initialize-instance :after method to add the node's variables
-;; This is because they depend on what the refinement is, and we can't compute this until
+;; This is because the set of variables depends on what the refinement is, and we can't compute this until
 ;; we know what the initial valuation is.  So initialization is done in initialize-sequence-node.
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; The node's outputs are computed from the node's 
-;; own progressed/regressed valuations together with the
-;; final/initial child's output valuation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod optimistic-progressor ((n <sequence-node>))
-  (make-simple-update-fn 
-   #'(lambda (l)
-       (binary-pointwise-min-upper-bound
-	(evaluate l (cons 'child-progressed-optimistic (1- (sequence-length n))))
-	(evaluate l 'my-progressed-optimistic)))))
-
-(defmethod pessimistic-progressor ((n <sequence-node>))
-  (make-simple-update-fn 
-   #'(lambda (l)
-       (binary-pointwise-max-lower-bound
-	(evaluate l (cons 'child-progressed-pessimistic (1- (sequence-length n))))
-	(evaluate l 'my-progressed-pessimistic)))))
-
-(defmethod optimistic-regressor ((n <sequence-node>))
-  (make-simple-update-fn 
-   #'(lambda (l)
-       (binary-pointwise-min-upper-bound
-	(evaluate l '(child-regressed-optimistic . 0))
-	(evaluate l 'my-regressed-optimistic)))))
 
 
-(defmethod pessimistic-regressor ((n <sequence-node>))
-  (make-simple-update-fn 
-   #'(lambda (l)
-       (binary-pointwise-max-lower-bound
-	(evaluate l '(child-regressed-pessimistic . 0))
-	(evaluate l 'my-regressed-pessimistic)))))
-
- 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Adding children
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,7 +22,7 @@
   (declare (ignore new-node-type args))
 
   (let ((child (child i n)))
-    ;; Output variables already created in initialize-instance, so just tie them
+    ;; Output variables already created in initialize-sequence-node, so just tie them
     (dolist (vars '((progressed-optimistic child-progressed-optimistic) (progressed-pessimistic child-progressed-pessimistic)
 		    (regressed-optimistic child-regressed-optimistic) (regressed-pessimistic child-regressed-pessimistic)))
       (tie-variables child (first vars) n (cons (second vars) i)))

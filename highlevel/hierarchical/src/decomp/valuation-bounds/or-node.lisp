@@ -8,36 +8,10 @@
 (defmethod initialize-instance :after ((n <or-node>) &rest args)
   (declare (ignorable args))
   ;; Aggregated inputs from children
-  (add-variable n 'children-progressed-optimistic :internal :simple-update-fn (child-progressed-optimistic-aggregator n) :dependants '(progressed-optimistic))
-  (add-variable n 'children-progressed-pessimistic :internal :simple-update-fn (child-progressed-pessimistic-aggregator n) :dependants '(progressed-pessimistic))
-  (add-variable n 'children-regressed-optimistic :internal :simple-update-fn (child-regressed-optimistic-aggregator n) :dependants '(regressed-optimistic))
-  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (child-regressed-pessimistic-aggregator n) :dependants '(regressed-pessimistic)))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Within the node:
-;; Update functions for output variables depend on
-;; aggregated child outputs, and on node's own
-;; progressed/regressed valuations
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod optimistic-progressor ((n <or-node>))
-  (make-simple-alist-updater (my-progressed-optimistic children-progressed-optimistic)
-    (binary-pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
-
-(defmethod pessimistic-progressor ((n <or-node>))
-  (make-simple-alist-updater (my-progressed-pessimistic children-progressed-pessimistic)
-    (binary-pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
-
-(defmethod optimistic-regressor ((n <or-node>))
-  (make-simple-alist-updater (my-regressed-optimistic children-regressed-optimistic)
-    (binary-pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
-
-(defmethod pessimistic-regressor ((n <or-node>))
-  (make-simple-alist-updater (my-regressed-pessimistic children-regressed-pessimistic)
-    (binary-pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
-
+  (add-variable n 'children-progressed-optimistic :internal :simple-update-fn (or-node-progressed-optimistic-aggregator n) :dependants '(progressed-optimistic))
+  (add-variable n 'children-progressed-pessimistic :internal :simple-update-fn (or-node-progressed-pessimistic-aggregator n) :dependants '(progressed-pessimistic))
+  (add-variable n 'children-regressed-optimistic :internal :simple-update-fn (or-node-regressed-optimistic-aggregator n) :dependants '(regressed-optimistic))
+  (add-variable n 'children-regressed-pessimistic :internal :simple-update-fn (or-node-regressed-pessimistic-aggregator n) :dependants '(regressed-pessimistic)))
 
 
 
@@ -76,7 +50,7 @@
 ;; Children outputs are aggregated together
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod child-progressed-optimistic-aggregator ((n <or-node>))
+(defun or-node-progressed-optimistic-aggregator (n)
   #'(lambda (l)
       ;; Note that we're treating the case with no children specially
       ;; in optimistic progression and regression
@@ -84,11 +58,11 @@
 	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
-(defmethod child-progressed-pessimistic-aggregator ((n <or-node>))
+(defun or-node-progressed-pessimistic-aggregator (n)
   #'(lambda (l)
       (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
 
-(defmethod child-regressed-optimistic-aggregator ((n <or-node>))
+(defun or-node-regressed-optimistic-aggregator (n)
   #'(lambda (l)
       ;; Note that we're treating the case with no children specially
       ;; in optimistic progression and regression
@@ -96,7 +70,7 @@
 	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
-(defmethod child-regressed-pessimistic-aggregator ((n <or-node>))
+(defun or-node-regressed-pessimistic-aggregator (n)
   #'(lambda (l)
       (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
 

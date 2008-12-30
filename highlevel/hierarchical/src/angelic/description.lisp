@@ -1,6 +1,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; description.lisp
-;; Define abstract action descriptions
+;; Define action descriptions
+;; 
+;; The most general kind of action description takes in a valuation (function 
+;; from states to numbers) and returns another valuation.
+;; 
+;; Required operations
+;; - successor-set
+;; - regress
+;;
+;; Descriptions of primitive actions should have a method for
+;; - succ-state
+;;
+;; Optimistic (complete descriptions) should have methods for
+;; - progress-sound-valuation
+;; - regress-sound-valuation
+;;
+;; Analogously for pessimistic (complete)
+;;
+;; Functions are interpreted as descriptions, and the above ops are implemented
+;; by just applying the function (TODO this is a bit strange - is it needed?)
+;;
+;;
+;;
+;; A valuation is a function from a state space to the real numbers.  The same
+;; data type is used for both forward valuations (reward from initial state till
+;; this point), and backward valuations (reward from this point till goal)
+;; 
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :lookahead)
@@ -136,10 +163,9 @@
 	  (s2 (sv-s (second vals)))
 	  (v2 (sv-v (second vals)))
 	  (achievable nil))
-      (unless (and (is-empty s1) (is-empty s2)) (push (my+ v1 v2) achievable))
-      (when (intersects s1 s2) (push (my- (my+ v1) (my+ v2)) achievable))
+      (when (intersects s1 s2) (push (my+ v1 v2) achievable))
       (unless (subset s1 s2) (push v1 achievable))
-      (unless (subset s1 s2) (push v2 achievable))
+      (unless (subset s2 s1) (push v2 achievable))
       (apply #'mymax achievable))))
 
 
@@ -156,7 +182,7 @@
   ((succ-state-fn :initarg :succ-state-fn :reader succ-state-fn)
    (predecessor-fn :initarg :predecessor-fn :reader predecessor-fn)
    (reward-fn :initarg :reward-fn :reader reward-fn))
-  (:documentation "A simple description has methods for successor-set and hla-reward.  It then progresses/regresses valuations by first finding the successor/predecessor-set, then calling hla-reward.   The successor, predecessor and reward functions can be provided using the initargs :succ-state-fn, :predecessor-fn and :reward-fn.  Alternatively, subclasses may override successor-set and hla-reward."))
+  (:documentation "A simple description has methods for successor-set and hla-reward.  It then progresses/regresses valuations by first finding the successor/predecessor-set, then calling hla-reward.   The successor, predecessor and reward functions can be provided using the initargs :succ-state-fn, :predecessor-fn and :reward-fn.  Alternatively, subclasses may override successor-set, regress and/or hla-reward."))
 
 (defgeneric hla-complete-reward (d s s2)
   (:documentation "hla-complete-reward SIMPLE-DESCRIPTION STATE-SET SUCC-STATE-SET.  

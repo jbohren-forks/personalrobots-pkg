@@ -11,12 +11,7 @@
    (children :reader children :initform (make-hash-table :test #'eql)) 
    
 
-   (status :accessor status)
-   
-   (optimistic-progressor :reader optimistic-progressor)
-   (pessimistic-progressor :reader pessimistic-progressor)
-   (optimistic-regressor :reader optimistic-regressor)
-   (pessimistic-regressor :reader pessimistic-regressor))
+   (status :accessor status))
   
   (:documentation "A valuation-bound node implements the following protocol:
 The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  The node in turn is responsible for passing back four corresponding variables {progressed|regressed}-{optimistic|pessimistic}.  The children are assumed to follow the same protocol.  The node is responsible for setting the inputs of its children.  Each child's outputs become external variables of this node, named using the child's unique ID.  For example, child I's progressed-optimistic variable gets tied to this node's variable (child-progressed-optimistic . I).  "))
@@ -49,11 +44,12 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
     (add-variable n 'my-regressed-pessimistic :internal :dependees '(initial-pessimistic final-pessimistic)
 		  :simple-update-fn (make-alist-function (initial-pessimistic final-pessimistic) (regress-pessimistic descs action initial-pessimistic final-pessimistic))))
 
-  ;; Outputs to parents.  Subclass will define the update functions (progressor/regressor).  Subclass :after method can add additional dependees of these variables.
-  (add-variable n 'progressed-optimistic :internal :update-fn (optimistic-progressor n) :dependees '(my-progressed-optimistic))
-  (add-variable n 'progressed-pessimistic :internal :update-fn (pessimistic-progressor n) :dependees '(my-progressed-pessimistic))
-  (add-variable n 'regressed-optimistic :internal :update-fn (optimistic-regressor n) :dependees '(my-regressed-optimistic))
-  (add-variable n 'regressed-pessimistic :internal :update-fn (pessimistic-regressor n) :dependees '(my-regressed-pessimistic)))
+  ;; Outputs to parents.  Subclass :after method can add additional dependees of these variables.  For now, the update function always works the same way - e.g.,
+  ;; we always compute progressed-optimistic by taking a pointwise-min of the parent variables.  Maybe allow child to change this if situation comes up where that's needed.
+  (add-variable n 'progressed-optimistic :internal :update-fn (make-simple-update-fn #'node-optimistic-progression) :dependees '(my-progressed-optimistic))
+  (add-variable n 'progressed-pessimistic :internal :update-fn (make-simple-update-fn #'node-pessimistic-progression) :dependees '(my-progressed-pessimistic))
+  (add-variable n 'regressed-optimistic :internal :update-fn (make-simple-update-fn #'node-optimistic-regression) :dependees '(my-regressed-optimistic))
+  (add-variable n 'regressed-pessimistic :internal :update-fn (make-simple-update-fn #'node-pessimistic-regression) :dependees '(my-regressed-pessimistic)))
 
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,19 +64,11 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 (defgeneric compute-cycle (n))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Generic functions defined here just so all subclasses
-;; can use them without namespace collisions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defgeneric child-progressed-optimistic-aggregator (n))
-(defgeneric child-progressed-pessimistic-aggregator (n))
-(defgeneric child-regressed-optimistic-aggregator (n))
-(defgeneric child-regressed-pessimistic-aggregator (n))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Things implemented here
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defmethod add-child ((n <node>) child-id new-node-type &rest args)
   "Add a child node.  The dependencies within the child will be set by its initialize-instance :after method.  Subclasses of <node> should add :after or :around methods to this to set up communication with the child."
@@ -106,6 +94,20 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 
 (defun planning-domain (n)
   (slot-value (root-node n) 'domain))
+
+(defun node-optimistic-progression (l)
+  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
+
+(defun node-pessimistic-progression (l)
+  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
+
+(defun node-optimistic-regression (l)
+  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
+
+(defun node-pessimistic-regression (l)
+  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; debug

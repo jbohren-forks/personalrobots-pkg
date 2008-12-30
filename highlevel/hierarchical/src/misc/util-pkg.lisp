@@ -204,6 +204,8 @@
 	   
 	   defaggregator
 	   compose
+	   nth-arg-fn
+
 	   fn
 	   arglist-fn
 	   is-standard-equality-test

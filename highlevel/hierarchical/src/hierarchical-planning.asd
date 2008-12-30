@@ -112,18 +112,23 @@
 				   ((:file "general")))))
 
 		 
-   (:module "env" :depends-on ("misc" "set" "prob")
+   (:module "env" :depends-on ("misc" "set" "prob" "agent")
 	    :components ((:file "env-pkg")
 			 (:file "env" :depends-on ("env-pkg"))
 			 (:file "fully-observable-env" :depends-on ("env"))
-			 (:file "trajectory" :depends-on ("env"))))
+			 (:file "trajectory" :depends-on ("env"))
+			 (:file "io-interface" :depends-on ("env"))))
+
+   (:module "agent" :depends-on ("misc")
+	    :components ((:file "agent")
+			 (:file "prompt-agent" :depends-on ("agent"))))
 
 
    (:module "angelic"
 	    :depends-on ("misc" "set" "data-struct" "mapping" "env")
 	    :components
 	    ((:file "angelic-pkg")
-	     (:file "planning-problem" :depends-on ("angelic-pkg"))
+	     (:file "planning-problem" :depends-on ("angelic-pkg" "description"))
 	     (:file "hierarchy" :depends-on ("angelic-pkg" "planning-problem"))
 	     (:file "description" :depends-on ("angelic-pkg"))
 	     (:file "variable-hierarchy" :depends-on ("description" "hierarchy"))

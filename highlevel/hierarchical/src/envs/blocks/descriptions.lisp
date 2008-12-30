@@ -55,6 +55,20 @@
 		   :add-list ((gripper-pos ?xt ?yt))
 		   :poss-delete-list ((faceR) (faceL)) 
 		   :delete-list ((gripper-pos ?xs ?ys)))))
+
+       (navigate-beside
+	:var-domains ((?x columns) (?y rows))
+	:effects ((:precond 
+		   (and)
+		   :poss-add-list ((for-all ((?x2 columns)) (or (r ?x2 ?x) (r ?x ?x2))
+					    (gripper-pos ?x ?y)))
+		   :poss-delete-list ((for-all ((?x3 columns) (?y3 rows)) 
+					       (or (not (int= ?y ?y3))
+						   (not (or (r ?x ?x3) (r ?x3 ?x))))
+					       (gripper-pos ?x3 ?y3)))
+		   :reward (negated-manhattan-dist-to-neighbor ?complete-set ?x ?y))))
+			    
+			    
        
        (nav 
 	:var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
@@ -81,6 +95,7 @@
 		   :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xc) (r ?xc ?x)) (gripper-pos ?x ?yt)) )
 		   :add-list ((on ?b ?c) (clear ?a) (block-pos ?b ?xc ?yt) (free ?xb ?yb)))))
 
+       ;; Is this used?
        (get
 	:var-domains ((?b actual-blocks) (?a blocks) (?xb columns) (?yb rows) (?xt columns))
 	:effects ((:precond (and (clear ?b) (on ?b ?a))
@@ -92,6 +107,7 @@
 					  (gripper-pos ?x ?y)))
 		   :poss-add-list ((for-all ((?x columns)) (or (r ?x ?xb) (r ?xb ?x)) (gripper-pos ?x ?yb)))
 		   :add-list ((clear ?a) (free ?xb ?yb)))))
+
     
        (move-to
 	:var-domains ((?b actual-blocks) (?c blocks) (?xc columns) (?yc all-rows) (?yt rows))
@@ -153,6 +169,14 @@
 		  (and (gripper-pos ?x ?ys) (above ?ys ?yt) (for-all (?y rows) (free ?x ?y)))
 		  :add-list ((gripper-pos ?x ?yt))
 		  :delete-list ((gripper-pos ?x ?ys)))))
+
+      (navigate-beside
+       :var-domains ((?x columns) (?y rows))
+       :effects ((:precond 
+		  (and)
+		  :reward -infty)))
+			   
+
     
       (navigate
        :var-domains ((?xs columns) (?ys rows) (?xt columns) (?yt rows))
@@ -200,6 +224,9 @@
 
 (defun negated-manhattan-dist (xs ys xt yt)
   (- (+ (abs-diff xs xt) (abs-diff ys yt))))
+
+(defun negated-manhattan-dist-to-neighbor (cs x y)
+  (1+ (reduce-set #'mymax (possible-gripper-positions cs) :key #'(lambda (pos) (negated-manhattan-dist (first pos) (second pos) x y)))))
 
 (defun illegal-gripper-pos (s)
   (let ((pos (possible-gripper-positions s)))

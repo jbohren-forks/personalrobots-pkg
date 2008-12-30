@@ -92,7 +92,7 @@ The top-level allows initargs :goal, :init-state, :action-descriptions, :reward-
   s)
 
 (defgeneric primitive-action-description (e a)
-  (:documentation "primitive-action-description PLANNING-DOMAIN ACTION.  Get description of this action.")
+  (:documentation "primitive-action-description PLANNING-DOMAIN ACTION.  Get description of this action.  A description is something which has succ-state, successor-set, and regress defined.")
   (:method ((e <planning-problem>) a) (mapping:evaluate (action-descriptions e) a)))
 
 (defun succeeds? (e actions &optional (s (init-state e)))

@@ -204,7 +204,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 		(if (dnf-consistent clause (ncc-precond ncstrips-clause))
 		    (let ((r (nstrips-reward (ncc-effect ncstrips-clause))))
 		      (etypecase r
-			(number r)
+			(extended-real r)
 			(function (funcall r (make-prop-state-set (pss-domain s) clause)))))
 		  (funcall fn)))))))
 
@@ -377,7 +377,7 @@ Another addition is that in the precondition, in any position where a term would
 	   (parse-reward-spec (spec)
 	     "Parse a reward spec of the form (FNAME . ARGLIST)"
 	     (typecase spec
-	       ((or null number) `(constantly ,spec))
+	       ((or null number (member -infty infty)) `(constantly ,(typecase spec (null nil) (symbol `',spec) (otherwise spec))))
 	       (otherwise
 		(dsbind (fname . args) spec
 		  (if (or (member '?complete-set args) (member '?sound-set args)

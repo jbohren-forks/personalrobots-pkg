@@ -22,6 +22,21 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 	    (dolist (f frest x)
 	      (setf x (funcall f x))))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pick out nth arg
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro nth-arg-fn (n)
+  "nth-arg-fn N.  N (unevaluated) must be a positive integer.  Expand to code that evaluates to a function that returns its Nth argument, ignoring the others."
+  (let ((vars (loop for i upto n collecting (gensym)))
+	(args (gensym)))
+    `#'(lambda (,@vars &rest ,args)
+	 (declare (ignore ,args ,@(butlast vars)))
+	 ,(nth n vars))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Building functions from other functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
