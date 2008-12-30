@@ -36,6 +36,7 @@
 
 using namespace ros;
 using namespace tf;
+using namespace std;
 
 
 static const double MAX_ROT_VEL = 0.5;
