@@ -43,12 +43,6 @@ public:
 
   // A function to call to send data periodically
   void test () {
-    NEWMAT::Matrix mat(4,4);
-    mat << 1 << 0 << 0 << 1
-        << 0 << 1 << 0 << 2
-        << 0 << 0 << 1 << 3
-        << 0 << 0 << 0 << 1;
-
     broadcaster.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), ros::Time().fromSec(1), "frame1", "frame2");
     /*    pTFServer->sendEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
     pTFServer->sendInverseEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
