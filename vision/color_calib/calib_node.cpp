@@ -39,7 +39,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "std_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
@@ -55,7 +55,7 @@ class ColorCalib : public ros::node
 public:
   std_msgs::ImageArray image_msg;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   bool first;
 
@@ -73,7 +73,7 @@ public:
     else
       first = false;
 
-    cv_mutex.lock();
+    boost::mutex::scoped_lock lock(cv_mutex);
 
     for (uint32_t i = 0; i < image_msg.get_images_size(); i++)
     {
@@ -108,16 +108,13 @@ public:
         delete cv_bridge;
       }
     }
-    cv_mutex.unlock();
   }
 
   void check_keys() 
   {
-    cv_mutex.lock();
+    boost::mutex::scoped_lock lock(cv_mutex);
     if (cvWaitKey(3) == 10)
       self_destruct();
-
-    cv_mutex.unlock();
   }
 
 };
