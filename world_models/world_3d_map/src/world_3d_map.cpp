@@ -413,7 +413,7 @@ private:
     copy->set_pts_size(n);	
     for (unsigned int k = 0 ; k < n ; ++k)
       if (random_utils::uniform(&m_rng, 0.0, 1.0) < frac)
-	if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
+	if (std::isfinite(cloud.pts[k].x) && std::isfinite(cloud.pts[k].y) && std::isfinite(cloud.pts[k].z))
 	  copy->pts[j++] = cloud.pts[k];
     copy->set_pts_size(j);
 	
