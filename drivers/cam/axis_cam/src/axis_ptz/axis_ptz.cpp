@@ -45,7 +45,7 @@ public:
 
   axis_cam::PTZActuatorCmd ptz_cmd_saved;
 
-  ros::thread::mutex control_mutex;
+  boost::mutex control_mutex;
 
   Axis_PTZ_node() : node("axis_ptz"), cam(NULL), cmd_updated(false)
   {
