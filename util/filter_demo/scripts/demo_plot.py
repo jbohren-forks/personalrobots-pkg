@@ -50,10 +50,10 @@ for line in  open("output.txt").readlines():
 fig=plot.figure(1)
 axes1 = fig.add_subplot(211)
 axes2 = fig.add_subplot(212)
-axes1.set_title('Channel 1: sin(2*pi*t/10)')
+axes1.set_title('Channel 1: sin(2*pi*t/25)')
 
 axes1.set_ylabel('Amplitude')
-axes2.set_title('Channel 2: cos(2*pi*t/20)')
+axes2.set_title('Channel 2: cos(2*pi*t/50)')
 axes2.set_xlabel('N')
 axes2.set_ylabel('Amplitude')
 
