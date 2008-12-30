@@ -39,6 +39,7 @@ import array
 import rosrecord
 #import visualize
 
+from vis import Vis
 
 def planar(x, y, z):
   from scipy import optimize
@@ -92,6 +93,8 @@ oe_y = []
 first_pair = None
 inliers = []
 
+
+vis = Vis(filename)
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
     break
@@ -123,7 +126,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,10000
+  start,end = 0,100
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -163,6 +166,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
       break
     if start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
+        vis.show(msg.left_image.data, [])
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
         vo.handle_frame(af)
         x,y,z = vo.pose.xform(0,0,0)
