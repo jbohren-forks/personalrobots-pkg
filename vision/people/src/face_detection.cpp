@@ -94,6 +94,8 @@ public:
 
   bool quit_;
 
+  std::string node_name_;
+
   ros::thread::mutex cv_mutex_;
 
   // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
@@ -109,7 +111,8 @@ public:
     people_(NULL),
     haar_filename_(haar_filename),
     external_init_(external_init),
-    quit_(false)
+    quit_(false),
+    node_name_(node_name)
   { 
     
     if (do_display_) {
@@ -128,11 +131,12 @@ public:
     sync_.subscribe("stereodcam/disparity",dimage_,1);
     sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
     sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.ready();
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
     if (external_init_) {
-      subscribe<robot_msgs::PositionMeasurement>("person_measurement",pos_,&FaceDetector::pos_cb,1);
+      subscribe<robot_msgs::PositionMeasurement>("people_tracking_filter",pos_,&FaceDetector::pos_cb,1);
     }
 
   }
@@ -165,9 +169,9 @@ public:
   void pos_cb() {
 
     // Check that the message came from the person filter, not one of the individual trackers.
-    if (pos_.name != "person_filter") {
-      return;
-    }
+    //if (pos_.name != "people_tracking_filter") {
+    //  return;
+    // }
 
     cv_mutex_.lock();
     // Find the person in my list. If they don't exist, or this is an initialization, create them.
@@ -184,6 +188,7 @@ public:
     }
     // Set the position.
     people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
+    printf("Face center reset: %f %f %f\n", -pos_.pos.y, -pos_.pos.z, pos_.pos.x);
     cv_mutex_.unlock();
 
     /** @todo Check the time of the position message. If it's too old, ignore it. */
@@ -280,7 +285,7 @@ public:
 
 	  if (do_publish) {
 	    pos.header.stamp = limage_.header.stamp;
-	    pos.name = "face_detection";
+	    pos.name = node_name_;
 	    pos.object_id = id;
 	    pos.pos.x = cvmGet(xyz,0,2);
 	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
@@ -289,7 +294,7 @@ public:
 	    pos.reliability = 0.8;
 	    pos.initialization = 0;
 	    //pos.covariance = ;
-	    publish("person_measurement",pos);
+	    publish("people_tracking_measurements",pos);
 	  }
 	}
 
@@ -344,7 +349,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   bool use_depth = true;
   bool do_display = true;
-  bool external_init = false;
+  bool external_init = true;
 
   if (argc < 3) {
     cerr << "Node name ending and path to cascade file required.\n" << endl;
