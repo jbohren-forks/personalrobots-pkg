@@ -21,6 +21,7 @@ import unittest
 import math
 import copy
 
+from image_msgs.msg import RawStereo
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast
@@ -64,6 +65,19 @@ class imgAdapted:
   def tostring(self):
     return self.data
 
+class dcamImage:
+  def __init__(self, m):
+    ma = m.byte_data # MultiArray
+
+    self.data = ma.data
+    d = ma.layout.dim
+    assert d[0].label == "height"
+    assert d[1].label == "width"
+    self.size = (d[1].size, d[0].size)
+
+  def tostring(self):
+    return self.data
+
 cam = None
 filename = "/u/prdata/videre-bags/loop2-color.bag"
 filename = "/u/prdata/videre-bags/greenroom-2008-11-3-color.bag"
@@ -78,7 +92,6 @@ oe_y = []
 first_pair = None
 
 for topic, msg, t in rosrecord.logplayer(filename):
-  print topic, msg
   if rospy.is_shutdown():
     break
 
@@ -109,7 +122,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,30
+  start,end = 0,10000
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -135,6 +148,32 @@ for topic, msg, t in rosrecord.logplayer(filename):
       print framecounter
     framecounter += 1
 
+  if topic == "/dcam/raw_stereo":
+    if not cam:
+      cam = camera.StereoCamera(msg.right_info)
+      vos = [VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+            ]
+      vo_x = [ [] for i in vos]
+      vo_y = [ [] for i in vos]
+      vo_u = [ [] for i in vos]
+      vo_v = [ [] for i in vos]
+      trajectory = [ [] for i in vos]
+    if framecounter == end:
+      break
+    if start <= framecounter and (framecounter % 1) == 0:
+      for i,vo in enumerate(vos):
+        af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
+        vo.handle_frame(af)
+        x,y,z = vo.pose.xform(0,0,0)
+        trajectory[i].append((x,y,z))
+        vo_x[i].append(x)
+        vo_y[i].append(z)
+        x1,y1,z1 = vo.pose.xform(0,0,1)
+        vo_u[i].append(x1 - x)
+        vo_v[i].append(z1 - z)
+      print framecounter
+    framecounter += 1
+
   if topic.endswith("odom_estimation"):
     oe_x.append(-msg.pose.position.y)
     oe_y.append(msg.pose.position.x)
@@ -143,13 +182,15 @@ print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
 print "There are", len(set([t.p[-1] for t in vo.tracks if t.alive])), "unique endpoints on live tracks"
 
-# Attempt to compute best possible end-to-end pose
-vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True)
-f0 = SparseStereoFrame(*first_pair)
-f1 = SparseStereoFrame(imgL, imgR)
-vo.handle_frame(f0)
-vo.handle_frame(f1)
-quality_pose = vo.pose
+quality_pose = Pose()
+if 0:
+  # Attempt to compute best possible end-to-end pose
+  vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True)
+  f0 = SparseStereoFrame(*first_pair)
+  f1 = SparseStereoFrame(imgL, imgR)
+  vo.handle_frame(f0)
+  vo.handle_frame(f1)
+  quality_pose = vo.pose
 
 if 0:
   for t in vos[2].all_tracks:
@@ -182,14 +223,14 @@ xlim = pylab.xlim()
 ylim = pylab.ylim()
 xrange = xlim[1] - xlim[0]
 yrange = ylim[1] - ylim[0]
-r = max(xrange, yrange) * 1.5
+r = max(xrange, yrange) * 0.75
 mid = sum(xlim) / 2
-pylab.xlim(mid - 0.5 * r, mid + 0.5 * r)
+pylab.xlim(mid - r, mid + r)
 mid = sum(ylim) / 2
-pylab.ylim(mid - 0.5 * r, mid + 0.5 * r)
+pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
-#pylab.show()
+pylab.show()
 
 for vo in vos:
   print vo.name()
