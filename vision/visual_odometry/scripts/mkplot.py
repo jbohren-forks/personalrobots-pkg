@@ -40,6 +40,7 @@ import rosrecord
 #import visualize
 
 from vis import Vis
+import transformations
 
 def planar(x, y, z):
   from scipy import optimize
@@ -93,8 +94,10 @@ oe_y = []
 first_pair = None
 inliers = []
 
-
 vis = Vis(filename)
+wheel_pose = None
+prev_wheel_pose = None
+
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
     break
@@ -107,7 +110,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+      VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
@@ -126,12 +129,12 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,100
+  start,end = 0,99999
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
       break
-    if start <= framecounter and (framecounter % 1) == 0:
+    if (start <= framecounter and (framecounter % 1) == 0):
       imgR = imgAdapted(msg.images[0])
       imgL = imgAdapted(msg.images[1])
       # jdc debugging
@@ -155,7 +158,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
   if topic == "/dcam/raw_stereo":
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
-      vos = [VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+      vos = [
+             VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
             ]
       vo_x = [ [] for i in vos]
       vo_y = [ [] for i in vos]
@@ -164,9 +168,15 @@ for topic, msg, t in rosrecord.logplayer(filename):
       trajectory = [ [] for i in vos]
     if framecounter == end:
       break
-    if start <= framecounter and (framecounter % 1) == 0:
+    has_moved = False
+    angle_thresh = 0.0003
+    if not wheel_pose:
+      has_moved = True # be conservative until wheel odom starts up
+    elif not prev_wheel_pose or prev_wheel_pose.further_than(wheel_pose, 0.01, angle_thresh):
+      prev_wheel_pose = wheel_pose
+      has_moved = True
+    if has_moved and start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
-        vis.show(msg.left_image.data, [])
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
         vo.handle_frame(af)
         x,y,z = vo.pose.xform(0,0,0)
@@ -176,13 +186,24 @@ for topic, msg, t in rosrecord.logplayer(filename):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
+      inliers = vos[0].pe.inliers()
+      pts = [(1,int(x0),int(y0)) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+      vis.show(msg.left_image.byte_data.data, pts)
       print framecounter, vo.inl, "inliers"
       inliers.append(vo.inl)
+    else:
+      print framecounter
+      
     framecounter += 1
 
   if topic.endswith("odom_estimation"):
     oe_x.append(-msg.pose.position.y)
     oe_y.append(msg.pose.position.x)
+
+    p = msg.pose.position
+    o = msg.pose.orientation
+    R = transformations.rotation_matrix_from_quaternion([o.x, o.y, o.z, o.w])
+    wheel_pose = Pose(R[:3,:3], [ p.x, p.y, p.z ])
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"

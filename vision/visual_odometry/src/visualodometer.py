@@ -111,6 +111,23 @@ class Pose:
     eud = [abs(eu0[i] - eu1[i]) for i in [0,1,2]]
     return (sqrt(numpy.dot(d, d.conj())), eud[0], eud[1], eud[2])
 
+  def further_than(self, other, pos_d, ori_d):
+    p0 = self.xform(0,0,0)
+    d0 = self.xform(0,0,1)
+    p1 = other.xform(0,0,0)
+    d1 = other.xform(0,0,1)
+    d = sqrt(sum([((a-b)**2) for a,b in zip(p0,p1)]))
+    v0 = [ (b - a) for (a,b) in zip(p0,d0) ]
+    v1 = [ (b - a) for (a,b) in zip(p1,d1) ]
+    dot = sum([(a*b) for a,b in zip(v0,v1)])
+    if dot >= 1.0:
+      th = 0.0
+    else:
+      th = acos(dot)
+    #print "d", d, "th", th
+
+    return (d > pos_d) or (abs(th) > ori_d)
+
   def distance(self):
     x,y,z = self.xform(0,0,0)
     return sqrt(x * x + y * y + z * z)
@@ -314,6 +331,8 @@ class VisualOdometer:
 
     self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
+    self.position_thresh = kwargs.get('position_thresh', 0.1)
+    self.angle_thresh = kwargs.get('angle_thresh', (2 * pi / 800))
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
@@ -581,8 +600,13 @@ class VisualOdometer:
         (inl, rot, shift) = solution
         diff_pose = self.mkpose(rot, shift)
         if self.scavenge:
-          (inl, rot, shift) = self.scavenger(diff_pose, ref, frame)
-          diff_pose = self.mkpose(rot, shift)
+          solution = self.scavenger(diff_pose, ref, frame)
+          if solution and solution[0] > 5:
+            (inl, rot, shift) = solution
+            diff_pose = self.mkpose(rot, shift)
+          else:
+            inl = 0
+            diff_pose = Pose()
       else:
         inl = 0
         diff_pose = Pose()
@@ -591,8 +615,8 @@ class VisualOdometer:
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
       #print "frame", frame.id, "key:", ref.id, "inliers:", inl
-      is_far = self.inl < self.inlier_thresh
-      if (self.keyframe != self.prev_frame) and is_far:
+      is_far = (self.inl < self.inlier_thresh) # or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
+      if (self.keyframe != self.prev_frame) and is_far: 
         self.change_keyframe(self.prev_frame)
         return self.handle_frame_0(frame)
       Tok = ref.pose
