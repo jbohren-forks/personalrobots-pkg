@@ -816,7 +816,8 @@ void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE*
 		}
 
 		int costToGoal = PathCost - costFromStart;
-		costFromStart += searchstateinfo->costtobestnextstate;
+		int transcost = searchstateinfo->g - ((ARAState*)(searchstateinfo->bestnextstate->PlannerSpecificData))->v;
+		costFromStart += transcost;
 
 		fprintf(fOut, "g=%d-->state %d, h = %d ctg = %d  ", searchstateinfo->g, 			
 			searchstateinfo->bestnextstate->StateID, searchstateinfo->h, costToGoal);
