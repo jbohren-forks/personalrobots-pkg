@@ -6,7 +6,7 @@
   </description>
   <author>Melonee Wise/mwise@willowgarage.com</author>
   <license>BSD</license>
-  <review status="API cleared" notes=""/>
+  <review status="API" notes=""/>
   <url>http://pr.willowgarage.com</url>
   <depend package="misc_utils" />
   <depend package="rosoct" />
