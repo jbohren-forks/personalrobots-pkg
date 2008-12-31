@@ -80,7 +80,7 @@ class dcamImage:
   def tostring(self):
     return self.data
 
-if 1:
+if 0:
   def rotation(angle, x, y, z):
     return numpy.array([
       [ 1 + (1-cos(angle))*(x*x-1)         ,    -z*sin(angle)+(1-cos(angle))*x*y   ,    y*sin(angle)+(1-cos(angle))*x*z  ],
