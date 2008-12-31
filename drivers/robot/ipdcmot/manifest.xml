@@ -7,7 +7,7 @@ This is an IP-based motor controller.
 <review status="unreviewed" notes=""/>
 <url>http://stair.stanford.edu</url>
 <depend package="roscpp"/>
-<depend package="rosthread"/>
+<depend package="boost"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lipdcmot"/>
 </export>
