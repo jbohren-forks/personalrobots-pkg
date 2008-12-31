@@ -97,6 +97,9 @@ inliers = []
 vis = Vis(filename)
 wheel_pose = None
 prev_wheel_pose = None
+wheel_o = None
+prev_wheel_o = None
+wheel_p = None
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -169,12 +172,27 @@ for topic, msg, t in rosrecord.logplayer(filename):
     if framecounter == end:
       break
     has_moved = False
-    angle_thresh = 0.0003
+    angle_thresh = 0.03
+
     if not wheel_pose:
       has_moved = True # be conservative until wheel odom starts up
     elif not prev_wheel_pose or prev_wheel_pose.further_than(wheel_pose, 0.01, angle_thresh):
       prev_wheel_pose = wheel_pose
+      prev_wheel_o = wheel_o
       has_moved = True
+
+    elif not prev_wheel_o == None:
+      w = wheel_o
+      yaw1 = math.atan2(2*(w.x*w.y + w.w*w.z), w.x*w.x + w.w*w.w - w.y*w.y - w.z*w.z)
+      w = prev_wheel_o
+      yaw2 = math.atan2(2*(w.x*w.y + w.w*w.z), w.x*w.x + w.w*w.w - w.y*w.y - w.z*w.z)
+      if abs(yaw1-yaw2) > angle_thresh:
+        print "*** Angle change: ", yaw1, abs(yaw1-yaw2)
+        has_moved = True
+        prev_wheel_pose = wheel_pose
+        prev_wheel_o = wheel_o
+
+
     if has_moved and start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
@@ -189,7 +207,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
       inliers = vos[0].pe.inliers()
       pts = [(1,int(x0),int(y0)) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
       vis.show(msg.left_image.byte_data.data, pts)
-      print framecounter, vo.inl, "inliers"
+
+      print "pose", framecounter, vo.inl, x, y, z
+
       inliers.append(vo.inl)
     else:
       print framecounter
@@ -202,6 +222,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
 
     p = msg.pose.position
     o = msg.pose.orientation
+    wheel_o = o
+    wheel_p = p
     R = transformations.rotation_matrix_from_quaternion([o.x, o.y, o.z, o.w])
     wheel_pose = Pose(R[:3,:3], [ p.x, p.y, p.z ])
 
