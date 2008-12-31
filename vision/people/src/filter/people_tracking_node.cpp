@@ -50,6 +50,7 @@ static const unsigned int num_meas_show              = 10;
 static const double       sequencer_delay            = 0.2;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
+static const string       fixed_frame                = "odom_combined";
 
 
 namespace estimation
@@ -126,9 +127,7 @@ namespace estimation
     pos_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
     pos_rel.stamp_    = message->header.stamp;
     pos_rel.frame_id_ = message->header.frame_id;
-    // TODO: REMOVE AFTER DEBUGGING
-    //robot_state_.transformVector("odom_combined", pos_rel, pos_abs);
-    pos_abs = pos_rel;
+    robot_state_.transformVector(fixed_frame, pos_rel, pos_abs);
 
     // get position covariance
     SymmetricMatrix cov(3);
@@ -170,7 +169,7 @@ namespace estimation
     if (meas_vis_counter_ == num_meas_show) meas_vis_counter_ = 0;
 
     std_msgs::PointCloud  meas_cloud; 
-    meas_cloud.header.frame_id = "odom";
+    meas_cloud.header.frame_id = fixed_frame;
     meas_cloud.pts = meas_vis_;
     publish("people_tracker_measurements_visualization", meas_cloud);
 
@@ -207,7 +206,7 @@ namespace estimation
 	publish("people_tracker_filter", est_pos);
       }
       std_msgs::PointCloud  people_cloud; 
-      people_cloud.header.frame_id = "odom";
+      people_cloud.header.frame_id = fixed_frame;
       people_cloud.pts  = points;
       publish("people_tracker_filter_visualization", people_cloud);
 
