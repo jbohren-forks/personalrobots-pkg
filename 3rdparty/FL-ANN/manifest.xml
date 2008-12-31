@@ -1,0 +1,27 @@
+<package>
+  <description brief="FL-ANN">
+
+    FLANN is a library for performing fast approximate nearest neighbor
+    searches in high dimensional spaces. It contains a collection of
+    algorithms we found to work best for nearest neighbor search and a
+    system for automatically choosing the best algorithm and optimum
+    parameters depending on the dataset.
+
+    FLANN is written in C++ and contains bindings for the following
+    languages: C, MATLAB and Python.
+
+  </description>
+
+  <author>Marius Muja and David Lowe</author>
+  <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://www.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN</url>
+  <export>
+    <cpp cflags="-I${prefix}/build/flann-1.11-src/src/cpp" lflags="-Wl,-rpath,${prefix}/build/build/cpp -L${prefix}/build/build/cpp -lflann" />
+    <doxymaker external="http://www.cs.ubc.ca/~mariusm/uploads/FLANN/manual.pdf" />
+  </export>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
+
+</package>
