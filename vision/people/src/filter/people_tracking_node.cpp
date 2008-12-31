@@ -58,7 +58,7 @@ namespace estimation
   PeopleTrackingNode::PeopleTrackingNode(const string& node_name)
     : ros::node(node_name),
       node_name_(node_name),
-      message_sequencer_(this, "people_tracking_measurements", 
+      message_sequencer_(this, "people_tracker_measurements", 
 			 boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
@@ -93,11 +93,11 @@ namespace estimation
     param("~/prior_sigma_vel_z", prior_sigma_.vel_[2], 0.0);
 
     // advertise
-    advertise<robot_msgs::PositionMeasurement>("people_tracking_filter",10);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<std_msgs::PointCloud>("people_tracking_filter_visualization",10);
-    advertise<std_msgs::PointCloud>("people_tracking_measurements_visualization",10);
+    advertise<std_msgs::PointCloud>("people_tracker_filter_visualization",10);
+    advertise<std_msgs::PointCloud>("people_tracker_measurements_visualization",10);
   }
 
 
@@ -172,7 +172,7 @@ namespace estimation
     std_msgs::PointCloud  meas_cloud; 
     meas_cloud.header.frame_id = "odom";
     meas_cloud.pts = meas_vis_;
-    publish("people_tracking_measurements_visualization", meas_cloud);
+    publish("people_tracker_measurements_visualization", meas_cloud);
 
   }
 
@@ -204,12 +204,12 @@ namespace estimation
 	points[i].y = est_pos.pos.y;
 	points[i].z = est_pos.pos.z;
 
-	publish("people_tracking_filter", est_pos);
+	publish("people_tracker_filter", est_pos);
       }
       std_msgs::PointCloud  people_cloud; 
       people_cloud.header.frame_id = "odom";
       people_cloud.pts  = points;
-      publish("people_tracking_filter_visualization", people_cloud);
+      publish("people_tracker_filter_visualization", people_cloud);
 
       // sleep
       usleep(1e6/freq_);
@@ -234,7 +234,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   // get node name from arguments
-  string node_name("people_tracking");
+  string node_name("people_tracker");
 
   // create tracker node
   PeopleTrackingNode my_tracking_node(node_name);
