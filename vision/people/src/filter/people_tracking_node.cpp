@@ -66,7 +66,7 @@ namespace estimation
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
-      robot_state_(*this, true),
+      robot_state_(*this, true, 3000000000),
       tracker_counter_(0),
       meas_vis_(num_meas_show),
       meas_vis_counter_(0)
@@ -87,6 +87,8 @@ namespace estimation
     param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0);
     param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
     param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
+    sys_sigma_.pos_ /= freq_;
+    sys_sigma_.vel_ /= freq_;
 
     param("~/prior_sigma_pos_x", prior_sigma_.pos_[0], 0.0);
     param("~/prior_sigma_pos_y", prior_sigma_.pos_[1], 0.0);
@@ -129,7 +131,7 @@ namespace estimation
     pos_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
     pos_rel.stamp_    = message->header.stamp;
     pos_rel.frame_id_ = message->header.frame_id;
-    robot_state_.transformVector(fixed_frame, pos_rel, pos_abs);
+    robot_state_.transformPoint(fixed_frame, pos_rel, pos_abs);
 
     // get position covariance
     SymmetricMatrix cov(3);
@@ -147,8 +149,7 @@ namespace estimation
     if (tracker != NULL){
       ROS_INFO("%s: Update tracker %s with measurement from %s",  
 	       node_name_.c_str(), name.c_str(), message->name.c_str());
-      tracker->updatePrediction(time);
-      tracker->updateCorrection(pos_abs, cov);
+      tracker->updateCorrection(pos_abs, cov, time);
     }
 
     // initialize a new tracker
@@ -171,7 +172,7 @@ namespace estimation
     if (meas_vis_counter_ == num_meas_show) meas_vis_counter_ = 0;
 
     std_msgs::PointCloud  meas_cloud; 
-    meas_cloud.header.frame_id = fixed_frame;
+    meas_cloud.header.frame_id = pos_abs.frame_id_;
     meas_cloud.pts = meas_vis_;
     publish("people_tracker_measurements_visualization", meas_cloud);
 
@@ -194,10 +195,14 @@ namespace estimation
     ROS_INFO("%s: People tracking manager stated.", node_name_.c_str());
 
     while (ok()){
-
-      // publish result
       vector<std_msgs::Point32> points(trackers_.size());
+
+      // loop over trackers
       for (unsigned int i=0; i<trackers_.size(); i++){
+	// update prediction
+	trackers_[i]->updatePrediction(1/freq_);
+
+	// publish result
 	PositionMeasurement est_pos;
 	trackers_[i]->getEstimate(est_pos);
 	est_pos.object_id = tracker_names_[i];

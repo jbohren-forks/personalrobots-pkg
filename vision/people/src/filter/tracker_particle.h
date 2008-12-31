@@ -77,8 +77,10 @@ public:
   virtual double getQuality() const {return quality_;};
 
   /// update tracker
-  virtual bool updatePrediction(const double filter_time);
-  virtual bool updateCorrection(const tf::Vector3& meas, const MatrixWrapper::SymmetricMatrix& cov);
+  virtual bool updatePrediction(const double dt);
+  virtual bool updateCorrection(const tf::Vector3& meas, 
+				const MatrixWrapper::SymmetricMatrix& cov,
+				const double time);
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const;

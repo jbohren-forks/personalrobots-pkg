@@ -125,18 +125,12 @@ namespace estimation
 
 
   // update filter prediction
-  bool TrackerKalman::updatePrediction(const double  filter_time)
+  bool TrackerKalman::updatePrediction(const double dt)
   {
-    // TODO: SET COVARIANCE RELATIVE TO TIME
-
-    // set time step
-    double dt = filter_time - filter_time_;
-    assert(dt >= 0);
+    // set dt in sys model
     for (unsigned int i=1; i<=3; i++)
       sys_matrix_(i, i+3) = dt;
     sys_pdf_->MatrixSet(0, sys_matrix_);
-
-    filter_time_ = filter_time;
 
     // update filter
     bool res = filter_->Update(sys_model_);
@@ -148,9 +142,12 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
+  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
   {
     assert(cov.columns() == 3);
+
+    // set filter time
+    filter_time_ = time;
 
     // copy measurement
     ColumnVector meas_vec(3);

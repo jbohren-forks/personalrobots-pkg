@@ -10,8 +10,10 @@ rospack_add_executable(people_tracker
                        src/filter/gaussian_vector.cpp 
                        src/filter/gaussian_pos_vel.cpp 
                        src/filter/mcpdf_pos_vel.cpp
+                       src/filter/mcpdf_vector.cpp
                        src/filter/sysmodel_pos_vel.cpp
                        src/filter/measmodel_pos.cpp
+                       src/filter/measmodel_vector.cpp
 		       src/filter/tracker_particle.cpp 
 		       src/filter/tracker_kalman.cpp 
 		       src/filter/people_tracking_node.cpp )

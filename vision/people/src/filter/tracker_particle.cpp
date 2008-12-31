@@ -90,11 +90,10 @@ namespace estimation
 
 
   // update filter prediction
-  bool TrackerParticle::updatePrediction(const double  filter_time)
+  bool TrackerParticle::updatePrediction(const double dt)
   {
-    // set time step
-    sys_model_.SetDt(filter_time - filter_time_);
-    filter_time_ = filter_time;
+    // set de in sys model
+    sys_model_.SetDt(dt);
 
     // update filter
     bool res = filter_->Update(&sys_model_);
@@ -106,8 +105,13 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
+  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
   {
+    assert(cov.columns() == 3);
+
+    // set filter time
+    filter_time_ = time;
+
     // set covariance
     ((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
 
