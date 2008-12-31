@@ -33,7 +33,7 @@
 #include <gazebo/Body.hh>
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/PoseWithRatesStamped.h>
 
@@ -136,7 +136,7 @@ namespace gazebo
       private: Vector3 rpyOffsets;
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
-      private: ros::thread::mutex lock;
+      private: boost::mutex lock;
 
       /// \brief save last_time
       private: double last_time;

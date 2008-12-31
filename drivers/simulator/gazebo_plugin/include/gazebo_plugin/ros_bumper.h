@@ -34,7 +34,7 @@
 
 // ros messages
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <std_msgs/String.h>
 
 namespace gazebo
@@ -102,7 +102,7 @@ namespace gazebo
     private: std::string bumperTopicName;
 
     /// \brief A mutex to lock access to fields that are used in message callbacks
-    private: ros::thread::mutex lock;
+    private: boost::mutex lock;
 
     /// \brief broadcast some string for now.
     private: std_msgs::String bumperMsg;

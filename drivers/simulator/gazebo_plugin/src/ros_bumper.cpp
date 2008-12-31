@@ -94,7 +94,7 @@ void RosBumper::InitChild()
 // Update the controller
 void RosBumper::UpdateChild()
 {
-  this->lock.lock();
+  boost::mutex::scoped_lock sclock(this->lock);
 
   unsigned int num_contacts = this->myParent->GetContactCount();
 
@@ -124,7 +124,6 @@ void RosBumper::UpdateChild()
 
   this->myParent->ResetContactStates();
 
-  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

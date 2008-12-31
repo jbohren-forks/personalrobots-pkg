@@ -31,7 +31,7 @@
 #include <map>
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Image.h>
 
@@ -159,7 +159,7 @@ class RosStereoCamera : public Controller
   private: std::string rightFrameName;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
-  private: ros::thread::mutex lock;
+  private: boost::mutex lock;
 
 };
 

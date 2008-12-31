@@ -162,7 +162,7 @@ void RosBlockLaser::PutLaserData()
   /*  point scan from laser                                      */
   /*                                                             */
   /***************************************************************/
-  this->lock.lock();
+  boost::mutex::scoped_lock sclock(this->lock);
   // Add Frame Name
   this->cloudMsg.header.frame_id = this->frameName;
   this->cloudMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
@@ -245,7 +245,6 @@ void RosBlockLaser::PutLaserData()
 
   // send data out via ros message
   rosnode->publish(this->topicName,this->cloudMsg);
-  this->lock.unlock();
 
 
 

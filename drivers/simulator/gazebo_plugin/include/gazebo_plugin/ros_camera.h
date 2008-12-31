@@ -28,7 +28,7 @@
 #define ROS_CAMERA_HH
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <std_msgs/Image.h>
 #include <gazebo/Controller.hh>
 
@@ -130,7 +130,7 @@ class RosCamera : public Controller
   private: std::string frameName;
 
   /// \brief A mutex to lock access to fields that are used in ROS message callbacks
-  private: ros::thread::mutex lock;
+  private: boost::mutex lock;
 
   /// \brief size of image buffer
   private: uint32_t buf_size;
