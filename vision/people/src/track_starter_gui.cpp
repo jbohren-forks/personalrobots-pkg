@@ -139,10 +139,10 @@ public:
     uvd_ = cvCreateMat(1,3,CV_32FC1);
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
-    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     std::list<std::string> left_list;
     left_list.push_back(std::string("stereodcam/left/image_rect_color"));
-    left_list.push_back(std::string("stereodcam/left/image_rect"));    
+    //left_list.push_back(std::string("stereodcam/left/image_rect"));    
     sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("stereodcam/disparity",dimage_,1);
     sync_.subscribe("stereodcam/stereo_info", stinfo_,1);
@@ -188,7 +188,7 @@ public:
     bool do_calib = false;
     if (limage_.encoding != "mono") {
       // If this is a color image, set the calibration and convert it.
-      if (calib_color_ && lcolor_cal_.getFromParam("dcam/left/image_rect_color")) {
+      if (calib_color_ && lcolor_cal_.getFromParam("stereodcam/left/image_rect_color")) {
 	do_calib = true;      
       }
       // Convert the images to OpenCV format.
@@ -278,10 +278,11 @@ public:
 	  pm.pos.x = cvmGet(xyz_,0,2);
 	  pm.pos.y = -1.0*cvmGet(xyz_,0,0);
 	  pm.pos.z = -1.0*cvmGet(xyz_,0,1);
+	  printf("Publishing %f %f %f\n", cvmGet(xyz_,0,0),cvmGet(xyz_,0,1),cvmGet(xyz_,0,2));
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
-	  publish("people_tracking_measurements",pm);
+	  publish("people_tracker_measurements",pm);
 	  gxys[i].published = true;
 	}	
       }
