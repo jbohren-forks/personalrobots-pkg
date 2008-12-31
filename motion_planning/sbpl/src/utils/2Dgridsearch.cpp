@@ -296,11 +296,8 @@ bool SBPL2DGridSearch::search(unsigned char** Grid2D, unsigned char obsthresh, i
 		largestcomputedoptf_ = INFINITECOST;
 
 
-    printf("number of expansions during 2dgridsearch=%d time=%d msecs 2Dsolcost=%d largestoptfval=%d\n", 
+    printf("number of expansions during 2dgridsearch=%d time=%d msecs 2Dsolcost_inmm=%d largestoptfval=%d\n", 
 		numofExpands, (int)(((clock()-starttime)/(double)CLOCKS_PER_SEC)*1000), searchStates2D_[goalx_c][goaly_c].g, largestcomputedoptf_);
-    
-    //printHeuristicValues();
-
 
 	return false;
 }

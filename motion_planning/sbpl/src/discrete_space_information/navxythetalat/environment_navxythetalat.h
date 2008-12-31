@@ -39,8 +39,8 @@
 //definition of theta orientations
 //0 - is aligned with X-axis in the positive direction (1,0 in polar coordinates)
 //theta increases as we go counterclockwise
-//number of theta values 
-#define NAVXYTHETALAT_THETADIRS 36 
+//number of theta values - should be power of 2
+#define NAVXYTHETALAT_THETADIRS 32 
 
 //number of actions per x,y,theta state
 #define NAVXYTHETALAT_DEFAULT_ACTIONWIDTH 5 //decrease, increase, same angle while moving plus decrease, increase angle while standing.
@@ -76,8 +76,48 @@ typedef struct
 	char dTheta;
 	unsigned int cost; 
 	vector<sbpl_2Dcell_t> intersectingcellsV;
+	//start at 0,0,starttheta and end at endcell in continuous domain with half-bin less to account for 0,0 start
+	vector<EnvNAVXYTHETALAT3Dpt_t> intermptV;
 } EnvNAVXYTHETALATAction_t;
 
+
+typedef struct 
+{
+	int stateID;
+	int X;
+	int Y;
+	char Theta;
+} EnvNAVXYTHETALATHashEntry_t;
+
+
+typedef struct
+{
+	int motprimID;
+	unsigned char starttheta_c;
+	int additionalactioncostmult;
+	EnvNAVXYTHETALAT3Dcell_t endcell;
+	//intermptV start at 0,0,starttheta and end at endcell in continuous domain with half-bin less to account for 0,0 start
+	vector<EnvNAVXYTHETALAT3Dpt_t> intermptV; 
+}SBPL_xytheta_mprimitive;
+
+
+//variables that dynamically change (e.g., array of states, ...)
+typedef struct
+{
+
+	int startstateid;
+	int goalstateid;
+
+	//hash table of size x_size*y_size. Maps from coords to stateId	
+	int HashTableSize;
+	vector<EnvNAVXYTHETALATHashEntry_t*>* Coord2StateIDHashTable;
+
+	//vector that maps from stateID to coords	
+	vector<EnvNAVXYTHETALATHashEntry_t*> StateID2CoordTable;
+
+	//any additional variables
+
+}EnvironmentNAVXYTHETALAT_t;
 
 //configuration parameters
 typedef struct ENV_NAVXYTHETALAT_CONFIG
@@ -107,45 +147,12 @@ typedef struct ENV_NAVXYTHETALAT_CONFIG
 	vector<EnvNAVXYTHETALATAction_t*>* PredActionsV; //PredActionsV[i] - vector of pointers to the actions that result in a state with theta = i
 
 	int actionwidth; //number of motion primitives
+	vector<SBPL_xytheta_mprimitive> mprimV;
 
 	vector<sbpl_2Dpt_t> FootprintPolygon;
 } EnvNAVXYTHETALATConfig_t;
 
-typedef struct 
-{
-	int stateID;
-	int X;
-	int Y;
-	char Theta;
-} EnvNAVXYTHETALATHashEntry_t;
 
-
-typedef struct
-{
-	double endx_m;
-	double endy_m;
-	double endtheta_rad;
-	vector<EnvNAVXYTHETALAT3Dpt_t> intermptV;
-}SBPL_xytheta_mprimitive;
-
-
-//variables that dynamically change (e.g., array of states, ...)
-typedef struct
-{
-
-	int startstateid;
-	int goalstateid;
-
-	//hash table of size x_size*y_size. Maps from coords to stateId	
-	int HashTableSize;
-	vector<EnvNAVXYTHETALATHashEntry_t*>* Coord2StateIDHashTable;
-
-	//vector that maps from stateID to coords	
-	vector<EnvNAVXYTHETALATHashEntry_t*> StateID2CoordTable;
-
-	//any additional variables
-
-}EnvironmentNAVXYTHETALAT_t;
 
 class SBPL2DGridSearch;
 
@@ -156,7 +163,7 @@ public:
 
 	EnvironmentNAVXYTHETALAT();
 
-	bool InitializeEnv(const char* sEnvFile, vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
+	bool InitializeEnv(const char* sEnvFile, const char* sMotPrimFile);	
 	bool InitializeEnv(const char* sEnvFile);
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);
 	int  GetFromToHeuristic(int FromStateID, int ToStateID);
@@ -179,7 +186,7 @@ public:
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
 					   const vector<sbpl_2Dpt_t> & perimeterptsV,
 					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, 
-					   unsigned char obsthresh,  vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
+					   unsigned char obsthresh, const char* sMotPrimFile);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
     bool UpdateCost(int x, int y, unsigned char newcost);
@@ -189,6 +196,8 @@ public:
 	void GetCoordFromState(int stateID, int& x, int& y, int& theta) const;
 
 	int GetStateFromCoord(int x, int y, int theta);
+
+	void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath); 
 
 	bool IsObstacle(int x, int y);
 	bool IsValidConfiguration(int X, int Y, int Theta);
@@ -284,13 +293,19 @@ public:
 	void RemoveSourceFootprint(EnvNAVXYTHETALAT3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint);
 
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionindV=NULL);
 
 	double EuclideanDistance_m(int X1, int Y1, int X2, int Y2);
 
 	void ComputeReplanningData();
 	void ComputeReplanningDataforAction(EnvNAVXYTHETALATAction_t* action);
 
+	bool ReadMotionPrimitives(FILE* fMotPrims);
+	bool ReadinMotionPrimitive(SBPL_xytheta_mprimitive* pMotPrim, FILE* fIn);
+	bool ReadinCell(EnvNAVXYTHETALAT3Dcell_t* cell, FILE* fIn);
+	bool ReadinPose(EnvNAVXYTHETALAT3Dpt_t* pose, FILE* fIn);
 
+	void PrintHeuristicValues();
 
 };
 

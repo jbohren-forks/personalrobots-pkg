@@ -515,3 +515,19 @@ bool IsInsideFootprint(sbpl_2Dpt_t pt, vector<sbpl_2Dpt_t>* bounding_polygon){
 
 }
 
+
+double computeMinUnsignedAngleDiff(double angle1, double angle2)
+{
+    //get the angles into 0-2*PI range
+    angle1 = normalizeAngle(angle1);
+    angle2 = normalizeAngle(angle2);
+
+    double anglediff = fabs(angle1-angle2);
+
+    //see if we can take a shorter route
+    if(anglediff > PI_CONST){
+        anglediff = fabs(anglediff - 2*PI_CONST);
+    }
+
+    return anglediff;
+}

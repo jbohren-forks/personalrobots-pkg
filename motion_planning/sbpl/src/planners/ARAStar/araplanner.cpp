@@ -1194,5 +1194,12 @@ int ARAPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 	return 1;
 }
 
+
+void ARAPlanner::print_searchpath(FILE* fOut)
+{
+	PrintSearchPath(pSearchStateSpace_, fOut);
+}
+
+
 //---------------------------------------------------------------------------------------------------------
 
