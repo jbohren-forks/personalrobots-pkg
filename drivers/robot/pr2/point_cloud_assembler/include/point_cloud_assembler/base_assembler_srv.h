@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+//! \author Vijay Pradeep
+
 #include "ros/node.h"
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
@@ -42,7 +44,7 @@
 // Service
 #include "point_cloud_assembler/BuildCloud.h"
 
-#include "rosthread/mutex.h"
+#include "boost/thread.hpp"
 #include "math.h"
 
 namespace point_cloud_assembler
@@ -101,7 +103,7 @@ private:
 
   //! \brief Stores history of scans
   std::deque<std_msgs::PointCloud> scan_hist_ ;
-  ros::thread::mutex scan_hist_mutex_ ;
+  boost::mutex scan_hist_mutex_ ;
 
   //! \brief The number points currently in the scan history
   unsigned int total_pts_ ;

@@ -39,13 +39,13 @@
 #include "ros/node.h"
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/LaserScan.h"
-#include "rosthread/mutex.h"
+#include "boost/thread.hpp"
 
 using namespace ros;
 using namespace std_msgs;
 
 
-static const unsigned int last_seq = 4107 ;
+static const unsigned int last_seq = 4100 ;
 
 int g_argc;
 char** g_argv;
@@ -57,12 +57,12 @@ public:
   node* node_;
 
   PointCloud cloud_msg_ ;
-  ros::thread::mutex cloud_mutex_ ;
+  boost::mutex cloud_mutex_ ;
   PointCloud safe_cloud_ ;
   double cloud_counter_ ;
 
   LaserScan scan_msg_ ;
-  ros::thread::mutex scan_mutex_ ;
+  boost::mutex scan_mutex_ ;
   LaserScan safe_scan_ ;
   double scan_counter_ ;
 
