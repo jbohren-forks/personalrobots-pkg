@@ -3,7 +3,7 @@ all: build
 SVN_DIR = lapackpp-svn
 SVN_URL = https://lapackpp.svn.sourceforge.net/svnroot/lapackpp/lapackpp/trunk/
 SVN_REVISION = -r 414
-SVN_PATCH = 
+SVN_PATCH = dgev.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
 

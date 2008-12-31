@@ -1,0 +1,115 @@
+Index: include/laslv.h
+===================================================================
+--- include/laslv.h	(revision 414)
++++ include/laslv.h	(working copy)
+@@ -378,6 +378,41 @@
+ void LaEigSolve(const LaGenMatDouble &A, LaVectorDouble &eigvals_real,
+ 		LaVectorDouble &eigvals_imag, LaGenMatDouble &VR);
+ 
++
++/** This function calculates generalized eigenvalues and eigenvectors of a
++ * <i>general</i> matrix A.
++ *
++ * Uses @c dggev
++ *
++ * @todo: description below needs update
++ *
++ * @param A On entry, the general matrix A of dimension N x N. 
++ *
++ * @param eigvals_real On exit, this vector contains the real
++ * parts of the eigenvalues. Complex conjugate
++ * pairs of eigenvalues appear consecutively with the eigenvalue
++ * having the positive imaginary part first. The given argument
++ * must be a vector of length N whose content will be overwritten.
++ *
++ * @param eigvals_imag On exit, this vector contains the imaginary
++ * parts of the eigenvalues. The given argument
++ * must be a vector of length N whose content will be overwritten.
++ *
++ * @param VR On exit, the right eigenvectors v(j) are stored one
++ * after another in the columns of \c VR, in the same order as
++ * their eigenvalues.  If the j- th eigenvalue is real, then v(j)
++ * = VR(:,j), the j-th column of VR.  If the j-th and (j+1)-st
++ * eigenvalues form a complex con- jugate pair, then v(j) =
++ * VR(:,j) + i*VR(:,j+1) and v(j+1) = VR(:,j) - i*VR(:,j+1). The
++ * given argument can be of size NxN, in which case the content
++ * will be overwritten, or of any other size, in which case it
++ * will be resized to dimension NxN.
++ *
++ * FIXME: Needs verification! */
++DLLIMPORT
++void LaGenEigSolve(const LaGenMatDouble &A, const LaGenMatDouble &B, LaVectorDouble &eigvals_real,
++		LaVectorDouble &eigvals_imag, LaGenMatDouble &VR);
++
+ /** FIXME: This is a misleading function! This function calculates all
+  * eigenvalues and eigenvectors of a <i>symmetric</i> matrix A, <i>not
+  * a general matrix A</i>!
+Index: include/lapackd.h
+===================================================================
+--- include/lapackd.h	(revision 414)
++++ include/lapackd.h	(working copy)
+@@ -125,6 +125,11 @@
+     integer *lda, doublereal *wr, doublereal *wi, doublereal *vl, integer *ldvl,
+     doublereal *vr, integer *ldvr, doublereal *work, integer *lwork, integer *info);
+ 
++    void F77NAME(dggev)(char *jobvl, char *jobvr, integer *N, doublereal *A,
++    integer *lda, doublereal *B, integer *ldb,
++    doublereal *alphar, doublereal *alphai, doublereal *beta, doublereal *vl, integer *ldvl,
++    doublereal *vr, integer *ldvr, doublereal *work, integer *lwork, integer *info);
++
+ // ********************* Eigenvalue/Singular Value Decomposition Drivers
+ 
+   void F77NAME(dsyevd)(char *jobz, char *uplo, integer *n, double *a, integer *lda, double *w, integer *info);
+Index: src/eigslv.cc
+===================================================================
+--- src/eigslv.cc	(revision 414)
++++ src/eigslv.cc	(working copy)
+@@ -129,7 +129,48 @@
+         throw(LaException("LaEigSolve(LaGenMatDouble &, LaVectorDouble &, LaVectorDouble &, LaGenMatDouble &", "Internal error in LAPACK: SSYEV()"));
+ }
+ 
++void LaGenEigSolve(const LaGenMatDouble &A, const LaGenMatDouble &B, LaVectorDouble &eigvals_real, LaVectorDouble &eigvals_imag, LaGenMatDouble &eigvec)
++{
++    char jobvl = 'N';
++    char jobvr = 'V';
++    long int n = A.size(0);
++    long int lda = A.gdim(0);
++    long int n2 = B.size(0);
++    long int ldb = B.gdim(0);
++    long int ldvl = 1;
++    long int ldvr = n;
++    long int lwork = 4*n;
++    long int info = 0;
++    LaVectorDouble alphar(n),alphai(n),beta(n);
++    
++    if (A.size(0) != A.size(1))
++      throw LaException("LaEigSolve(LaGenMatDouble &, LaVectorDouble &, LaVectorDouble &, LaGenMatDouble &", "Matrix must be square!");
++    if (B.size(0) != B.size(1))
++      throw LaException("LaEigSolve(LaGenMatDouble &, LaVectorDouble &, LaVectorDouble &, LaGenMatDouble &", "Matrix must be square!");
++    if((eigvals_real.size() != n) || (eigvals_imag.size() != n))
++      throw LaException("LaEigSolve(LaGenMatDouble &, LaVectorDouble &, LaVectorDouble &, LaGenMatDouble &", "eigenvalue vectors must be same size as one dimension of input matrix");
+ 
++    LaGenMatDouble tmpA;
++    tmpA.copy(A);
++    LaGenMatDouble tmpB;
++    tmpB.copy(B);
++
++    LaVectorDouble work(lwork);
++    if (eigvec.size(0) != n || eigvec.size(1) != n)
++      eigvec.resize(n, n);
++    
++    F77NAME(dggev)(&jobvl, &jobvr, &n, &tmpA(0,0), &lda, &tmpB(0,0), &ldb, &alphar(0), &alphai(0), &beta(0),
++                   NULL, &ldvl, &eigvec(0,0), &ldvr, &work(0), &lwork, &info);
++    for (int i=0; i<alphar.size(); i++)
++        eigvals_real(i) = alphar(i)/beta(i);
++    for (int i=0; i<alphai.size(); i++)
++        eigvals_imag(i) = alphai(i)/beta(i);
++
++    
++    if (info != 0)
++        throw(LaException("LaEigSolve(LaGenMatDouble &, LaVectorDouble &, LaVectorDouble &, LaGenMatDouble &", "Internal error in LAPACK: SSYEV()"));
++}
++
+ #ifdef LA_COMPLEX_SUPPORT
+ void LaEigSolve(const LaGenMatComplex &A, LaVectorComplex &W,
+ 		LaGenMatComplex &VR)
