@@ -6,12 +6,17 @@
   <license>BSD/GPL/LGPL</license>
   <review status="3rdparty" notes=""/>
   <url>http://octave.sf.net</url>
-  <depend package="octave" />
+  <!--depend package="octave" /-->
   <export>
     <cpp lflags="-L${prefix}/octave-forge/lib" cflags="-I${prefix}/octave-forge/include "/>
     <doxymaker external="http://octave.sourceforge.net/"/>
   </export>
   <versioncontrol type="svn" url="https://octave.svn.sourceforge.net/svnroot/octave/trunk/octave-forge"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="octave2.9"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="octave2.9-headers"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="octave3.0"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="octave3.0-headers"/>
 
 </package>
 
