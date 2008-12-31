@@ -2,9 +2,9 @@
   <controller name="laser_tilt_controller" topic="laser_controller" type="LaserScannerTrajControllerNode">
     <max_acc  value="1.0" />
     <max_rate value="100.0" />
-    <d_error_filter smoothing_factor=".1" />
+    <d_error_filter smoothing_factor=".05" />
     <joint name="laser_tilt_mount_joint">
-      <pid p="2" i=".1" d="0.25" iClamp="0.5" />
+      <pid p="8" i=".1" d="0.2" iClamp="0.5" />
     </joint>
   </controller> 
 </controllers>
