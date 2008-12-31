@@ -1,0 +1,13 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b cloud_kdtree is a general library for k-D tree decomposition and ANN
+(Approximate Nearest Neighbor) searches. Two libraries are wrapped at
+the moment: ANN (Approximate Nearest Neighbors) from David M. Mount and
+Sunil Arya, and FL-ANN (Fast Library for Approximate Nearest Neighbors)
+from Marius Muja and David Lowe. By default, FL-ANN will be used, unless
+USE_ANN is enabled.
+
+*/

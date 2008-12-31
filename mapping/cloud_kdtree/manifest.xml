@@ -1,0 +1,19 @@
+<package>
+  <description>
+    A library for nD spatial decomposition and nearest neighbors searches for PointCloud messages using k-D trees.
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="unreviewed" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+<!-- <depend package="ANN" />-->
+  <depend package="FL-ANN" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_kdtree"/>
+  </export>
+</package>
