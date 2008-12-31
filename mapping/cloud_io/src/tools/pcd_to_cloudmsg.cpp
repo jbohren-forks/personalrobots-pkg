@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: pcd_to_cloudmsg.cpp 8080 2008-12-14 23:40:14Z veedee $
+ * $Id$
  *
  */
 
