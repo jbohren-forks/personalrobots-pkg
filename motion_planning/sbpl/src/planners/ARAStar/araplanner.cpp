@@ -777,12 +777,24 @@ int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace)
 void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE* fOut)
 {
 	ARAState* searchstateinfo;
-	CMDPSTATE* state = pSearchStateSpace->searchstartstate;
+	CMDPSTATE* state;
+	int goalID;
+	int PathCost;
 
+	if(bforwardsearch)
+	{
+		state  = pSearchStateSpace->searchstartstate;
+		goalID = pSearchStateSpace->searchgoalstate->StateID;
+	}
+	else
+	{
+		state = pSearchStateSpace->searchgoalstate;
+		goalID = pSearchStateSpace->searchstartstate->StateID;
+	}
 	if(fOut == NULL)
 		fOut = stdout;
 
-	int PathCost = ((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g;
+	PathCost = ((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g;
 
 	fprintf(fOut, "Printing a path from state %d to the goal state %d\n", 
 			state->StateID, pSearchStateSpace->searchgoalstate->StateID);
@@ -792,7 +804,7 @@ void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE*
 	environment_->PrintState(state->StateID, false, fOut);
 
 	int costFromStart = 0;
-	while(state->StateID != pSearchStateSpace->searchgoalstate->StateID)
+	while(state->StateID != goalID)
 	{
 		fprintf(fOut, "state %d ", state->StateID);
 
@@ -817,6 +829,9 @@ void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE*
 
 		int costToGoal = PathCost - costFromStart;
 		int transcost = searchstateinfo->g - ((ARAState*)(searchstateinfo->bestnextstate->PlannerSpecificData))->v;
+		if(bforwardsearch)
+			transcost = -transcost;
+
 		costFromStart += transcost;
 
 		fprintf(fOut, "g=%d-->state %d, h = %d ctg = %d  ", searchstateinfo->g, 			
