@@ -24,24 +24,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id$
+ * $Id: areas.h 8223 2008-12-17 00:41:04Z veedee $
  *
  */
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _CLOUD_GEOMETRY_LAPACK_H_
-#define _CLOUD_GEOMETRY_LAPACK_H_
+#ifndef _CLOUD_GEOMETRY_AREAS_H_
+#define _CLOUD_GEOMETRY_AREAS_H_
 
-#include "Eigen/Core"
-
-extern "C" void dsyev_  (char *jobz, char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork, int *info);
-extern "C" void dgesvd_ (char *jobu, char *jobvt, int *m, int *n, double *a, int *lda, double *s, double *u, int *ldu, double *vt, int *ldvt, double *work, int *lwork, int *info);
+// ROS includes
+#include <std_msgs/Point32.h>
 
 namespace cloud_geometry
 {
-  bool eigen_cov (Eigen::Matrix3d covariance_matrix, Eigen::Vector3d &eigen_values, Eigen::Matrix3d &eigen_vectors);
-  bool svd (Eigen::Matrix3d h, Eigen::Matrix3d &u, Eigen::Vector3d &s, Eigen::Matrix3d &v);
+
+  namespace areas
+  {
+
+    double compute2DPolygonalArea (std::vector<double> points, std::vector<double> normal);
+  }
 }
 
 #endif

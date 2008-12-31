@@ -3,7 +3,7 @@
     A library for SAmple Consensus (SAC) like methods: RANSAC, MSAC, MLESAC, etc, and geometric shape models.
   </description>
 
-  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <author>Radu Bogdan Rusu</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="unreviewed" notes="beta"/>

@@ -3,7 +3,7 @@
     A node which converts 3D point cloud data from BAG log files into PCD (Point Cloud Data) files.
   </description>
 
-  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <author>Radu Bogdan Rusu</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>

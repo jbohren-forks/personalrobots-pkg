@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu@cs.tum.edu>
+ * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -28,7 +28,7 @@
  *
  */
 
-/* author: Radu Bogdan Rusu <rusu@cs.tum.edu> */
+/* author: Radu Bogdan Rusu */
 
 #ifndef INCLUDE_MODELTYPES_H
 #define INCLUDE_MODELTYPES_H
