@@ -2,6 +2,13 @@
 @mainpage
 @htmlinclude manifest.html
 
+\section packages Octave Packages
+This package depends on the following <a href="http://octave.sourceforge.net/packages.html">octave packages</a>:
+\li funspec
+\li signal
+\li miscellaneous
+\li optim
+
 \section commandline Command-line tools
 
 \subsection generate_filter_coeffs
