@@ -1,0 +1,17 @@
+<package>
+  <description brief="octave-forge">
+  This package contains octave-forge packages from source forge.
+  </description>
+  <author> Aida Alvera-AzcÃ¡rate et al.  </author>
+  <license>BSD/GPL/LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://octave.sf.net</url>
+  <export>
+    <cpp lflags="-L${prefix}/octave-forge/lib" cflags="-I${prefix}/octave-forge/include "/>
+    <doxymaker external="http://octave.sourceforge.net/"/>
+  </export>
+  <versioncontrol type="svn" url="https://octave.svn.sourceforge.net/svnroot/octave/trunk/octave-forge"/>
+
+</package>
+
+
