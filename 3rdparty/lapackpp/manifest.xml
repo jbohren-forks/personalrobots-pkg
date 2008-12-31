@@ -11,6 +11,16 @@
     <doxymaker external="http://lapackpp.sourceforge.net/"/>
   </export>
   <versioncontrol type="svn" url="https://lapackpp.svn.sourceforge.net/svnroot/lapackpp/lapackpp/trunk/"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="refblas3"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="refblas3-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="lapack3"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="lapack3-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="refblas3"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="refblas3-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
+
 </package>
 
 
