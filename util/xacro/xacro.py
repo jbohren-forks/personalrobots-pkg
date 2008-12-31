@@ -30,6 +30,7 @@
 
 
 import os.path, sys, os
+import subprocess
 from xml.dom.minidom import parse, parseString
 import xml.dom
 import re
@@ -40,6 +41,11 @@ class XacroException(Exception): pass
 
 def isnumber(x):
     return hasattr(x, '__int__')
+
+import rostools; rostools.update_path('xacro')
+import roslaunch
+def eval_extension(str):
+    return roslaunch.core.resolve_args(str)
 
 class Table:
     def __init__(self, parent = None):
@@ -310,39 +316,21 @@ def eval_text(text, symbols):
                          RPAREN = r"\)")
         lex.lex(s)
         return eval_expr(lex, symbols)
-    def handle_shell(s):
-        (_, fin) = os.popen2(s)
-        return fin.read().rstrip()
+    def handle_extension(s):
+        return eval_extension("$(%s)" % s)
 
     results = []
     lex = QuickLexer(EXPR = r"\$\{[^\}]*\}",
-                     SHELL = r"\$\([^\)]*\)",
+                     EXTENSION = r"\$\([^\)]*\)",
                      TEXT = r"[^\$]+")
     lex.lex(text)
     while lex.peek():
         if lex.peek()[0] == lex.EXPR:
             results.append(handle_expr(lex.next()[1][2:-1]))
-        elif lex.peek()[0] == lex.SHELL:
-            results.append(handle_shell(lex.next()[1][2:-1]))
+        elif lex.peek()[0] == lex.EXTENSION:
+            results.append(handle_extension(lex.next()[1][2:-1]))
         elif lex.peek()[0] == lex.TEXT:
             results.append(lex.next()[1])
-    return ''.join(map(str, results))
-
-    results = []
-    pieces = re.split(r'\$\{([^\}]*)\}', text)
-    for i in range(len(pieces)):
-        if i % 2 == 0: # Normal piece
-            if pieces[i]:
-                results.append(pieces[i])
-        else: # Expression
-            lex = QuickLexer(IGNORE = r"\s+",
-                             NUMBER = r"(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?",
-                             SYMBOL = r"[a-zA-Z_]\w*",
-                             OP = r"[\+\-\*/^]",
-                             LPAREN = r"\(",
-                             RPAREN = r"\)")
-            lex.lex(pieces[i])
-            results.append(eval_expr(lex, symbols))
     return ''.join(map(str, results))
 
 # Expands macros, replaces properties, and evaluates expressions
