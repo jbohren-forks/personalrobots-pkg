@@ -43,6 +43,10 @@ def isnumber(x):
     return hasattr(x, '__int__')
 
 import rostools; rostools.update_path('xacro')
+# Suppresses the output from roslaunch by killing the logger
+import rostools.scriptutil
+def return_none(a=0,b=0): return None
+rostools.scriptutil.configure_logging = return_none
 import roslaunch
 def eval_extension(str):
     return roslaunch.core.resolve_args(str)
@@ -391,6 +395,11 @@ def eval_all(root, macros, symbols):
         node = next_node(previous)
     return macros
 
+# Expands everything except includes
+def eval_self_contained(doc):
+    macros = grab_macros(doc)
+    symbols = grab_properties(doc)
+    eval_all(doc.documentElement, macros, symbols)
 
 if __name__ == '__main__':
     f = open(sys.argv[1])
@@ -399,10 +408,7 @@ if __name__ == '__main__':
 
 
     process_includes(doc, os.path.dirname(sys.argv[1]))
-    macros = grab_macros(doc)
-    symbols = grab_properties(doc)
-
-    eval_all(doc.documentElement, macros, symbols)
+    eval_self_contained(doc)
 
     doc.writexml(sys.stdout)
     print
