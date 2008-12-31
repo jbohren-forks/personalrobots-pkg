@@ -150,7 +150,7 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
     matIn(0,i) = cloudIn.pts[i].x;
     matIn(1,i) = cloudIn.pts[i].y;
     matIn(2,i) = cloudIn.pts[i].z;
-    matIn(3,1) = 1;
+    matIn(3,i) = 1;
   };
 
   boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
