@@ -21,7 +21,7 @@ rospack_add_executable(face_detector
                        src/people.cpp 
                        src/utils.cpp)
 
-rospack_add_executable(stereo_face_color_tracking
+rospack_add_executable(stereo_face_color_tracker
                        src/stereo_face_color_tracker.cpp 
                        src/people.cpp 
                        src/utils.cpp)
