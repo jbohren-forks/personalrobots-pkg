@@ -199,6 +199,8 @@ public:
       stcam_->setProcMode(videre_mode);
       stcam_->setUniqueThresh(36);
       stcam_->setTextureThresh(30);
+      stcam_->setSpeckleSize(100);
+      stcam_->setSpeckleDiff(10);
       stcam_->setCompanding(true);
 
       advertise<image_msgs::RawStereo>("~raw_stereo", 1);
