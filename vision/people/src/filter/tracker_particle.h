@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #ifndef __TRACKER_PARTICLE__
 #define __TRACKER_PARTICLE__
 

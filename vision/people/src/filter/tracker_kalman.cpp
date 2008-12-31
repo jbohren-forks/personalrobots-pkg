@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include "tracker_kalman.h"
 
 using namespace MatrixWrapper;

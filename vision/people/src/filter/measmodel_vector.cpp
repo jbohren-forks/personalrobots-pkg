@@ -34,7 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include "measmodel_pos.h"
+#include "measmodel_vector.h"
 
 using namespace std;
 using namespace BFL;
@@ -42,30 +42,30 @@ using namespace tf;
 
 
 // Constructor
-MeasPdfPos::MeasPdfPos(const Vector3& sigma)
-  : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),
-    meas_noise_(Vector3(0,0,0), sigma)
+MeasPdfVector::MeasPdfVector(const StateVector& sigma)
+  : ConditionalPdf<StateVector, StateVector>(DIM_MEASMODEL_VECTOR, NUM_MEASMODEL_VECTOR_COND_ARGS),
+    meas_noise_(StateVector(0,0,0), sigma)
 {}
 
 
 // Destructor
-MeasPdfPos::~MeasPdfPos()
+MeasPdfVector::~MeasPdfVector()
 {}
 
 
 
 Probability 
-MeasPdfPos::ProbabilityGet(const Vector3& measurement) const
+MeasPdfVector::ProbabilityGet(const StateVector& measurement) const
 {
-  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0).pos_);
+  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0));
 }
 
 
 
 bool
-MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
+MeasPdfVector::SampleFrom (Sample<StateVector>& one_sample, int method, void *args) const
 {
-  cerr << "MeasPdfPos::SampleFrom Method not applicable" << endl;
+  cerr << "MeasPdfVector::SampleFrom Method not applicable" << endl;
   assert(0);
   return false;
 }
@@ -73,11 +73,11 @@ MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) con
 
 
 
-Vector3
-MeasPdfPos::ExpectedValueGet() const
+StateVector
+MeasPdfVector::ExpectedValueGet() const
 {
-  cerr << "MeasPdfPos::ExpectedValueGet Method not applicable" << endl;
-  Vector3 result;
+  cerr << "MeasPdfVector::ExpectedValueGet Method not applicable" << endl;
+  StateVector result;
   assert(0);
   return result;
 }
@@ -86,19 +86,19 @@ MeasPdfPos::ExpectedValueGet() const
 
 
 SymmetricMatrix 
-MeasPdfPos::CovarianceGet() const
+MeasPdfVector::CovarianceGet() const
 {
-  cerr << "MeasPdfPos::CovarianceGet Method not applicable" << endl;
-  SymmetricMatrix Covar(DIM_MEASMODEL_POS);
+  cerr << "MeasPdfVector::CovarianceGet Method not applicable" << endl;
+  SymmetricMatrix Covar(DIM_MEASMODEL_VECTOR);
   assert(0);
   return Covar;
 }
 
 
 void
-MeasPdfPos::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
+MeasPdfVector::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
 {
-  tf::Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
+  StateVector cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
   meas_noise_.sigmaSet(cov_vec);
 }
 

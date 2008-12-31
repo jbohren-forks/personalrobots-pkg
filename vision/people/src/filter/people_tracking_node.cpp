@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include "people_tracking_node.h"
 #include "tracker_particle.h"
 #include "tracker_kalman.h"

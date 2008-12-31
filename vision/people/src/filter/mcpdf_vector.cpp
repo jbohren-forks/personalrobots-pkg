@@ -34,7 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include "mcpdf_pos_vel.h"
+#include "mcpdf_vector.h"
 #include <assert.h>
 #include <vector>
 #include <std_msgs/Float64.h>
@@ -48,46 +48,45 @@
   static const unsigned int NUM_CONDARG   = 1;
 
 
-  MCPdfPosVel::MCPdfPosVel (unsigned int num_samples) 
-    : MCPdf<StatePosVel> ( num_samples, NUM_CONDARG )
+  MCPdfVector::MCPdfVector (unsigned int num_samples) 
+    : MCPdf<StateVector> ( num_samples, NUM_CONDARG )
   {}
 
-  MCPdfPosVel::~MCPdfPosVel(){}
+  MCPdfVector::~MCPdfVector(){}
 
 
-  WeightedSample<StatePosVel>
-  MCPdfPosVel::SampleGet(unsigned int particle) const
+  WeightedSample<StateVector>
+  MCPdfVector::SampleGet(unsigned int particle) const
   {
     assert ((int)particle >= 0 && particle < _listOfSamples.size());
     return _listOfSamples[particle];
   }
 
 
-  StatePosVel MCPdfPosVel::ExpectedValueGet() const
+  StateVector MCPdfVector::ExpectedValueGet() const
   {
-    tf::Vector3 pos(0,0,0);  tf::Vector3 vel(0,0,0); 
+    StateVector pos(0,0,0); 
     double current_weight;
-    std::vector<WeightedSample<StatePosVel> >::const_iterator it_los;
+    std::vector<WeightedSample<StateVector> >::const_iterator it_los;
     for ( it_los = _listOfSamples.begin() ; it_los != _listOfSamples.end() ; it_los++ ){
       current_weight = it_los->WeightGet();
-      pos += (it_los->ValueGet().pos_ * current_weight);
-      vel += (it_los->ValueGet().vel_ * current_weight);
+      pos += (it_los->ValueGet() * current_weight);
     }
-    return StatePosVel(pos, vel);
+    return StateVector(pos);
   }
 
 
   /// Get evenly distributed particle cloud
-  void MCPdfPosVel::getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  void MCPdfVector::getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const
   { 
     unsigned int num_samples = _listOfSamples.size();
     assert(num_samples > 0);
-    Vector3 m = _listOfSamples[0].ValueGet().pos_;
-    Vector3 M = _listOfSamples[0].ValueGet().pos_;
+    StateVector m = _listOfSamples[0].ValueGet();
+    StateVector M = _listOfSamples[0].ValueGet();
 
     // calculate min and max
     for (unsigned int s=0; s<num_samples; s++){
-      Vector3 v = _listOfSamples[s].ValueGet().pos_;
+      StateVector v = _listOfSamples[s].ValueGet();
       for (unsigned int i=0; i<3; i++){
 	if (v[i] < m[i]) m[i] = v[i];
 	if (v[i] > M[i]) M[i] = v[i];
@@ -126,21 +125,14 @@
 
 
   /// Get histogram from pos
-  MatrixWrapper::Matrix MCPdfPosVel::getHistogramPos(const Vector3& m, const Vector3& M, const Vector3& step) const
+  MatrixWrapper::Matrix MCPdfVector::getHistogramPos(const StateVector& m, const StateVector& M, const StateVector& step) const
   { 
-    return getHistogram(m, M, step, true);
-  }
-
-
-  /// Get histogram from vel
-  MatrixWrapper::Matrix MCPdfPosVel::getHistogramVel(const Vector3& m, const Vector3& M, const Vector3& step) const
-  { 
-    return getHistogram(m, M, step, false);
+    return getHistogram(m, M, step);
   }
 
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step, bool pos_hist) const
+  MatrixWrapper::Matrix MCPdfVector::getHistogram(const StateVector& m, const StateVector& M, const StateVector& step) const
   {  
     unsigned int num_samples = _listOfSamples.size();
     unsigned int rows = round((M[0]-m[0])/step[0]);
@@ -150,12 +142,7 @@
 
     // calculate histogram
     for (unsigned int i=0; i<num_samples; i++){
-      Vector3 rel;
-      if (pos_hist)
-	rel = _listOfSamples[i].ValueGet().pos_ - m;
-      else
-	rel = _listOfSamples[i].ValueGet().vel_ - m;
-
+      StateVector rel(_listOfSamples[i].ValueGet() - m);
       unsigned int r = round(rel[0] / step[0]);
       unsigned int c = round(rel[1] / step[1]);
       if (r >= 1 && c >= 1 && r <= rows && c <= cols)
@@ -168,7 +155,7 @@
 
 
   unsigned int
-  MCPdfPosVel::numParticlesGet() const
+  MCPdfVector::numParticlesGet() const
   {
     return _listOfSamples.size();
   }

@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #ifndef __TRACKER_KALMAN__
 #define __TRACKER_KALMAN__
 

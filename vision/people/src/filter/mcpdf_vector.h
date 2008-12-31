@@ -34,73 +34,43 @@
 
 /* Author: Wim Meeussen */
 
-#include "measmodel_pos.h"
+#ifndef MCPDF_VECTOR_H
+#define MCPDF_VECTOR_H
 
-using namespace std;
-using namespace BFL;
-using namespace tf;
+#include <pdf/mcpdf.h>
+#include "state_vector.h"
+#include <tf/tf.h>
+#include <std_msgs/PointCloud.h>
 
-
-// Constructor
-MeasPdfPos::MeasPdfPos(const Vector3& sigma)
-  : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),
-    meas_noise_(Vector3(0,0,0), sigma)
-{}
-
-
-// Destructor
-MeasPdfPos::~MeasPdfPos()
-{}
-
-
-
-Probability 
-MeasPdfPos::ProbabilityGet(const Vector3& measurement) const
+namespace BFL
 {
-  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0).pos_);
-}
+  /// Class representing a vector mcpdf
+  class MCPdfVector: public MCPdf<StateVector>
+    {
+    public:
+      /// Constructor
+      MCPdfVector (unsigned int num_samples);
+
+      /// Destructor
+      virtual ~MCPdfVector();
+
+      /// Get evenly distributed particle cloud
+      void getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
+
+      /// Get pos histogram from certain area
+      MatrixWrapper::Matrix getHistogramPos(const StateVector& min, const StateVector& max, const StateVector& step) const;
+
+      virtual StateVector ExpectedValueGet() const;
+      virtual WeightedSample<StateVector> SampleGet(unsigned int particle) const;
+      virtual unsigned int numParticlesGet() const;
+
+    private:
+      /// Get histogram from certain area
+      MatrixWrapper::Matrix getHistogram(const StateVector& min, const StateVector& max, const StateVector& step) const;
+
+    };
 
 
 
-bool
-MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
-{
-  cerr << "MeasPdfPos::SampleFrom Method not applicable" << endl;
-  assert(0);
-  return false;
-}
-
-
-
-
-Vector3
-MeasPdfPos::ExpectedValueGet() const
-{
-  cerr << "MeasPdfPos::ExpectedValueGet Method not applicable" << endl;
-  Vector3 result;
-  assert(0);
-  return result;
-}
-
-
-
-
-SymmetricMatrix 
-MeasPdfPos::CovarianceGet() const
-{
-  cerr << "MeasPdfPos::CovarianceGet Method not applicable" << endl;
-  SymmetricMatrix Covar(DIM_MEASMODEL_POS);
-  assert(0);
-  return Covar;
-}
-
-
-void
-MeasPdfPos::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
-{
-  tf::Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
-  meas_noise_.sigmaSet(cov_vec);
-}
-
-
-
+} // end namespace
+#endif

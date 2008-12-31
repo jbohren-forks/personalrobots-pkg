@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #ifndef __TRACKER__
 #define __TRACKER__
 

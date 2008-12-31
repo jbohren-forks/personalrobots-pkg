@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include "tracker_particle.h"
 #include "gaussian_pos_vel.h"
 

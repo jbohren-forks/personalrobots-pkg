@@ -34,73 +34,30 @@
 
 /* Author: Wim Meeussen */
 
-#include "measmodel_pos.h"
+#ifndef STATE_VECTOR_H
+#define STATE_VECTOR_H
 
-using namespace std;
-using namespace BFL;
-using namespace tf;
+#include <tf/tf.h>
 
-
-// Constructor
-MeasPdfPos::MeasPdfPos(const Vector3& sigma)
-  : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),
-    meas_noise_(Vector3(0,0,0), sigma)
-{}
-
-
-// Destructor
-MeasPdfPos::~MeasPdfPos()
-{}
-
-
-
-Probability 
-MeasPdfPos::ProbabilityGet(const Vector3& measurement) const
+namespace BFL
 {
-  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0).pos_);
-}
-
-
-
-bool
-MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
+/// Class representing state with pos and vel
+class StateVector: public tf::Vector3
 {
-  cerr << "MeasPdfPos::SampleFrom Method not applicable" << endl;
-  assert(0);
-  return false;
-}
+ public:
+  /// Constructor
+  StateVector(unsigned int bogus=0) {};
+  StateVector(double x, double y, double z): tf::Vector3(x,y,z) {};
+  StateVector(const tf::Vector3& s): tf::Vector3(s) {};
 
+  
+  /// Destructor
+  ~StateVector() {};
+  
+  /// output stream for StateVector
+  friend std::ostream& operator<< (std::ostream& os, const StateVector& s) 
+    { os << "(" << s[0] << ", " << s[1] << ", "  << s[2];  return os;};
 
-
-
-Vector3
-MeasPdfPos::ExpectedValueGet() const
-{
-  cerr << "MeasPdfPos::ExpectedValueGet Method not applicable" << endl;
-  Vector3 result;
-  assert(0);
-  return result;
-}
-
-
-
-
-SymmetricMatrix 
-MeasPdfPos::CovarianceGet() const
-{
-  cerr << "MeasPdfPos::CovarianceGet Method not applicable" << endl;
-  SymmetricMatrix Covar(DIM_MEASMODEL_POS);
-  assert(0);
-  return Covar;
-}
-
-
-void
-MeasPdfPos::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
-{
-  tf::Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
-  meas_noise_.sigmaSet(cov_vec);
-}
-
-
-
+};
+} // end namespace
+#endif

@@ -34,73 +34,73 @@
 
 /* Author: Wim Meeussen */
 
-#include "measmodel_pos.h"
 
-using namespace std;
-using namespace BFL;
-using namespace tf;
+#ifndef MEASMODEL_VECTOR_H
+#define MEASMODEL_VECTOR_H
 
-
-// Constructor
-MeasPdfPos::MeasPdfPos(const Vector3& sigma)
-  : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),
-    meas_noise_(Vector3(0,0,0), sigma)
-{}
+#define NUM_MEASMODEL_VECTOR_COND_ARGS    1
+#define DIM_MEASMODEL_VECTOR              3
 
 
-// Destructor
-MeasPdfPos::~MeasPdfPos()
-{}
+#include "tf/tf.h"
+#include "state_vector.h"
+#include "gaussian_vector.h"
+#include <model/measurementmodel.h>
+#include <pdf/conditionalpdf.h>
+#include <wrappers/matrix/matrix_wrapper.h>
+#include <string>
 
-
-
-Probability 
-MeasPdfPos::ProbabilityGet(const Vector3& measurement) const
+namespace BFL
 {
-  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0).pos_);
-}
+
+  class MeasPdfVector 
+    : public BFL::ConditionalPdf<StateVector, StateVector>
+  {
+  public:
+    /// Constructor
+    MeasPdfVector(const StateVector& sigma);
+    
+    /// Destructor
+    virtual ~MeasPdfVector();
+    
+    // set covariance
+    void CovarianceSet(const  MatrixWrapper::SymmetricMatrix& cov);
+
+    // Redefining pure virtual methods
+    virtual BFL::Probability ProbabilityGet(const StateVector& input) const;
+    virtual bool SampleFrom (BFL::Sample<StateVector>& one_sample, int method, void *args) const;  // Not applicable
+    virtual StateVector ExpectedValueGet() const; // Not applicable
+    virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
+
+
+  private:
+    GaussianVector meas_noise_;
+    
+  }; // class
+  
 
 
 
-bool
-MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
-{
-  cerr << "MeasPdfPos::SampleFrom Method not applicable" << endl;
-  assert(0);
-  return false;
-}
 
 
+  class MeasModelVector
+    : public BFL::MeasurementModel<StateVector, StateVector>
+  {
+  public:
+    /// constructor
+    MeasModelVector(const StateVector& sigma)
+      : BFL::MeasurementModel<StateVector, StateVector>(new MeasPdfVector(sigma))
+    {};
 
+    /// destructor
+    ~MeasModelVector()
+    {
+      delete MeasurementPdfGet();
+    };
 
-Vector3
-MeasPdfPos::ExpectedValueGet() const
-{
-  cerr << "MeasPdfPos::ExpectedValueGet Method not applicable" << endl;
-  Vector3 result;
-  assert(0);
-  return result;
-}
+  }; // class
 
-
-
-
-SymmetricMatrix 
-MeasPdfPos::CovarianceGet() const
-{
-  cerr << "MeasPdfPos::CovarianceGet Method not applicable" << endl;
-  SymmetricMatrix Covar(DIM_MEASMODEL_POS);
-  assert(0);
-  return Covar;
-}
-
-
-void
-MeasPdfPos::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
-{
-  tf::Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
-  meas_noise_.sigmaSet(cov_vec);
-}
-
-
-
+} //namespace
+  
+  
+#endif 
