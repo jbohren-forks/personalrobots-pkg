@@ -6,6 +6,7 @@
   <license>BSD/GPL/LGPL</license>
   <review status="3rdparty" notes=""/>
   <url>http://octave.sf.net</url>
+  <depend package="octave" />
   <export>
     <cpp lflags="-L${prefix}/octave-forge/lib" cflags="-I${prefix}/octave-forge/include "/>
     <doxymaker external="http://octave.sourceforge.net/"/>
