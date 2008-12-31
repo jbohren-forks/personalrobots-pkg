@@ -191,16 +191,21 @@ public:
     stereo_info_.width = stdata_->imWidth;
 
     stereo_info_.dpp = stdata_->dpp;
-    stereo_info_.numDisp = stdata_->numDisp;
-    stereo_info_.imDtop = stdata_->imDtop;
-    stereo_info_.imDleft = stdata_->imDleft;
-    stereo_info_.imDwidth = stdata_->imDwidth;
-    stereo_info_.imDheight = stdata_->imDheight;
-    stereo_info_.corrSize = stdata_->corrSize;
-    stereo_info_.filterSize = stdata_->filterSize;
-    stereo_info_.horOffset = stdata_->horOffset;
-    stereo_info_.textureThresh = stdata_->textureThresh;
-    stereo_info_.uniqueThresh = stdata_->uniqueThresh;
+    stereo_info_.num_disp = stdata_->numDisp;
+    stereo_info_.im_Dtop = stdata_->imDtop;
+    stereo_info_.im_Dleft = stdata_->imDleft;
+    stereo_info_.im_Dwidth = stdata_->imDwidth;
+    stereo_info_.im_Dheight = stdata_->imDheight;
+    stereo_info_.corr_size = stdata_->corrSize;
+    stereo_info_.filter_size = stdata_->filterSize;
+    stereo_info_.hor_offset = stdata_->horOffset;
+    stereo_info_.texture_thresh = stdata_->textureThresh;
+    stereo_info_.unique_thresh = stdata_->uniqueThresh;
+    stereo_info_.smooth_thresh = stdata_->smoothThresh;
+    stereo_info_.speckle_diff = stdata_->speckleDiff;
+    stereo_info_.speckle_region_size = stdata_->speckleRegionSize;
+    stereo_info_.unique_check = stdata_->unique_check;
+
 
     memcpy((char*)(&stereo_info_.T[0]),  (char*)(stdata_->T),   3*sizeof(double));
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));

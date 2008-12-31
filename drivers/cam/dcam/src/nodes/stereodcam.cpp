@@ -32,6 +32,35 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+stereodcam node uses the parameters:
+
+- @b ~exposure (int)
+- @b ~gain     (int)
+- @b ~brightness (int)
+- @b ~exposure_auto (bool)
+- @b ~gain_auto  (bool)
+- @b ~brightness_auto (bool)
+- @b ~companding (bool)
+- @b ~hdr (bool)
+- @b ~unique_check (bool)
+- @b ~texture_thresh (int)
+- @b ~unique_thresh (int)
+- @b ~smoothness_thresh (int)
+- @b ~horopter (int)
+- @b ~speckle_size (int)
+- @b ~speckle_diff (int)
+- @b ~corr_size (int)
+- @b ~num_disp (int)
+
+**/
+
+
 #include <cstdio>
 
 #include "dcam/dcam.h"
@@ -156,14 +185,14 @@ public:
 
       // Fetch the camera string and send it to the parameter server if people want it (they shouldn't)
       std::string params(stcam_->getParameters());
-      set_param("~/params", params);
+      set_param("~params", params);
 
-      set_param("~/exposure_max", (int)stcam_->expMax);
-      set_param("~/exposure_min", (int)stcam_->expMin);
-      set_param("~/gain_max", (int)stcam_->gainMax);
-      set_param("~/gain_min", (int)stcam_->gainMin);
-      set_param("~/brightness_max", (int)stcam_->brightMax);
-      set_param("~/brightness_min", (int)stcam_->brightMin);
+      set_param("~exposure_max", (int)stcam_->expMax);
+      set_param("~exposure_min", (int)stcam_->expMin);
+      set_param("~gain_max", (int)stcam_->gainMax);
+      set_param("~gain_min", (int)stcam_->gainMin);
+      set_param("~brightness_max", (int)stcam_->brightMax);
+      set_param("~brightness_min", (int)stcam_->brightMin);
 
       // Configure camera
       stcam_->setFormat(mode, fps, speed);
@@ -198,23 +227,32 @@ public:
 
   void checkAndSetAll()
   {
-    checkAndSetIntBool("exposure",   boost::bind(&dcam::Dcam::setExposure,   stcam_, _1, _2));
-    checkAndSetIntBool("gain",       boost::bind(&dcam::Dcam::setGain,       stcam_, _1, _2));
-    checkAndSetIntBool("brightness", boost::bind(&dcam::Dcam::setBrightness, stcam_, _1, _2));
-    checkAndSetBool("companding", boost::bind(&dcam::Dcam::setCompanding, stcam_, _1));
-    checkAndSetBool("hdr",        boost::bind(&dcam::Dcam::setHDR,        stcam_, _1));
+    checkAndSetIntBool("exposure",       boost::bind(&dcam::Dcam::setExposure,      stcam_, _1, _2));
+    checkAndSetIntBool("gain",           boost::bind(&dcam::Dcam::setGain,          stcam_, _1, _2));
+    checkAndSetIntBool("brightness",     boost::bind(&dcam::Dcam::setBrightness,    stcam_, _1, _2));
+    checkAndSetBool("companding",        boost::bind(&dcam::Dcam::setCompanding,    stcam_, _1));
+    checkAndSetBool("hdr",               boost::bind(&dcam::Dcam::setHDR,           stcam_, _1));
+    checkAndSetBool("unique_check",      boost::bind(&dcam::StereoDcam::setUniqueCheck,      stcam_, _1));
+    checkAndSetInt("texture_thresh",     boost::bind(&dcam::StereoDcam::setTextureThresh, stcam_, _1));
+    checkAndSetInt("unique_thresh",      boost::bind(&dcam::StereoDcam::setUniqueThresh,  stcam_, _1));
+    checkAndSetInt("smoothness_thresh",  boost::bind(&dcam::StereoDcam::setSmoothnessThresh,  stcam_, _1));
+    checkAndSetInt("horopter",           boost::bind(&dcam::StereoDcam::setHoropter,      stcam_, _1));
+    checkAndSetInt("speckle_size",       boost::bind(&dcam::StereoDcam::setSpeckleSize,      stcam_, _1));
+    checkAndSetInt("speckle_diff",       boost::bind(&dcam::StereoDcam::setSpeckleDiff,      stcam_, _1));
+    checkAndSetInt("corr_size",          boost::bind(&dcam::StereoDcam::setCorrsize,      stcam_, _1));
+    checkAndSetInt("num_disp",           boost::bind(&dcam::StereoDcam::setNumDisp,      stcam_, _1));
   }
 
   void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
   {
-    if (has_param(std::string("~/") + param_name) || has_param(std::string("~/") + param_name + std::string("_auto")))
+    if (has_param(std::string("~") + param_name) || has_param(std::string("~") + param_name + std::string("_auto")))
     {
 
       int val = 0;
       bool isauto = false;
 
-      param( std::string("~/") + param_name, val, 0);
-      param( std::string("~/") + param_name + std::string("_auto"), isauto, false);
+      param( std::string("~") + param_name, val, 0);
+      param( std::string("~") + param_name + std::string("_auto"), isauto, false);
     
       int testval = (val * (!isauto));
 
@@ -230,11 +268,11 @@ public:
 
   void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
   {
-    if (has_param(std::string("~/") + param_name))
+    if (has_param(std::string("~") + param_name))
     {
       bool on = false;
 
-      param(std::string("~/") + param_name, on, false);
+      param(std::string("~") + param_name, on, false);
     
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
@@ -249,12 +287,12 @@ public:
 
   void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
   {
-    if (has_param(std::string("~/") + param_name))
+    if (has_param(std::string("~") + param_name))
     {
 
       int val = 0;
 
-      param(std::string("~/") + param_name, val, 0);
+      param(std::string("~") + param_name, val, 0);
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
 
