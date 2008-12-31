@@ -149,7 +149,7 @@ public:
 
     subscribe("scan", scan_, &LegDetector::laserCallback, 10);
     advertise<std_msgs::PointCloud>("filt_cloud",10);
-    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     subscribe("people_tracker_filter", people_meas_, &LegDetector::peopleCallback, 10);
 
     feature_id_ = 0;
@@ -379,9 +379,9 @@ public:
         pos.object_id = sf_iter->object_id;
         tf::PointTFToMsg(sf_iter->loc_,pos.pos);
         pos.reliability = 0.7;
-        pos.covariance[0] = 1.0;
-        pos.covariance[4] = 1.0;
-        pos.covariance[8] = 0.1;
+        pos.covariance[0] = 0.09;
+        pos.covariance[4] = 0.09;
+        pos.covariance[8] = 0.01;
         pos.initialization = 0;
         
         publish("people_tracker_measurements", pos);        
