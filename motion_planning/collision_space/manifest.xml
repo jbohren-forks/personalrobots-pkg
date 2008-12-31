@@ -7,7 +7,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
 
-  <depend package="rosthread"/>
+  <depend package="boost"/>
   <depend package="planning_models"/>
   <depend package="opende"/>
   <depend package="bullet"/>
