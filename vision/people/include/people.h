@@ -55,7 +55,7 @@ $ people/bin/face_detection [node_name] [cascade_file_path] [do_display]
 @endverbatim
 
 @param node_name A name for the node and topic to publish. Necessary because multiple copies of this node may be run.
-@param casade_file_path Full path to the trained haar cascade. Currently useful cascades are people/cascades/haar_frontalface_alt.xml and people/cascades/haar_profileface.xml
+@param casade_file_path Full path to the trained haar cascade. Currently useful cascades are people/cascades/haar_frontalface_alt.xml and people/cascades/haar_profileface.xml 
 @param do_display 0/1 whether to display the detections or just publish them.
 
 @verbatim
@@ -86,9 +86,9 @@ $ people/bin/track_starter_gui
 // Thresholds for the face detection algorithm
 #define FACE_SIZE_MIN_M 0.1
 #define FACE_SIZE_MAX_M 0.5
-#define FACE_SIZE_DEFAULT_M 0.1
+#define FACE_SIZE_DEFAULT_M 0.075//0.1
 #define MAX_Z_M 10
-#define FACE_DIST 0.4
+#define FACE_DIST 2.0 //0.4
 
 using namespace std;
 
@@ -151,6 +151,11 @@ class People
   void setFaceBbox2D(CvRect face_rect, int iperson );
 
   /*!
+   * \brief Print a person's 3d face center position.
+   */
+  void printFaceCenter3D(int iperson);
+
+  /*!
    * \brief Set a person's 3d face center position.
    */
   void setFaceCenter3D(double cx, double cy, double cz, int iperson);
@@ -196,6 +201,12 @@ class People
   IplImage* faceHist2Im(int iperson);
 
   /*!
+   * \brief Clear the face color histogram of a given person.
+   */
+  void clearFaceColorHist(int iperson);
+
+
+  /*!
    * \brief Detect all faces in an image.
    * 
    * Input:
@@ -219,7 +230,7 @@ class People
   /*!
    * \brief Track a face based on the face colour histogram.
    */
-  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
+  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points, bool* tracked_each);
 
  ////////////////////
  private:
