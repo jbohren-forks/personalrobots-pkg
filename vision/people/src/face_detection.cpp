@@ -47,6 +47,7 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 #include "topic_synchronizer.h"
+#include "tf/transform_listener.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -95,6 +96,9 @@ public:
   bool quit_;
 
   std::string node_name_;
+  ros::Time last_image_time_;
+
+  tf::TransformListener tf;
 
   ros::thread::mutex cv_mutex_;
 
@@ -112,7 +116,9 @@ public:
     haar_filename_(haar_filename),
     external_init_(external_init),
     quit_(false),
-    node_name_(node_name)
+    node_name_(node_name),
+    last_image_time_(ros::Time().fromSec(0)),
+    tf(*this)
   { 
     
     if (do_display_) {
@@ -125,7 +131,7 @@ public:
 
     // Subscribe to the images and parameters
     std::list<std::string> left_list;
-    left_list.push_back(std::string("stereodcam/left/image_rect"));
+    //left_list.push_back(std::string("stereodcam/left/image_rect"));
     left_list.push_back(std::string("stereodcam/left/image_rect_color"));
     sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("stereodcam/disparity",dimage_,1);
@@ -134,9 +140,9 @@ public:
     sync_.ready();
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     if (external_init_) {
-      subscribe<robot_msgs::PositionMeasurement>("people_tracking_filter",pos_,&FaceDetector::pos_cb,1);
+      subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
     }
 
   }
@@ -174,6 +180,13 @@ public:
     // }
 
     cv_mutex_.lock();
+
+    if ((pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {
+      cv_mutex_.unlock();
+      return;
+    }
+
+
     // Find the person in my list. If they don't exist, or this is an initialization, create them.
     // Otherwise, reset the position.
     int iperson = people_->findID(pos_.object_id);
@@ -187,8 +200,18 @@ public:
       // Person already exists.
     }
     // Set the position.
-    people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
-    printf("Face center reset: %f %f %f\n", -pos_.pos.y, -pos_.pos.z, pos_.pos.x);
+    tf::Point pt;
+    tf::PointMsgToTF(pos_.pos, pt);
+    tf::Stamped<tf::Point> loc(pt, pos_.header.stamp, pos_.header.frame_id);
+    try
+      {
+        tf.transformPoint("stereo_link", pos_.header.stamp, loc, "odom_combined", loc);
+      } 
+    catch (tf::TransformException& ex)
+      {
+      }
+    people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
+    printf("Face center reset: %f %f %f\n", -loc[1], -loc[2], loc[0]);
     cv_mutex_.unlock();
 
     /** @todo Check the time of the position message. If it's too old, ignore it. */
@@ -215,6 +238,8 @@ public:
   {
 
     cv_mutex_.lock();
+
+    last_image_time_ = limage_.header.stamp;
  
     CvSize im_size;
 
@@ -274,6 +299,7 @@ public:
 	    // If not, don't publish it.
 	    // If yes, set it's new position and publish it.
 	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
+	    printf("close person %d \n", close_person);
 	    if (close_person < 0) {
 	      do_publish = false;
 	    }
@@ -293,8 +319,10 @@ public:
 	    pos.header.frame_id = "stereo_link";
 	    pos.reliability = 0.8;
 	    pos.initialization = 0;
-	    //pos.covariance = ;
-	    publish("people_tracking_measurements",pos);
+	    pos.covariance[0] = 0.09;
+	    pos.covariance[4] = 0.09;
+	    pos.covariance[8] = 0.09;
+	    publish("people_tracker_measurements",pos);
 	  }
 	}
 
