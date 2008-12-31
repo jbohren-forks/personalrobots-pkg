@@ -40,7 +40,7 @@
 #include <cfloat>
 
 #define __PEOPLE_DEBUG__ 0
-#define __PEOPLE_DISPLAY__ 0
+#define __PEOPLE_DISPLAY__ 1
 
 
 People::People():
@@ -69,28 +69,28 @@ People::People():
 People::~People() {
 
   for (uint i=0; i < list_.size(); i++) {
-    cvReleaseHist(&list_[i].face_color_hist);
-    cvReleaseHist(&list_[i].shirt_color_hist);
-    cvReleaseImage(&list_[i].body_mask_2d);
-    cvReleaseImage(&list_[i].face_mask_2d);
+    cvReleaseHist(&list_[i].face_color_hist);  list_[i].face_color_hist = 0;  
+    cvReleaseHist(&list_[i].shirt_color_hist); list_[i].shirt_color_hist = 0;
+    cvReleaseImage(&list_[i].body_mask_2d);    list_[i].body_mask_2d = 0;
+    cvReleaseImage(&list_[i].face_mask_2d);    list_[i].face_mask_2d = 0;
   }
 
-  cvReleaseImage(&cv_image_gray_);
-  cvReleaseMemStorage(&storage_);
-  cvReleaseHaarClassifierCascade(&cascade_);
+  cvReleaseImage(&cv_image_gray_); cv_image_gray_ = 0;
+  cvReleaseMemStorage(&storage_); storage_ = 0;
+  cvReleaseHaarClassifierCascade(&cascade_); cascade_ = 0;
 
-  cvReleaseImage(&cft_r_plane_);  
-  cvReleaseImage(&cft_g_plane_);  
-  cvReleaseImage(&cft_b_plane_);
-  cvReleaseImage(&cft_r_plane_norm_);  
-  cvReleaseImage(&cft_g_plane_norm_); 
-  cvReleaseImage(&cft_X_);  
-  cvReleaseImage(&cft_Y_);  
-  cvReleaseImage(&cft_Z_); 
-  cvReleaseMat(&rbins_);
-  cvReleaseMat(&gbins_);
-  cvReleaseHist(&cft_start_hist_);
-  cvReleaseHist(&cft_ratio_hist_);
+  cvReleaseImage(&cft_r_plane_); cft_r_plane_ = 0; 
+  cvReleaseImage(&cft_g_plane_); cft_g_plane_ = 0;
+  cvReleaseImage(&cft_b_plane_); cft_b_plane_ = 0;
+  cvReleaseImage(&cft_r_plane_norm_); cft_r_plane_norm_ = 0;
+  cvReleaseImage(&cft_g_plane_norm_); cft_g_plane_norm_ = 0; 
+  cvReleaseImage(&cft_X_); cft_X_ = 0;
+  cvReleaseImage(&cft_Y_); cft_Y_ = 0;
+  cvReleaseImage(&cft_Z_); cft_Z_ = 0;
+  cvReleaseMat(&rbins_); rbins_ = 0;
+  cvReleaseMat(&gbins_); gbins_ = 0;
+  cvReleaseHist(&cft_start_hist_); cft_start_hist_ = 0;
+  cvReleaseHist(&cft_ratio_hist_); cft_ratio_hist_ = 0;
 
 #if __PEOPLE_DISPLAY__
   cvDestroyWindow("Real face hist");
@@ -248,6 +248,12 @@ void People::setFaceCenter3D(double cx, double cy, double cz, int iperson) {
   list_[iperson].face_center_3d = cvScalar(cx,cy,cz);
 }
 
+// Print a person's position.
+void People::printFaceCenter3D(int iperson) {
+  std::cout << "Face center for person " << iperson << ": " << list_[iperson].face_center_3d.val[0] << " " << list_[iperson].face_center_3d.val[1] << " " << list_[iperson].face_center_3d.val[2] << std::endl;
+}
+
+
 // Find the closest person with a face within a certain distance in 3D.
 int People::findPersonFaceLTDist3D(double dist, double cx, double cy, double cz){
   double mindist = dist;
@@ -279,7 +285,11 @@ IplImage* People::faceHist2Im(int iperson){
   return out_im;
 }
 
-
+// Clear a person's face histogram.
+void People::clearFaceColorHist(int iperson) {
+  cvReleaseHist(&list_[iperson].face_color_hist);
+  list_[iperson].face_color_hist = 0;
+}
 
 /********
  * Detect all faces in an image.
@@ -394,7 +404,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
  *   end_points: List of the new face centers. Does *not* update the face centers of the people without further intervention. Assumes the endpoint array is allocated.
  *   Side effect: can update the person's colour histogram.
  *********************************************/
-bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
+bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points, bool* tracked_each) {
  
 #if __PEOPLE_DEBUG__
   printf("in tracker\n");
@@ -449,18 +459,18 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 
       alloc = true;
 
-      cvReleaseImage(&cft_r_plane_);  
-      cvReleaseImage(&cft_g_plane_);  
-      cvReleaseImage(&cft_b_plane_);
-      cvReleaseImage(&cft_r_plane_norm_);  
-      cvReleaseImage(&cft_g_plane_norm_); 
-      cvReleaseImage(&cft_X_);  
-      cvReleaseImage(&cft_Y_);  
-      cvReleaseImage(&cft_Z_); 
-      cvReleaseMat(&rbins_);
-      cvReleaseMat(&gbins_);
-      cvReleaseMat(&cft_uvd_);
-      cvReleaseMat(&cft_xyz_);
+      cvReleaseImage(&cft_r_plane_); cft_r_plane_ = 0; 
+      cvReleaseImage(&cft_g_plane_); cft_g_plane_ = 0;
+      cvReleaseImage(&cft_b_plane_); cft_b_plane_ = 0;
+      cvReleaseImage(&cft_r_plane_norm_); cft_r_plane_norm_ = 0; 
+      cvReleaseImage(&cft_g_plane_norm_); cft_g_plane_norm_ = 0;
+      cvReleaseImage(&cft_X_); cft_X_ = 0;
+      cvReleaseImage(&cft_Y_); cft_Y_ = 0;
+      cvReleaseImage(&cft_Z_); cft_Z_ = 0; 
+      cvReleaseMat(&rbins_); rbins_ = 0;
+      cvReleaseMat(&gbins_); gbins_ = 0;
+      cvReleaseMat(&cft_uvd_); cft_uvd_ = 0;
+      cvReleaseMat(&cft_xyz_); cft_xyz_ = 0;
     }
   }
   if (alloc) {
@@ -549,7 +559,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
   for (int iperson = 0; iperson<npeople; iperson++) {
     t_person = &list_[which_people[iperson]];
 
-    
+    tracked_each[iperson] = true;
 
     cvSet(size_3d, cvScalar(t_person->face_size_3d));
 
@@ -573,6 +583,16 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     }
 
     cam_model->cartToDisp(four_corners, four_corners_2d);
+
+    if (cvmGet(four_corners_2d,0,0)< 0 || cvmGet(four_corners_2d,0,1) < 0 || cvmGet(four_corners_2d,1,0) >= imsize.width || cvmGet(four_corners_2d,2,1) >= imsize.height) {
+      cvmSet(end_points,iperson,0,cvmGet(my_start_point,0,0));
+      cvmSet(end_points,iperson,1,cvmGet(my_start_point,0,1));
+      cvmSet(end_points,iperson,2,cvmGet(my_start_point,0,2));
+      tracked_each[iperson] = false;
+      printf("bbox1 bad\n");
+      printf("x1,y1,x2,y2,w,h %f %f %f %f %d %d \n",cvmGet(four_corners_2d,0,0), cvmGet(four_corners_2d,0,1),cvmGet(four_corners_2d,1,0),cvmGet(four_corners_2d,2,1),imsize.width, imsize.height);
+      continue;
+    }
 
     bbox = cvRect((int)(cvmGet(four_corners_2d,0,0)), 
 		  (int)(cvmGet(four_corners_2d,0,1)), 
@@ -722,12 +742,22 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       } 
 
       bhat_coeff_new = 0.0;
+      bool ok_adjust = true; 
       while (d > EPS) {
 
 	// Compute the histogram and Bhattacharya coeff at the new position.
 	// Convert 3d point-size to 2d rectangle
 	centerSizeToFourCorners(next_point, size_3d, four_corners);
 	cam_model->cartToDisp(four_corners, four_corners_2d);
+
+	if (cvmGet(four_corners_2d,0,0)< 0 || cvmGet(four_corners_2d,0,1) < 0 || cvmGet(four_corners_2d,1,0) >= imsize.width || cvmGet(four_corners_2d,2,1) >= imsize.height) {
+	  //cvmSet(end_points,iperson,0,cvmGet(curr_point,0,0));cvmSet(end_points,iperson,1,cvmGet(curr_point,0,1));cvmSet(end_points,iperson,2,cvmGet(curr_point,0,2));
+	  tracked_each[iperson] = false;
+	  ok_adjust = false;
+	  printf("bbox2 bad\n");
+	  break;
+	}
+
 	bbox = cvRect(cvmGet(four_corners_2d,0,0), cvmGet(four_corners_2d,0,1), 
 		      cvmGet(four_corners_2d,1,0)-cvmGet(four_corners_2d,0,0)+1, 
 		      cvmGet(four_corners_2d,2,1)-cvmGet(four_corners_2d,0,1)+1);
@@ -768,7 +798,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       bhat_coeff = bhat_coeff_new;
       
       // Movement is small, break.
-      if (d <= EPS) {
+      if (d <= EPS || !ok_adjust) {
 	break;
       }
 
@@ -783,11 +813,11 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       (*fptr2) = (*fptr1); fptr2++; fptr1++;;
     }
 
-#if __PEOPLE_DEBUG__
+#if 1 // __PEOPLE_DEBUG__
     printf("iter=%d, d=%f\n",iter, d);
 #endif
 
-#if __PEOPLE_DEBUG__
+#if 1 //__PEOPLE_DEBUG__
     printf("end point ");
     for (int i =0; i<3; i++) {
       printf("%f ",cvmGet(end_points,iperson,i));
@@ -825,16 +855,16 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 
 
   /*** Cleanup ***/ 
-  cvReleaseMat(&four_corners);
-  cvReleaseMat(&four_corners_2d);
-  cvReleaseMat(&size_3d);
-  cvReleaseMat(&my_start_point);
-  cvReleaseMat(&next_point);
-  cvReleaseMat(&curr_point);
-  cvReleaseMat(&tpt);
+  cvReleaseMat(&four_corners); four_corners = 0;
+  cvReleaseMat(&four_corners_2d); four_corners_2d = 0;
+  cvReleaseMat(&size_3d); size_3d = 0;
+  cvReleaseMat(&my_start_point); my_start_point = 0;
+  cvReleaseMat(&next_point); next_point = 0;
+  cvReleaseMat(&curr_point); curr_point = 0;
+  cvReleaseMat(&tpt); tpt = 0;
 #if __PEOPLE_DISPLAY__
-  cvReleaseImage(&hist_im);
-  cvReleaseImage(&hist_im_real);
+  cvReleaseImage(&hist_im); hist_im = 0;
+  cvReleaseImage(&hist_im_real); hist_im_real = 0;
 #endif
 
   delete [] which_people;
