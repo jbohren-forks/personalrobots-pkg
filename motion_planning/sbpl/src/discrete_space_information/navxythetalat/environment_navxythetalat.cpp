@@ -1123,6 +1123,7 @@ double EnvironmentNAVXYTHETALAT::EuclideanDistance_m(int X1, int Y1, int X2, int
 //adds points to it (does not clear it beforehand)
 void EnvironmentNAVXYTHETALAT::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
 {  
+	int pind;
 
 #if DEBUG
 //  printf("---Calculating Footprint for Pose: %f %f %f---\n",
@@ -1135,7 +1136,7 @@ void EnvironmentNAVXYTHETALAT::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t 
     cell.x = CONTXY2DISC(pose.x, EnvNAVXYTHETALATCfg.cellsize_m);
     cell.y = CONTXY2DISC(pose.y, EnvNAVXYTHETALATCfg.cellsize_m);
 
-	for(int pind = 0; pind < (int)footprint->size(); pind++)
+	for(pind = 0; pind < (int)footprint->size(); pind++)
 	{
 		if(cell.x == footprint->at(pind).x && cell.y == footprint->at(pind).y)
 			break;
