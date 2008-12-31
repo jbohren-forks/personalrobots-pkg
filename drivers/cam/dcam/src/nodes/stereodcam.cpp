@@ -44,6 +44,11 @@
 
 #include "diagnostic_updater/diagnostic_updater.h"
 
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
+#include "std_srvs/Empty.h"
+
 using namespace std;
 
 void sigsegv_handler(int sig);
@@ -57,6 +62,8 @@ class StereoDcamNode : public ros::node
   double desired_freq_;
 
   string frame_id_;
+
+  std::map<std::string, int> paramcache_;
 
 public:
 
@@ -151,21 +158,111 @@ public:
       std::string params(stcam_->getParameters());
       set_param("~/params", params);
 
+      set_param("~/exposure_max", (int)stcam_->expMax);
+      set_param("~/exposure_min", (int)stcam_->expMin);
+      set_param("~/gain_max", (int)stcam_->gainMax);
+      set_param("~/gain_min", (int)stcam_->gainMin);
+      set_param("~/brightness_max", (int)stcam_->brightMax);
+      set_param("~/brightness_min", (int)stcam_->brightMin);
+
       // Configure camera
       stcam_->setFormat(mode, fps, speed);
       stcam_->setProcMode(videre_mode);
-      stcam_->setUniqueThresh(12);
-      stcam_->setTextureThresh(10);
+      stcam_->setUniqueThresh(36);
+      stcam_->setTextureThresh(30);
       stcam_->setCompanding(true);
 
       advertise<image_msgs::RawStereo>("~raw_stereo", 1);
-      
+      advertise_service("~check_params", &StereoDcamNode::checkFeatureService);
+
       // Start the camera
       stcam_->start();
+
+      usleep(200000);
+      
+      checkAndSetAll();
 
     } else {
       ROS_FATAL("stereodcam: No cameras found\n");
       self_destruct();
+    }
+  }
+
+
+  bool checkFeatureService(std_srvs::Empty::request &req,
+                           std_srvs::Empty::response &res)
+  {
+    checkAndSetAll();
+    return true;
+  }
+
+  void checkAndSetAll()
+  {
+    checkAndSetIntBool("exposure",   boost::bind(&dcam::Dcam::setExposure,   stcam_, _1, _2));
+    checkAndSetIntBool("gain",       boost::bind(&dcam::Dcam::setGain,       stcam_, _1, _2));
+    checkAndSetIntBool("brightness", boost::bind(&dcam::Dcam::setBrightness, stcam_, _1, _2));
+    checkAndSetBool("companding", boost::bind(&dcam::Dcam::setCompanding, stcam_, _1));
+    checkAndSetBool("hdr",        boost::bind(&dcam::Dcam::setHDR,        stcam_, _1));
+  }
+
+  void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
+  {
+    if (has_param(std::string("~/") + param_name) || has_param(std::string("~/") + param_name + std::string("_auto")))
+    {
+
+      int val = 0;
+      bool isauto = false;
+
+      param( std::string("~/") + param_name, val, 0);
+      param( std::string("~/") + param_name + std::string("_auto"), isauto, false);
+    
+      int testval = (val * (!isauto));
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != testval) )
+        setfunc(val, isauto);
+
+      paramcache_[param_name] = testval;
+    }
+  }
+
+  void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
+  {
+    if (has_param(std::string("~/") + param_name))
+    {
+      bool on = false;
+
+      param(std::string("~/") + param_name, on, false);
+    
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != on) )
+        setfunc(on);
+
+      paramcache_[param_name] = on;
+    }
+  }
+
+  void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
+  {
+    if (has_param(std::string("~/") + param_name))
+    {
+
+      int val = 0;
+
+      param(std::string("~/") + param_name, val, 0);
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != val) )
+        setfunc(val);
+
+      paramcache_[param_name] = val;
     }
   }
 
