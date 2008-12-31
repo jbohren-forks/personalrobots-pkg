@@ -15,7 +15,7 @@ octave-forge: $(SVN_DIR)
 	if [ ! -d octave-forge ]; then mkdir -p octave-forge; mkdir -p octave-forge/lib -p octave-forge/include -p octave-forge/bin; fi
 	-cd $(SVN_DIR) && ./autogen.sh
 	-cd $(SVN_DIR) && PATH=$(PATH):$(OCT_PATH) ./configure --prefix=$(PWD)/octave-forge
-	-cd $(SVN_DIR) && make
+	-cd $(SVN_DIR) && make all
 	-cd $(SVN_DIR) && make install
 	touch octave-forge
 
