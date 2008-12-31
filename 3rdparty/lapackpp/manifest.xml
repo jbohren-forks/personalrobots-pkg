@@ -1,0 +1,16 @@
+<package>
+  <description brief="lapackpp">
+  This package contains Lapack++ from source forge.
+  </description>
+  <author>Christian Stimming</author>
+  <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://lapackpp.sf.net</url>
+  <export>
+    <cpp lflags="-L${prefix}/lapackpp/lib" cflags="-I${prefix}/lapackpp/include "/>
+    <doxymaker external="http://lapackpp.sourceforge.net/"/>
+  </export>
+  <versioncontrol type="svn" url="https://lapackpp.svn.sourceforge.net/svnroot/lapackpp/lapackpp/trunk/"/>
+</package>
+
+
