@@ -4,7 +4,7 @@ TARBALL     = build/flann-1.11-src.zip
 TARBALL_URL = http://pr.willowgarage.com/downloads/flann-1.11-src.zip
 UNPACK_CMD  = unzip -x
 SOURCE_DIR  = build/flann-1.11-src
-TARBALL_PATCH = test_cmakelists.patch
+TARBALL_PATCH = cmakelists.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
