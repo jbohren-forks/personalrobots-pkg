@@ -85,6 +85,7 @@ public:
   virtual void getEstimate(BFL::StatePosVel& est) const;
   virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
+
 private:
   // pdf / model / filter
   BFL::Gaussian                                           prior_;
@@ -95,6 +96,7 @@ private:
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* meas_model_;
   MatrixWrapper::Matrix                                   sys_matrix_;
 
+  double calculateQuality();
 
   // vars
   bool tracker_initialized_;

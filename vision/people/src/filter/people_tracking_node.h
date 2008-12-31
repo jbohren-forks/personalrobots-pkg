@@ -86,8 +86,8 @@ private:
   message_sequencing::TimeSequencer<robot_msgs::PositionMeasurement>  message_sequencer_;
 
   /// trackers
-  std::vector<Tracker*> trackers_;
-  std::vector<std::string> tracker_names_;
+  std::map<std::string, Tracker*> trackers_;
+  std::map<std::string, Tracker*>::iterator tracker_it_;
 
   // tf listener
   tf::TransformListener robot_state_;
@@ -95,8 +95,8 @@ private:
   unsigned int tracker_counter_;
   double freq_;
   BFL::StatePosVel sys_sigma_;
-  tf::Vector3 meas_sigma_;
-  BFL::StatePosVel prior_sigma_;
+  std::string fixed_frame_;
+
 
   std::vector<std_msgs::Point32> meas_vis_;
   unsigned int meas_vis_counter_;

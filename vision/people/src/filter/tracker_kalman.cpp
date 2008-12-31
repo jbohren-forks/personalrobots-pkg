@@ -103,7 +103,6 @@ namespace estimation
   // initialize prior density of filter 
   void TrackerKalman::initialize(const StatePosVel& mu, const StatePosVel& sigma, const double time)
   {
-    cout << "Initializing tracker with covariance " << sigma << " around " << mu << endl;
     ColumnVector mu_vec(6);
     SymmetricMatrix sigma_vec(6); sigma_vec = 0;
     for (unsigned int i=0; i<3; i++){
@@ -135,6 +134,7 @@ namespace estimation
     // update filter
     bool res = filter_->Update(sys_model_);
     if (!res) quality_ = 0;
+    else quality_ = calculateQuality();
 
     return res;
   };
@@ -160,6 +160,7 @@ namespace estimation
     // update filter
     bool res = filter_->Update(meas_model_, meas_vec);
     if (!res) quality_ = 0;
+    else quality_ = calculateQuality();
 
     return res;
   };
@@ -187,6 +188,19 @@ namespace estimation
     est.header.frame_id = "odom_combined";
   }
 
+
+
+
+  double TrackerKalman::calculateQuality()
+  {
+    double sigma_max = 0;
+    SymmetricMatrix cov = filter_->PostGet()->CovarianceGet();
+    for (unsigned int i=1; i<=3; i++)
+      sigma_max = max(sigma_max, sqrt(cov(i,i)));
+
+
+    return 1.0 - min(1.0, sigma_max / 1.5);
+  }
 
 }; // namespace
 
