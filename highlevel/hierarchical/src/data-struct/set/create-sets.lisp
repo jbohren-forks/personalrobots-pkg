@@ -195,12 +195,47 @@ Can create using constructor, or the functions filter or objects-satisfying."))
 (defclass <implicit-union> (<set>)
   ((sets :initarg :sets :accessor sets :reader union-sets))
   (:documentation "Represents an implicit union of sets.
+
+Iteration is slow since we have to maintain a table of previously seen items.
+
 Initargs
 :sets"))
+
+(defmethod initialize-instance :after ((s <implicit-union>) &rest args &key sets)
+  (declare (ignore args))
+  (unless (is-empty sets)
+    (set-equality-test (equality-test (item 0 sets)) s)))
+
+(defmethod iterator ((s <implicit-union>))
+  (let ((already-seen (make-hash-table* :test (equality-test s)))
+	(iter (iterator (sets s)))
+	(set-iter nil))
+    #'(lambda ()
+	(loop
+	   unless set-iter
+	   do (mvbind (s done) (funcall iter)
+		(if done
+		    (return (iterator-done))
+		    (setq set-iter (iterator s))))
+	     
+	   do (mvbind (item done) (funcall set-iter)
+		(if done
+		    (setq set-iter nil)
+		    (unless (hash-table-has-key already-seen item)
+		      (setf (gethash* item already-seen) t)
+		      (return (iterator-not-done item)))))))))
+	
+      
 
 (defun implicit-union (&rest sets)
   "implicit-union &rest SETS"
   (make-instance '<implicit-union> :sets sets))
+
+(defmethod member? (x (us <implicit-union>))
+  (any (sets us) #'(lambda (s) (member? x s))))
+
+(defmethod is-empty ((s <implicit-union>))
+  (each (sets s) #'is-empty))
 
 (defclass <disjoint-union> (<implicit-union> <numbered-set>)
   ((sets :initarg :sets :accessor sets)
@@ -223,9 +258,6 @@ Initargs
   "disjoint-union-of-sets SETS.  Disjoint union of the sets (see disjoint-union)."
   (make-instance '<disjoint-union> :sets s))
 
-
-(defmethod member? (x (us <implicit-union>))
-  (any (sets us) #'(lambda (s) (member? x s))))
 
 (defmethod item (n (ds <disjoint-union>))
   (if (eq (size ds) ':unknown)

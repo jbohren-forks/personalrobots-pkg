@@ -1,32 +1,31 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; description.lisp
-;; Define action descriptions
+;; Define action descriptions and valuations
+;;
 ;; 
-;; The most general kind of action description takes in a valuation (function 
-;; from states to numbers) and returns another valuation.
-;; 
-;; Required operations
-;; - successor-set
-;; - regress
+;; Dec 30, 2008
+;; Went through the different types and ops.  It's gotten a bit clunky over time
+;; and in need of refactoring.  But for now:
+;; 1. There are a bunch of base ops that take in a description and either a
+;; state (succ-state) or set(s) (succ-set, regress, hla-complete/sound reward)
+;; 2. There are a couple more ops that take in a description and a valuation
+;; (progress/regress-sound/complete-valuation).  In the only case that's 
+;; implemented (simple valuations and descriptions), these just call out to
+;; the ops from 1.
+;; 3. Then there are other ops that take in a planning problem (or abstract-
+;; planning-problem), an action and a state.  These look up the action description 
+;; using one of primitive-action-desc, sound-desc, or complete-desc, then 
+;; call one of the ops from 1 or 2.  Examples are in abstract-planning-problem,
+;; and in ../decomp/valuation-bounds/descriptions.lisp, as well as some of
+;; the planning algorithms themselves.
 ;;
-;; Descriptions of primitive actions should have a method for
-;; - succ-state
+;; The main option would be to not have separate objects for descriptions and
+;; just pass the planning-problem and action name around, but the current
+;; method seems more flexible, e.g., for having different types of descriptions
+;; for different actions, at the cost of complexity and possibly needing to
+;; define a separate description type when defining a planning problem (some
+;; standard types exist such as ncstrips).
 ;;
-;; Optimistic (complete descriptions) should have methods for
-;; - progress-sound-valuation
-;; - regress-sound-valuation
-;;
-;; Analogously for pessimistic (complete)
-;;
-;; Functions are interpreted as descriptions, and the above ops are implemented
-;; by just applying the function (TODO this is a bit strange - is it needed?)
-;;
-;;
-;;
-;; A valuation is a function from a state space to the real numbers.  The same
-;; data type is used for both forward valuations (reward from initial state till
-;; this point), and backward valuations (reward from this point till goal)
-;; 
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -34,7 +33,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Action descriptions
+;; Base ops
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgeneric successor-set (desc states)
@@ -42,14 +41,20 @@
   (:method ((desc function) states)
 	   (funcall desc states)))
 
-
 (defgeneric succ-state (s d)
   (:documentation "succ-state STATE DESC.  Return next state after doing action with description DESC in STATE.  Applies only to descriptions that are, or can be treated as, deterministic.")
   (:method (s (d function)) (funcall d s)))
-
 	   
 (defgeneric regress (s s2 d)
   (:documentation "regress STATE-SET NEXT-STATE-SET DESC.  Return the set of states in STATE-SET such that progressing each of them through DESC yields a set that intersects NEXT-STATE-SET."))
+
+(defgeneric hla-complete-reward (d s s2)
+  (:documentation "hla-complete-reward SIMPLE-DESCRIPTION STATE-SET SUCC-STATE-SET.  
+Return a number R with the property that, for any refinement of the action referred to by description that goes between a state in STATE-SET and a state in SUCC-STATE-SET, the reward is <= R."))
+
+(defgeneric hla-sound-reward (d s s2)
+  (:documentation "hla-sound-reward DESC S S'.  Return a number R, with the property that for every state in SUCC-STATE-SET, there is some state in STATE-SET and a refinement of the HLA of DESC that goes between the given states with reward >= R."))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -61,11 +66,19 @@
 ;; - backward valuations map each state to a bound on 
 ;;   how much reward can be attained in future starting at
 ;;   this state
+;; The type system does not distinguish between the two
+;; kinds.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defstruct (simple-valuation (:conc-name sv-) (:constructor make-simple-valuation (s v)))
   "A simple valuation consists of a set and number and represents the function that equals the number on the set and -infty elsewhere."
   s v)
+
+(defun initial-valuation (d)
+  (make-simple-valuation (init-state-set d) 0))
+
+(defun final-valuation (d)
+  (make-simple-valuation (goal d) 0))
 
 (defgeneric progress-sound-valuation (desc val)
   (:documentation "progress-sound-valuation DESC V.  Suppose V is a lower-bound on the current valuation.  Returns a new valuation guaranteed to be a lower-bound on the result of progressing V through DESC.")
@@ -138,10 +151,38 @@
     ;; We can do this exactly
     (make-simple-valuation (binary-intersection (sv-s v1) (sv-s v2)) (mymin (sv-v v1) (sv-v v2)))))
 
+
+;; Note we treat the lower bound differently - instead of making an approximate simple valuation like in the upper bound, we make an exact
+;; upper bound of type max-valuation.  Will need to eventually allow calling code to control when this is done to prevent blowup.
 (defgeneric binary-pointwise-max-lower-bound (v1 v2)
   (:method ((v1 simple-valuation) (v2 simple-valuation))
-    ;; union the sets, take min of valuations.  We don't bother with the special case from the upper bound.
-    (make-simple-valuation (binary-union (sv-s v1) (sv-s v2)) (mymax (sv-v v1) (sv-v v2)))))
+    (make-max-valuation (list v1 v2))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; max valuations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstruct (max-valuation (:constructor make-max-valuation (vals)))
+  vals)
+
+(defmethod reachable-set ((v max-valuation))
+  (reduce #'binary-union (max-valuation-vals v) :key #'reachable-set))
+
+(defmethod max-achievable-value ((v max-valuation))
+  (reduce #'mymax (max-valuation-vals v) :key #'max-achievable-value))
+
+(def-symmetric-method binary-pointwise-max-upper-bound ((v1 max-valuation) v2)
+  (make-max-valuation (cons v2 (max-valuation-vals v1))))
+
+;; same as upper bound, as it is exact
+(def-symmetric-method binary-pointwise-max-lower-bound ((v1 max-valuation) v2)
+  (make-max-valuation (cons v2 (max-valuation-vals v1))))
+
+(defmethod evaluate-valuation ((v max-valuation) s)
+  (reduce #'mymax (max-valuation-vals v) :key #'(lambda (val) (evaluate-valuation val s))))
+  
+
 
 
 
@@ -168,10 +209,6 @@
       (unless (subset s2 s1) (push v2 achievable))
       (apply #'mymax achievable))))
 
-
-
-  
-
 	       
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -182,18 +219,16 @@
   ((succ-state-fn :initarg :succ-state-fn :reader succ-state-fn)
    (predecessor-fn :initarg :predecessor-fn :reader predecessor-fn)
    (reward-fn :initarg :reward-fn :reader reward-fn))
-  (:documentation "A simple description has methods for successor-set and hla-reward.  It then progresses/regresses valuations by first finding the successor/predecessor-set, then calling hla-reward.   The successor, predecessor and reward functions can be provided using the initargs :succ-state-fn, :predecessor-fn and :reward-fn.  Alternatively, subclasses may override successor-set, regress and/or hla-reward."))
+  (:documentation "A simple description has methods for successor-set and hla-sound/complete-reward.  It then progresses/regresses valuations by first finding the successor/predecessor-set, then calling hla-reward.   The successor, predecessor and reward functions can be provided using the initargs :succ-state-fn, :predecessor-fn and :reward-fn (note that there aren't separate functions for sound/complete - override hla-sound/complete-reward if this is a problem, like in ncstrips.lisp).  Alternatively, subclasses may override successor-set, regress and/or hla-reward."))
 
-(defgeneric hla-complete-reward (d s s2)
-  (:documentation "hla-complete-reward SIMPLE-DESCRIPTION STATE-SET SUCC-STATE-SET.  
-Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
-  (:method ((d <simple-description>) s s2)
-	   (funcall (reward-fn d) s s2)))
+(defun make-simple-description (succ-state-fn predecessor-fn reward-fn)
+  (make-instance '<simple-description> :succ-state-fn (designated-function succ-state-fn) :predecessor-fn (designated-function predecessor-fn) :reward-fn (designated-function reward-fn)))
 
-(defgeneric hla-sound-reward (d s s2)
-  (:documentation "hla-sound-reward DESC S S'.  Return a number R, with the property that for every state in SUCC-STATE-SET, there is some state in STATE-SET and a refinement of the HLA of DESC that goes between the given states with reward >= R.")
-  (:method ((d <simple-description>) s s2)
-	   (funcall (reward-fn d) s s2)))
+(defmethod hla-complete-reward ((d <simple-description>) s s2)
+  (funcall (reward-fn d) s s2))
+
+(defmethod hla-sound-reward ((d <simple-description>) s s2)
+    (funcall (reward-fn d) s s2))
 
 (defmethod successor-set ((d <simple-description>) s)
   (funcall (succ-state-fn d) s))
@@ -206,20 +241,20 @@ Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
   (with-struct (sv- s v) val
     (let* ((s2 (successor-set d s))
 	   (r (hla-sound-reward d s s2)))
-      (make-simple-valuation s2 (my+ r v)))))
+      (make-simple-valuation s2 (iunless (is-empty s2) (my+ r v))))))
 
 (defmethod progress-complete-valuation ((d <simple-description>) (val simple-valuation))
   (with-struct (sv- s v) val
     (let* ((s2 (successor-set d s))
 	   (r (hla-complete-reward d s s2)))
       (make-simple-valuation s2 (my+ r v)))))
-  
 
 (defmethod regress-sound-valuation ((d <simple-description>) (val1 simple-valuation) (val2 simple-valuation))
   (let* ((s2 (sv-s val2))
 	 (s1 (regress (sv-s val1) s2 d))
 	 (r (hla-sound-reward d s1 s2)))
-    (make-simple-valuation s1 (my+ r (sv-v val2)))))
+    ;; Adding this check won't change behavior, and avoids occasional annoying exceptions with adding infty and -infty
+    (make-simple-valuation s1 (iunless (is-empty s1) (my+ r (sv-v val2))))))
 
 (defmethod regress-complete-valuation ((d <simple-description>) (val1 simple-valuation) (val2 simple-valuation))
   (let* ((s2 (sv-s val2))
@@ -230,3 +265,11 @@ Return upper bound on reward for going from STATE-SET to SUCC-STATE-SET.")
 
 
     
+(defmethod progress-sound-valuation ((d <simple-description>) (val max-valuation))
+  (make-max-valuation (mapcar #'(lambda (v) (progress-sound-valuation d v)) (max-valuation-vals val))))
+
+(defmethod regress-sound-valuation ((d <simple-description>) val1 (val max-valuation))
+  (make-max-valuation (mapcar #'(lambda (v) (regress-sound-valuation d val1 v)) (max-valuation-vals val))))
+
+(defmethod regress-sound-valuation ((d <simple-description>) (val1 max-valuation) val)
+  (make-max-valuation (mapcar #'(lambda (v) (regress-sound-valuation d v val)) (max-valuation-vals val1))))

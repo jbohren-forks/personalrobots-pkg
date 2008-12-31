@@ -119,7 +119,7 @@
 			 (:file "trajectory" :depends-on ("env"))
 			 (:file "io-interface" :depends-on ("env"))))
 
-   (:module "agent" :depends-on ("misc")
+   (:module "agent" :depends-on ("misc" "set")
 	    :components ((:file "agent")
 			 (:file "prompt-agent" :depends-on ("agent"))))
 
@@ -164,11 +164,11 @@
 	     (:module "valuation-bounds"
 		      :depends-on ("dependency" "decomp")
 		      :components ((:file "vb-package")
-				   (:file "node" :depends-on ("vb-package"))
+				   (:file "node" :depends-on ("vb-package" "descriptions"))
 				   (:file "primitive" :depends-on ("node"))
 				   (:file "or-node" :depends-on ("node"))
 				   (:file "sequence" :depends-on ("node"))
-				   (:file "descriptions" :depends-on ("node"))
+				   (:file "descriptions" :depends-on ("vb-package"))
 				   ))))
 					    
    (:module "envs" :depends-on ("angelic" "motion-planning" "hybrid" "decomp")
@@ -182,10 +182,15 @@
 			   (:file "descriptions" :depends-on ("state-set"))
 			   (:file "decomp-descriptions" :depends-on ("decomp-hierarchy" "descriptions"))
 			   (:file "subsumption" :depends-on ("state-set"))))
+	     (:module "two-by-n"
+	      :components ((:file "two-by-n")
+			   (:file "hierarchy" :depends-on ("two-by-n"))
+			   (:file "descriptions" :depends-on ("hierarchy"))))
 	     (:module "nav-switch" 
 	      :components ((:file "nav-switch")
 			   (:file "hierarchy" :depends-on ("nav-switch"))
 			   (:file "descriptions" :depends-on ("nav-switch"))))
+		      
 							      
 	     #|(:module "pick-place" 
 	      :components 

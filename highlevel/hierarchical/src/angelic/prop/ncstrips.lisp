@@ -187,7 +187,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 
 
 (defmethod hla-sound-reward ((d ncstrips) (s <prop-state-set>) s2)
-  ;; Not quite correct, but lower bounds the actual reward, so everything will still work
+  ;; Not tight, but lower bounds the actual reward, so everything will still work
   (ncstrips-hla-reward d s s2 #'mymin))
 
 (defmethod hla-complete-reward ((d ncstrips) (s <prop-state-set>) s2)

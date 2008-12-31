@@ -24,6 +24,8 @@ Subclasses may implement
 - avail-actions
 - init-state-set
 - same-state
+- empty-set
+- universal-set
 
 And optionally
 - reward
@@ -79,7 +81,8 @@ The top-level allows initargs :goal, :init-state, :action-descriptions, :reward-
   (:method ((e <planning-problem>) s) (list s)))
 
 (defgeneric empty-set (d)
-  (:documentation "Return the empty set in the state representation used by this planning problem."))
+  (:documentation "Return the empty set in the state representation used by this planning problem.")
+  (:method ((d <planning-problem>)) nil))
 
 (defgeneric universal-set (d)
   (:documentation "Return the set of all states for this planning problem."))

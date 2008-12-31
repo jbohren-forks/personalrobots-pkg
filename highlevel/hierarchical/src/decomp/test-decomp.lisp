@@ -10,6 +10,7 @@
 	:dependency-graph
 	:set
 	:vb-node
+	:two-by-n
 	:prop-logic)
   (:import-from
    :vb-node
@@ -26,36 +27,19 @@
    :child-regressed-pessimistic
 
    :status)
-  (:import-from
-   :dep-graph 
-   :graph)
   )
 
 (in-package :test-decomp)
 
-(defvars nr nc dom hier descs)
 
-(set-debug-level :decomp 2)
-
-(setf nr 4
-      nc 4
-      dom (make-blocks-world-with-ceiling nr nc '((a 0 1) (baz 2 1) (c 2 2))
-					  '(2 3) '(and (on a c) (on c :t1)))
-      hier (make-instance '<blocks-hierarchy> :domain dom)
-      descs (make-instance '<blocks-descriptions> :domain dom :heuristic (dist-heuristic dom) :hierarchy hier))
-      
-      
-
- 
+(load-relative #P"dependency/test-dependency.lisp")
 
 
 
-(defun top-node ()
-  (let ((n (make-instance '<or-node> :action '(act) :descs descs :hierarchy hier :domain dom :parent nil))
-	(init-exact (new-val-diff (make-simple-valuation (init-state-set dom) 0)))
-	(final-exact (new-val-diff (make-simple-valuation (goal dom) 0)))) 
-    (update-external-variable n 'initial-optimistic init-exact)
-    (update-external-variable n 'initial-pessimistic init-exact)
-    (update-external-variable n 'final-pessimistic final-exact)
-    (update-external-variable n 'final-optimistic final-exact)
-    n))
+
+;; two-by-n 
+(defparameter costs #3A(((1 0) (1 6) (7 1)) ((0 0) (8 4) (6 5))))
+(defparameter e (make-instance '<two-by-n> :costs costs))
+(defparameter h (make-instance '<two-by-n-hierarchy> :planning-domain e))
+(defparameter descs (make-instance '<two-by-n-descriptions> :hierarchy h))
+

@@ -9,7 +9,7 @@
    :compute-cycle
 
    :action-description
-   :desc-domain
+   :planning-domain
 
    :progress-optimistic
    :progress-pessimistic

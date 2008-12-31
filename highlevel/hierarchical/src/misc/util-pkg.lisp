@@ -201,6 +201,7 @@
 	   srs
 	   rrs
 	   randomized-trials
+	   load-relative
 	   
 	   defaggregator
 	   compose

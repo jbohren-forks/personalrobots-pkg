@@ -27,8 +27,6 @@
 	(primitive-action-description (desc-domain d) action)
 	(lookup-in-ncstrips-schemas action (ecase type (:pessimistic (pessimistic-descs d)) (:optimistic (optimistic-descs d)))))))
 
-(defun make-simple-description (succ-state-fn predecessor-fn reward-fn)
-  (make-instance '<simple-description> :succ-state-fn (designated-function succ-state-fn) :predecessor-fn (designated-function predecessor-fn) :reward-fn (designated-function reward-fn)))
 
 
 

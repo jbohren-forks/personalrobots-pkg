@@ -101,7 +101,10 @@
 
    :simple-valuation
    :<simple-description>
+   :make-simple-description
    :make-simple-valuation
+   :initial-valuation
+   :final-valuation
    :sv-s
    :sv-v
    :max-achievable-value
@@ -117,6 +120,7 @@
    
    
    :successor-set
+   :regress
 
    :action-name
    :action-args

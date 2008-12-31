@@ -5,8 +5,6 @@
 (defclass <node> (<dependency-graph>)
   ((id :initarg :action :reader action)
    (descs :initarg :descs)
-   (domain :initarg :domain)
-   (hierarchy :initarg :hierarchy)
    (root-node :writer set-root-node :reader root-node)
    (children :reader children :initform (make-hash-table :test #'eql)) 
    
@@ -21,8 +19,7 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   "Creates the basic input and output variables to the parent, and the node's own progressed/regressed valuations.  Subtypes extend this to add additional variables and set up dependencies within the node."
   (set-root-node (if parent (root-node parent) n) n)
   (unless (eq n (root-node n))
-    (assert (not (or (slot-boundp n 'hierarchy) (slot-boundp n 'descs))) nil
-	    "Hierarchy and descs arguments should be nil for a non-root node"))
+    (assert (not (slot-boundp n 'descs)) nil "descs arguments should be nil for a non-root node"))
 
   ;; Inputs from parents
   (add-variable n 'initial-optimistic :external)
@@ -86,14 +83,14 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 (defun child (i n)
   (evaluate (children n) i))
 
-(defun hierarchy (n)
-  (slot-value (root-node n) 'hierarchy))
+(defmethod hierarchy ((n <node>))
+  (hierarchy (descs n)))
 
 (defun descs (n)
   (slot-value (root-node n) 'descs))
 
-(defun planning-domain (n)
-  (slot-value (root-node n) 'domain))
+(defmethod planning-domain ((n <node>))
+  (planning-domain (hierarchy (descs n))))
 
 (defun node-optimistic-progression (l)
   (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
