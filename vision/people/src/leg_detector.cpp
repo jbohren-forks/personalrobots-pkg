@@ -150,7 +150,7 @@ public:
     subscribe("scan", scan_, &LegDetector::laserCallback, 10);
     advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("people_tracking_measurements",1);
-    subscribe("people_tracking_filter", people_meas_, &LegDetector::peopleCallback, 10);
+    subscribe("people_tracker_filter", people_meas_, &LegDetector::peopleCallback, 10);
 
     feature_id_ = 0;
   }
@@ -384,7 +384,7 @@ public:
         pos.covariance[8] = 0.1;
         pos.initialization = 0;
         
-        publish("people_tracking_measurements", pos);        
+        publish("people_tracker_measurements", pos);        
       }
     }
   }
