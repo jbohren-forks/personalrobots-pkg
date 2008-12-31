@@ -49,6 +49,7 @@ switch method
     end
   case{'ellip'}
     if(length(req.args)==4) %defualt lowpass
+      'here'
       [b,a]=ellip(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),str2num(req.args{4}));
     elseif(length(req.args)==5) 
       if(strcmp(req.args{5},'high') || strcmp(req.args{5},'h') || strcmp(req.args{5},'low') || strcmp(req.args{5},'l'))%select type
@@ -61,24 +62,8 @@ switch method
     else %wrong number of arguments
       res=[];
     end
-  case{'invfreqz'}
-    if(length(req.args)==4) %defualt 
-      [b,a]=invfreqz(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),str2num(req.args{4}));
-    elseif(length(req.args)==5) %fit-errors vs. frequency
-      [b,a]=invfreqz(str2num(req.args{1}),str2num(req.args{2}), str2num(req.args{3}),str2num(req.args{4}), str2num(req.args{5}));
-    elseif(length(req.args)==6) %convergence
-      [b,a]=invfreqz(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),[str2num(req.args{4}) str2num(req.args{5})], str2num(req.args{6}));
-    elseif(length(req.args)==7) %convergence and tolerance
-      [b,a]=invfreqz(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),[str2num(req.args{4}) str2num(req.args{5})], str2num(req.args{6}), str2num(req.args{7}));   
-    else %wrong number of arguments
-      res=[];
-    end  
   otherwise %filter doesn't exist
     res=[];
 end
-
 res.a=a;
 res.b=b; 
-
-
-

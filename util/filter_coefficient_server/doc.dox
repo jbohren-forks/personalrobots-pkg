@@ -19,9 +19,6 @@ Generates a Chebyshev type I filter with Rp dB of pass band ripple.
 Generates a Chebyshev type II filter with Rs dB of stop band attenuation.
 \li <a href="http://octave.sourceforge.net/doc/f/ellip.html">ellip</a> - 
 Generate an Elliptic or Cauer filter (discrete).
-\li <a href="http://octave.sourceforge.net/doc/f/invfreqz.html">invfreqz</a> - 
-Generates a Fit filter B(z)/A(z) to the complex frequency response H at frequency
-points F.
 
 \verbatim
 $ ./generate_filter_coeffs.m
