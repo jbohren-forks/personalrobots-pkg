@@ -3,7 +3,7 @@
     A library for Input/Output PCD (Point Cloud Data) processing.
   </description>
 
-  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <author>Radu Bogdan Rusu</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>

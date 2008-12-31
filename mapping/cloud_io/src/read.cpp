@@ -87,6 +87,7 @@ namespace cloud_io
           std::string col_type = st.at (i + 4);
           points.chan[i].name = col_type;
         }
+        
         continue;
       }
       // Get the number of points
