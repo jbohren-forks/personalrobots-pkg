@@ -282,6 +282,15 @@ public:
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
+	  pm.covariance[0] = 0.09;
+	  pm.covariance[1] = 0.0;
+	  pm.covariance[2] = 0.0;
+	  pm.covariance[3] = 0.0;
+	  pm.covariance[4] = 0.09;
+	  pm.covariance[5] = 0.0;
+	  pm.covariance[6] = 0.0;
+	  pm.covariance[7] = 0.0;
+	  pm.covariance[8] = 0.09;
 	  publish("people_tracker_measurements",pm);
 	  gxys[i].published = true;
 	}	
