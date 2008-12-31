@@ -13,7 +13,7 @@
 <depend package="std_srvs"/>
 <depend package="rosthread"/>
 <depend package="string_utils"/>
-<depend package="image_utils"/>
+<depend package="opencv_latest"/>
 <depend package="stereo_utils"/>
 <!--<depend package="visual_odometry"/>-->
 <depend package="pyrob"/>
