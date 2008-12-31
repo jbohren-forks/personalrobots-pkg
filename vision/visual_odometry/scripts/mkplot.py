@@ -80,6 +80,17 @@ class dcamImage:
   def tostring(self):
     return self.data
 
+if 1:
+  def rotation(angle, x, y, z):
+    return numpy.array([
+      [ 1 + (1-cos(angle))*(x*x-1)         ,    -z*sin(angle)+(1-cos(angle))*x*y   ,    y*sin(angle)+(1-cos(angle))*x*z  ],
+      [ z*sin(angle)+(1-cos(angle))*x*y    ,    1 + (1-cos(angle))*(y*y-1)         ,    -x*sin(angle)+(1-cos(angle))*y*z ],
+      [ -y*sin(angle)+(1-cos(angle))*x*z   ,    x*sin(angle)+(1-cos(angle))*y*z    ,    1 + (1-cos(angle))*(z*z-1)       ]])
+  p0 = Pose(rotation(0.0, 0, 0, 1), [ 0, 0, 0])
+  p1 = Pose(rotation(0.1, 0, 0, 1), [ 0, 0, 0])
+  print p0.angle(p1)
+  sys.exit(0)
+
 cam = None
 filename = "/u/prdata/videre-bags/loop2-color.bag"
 filename = "/u/prdata/videre-bags/greenroom-2008-11-3-color.bag"
@@ -100,6 +111,9 @@ prev_wheel_pose = None
 wheel_o = None
 prev_wheel_o = None
 wheel_p = None
+
+angles = []
+qangles = []
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -133,6 +147,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
 
   start,end = 941,1000
   start,end = 0,99999
+  start,end = 1400,1500
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -173,6 +188,10 @@ for topic, msg, t in rosrecord.logplayer(filename):
       break
     has_moved = False
     angle_thresh = 0.03
+
+    if prev_wheel_pose and wheel_pose:
+      angles.append(prev_wheel_pose.angle(wheel_pose))
+      qangles.append(prev_wheel_pose.qangle(wheel_pose))
 
     if not wheel_pose:
       has_moved = True # be conservative until wheel odom starts up
@@ -226,6 +245,12 @@ for topic, msg, t in rosrecord.logplayer(filename):
     wheel_p = p
     R = transformations.rotation_matrix_from_quaternion([o.x, o.y, o.z, o.w])
     wheel_pose = Pose(R[:3,:3], [ p.x, p.y, p.z ])
+
+print "angles", len(angles)
+pylab.plot(range(100), angles[-100:], label = 'angle')
+pylab.plot(range(100), qangles[-100:], label = 'quaternion angle')
+pylab.show()
+sys.exit(0)
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"

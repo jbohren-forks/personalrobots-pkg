@@ -111,20 +111,33 @@ class Pose:
     eud = [abs(eu0[i] - eu1[i]) for i in [0,1,2]]
     return (sqrt(numpy.dot(d, d.conj())), eud[0], eud[1], eud[2])
 
-  def further_than(self, other, pos_d, ori_d):
+  def qangle(self, other):
+    (wx,wy,wz,ww) = self.quaternion()
+    yaw1 = atan2(2*(wx*wy + ww*wz), wx*wx + ww*ww - wy*wy - wz*wz)
+    (wx,wy,wz,ww) = other.quaternion()
+    yaw2 = atan2(2*(wx*wy + ww*wz), wx*wx + ww*ww - wy*wy - wz*wz)
+    return yaw2 - yaw1
+
+  def angle(self, other):
     p0 = self.xform(0,0,0)
     d0 = self.xform(0,0,1)
     p1 = other.xform(0,0,0)
     d1 = other.xform(0,0,1)
-    d = sqrt(sum([((a-b)**2) for a,b in zip(p0,p1)]))
     v0 = [ (b - a) for (a,b) in zip(p0,d0) ]
     v1 = [ (b - a) for (a,b) in zip(p1,d1) ]
+    print "d0", d0
+    print "d1", d1
     dot = sum([(a*b) for a,b in zip(v0,v1)])
     if dot >= 1.0:
       th = 0.0
     else:
       th = acos(dot)
-    #print "d", d, "th", th
+    return th
+
+  def further_than(self, other, pos_d, ori_d):
+    p0 = self.xform(0,0,0)
+    p1 = other.xform(0,0,0)
+    th = self.angle(other)
 
     return (d > pos_d) or (abs(th) > ori_d)
 
@@ -615,7 +628,7 @@ class VisualOdometer:
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
       #print "frame", frame.id, "key:", ref.id, "inliers:", inl
-      is_far = (self.inl < self.inlier_thresh) # or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
+      is_far = (self.inl < self.inlier_thresh) or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
       if (self.keyframe != self.prev_frame) and is_far: 
         self.change_keyframe(self.prev_frame)
         return self.handle_frame_0(frame)
