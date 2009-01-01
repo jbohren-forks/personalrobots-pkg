@@ -147,7 +147,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
     trajectory = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,99999
+  start,end = 0,27000
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -177,7 +177,10 @@ for topic, msg, t in rosrecord.logplayer(filename):
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
       vos = [
-             VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+             VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast,
+                            inlier_error_threshold = 3.0, sba = (5,5,5),
+                            inlier_thresh = 50,
+                            position_keypoint_thresh = 0.5, angle_keypoint_thresh = 0.15),
             ]
       vo_x = [ [] for i in vos]
       vo_y = [ [] for i in vos]

@@ -137,7 +137,6 @@ class Pose:
     p1 = other.xform(0,0,0)
     th = self.qangle(other)
     d = sqrt(sum([(a - b)**2 for (a,b) in zip(p0, p1)]))
-
     return (d > pos_d) or (abs(th) > ori_d)
 
   def distance(self):
@@ -342,9 +341,8 @@ class VisualOdometer:
     self.posechain = []
 
     self.position_thresh = kwargs.get('position_keypoint_thresh', 0.5)
-    self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5. / 360))
+    self.angle_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5. / 360))
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
-    self.angle_thresh = kwargs.get('angle_thresh', (2 * pi / 800))
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
@@ -626,7 +624,7 @@ class VisualOdometer:
       self.inl = inl
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
-      #print "frame", frame.id, "key:", ref.id, "inliers:", inl
+#      print "frame", frame.id, "key:", ref.id, "inliers:", inl, "angle_thresh", self.angle_thresh
       is_far = (self.inl < self.inlier_thresh) or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
       if (self.keyframe != self.prev_frame) and is_far: 
         self.change_keyframe(self.prev_frame)
