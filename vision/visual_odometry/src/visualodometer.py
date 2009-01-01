@@ -125,8 +125,6 @@ class Pose:
     d1 = other.xform(0,0,1)
     v0 = [ (b - a) for (a,b) in zip(p0,d0) ]
     v1 = [ (b - a) for (a,b) in zip(p1,d1) ]
-    print "d0", d0
-    print "d1", d1
     dot = sum([(a*b) for a,b in zip(v0,v1)])
     if dot >= 1.0:
       th = 0.0
@@ -137,7 +135,8 @@ class Pose:
   def further_than(self, other, pos_d, ori_d):
     p0 = self.xform(0,0,0)
     p1 = other.xform(0,0,0)
-    th = self.angle(other)
+    th = self.qangle(other)
+    d = sqrt(sum([(a - b)**2 for (a,b) in zip(p0, p1)]))
 
     return (d > pos_d) or (abs(th) > ori_d)
 

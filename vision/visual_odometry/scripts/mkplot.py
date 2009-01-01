@@ -147,7 +147,6 @@ for topic, msg, t in rosrecord.logplayer(filename):
 
   start,end = 941,1000
   start,end = 0,99999
-  start,end = 1400,1500
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -200,18 +199,6 @@ for topic, msg, t in rosrecord.logplayer(filename):
       prev_wheel_o = wheel_o
       has_moved = True
 
-    elif not prev_wheel_o == None:
-      w = wheel_o
-      yaw1 = math.atan2(2*(w.x*w.y + w.w*w.z), w.x*w.x + w.w*w.w - w.y*w.y - w.z*w.z)
-      w = prev_wheel_o
-      yaw2 = math.atan2(2*(w.x*w.y + w.w*w.z), w.x*w.x + w.w*w.w - w.y*w.y - w.z*w.z)
-      if abs(yaw1-yaw2) > angle_thresh:
-        print "*** Angle change: ", yaw1, abs(yaw1-yaw2)
-        has_moved = True
-        prev_wheel_pose = wheel_pose
-        prev_wheel_o = wheel_o
-
-
     if has_moved and start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
@@ -246,11 +233,12 @@ for topic, msg, t in rosrecord.logplayer(filename):
     R = transformations.rotation_matrix_from_quaternion([o.x, o.y, o.z, o.w])
     wheel_pose = Pose(R[:3,:3], [ p.x, p.y, p.z ])
 
-print "angles", len(angles)
-pylab.plot(range(100), angles[-100:], label = 'angle')
-pylab.plot(range(100), qangles[-100:], label = 'quaternion angle')
-pylab.show()
-sys.exit(0)
+if 0:
+  print "angles", len(angles)
+  pylab.plot(range(100), angles[-100:], label = 'angle')
+  pylab.plot(range(100), qangles[-100:], label = 'quaternion angle')
+  pylab.show()
+  sys.exit(0)
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
