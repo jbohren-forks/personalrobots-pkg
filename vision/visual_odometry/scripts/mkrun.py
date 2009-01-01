@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+#
+# run VO
+# do plot at end
+#
+
 import rostools
 rostools.update_path('visual_odometry')
 import rostest
@@ -179,8 +184,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
       vos = [
              VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(),
                             inlier_error_threshold = 3.0, sba = (5,5,5),
-                            inlier_thresh = 50,
-                            position_keypoint_thresh = 0.5, angle_keypoint_thresh = 0.15),
+                            inlier_thresh = 100,
+                            position_keypoint_thresh = 0.3, angle_keypoint_thresh = 0.15),
             ]
       vo_x = [ [] for i in vos]
       vo_y = [ [] for i in vos]
@@ -214,9 +219,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
-        if not vo.keyframe.id in keys:
-          Image.fromstring("L", (640,480), af.lf.tostring()).save("key_%06d.png" % len(keys))
-          keys.add(vo.keyframe.id)
+#        if not vo.keyframe.id in keys:
+#          Image.fromstring("L", (640,480), af.lf.tostring()).save("key_%06d.png" % len(keys))
+#          keys.add(vo.keyframe.id)
       inliers = vos[0].pe.inliers()
       pts = [(1,int(x0),int(y0)) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
       vis.show(msg.left_image.byte_data.data, pts)
