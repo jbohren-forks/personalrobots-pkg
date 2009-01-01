@@ -18,6 +18,10 @@
    (graph :reader graph :initform (make-instance '<adjacency-list-graph> :node-test #'equal))
    (id :initform (gensym) :initarg :id :reader dep-graph-id)
    (uninitialized-value :reader uninitialized-value :initform (gensym))
+
+   ;; Used to check if a variable has changed, which in turn determines whether the change is propagated
+   (equality-test :initarg :equality-test :initform #'equal :reader equality-test)
+
    (out-of-date-vars :initform (make-hash-table :test #'equal) :reader out-of-date-vars)))
 
 
@@ -110,6 +114,10 @@ If there exist out-of-date variables, update one of them and return 1) Its name 
   (assert (initialized? v g) nil "Can't get value of uninitialized variable ~a of ~a" v g)
   (current-val (get-var-desc v g)))
 
+(defun current-values (g vars)
+  "Call current-value for each var and return an alist of the values"
+  (mapcar #'(lambda (v) (cons v (current-value g v))) vars))
+
 (defun up-to-date-value (g v)
   "Make variable up-to-date and return its value.  An error will happen if V is an uninitialized external variable."
   (make-up-to-date g v)
@@ -168,8 +176,8 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 	(setf (edge-label e) nil)))
     
 
-    (debug-out :dep-graph 1 t "~&Updating variable ~a of dep graph ~a~& Value: ~a~& Parents: ~a~& Parent-vals: ~a" 
-	       v (dep-graph-id g) (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
+    (debug-out :dep-graph 1 t "~&Updating variable ~a of dep graph ~a~& Value: ~a~& Parent-vals: ~a" 
+	       v (dep-graph-id g) (current-val desc) parent-vals)
 
 
     (loop
@@ -183,11 +191,15 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 
 (defun change-variable (v new-val diff g)
   (let ((desc (get-var-desc v g)))
-    (setf (current-val desc) new-val)
-    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to ~a" v (dep-graph-id g) new-val)
-    (propagate-diff v g diff)
-    (dolist (h (update-hooks desc))
-      (funcall h new-val diff))))
+    (cond 
+      ((funcall (equality-test g) (current-val desc) new-val)
+       (debug-out :dep-graph 1 t "~&Value of variable ~a in graph ~a was unchanged at ~a, so not propagating" v (dep-graph-id g) new-val))
+      (t
+       (setf (current-val desc) new-val)
+       (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to~& ~a" v (dep-graph-id g) new-val)
+       (propagate-diff v g diff)
+       (dolist (h (update-hooks desc))
+	 (funcall h new-val diff))))))
 
 (defun propagate-diff (v g diff)
   (do-elements (e (edges-from (graph g) v))

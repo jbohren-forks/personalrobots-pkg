@@ -131,6 +131,12 @@
 	     (:file "planning-problem" :depends-on ("angelic-pkg" "description"))
 	     (:file "hierarchy" :depends-on ("angelic-pkg" "planning-problem"))
 	     (:file "description" :depends-on ("angelic-pkg"))
+	     (:module "descriptions" :depends-on ("description")
+		      :components
+		      ((:file "simple-valuation")
+		       (:file "sum-valuation" :depends-on ("max-valuation"))
+		       (:file "max-valuation" :depends-on ("simple-valuation"))
+		       (:file "simple-description")))
 	     (:file "variable-hierarchy" :depends-on ("description" "hierarchy"))
 	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "description"))
 	     (:file "subsumption" :depends-on ("description"))

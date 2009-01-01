@@ -95,6 +95,7 @@
 	   with-debug-indent
 	   debug-out
 	   set-debug-level
+	   reset-debug-level
 	   *debug-topics*
 	   define-debug-topic
 

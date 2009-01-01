@@ -643,8 +643,13 @@ Causes the dispatching read macro for CHAR in READTABLE to work by reading the n
 (defvar *debug-stream* t)
 (defvar *debug-topics* (make-hash-table :test #'equal))
 
-(defun set-debug-level (topic level)
-  (setf (gethash topic *debug-topics*) level))
+(defun set-debug-level (topic level &rest args)
+  (setf (gethash topic *debug-topics*) level)
+  (awhen args (apply #'set-debug-level it)))
+
+(defun reset-debug-level (&rest args)
+  (setf *debug-topics* (make-hash-table :test #'equal))
+  (awhen args (apply #'set-debug-level it)))
 
 (defmacro debug-out (topic level cond str &rest args)
   "debug-out TOPIC LEVEL CONDITION FORMAT-STRING &rest ARGS
@@ -653,6 +658,7 @@ When CONDITION is true, see if the level of this TOPIC exceeds LEVEL, and if so,
 The TOPICs are arranged in a forest (using define-debug-topic) and the level of the TOPIC is found by moving up the tree until a topic is found for which the level has been set using set-debug-level."
   `(when (and ,cond (topic-level-exceeds ',topic ,level))
      (format *debug-stream* ,str ,@args)))
+  
 
 (defun get-topic-level (topic)
   (or (gethash topic *debug-topics*)

@@ -51,7 +51,7 @@
 
 
 (defun top-node ()
-  (let ((n (make-instance '<or-node> :action '(act) :descs descs :hierarchy hier :domain dom :parent nil))
+  (let ((n (make-instance '<or-node> :action '(act) :descs descs :parent nil))
 	(init-exact (new-val-diff (make-simple-valuation (init-state-set dom) 0)))
 	(final-exact (new-val-diff (make-simple-valuation (goal dom) 0)))) 
     (update-external-variable n 'initial-optimistic init-exact)

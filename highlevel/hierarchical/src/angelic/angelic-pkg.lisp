@@ -107,6 +107,7 @@
    :final-valuation
    :sv-s
    :sv-v
+   :equal-valuations
    :max-achievable-value
    :progress-sound-valuation
    :regress-sound-valuation
@@ -117,6 +118,7 @@
    :binary-pointwise-max-upper-bound
    :binary-pointwise-max-lower-bound
    :binary-pointwise-min-upper-bound
+   :print-valuation
    
    
    :successor-set

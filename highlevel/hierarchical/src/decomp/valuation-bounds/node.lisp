@@ -5,6 +5,7 @@
 (defclass <node> (<dependency-graph>)
   ((id :initarg :action :reader action)
    (descs :initarg :descs)
+   (equality-test :initform #'equal-valuations)
    (root-node :writer set-root-node :reader root-node)
    (children :reader children :initform (make-hash-table :test #'eql)) 
    
@@ -57,8 +58,19 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 
 (defgeneric action-node-type (action-class)
   (:documentation "Maps from the action type (e.g :or) to the class name of corresponding nodes (<or-node>)."))
-(defgeneric add-child (n child-id new-node-type &rest args))
-(defgeneric compute-cycle (n))
+
+
+(defgeneric add-child (n child-id new-node-type &rest args)
+  (:documentation "Add a child node and set up communication with it.")
+  (:method ((n <node>) child-id new-node-type &rest args)
+    ;; The top method just creates and adds the child node object (which will set up the variables and communication within the child)
+    ;; Subclasses should define :after methods for add-child that set up communication between n and the child
+    (let ((child (apply #'make-instance new-node-type :parent n args)))
+      (setf (evaluate (children n) child-id) child)
+      (debug-out :node 1 t "~&Added child ~a to node ~a" (action child) (action n)))))
+
+(defgeneric compute-cycle (n)
+  (:documentation "This is where it all happens.  Improves the node's estimate of output vars given input vars.  May recursively call compute-cycle on children.  Takes time linear in depth of tree rooted at n."))
 
 
 
@@ -66,16 +78,32 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 ;; Things implemented here
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-(defmethod add-child ((n <node>) child-id new-node-type &rest args)
-  "Add a child node.  The dependencies within the child will be set by its initialize-instance :after method.  Subclasses of <node> should add :after or :around methods to this to set up communication with the child."
-  (let ((child (apply #'make-instance new-node-type :parent n args)))
-    (setf (evaluate (children n) child-id) child)
-    (debug-out :node 1 t "~&Added child ~a to node ~a" (action child) (action n))))
-  
-
 (defun create-child-for-action (hierarchy node id a)
   (add-child node id (action-node-type (action-class a hierarchy)) :action a))
+
+(defun node-optimistic-progression (l)
+  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
+
+(defun node-pessimistic-progression (l)
+  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
+
+(defun node-optimistic-regression (l)
+  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
+
+(defun node-pessimistic-regression (l)
+  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Getting plans from a node
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Accessors
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun child-ids (n)
   (domain (children n)))
@@ -92,18 +120,6 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 (defmethod planning-domain ((n <node>))
   (planning-domain (hierarchy (descs n))))
 
-(defun node-optimistic-progression (l)
-  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
-
-(defun node-pessimistic-progression (l)
-  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
-
-(defun node-optimistic-regression (l)
-  (reduce #'binary-pointwise-min-upper-bound l :key #'cdr))
-
-(defun node-pessimistic-regression (l)
-  (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -114,3 +130,9 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (let ((h (make-hash-table)))
     (maphash #'(lambda (k v) (setf (gethash k h) (action v))) (children n))
     (pprint-hash h)))
+
+(defun node-inputs (n)
+  (current-values n '(initial-optimistic initial-pessimistic final-optimistic final-pessimistic)))
+
+(defun node-outputs (n)
+  (current-values n '(progressed-optimistic progressed-pessimistic regressed-optimistic regressed-pessimistic)))

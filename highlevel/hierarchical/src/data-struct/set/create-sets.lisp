@@ -196,7 +196,7 @@ Can create using constructor, or the functions filter or objects-satisfying."))
   ((sets :initarg :sets :accessor sets :reader union-sets))
   (:documentation "Represents an implicit union of sets.
 
-Iteration is slow since we have to maintain a table of previously seen items.
+Iteration is slow especially for sets with nonstandard equality tests since we have to maintain a table of previously seen items.
 
 Initargs
 :sets"))
@@ -206,8 +206,8 @@ Initargs
   (unless (is-empty sets)
     (set-equality-test (equality-test (item 0 sets)) s)))
 
-(defmethod iterator ((s <implicit-union>))
-  (let ((already-seen (make-hash-table* :test (equality-test s)))
+(defmethod iterator ((s <implicit-union>) &aux (test (equality-test s)))
+  (let ((already-seen (if (is-standard-equality-test test) (make-hash-table :test #'equal) nil))
 	(iter (iterator (sets s)))
 	(set-iter nil))
     #'(lambda ()
@@ -221,9 +221,13 @@ Initargs
 	   do (mvbind (item done) (funcall set-iter)
 		(if done
 		    (setq set-iter nil)
-		    (unless (hash-table-has-key already-seen item)
-		      (setf (gethash* item already-seen) t)
-		      (return (iterator-not-done item)))))))))
+		    (etypecase already-seen
+		      (hash-table (unless (hash-table-has-key already-seen item)
+				    (setf (gethash item already-seen) t)
+				    (return (iterator-not-done item))))
+		      (list (unless (assoc item already-seen :test test)
+			      (push (cons item t) already-seen)
+			      (return (iterator-not-done item)))))))))))
 	
       
 
@@ -234,8 +238,20 @@ Initargs
 (defmethod member? (x (us <implicit-union>))
   (any (sets us) #'(lambda (s) (member? x s))))
 
+(defmethod subset ((s1 <implicit-union>) s2)
+  (each (sets s1) #'(lambda (s) (subset s s2))))
+
+
 (defmethod is-empty ((s <implicit-union>))
   (each (sets s) #'is-empty))
+
+(def-symmetric-method intersects ((us <implicit-union>) s2)
+  (any (sets us) #'(lambda (s) (intersects s s2))))
+
+(def-symmetric-method binary-intersection ((s1 <implicit-union>) s2)
+  (make-instance '<implicit-union> :sets (mapset 'list #'(lambda (s) (binary-intersection s s2)) (sets s1))))
+
+
 
 (defclass <disjoint-union> (<implicit-union> <numbered-set>)
   ((sets :initarg :sets :accessor sets)
@@ -313,11 +329,6 @@ Initargs
   (print-unreadable-object (s str :type nil :identity nil)
     (format str "Union of ~w" (sets s))))
 
-(defmethod intersects ((us <implicit-union>) s2)
-  (any (sets us) #'(lambda (s) (intersects s s2))))
-
-(defmethod intersects (s1 (us <implicit-union>))
-  (any (sets us) #'(lambda (s) (intersects s s1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; implicit intersection

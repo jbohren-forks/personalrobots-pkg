@@ -13,6 +13,7 @@
    :do-all-updates
    :do-next-update
    :current-value
+   :current-values
    :up-to-date-value
    :apply-diff
    :new-val-diff
@@ -20,6 +21,7 @@
    :tie-variables
    :id
    :dep-graph-id
+   :equality-test
 
    :make-simple-update-fn
    :make-simple-aggregator

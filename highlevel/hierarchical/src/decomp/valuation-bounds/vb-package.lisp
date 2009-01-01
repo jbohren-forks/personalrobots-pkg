@@ -7,6 +7,7 @@
    :<sequence-node>
 
    :compute-cycle
+   :child
 
    :action-description
    :planning-domain
@@ -29,12 +30,22 @@
    :my-regressed-optimistic
    :my-regressed-pessimistic
    :child-progressed-optimistic
-   :child-progressed-optimistic
+   :child-progressed-pessimistic
    :child-regressed-optimistic
    :child-regressed-pessimistic
+   :children-progressed-optimistic
+   :children-progressed-pessimistic
+   :children-regressed-optimistic
+   :children-regressed-pessimistic
+   
 
    :print-children
-   
+   :node-inputs
+   :node-outputs
+   :*progress-optimistic-counts*
+   :*progress-pessimistic-counts*
+   :*regress-optimistic-counts*
+   :*regress-pessimistic-counts*
    )
   (:documentation "Valuation bound nodes are decomposed planning nodes that implement the following internode protocol:
 

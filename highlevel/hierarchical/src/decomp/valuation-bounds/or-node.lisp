@@ -3,7 +3,8 @@
 (define-debug-topic :or-node :vb-node)
 
 (defclass <or-node> (<node>)
-  ((status :initform :initial)))
+  ((status :initform :initial)
+   (next-child :initform 0 :accessor next-child)))
 
 (defmethod initialize-instance :after ((n <or-node>) &rest args)
   (declare (ignorable args))
@@ -52,10 +53,11 @@
 
 (defun or-node-progressed-optimistic-aggregator (n)
   #'(lambda (l)
-      ;; Note that we're treating the case with no children specially
-      ;; in optimistic progression and regression
+      ;; Note that we're treating the case with no children differently
+      ;; in optimistic progression and regression, because it doesnt' mean that 
+      ;; there are no achievable states - just that we don't have any bounds on them yet
       (if l 
-	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr)
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 (defun or-node-progressed-pessimistic-aggregator (n)
@@ -64,10 +66,9 @@
 
 (defun or-node-regressed-optimistic-aggregator (n)
   #'(lambda (l)
-      ;; Note that we're treating the case with no children specially
-      ;; in optimistic progression and regression
+      ;; see progressed version above
       (if l
-	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr)
 	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
 
 (defun or-node-regressed-pessimistic-aggregator (n)
@@ -86,18 +87,24 @@
   (debug-out :or-node 1 t "~&In compute cycle of or-node ~a with status ~a" (action n) (status n))
   (ecase (status n)
     (:initial (do-all-updates n) (setf (status n) :create-children))
-    (:create-children (or-node-create-children n) (setf (status n) :children-created))
-    (:children-created
+    (:create-children (or-node-create-children n) (setf (status n) :cycle))
+    (:cycle (unless (zerop (size (children n)))
+	      (do-all-updates n)
+	      (compute-cycle (child (mod (incf (next-child n)) (size (children n))) n))
+	      (do-all-updates n))
+	    (setf (status n) :best-child))
+    (:best-child
      (do-all-updates n)
      (let ((children (child-ids n)))
+       (debug-out :or-node 1 t "~&Child scores of ~a are ~a" (action n) (mapset 'list (or-node-child-evaluator n) children))
        (unless (is-empty children)
-	 (let ((i (maximizing-element children (or-node-child-evaluator n))))
+	 (let ((i (maximizing-element children #'(lambda (j) (or-node-evaluate-child n j)))))
 	   (compute-cycle (child i n)))
-	 (do-all-updates n))))))
+	 (do-all-updates n))
+       (setf (status n) :cycle)))))
 
-(defun or-node-child-evaluator (n)
-  #'(lambda (i)
-      (max-achievable-value (make-sum-valuation (current-value n (cons 'child-progressed-optimistic i)) (current-value n 'final-optimistic)))))
+(defun or-node-evaluate-child (n i)
+  (max-achievable-value (make-sum-valuation (current-value n (cons 'child-progressed-optimistic i)) (current-value n 'final-optimistic))))
 
 
 (defun or-node-create-children (n)
@@ -106,6 +113,12 @@
       (assert (= 1 (length ref)))
       (create-child-for-action h n i (sfirst ref)))))
       
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; extracting plans
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 
     
     
