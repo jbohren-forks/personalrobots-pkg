@@ -50,7 +50,7 @@ using namespace robot_msgs;
 
 
 static const unsigned int num_meas_show              = 10;
-static const double       sequencer_delay            = 0.2;
+static const double       sequencer_delay            = 0.4;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 
@@ -65,23 +65,23 @@ namespace estimation
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
-      robot_state_(*this, true, 3000000000),
+      robot_state_(*this, true),
       tracker_counter_(0),
-      meas_vis_(num_meas_show),
-      meas_vis_counter_(0)
+      meas_visualize_(num_meas_show),
+      meas_visualize_counter_(0)
   {
     // initialize
     for (unsigned int i=0; i<num_meas_show; i++){
-      meas_vis_[i].x = 0;
-      meas_vis_[i].y = 0;
-      meas_vis_[i].z = 0;
+      meas_visualize_[i].x = 0;
+      meas_visualize_[i].y = 0;
+      meas_visualize_[i].z = 0;
     }
 
     // get parameters
-    param("~/fixed_frame", fixed_frame_, string("odom_combined"));
+    param("~/fixed_frame", fixed_frame_, string("default"));
+    cout << "frame " << fixed_frame_ << endl;
 
     param("~/freq", freq_, 1.0);
-
     param("~/sys_sigma_pos_x", sys_sigma_.pos_[0], 0.0);
     param("~/sys_sigma_pos_y", sys_sigma_.pos_[1], 0.0);
     param("~/sys_sigma_pos_z", sys_sigma_.pos_[2], 0.0);
@@ -144,22 +144,23 @@ namespace estimation
     // initialize a new tracker when initialization flag is set
     if (message->initialization == 1){
       stringstream name_new;
-      StatePosVel prior_sigma(Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), Vector3(0,0,0));
+      // TODO: WHAT SHOULD COVAR OF VEL BE??
+      StatePosVel prior_sigma(Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), Vector3(0.0000001, 0.0000001, 0.0000001));
       name_new << "person " << tracker_counter_++;
-      trackers_[name_new.str()] = new TrackerKalman(sys_sigma_, Vector3(0,0,0));
+      trackers_[name_new.str()] = new TrackerKalman(sys_sigma_);
       trackers_[name_new.str()]->initialize(meas, prior_sigma, time);
       ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), name_new.str().c_str());
     }
 
     // visualize measurement
-    meas_vis_[meas_vis_counter_].x = meas[0];
-    meas_vis_[meas_vis_counter_].y = meas[1];
-    meas_vis_[meas_vis_counter_].z = meas[2];
-    meas_vis_counter_++;
-    if (meas_vis_counter_ == num_meas_show) meas_vis_counter_ = 0;
+    meas_visualize_[meas_visualize_counter_].x = meas[0];
+    meas_visualize_[meas_visualize_counter_].y = meas[1];
+    meas_visualize_[meas_visualize_counter_].z = meas[2];
+    meas_visualize_counter_++;
+    if (meas_visualize_counter_ == num_meas_show) meas_visualize_counter_ = 0;
     std_msgs::PointCloud  meas_cloud; 
     meas_cloud.header.frame_id = meas.frame_id_;
-    meas_cloud.pts = meas_vis_;
+    meas_cloud.pts = meas_visualize_;
     publish("people_tracker_measurements_visualization", meas_cloud);
 
   }
@@ -169,7 +170,9 @@ namespace estimation
   // callback for dropped messages
   void PeopleTrackingNode::callbackDrop(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
-    ROS_INFO("%s: DROPPED PACKAGE FROM %s !!!!!!!!!!!", node_name_.c_str(), message->object_id.c_str());
+    ROS_INFO("%s: DROPPED PACKAGE for %s from %s !!!!!!!!!!!", 
+	     node_name_.c_str(), message->object_id.c_str(), message->name.c_str());
+
   }
 
 
@@ -182,7 +185,7 @@ namespace estimation
 
     while (ok()){
       // visualization variables
-      vector<std_msgs::Point32> points(trackers_.size());
+      vector<std_msgs::Point32> filter_visualize(trackers_.size());
       vector<float> weights(trackers_.size());
       std_msgs::ChannelFloat32 channel;
 
@@ -197,12 +200,13 @@ namespace estimation
 	PositionMeasurement est_pos;
 	it->second->getEstimate(est_pos);
 	est_pos.object_id = it->first;
-	points[i].x = est_pos.pos.x;
-	points[i].y = est_pos.pos.y;
-	points[i].z = est_pos.pos.z;
-	weights[i] = rgb[min(998, max(1, 999-(int)trunc( it->second->getQuality()*999 )))];
+	est_pos.header.frame_id = fixed_frame_;
 	publish("people_tracker_filter", est_pos);
-	i++;
+
+	filter_visualize[i].x = est_pos.pos.x;
+	filter_visualize[i].y = est_pos.pos.y;
+	filter_visualize[i].z = est_pos.pos.z;
+	weights[i] = rgb[min(998, max(1, (int)trunc( it->second->getQuality()*999.0 )))];
 
 	// remove trackers that have zero quality
 	if (it->second->getQuality() <= 0){
@@ -217,7 +221,7 @@ namespace estimation
       std_msgs::PointCloud  people_cloud; 
       people_cloud.chan.push_back(channel);
       people_cloud.header.frame_id = fixed_frame_;
-      people_cloud.pts  = points;
+      people_cloud.pts  = filter_visualize;
       publish("people_tracker_filter_visualization", people_cloud);
 
       // sleep

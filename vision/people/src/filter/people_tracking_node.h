@@ -98,8 +98,8 @@ private:
   std::string fixed_frame_;
 
 
-  std::vector<std_msgs::Point32> meas_vis_;
-  unsigned int meas_vis_counter_;
+  std::vector<std_msgs::Point32> meas_visualize_;
+  unsigned int meas_visualize_counter_;
 
 
 }; // class

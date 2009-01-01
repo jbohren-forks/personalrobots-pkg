@@ -48,7 +48,7 @@ using namespace robot_msgs;
 namespace estimation
 {
   // constructor
-  TrackerKalman::TrackerKalman(const StatePosVel& sysnoise, const Vector3& measnoise):
+  TrackerKalman::TrackerKalman(const StatePosVel& sysnoise):
     filter_(NULL),
     sys_pdf_(NULL),
     sys_model_(NULL),
@@ -81,7 +81,7 @@ namespace estimation
     ColumnVector meas_mu(3); meas_mu = 0;
     SymmetricMatrix meas_sigma(3); meas_sigma = 0;
     for (unsigned int i=0; i<3; i++)
-      meas_sigma(i+1, i+1) = pow(measnoise[i],2);
+      meas_sigma(i+1, i+1) = 0;
     Gaussian meas_noise(meas_mu, meas_sigma);
     meas_pdf_   = new LinearAnalyticConditionalGaussian(meas_matrix, meas_noise);
     meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(meas_pdf_);
@@ -126,6 +126,8 @@ namespace estimation
   // update filter prediction
   bool TrackerKalman::updatePrediction(const double dt)
   {
+    calculateQuality();
+
     // set dt in sys model
     for (unsigned int i=1; i<=3; i++)
       sys_matrix_(i, i+3) = dt;
@@ -144,6 +146,7 @@ namespace estimation
   // update filter correction
   bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
   {
+
     assert(cov.columns() == 3);
 
     // set filter time
@@ -195,9 +198,8 @@ namespace estimation
   {
     double sigma_max = 0;
     SymmetricMatrix cov = filter_->PostGet()->CovarianceGet();
-    for (unsigned int i=1; i<=3; i++)
+    for (unsigned int i=1; i<=2; i++)
       sigma_max = max(sigma_max, sqrt(cov(i,i)));
-
 
     return 1.0 - min(1.0, sigma_max / 1.5);
   }

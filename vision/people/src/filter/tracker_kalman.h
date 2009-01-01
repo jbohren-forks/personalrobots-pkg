@@ -61,7 +61,7 @@ class TrackerKalman: public Tracker
 {
 public:
   /// constructor
-  TrackerKalman(const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
+  TrackerKalman(const BFL::StatePosVel& sysnoise);
 
   /// destructor
   virtual ~TrackerKalman();

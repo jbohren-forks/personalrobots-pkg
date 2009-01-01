@@ -1,15 +1,15 @@
 
 <launch>
-<param name="people_tracker/fixed_frame" type="string" value="odom_combined"/>
+<param name="people_tracker/fixed_frame" type="string" value="odom"/>
 
 <param name="people_tracker/freq" value="10.0"/>
 
 <param name="people_tracker/sys_sigma_pos_x" value="0.1"/>
 <param name="people_tracker/sys_sigma_pos_y" value="0.1"/>
-<param name="people_tracker/sys_sigma_pos_z" value="0.0000001"/>
+<param name="people_tracker/sys_sigma_pos_z" value="0.0001"/>
 <param name="people_tracker/sys_sigma_vel_x" value="0.1"/>
 <param name="people_tracker/sys_sigma_vel_y" value="0.1"/>
-<param name="people_tracker/sys_sigma_vel_z" value="0.0000001"/>
+<param name="people_tracker/sys_sigma_vel_z" value="0.1"/>
 
 <node pkg="people" type="people_tracker" output="screen"/>
 </launch>
