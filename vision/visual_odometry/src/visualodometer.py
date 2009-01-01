@@ -341,9 +341,9 @@ class VisualOdometer:
     self.all_tracks = set()
     self.posechain = []
 
-    self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
+    self.position_thresh = kwargs.get('position_keypoint_thresh', 0.5)
+    self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5 / 360))
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
-    self.position_thresh = kwargs.get('position_thresh', 0.1)
     self.angle_thresh = kwargs.get('angle_thresh', (2 * pi / 800))
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())

@@ -114,6 +114,7 @@ wheel_p = None
 
 angles = []
 qangles = []
+keys = set()
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -210,6 +211,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
+        if not vo.keyframe.id in keys:
+          Image.fromstring("L", (640,480), af.lf.tostring()).save("key_%06d.png" % len(keys))
+          keys.add(vo.keyframe.id)
       inliers = vos[0].pe.inliers()
       pts = [(1,int(x0),int(y0)) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
       vis.show(msg.left_image.byte_data.data, pts)
