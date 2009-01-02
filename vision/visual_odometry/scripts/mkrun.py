@@ -150,6 +150,7 @@ angles = []
 qangles = []
 keys = set()
 initfig = 0
+ploton = 0
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -213,7 +214,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
       cam = camera.StereoCamera(msg.right_info)
       vos = [
              VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(),
-                            inlier_error_threshold = 3.0, sba = (10,10,10),
+                            inlier_error_threshold = 3.0, sba = (5,5,5),
                             inlier_thresh = 100,
                             position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15),
             ]
@@ -259,11 +260,20 @@ for topic, msg, t in rosrecord.logplayer(filename):
       print "pose", framecounter, vo.inl, x, y, z
 
       # optional show the plot
-      if not checkch() == None or len(vos[0].log_keyframes) > initfig:
+      c = checkch()
+      if not c == None:
+        if ploton:
+          ploton = 0
+          pylab.ioff()
+        else:
+          ploton = 1
+          pylab.ion()
+        
+      if ploton and len(vos[0].log_keyframes) > initfig:
         if initfig == 0:
           pylab.ion()
           pylab.figure(figsize=(10,10))
-        initfig = 2 + len(vos[0].log_keyframes)
+        initfig = len(vos[0].log_keyframes)
         xs = numpy.array(vo_x[0])
         ys = numpy.array(vo_y[0])
 #        xs -= 4.5 * 1e-3
