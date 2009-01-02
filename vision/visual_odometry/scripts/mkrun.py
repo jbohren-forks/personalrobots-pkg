@@ -213,9 +213,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
       cam = camera.StereoCamera(msg.right_info)
       vos = [
              VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(),
-                            inlier_error_threshold = 3.0, sba = (5,5,5),
-                            inlier_thresh = 150,
-                            position_keypoint_thresh = 0.3, angle_keypoint_thresh = 0.15),
+                            inlier_error_threshold = 3.0, sba = (10,10,10),
+                            inlier_thresh = 100,
+                            position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15),
             ]
       vo_x = [ [] for i in vos]
       vo_y = [ [] for i in vos]
@@ -259,18 +259,26 @@ for topic, msg, t in rosrecord.logplayer(filename):
       print "pose", framecounter, vo.inl, x, y, z
 
       # optional show the plot
-      if not checkch() == None:
+      if not checkch() == None or len(vos[0].log_keyframes) > initfig:
         if initfig == 0:
+          pylab.ion()
           pylab.figure(figsize=(10,10))
+        initfig = 2 + len(vos[0].log_keyframes)
         xs = numpy.array(vo_x[0])
         ys = numpy.array(vo_y[0])
-        xs -= 4.5 * 1e-3
+#        xs -= 4.5 * 1e-3
         f = -0.06
+        f = 0.0
         xp = xs * cos(f) - ys * sin(f)
         yp = ys * cos(f) + xs * sin(f)
         pylab.plot(xp, yp, c = 'blue', label = vos[0].name())
+
+        xk = [ x for j,x in enumerate(vo_x[0]) if j in vos[0].log_keyframes ]
+        yk = [ y for j,y in enumerate(vo_y[0]) if j in vos[0].log_keyframes ]
+        pylab.scatter(xk, yk, c = 'red', label = '_nolegend_')
+
         pylab.axis('equal')
-        pylab.show()
+        pylab.draw()
 
 
       inliers.append(vo.inl)
@@ -349,6 +357,7 @@ mid = sum(ylim) / 2
 pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
+pylab.ioff()
 pylab.show()
 
 for vo in vos:
