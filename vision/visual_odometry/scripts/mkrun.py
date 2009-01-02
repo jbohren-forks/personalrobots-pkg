@@ -26,6 +26,9 @@ import unittest
 import math
 import copy
 
+# stuff for keypress check
+import termios, fcntl, sys, os, select
+
 from image_msgs.msg import RawStereo
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
@@ -46,6 +49,32 @@ import rosrecord
 
 from vis import Vis
 import transformations
+
+
+def checkch():
+  fd = sys.stdin.fileno()
+  oldterm = termios.tcgetattr(fd)
+  newattr = oldterm[:]
+  newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+  termios.tcsetattr(fd, termios.TCSANOW, newattr)
+
+  oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+  fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+
+  c = None
+  try:
+    r, w, e = select.select([fd], [], [], 0)
+    if r:
+      c = sys.stdin.read(1)
+      print "Got character", repr(c)
+
+  finally:
+    termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+
+  return c
+
+
 
 def planar(x, y, z):
   from scipy import optimize
@@ -120,6 +149,7 @@ wheel_p = None
 angles = []
 qangles = []
 keys = set()
+initfig = 0
 
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
@@ -184,7 +214,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
       vos = [
              VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(),
                             inlier_error_threshold = 3.0, sba = (5,5,5),
-                            inlier_thresh = 100,
+                            inlier_thresh = 150,
                             position_keypoint_thresh = 0.3, angle_keypoint_thresh = 0.15),
             ]
       vo_x = [ [] for i in vos]
@@ -227,6 +257,21 @@ for topic, msg, t in rosrecord.logplayer(filename):
       vis.show(msg.left_image.byte_data.data, pts)
 
       print "pose", framecounter, vo.inl, x, y, z
+
+      # optional show the plot
+      if not checkch() == None:
+        if initfig == 0:
+          pylab.figure(figsize=(10,10))
+        xs = numpy.array(vo_x[0])
+        ys = numpy.array(vo_y[0])
+        xs -= 4.5 * 1e-3
+        f = -0.06
+        xp = xs * cos(f) - ys * sin(f)
+        yp = ys * cos(f) + xs * sin(f)
+        pylab.plot(xp, yp, c = 'blue', label = vos[0].name())
+        pylab.axis('equal')
+        pylab.show()
+
 
       inliers.append(vo.inl)
     else:
