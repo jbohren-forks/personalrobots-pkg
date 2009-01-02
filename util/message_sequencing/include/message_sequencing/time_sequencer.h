@@ -220,7 +220,7 @@ public:
     // Deserialize into our newly created message:
     message->__serialized_length = __serialized_length;
     uint8_t* ret = message->deserialize(read_ptr);
-
+    
     {
       boost::mutex::scoped_lock lock(queue_mutex_);
 
@@ -258,33 +258,33 @@ private:
   ros::Time dispatchNextMessage()
   {
 
+
+    // Purge all out of date messages:
     typename S_Message::iterator it = messages_.begin();
     typename S_Message::iterator end = messages_.end();
-    for (; it != end; )
+    while (it != end && (*it)->header.stamp < last_time_)
     {
-      const MessagePtr& message = *it;
+      if (old_callback_)
+        old_callback_(*it);
+      ++it;
+    }
+    messages_.erase(messages_.begin(), it);
 
-      // If the message is out of date, purge it
-      if (message->header.stamp < last_time_)
-      {
-        if (old_callback_)
-          old_callback_(message);
-        messages_.erase(it++);
-      }
-      else if (message->header.stamp < ros::Time::now() + neg_delay_)
-      {
-        last_time_ = message->header.stamp;
 
-        if (callback_)
-          callback_(message);
+    // If there is a message left at the beginning execute it if it's time
+    it = messages_.begin();
 
-        messages_.erase(it++);
-        break;
-      } else {
-        it++;
-      }
+    if (it != end && (*it)->header.stamp < ros::Time::now() + neg_delay_)
+    {
+      last_time_ = (*it)->header.stamp;
+
+      if (callback_)
+        callback_(*it);
+
+      messages_.erase(it);
     }
 
+    it = messages_.begin();
     if (it != end)
     {
       // Return timestamp of next message if available
@@ -350,8 +350,10 @@ private:
           if (time_to_go < ros::Duration().fromSec(0.1))
             timeout = boost::posix_time::nanosec(time_to_go.toNSec());
           else
-            timeout += boost::posix_time::milliseconds(100);
+            timeout = boost::posix_time::milliseconds(100);
+
           new_data_.timed_wait(lock, timeout);
+          
           time_to_go = next_time - (ros::Time::now() + neg_delay_);
         }
 
@@ -362,7 +364,6 @@ private:
         }
 
         local_queue.swap(new_message_queue_);
-
         new_messages_ = false;
       }
 
@@ -374,6 +375,8 @@ private:
 
         local_queue.clear();
 
+        // We only dispatch one message at a time so we can swap in new messages that arrived
+        // during the processing time.
         next_time = dispatchNextMessage();
       }
     }
