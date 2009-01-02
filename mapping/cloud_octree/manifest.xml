@@ -1,0 +1,17 @@
+<package>
+  <description>
+    A library for 3D spatial decomposition of PointCloud messages using Octree data structures.
+  </description>
+
+  <author>Matei Ciocarlie and Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="unreviewed" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_octree"/>
+  </export>
+</package>

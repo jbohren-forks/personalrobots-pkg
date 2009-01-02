@@ -1,0 +1,11 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b cloud_octree is a library for 3D point cloud decomposition using octree
+structures. To optimize the amount of data stored and passed to other
+libraries or nodes, a leaf contains integer point indices into the cloud,
+rather than the 3D points themselves.
+
+*/
