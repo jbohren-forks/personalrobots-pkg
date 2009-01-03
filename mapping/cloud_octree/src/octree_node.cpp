@@ -113,7 +113,7 @@ namespace cloud_octree
         continue;
       }
       if (source[address] == child_type::LEAF)
-        setChild (i, new Leaf () );
+        setChild (i, new Leaf ());
       else if (source[address] == child_type::BRANCH)
         setChild (i, new Branch () );
       else                // Error
@@ -168,8 +168,8 @@ namespace cloud_octree
         return (false);
 
       // Two children leaves have different values
-      if ( ((Leaf*)(m_children_[i]))->getValue () != indices)
-        return (false);
+//      if ( ((Leaf*)(m_children_[i]))->getValue () != indices)
+//        return (false);
     }
 
     // All children are leaves and they have the same value
@@ -185,9 +185,9 @@ namespace cloud_octree
     int n = 0;
     for (int i = 0; i < 8; i++)
     {
-      if ( !m_children_[i] )
+      if (!m_children_[i])
         continue;
-      if ( m_children_[i]->isLeaf ())
+      if (m_children_[i]->isLeaf ())
         n += 1;
       else
         n += ((Branch*)m_children_[i])->getNumLeaves ();

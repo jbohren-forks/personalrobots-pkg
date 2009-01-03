@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: octree.h 8082 2008-12-15 00:40:22Z veedee $
+ * $Id$
  *
  */
 
@@ -38,12 +38,15 @@
 #include <iostream>
 #include <assert.h>
 #include <list>
+#include <set>
 #include <cloud_octree/octree_node.h>
+#include <cloud_octree/octree_index.h>
 // #include <scan_utils/OctreeMsg.h>
 #include <math.h>
 
 namespace cloud_octree
 {
+  /** \brief Main octree class */
   class Octree
   {
     public:
@@ -73,7 +76,7 @@ namespace cloud_octree
       inline void
         setMaxDepth (int d)
       {
-        if ( d <= 0 )
+        if (d <= 0)
           d = 1;
         m_max_depth_ = d;
       }
@@ -86,7 +89,10 @@ namespace cloud_octree
       /** \brief Returns the maximum number of cells along one dimension of this Octree. Equals 2^(mMaxDepth). 
         * Overall, the Octree might contain up to getNumCells()^3 cells.
         */
-      int getNumCells () const { return ((int)pow ((float)2, m_max_depth_)); } 
+      inline int getNumCells () const { return (1 << m_max_depth_); }
+
+      std::vector<Leaf*> getOccupiedLeaves ();
+      std::vector<Leaf*> getMinOccupiedLeaves (unsigned int min_points);
 
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +160,9 @@ namespace cloud_octree
         coordinatesToCell (float x, float y, float z, int *i, int *j, int *k) const
       {
         int num_cells = getNumCells ();
-        *i = (int)(floor ( (x - m_cen_[0]) / num_cells ) + (num_cells / 2) );
-        *j = (int)(floor ( (y - m_cen_[1]) / num_cells ) + (num_cells / 2) );
-        *k = (int)(floor ( (z - m_cen_[2]) / num_cells ) + (num_cells / 2) );
+        *i = (int)(floor ((x - m_cen_[0]) / num_cells) + (num_cells / 2));
+        *j = (int)(floor ((y - m_cen_[1]) / num_cells) + (num_cells / 2));
+        *k = (int)(floor ((z - m_cen_[2]) / num_cells) + (num_cells / 2));
         if (!testBounds (x, y, z))
           return (false);
         return (true);
@@ -174,9 +180,9 @@ namespace cloud_octree
         float dx = m_dim_[0] / 2.0;
         float dy = m_dim_[1] / 2.0;
         float dz = m_dim_[2] / 2.0;
-        if ( x > m_cen_[0] + dx ) return (false); if ( x < m_cen_[0] - dx ) return (false);
-        if ( y > m_cen_[1] + dy ) return (false); if ( y < m_cen_[1] - dy ) return (false);
-        if ( z > m_cen_[2] + dz ) return (false); if ( z < m_cen_[2] - dz ) return (false);
+        if (x > m_cen_[0] + dx) return (false); if (x < m_cen_[0] - dx) return (false);
+        if (y > m_cen_[1] + dy) return (false); if (y < m_cen_[1] - dy) return (false);
+        if (z > m_cen_[2] + dz) return (false); if (z < m_cen_[2] - dz) return (false);
         return (true);
       }
 

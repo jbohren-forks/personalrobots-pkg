@@ -127,11 +127,13 @@ namespace cloud_octree
       unsigned char address = 0;
       // Compute the address of the current root in the list of the future root which will be added on top.
       // It is reversed from the address computation used in insert/erase(...)
-      if ( x < m_cen_[0] - m_dim_[0] / 2.0 ) { address +=4; m_cen_[0] -= m_dim_[0] / 2.0; }
+      if (x < (m_cen_[0] - m_dim_[0] / 2.0)) { address +=4; m_cen_[0] -= m_dim_[0] / 2.0; }
       else                                   { m_cen_[0] += m_dim_[0] / 2.0; }
-      if ( y < m_cen_[1] - m_dim_[1] / 2.0 ) { address +=2; m_cen_[1] -= m_dim_[1] / 2.0; }
+
+      if (y < (m_cen_[1] - m_dim_[1] / 2.0)) { address +=2; m_cen_[1] -= m_dim_[1] / 2.0; }
       else                                   { m_cen_[1] += m_dim_[1] / 2.0; }
-      if ( z < m_cen_[2] - m_dim_[2] / 2.0 ) { address +=1; m_cen_[2] -= m_dim_[2] / 2.0; }
+
+      if (z < (m_cen_[2] - m_dim_[2] / 2.0)) { address +=1; m_cen_[2] -= m_dim_[2] / 2.0; }
       else                                   { m_cen_[2] += m_dim_[2] / 2.0; }
 
       // We have doubled the size
@@ -201,8 +203,8 @@ namespace cloud_octree
   /** \brief Insert a new value at the spatial location specified by \a x,y,z. If the given region of space is
     * previously unvisited, it will travel down creating Branches as it goes, until reaching a depth
     * of \a m_max_depth_. At that point it will create a Leaf with the value \a new_value.
-    * On success, the function will navigate back towards the top of the tree, aggregating leaves
-    * where appropriate.
+    * On success, the method will navigate back towards the top of the tree, aggregating leaves
+    * where appropriate. The method will also update the internal \a occupied_leaves_ set.
     * \note
       If the point at \a x,y,z is out of bounds: if the \a m_auto_expand_
       is true, the tree will expand (by adding new leaves on top of the
@@ -266,6 +268,22 @@ namespace cloud_octree
           indices[0] = new_idx;
           next_node = new Leaf (indices);
           current_node->setChild (address, next_node);
+
+          /*int num_cells = getNumCells ();
+          int i, j, k;
+          i = (int)(floor ((cx - m_cen_[0]) / num_cells) + (num_cells / 2));
+          j = (int)(floor ((cy - m_cen_[1]) / num_cells) + (num_cells / 2));
+          k = (int)(floor ((cz - m_cen_[2]) / num_cells) + (num_cells / 2));
+          // Update the occupied_leaves_ list
+          OctreeIndex leaf_index (i, j, k);
+          occupied_leaves_.insert (leaf_index);
+      //     std::cerr << "New Leaf at " << i << " " << j << " " << k << std::endl;
+          for (std::set<OctreeIndex>::iterator it = occupied_leaves_.begin (); it != occupied_leaves_.end (); ++it)
+          {
+            OctreeIndex oi = *it;
+            oi.getIndex (i, j, k);
+      //       std::cerr << "Leaf at " << i << " " << j << " " << k << std::endl;
+          }*/
           break;
         }
         else
@@ -306,6 +324,97 @@ namespace cloud_octree
         visited_branches.back ()->replaceChild (current_node, new_leaf);
     }
     visited_branches.clear ();
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Returns the list of occupied leaves in the tree. */
+  std::vector<Leaf*>
+    Octree::getOccupiedLeaves ()
+  {
+    std::vector<Leaf*> leaves;
+
+    std::list< SpatialNode* > stack;
+    SpatialNode* sn = new SpatialNode;
+
+    sn->node_ = root_;
+    sn->cx_ = m_cen_[0]; sn->cy_ = m_cen_[1]; sn->cz_ = m_cen_[2];
+    sn->dx_ = m_dim_[0]; sn->dy_ = m_dim_[2]; sn->dz_ = m_dim_[2];
+    stack.push_front (sn);
+
+    while (!stack.empty ())
+    {
+      sn = stack.front ();
+      stack.pop_front ();
+
+      // Check if we have a valid node
+      if (sn->node_)
+      {
+        // Check if the node is a leaf
+        if (sn->node_->isLeaf ())
+          leaves.push_back ((Leaf*)sn->node_);
+        // Must be a branch then, get it's children
+        else
+          for (int i = 0; i < 8; i++)
+            stack.push_front (((Branch*)sn->node_)->getSpatialChild (i, sn->cx_, sn->cy_, sn->cz_, sn->dx_, sn->dy_, sn->dz_));
+      }
+      delete sn;
+    }
+
+    // Cleanup
+    while (!stack.empty ())
+    {
+      delete stack.front ();
+      stack.pop_front ();
+    }
+    return (leaves);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Returns the list of occupied leaves in the tree that have a minimum imposed number of points
+    * \param min_points the minimum number of points that a leaf must contain in order to be selected
+    */
+  std::vector<Leaf*>
+    Octree::getMinOccupiedLeaves (unsigned int min_points)
+  {
+    std::vector<Leaf*> leaves;
+
+    std::list< SpatialNode* > stack;
+    SpatialNode* sn = new SpatialNode;
+
+    sn->node_ = root_;
+    sn->cx_ = m_cen_[0]; sn->cy_ = m_cen_[1]; sn->cz_ = m_cen_[2];
+    sn->dx_ = m_dim_[0]; sn->dy_ = m_dim_[2]; sn->dz_ = m_dim_[2];
+    stack.push_front (sn);
+
+    while (!stack.empty ())
+    {
+      sn = stack.front ();
+      stack.pop_front ();
+
+      // Check if we have a valid node
+      if (sn->node_)
+      {
+        // Check if the node is a leaf
+        if (sn->node_->isLeaf ())
+        {
+          if (((Leaf*)sn->node_)->getValue ().size () >= min_points)
+            leaves.push_back ((Leaf*)sn->node_);
+        }
+        // Must be a branch then, get it's children
+        else
+          for (int i = 0; i < 8; i++)
+            stack.push_front (((Branch*)sn->node_)->getSpatialChild (i, sn->cx_, sn->cy_, sn->cz_, sn->dx_, sn->dy_, sn->dz_));
+      }
+      delete sn;
+    }
+
+    // Cleanup
+    while (!stack.empty ())
+    {
+      delete stack.front ();
+      stack.pop_front ();
+    }
+    return (leaves);
   }
 
 }

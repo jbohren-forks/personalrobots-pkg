@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: octree_node.h 8082 2008-12-15 00:40:22Z veedee $
+ * $Id$
  *
  */
 
@@ -47,6 +47,7 @@ namespace cloud_octree
     const char BRANCH     = 1;
     const char LEAF       = 2;
   }
+
 
   /** \brief  An Octree node (leaf or branch). We could define this privately inside the Octree class, but in
     * the future we might implement faster accessors that return the node that they accessed, so that subsequent calls
@@ -71,6 +72,20 @@ namespace cloud_octree
       virtual bool deserialize (char*, unsigned int&, unsigned int)  = 0;
 
       virtual int computeMaxDepth () const { return (0); }
+  };
+
+
+  /** \brief Spatial Node index class. Holds a pointer to a node as well as
+    * the spatial coordinates that the node is responsible for. It is
+    * designed to facilitate navigation through the Octree without using
+    * recursion.
+    */
+  class SpatialNode
+  {
+    public:
+      Node *node_;
+      float cx_, cy_, cz_;
+      float dx_, dy_, dz_;
   };
 
 
@@ -201,6 +216,38 @@ namespace cloud_octree
 
       int getNumLeaves () const;
       int getNumBranches() const;
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Returns a structure that contains both a pointer to the child and its spatial coordinates
+        * \param address the requested node address
+        * \param cx, cy, cz, dx, dy, dz the node's spatial coordinates
+        */
+      inline SpatialNode*
+        getSpatialChild (int address, float cx, float cy, float cz, float dx, float dy, float dz)
+      {
+        SpatialNode *sn = new SpatialNode;
+        sn->node_ = getChild (address);
+
+        sn->dx_ = dx / 2.0;
+        sn->dy_ = dy / 2.0;
+        sn->dz_ = dz / 2.0;
+
+        if (address / 4 == 0)
+          sn->cx_ = cx - sn->dx_ / 2.0;
+        else
+          sn->cx_ = cx + sn->dx_ / 2.0;
+
+        if ((address % 4) / 2 == 0)
+          sn->cy_ = cy - sn->dy_ / 2.0;
+        else
+          sn->cy_ = cy + sn->dy_ / 2.0;
+        if ((address % 4) % 2 == 0)
+          sn->cz_ = cz - sn->dz_ / 2.0;
+        else
+          sn->cz_ = cz + sn->dz_ / 2.0;
+
+        return (sn);
+      }
 
     private:
       /** \brief Placeholder for the 8 childrens of the branch. */
