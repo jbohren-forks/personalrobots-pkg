@@ -15,3 +15,5 @@ target_link_libraries(test_io cloud_io)
 rospack_add_executable(pcd_to_cloudmsg src/tools/pcd_to_cloudmsg.cpp)
 target_link_libraries(pcd_to_cloudmsg cloud_io)
 
+rospack_add_executable(bag_pcd src/tools/bag_pcd.cpp)
+target_link_libraries(bag_pcd cloud_io)
