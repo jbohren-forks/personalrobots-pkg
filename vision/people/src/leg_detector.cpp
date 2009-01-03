@@ -158,6 +158,7 @@ public:
 
   void peopleCallback()
   {
+
     tf::Point pt;
 
     tf::PointMsgToTF(people_meas_.pos, pt);
@@ -186,6 +187,7 @@ public:
       {
       }
 
+      loc[2] = it->loc_[2];
       float dist = loc.distance(it->loc_);
       if ( dist < closest_dist )
       {
@@ -200,6 +202,7 @@ public:
 
   void laserCallback()
   {
+
     cloud_.pts.clear();
     cloud_.chan.clear();
     cloud_.chan.resize(1);
@@ -369,8 +372,10 @@ public:
          sf_iter != saved_features_.end();
          sf_iter++)
     {
+
       if (sf_iter->object_id != "none" && sf_iter->time_ == scan_.header.stamp)
       {
+
         robot_msgs::PositionMeasurement pos;
 
         pos.header.stamp = sf_iter->time_;
@@ -380,8 +385,14 @@ public:
         tf::PointTFToMsg(sf_iter->loc_,pos.pos);
         pos.reliability = 0.7;
         pos.covariance[0] = 0.09;
+        pos.covariance[1] = 0.0;
+        pos.covariance[2] = 0.0;
+        pos.covariance[3] = 0.0;
         pos.covariance[4] = 0.09;
-        pos.covariance[8] = 0.01;
+        pos.covariance[5] = 0.0;
+        pos.covariance[6] = 0.0;
+        pos.covariance[7] = 0.0;
+        pos.covariance[8] = 10000.0;
         pos.initialization = 0;
         
         publish("people_tracker_measurements", pos);        
