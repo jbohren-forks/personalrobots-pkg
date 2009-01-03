@@ -203,18 +203,17 @@ public:
     tf::Point pt;
     tf::PointMsgToTF(pos_.pos, pt);
     tf::Stamped<tf::Point> loc(pt, pos_.header.stamp, pos_.header.frame_id);
+    cout << loc[0] << " " << loc[1] <<" " <<  loc[2] << endl;
     try
       {
-        tf.transformPoint("stereo_link", pos_.header.stamp, loc, "odom_combined", loc);
+        tf.transformPoint("stereo_link", loc, loc);//, pos_.header.stamp, loc, "odom_combined", loc);
       } 
     catch (tf::TransformException& ex)
       {
       }
+    cout << loc[0] <<" " <<  loc[1] <<" " <<  loc[2] << endl;
     people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
-    printf("Face center reset: %f %f %f\n", -loc[1], -loc[2], loc[0]);
     cv_mutex_.unlock();
-
-    /** @todo Check the time of the position message. If it's too old, ignore it. */
 
   }
 
@@ -319,9 +318,15 @@ public:
 	    pos.header.frame_id = "stereo_link";
 	    pos.reliability = 0.8;
 	    pos.initialization = 0;
-	    pos.covariance[0] = 0.09;
-	    pos.covariance[4] = 0.09;
-	    pos.covariance[8] = 0.09;
+	    pos.covariance[0] = 0.04;
+	    pos.covariance[1] = 0.0;
+	    pos.covariance[2] = 0.0;
+	    pos.covariance[3] = 0.0;
+	    pos.covariance[4] = 0.04;
+	    pos.covariance[5] = 0.0;
+	    pos.covariance[6] = 0.0;
+	    pos.covariance[7] = 0.0;
+	    pos.covariance[8] = 0.04;
 	    publish("people_tracker_measurements",pos);
 	  }
 	}
