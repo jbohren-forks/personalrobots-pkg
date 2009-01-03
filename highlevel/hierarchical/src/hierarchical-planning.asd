@@ -171,6 +171,7 @@
 		      :depends-on ("dependency" "decomp")
 		      :components ((:file "vb-package")
 				   (:file "node" :depends-on ("vb-package" "descriptions"))
+				   (:file "top-level" :depends-on ("node"))
 				   (:file "primitive" :depends-on ("node"))
 				   (:file "or-node" :depends-on ("node"))
 				   (:file "sequence" :depends-on ("node"))

@@ -6,11 +6,20 @@
    :<primitive-node>
    :<sequence-node>
 
+   :<vb-descriptions>
+   :top-node-type
+   :top-action
+
+   :find-optimal-plan
+   :find-satisficing-plan
+
    :compute-cycle
    :child
+   :cycle-number
 
    :action-description
    :planning-domain
+   :hierarchy
 
    :progress-optimistic
    :progress-pessimistic

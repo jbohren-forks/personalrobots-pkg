@@ -24,6 +24,10 @@
 
    (out-of-date-vars :initform (make-hash-table :test #'equal) :reader out-of-date-vars)))
 
+(define-condition uninitialized-variable (error)
+  ((graph :reader graph :initarg :graph)
+   (variable :reader var :initarg :var)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -110,9 +114,11 @@ If there exist out-of-date variables, update one of them and return 1) Its name 
       (update-ancestor v g fully-update))))
 
 (defun current-value (g v)
-  "Current value of variable V.  This might be out of date.  If V is uninitialized, signal an error."
-  (assert (initialized? v g) nil "Can't get value of uninitialized variable ~a of ~a" v g)
-  (current-val (get-var-desc v g)))
+  "Current value of variable V.  This might be out of date.  If V is uninitialized, signal an uninitialized-variable error."
+  (if (initialized? v g)
+    (current-val (get-var-desc v g))
+    (restart-case (error 'uninitialized-variable :graph g :var v)
+      (use-value (value) value))))
 
 (defun current-values (g vars)
   "Call current-value for each var and return an alist of the values"

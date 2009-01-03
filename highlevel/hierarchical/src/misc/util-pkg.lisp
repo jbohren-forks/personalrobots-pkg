@@ -79,6 +79,7 @@
 	   array-lp-dist
 	   bsearch
 	   make-adjustable-array
+	   append-to-adjustable-array
 	   
 	   number-sequence
 	   hash-to-alist
@@ -151,6 +152,8 @@
 	   dbind
 	   dsbind
 	   with-struct
+	   with-readers
+
 	   mvsetq
 	   unbind-slot
 	   

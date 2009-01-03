@@ -108,6 +108,8 @@
    :sv-s
    :sv-v
    :equal-valuations
+   :pointwise-subsumes
+   :evaluate-valuation
    :max-achievable-value
    :progress-sound-valuation
    :regress-sound-valuation

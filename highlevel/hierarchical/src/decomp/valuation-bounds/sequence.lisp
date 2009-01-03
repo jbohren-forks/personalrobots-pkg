@@ -46,6 +46,21 @@
        (tie-variables n (cons 'child-regressed-optimistic (1+ i)) child 'final-optimistic)
        (tie-variables n (cons 'child-regressed-pessimistic (1+ i)) child 'final-pessimistic)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Extracting plans
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod primitive-plan-with-pessimistic-future-value-above ((n <sequence-node>) s v)
+  (let ((plan-so-far (make-adjustable-array)) (total-reward 0))
+    (dotimes (i (sequence-length n) (values plan-so-far s total-reward))
+      (let ((child (child i n)))
+	(mvbind (plan successor reward) (primitive-plan-with-pessimistic-future-value-above child s (my- v total-reward))
+	  (unless plan (return nil))
+	  (append-to-adjustable-array plan-so-far plan)
+	  (setq s successor)
+	  (_f my+ total-reward reward))))))
+
+    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Compute cycle: update self, then pass control to child

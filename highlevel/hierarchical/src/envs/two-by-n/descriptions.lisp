@@ -1,12 +1,8 @@
 (in-package :two-by-n)
 
-(defclass <two-by-n-descriptions> ()
-  ((hierarchy :initarg :hierarchy :reader hierarchy)
-   (planning-domain :writer set-domain :reader planning-domain)))
-
-(defmethod initialize-instance :after ((descs <two-by-n-descriptions>) &rest args &key hierarchy)
-  (declare (ignore args))
-  (set-domain (planning-domain hierarchy) descs))
+(defclass <two-by-n-descriptions> (<vb-descriptions>)
+  ((top-node-type :initform '<sequence-node> :reader top-node-type)
+   (top-action :initform '(top) :reader top-action)))
 
 
 

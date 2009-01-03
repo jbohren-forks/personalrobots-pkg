@@ -212,6 +212,14 @@ If ARGS has length 1, bind STR to t, OBJ to (FIRST ARGS).  Otherwise, bind STR t
       `(let ((,gseq ,seq))
 	 ,(dbind-ex (destruc pat gseq #'atom) body))))
 
+(defmacro with-readers (reader-specs object &body body)
+  (let ((vars (mapcar #'(lambda (spec) (if (listp spec) (first spec) spec)) reader-specs))
+	(fnames (mapcar #'(lambda (spec) (if (listp spec) (second spec) spec)) reader-specs))
+	(obj (gensym)))
+    `(let ((,obj ,object))
+       (let ,(mapcar #'(lambda (v f) `(,v (,f ,obj))) vars fnames)
+	 ,@body))))
+
 (defmacro with-struct ((name &rest fields) s &body body)
   "with-struct (CONC-NAME . FIELDS) S &rest BODY
 

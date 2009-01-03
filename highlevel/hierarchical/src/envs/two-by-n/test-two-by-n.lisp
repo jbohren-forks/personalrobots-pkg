@@ -18,16 +18,12 @@
 (defun counts ()
   (list *progress-optimistic-counts* *progress-pessimistic-counts* *regress-optimistic-counts* *regress-pessimistic-counts*))
 
-
-(defun top-node ()
-  (let ((n (make-instance '<sequence-node> :action '(top) :descs descs :parent nil))
-	(init (new-val-diff (initial-valuation e)))
-	(final (new-val-diff (final-valuation e))))
-    (update-external-variable n 'initial-optimistic init)
-    (update-external-variable n 'initial-pessimistic init)
-    (update-external-variable n 'final-optimistic final)
-    (update-external-variable n 'final-pessimistic final)
+(defun reinitialize (i)
+  (let ((n (top-node)))
+    (repeat i (compute-cycle n))
     n))
+
+
 
 
 (defparameter n (top-node))

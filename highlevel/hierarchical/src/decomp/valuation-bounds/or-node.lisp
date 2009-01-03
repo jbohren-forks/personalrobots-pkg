@@ -96,16 +96,12 @@
     (:best-child
      (do-all-updates n)
      (let ((children (child-ids n)))
-       (debug-out :or-node 1 t "~&Child scores of ~a are ~a" (action n) (mapset 'list (or-node-child-evaluator n) children))
+       (debug-out :or-node 1 t "~&Child scores of ~a are ~a" (action n) (mapset 'list #'(lambda (i) (node-optimistic-value-regressed (child i n))) children))
        (unless (is-empty children)
-	 (let ((i (maximizing-element children #'(lambda (j) (or-node-evaluate-child n j)))))
+	 (let ((i (maximizing-element children #'(lambda (j) (node-optimistic-value-regressed (child j n))))))
 	   (compute-cycle (child i n)))
 	 (do-all-updates n))
        (setf (status n) :cycle)))))
-
-(defun or-node-evaluate-child (n i)
-  (max-achievable-value (make-sum-valuation (current-value n (cons 'child-progressed-optimistic i)) (current-value n 'final-optimistic))))
-
 
 (defun or-node-create-children (n)
   (with-accessors ((action action) (h hierarchy)) n
@@ -118,7 +114,8 @@
 ;; extracting plans
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-    
-    
+(defmethod primitive-plan-with-pessimistic-future-value-above ((n <or-node>) state v)
+  (do-elements (i (children n))
+    (let ((child (child i n)))
+      (mvbind (plan successor reward) (primitive-plan-with-pessimistic-future-value-above child state v)
+	(when plan (return (values plan successor reward)))))))

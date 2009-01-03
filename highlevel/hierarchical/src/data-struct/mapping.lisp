@@ -15,6 +15,7 @@ set-value
 do-entries
 make-undefined
 domain
+range
 transform
 
 Conditions
@@ -36,6 +37,7 @@ mapping-undefined
    do-entries
    make-undefined
    domain
+   range
    transform
    
    [mapping]
@@ -218,6 +220,16 @@ Make M not be defined at X, and return the resulting mapping.  Should not be cal
 	   (length m))
   (:method ((m hash-table))
 	   (hash-keys m)))
+
+(defgeneric range (m)
+  (:documentation "Return a sequence (possibly with duplicates) consisting of the range of mapping.")
+  (:method ((m list))
+    (mapcar #'cdr (if (is-assoc-list m) m (progn (check-type (car m) function) (cdr m)))))
+  (:method ((m vector)) m)
+  (:method ((m hash-table))
+    (loop for v being each hash-value in m 
+	  collect v)))
+  
 
 
 

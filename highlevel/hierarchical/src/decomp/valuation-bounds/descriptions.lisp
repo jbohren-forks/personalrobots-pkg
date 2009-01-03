@@ -3,7 +3,9 @@
 (define-debug-topic :valuation :vb-node)
 
 (defclass <vb-descriptions> ()
-  ((hierarchy :initarg :hierarchy :reader hierarchy)))
+  ((hierarchy :initarg :hierarchy :reader hierarchy)
+   (top-node-type)
+   (top-action)))
 
 (defmethod planning-domain ((descs <vb-descriptions>))
   (planning-domain (hierarchy descs)))
@@ -12,6 +14,16 @@
 (defgeneric action-description (descs action-name action-args type)
   (:documentation "Retrieve the description (see angelic/description.lisp) of an action of the form (NAME . ARGS).  TYPE is either :optimistic or :pessimistic."))
 
+(defun top-node (descs)
+  (let* ((n (make-instance (top-node-type descs) :action (top-action descs) :parent nil :descs descs))
+	 (e (planning-domain descs))
+	 (init (new-val-diff (initial-valuation e)))
+	 (final (new-val-diff (final-valuation e))))
+    (update-external-variable n 'initial-optimistic init)
+    (update-external-variable n 'initial-pessimistic init)
+    (update-external-variable n 'final-optimistic final)
+    (update-external-variable n 'final-pessimistic final)
+    n))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Called by algorithms to progress/regress using the 

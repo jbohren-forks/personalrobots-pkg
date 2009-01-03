@@ -268,5 +268,9 @@ Return an adjustable array, whose initial contents are the elements of INITIAL-C
     (dolist (c initial-contents a)
       (vector-push-extend c a))))
 
+(defun append-to-adjustable-array (a s)
+  "Destrutive operation: add the elements in S to the end of adjustable array A in forward order."
+  (map nil #'(lambda (x) (vector-push-extend x a)) s))
+
 (in-package cl-user)
 

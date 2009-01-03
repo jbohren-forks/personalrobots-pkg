@@ -7,6 +7,7 @@
    (descs :initarg :descs)
    (equality-test :initform #'equal-valuations)
    (root-node :writer set-root-node :reader root-node)
+   (cycle-number :initform 0 :accessor cycle-number)
    (children :reader children :initform (make-hash-table :test #'eql)) 
    
 
@@ -70,7 +71,8 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
       (debug-out :node 1 t "~&Added child ~a to node ~a" (action child) (action n)))))
 
 (defgeneric compute-cycle (n)
-  (:documentation "This is where it all happens.  Improves the node's estimate of output vars given input vars.  May recursively call compute-cycle on children.  Takes time linear in depth of tree rooted at n."))
+  (:documentation "This is where it all happens.  Improves the node's estimate of output vars given input vars.  May recursively call compute-cycle on children.  Takes time linear in depth of tree rooted at n.")
+  (:method :after (n) (incf (cycle-number n))))
 
 
 
@@ -99,6 +101,22 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defun node-optimistic-value-regressed (n)
+  "Upper bound on the value of plans passing through this node."
+  (handler-case
+      (max-achievable-value (make-sum-valuation (current-value n 'regressed-optimistic) (current-value n 'initial-optimistic)))
+    (uninitialized-variable () 'infty)))
+			     
+(defun node-pessimistic-value-regressed (n)
+  "Lower bound on the value of plans passing through this node."
+  (handler-case
+      (max-achievable-value (make-sum-valuation (current-value n 'regressed-pessimistic) (current-value n 'initial-pessimistic)))
+    (uninitialized-variable () '-infty)))
+
+
+(defgeneric primitive-plan-with-pessimistic-future-value-above (n init-state v)
+  (:documentation "If N has a primitive subplan whose future value (within this node and after) starting at init-state exceeds V, return one (as a vector), and the successor state and reward within the node.  Else return nil"))
+  
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,6 +144,23 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 ;; debug
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun print-node (&rest args)
+  (bind-pprint-args (str n) args
+    (pprint-logical-block 
+     (str nil :prefix "[" :suffix "]")
+     (format str "Node ~a" (action n))
+     (format str "~:@_ Children: ~a" (map 'list #'action (range (children n))))
+     (handler-bind
+	 ((uninitialized-variable #'(lambda (c) (declare (ignore c)) (use-value :uninitialized))))
+       (format str "~:@_ Inputs:")
+       (dolist (v '(initial-optimistic initial-pessimistic final-optimistic final-pessimistic))
+	 (format str "~:@_  ~a: ~a" v (current-value n v)))
+       (format str "~:@_ Outputs:")
+       (dolist (v '(progressed-optimistic progressed-pessimistic regressed-optimistic regressed-pessimistic))
+	 (format str "~:@_  ~a: ~a" v (current-value n v)))))))
+
+(set-pprint-dispatch '<node> #'print-node 1)
+     
 (defun print-children (n)
   (let ((h (make-hash-table)))
     (maphash #'(lambda (k v) (setf (gethash k h) (action v))) (children n))

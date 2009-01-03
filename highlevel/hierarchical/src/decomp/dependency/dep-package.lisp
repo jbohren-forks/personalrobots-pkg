@@ -23,6 +23,8 @@
    :dep-graph-id
    :equality-test
 
+   :uninitialized-variable
+
    :make-simple-update-fn
    :make-simple-aggregator
    :make-simple-alist-updater

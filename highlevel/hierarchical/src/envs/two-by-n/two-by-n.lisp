@@ -29,7 +29,7 @@ Represents a world where states are form the form (0,i) and (1,i) where i ranges
 (defmethod initialize-instance :after ((p <two-by-n>) &rest args)
   (declare (ignore args))
   (setf (universal-set p) 
-	(direct-product 'list 2 (n p))))
+	(direct-product 'list 2 (1+ (n p)))))
 
 
 (defmethod goal ((p <two-by-n>))
