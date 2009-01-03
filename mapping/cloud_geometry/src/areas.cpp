@@ -30,10 +30,14 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "cloud_geometry/point.h"
-#include "cloud_geometry/areas.h"
+#include <cloud_geometry/point.h>
+#include <cloud_geometry/areas.h>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <cfloat>
+#include <algorithm>
 
 namespace cloud_geometry
 {
@@ -51,8 +55,8 @@ namespace cloud_geometry
       int k0, k1, k2;
 
       // Find axis with largest normal component and project onto perpendicular plane
-      k0 = (fabs ( normal.at (0)  ) > fabs ( normal.at (1) )) ? 0  : 1;
-      k0 = (fabs ( normal.at (k0) ) > fabs ( normal.at (2) )) ? k0 : 2;
+      k0 = (fabs (normal.at (0) ) > fabs (normal.at (1))) ? 0  : 1;
+      k0 = (fabs (normal.at (k0)) > fabs (normal.at (2))) ? k0 : 2;
       k1 = (k0 + 1) % 3;
       k2 = (k0 + 2) % 3;
 
@@ -74,5 +78,234 @@ namespace cloud_geometry
 
       return (area);
     }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute a 2D convex hull in 3D space using Andrew's monotone chain algorithm
+      * \param points the point cloud
+      * \param indices the point indices to use from the cloud (they must form a planar model)
+      * \param coeff the planar model coefficients
+      * \param hull the resultant convex hull model as a \a Polygon3D
+      */
+    void
+      convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull)
+    {
+      // Make sure plane coefficients are normalized (just in case)
+      float norm = 0;
+      for (int i = 0; i < 3; i++)
+        norm += coeff[i] * coeff[i];
+      norm = sqrt (norm);
+      for (int i = 0; i < 4; i++)
+        coeff[i] /= norm;
+
+      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending std_msgs::Point32
+      // to allow []/() accessors.
+      std::vector<Eigen::Vector3f> epoints (indices.size ());
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
+      {
+        epoints[cp](0) = points->pts[indices.at (cp)].x;
+        epoints[cp](1) = points->pts[indices.at (cp)].y;
+        epoints[cp](2) = points->pts[indices.at (cp)].z;
+      }
+
+      // Determine the best plane to project points onto
+      int k0, k1, k2;
+      k0 = (fabs (coeff.at (0) ) > fabs (coeff.at (1))) ? 0  : 1;
+      k0 = (fabs (coeff.at (k0)) > fabs (coeff.at (2))) ? k0 : 2;
+      k1 = (k0 + 1) % 3;
+      k2 = (k0 + 2) % 3;
+
+      // Compute a 2D centroid for two dimensions
+      Eigen::Vector2d centroid;
+      centroid.Zero ();
+      for (unsigned int cp = 0; cp < epoints.size (); cp++)
+      {
+        centroid (0) += epoints[cp](k1);
+        centroid (1) += epoints[cp](k2);
+      }
+      centroid (0) /= epoints.size ();
+      centroid (1) /= epoints.size ();
+      //std_msgs::Point32 centroid;
+      //cloud_geometry::nearest::computeCentroid (points, indices, centroid);
+
+      // Push projected centered 2d points
+      std::vector<std_msgs::Point2DFloat32> cPoints (epoints.size ());
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
+      {
+        cPoints[cp].x = epoints[cp](k1) - centroid (0);
+        cPoints[cp].y = epoints[cp](k2) - centroid (1);
+      }
+      std::sort (cPoints.begin (), cPoints.end (), comparePoint2DFloat32);
+
+      std_msgs::Polyline2D hull_2d;
+      convexHull2D (cPoints, hull_2d);
+
+      int nr_points_hull = hull_2d.points.size ();
+      if (nr_points_hull >= 3)
+      {
+        // Determine the convex hull direction
+        Eigen::Vector3d p1, p2, p3;
+
+        p1 (k0) = 0;
+        p1 (k1) = -hull_2d.points[0].x + hull_2d.points[1].x + hull_2d.points[2].x;
+        p1 (k2) = -hull_2d.points[0].y + hull_2d.points[1].y + hull_2d.points[2].y;
+
+        p2 (k0) = 0;
+        p2 (k1) = -hull_2d.points[0].x;
+        p2 (k2) = -hull_2d.points[0].y;
+
+        p3 = p1.cross (p2);
+
+        bool direction = (p3 (k0) * coeff[k0] > 0);
+
+        // Create the Polygon3D object
+        hull.points.resize (nr_points_hull);
+
+        // Copy hull points in clockwise or anti-clockwise format
+        for (int cp = 0; cp < nr_points_hull; cp++)
+        {
+          int d = direction ? cp : (nr_points_hull - cp - 1);
+          Eigen::Vector3f pt;
+          pt (k1) = hull_2d.points[cp].x + centroid (0);
+          pt (k2) = hull_2d.points[cp].y + centroid (1);
+          pt (k0) = -(coeff[3] + pt (k1) * coeff[k1] + pt (k2) * coeff[k2]) / coeff[k0];
+
+          // Copy the point data to Polygon3D format
+          hull.points[d].x = pt (0);
+          hull.points[d].y = pt (1);
+          hull.points[d].z = pt (2);
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute a 2D convex hull using Andrew's monotone chain algorithm
+      * \note (code snippet inspired from http://www.softsurfer.com/Archive/algorithm_0109/algorithm_0109.htm)
+      *        Copyright 2001, softSurfer (www.softsurfer.com)
+      * \param points the 2D projected point cloud representing a planar model
+      * \param hull the resultant 2D convex hull model as a \a Polyline2D
+      */
+    void
+      convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull)
+    {
+      int nr_points = points.size ();
+      hull.points.resize (nr_points);
+
+      // Indices for bottom and top of the stack
+      int bot = 0, top = -1;
+      int i;
+
+      for (i = 1; i < nr_points; i++)
+        // points[0].x represents the smallest X coordinate
+        if (points[i].x != points[0].x)
+          break;
+
+      // Get the indices of points with min|max y-coord
+      int minmax = i - 1;
+
+      // Degenerate case: all x-coords == xmin
+      if ( minmax == (nr_points - 1) )
+      {
+        ++top;
+        hull.points[top].x = points[0].x;
+        hull.points[top].y = points[0].y;
+        // A nontrivial segment
+        if (points[minmax].y != points[0].y)
+        {
+          ++top;
+          hull.points[top].x = points[minmax].x;
+          hull.points[top].y = points[minmax].y;
+        }
+        ++top;
+        // Add the polygon's endpoint
+        hull.points[top].x = points[0].x;
+        hull.points[top].y = points[0].y;
+        hull.points.resize (top + 1);
+        return;
+      }
+
+      int maxmin;
+      for (i = nr_points - 2; i >= 0; i--)
+        if (points[i].x != points[nr_points - 1].x)
+          break;
+      maxmin = i + 1;
+
+      // Compute the lower hull
+      ++top;
+      // Add the polygon's endpoint
+      hull.points[top].x = points[0].x;
+      hull.points[top].y = points[0].y;
+
+      i = minmax;
+      while (++i <= maxmin)
+      {
+        // The lower line joins P[minmin] with P[maxmin]
+        if ((i < maxmin) && (
+            (points[maxmin].x - points[0].x) * (points[i].y      - points[0].y) -
+            (points[i].x      - points[0].x) * (points[maxmin].y - points[0].y) >= 0))
+          continue;          // ignore P[i] above or on the lower line
+
+        // If there are at least 2 points on the stack
+        while (top > 0)
+        {
+          // Test if P[i] is left of the line at the stack top
+          if ((hull.points[top].x - hull.points[top-1].x) * (points[i].y        - hull.points[top-1].y) -
+              (points[i].x        - hull.points[top-1].x) * (hull.points[top].y - hull.points[top-1].y) > 0)
+            break;         // P[i] is a new hull vertex
+          else
+            top--;         // pop top point off stack
+        }
+        ++top;
+        hull.points[top].x = points[i].x;
+        hull.points[top].y = points[i].y;
+      }
+
+      // Next, compute the upper hull above the bottom hull
+      if ((nr_points - 1) != maxmin)      // if distinct xmax points
+      {
+        ++top;
+        // Add the point with max X and max Y coordinates to the hull
+        hull.points[top].x = points[nr_points - 1].x;
+        hull.points[top].y = points[nr_points - 1].y;
+      }
+      // The bottom point of the upper hull stack
+      bot = top;
+
+      i = maxmin;
+      while (--i >= minmax)
+      {
+        // The upper line joins P[nr_points - 1] with P[minmax]
+        if ((i > minmax) && (
+            (points[minmax].x - points[nr_points - 1].x) * (points[i].y      - points[nr_points - 1].y) -
+            (points[i].x      - points[nr_points - 1].x) * (points[minmax].y - points[nr_points - 1].y) >= 0))
+          continue;          // ignore P[i] below or on the upper line
+
+        // If there are at least 2 points on the stack
+        while (top > bot)
+        {
+          // Test if P[i] is left of the line at the stack top
+          if ((hull.points[top].x - hull.points[top-1].x) * (points[i].y        - hull.points[top-1].y) -
+              (points[i].x        - hull.points[top-1].x) * (hull.points[top].y - hull.points[top-1].y) > 0)
+            break;         // P[i] is a new hull vertex
+          else
+            top--;         // pop top point off stack
+        }
+        ++top;
+
+        hull.points[top].x = points[i].x;
+        hull.points[top].y = points[i].y;
+      }
+
+      if (minmax != 0)
+      {
+        ++top;
+        // Add the polygon's endpoint
+        hull.points[top].x = points[0].x;
+        hull.points[top].y = points[0].y;
+      }
+      hull.points.resize (top + 1);
+      return;
+    }
+
   }
 }

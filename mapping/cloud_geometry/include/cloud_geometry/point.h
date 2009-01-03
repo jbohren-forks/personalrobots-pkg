@@ -34,8 +34,8 @@
 #define _CLOUD_GEOMETRY_POINT_H_
 
 // ROS includes
-#include "std_msgs/PointCloud.h"
-#include "std_msgs/Point32.h"
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/Point32.h>
 
 namespace cloud_geometry
 {

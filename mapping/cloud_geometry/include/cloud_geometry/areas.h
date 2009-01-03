@@ -35,6 +35,12 @@
 
 // ROS includes
 #include <std_msgs/Point32.h>
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/Point2DFloat32.h>
+#include <std_msgs/Polygon3D.h>
+#include <std_msgs/Polyline2D.h>
+
+#include <cloud_geometry/nearest.h>
 
 namespace cloud_geometry
 {
@@ -42,7 +48,24 @@ namespace cloud_geometry
   namespace areas
   {
 
-    double compute2DPolygonalArea (std::vector<double> points, std::vector<double> normal);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Sort the Point2DFloat32 points in vector structures according to their .x/.y values
+      * \param p1 the first Point2DFloat32 point
+      * \param p2 the second Point2DFloat32 point
+      */
+    inline bool
+      comparePoint2DFloat32 (const std_msgs::Point2DFloat32& p1, const std_msgs::Point2DFloat32& p2)
+    {
+      if (p1.x < p2.x)      return true;
+      else if (p1.x > p2.x) return false;
+      else if (p1.y < p2.y) return true;
+      else                  return false;
+    }
+
+    double compute2DPolygonalArea (std_msgs::PointCloud points, std::vector<double> normal);
+    void convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull);
+    void convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull);
+
   }
 }
 

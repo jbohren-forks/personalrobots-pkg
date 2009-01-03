@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 include(rosbuild)
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(cloud_geometry)
 add_definitions(-Wall)
 
