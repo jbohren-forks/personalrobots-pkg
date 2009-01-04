@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <std_msgs/Point32.h>
+#include <std_msgs/Polygon3D.h>
 
 namespace cloud_geometry
 {
@@ -45,7 +46,7 @@ namespace cloud_geometry
     bool planeWithPlaneIntersection (std::vector<double> plane_a, std::vector<double> plane_b, std::vector<double> &line);
     bool lineWithPlaneIntersection (std::vector<double> plane, std::vector<double> line, std_msgs::Point32 &point);
     bool lineWithLineIntersection (std::vector<double> line_a, std::vector<double> line_b, std_msgs::Point32 &point, double sqr_eps);
-    bool planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, std::vector<double> &polygon);
+    bool planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, std_msgs::Polygon3D &polygon);
     bool lineToBoxIntersection (std::vector<double> line, std::vector<double> cube);
 
   }

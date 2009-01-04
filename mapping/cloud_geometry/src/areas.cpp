@@ -32,6 +32,7 @@
 
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/areas.h>
+#include <cloud_geometry/transforms.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -79,25 +80,16 @@ namespace cloud_geometry
       return (area);
     }
 
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute a 2D convex hull in 3D space using Andrew's monotone chain algorithm
       * \param points the point cloud
       * \param indices the point indices to use from the cloud (they must form a planar model)
-      * \param coeff the planar model coefficients
+      * \param coeff the *normalized* planar model coefficients
       * \param hull the resultant convex hull model as a \a Polygon3D
       */
     void
       convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull)
     {
-      // Make sure plane coefficients are normalized (just in case)
-      float norm = 0;
-      for (int i = 0; i < 3; i++)
-        norm += coeff[i] * coeff[i];
-      norm = sqrt (norm);
-      for (int i = 0; i < 4; i++)
-        coeff[i] /= norm;
-
       // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending std_msgs::Point32
       // to allow []/() accessors.
       std::vector<Eigen::Vector3f> epoints (indices.size ());
@@ -125,20 +117,18 @@ namespace cloud_geometry
       }
       centroid (0) /= epoints.size ();
       centroid (1) /= epoints.size ();
-      //std_msgs::Point32 centroid;
-      //cloud_geometry::nearest::computeCentroid (points, indices, centroid);
 
       // Push projected centered 2d points
-      std::vector<std_msgs::Point2DFloat32> cPoints (epoints.size ());
+      std::vector<std_msgs::Point2DFloat32> epoints_demean (epoints.size ());
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        cPoints[cp].x = epoints[cp](k1) - centroid (0);
-        cPoints[cp].y = epoints[cp](k2) - centroid (1);
+        epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
+        epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
       }
-      std::sort (cPoints.begin (), cPoints.end (), comparePoint2DFloat32);
+      std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
 
       std_msgs::Polyline2D hull_2d;
-      convexHull2D (cPoints, hull_2d);
+      convexHull2D (epoints_demean, hull_2d);
 
       int nr_points_hull = hull_2d.points.size ();
       if (nr_points_hull >= 3)
@@ -147,12 +137,12 @@ namespace cloud_geometry
         Eigen::Vector3d p1, p2, p3;
 
         p1 (k0) = 0;
-        p1 (k1) = -hull_2d.points[0].x + hull_2d.points[1].x + hull_2d.points[2].x;
-        p1 (k2) = -hull_2d.points[0].y + hull_2d.points[1].y + hull_2d.points[2].y;
+        p1 (k1) = -hull_2d.points[0].x + hull_2d.points[1].x;
+        p1 (k2) = -hull_2d.points[0].y + hull_2d.points[1].y;
 
         p2 (k0) = 0;
-        p2 (k1) = -hull_2d.points[0].x;
-        p2 (k2) = -hull_2d.points[0].y;
+        p2 (k1) = -hull_2d.points[0].x + hull_2d.points[2].x;
+        p2 (k2) = -hull_2d.points[0].y + hull_2d.points[2].y;
 
         p3 = p1.cross (p2);
 

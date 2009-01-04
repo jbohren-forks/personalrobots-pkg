@@ -148,10 +148,8 @@ namespace cloud_geometry
       * \param polygon the resulting polygon
       */
     bool
-      planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, std::vector<double> &polygon)
+      planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, std_msgs::Polygon3D &polygon)
     {
-      std::vector<std_msgs::Point32> intersections;
-
       double width[3];
       for (int d = 0; d < 3; d++)
         width[d] = cube.at (d + 3) - cube.at (d);
@@ -186,7 +184,7 @@ namespace cloud_geometry
               {
                 std_msgs::Point32 ci;
                 ci.x = x[0]; ci.y = x[1]; ci.z = x[2];
-                intersections.push_back (ci);
+                polygon.points.push_back (ci);
 
                 mean.x += x[0]; mean.y += x[1]; mean.z += x[2];
               } //
@@ -195,34 +193,34 @@ namespace cloud_geometry
         }
       } // for k
 
-      int npts = intersections.size ();
+      int npts = polygon.points.size ();
       // Compute the mean
       mean.x /= npts; mean.y /= npts; mean.z /= npts;
 
       // Sort the points so we create a convex polygon
       for (int i = 0; i < npts; i++)
       {
-        double a = atan2 (intersections.at (i).y - mean.y, intersections.at (i).x - mean.x);
+        double a = atan2 (polygon.points[i].y - mean.y, polygon.points[i].x - mean.x);
         if (a < 0) a += 2*M_PI;
         for (int j = i+1; j < npts; j++)
         {
-          double b = atan2 (intersections.at (j).y - mean.y, intersections.at (j).x - mean.x);
+          double b = atan2 (polygon.points[j].y - mean.y, polygon.points[j].x - mean.x);
           if (b < 0) b += 2*M_PI;
           if (b < a)
           {
             double temp;
 
-            temp = intersections.at (j).x;
-            intersections.at (j).x = intersections.at (i).x;
-            intersections.at (i).x = temp;
+            temp = polygon.points[j].x;
+            polygon.points[j].x = polygon.points[i].x;
+            polygon.points[i].x = temp;
 
-            temp = intersections.at (j).y;
-            intersections.at (j).y = intersections.at (i).y;
-            intersections.at (i).y = temp;
+            temp = polygon.points[j].y;
+            polygon.points[j].y = polygon.points[i].y;
+            polygon.points[i].y = temp;
 
-            temp = intersections.at (j).z;
-            intersections.at (j).z = intersections.at (i).z;
-            intersections.at (i).z = temp;
+            temp = polygon.points[j].z;
+            polygon.points[j].z = polygon.points[i].z;
+            polygon.points[i].z = temp;
 
             a = b;
           }
