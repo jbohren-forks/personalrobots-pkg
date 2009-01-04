@@ -181,7 +181,7 @@ public:
       try
       {
         tf.transformPoint(it->loc_.frame_id_, it->loc_.stamp_,
-                          loc, "odom_combined", loc);
+                          loc, "odom", loc);
       } 
       catch (tf::TransformException& ex)
       {
@@ -253,10 +253,10 @@ public:
       tf::Stamped<tf::Point> sf_loc;
       if (tf.canTransform(scan_.header.frame_id, scan_.header.stamp,
                           sf_iter->loc_.frame_id_, sf_iter->loc_.stamp_,
-                          "odom_combined"))
+                          "odom"))
       {
         tf.transformPoint(scan_.header.frame_id, scan_.header.stamp,
-                          sf_iter->loc_, "odom_combined", sf_loc);
+                          sf_iter->loc_, "odom", sf_loc);
       } else {
         sf_loc = sf_iter->loc_;
       }

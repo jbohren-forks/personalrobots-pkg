@@ -50,7 +50,7 @@ using namespace robot_msgs;
 
 
 static const unsigned int num_meas_show              = 10;
-static const double       sequencer_delay            = 0.4;
+static const double       sequencer_delay            = 0.5;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 
@@ -125,7 +125,15 @@ namespace estimation
     meas_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
     meas_rel.stamp_    = message->header.stamp;
     meas_rel.frame_id_ = message->header.frame_id;
-    robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
+    try {
+      robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
+    }
+    catch (tf::TransformException &e)
+    {
+      ROS_INFO("%s caught TF exception for %s from %s : %s\n", node_name_.c_str(), message->object_id.c_str(), message->name.c_str(), e.what());
+      return;
+    }
+
 
     // get measurement covariance
     SymmetricMatrix cov(3);
@@ -170,8 +178,8 @@ namespace estimation
   // callback for dropped messages
   void PeopleTrackingNode::callbackDrop(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
-    ROS_INFO("%s: DROPPED PACKAGE for %s from %s !!!!!!!!!!!", 
-	     node_name_.c_str(), message->object_id.c_str(), message->name.c_str());
+    ROS_INFO("%s: DROPPED PACKAGE for %s from %s with delay %f !!!!!!!!!!!", 
+	     node_name_.c_str(), message->object_id.c_str(), message->name.c_str(), (ros::Time::now() - message->header.stamp).toSec());
 
   }
 
@@ -191,7 +199,7 @@ namespace estimation
 
       // loop over trackers
       unsigned int i=0;
-      for (map<string, Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++){
+      for (map<string, Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++,i++){
 
 	// update prediction
 	it->second->updatePrediction(1/freq_);
