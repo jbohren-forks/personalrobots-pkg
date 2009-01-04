@@ -313,8 +313,9 @@ private:
       } else {
 
         // As long as the message is more recent than the oldest message
+        
         typename S_Message::iterator oldest = messages_.begin();
-        if (message->header.stamp > (*oldest)->header.stamp)
+        if (oldest != messages_.end() && message->header.stamp > (*oldest)->header.stamp)
         {
           messages_.erase(oldest);
           messages_.insert(message);
