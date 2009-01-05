@@ -157,10 +157,22 @@ public:
                 _probot->GetJointLimits(vlower,vupper);
                 FOREACHC(itj, _mapjoints) {
                     values[itj->second] = _mstate.joint_states[itj->first].position;
-                    while(values[itj->second] > vupper[itj->second] )
-                        values[itj->second] -= 2*PI;
-                    while(values[itj->second] < vlower[itj->second] )
-                        values[itj->second] += 2*PI;
+                    while(values[itj->second] > vupper[itj->second] ) {
+                        if( values[itj->second]-vupper[itj->second] > PI )
+                            values[itj->second] -= 2*PI;
+                        else {
+                            values[itj->second] = vupper[itj->second];
+                            break;
+                        }
+                    }
+                    while(values[itj->second] < vlower[itj->second] ) {
+                        if( values[itj->second]-vlower[itj->second] < -PI )
+                            values[itj->second] += 2*PI;
+                        else {
+                            values[itj->second] = vlower[itj->second];
+                            break;
+                        }
+                    }
                 }
 
                 ROS_ASSERT( (int)values.size() == _probot->GetDOF() );
