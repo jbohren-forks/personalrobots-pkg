@@ -134,11 +134,13 @@
 	     (:module "descriptions" :depends-on ("description")
 		      :components
 		      ((:file "simple-valuation")
+		       (:file "alist-valuation")
+		       (:file "description")
 		       (:file "sum-valuation" :depends-on ("max-valuation"))
 		       (:file "max-valuation" :depends-on ("simple-valuation"))
 		       (:file "simple-description")))
 	     (:file "variable-hierarchy" :depends-on ("description" "hierarchy"))
-	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "description"))
+	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "descriptions"))
 	     (:file "subsumption" :depends-on ("description"))
 	     (:module "lookahead" :depends-on ("abstract-planning-problem" "subsumption" "angelic-pkg")
 				  :components

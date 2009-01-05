@@ -52,6 +52,7 @@
    :make-variable-hierarchy
    :<variable-hierarchy>
    :planning-problem
+   :high-level-actions
    :action-type
    :applicable-refinements
    :applicable-top-level-actions
@@ -102,6 +103,7 @@
    :simple-valuation
    :<simple-description>
    :make-simple-description
+   :<functional-description>
    :make-simple-valuation
    :initial-valuation
    :final-valuation
@@ -120,6 +122,9 @@
    :binary-pointwise-max-upper-bound
    :binary-pointwise-max-lower-bound
    :binary-pointwise-min-upper-bound
+   :alist-progressor
+   :alist-regressor
+   :remove-alist-valuation-duplicates
    :print-valuation
    
    

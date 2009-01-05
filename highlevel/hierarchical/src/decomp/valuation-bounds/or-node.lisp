@@ -22,7 +22,8 @@
 
 (defmethod add-child :after ((n <or-node>) i new-node-type &rest args)
   (declare (ignore new-node-type args))
-  (let ((child (child i n)))
+  (let ((child (child i n))
+	(descs (descs n)))
 
     ;; Child inputs are tied to node's own inputs
     (dolist (v '(initial-optimistic initial-pessimistic final-optimistic final-pessimistic))
@@ -30,19 +31,19 @@
 
     ;; Add output variables from child and tie them 
     (add-variable n (cons 'child-progressed-optimistic i) :external :dependants '(children-progressed-optimistic) 
-		  :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+		  :initial-value (maximal-valuation descs))
     (tie-variables child 'progressed-optimistic  n (cons 'child-progressed-optimistic i))
 
     (add-variable n (cons 'child-progressed-pessimistic i) :external :dependants '(children-progressed-pessimistic) 
-		  :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
+		  :initial-value (minimal-valuation descs))
     (tie-variables child 'progressed-pessimistic n (cons 'child-progressed-pessimistic i))
 
     (add-variable n (cons 'child-regressed-optimistic i) :external :dependants '(children-regressed-optimistic) 
-		  :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty))
+		  :initial-value (maximal-valuation descs))
     (tie-variables child 'regressed-optimistic n (cons 'child-regressed-optimistic i))
 
     (add-variable n (cons 'child-regressed-pessimistic i) :external :dependants '(children-regressed-pessimistic) 
-		  :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))
+		  :initial-value (minimal-valuation descs))
     (tie-variables child 'regressed-pessimistic n (cons 'child-regressed-pessimistic i))))
 
 
@@ -58,22 +59,22 @@
       ;; there are no achievable states - just that we don't have any bounds on them yet
       (if l 
 	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
+	(maximal-valuation (descs n)))))
 
 (defun or-node-progressed-pessimistic-aggregator (n)
   #'(lambda (l)
-      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (minimal-valuation (descs n)))))
 
 (defun or-node-regressed-optimistic-aggregator (n)
   #'(lambda (l)
       ;; see progressed version above
       (if l
 	  (reduce #'binary-pointwise-max-upper-bound l :key #'cdr)
-	  (make-simple-valuation (universal-set (planning-domain n)) 'infty))))
+	(maximal-valuation (descs n)))))
 
 (defun or-node-regressed-pessimistic-aggregator (n)
   #'(lambda (l)
-      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty))))
+      (reduce #'binary-pointwise-max-lower-bound l :key #'cdr :initial-value (minimal-valuation (descs n)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Compute cycle: update self and pass control to best
@@ -88,20 +89,18 @@
   (ecase (status n)
     (:initial (do-all-updates n) (setf (status n) :create-children))
     (:create-children (or-node-create-children n) (setf (status n) :cycle))
-    (:cycle (unless (zerop (size (children n)))
-	      (do-all-updates n)
-	      (compute-cycle (child (mod (incf (next-child n)) (size (children n))) n))
-	      (do-all-updates n))
-	    (setf (status n) :best-child))
-    (:best-child
-     (do-all-updates n)
-     (let ((children (child-ids n)))
-       (debug-out :or-node 1 t "~&Child scores of ~a are ~a" (action n) (mapset 'list #'(lambda (i) (node-optimistic-value-regressed (child i n))) children))
-       (unless (is-empty children)
-	 (let ((i (maximizing-element children #'(lambda (j) (node-optimistic-value-regressed (child j n))))))
-	   (compute-cycle (child i n)))
-	 (do-all-updates n))
-       (setf (status n) :cycle)))))
+    (:cycle (let ((max-pessimistic (reduce-set #'mymax (children n) :key #'(lambda (i) (node-pessimistic-value-regressed (child i n)))))
+		  (num-children (size (children n))))
+	      (debug-out :or-node 2 t "~&Max pessimistic value is ~a" max-pessimistic)
+	      (with-accessors ((c next-child)) n
+		(dotimes (i num-children (do-all-updates n))
+		  (setq c (mod-inc num-children c))
+		  (unless (my< (node-optimistic-value-regressed (child c n)) max-pessimistic)
+		    (do-all-updates n)
+		    (compute-cycle (child c n))
+		    (do-all-updates n)
+		    (return nil))))))))
+
 
 (defun or-node-create-children (n)
   (with-accessors ((action action) (h hierarchy)) n

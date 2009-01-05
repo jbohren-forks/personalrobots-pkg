@@ -14,6 +14,7 @@
  ((planning-problem :type <planning-problem> :initarg :planning-problem :accessor planning-problem)
   (hierarchy :initarg :hierarchy :type <hierarchy> :accessor hierarchy)
   (preprocess :initarg :preprocess :initform nil :accessor preprocess)
+  (init-val-type :initarg :init-val-type :initform :simple :reader init-val-type)
   (admissible-heuristic :initarg :admissible-heuristic :initform (constantly 'infty)
 			:accessor admissible-heuristic)
   (guarantee-heuristic :initarg :guarantee-heuristic :initform nil :accessor guarantee-heuristic)
@@ -24,6 +25,7 @@
  (:documentation "Class <abstract-planning-problem>.  Create using make-instance with initargs
 :planning-problem - object of type <planning-problem>
 :hierarchy - hierarchy
+:init-val-type - for now, either :simple or :alist
 :preprocess - whether to preprocess by adding a dummy terminal state, and 'finish and 'act actions
 :admissible-heuristic - a function from sets of states to extended reals that maps a set of states to an upper bound on achievable reward from that state.  Defaults to (constantly 'infty).  It will be better to use (constantly 0) if the domain has nonpositive rewards.
 
@@ -81,10 +83,18 @@
 	  (aand (ad-guarantee desc) (my> (funcall it s) '-infty)))
       '(terminal) nil))
 
-(defun progress-finish-valuation (desc val)
-  (if (intersects (sv-s val) (fd-goal desc))
+(defgeneric progress-finish-valuation (desc val)
+  (:method (desc (val simple-valuation))
+    (if (intersects (sv-s val) (fd-goal desc))
       (make-simple-valuation '(terminal) (sv-v val))
-    (make-simple-valuation nil '-infty)))
+      (make-simple-valuation nil '-infty)))
+  (:method (desc (val list))
+    (list (cons 'terminal
+		(reduce #'mymax val
+			:key #'(lambda (pair)
+				 (if (member? (car pair) (fd-goal desc))
+				   (cdr pair)
+				   '-infty)))))))
 
 (defmethod progress-sound-valuation ((desc finish-desc) (val simple-valuation))
   (progress-finish-valuation desc val))
@@ -92,8 +102,20 @@
 (defmethod progress-complete-valuation ((desc finish-desc) (val simple-valuation))
   (progress-finish-valuation desc val))
 
+(defmethod progress-sound-valuation ((desc finish-desc) (val list))
+  (progress-finish-valuation desc val))
+
+(defmethod progress-complete-valuation ((desc finish-desc) (val list))
+  (progress-finish-valuation desc val))
+
 (defmethod progress-complete-valuation ((desc act-complete-desc) (val simple-valuation))
   (make-simple-valuation '(terminal) (my+ (sv-v val) (funcall (acd-heuristic desc) (sv-s val)))))
+
+(defmethod progress-complete-valuation ((desc act-complete-desc) (val list))
+  (list (cons 'terminal
+	      (reduce #'mymax val
+		      :key #'(lambda (pair)
+			       (my+ (cdr pair) (funcall (acd-heuristic desc) (car pair))))))))
 
 (defmethod progress-sound-valuation ((desc act-sound-desc) (val simple-valuation))
   (cond
@@ -103,9 +125,18 @@
     (make-simple-valuation '(terminal) (sv-v val)))
    (t (make-simple-valuation nil '-infty))))
 
+(defmethod progress-sound-valuation ((desc act-sound-desc) (val list))
+  `((terminal . ,(reduce #'mymax val
+			 :key (if (ad-guarantee desc) 
+				#'(lambda (pair) (my+ (cdr pair) (funcall (ad-guarantee desc) (car pair))))
+				#'(lambda (pair) (my+ (cdr pair) (if (member? (car pair) (ad-goal desc)) 0 '-infty))))))))
+
 (defmethod succ-state (s (desc finish-desc))
   (if (member? s (fd-goal desc)) 'terminal 'illegal-finish))
 
+(defgeneric make-initial-valuation (val-type s)
+  (:method ((val-type (eql :simple)) s) (make-simple-valuation s 0))
+  (:method ((val-type (eql :list)) s) (mapset 'list #'(lambda (x) (cons x 0)) s)))
       
 
 

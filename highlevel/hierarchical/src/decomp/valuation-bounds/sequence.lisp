@@ -5,6 +5,7 @@
 (defclass <sequence-node> (<node>)
   ((action-sequence :reader action-sequence :writer set-action-sequence)
    (next-child-to-refine :accessor next-child-to-refine :initform -1)
+   (child-inc :initform 1 :accessor child-inc)
    (status :initform :initial)))
 
 ;; We don't have an initialize-instance :after method to add the node's variables
@@ -73,7 +74,11 @@
     (:initial (initialize-sequence-node n) (setf (status n) :ready))
     (:ready 
        (do-all-updates n)
-       (compute-cycle (child (setf (next-child-to-refine n) (mod-inc (sequence-length n) (next-child-to-refine n))) n))
+       (with-accessors ((ind next-child-to-refine) (inc child-inc)) n
+	 (when (= ind 0) (setf inc 1))
+	 (when (= ind (1- (sequence-length n))) (setf inc -1))
+	 (incf ind inc)
+	 (compute-cycle (child ind n)))
        (do-all-updates n))))
 
 (defun sequence-node-child-evaluator (n)
@@ -89,7 +94,8 @@
 
   (let ((h (hierarchy n))
 	(ref (action-sequence n))
-	(l (sequence-length n)))
+	(l (sequence-length n))
+	(descs (descs n)))
 
     ;; Add child output variables
     ;; They have dependants within the node only at the ends
@@ -102,14 +108,14 @@
 				     (current-value n 'initial-optimistic)
 				     (current-value n (cons 'child-progressed-optimistic (1- i))))))
 	(add-variable n (cons 'child-progressed-optimistic i) :external :dependants (when (= i (1- l)) '(progressed-optimistic))
-		      :initial-value (progress-optimistic (descs n) (elt ref i) init-progressed-opt)))
+		      :initial-value (progress-optimistic descs (elt ref i) init-progressed-opt)))
 
       ;; Everything else gets a default initial value
-      (add-variable n (cons 'child-progressed-pessimistic i) :external :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty)
+      (add-variable n (cons 'child-progressed-pessimistic i) :external :initial-value (minimal-valuation descs)
 		    :dependants (when (= i (1- l)) '(progressed-pessimistic)))
-      (add-variable n (cons 'child-regressed-optimistic i) :external :initial-value (make-simple-valuation (universal-set (planning-domain n)) 'infty)
+      (add-variable n (cons 'child-regressed-optimistic i) :external :initial-value (maximal-valuation descs)
 		    :dependants (when (zerop i) '(regressed-optimistic)))
-      (add-variable n (cons 'child-regressed-pessimistic i) :external :initial-value (make-simple-valuation (empty-set (planning-domain n)) '-infty)
+      (add-variable n (cons 'child-regressed-pessimistic i) :external :initial-value (minimal-valuation descs)
 		    :dependants (when (zerop i) '(regressed-pessimistic))))
 
     ;; Add the child nodes themselves

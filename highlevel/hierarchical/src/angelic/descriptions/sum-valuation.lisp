@@ -6,7 +6,9 @@
 
 
 (defun make-sum-valuation (&rest vals)
-  (make-instance '<sum-valuation> :vals vals))
+  (if (every #'listp vals)
+    (sum-alist-valuations vals)
+  (make-instance '<sum-valuation> :vals vals)))
 
 (defmethod max-achievable-value ((v <sum-valuation>))
   (with-accessors ((vals sum-valuation-vals)) v

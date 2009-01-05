@@ -1,4 +1,4 @@
-(in-package lookahead)
+(in-package :hla)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Planning algorithms

@@ -97,6 +97,7 @@
 	   debug-out
 	   set-debug-level
 	   reset-debug-level
+	   with-debug-levels
 	   *debug-topics*
 	   define-debug-topic
 

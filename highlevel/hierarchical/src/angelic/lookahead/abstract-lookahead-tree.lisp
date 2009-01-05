@@ -101,8 +101,7 @@ Returns the initial lookahead tree for this hierarchical planning problem.  The 
 
 NODE-TYPE, if left out, will default to the standard node type.  It can be specified here by algorithms that want to include additional information in the nodes.  It should be a subclass of <node>.  NODE-INITARGS are any additional initargs for the node-type."
 
-  (let* ((s (make-state-set hpp init-state))
-	 (val (make-simple-valuation s 0))
+  (let* ((val (make-initial-valuation (init-val-type hpp) (make-state-set hpp init-state)))
 	 (root (or initial-tree
 		   (apply 
 		    #'make-instance

@@ -16,7 +16,7 @@
 	(s (init-state (planning-domain descs))))
   (loop
     (compute-cycle n)
-    (if (my< (node-optimistic-value-regressed n) r) 
+    (if (my< (node-optimistic-value-regressed n) r)
       (return nil)
       (let ((plan (primitive-plan-with-pessimistic-future-value-above n s r)))
 	(awhen plan (return it)))))))

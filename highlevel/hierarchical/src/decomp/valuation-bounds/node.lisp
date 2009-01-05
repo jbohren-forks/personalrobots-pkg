@@ -48,7 +48,10 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
   (add-variable n 'progressed-optimistic :internal :update-fn (make-simple-update-fn #'node-optimistic-progression) :dependees '(my-progressed-optimistic))
   (add-variable n 'progressed-pessimistic :internal :update-fn (make-simple-update-fn #'node-pessimistic-progression) :dependees '(my-progressed-pessimistic))
   (add-variable n 'regressed-optimistic :internal :update-fn (make-simple-update-fn #'node-optimistic-regression) :dependees '(my-regressed-optimistic))
-  (add-variable n 'regressed-pessimistic :internal :update-fn (make-simple-update-fn #'node-pessimistic-regression) :dependees '(my-regressed-pessimistic)))
+  (add-variable n 'regressed-pessimistic :internal :update-fn (make-simple-update-fn #'node-pessimistic-regression) :dependees '(my-regressed-pessimistic))
+
+  (add-variable n 'node-optimistic-value-regressed :internal :update-fn (make-simple-update-fn #'maximize-sum-valuation) :dependees '(regressed-optimistic initial-optimistic))
+  (add-variable n 'node-pessimistic-value-regressed :internal :update-fn (make-simple-update-fn #'maximize-sum-valuation) :dependees '(regressed-pessimistic initial-pessimistic)))
 
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,24 +98,23 @@ The parents pass in four variables {initial|final}-{optimistic|pessimistic}.  Th
 (defun node-pessimistic-regression (l)
   (reduce #'binary-pointwise-max-lower-bound l :key #'cdr))
 
+(defun maximize-sum-valuation (l)
+  (assert (= (length l) 2))
+  (max-achievable-value (make-sum-valuation (cdar l) (cdadr l))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Getting plans from a node
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defun node-optimistic-value-regressed (n)
-  "Upper bound on the value of plans passing through this node."
   (handler-case
-      (max-achievable-value (make-sum-valuation (current-value n 'regressed-optimistic) (current-value n 'initial-optimistic)))
+      (current-value n 'node-optimistic-value-regressed)
     (uninitialized-variable () 'infty)))
-			     
-(defun node-pessimistic-value-regressed (n)
-  "Lower bound on the value of plans passing through this node."
-  (handler-case
-      (max-achievable-value (make-sum-valuation (current-value n 'regressed-pessimistic) (current-value n 'initial-pessimistic)))
-    (uninitialized-variable () '-infty)))
 
+(defun node-pessimistic-value-regressed (n)
+  (handler-case
+      (current-value n 'node-pessimistic-value-regressed)
+    (uninitialized-variable () '-infty)))
 
 (defgeneric primitive-plan-with-pessimistic-future-value-above (n init-state v)
   (:documentation "If N has a primitive subplan whose future value (within this node and after) starting at init-state exceeds V, return one (as a vector), and the successor state and reward within the node.  Else return nil"))

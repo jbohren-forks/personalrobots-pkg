@@ -7,12 +7,6 @@
 (defun make-simple-valuation (s v)
   (create-simple-valuation s (if (is-empty s) '-infty v)))
 
-(defun initial-valuation (d)
-  (make-simple-valuation (init-state-set d) 0))
-
-(defun final-valuation (d)
-  (make-simple-valuation (goal d) 0))
-
 (defmethod evaluate-valuation ((v simple-valuation) s) 
   (if (member? s (sv-s v)) (sv-v v) '-infty))
 

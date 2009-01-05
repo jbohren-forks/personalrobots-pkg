@@ -39,7 +39,7 @@ Looping construct.  TEST is evaluated *after* each iteration (unlike while and u
      ,@body
      (when ,test (return))))
 
-(defmacro repeat (n &rest body)
+(defmacro repeat (n &body body)
   "repeat N &rest BODY.  Execute BODY N times."
   (let ((i (gensym)))
     `(dotimes (,i ,n)
@@ -651,9 +651,11 @@ Causes the dispatching read macro for CHAR in READTABLE to work by reading the n
 (defvar *debug-stream* t)
 (defvar *debug-topics* (make-hash-table :test #'equal))
 
-(defun set-debug-level (topic level &rest args)
-  (setf (gethash topic *debug-topics*) level)
-  (awhen args (apply #'set-debug-level it)))
+(defun set-debug-level (&rest args)
+  (when args
+    (dsbind (topic level &rest more) args
+      (setf (gethash topic *debug-topics*) level)
+      (apply #'set-debug-level more))))
 
 (defun reset-debug-level (&rest args)
   (setf *debug-topics* (make-hash-table :test #'equal))
@@ -666,6 +668,11 @@ When CONDITION is true, see if the level of this TOPIC exceeds LEVEL, and if so,
 The TOPICs are arranged in a forest (using define-debug-topic) and the level of the TOPIC is found by moving up the tree until a topic is found for which the level has been set using set-debug-level."
   `(when (and ,cond (topic-level-exceeds ',topic ,level))
      (format *debug-stream* ,str ,@args)))
+
+(defmacro with-debug-levels ((&rest levels) &body body)
+  `(let ((*debug-topics* (make-hash-table :test #'equal)))
+     (set-debug-level ,@levels)
+     ,@body))
   
 
 (defun get-topic-level (topic)

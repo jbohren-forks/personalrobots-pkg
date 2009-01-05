@@ -42,13 +42,10 @@
 (defparameter e (make-instance '<two-by-n> :costs costs))
 (defparameter h (make-instance '<two-by-n-hierarchy> :planning-domain e))
 (defparameter descs (make-instance '<two-by-n-descriptions> :hierarchy h))
-(setq *progress-optimistic-counts* 0 *progress-pessimistic-counts* 0 *regress-optimistic-counts* 0 *regress-pessimistic-counts* 0)
 
 (tests "two-by-n environment"
   ((find-satisficing-plan descs '-infty) #(0 0 0))
-  ((< (max *progress-optimistic-counts* *progress-pessimistic-counts*  *regress-optimistic-counts* *regress-pessimistic-counts*) 15) t)
-  ((find-optimal-plan descs) #(0 0 1))
-  ((< (max *progress-optimistic-counts* *progress-pessimistic-counts*  *regress-optimistic-counts* *regress-pessimistic-counts*) 60) t))
+  ((find-optimal-plan descs) #(0 0 1)))
 
 
     

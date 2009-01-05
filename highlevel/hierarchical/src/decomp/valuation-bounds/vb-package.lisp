@@ -9,6 +9,7 @@
    :<vb-descriptions>
    :top-node-type
    :top-action
+   :top-node
 
    :find-optimal-plan
    :find-satisficing-plan
@@ -20,6 +21,10 @@
    :action-description
    :planning-domain
    :hierarchy
+   :initial-valuation
+   :final-valuation
+   :minimal-valuation
+   :maximal-valuation
 
    :progress-optimistic
    :progress-pessimistic
@@ -46,15 +51,13 @@
    :children-progressed-pessimistic
    :children-regressed-optimistic
    :children-regressed-pessimistic
+   :node-optimistic-value-regressed
+   :node-pessimistic-value-regressed
    
 
    :print-children
    :node-inputs
    :node-outputs
-   :*progress-optimistic-counts*
-   :*progress-pessimistic-counts*
-   :*regress-optimistic-counts*
-   :*regress-pessimistic-counts*
    )
   (:documentation "Valuation bound nodes are decomposed planning nodes that implement the following internode protocol:
 

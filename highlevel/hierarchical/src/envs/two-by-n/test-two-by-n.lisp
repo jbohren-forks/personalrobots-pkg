@@ -7,24 +7,39 @@
 (defparameter e (make-instance '<two-by-n> :costs costs))
 (defparameter h (make-instance '<two-by-n-hierarchy> :planning-domain e))
 (defparameter descs (make-instance '<two-by-n-descriptions> :hierarchy h))
+(defparameter p (two-by-n-abstract-planning-problem descs))
+
+(defun make-prob (n)
+  (let* ((e (random-two-by-n-env n))
+	 (h (make-instance '<two-by-n-hierarchy> :planning-domain e))
+	 (descs (make-instance '<two-by-n-descriptions> :hierarchy h)))
+    (values descs (two-by-n-abstract-planning-problem descs))))
+	   
 
 (reset-debug-level :decomp 2 :valuation 0)
-(setq 
- *progress-optimistic-counts* 0
- *progress-pessimistic-counts* 0
- *regress-optimistic-counts* 0
- *regress-pessimistic-counts* 0)
-
-(defun counts ()
-  (list *progress-optimistic-counts* *progress-pessimistic-counts* *regress-optimistic-counts* *regress-pessimistic-counts*))
 
 (defun reinitialize (i)
-  (let ((n (top-node)))
+  (let ((n (top-node descs)))
     (repeat i (compute-cycle n))
     n))
 
+(defun test (n k)
+  (let ((probs nil) (descs nil))
+    (repeat k
+      (mvbind (desc prob) (make-prob n)
+	(push desc descs)
+	(push prob probs)))
+
+    (time
+     (dolist (desc descs)
+       (print (find-optimal-plan desc))))
+    
+    (time 
+     (dolist (prob probs)
+       (print (aha* prob))))))
+
+       
 
 
-
-(defparameter n (top-node))
+(defparameter n (top-node descs))
 

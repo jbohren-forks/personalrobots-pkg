@@ -1,5 +1,9 @@
 (in-package :hla)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This seems somewhat subsumed by functional-description
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defclass <simple-description> ()
   ((succ-state-fn :initarg :succ-state-fn :reader succ-state-fn)
    (predecessor-fn :initarg :predecessor-fn :reader predecessor-fn)
