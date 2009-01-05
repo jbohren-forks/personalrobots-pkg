@@ -86,6 +86,7 @@ Reads the following parameters from the parameter server
 - @b "~max_ang_degrees" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
 - @b "~min_ang"         : @b [double] the angle of the first range measurement in radians (Default: -pi/2)
 - @b "~max_ang"         : @b [double] the angle of the last range measurement in radians (Default: pi/2)
+- @b "~intensity"       : @b [bool]   whether or not the hokuyo returns intensity values (Default: true)
 - @b "~cluster"         : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
 - @b "~skip"            : @b [int]    the number of scans to skip between each measured scan (Default: 1)
 - @b "~port"            : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
@@ -132,6 +133,7 @@ public:
 
   double min_ang_;
   double max_ang_;
+  bool intensity_;
   int cluster_;
   int skip_;
   string port_;
@@ -186,6 +188,7 @@ public:
       max_ang_ = M_PI/2.0;
     }
 
+    param("~intensity", intensity_, true);
     param("~cluster", cluster_, 1);
     param("~skip", skip_, 1);
     param("~port", port_, string("/dev/ttyACM0"));
@@ -246,7 +249,7 @@ public:
       set_param("~min_range", (double)(config.min_range));
       set_param("~max_range", (double)(config.max_range));
 
-      int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
+      int status = laser_.requestScans(intensity_, min_ang_, max_ang_, cluster_, skip_);
 
       if (status != 0) {
         ROS_WARN("Failed to request scans from device.  Status: %d.", status);
