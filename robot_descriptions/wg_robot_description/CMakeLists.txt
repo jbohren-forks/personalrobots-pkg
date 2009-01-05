@@ -81,7 +81,7 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
 add_custom_command(
   OUTPUT ${basepath}/convex/${basename}_convex.obj
   COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
-  ARGS ${basepath}/convex/${basename}.obj
+  ARGS ${basepath}/convex/${basename}.obj -v12 -p10
   DEPENDS ${basepath}/convex/${basename}.obj ${basepath}/convex)
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
