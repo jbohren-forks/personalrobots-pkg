@@ -140,6 +140,7 @@ public:
   string frameid_;
   string device_id_;
   string device_status_;
+  string connect_fail_;
 
   HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
@@ -256,6 +257,8 @@ public:
 
     } catch (hokuyo::Exception& e) {
       ROS_WARN("Exception thrown while starting urg.\n%s", e.what());
+      connect_fail_ = e.what();
+
       return -1;
     }
 
@@ -350,7 +353,7 @@ public:
     if (!running_)
     {
       status.level = 2;
-      status.message = "Not connected";
+      status.message = "Not connected. " + connect_fail_;
     }
     else if (device_status_ != std::string("Sensor works well."))
     {
