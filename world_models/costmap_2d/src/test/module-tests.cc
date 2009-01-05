@@ -542,7 +542,7 @@ TEST(costmap, test7){
 
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
-  vector<std_msgs::PointCloud*> cv2;
+  std::vector<std_msgs::PointCloud*> cv2;
   std_msgs::PointCloud c2;
   cv2.push_back(&c2);
   c2.set_pts_size(1);
@@ -555,7 +555,7 @@ TEST(costmap, test7){
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
-  vector<std_msgs::PointCloud*> cv3;
+  std::vector<std_msgs::PointCloud*> cv3;
   std_msgs::PointCloud c3;
   cv3.push_back(&c3);
   c3.set_pts_size(1);
@@ -702,7 +702,7 @@ TEST(costmap, test11){
 
 
 
-bool compareFiles(string a, string b) {
+bool compareFiles(std::string a, std::string b) {
   FILE *test, *compare;
 
   test = fopen(a.c_str(), "r");
@@ -788,7 +788,7 @@ TEST(costmap, test17){
 
 
   //Add a dynamic obstacle
-  vector<std_msgs::PointCloud*> cv2;
+  std::vector<std_msgs::PointCloud*> cv2;
   std_msgs::PointCloud c2;
   cv2.push_back(&c2);
   c2.set_pts_size(3);
@@ -826,7 +826,7 @@ TEST(costmap, test17){
     ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST[i]);
   }
 
-  vector<std_msgs::PointCloud*> cv;
+  std::vector<std_msgs::PointCloud*> cv;
   std_msgs::PointCloud c;
   cv.push_back(&c);
   c.set_pts_size(1);
