@@ -152,6 +152,9 @@ keys = set()
 initfig = 0
 ploton = 0
 
+# turn this on to skip every other frame
+flag_15Hz = 1                           
+
 for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
     break
@@ -213,8 +216,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
       vos = [
-             VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(),
-                            inlier_error_threshold = 3.0, sba = (5,5,5),
+             VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
+                            inlier_error_threshold = 3.0, sba = None,
                             inlier_thresh = 100,
                             position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15),
             ]
@@ -234,7 +237,9 @@ for topic, msg, t in rosrecord.logplayer(filename):
 
     if not wheel_pose:
       has_moved = True # be conservative until wheel odom starts up
-    elif not prev_wheel_pose or prev_wheel_pose.further_than(wheel_pose, 0.01, angle_thresh):
+    elif not prev_wheel_pose or \
+           ((not flag_15Hz or framecounter%2 == 0) and \
+            prev_wheel_pose.further_than(wheel_pose, 0.01, angle_thresh)):
       prev_wheel_pose = wheel_pose
       prev_wheel_o = wheel_o
       has_moved = True
@@ -270,6 +275,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
           pylab.ion()
         
       if ploton and len(vos[0].log_keyframes) > initfig:
+        ploton -= 1
         if initfig == 0:
           pylab.ion()
           pylab.figure(figsize=(10,10))
