@@ -121,4 +121,13 @@
   ((out-of-date-variables h) '(z))
   ((current-value h 'z) 12)
   ((up-to-date-value h 'z) -70)
-  ((out-of-date-variables h) nil))
+  ((out-of-date-variables h) nil)
+  ((progn (update-external-variable g 'a (new-val-diff 2))
+	  (out-of-date-variables g))
+   nil)
+  ((progn (update-external-variable g 'a (new-val-diff 3))
+	  (out-of-date-variables g))
+   '(b d) #'set-eq)
+  ((progn (do-all-updates g) (out-of-date-variables g)) nil))
+   
+   

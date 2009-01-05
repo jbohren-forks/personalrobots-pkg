@@ -16,8 +16,17 @@
 (defclass <dependency-graph> ()
   ((var-descs :reader var-descs :initform (make-hash-table :test #'equal))
    (graph :reader graph :initform (make-instance '<adjacency-list-graph> :node-test #'equal))
+   (id :initform (gensym) :initarg :id :reader dep-graph-id)
    (uninitialized-value :reader uninitialized-value :initform (gensym))
+
+   ;; Used to check if a variable has changed, which in turn determines whether the change is propagated
+   (equality-test :initarg :equality-test :initform #'equal :reader equality-test)
+
    (out-of-date-vars :initform (make-hash-table :test #'equal) :reader out-of-date-vars)))
+
+(define-condition uninitialized-variable (error)
+  ((graph :reader graph :initarg :graph)
+   (variable :reader var :initarg :var)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,6 +56,8 @@ If INITIAL-VALUE is supplied, it's used to initialize the variable, which must b
   (assert (ecase type
 	    (:internal (xor update-fn simple-update-fn))
 	    (:external (and (not update-fn) (not simple-update-fn) (null dependees)))))
+  (debug-out :decomp 0 t "~&Adding variable ~a of type ~a with dependees ~a and dependants ~a to dependency-graph ~a" name type dependees dependants (dep-graph-id g))
+  
   (when simple-update-fn (setf update-fn (make-simple-update-fn simple-update-fn)))
 
   ;; Add this variable's description
@@ -103,9 +114,15 @@ If there exist out-of-date variables, update one of them and return 1) Its name 
       (update-ancestor v g fully-update))))
 
 (defun current-value (g v)
-  "Current value of variable V.  This might be out of date.  If V is uninitialized, signal an error."
-  (assert (initialized? v g) nil "Can't get value of uninitialized variable ~a of ~a" v g)
-  (current-val (get-var-desc v g)))
+  "Current value of variable V.  This might be out of date.  If V is uninitialized, signal an uninitialized-variable error."
+  (if (initialized? v g)
+    (current-val (get-var-desc v g))
+    (restart-case (error 'uninitialized-variable :graph g :var v)
+      (use-value (value) value))))
+
+(defun current-values (g vars)
+  "Call current-value for each var and return an alist of the values"
+  (mapcar #'(lambda (v) (cons v (current-value g v))) vars))
 
 (defun up-to-date-value (g v)
   "Make variable up-to-date and return its value.  An error will happen if V is an uninitialized external variable."
@@ -165,8 +182,8 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 	(setf (edge-label e) nil)))
     
 
-    (debug-out :dep-graph 1 t "~&Updating variable ~a with value ~a based on parents ~a, whose vals are ~a" 
-	       v (current-val desc) (nreverse (to-list (parents (graph g) v))) parent-vals)
+    (debug-out :dep-graph 1 t "~&Updating variable ~a of dep graph ~a~& Value: ~a~& Parent-vals: ~a" 
+	       v (dep-graph-id g) (current-val desc) parent-vals)
 
 
     (loop
@@ -180,11 +197,15 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
 
 (defun change-variable (v new-val diff g)
   (let ((desc (get-var-desc v g)))
-    (setf (current-val desc) new-val)
-    (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph to ~a" v new-val)
-    (propagate-diff v g diff)
-    (dolist (h (update-hooks desc))
-      (funcall h new-val diff))))
+    (cond 
+      ((funcall (equality-test g) (current-val desc) new-val)
+       (debug-out :dep-graph 1 t "~&Value of variable ~a in graph ~a was unchanged at ~a, so not propagating" v (dep-graph-id g) new-val))
+      (t
+       (setf (current-val desc) new-val)
+       (debug-out :dep-graph 1 t "~&Changing variable ~a in dep graph ~a to~& ~a" v (dep-graph-id g) new-val)
+       (propagate-diff v g diff)
+       (dolist (h (update-hooks desc))
+	 (funcall h new-val diff))))))
 
 (defun propagate-diff (v g diff)
   (do-elements (e (edges-from (graph g) v))
@@ -235,7 +256,7 @@ If V1 is initialized, V2 will get its initial value.  Otherwise, V2 will be unin
   (bind-pprint-args (str g) args
     (pprint-logical-block 
      (str nil :prefix "[" :suffix "]")
-     (format str "Dep graph~:@_ Graph: ~a~:@_" (graph g))
+     (format str "Dep graph ~a~:@_ Graph: ~a~:@_" (dep-graph-id g) (graph g))
      (do-hash (var val (var-descs g))
        (format str " ~a: ~a~:@_" var val)))))
 

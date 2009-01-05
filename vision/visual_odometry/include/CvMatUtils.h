@@ -23,8 +23,11 @@ public:
 	 *  print a matrix to standard output
 	 */
 	static void printMat(const CvMat *mat, const char *format="%12.5f,");
+	/// save a matrix is plain text
+	static void saveMat(const char* filename, const CvMat *mat, const char* msg,
+	    const char * format="%12.5f ");
 	/**
-	 *  Convert a rotation matrix to euler angles, in ratians
+	 *  Convert a rotation matrix to euler angles, in radians
 	 */
 	static bool rotMatToEuler(const CvMat& rot, CvPoint3D64f &euler);
 	static CvPoint3D64f rowToPoint(const CvMat& mat, int row);
@@ -118,10 +121,16 @@ public:
 
   static void transformToQuaternionAndShift(
       /// 4x4 matrix or 3x4 matrix of transformation
-      const CvMat& transform,
+      const CvMat* transform,
       /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
       /// vector.
       CvMat* params);
+
+  static void transformFromQuaternionAndShift(
+      /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
+      const CvMat* params,
+      CvMat *transform
+  );
 
   /// given Euler angle and shift vector, construct a transformation matrix
   static void transformFromEulerAndShift(

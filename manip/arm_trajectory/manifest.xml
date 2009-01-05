@@ -5,5 +5,5 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="rosthread" />
+  <depend package="boost" />
 </package>

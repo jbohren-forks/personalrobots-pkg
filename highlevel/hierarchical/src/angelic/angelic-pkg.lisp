@@ -38,6 +38,8 @@
    :fluents
    :make-prop-state-set
    :make-state-set
+   :universal-set
+   :empty-set
    :lookup-action
   
   
@@ -50,6 +52,7 @@
    :make-variable-hierarchy
    :<variable-hierarchy>
    :planning-problem
+   :high-level-actions
    :action-type
    :applicable-refinements
    :applicable-top-level-actions
@@ -99,9 +102,16 @@
 
    :simple-valuation
    :<simple-description>
+   :make-simple-description
+   :<functional-description>
    :make-simple-valuation
+   :initial-valuation
+   :final-valuation
    :sv-s
    :sv-v
+   :equal-valuations
+   :pointwise-subsumes
+   :evaluate-valuation
    :max-achievable-value
    :progress-sound-valuation
    :regress-sound-valuation
@@ -109,12 +119,17 @@
    :regress-complete-valuation
    :reachable-set
    :make-sum-valuation
-   :pointwise-max-upper-bound
-   :pointwise-min-upper-bound
-   :pointwise-max-lower-bound
+   :binary-pointwise-max-upper-bound
+   :binary-pointwise-max-lower-bound
+   :binary-pointwise-min-upper-bound
+   :alist-progressor
+   :alist-regressor
+   :remove-alist-valuation-duplicates
+   :print-valuation
    
    
    :successor-set
+   :regress
 
    :action-name
    :action-args
@@ -131,6 +146,7 @@
    :make-ncstrips
    :make-ncstrips-schema
    :make-ncstrips-schemas
+   :lookup-in-ncstrips-schemas
    :vacuous-sound-ncstrips-descriptions
    :vacuous-complete-ncstrips-descriptions
    

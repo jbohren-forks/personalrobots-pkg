@@ -1,16 +1,16 @@
-(defpackage env
+(defpackage :env
   (:documentation "Internal package for environments.  Externally used packages are env-user and create-env.")
-  (:use common-lisp
-	utils)
+  (:use :common-lisp
+	:utils
+	:agent)
 
-  (:export "<ENV>" "<FULLY-OBSERVABLE-ENV>" "DO-ACTION" "RESET" "RESET-TO-STATE" "AT-TERMINAL-STATE" "GET-ACTIONS" "AVAIL-ACTIONS" "IO-INTERFACE" "GET-LAST-PERCEPT" "GET-STATE" "SET-STATE" "CURRENT-EFFECTORS" "SAMPLE-PERCEPT"  "SAMPLE-INIT" "SAME" "IS-TERMINAL-STATE"  "SAMPLE-NEXT" "SAMPLE-INIT-PERCEPT" "SAME-STATE"
-	   "TRAJECTORY-ENV"
-	   "EFFECTORS"
-	   "TRAJECTORY-STATES" "TRAJECTORY-REWARDS" "TRAJECTORY-ACTIONS" 
-	   "MAKE-TRAJECTORY" "NUM-TRANSITIONS" "TRANSITIONS" "IS-VALID-TRAJECTORY"
-	   "UNTRANSLATABLE-ACTION" "TRANSLATE-ACTION"))
+  (:export 
+   :<env> :<fully-observable-env> :do-action :reset :reset-to-state :at-terminal-state :get-actions :avail-actions :io-interface :get-last-percept :get-state :set-state :current-effectors 
+   :sample-percept :sample-init :same :is-terminal-state :sample-next :sample-init-percept :same-state :trajectory-env :effectors
+   :trajectory-states :trajectory-rewards :trajectory-actions :make-trajectory :num-transitions :transitions :is-valid-trajectory
+   :untranslatable-action :translate-action :*hist*))
 
-(defpackage env-user
+(defpackage :env-user
  (:documentation "Package used when interacting with an environment.
 
 Types
@@ -51,23 +51,20 @@ transitions
 
 
 ")
- (:use common-lisp
-       env
+ (:use :common-lisp
+       :env
        )
 
   (:export
-"<ENV>" "<FULLY-OBSERVABLE-ENV>" "DO-ACTION" "RESET" "RESET-TO-STATE" "SAME-STATE"
- "AT-TERMINAL-STATE" "GET-ACTIONS" "AVAIL-ACTIONS" "IO-INTERFACE"
- "GET-LAST-PERCEPT" "GET-STATE" "CURRENT-EFFECTORS" "TRAJECTORY-ENV"
- "TRAJECTORY-STATES" "TRAJECTORY-REWARDS" "TRAJECTORY-ACTIONS" 
- "MAKE-TRAJECTORY" "NUM-TRANSITIONS" "TRANSITIONS" "IS-VALID-TRAJECTORY"
- "UNTRANSLATABLE-ACTION" "TRANSLATE-ACTION"
+   :<env> :<fully-observable-env> :do-action :reset :reset-to-state :same-state :at-terminal-state :get-actions :avail-actions :io-interface :get-last-percept 
+   :get-state :current-effectors :trajectory-env :trajectory-states :trajectory-rewards :trajectory-actions :make-trajectory :num-transitions :transitions 
+   :is-valid-trajectory :untranslatable-action :translate-action
 ))
 
 
 
-(defpackage create-env
- (:documentation "Package used when making new types of environments.
+(defpackage :create-env
+  (:documentation "Package used when making new types of environments.
 
 Types
 -----
@@ -105,21 +102,9 @@ get-state
 set-state.  Warning - if you need to use set-state, and the environment is not fully observable, make sure to call set-last-percept as well, otherwise the overall state of the object could be inconsistent.
 set-last-percept.
 ")
- (:use common-lisp
-       env
-       )
-
- (:export
-
-
-"<ENV>" "<FULLY-OBSERVABLE-ENV>" "SAMPLE-NEXT" "DO-ACTION" "SAMPLE-INIT"
- "RESET" "RESET-TO-STATE" "SAMPLE-PERCEPT" "SAMPLE-INIT-PERCEPT" "IS-TERMINAL-STATE"
- "AT-TERMINAL-STATE" "AVAIL-ACTIONS" "IO-INTERFACE" "PRINT-OBJECT"
- "SAME-STATE"
- "EFFECTORS"  "GET-LAST-PERCEPT"
- "SET-LAST-PERCEPT" "GET-STATE" "SET-STATE"
-       )
-
-)
+  (:use :common-lisp :env)
+  (:export
+   :<env> :<fully-observable-env> :sample-next :do-action :sample-init :reset :reset-to-state :sample-percept :sample-init-percept :is-terminal-state 
+   :at-terminal-state :avail-actions :io-interface :print-object :same-state :effectors :get-last-percept :set-last-percept :get-state :set-state))
 
 

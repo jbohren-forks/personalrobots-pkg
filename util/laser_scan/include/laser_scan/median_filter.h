@@ -37,6 +37,7 @@
 #include "std_msgs/LaserScan.h"
 
 #include "filters/median.h"
+#include "boost/thread/mutex.hpp"
 
 namespace laser_scan{
 
@@ -60,7 +61,7 @@ private:
   unsigned int filter_length_; ///How many scans to average over
   unsigned int num_ranges_; /// How many data point are in each row
 
-  ros::thread::mutex data_lock; /// Protection from multi threaded programs
+  boost::mutex data_lock; /// Protection from multi threaded programs
   std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
   filters::MedianFilter<float> * range_filter_;

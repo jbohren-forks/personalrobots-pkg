@@ -80,18 +80,17 @@
 
    ;; Additional, for decomp-hierarchy
    :<blocks-hierarchy>
-   :nav-put
-   :nav-get
-   :left-and-navigate
-   :right-and-navigate
-   :up-and-navigate
-   :down-and-navigate
-   :left-turn-and-navigate
-   :right-turn-and-navigate
-   :put
-   :move
+   :move-then-act
+   :navigate-beside
+   :navigate-with-right-turn
+   :navigate-with-left-turn
+   :left-and-nav
+   :right-and-nav
+   :up-and-nav
+   :down-and-nav
    :pickup
    :stack
+
 
    ;; descriptions
    :make-complete-descriptions

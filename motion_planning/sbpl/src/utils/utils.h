@@ -101,6 +101,8 @@ int ContTheta2Disc(double fTheta, int NUMOFANGLEVALS);
 //output is an angle in the range of from 0 to 2*PI
 double normalizeAngle(double angle);
 
+double computeMinUnsignedAngleDiff(double angle1, double angle2);
+
 //returns true if 2D point is within the specified polygon given by ordered sequence of 2D points (last point is automatically connected to the first)
 bool IsInsideFootprint(sbpl_2Dpt_t pt, vector<sbpl_2Dpt_t>* bounding_polygon);
 

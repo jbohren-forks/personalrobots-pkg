@@ -132,21 +132,15 @@ void GovernorNode::processPlan(){
   vel_lock.unlock();
 
   tf::Stamped<tf::Pose> drive_cmds;
-  struct timeval start;
-  struct timeval end;
-  double start_t, end_t, t_diff;
   //we need to lock the map while we process it
   map_lock.lock();
   ma_.updateOrigin(map_.origin_x, map_.origin_y);
   //ma_.updateResolution(map_.scale);
   //ma_.updateSize(map_.size_x_, map_.size_y_);
-  gettimeofday(&start,NULL);
+  ros::Time start = ros::Time::now();
   Trajectory path = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
-  gettimeofday(&end,NULL);
-  start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-  end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-  t_diff = end_t - start_t;
-  fprintf(stderr, "Cycle Time: %.3f\n", t_diff);
+  ros::Time end = ros::Time::now();
+  fprintf(stderr, "Cycle Time: %.3f\n", (end - start).toSec());
   //give map_ back
   map_lock.unlock();
 
@@ -210,16 +204,18 @@ void GovernorNode::processPlan(){
 }
 
 //wait out remaining time of cycle
-void GovernorNode::sleep(double loopstart){
-  struct timeval curr;
-  double curr_t, t_diff;
-  gettimeofday(&curr, NULL);
-  curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-  t_diff = cycle_time_ - (curr_t - loopstart);
-  if(t_diff <= 0.0)
+void GovernorNode::sleep(ros::Time start){
+  ros::Time end = start;
+  ros::Duration cycle;
+  cycle = cycle.fromSec(cycle_time_);
+  end = end + cycle;
+
+  ros::Duration sleepTime = ros::Time::now() - end;
+
+  if (sleepTime <= ros::Duration(0))
     printf("Governor Node missed deadline and is not sleeping\n");
   else
-    usleep((unsigned int) rint(t_diff * 1e6));
+    sleepTime.sleep();
 }
 
 int main(int argc, char** argv){
@@ -243,14 +239,14 @@ int main(int argc, char** argv){
   
   GovernorNode gn(footprint_spec);
 
-  struct timeval start;
+  ros::Time start;
   //struct timeval end;
   //double start_t, end_t, t_diff;
 
   while(gn.ok()){
-    gettimeofday(&start,NULL);
+    start = ros::Time::now();
     gn.processPlan();
-    gn.sleep(start.tv_sec + start.tv_usec / 1e6);
+    gn.sleep(start);
     //gettimeofday(&end,NULL);
     //start_t = start.tv_sec + start.tv_usec / 1e6;
     //end_t = end.tv_sec + end.tv_usec / 1e6;

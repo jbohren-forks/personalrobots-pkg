@@ -30,7 +30,7 @@
 
 // roscpp
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 // roscpp - arm trajectory
 #include <std_msgs/ArmTrajectory.h>
 
@@ -47,7 +47,7 @@ class ArmTrajectoryNode : public ros::node
     std_msgs::ArmTrajectory armTrajectoryMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
-    ros::thread::mutex lock;
+  boost::mutex lock;
 
    double currentVelocity[6]; //Encode x,y,z,y,p,r for one time stamp
 
@@ -120,9 +120,10 @@ void ArmTrajectoryNode::SendOneVelocity(){
     char xdot[100];
     char ydot[100];
     char zdot[100];
-   std_msgs::ArmTrajectory currentMsg;
-	std_msgs::Float32        tmp_trajectory_v;
-  this->lock.lock();
+    std_msgs::ArmTrajectory currentMsg;
+    std_msgs::Float32        tmp_trajectory_v;
+
+    boost::mutex::scoped_lock sc_lock(lock);
 
     cout<<"X dot?:";
     gets(xdot);
@@ -150,15 +151,14 @@ void ArmTrajectoryNode::SendOneVelocity(){
 	}
 	  publish("arm_trajectory",currentMsg);
 	cout<<"Send!\n"<<endl;
-	this->lock.unlock();
 
 }
 
 void
 ArmTrajectoryNode::SendTrajectory()
 {
-  this->lock.lock();
-
+  boost::mutex::scoped_lock sc_lock(lock);
+  
   std_msgs::Point32 tmp_trajectory_p;
   std_msgs::Float32        tmp_trajectory_v;
 
@@ -192,7 +192,7 @@ ArmTrajectoryNode::SendTrajectory()
   }
   publish("arm_trajectory",this->armTrajectoryMsg);
 
-  this->lock.unlock();
+  
 }
 
 

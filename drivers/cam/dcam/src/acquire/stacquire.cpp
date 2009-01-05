@@ -63,12 +63,12 @@ main(int argc, char **argv)
 
 
   // open the first camera, and start streaming video
-  cam::StereoDcam *dev;		// camera object
+  dcam::StereoDcam *dev;		// camera object
   if (nc > 0)
     {
       // initializing camera
       printf("Initializing camera 0\n");
-      dev = new cam::StereoDcam(dcam::getGuid(0));
+      dev = new dcam::StereoDcam(dcam::getGuid(0));
       
       // find modes
       dc1394video_modes_t *modes;

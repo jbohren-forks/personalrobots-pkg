@@ -150,7 +150,7 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create a new point cloud with inliers projected onto the plane model.
     * \param inliers the data inliers that we want to project on the plane model
-    * \param model_coefficients the coefficients of a plane model
+    * \param model_coefficients the *normalized* coefficients of a plane model
     */
   std_msgs::PointCloud
     SACModelPlane::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
@@ -170,13 +170,13 @@ namespace sample_consensus
 
     // Get the plane normal
     // Calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
-    double n_norm = sqrt (model_coefficients.at (0) * model_coefficients.at (0) +
-                          model_coefficients.at (1) * model_coefficients.at (1) +
-                          model_coefficients.at (2) * model_coefficients.at (2));
-    model_coefficients.at (0) /= n_norm;
-    model_coefficients.at (1) /= n_norm;
-    model_coefficients.at (2) /= n_norm;
-    model_coefficients.at (3) /= n_norm;
+    //double n_norm = sqrt (model_coefficients.at (0) * model_coefficients.at (0) +
+    //                      model_coefficients.at (1) * model_coefficients.at (1) +
+    //                      model_coefficients.at (2) * model_coefficients.at (2));
+    //model_coefficients.at (0) /= n_norm;
+    //model_coefficients.at (1) /= n_norm;
+    //model_coefficients.at (2) /= n_norm;
+    //model_coefficients.at (3) /= n_norm;
 
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < inliers.size (); i++)
@@ -200,20 +200,20 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Project inliers (in place) onto the given plane model.
     * \param inliers the data inliers that we want to project on the plane model
-    * \param model_coefficients the coefficients of a plane model
+    * \param model_coefficients the *normalized* coefficients of a plane model
     */
   void
     SACModelPlane::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
   {
     // Get the plane normal
     // Calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
-    double n_norm = sqrt (model_coefficients.at (0) * model_coefficients.at (0) +
-                          model_coefficients.at (1) * model_coefficients.at (1) +
-                          model_coefficients.at (2) * model_coefficients.at (2));
-    model_coefficients.at (0) /= n_norm;
-    model_coefficients.at (1) /= n_norm;
-    model_coefficients.at (2) /= n_norm;
-    model_coefficients.at (3) /= n_norm;
+    //double n_norm = sqrt (model_coefficients.at (0) * model_coefficients.at (0) +
+    //                      model_coefficients.at (1) * model_coefficients.at (1) +
+    //                      model_coefficients.at (2) * model_coefficients.at (2));
+    //model_coefficients.at (0) /= n_norm;
+    //model_coefficients.at (1) /= n_norm;
+    //model_coefficients.at (2) /= n_norm;
+    //model_coefficients.at (3) /= n_norm;
 
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < inliers.size (); i++)

@@ -1,9 +1,9 @@
 <launch>
   <!-- <node pkg="rosrecord" type="rosplay" args="/u/prdata/videre-bags/bagname.bag" output="log" />--> 
   <!-- Face detection -->
-  <node pkg="people" type="face_detection" args="frontalface ./cascades/haarcascade_frontalface_alt.xml 1" output="screen" />
-  <node pkg="people" type="face_detection" args="profileface ./cascades/haarcascade_profileface.xml 1" output="screen" />
-  <!-- <node pkg="people" type="face_detection" args="./cascades/haarcascade_upperbody.xml" output="screen" />-->
+  <node pkg="people" type="face_detector" args="frontalface ./cascades/haarcascade_frontalface_alt.xml 1" output="screen" />
+  <node pkg="people" type="face_detector" args="profileface ./cascades/haarcascade_profileface.xml 1" output="screen" />
+  <!-- <node pkg="people" type="face_detector" args="./cascades/haarcascade_upperbody.xml" output="screen" />-->
   <!-- Face feature tracking  -->
   <!-- <node pkg="people" type="stereo_face_feature_tracker.py" /> -->
   <!-- Face colour tracking -->

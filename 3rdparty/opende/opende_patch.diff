@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1598)
+--- ode/src/quickstep.cpp	(revision 1611)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -66,6 +66,9 @@
  

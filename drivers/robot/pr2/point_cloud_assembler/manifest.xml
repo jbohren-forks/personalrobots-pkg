@@ -11,5 +11,12 @@
   <depend package="laser_scan"/>
   <depend package="tf"/>
   <depend package="pr2_mechanism_controllers"/>
+  <depend package="boost" />
+  
+  # For Testing
+  <depend package="rostest"/>
+  <depend package="gtest"/>
+  <depend package="scan_shadows_filter"/>
+  <depend package="rosrecord" />
 </package>
 

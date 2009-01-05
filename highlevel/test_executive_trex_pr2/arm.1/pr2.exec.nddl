@@ -1,6 +1,4 @@
-#include "../arm.0/pr2.exec.nddl"
 
-/*
 #include "exec.init.nddl"
 
 rejectable(moveRightArm.Inactive rightArmGoal_0);
@@ -24,7 +22,7 @@ rightArmGoal_1.des_gripper_roll = 0.0;
 
 // Order goals in time
 rightArmGoal_0 before rightArmGoal_1;
-*/
+
 
 // Force a wait for at least 15 seconds before we get started, to get obstacle data
 rejectable(moveRightArm.Inactive waitingForGazebo);

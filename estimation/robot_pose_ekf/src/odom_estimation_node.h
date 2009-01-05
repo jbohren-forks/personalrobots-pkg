@@ -50,6 +50,8 @@
 #include "robot_msgs/VOPose.h"
 #include "robot_msgs/PoseWithCovariance.h"
 
+#include <boost/thread/mutex.hpp>
+
 // log files
 #include <fstream>
 
@@ -60,7 +62,7 @@ class OdomEstimationNode: public ros::node
 {
 public:
   /// constructor
-  OdomEstimationNode(const string& node_name);
+  OdomEstimationNode(const std::string& node_name);
 
   /// destructor
   virtual ~OdomEstimationNode();
@@ -117,7 +119,7 @@ private:
   double freq_, timeout_, odom_multiplier_;
 
   // mutex
-  ros::thread::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;
+  boost::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;
 
   // log files for debugging
   std::ofstream odom_file_, imu_file_, vo_file_, corr_file_, time_file_, extra_file_;

@@ -70,7 +70,8 @@ class SBPL2DGridSearch
 	{
 		//the logic is that if s wasn't expanded, then g(s) + h(s) >= maxcomputed_fval => g(s) >= maxcomputed_fval - h(s)
 		return ( (searchStates2D_[x][y].iterationaccessed == iteration_ && searchStates2D_[x][y].g+SBPL_2DGRIDSEARCH_HEUR2D(x,y) <= largestcomputedoptf_) ? 
-					searchStates2D_[x][y].g:(largestcomputedoptf_-SBPL_2DGRIDSEARCH_HEUR2D(x,y)));
+					searchStates2D_[x][y].g:
+		(largestcomputedoptf_ < INFINITECOST?largestcomputedoptf_-SBPL_2DGRIDSEARCH_HEUR2D(x,y):INFINITECOST));
 	};
 	
 	int getlargestcomputedoptimalf_inmm() {return largestcomputedoptf_;};

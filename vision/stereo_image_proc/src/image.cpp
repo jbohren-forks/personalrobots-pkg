@@ -184,17 +184,27 @@ bool
 ImageData::doRectify()
 {
   if (!hasRectification)
+  {
     return false;		// has no rectification
+  }
 
   if (imWidth == 0 || imHeight == 0)
+  {
     return false;
+  }
+
+  doBayerMono();
 
   if (imType == COLOR_CODING_NONE && imColorType == COLOR_CODING_NONE)
+  {
     return false;		// nothing to rectify
+  }
 
   if (!((imType != COLOR_CODING_NONE && imRectType == COLOR_CODING_NONE) ||
 	(imColorType != COLOR_CODING_NONE && imRectColorType == COLOR_CODING_NONE)))
+  {
     return true;		// already done
+  }
 
   initRectify();		// ok to call multiple times
 
@@ -441,6 +451,26 @@ StereoData::doRectify()
   return res;
 }
 
+//
+// Color processing
+//
+void
+StereoData::doBayerColorRGB()
+{
+  imLeft->doBayerColorRGB();
+  imRight->doBayerColorRGB();
+}
+
+//
+// Mono processing
+//
+void
+StereoData::doBayerMono()
+{
+  imLeft->doBayerMono();
+  imRight->doBayerMono();
+}
+
 
 //
 // includes post-filtering
@@ -530,9 +560,27 @@ switch(alg){
  
   hasDisparity = true;
 
+  doSpeckle();
+  return true;
+}
+
+
+
+//
+// apply speckle filter
+// useful for STOC processing, where it's not done on-camera
+//
+
+bool 
+StereoData::doSpeckle()
+{
+  if (!hasDisparity) return false;
+
   // speckle filter
   if (speckleRegionSize > 0)
     {
+      int xim = imWidth;
+      int yim = imHeight;
       if (!rbuf)
 	rbuf  = (uint8_t *)malloc(xim*yim); // local storage for the algorithm
       if (!lbuf)
@@ -542,9 +590,9 @@ switch(alg){
       do_speckle(imDisp, 0, xim, yim, speckleDiff, speckleRegionSize, 
 		 lbuf, wbuf, rbuf);
     }
-
   return true;
 }
+
 
 
 //
@@ -1140,6 +1188,16 @@ StereoData::createParams()
 void
 ImageData::doBayerColorRGB()
 {
+  if (imRawType == COLOR_CODING_NONE)
+  {
+    return;		// nothing to colorize
+  }
+
+  if (imRawType != COLOR_CODING_NONE && imColorType != COLOR_CODING_NONE)
+  {
+    return;		// already done
+  }
+
   // check allocation
   size_t size = imWidth*imHeight;
   if (imSize < size)
@@ -1163,6 +1221,17 @@ ImageData::doBayerColorRGB()
 void 
 ImageData::doBayerMono()
 {
+
+  if (imRawType == COLOR_CODING_NONE)
+  {
+    return;		// nothing to colorize
+  }
+
+  if (imRawType != COLOR_CODING_NONE && imType != COLOR_CODING_NONE)
+  {
+    return;		// already done
+  }
+
   // check allocation
   size_t size = imWidth*imHeight;
   if (imSize < size)

@@ -62,10 +62,10 @@ public:
   VOSparseBundleAdj(
       /// Image size. Use for buffer allocation.
       const CvSize& imageSize,
-      /// the number of free frames (cameras)
-      int num_free_frames = DefaultFreeWindowSize,
       /// the number of fixed frames (cameras)
-      int num_fixed_frames = DefaultFrozenWindowSize
+      int num_fixed_frames = DefaultFrozenWindowSize,
+      /// the number of free frames (cameras)
+      int num_free_frames = DefaultFreeWindowSize
   );
   virtual ~VOSparseBundleAdj();
 
@@ -100,11 +100,13 @@ public:
   class Stat2 {
   public:
     void print();
+    void update(const PointTracks& pointTracks);
     vector<int> numTracks;
     vector<int> maxTrackLens;
     vector<int> minTrackLens;
     vector<double> avgTrackLens;
     vector<int> trackLenHisto;
+    void clear();
   };
   Stat2 mStat2;
   void updateStat2();
@@ -200,13 +202,23 @@ class SBAVisualizer: public F2FVisualizer {
     /// on the current frame. Yellow otherwise.
     virtual void drawTrackTrajectories(int frame_index);
 
+    void recordFrameIds(const vector<FramePose*>* fixed_frames, const vector<FramePose*>* free_frames);
+
+    /// Convenient method to show a snapshot of a scene.
+    /// Show a snapshot of the scene according to the input parameters.
+    /// The image, frame poses and tracks will not be instored in the object.
+    void show(IplImage* im, const vector<FramePose*>& fixed_frames,
+        const vector<FramePose*>& free_frames, const PointTracks& tracks);
+    using Parent::show;
+
     /// a reference to the estimated pose of the frames
     vector<FramePose*>* framePoses;
     /// a reference to the tracks.
-    PointTracks* tracks;
-    int   slideWindowFront;
+    const PointTracks* tracks;
     CvMat* threeDToDisparity_;
     boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
+    boost::unordered_set<int> free_frame_id_set_;
+    boost::unordered_set<int> fixed_frame_id_set_;
 };
 
 

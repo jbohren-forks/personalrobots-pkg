@@ -14,7 +14,7 @@
 interface routed to 192.168.1.1
 
 @subsection send Send Commands
-./send_command.py breaker_number command
+./send_command breaker_number command
  - breaker_number (0 | 1 | 2)
  - command = (start | stop | reset | disable)
 
@@ -22,10 +22,12 @@ send_command will send a command over ROS to the power_node which will then exec
 Thus send_command requires a power_node to be operating to be useful.  
 
 @subsection gui Power Board GUI
-./view_power.py  
+./view_power  
 
  This will start up a wx based gui to allow viewing and commanding of the power board.  This simply
-provides a graphical interface to the power_node over ROS.  
+provides a graphical interface to the power_node over ROS.  Without the power_node running this will do nothing.  
+
+\image html view_power.png
 
 @section topic ROS topics
 

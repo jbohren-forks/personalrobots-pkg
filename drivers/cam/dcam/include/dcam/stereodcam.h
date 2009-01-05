@@ -54,7 +54,7 @@ typedef enum
   } stereo_side_t;
 
 
-namespace cam
+namespace dcam
 {
 
   class StcamException : public std::runtime_error
@@ -62,9 +62,6 @@ namespace cam
   public:
     StcamException(const char* msg) : std::runtime_error(msg) {}
   };
-
-
-  using namespace dcam;
 
   class StereoDcam
     : public Dcam
@@ -105,6 +102,8 @@ namespace cam
     bool setUniqueCheck(bool unique_check);
 
     // visible calls to StereoData functions
+    void doBayerColorRGB();
+    void doBayerMono();
     bool doRectify();
     bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM);
     bool doCalcPts();

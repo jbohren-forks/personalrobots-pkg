@@ -70,16 +70,6 @@
     </body:plane>
   </model:physical>
 
-  <!--
-  <model:empty name="ros_model">
-    <body:empty name="ros_body">
-       <controller:ros_node name="ros_node" plugin="libRos_Node.so">
-        <nodeName>simulator_ros_node</nodeName>
-      </controller:ros_node>
-    </body:empty>
-  </model:empty>
-  -->
-
   <!-- The "desk"-->
   <model:physical name="desk1_model">
     <xyz>   0.80  -0.21  -0.35</xyz>
@@ -169,13 +159,13 @@
 			</geom:box>
 		</body:box>
 
-		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+		<controller:ros_p3d name="p3d_object_controller" plugin="libros_p3d.so">
 			<updateRate>100.0</updateRate>
 			<bodyName>object1_body</bodyName>
 			<topicName>object1_body_ground_truth</topicName>
 			<frameName>map</frameName>
 			<interface:position name="p3d_object_position"/>
-		</controller:P3D>
+		</controller:ros_p3d>
 
 	</model:physical>
 

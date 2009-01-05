@@ -22,6 +22,21 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 	    (dolist (f frest x)
 	      (setf x (funcall f x))))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pick out nth arg
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro nth-arg-fn (n)
+  "nth-arg-fn N.  N (unevaluated) must be a positive integer.  Expand to code that evaluates to a function that returns its Nth argument, ignoring the others."
+  (let ((vars (loop for i upto n collecting (gensym)))
+	(args (gensym)))
+    `#'(lambda (,@vars &rest ,args)
+	 (declare (ignore ,args ,@(butlast vars)))
+	 ,(nth n vars))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Building functions from other functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,7 +82,7 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro defaggregator (fn-name binary-fn-name default-value-form)
-  "Define a function FN-NAME that takes a variable number of arguments.  If given 0 arguments, return value of default-value-form.  Else, apply binary-fn-name to first argument and recursive value of FN-NAME on remaining arguments."
+  "Define a function FN-NAME that takes a variable number of arguments.  If given 0 arguments, return value of default-value-form.  If given 1 argument, return that argument.  Else, apply binary-fn-name to first argument and recursive value of FN-NAME on remaining arguments."
   (let ((args (gensym)))
     `(defun ,fn-name (&rest ,args)
        (if ,args
@@ -82,3 +97,9 @@ For now, all the Fi except the last one must be unary.  Return F s.t. (apply f #
 
 (defun is-standard-equality-test (f)
   (member f *standard-equality-tests*))
+
+(defun designated-function (x)
+  "If X is a function return it, else return function that always returns X.  Obviously, 1) X should be immutable 2) Make sure it would never make sense to have the desired return value actually be a function."
+  (if (functionp x)
+      x
+      (constantly x)))

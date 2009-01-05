@@ -51,7 +51,7 @@
     </frames>
   </rendering:gui>
 
-  <!-- camera used to test Ros_Camera plugin -->
+  <!-- camera used to test ros_camera plugin -->
   <model:physical name="test_camera_model">
     <body:empty name="test_camera_body">
         <xyz>-1 0 3</xyz>	
@@ -65,7 +65,7 @@
             <updateRate>15.0</updateRate>
             <saveFrames>false</saveFrames>
             <saveFramePath>testcameraframes</saveFramePath>
-            <controller:ros_camera name="test_camera_controller" plugin="libRos_Camera.so">
+            <controller:ros_camera name="test_camera_controller" plugin="libros_camera.so">
                 <alwaysOn>true</alwaysOn>
                 <updateRate>15.0</updateRate>
                 <topicName>test_camera/image</topicName>

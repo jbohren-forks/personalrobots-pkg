@@ -123,9 +123,9 @@ namespace sample_consensus
        * \param cloud the data set to be used
        * \param indices the point indices used */
       inline void
-        setDataSet (std_msgs::PointCloud cloud, std::vector<int> indices)
+        setDataSet (std_msgs::PointCloud *cloud, std::vector<int> indices)
       {
-        this->cloud_   = &cloud;
+        this->cloud_   = cloud;
         this->indices_ = indices;
       }
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

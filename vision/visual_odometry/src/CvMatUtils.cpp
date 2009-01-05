@@ -3,6 +3,9 @@
 using namespace cv::willow;
 
 #include <iostream>
+#include <fstream>
+using namespace std;
+
 #include <limits.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
@@ -12,6 +15,7 @@ using namespace cv::willow;
 #include "CvMat3X3.h"
 
 #include <boost/foreach.hpp>
+#include <Eigen/Geometry>
 #undef DEBUG
 
 const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
@@ -38,6 +42,22 @@ void CvMatUtils::printMat(const CvMat *mat, const char * format){
     }
     cout << endl;
   }
+}
+
+void CvMatUtils::saveMat(const char* filename, const CvMat *mat, const char* msg, const char * format) {
+  if (format == NULL) format = "%12.5f";
+  FILE* fp = fopen(filename, "w");
+
+  fprintf(fp, "# %s\n", msg);
+
+  for (int i=0; i<mat->rows; i++) {
+    for (int j=0; j<mat->cols; j++) {
+      fprintf(fp,format, cvmGet(mat, i, j));
+      fprintf(fp," ");
+    }
+    fprintf(fp,"\n");
+  }
+  fclose(fp);
 }
 
 // the unit of the dispMap is 1/16 of a pixel
@@ -288,43 +308,68 @@ void CvMatUtils::transformToRodriguesAndShift(
   cvCopy(&shift, &shift1);
 }
 
-
 void CvMatUtils::transformToQuaternionAndShift(
-    const CvMat& transform,
+    /// 4x4 matrix or 3x4 matrix of transformation. CV_64FC1 or CV_32FC1
+    const CvMat* transform,
     /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
     /// vector.
-    CvMat* params) {
-  CvMat rot;
-  CvMat shift;
-  CvMat shift1;
-  cvGetRows(params, &shift1, 4, 7);
-  cvGetSubRect(&transform, &rot, cvRect(0, 0, 3, 3));
+    CvMat* params){
+  Eigen::Matrix3d rot;
 
-  double Qxx = cvmGet(&rot, 0, 0);
-  double Qxy = cvmGet(&rot, 0, 1);
-  double Qxz = cvmGet(&rot, 0, 2);
-  double Qyx = cvmGet(&rot, 1, 0);
-  double Qyy = cvmGet(&rot, 1, 1);
-  double Qyz = cvmGet(&rot, 1, 2);
-  double Qzx = cvmGet(&rot, 2, 0);
-  double Qzy = cvmGet(&rot, 2, 1);
-  double Qzz = cvmGet(&rot, 2, 2);
+  for (int i=0;i<3; i++) {
+    for (int j=0; j<3; j++) {
+      rot(i,j) = cvmGet(transform, i, j);
+    }
+  }
+  Eigen::Quaterniond quatd(rot);
 
-  double t = Qxx+Qyy+Qzz;
-  double r = sqrt(1+t);
-  double s = 0.5/r;
-  double w = 0.5*r;
-  double x = (Qzy-Qyz)*s;
-  double y = (Qxz-Qzx)*s;
-  double z = (Qyx-Qxy)*s;
+  // quaternion
+  cvmSet(params, 0, 0, quatd.w());
+  cvmSet(params, 1, 0, quatd.x());
+  cvmSet(params, 2, 0, quatd.y());
+  cvmSet(params, 3, 0, quatd.z());
 
-  cvmSet(params, 0, 0, w);
-  cvmSet(params, 1, 0, x);
-  cvmSet(params, 2, 0, y);
-  cvmSet(params, 3, 0, z);
+  // translation
+  cvmSet(params, 4, 0, cvmGet(transform, 0, 3));
+  cvmSet(params, 5, 0, cvmGet(transform, 1, 3));
+  cvmSet(params, 6, 0, cvmGet(transform, 2, 3));
+}
 
-  cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
-  cvCopy(&shift, &shift1);
+void CvMatUtils::transformFromQuaternionAndShift(
+    /// 7x1 matrix. The first 4 rows are the quaternion, the last 3 translation
+    const CvMat* params,
+    CvMat *transform
+    ){
+  double w = cvmGet(params, 0, 0);
+  double x = cvmGet(params, 1, 0);
+  double y = cvmGet(params, 2, 0);
+  double z = cvmGet(params, 3, 0);
+  Eigen::Quaterniond quatd(w, x, y, z);
+  Eigen::Matrix3d rot = quatd.toRotationMatrix();
+
+
+  cvmSet(transform, 0, 0, rot(0,0));
+  cvmSet(transform, 0, 1, rot(0,1));
+  cvmSet(transform, 0, 2, rot(0,2));
+  cvmSet(transform, 1, 0, rot(1,0));
+  cvmSet(transform, 1, 1, rot(1,1));
+  cvmSet(transform, 1, 2, rot(1,2));
+  cvmSet(transform, 2, 0, rot(2,0));
+  cvmSet(transform, 2, 1, rot(2,1));
+  cvmSet(transform, 2, 2, rot(2,2));
+
+  // fill in the translation part
+  CvMat shift0, shift1;
+  cvGetRows(params, &shift0, 4, 7);
+  cvGetSubRect(transform, &shift1, cvRect(3, 0, 1, 3));
+  cvCopy(&shift0, &shift1);
+
+  if (transform->rows == 4) {
+    cvmSet(transform, 3, 0, 0.);
+    cvmSet(transform, 3, 1, 0.);
+    cvmSet(transform, 3, 2, 0.);
+    cvmSet(transform, 3, 3, 1.);
+  }
 }
 
 

@@ -49,6 +49,11 @@ double cvMedianNonZeroElIn2DArr(CvArr *arr, int r1, int r2, int c1, int c2) {
   CvMat *mat = cvCreateMatHeader(cvGetDimSize(arr,0), cvGetDimSize(arr,1), type);  
   cvGetMat(arr, mat);
 
+  r1 = MAX(0,r1);
+  r2 = MIN(cvGetDimSize(arr,0)-1,r2);
+  c1 = MAX(0,c1);
+  c2 = MIN(cvGetDimSize(arr,1)-1,c2);
+
   int r, c;
   
   // Create a vector of non-zero elements in the array boundaries, 

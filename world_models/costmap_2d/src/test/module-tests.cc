@@ -86,7 +86,7 @@ TEST(costmap, testResetForStaticMap){
   }
 
   // Allocate the cost map, with a inflation to 3 cells all around
-  CostMap2D map(10, 10, staticMap, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,	3, 3, 3);
+  CostMap2D map(10, 10, staticMap, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,	3, 3, 3, 1, 100.0, 100.0, 3.0);
 
   // Populate the cost map with a wall around the perimeter. Free space should clear out the room.
   std_msgs::PointCloud cloud;
@@ -132,33 +132,46 @@ TEST(costmap, testResetForStaticMap){
   // Update the cost map for this observation
   map.updateDynamicObstacles(wx, wy, obsBuf);
 
-  // Verify that we now have only 8 * 4 + 4 cells with lethal cost, thus provong that we have correctly cleared
+
+  // Verify that we now have only 84 cells with lethal cost, thus provong that we have correctly cleared
   // free space
   unsigned int hitCount = 0;
   for(unsigned int i=0; i <100; i++){
     if(map.getMap()[i] == CostMap2D::LETHAL_OBSTACLE)
       hitCount++;
   }
-  ASSERT_EQ(hitCount, 36);
+  ASSERT_EQ(hitCount, 84);
 
-  // Veriy that we have 4 free cells
+  // Veriy that we have 16 non-leathal
   hitCount = 0;
   for(unsigned int i=0; i < 100; i++){
-    if(map.getMap()[i] == 0)
+    if(map.getMap()[i] != CostMap2D::LETHAL_OBSTACLE)
       hitCount++;
   }
-  ASSERT_EQ(hitCount, 4);
+  ASSERT_EQ(hitCount, 16);
 
   // Now if we reset the cost map, we shold retain the free space, and also retain values of INSCRIBED circle
   // in the region of the circumscribed radius (3 cells)
   map.revertToStaticMap(wx, wy);
   unsigned int mx, my;
   map.WC_MC(wx, wy, mx, my);
-  for(unsigned int x = mx - 3; x <= mx+3; x++){
-    for(unsigned int y = my -3; y <= my + 3; y++){
-      ASSERT_EQ(map.getCost(x, y) < CostMap2D::LETHAL_OBSTACLE, true);
-    }
+
+
+  //We should retain
+  hitCount = 0;
+  for(unsigned int i=0; i <100; i++){
+    if(map.getMap()[i] == CostMap2D::LETHAL_OBSTACLE)
+      hitCount++;
   }
+  ASSERT_EQ(hitCount, 84);
+
+  // Veriy that we have 16 non-leathal
+  hitCount = 0;
+  for(unsigned int i=0; i < 100; i++){
+    if(map.getMap()[i] != CostMap2D::LETHAL_OBSTACLE)
+      hitCount++;
+  }
+  ASSERT_EQ(hitCount, 16);
 }
 
 /**
@@ -336,6 +349,7 @@ TEST(costmap, test0){
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(cloud, updates);
+
 
   ASSERT_EQ(updates.size(), 3);
 }
@@ -528,7 +542,7 @@ TEST(costmap, test7){
 
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
-  vector<std_msgs::PointCloud*> cv2;
+  std::vector<std_msgs::PointCloud*> cv2;
   std_msgs::PointCloud c2;
   cv2.push_back(&c2);
   c2.set_pts_size(1);
@@ -541,7 +555,7 @@ TEST(costmap, test7){
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
-  vector<std_msgs::PointCloud*> cv3;
+  std::vector<std_msgs::PointCloud*> cv3;
   std_msgs::PointCloud c3;
   cv3.push_back(&c3);
   c3.set_pts_size(1);
@@ -575,6 +589,7 @@ TEST(costmap, test8){
   c0.pts[2].z = MAX_Z;
 
   map.updateDynamicObstacles(c0, updates);
+
   ASSERT_EQ(map.getCost(3, 2), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);  
   ASSERT_EQ(map.getCost(3, 3), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 }
@@ -660,7 +675,7 @@ TEST(costmap, test10){
  */
 
 TEST(costmap, test11){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0, 7.0);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <8, 8> to be free
@@ -676,12 +691,184 @@ TEST(costmap, test11){
   // I considered allowing the cost function to over-ride this case but we quickly find that the planner will plan through walls once it gets out of sensor range.
   // Note that this will not be the case when we persist the changes to the static map more aggressively since we will retain high cost obstacle data that 
   // has not been ray tarced thru. If that is the case, this update count would change to 6
-  ASSERT_EQ(updates.size(), 4);
+  ASSERT_EQ(updates.size(), 5);
 
-  // all cells will have been switched to free space along the diagonal except for this inflated in the update
-  for(unsigned int i=0; i < 8; i++)
-    ASSERT_EQ(map.getCost(i, i), 0);
+
+  // many cells will have been switched to free space along the diagonal except for those inflated in the update
+  unsigned char test[9]= {0, 0, 0, 126, 126, 0, 0, 126, 254};
+  for(unsigned int i=0; i < 9; i++)
+    ASSERT_EQ(map.getCost(i, i), test[i]);
 }
+
+
+
+bool compareFiles(std::string a, std::string b) {
+  FILE *test, *compare;
+
+  test = fopen(a.c_str(), "r");
+  compare = fopen(b.c_str(), "r");
+  if (!test) {
+    ROS_INFO("Could not open: %s\n", a.c_str());
+    return false;
+  }
+  if (!compare) {
+    ROS_INFO("Could not open: %s\n", b.c_str());
+    return false;
+  }
+
+  while (1) {
+    char out = getc(test);
+    char com = getc(compare);
+    if (out == EOF && com == EOF) {
+      fclose(test);
+      fclose(compare);
+      return true;
+    }
+    if (out != com) {
+      fclose(test);
+      fclose(compare);
+      return false;
+    }
+    if (out == EOF || com == EOF) {
+      fclose(test);
+      fclose(compare);
+      return false;
+    }
+  }
+
+}
+
+
+/**
+ * Test for saving.
+ */
+
+TEST(costmap, test16){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
+  map.saveText("testmap.txt");
+  map.saveBinary("testmap.bin");
+  
+  ASSERT_EQ(compareFiles("testmap.txt", "testmap_compare.txt"), true);
+  ASSERT_EQ(compareFiles("testmap.bin", "testmap_compare.bin"), true);
+}
+
+
+
+
+
+
+/**
+ * Within a certian radius of the robot, the cost map most propagate obstacles. This
+ * is to avoid a case where a hit on a far obstacle clears inscribed radius around a
+ * near one.
+ */
+
+TEST(costmap, test17){
+  const unsigned char MAP_HALL_CHAR[10 * 10] = {
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    254, 0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   254, 0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 254, 0, 0, 0, 0,
+    0,   0, 0,   0,   0, 254, 0, 0, 0, 0,
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+    0,   0, 0,   0,   0, 0,   0, 0, 0, 0,
+  };
+  std::vector<unsigned char> MAP_HALL;
+  for (int i = 0; i < 10 * 10; i++) {
+    MAP_HALL.push_back(MAP_HALL_CHAR[i]);
+  }
+
+
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_HALL, RESOLUTION, 
+		THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0, 7.0);
+
+
+
+  //Add a dynamic obstacle
+  std::vector<std_msgs::PointCloud*> cv2;
+  std_msgs::PointCloud c2;
+  cv2.push_back(&c2);
+  c2.set_pts_size(3);
+  //Dynamic obstacle that raytaces.
+  c2.pts[0].x = 7.0;
+  c2.pts[0].y = 8.0;
+  c2.pts[0].z = 1.0;
+  //Dynamic obstacle that should not be raytraced the
+  //first update, but should on the second.
+  c2.pts[1].x = 3.0;
+  c2.pts[1].y = 4.0;
+  c2.pts[1].z = 1.0;
+  //Dynamic obstacle that should not be erased.
+  c2.pts[2].x = 6.0;
+  c2.pts[2].y = 3.0;
+  c2.pts[2].z = 1.0;
+  map.updateDynamicObstacles(0.0, 0.0, cv2);
+
+
+  const unsigned char MAP_HALL_CHAR_TEST[10 * 10] = { 
+    126, 254, 126,   0,   0,   0,   0,   0,   0,   0,
+      0, 126,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0, 126,   0,   0,   0,   0,   0,
+      0,   0,   0, 126, 254, 126,   0,   0,   0,   0,
+      0,   0,   0,   0, 126,   0,   0, 126,   0,   0,
+      0,   0,   0, 126,   0,   0, 126, 254, 126,   0,
+      0,   0, 126, 254, 126,   0,   0, 126, 126,   0,
+      0,   0,   0, 126,   0,   0,   0, 126, 254, 126,
+      0,   0,   0,   0,   0,   0,   0,   0, 126,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  };
+
+  
+  for (int i = 0; i < 10 * 10; i++) {
+    ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST[i]);
+  }
+
+  std::vector<std_msgs::PointCloud*> cv;
+  std_msgs::PointCloud c;
+  cv.push_back(&c);
+  c.set_pts_size(1);
+  //Dynamic obstacle that raytaces the one at (3.0, 4.0).
+  c.pts[0].x = 4.0;
+  c.pts[0].y = 5.0;
+  c.pts[0].z = 1.0;
+  map.updateDynamicObstacles(0.0, 0.0, cv);
+
+
+  const unsigned char MAP_HALL_CHAR_TEST2[10 * 10] = { 
+    126, 254, 126,   0,   0,   0,   0,   0,   0,   0,
+      0, 126,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0, 126,   0,   0,   0,   0,
+      0,   0,   0,   0, 126, 254, 126, 126,   0,   0,
+      0,   0,   0, 126,   0, 126, 126, 254, 126,   0,
+      0,   0, 126, 254, 126,   0,   0, 126, 126,   0,
+      0,   0,   0, 126,   0,   0,   0, 126, 254, 126,
+      0,   0,   0,   0,   0,   0,   0,   0, 126,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+  };
+
+  
+  for (int i = 0; i < 10 * 10; i++) {
+    ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST2[i]);
+  }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++){

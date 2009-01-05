@@ -97,6 +97,9 @@ namespace cloud_geometry
       return (sqrt ( (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y) + (p.z - z) * (p.z - z) ) - r);
     }
 
+
+    void lineToLineSegment (std::vector<double> line_a, std::vector<double> line_b, std::vector<double> &segment);
+
   }
 }
 

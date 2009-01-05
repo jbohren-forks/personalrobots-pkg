@@ -112,22 +112,35 @@
 				   ((:file "general")))))
 
 		 
-   (:module "env" :depends-on ("misc" "set" "prob")
+   (:module "env" :depends-on ("misc" "set" "prob" "agent")
 	    :components ((:file "env-pkg")
 			 (:file "env" :depends-on ("env-pkg"))
 			 (:file "fully-observable-env" :depends-on ("env"))
-			 (:file "trajectory" :depends-on ("env"))))
+			 (:file "trajectory" :depends-on ("env"))
+			 (:file "io-interface" :depends-on ("env"))))
+
+   (:module "agent" :depends-on ("misc" "set")
+	    :components ((:file "agent")
+			 (:file "prompt-agent" :depends-on ("agent"))))
 
 
    (:module "angelic"
 	    :depends-on ("misc" "set" "data-struct" "mapping" "env")
 	    :components
 	    ((:file "angelic-pkg")
-	     (:file "planning-problem" :depends-on ("angelic-pkg"))
+	     (:file "planning-problem" :depends-on ("angelic-pkg" "description"))
 	     (:file "hierarchy" :depends-on ("angelic-pkg" "planning-problem"))
 	     (:file "description" :depends-on ("angelic-pkg"))
+	     (:module "descriptions" :depends-on ("description")
+		      :components
+		      ((:file "simple-valuation")
+		       (:file "alist-valuation")
+		       (:file "description")
+		       (:file "sum-valuation" :depends-on ("max-valuation"))
+		       (:file "max-valuation" :depends-on ("simple-valuation"))
+		       (:file "simple-description")))
 	     (:file "variable-hierarchy" :depends-on ("description" "hierarchy"))
-	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "description"))
+	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "descriptions"))
 	     (:file "subsumption" :depends-on ("description"))
 	     (:module "lookahead" :depends-on ("abstract-planning-problem" "subsumption" "angelic-pkg")
 				  :components
@@ -159,11 +172,12 @@
 	     (:module "valuation-bounds"
 		      :depends-on ("dependency" "decomp")
 		      :components ((:file "vb-package")
-				   (:file "node" :depends-on ("vb-package"))
+				   (:file "node" :depends-on ("vb-package" "descriptions"))
+				   (:file "top-level" :depends-on ("node"))
 				   (:file "primitive" :depends-on ("node"))
 				   (:file "or-node" :depends-on ("node"))
 				   (:file "sequence" :depends-on ("node"))
-				   (:file "descriptions" :depends-on ("node"))
+				   (:file "descriptions" :depends-on ("vb-package"))
 				   ))))
 					    
    (:module "envs" :depends-on ("angelic" "motion-planning" "hybrid" "decomp")
@@ -177,10 +191,15 @@
 			   (:file "descriptions" :depends-on ("state-set"))
 			   (:file "decomp-descriptions" :depends-on ("decomp-hierarchy" "descriptions"))
 			   (:file "subsumption" :depends-on ("state-set"))))
+	     (:module "two-by-n"
+	      :components ((:file "two-by-n")
+			   (:file "hierarchy" :depends-on ("two-by-n"))
+			   (:file "descriptions" :depends-on ("hierarchy"))))
 	     (:module "nav-switch" 
 	      :components ((:file "nav-switch")
 			   (:file "hierarchy" :depends-on ("nav-switch"))
 			   (:file "descriptions" :depends-on ("nav-switch"))))
+		      
 							      
 	     #|(:module "pick-place" 
 	      :components 

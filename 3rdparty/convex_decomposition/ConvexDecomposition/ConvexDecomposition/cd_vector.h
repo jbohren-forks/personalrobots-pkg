@@ -309,12 +309,12 @@ public:
 
 	Type FastMagnitude(void) const
 	{
-		return Type(fast_sqrt(x * x + y * y + z * z));
+		return Type(sqrt(x * x + y * y + z * z));
 	};
 
 	Type FasterMagnitude(void) const
 	{
-		return Type(faster_sqrt(x * x + y * y + z * z));
+		return Type(sqrt(x * x + y * y + z * z));
 	};
 
 	void Lerp(const Vector3d<Type>& from,const Vector3d<Type>& to,double slerp)
@@ -436,13 +436,13 @@ public:
 
 	Type FastLength(void) const          // length of vector.
 	{
-		return Type(fast_sqrt( x*x + y*y + z*z ));
+		return Type(sqrt( x*x + y*y + z*z ));
 	};
 	
 
 	Type FasterLength(void) const          // length of vector.
 	{
-		return Type(faster_sqrt( x*x + y*y + z*z ));
+		return Type(sqrt( x*x + y*y + z*z ));
 	};
 
 	Type Length2(void) const         // squared distance, prior to square root.
@@ -518,7 +518,7 @@ public:
 
 	inline double FastNormalize(void)       // normalize to a unit vector, returns distance.
 	{
-		double d = fast_sqrt( static_cast< double >( x*x + y*y + z*z ) );
+		double d = sqrt( static_cast< double >( x*x + y*y + z*z ) );
 		if ( d > 0 )
 		{
 			double r = 1.0f / d;
@@ -535,7 +535,7 @@ public:
 
 	inline double FasterNormalize(void)       // normalize to a unit vector, returns distance.
 	{
-		double d = faster_sqrt( static_cast< double >( x*x + y*y + z*z ) );
+		double d = sqrt( static_cast< double >( x*x + y*y + z*z ) );
 		if ( d > 0 )
 		{
 			double r = 1.0f / d;
@@ -1029,7 +1029,8 @@ public:
 
 	void Zero(void)
 	{
-		x = y = z = 0;
+		x = 0;
+		y = 0;
 	};
 
 	Vector2d negative(void) const
@@ -1047,12 +1048,12 @@ public:
 
 	Type fastmagnitude(void) const
 	{
-		return (Type) fast_sqrt(x * x + y * y );
+		return (Type) sqrt(x * x + y * y );
 	}
 	
 	Type fastermagnitude(void) const
 	{
-		return (Type) faster_sqrt( x * x + y * y );
+		return (Type) sqrt( x * x + y * y );
 	}
 
 	void Reflection(Vector2d &a,Vector2d &b); // compute reflection vector.
@@ -1064,12 +1065,12 @@ public:
 
 	Type FastLength(void) const          // length of vector.
 	{
-		return Type(fast_sqrt( x*x + y*y ));
+		return Type(sqrt( x*x + y*y ));
 	};
 
 	Type FasterLength(void) const          // length of vector.
 	{
-		return Type(faster_sqrt( x*x + y*y ));
+		return Type(sqrt( x*x + y*y ));
 	};
 
 	Type Length2(void)        // squared distance, prior to square root.
@@ -1090,7 +1091,7 @@ public:
 		Type dx = a.x - x;
 		Type dy = a.y - y;
 		Type d  = dx*dx+dy*dy;
-		return fast_sqrt(d);
+		return sqrt(d);
 	};
 
 	Type FasterDistance(const Vector2d &a) const   // distance between two points.
@@ -1098,7 +1099,7 @@ public:
 		Type dx = a.x - x;
 		Type dy = a.y - y;
 		Type d  = dx*dx+dy*dy;
-		return faster_sqrt(d);
+		return sqrt(d);
 	};
 
 	Type Distance2(Vector2d &a) // squared distance.

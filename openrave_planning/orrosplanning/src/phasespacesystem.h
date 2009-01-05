@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -26,140 +26,65 @@
 #ifndef PHASESPACE_MOCAP_SYSTEM
 #define PHASESPACE_MOCAP_SYSTEM
 
-#include "simplesensorsystem.h"
+#include "rossensorsystem.h"
 #include "phase_space/PhaseSpaceSnapshot.h"
 
-using namespace ros;
-
 // used to update objects through a mocap system
-class PhaseSpaceMocapClient : public SimpleSensorSystem
+class PhaseSpaceXMLID
 {
 public:
-    PhaseSpaceMocapClient(EnvironmentBase* penv) : SimpleSensorSystem(penv, "phasespace"), _bSubscribed(false)
+    static const char* GetXMLId() { return "phasespace"; }
+};
+
+class PhaseSpaceMocapClient : public ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>
+{
+public:
+    PhaseSpaceMocapClient(EnvironmentBase* penv)
+        : ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>(penv)
     {
-        RegisterXMLReader(GetEnv()); // just in case, register again
-    }
-    virtual ~PhaseSpaceMocapClient() {
-        Destroy();
     }
 
     virtual bool Init(istream& sinput)
     {
-        if( !SimpleSensorSystem::Init(sinput) )
-            return false;
-
-        _phasespacetopic = "phase_space_snapshot";
-        sinput >> _phasespacetopic;
-        startsubscriptions();
-        return _bSubscribed;
-    }
-
-    virtual void Destroy()
-    {
-        stopsubscriptions();
-        SimpleSensorSystem::Destroy();
-    }
-
-    static void RegisterXMLReader(EnvironmentBase* penv)
-    {
-        if( penv != NULL )
-            penv->RegisterXMLReader("phasespace", PhaseSpaceMocapClient::CreateMocapReader);
-    }
-
-    static BaseXMLReader* CreateMocapReader(KinBody* parent, const char **atts)
-    {
-        return new MocapXMLReader("phasespace", NULL, atts);
+        _topic = "phase_space_snapshot";
+        return ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>::Init(sinput);
     }
 
 private:
-    node* check_roscpp()
-    {
-        // start roscpp
-        ros::node* pnode = ros::node::instance();
-
-        if( pnode && !pnode->check_master() ) {
-            ros::fini();
-            delete pnode;
-            return NULL;
-        }
-
-        if (!pnode) {
-            int argc = 0;
-            char strname[256] = "nohost";
-            gethostname(strname, sizeof(strname));
-            strcat(strname,"_rosoct");
-
-            ros::init(argc,NULL);
-            
-            pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME|ros::node::DONT_ADD_ROSOUT_APPENDER);
-            
-            bool bCheckMaster = pnode->check_master();
-            ros::fini();
-            delete pnode;
-
-            if( !bCheckMaster ) {
-                RAVELOG_ERRORA("ros not present");
-                return NULL;
-            }
-        
-            ros::init(argc,NULL);
-            pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME);
-            RAVELOG_DEBUGA("new roscpp node started");
-        }
-
-        return pnode;
-    }
-
-    void startsubscriptions()
-    {
-        // check if thread launched
-        _bSubscribed = false;
-        ros::node* pnode = check_roscpp();
-        if( pnode != NULL ) {
-            _bSubscribed = pnode->subscribe(_phasespacetopic, _snapshot, &PhaseSpaceMocapClient::newdatacb, this, 10);
-            if( _bSubscribed )
-                RAVELOG_DEBUGA("subscribed to %s\n", _phasespacetopic.c_str());
-            else
-                RAVELOG_ERRORA("failed to subscribe to %s\n", _phasespacetopic.c_str());
-        }
-    }
-
-    void stopsubscriptions()
-    {
-        if( _bSubscribed ) {
-            ros::node* pnode = ros::node::instance();
-            if( pnode && pnode->check_master() ) {
-                pnode->unsubscribe(_phasespacetopic.c_str());
-                RAVELOG_DEBUGA("unsubscribe from %s\n", _phasespacetopic.c_str());
-            }
-            _bSubscribed = false;
-        }
-    }
-
     void newdatacb()
     {
         list< SNAPSHOT > listbodies;
-        boost::mutex::scoped_lock lock(_mutex);
-        RAVELOG_VERBOSEA("cb\n");
+        list< const phase_space::PhaseSpaceBody* > listnewbodies;
 
-        for (unsigned int i=0; i<_snapshot.get_bodies_size(); i++) {
-            const phase_space::PhaseSpaceBody& psbody = _snapshot.bodies[i];
+        {
+            boost::mutex::scoped_lock lock(_mutex);
 
-            boost::shared_ptr<BODY> b;
-            FOREACH(it, _mapbodies) {
-                if( it->second->_initdata.id == psbody.id ) {
-                    b = it->second;
-                    break;
+            for (unsigned int i=0; i<_topicmsg.get_bodies_size(); i++) {
+                const phase_space::PhaseSpaceBody& psbody = _topicmsg.bodies[i];
+
+                boost::shared_ptr<BODY> b;
+                Transform tnew = GetTransform(psbody.pose);
+
+                FOREACH(it, _mapbodies) {
+                    if( it->second->_initdata->id == psbody.id ) {
+                        b = it->second;
+                        break;
+                    }
+                }
+
+                if( !b ) {
+                    listnewbodies.push_back(&psbody);
+                }
+                else {
+                    if( !b->IsEnabled() )
+                        continue;
+                    
+                    listbodies.push_back(SNAPSHOT(b, tnew));
                 }
             }
 
-            if( !b || !b->IsEnabled() )
-                continue;
-
-            listbodies.push_back(SNAPSHOT(b, GetTransform(psbody.pose)));
+            UpdateBodies(listbodies);
         }
-
-        UpdateBodies(listbodies);
 
         // try to add the left-over objects
     }
@@ -168,10 +93,6 @@ private:
     {
         return Transform(Vector(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z), Vector(pose.translation.x, pose.translation.y, pose.translation.z));
     }
-
-    phase_space::PhaseSpaceSnapshot _snapshot;
-    string _phasespacetopic;
-    bool _bSubscribed;
 };
 
 #endif

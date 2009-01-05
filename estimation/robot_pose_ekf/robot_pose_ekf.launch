@@ -1,12 +1,4 @@
 <launch>
-<param name="odom_estimation_no_vo/freq" value="30.0"/>
-<param name="odom_estimation_no_vo/sensor_timeout" value="1.0"/>
-<param name="odom_estimation_no_vo/odom_used" value="true"/>
-<param name="odom_estimation_no_vo/imu_used" value="true"/>
-<param name="odom_estimation_no_vo/vo_used" value="false"/>
-
-<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="odom_estimation_no_vo" output="screen"/>
-
 
 <param name="odom_estimation/freq" value="30.0"/>
 <param name="odom_estimation/sensor_timeout" value="1.0"/>
@@ -15,5 +7,14 @@
 <param name="odom_estimation/vo_used" value="true"/>
 
 <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="odom_estimation" output="screen"/>
+
+<param name="odom_estimation_no_vo/freq" value="30.0"/>
+<param name="odom_estimation_no_vo/sensor_timeout" value="1.0"/>
+<param name="odom_estimation_no_vo/odom_used" value="true"/>
+<param name="odom_estimation_no_vo/imu_used" value="true"/>
+<param name="odom_estimation_no_vo/vo_used" value="false"/>
+
+<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="odom_estimation_no_vo" output="screen"/>
+
 </launch>
 

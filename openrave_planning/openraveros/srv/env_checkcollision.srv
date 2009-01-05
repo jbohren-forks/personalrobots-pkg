@@ -1,5 +1,4 @@
-# Check collision of the robot with the environment. collision is 1 if the robot
-# is colliding, colbodyid is the id of the object that body collided with
+# Check collision of the body with the environment.
 int32 bodyid
 
 # the link of the body to check collision again, if -1 check all links
@@ -10,6 +9,9 @@ int32[] excludedbodyids
 # value to specify tolerance of collision checks (only valid if correct option is set), default is 0
 float32 tolerance
 
+#if non-zero, also checks self-collisions
+uint8 checkselfcollision
+
 # optional collision checker options, affects what information is sent back
 uint8 options
 
@@ -19,8 +21,8 @@ uint8 CO_Contacts=4
 uint8 CO_RayAnyHit=8
 
 ---
-uint8 collision
-int32 collidingbodyid
+uint8 collision # 1 if the robot is colliding
+int32 collidingbodyid # id of the object that body collided with
 
 # index of first colliding link of colliding body
 uint8 collidinglink

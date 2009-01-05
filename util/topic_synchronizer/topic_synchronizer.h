@@ -123,6 +123,9 @@ class TopicSynchronizer
   //! Whether or not the given wait cycle has completed
   bool done_;
 
+  //! Whether or not the node is ready to process data (all subscriptions are completed)
+  bool ready_;
+
   //! The timestamp that is currently being waited for
   ros::Time waiting_time_;
 
@@ -135,6 +138,10 @@ class TopicSynchronizer
    */
   void msg_cb(void* p)
   {
+    //Bail until we are actually ready
+    if (!ready_)
+      return;
+
     ros::Time* time = (ros::Time*)(p);
 
     cond_all_.lock();
@@ -287,6 +294,11 @@ class TopicSynchronizer
       node_->subscribe(*tn_iter, msg, &TopicSynchronizer<N>::msg_cb, this, &(msg.header.stamp), queue_size);
     }
     expected_count_++;
+  }
+
+  void ready()
+  {
+    ready_ = true;
   }
 };
 

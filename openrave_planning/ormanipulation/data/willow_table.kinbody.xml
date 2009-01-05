@@ -15,7 +15,7 @@
   </Body>
   <phasespace>
     <offsetlink>base</offsetlink>
-    <id>1</id>
+    <id>0</id>
     <pretranslation>0.27 0.3425 -0.75</pretranslation>
     <prerotationaxis>0 0 1 -90</prerotationaxis>
   </phasespace>

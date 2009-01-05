@@ -1,5 +1,32 @@
+// Software License Agreement (BSD License)
+// Copyright (c) 2008, Rosen Diankov
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//   * Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//   * The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// author: Rosen Diankov
 #ifndef OPENRAVE_ROS_PLANNING_PROBLEM
 #define OPENRAVE_ROS_PLANNING_PROBLEM
+
+#include <boost/regex.hpp>
 
 class ROSPlanningProblem : public CmdProblemInstance
 {
@@ -7,13 +34,13 @@ public:
     ROSPlanningProblem(EnvironmentBase* penv) : CmdProblemInstance(penv)
     {
         PhaseSpaceMocapClient::RegisterXMLReader(GetEnv());
-        
-        RegisterCommand("createsystem",(CommandFn)&ROSPlanningProblem::CreateSystem, "creates a sensor system and initializes it with the current bodies");
+    }
+    virtual ~ROSPlanningProblem() {
+        Destroy();
     }
 
     virtual void Destroy()
     {
-        listsystems.clear();
     }
 
     int main(const char* cmd)
@@ -21,30 +48,6 @@ public:
         return 0;
     }
 
-    bool CreateSystem(ostream& sout, istream& sinput)
-    {
-        string systemname;
-        sinput >> systemname;
-        if( !sinput )
-            return false;
-
-        boost::shared_ptr<SensorSystemBase> psystem(GetEnv()->CreateSensorSystem(systemname.c_str()));
-        if( !psystem )
-            return false;
-
-        if( !psystem->Init(sinput) )
-            return false;
-
-        psystem->AddRegisteredBodies(GetEnv()->GetBodies());
-        listsystems.push_back(psystem);
-
-        RAVELOG_DEBUGA("added %s system\n", systemname.c_str());
-        sout << 1; // signal success
-        return true;
-    }
-
-protected:
-    list<boost::shared_ptr<SensorSystemBase> > listsystems;
 };
 
 #endif

@@ -4,6 +4,8 @@
 #include "ros/node.h"
 #include "image_utils/cv_bridge.h"
 
+#include "boost/thread/mutex.hpp"
+
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -33,7 +35,7 @@ bool g_start_track;
 bool g_get_rect;
 bool g_is_new_blob;
 
-ros::thread::mutex g_selection_mutex;
+boost::mutex g_selection_mutex;
 
 int g_iframe;
 
@@ -170,7 +172,7 @@ public:
 
   bool quit;
 
-  ros::thread::mutex cv_mutex_;
+  boost::mutex cv_mutex_;
 
   map<string, imgData> images;
 

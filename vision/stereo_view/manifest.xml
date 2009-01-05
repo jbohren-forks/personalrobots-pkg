@@ -12,4 +12,5 @@
   <depend package="roscpp"/>
   <depend package="topic_synchronizer"/>
   <depend package="color_calib"/>
+  <depend package="stereo_utils"/>
 </package>

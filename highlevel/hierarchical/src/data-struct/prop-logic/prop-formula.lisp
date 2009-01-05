@@ -1,4 +1,4 @@
-(defpackage prop-logic
+(defpackage :prop-logic
   (:documentation "Package for representing formulas in propositional logic.
 
 Formulas are representing using the [formula] type.  Elementary propositions are represented by symbols or lists (denoting predicates), and t and nil represent the logical constants TRUE and FALSE.  More complex formulae are built out of these using conjoin, disjoin, or negate.  A propositional state (aka possible world aka model), using the closed world assumption, is represented by a list of propositions that are true in that state.
@@ -54,6 +54,7 @@ dnf-implies
 dnf-consistent
 make-state-dnf
 *compound-formula-type*
+*dnf-or-method*
 conjoin-clausess
 
 DNF sets
@@ -73,65 +74,67 @@ with-dnf-pprint
   
 
   (:export
-   conjoin
-   conjoin-set
-   disjoin
-   disjoin-set
-   negate
-   conjuncts
-   disjuncts
-   negatee
-   literal-prop
-   standardize-literal
-   standardize-prop
-   prop-symbol
-   prop-args
+   :conjoin
+   :conjoin-set
+   :disjoin
+   :disjoin-set
+   :negate
+   :conjuncts
+   :disjuncts
+   :negatee
+   :literal-prop
+   :standardize-literal
+   :standardize-prop
+   :prop-symbol
+   :prop-args
    
-   is-state
-   is-formula
-   [formula]
-   proposition
-   literal
-   negation
-   conjunction
-   disjunction
-   compound-formula
+   :is-state
+   :is-formula
+   :[formula]
+   :proposition
+   :literal
+   :negation
+   :conjunction
+   :disjunction
+   :compound-formula
 
-   holds
+   :holds
    
-   bind
+   :bind
    
-   make-prop-set
+   :make-prop-set
 
-   dnf-or
-   dnf-and
-   dnf-not
-   is-dnf-clause
-   is-dnf-formula
-   dnf-implies
-   dnf-consistent
-   make-state-dnf
-   conjoin-clauses
-   *compound-formula-type*
+   :dnf-or
+   :dnf-and
+   :dnf-not
+   :is-dnf-clause
+   :is-dnf-formula
+   :dnf-implies
+   :dnf-consistent
+   :make-state-dnf
+   :conjoin-clauses
+   :*compound-formula-type*
+   :*dnf-or-method*
+
    
-   make-dnf-set
-   <dnf-set>
-   formula
-   props
-   size-must-exceed
+   :make-dnf-set
+   :<dnf-set>
+   :formula
+   :props
+   :size-must-exceed
    
-   pprint-dnf
-   with-dnf-pprint
+   :pprint-dnf
+   :with-dnf-pprint
    )
   (:use
-   cl
-   utils
-   inst-vars
-   prod-set
-   set))
+   :cl
+   :utils
+   :inst-vars
+   :prod-set
+   :set))
    
 
-(in-package prop-logic)
+(in-package :prop-logic)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

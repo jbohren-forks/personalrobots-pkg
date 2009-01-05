@@ -62,10 +62,10 @@ using namespace boost::accumulators;
 #include <queue>
 
 #define DISPLAY 1
-//#define DEBUG 1
+#define DEBUG 1
 
 VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
-    int num_free_frames, int num_fixed_frames):
+    int num_fixed_frames, int num_free_frames):
   PathRecon(imageSize),
   full_free_window_size_(num_free_frames),
   full_fixed_window_size_(num_fixed_frames),
@@ -90,10 +90,6 @@ void VOSparseBundleAdj::updateSlideWindow() {
     delete frame;
   }
 
-  if (mVisualizer) {
-    ((SBAVisualizer*)mVisualizer)->slideWindowFront =
-      mActiveKeyFrames.front()->mFrameIndex;
-  }
 #if DEBUG==1
   cout << "Current slide window: [";
   BOOST_FOREACH(const PoseEstFrameEntry* frame, mActiveKeyFrames) {
@@ -160,6 +156,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
         PoseEstFrameEntry& peef = *pee;
         cout << pee->mFrameIndex << endl;
         SBAVisualizer* vis = (SBAVisualizer*)mVisualizer;
+        vis->recordFrameIds(&fixed_frames, &free_frames);
         vis->drawTrack(peef);
       }
     }
@@ -359,7 +356,13 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
       BOOST_FOREACH(PointTrackObserv* obsv, *track) {
         boost::unordered_map<int, FramePose*>::const_iterator it;
         it = map_index_to_FramePose_->find(obsv->frame_index_);
-        assert(it!=map_index_to_FramePose_->end());
+        if (it == map_index_to_FramePose_->end()) {
+#if DEBUG==1
+          printf("frame %d is missing in frame lists but referenced by track %d\n",
+              obsv->frame_index_, track->id_);
+#endif
+          continue;
+        }
         const FramePose* fp = it->second;
         assert(obsv->frame_index_ == fp->mIndex);
 
@@ -410,10 +413,14 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
       for (iObsv++; iObsv != track->end(); iObsv++) {
         obsv = *iObsv;
         CvScalar color;
-        if (obsv->frame_index_ < slideWindowFront) {
+        if (free_frame_id_set_.find(obsv->frame_index_) != free_frame_id_set_.end()) {
+          color = colorFreeFrame;
+        } else
+        if (fixed_frame_id_set_.find(obsv->frame_index_) != fixed_frame_id_set_.end()) {
           color = colorFixedFrame;
         } else {
-          color = colorFreeFrame;
+          // probably a frame that are ignored
+          color = colorFixedFrame;
         }
         CvPoint pt1     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
         disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
@@ -443,6 +450,91 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
   canvasTrackingRedrawn = true;
   cvReleaseMat(&mat0);
   cvReleaseMat(&mat1);
+}
+
+void SBAVisualizer::recordFrameIds(const vector<FramePose*>* fixed_frames,
+    const vector<FramePose*>* free_frames) {
+  fixed_frame_id_set_.clear();
+  BOOST_FOREACH(const FramePose* fp, *fixed_frames) {
+    fixed_frame_id_set_.insert(fp->mIndex);
+  }
+  free_frame_id_set_.clear();
+  BOOST_FOREACH(const FramePose* fp, *free_frames) {
+    free_frame_id_set_.insert(fp->mIndex);
+  }
+}
+
+void SBAVisualizer::show(IplImage* im, const vector<FramePose*>& fixed_frames,
+    const vector<FramePose*>& free_frames, const PointTracks& tracks) {
+  reset();
+  // set frame poses, point tracks and maps from index to frame poses
+  vector<FramePose* > frame_poses;
+#if DEBUG==1
+  cout << ("Inserting fixed frames [");
+#endif
+  BOOST_FOREACH(FramePose *fp, fixed_frames) {
+    frame_poses.push_back(fp);
+    map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));
+#if DEBUG==1
+    printf("%d ", fp->mIndex);
+#endif
+  }
+#if DEBUG==1
+  cout << endl;
+#endif
+
+#if DEBUG==1
+  cout << ("Inserting free frames [");
+#endif
+  BOOST_FOREACH(FramePose *fp, free_frames) {
+    frame_poses.push_back(fp);
+    map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+#if DEBUG==1
+    printf("%d ", fp->mIndex);
+#endif
+  }
+#if DEBUG==1
+  cout << endl;
+#endif
+  this->framePoses = &frame_poses;
+  this->tracks = &tracks;
+  FramePose* fp = free_frames.back();
+  int current_frame_index = fp->mIndex;
+
+  if (im) {
+    canvasTracking.SetIpl(im);
+  } else {
+    // make sure the image buffers is allocated to the right sizes
+    canvasTracking.Allocate(640, 480);
+    // clear the image
+    cvSet(canvasTracking.Ipl(), cvScalar(0,0,0));
+  }
+  { // annotation on the canvas
+    char info[256];
+    CvPoint org = cvPoint(0, 475);
+    CvFont font;
+    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+    double x = -cvmGet(&fp->transf_local_to_global_, 0, 3);
+    double y = -cvmGet(&fp->transf_local_to_global_, 1, 3);
+    double z = -cvmGet(&fp->transf_local_to_global_, 2, 3);
+    cout << "last frame " << fp->mIndex << " "<<x<<" "<<y<<" "<<z<<endl;
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+
+
+    sprintf(info, "%04d, [%5.2f,%5.2f,%5.2f], nTrcks=%d",
+        current_frame_index, x,y,z, tracks.tracks_.size());
+
+    cvPutText(canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+  }
+  cout << "All The Tracks"<<endl;
+  tracks.print();
+  sprintf(poseEstFilename,  "%s/poseEst-%04d.png", outputDirname.c_str(),
+      current_frame_index);
+  recordFrameIds(&fixed_frames, &free_frames);
+  drawTrackTrajectories(current_frame_index);
+  this->show();
+  save();
+  reset();
 }
 
 void VOSparseBundleAdj::Stat2::print() {
@@ -513,25 +605,36 @@ void VOSparseBundleAdj::Stat2::print() {
 }
 
 void VOSparseBundleAdj::updateStat2() {
-  int numTracks, maxLen, minLen;
+  mStat2.update(mTracks);
+}
+
+void VOSparseBundleAdj::Stat2::update(const PointTracks& point_track) {
+  int nTracks, maxLen, minLen;
   double avgLen;
   vector<int> lenHisto;
-  mTracks.stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
-  if (numTracks>0) {
-    mStat2.numTracks.push_back(numTracks);
-    mStat2.maxTrackLens.push_back(maxLen);
-    mStat2.minTrackLens.push_back(minLen);
-    mStat2.avgTrackLens.push_back(avgLen);
+  point_track.stats(&nTracks, &maxLen, &minLen, &avgLen, &lenHisto);
+  if (nTracks>0) {
+    numTracks.push_back(nTracks);
+    maxTrackLens.push_back(maxLen);
+    minTrackLens.push_back(minLen);
+    avgTrackLens.push_back(avgLen);
 
-    if (lenHisto.size()>mStat2.trackLenHisto.size()) {
-      mStat2.trackLenHisto.resize(lenHisto.size());
+    if (lenHisto.size()>trackLenHisto.size()) {
+      trackLenHisto.resize(lenHisto.size());
     }
     int len=0;
     BOOST_FOREACH( const int count, lenHisto ) {
-      mStat2.trackLenHisto.at(len) += count;
+      trackLenHisto.at(len) += count;
       len++;
     }
   }
+}
+void VOSparseBundleAdj::Stat2::clear() {
+  numTracks.clear();
+  maxTrackLens.clear();
+  minTrackLens.clear();
+  avgTrackLens.clear();
+  trackLenHisto.clear();
 }
 
 void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
@@ -546,6 +649,6 @@ void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
     cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_updates,DBL_EPSILON);
 
   levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
-      full_free_window_size_, full_fixed_window_size_, term_criteria);
+      full_fixed_window_size_, full_free_window_size_, term_criteria);
 }
 

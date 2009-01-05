@@ -1,0 +1,19 @@
+<launch>
+  <machine name="cameras" address="ahc" default="false" user="rdiankov"/>  
+  <node machine="cameras" name="dcam" pkg="dcam" type="dcam" respawn="false">
+    <!-- video_mode should be one of the following:
+         640x480_videre_rectified:     Provides rectified images from the hw
+                                        Provides: left mono image
+         640x480_videre_disparity:     Disparity and rectification done on chip.
+                                        Provides: Disparity and left mono image
+         640x480_videre_disparity_raw: Disparity done on chip (debayer and rectification in software).
+                                        Provides: disparity and left color image.
+         640x480_videre_none:          No stereo on chip (all processing done in software).
+                                        Provides: all 3 images available
+          -->
+    <param name="video_mode" type="str" value="640x480_videre_rectified"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+  </node>
+</launch>

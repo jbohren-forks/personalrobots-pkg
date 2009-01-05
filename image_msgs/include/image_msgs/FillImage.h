@@ -61,6 +61,13 @@ namespace image_msgs
     memcpy((char*)(&m.data[0]), (char*)(d), st0*sizeof(m.data[0]));
   }
 
+  template <class M>
+  void clearImageHelper(M &m)
+  {
+    m.layout.dim.resize(0);
+    m.data.resize(0);
+  }
+
   bool fillImage(Image& image,
                  std::string label_arg,
                  uint32_t height_arg, uint32_t width_arg, uint32_t channel_arg,
@@ -94,8 +101,40 @@ namespace image_msgs
                      width_arg, width_step,
                      channel_arg, channel_step,
                      data_arg);
+
+    else if (image.depth == "int16")
+      fillImageHelper(image.int16_data,
+                     height_arg, height_step,
+                     width_arg, width_step,
+                     channel_arg, channel_step,
+                     data_arg);
     
     return true;
+  }
+
+  bool clearImage(Image& image)
+  {
+    image.label    = "none";
+    image.encoding = "other";
+    if (image.depth == "byte")
+      clearImageHelper(image.byte_data);
+    else if (image.depth == "uint16")
+      clearImageHelper(image.uint16_data);
+    else if (image.depth == "int16")
+      clearImageHelper(image.int16_data);
+    else if (image.depth == "uint32")
+      clearImageHelper(image.uint32_data);
+    else if (image.depth == "int32")
+      clearImageHelper(image.int32_data);
+    else if (image.depth == "uint64")
+      clearImageHelper(image.uint64_data);
+    else if (image.depth == "int64")
+      clearImageHelper(image.int64_data);
+    else if (image.depth == "float32")
+      clearImageHelper(image.float32_data);
+    else if (image.depth == "float64")
+      clearImageHelper(image.float64_data);
+    image.depth = "none";
   }
 }
 

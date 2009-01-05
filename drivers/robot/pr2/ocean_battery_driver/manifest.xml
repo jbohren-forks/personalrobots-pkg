@@ -1,0 +1,8 @@
+<package>
+  <description>This is an interface to the Ocean Server Technology Intelligent Battery and Power System.</description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="API cleared" notes=""/>
+  <depend package="rospy" />
+  <depend package="robot_msgs" />
+</package>

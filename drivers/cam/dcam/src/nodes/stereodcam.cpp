@@ -32,62 +32,90 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+stereodcam node uses the parameters:
+
+- @b ~exposure (int)
+- @b ~gain     (int)
+- @b ~brightness (int)
+- @b ~exposure_auto (bool)
+- @b ~gain_auto  (bool)
+- @b ~brightness_auto (bool)
+- @b ~companding (bool)
+- @b ~hdr (bool)
+- @b ~unique_check (bool)
+- @b ~texture_thresh (int)
+- @b ~unique_thresh (int)
+- @b ~smoothness_thresh (int)
+- @b ~horopter (int)
+- @b ~speckle_size (int)
+- @b ~speckle_diff (int)
+- @b ~corr_size (int)
+- @b ~num_disp (int)
+
+**/
+
+
 #include <cstdio>
 
 #include "dcam/dcam.h"
 #include "dcam/stereodcam.h"
 
 #include "ros/node.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/FillImage.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/StereoInfo.h"
-#include "std_msgs/PointCloud.h"
+
+#include "image_msgs/RawStereo.h"
+#include "cam_bridge.h"
 
 #include "diagnostic_updater/diagnostic_updater.h"
+
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
+#include "std_srvs/Empty.h"
 
 using namespace std;
 
 void sigsegv_handler(int sig);
 
-class DcamNode : public ros::node
+class StereoDcamNode : public ros::node
 {
+  image_msgs::RawStereo    raw_stereo_;
+  DiagnosticUpdater<StereoDcamNode> diagnostic_;
 
-  bool stereo_cam_;
-  bool do_stereo_;
-  bool do_rectify_;
-  bool do_calc_points_;
-
-  image_msgs::Image        img_;
-  std_msgs::PointCloud     cloud_;
-  image_msgs::CamInfo      cam_info_;
-  image_msgs::StereoInfo   stereo_info_;
-
-  DiagnosticUpdater<DcamNode> diagnostic_;
   int count_;
   double desired_freq_;
 
   string frame_id_;
 
+  std::map<std::string, int> paramcache_;
 
 public:
 
-  static dcam::Dcam* cam_;
-  static cam::StereoDcam* stcam_;
+  dcam::StereoDcam* stcam_;
 
-
-  DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
+  StereoDcamNode() : ros::node("stereodcam"), diagnostic_(this), count_(0)
   {
+    // Set up segfault handler
     signal(SIGSEGV, &sigsegv_handler);
 
+    // Initialize the dcam system
     dcam::init();
 
+    // Look for cameras
     int num_cams = dcam::numCameras();
 
-    diagnostic_.addUpdater( &DcamNode::freqStatus );
+    // Register a frequency status updater
+    diagnostic_.addUpdater( &StereoDcamNode::freqStatus );
 
+    // If there is a camera...
     if (num_cams > 0)
     {
+      // Check our gui parameter, or else use first camera
       uint64_t guid;
       if (has_param("~guid"))
       {
@@ -99,13 +127,13 @@ public:
         guid = dcam::getGuid(0);
       }
 
-      string str_speed;
-      dc1394speed_t speed;
-
-      param("~speed", str_speed, string("S400"));
-
       param("~frame_id", frame_id_, string("stereo"));
 
+
+      // Get the ISO speed parameter if available
+      string str_speed;
+      dc1394speed_t speed;
+      param("~speed", str_speed, string("S400"));
       if (str_speed == string("S100"))
         speed = DC1394_ISO_SPEED_100;
       else if (str_speed == string("S200"))
@@ -113,14 +141,11 @@ public:
       else
         speed = DC1394_ISO_SPEED_400;
 
-
+      // Get the FPS parameter if available;
       double dbl_fps;
       dc1394framerate_t fps;
-
       param("~fps", dbl_fps, 30.0);
-
       desired_freq_ = dbl_fps;
-
       if (dbl_fps >= 240.0)
         fps = DC1394_FRAMERATE_240;
       else if (dbl_fps >= 120.0)
@@ -138,368 +163,179 @@ public:
       else
         fps = DC1394_FRAMERATE_1_875;
       
-      string str_mode;
-      dc1394video_mode_t mode;
+      // For right now we ONLY support Videre stereo cameras:
+      dc1394video_mode_t mode = VIDERE_STEREO_640x480;
+
+      // Get the videre processing mode if available:
+      string str_videre_mode;
       videre_proc_mode_t videre_mode = PROC_MODE_NONE;  
-      stereo_cam_ = false;
-
-      param("~video_mode", str_mode, string("640x480_mono8"));
-
-      if (str_mode == string("640x480_rgb24"))
-        mode = DC1394_VIDEO_MODE_640x480_RGB8;
-      else if (str_mode == string("1024x768_rgb24"))
-        mode = DC1394_VIDEO_MODE_1024x768_RGB8;
-      else if (str_mode == string("1280x960_rgb24"))
-        mode = DC1394_VIDEO_MODE_1280x960_RGB8;
-      else if (str_mode == string("1600x1200_rgb24"))
-        mode = DC1394_VIDEO_MODE_1600x1200_RGB8;
-      else if (str_mode == string("640x480_mono8"))
-        mode = DC1394_VIDEO_MODE_640x480_MONO8;
-      else if (str_mode == string("1024x768_mono8"))
-        mode = DC1394_VIDEO_MODE_1024x768_MONO8;
-      else if (str_mode == string("1280x960_mono8"))
-        mode = DC1394_VIDEO_MODE_1280x960_MONO8;
-      else if (str_mode == string("1600x1200_mono8"))
-        mode = DC1394_VIDEO_MODE_1600x1200_MONO8;
-      else if (str_mode == string("640x480_videre_none"))
-      {
-        stereo_cam_ = true;
-        mode = VIDERE_STEREO_640x480;
-        videre_mode = PROC_MODE_NONE;
-      }
-      else if (str_mode == string("640x480_videre_rectified"))
-      {
-        stereo_cam_ = true;
-        mode = VIDERE_STEREO_640x480;
+      param("~videre_mode", str_videre_mode, string("none"));
+      if (str_videre_mode == string("rectified"))
         videre_mode = PROC_MODE_RECTIFIED;
-      }
-      else if (str_mode == string("640x480_videre_disparity"))
-      {
-        stereo_cam_ = true;
-        mode = VIDERE_STEREO_640x480;
+      else if (str_videre_mode == string("disparity"))
         videre_mode = PROC_MODE_DISPARITY;
-      }
-      else if (str_mode == string("640x480_videre_disparity_raw"))
-      {
-        stereo_cam_ = true;
-        mode = VIDERE_STEREO_640x480;
+      else if (str_videre_mode == string("disparity_raw"))
         videre_mode = PROC_MODE_DISPARITY_RAW;
-      }
       else
-        mode = DC1394_VIDEO_MODE_640x480_MONO8;
-
-      param("~do_rectify", do_rectify_, false);
-
-      param("~do_stereo", do_stereo_, false);
-
-      param("~do_calc_points", do_calc_points_, false);
-
-      // Only do stereo if using stereo cam
-      do_stereo_ = do_stereo_ && stereo_cam_;
-
-      // Must do stereo if calculating points
-      do_stereo_ = do_stereo_ || do_calc_points_;
-
-      // Must rectify if doing stereo
-      do_rectify_ = do_rectify_ || do_stereo_;
+        videre_mode = PROC_MODE_NONE;
 
 
-      // This switch might not be necessary... can maybe read
-      // from regular cam with StereoDcam, but then the name
-      // is definitely wrong.
-      if (stereo_cam_)
-      {
-        stcam_ = new cam::StereoDcam(guid);
-        cam_ = stcam_;
+      // Create the StereoDcam
+      stcam_ = new dcam::StereoDcam(guid);
 
-        std::string params(cam_->getParameters());
-        set_param("~/params", params);
+      // Fetch the camera string and send it to the parameter server if people want it (they shouldn't)
+      std::string params(stcam_->getParameters());
+      set_param("~params", params);
 
-        cam_->setFormat(mode, fps, speed);
-        cam_->setProcMode(videre_mode);
-        cam_->setUniqueThresh(12);
-        cam_->setTextureThresh(10);
-        cam_->setCompanding(true);
-      } else {
-        cam_ = new dcam::Dcam(guid);
-        cam_->setFormat(mode, fps, speed);
-      }
+      set_param("~exposure_max", (int)stcam_->expMax);
+      set_param("~exposure_min", (int)stcam_->expMin);
+      set_param("~gain_max", (int)stcam_->gainMax);
+      set_param("~gain_min", (int)stcam_->gainMin);
+      set_param("~brightness_max", (int)stcam_->brightMax);
+      set_param("~brightness_min", (int)stcam_->brightMin);
 
-      cam_->start();
+      // Configure camera
+      stcam_->setFormat(mode, fps, speed);
+      stcam_->setProcMode(videre_mode);
+      stcam_->setUniqueThresh(36);
+      stcam_->setTextureThresh(30);
+      stcam_->setSpeckleSize(100);
+      stcam_->setSpeckleDiff(10);
+      stcam_->setCompanding(true);
 
-      while (ok() && !serviceCam())
-        diagnostic_.update();
-        
-      printf("Advertising\n");
-      advertiseCam();
+      advertise<image_msgs::RawStereo>("~raw_stereo", 1);
+      advertise_service("~check_params", &StereoDcamNode::checkFeatureService);
+
+      // Start the camera
+      stcam_->start();
+
+      usleep(200000);
+      
+      checkAndSetAll();
+
+    } else {
+      ROS_FATAL("stereodcam: No cameras found\n");
+      self_destruct();
     }
   }
 
 
-  ~DcamNode()
+  bool checkFeatureService(std_srvs::Empty::request &req,
+                           std_srvs::Empty::response &res)
   {
-    if (cam_)
+    checkAndSetAll();
+    return true;
+  }
+
+  void checkAndSetAll()
+  {
+    checkAndSetIntBool("exposure",       boost::bind(&dcam::Dcam::setExposure,      stcam_, _1, _2));
+    checkAndSetIntBool("gain",           boost::bind(&dcam::Dcam::setGain,          stcam_, _1, _2));
+    checkAndSetIntBool("brightness",     boost::bind(&dcam::Dcam::setBrightness,    stcam_, _1, _2));
+    checkAndSetBool("companding",        boost::bind(&dcam::Dcam::setCompanding,    stcam_, _1));
+    checkAndSetBool("hdr",               boost::bind(&dcam::Dcam::setHDR,           stcam_, _1));
+    checkAndSetBool("unique_check",      boost::bind(&dcam::StereoDcam::setUniqueCheck,      stcam_, _1));
+    checkAndSetInt("texture_thresh",     boost::bind(&dcam::StereoDcam::setTextureThresh, stcam_, _1));
+    checkAndSetInt("unique_thresh",      boost::bind(&dcam::StereoDcam::setUniqueThresh,  stcam_, _1));
+    checkAndSetInt("smoothness_thresh",  boost::bind(&dcam::StereoDcam::setSmoothnessThresh,  stcam_, _1));
+    checkAndSetInt("horopter",           boost::bind(&dcam::StereoDcam::setHoropter,      stcam_, _1));
+    checkAndSetInt("speckle_size",       boost::bind(&dcam::StereoDcam::setSpeckleSize,      stcam_, _1));
+    checkAndSetInt("speckle_diff",       boost::bind(&dcam::StereoDcam::setSpeckleDiff,      stcam_, _1));
+    checkAndSetInt("corr_size",          boost::bind(&dcam::StereoDcam::setCorrsize,      stcam_, _1));
+    checkAndSetInt("num_disp",           boost::bind(&dcam::StereoDcam::setNumDisp,      stcam_, _1));
+  }
+
+  void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
+  {
+    if (has_param(std::string("~") + param_name) || has_param(std::string("~") + param_name + std::string("_auto")))
     {
-      cam_->stop();
-      delete cam_;
+
+      int val = 0;
+      bool isauto = false;
+
+      param( std::string("~") + param_name, val, 0);
+      param( std::string("~") + param_name + std::string("_auto"), isauto, false);
+    
+      int testval = (val * (!isauto));
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != testval) )
+        setfunc(val, isauto);
+
+      paramcache_[param_name] = testval;
+    }
+  }
+
+  void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
+  {
+    if (has_param(std::string("~") + param_name))
+    {
+      bool on = false;
+
+      param(std::string("~") + param_name, on, false);
+    
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != on) )
+        setfunc(on);
+
+      paramcache_[param_name] = on;
+    }
+  }
+
+  void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
+  {
+    if (has_param(std::string("~") + param_name))
+    {
+
+      int val = 0;
+
+      param(std::string("~") + param_name, val, 0);
+
+      std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
+
+      if ( (cacheval == paramcache_.end())
+           || (cacheval->second != val) )
+        setfunc(val);
+
+      paramcache_[param_name] = val;
+    }
+  }
+
+  void cleanup()
+  {
+    if (stcam_)
+    {
+      stcam_->stop();
+      delete stcam_;
     }
 
     dcam::fini();  
   }
 
+  ~StereoDcamNode()
+  {
+    cleanup();
+  }
+
   bool serviceCam()
   {
-    if (!cam_->getImage(100 + 1.0/desired_freq_ * 1000))
+    if (!stcam_->getImage(100 + (int)(1.0/desired_freq_ * 1000)))
     {
       ROS_WARN("Timed out waiting for camera.");
       return false;
     }
-
-    if (do_rectify_)
-    {
-      //      ( (cam::StereoDcam*)(cam_) )->doRectify();
-      stcam_->doRectify();
-    }
-
-    //    cam_->doRectify();
- 
-    if (do_stereo_)
-    {
-      //      ( (cam::StereoDcam*)(cam_) )->doDisparity();
-      stcam_->doDisparity();
-    }
-
-    if (do_calc_points_)
-    {
-      //( (cam::StereoDcam*)(cam_) )->doCalcPts();
-      stcam_->doCalcPts();
-    }
+    
+    cam_bridge::StereoDataToRawStereo(stcam_->stIm, raw_stereo_);
+    publish("~raw_stereo", raw_stereo_);
 
     count_++;
     return true;
   }
-
-  void publishCam()
-  {
-    if (stereo_cam_)
-    {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
-
-      publishImages("~left/", stcam->stIm->imLeft);
-      publishImages("~right/", stcam->stIm->imRight);
-      
-      if (stcam->stIm->imDisp)
-      {
-        fillImage(img_,  "disparity",
-                  stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
-                  "mono", "uint16",
-                  stcam->stIm->imDisp );
-
-        img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-        publish("~disparity", img_);
-        
-        stereo_info_.has_disparity = true;
-      } else {
-        stereo_info_.has_disparity = false;
-      }
-
-      if (do_calc_points_)
-      {
-        cloud_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-        cloud_.header.frame_id = frame_id_;
-        cloud_.pts.resize(stcam->stIm->numPts);
-        cloud_.chan.resize(1);
-        cloud_.chan[0].name = "rgb";
-        cloud_.chan[0].vals.resize(stcam->stIm->numPts);
-        
-        for (int i = 0; i < stcam->stIm->numPts; i++)
-        {
-          cloud_.pts[i].y = -stcam->stIm->imPts[3*i + 0];
-          cloud_.pts[i].z = -stcam->stIm->imPts[3*i + 1];
-          cloud_.pts[i].x = stcam->stIm->imPts[3*i + 2];
-          //          printf("(%d/%d) %f %f %f\n", i, stcam->stIm->numPts, cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
-        }
-
-        for (int i = 0; i < stcam->stIm->numPts; i++)
-        {
-          int rgb = (stcam->stIm->imPtsColor[3*i] << 16) | (stcam->stIm->imPtsColor[3*i + 1] << 8) | stcam->stIm->imPtsColor[3*i + 2];
-          cloud_.chan[0].vals[i] = *(float*)(&rgb);
-        }
-
-        
-
-        publish("~cloud", cloud_);
-      }
-
-      stereo_info_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-
-      stereo_info_.height = stcam->stIm->imHeight;
-      stereo_info_.width = stcam->stIm->imWidth;
-
-      stereo_info_.dpp = stcam->stIm->dpp;
-      stereo_info_.numDisp = stcam->stIm->numDisp;
-      stereo_info_.imDtop = stcam->stIm->imDtop;
-      stereo_info_.imDleft = stcam->stIm->imDleft;
-      stereo_info_.imDwidth = stcam->stIm->imDwidth;
-      stereo_info_.imDheight = stcam->stIm->imDheight;
-      stereo_info_.corrSize = stcam->stIm->corrSize;
-      stereo_info_.filterSize = stcam->stIm->filterSize;
-      stereo_info_.horOffset = stcam->stIm->horOffset;
-      stereo_info_.textureThresh = stcam->stIm->textureThresh;
-      stereo_info_.uniqueThresh = stcam->stIm->uniqueThresh;
-
-      memcpy((char*)(&stereo_info_.T[0]),  (char*)(stcam->stIm->T),   3*sizeof(double));
-      memcpy((char*)(&stereo_info_.Om[0]), (char*)(stcam->stIm->Om),  3*sizeof(double));
-      memcpy((char*)(&stereo_info_.RP[0]), (char*)(stcam->stIm->RP), 16*sizeof(double));
-
-      publish("~stereo_info", stereo_info_);
-
-    } else {
-      publishImages("~", cam_->camIm);
-    }
-  }
-
-  void publishImages(std::string base_name, cam::ImageData* img_data)
-  {
-    if (img_data->imRawType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  "image_raw",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
-                img_data->imRaw );
-
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image_raw"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
-    }
-
-    if (img_data->imType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  "image",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
-                img_data->im );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
-    }
-
-    if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  "image_color",
-                img_data->imHeight, img_data->imWidth, 3,
-                "rgba", "byte",
-                img_data->imColor );
-
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image_color"), img_);
-      cam_info_.has_image_color = true;
-    } else {
-      cam_info_.has_image_color = false;
-    }
-
-    if (img_data->imRectType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  "image_rect",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
-                img_data->imRect );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image_rect"), img_);
-      cam_info_.has_image_rect = true;
-    } else {
-      cam_info_.has_image_rect = false;
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  "image_rect_color",
-                img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "byte",
-                img_data->imRectColor );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
-    {
-      fillImage(img_,  "image_rect_color",
-                img_data->imHeight, img_data->imWidth, 4,
-                "rgba", "byte",
-                img_data->imRectColor );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
-    }
-
-    cam_info_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-    cam_info_.height = img_data->imHeight;
-    cam_info_.width  = img_data->imWidth;
-
-    memcpy((char*)(&cam_info_.D[0]), (char*)(img_data->D),  5*sizeof(double));
-    memcpy((char*)(&cam_info_.K[0]), (char*)(img_data->K),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.R[0]), (char*)(img_data->R),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
-
-    publish(base_name + std::string("cam_info"), cam_info_);
-
-  }
-
-
-  void advertiseImages(std::string base_name, cam::ImageData* img_data)
-  {
-    advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
-
-    if (img_data->imRawType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_raw"), 1);
-
-    if (img_data->imType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image"), 1);
-
-    if (img_data->imColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_color"), 1);
-
-    if (img_data->imRectType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_rect"), 1);
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_rect_color"), 1);
-
-  }
-
-  void advertiseCam()
-  {
-    if (stereo_cam_)
-    {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
-
-      advertise<image_msgs::StereoInfo>("~stereo_info", 1);
-
-      advertiseImages("~left/", stcam->stIm->imLeft);
-      advertiseImages("~right/", stcam->stIm->imRight);
-
-      if (stcam->stIm->imDisp)
-        advertise<image_msgs::Image>("~disparity", 1);
-      
-      if (do_calc_points_)
-        advertise<std_msgs::PointCloud>("~cloud",1);
-
-    }
-    else
-    {
-      advertiseImages("~", cam_->camIm);
-    }
-  }
-
 
   void freqStatus(robot_msgs::DiagnosticStatus& status)
   {
@@ -536,8 +372,7 @@ public:
     // Start up the camera
     while (ok())
     {
-      if (serviceCam())
-        publishCam();
+      serviceCam();
       diagnostic_.update();
     }
 
@@ -545,16 +380,15 @@ public:
   }
 };
 
-dcam::Dcam* DcamNode::cam_ = 0;
-cam::StereoDcam* DcamNode::stcam_ = 0;
+StereoDcamNode* g_sdc = 0;
 
 void sigsegv_handler(int sig)
 {
   signal(SIGSEGV, SIG_DFL);
   printf("System segfaulted, stopping camera nicely\n");
-  if (DcamNode::cam_)
+  if (g_sdc)
   {
-    DcamNode::cam_->stop();
+    g_sdc->cleanup();
   }
 }
 
@@ -563,9 +397,11 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  DcamNode dc;
+  g_sdc = new StereoDcamNode;
 
-  dc.spin();
+  g_sdc->spin();
+
+  delete g_sdc;
 
   ros::fini();
   return 0;

@@ -244,6 +244,10 @@ namespace costmap_2d {
      */
     std::string toString() const;
 
+
+    static double computeWX(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy);
+    static double computeWY(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy);
+
   protected:
 
     /**

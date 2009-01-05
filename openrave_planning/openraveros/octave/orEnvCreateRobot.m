@@ -6,7 +6,7 @@ function bodyid = orEnvCreateRobot(robotname, xmlfile, type)
 
 session = openraveros_getglobalsession();
 req = openraveros_env_createrobot();
-req.robotname = robotname;
+req.name = robotname;
 req.file = xmlfile;
 if( exist('type','var') )
     req.type = type;

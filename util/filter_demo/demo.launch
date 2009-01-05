@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="filter_coefficient_server" type="generate_filter_coeffs.m"/>
+  <node pkg="filter_demo" type="filtering_example" args="butter 2 .1 "/>
+  <node pkg="filter_demo" type="demo_plot.py"/>
+</launch>

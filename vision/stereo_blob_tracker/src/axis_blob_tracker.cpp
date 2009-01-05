@@ -8,6 +8,8 @@
 #include "axis_cam/PTZActuatorState.h"
 #include "image_utils/cv_bridge.h"
 
+#include "boost/thread/mutex.hpp"
+
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -161,7 +163,7 @@ public:
 
   bool quit;
 
-  ros::thread::mutex cv_mutex_;
+  boost::mutex cv_mutex_;
 
   BTracker *btracker_;
 

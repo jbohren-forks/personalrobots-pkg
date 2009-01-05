@@ -33,11 +33,13 @@
 #ifndef _CLOUD_GEOMETRY_NEAREST_H_
 #define _CLOUD_GEOMETRY_NEAREST_H_
 
-#include "std_msgs/PointCloud.h"
-#include "std_msgs/Point32.h"
+// ROS includes
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/Point32.h>
+#include <std_msgs/Point2DFloat32.h>
 
 #include "Eigen/Core"
-#include "cloud_geometry/lapack.h"
+#include <cloud_geometry/lapack.h>
 
 namespace cloud_geometry
 {

@@ -56,6 +56,7 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <fstream>
 #include <assert.h>
 
 namespace costmap_2d {
@@ -71,15 +72,15 @@ namespace costmap_2d {
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
       double resolution, unsigned char threshold, double maxZ, double zLB, double zUB,
       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight, 
-      double  obstacleRange, double raytraceRange)
+		       double  obstacleRange, double raytraceRange, double raytraceWindow)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
-    maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
-    inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
-    circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
-    inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-    weight_(std::max(0.0, std::min(weight, 1.0))), sq_obstacle_range_(obstacleRange * obstacleRange),
-    sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
-      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1)
+      maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
+      inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
+      circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
+      inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
+      weight_(std::max(0.0, std::min(weight, 1.0))), raytraceWindow_(raytraceWindow),
+      sq_obstacle_range_(obstacleRange * obstacleRange), sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
+      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1), raytraceCells_ (raytraceWindow_ / resolution)
   {
     if(weight != weight_){
       ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
@@ -95,7 +96,7 @@ namespace costmap_2d {
     for (i=0; i<=inflationRadius_; i++) {
       cachedDistances[i] = new double[inflationRadius_+1];
       for (j=0; j<=i; j++) {
-        cachedDistances[i][j] = sqrt (pow(i, 2) + pow(j, 2));
+        cachedDistances[i][j] = sqrt(pow(i, 2) + pow(j, 2));
         cachedDistances[j][i] = cachedDistances[i][j];
       }
     }
@@ -131,6 +132,12 @@ namespace costmap_2d {
 
     // Instantiate static data
     memcpy(staticData_, costData_, width_ * height_);
+
+    if (raytraceCells_ + inflationRadius_ * 2 >= getWidth() || raytraceCells_ + inflationRadius_ * 2 >= getHeight()) {
+      ROS_ERROR("Raytrace area can't be larger than the costmap.");
+      ROS_ASSERT(false);
+      exit(1);
+    }
   }
 
   CostMap2D::~CostMap2D() {
@@ -224,27 +231,13 @@ namespace costmap_2d {
     // Revert to initial state
     memset(xy_markers_, 0, width_ * height_ * sizeof(bool));
 
-    // Now propagate free space. We iterate again over observations, process only those from an origin
-    // within a specific range, and a point within a certain z-range. We only want to propagate free space
-    // in 2D so keep point and its origin within expected range
-    for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
-      const Observation& obs = *it;
-      if(!in_projection_range(obs.origin_.z))
-        continue;
-
-      const std_msgs::PointCloud& cloud = *(obs.cloud_);
-      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-        if(!in_projection_range(cloud.pts[i].z))
-          continue;
-
-        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
-      }
-    }
+    robotX_ = wx; robotY_ = wy;
 
     // Propagation queue should be empty from completion of last propagation.
     ROS_ASSERT(queue_.empty());
 
-    // First we propagate costs. For this we iterate over observations, and process the internal point clouds
+    // Iterate over observations, buffering hits, and propagating free space as we go. We ray trace hits
+    // to remove all static lethal obstacles that can be ray traced out.
     for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
       const Observation& obs = *it;
       const std_msgs::PointCloud& cloud = *(obs.cloud_);
@@ -273,6 +266,59 @@ namespace costmap_2d {
         unsigned int mx, my;
         IND_MC(ind, mx, my);
         enqueue(ind, mx, my);
+
+        if(in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
+	  updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      }
+    }
+
+
+    // Now propagate free space. We iterate again over observations, process only those from an origin
+    // within a specific range, and a point within a certain z-range. We only want to propagate free space
+    // in 2D so keep point and its origin within expected range
+    /*for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
+      const Observation& obs = *it;
+      if(!in_projection_range(obs.origin_.z))
+        continue;
+
+      const std_msgs::PointCloud& cloud = *(obs.cloud_);
+      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+        if(!in_projection_range(cloud.pts[i].z))
+          continue;
+
+        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      }
+      }*/
+
+
+
+    // Clear out the window. Here we want to keep any up to date lethal obstacles. We need to iterate over the window
+    // and enqueue any old lethal obstacles that remain when ray tracing is done. These can be from either the static map or
+    // from old sensor data. Note that we compute the window to include an outer limit given by the inflation radius to ensure we
+    // correctly repropagate effects of obstacles outside the window which impinge the window.
+    unsigned int rayStartX = 0, rayStartY = 0, rayEndX = 0, rayEndY = 0;
+    WC_MC(computeWX(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), 
+	  computeWY(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), rayStartX, rayStartY);
+    rayEndX = rayStartX + raytraceCells_ + inflationRadius_ * 2;
+    rayEndY = rayStartY + raytraceCells_ + inflationRadius_ * 2;
+
+    unsigned int clearStartX = 0, clearStartY = 0, clearEndX = 0, clearEndY = 0;
+    WC_MC(computeWX(*this, raytraceWindow_, robotX_, robotY_), 
+	  computeWY(*this, raytraceWindow_, robotX_, robotY_), clearStartX, clearStartY);
+    clearEndX = clearStartX + raytraceCells_;
+    clearEndY = clearStartY + raytraceCells_;
+
+    for (unsigned int x = rayStartX; x < rayEndX; x++) {
+      for (unsigned int y = rayStartY; y < rayEndY; y++) {
+	unsigned int ind = MC_IND(x, y);
+
+	if (costData_[ind] == LETHAL_OBSTACLE && !marked(ind)) {
+	  enqueue(ind, x, y);
+	  
+	}
+	if (x > clearStartX && x < clearEndX && y > clearStartY && y < clearEndY) {
+	  costData_[ind] = 0;
+	}
       }
     }
 
@@ -302,6 +348,37 @@ namespace costmap_2d {
 
       delete c;
     }
+  }
+
+
+
+  void CostMap2D::saveText(std::string file) { 
+    std::ofstream of_text(file.c_str()); 
+
+
+    if (of_text.fail() || !of_text) {
+      ROS_INFO("Failed to open file %s.\n", file.c_str());
+      return;
+    }
+
+    for (unsigned int i = 0; i < getWidth(); i++) {
+      for (unsigned int j = 0; j < getHeight(); j++) {
+	of_text.width(4);
+	of_text << (int)(getMap()[i + j * getWidth()]) << ",";
+      }
+      of_text << std::endl;
+    }
+  }
+
+  void CostMap2D::saveBinary(std::string file) { 
+    std::ofstream of(file.c_str(), std::ios::out|std::ios::binary);
+    if (of.fail() || !of) {
+      ROS_INFO("Failed to open file %s.\n", file.c_str());
+      return;
+    }
+
+    of.write((const char*)(getMap()), getWidth() * getHeight() * sizeof(unsigned char));
+    of.close(); 
   }
 
   /**
@@ -402,6 +479,15 @@ namespace costmap_2d {
       numpixels = deltay;         // There are more y-values than x-values
     }
 
+
+    //Static Ray trace zone.
+    unsigned int rayStartX = 0, rayStartY = 0, rayEndX = 0, rayEndY = 0;
+    WC_MC(computeWX(*this, raytraceWindow_, robotX_, robotY_), 
+	  computeWY(*this, raytraceWindow_, robotX_, robotY_), rayStartX, rayStartY);
+    rayEndX = rayStartX + raytraceCells_;
+    rayEndY = rayStartY + raytraceCells_;
+
+
     for (unsigned int curpixel = 0; curpixel <= numpixels; curpixel++){
       unsigned int index = MC_IND(x, y);
 
@@ -417,14 +503,20 @@ namespace costmap_2d {
       x += xinc2;                 // Change the x as appropriate
       y += yinc2;                 // Change the y as appropriate
 
-      if(!marked(index))
+      if(!marked(index)) {
         costData_[index] = 0;
+      }
 
       //we want to break out of the loop if we have raytraced far enough
       double sq_cell_dist = (x - startx) * (x - startx) + (y - starty) * (y - starty);
       if(sq_cell_dist >= sq_raytrace_range_)
         break;
 
+
+      if (x < rayStartX) { return; }
+      if (x > rayEndX) { return; }
+      if (y < rayStartY) { return; }
+      if (y > rayEndY) { return; }
     }
   }
 
@@ -468,37 +560,6 @@ namespace costmap_2d {
     }
   }
 
-  double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
-    unsigned int mx, my;
-    costMap.WC_MC(wx, wy, mx, my);
-
-    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
-    unsigned int origin_mx(0);
-
-    if(mx > cellWidth/2)
-      origin_mx = mx - cellWidth/2;
-
-    if(origin_mx + cellWidth > costMap.getWidth())
-      origin_mx = costMap.getWidth() - cellWidth - 1;
-
-    return origin_mx * costMap.getResolution();
-  }
-
-  double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy){
-    unsigned int mx, my;
-    costMap.WC_MC(wx, wy, mx, my);
-
-    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
-    unsigned int origin_my(0);
-
-    if(my > cellWidth/2)
-      origin_my = my - cellWidth/2;
-
-    if(origin_my + cellWidth > costMap.getHeight())
-      origin_my = costMap.getHeight() - cellWidth - 1;
-
-    return origin_my * costMap.getResolution();
-  }
 
   unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
     unsigned int cellWidth = (unsigned int) ceil(maxSize/resolution);

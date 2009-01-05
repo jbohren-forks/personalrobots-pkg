@@ -187,7 +187,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 
 
 (defmethod hla-sound-reward ((d ncstrips) (s <prop-state-set>) s2)
-  ;; Not quite correct, but lower bounds the actual reward, so everything will still work
+  ;; Not tight, but lower bounds the actual reward, so everything will still work
   (ncstrips-hla-reward d s s2 #'mymin))
 
 (defmethod hla-complete-reward ((d ncstrips) (s <prop-state-set>) s2)
@@ -204,7 +204,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 		(if (dnf-consistent clause (ncc-precond ncstrips-clause))
 		    (let ((r (nstrips-reward (ncc-effect ncstrips-clause))))
 		      (etypecase r
-			(number r)
+			(extended-real r)
 			(function (funcall r (make-prop-state-set (pss-domain s) clause)))))
 		  (funcall fn)))))))
 
@@ -217,7 +217,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defmethod regress (s1 s2 desc)
+(defmethod regress ((s1 <prop-state-set>) (s2 <prop-state-set>) (desc ncstrips))
   (make-prop-state-set (pss-domain s1) (regress-dnf-ncstrips (formula s1) (formula s2) desc )))
 
 
@@ -248,7 +248,7 @@ Each precondition must be a conjunction, and each effect is of type nstrips.  Th
   (let ((source-clauses (disjuncts f1))
 	(dest-clauses (disjuncts f2))
 	(nclauses (ncstrips-clauses desc)))
-    (do-elements (nc nclauses nil)
+    (do-elements (nc nclauses (disjoin))
       (do-elements (c1 source-clauses)
 	(let ((pre (conjoin-clauses (list (ncc-precond nc) c1))))
 	  (unless (dnf-implies pre nil)
@@ -377,7 +377,7 @@ Another addition is that in the precondition, in any position where a term would
 	   (parse-reward-spec (spec)
 	     "Parse a reward spec of the form (FNAME . ARGLIST)"
 	     (typecase spec
-	       ((or null number) `(constantly ,spec))
+	       ((or null number (member -infty infty)) `(constantly ,(typecase spec (null nil) (symbol `',spec) (otherwise spec))))
 	       (otherwise
 		(dsbind (fname . args) spec
 		  (if (or (member '?complete-set args) (member '?sound-set args)

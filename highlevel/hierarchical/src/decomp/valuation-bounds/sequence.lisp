@@ -4,59 +4,64 @@
 
 (defclass <sequence-node> (<node>)
   ((action-sequence :reader action-sequence :writer set-action-sequence)
+   (next-child-to-refine :accessor next-child-to-refine :initform -1)
+   (child-inc :initform 1 :accessor child-inc)
    (status :initform :initial)))
 
-(defun sequence-length (n)
-  (length (action-sequence n)))
+;; We don't have an initialize-instance :after method to add the node's variables
+;; This is because the set of variables depends on what the refinement is, and we can't compute this until
+;; we know what the initial valuation is.  So initialization is done in initialize-sequence-node.
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; The only time child vars have an explicit dependant is 
-;; at the ends of the sequence 
+;; Adding children
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod child-progressed-optimistic-dependants ((n <sequence-node>) i)
-   (when (= (1- (sequence-length n)) i)
-     '(children-progressed-optimistic)))
 
-(defmethod child-progressed-pessimistic-dependants ((n <sequence-node>) i)
-   (when (= (1- (sequence-length n)) i)
-     '(children-progressed-pessimistic)))
+(defmethod add-child :after ((n <sequence-node>) i new-node-type &rest args)
+  (declare (ignore new-node-type args))
 
-(defmethod child-regressed-optimistic-dependants ((n <sequence-node>) i)
-   (when (zerop i)
-     '(children-regressed-optimistic)))
+  (let ((child (child i n)))
+    ;; Output variables already created in initialize-sequence-node, so just tie them
+    (dolist (vars '((progressed-optimistic child-progressed-optimistic) (progressed-pessimistic child-progressed-pessimistic)
+		    (regressed-optimistic child-regressed-optimistic) (regressed-pessimistic child-regressed-pessimistic)))
+      (tie-variables child (first vars) n (cons (second vars) i)))
+    
 
-(defmethod child-regressed-pessimistic-dependants ((n <sequence-node>) i)
-   (when (zerop i)
-     '(children-regressed-pessimistic)))
+    ;; Forward input messages
+    (cond 
+      ((zerop i)
+       (tie-variables n 'initial-optimistic child 'initial-optimistic)
+       (tie-variables n 'initial-pessimistic child 'initial-pessimistic))
+      (t
+       (tie-variables n (cons 'child-progressed-optimistic (1- i)) child 'initial-optimistic)
+       (tie-variables n (cons 'child-progressed-pessimistic (1- i)) child 'initial-pessimistic)))
 
-
+    ;; Backward input messages
+    (cond
+      ((= i (1- (sequence-length n)))
+       (tie-variables n 'final-optimistic child 'final-optimistic)
+       (tie-variables n 'final-pessimistic child 'final-pessimistic))
+      (t
+       (tie-variables n (cons 'child-regressed-optimistic (1+ i)) child 'final-optimistic)
+       (tie-variables n (cons 'child-regressed-pessimistic (1+ i)) child 'final-pessimistic)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; The node's outputs are computed from the node's 
-;; own progressed/regressed valuations together with the
-;; final/initial child's output valuation
+;; Extracting plans
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod optimistic-progressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-progressed-optimistic children-progressed-optimistic)
-    (pointwise-min-upper-bound my-progressed-optimistic children-progressed-optimistic)))
+(defmethod primitive-plan-with-pessimistic-future-value-above ((n <sequence-node>) s v)
+  (let ((plan-so-far (make-adjustable-array)) (total-reward 0))
+    (dotimes (i (sequence-length n) (values plan-so-far s total-reward))
+      (let ((child (child i n)))
+	(mvbind (plan successor reward) (primitive-plan-with-pessimistic-future-value-above child s (my- v total-reward))
+	  (unless plan (return nil))
+	  (append-to-adjustable-array plan-so-far plan)
+	  (setq s successor)
+	  (_f my+ total-reward reward))))))
 
-(defmethod pessimistic-progressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-progressed-pessimistic children-progressed-pessimistic)
-    (pointwise-max-lower-bound my-progressed-pessimistic children-progressed-pessimistic)))
-
-
-(defmethod optimistic-regressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-regressed-optimistic children-regressed-optimistic)
-    (pointwise-min-upper-bound my-regressed-optimistic children-regressed-optimistic)))
-
-(defmethod pessimistic-regressor ((n <sequence-node>))
-  (make-simple-alist-updater (my-regressed-pessimistic children-regressed-pessimistic)
-    (pointwise-max-lower-bound my-regressed-pessimistic children-regressed-pessimistic)))
-
+    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Compute cycle: update self, then pass control to child
@@ -64,66 +69,61 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod compute-cycle ((n <sequence-node>))
-  (debug-out :sequence-node 1 t "In compute cycle of sequence-node ~a with status ~a" (action n) (status n))
+  (debug-out :sequence-node 1 t "~&In compute cycle of sequence-node ~a with status ~a" (action n) (status n))
   (ecase (status n)
-    (:initial (initialize-sequence-node n))
-    (:ready (do-all-updates n)
-	    (let ((i (maximizing-element (child-ids n) (sequence-node-child-evaluator n))))
-	      (compute-cycle (child i n)))
-	    (do-all-updates n))))
+    (:initial (initialize-sequence-node n) (setf (status n) :ready))
+    (:ready 
+       (do-all-updates n)
+       (with-accessors ((ind next-child-to-refine) (inc child-inc)) n
+	 (when (= ind 0) (setf inc 1))
+	 (when (= ind (1- (sequence-length n))) (setf inc -1))
+	 (incf ind inc)
+	 (compute-cycle (child ind n)))
+       (do-all-updates n))))
 
 (defun sequence-node-child-evaluator (n)
-  (declare (ignore n))
+  ;; Roughly speaking, we want to refine the node with the biggest gap between
+  ;; optimistic and pessimistic boundsppp
   #'(lambda (i)
-      (format t "~&Stub: Enter value for child ~a of sequence node: " i)
-      (read)))
+      (let ((c (child i n)))
+	(my- (max-achievable-value (make-sum-valuation (current-value c 'progressed-pessimistic) (current-value c 'final-pessimistic)))))))
+
+
+(defun initialize-sequence-node (n)
+  (set-action-sequence (item 0 (refinements (action n) (hierarchy n) :init-opt-set (reachable-set (current-value n 'initial-optimistic)))) n)
+
+  (let ((h (hierarchy n))
+	(ref (action-sequence n))
+	(l (sequence-length n))
+	(descs (descs n)))
+
+    ;; Add child output variables
+    ;; They have dependants within the node only at the ends
+    ;; We have to add all these variables before adding the child nodes because of cyclic dependencies
+    (dotimes (i l)
+
+      ;; When the child is created, it has to know it's initial optimistic set, because that's what it uses to decide
+      ;; what its refinements are.  So we precompute this here.
+      (let ((init-progressed-opt (if (zerop i)
+				     (current-value n 'initial-optimistic)
+				     (current-value n (cons 'child-progressed-optimistic (1- i))))))
+	(add-variable n (cons 'child-progressed-optimistic i) :external :dependants (when (= i (1- l)) '(progressed-optimistic))
+		      :initial-value (progress-optimistic descs (elt ref i) init-progressed-opt)))
+
+      ;; Everything else gets a default initial value
+      (add-variable n (cons 'child-progressed-pessimistic i) :external :initial-value (minimal-valuation descs)
+		    :dependants (when (= i (1- l)) '(progressed-pessimistic)))
+      (add-variable n (cons 'child-regressed-optimistic i) :external :initial-value (maximal-valuation descs)
+		    :dependants (when (zerop i) '(regressed-optimistic)))
+      (add-variable n (cons 'child-regressed-pessimistic i) :external :initial-value (minimal-valuation descs)
+		    :dependants (when (zerop i) '(regressed-pessimistic))))
+
+    ;; Add the child nodes themselves
+    (do-elements (child-action ref nil i)
+      (create-child-for-action h n i child-action))))
 
 (defmethod action-node-type ((c (eql ':sequence)))
   '<sequence-node>)
 
-
-(defun initialize-sequence-node (n)
-  "Called the first time a sequence node gets to run.  This creates all the child nodes and sets up communication"
-
-  (set-action-sequence (item 0 (refinements (action n) (hierarchy n) :init-opt-set (reachable-set (current-value n 'initial-optimistic)))) n)
-
-  ;; Add child nodes
-  (let ((h (hierarchy n))
-	(ref (action-sequence n)))
-
-    (do-elements (child-action ref nil i)
-      (create-child-for-action h n i child-action))
-    (set-action-sequence ref n)
-
-    (let ((length (sequence-length n)))
-
-      ;; Outputs of the first and last children
-      (add-variable n 'children-progressed-optimistic :internal :update-fn #'copier :dependants '(progressed-optimistic) :dependees (list (cons 'child-progressed-optimistic (1- length))))
-      (add-variable n 'children-progressed-pessimistic :internal :update-fn #'copier :dependants '(progressed-pessimistic) :dependees (list (cons 'child-progressed-pessimistic (1- length))))
-      (add-variable n 'children-regressed-optimistic :internal :update-fn #'copier :dependants '(regressed-optimistic) :dependees (list (cons 'child-regressed-optimistic 0)))
-      (add-variable n 'children-regressed-pessimistic :internal :update-fn #'copier :dependants '(regressed-pessimistic) :dependees (list (cons 'child-regressed-pessimistic 0)))
-
-      (dotimes (i (sequence-length n))
-	(let ((child (child i n)))
-
-	  ;; Forward communication between children
-	  (cond 
-	    ((zerop i)
-	     (tie-variables n 'initial-optimistic child 'initial-optimistic)
-	     (tie-variables n 'initial-pessimistic child 'initial-pessimistic))
-	    (t
-	     (tie-variables n (cons 'child-progressed-optimistic (1- i)) child 'initial-optimistic)
-	     (tie-variables n (cons 'child-progressed-pessimistic (1- i)) child 'initial-optimistic)))
-
-	  ;; Backward communication between children
-	  (cond
-	    ((= i (1- (sequence-length n)))
-	     (tie-variables n 'final-optimistic child 'final-optimistic)
-	     (tie-variables n 'final-pessimistic child 'final-pessimistic))
-	    (t
-	     (tie-variables n (cons 'child-regressed-optimistic (1+ i)) child 'final-optimistic)
-	     (tie-variables n (cons 'child-regressed-pessimistic (1+ i)) child 'final-pessimistic)))))
-
-      (setf (status n) :ready))))
-
-
+(defun sequence-length (n)
+  (length (action-sequence n)))

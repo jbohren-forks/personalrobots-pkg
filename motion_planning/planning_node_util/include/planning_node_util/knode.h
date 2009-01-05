@@ -231,13 +231,13 @@ namespace planning_node_util
 	    
 	    if (success)
 	    {
-		if (isfinite(pose.getOrigin().x()))
+		if (std::isfinite(pose.getOrigin().x()))
 		    m_basePos[0] = pose.getOrigin().x();
-		if (isfinite(pose.getOrigin().y()))
+		if (std::isfinite(pose.getOrigin().y()))
 		    m_basePos[1] = pose.getOrigin().y();
                 double yaw, pitch, roll;
                 pose.getBasis().getEulerZYX(yaw, pitch, roll);
-		if (isfinite(yaw))
+		if (std::isfinite(yaw))
 		    m_basePos[2] = yaw;
 		m_haveBasePos = true;
 		baseUpdate();

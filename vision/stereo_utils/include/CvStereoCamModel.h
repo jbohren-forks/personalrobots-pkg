@@ -165,9 +165,22 @@ public:
 	) const;
 
 	/// \brief Get references to the projection matrices.
-	void getProjectionMatrices(CvMat* cartToDisp, CvMat* dispToCart) const {
-	  *cartToDisp = mat_cart_to_disp_;
-	  *dispToCart = mat_disp_to_cart_;
+	void getProjectionMatrices(
+	    /// cartesian to disparity. NULL if not needed.
+	    CvMat* cartToDisp,
+	    /// disparity to cartesian. NULL if not needed.
+	    CvMat* dispToCart) const {
+	  if (cartToDisp)
+	    *cartToDisp = mat_cart_to_disp_;
+	  if (dispToCart)
+	    *dispToCart = mat_disp_to_cart_;
+	}
+
+	void getLeftScreenProjectionMatrix(CvMat* cartToLeftScreen) const {
+    *cartToLeftScreen = mat_cart_to_screen_left_;
+	}
+	void getRightScreenProjectionMatrix(CvMat* cartToRightScreen) const {
+    *cartToRightScreen = mat_cart_to_screen_right_;
 	}
 
 	/// \brief Compute delta u, given Z and delta X in Cartesian space.

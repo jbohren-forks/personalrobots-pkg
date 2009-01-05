@@ -44,7 +44,7 @@ using namespace tf;
 
 static const double EPS = 1e-5;
 
-#define __EKF_DEBUG_FILE__
+//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -79,14 +79,17 @@ namespace estimation
     // advertise our estimation
     advertise<robot_msgs::PoseWithCovariance>(node_name_, 10);
 
+    // initialize
+    filter_stamp_ = Time::now();
+
+    // fiexed transform between camera frame and vo frame
+    vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
+
     // subscribe to messages
     subscribe("cmd_vel",      vel_,  &OdomEstimationNode::velCallback,  10);
     subscribe("odom",         odom_, &OdomEstimationNode::odomCallback, 10);
     subscribe("imu_data",     imu_,  &OdomEstimationNode::imuCallback,  10);
 
-    // fiexed transform between camera frame and vo frame
-    vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
-    
 #ifdef __EKF_DEBUG_FILE__
     // open files for debugging
     odom_file_.open("odom_file.txt");
@@ -123,7 +126,7 @@ namespace estimation
   {
     if (odom_used_){
       // receive data 
-      odom_mutex_.lock();
+      boost::mutex::scoped_lock lock(odom_mutex_);
       odom_stamp_ = odom_.header.stamp;
       odom_time_  = Time::now();
       odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
@@ -159,7 +162,6 @@ namespace estimation
       odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
 #endif
 
-      odom_mutex_.unlock();
     }
   };
 
@@ -171,10 +173,8 @@ namespace estimation
   {
     if (imu_used_){
       // receive data
-      imu_mutex_.lock();
-      
-      // TODO: TMP FIX FOR WRONG DATA IN BAG BRIAN
-      imu_stamp_ = imu_.header.stamp + Duration(0.902);
+      boost::mutex::scoped_lock lock(imu_mutex_);
+      imu_stamp_ = imu_.header.stamp;
       imu_time_  = Time::now();
       PoseMsgToTF(imu_.pos, imu_meas_);
       my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
@@ -202,7 +202,6 @@ namespace estimation
       imu_file_ << yaw << endl;
 #endif
       
-      imu_mutex_.unlock();
     }
   };
 
@@ -214,7 +213,7 @@ namespace estimation
   {
     if (vo_used_){
       // get data
-      vo_mutex_.lock();
+      boost::mutex::scoped_lock lock(vo_mutex_);
       vo_ = *vo;
       vo_stamp_ = vo_.header.stamp;
       vo_time_  = Time::now();
@@ -254,7 +253,6 @@ namespace estimation
 	       << Rx << " " << Ry << " " << Rz << endl;
 #endif
 
-      vo_mutex_.unlock();
     }
   };
 
@@ -265,9 +263,8 @@ namespace estimation
   void OdomEstimationNode::velCallback()
   {
     // receive data
-    vel_mutex_.lock();
+    boost::mutex::scoped_lock lock(vel_mutex_);
     vel_desi_(1) = vel_.vx;   vel_desi_(2) = vel_.vw;
-    vel_mutex_.unlock();
 
     // active
     //if (!vel_active_) vel_active_ = true;
@@ -281,7 +278,9 @@ namespace estimation
   void OdomEstimationNode::spin()
   {
     while (ok()){
-      odom_mutex_.lock();  imu_mutex_.lock();  vo_mutex_.lock();
+      boost::mutex::scoped_lock odom_lock(odom_mutex_);
+      boost::mutex::scoped_lock imu_lock(imu_mutex_);
+      boost::mutex::scoped_lock vo_lock(vo_mutex_);
 
       // initial value for filter stamp; keep this stamp when no sensors are active
       filter_stamp_ = Time::now();
@@ -317,7 +316,7 @@ namespace estimation
 
 	    // output most recent estimate and relative covariance
 	    my_filter_.getEstimate(output_);
-	    publish("odom_estimation", output_);
+	    publish(node_name_, output_);
 
 	    // broadcast most recent estimate to TransformArray
 	    Stamped<Transform> tmp;
@@ -344,7 +343,7 @@ namespace estimation
 	  ROS_INFO((node_name_+"  Fiter initialized").c_str());
 	}
       }
-      vo_mutex_.unlock();  imu_mutex_.unlock();  odom_mutex_.unlock();
+      vo_lock.unlock();  imu_lock.unlock();  odom_lock.unlock();
       
       // sleep
       usleep(1e6/freq_);

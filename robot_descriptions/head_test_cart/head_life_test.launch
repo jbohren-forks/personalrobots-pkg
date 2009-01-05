@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find head_test_cart)/test.launch" />
+  <include file="$(find head_test_cart)/control.launch" />
+  <node pkg="head_test_cart" type="laser_test.bash" />
+</launch>

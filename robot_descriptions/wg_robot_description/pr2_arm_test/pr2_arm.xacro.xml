@@ -61,15 +61,15 @@
 
   <map name="gazebo_material" flag="gazebo">
   <verbatim>
-    <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_l_wrist_controller" plugin="libP3D.so">
+    <!-- ros_p3d for position groundtruth -->
+    <controller:ros_p3d name="p3d_l_wrist_controller" plugin="libros_p3d.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
       <bodyName>l_gripper_palm_link</bodyName>
       <topicName>l_gripper_palm_pose_ground_truth</topicName>
       <frameName>map</frameName>
       <interface:position name="p3d_l_wrist_position"/>
-    </controller:P3D>
+    </controller:ros_p3d>
   </verbatim>
   </map>
 

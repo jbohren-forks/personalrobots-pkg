@@ -24,6 +24,8 @@ Subclasses may implement
 - avail-actions
 - init-state-set
 - same-state
+- empty-set
+- universal-set
 
 And optionally
 - reward
@@ -78,6 +80,13 @@ The top-level allows initargs :goal, :init-state, :action-descriptions, :reward-
   (:documentation "make-state-set DOMAIN STATE.  Return a representation of the singleton set consisting of this state.")
   (:method ((e <planning-problem>) s) (list s)))
 
+(defgeneric empty-set (d)
+  (:documentation "Return the empty set in the state representation used by this planning problem.")
+  (:method ((d <planning-problem>)) nil))
+
+(defgeneric universal-set (d)
+  (:documentation "Return the set of all states for this planning problem."))
+
   
 
 (defun action-seq-result (e s actions)
@@ -86,7 +95,7 @@ The top-level allows initargs :goal, :init-state, :action-descriptions, :reward-
   s)
 
 (defgeneric primitive-action-description (e a)
-  (:documentation "primitive-action-description PLANNING-DOMAIN ACTION.  Get description of this action.")
+  (:documentation "primitive-action-description PLANNING-DOMAIN ACTION.  Get description of this action.  A description is something which has succ-state, successor-set, and regress defined.")
   (:method ((e <planning-problem>) a) (mapping:evaluate (action-descriptions e) a)))
 
 (defun succeeds? (e actions &optional (s (init-state e)))

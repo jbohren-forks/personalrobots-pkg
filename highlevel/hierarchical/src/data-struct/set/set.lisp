@@ -236,7 +236,7 @@ Other symbols
 4. A hashtable from items to numbers
 5. 'natural-numbers, signifying the set {0,1,2,...}
 6. Object of type <numbered-set>"
-  `(or cons null vector fixnum hash-table gen-hash-table <numbered-set> (eql 'natural-numbers)))
+  `(or cons null vector fixnum hash-table gen-hash-table <numbered-set> (eql natural-numbers)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -513,13 +513,13 @@ If initial value is not provided:
 
 (defgeneric subset (s1 s2)
   (:documentation "subset SET1 SET2.  Is SET1 a subset of SET2?")
-  (:method ((s1 <numbered-set>) (s2 <numbered-set>))
-	   (let ((size1 (size s1 t))
-		 (size2 (size s2 t)))
-	     (and (or (symbolp size1) (symbolp size2) (my<= size1 size2))
-		  (call-next-method s1 s2))))
-  (:method (s1 s2)
-	   (each s1 #'(lambda (x) (member? x s2)))))
+  (:method ((s1 t) (s2 t))
+    (let ((size1 (size s1 t))
+	  (size2 (size s2 t)))
+      (when (or (symbolp size1) (symbolp size2) (my<= size1 size2))
+	(each s1 #'(lambda (x) (member? x s2))))))
+  (:method (s1 (s2 null))
+    (is-empty s1)))
 
 	   
 

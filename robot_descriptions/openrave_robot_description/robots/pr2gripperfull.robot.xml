@@ -1,0 +1,11 @@
+<!-- uses the base kinematics from pr2.robot.xml and includes other definitions -->
+<Robot file="pr2_gripper.robot.xml">
+  <!-- left gripper -->
+  <Manipulator>
+    <base>l_gripper_palm_link</base>
+    <effector>l_gripper_palm_link</effector>
+    <joints>l_gripper_l_finger_joint</joints>
+    <closed>0</closed>
+    <opened>0.8</opened>
+  </Manipulator>
+</Robot>

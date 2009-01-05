@@ -303,7 +303,7 @@ Useful, for example, when saving a history of a given length for an algorithm."
 (defun my+ (&rest args)
   "my+ &args.  Like +, but allows args to be 'infty or '-infty.  Attempting to add '-infty and 'infty results in an error."
   (labels 
-      ((invalid () (error 'add-infinity-and-minus-infinity))
+      ((invalid () (restart-case (error 'add-infinity-and-minus-infinity) (use-value (value) value)))
        (helper (a b)    
 	 (case a
 	   (infty (if (eq b '-infty) (invalid) 'infty))

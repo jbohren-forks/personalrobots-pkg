@@ -172,7 +172,8 @@ namespace estimation
 
     // only update filter for time later than current filter time
     double dt = (filter_time - filter_time_old_).toSec();
-    if (dt <= 0){
+    if (dt == 0) return false;
+    if (dt <  0){
       ROS_INFO("Will not update robot pose with time %f sec in the past.", dt);
       return false;
     }

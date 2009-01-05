@@ -1,5 +1,4 @@
 time begin
 time end
-string target_frame_id
 ---
 std_msgs/PointCloud cloud

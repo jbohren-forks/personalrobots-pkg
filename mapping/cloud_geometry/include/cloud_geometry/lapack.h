@@ -35,18 +35,13 @@
 
 #include "Eigen/Core"
 
-extern "C" void dsyev_ (char *jobz, char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork, int *info);
+extern "C" void dsyev_  (char *jobz, char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork, int *info);
+extern "C" void dgesvd_ (char *jobu, char *jobvt, int *m, int *n, double *a, int *lda, double *s, double *u, int *ldu, double *vt, int *ldvt, double *work, int *lwork, int *info);
 
 namespace cloud_geometry
 {
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Compute the 3 eigen values and eigenvectors for a 3x3 covariance matrix
-    * \param covariance_matrix a 3x3 covariance matrix in Eigen2::Matrix3d format
-    * \param eigen_values the resulted eigenvalues in Eigen2::Vector3d
-    * \param eigen_vectors a 3x3 matrix in Eigen2::Matrix3d format, containing each eigenvector on a new line */
   bool eigen_cov (Eigen::Matrix3d covariance_matrix, Eigen::Vector3d &eigen_values, Eigen::Matrix3d &eigen_vectors);
-
+  bool svd (Eigen::Matrix3d h, Eigen::Matrix3d &u, Eigen::Vector3d &s, Eigen::Matrix3d &v);
 }
 
 #endif

@@ -24,6 +24,7 @@
  <depend package="tf"/>
  <depend package="sbpl"/>
  <depend package="sbpl_util"/>
+ <depend package="rostime"/>
  <depend package="navfn"/>
 
  <export>

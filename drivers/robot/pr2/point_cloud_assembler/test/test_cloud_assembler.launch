@@ -1,0 +1,25 @@
+<launch>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+    <remap from="scan_in" to="tilt_laser_cloud_filtered"/>
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="400" />
+    <param name="fixed_frame" type="string" value="torso_lift_link" />
+  </node>
+
+  <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" output="screen"  name="shadow_filter">
+    <remap from="tilt_laser_cloud_filtered" to="tilt_laser_cloud_filtered"/>
+    <remap from="tilt_scan" to="tilt_scan" />
+  </node>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
+    <remap from="full_cloud" to="snapshot_cloud" />
+  </node>
+
+  <node pkg="rosrecord" type="rosplay" args="$(find point_cloud_assembler)/test/test_assembler.bag" />
+
+  <test test-name="test_cloud_assembler" pkg="point_cloud_assembler" type="test_assembler" />
+
+</launch>

@@ -1,0 +1,10 @@
+<launch>
+<node pkg="message_sequencing" type="testgen"/> <!-- This node is generating messages at 10Hz -->
+<node pkg="message_sequencing" type="testdelay" args="0.0 1"/>   <!-- Should always go through -->
+<node pkg="message_sequencing" type="testdelay" args="0.05 2"/>  <!-- Should always go through -->
+<node pkg="message_sequencing" type="testdelay" args="0.025 3"/> <!-- Should always go through -->
+<node pkg="message_sequencing" type="testdelay" args="0.15 4"/>  <!-- Should go through, but delay won't keep up with orig (some will be missing)-->
+<node pkg="message_sequencing" type="testdelay" args="0.25 5"/>  <!-- Will frequently be dropped b/c too delayed-->
+<node pkg="message_sequencing" type="testrecv" output="screen"/>
+</launch>
+

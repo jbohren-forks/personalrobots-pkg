@@ -3,7 +3,7 @@
     A library for point cloud geometry.
   </description>
 
-  <author>Radu Bogdan Rusu (rusu@cs.tum.edu)</author>
+  <author>Radu Bogdan Rusu</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="unreviewed" notes="beta"/>
@@ -13,7 +13,7 @@
   <depend package="eigen" />
   
   <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
-
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry"/>
   </export>

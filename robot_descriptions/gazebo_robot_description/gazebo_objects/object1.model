@@ -19,13 +19,13 @@
     </geom:box>
   </body:box>
 
-  <controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+  <controller:ros_p3d name="p3d_object_controller" plugin="libros_p3d.so">
     <updateRate>100.0</updateRate>
     <bodyName>object1_body</bodyName>
     <topicName>object1_body_ground_truth</topicName>
     <frameName>object1_body_ground_truth_frame</frameName>
     <interface:position name="p3d_object_position"/>
-  </controller:P3D>
+  </controller:ros_p3d>
 
 </model:physical>
 

@@ -1,13 +1,16 @@
 (in-package :blocks)
 
 (defun possibly-clear-blocks (opt-set)
-  (mapcar #'car (make-and-solve-csp (pss-domain opt-set) '((clear ?b)) '((?b . actual-blocks)) opt-set)))
+  (when opt-set
+    (mapcar #'car (make-and-solve-csp (pss-domain opt-set) '((clear ?b)) '((?b . actual-blocks)) opt-set))))
 
 (defun possibly-clear-surfaces (opt-set)
-  (mapcar #'car (make-and-solve-csp (pss-domain opt-set) '((clear ?b)) '((?b . blocks)) opt-set)))
+  (when opt-set
+    (mapcar #'car (make-and-solve-csp (pss-domain opt-set) '((clear ?b)) '((?b . blocks)) opt-set))))
 
 (defun possible-gripper-positions (opt-set)
-  (make-and-solve-csp (pss-domain opt-set) '((gripper-pos ?x ?y)) '((?x . columns) (?y . all-rows)) opt-set))
+  (when opt-set
+    (make-and-solve-csp (pss-domain opt-set) '((gripper-pos ?x ?y)) '((?x . columns) (?y . all-rows)) opt-set)))
 
 (defun unique-block-position (b opt-set &aux (d (pss-domain opt-set)))
   (if (make-and-solve-csp d '((gripper-holding ?b)) `((?b ,b)) opt-set)

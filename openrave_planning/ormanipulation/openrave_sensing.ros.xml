@@ -1,9 +1,12 @@
+<!-- starts all the sensing modules -->
 <launch>
+  <machine name="localhost" address="localhost" default="true"/>  
+
   <!-- start openraveros server and set all the correct paths -->
   <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
+  <include file="$(find ormanipulation)/startchecker.ros.xml"/>
+
   <node pkg="phase_space" type="phase_space_node"/>
   <!-- launch octave scripts to start the openrave client -->
-  <node pkg="ormanipulation" type="testscene.m" output="screen">
-    <env name="OCTAVE_WORKINGDIR" value="$(find ormanipulation)/octave"/>
-  </node>
+  <node pkg="ormanipulation" type="runperception.m" output="screen"/>
 </launch>

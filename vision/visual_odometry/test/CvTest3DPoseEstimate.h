@@ -32,12 +32,16 @@ public:
     	/// bundle adjustment over a sequence of video images
     	VideoBundleAdj,
     	BundleAdj,
-    	BundleAdjUTest
+    	BundleAdjUTest,
+    	BundleAdjSeq
     } TestType;
     typedef enum {
       Indoor1,
       James4,
-      SyntheticLoop1
+      SyntheticLoop1,
+      SyntheticDiskLoop,
+      SyntheticDiskLoopNoisy,
+      SyntheticDiskLoopNoisy2
     } DataSet;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();
@@ -53,6 +57,8 @@ public:
         int num_free_frames, int num_fixed_frames, int num_iterations,
         int repeats,
         bool disturb_frames, bool disturb_points, bool disturb_obsvs);
+    bool testBundleAdjSeq(
+        bool disturb_frames, bool disturb_points, bool disturb_obsvs);
     bool test();
     TestType mTestType;
 
@@ -60,6 +66,13 @@ public:
         FrameSeq& frameSeq, CamTracker& tracker);
 
     void setInputData(DataSet data_set);
+    void setUpTracks(const vector<FramePose* >& frame_poses,
+        const CvMat *points,
+        const CvMat& cartToDisp, int oldest_index,
+        PointTracks* tracks);
+
+    int selectTracks(const vector<FramePose*>* frames,
+        const PointTracks* all_tracks, PointTracks* tracks);
 
     string input_data_path_;
     string output_data_path_;
@@ -83,6 +96,7 @@ protected:
     void loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
     void disturbFrames(vector<FramePose*>& free_frames);
     void disturbPoints(PointTracks* tracks);
+    void disturbPoints(const CvMat* points, CvMat* disturbPoints);
     void disturbObsvs(PointTracks* tracks);
     CvPoint3D64f mEulerAngle;
     CvPoint3D64f mTranslation;

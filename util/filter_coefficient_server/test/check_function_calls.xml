@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="filter_coefficient_server" type="generate_filter_coeffs.m"/>
+  <test test-name="test_filter_coeff_srv_working" pkg="filter_coefficient_server" type="check_function_calls" time-limit="10.0"/>
+</launch>
+

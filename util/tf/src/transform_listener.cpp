@@ -137,23 +137,23 @@ void TransformListener::transformPointCloud(const std::string& target_frame, con
 
 void TransformListener::transformPointCloud(const std::string & target_frame, const Transform& net_transform, const ros::Time& target_time, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
 {
-  NEWMAT::Matrix transform = transformAsMatrix(net_transform);
+  boost::numeric::ublas::matrix<double> transform = transformAsMatrix(net_transform);
 
   unsigned int length = cloudIn.get_pts_size();
 
-  NEWMAT::Matrix matIn(4, length);
+  boost::numeric::ublas::matrix<double> matIn(4, length);
 
-  double * matrixPtr = matIn.Store();
+  //  double * matrixPtr = matIn.Store();
 
   for (unsigned int i = 0; i < length ; i++)
   {
-    matrixPtr[i] = cloudIn.pts[i].x;
-    matrixPtr[length +i] = cloudIn.pts[i].y;
-    matrixPtr[2 * length + i] = cloudIn.pts[i].z;
-    matrixPtr[3 * length + i] = 1;
+    matIn(0,i) = cloudIn.pts[i].x;
+    matIn(1,i) = cloudIn.pts[i].y;
+    matIn(2,i) = cloudIn.pts[i].z;
+    matIn(3,i) = 1;
   };
 
-  NEWMAT::Matrix matOut = transform * matIn;
+  boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
 
   // Copy relevant data from cloudIn, if needed
   if (&cloudIn != &cloudOut)
@@ -165,16 +165,14 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
       cloudOut.chan[i] = cloudIn.chan[i];
   }
 
-  matrixPtr = matOut.Store();
-
   //Override the positions
   cloudOut.header.stamp = target_time;
   cloudOut.header.frame_id = target_frame;
   for (unsigned int i = 0; i < length ; i++)
   {
-    cloudOut.pts[i].x = matrixPtr[i];
-    cloudOut.pts[i].y = matrixPtr[1*length + i];
-    cloudOut.pts[i].z = matrixPtr[2*length + i];
+    cloudOut.pts[i].x = matOut(0,i);
+    cloudOut.pts[i].y = matOut(1,i);
+    cloudOut.pts[i].z = matOut(2,i);
   };
 }
 

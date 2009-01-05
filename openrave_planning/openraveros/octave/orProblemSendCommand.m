@@ -1,4 +1,4 @@
-% output = orProblemSendCommand(cmd, problemid)
+% [output,success] = orProblemSendCommand(cmd, problemid)
 %
 % Sends a command to the problem. The function doesn't return until
 % ProblemInstance::SendCommand returns.
@@ -8,7 +8,8 @@
 % dosync [optional] - If 1, the SendCommand is called in the main thread, in sync
 %                        with the rest of the primitives. If 0, called in a different thread.
 % output - the concatenated output of all the problems that the command is sent to
-function output = orProblemSendCommand(cmd, problemid)
+% success - if 1, command completed successfully, otherwise 0
+function [output, success] = orProblemSendCommand(cmd, problemid)
 session = openraveros_getglobalsession();
 req = openraveros_problem_sendcommand();
 req.cmd = cmd;
@@ -17,6 +18,8 @@ res = rosoct_session_call(session.id,'problem_sendcommand',req);
 
 if(~isempty(res))
     output = res.output;
+    success = 1;
 else
     output = [];
+    success = 0;
 end

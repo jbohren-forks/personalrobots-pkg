@@ -91,7 +91,7 @@
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
             <updateRate>15.0</updateRate>
-            <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libRos_Camera.so">
+            <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libros_camera.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>15.0</updateRate>
               <topicName>axis_${side}/image</topicName>
@@ -105,7 +105,7 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_${side}_ptz_actuators">
         <!-- controllers for ptz -->
-        <controller:Ros_PTZ name="${side}_ptz_actuators_controller" plugin="libRos_PTZ.so">
+        <controller:ros_ptz name="${side}_ptz_actuators_controller" plugin="libros_ptz.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>15.0</updateRate>
           <panJoint>${side}_ptz_pan_joint</panJoint>
@@ -113,7 +113,7 @@
           <commandTopicName>axis_${side}/ptz_cmd</commandTopicName>
           <stateTopicName>axis_${side}/ptz_state</stateTopicName>
           <interface:ptz name="${side}_ptz_actuators_iface" />
-        </controller:Ros_PTZ>
+        </controller:ros_ptz>
       </verbatim>
     </map>
 

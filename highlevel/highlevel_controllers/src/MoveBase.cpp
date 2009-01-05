@@ -165,10 +165,18 @@ namespace ros {
       }
 
       // Now allocate the cost map and its sliding window used by the controller
+      double zLB, zUB, raytraceWindow, obstacleRange, rayTraceRange;
+      param("/costmap_2d/zLB", zLB, 0.15);
+      param("/costmap_2d/zUB", zUB, 0.25);
+      param("/costmap_2d/raytrace_window", raytraceWindow, 2.5);
+      param("/costmap_2d/raytrace_range", rayTraceRange, 10.0);
+      param("/costmap_2d/obstacle_range", obstacleRange, 10.0);
+
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-          inputData , resp.map.resolution, 
-          lethalObstacleThreshold, maxZ_, 0.15, .25,
-          inflationRadius, circumscribedRadius, inscribedRadius, weight);
+			       inputData , resp.map.resolution, 
+			       lethalObstacleThreshold, maxZ_, zLB, zUB,
+			       inflationRadius, circumscribedRadius, inscribedRadius, weight, 
+			       obstacleRange, rayTraceRange, raytraceWindow);
 
       // Allocate Velocity Controller
       double mapSize(2.0);
@@ -177,17 +185,24 @@ namespace ros {
       double accLimit_x(1.0);
       double accLimit_y(1.0);
       double accLimit_th(1.0);
-      const double SIM_TIME = 1.0;
-      const unsigned int SIM_STEPS = 20;
-      const unsigned int SAMPLES_PER_DIM = 25;
-      const double DFAST_SCALE = 0;
-      const double OCCDIST_SCALE = 0.2;
+      double sim_time = 1.0;
+      //Note: sim_steps and samples_per_dim should be unsigned
+      //ints but the param function does not like it
+      int sim_steps = 20; 
+      int samples_per_dim = 25;
+      double dfast_scale = 0;
+      double occdist_scale = 0.2;
       param("/trajectory_rollout/map_size", mapSize, 2.0);
       param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
       param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
       param("/trajectory_rollout/acc_limit_x", accLimit_x, 1.0);
       param("/trajectory_rollout/acc_limit_y", accLimit_y, 1.0);
       param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
+      param("/trajectory_rollout/occdist_scale", occdist_scale, occdist_scale);
+      param("/trajectory_rollout/dfast_scale", dfast_scale, dfast_scale);
+      param("/trajectory_rollout/samples_per_dim", samples_per_dim, samples_per_dim);
+      param("/trajectory_rollout/sim_steps", sim_steps, sim_steps);
+      param("/trajectory_rollout/sim_time", sim_time, sim_time);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -215,13 +230,13 @@ namespace ros {
       footprint_.push_back(pt);
 
       controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
-          SIM_TIME,
-          SIM_STEPS,
-          SAMPLES_PER_DIM,
+          sim_time,
+          sim_steps,
+	  samples_per_dim,
           pathDistanceBias,
           goalDistanceBias,
-          DFAST_SCALE,
-          OCCDIST_SCALE,
+          dfast_scale,
+          occdist_scale,
           accLimit_x,
           accLimit_y,
           accLimit_th, 
@@ -653,22 +668,14 @@ namespace ros {
         currentVel.vy = base_odom_.vel.y;
         currentVel.vw = base_odom_.vel.th;
 
-        struct timeval start;
-        struct timeval end;
-        double start_t, end_t, t_diff;
+	ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
         std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-        gettimeofday(&start,NULL);
         if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }
-
-        gettimeofday(&end,NULL);
-        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-        t_diff = end_t - start_t;
-        ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
+        ROS_DEBUG("Cycle Time: %.3f\n", (ros::Time::now() - start).toSec());
 
         if(!planOk){
           // Zero out the velocities
@@ -878,14 +885,9 @@ namespace ros {
 
           ROS_DEBUG("Applying update with %d observations/n", observations.size());
           // Apply to cost map
-          struct timeval curr;
-          gettimeofday(&curr,NULL);
-          double curr_t, last_t, t_diff;
-          curr_t = curr.tv_sec + curr.tv_usec / 1e6;
+	  ros::Time start = ros::Time::now();
           costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
-          gettimeofday(&curr,NULL);
-          last_t = curr.tv_sec + curr.tv_usec / 1e6;
-          t_diff = last_t - curr_t;
+          double t_diff = (ros::Time::now() - start).toSec();
           publishLocalCostMap();
           unlock();
           ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());

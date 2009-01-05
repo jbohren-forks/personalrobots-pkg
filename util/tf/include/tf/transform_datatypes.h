@@ -32,8 +32,8 @@
 #ifndef TF_TRANSFORM_DATATYPES_H
 #define TF_TRANSFORM_DATATYPES_H
 
-#include <iostream> //needed before newmat
-#include "newmat10/newmat.h"
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
 
 #include <string>
 #include "std_msgs/PointStamped.h"
@@ -149,59 +149,33 @@ static inline void PoseStampedTFToMsg(const Stamped<Pose>& bt, std_msgs::PoseSta
 
 
 /** \brief Convert the transform to a Homogeneous matrix for large operations */
-static inline NEWMAT::Matrix transformAsMatrix(const Transform& bt)
+static inline boost::numeric::ublas::matrix<double> transformAsMatrix(const Transform& bt)
 {
-  NEWMAT::Matrix outMat(4,4);
+  boost::numeric::ublas::matrix<double> outMat(4,4);
 
-  double * mat = outMat.Store();
+  //  double * mat = outMat.Store();
 
   double mv[12];
   bt.getBasis().getOpenGLSubMatrix(mv);
 
   Vector3 origin = bt.getOrigin();
 
-  mat[0]  = mv[0];
-  mat[1]  = mv[4];
-  mat[2]  = mv[8];
-  mat[4]  = mv[1];
-  mat[5]  = mv[5];
-  mat[6]  = mv[9];
-  mat[8]  = mv[2];
-  mat[9]  = mv[6];
-  mat[10] = mv[10];
+  outMat(0,0)= mv[0];
+  outMat(0,1)  = mv[4];
+  outMat(0,2)  = mv[8];
+  outMat(1,0)  = mv[1];
+  outMat(1,1)  = mv[5];
+  outMat(1,2)  = mv[9];
+  outMat(2,0)  = mv[2];
+  outMat(2,1)  = mv[6];
+  outMat(2,2) = mv[10];
 
-  mat[12]  = mat[13] = mat[14] = 0;
-  mat[3] = origin.x();
-  mat[7] = origin.y();
-  mat[11] = origin.z();
-  mat[15] = 1;
+  outMat(3,0)  = outMat(3,1) = outMat(3,2) = 0;
+  outMat(0,3) = origin.x();
+  outMat(1,3) = origin.y();
+  outMat(2,3) = origin.z();
+  outMat(3,3) = 1;
 
-  /*
-  // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
-  double xx      = rotation.x() * rotation.x();
-  double xy      = rotation.x() * rotation.y();
-  double xz      = rotation.x() * rotation.z();
-  double xw      = rotation.x() * rotation.w();
-  double yy      = rotation.y() * rotation.y();
-  double yz      = rotation.y() * rotation.z();
-  double yw      = rotation.y() * rotation.w();
-  double zz      = rotation.z() * rotation.z();
-  double zw      = rotation.z() * rotation.w();
-  mat[0]  = 1 - 2 * ( yy + zz );
-  mat[1]  =     2 * ( xy - zw );
-  mat[2]  =     2 * ( xz + yw );
-  mat[4]  =     2 * ( xy + zw );
-  mat[5]  = 1 - 2 * ( xx + zz );
-  mat[6]  =     2 * ( yz - xw );
-  mat[8]  =     2 * ( xz - yw );
-  mat[9]  =     2 * ( yz + xw );
-  mat[10] = 1 - 2 * ( xx + yy );
-  mat[12]  = mat[13] = mat[14] = 0;
-  mat[3] = origin.x();
-  mat[7] = origin.y();
-  mat[11] = origin.z();
-  mat[15] = 1;
-  */
 
   return outMat;
 };

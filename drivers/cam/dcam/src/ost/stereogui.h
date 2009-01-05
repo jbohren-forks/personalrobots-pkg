@@ -51,7 +51,6 @@ extern void texture_cb(Fl_Counter*, void*);
 extern void speckle_size_cb(Fl_Counter*, void*);
 extern void speckle_diff_cb(Fl_Counter*, void*);
 extern void smoothness_cb(Fl_Counter*, void*);
-extern void unique_check_cb(Fl_Light_Button*, void*);
 extern void disparity_cb(Fl_Counter*, void*);
 extern void corrsize_cb(Fl_Counter*, void*);
 extern void xoff_cb(Fl_Counter*, void*);
@@ -169,7 +168,6 @@ public:
   Fl_Check_Button *fixed_tau_button;
   Fl_Check_Button *zero_disparity_button;
   Fl_Window *stereo_window;
-  Fl_Light_Button *unique_check_button;
   Fl_Light_Button *rectify_button;
   Fl_Light_Button *stereo_button;
   Fl_Light_Button *x3d_button;

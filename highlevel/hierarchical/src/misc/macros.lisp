@@ -39,7 +39,7 @@ Looping construct.  TEST is evaluated *after* each iteration (unlike while and u
      ,@body
      (when ,test (return))))
 
-(defmacro repeat (n &rest body)
+(defmacro repeat (n &body body)
   "repeat N &rest BODY.  Execute BODY N times."
   (let ((i (gensym)))
     `(dotimes (,i ,n)
@@ -211,6 +211,14 @@ If ARGS has length 1, bind STR to t, OBJ to (FIRST ARGS).  Otherwise, bind STR t
     (let ((gseq (gensym)))
       `(let ((,gseq ,seq))
 	 ,(dbind-ex (destruc pat gseq #'atom) body))))
+
+(defmacro with-readers (reader-specs object &body body)
+  (let ((vars (mapcar #'(lambda (spec) (if (listp spec) (first spec) spec)) reader-specs))
+	(fnames (mapcar #'(lambda (spec) (if (listp spec) (second spec) spec)) reader-specs))
+	(obj (gensym)))
+    `(let ((,obj ,object))
+       (let ,(mapcar #'(lambda (v f) `(,v (,f ,obj))) vars fnames)
+	 ,@body))))
 
 (defmacro with-struct ((name &rest fields) s &body body)
   "with-struct (CONC-NAME . FIELDS) S &rest BODY
@@ -643,8 +651,15 @@ Causes the dispatching read macro for CHAR in READTABLE to work by reading the n
 (defvar *debug-stream* t)
 (defvar *debug-topics* (make-hash-table :test #'equal))
 
-(defun set-debug-level (topic level)
-  (setf (gethash topic *debug-topics*) level))
+(defun set-debug-level (&rest args)
+  (when args
+    (dsbind (topic level &rest more) args
+      (setf (gethash topic *debug-topics*) level)
+      (apply #'set-debug-level more))))
+
+(defun reset-debug-level (&rest args)
+  (setf *debug-topics* (make-hash-table :test #'equal))
+  (awhen args (apply #'set-debug-level it)))
 
 (defmacro debug-out (topic level cond str &rest args)
   "debug-out TOPIC LEVEL CONDITION FORMAT-STRING &rest ARGS
@@ -653,6 +668,12 @@ When CONDITION is true, see if the level of this TOPIC exceeds LEVEL, and if so,
 The TOPICs are arranged in a forest (using define-debug-topic) and the level of the TOPIC is found by moving up the tree until a topic is found for which the level has been set using set-debug-level."
   `(when (and ,cond (topic-level-exceeds ',topic ,level))
      (format *debug-stream* ,str ,@args)))
+
+(defmacro with-debug-levels ((&rest levels) &body body)
+  `(let ((*debug-topics* (make-hash-table :test #'equal)))
+     (set-debug-level ,@levels)
+     ,@body))
+  
 
 (defun get-topic-level (topic)
   (or (gethash topic *debug-topics*)

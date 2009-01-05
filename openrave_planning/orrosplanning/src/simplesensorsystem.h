@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -29,70 +29,116 @@
 using namespace std;
 
 // used to update objects through a mocap system
+template <typename XMLID>
 class SimpleSensorSystem : public SensorSystemBase
 {
- public:
+public:
     class MocapData : public XMLReadable
     {
     public:
-        MocapData(const string& xmlid) : _xmlid(xmlid) {}
-        virtual const char* GetXMLId() { return _xmlid.c_str(); }
-    
+        MocapData() {}
+        virtual const char* GetXMLId() { return XMLID::GetXMLId(); }
+
+        virtual void copy(const MocapData* pdata) {
+            assert( pdata != NULL );
+            *this = *pdata;
+        }
+
         string sid; ///< global id for the system id 
         int id;
         std::wstring strOffsetLink; ///< the link where the markers are attached (if any)
         Transform transOffset,transPreOffset; // final offset = transOffset * transReturnedFromVision * transPreOffset
-        
-    private:
-        string _xmlid;
     };
 
     class BODY : public BODYBASE
     {
     public:
-        BODY(KinBody* pbody, const MocapData& initdata, const string& xmlid) : BODYBASE(), _initdata(xmlid)
+        BODY(KinBody* pbody, MocapData* pdata) : bPresent(false), bEnabled(true), bLock(false)
+        {
+            assert( pbody != NULL && pdata != NULL);
+            _initdata.reset(pdata);
+            SetBody(pbody);
+        }
+
+        virtual void* GetInitData(int* psize) const
+        {
+            if( psize )
+                *psize = sizeof(_initdata);
+            return _initdata.get();
+        }
+
+        virtual KinBody::Link* GetOffsetLink() const
+        {
+            KinBody* pbody = _penv->GetBodyFromNetworkId(_bodyid);
+            if( pbody == NULL || _linkid >= (int)pbody->GetLinks().size() ) {
+                RAVELOG_WARNA("could not find body %d:%S\n", _bodyid, _bodyname.c_str());
+                return NULL;
+            }
+            return pbody->GetLinks()[_linkid];
+        }
+
+        virtual bool IsPresent() const { return bPresent; }
+        virtual bool IsEnabled() const { return bEnabled; }
+        virtual bool IsLocked() const { return bLock; }
+        virtual bool Lock(bool bDoLock) { bLock = bDoLock; return true; }
+
+        virtual const wstring& GetBodyName() const { return _bodyname; }
+
+                
+        virtual void SetBody(KinBody* pbody)
         {
             assert( pbody != NULL );
-            _initdata = initdata;
-            pOffsetLink = pbody->GetLink(_initdata.strOffsetLink.c_str());
-            if( pOffsetLink == NULL )
-                pOffsetLink = pbody->GetLinks().front();
-            
-            bPresent = false;
-            bEnabled = true;
-            bLock = false;
+            _penv = pbody->GetEnv();
+            _bodyname = pbody->GetName();
+            _bodyid = pbody->GetNetworkId();
+
+            _linkid = 0;
+            if( _initdata->strOffsetLink.size() > 0 ) {
+                KinBody::Link* plink = pbody->GetLink(_initdata->strOffsetLink.c_str());
+                if( plink != NULL )
+                    _linkid = plink->GetIndex();
+                else
+                    RAVELOG_WARNA("could not find link %S on body %S\n", _initdata->strOffsetLink.c_str(), pbody->GetName());
+            }
         }
 
-        virtual void SetEnable(bool bNewEnable) { bEnabled = bNewEnable; }
-        virtual void SetPresent(bool bNewPresent) { bPresent = bNewPresent; }
-
-        virtual void* GetInitData(int* psize) { if( psize ) *psize = sizeof(_initdata); return &_initdata; }
         ros::Time lastupdated;
-        MocapData _initdata;
+        Transform tnew; ///< most recent transform that is was set
+        boost::shared_ptr<MocapData> _initdata;
+
+    private:
+        bool bPresent; 
+        bool bEnabled; 
+        bool bLock;
+
+        EnvironmentBase* _penv;
+        int _bodyid, _linkid;
+        wstring _bodyname;
+        friend class SimpleSensorSystem<XMLID>;
     };
 
-    class MocapXMLReader : public BaseXMLReader
+    class SimpleXMLReader : public BaseXMLReader
     {
     public:
-        MocapXMLReader(const string& xmlid, MocapData* pMocap, const char **atts) : _xmlid(xmlid) {
+        SimpleXMLReader(MocapData* pMocap, const char **atts) {
             _pMocap = pMocap;
             if( _pMocap == NULL )
-                _pMocap = new MocapData(_xmlid);
+                _pMocap = new MocapData();
         }
-        virtual ~MocapXMLReader() { delete _pMocap; }
+        virtual ~SimpleXMLReader() { delete _pMocap; }
         
         void* Release() { MocapData* temp = _pMocap; _pMocap = NULL; return temp; }
 
         virtual void startElement(void *ctx, const char *name, const char **atts) {}
         virtual bool endElement(void *ctx, const char *name)
         {
-            if( stricmp((const char*)name, _xmlid.c_str()) == 0 )
+            if( stricmp((const char*)name, XMLID::GetXMLId()) == 0 )
                 return true;
 
             if( stricmp((const char*)name, "offsetlink") == 0 ) {
                 string linkname;
                 ss >> linkname;
-                _pMocap->strOffsetLink = _ravembstowcs(linkname.c_str());
+                _pMocap->strOffsetLink = _stdmbstowcs(linkname.c_str());
             }
             else if( stricmp((const char*)name, "id") == 0 )
                 ss >> _pMocap->id;
@@ -130,7 +176,7 @@ class SimpleSensorSystem : public SensorSystemBase
                 RAVELOG_ERRORA("unknown field %s\n", name);
 
             if( !ss )
-                RAVELOG_ERRORA("MocapXMLReader error parsing %s\n", name);
+                RAVELOG_ERRORA("SimpleXMLReader error parsing %s\n", name);
 
             return false;
         }
@@ -148,12 +194,24 @@ class SimpleSensorSystem : public SensorSystemBase
     protected:
         MocapData* _pMocap;
         stringstream ss;
-        string _xmlid;
     };
 
-    SimpleSensorSystem(EnvironmentBase* penv, const string& xmlid) : SensorSystemBase(penv), _expirationtime(2,0), _xmlid(xmlid)
+    static void RegisterXMLReader(EnvironmentBase* penv)
     {
+        if( penv != NULL )
+            penv->RegisterXMLReader(XMLID::GetXMLId(), SimpleSensorSystem<XMLID>::CreateMocapReader);
     }
+
+    static BaseXMLReader* CreateMocapReader(KinBody* parent, const char **atts)
+    {
+        return new SimpleXMLReader(NULL, atts);
+    }
+
+    SimpleSensorSystem(EnvironmentBase* penv) : SensorSystemBase(penv), _expirationtime(2,0)
+    {
+        RegisterXMLReader(GetEnv()); // just in case, register again
+    }
+
     virtual ~SimpleSensorSystem() {
         Destroy();
     }
@@ -173,7 +231,7 @@ class SimpleSensorSystem : public SensorSystemBase
     {
         // go through all bodies in the environment and check for mocap data
         FOREACHC(itbody, vbodies) {
-            MocapData* pmocapdata = (MocapData*)((*itbody)->GetExtraInterface(GetXMLId()));
+            MocapData* pmocapdata = (MocapData*)((*itbody)->GetExtraInterface(XMLID::GetXMLId()));
             if( pmocapdata != NULL ) {
                 BODY* p = AddKinBody(*itbody, pmocapdata);
                 if( p != NULL ) {
@@ -186,11 +244,18 @@ class SimpleSensorSystem : public SensorSystemBase
 
     virtual BODY* AddKinBody(KinBody* pbody, const void* _pdata)
     {
-        if( _pdata == NULL || pbody == NULL )
+        if( pbody == NULL )
             return false;
         assert( pbody->GetEnv() == GetEnv() );
     
         const MocapData* pdata = (const MocapData*)_pdata;
+        if( pdata == NULL ) {
+            pdata = (const MocapData*)(pbody->GetExtraInterface(XMLID::GetXMLId()));
+            if( pdata == NULL ) {
+                RAVELOG_ERRORA("failed to find mocap data for body %S\n", pbody->GetName());
+                return NULL;
+            }
+        }
 
         boost::mutex::scoped_lock lock(_mutex);
         if( _mapbodies.find(pbody->GetNetworkId()) != _mapbodies.end() ) {
@@ -198,9 +263,9 @@ class SimpleSensorSystem : public SensorSystemBase
             return NULL;
         }
         
-        BODY* b = new BODY(pbody, *pdata, _xmlid);
+        BODY* b = CreateBODY(pbody, (const MocapData*)pdata);            
         _mapbodies[pbody->GetNetworkId()].reset(b);
-        RAVELOG_DEBUGA("system adding body %S\n", pbody->GetName());
+        RAVELOG_DEBUGA("system adding body %S, total: %d\n", pbody->GetName(), _mapbodies.size());
         return b;
     }
 
@@ -233,13 +298,13 @@ class SimpleSensorSystem : public SensorSystemBase
             return false;
         assert( pbody->GetEnv() == GetEnv() );
         
-        map<int,boost::shared_ptr<BODY> >::iterator it = _mapbodies.find(pbody->GetNetworkId());
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody->GetNetworkId());
         if( it == _mapbodies.end() ) {
             RAVELOG_WARNA("trying to %s body %S that is not in system\n", bEnable?"enable":"disable", pbody->GetName());
             return false;
         }
 
-        it->second->SetEnable(bEnable);
+        it->second->bEnabled = bEnable;
         return true;
     }
 
@@ -250,57 +315,100 @@ class SimpleSensorSystem : public SensorSystemBase
         assert( pbody->GetEnv() == GetEnv() );
 
         boost::mutex::scoped_lock lock(_mutex);
-        map<int,boost::shared_ptr<BODY> >::iterator it = _mapbodies.find(pbody->GetNetworkId());
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody->GetNetworkId());
         return it != _mapbodies.end() ? it->second.get() : NULL;
     }
 
-    virtual const char* GetXMLId() { return _xmlid.c_str(); }
+    virtual bool SwitchBody(KinBody* pbody1, KinBody* pbody2)
+    {
+        if( pbody1 == NULL || pbody2 == NULL )
+            return false;
+        assert( pbody1->GetEnv() == GetEnv() && pbody2->GetEnv() == GetEnv() );
+
+        boost::mutex::scoped_lock lock(_mutex);
+        TYPEOF(_mapbodies.begin()) it = _mapbodies.find(pbody1->GetNetworkId());
+        BODY* pb1 = it != _mapbodies.end() ? it->second.get() : NULL;
+        it = _mapbodies.find(pbody2->GetNetworkId());
+        BODY* pb2 = it != _mapbodies.end() ? it->second.get() : NULL;
+
+        if( pb1 == NULL && pb2 == NULL )
+            return false;
+
+        if( pb1 != NULL )
+            pb1->SetBody(pbody2);
+        if( pb2 != NULL )
+            pb2->SetBody(pbody1);
+
+        return true;
+    }
 
 protected:
+    virtual BODY* CreateBODY(KinBody* pbody, const MocapData* pdata)
+    {
+        MocapData* pnewdata = new MocapData();
+        pnewdata->copy(pdata);
+        BODY* b = new BODY(pbody, pnewdata);
+        return b;
+    }
 
     typedef pair<boost::shared_ptr<BODY>, Transform > SNAPSHOT;
     virtual void UpdateBodies(list<SNAPSHOT>& listbodies)
     {
         // assume mutex is already locked
-        if( listbodies.size() == 0 )
-            return;
-
         ros::Time curtime = ros::Time::now();
-        GetEnv()->LockPhysics(true);
 
-        FOREACH(it, listbodies) {
-            assert( it->first->IsEnabled() && it->first->GetOffsetLink() != NULL );
+        if( listbodies.size() > 0 ) {
 
-            // transform with respect to offset link
-            TransformMatrix tlink = it->first->GetOffsetLink()->GetTransform();
-            TransformMatrix tbase = it->first->GetOffsetLink()->GetParent()->GetTransform();
-            TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata.transOffset;
-            TransformMatrix tfinal = toffset * it->second*it->first->_initdata.transPreOffset;
+            GetEnv()->LockPhysics(true);
 
-            it->first->GetOffsetLink()->GetParent()->SetTransform(tfinal);
-            it->first->lastupdated = curtime;
+            FOREACH(it, listbodies) {
+                assert( it->first->IsEnabled() );
 
-            RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+                KinBody::Link* plink = it->first->GetOffsetLink();
+                if( plink == NULL )
+                    continue;
+
+                // transform with respect to offset link
+                TransformMatrix tlink = plink->GetTransform();
+                TransformMatrix tbase = plink->GetParent()->GetTransform();
+                TransformMatrix toffset = tbase * tlink.inverse() * it->first->_initdata->transOffset;
+                TransformMatrix tfinal = toffset * it->second*it->first->_initdata->transPreOffset;
             
-            if( !it->first->IsPresent() )
-                RAVELOG_VERBOSEA("updating body %S\n", it->first->GetOffsetLink()->GetParent()->GetName());
-            it->first->SetPresent(true);
+                plink->GetParent()->SetTransform(tfinal);
+                it->first->lastupdated = curtime;
+                it->first->tnew = it->second;
+            
+                //RAVELOG_DEBUGA("%f %f %f\n", tfinal.trans.x, tfinal.trans.y, tfinal.trans.z);
+            
+                if( !it->first->IsPresent() )
+                    RAVELOG_VERBOSEA("updating body %S\n", plink->GetParent()->GetName());
+                it->first->bPresent = true;
+            }
+
+            GetEnv()->LockPhysics(false);
         }
 
-        GetEnv()->LockPhysics(false);
-
-        map<int,boost::shared_ptr<BODY> >::iterator itbody = _mapbodies.begin();
+        TYPEOF(_mapbodies.begin()) itbody = _mapbodies.begin();
         while(itbody != _mapbodies.end()) {
             if( curtime-itbody->second->lastupdated > _expirationtime ) {
                 if( !itbody->second->IsLocked() ) {
-                    GetEnv()->RemoveKinBody(itbody->second->GetOffsetLink()->GetParent());
+
+                    GetEnv()->LockPhysics(true);
+                    KinBody::Link* plink = itbody->second->GetOffsetLink();
+                    if( plink != NULL ) {                        
+                        RAVELOG_DEBUGA("object %S expired %fs\n", plink->GetParent()->GetName(), (float)(curtime-itbody->second->lastupdated).toSec());
+                        GetEnv()->RemoveKinBody(plink->GetParent());
+                    }
+
+                    GetEnv()->LockPhysics(false);
+
                     _mapbodies.erase(itbody++);
                     continue;
                 }
                 
                 if( itbody->second->IsPresent() )
-                    RAVELOG_VERBOSEA("body %S not present\n", itbody->second->GetOffsetLink()->GetParent()->GetName());
-                itbody->second->SetPresent(false);
+                    RAVELOG_VERBOSEA("body %S not present\n", itbody->second->GetBodyName().c_str());
+                itbody->second->bPresent = false;
             }
 
             ++itbody;
@@ -310,14 +418,13 @@ protected:
     map<int,boost::shared_ptr<BODY> > _mapbodies;
     boost::mutex _mutex;
     ros::Duration _expirationtime;
-    string _xmlid;
 };
 
 #ifdef RAVE_REGISTER_BOOST
 #include BOOST_TYPEOF_INCREMENT_REGISTRATION_GROUP()
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::MocapData)
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::BODY)
-BOOST_TYPEOF_REGISTER_TYPE(SimpleSensorSystem::MocapXMLReader)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::MocapData, 1)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::BODY, 1)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::SimpleXMLReader, 1)
 #endif
 
 #endif

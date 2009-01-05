@@ -111,13 +111,41 @@ class Pose:
     eud = [abs(eu0[i] - eu1[i]) for i in [0,1,2]]
     return (sqrt(numpy.dot(d, d.conj())), eud[0], eud[1], eud[2])
 
+  def qangle(self, other):
+    (wx,wy,wz,ww) = self.quaternion()
+    yaw1 = atan2(2*(wx*wy + ww*wz), wx*wx + ww*ww - wy*wy - wz*wz)
+    (wx,wy,wz,ww) = other.quaternion()
+    yaw2 = atan2(2*(wx*wy + ww*wz), wx*wx + ww*ww - wy*wy - wz*wz)
+    return yaw2 - yaw1
+
+  def angle(self, other):
+    p0 = self.xform(0,0,0)
+    d0 = self.xform(0,0,1)
+    p1 = other.xform(0,0,0)
+    d1 = other.xform(0,0,1)
+    v0 = [ (b - a) for (a,b) in zip(p0,d0) ]
+    v1 = [ (b - a) for (a,b) in zip(p1,d1) ]
+    dot = sum([(a*b) for a,b in zip(v0,v1)])
+    if dot >= 1.0:
+      th = 0.0
+    else:
+      th = acos(dot)
+    return th
+
+  def further_than(self, other, pos_d, ori_d):
+    p0 = self.xform(0,0,0)
+    p1 = other.xform(0,0,0)
+    th = self.qangle(other)
+    d = sqrt(sum([(a - b)**2 for (a,b) in zip(p0, p1)]))
+    return (d > pos_d) or (abs(th) > ori_d)
+
   def distance(self):
     x,y,z = self.xform(0,0,0)
     return sqrt(x * x + y * y + z * z)
 
   def assert_sane(self):
     rot = self.M[0:3,0:3]
-    assert numpy.alltrue(numpy.abs(((rot * rot.T) - numpy.identity(3))) < 1.0e-5)
+    #assert numpy.alltrue(numpy.abs(((rot * rot.T) - numpy.identity(3))) < 1.0e-3)
 
 import fast
 
@@ -281,6 +309,7 @@ class Track:
     self.alive = True
     #print p0id,p0,p1id,p1,p1pose.xform(*cam.pix2cam(*p1)),uniq_track_id
     self.sba_track = VO.point_track(p0id, p0, p1id, p1, p1pose.xform(*cam.pix2cam(*p1)), uniq_track_id)
+    self.uniq_track_id = uniq_track_id
     uniq_track_id += 1
   def kill(self):
     self.alive = False
@@ -311,7 +340,8 @@ class VisualOdometer:
     self.all_tracks = set()
     self.posechain = []
 
-    self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
+    self.position_thresh = kwargs.get('position_keypoint_thresh', 0.5)
+    self.angle_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5. / 360))
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
@@ -399,9 +429,7 @@ class VisualOdometer:
     else:
       return (0, None)
 
-  def scavenger(self, diff_pose, frame):
-    af0 = self.keyframe
-    af1 = frame
+  def scavenger(self, diff_pose, af0, af1):
     Xs = vop.array([k[0] for k in af1.kp])
     Ys = vop.array([k[1] for k in af1.kp])
     pairs = []
@@ -424,6 +452,9 @@ class VisualOdometer:
     solution = self.solve(f0.kp, f1.kp, pairs)
     if solution and solution[0] > 5:
       (inl, rot, shift) = solution
+      diff_pose = self.mkpose(rot, shift)
+      if self.scavenge:
+        (inl, rot, shift) = self.scavenger(diff_pose, f0, f1)
     # for points x in f0, inlmap[x] has corresponding point in f1
     pairmap = dict([(p1,p0) for (p0,p1) in self.pe.inliers()])
 
@@ -431,12 +462,21 @@ class VisualOdometer:
       if not (t.lastpt in pairmap):
         t.kill()
 
-    # Only keep tracks that have a recent frame
-    (fix_sz, free_sz, niter) = self.sba
-    oldest_useful_frame = f0.id - (fix_sz + free_sz)
-    def age(t):
-      return max([ i for i in t.id if i < 1000000])
-    self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
+    if self.posechain != []:
+      # Only keep tracks that have a recent frame
+      (fix_sz, free_sz, niter) = self.sba
+      nfr = fix_sz + free_sz
+      print "posechain length", len(self.posechain)
+      print "posechain ", (self.posechain)
+      if len(self.posechain) > nfr:
+        oldest_useful_frame = self.posechain[-nfr][0].id
+      else:
+        oldest_useful_frame = self.posechain[0][0].id
+      #print "oldest_useful_frame", oldest_useful_frame
+
+      def age(t):
+        return max([ i for i in t.id if i < 1000000])
+      self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= age(t)])
 
     oldtails = set([t.lastpt for t in self.tracks])
     for t in self.tracks:
@@ -450,19 +490,37 @@ class VisualOdometer:
       self.tracks.add(newtrack)
       self.all_tracks.add(newtrack)
 
+    if 0:
+      import pylab
+      print "Inliers:", len(self.pe.inliers())
+
+      f1in = [ a for (a,b) in self.pe.inliers()]
+      pylab.scatter([x for (x,y,d) in f1in], [y for (x,y,d) in f1in])
+
+      print "There are", len(self.tracks)
+      for t in self.tracks:
+        pylab.plot([x for (x,y,d) in t.p], [y for (x,y,d) in t.p])
+      pylab.xlim((0, 640))
+      pylab.ylim((0, 480))
+      pylab.show()
+    
     # Run through all tracks.  If two tracks share an endpoint, delete the shorter track
     by_lastpt = [e[1] for e in sorted([(t.lastpt, t) for t in self.tracks if t.alive])]
     tocull = set()
     for (t0,t1) in zip(by_lastpt, by_lastpt[1:]):
       if t0.lastpt == t1.lastpt:
-        assert t0.lastpt == t1.lastpt
+        if 0:
+          print "Detected shared point", t0.uniq_track_id, t1.uniq_track_id
+          print t0.lastpt, t0.p
+          print t1.lastpt, t1.p
+          print
         tocull.add(t0)
         tocull.add(t1)
         if len(t0.p) > len(t1.p):
           tocull.add(t0)
         else:
           tocull.add(t1)
-    print "Killing tracks:", [ t.id for t in tocull]
+    #print "Killing tracks because of shared point:", [t.id for t in tocull]
     self.tracks -= tocull
 
     for t in self.tracks:
@@ -471,6 +529,9 @@ class VisualOdometer:
 
     self.timer['tracks'].stop()
 
+  def sba_add_frame(self, frame):
+    self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
+    
   def sba_handle_frame(self, frame):
     self.timer['sba'].start()
 
@@ -479,23 +540,21 @@ class VisualOdometer:
     for t in self.tracks:
       #print len(t.p), t.p
       ids |= set(t.id)
-    print "have tracks that cover frames", sorted(list(ids))
 
-    self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
+    self.sba_add_frame(frame)
     # Only allow frames in the posechain if there exists an observation for that frame
     self.posechain = [ (f,fp) for (f,fp) in self.posechain if f.id in ids ]
 
     (fix_sz, free_sz, niter) = self.sba
-    if (1 + free_sz) > len(self.posechain):
+    if len(self.posechain) <= (1 + free_sz):
       fix_sz = 1
       free_sz = len(self.posechain) - 1
     fixed = self.posechain[-(fix_sz + free_sz):-(free_sz)]
     free = self.posechain[-(free_sz):]
     externals = sum([ f.externals for (f,_) in (fixed + free)], [])
-    print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
+    #print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
     if externals != []:
       fixed += externals
-      print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
     self.pe.sba([fp for (_,fp) in fixed], [fp for (_,fp) in free], [ t.sba_track for t in self.tracks ], niter)
     if 0:
       for (f,fp) in free:
@@ -530,6 +589,7 @@ class VisualOdometer:
     return self.handle_frame_0(frame)
 
   def change_keyframe(self, newkey):
+    print "Change keyframe from", self.keyframe.id, "to", newkey.id
     self.log_keyframes.append(newkey.id)
     oldkey = self.keyframe
     self.keyframe = newkey
@@ -550,8 +610,13 @@ class VisualOdometer:
         (inl, rot, shift) = solution
         diff_pose = self.mkpose(rot, shift)
         if self.scavenge:
-          (inl, rot, shift) = self.scavenger(diff_pose, frame)
-          diff_pose = self.mkpose(rot, shift)
+          solution = self.scavenger(diff_pose, ref, frame)
+          if solution and solution[0] > 5:
+            (inl, rot, shift) = solution
+            diff_pose = self.mkpose(rot, shift)
+          else:
+            inl = 0
+            diff_pose = Pose()
       else:
         inl = 0
         diff_pose = Pose()
@@ -559,8 +624,9 @@ class VisualOdometer:
       self.inl = inl
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
-      is_far = self.inl < self.inlier_thresh
-      if (self.keyframe != self.prev_frame) and is_far:
+#      print "frame", frame.id, "key:", ref.id, "inliers:", inl, "angle_thresh", self.angle_thresh
+      is_far = (self.inl < self.inlier_thresh) or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
+      if (self.keyframe != self.prev_frame) and is_far: 
         self.change_keyframe(self.prev_frame)
         return self.handle_frame_0(frame)
       Tok = ref.pose
@@ -574,7 +640,7 @@ class VisualOdometer:
       self.log_keyframes.append(self.keyframe.id)
       frame.inl = 999
       if self.sba:
-        self.sba_handle_frame(frame)
+        self.sba_add_frame(frame)
     self.pose.assert_sane()
 
     self.pose = frame.pose

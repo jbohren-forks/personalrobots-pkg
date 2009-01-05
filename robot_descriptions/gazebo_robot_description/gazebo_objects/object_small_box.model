@@ -18,12 +18,12 @@
       </visual>
     </geom:box>
   </body:box>
-  <controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+  <controller:ros_p3d name="p3d_object_controller" plugin="libros_p3d.so">
     <alwaysOn>true</alwaysOn>
     <updateRate>100.0</updateRate>
     <bodyName>small_box_body</bodyName>
     <topicName>small_box_pose_ground_truty</topicName>
     <frameName>map</frameName>
     <interface:position name="p3d_object_position"/>
-  </controller:P3D>
+  </controller:ros_p3d>
 </model:physical>

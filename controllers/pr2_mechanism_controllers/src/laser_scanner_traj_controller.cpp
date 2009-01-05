@@ -37,8 +37,9 @@
 
 #include <math.h>
 
-using namespace std;
-using namespace controller;
+using namespace std ;
+using namespace controller ;
+using namespace filters ;
 
 ROS_REGISTER_CONTROLLER(LaserScannerTrajController)
 
@@ -46,11 +47,13 @@ LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
   tracking_offset_ = 0 ;
   track_link_enabled_ = false ;
+  d_error_filter = NULL ;
 }
 
 LaserScannerTrajController::~LaserScannerTrajController()
 {
-
+  if (d_error_filter != NULL)
+    delete d_error_filter ;
 }
 
 bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -59,21 +62,70 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false ;
   robot_ = robot ;
 
-  // Look through XML to grab the joint name
+  // ***** Name element *****
+  const char* name = config->Attribute("name") ;
+  if (!name)
+  {
+    ROS_ERROR("LaserScannerTrajController:: Name attribute not defined in controller tag") ;
+    return false ;
+  }
+  name_ = name ;
+
+  // ***** Joint Element *****
   TiXmlElement *j = config->FirstChildElement("joint") ;
   if (!j)
+  {
+    ROS_ERROR("%s:: joint element not defined inside controller", name_.c_str()) ;
     return false ;
-
+  }
   const char *jn = j->Attribute("name") ;
 
   if (!jn)
+  {
+    ROS_ERROR("%s:: name attribute not defined insidejoint element", name_.c_str()) ;
     return false ;
-  std::string joint_name = jn ;
+  }
+  joint_state_ = robot_->getJointState(string(jn)) ;  // Need joint state to check calibrated flag
+  if (!joint_state_)
+  {
+    ROS_ERROR("%s:: Could not find joint \"%s\" in robot model", name_.c_str(), jn) ;
+    return false ;
+  }
 
-  joint_state_ = robot_->getJointState(joint_name) ;  // Need joint state to check calibrated flag
+  TiXmlElement *pid_elem = j->FirstChildElement("pid") ;
+  if (!pid_elem)
+  {
+    ROS_ERROR("%s:: Could not find element \"pid\" in joint", name_.c_str()) ;
+    return false ;
+  }
 
-  joint_position_controller_.initXml(robot, config) ; //Pass down XML snippet to encapsulated joint_position_controller_
+  bool result ;
+  result = pid_controller_.initXml(pid_elem) ;
+  if (!result)
+  {
+    ROS_ERROR("%s:: Error initializing pid element", name_.c_str()) ;
+    return false ;
+  }
+  last_time_ = robot->hw_->current_time_ ;
+  last_error_ = 0.0 ;
 
+  // ***** Derivate Error Filter Element *****
+  TiXmlElement *filter_elem = config->FirstChildElement("d_error_filter");
+  if(!filter_elem)
+  {
+    ROS_ERROR("%s:: d_error_filter element not defined inside controller", name_.c_str()) ;
+    return false ;
+  }
+
+  double smoothing_factor ;
+  if(filter_elem->QueryDoubleAttribute("smoothing_factor", & smoothing_factor)!=TIXML_SUCCESS)
+  {
+    ROS_ERROR("%s:: Error reading \"smoothing_factor\" element in d_error_filter element", name_.c_str()) ;
+    return false ;
+  }
+  initDErrorFilter(smoothing_factor) ;
+
+  // ***** Max Rate and Acceleration Elements *****
   TiXmlElement *max_rate_elem = config->FirstChildElement("max_rate") ;
   if (!max_rate_elem)
     return false ;
@@ -89,11 +141,25 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   return true ;
 }
 
+void LaserScannerTrajController::initDErrorFilter(double f)
+{
+  vector<double> a ;
+  vector<double> b ;
+  a.resize(2) ;
+  b.resize(1) ;
+  a[0] = 1.0 ;
+  a[1] = - (1.0 - f) ;
+  b[0] = 1.0 ;
+
+  if(d_error_filter == NULL)
+    delete d_error_filter ;
+  d_error_filter = new TransferFunctionFilter<double>(b,a,1) ;
+}
+
 void LaserScannerTrajController::update()
 {
-  //if (!joint_state_->calibrated_)
-  //  return;
-
+  if (!joint_state_->calibrated_)
+    return;
 
   // ***** Compute the offset from tracking a link *****
   //! \todo replace this link tracker with a KDL inverse kinematics solver
@@ -133,13 +199,34 @@ void LaserScannerTrajController::update()
 
       result = traj_.sample(sampled_point, profile_time) ;
       if (result > 0)
-      {
-        joint_position_controller_.setCommand(sampled_point.q_[0] + tracking_offset_) ;
-        joint_position_controller_.update() ;
-      }
+        traj_command_ = sampled_point.q_[0] ;
     }
     traj_lock_.unlock() ;
   }
+
+  // ***** Run the position control loop *****
+  double cmd = traj_command_ + tracking_offset_ ;
+
+  double time = robot_->hw_->current_time_ ;
+  double error(0.0) ;
+  angles::shortest_angular_distance_with_limits(cmd, joint_state_->position_,
+                                                joint_state_->joint_->joint_limit_min_,
+                                                joint_state_->joint_->joint_limit_max_,
+                                                error) ;
+  double dt = time - last_time_ ;
+  double d_error = (error-last_error_)/dt ;
+  vector<double> filtered_d_error ;
+  filtered_d_error.resize(1) ;
+
+  vector<double> d_error_vec(1,d_error) ;
+
+  d_error_filter->update(&d_error_vec, &filtered_d_error) ;
+
+  // Add filtering step
+  // Update pid with d_error added
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, filtered_d_error[0], dt) ;
+  last_time_ = time ;
+  last_error_ = error ;
 }
 
 double LaserScannerTrajController::getCurProfileTime()
@@ -277,11 +364,17 @@ void LaserScannerTrajControllerNode::update()
       prev_profile_time_ < c_.getProfileDuration()/2.0)
   {
     // Should we be populating header.stamp here? Or, we can simply let ros take care of the timestamp
+    ros::Time cur_time ;
+    cur_time.fromSec(robot_->hw_->current_time_) ;
+    m_scanner_signal_.header.stamp = cur_time ;
     m_scanner_signal_.signal = 0 ;
     need_to_send_msg_ = true ;
   }
   else if (cur_profile_time < prev_profile_time_)        // Check if we wrapped around
   {
+    ros::Time cur_time ;
+    cur_time.fromSec(robot_->hw_->current_time_) ;
+    m_scanner_signal_.header.stamp = cur_time ;
     m_scanner_signal_.signal = 1 ;
     need_to_send_msg_ = true ;
   }
@@ -305,6 +398,8 @@ void LaserScannerTrajControllerNode::update()
 
 bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  robot_ = robot ;      // Need robot in order to grab hardware time
+
   service_prefix_ = config->Attribute("name") ;
 
   if (!c_.initXml(robot, config))

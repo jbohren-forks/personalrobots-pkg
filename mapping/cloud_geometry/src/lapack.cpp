@@ -35,7 +35,7 @@
 namespace cloud_geometry
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief compute the 3 eigen values and eigenvectors for a 3x3 covariance matrix
+  /** \brief Compute the 3 eigen values and eigenvectors for a 3x3 covariance matrix
     * \param covariance_matrix a 3x3 covariance matrix in eigen2::matrix3d format
     * \param eigen_values the resulted eigenvalues in eigen2::vector3d
     * \param eigen_vectors a 3x3 matrix in eigen2::matrix3d format, containing each eigenvector on a new line
@@ -47,7 +47,7 @@ namespace cloud_geometry
     char uplo = 'U';    // 'U':  Upper triangle of A is stored
 
     int n = 3, lda = 3, info = -1;
-    int lwork = 3 * n - 1;
+    int lwork = 3 * 3 - 1;
 
     double *work = new double[lwork];
     for (int i = 0; i < 3; i++)
@@ -60,5 +60,35 @@ namespace cloud_geometry
 
     return (info == 0);
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Perform Singular Value Decomposition (SVD) on a given matrix. Returns U, S, V.
+    * \param h a 3x3 matrix in eigen2::matrix3d format that is to be decomposed
+    * \param u the resulted U matrix
+    * \param s the resulted S diagonal matrix as a eigen2::vector3d
+    * \param v the resulted V matrix
+    */
+  bool
+    svd (Eigen::Matrix3d h, Eigen::Matrix3d &u, Eigen::Vector3d &s, Eigen::Matrix3d &v)
+  {
+    char jobu  = 'A';    // 'A':  all M columns of U are returned in array U
+    char jobvt = 'A';    // 'A':  all N rows of V**T are returned in the array VT
+
+    int m = 3, n = 3, lda = 3, ldu = 3, ldvt = 3, info = -1;
+    int lwork = 5 * 3;
+
+    double *work = new double[lwork];
+    Eigen::Matrix3d B;
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        B (i, j) = h (j, i);
+
+    dgesvd_ (&jobu, &jobvt, &m, &n, B.data (), &lda, s.data (), u.data (), &ldu, v.data (), &ldvt, work, &lwork, &info);
+
+    delete work;
+//    U = transpose (U, m, m);
+    return (info == 0);
+  }
+
 }
 

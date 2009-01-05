@@ -845,13 +845,14 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   values_.clear();
 
   stringstream str;
-  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (" << actuator_info_.name_ << ")";
+  str << "EtherCAT Device (" << actuator_info_.name_ << ")";
   d.name = str.str();
   d.message = reason_;
   d.level = reason_ == "OK" ? 0 : 2;
 
   ADD_STRING("Configuration", config_info_.configuration_status_ ? "good" : "error loading configuration");
   ADD_STRING("Name", actuator_info_.name_);
+  ADD_STRING_FMT("Position", "%02d", sh_->get_ring_position());
   unsigned int revision = sh_->get_revision();
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;

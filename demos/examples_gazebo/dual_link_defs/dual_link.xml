@@ -128,7 +128,7 @@
   
   <map name="sensor" flag="gazebo">
     <verbatim key="mechanism_control_simulation">
-    <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+    <controller:ros_time name="ros_time" plugin="libros_time.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
@@ -142,8 +142,8 @@
       <interface:audio name="gazebo_mechanism_control_dummy_iface" />
     </controller:gazebo_mechanism_control>
 
-    <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_link1_controller" plugin="libP3D.so">
+    <!-- ros_p3d for position groundtruth -->
+    <controller:ros_p3d name="p3d_link1_controller" plugin="libros_p3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
         <bodyName>link1</bodyName>
@@ -152,17 +152,17 @@
         <xyzOffsets>0 0 0.0</xyzOffsets>
         <rpyOffsets>0 0 0.0</rpyOffsets>
         <interface:position name="p3d_link1_position"/>
-    </controller:P3D>
+    </controller:ros_p3d>
 
-    <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_link2_controller" plugin="libP3D.so">
+    <!-- ros_p3d for position groundtruth -->
+    <controller:ros_p3d name="p3d_link2_controller" plugin="libros_p3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
         <bodyName>link2</bodyName>
         <topicName>link2_pose</topicName>
         <frameName>map</frameName>
         <interface:position name="p3d_link2_position"/>
-    </controller:P3D>
+    </controller:ros_p3d>
 
     </verbatim>
   </map>

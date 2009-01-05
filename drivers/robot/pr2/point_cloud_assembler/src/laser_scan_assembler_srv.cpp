@@ -33,54 +33,13 @@
 *********************************************************************/
 
 
-/**
-
-@mainpage
-
-@htmlinclude manifest.html
-
-@b LaserScanAssemblerSrv accumulates scan lines from a laser range finder mounted on a tilting stage and generates 3D point clouds.
-
-<hr>
-
-@section usage Usage
-
-To use this node, the tilting stage and laser have to be started. A convenient method for starting them is on the way, perhaps as a script.
-
-@par Example
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">LaserScan</a> : laser scan data
-
-<hr>
-
-@section parameters ROS parameters
-
- **/
-
-
-#include "ros/node.h"
-#include "tf/transform_listener.h"
-#include "std_msgs/LaserScan.h"
-#include "std_msgs/PointCloud.h"
-
-#include <deque>
-
-
-// Service
-#include "point_cloud_assembler/BuildCloud.h"
-
-// Laser projection
 #include "laser_scan/laser_scan.h"
 
-#include "math.h"
+#include "std_msgs/LaserScan.h"
+#include "point_cloud_assembler/base_assembler_srv.h"
+
 
 using namespace std_msgs;
-
 using namespace std ;
 
 namespace point_cloud_assembler
@@ -88,170 +47,51 @@ namespace point_cloud_assembler
 
 /**
  * \brief Maintains a history of laser scans and generates a point cloud upon request
- * \todo Clean up the doxygen part of this header
- * params
- *  * "~tf_cache_time_secs" (double) - The cache time (in seconds) to holds past transforms
- *  * "~tf_extrap_limit" (double) - The extrapolation limit for TF (in seconds)
- *  * "~max_scans" (unsigned int) - The number of scans to store in the assembler's history, until they're thrown away
- *  * "~ignore_laser_skew" (bool) - Specifies the method to project laser data
- *    * true -> Account for laser skew, and compute the transform for each laser point (This is currently really slow!)
- *    * false-> Don't account for laser skew, and use 1 transform per scanline. (This might have a little error when moving fast)
+ * \section params ROS Parameters
+ * - (Several params are inherited from point_cloud_assembler::BaseAssemblerSrv)
+ * - \b "~ignore_laser_skew" (bool) - Specifies the method to project laser data
+ *   - true -> Account for laser skew, and compute the transform for each laser point (This is currently really slow!)
+ *   - false-> Don't account for laser skew, and use 1 transform per scanline. (This might have a little error when moving fast)
+ * \section services ROS Services
+ * - "~build_cloud" - Inhertited from point_cloud_assembler::BaseAssemblerSrv
  */
-class LaserScanAssemblerSrv : public ros::node
+class LaserScanAssemblerSrv : public BaseAssemblerSrv<std_msgs::LaserScan>
 {
 public:
-
-  tf::TransformListener* tf_;
-  laser_scan::LaserProjection projector_;
-
-  LaserScan scan_;
-
-  unsigned int max_scans_ ;
-  bool ignore_laser_skew_ ;
-
-  deque<LaserScan> scan_hist_ ;            //!< Stores history of scans. We want them in time-ordered, which is (in most situations) the same as time-of-receipt-ordered
-  unsigned int total_pts_ ;                //!< Stores the total number of range points in the entire stored history of scans. Useful for estimating points/scan
-
-
-  LaserScanAssemblerSrv() : ros::node("point_cloud_assembler")
+  LaserScanAssemblerSrv() : BaseAssemblerSrv<std_msgs::LaserScan>("laser_scan_assembler")
   {
-    // **** Initialize TransformListener ****
-    double tf_cache_time_secs ;
-    param("~tf_cache_time_secs", tf_cache_time_secs, 10.0) ;
-    if (tf_cache_time_secs < 0)
-      ROS_ERROR("Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs) ;
-    unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL ;
-    tf_ = new tf::TransformListener(*this, true, tf_cache_time) ;
-    ROS_INFO("TF Cache Time: %f Seconds", tf_cache_time_secs) ;
-
-    // **** Set TF Extrapolation Limit ****
-    double tf_extrap_limit_secs ;
-    param("~tf_extrap_limit", tf_extrap_limit_secs, 0.00) ;
-    if (tf_extrap_limit_secs < 0.0)
-      ROS_ERROR("Parameter tf_extrap_limit<0 (%f)", tf_extrap_limit_secs) ;
-
-    ros::Duration extrap_limit ;
-    extrap_limit.fromSec(tf_extrap_limit_secs) ;
-    tf_->setExtrapolationLimit(extrap_limit) ;
-    ROS_INFO("TF Extrapolation Limit: %f Seconds", tf_extrap_limit_secs) ;
-
-    // ***** Set max_scans *****
-    const int default_max_scans = 400 ;
-    int tmp_max_scans;
-    param("~max_scans", tmp_max_scans, default_max_scans) ;
-    if (tmp_max_scans < 0)
-    {
-      ROS_ERROR("Parameter max_scans<0 (%i)", tmp_max_scans) ;
-      tmp_max_scans = default_max_scans ;
-    }
-    max_scans_ = tmp_max_scans;
-    ROS_INFO("Max Scans in History: %u", max_scans_) ;
-    total_pts_ = 0 ;    // We're always going to start with no points in our history
-
     // ***** Set Laser Projection Method *****
     param("~ignore_laser_skew", ignore_laser_skew_, true) ;
-
-    // ***** Start Services *****
-    advertise_service(get_name()+"/build_cloud", &LaserScanAssemblerSrv::buildCloud, this, 0) ; // Don't spawn threads so that we can avoid dealing with mutexing [for now]
-    subscribe("scan", scan_, &LaserScanAssemblerSrv::scans_callback, 40) ;      // Choose something reasonably large, so data doesn't get dropped
   }
 
   ~LaserScanAssemblerSrv()
   {
-    unadvertise_service(get_name()+"/build_cloud") ;
-    unsubscribe("scan") ;
-    delete tf_ ;
+
   }
 
-  void scans_callback()
+  unsigned int GetPointsInScan(const LaserScan& scan)
   {
-    if (scan_hist_.size() == max_scans_)                                                // Is our deque full?
-    {
-      total_pts_ -= scan_hist_.front().get_ranges_size() ;                              // We're removing an elem, so this reduces our total point count
-      scan_hist_.pop_front() ;                                                          // The front of the deque has the oldest elem, so we can get rid of it
-    }
-
-    scan_hist_.push_back(scan_) ;                                                       // Add the newest scan to the back of the deque
-    total_pts_ += scan_.get_ranges_size() ;                                             // Add the new scan to the running total of points
-
-    //printf("LaserScanAssemblerSrv:: Got Scan: TotalPoints=%u", total_pts_) ;
+    return scan.get_ranges_size() ;
   }
 
-  bool buildCloud(BuildCloud::request& req, BuildCloud::response& resp)
+  void ConvertToCloud(const string& fixed_frame_id, const LaserScan& scan_in, PointCloud& cloud_out)
   {
-    // Allocate space for the cloud
-    resp.cloud.set_pts_size( total_pts_ ) ;                                             // There's no way to have a point cloud bigger than our entire history of scans.
-    resp.cloud.set_chan_size(1) ;
-    resp.cloud.chan[0].name = "intensities" ;
-    resp.cloud.chan[0].set_vals_size( total_pts_ ) ;
-
-    unsigned int cloud_count = 0 ;                                                      // Store the number of points in the current cloud
-
-    PointCloud projector_cloud ;                                                 // Stores the current scan after being projected into the laser frame
-    PointCloud target_frame_cloud ;                                              // Stores the current scan in the target frame
-
-    unsigned int i = 0 ;
-
-    // Find the beginning of the request. Probably should be a search
-    while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
-            scan_hist_[i].header.stamp < req.begin )                                    // Keep stepping until we've exceeded the start time
+    if (ignore_laser_skew_)  // Do it the fast (approximate) way
     {
-      i++ ;
+      projector_.projectLaser(scan_in, cloud_out) ;
+      if (cloud_out.header.frame_id != fixed_frame_id)
+        tf_->transformPointCloud(fixed_frame_id, cloud_out, cloud_out) ;
     }
-
-    unsigned int start_index = i ;
-
-    unsigned int tf_ex_count = 0 ;              // Keep a count of how many TF exceptions we got (for diagnostics)
-    unsigned int scan_lines_count = 0 ;         // Keep a count of how many scan lines we agregated (for diagnostics)
-
-    // Populate the cloud
-    while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
-            scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
+    else                     // Do it the slower (more accurate) way
     {
-      const LaserScan& cur_scan = scan_hist_[i] ;
-
-      try
-      {
-        if (ignore_laser_skew_)  // Do it the fast (approximate) way
-	{
-	  projector_.projectLaser(cur_scan, projector_cloud) ;
-          tf_->transformPointCloud(req.target_frame_id, projector_cloud, target_frame_cloud) ;
-	}
-	else                     // Do it the slower (more accurate) way
-	{
-	  projector_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan, *tf_) ;
-        }
-
-        for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud
-        {
-          resp.cloud.pts[cloud_count].x        = target_frame_cloud.pts[j].x ;
-          resp.cloud.pts[cloud_count].y        = target_frame_cloud.pts[j].y ;
-          resp.cloud.pts[cloud_count].z        = target_frame_cloud.pts[j].z ;
-          resp.cloud.chan[0].vals[cloud_count] = target_frame_cloud.chan[0].vals[j] ;
-          cloud_count++ ;
-        }
-        resp.cloud.header = target_frame_cloud.header ;                                   // Find a better place to do this/way to do this
-      }
-      catch(tf::TransformException& ex)
-      {
-        //ROS_WARN("Transform Exception %s", ex.what()) ;
-        tf_ex_count++ ;
-      }
-
-      scan_lines_count++ ;
-      i++ ;                                                                             // Check the next scan in the scan history
+      projector_.transformLaserScanToPointCloud(fixed_frame_id, cloud_out, scan_in, *tf_) ;
     }
-    int end_index = i ;
-
-    resp.cloud.set_pts_size( cloud_count ) ;                                            // Resize the output accordingly
-    resp.cloud.chan[0].set_vals_size( cloud_count ) ;
-
-    ROS_INFO("Point Cloud Results: Agregated from index %u->%u. Total ScanLines: %u.  BufferSize: %u", start_index, end_index, scan_lines_count, scan_hist_.size()) ;
-    if (tf_ex_count > 0)
-      ROS_WARN("%u TF Exceptions while generating Point Cloud", tf_ex_count) ;
-
-    return true ;
+    return ;
   }
+
+private:
+  bool ignore_laser_skew_ ;
+  laser_scan::LaserProjection projector_ ;
 };
 
 }

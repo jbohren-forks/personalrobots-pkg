@@ -1,0 +1,6 @@
+<!-- starts a simulated environment of openrave cleaning a table -->
+<launch>
+  <machine name="localhost" address="localhost" default="true"/>  
+  <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
+  <node pkg="ormanipulation" type="runmanip_sim.m" output="screen"/>
+</launch>

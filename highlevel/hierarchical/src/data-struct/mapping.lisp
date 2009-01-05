@@ -15,6 +15,7 @@ set-value
 do-entries
 make-undefined
 domain
+range
 transform
 
 Conditions
@@ -36,6 +37,7 @@ mapping-undefined
    do-entries
    make-undefined
    domain
+   range
    transform
    
    [mapping]
@@ -76,7 +78,7 @@ See also [changeable-mapping]."
 (define-condition mapping-undefined ()
   ((item :initarg :item :reader get-item)
    (m :initarg :mapping :reader get-mapping))
-  (:report (lambda (c s) (format s "Value of mapping ~a not defined at ~a" (get-mapping c) (get-item c))))
+  (:report (lambda (c s) (format s "Value of item ~a not defined in mapping ~a" (get-item c) (get-mapping c))))
   (:documentation "Signalled when applying a mapping to an item that it's not defined at."))
 
 
@@ -218,6 +220,16 @@ Make M not be defined at X, and return the resulting mapping.  Should not be cal
 	   (length m))
   (:method ((m hash-table))
 	   (hash-keys m)))
+
+(defgeneric range (m)
+  (:documentation "Return a sequence (possibly with duplicates) consisting of the range of mapping.")
+  (:method ((m list))
+    (mapcar #'cdr (if (is-assoc-list m) m (progn (check-type (car m) function) (cdr m)))))
+  (:method ((m vector)) m)
+  (:method ((m hash-table))
+    (loop for v being each hash-value in m 
+	  collect v)))
+  
 
 
 

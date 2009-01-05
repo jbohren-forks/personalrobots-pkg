@@ -73,7 +73,7 @@ class DcamNode : public ros::node
 public:
 
   static dcam::Dcam* cam_;
-  static cam::StereoDcam* stcam_;
+  static dcam::StereoDcam* stcam_;
 
 
   DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
@@ -209,7 +209,7 @@ public:
       // is definitely wrong.
       if (stereo_cam_)
       {
-        stcam_ = new cam::StereoDcam(guid);
+        stcam_ = new dcam::StereoDcam(guid);
         cam_ = stcam_;
 
         std::string params(cam_->getParameters());
@@ -217,8 +217,8 @@ public:
 
         cam_->setFormat(mode, fps, speed);
         cam_->setProcMode(videre_mode);
-        cam_->setUniqueThresh(12);
-        cam_->setTextureThresh(10);
+        stcam_->setUniqueThresh(30);
+        stcam_->setTextureThresh(30);
         cam_->setCompanding(true);
       } else {
         cam_ = new dcam::Dcam(guid);
@@ -283,7 +283,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
+      dcam::StereoDcam* stcam = ( (dcam::StereoDcam*)(cam_) );
 
       publishImages("~left/", stcam->stIm->imLeft);
       publishImages("~right/", stcam->stIm->imRight);
@@ -337,16 +337,16 @@ public:
       stereo_info_.width = stcam->stIm->imWidth;
 
       stereo_info_.dpp = stcam->stIm->dpp;
-      stereo_info_.numDisp = stcam->stIm->numDisp;
-      stereo_info_.imDtop = stcam->stIm->imDtop;
-      stereo_info_.imDleft = stcam->stIm->imDleft;
-      stereo_info_.imDwidth = stcam->stIm->imDwidth;
-      stereo_info_.imDheight = stcam->stIm->imDheight;
-      stereo_info_.corrSize = stcam->stIm->corrSize;
-      stereo_info_.filterSize = stcam->stIm->filterSize;
-      stereo_info_.horOffset = stcam->stIm->horOffset;
-      stereo_info_.textureThresh = stcam->stIm->textureThresh;
-      stereo_info_.uniqueThresh = stcam->stIm->uniqueThresh;
+      stereo_info_.num_disp = stcam->stIm->numDisp;
+      stereo_info_.im_Dtop = stcam->stIm->imDtop;
+      stereo_info_.im_Dleft = stcam->stIm->imDleft;
+      stereo_info_.im_Dwidth = stcam->stIm->imDwidth;
+      stereo_info_.im_Dheight = stcam->stIm->imDheight;
+      stereo_info_.corr_size = stcam->stIm->corrSize;
+      stereo_info_.filter_size = stcam->stIm->filterSize;
+      stereo_info_.hor_offset = stcam->stIm->horOffset;
+      stereo_info_.texture_thresh = stcam->stIm->textureThresh;
+      stereo_info_.unique_thresh = stcam->stIm->uniqueThresh;
 
       memcpy((char*)(&stereo_info_.T[0]),  (char*)(stcam->stIm->T),   3*sizeof(double));
       memcpy((char*)(&stereo_info_.Om[0]), (char*)(stcam->stIm->Om),  3*sizeof(double));
@@ -480,7 +480,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
+      dcam::StereoDcam* stcam = ( (dcam::StereoDcam*)(cam_) );
 
       advertise<image_msgs::StereoInfo>("~stereo_info", 1);
 
@@ -546,7 +546,7 @@ public:
 };
 
 dcam::Dcam* DcamNode::cam_ = 0;
-cam::StereoDcam* DcamNode::stcam_ = 0;
+dcam::StereoDcam* DcamNode::stcam_ = 0;
 
 void sigsegv_handler(int sig)
 {

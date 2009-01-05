@@ -104,7 +104,7 @@ class StageNode : public ros::node
     std_msgs::PoseWithRatesStamped groundTruthMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
-    ros::thread::mutex lock;
+    boost::mutex msg_lock;
 
     // The models that we're interested in
     Stg::StgModelLaser* lasermodel;
@@ -165,11 +165,10 @@ StageNode::ghfunc(gpointer key,
 void
 StageNode::cmdvelReceived()
 {
-  this->lock.lock();
+  boost::mutex::scoped_lock lock(msg_lock);
 
   this->positionmodel->SetSpeed(this->velMsg.vx, this->velMsg.vy, this->velMsg.vw);
   this->base_last_cmd = this->sim_time;
-  this->lock.unlock();
 }
 
 StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
@@ -238,7 +237,7 @@ StageNode::Update()
 {
   // Wait until it's time to update
   this->world->PauseUntilNextUpdateTime();
-  this->lock.lock();
+  boost::mutex::scoped_lock lock(msg_lock);
 
   // Let the simulator update (it will sleep if there's time)
   this->world->Update();
@@ -280,7 +279,11 @@ StageNode::Update()
                    (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
                                   tf::Point(lp.x, lp.y, 0.15)),
                     sim_time, "base_laser", "base_link"));
-
+  // Send the identity transform between base_footprint and base_link
+  tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
+  tf.sendTransform(tf::Stamped<tf::Transform>
+		   (txIdentity.inverse(),
+		    sim_time, "base_footprint", "base_link"));
   // Get latest odometry data
   // Translate into ROS message format and publish
   this->odomMsg.pos.x = this->positionmodel->est_pose.x;
@@ -319,7 +322,6 @@ StageNode::Update()
 
   publish("base_pose_ground_truth", this->groundTruthMsg);
 
-  this->lock.unlock();
 }
 
 int 

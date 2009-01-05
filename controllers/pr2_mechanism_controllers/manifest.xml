@@ -21,6 +21,7 @@
   <depend package="rosthread" />
   <depend package="angles" />
   <depend package="control_toolbox" />
+  <depend package="filters" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

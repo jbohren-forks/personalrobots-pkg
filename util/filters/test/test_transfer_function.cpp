@@ -64,13 +64,13 @@ TEST(TransferFunctionFilter, LowPass)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(11.8008);
-  filter.update(&in1);
-  filter.update(&in2);
-  filter.update(&in3);
-  filter.update(&in4);
-  filter.update(&in5);
-  filter.update(&in6);
-  filter.update(&in7);
+  filter.update(&in1, &in1);
+  filter.update(&in2, &in2);
+  filter.update(&in3, &in3);
+  filter.update(&in4, &in4);
+  filter.update(&in5, &in5);
+  filter.update(&in6, &in6);
+  filter.update(&in7, &in7);
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -95,13 +95,13 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(2.4088);
-  filter.update(&in1);
-  filter.update(&in2);
-  filter.update(&in3);
-  filter.update(&in4);
-  filter.update(&in5);
-  filter.update(&in6);
-  filter.update(&in7);
+  filter.update(&in1, &in1);
+  filter.update(&in2, &in2);
+  filter.update(&in3, &in3);
+  filter.update(&in4, &in4);
+  filter.update(&in5, &in5);
+  filter.update(&in6, &in6);
+  filter.update(&in7, &in7);
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -121,7 +121,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   b.push_back(0.245237275252786);
   b.push_back(0.054296799022543);
   b.push_back(0.018098933007514);
-  TransferFunctionFilter<double> filter(b,a,1);
+  TransferFunctionFilter<double> filter(b,a,3);
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);
@@ -153,13 +153,13 @@ TEST(TransferFunctionFilter, LowPassMulti)
   out1.push_back(60.6216);
   out1.push_back(33.9829);
   out1.push_back(28.1027);
-  filter.update(&in1);
-  filter.update(&in2);
-  filter.update(&in3);
-  filter.update(&in4);
-  filter.update(&in5);
-  filter.update(&in6);
-  filter.update(&in7);
+  filter.update(&in1, &in1);
+  filter.update(&in2, &in2);
+  filter.update(&in3, &in3);
+  filter.update(&in4, &in4);
+  filter.update(&in5, &in5);
+  filter.update(&in6, &in6);
+  filter.update(&in7, &in7);
 
   for(unsigned int i=0; i<out1.size(); i++)
   {
@@ -213,13 +213,13 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   out1.push_back(17.1112);
   out1.push_back(9.0285);
   out1.push_back(8.3102);
-  filter.update(&in1);
-  filter.update(&in2);
-  filter.update(&in3);
-  filter.update(&in4);
-  filter.update(&in5);
-  filter.update(&in6);
-  filter.update(&in7);
+  filter.update(&in1, &in1);
+  filter.update(&in2, &in2);
+  filter.update(&in3, &in3);
+  filter.update(&in4, &in4);
+  filter.update(&in5, &in5);
+  filter.update(&in6, &in6);
+  filter.update(&in7, &in7);
 
   for(unsigned int i=0; i<out1.size(); i++)
   {

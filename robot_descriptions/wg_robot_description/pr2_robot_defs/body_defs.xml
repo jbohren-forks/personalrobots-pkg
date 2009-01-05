@@ -54,7 +54,7 @@
           <sensor:contact name="${name}_contact_sensor">
             <geom>${name}_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libRos_Bumper.so">
+            <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
               <bumperTopicName>${name}_bumper</bumperTopicName>

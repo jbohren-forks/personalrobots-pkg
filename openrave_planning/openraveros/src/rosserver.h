@@ -52,6 +52,7 @@ class ROSServer : public RaveServerBase
     class ServerWorker
     {
     public:
+        virtual ~ServerWorker() {}
         virtual void work() = 0;
     };
 
@@ -62,6 +63,18 @@ class ROSServer : public RaveServerBase
         ~WorkExecutor() { _worker->work(); }
     private:
         boost::shared_ptr<ServerWorker> _worker;
+    };
+
+    class ResetEnvironmentWorker : public ServerWorker
+    {
+    public:
+        ResetEnvironmentWorker(EnvironmentBase* penv) : _penv(penv) {}
+        virtual void work() {
+            RAVELOG_INFOA("resetting scene\n");
+            _penv->Reset();
+        }
+    private:
+        EnvironmentBase* _penv;
     };
 
     class SendProblemWorker : public ServerWorker
@@ -94,7 +107,10 @@ class ROSServer : public RaveServerBase
     class RemoveProblemWorker : public ServerWorker
     {
     public:
-        RemoveProblemWorker(boost::shared_ptr<ProblemInstance> prob, bool& retval) : _prob(prob), _retval(retval) {}
+        RemoveProblemWorker(boost::shared_ptr<ProblemInstance>& prob, bool& retval) : _retval(retval) {
+            _prob.swap(prob); // take ownership
+        }
+
         virtual void work() {
             _retval = _prob->GetEnv()->RemoveProblem(_prob.get());
         }
@@ -144,8 +160,8 @@ class ROSServer : public RaveServerBase
     };
 
 public:
-        ROSServer(SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
-         : RaveServerBase(penv), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
+        ROSServer(int nSessionId, SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
+            : RaveServerBase(penv), _nSessionId(nSessionId), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
         _psetviewer.reset(psetviewer);
         _bThreadDestroyed = false;
         _bCloseClient = false;
@@ -182,11 +198,14 @@ public:
     {
         Worker();
 
+        // destroy environment specific state: problems, planners, figures
         _mapFigureIds.clear();
 
-        // destroy environment specific state: problems, planners, figures
-        _mapplanners.clear();
+        FOREACH(itprob, _mapproblems)
+            itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
         _mapproblems.clear();
+        
+        _mapplanners.clear();
     }
 
     virtual bool Init(int port)
@@ -273,8 +292,14 @@ public:
 
     bool SetViewer(const string& viewer)
     {
-        if( !!_psetviewer )
-            return _psetviewer->SetViewer(GetEnv(),viewer);
+        if( viewer.size() == 0 )
+            return true;
+
+        if( !!_psetviewer ) {
+            stringstream ss;
+            ss << "OpenRAVE - session " << _nSessionId;
+            return _psetviewer->SetViewer(GetEnv(),viewer,ss.str());
+        }
 
         _threadviewer.join(); // wait for the viewer
         
@@ -342,7 +367,7 @@ public:
         LockEnvironment envlock(this);
         res.boxes.resize(pbody->GetLinks().size()); int index = 0;
         FOREACHC(itlink, pbody->GetLinks()) {
-            OpenRAVE::AABB ab = (*itlink)->ComputeAABB();
+            OpenRAVE::AABB ab = (*itlink)->ComputeAABB(); 
             openraveros::AABB& resbox = res.boxes[index++];
             resbox.center[0] = ab.pos.x; resbox.center[1] = ab.pos.y; resbox.center[2] = ab.pos.z;
             resbox.extents[0] = ab.extents.x; resbox.extents[1] = ab.extents.y; resbox.extents[2] = ab.extents.z;
@@ -484,6 +509,10 @@ public:
                 res.collision = GetEnv()->CheckCollision(pbody->GetLinks()[req.linkid], setignore, empty, &report);
             }
 
+            if( !res.collision && req.checkselfcollision ) {
+                res.collision = pbody->CheckSelfCollision(&report);
+            }
+
             GetEnv()->SetCollisionOptions(oldopts);
         }
 
@@ -491,8 +520,7 @@ public:
 
         if( res.collision ) {
             KinBody::Link* plinkcol = report.plink1;
-            if( report.plink2 && report.plink2->GetParent() != pbody ) {
-                ROS_ASSERT(report.plink1->GetParent() == pbody);
+            if( report.plink2 && report.plink2->GetParent() != pbody && !pbody->IsAttached(report.plink2->GetParent()) ) {
                 plinkcol = report.plink2;
             }
 
@@ -501,7 +529,7 @@ public:
                 res.collidinglink = plinkcol->GetIndex();
             }
 
-            RAVELOG_INFOA("collision %S:%S with %S:%S\n",
+            RAVELOG_DEBUGA("collision %S:%S with %S:%S\n",
                        report.plink1?report.plink1->GetParent()->GetName():L"(NULL",
                        report.plink1?report.plink1->GetName():L"(NULL)",
                        report.plink2?report.plink2->GetParent()->GetName():L"(NULL)",
@@ -511,11 +539,21 @@ public:
         if( req.options & CO_Distance )
             res.mindist = report.minDistance;
         if( req.options & CO_Contacts ) {
-            res.contacts.resize(report.contacts.size()); int index = 0;
+            res.contacts.resize(report.contacts.size());
+            int negnormals = 0;
+            if( report.plink1 != NULL ) {
+                if( req.linkid < 0 )
+                    negnormals = report.plink1->GetParent() != pbody;
+                else
+                    negnormals = report.plink1->GetParent() != pbody || report.plink1->GetIndex() != req.linkid;
+            }
+            
+            int index = 0;
             FOREACHC(itc, report.contacts) {
                 openraveros::Contact& c = res.contacts[index++];
+                Vector vnorm = negnormals ? -itc->norm : itc->norm;
                 c.position[0] = itc->pos.x; c.position[1] = itc->pos.y; c.position[2] = itc->pos.z;
-                c.normal[0] = itc->norm.x; c.normal[1] = itc->norm.y; c.normal[2] = itc->norm.z;
+                c.normal[0] = vnorm.x; c.normal[1] = vnorm.y; c.normal[2] = vnorm.z;
             }
         }
 
@@ -544,14 +582,18 @@ public:
         KinBody* pbody = GetEnv()->CreateKinBody();
 
         if( req.file.size() > 0 ) {
-            if( !pbody->Init(req.file.c_str(), NULL) )
+            if( !pbody->Init(req.file.c_str(), NULL) ) {
+                delete pbody;
                 return false;
+            }
         }
 
         pbody->SetName(req.name.c_str());
 
-        if( !GetEnv()->AddKinBody(pbody) )
+        if( !GetEnv()->AddKinBody(pbody) ) {
+            delete pbody;
             return false;
+        }
 
         res.bodyid = pbody->GetNetworkId();
         return true;
@@ -629,6 +671,7 @@ public:
             return false;
 
         bool bsuccess=false;
+
         AddWorker(new RemoveProblemWorker(itprob->second,bsuccess), true);
         if( !bsuccess )
             RAVELOG_WARNA("failed to remove problem\n");
@@ -642,6 +685,7 @@ public:
         info.bodyid = pbody->GetNetworkId();
         info.transform = GetAffineTransform(pbody->GetTransform());
         info.enabled = pbody->IsEnabled();
+        info.dof = pbody->GetDOF();
 
         if( options & BodyInfo::Req_JointValues ) {
             vector<dReal> vvalues; pbody->GetJointValues(vvalues);
@@ -657,7 +701,7 @@ public:
         }
         if( options & BodyInfo::Req_LinkNames ) {
             info.linknames.resize(pbody->GetLinks().size());
-            for(size_t i = 0; i < info.linknames.size(); ++i)
+            for(size_t i = 0; i < pbody->GetLinks().size(); ++i)
                 info.linknames[i] = _stdwcstombs(pbody->GetLinks()[i]->GetName());
         }
         if( options & BodyInfo::Req_JointLimits ) {
@@ -676,13 +720,17 @@ public:
             info.name = _stdwcstombs(pbody->GetName());
             info.type = pbody->GetXMLId();
         }
+        if( options & BodyInfo::Req_JointNames ) {
+            info.jointnames.resize(pbody->GetJoints().size());
+            for(size_t i = 0; i < pbody->GetJoints().size(); ++i)
+                info.jointnames[i] = _stdwcstombs(pbody->GetJoints()[i]->GetName());
+        }
     }
 
     bool env_getbodies_srv(env_getbodies::request& req, env_getbodies::response& res)
     {
         vector<KinBody*> vbodies;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedBodies(vbodies));
-        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             KinBody* pfound = NULL;
@@ -793,7 +841,6 @@ public:
     {
         vector<RobotBase*> vrobots;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedRobots(vrobots));
-        LockEnvironment envlock(this);
 
         if( req.bodyid != 0 ) {
             RobotBase* pfound = NULL;
@@ -829,10 +876,8 @@ public:
 
     bool env_loadscene_srv(env_loadscene::request& req, env_loadscene::response& res)
     {
-        if( req.resetscene ) {
-            RAVELOG_INFOA("resetting scene\n");
-            GetEnv()->Reset();
-        }
+        if( req.resetscene )
+            AddWorker(new ResetEnvironmentWorker(GetEnv()), true);
         
         if( req.filename.size() > 0 ) {
             LockEnvironment envlock(this);
@@ -1021,6 +1066,10 @@ public:
         if( req.setmask & env_set::request::Set_Viewer ) {
             GetEnv()->AttachViewer(NULL);
             SetViewer(req.viewer);
+        }
+        if( req.setmask & env_set::request::Set_ViewerDims ) {
+            if( GetEnv()->GetViewer() != NULL )
+                GetEnv()->GetViewer()->ViewerSetSize(req.viewerwidth,req.viewerheight);
         }
 
         return true;
@@ -1374,7 +1423,6 @@ public:
 
         RobotBase* probot = (RobotBase*)pbody;
 
-        LockEnvironment envlock(this);
         RobotSetActiveDOFs(probot, req.active);
         return true;
     }
@@ -1506,6 +1554,7 @@ private:
     map<int, boost::shared_ptr<PlannerBase> > _mapplanners;
     map<int, boost::shared_ptr<ProblemInstance> > _mapproblems;
     map<int, boost::shared_ptr<FIGURE> > _mapFigureIds;
+    int _nSessionId;
     int _nNextFigureId, _nNextPlannerId, _nNextProblemId;
     float _fSimulationTimestep;
     Vector _vgravity;

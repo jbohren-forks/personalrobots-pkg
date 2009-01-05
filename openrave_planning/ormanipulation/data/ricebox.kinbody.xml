@@ -1,9 +1,14 @@
 <Kinbody name="ricebox">
-  <Body>
+  <Body name="base">
     <Geom type="box">
-      <extents>0.03 0.0525 0.1125</extents>
-      <translation>0 0 0.1125</translation>
+      <extents>0.1125 0.0525 0.03</extents>
+      <translation>0 0 0.03</translation>
       <diffusecolor>0.1 0.6 1</diffusecolor>
     </Geom>
   </Body>
+  <objecttransform>
+    <offsetlink>base</offsetlink>
+    <sid>data/ricebox.kinbody.xml</sid>
+    <pretranslation>-0.0155 0.0205 0</pretranslation>
+  </objecttransform>
 </Kinbody>

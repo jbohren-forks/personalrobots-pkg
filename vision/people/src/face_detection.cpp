@@ -1,11 +1,8 @@
-/*********************************************************************
-* A ros node to run face detection with images from the videre cameras.
-*
-**********************************************************************
+/**********************************************************************
 *
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Caroline Pantofaru
+*  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -50,6 +47,7 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 #include "topic_synchronizer.h"
+#include "tf/transform_listener.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -60,36 +58,47 @@
 
 using namespace std;
 
-// FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
-
+/** FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
+ *
+ * This class provides a ROS node wrapper around OpenCV's face detection, plus some use of depth from stereo to restrict the
+ * results presented to plausible face sizes. 
+ * Displayed face detections are colored by:
+ * red - not a plausible face size;
+ * blue - no stereo information available;
+ * green - plausible face size. 
+ */
 class FaceDetector: public ros::node {
 public:
   // Images and conversion
-  image_msgs::Image limage_;
-  image_msgs::Image dimage_;
-  image_msgs::StereoInfo stinfo_;
-  image_msgs::CamInfo rcinfo_;
-  image_msgs::CvBridge lbridge_;
-  image_msgs::CvBridge dbridge_;
-  TopicSynchronizer<FaceDetector> sync_;
+  image_msgs::Image limage_; /**< Left image msg. */
+  image_msgs::Image dimage_; /**< Disparity image msg. */
+  image_msgs::StereoInfo stinfo_; /**< Stereo info msg. */
+  image_msgs::CamInfo rcinfo_; /**< Right camera info msg. */
+  image_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
+  image_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
+  TopicSynchronizer<FaceDetector> sync_; /**< Stereo topic synchronizer. */
 
   // The left and disparity images.
-  IplImage *cv_image_left_;
-  IplImage *cv_image_disp_;
-  bool do_display_;
-  IplImage *cv_image_disp_out_;
+  IplImage *cv_image_left_; /**< Left image. */
+  IplImage *cv_image_disp_; /**< Disparity image. */
+  bool do_display_; /**< True/false display face detections. */
+  IplImage *cv_image_disp_out_; /**< Display image. */
 
-  bool use_depth_;
-  CvStereoCamModel *cam_model_;
+  bool use_depth_; /**< True/false use depth information. */
+  CvStereoCamModel *cam_model_; /**< A model of the stereo cameras. */
+ 
+  People *people_; /**< List of people and associated fcns. */
+  const char *haar_filename_; /**< Training file for the haar cascade classifier. */
 
-  People *people_;
-  const char *haar_filename_;
-
-  bool external_init_;
-  robot_msgs::PositionMeasurement pos_;
+  bool external_init_; 
+  robot_msgs::PositionMeasurement pos_; /**< The person position measurement to publish. */
 
   bool quit_;
-  int detect_;
+
+  std::string node_name_;
+  ros::Time last_image_time_;
+
+  tf::TransformListener tf;
 
   ros::thread::mutex cv_mutex_;
 
@@ -107,7 +116,9 @@ public:
     haar_filename_(haar_filename),
     external_init_(external_init),
     quit_(false),
-    detect_(0)
+    node_name_(node_name),
+    last_image_time_(ros::Time().fromSec(0)),
+    tf(*this)
   { 
     
     if (do_display_) {
@@ -120,17 +131,18 @@ public:
 
     // Subscribe to the images and parameters
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect"));
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
+    //left_list.push_back(std::string("stereodcam/left/image_rect"));
+    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
     sync_.subscribe(left_list,limage_,1);
-    sync_.subscribe("dcam/disparity",dimage_,1);
-    sync_.subscribe("dcam/stereo_info",stinfo_,1);
-    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereodcam/disparity",dimage_,1);
+    sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
+    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.ready();
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     if (external_init_) {
-      subscribe<robot_msgs::PositionMeasurement>("person_measurement",pos_,&FaceDetector::pos_cb,1);
+      subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
     }
 
   }
@@ -154,15 +166,27 @@ public:
 
   }
 
-  // Position message callback.
+  /*!
+   * \brief Position message callback. 
+   *
+   * When hooked into the person tracking filter, this callback will listen to messages 
+   * from the filter with a person id and 3D position and adjust the person's face position accordingly.
+   */ 
   void pos_cb() {
 
     // Check that the message came from the person filter, not one of the individual trackers.
-    if (pos_.name != "person_filter") {
+    //if (pos_.name != "people_tracking_filter") {
+    //  return;
+    // }
+
+    cv_mutex_.lock();
+
+    if ((pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {
+      cv_mutex_.unlock();
       return;
     }
 
-    cv_mutex_.lock();
+
     // Find the person in my list. If they don't exist, or this is an initialization, create them.
     // Otherwise, reset the position.
     int iperson = people_->findID(pos_.object_id);
@@ -176,27 +200,45 @@ public:
       // Person already exists.
     }
     // Set the position.
-    people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
+    tf::Point pt;
+    tf::PointMsgToTF(pos_.pos, pt);
+    tf::Stamped<tf::Point> loc(pt, pos_.header.stamp, pos_.header.frame_id);
+    cout << loc[0] << " " << loc[1] <<" " <<  loc[2] << endl;
+    try
+      {
+        tf.transformPoint("stereo_link", loc, loc);//, pos_.header.stamp, loc, "odom_combined", loc);
+      } 
+    catch (tf::TransformException& ex)
+      {
+      }
+    cout << loc[0] <<" " <<  loc[1] <<" " <<  loc[2] << endl;
+    people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
     cv_mutex_.unlock();
-
-    ///// I'm not currently checking the time of this positioning message, which is a little worrying.
 
   }
 
-  /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
+  /*!
+   * \brief Image callback for unsynced messages.
+   *
+   * If unsynced stereo msgs are received, do nothing. 
+   */
   void image_cb_timeout(ros::Time t) {
   }
 
-  /// The image callback. For each new image, copy it, perform face detection, and draw the rectangles on the image.
+  /*! 
+   * \brief Image callback for synced messages. 
+   *
+   * For each new image:
+   * convert it to OpenCV format, perform face detection using OpenCV's haar filter cascade classifier, and
+   * (if requested) draw rectangles around the found faces.
+   * Only publishes faces which are associated (by proximity, currently) with faces it already has in its list of people.
+   */
   void image_cb_all(ros::Time t)
   {
 
-    detect_++;
-    if (detect_ % 2) {
-      return;
-    }
-
     cv_mutex_.lock();
+
+    last_image_time_ = limage_.header.stamp;
  
     CvSize im_size;
 
@@ -256,6 +298,7 @@ public:
 	    // If not, don't publish it.
 	    // If yes, set it's new position and publish it.
 	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
+	    printf("close person %d \n", close_person);
 	    if (close_person < 0) {
 	      do_publish = false;
 	    }
@@ -267,7 +310,7 @@ public:
 
 	  if (do_publish) {
 	    pos.header.stamp = limage_.header.stamp;
-	    pos.name = "face_detection";
+	    pos.name = node_name_;
 	    pos.object_id = id;
 	    pos.pos.x = cvmGet(xyz,0,2);
 	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
@@ -275,8 +318,16 @@ public:
 	    pos.header.frame_id = "stereo_link";
 	    pos.reliability = 0.8;
 	    pos.initialization = 0;
-	    //pos.covariance = ;
-	    publish("person_measurement",pos);
+	    pos.covariance[0] = 0.04;
+	    pos.covariance[1] = 0.0;
+	    pos.covariance[2] = 0.0;
+	    pos.covariance[3] = 0.0;
+	    pos.covariance[4] = 0.04;
+	    pos.covariance[5] = 0.0;
+	    pos.covariance[6] = 0.0;
+	    pos.covariance[7] = 0.0;
+	    pos.covariance[8] = 0.04;
+	    publish("people_tracker_measurements",pos);
 	  }
 	}
 
@@ -299,7 +350,9 @@ public:
   }
 
 
-  // Wait for completion, wait for user input, display images.
+  /*!
+   *\brief Wait for completion, wait for user input, display images.
+   */
   bool spin() {
     while (ok() && !quit_) {
 
@@ -329,7 +382,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   bool use_depth = true;
   bool do_display = true;
-  bool external_init = false;
+  bool external_init = true;
 
   if (argc < 3) {
     cerr << "Node name ending and path to cascade file required.\n" << endl;

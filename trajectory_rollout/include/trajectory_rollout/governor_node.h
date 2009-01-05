@@ -48,8 +48,6 @@
 #include <std_msgs/Polyline2D.h>
 #include <std_msgs/Point2DFloat32.h>
 
-//for time support
-#include <sys/time.h>
 
 //for transform support
 #include "tf/transform_listener.h"
@@ -138,8 +136,7 @@ class GovernorNode: public ros::node
     void processPlan();
 
     //sleep for remaining time of cycle
-    //TODO: ros::Duration.sleep --- check it out
-    void sleep(double loopstart);
+    void sleep(ros::Time start);
 
     //a map
     MapGrid map_;

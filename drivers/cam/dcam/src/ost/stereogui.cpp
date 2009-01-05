@@ -1229,10 +1229,6 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)smoothness_cb);
         o->align(FL_ALIGN_LEFT);
       }
-      { Fl_Light_Button* o = unique_check_button = new Fl_Light_Button(165, 190, 115, 20, "Uniqueness check");
-        o->labelsize(11);
-        o->callback((Fl_Callback*)unique_check_cb);
-      }
       o->end();
     }
     { Fl_Group* o = new Fl_Group(20, 30, 320, 110);

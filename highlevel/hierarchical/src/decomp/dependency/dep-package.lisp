@@ -13,11 +13,17 @@
    :do-all-updates
    :do-next-update
    :current-value
+   :current-values
    :up-to-date-value
    :apply-diff
    :new-val-diff
    :new-val
    :tie-variables
+   :id
+   :dep-graph-id
+   :equality-test
+
+   :uninitialized-variable
 
    :make-simple-update-fn
    :make-simple-aggregator

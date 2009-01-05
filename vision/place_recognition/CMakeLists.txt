@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+set(ROS_BUILD_TYPE Release)
+rospack(place_recognition)
+rospack_add_library(place_recognition src/kmeans.cpp src/vocabulary_tree.cpp src/place_recognizer.cpp)
+rospack_add_compile_flags(place_recognition -save-temps -march=pentium3 -msse3)

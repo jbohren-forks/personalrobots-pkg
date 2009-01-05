@@ -48,12 +48,12 @@
       <param name="tf_cache_time_secs" type="double" value="10.0" />
       <param name="tf_extrap_limit" type="double" value="0.01" />
       <param name="max_scans" type="int" value="400" />
+      <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
 
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter" machine="three" respawn="true" >
       <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-      <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
 
     <param name="ransac_ground_plane_extraction/listen_topic" value="full_cloud"/>

@@ -62,10 +62,6 @@
 	   (set-last-percept (sample-init-percept e (state e)) e)))
 
 
-;; TODO delete
-(defgeneric io-interface (e)
-  (:documentation "io-interface E.  Read actions from the terminal and perform them in E, until the user types ``nil'' for the action"))
-
 
 (defgeneric at-terminal-state (e)
   (:documentation "at-terminal-state E.  Is the current state of E terminal?")

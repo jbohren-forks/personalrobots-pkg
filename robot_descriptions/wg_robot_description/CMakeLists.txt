@@ -3,20 +3,22 @@ include(rosbuild)
 rospack(wg_robot_description)
 
 rospack_add_gtest(test_update test/test_update.cpp)
-rospack_add_executable(ivcon src/ivcon)
 
 find_ros_package(wg_robot_description)
 
+file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/pr2_robot_defs/*.xml)
+
 # xacro file generation
 find_ros_package(xacro)
+find_ros_package(ivcon)
+find_ros_package(convex_decomposition)
 
 set(pr2robot "${CMAKE_CURRENT_SOURCE_DIR}/pr2/pr2")
 add_custom_command(
   OUTPUT ${pr2robot}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2robot}.xacro.xml > ${pr2robot}.xml
-  DEPENDS ${pr2robot}.xacro.xml)
-
+  DEPENDS ${pr2robot}.xacro.xml ${def_files})
 
 # Replace the COMMAND block with a call to a version of xacro that reads in
 # a .deps file and a xacro.xml file, determines the dependencies of the
@@ -25,25 +27,26 @@ add_custom_command(
 #  COMMAND touch ${pr2prototype1}.xacro.deps)
 
 set(pr2prototype1 "${CMAKE_CURRENT_SOURCE_DIR}/pr2_prototype1/pr2_prototype1")
+
 add_custom_command(
   OUTPUT ${pr2prototype1}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2prototype1}.xacro.xml > ${pr2prototype1}.xml
-  DEPENDS ${pr2prototype1}.xacro.xml)
+  DEPENDS ${pr2prototype1}.xacro.xml ${def_files})
 
 set(pr2arm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_arm")
 add_custom_command(
   OUTPUT ${pr2arm}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2arm}.xacro.xml > ${pr2arm}.xml
-  DEPENDS ${pr2arm}.xacro.xml)
+  DEPENDS ${pr2arm}.xacro.xml ${def_files})
 
 set(pr2gripper "${CMAKE_CURRENT_SOURCE_DIR}/pr2_gripper/pr2_gripper")
 add_custom_command(
   OUTPUT ${pr2gripper}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2gripper}.xacro.xml > ${pr2gripper}.xml
-  DEPENDS ${pr2gripper}.xacro.xml)
+  DEPENDS ${pr2gripper}.xacro.xml ${def_files})
 
 #iv files
 # iterate through all the stl files and generate *.mesh and *.iv files
@@ -54,14 +57,60 @@ foreach(it ${pr2_stl_files})
 get_filename_component(basepath ${it} PATH)
 get_filename_component(basename ${it} NAME_WE)
 
+IF ( ${basename} MATCHES "_convex" )
+
+  message("ignoring stale .._convex.stl file:",${basename})
+
+ELSE ( ${basename} MATCHES "_convex" )
+
+#convex decomposition obj files
+add_custom_command(
+  OUTPUT ${basepath}/convex
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+  ARGS ${basepath}/convex)
+
+#create obj files for convex decomposition from stl files
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}.obj
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+  ARGS ${it} ${basepath}/convex/${basename}.obj
+  DEPENDS ${it} ${basepath}/convex)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
+
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.obj
+  COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
+  ARGS ${basepath}/convex/${basename}.obj
+  DEPENDS ${basepath}/convex/${basename}.obj ${basepath}/convex)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
+
+#convert obj files back to stlb, put in directory named convex
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.stlb
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
+
 #iv files
 add_custom_command(
   OUTPUT ${basepath}/${basename}.iv
-  COMMAND ivcon
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
   ARGS ${it} ${basepath}/${basename}.iv
-  DEPENDS ${it} ivcon)
+  DEPENDS ${it})
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.iv
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+ 
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
+
+  ENDIF ( ${basename} MATCHES "_convex" )
 
 endforeach(it)
 

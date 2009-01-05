@@ -53,6 +53,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; t denotes the universal set
+;; Note that the explicit set that this refers to depends
+;; on context.  So long as all pairwise operations are done
+;; in the context of the same universal set, things will
+;; work as expected.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod member? (item (s (eql t)))
@@ -69,3 +73,6 @@
 (def-symmetric-method binary-intersection ((s1 (eql t)) s2)
   s2)
 
+(defmethod subset (s1 (s2 (eql t)))
+  (declare (ignore s1))
+  t)

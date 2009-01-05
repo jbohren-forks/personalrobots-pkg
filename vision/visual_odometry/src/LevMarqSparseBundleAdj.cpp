@@ -69,8 +69,8 @@ namespace willow {
 
 LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
     const CvMat *threeDToDisparity,
-    int full_free_window_size,
     int full_fixed_window_size,
+    int full_free_window_size,
     CvTermCriteria term_criteria):
       /// @todo move file term_criteria_ to Parent
       Parent(disparityTo3D, threeDToDisparity, term_criteria.max_iter, Rodrigues),
@@ -562,12 +562,11 @@ LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
 #else
         JacobianOfPointAnalytic(obsv, transf_global_disp, Jp);
 #endif
-#if DEBUG==1
-        {
-          printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
-              obsv->frame_index_, obsv->local_frame_index_);
-          CvMatUtils::printMat(mat_Jp);
-        }
+#if DEBUG2==1
+        printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
+            obsv->frame_index_, obsv->local_frame_index_);
+        CvMatUtils::printMat(mat_Jp);
+        assert(cvCountNonZero(mat_Jp)>0);
 #endif
 
         //     Add \f$ J_p^T J_p\f$ to the upper triangular part of \f$ H_{pp} \f$
@@ -622,6 +621,7 @@ LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
             printf("Jacobian Jc of point %d, on frame %d,%d, error=[%f,%f,%f]\n",
                 p->id_, obsv->frame_index_, obsv->local_frame_index_, rx, ry, rz);
             CvMatUtils::printMat(mat_Jc);
+            assert(cvCountNonZero(mat_Jc)>0);
           }
 #endif
 

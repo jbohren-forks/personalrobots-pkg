@@ -1,4 +1,4 @@
-        # robot information
+# robot information
 
 BodyInfo bodyinfo
 Manipulator[] manips

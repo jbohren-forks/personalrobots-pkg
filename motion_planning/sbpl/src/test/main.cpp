@@ -271,37 +271,38 @@ int planxythetalat(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 0.5; //in seconds
+	double allocated_time_secs = 1.0; //in seconds
 	MDPConfig MDPCfg;
+	bool bsearchuntilfirstsolution = true;
 	
+
 	//read in motion primitives
-	FILE* fmprimitives = fopen("xytheta_mprimitives_1.cfg", "r");
+	FILE* fmprimitives = fopen("xytheta_mprimitives_2.cfg", "r");
 	if(fmprimitives == NULL)
 	{
 		printf("ERROR: motion primitives file can not be opened\n");
 		exit(1);
 	}
 	vector<SBPL_xytheta_mprimitive> mprimV;
-	while(!feof(fmprimitives))
-	{
-		SBPL_xytheta_mprimitive mprim;
-		mprim.intermptV.clear();
-		float ftemp;
-		fscanf(fmprimitives, "%f", &ftemp);
-		mprim.endx_m = ftemp;
-		fscanf(fmprimitives, "%f", &ftemp);
-		mprim.endy_m = ftemp;
-		fscanf(fmprimitives, "%f", &ftemp);
-		mprim.endtheta_rad = ftemp;
-		mprimV.push_back(mprim);
-	}
 
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAVXYTHETALAT environment_navxythetalat;
-	if(!environment_navxythetalat.InitializeEnv(argv[1], &mprimV))
+	
+	if(argc == 3)
 	{
-		printf("ERROR: InitializeEnv failed\n");
-		exit(1);
+		if(!environment_navxythetalat.InitializeEnv(argv[1], argv[2]))
+		{
+			printf("ERROR: InitializeEnv failed\n");
+			exit(1);
+		}
+	}
+	else
+	{
+		if(!environment_navxythetalat.InitializeEnv(argv[1]))
+		{
+			printf("ERROR: InitializeEnv failed\n");
+			exit(1);
+		}
 	}
 
 	//Initialize MDP Info
@@ -329,6 +330,9 @@ int planxythetalat(int argc, char *argv[])
             exit(1);
         }
 	planner.set_initialsolution_eps(4.0);
+
+	//set search mode
+	planner.set_search_mode(bsearchuntilfirstsolution);
 
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
@@ -373,8 +377,10 @@ int planxythetalat(int argc, char *argv[])
 	*/
 
     FILE* fSol = fopen("sol.txt", "w");
-	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-	  environment_navxythetalat.PrintState(solution_stateIDs_V[i], false, fSol);
+	vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;
+	environment_navxythetalat.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath);
+	for(unsigned int i = 0; i < xythetaPath.size(); i++) {
+		fprintf(fSol, "%.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta);
 	}
     fclose(fSol);
 
@@ -1002,7 +1008,7 @@ int planrobarm(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 
-	if(argc != 2)
+	if(argc < 2)
 	{
 		PrintUsage(argv);
 		exit(1);
@@ -1010,7 +1016,7 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    planandnavigate2d(argc, argv);
+    //planandnavigate2d(argc, argv);
 
     //3D planning
     //plan3dkin(argc, argv);
@@ -1019,7 +1025,7 @@ int main(int argc, char *argv[])
     //planandnavigate3dkin(argc, argv);
 
     //xytheta planning
-    //planxythetalat(argc, argv);
+	planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);

@@ -37,10 +37,8 @@
 #ifndef H_HighlevelController
 
 #include <ros/node.h>
-#include <sys/time.h>
 #include <rosthread/member_thread.h>
 #include <rosconsole/rosconsole.h>
-#include <time.h>
 #include <math.h>
 #include <iostream>
 #include <sstream>
@@ -130,8 +128,7 @@ public:
    */
   void run(){
     while(ok()  && !isTerminated()) {
-      struct timeval curr;
-      gettimeofday(&curr,NULL);
+      ros::Time curr = ros::Time::now();
 	
       // Guard with initialization check to prevent sending bogus state messages.
       if(isInitialized()){
@@ -140,7 +137,7 @@ public:
 	publish(stateTopic, this->stateMsg);
       }
  
-      sleep(curr.tv_sec+curr.tv_usec/1e6, controllerCycleTime_);
+      sleep(curr, controllerCycleTime_);
     }
   }
 
@@ -150,10 +147,7 @@ public:
    */
   void plannerLoop(){
     while(ok() && !isTerminated()){
-      struct timeval curr;
-      gettimeofday(&curr,NULL);
-      double currentTime = curr.tv_sec+curr.tv_usec/1e6;
-      //ROS_INFO("Running the planner again at %f\n", currentTime);
+      ros::Time curr = ros::Time::now();
 
       if(isInitialized() && isActive()){
 
@@ -170,9 +164,9 @@ public:
       }
 
       if(plannerCycleTime_ >= 0)
-	sleep(currentTime, std::max(plannerCycleTime_, controllerCycleTime_));
+	sleep(curr, std::max(plannerCycleTime_, controllerCycleTime_));
       else
-	sleep(currentTime, currentTime + 0.001);
+	sleep(curr, curr.toSec() + 0.001);
     }
   }
 
@@ -363,18 +357,21 @@ private:
   /**
    * @brief Sleep for remaining time of the cycle
    */
-  void sleep(double loopstart, double loopDuration)
+  void sleep(ros::Time loopstart, double loopDuration)
   {
-    struct timeval curr;
-    double currt,tdiff;
-    gettimeofday(&curr,NULL);
-    currt = curr.tv_sec + curr.tv_usec/1e6;
-    tdiff = loopDuration - (currt-loopstart);
-    if(tdiff <= 0.0){
-      ROS_DEBUG("Missed deadline and not sleeping; check machine load(%f)\n", currt-loopstart);
+    ros::Time curr = ros::Time::now();
+    ros::Duration cycleTime;
+    cycleTime = cycleTime.fromSec(loopDuration);
+    ros::Time desiredCycleEnd = loopstart + cycleTime;
+
+    ros::Duration diff = desiredCycleEnd - curr;
+    
+    if(diff <= ros::Duration(0)){
+      ROS_DEBUG("Missed deadline and not sleeping; check machine load. Started %f, ended %f, wanted end %f. Wanted delta %f, got %f. Tryed to correct %f sec.\n", 
+		loopstart.toSec(), curr.toSec(), desiredCycleEnd.toSec(), cycleTime.toSec(), (curr - loopstart).toSec(), diff.toSec());
+    } else {
+      diff.sleep();
     }
-    else
-      usleep((unsigned int)rint(tdiff*1e6));
   }
 
   /**

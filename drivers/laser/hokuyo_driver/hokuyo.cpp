@@ -30,6 +30,8 @@
 
 #include <time.h>
 
+#include <fcntl.h>
+
 #if POSIX_TIMERS <= 0
 #include <sys/time.h>
 #endif
@@ -96,10 +98,25 @@ hokuyo::Laser::open(const char * port_name)
 
   try
   {
-
     laser_fd_ = fileno (laser_port_);
     if (laser_fd_ == -1)
       HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to get file descriptor --  error = %d: %s", errno, strerror(errno));
+
+    struct flock fl;
+    fl.l_type   = F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = 0;
+    fl.l_len   = 0;
+    fl.l_pid   = getpid();
+
+    fcntl(laser_fd_, F_GETLK, &fl);
+
+    if (fl.l_type != F_UNLCK)
+      HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Device %s is already locked.", port_name);
+
+    fl.l_type = F_WRLCK;
+
+    fcntl(laser_fd_, F_SETLK, &fl);
 
     // Settings for USB?
     struct termios newtio;
@@ -152,6 +169,15 @@ hokuyo::Laser::close ()
     catch (hokuyo::Exception& e) {
       //Exceptions here can be safely ignored since we are closing the port anyways
     }
+
+    struct flock fl;
+    fl.l_type   = F_UNLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = 0;
+    fl.l_len   = 0;
+    fl.l_pid   = getpid();
+    
+    fcntl(laser_fd_, F_SETLK, &fl);
 
     retval = fclose(laser_port_);
   }

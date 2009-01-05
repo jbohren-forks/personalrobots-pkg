@@ -88,5 +88,67 @@ namespace cloud_geometry
       return (sqrt (sqr_distance));
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the shortest 3D segment between two 3D lines
+      * \param line_a the coefficients of the first line (point, direction)
+      * \param line_b the coefficients of the second line (point, direction)
+      * \param segment the resulting two 3D points that mark the beginning and the end of the segment
+      */
+    void
+      lineToLineSegment (std::vector<double> line_a, std::vector<double> line_b, std::vector<double> &segment)
+    {
+      segment.resize (6);
+
+      std_msgs::Point32 p2, q2;
+      p2.x = line_a.at (0) + line_a.at (3);    // point + direction = 2nd point
+      p2.y = line_a.at (1) + line_a.at (4);
+      p2.z = line_a.at (2) + line_a.at (5);
+      q2.x = line_b.at (0) + line_b.at (3);    // point + direction = 2nd point
+      q2.y = line_b.at (1) + line_b.at (4);
+      q2.z = line_b.at (2) + line_b.at (5);
+
+      std_msgs::Point32 u, v, w;
+
+      // a = x2 - x1 = line_a[1] - line_a[0]
+      u.x = p2.x - line_a.at (0);
+      u.y = p2.y - line_a.at (1);
+      u.z = p2.z - line_a.at (2);
+      // b = x4 - x3 = line_b[1] - line_b[0]
+      v.x = q2.x - line_b.at (0);
+      v.y = q2.y - line_b.at (1);
+      v.z = q2.z - line_b.at (2);
+      // c = x2 - x3 = line_a[1] - line_b[0]
+      w.x = p2.x - line_b.at (0);
+      w.y = p2.y - line_b.at (1);
+      w.z = p2.z - line_b.at (2);
+
+      double a = dot (u, u);
+      double b = dot (u, v);
+      double c = dot (v, v);
+      double d = dot (u, w);
+      double e = dot (v, w);
+      double denominator = a*c - b*b;
+      double sc, tc;
+      // Compute the line parameters of the two closest points
+      if (denominator < 1e-5)          // The lines are almost parallel
+      {
+        sc = 0.0;
+        tc = (b > c ? d / b : e / c);  // Use the largest denominator
+      }
+      else
+      {
+        sc = (b*e - c*d) / denominator;
+        tc = (a*e - b*d) / denominator;
+      }
+      // Get the closest points
+      segment[0] = p2.x + (sc * u.x);
+      segment[1] = p2.y + (sc * u.y);
+      segment[2] = p2.z + (sc * u.z);
+
+      segment[3] = line_b.at (0) + (tc * v.x);
+      segment[4] = line_b.at (1) + (tc * v.y);
+      segment[5] = line_b.at (2) + (tc * v.z);
+    }
+
   }
 }

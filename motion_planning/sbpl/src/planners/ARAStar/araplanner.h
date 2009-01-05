@@ -121,6 +121,9 @@ public:
     virtual int get_n_expands() const { return searchexpands; }
 	virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
 
+	void print_searchpath(FILE* fOut);
+
+
 	//constructors & destructors
     ARAPlanner(DiscreteSpaceInformation* environment, bool bforwardsearch);
     ~ARAPlanner();

@@ -66,11 +66,6 @@ void uniqueness_constraint_reducedrange(int w, short int* disp, int maxdisp, int
 
 int x, d, x_oth, d_oth;
 
-// int w = par.w;
-// short int* disp = par.disp;
-// int maxdisp = par.maxdisp;
-// int r = par.radius;
-
 //Init array
 int* unique = (int *)malloc(w*sizeof(int));
 for(x=r; x<w-r; x++)
@@ -136,16 +131,10 @@ int x,y,d,i,j;
 int dbest=0;
 int c_min, cost;
 
-//printf("%d %d\r", w, h);
-
 //FILTERS
-int *min_scores = (int *)malloc(w * sizeof(int ));
-
+//int *min_scores = (int *)malloc(w * sizeof(int ));
 int ratio_filter = 100-ufilter_thresh;
 int peak_filter = pfilter_thresh*n;
-
-//printf("RF: %d, PF: %d, ST: %d\r", ufilter_thresh, pfilter_thresh, smooth_thresh);
-
 
 int sad_second_min;
 int da, db, s1, s2, s3;
@@ -282,7 +271,7 @@ for(y=r+1; y<h-r; y++){
 		
 		//******* FILTERS ********
 		//( 2)needed for uniqueness constraint filter )
-		min_scores[x] = c_min;
+		//min_scores[x] = c_min;
 	
 		//3) uniqueness filter
 		sad_second_min = 32000;
@@ -317,8 +306,8 @@ for(y=r+1; y<h-r; y++){
 			disp[y*w + x] = (int)(0.5 + 16*v);
 		}
 	}
-	if(unique_c)
-		uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
+	//if(unique_c)
+	//	uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 }
 
 for(x=0; x<w; x++){
@@ -333,7 +322,7 @@ free(B);
 //free(diff);
 free(acc);
 
-free(min_scores);
+//free(min_scores);
 
 }
 
@@ -373,11 +362,11 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 		acc[d] = (int *)calloc(maxdisp, sizeof(int)); 
 	}
 
-	int sad_min, dbest=0, temp, cost;
+	int sad_min=0, dbest=0, temp, cost;
 	int sad_max = 255 * sqn;
 
 	//FILTERS
-	int *min_scores = (int *)malloc(w * sizeof(int ));
+	//int *min_scores = (int *)malloc(w * sizeof(int ));
 	
 	int sad_second_min;
 	int da, db;
@@ -439,15 +428,16 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			
 			rp += maxdisp;
 			rpp += maxdisp;
-		}			sad_second_min = sad_max;
-			for(d=0; d<maxdisp; d++){
-				if(d != dbest && acc[x][d]<sad_second_min){
-					sad_second_min = acc[x][d];
-				}
-			}	
-			if( sad_min*100  > ratio_filter*sad_second_min)
-				disp[y*w + x] = FILTERED;
-	
+		}	
+		sad_second_min = sad_max;
+		for(d=0; d<maxdisp; d++){
+			if(d != dbest && acc[x][d]<sad_second_min){
+				sad_second_min = acc[x][d];
+			}
+		}	
+		if( sad_min*100  > ratio_filter*sad_second_min)
+			disp[y*w + x] = FILTERED;
+
 		//only right term exists
 		for(x=maxdisp+r; x<maxdisp+n; x++){
 			sad_min = sad_max;
@@ -460,7 +450,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			}
 			disp[y*w + x] = dbest;
 			
-			min_scores[x] = sad_min;
+			//min_scores[x] = sad_min;
 			// 3) uniqueness filter
 			sad_second_min = 32000;
 			for(d=0; d<dbest-1; d++){
@@ -509,7 +499,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 			disp[y*w + x] = dbest;
 			
 			//******* FILTERS ********
-			min_scores[x] = sad_min;
+			//min_scores[x] = sad_min;
 			// 3) uniqueness filter
 			sad_second_min = 32000;
 			for(d=0; d<dbest-1; d++){
@@ -556,7 +546,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 				}
 			}
 			disp[y*w + x] = dbest;
-			min_scores[x] = sad_min;
+			//min_scores[x] = sad_min;
 			// 3) uniqueness filter
 			sad_second_min = 32000;
 			for(d=0; d<dbest-1; d++){
@@ -590,8 +580,8 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 				disp[y*w + x] = (int)(0.5 + 16*v);
 			}
 		}
-		if(unique_c == 1)
-			uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
+		//if(unique_c == 1)
+		//	uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 	}//y
 
 	for(d=0; d<w;d++){
@@ -601,7 +591,7 @@ void do_stereo_mw(uint8_t *lim, uint8_t *rim, // input feature images
 	free(V);
 	free(acc);
 
-	free(min_scores);
+	//free(min_scores);
 }
 
 //Scanline-optimization along horizontal directions
@@ -642,12 +632,12 @@ int dbest=0;
 int c_min, cost;
 
 //FILTERS
-int *min_scores = (int *)malloc(w * sizeof(int ));
+//int *min_scores = (int *)malloc(w * sizeof(int ));
 
-int ratio_filter = 100-ufilter_thresh;
+//int ratio_filter = 100-ufilter_thresh;
 int peak_filter = pfilter_thresh;
 
-int sad_second_min;
+//int sad_second_min;
 int da, db, s1, s2, s3;
 
 //data structured for Dynamic Programming
@@ -824,7 +814,7 @@ for(y=r+1; y<h-r; y++){
  		disp[y*w+x] = dbest;	
 		
 		//******* FILTERS ********
-		min_scores[x] = c_min;
+		//min_scores[x] = c_min;
 	
 		//3) uniqueness filter
 // 		c_min = S[x][dbest];
@@ -860,8 +850,8 @@ for(y=r+1; y<h-r; y++){
 			disp[y*w + x] = (int)(0.5 + 16*v);
 		}
 	}
-	if(unique_c == 1)
-		uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
+	//if(unique_c == 1)
+	//	uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 }
 
 for(x=0; x<w; x++){
@@ -875,7 +865,7 @@ free(S);
 free(B);
 free(acc);
 
-free(min_scores);
+//free(min_scores);
 
 }
 
@@ -947,7 +937,7 @@ int pi2 = pi1 - smooth_thresh*n;
 int x,y,d,i,j;
 
 //FILTERS
-int *min_scores = (int *)malloc(w * sizeof(int ));
+//int *min_scores = (int *)malloc(w * sizeof(int ));
 int ratio_filter = 100-ufilter_thresh;
 int peak_filter = pfilter_thresh;	
 int sad_second_min;
@@ -1128,7 +1118,7 @@ int temp;
 			disp[y*w+x] = dbest*16;
 
 			//( 2)needed for uniqueness constraint filter )
-			min_scores[x] = sad_min;
+			//min_scores[x] = sad_min;
 		
 			//3) uniqueness filter
 			sad_second_min = 32000;
@@ -1195,8 +1185,8 @@ int temp;
 			dbestph = compute_penalty(temp, acc, pi1, pi2, maxdisp);
 					
 		}//x to compute ACC
-		if(unique_c)
-			uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
+		//if(unique_c)
+		//	uniqueness_constraint_reducedrange(w, disp, maxdisp, r, min_scores, y);
 	}
 	//END 2nd PASS
 
@@ -1210,7 +1200,7 @@ int temp;
 	free(bdh);
 	free(bdu);
 
-	free(min_scores);
+	//free(min_scores);
 }
 
 

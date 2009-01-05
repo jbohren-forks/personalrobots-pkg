@@ -79,6 +79,7 @@
 	   array-lp-dist
 	   bsearch
 	   make-adjustable-array
+	   append-to-adjustable-array
 	   
 	   number-sequence
 	   hash-to-alist
@@ -95,6 +96,8 @@
 	   with-debug-indent
 	   debug-out
 	   set-debug-level
+	   reset-debug-level
+	   with-debug-levels
 	   *debug-topics*
 	   define-debug-topic
 
@@ -150,6 +153,8 @@
 	   dbind
 	   dsbind
 	   with-struct
+	   with-readers
+
 	   mvsetq
 	   unbind-slot
 	   
@@ -201,12 +206,16 @@
 	   srs
 	   rrs
 	   randomized-trials
+	   load-relative
 	   
 	   defaggregator
 	   compose
+	   nth-arg-fn
+
 	   fn
 	   arglist-fn
 	   is-standard-equality-test
+	   designated-function
 	   
 	   infty
 	   -infty

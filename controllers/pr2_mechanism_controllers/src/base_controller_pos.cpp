@@ -33,8 +33,10 @@
  *********************************************************************/
 
 #include <pr2_mechanism_controllers/base_controller_pos.h>
+#include <misc_utils/realtime_publisher.h>
 #include <control_toolbox/filters.h>
 #include <angles/angles.h>
+#include <std_msgs/String.h>
 #include "ros/node.h"
 
 #define NUM_TRANSFORMS 2
@@ -249,7 +251,7 @@ void BaseControllerPos::init(std::vector<JointControlParam> jcp, mechanism::Robo
    if(num_wheels_ > 0)
    {
       link = urdf_model_.getJointLink(base_wheels_[0].name_);
-      robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
+      robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
       if (wheel_geom)
          wheel_radius_ = wheel_geom->radius;
       else
@@ -466,6 +468,7 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    double dt_min_x(0), dt_min_y(0), dt_min_t(0), dt(0);
    double new_cmd_mag = sqrt(new_cmd.x*new_cmd.x+new_cmd.y*new_cmd.y+new_cmd.z*new_cmd.z);
    libTF::Vector new_vel_direction;
+   double dot_direction(0), delta_direction(0), delta_direction_m_pi(0);
 
    if(max_rate.x > EPS)
       dt_min_x = fabs(new_cmd.x-cmd_vel_.x)/max_rate.x;
@@ -490,9 +493,9 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
       new_vel_direction.x = new_cmd.x/new_cmd_mag;
       new_vel_direction.y = new_cmd.y/new_cmd_mag;
       new_vel_direction.z = new_cmd.z/new_cmd_mag;
-     double dot_direction = new_vel_direction.x * cmd_vel_direction_.x + new_vel_direction.y * cmd_vel_direction_.y +  new_vel_direction.z * cmd_vel_direction_.z;
-     double delta_direction = acos(dot_direction);
-     double delta_direction_m_pi = angles::normalize_angle(acos(dot_direction)+M_PI);
+      dot_direction = new_vel_direction.x * cmd_vel_direction_.x + new_vel_direction.y * cmd_vel_direction_.y +  new_vel_direction.z * cmd_vel_direction_.z;
+      delta_direction = acos(filters::clamp(dot_direction,-1.0,1.0));
+      delta_direction_m_pi = angles::normalize_angle(delta_direction+M_PI);
 
      if(fabs(delta_direction_m_pi) <= fabs(delta_direction))
      {
@@ -518,6 +521,14 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
 
    cmd_vel_trajectory_->setTrajectory(cmd_vel_points_);
 
+/*  static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
+  if (p.trylock()) {
+    char buf[1000];       
+    sprintf(buf, "Time = %15.6lf dirn: %1.6f %1.6f %1.6f mag: %1.6f\n Angles: %f %f \n Current dirn: %1.6f %1.6f %1.6f mag: %1.6f\n New cmd: %1.6f %1.6f %1.6f\n Old cmd: %1.6f %1.6f %1.6f\n ",dt,new_vel_direction.x,new_vel_direction.y,new_vel_direction.z,new_cmd_mag,delta_direction,delta_direction_m_pi,cmd_vel_direction_.x,cmd_vel_direction_.y,cmd_vel_direction_.z,cmd_vel_magnitude_,new_cmd.x, new_cmd.y,new_cmd.z,cmd_vel_.x,cmd_vel_.y,cmd_vel_.z);
+    p.msg_.data = std::string(buf);
+    p.unlockAndPublish();
+  }
+*/
 //   ROS_INFO("New command: %f %f %f",new_cmd.x,new_cmd.y,new_cmd.z);
 //   ROS_INFO("Max rate   : %f %f %f",max_rate.x,max_rate.y,max_rate.z);
 //   ROS_INFO("New command issued: %f",dt);
@@ -589,7 +600,7 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
     error_steer_dt = angles::shortest_angular_distance(steer_angle_desired_dt, steer_angle_actual_[i]);
     error_steer_m_pi_dt = angles::shortest_angular_distance(steer_angle_desired_m_pi_dt, steer_angle_actual_[i]);
 
-    /*    if(fabs(error_steer_m_pi) < fabs(error_steer))
+/*    if(fabs(error_steer_m_pi) < fabs(error_steer))
     {
       error_steer = error_steer_m_pi;
       steer_angle_desired = steer_angle_desired_m_pi;
@@ -600,7 +611,7 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
       error_steer_dt = error_steer_m_pi_dt;
       steer_angle_desired_dt = steer_angle_desired_m_pi_dt;
     }
-    */
+*/  
     steer_position_desired_[i] = steer_angle_desired;
     steer_velocity_desired_[i] = (steer_angle_desired_dt - steer_angle_desired)/dT - kp_speed_*error_steer;
     //    ROS_INFO("Caster position desired: %d %f ",i,steer_position_desired_[i]);
@@ -699,7 +710,13 @@ void BaseControllerPos::computeOdometry(double time)
 {
   double dt = time-last_time_;
 
+  try{
   computeBaseVelocity();
+  }
+  catch(NEWMAT::ConvergenceException &e)
+  {
+    return;
+  }
 
   libTF::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
 

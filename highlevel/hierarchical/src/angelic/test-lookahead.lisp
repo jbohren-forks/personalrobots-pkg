@@ -375,7 +375,7 @@
   '((2 3) (1 3) (0 3) (0 2))
   
   (to-boolean (and (member? '(on c baz) cons3) (member? '(clear a) cons3)
-		   p(member? '(not (on c a)) cons3) (member? '(not (clear baz)) cons3))) 
+		   (member? '(not (on c a)) cons3) (member? '(not (clear baz)) cons3))) 
   t
   
   (dnf-consistent f5 '(gripper-pos 0 3)) nil

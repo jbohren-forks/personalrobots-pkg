@@ -5,6 +5,8 @@
   <author>Jindong (JD) Chen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="numpy"/>
+  <depend package="matplotlib"/>
   <depend package="roscpp"/>
   <depend package="rostest"/>
   <depend package="rospy"/>
@@ -27,10 +29,6 @@
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk-dev"/>
 </package>

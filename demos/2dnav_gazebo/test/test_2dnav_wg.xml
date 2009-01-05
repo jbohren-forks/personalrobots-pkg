@@ -14,8 +14,8 @@
     <!--
     <node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" />
     <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
-    -->
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
+    -->
 
     <!--
     <param name="/trex/ping_frequency" value="1"/>
@@ -28,12 +28,12 @@
     -->
 
     <!-- test -->
-    <test test-name="2dnav_gazebo_test_2dnav_wg_1"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x  40.8 -y 42.5 -t 3.083 -nav_tol 0.60 -odom_tol 0.05" />
-    <test test-name="2dnav_gazebo_test_2dnav_wg_2"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x  36.0 -y 34.9 -t 2.554 -nav_tol 0.70 -odom_tol 0.03" />
-    <test test-name="2dnav_gazebo_test_2dnav_wg_3"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x  31.3 -y 45.8 -t 0.000 -nav_tol 0.60 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_wg_4"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x  22.2 -y 20.0 -t 0.000 -nav_tol 0.60 -odom_tol 0.01" />
-    <test test-name="2dnav_gazebo_test_2dnav_wg_5"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x   7.5 -y 45.0 -t 1.571 -nav_tol 0.65 -odom_tol 0.05" />
-    <test test-name="2dnav_gazebo_test_2dnav_wg_6"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args="-x   9.4 -y 11.2 -t 0.000 -nav_tol 0.65 -odom_tol 0.05" />
+    <test test-name="2dnav_gazebo_test_2dnav_wg_1"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x  40.8 -y 42.5 -t 3.083 -nav_tol 0.70 -odom_tol 0.05 -timeout 350 " time-limit="360"/>
     <!--
+    <test test-name="2dnav_gazebo_test_2dnav_wg_2"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x  36.0 -y 34.9 -t 2.554 -nav_tol 0.70 -odom_tol 0.03 -timeout 350 " time-limit="360"/>
+    <test test-name="2dnav_gazebo_test_2dnav_wg_3"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x  31.3 -y 45.8 -t 0.000 -nav_tol 0.70 -odom_tol 0.01 -timeout 350 " time-limit="360"/>
+    <test test-name="2dnav_gazebo_test_2dnav_wg_4"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x  22.2 -y 20.0 -t 0.000 -nav_tol 0.70 -odom_tol 0.01 -timeout 350 " time-limit="360"/>
+    <test test-name="2dnav_gazebo_test_2dnav_wg_5"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x   7.5 -y 45.0 -t 1.571 -nav_tol 0.70 -odom_tol 0.05 -timeout 350 " time-limit="360"/>
+    <test test-name="2dnav_gazebo_test_2dnav_wg_6"     pkg="2dnav_gazebo" type="test_2dnav_translations.py" args=" -x   9.4 -y 11.2 -t 0.000 -nav_tol 0.70 -odom_tol 0.05 -timeout 350 " time-limit="360"/>
     -->
 </launch>

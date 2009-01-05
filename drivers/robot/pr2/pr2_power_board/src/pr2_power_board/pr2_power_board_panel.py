@@ -54,7 +54,7 @@ class PowerBoardPanel(wx.Panel):
         
         self._mutex = threading.Lock()
         
-        xrc_path = rostools.packspec.get_pkg_dir(PKG) + '/pr2_power_board.xrc'
+        xrc_path = rostools.packspec.get_pkg_dir(PKG) + '/ui/pr2_power_board_panel.xrc'
         
         self._xrc = xrc.XmlResource(xrc_path)
         self._real_panel = self._xrc.LoadPanel(self, 'PowerBoardPanel')
@@ -87,7 +87,7 @@ class PowerBoardPanel(wx.Panel):
 
         self.voltages = [0,0,0]
         self.breaker_state = ["", "", ""]
-        self.estop_wireless_status = "uninitialized"
+        self.estop_wireless_status = "uninitialized, no power_node sending data"
         self.estop_button_status = "uninitialized"
 
         self.breaker0_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl1')

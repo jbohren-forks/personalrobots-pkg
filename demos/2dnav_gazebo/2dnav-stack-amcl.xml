@@ -36,16 +36,21 @@
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     -->
 
-    <!-- starting ransac node -->
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler" output="screen"  name="assembler">
-      <remap from="scan" to="tilt_scan"/>
+    <!-- Run this node if you want to aggregate laser_scans into a point cloud -->
+    <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
+      <remap from="scan_in" to="tilt_scan"/>
+      <param name="tf_cache_time_secs" type="double" value="10.0" />
+      <param name="max_scans" type="int" value="400" />
       <param name="ignore_laser_skew" type="bool" value="true" />
-    </node>
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
-      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-      <remap from="full_cloud" to="tilt_scan_cloud" />
       <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
+    <!-- Run this node if you want clouds automatically published during laser shutter messages -->
+    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+      <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+      <remap from="full_cloud" to="snapshot_cloud" />
+    </node>
+    <!-- starting ransac node -->
     <param name="ransac_ground_plane_extraction/listen_topic" value="tilt_scan_cloud"/>
     <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
     <param name="ransac_ground_plane_extraction/publish_obstacle_topic" value="obstacle_cloud"/>
@@ -78,7 +83,8 @@
     <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
     <param name="/costmap_2d/no_information_value" value="255"/>
-    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/z_threshold_max" value="2.0"/>
+    <param name="/costmap_2d/z_threshold_min" value="0.06"/>
     <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
     <param name="/costmap_2d/inflation_radius" value="0.55"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>

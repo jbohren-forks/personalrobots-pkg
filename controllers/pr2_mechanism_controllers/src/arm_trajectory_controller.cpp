@@ -35,11 +35,20 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
 #include "pr2_mechanism_controllers/arm_trajectory_controller.h"
+#include "misc_utils/realtime_publisher.h"
+#include "std_msgs/String.h"
 
 using namespace controller;
 using namespace std;
 
 ROS_REGISTER_CONTROLLER(ArmTrajectoryController);
+
+static inline double now()
+{
+  struct timespec n;
+  clock_gettime(CLOCK_MONOTONIC, &n);
+  return double(n.tv_nsec) / 1.0e9 + n.tv_sec;
+}
 
 ArmTrajectoryController::ArmTrajectoryController() :
   refresh_rt_vals_(false)
@@ -77,7 +86,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
     joint = (robot->getJointState(jpc->getJointName()))->joint_;
     if(joint)
-      joint_velocity_limits.push_back(joint->velocity_limit_/2.0);
+      joint_velocity_limits.push_back(joint->velocity_limit_/1.0);
 
     elt = elt->NextSiblingElement("controller");
   }
@@ -171,6 +180,8 @@ int ArmTrajectoryController::getJointControllerPosByName(std::string name)
 
 void ArmTrajectoryController::update(void)
 {
+  double start_time = now();
+
   double sample_time(0.0);
   if(refresh_rt_vals_)
   {
@@ -196,6 +207,16 @@ void ArmTrajectoryController::update(void)
     joint_position_controllers_[i]->setCommand(joint_cmd_rt_[i]);
 
   updateJointControllers();
+
+  double end_time = now();
+
+  static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
+  if (p.trylock()) {
+    char buf[1000];       
+    sprintf(buf, "Time = %15.6lf\n", end_time - start_time);
+    p.msg_.data = std::string(buf);
+    p.unlockAndPublish();
+  }
 }
 
 void ArmTrajectoryController::updateJointControllers(void)

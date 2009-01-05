@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; misc/exp-utils.lisp
-;; utilities for running experiments
+;; utilities for running experiments and test scripts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package utils)
@@ -66,3 +66,11 @@ Run BODY N times and return 1) the results of each run in a vector 2) the sample
   (apply #'map 'vector #'std avg arg1 args))
      
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; loading
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun load-relative (pathname)
+  "load-relative PATHNAME.  For example, if /foo/baz.lisp contains (load-relative qux/oof.lisp), this will result in loading /foo/qux/oof.lisp"
+  (load (merge-pathnames pathname *load-pathname*)))

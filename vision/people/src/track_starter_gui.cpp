@@ -5,7 +5,7 @@
 *
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Caroline Pantofaru
+*  Copyright (c) 2008, Willow Garage, Inc
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,8 @@ using namespace std;
 void on_mouse(int event, int x, int y, int flags, void *params){
   
   switch(event){
+  case CV_EVENT_MOUSEMOVE:
+    break;
   case CV_EVENT_LBUTTONUP:
     // Add a clicked-on point to the list of points, to be published by the image callback on the next image.
     g_selection_mutex.lock();
@@ -89,7 +91,10 @@ void on_mouse(int event, int x, int y, int flags, void *params){
   }
 }
 
-
+/**
+ * This node provides a GUI for starting tracker tracks. Press P to pause the playback and click on a point in the image. 
+ * The 3D coords of the point will be published. 
+ */
 class TrackStarterGUI: public ros::node
 {
 public:
@@ -123,7 +128,7 @@ public:
     cv_image_(NULL),
     cv_disp_image_(NULL),
     cv_disp_image_out_(NULL),
-    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(10), &TrackStarterGUI::image_cb_timeout)
+    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(0.05), &TrackStarterGUI::image_cb_timeout)
   {
     
 
@@ -134,14 +139,15 @@ public:
     uvd_ = cvCreateMat(1,3,CV_32FC1);
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
-    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
-    left_list.push_back(std::string("dcam/left/image_rect"));    
+    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
+    //left_list.push_back(std::string("stereodcam/left/image_rect"));    
     sync_.subscribe(left_list,limage_,1);
-    sync_.subscribe("dcam/disparity",dimage_,1);
-    sync_.subscribe("dcam/stereo_info", stinfo_,1);
-    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereodcam/disparity",dimage_,1);
+    sync_.subscribe("stereodcam/stereo_info", stinfo_,1);
+    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.ready();
     //subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
@@ -182,7 +188,7 @@ public:
     bool do_calib = false;
     if (limage_.encoding != "mono") {
       // If this is a color image, set the calibration and convert it.
-      if (calib_color_ && lcolor_cal_.getFromParam("dcam/left/image_rect_color")) {
+      if (calib_color_ && lcolor_cal_.getFromParam("stereodcam/left/image_rect_color")) {
 	do_calib = true;      
       }
       // Convert the images to OpenCV format.
@@ -219,6 +225,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
+    //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
 
 
@@ -271,10 +278,20 @@ public:
 	  pm.pos.x = cvmGet(xyz_,0,2);
 	  pm.pos.y = -1.0*cvmGet(xyz_,0,0);
 	  pm.pos.z = -1.0*cvmGet(xyz_,0,1);
+	  printf("Publishing %f %f %f\n", cvmGet(xyz_,0,0),cvmGet(xyz_,0,1),cvmGet(xyz_,0,2));
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
-	  publish("person_measurement",pm);
+	  pm.covariance[0] = 0.09;
+	  pm.covariance[1] = 0.0;
+	  pm.covariance[2] = 0.0;
+	  pm.covariance[3] = 0.0;
+	  pm.covariance[4] = 0.09;
+	  pm.covariance[5] = 0.0;
+	  pm.covariance[6] = 0.0;
+	  pm.covariance[7] = 0.0;
+	  pm.covariance[8] = 0.09;
+	  publish("people_tracker_measurements",pm);
 	  gxys[i].published = true;
 	}	
       }

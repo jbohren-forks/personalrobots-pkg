@@ -38,7 +38,7 @@
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <vector>
 #include <string>
 
@@ -117,7 +117,7 @@ namespace collision_space
 
     protected:
         
-	ros::thread::mutex m_lock;
+	boost::mutex m_lock;
 	bool               m_selfCollision;
 	
 	/** List of loaded robot models */	

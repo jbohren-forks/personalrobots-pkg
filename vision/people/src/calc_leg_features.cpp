@@ -47,7 +47,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   // Number of points
   int num_points = cluster->size();
-  features.push_back(num_points);
+  //  features.push_back(num_points);
 
   // Compute mean and median points for future use
   float x_mean = 0.0;
@@ -82,8 +82,8 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
        i++)
 
   {
-    sum_std_diff += pow( (*i)->x - x_mean, 2.0f) + pow((*i)->y - y_mean, 2.0f);
-    sum_med_diff += sqrt(pow( (*i)->x - x_median, 2.0f) + pow((*i)->y - y_median, 2.0f));
+    sum_std_diff += pow( (*i)->x - x_mean, 2) + pow((*i)->y - y_mean, 2);
+    sum_med_diff += sqrt(pow( (*i)->x - x_median, 2) + pow((*i)->y - y_median, 2));
   }
 
   float std = sqrt( 1.0/(num_points - 1.0) * sum_std_diff);
@@ -110,7 +110,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     Sample* prev = Sample::Extract(prev_ind, scan);
     if (prev)
     {
-      prev_jump = sqrt( pow( (*first)->x - prev->x, 2.0f) + pow((*first)->y - prev->y, 2.0f));
+      prev_jump = sqrt( pow( (*first)->x - prev->x, 2) + pow((*first)->y - prev->y, 2));
       delete prev;
     }
 
@@ -121,7 +121,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     Sample* next = Sample::Extract(next_ind, scan);
     if (next)
     {
-      next_jump = sqrt( pow( (*last)->x - next->x, 2.0f) + pow((*last)->y - next->y, 2.0f));
+      next_jump = sqrt( pow( (*last)->x - next->x, 2) + pow((*last)->y - next->y, 2));
       delete next;
     }
   }
@@ -130,7 +130,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   features.push_back(next_jump);
 
   // Compute Width
-  float width = sqrt( pow( (*first)->x - (*last)->x, 2.0f) + pow((*first)->y - (*last)->y, 2.0f));
+  float width = sqrt( pow( (*first)->x - (*last)->x, 2) + pow((*first)->y - (*last)->y, 2));
   features.push_back(width);
 
   // Compute Linearity
@@ -159,7 +159,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   float linearity = 0.0;
   for (int i = 0; i < num_points; i++)
   {
-    linearity += pow(cvmGet(rot_points, i, 1), 2.0);
+    linearity += pow(cvmGet(rot_points, i, 1), 2);
   }
 
   cvReleaseMat(&points);
@@ -186,7 +186,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
       cvmSet(A, j, 1, -2.0*y);
       cvmSet(A, j, 2, 1);
 
-      cvmSet(B, j, 0, -pow(x,2.0f)-pow(y,2.0f));
+      cvmSet(B, j, 0, -pow(x,2)-pow(y,2));
       j++;
     }
   }
@@ -195,14 +195,14 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   float xc = cvmGet(sol, 0, 0);
   float yc = cvmGet(sol, 1, 0);
-  float rc = sqrt(pow(xc,2.0f) + pow(yc,2.0f) - cvmGet(sol, 2, 0));
+  float rc = sqrt(pow(xc,2) + pow(yc,2) - cvmGet(sol, 2, 0));
 
   float circularity = 0.0;
   for (SampleSet::iterator i = cluster->begin();
        i != cluster->end();
        i++)
   {
-    circularity += pow( rc - sqrt( pow(xc - (*i)->x, 2.0f) + pow( yc - (*i)->y, 2.0f) ), 2.0f);
+    circularity += pow( rc - sqrt( pow(xc - (*i)->x, 2) + pow( yc - (*i)->y, 2) ), 2);
   }
 
   features.push_back(circularity);
@@ -250,15 +250,13 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     sum_boundary_reg_sq += L_mr*L_mr;
     last_boundary_seg = L_ml;
 
-    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2.0f);
-    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2.0f);
+    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2);
+    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2);
 
     float th = atan2(B,A);
 
     if (th < 0)
       th += 2*M_PI;
-
-    th -= M_PI;
 
     ang_diff += th / num_points;
 
@@ -278,13 +276,58 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   boundary_length += last_boundary_seg;
   sum_boundary_reg_sq += last_boundary_seg*last_boundary_seg;
 
-  boundary_regularity = sqrt( (sum_boundary_reg_sq - pow(boundary_length,2.0f)/num_points)/(num_points - 1) );
+  boundary_regularity = sqrt( (sum_boundary_reg_sq - pow(boundary_length,2)/num_points)/(num_points - 1) );
 
   features.push_back(boundary_length);
   features.push_back(ang_diff);
   features.push_back(mean_curvature);
 
   features.push_back(boundary_regularity);
+
+
+  // Mean angular difference
+  first = cluster->begin();
+  mid = cluster->begin();
+  mid++;
+  last = cluster->end();
+  last--;
+  
+  double sum_iav = 0.0;
+  double sum_iav_sq  = 0.0;
+
+  while (mid != last)
+  {
+    float mlx = (*first)->x - (*mid)->x;
+    float mly = (*first)->y - (*mid)->y;
+    float L_ml = sqrt(mlx*mlx + mly*mly);
+
+    float mrx = (*last)->x - (*mid)->x;
+    float mry = (*last)->y - (*mid)->y;
+    float L_mr = sqrt(mrx*mrx + mry*mry);
+
+    float lrx = (*first)->x - (*last)->x;
+    float lry = (*first)->y - (*last)->y;
+    float L_lr = sqrt(lrx*lrx + lry*lry);
+      
+    float A = (mlx*mrx + mly*mry) / pow(L_mr, 2);
+    float B = (mlx*mry - mly*mrx) / pow(L_mr, 2);
+
+    float th = atan2(B,A);
+
+    if (th < 0)
+      th += 2*M_PI;
+
+    sum_iav += th;
+    sum_iav_sq += th*th;
+
+    mid++;
+  }
+
+  float iav = sum_iav / num_points;
+  float std_iav = sqrt( (sum_iav_sq - pow(sum_iav,2)/num_points)/(num_points - 1) );
+
+  features.push_back(iav);
+  features.push_back(std_iav);
 
   return features;
 }

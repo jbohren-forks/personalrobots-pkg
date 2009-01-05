@@ -234,11 +234,12 @@ ScanProcessor::splitConnected(float thresh)
     {
       // Take the first element
       SampleSet::iterator s_first = (*c_iter)->begin();
-      (*c_iter)->erase(s_first);
 
       // Start a new queue
       list<Sample*> sample_queue;
       sample_queue.push_back(*s_first);
+
+      (*c_iter)->erase(s_first);
 
       // Grow until we get to the end of the queue
       list<Sample*>::iterator s_q = sample_queue.begin();

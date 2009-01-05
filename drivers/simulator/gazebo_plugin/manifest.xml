@@ -16,7 +16,7 @@
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
   <depend package="robot_msgs" />
-  <depend package="rosthread"/>
+  <depend package="boost"/>
   <depend package="stl_utils" />
   <depend package="angles" />
   <depend package="gazebo_robot_description"/>
@@ -30,4 +30,6 @@
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>

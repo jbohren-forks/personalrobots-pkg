@@ -16,17 +16,20 @@
   (declare (ignore args))
   (set-if-unbound 'hset-desc-schemas p (complete-desc-schemas p)))
 
+(defun lookup-in-ncstrips-schemas (a schemas)
+  (instantiate (mapping:evaluate schemas (car a)) (cdr a)))
+
 (defmethod sound-desc ((p <prop-abstract-planning-problem>) a)
   (ecase (action-type a (hierarchy p))
     (primitive (primitive-action-description (planning-problem p) a))
     (high-level (let ((a (if (consp a) a (cons a nil))))
-		  (instantiate (mapping:evaluate (sound-desc-schemas p) (car a)) (cdr a))))))
+		  (lookup-in-ncstrips-schemas a (sound-desc-schemas p))))))
 
 (defmethod complete-desc ((p <prop-abstract-planning-problem>) a)
   (ecase (action-type a (hierarchy p))
     (primitive (primitive-action-description (planning-problem p) a))
     (high-level (let ((a (if (consp a) a (cons a nil))))
-		  (instantiate (mapping:evaluate (complete-desc-schemas p) (car a)) (cdr a))))))
+		  (lookup-in-ncstrips-schemas a (complete-desc-schemas p))))))
 
 (defun hset-desc  (p a)
   (let ((a (if (consp a) a (cons a nil))))
