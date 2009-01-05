@@ -146,7 +146,7 @@ MS_3DMGX2::IMU::close_port()
   if (fd != -1)
     if (close(fd) != 0)
       IMU_EXCEPT(MS_3DMGX2::exception, "Unable to close serial port; [%s]", strerror(errno));
-
+  fd = -1;
 }
 
 
