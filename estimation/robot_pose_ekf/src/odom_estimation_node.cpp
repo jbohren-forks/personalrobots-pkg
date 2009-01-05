@@ -43,6 +43,8 @@ using namespace tf;
 
 
 static const double EPS = 1e-5;
+static const string publish_name = "odom_combined";
+
 
 //#define __EKF_DEBUG_FILE__
 
@@ -77,7 +79,7 @@ namespace estimation
     if (vo_used_)   ROS_INFO((node_name_+"  VO sensor can be used").c_str());
     else            ROS_INFO((node_name_+"  VO sensor will NOT be used").c_str());
     // advertise our estimation
-    advertise<robot_msgs::PoseWithCovariance>(node_name_, 10);
+    advertise<robot_msgs::PoseWithCovariance>(node_name_+"/"+publish_name, 10);
 
     // initialize
     filter_stamp_ = Time::now();
@@ -316,14 +318,14 @@ namespace estimation
 
 	    // output most recent estimate and relative covariance
 	    my_filter_.getEstimate(output_);
-	    publish(node_name_, output_);
+	    publish(node_name_+"/"+publish_name, output_);
 
 	    // broadcast most recent estimate to TransformArray
 	    Stamped<Transform> tmp;
 	    my_filter_.getEstimate(ros::Time(), tmp);
 	    if(!vo_active_)
 	      tmp.getOrigin().setZ(0.0);
-	    odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
+	    odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, publish_name, "base_footprint"));
 
 #ifdef __EKF_DEBUG_FILE__
 	    // write to file
@@ -368,7 +370,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   // get node name from arguments
-  string node_name("odom_estimation");
+  string node_name("robot_pose_ekf");
   if (argc > 2){
     ROS_INFO((node_name+"  Too many arguments for robot_pose_ekf.").c_str());
     assert(0);
