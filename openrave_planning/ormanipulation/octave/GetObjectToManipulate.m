@@ -94,5 +94,13 @@ for i = 1:size(dests,2)
     curobj.dests(:,i) = [Rnew(:);pos];
 end
 
+%% scroll through the destinations
+% Tbody = orBodyGetTransform(curobj.id);
+% for i = 1:size(curobj.dests,2)
+%     orBodySetTransform(curobj.id,curobj.dests(:,i));
+%     pause(0.02);
+% end
+% orBodySetTransform(curobj.id,Tbody);
+
 %% for now
 outmemory.ignorelist(end+1) = curobj.id;

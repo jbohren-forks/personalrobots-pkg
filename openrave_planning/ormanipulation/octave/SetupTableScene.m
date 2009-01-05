@@ -94,6 +94,7 @@ robot.activemanip = 2; % update
 scenedata.TargetObjPattern = TargetObjPattern;
 scenedata.SwitchModelPatterns = SwitchModelPatterns;
 scenedata.GetDestsFn = @() GetDests('^willow_table$');
+scenedata.SetupCloneFn = @() SetupClone(robot.name);
 
 updir = [0;0;1];
 
@@ -156,8 +157,8 @@ Ny = 5;
 X = [];
 Y = [];
 for x = 0:(Nx-1)
-    X = [X 0.5*ones(1,Ny)/(Nx+1) + (x+0.5)/(Nx+1)];
-    Y = [Y 0.5*ones(1,Ny)/(Ny+1) + ([0:(Ny-1)]+0.5)/(Ny+1)];
+    X = [X 0.5*rand(1,Ny)/(Nx+1) + (x+1)/(Nx+1)];
+    Y = [Y 0.5*rand(1,Ny)/(Ny+1) + ([0:(Ny-1)]+0.5)/(Ny+1)];
 end
 
 offset = [ab(1,1)-ab(1,2);ab(2,1); ab(3,1)+ab(3,2)];
@@ -177,3 +178,17 @@ surfaceplane = [Ttable(1:3,3);-Ttable(1:3,3)'*trans(1:3,1)]; % along z axis
 
 orEnvClose();
 orEnvPlot(dests(10:12,:)','size',10);
+
+function SetupClone(robotname)
+
+global probs
+
+probs.task = orEnvCreateProblem('TaskManipulation',robotname);
+if( isempty(probs.task) )
+    error('failed to create TaskManipulation problem');
+end
+
+probs.manip = orEnvCreateProblem('BaseManipulation',robotname);
+if( isempty(probs.manip) )
+    error('failed to create BaseManipulation problem');
+end

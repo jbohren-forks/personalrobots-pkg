@@ -82,7 +82,8 @@ while(curgrasp < size(grasps,1))
     
     offset = 0.02;
     
-    cmd = ['testallgrasps combinepreshapetraj execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
+    cmd = ['testallgrasps execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
+           ' seedik 1 seedgrasps 10 seeddests 8 randomdests 1 randomgrasps 1 ' ...
            ' target ' curobj.info.name ' robothand ' handrobot.name ...
            ' robothandjoints ' sprintf('%d ', length(handjoints), handjoints) ...
            ' handjoints ' sprintf('%d ', length(handrobot.handjoints), handrobot.handjoints) ...
@@ -124,7 +125,7 @@ while(curgrasp < size(grasps,1))
     end
 
     % start the trajectory
-    success = StartTrajectory(robotid,probs.manip,trajdata);
+    success = StartTrajectory(robotid,trajdata);
     if( ~success )
         warning('failed to start initial traj');
         return;
@@ -136,7 +137,7 @@ while(curgrasp < size(grasps,1))
     if( ~success )
         error('failed to movehandstraight');
     end
-    success = StartTrajectory(robotid,probs.manip,trajdata);
+    success = StartTrajectory(robotid,trajdata);
     if( ~success )
         warning('failed to move hand straight');
         return;
@@ -178,7 +179,7 @@ while(curgrasp < size(grasps,1))
         if( ~success )
             error('failed to movehandstraight');
         end
-        success = StartTrajectory(robotid,probs.manip,trajdata);
+        success = StartTrajectory(robotid,trajdata);
         if( ~success )
             warning('failed to close fingers');
             return;
@@ -199,7 +200,7 @@ while(curgrasp < size(grasps,1))
     %% not going to work well
     %ExecuteOnRealSession(@() orProblemSendCommand(['grabbody name ' curobj.info.name], probs.manip));
 
-    success = StartTrajectory(robotid,probs.manip,trajdata);
+    success = StartTrajectory(robotid,trajdata);
     if( ~success )
         warning('failed to move hand straight');
         return;
@@ -224,9 +225,9 @@ while(curgrasp < size(grasps,1))
     if( squeezesuccess > 0 )
         display('planning to destination');
         
-        [trajdata,success] = orProblemSendCommand(['MoveToHandPosition execute 0 outputtraj matrices ' sprintf('%d ', size(goaldests,2)) ' sprintf('%f ', goaldests)], probs.manip);
+        [trajdata,success] = orProblemSendCommand(['MoveToHandPosition maxiter 1000 maxtries 1 seedik 4 execute 0 outputtraj matrices ' sprintf('%d ', size(destgoals,2)) sprintf('%f ', destgoals)], probs.manip);
         if( success )
-            success = StartTrajectory(robotid,probs.manip,trajdata);
+            success = StartTrajectory(robotid,trajdata);
             if( ~success )
                 warning('failed to start trajectory');
                 return;
@@ -277,7 +278,7 @@ while(curgrasp < size(grasps,1))
     if( ~success )
         error('failed to movehandstraight');
     end
-    success = StartTrajectory(robotid,probs.manip,trajdata);
+    success = StartTrajectory(robotid,trajdata);
     if( ~success )
         warning('failed to move hand straight');
         return;
@@ -297,7 +298,7 @@ while(curgrasp < size(grasps,1))
         error('failed to release fingers');
     end
 
-    success = StartTrajectory(robotid,probs.manip,trajdata,4);
+    success = StartTrajectory(robotid,trajdata,4);
     if( ~success )
         warning('trajectory failed to release fingers');
         return;

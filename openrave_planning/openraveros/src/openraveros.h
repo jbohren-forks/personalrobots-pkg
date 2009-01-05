@@ -148,7 +148,7 @@ using namespace openraveros;
 class SetViewerFunc
 {
 public:
-    virtual bool SetViewer(EnvironmentBase* penv, const string& viewername) = 0;
+    virtual bool SetViewer(EnvironmentBase* penv, const string& viewername, const string& title) = 0;
 };
 
 #endif

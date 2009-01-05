@@ -160,8 +160,8 @@ class ROSServer : public RaveServerBase
     };
 
 public:
-        ROSServer(SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
-         : RaveServerBase(penv), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
+        ROSServer(int nSessionId, SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
+            : RaveServerBase(penv), _nSessionId(nSessionId), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
         _psetviewer.reset(psetviewer);
         _bThreadDestroyed = false;
         _bCloseClient = false;
@@ -295,8 +295,11 @@ public:
         if( viewer.size() == 0 )
             return true;
 
-        if( !!_psetviewer )
-            return _psetviewer->SetViewer(GetEnv(),viewer);
+        if( !!_psetviewer ) {
+            stringstream ss;
+            ss << "OpenRAVE - session " << _nSessionId;
+            return _psetviewer->SetViewer(GetEnv(),viewer,ss.str());
+        }
 
         _threadviewer.join(); // wait for the viewer
         
@@ -1551,6 +1554,7 @@ private:
     map<int, boost::shared_ptr<PlannerBase> > _mapplanners;
     map<int, boost::shared_ptr<ProblemInstance> > _mapproblems;
     map<int, boost::shared_ptr<FIGURE> > _mapFigureIds;
+    int _nSessionId;
     int _nNextFigureId, _nNextPlannerId, _nNextProblemId;
     float _fSimulationTimestep;
     Vector _vgravity;

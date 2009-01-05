@@ -55,8 +55,11 @@ while(1)
         continue;
     end
         
-    %% if found, create a clone
-    %setclonesession(openraveros_makeclone(openraveros_openrave_session().CloneBodies()));
+    %% if not simulation, create a clone
+    if( ~simulation )
+        setclonesession(openraveros_makeclone(openraveros_openrave_session().CloneBodies()));
+        scenedata.SetupCloneFn();
+    end
     
     %% try to find the new object
     curobj.info = orEnvGetBodies(curobj.id);

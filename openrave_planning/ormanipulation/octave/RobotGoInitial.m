@@ -21,7 +21,7 @@ if( isempty(trajdata) )
     return;
 end
 
-success = StartTrajectory(robotid, probs.manip, trajdata)
+success = StartTrajectory(robotid, trajdata)
 if( ~success )
     return;
 end

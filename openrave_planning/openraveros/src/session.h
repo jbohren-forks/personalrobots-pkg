@@ -60,8 +60,8 @@ class SessionServer
     {
     public:
         SessionSetViewerFunc(SessionServer* pserv) : _pserv(pserv) {}
-        virtual bool SetViewer(EnvironmentBase* penv, const string& viewername) {
-            return _pserv->SetViewer(penv,viewername);
+        virtual bool SetViewer(EnvironmentBase* penv, const string& viewername, const string& title) {
+            return _pserv->SetViewer(penv,viewername,title);
         }
 
     private:
@@ -228,7 +228,7 @@ public:
             _penvViewer->AttachViewer(NULL);
     }
 
-    bool SetViewer(EnvironmentBase* penv, const string& viewer)
+    bool SetViewer(EnvironmentBase* penv, const string& viewer, const string& title)
     {
         boost::mutex::scoped_lock lock(_mutexViewer);
         
@@ -241,6 +241,7 @@ public:
          
         ROS_ASSERT(!_penvViewer);
 
+        _strviewertitle = title;
         _strviewer = viewer;
         if( viewer.size() == 0 || !penv )
             return false;
@@ -263,7 +264,7 @@ private:
     boost::mutex _mutexViewer;
     boost::condition _conditionViewer;
     EnvironmentBase* _penvViewer;
-    string _strviewer;
+    string _strviewer, _strviewertitle;
 
     bool _ok;
 
@@ -292,6 +293,9 @@ private:
                 if( !_pviewer )
                     continue;
             }
+
+            if( _strviewertitle.size() > 0 )
+                _pviewer->ViewerSetTitle(_strviewertitle.c_str());
 
             _pviewer->main(); // spin until quitfrommainloop is called
             
@@ -364,7 +368,7 @@ private:
             state._penv.reset(_pParentEnvironment->CloneSelf(0));
         }
 
-        state._pserver.reset(new ROSServer(new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
+        state._pserver.reset(new ROSServer(id, new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
         state._penv->AttachServer(state._pserver.get());
         _mapsessions[id] = state;
         res.sessionid = id;

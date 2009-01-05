@@ -1,8 +1,9 @@
-%% success = StartTrajectory(robotid, probid, trajdata)
+%% success = StartTrajectory(robotid, trajdata)
 %%
 %% Starts a trajectory on the real robot and waits for it, in the end sets the new robot values
 %% in the cloned (current) world.
-function success = StartTrajectory(robotid, probid, trajdata,timelimit)
+function success = StartTrajectory(robotid,trajdata,timelimit)
+global probs
 
 if( isempty(trajdata) )
     success = 1;
@@ -14,8 +15,15 @@ if( ~exist('timelimit','var') )
 end
 
 prevsession = openraveros_getglobalsession();
+prevprobs = probs;
 setrealsession();
-orProblemSendCommand(['traj stream ' trajdata],probid);
+[out,trajsuc] = orProblemSendCommand(['traj stream ' trajdata],probs.manip);
+if( ~trajsuc )
+    success = 0;
+    setclonesession(prevsession);
+    probs = prevprobs;
+    return;
+end
 
 display('waiting for robot');
 success = 1;
@@ -40,4 +48,5 @@ end
 
 newjointconfig = orBodyGetJointValues(robotid);
 setclonesession(prevsession);
+probs = prevprobs;
 orBodySetJointValues(robotid,newjointconfig);
