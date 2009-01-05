@@ -236,7 +236,8 @@ namespace costmap_2d {
     // Propagation queue should be empty from completion of last propagation.
     ROS_ASSERT(queue_.empty());
 
-    // First we propagate costs. For this we iterate over observations, and process the internal point clouds
+    // Iterate over observations, buffering hits, and propagating free space as we go. We ray trace hits
+    // to remove all static lethal obstacles that can be ray traced out.
     for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
       const Observation& obs = *it;
       const std_msgs::PointCloud& cloud = *(obs.cloud_);
@@ -291,7 +292,10 @@ namespace costmap_2d {
 
 
 
-    //Clear out the window.
+    // Clear out the window. Here we want to keep any up to date lethal obstacles. We need to iterate over the window
+    // and enqueue any old lethal obstacles that remain when ray tracing is done. These can be from either the static map or
+    // from old sensor data. Note that we compute the window to include an outer limit given by the inflation radius to ensure we
+    // correctly repropagate effects of obstacles outside the window which impinge the window.
     unsigned int rayStartX = 0, rayStartY = 0, rayEndX = 0, rayEndY = 0;
     WC_MC(computeWX(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), 
 	  computeWY(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), rayStartX, rayStartY);
@@ -303,8 +307,6 @@ namespace costmap_2d {
 	  computeWY(*this, raytraceWindow_, robotX_, robotY_), clearStartX, clearStartY);
     clearEndX = clearStartX + raytraceCells_;
     clearEndY = clearStartY + raytraceCells_;
-
-
 
     for (unsigned int x = rayStartX; x < rayEndX; x++) {
       for (unsigned int y = rayStartY; y < rayEndY; y++) {
@@ -319,8 +321,6 @@ namespace costmap_2d {
 	}
       }
     }
-
-
 
     // Propagate costs
     propagateCosts();
