@@ -132,7 +132,7 @@ TEST_F(TestEKF, test)
   ASSERT_TRUE(node_->unsubscribe("odom"));
 
   // check if callback was called enough times
-  ASSERT_TRUE(ekf_counter_ > 200);
+  ASSERT_TRUE(ekf_counter_ > 100);
 
   // check if time interval is correct
   ASSERT_TRUE(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec() < ekf_duration * 1.25);
