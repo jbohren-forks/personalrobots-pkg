@@ -1,0 +1,58 @@
+Welcome to the stereo_capture package.
+=======================================================
+Purpose:
+  This package projects light using a projector and
+  synchronizes this with stereo capture using DCAM_NODE 
+  as the sensor data provider.  
+=======================================================
+Written by: Ethan Dreyfuss (ethan@cs.stanford.edu)
+Based on code from vision/stereo_view, and code written by Federico Tombari.
+
+To use this package, first build the package with rosmake stereo_capture.  
+
+This package is designed to be used with a two-computer setup, one to 
+record data from the camera, and one to drive the projector.  If a single 
+machine could be hooked up to both, it should work on a single machine as 
+well.  Once the package has been built, from the primary machine 
+(data capture machine, not the one connected to the projector) do the 
+following from the stereo_capture directory:
+
+roslaunch capture.launch
+
+Three windows should come up showing the disparity and left and right cameras.
+The console should also begin scrolling 
+"project status: 0"
+messages.  These indicate the projector status (1=pattern, 0=black).
+
+Then on the projector machine, first make sure it knows to use the roscore which
+is now running on the data collection machine.  (adr.willowgarage.com in the case
+of the current sensor cart configuration).  To do this type the following command
+on the projector machine:
+
+export ROS_MASTER_URI=http://adr.willowgarage.com:11311
+
+Then run the pattern generator code with:
+
+rosrun stereo_capture project_light
+If all went well then then the status messages on the data capture machine should
+now switch from 0 to 1 in sync with the projector image.  The frequency of the
+projector image switch from blank to patterned is currently at half a hertz, and
+can be controlled with the project_light/frequency parameter.
+
+Images can now be captured by pressing the 'c' key, with one of the openCV windows
+selected (camera or disparity images).  
+
+Right now the capture is hard coded to data/stereoImage*, and the sequence numbering 
+begins at 0 with every run of the program.  This means the following:
+
+* Make sure the stereo_capture/data directory exists and is empty before capture
+* If the stereo_capture program ever restarts, make sure the directory is empty
+    again or you may overwrite your data
+
+Both the initial sequence number and the file name stem could be exposed as parameters
+in the future, and could then be edited without recompilation.
+
+Gary should have at least two example datasets collected with this setup.
+
+Happy stereo data collection!
+
