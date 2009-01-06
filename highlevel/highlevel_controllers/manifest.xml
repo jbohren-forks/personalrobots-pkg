@@ -10,6 +10,7 @@
  <url>http://pr.willowgarage.com</url>
 
  <depend package="roscpp"/>
+ <depend package="boost"/>
  <depend package="rosthread"/>
  <depend package="rosconsole"/>
  <depend package="std_msgs"/>

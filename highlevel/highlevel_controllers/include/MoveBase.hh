@@ -66,8 +66,7 @@
 #include "laser_scan/laser_scan.h"
 
 // Thread suppport
-#include <rosthread/member_thread.h>
-#include <rosthread/mutex.h>
+#include <boost/thread.hpp>
 
 #include <list>
 
@@ -252,7 +251,7 @@ namespace ros {
 
       // Thread control
       void mapUpdateLoop();
-      pthread_t *map_update_thread_; /*<! Thread to process laser data and apply to the map */
+      boost::thread *map_update_thread_; /*<! Thread to process laser data and apply to the map */
       bool active_; /*<! Thread control parameter */
       double map_update_frequency_;
 
