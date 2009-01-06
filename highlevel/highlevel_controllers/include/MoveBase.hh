@@ -256,6 +256,10 @@ namespace ros {
       bool active_; /*<! Thread control parameter */
       double map_update_frequency_;
 
+      // Tolerances for determining if goal has been reached
+      double yaw_goal_tolerance_;
+      double xy_goal_tolerance_;
+
       //ground plane extraction
       ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;
       pr2_msgs::PlaneStamped groundPlaneMsg_;

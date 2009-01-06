@@ -26,6 +26,7 @@
  <depend package="sbpl_util"/>
  <depend package="rostime"/>
  <depend package="navfn"/>
+ <depend package="angles"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

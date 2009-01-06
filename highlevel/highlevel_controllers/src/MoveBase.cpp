@@ -43,6 +43,7 @@
 #include <std_msgs/PointStamped.h>
 #include <algorithm>
 #include <iterator>
+#include <angles/angles.h>
 
 namespace ros {
   namespace highlevel_controllers {
@@ -55,7 +56,9 @@ namespace ros {
       ma_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
-      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
+      yaw_goal_tolerance_(0.1),
+      xy_goal_tolerance_(robotWidth_ / 2)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.setIdentity();
@@ -215,6 +218,8 @@ namespace ros {
       param("/trajectory_rollout/samples_per_dim", samples_per_dim, samples_per_dim);
       param("/trajectory_rollout/sim_steps", sim_steps, sim_steps);
       param("/trajectory_rollout/sim_time", sim_time, sim_time);
+      param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
+      param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -585,7 +590,7 @@ namespace ros {
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       if(plan_.empty() && 
-          fabs(yaw - stateMsg.goal.th) < 0.1){
+          fabs(angles::shortest_angular_distance(yaw , stateMsg.goal.th)) < this->yaw_goal_tolerance_){ /// @todo: this is still wrong, should use bt or similar to check shortest angular distance of roll/pitch/yaw.
 
         ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
             global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
@@ -722,8 +727,7 @@ namespace ros {
      * @todo Make based on loaded tolerances
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      static const double XY_ERROR = robotWidth_ / 2;
-      if(fabs(x1 - x2) < XY_ERROR && fabs(y1 - y2) < XY_ERROR)
+      if(fabs(x1 - x2) < this->xy_goal_tolerance_ && fabs(y1 - y2) < this->xy_goal_tolerance_)
         return true;
 
       return false;
