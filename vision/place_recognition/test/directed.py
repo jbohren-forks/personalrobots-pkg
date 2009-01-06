@@ -12,21 +12,22 @@ import place_recognition
 #ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
 
 ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(10)]
+
 if 1:
   vt = place_recognition.vocabularytree()
   vt.build(ims, 5, 4, False)
   vt.save("foo")
+if 1:
+  print "loading..."
+  vt = place_recognition.load("foo")
 
-print "loading..."
-vt = place_recognition.load("foo")
+  print "adding..."
+  for i in ims:
+    vt.add(i)
+    
+  #M = vt.query(ims)
+  M = [ vt.topN(i) for i in ims[:100] ]
 
-print "adding..."
-for i in ims:
-  vt.add(i)
-
-#M = vt.query(ims)
-M = [ vt.topN(i) for i in ims[:100] ]
-
-pylab.pcolor(numpy.array(M))
-pylab.colorbar()
-pylab.show()
+  pylab.pcolor(numpy.array(M))
+  pylab.colorbar()
+  pylab.show()

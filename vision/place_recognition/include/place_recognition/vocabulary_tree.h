@@ -63,6 +63,9 @@ public:
   unsigned int insert(const FeatureMatrix& image_features);
 
   // TODO: combined find + insertion for efficiency? findAndRetain & insertRetainedQuery?
+
+  //! Returns number of images saved in the database
+  unsigned int databaseSize() { return db_vectors_.size(); }
   
   // File I/O
   void save(const std::string& file);

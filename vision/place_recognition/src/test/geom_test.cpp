@@ -112,6 +112,8 @@ int main(int argc, char** argv)
   tree.build(features, objs, 5, 4);
   /*
   tree.build(features, objs, 5, 4, false);
+  //tree.save("james4_empty.tree");
+  tree.load("james4_empty.tree");
   printf("Adding images to tree dynamically...\n");
   current_row = 0;
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {

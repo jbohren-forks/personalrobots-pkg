@@ -69,6 +69,7 @@ int main(int argc, char** argv)
   // Train vocabulary tree
   VocabularyTree tree;
   tree.build(features, objs, 5, 4);
+  //tree.build(features, objs, 5, 4, false);
   printf("Saving...\n");
   tree.save("test.tree");
     
