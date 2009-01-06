@@ -128,17 +128,29 @@ namespace ros {
       param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
       param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
       param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      double base_laser_keepalive(0.0);
+      double tilt_laser_keepalive(3.0);
+      double low_obstacle_keepalive(2.0);
+      double stereo_keepalive(0.0);
+      param("/costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
+      param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
+      param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
+      param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
       // Then allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), 
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, 
+							       ros::Duration().fromSec(base_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(3, 0), 
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, 
+							       ros::Duration().fromSec(tilt_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, ros::Duration(2, 0), 
-							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
-							       inscribedRadius, -10.0, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, ros::Duration(0, 0), 
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, 
+								  ros::Duration().fromSec(low_obstacle_keepalive), 
+								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
+								  inscribedRadius, -10.0, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, 
+								  ros::Duration().fromSec(stereo_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
 
