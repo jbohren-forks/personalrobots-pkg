@@ -10,6 +10,6 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 ann: $(SOURCE_DIR)
 	echo "Building FL-ANN..."
-	cd build/ann_1.1.1 && make linux-g++
+	cd build/ann_1.1.1 && make linux-shared-g++
 wipe:
 	rm -rf build
