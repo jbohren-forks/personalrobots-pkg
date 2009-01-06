@@ -11,8 +11,7 @@ import place_recognition
 #ims = [ Image.open("/u/jamesb/ros2/ros-pkg/vision/visual_odometry/key_%06d.png" % (3 * i)) for i in range(1000)]
 #ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
 
-tst = range(0,10)
-ims = [ Image.open("/tmp/out%06d.png" % i).split()[0] for i in tst]
+ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(10)]
 if 1:
   vt = place_recognition.vocabularytree()
   vt.build(ims, 5, 4, False)
