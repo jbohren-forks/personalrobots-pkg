@@ -156,7 +156,7 @@ namespace cloud_octree
     if (!m_children_[0]->isLeaf ())
       return (false);
 
-    std::vector<int> indices = ((Leaf*)(m_children_[0]))->getValue ();
+    std::vector<int> indices = ((Leaf*)(m_children_[0]))->getIndices ();
 
     for (int i = 1; i < 8; i++)
     {

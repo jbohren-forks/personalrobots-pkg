@@ -96,10 +96,14 @@ namespace cloud_octree
       std::vector<int> indices_;
 
     public:
+
+      float cen_[3];
+      int i_, j_, k_;
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructors for Leaf. */
       Leaf () { }
-      Leaf (std::vector<int> indices) { setValue (indices); }
+      Leaf (std::vector<int> indices) { setIndices (indices); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for Leaf. */
@@ -107,19 +111,19 @@ namespace cloud_octree
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Get the point indices stored in this leaf. */
-      inline std::vector<int> getValue () { return (indices_); }
+      inline std::vector<int> getIndices () { return (indices_); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Set the underlying point indices.
         * \param indices the point indices to set
         */
-      inline void setValue (std::vector<int> indices) { indices_ = indices; }
+      inline void setIndices (std::vector<int> indices) { indices_ = indices; }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Insert a new point index in the leaf
         * \param index the point index to insert
         */
-      inline void insertValue (int index) { indices_.push_back (index); }
+      inline void insertIndex (int index) { indices_.push_back (index); }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       bool isLeaf () const { return (true); }

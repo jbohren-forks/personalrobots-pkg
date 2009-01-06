@@ -189,6 +189,23 @@ namespace cloud_octree
       std::vector<int> get (float x, float y, float z) const;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Compute the 3D bounds (min, max) of a leaf/cell
+        * \param leaf the leaf to compute bounds for
+        * \param bounds the resultant bounds
+        */
+      inline void
+        computeCellBounds (Leaf* leaf, std::vector<double> &bounds)
+      {
+        int num_cells = getNumCells ();
+        bounds[0] = leaf->cen_[0] - (m_dim_[0] / num_cells) / 2;
+        bounds[1] = leaf->cen_[1] - (m_dim_[0] / num_cells) / 2;
+        bounds[2] = leaf->cen_[2] - (m_dim_[0] / num_cells) / 2;
+        bounds[3] = leaf->cen_[0] + (m_dim_[0] / num_cells) / 2;
+        bounds[4] = leaf->cen_[1] + (m_dim_[0] / num_cells) / 2;
+        bounds[5] = leaf->cen_[2] + (m_dim_[0] / num_cells) / 2;
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Delete a value stored at the lowermost leaf \a x,y,z. Any subsequent query will then return
         * \a empty_indices_. On success, the function will navigate back towards the top of the tree, aggregating leaves
         * where appropriate.
@@ -247,7 +264,7 @@ namespace cloud_octree
             }
 
             // Create a new branch with the all children leaves with the old value
-            next_node = new Branch (((Leaf*)next_node)->getValue ());
+            next_node = new Branch (((Leaf*)next_node)->getIndices ());
             current_node->setChild (address, next_node);
           }
 
@@ -348,14 +365,9 @@ namespace cloud_octree
         */
       int m_max_depth_;
 
-      /** \brief Bounding box dimensions for level 0 */
-      float min_b_[3], max_b_[3];
-
       /** \brief The total size of the Octree. Can be thought of as the dimensions of the root branch. */
-      //float m_dim_x_, m_dim_y_, m_dim_z_;
       float m_dim_[3];
       /** \brief The location of the center of the octree. */
-      //float m_cen_x_, m_cen_y_, m_cen_z_;
       float m_cen_[3];
 
       /** \brief Expand Octree automatically if data to be inserted is out of bounds */
