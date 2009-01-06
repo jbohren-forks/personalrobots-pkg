@@ -283,10 +283,11 @@ void VocabularyTree::save(const std::string& file)
 
 void VocabularyTree::loadAux(Node* node, FILE* in, unsigned int indent_level)
 {
-  int centroid_size;
+  int centroid_size = 0;
   //fseek(in, indentation, SEEK_CUR);
   fscanf(in, "Centroid[%d]: ", &centroid_size);
-  node->centroid.resize(centroid_size);
+  if (centroid_size != 0)
+    node->centroid.resize(centroid_size);
   for (int i = 0; i < centroid_size; ++i) {
     fscanf(in, "%f ", &node->centroid[i]);
   }

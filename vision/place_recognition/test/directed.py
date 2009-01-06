@@ -8,20 +8,22 @@ import sys
 sys.path.append('lib')
 import place_recognition
 
-# place_recognition.dotrain()
-#M = place_recognition.doquery()
-
 #ims = [ Image.open("/u/jamesb/ros2/ros-pkg/vision/visual_odometry/key_%06d.png" % (3 * i)) for i in range(1000)]
 #ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
-tst = range(0,800,4)
+
+tst = range(0,10)
 ims = [ Image.open("/tmp/out%06d.png" % i).split()[0] for i in tst]
-vt = place_recognition.vocabularytree()
-if 0:
-  vt.build(ims, 5, 4, True)
-else:
-  vt.build(ims[:100], 5, 4, False)
-  for i in ims:
-    vt.add(i)
+if 1:
+  vt = place_recognition.vocabularytree()
+  vt.build(ims, 5, 4, False)
+  vt.save("foo")
+
+print "loading..."
+vt = place_recognition.load("foo")
+
+print "adding..."
+for i in ims:
+  vt.add(i)
 
 #M = vt.query(ims)
 M = [ vt.topN(i) for i in ims[:100] ]

@@ -231,7 +231,7 @@ PyObject *vtquery(PyObject *self, PyObject *args)
     ++obj;
   }
   size_t num_features = std::accumulate(buffer_sizes.begin(), buffer_sizes.end(), 0);  
-  printf("%u features\n", num_features);
+  //printf("%u features\n", num_features);
 
   // Copy into single Eigen matrix
   FeatureMatrix features((int)num_features, (int)dimension);
@@ -296,6 +296,16 @@ PyObject *vtadd(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *vtsave(PyObject *self, PyObject *args)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+  char *filename;
+  if (!PyArg_ParseTuple(args, "s", &filename))
+    return NULL;
+  vt->save(filename);
+  Py_RETURN_NONE;
+}
+
 PyObject *vttopN(PyObject *self, PyObject *args)
 {
   VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
@@ -328,6 +338,7 @@ PyObject *vttopN(PyObject *self, PyObject *args)
 
 /* Method table */
 static PyMethodDef vocabularytree_methods[] = {
+  {"save", vtsave, METH_VARARGS},
   {"build", vtbuild, METH_VARARGS},
   {"add", vtadd, METH_VARARGS},
   {"query", vtquery, METH_VARARGS},
@@ -387,14 +398,33 @@ PyObject *mkvocabularytree(PyObject *self, PyObject *args)
 {
   vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
   object->vt = new VocabularyTree();
+  object->size = 0;
   object->classifier = new RTreeClassifier(true);
   object->classifier->read(classifier_file);
 
   return (PyObject*)object;
 }
 
+
+PyObject *mkload(PyObject *self, PyObject *args)
+{
+  char *filename;
+  if (!PyArg_ParseTuple(args, "s", &filename))
+    return NULL;
+
+  vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
+  object->vt = new VocabularyTree();
+  object->size = 0;
+  object->classifier = new RTreeClassifier(true);
+  object->classifier->read(classifier_file);
+  object->vt->load(filename);
+
+  return (PyObject*)object;
+}
+
 static PyMethodDef methods[] = {
   {"vocabularytree", mkvocabularytree, METH_VARARGS},
+  {"load", mkload, METH_VARARGS},
   {NULL, NULL},
 };
 
