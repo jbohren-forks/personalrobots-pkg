@@ -233,7 +233,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
           scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
   {
     req_pts += (scan_hist_[i].get_pts_size()+downsample_factor_-1)/downsample_factor_ ;
-    i++ ;
+    i += downsample_factor_ ;
   }
   unsigned int past_end_index = i ;
 
@@ -259,7 +259,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
     resp.cloud.header.stamp = req.end ;
     resp.cloud.header.frame_id = fixed_frame_ ;
     unsigned int cloud_count = 0 ;
-    for (i=start_index; i<past_end_index; i++)
+    for (i=start_index; i<past_end_index; i+=downsample_factor_)
     {
       for(unsigned int j=0; j<scan_hist_[i].get_pts_size(); j+=downsample_factor_)
       {
