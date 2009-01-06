@@ -42,6 +42,7 @@
 
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/Image.h"
 
 
@@ -59,6 +60,7 @@ public:
   image_msgs::Image rimage;
   image_msgs::Image dimage;
   image_msgs::StereoInfo stinfo;
+  image_msgs::DisparityInfo dinfo;
 
   image_msgs::CvBridge lbridge;
   image_msgs::CvBridge rbridge;
@@ -88,19 +90,20 @@ public:
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
     std::list<std::string> left_list;
-    left_list.push_back(map_name("stereodcam") + std::string("/left/image_rect_color"));
-    left_list.push_back(map_name("stereodcam") + std::string("/left/image_rect"));
+    left_list.push_back(map_name("stereo") + std::string("/left/image_rect_color"));
+    left_list.push_back(map_name("stereo") + std::string("/left/image_rect"));
 
 
     std::list<std::string> right_list;
-    right_list.push_back(map_name("stereodcam") + std::string("/right/image_rect_color"));
-    right_list.push_back(map_name("stereodcam") + std::string("/right/image_rect"));
+    right_list.push_back(map_name("stereo") + std::string("/right/image_rect_color"));
+    right_list.push_back(map_name("stereo") + std::string("/right/image_rect"));
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe(map_name("stereodcam") + "/disparity", dimage, 1);
-    sync.subscribe(map_name("stereodcam") + "/stereo_info", stinfo, 1);
+    sync.subscribe(map_name("stereo") + "/disparity", dimage, 1);
+    sync.subscribe(map_name("stereo") + "/stereo_info", stinfo, 1);
+    sync.subscribe(map_name("stereo") + "/disparity_info", dinfo, 1);
 
     sync.ready();
   }
@@ -147,7 +150,7 @@ public:
     {
       // Disparity has to be scaled to be be nicely displayable
       IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-      cvCvtScale(dbridge.toIpl(), disp, 4.0/stinfo.dpp);
+      cvCvtScale(dbridge.toIpl(), disp, 4.0/dinfo.dpp);
       cvShowImage("disparity", disp);
       cvReleaseImage(&disp);
     }
@@ -189,8 +192,8 @@ public:
       // Fetch color calibration parameters as necessary
       if (calib_color_)
       {
-        lcal.getFromParam(map_name("stereodcam") + "/left/image_rect_color");
-        rcal.getFromParam(map_name("stereodcam") + "/right/image_rect_color");
+        lcal.getFromParam(map_name("stereo") + "/left/image_rect_color");
+        rcal.getFromParam(map_name("stereo") + "/right/image_rect_color");
       }
 
       cv_mutex.unlock();

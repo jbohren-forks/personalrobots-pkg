@@ -1,0 +1,42 @@
+#
+# About
+#
+
+This k-means clustering code is a mex implementation of the ICML2003 paper 
+
+@misc{ elkan03using,
+  author = "C. Elkan",
+  title = "Using the triangle inequality to accelerate kMeans",
+  text = "C. Elkan. Using the triangle inequality to accelerate kMeans. In Proceedings
+    of the Twentieth International Conference on Machine Learning, 2003, pp.
+    147-153.",
+  year = "2003",
+  url = "citeseer.ist.psu.edu/elkan03using.html" 
+}
+
+
+#
+# Installation
+#
+You need to update the Makefile if you are on a 64bit machine (you will see it). and to give the correct
+$MATLABDIR if you want to use matlab. Then call "make clean all"
+
+Or within Matlab, using mex:
+mex -c -O mpi_kmeans.cxx
+mex -O mpi_kmeans_mex.cxx mpi_kmeans.o
+mex -O mpi_assign.cxx mpi_kmeans.o
+
+If you are fine with single precision or in need for more mem you can compile with -DINPUT_TYPE=2
+
+#
+# Use
+#
+Matlab:
+Try "help mpi_kmeans_mex" in a matlab shell. This will also give an example
+
+Python: 
+Just run ./mpi_kmeans.py for an example.
+
+
+Tuebingen, 14th Feb 2008
+Peter Gehler, peter.gehler@tuebingen.mpg.de

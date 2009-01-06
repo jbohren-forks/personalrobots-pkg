@@ -1,0 +1,24 @@
+<launch>
+  <machine name="localhost_cameras" address="localhost" default="false"/>  
+
+<!--   <node machine="cameras" name="dcam" pkg="dcam" type="dcam" respawn="false">
+    <param name="video_mode" type="str" value="640x480_videre_rectified"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+  </node> -->
+  <group ns="checkerdetector" clear_params="true">
+    <param name="display" type="int" value="1"/>
+    <param name="frame_id" type="string" value="head_tilt_link"/>
+    <param name="rect0_size_x" type="double" value="0.10740"/>
+    <param name="rect0_size_y" type="double" value="0.10757"/>
+    <param name="grid0_size_x" type="int" value="6"/>
+    <param name="grid0_size_y" type="int" value="8"/>
+    <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
+    <node machine="localhost_cameras" pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
+      <remap from="CamInfo" to="/stereo/left/cam_info"/>
+      <remap from="Image" to="/stereo/left/image_rect"/>
+<!--       <env name="DISPLAY" value=":0.0"/> -->
+    </node>
+  </group>
+</launch>

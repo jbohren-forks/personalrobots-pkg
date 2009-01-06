@@ -8,11 +8,12 @@ namespace costmap_2d {
 
   void BasicObservationBuffer::buffer_cloud(const std_msgs::PointCloud& local_cloud)
   {
-    static const ros::Duration max_transform_delay(10, 0); // max time we will wait for a transform before chucking out the data
+    static const ros::Duration max_transform_delay(1, 0); // max time we will wait for a transform before chucking out the data
     point_clouds_.push_back(local_cloud);
 
     std_msgs::PointCloud * newData = NULL;
     std_msgs::PointCloud * map_cloud = NULL;
+
 
     while(!point_clouds_.empty()){
       const std_msgs::PointCloud& point_cloud = point_clouds_.front();

@@ -7,5 +7,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roslaunch" />
+  <depend package="rostest" />
 </package>
 

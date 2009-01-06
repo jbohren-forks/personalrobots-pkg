@@ -50,11 +50,11 @@ using namespace robot_msgs;
 namespace estimation
 {
   // constructor
-  TrackerParticle::TrackerParticle(unsigned int num_particles, const StatePosVel& sysnoise, const Vector3& measnoise):
+  TrackerParticle::TrackerParticle(unsigned int num_particles, const StatePosVel& sysnoise):
     prior_(num_particles),
     filter_(NULL),
     sys_model_(sysnoise),
-    meas_model_(measnoise),
+    meas_model_(Vector3(0.1,0.1,0.1)),
     tracker_initialized_(false),
     num_particles_(num_particles)
   {};
@@ -96,9 +96,10 @@ namespace estimation
     sys_model_.SetDt(dt);
 
     // update filter
+    cout << "< predction" << endl;
     bool res = filter_->Update(&sys_model_);
     if (!res) quality_ = 0;
-
+    cout << "predction >" << endl;
     return res;
   };
 
@@ -113,7 +114,8 @@ namespace estimation
     filter_time_ = time;
 
     // set covariance
-    ((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
+    // TODO: remove uncomment
+    //((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
 
 
     // update filter

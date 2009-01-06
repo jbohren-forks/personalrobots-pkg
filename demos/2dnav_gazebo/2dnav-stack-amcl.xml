@@ -2,9 +2,13 @@
   <group name="wg">
 
     <!-- publish mapping between odom and base_footprint -->
-    <param name="odom_estimation/sensor_timeout" value="1.0"/>
-    <param name="odom_estimation/exact_time_mode" value="true"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" />
+    <param name="robot_pose_ekf/freq" value="30.0"/>
+    <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+    <param name="robot_pose_ekf/odom_used" value="true"/>
+    <param name="robot_pose_ekf/imu_used" value="true"/>
+    <param name="robot_pose_ekf/vo_used" value="true"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
+
 
     <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
     <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
@@ -91,6 +95,10 @@
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
+
+    <param name="/trajectory_rollout/occdist_scale" type="double" value="0.002"/>
+    <param name="/trajectory_rollout/yaw_goal_tolerance" type="double" value="0.1"/>
+    <param name="/trajectory_rollout/xy_goal_tolerance" type="double" value="0.35"/>
 
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->

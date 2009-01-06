@@ -79,15 +79,13 @@ namespace estimation
 
     // get parameters
     param("~/fixed_frame", fixed_frame_, string("default"));
-    cout << "frame " << fixed_frame_ << endl;
-
     param("~/freq", freq_, 1.0);
-    param("~/sys_sigma_pos_x", sys_sigma_.pos_[0], 0.0);
-    param("~/sys_sigma_pos_y", sys_sigma_.pos_[1], 0.0);
-    param("~/sys_sigma_pos_z", sys_sigma_.pos_[2], 0.0);
-    param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0);
-    param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
-    param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
+    param("~/sys_sigma_pos_x", sys_sigma_.pos_[0], 0.2);
+    param("~/sys_sigma_pos_y", sys_sigma_.pos_[1], 0.2);
+    param("~/sys_sigma_pos_z", sys_sigma_.pos_[2], 0.2);
+    param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0000001);
+    param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0000001);
+    param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0000001);
     sys_sigma_.pos_ /= freq_;
     sys_sigma_.vel_ /= freq_;
 
@@ -141,7 +139,9 @@ namespace estimation
       for (unsigned int j=0; j<3; j++)
 	cov(i+1, j+1) = message->covariance[3*i+j];
 
+    // ----- LOCKED ------
     // update tracker if matching tracker found
+    boost::mutex::scoped_lock lock(filter_mutex_);
     tracker_it_ = trackers_.find(name);
     if (tracker_it_ != trackers_.end()){
       ROS_INFO("%s: Update tracker %s with measurement from %s",  
@@ -156,10 +156,14 @@ namespace estimation
       StatePosVel prior_sigma(Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), Vector3(0.0000001, 0.0000001, 0.0000001));
       name_new << "person " << tracker_counter_++;
       trackers_[name_new.str()] = new TrackerKalman(sys_sigma_);
+      //trackers_[name_new.str()] = new TrackerParticle(1000, sys_sigma_);
       trackers_[name_new.str()]->initialize(meas, prior_sigma, time);
       ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), name_new.str().c_str());
     }
+    lock.unlock();
+    // ------ LOCKED ------
 
+    
     // visualize measurement
     meas_visualize_[meas_visualize_counter_].x = meas[0];
     meas_visualize_[meas_visualize_counter_].y = meas[1];
@@ -198,6 +202,7 @@ namespace estimation
       std_msgs::ChannelFloat32 channel;
 
       // loop over trackers
+      boost::mutex::scoped_lock lock(filter_mutex_);
       unsigned int i=0;
       for (map<string, Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++,i++){
 
@@ -214,7 +219,7 @@ namespace estimation
 	filter_visualize[i].x = est_pos.pos.x;
 	filter_visualize[i].y = est_pos.pos.y;
 	filter_visualize[i].z = est_pos.pos.z;
-	weights[i] = rgb[min(998, max(1, (int)trunc( it->second->getQuality()*999.0 )))];
+	weights[i] = rgb[min(998, 999-max(1, (int)trunc( it->second->getQuality()*999.0 )))];
 
 	// remove trackers that have zero quality
 	if (it->second->getQuality() <= 0){
@@ -222,6 +227,7 @@ namespace estimation
 	  trackers_.erase(it);
 	}
       }
+      lock.unlock();
 
       // visualize all trackers
       channel.name = "rgb";

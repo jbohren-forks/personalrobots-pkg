@@ -38,25 +38,90 @@
 
 @htmlinclude manifest.html
 
-stereodcam node uses the parameters:
+Stereodcam is a driver primarily for communicating with the Videre stereocameras.
 
-- @b ~exposure (int)
-- @b ~gain     (int)
-- @b ~brightness (int)
-- @b ~exposure_auto (bool)
-- @b ~gain_auto  (bool)
-- @b ~brightness_auto (bool)
-- @b ~companding (bool)
-- @b ~hdr (bool)
-- @b ~unique_check (bool)
-- @b ~texture_thresh (int)
-- @b ~unique_thresh (int)
-- @b ~smoothness_thresh (int)
-- @b ~horopter (int)
-- @b ~speckle_size (int)
-- @b ~speckle_diff (int)
-- @b ~corr_size (int)
-- @b ~num_disp (int)
+<hr>
+
+@section behavior Behavior
+
+The Stereodcam node outputs a "raw_stereo" message, defined in the
+"image_msgs" package.  This message may either contain a left and
+right image, or, in the event of STOC processing, will contain a left
+image and disparity image.  It additionally contains the relevant
+intrinsic and extrinsic parameters for computing stereo.
+
+<hr>
+
+@section names Names
+
+The default name for the node is "stereodcam", however, this private
+namespace is not actually used internally to the node.  This node
+primarily makes use of the "stereo" namespace, which it shares with
+the "stereoproc" node.  This namespace is both where it looks for
+parameters and publishes topics.
+
+The "stereo" name can be remapped through standard topic remapping in
+the event that two cameras are sharing the same ROS system.
+
+<hr>
+
+@par Example
+
+Running in the stereo namespace:
+@verbatim
+$ rosrun dcam stereodcam
+@endverbatim
+
+Running in a different namespace
+@verbatim
+$ rosrun dcam stereodcam stereo:=head_cam
+@endverbatim
+
+<hr>
+
+@section topics Topics
+
+Subscribes to (name/type):
+- @b "stereo/check_params" : std_msgs/Empty : signal to recheck all of the parameters
+
+Publishes to (name : type : description):
+- @b "stereo/raw_stereo" : image_msgs/RawStereo : raw stereo information from camera
+
+<hr>
+
+@section parameters Parameters
+
+The camera will set the following parameters after running:
+- @b stereo/exposure_max (int) : maximum value for exposure
+- @b stereo/exposure_min (int) : maximum value for exposure
+- @b stereo/brightness_max (int) : maximum value for brightness
+- @b stereo/brightness_min (int) : maximum value for brightness
+- @b stereo/gain_max (int) : maximum value for gain
+- @b stereo/gain_min (int) : maximum value for gain
+
+The camera will read from the following parameters:
+- @b stereo/videre_mode (string) : The processing type that a Videre
+  STOC will use.  Value can be "none", "rectified", "disparity" or
+  "disparity_raw"
+- @b stereo/fps         (double) : Target fps of the camera
+- @b stereo/speed       (string) : Firewire isospeed: S100, S200, or S400
+- @b stereo/exposure (int)
+- @b stereo/gain     (int)
+- @b stereo/brightness (int)
+- @b stereo/exposure_auto (bool)
+- @b stereo/gain_auto  (bool)
+- @b stereo/brightness_auto (bool)
+- @b stereo/companding (bool)
+- @b stereo/hdr (bool)
+- @b stereo/unique_check (bool)
+- @b stereo/texture_thresh (int)
+- @b stereo/unique_thresh (int)
+- @b stereo/smoothness_thresh (int)
+- @b stereo/horopter (int)
+- @b stereo/speckle_size (int)
+- @b stereo/speckle_diff (int)
+- @b stereo/corr_size (int)
+- @b stereo/num_disp (int)
 
 **/
 
@@ -76,7 +141,7 @@ stereodcam node uses the parameters:
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#include "std_srvs/Empty.h"
+#include "std_msgs/Empty.h"
 
 using namespace std;
 
@@ -93,6 +158,10 @@ class StereoDcamNode : public ros::node
   string frame_id_;
 
   std::map<std::string, int> paramcache_;
+
+  std_msgs::Empty check_params_msg_;
+
+  std::string stereo_name_;
 
 public:
 
@@ -112,28 +181,30 @@ public:
     // Register a frequency status updater
     diagnostic_.addUpdater( &StereoDcamNode::freqStatus );
 
+    stereo_name_ = map_name("stereo") + std::string("/");
+
     // If there is a camera...
     if (num_cams > 0)
     {
       // Check our gui parameter, or else use first camera
       uint64_t guid;
-      if (has_param("~guid"))
+      if (has_param(stereo_name_+ std::string("guid")))
       {
         string guid_str;
-        get_param("~guid", guid_str);
+        get_param(stereo_name_ + std::string("guid"), guid_str);
         
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {
         guid = dcam::getGuid(0);
       }
 
-      param("~frame_id", frame_id_, string("stereo"));
+      param(stereo_name_ + std::string("frame_id"), frame_id_, string("stereo"));
 
 
       // Get the ISO speed parameter if available
       string str_speed;
       dc1394speed_t speed;
-      param("~speed", str_speed, string("S400"));
+      param(stereo_name_ + std::string("speed"), str_speed, string("S400"));
       if (str_speed == string("S100"))
         speed = DC1394_ISO_SPEED_100;
       else if (str_speed == string("S200"))
@@ -144,7 +215,7 @@ public:
       // Get the FPS parameter if available;
       double dbl_fps;
       dc1394framerate_t fps;
-      param("~fps", dbl_fps, 30.0);
+      param(stereo_name_ + std::string("fps"), dbl_fps, 30.0);
       desired_freq_ = dbl_fps;
       if (dbl_fps >= 240.0)
         fps = DC1394_FRAMERATE_240;
@@ -169,7 +240,7 @@ public:
       // Get the videre processing mode if available:
       string str_videre_mode;
       videre_proc_mode_t videre_mode = PROC_MODE_NONE;  
-      param("~videre_mode", str_videre_mode, string("none"));
+      param(stereo_name_ + std::string("videre_mode"), str_videre_mode, string("none"));
       if (str_videre_mode == string("rectified"))
         videre_mode = PROC_MODE_RECTIFIED;
       else if (str_videre_mode == string("disparity"))
@@ -185,14 +256,14 @@ public:
 
       // Fetch the camera string and send it to the parameter server if people want it (they shouldn't)
       std::string params(stcam_->getParameters());
-      set_param("~params", params);
+      set_param(stereo_name_ + std::string("params"), params);
 
-      set_param("~exposure_max", (int)stcam_->expMax);
-      set_param("~exposure_min", (int)stcam_->expMin);
-      set_param("~gain_max", (int)stcam_->gainMax);
-      set_param("~gain_min", (int)stcam_->gainMin);
-      set_param("~brightness_max", (int)stcam_->brightMax);
-      set_param("~brightness_min", (int)stcam_->brightMin);
+      set_param(stereo_name_ + std::string("exposure_max"), (int)stcam_->expMax);
+      set_param(stereo_name_ + std::string("exposure_min"), (int)stcam_->expMin);
+      set_param(stereo_name_ + std::string("gain_max"), (int)stcam_->gainMax);
+      set_param(stereo_name_ + std::string("gain_min"), (int)stcam_->gainMin);
+      set_param(stereo_name_ + std::string("brightness_max"), (int)stcam_->brightMax);
+      set_param(stereo_name_ + std::string("brightness_min"), (int)stcam_->brightMin);
 
       // Configure camera
       stcam_->setFormat(mode, fps, speed);
@@ -203,8 +274,9 @@ public:
       stcam_->setSpeckleDiff(10);
       stcam_->setCompanding(true);
 
-      advertise<image_msgs::RawStereo>("~raw_stereo", 1);
-      advertise_service("~check_params", &StereoDcamNode::checkFeatureService);
+      advertise<image_msgs::RawStereo>(stereo_name_ + std::string("raw_stereo"), 1);
+
+      subscribe(stereo_name_ + std::string("check_params"), check_params_msg_, &StereoDcamNode::checkParams, 1);
 
       // Start the camera
       stcam_->start();
@@ -220,11 +292,9 @@ public:
   }
 
 
-  bool checkFeatureService(std_srvs::Empty::request &req,
-                           std_srvs::Empty::response &res)
+  void checkParams()
   {
     checkAndSetAll();
-    return true;
   }
 
   void checkAndSetAll()
@@ -247,14 +317,14 @@ public:
 
   void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
   {
-    if (has_param(std::string("~") + param_name) || has_param(std::string("~") + param_name + std::string("_auto")))
+    if (has_param(stereo_name_ +  param_name) || has_param(stereo_name_ +  param_name + std::string("_auto")))
     {
 
       int val = 0;
       bool isauto = false;
 
-      param( std::string("~") + param_name, val, 0);
-      param( std::string("~") + param_name + std::string("_auto"), isauto, false);
+      param( stereo_name_ +  param_name, val, 0);
+      param( stereo_name_ +  param_name + std::string("_auto"), isauto, false);
     
       int testval = (val * (!isauto));
 
@@ -270,11 +340,11 @@ public:
 
   void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
   {
-    if (has_param(std::string("~") + param_name))
+    if (has_param(stereo_name_ +  param_name))
     {
       bool on = false;
 
-      param(std::string("~") + param_name, on, false);
+      param(stereo_name_ +  param_name, on, false);
     
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
@@ -289,12 +359,12 @@ public:
 
   void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
   {
-    if (has_param(std::string("~") + param_name))
+    if (has_param(stereo_name_ +  param_name))
     {
 
       int val = 0;
 
-      param(std::string("~") + param_name, val, 0);
+      param(stereo_name_ +  param_name, val, 0);
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
 
@@ -331,7 +401,7 @@ public:
     }
     
     cam_bridge::StereoDataToRawStereo(stcam_->stIm, raw_stereo_);
-    publish("~raw_stereo", raw_stereo_);
+    publish(stereo_name_ + std::string("raw_stereo"), raw_stereo_);
 
     count_++;
     return true;

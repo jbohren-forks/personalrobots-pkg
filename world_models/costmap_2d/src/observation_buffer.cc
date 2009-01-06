@@ -66,8 +66,16 @@ namespace costmap_2d {
     last_updated_ = ros::Time::now();
     received_obseration_ = true;
 
-    if(observation.cloud_->header.frame_id != "map")
+    if(observation.cloud_->header.frame_id != "map") {
+      ROS_ERROR("Observation in frame %s, must be in frame \"map\".",
+		observation.cloud_->header.frame_id.c_str());
       return false;
+    }
+    
+    if((last_updated_ - observation.cloud_->header.stamp) > keep_alive_){
+      //ROS_ERROR("Observation just recived at (%f) is out of date. Now = %f\n",
+      //	observation.cloud_->header.stamp.toSec(), last_updated_.toSec());
+    }
 
     // If the duration is 0, then we just keep the latest one, so we clear out all existing observations
     while(!buffer_.empty()){

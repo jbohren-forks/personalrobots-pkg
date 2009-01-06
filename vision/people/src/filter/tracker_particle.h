@@ -62,7 +62,7 @@ class TrackerParticle: public Tracker
 {
 public:
   /// constructor
-  TrackerParticle(unsigned int num_particles, const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
+  TrackerParticle(unsigned int num_particles, const BFL::StatePosVel& sysnoise);
 
   /// destructor
   virtual ~TrackerParticle();

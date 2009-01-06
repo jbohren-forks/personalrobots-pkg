@@ -113,8 +113,8 @@ protected:
 
 TEST_F(TestEKF, test)
 {
-  ROS_INFO("Subscribing to odom_estimation/odom_combined");
-  ASSERT_TRUE(node_->subscribe("odom_estimation/odom_combined", ekf_msg_, &TestEKF::EKFCallback, 
+  ROS_INFO("Subscribing to robot_pose_ekf/odom_combined");
+  ASSERT_TRUE(node_->subscribe("robot_pose_ekf/odom_combined", ekf_msg_, &TestEKF::EKFCallback, 
 			       (TestEKF*)this, 10));
 
   ROS_INFO("Subscribing to odom");
@@ -128,10 +128,12 @@ TEST_F(TestEKF, test)
     usleep(1e4);
 
   // unsubscribe
-  ASSERT_TRUE(node_->unsubscribe("odom_estimation/odom_combined"));
+  ASSERT_TRUE(node_->unsubscribe("robot_pose_ekf/odom_combined"));
   ASSERT_TRUE(node_->unsubscribe("odom"));
 
   // check if callback was called enough times
+  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!  " << ekf_counter_ << std::endl;
+  printf("???????????????????????? %\n", ekf_counter_);
   ASSERT_TRUE(ekf_counter_ > 200);
 
   // check if time interval is correct

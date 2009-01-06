@@ -88,8 +88,8 @@ namespace image_msgs
     if (height_step == 0)
       height_step = height_arg * width_step;
     
-    if (image.depth == "byte")
-      fillImageHelper(image.byte_data,
+    if (image.depth == "uint8")
+      fillImageHelper(image.uint8_data,
                      height_arg, height_step,
                      width_arg, width_step,
                      channel_arg, channel_step,
@@ -108,16 +108,20 @@ namespace image_msgs
                      width_arg, width_step,
                      channel_arg, channel_step,
                      data_arg);
+    else
+    {
+      return false;
+    }
     
     return true;
   }
 
-  bool clearImage(Image& image)
+  void clearImage(Image& image)
   {
     image.label    = "none";
     image.encoding = "other";
-    if (image.depth == "byte")
-      clearImageHelper(image.byte_data);
+    if (image.depth == "uint8")
+      clearImageHelper(image.uint8_data);
     else if (image.depth == "uint16")
       clearImageHelper(image.uint16_data);
     else if (image.depth == "int16")

@@ -594,6 +594,21 @@ StereoData::doSpeckle()
 }
 
 
+bool
+StereoData::setSpeckleRegionSize(int val)
+{
+  speckleRegionSize = val;
+  return true;
+}
+
+bool
+StereoData::setSpeckleDiff(int val)
+{
+  speckleDiff = val;
+  return true;
+}
+
+
 
 //
 // param sting parsing routines

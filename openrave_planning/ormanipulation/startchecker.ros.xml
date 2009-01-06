@@ -16,8 +16,8 @@
     <param name="grid0_size_y" type="int" value="3"/>
     <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
     <node machine="localhost_cameras" pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
-      <remap from="CamInfo" to="/dcam/left/cam_info"/>
-      <remap from="Image" to="/dcam/left/image_rect"/>
+      <remap from="CamInfo" to="/stereo/left/cam_info"/>
+      <remap from="Image" to="/stereo/left/image_rect"/>
 <!--       <env name="DISPLAY" value=":0.0"/> -->
     </node>
   </group>

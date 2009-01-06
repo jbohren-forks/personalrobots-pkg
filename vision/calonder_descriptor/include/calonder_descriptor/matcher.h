@@ -17,14 +17,6 @@ public:
   typedef typename Promote<SigElem>::type distance_type;
   
   BruteForceMatcher(size_t signature_dimension);
-
-  // TODO: mostly to get Python bindings working, probably don't want size to be changeable
-  // TODO: get rid of this stuff, currently broken wrt distance function
-  BruteForceMatcher()
-    : threshold_(std::numeric_limits<distance_type>::max()),
-      dimension_(0), distance_func(0)
-  {}
-  inline void setSize(size_t dimension) { dimension_ = dimension; }
   
   // BruteForceMatcher does NOT take ownership of signature's memory
   void addSignature(SigElem* signature, Data const& data);
@@ -47,9 +39,7 @@ public:
   int findMatches(const SigElem* signature, distance_type *d1, int *second,
                   distance_type *d2) const;
 
-  // TODO: restore threshold functionality if useful. May depend on #trees.
-  
-  // FIXME: for testing/debugging only
+  // TODO: for testing/debugging only, remove
   const std::vector<SigElem*>& signatures() { return signatures_; }
 
 private:

@@ -172,10 +172,17 @@ void RandomizedTree::finalize(size_t reduced_num_dim, int num_quant_bits)
 }
 
 void RandomizedTree::compressLeaves(size_t reduced_num_dim)
-{
+{   
+   static bool warned = false;
+   if (!warned) {
+      printf("[OK] compressing leaves with phi %i x %i\n", reduced_num_dim, classes_);
+      warned = true;
+   }
+
    float *cs_phi = new float[reduced_num_dim * classes_];         // reduced_num_dim x classes_
    makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
 
+   #if 1   // real code 
    float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // temp, num_leaves_ x reduced_num_dim
    for (int i=0; i<num_leaves_; ++i) {
       float *post = getPosteriorByIndex(i);
@@ -183,6 +190,18 @@ void RandomizedTree::compressLeaves(size_t reduced_num_dim)
       cblas_sgemv(CblasRowMajor, CblasNoTrans, reduced_num_dim, classes_, 1.f, cs_phi,
                   classes_, post, 1, 0.f, prod, 1);       
    }
+   #else  // test code
+   float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // temp, num_leaves_ x reduced_num_dim
+   for (int i=0; i<num_leaves_; ++i) {
+      float *post = getPosteriorByIndex(i);
+      for (int s=0; s<164; ++s) {
+         cs_posteriors[s] = (post[0] + post[1] + post[2] + post[3] + post[4])/5.f;
+         post += 3;
+      }
+      cs_posteriors[164] = (post[0] + post[1])/2;
+      memset(&cs_posteriors[165], 0, 12*sizeof(float));
+   }
+   #endif
 
    // copy new posteriors
    freePosteriors();
@@ -192,7 +211,7 @@ void RandomizedTree::compressLeaves(size_t reduced_num_dim)
    classes_ = reduced_num_dim;
 
    delete [] cs_posteriors;
-   delete [] cs_phi;
+   delete [] cs_phi;      
 }
 
 void RandomizedTree::makePosteriors2() 
@@ -341,8 +360,11 @@ void RandomizedTree::write(std::ostream &os) const
 
 void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
 {
-   #if 0 // debug
-      const char *phi = "/u/calonder/temp/debug_phi.txt";
+   #if 1 // debug
+assert(reduced_num_dim == 176);
+assert(classes_ == 500);
+const char *phi = "/u/calonder/temp/dim_red/kpca_phi.txt";
+      //const char *phi = "/u/calonder/temp/dim_red/debug_phi.txt";
       std::ifstream ifs(phi);
       for (size_t i=0; i<reduced_num_dim*classes_; ++i) {
          if (!ifs.good()) {
@@ -411,9 +433,9 @@ void RandomizedTree::setMeasMatrix(std::string filename, size_t dim_m)
    ifs.close();
 }*/
 
-void RandomizedTree::savePosteriors(std::string url)
+void RandomizedTree::savePosteriors(std::string url, bool append)
 {   
-   std::ofstream file(url.c_str());
+   std::ofstream file(url.c_str(), (append?std::ios::app:std::ios::out));
    for (int i=0; i<num_leaves_; i++) {
       float *post = posteriors_[i];      
       char buf[20];

@@ -43,6 +43,7 @@
 #include <std_msgs/PointStamped.h>
 #include <algorithm>
 #include <iterator>
+#include <angles/angles.h>
 
 namespace ros {
   namespace highlevel_controllers {
@@ -55,7 +56,9 @@ namespace ros {
       ma_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
-      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
+      yaw_goal_tolerance_(0.1),
+      xy_goal_tolerance_(robotWidth_ / 2)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.setIdentity();
@@ -118,6 +121,7 @@ namespace ros {
       param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
+      xy_goal_tolerance_ = robotWidth_ / 2;
 
       // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
       double base_laser_update_rate(2.0);
@@ -128,17 +132,29 @@ namespace ros {
       param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
       param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
       param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      double base_laser_keepalive(0.0);
+      double tilt_laser_keepalive(3.0);
+      double low_obstacle_keepalive(2.0);
+      double stereo_keepalive(0.0);
+      param("/costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
+      param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
+      param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
+      param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
       // Then allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), 
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, 
+							       ros::Duration().fromSec(base_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(3, 0), 
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, 
+							       ros::Duration().fromSec(tilt_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_);
-      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, ros::Duration(2, 0), 
-							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
-							       inscribedRadius, -10.0, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, ros::Duration(0, 0), 
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, 
+								  ros::Duration().fromSec(low_obstacle_keepalive), 
+								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
+								  inscribedRadius, -10.0, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, 
+								  ros::Duration().fromSec(stereo_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_);
 
@@ -203,6 +219,8 @@ namespace ros {
       param("/trajectory_rollout/samples_per_dim", samples_per_dim, samples_per_dim);
       param("/trajectory_rollout/sim_steps", sim_steps, sim_steps);
       param("/trajectory_rollout/sim_time", sim_time, sim_time);
+      param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
+      param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -573,7 +591,7 @@ namespace ros {
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       if(plan_.empty() && 
-          fabs(yaw - stateMsg.goal.th) < 0.1){
+          fabs(angles::shortest_angular_distance(yaw , stateMsg.goal.th)) < this->yaw_goal_tolerance_){ /// @todo: this is still wrong, should use bt or similar to check shortest angular distance of roll/pitch/yaw.
 
         ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
             global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
@@ -710,8 +728,7 @@ namespace ros {
      * @todo Make based on loaded tolerances
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      static const double XY_ERROR = robotWidth_ / 2;
-      if(fabs(x1 - x2) < XY_ERROR && fabs(y1 - y2) < XY_ERROR)
+      if(fabs(x1 - x2) < this->xy_goal_tolerance_ && fabs(y1 - y2) < this->xy_goal_tolerance_)
         return true;
 
       return false;

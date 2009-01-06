@@ -44,6 +44,7 @@
 #include "color_calib.h"
 #include <robot_msgs/PositionMeasurement.h>
 #include "image_msgs/StereoInfo.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
@@ -70,6 +71,7 @@ public:
   image_msgs::Image limage_;
   image_msgs::Image dimage_;
   image_msgs::StereoInfo stinfo_;
+  image_msgs::DisparityInfo dispinfo_;
   image_msgs::CamInfo rcinfo_;
   image_msgs::CvBridge lbridge_;
   image_msgs::CvBridge dbridge_;
@@ -137,10 +139,11 @@ public:
     people_ = new People();
 
     // Subscribe to the images and parameters
-    sync_.subscribe("stereodcam/left/image_rect_color",limage_,1);
-    sync_.subscribe("stereodcam/disparity",dimage_,1);
-    sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
-    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereo/left/image_rect_color",limage_,1);
+    sync_.subscribe("stereo/disparity",dimage_,1);
+    sync_.subscribe("stereo/stereo_info",stinfo_,1);
+    sync_.subscribe("stereo/disparity_info",dispinfo_,1);
+    sync_.subscribe("stereo/right/cam_info",rcinfo_,1);
     sync_.ready();
 
     // Advertise a 3d position measurement for each head.
@@ -282,7 +285,7 @@ public:
 	cv_image_left_ = lbridge_.toIpl();
       }
     }
-    else if (calib_color_ && lcolor_cal_.getFromParam("stereodcam/left/image_rect_color")) {
+    else if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
       // Exit if color calibration hasn't been performed.
       do_calib = true;
       if (lbridge_.fromImage(limage_,"bgr")) {
@@ -310,7 +313,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
-    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
     im_size = cvGetSize(cv_image_left_);
 
@@ -489,7 +492,7 @@ public:
     if (!cv_image_disp_out_) {
       cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
     }
-    cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
+    cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
     cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif

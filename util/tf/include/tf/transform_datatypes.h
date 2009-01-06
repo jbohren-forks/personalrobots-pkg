@@ -44,6 +44,8 @@
 #include "LinearMath/btTransform.h"
 #include "ros/time.h"
 
+#include "rosconsole/rosconsole.h"
+
 namespace tf
 {
 /** \brief A representaton of orientation or rotation depending on context*/
@@ -56,6 +58,8 @@ typedef btVector3 Point;
 typedef btTransform Transform;
 /** \brief A representation of pose (A position and orientation)*/
 typedef btTransform Pose;
+
+static const double QUATERNION_TOLERANCE = 0.1f;
 
 /** \brief The data type which will be cross compatable with std_msgs
  * this will require the associated rosTF package to convert */
@@ -82,9 +86,30 @@ class Stamped : public T{
 
 
 /** \brief convert Quaternion msg to Quaternion */
-static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) {bt = Quaternion(msg.x, msg.y, msg.z, msg.w);};
+static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) 
+{
+  bt = Quaternion(msg.x, msg.y, msg.z, msg.w); 
+  if (fabs(bt.length2() - 1 ) > QUATERNION_TOLERANCE) 
+    {
+      ROS_WARN("MSG to TF: Quaternion Not Properly Normalized");
+      bt.normalize();
+    }
+};
 /** \brief convert Quaternion to Quaternion msg*/
-static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion& msg) {msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();};
+static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion& msg) 
+{
+  if (fabs(bt.length2() - 1 ) > QUATERNION_TOLERANCE) 
+    {
+      ROS_WARN("TF to MSG: Quaternion Not Properly Normalized");
+      Quaternion bt_temp = bt; 
+      bt_temp.normalize();
+      msg.x = bt_temp.x(); msg.y = bt_temp.y(); msg.z = bt_temp.z();  msg.w = bt_temp.w();
+    }
+  else
+  {
+    msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();
+  }
+};
 
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
 static inline void QuaternionStampedMsgToTF(const std_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)

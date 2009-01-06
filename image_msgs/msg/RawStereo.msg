@@ -5,19 +5,21 @@
 # used.  This is the preferred message to log when generating log
 # files, as it is the minimal representation of the information.
 
-byte       NONE=0
-byte       IMAGE_RAW=1
-byte       IMAGE=2
-byte       IMAGE_COLOR=3
-byte       IMAGE_RECT=4
-byte       IMAGE_RECT_COLOR=5
+uint8       NONE=0
+uint8       IMAGE_RAW=1
+uint8       IMAGE=2
+uint8       IMAGE_COLOR=3
+uint8       IMAGE_RECT=4
+uint8       IMAGE_RECT_COLOR=5
 
-Header     header
-StereoInfo stereo_info
-CamInfo    left_info
-byte       left_type
-Image      left_image
-CamInfo    right_info
-byte       right_type
-Image      right_image
-Image      disparity_image
+Header        header
+StereoInfo    stereo_info
+CamInfo       left_info
+uint8         left_type
+Image         left_image
+CamInfo       right_info
+uint8         right_type
+Image         right_image
+uint8         has_disparity
+DisparityInfo disparity_info
+Image         disparity_image

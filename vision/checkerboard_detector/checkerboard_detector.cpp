@@ -252,7 +252,7 @@ public:
         publish("ObjectDetection", _objdetmsg);
 
         ROS_INFO("checkerboard: image: %dx%d (size=%d), num: %d, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
-                _imagemsg.byte_data.data.size(), _objdetmsg.get_objects_size(),
+                _imagemsg.uint8_data.data.size(), _objdetmsg.get_objects_size(),
                 (float)(ros::Time::now()-lasttime).toSec());
         lasttime = ros::Time::now();
         

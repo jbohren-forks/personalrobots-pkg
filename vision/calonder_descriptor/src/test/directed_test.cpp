@@ -52,8 +52,8 @@ int main(int argc, char** argv)
   cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000, num_corners); // Only 20 views?
   cl.write(tree_name);
 
-  //typedef float SigType;
-  typedef uint8_t SigType;
+  typedef float SigType;
+  //typedef uint8_t SigType;
   typedef Promote<SigType>::type DistanceType;
   BruteForceMatcher<SigType, CvPoint> matcher(cl.classes());
 

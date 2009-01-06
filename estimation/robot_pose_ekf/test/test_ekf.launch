@@ -1,16 +1,16 @@
 <launch>
 
-<param name="odom_estimation/freq" value="30.0"/>
-<param name="odom_estimation/sensor_timeout" value="1.0"/>
-<param name="odom_estimation/publish_tf" value="true"/>
-<param name="odom_estimation/odom_used" value="true"/>
-<param name="odom_estimation/imu_used" value="true"/>
-<param name="odom_estimation/vo_used" value="true"/>
-<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="odom_estimation" output="screen"/>
+<param name="robot_pose_ekf/freq" value="30.0"/>
+<param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+<param name="robot_pose_ekf/publish_tf" value="true"/>
+<param name="robot_pose_ekf/odom_used" value="true"/>
+<param name="robot_pose_ekf/imu_used" value="true"/>
+<param name="robot_pose_ekf/vo_used" value="true"/>
+<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
 
 <node pkg="rosrecord" type="rosplay" args="$(find robot_pose_ekf)/test/ekf_test.bag" />
 
-<test test-name="test_ekf" pkg="robot_pose_ekf" type="test_ekf"/>
+<test test-name="test_ekf" pkg="robot_pose_ekf" type="test_ekf" output="screen"/>
 
 
 </launch>

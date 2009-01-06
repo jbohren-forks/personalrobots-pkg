@@ -12,5 +12,6 @@ rospack_add_library(stereoproc src/image.cpp src/stereolib.c src/stereolib2.cpp)
 rospack_add_compile_flags(stereoproc "-msse2 -mpreferred-stack-boundary=4")
 
 rospack_add_executable(stereoproc_exe src/stereoproc.cpp)
+rospack_add_compile_flags(stereoproc_exe "-msse2 -mpreferred-stack-boundary=4")
 target_link_libraries(stereoproc_exe stereoproc)
 SET_TARGET_PROPERTIES(stereoproc_exe PROPERTIES OUTPUT_NAME stereoproc)

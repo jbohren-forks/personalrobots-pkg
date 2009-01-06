@@ -42,6 +42,7 @@ This launch file is performing two separate tasks
     <param name="max_scans" type="int" value="400" />
     <param name="ignore_laser_skew" type="bool" value="true" />
     <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="2" />
   </node>
 
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">

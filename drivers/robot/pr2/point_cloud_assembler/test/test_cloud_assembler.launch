@@ -5,6 +5,7 @@
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="max_scans" type="int" value="400" />
     <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="2" />
   </node>
 
   <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" output="screen"  name="shadow_filter">

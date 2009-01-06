@@ -327,7 +327,6 @@ lock_fd(int fd)
   lock.l_len = 0;
 
   rv = fcntl(fd, F_SETLK, &lock);
-  printf("rv = %d\n", rv);
   return rv;
 }
 
@@ -406,7 +405,7 @@ end:
   return rv;
 }
 
-static int cleanupPidFile(void)
+static void cleanupPidFile(void)
 {
   unlink(PIDFILE);
 }

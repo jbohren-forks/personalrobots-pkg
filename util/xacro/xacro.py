@@ -272,6 +272,7 @@ def eval_term(lex, symbols):
             or lex.peek()[1] == '-':
         result = eval_factor(lex, symbols)
 
+    eat_ignore(lex)
     while lex.peek() and lex.peek()[1] in ['*', '/']:
         op = lex.next()[1]
         n = eval_factor(lex, symbols)
@@ -282,6 +283,7 @@ def eval_term(lex, symbols):
             result = float(result) / float(n)
         else:
             raise "WTF"
+        eat_ignore(lex)
     return result
 
 def eval_expr(lex, symbols):

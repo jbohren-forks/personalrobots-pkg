@@ -12,6 +12,7 @@ Library for doing transformations.
 <depend package="angles"/>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
+<depend package="rosconsole"/>
 <depend package="bullet"/>
 <depend package="boost"/>
 <depend package="rospy"/>

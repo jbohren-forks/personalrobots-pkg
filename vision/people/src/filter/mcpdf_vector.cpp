@@ -72,6 +72,7 @@
       current_weight = it_los->WeightGet();
       pos += (it_los->ValueGet() * current_weight);
     }
+
     return StateVector(pos);
   }
 

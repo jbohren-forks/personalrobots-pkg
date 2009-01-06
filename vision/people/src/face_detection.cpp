@@ -43,6 +43,7 @@
 #include "CvStereoCamModel.h"
 #include <robot_msgs/PositionMeasurement.h>
 #include "image_msgs/StereoInfo.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
@@ -73,6 +74,7 @@ public:
   image_msgs::Image limage_; /**< Left image msg. */
   image_msgs::Image dimage_; /**< Disparity image msg. */
   image_msgs::StereoInfo stinfo_; /**< Stereo info msg. */
+  image_msgs::DisparityInfo dispinfo_; /**< Disparity info msg. */
   image_msgs::CamInfo rcinfo_; /**< Right camera info msg. */
   image_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
   image_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
@@ -131,12 +133,13 @@ public:
 
     // Subscribe to the images and parameters
     std::list<std::string> left_list;
-    //left_list.push_back(std::string("stereodcam/left/image_rect"));
-    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
+    //left_list.push_back(std::string("stereo/left/image_rect"));
+    left_list.push_back(std::string("stereo/left/image_rect_color"));
     sync_.subscribe(left_list,limage_,1);
-    sync_.subscribe("stereodcam/disparity",dimage_,1);
-    sync_.subscribe("stereodcam/stereo_info",stinfo_,1);
-    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereo/disparity",dimage_,1);
+    sync_.subscribe("stereo/stereo_info",stinfo_,1);
+    sync_.subscribe("stereo/disparity_info",dispinfo_,1);
+    sync_.subscribe("stereo/right/cam_info",rcinfo_,1);
     sync_.ready();
 
     // Advertise a position measure message.
@@ -260,7 +263,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
-    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)stinfo_.dpp);
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
  
     if ( cv_image_left_ )  {
       im_size = cvGetSize(cv_image_left_);
@@ -338,7 +341,7 @@ public:
 	  if (!cv_image_disp_out_) {
 	    cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
 	  }
-	  cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
+	  cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
 
 	  cvShowImage("Face detector: Face Detection",cv_image_left_);
 	  cvShowImage("Face detector: Disparity",cv_image_disp_out_);

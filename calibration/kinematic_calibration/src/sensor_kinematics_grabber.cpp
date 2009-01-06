@@ -254,25 +254,25 @@ public:
     ros::Duration lag ;
     
     lag = data.left_image.header.stamp-cur_time ;
-    if (data.left_image.byte_data.layout.get_dim_size() < 2)
+    if (data.left_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Left Image:       %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Left Image:       %lf (%u, %u)\n", lag.to_double(), data.left_image.byte_data.layout.dim[0].size,
-                                                                  data.left_image.byte_data.layout.dim[1].size) ;
+      printf("     Left Image:       %lf (%u, %u)\n", lag.to_double(), data.left_image.uint8_data.layout.dim[0].size,
+                                                                  data.left_image.uint8_data.layout.dim[1].size) ;
 
     lag = data.right_image.header.stamp-cur_time ;
-    if (data.right_image.byte_data.layout.get_dim_size() < 2)
+    if (data.right_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Right Image:      %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Right Image:      %lf (%u, %u)\n", lag.to_double(), data.right_image.byte_data.layout.dim[0].size,
-                                                                  data.right_image.byte_data.layout.dim[1].size) ;
+      printf("     Right Image:      %lf (%u, %u)\n", lag.to_double(), data.right_image.uint8_data.layout.dim[0].size,
+                                                                  data.right_image.uint8_data.layout.dim[1].size) ;
     
     lag = data.disparity_image.header.stamp-cur_time ;
-    if (data.disparity_image.byte_data.layout.get_dim_size() < 2)
+    if (data.disparity_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Disparity Image:  %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Disparity Image:  %lf (%u, %u)\n", lag.to_double(), data.disparity_image.byte_data.layout.dim[0].size,
-                                                                  data.disparity_image.byte_data.layout.dim[1].size) ;
+      printf("     Disparity Image:  %lf (%u, %u)\n", lag.to_double(), data.disparity_image.uint8_data.layout.dim[0].size,
+                                                                  data.disparity_image.uint8_data.layout.dim[1].size) ;
     
     lag = data.stereo_info.header.stamp-cur_time ;
     printf("     Stereo Info:      %lf\n", lag.to_double()) ;

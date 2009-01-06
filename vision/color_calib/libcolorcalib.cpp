@@ -32,7 +32,12 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+#include <vector>
+#include <algorithm>
+
 #include "ros/node.h"
+#include "filters/median.h"
+#include "ros/time.h"
 
 #include "color_calib.h"
 
@@ -282,8 +287,29 @@ void on_mouse(int event, int x, int y, int flags, void *params)
        cvSetZero(mask);
        cvFillConvexPoly(mask, poly, 4, cvScalar(1));
 
-       CvScalar color = cvAvg(g_img, mask);
-
+       //CvScalar color = cvAvg(g_img, mask);
+       CvScalar color;
+       float *p;
+       uint8_t *m;       
+       int cnz = cvCountNonZero(mask);
+       float vals[cnz];
+       int v;
+       for (int ch=0; ch<g_img->nChannels; ch++) {
+	 v = 0;
+	 for (int r=0; r<g_img->height; r++) {
+	   m = (uint8_t*)(mask->imageData + r*mask->widthStep);
+	   p = (float*)(g_img->imageData + r*g_img->widthStep) + ch;
+	   for (int c=0; c<g_img->width; c++) {
+	     if ((*m)==1) {	     
+	       vals[v] = (*p); v++;
+	     }
+	     m++;
+	     p += g_img->nChannels;
+	   }
+	 }
+	 color.val[ch] = filters::median(vals,cnz);
+       }          
+       
        cvReleaseImage(&mask);
 
        cvmSet(g_meas_colors, i, 0, color.val[0]);
@@ -299,7 +325,7 @@ void on_mouse(int event, int x, int y, int flags, void *params)
 
      for (int k = 0; k < 24; k++)
      {
-       printf("%d) Meas: %f %f %f\n   Reproj: %f %f %f\n  Real: %f %f %f\n",
+       printf("%d)Meas: (%f %f %f) Reproj: (%f %f %f) Real: (%f %f %f)\n",
               k,
               cvmGet(g_meas_colors,k,0),
               cvmGet(g_meas_colors,k,1),

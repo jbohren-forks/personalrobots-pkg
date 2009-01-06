@@ -41,13 +41,13 @@
 
 namespace cam_bridge
 {
-  void CamDataToRawStereo(cam::ImageData* im, image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, int8_t& type)
+  void CamDataToRawStereo(cam::ImageData* im, image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t& type)
   {
     if (im->imRawType != COLOR_CODING_NONE)
     {
       fillImage(im_msg,  "image_raw",
                 im->imHeight, im->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 im->imRaw );
       type = image_msgs::RawStereo::IMAGE_RAW;
     }
@@ -55,7 +55,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image",
                 im->imHeight, im->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 im->im );
       type = image_msgs::RawStereo::IMAGE;
     }
@@ -63,7 +63,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image_color",
                 im->imHeight, im->imWidth, 4,
-                "rgba", "byte",
+                "rgba", "uint8",
                 im->imColor );
       type = image_msgs::RawStereo::IMAGE_COLOR;
     }
@@ -71,7 +71,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image_color",
                 im->imHeight, im->imWidth, 3,
-                "rgb", "byte",
+                "rgb", "uint8",
                 im->imColor );
       type = image_msgs::RawStereo::IMAGE_COLOR;
     }
@@ -79,7 +79,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image_rect",
                 im->imHeight, im->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 im->imRect );
       type = image_msgs::RawStereo::IMAGE_RECT;
     }
@@ -87,7 +87,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image_rect_color",
                 im->imHeight, im->imWidth, 4,
-                "rgba", "byte",
+                "rgba", "uint8",
                 im->imRectColor );
       type = image_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
@@ -95,7 +95,7 @@ namespace cam_bridge
     {
       fillImage(im_msg,  "image_rect_color",
                 im->imHeight, im->imWidth, 3,
-                "rgb", "byte",
+                "rgb", "uint8",
                 im->imRectColor );
       type = image_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
@@ -120,29 +120,34 @@ namespace cam_bridge
                 "mono", "int16",
                 stIm->imDisp );
       
-      raw_stereo.stereo_info.has_disparity = true;
+      raw_stereo.has_disparity = true;
+
+      raw_stereo.disparity_info.height = stIm->imHeight;
+      raw_stereo.disparity_info.width = stIm->imWidth;
+
+      raw_stereo.disparity_info.dpp = stIm->dpp;
+      raw_stereo.disparity_info.num_disp = stIm->numDisp;
+      raw_stereo.disparity_info.im_Dtop = stIm->imDtop;
+      raw_stereo.disparity_info.im_Dleft = stIm->imDleft;
+      raw_stereo.disparity_info.im_Dwidth = stIm->imDwidth;
+      raw_stereo.disparity_info.im_Dheight = stIm->imDheight;
+      raw_stereo.disparity_info.corr_size = stIm->corrSize;
+      raw_stereo.disparity_info.filter_size = stIm->filterSize;
+      raw_stereo.disparity_info.hor_offset = stIm->horOffset;
+      raw_stereo.disparity_info.texture_thresh = stIm->textureThresh;
+      raw_stereo.disparity_info.unique_thresh = stIm->uniqueThresh;
+      raw_stereo.disparity_info.smooth_thresh = stIm->smoothThresh;
+      raw_stereo.disparity_info.speckle_diff = stIm->speckleDiff;
+      raw_stereo.disparity_info.speckle_region_size = stIm->speckleRegionSize;
+      raw_stereo.disparity_info.unique_check = stIm->unique_check;
+
     } else {
       clearImage(raw_stereo.disparity_image);
-      raw_stereo.stereo_info.has_disparity = false;
+      raw_stereo.has_disparity = false;
     }
 
     raw_stereo.stereo_info.height = stIm->imHeight;
     raw_stereo.stereo_info.width = stIm->imWidth;
-    raw_stereo.stereo_info.dpp = stIm->dpp;
-    raw_stereo.stereo_info.num_disp = stIm->numDisp;
-    raw_stereo.stereo_info.im_Dtop = stIm->imDtop;
-    raw_stereo.stereo_info.im_Dleft = stIm->imDleft;
-    raw_stereo.stereo_info.im_Dwidth = stIm->imDwidth;
-    raw_stereo.stereo_info.im_Dheight = stIm->imDheight;
-    raw_stereo.stereo_info.corr_size = stIm->corrSize;
-    raw_stereo.stereo_info.filter_size = stIm->filterSize;
-    raw_stereo.stereo_info.hor_offset = stIm->horOffset;
-    raw_stereo.stereo_info.texture_thresh = stIm->textureThresh;
-    raw_stereo.stereo_info.unique_thresh = stIm->uniqueThresh;
-    raw_stereo.stereo_info.smooth_thresh = stIm->smoothThresh;
-    raw_stereo.stereo_info.speckle_diff = stIm->speckleDiff;
-    raw_stereo.stereo_info.speckle_region_size = stIm->speckleRegionSize;
-    raw_stereo.stereo_info.unique_check = stIm->unique_check;
     memcpy((char*)(&raw_stereo.stereo_info.T[0]),  (char*)(stIm->T),   3*sizeof(double));
     memcpy((char*)(&raw_stereo.stereo_info.Om[0]), (char*)(stIm->Om),  3*sizeof(double));
     memcpy((char*)(&raw_stereo.stereo_info.RP[0]), (char*)(stIm->RP), 16*sizeof(double));
@@ -152,7 +157,7 @@ namespace cam_bridge
   }
 
 
-  void extractImage(std_msgs::ByteMultiArray& arr, size_t* sz, uint8_t **d)
+  void extractImage(std_msgs::UInt8MultiArray& arr, size_t* sz, uint8_t **d)
   {
     size_t new_size = arr.layout.dim[0].stride;
 
@@ -178,7 +183,7 @@ namespace cam_bridge
     memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
   }
 
-  void RawStereoToCamData(image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, int8_t& type, cam::ImageData* im)
+  void RawStereoToCamData(image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t& type, cam::ImageData* im)
   {
 
     im->imRawType = COLOR_CODING_NONE;
@@ -189,37 +194,37 @@ namespace cam_bridge
 
     if (type == image_msgs::RawStereo::IMAGE_RAW)
     {
-      extractImage(im_msg.byte_data, &im->imRawSize, &im->imRaw);
+      extractImage(im_msg.uint8_data, &im->imRawSize, &im->imRaw);
       im->imRawType = COLOR_CODING_BAYER8_RGGB;
     }
     else if (type == image_msgs::RawStereo::IMAGE)
     {
-      extractImage(im_msg.byte_data, &im->imSize, &im->im);
+      extractImage(im_msg.uint8_data, &im->imSize, &im->im);
       im->imType = COLOR_CODING_MONO8;
     }
     else if (type == image_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgba")
     {
-      extractImage(im_msg.byte_data, &im->imColorSize, &im->imColor);
+      extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGBA8;
     }
     else if (type == image_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgb")
     {
-      extractImage(im_msg.byte_data, &im->imColorSize, &im->imColor);
+      extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGB8;
     }
     else if (type == image_msgs::RawStereo::IMAGE_RECT)
     {
-      extractImage(im_msg.byte_data, &im->imRectSize, &im->imRect);
+      extractImage(im_msg.uint8_data, &im->imRectSize, &im->imRect);
       im->imRectType = COLOR_CODING_MONO8;
     }
     else if (type == image_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgba")
     {
-      extractImage(im_msg.byte_data, &im->imRectColorSize, &im->imRectColor);
+      extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGBA8;
     }
     else if (type == image_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgb")
     {
-      extractImage(im_msg.byte_data, &im->imRectColorSize, &im->imRectColor);
+      extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGB8;
     }
 
@@ -241,28 +246,28 @@ namespace cam_bridge
    
     stIm->hasDisparity = false;
  
-    if (raw_stereo.stereo_info.has_disparity)
+    if (raw_stereo.has_disparity)
     {
       extractImage(raw_stereo.disparity_image.int16_data, &stIm->imDispSize, &stIm->imDisp);
       stIm->hasDisparity = true;
+
+      stIm->dpp                 =     raw_stereo.disparity_info.dpp;
+      stIm->numDisp             =     raw_stereo.disparity_info.num_disp;
+      stIm->imDtop              =     raw_stereo.disparity_info.im_Dtop;
+      stIm->imDleft             =     raw_stereo.disparity_info.im_Dleft;
+      stIm->imDwidth            =     raw_stereo.disparity_info.im_Dwidth;
+      stIm->imDheight           =     raw_stereo.disparity_info.im_Dheight;
+      stIm->corrSize            =     raw_stereo.disparity_info.corr_size;
+      stIm->filterSize          =     raw_stereo.disparity_info.filter_size;
+      stIm->horOffset           =     raw_stereo.disparity_info.hor_offset;
+      stIm->textureThresh       =     raw_stereo.disparity_info.texture_thresh;
+      stIm->uniqueThresh        =     raw_stereo.disparity_info.unique_thresh;
+      stIm->smoothThresh        =     raw_stereo.disparity_info.smooth_thresh;
+      stIm->speckleDiff         =     raw_stereo.disparity_info.speckle_diff;
+      stIm->speckleRegionSize   =     raw_stereo.disparity_info.speckle_region_size;
+      stIm->unique_check        =     raw_stereo.disparity_info.unique_check;
     }
 
-
-    stIm->dpp                 =     raw_stereo.stereo_info.dpp;
-    stIm->numDisp             =     raw_stereo.stereo_info.num_disp;
-    stIm->imDtop              =     raw_stereo.stereo_info.im_Dtop;
-    stIm->imDleft             =     raw_stereo.stereo_info.im_Dleft;
-    stIm->imDwidth            =     raw_stereo.stereo_info.im_Dwidth;
-    stIm->imDheight           =     raw_stereo.stereo_info.im_Dheight;
-    stIm->corrSize            =     raw_stereo.stereo_info.corr_size;
-    stIm->filterSize          =     raw_stereo.stereo_info.filter_size;
-    stIm->horOffset           =     raw_stereo.stereo_info.hor_offset;
-    stIm->textureThresh       =     raw_stereo.stereo_info.texture_thresh;
-    stIm->uniqueThresh        =     raw_stereo.stereo_info.unique_thresh;
-    stIm->smoothThresh        =     raw_stereo.stereo_info.smooth_thresh;
-    stIm->speckleDiff         =     raw_stereo.stereo_info.speckle_diff;
-    stIm->speckleRegionSize =     raw_stereo.stereo_info.speckle_region_size;
-    stIm->unique_check        =     raw_stereo.stereo_info.unique_check;
     memcpy((char*)(stIm->T),  (char*)(&raw_stereo.stereo_info.T[0]),  3*sizeof(double));
     memcpy((char*)(stIm->Om), (char*)(&raw_stereo.stereo_info.Om[0]), 3*sizeof(double));
     memcpy((char*)(stIm->RP), (char*)(&raw_stereo.stereo_info.RP[0]), 16*sizeof(double));

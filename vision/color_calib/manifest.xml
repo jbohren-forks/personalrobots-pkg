@@ -12,6 +12,7 @@ Generate color calibration matrix from macbeth chart.
 <depend package="std_srvs"/>
 <depend package="boost"/>
 <depend package="image_utils"/>
+<depend package="filters"/>
 <depend package="opencv_latest"/>
 <depend package="image_msgs"/>
   <export>

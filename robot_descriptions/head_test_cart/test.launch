@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find head_test_cart)/send_description.xml" />
 
-  <machine name="xenomai_root" user="root" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
+  <machine name="xenomai_root" user="root" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 
   <include file="$(find head_test_cart)/test.machine" />
 

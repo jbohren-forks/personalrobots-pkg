@@ -1,0 +1,13 @@
+<launch>
+  <group ns="stereo">
+    <param name="videre_mode" type="str" value="none"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+  </group>
+  <node pkg="dcam" type="stereodcam" respawn="false"/>
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+  <node name="stereo_capture" pkg="stereo_capture" type="stereo_capture" respawn="false" output="screen"/>
+</launch>
+

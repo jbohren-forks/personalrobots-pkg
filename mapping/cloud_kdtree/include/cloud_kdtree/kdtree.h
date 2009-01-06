@@ -39,6 +39,8 @@
 
 #include <stdlib.h>
 
+#define USE_ANN
+
 #ifdef USE_ANN
   #include <ANN/ANN.h>
 #else
@@ -88,9 +90,9 @@ namespace cloud_kdtree
         bucket_size_ = 30;    // default bucket size value
 
         // Allocate enough data
+        nr_points_ = convertCloudToArray (points, points_);
         nn_idx_    = new ANNidx [nr_points_];
         nn_dists_  = new ANNdist [nr_points_];
-        nr_points_ = convertCloudToArray (points, points_);
         // Create the kd_tree representation
 #ifdef USE_ANN
         ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
@@ -113,9 +115,9 @@ namespace cloud_kdtree
         dim_       = 3 + dim;     // default number of dimensions (3 = xyz) + the extra channels
 
         // Allocate enough data
+        nr_points_ = convertCloudToArray (points, dim, points_);
         nn_idx_   = new ANNidx [nr_points_];
         nn_dists_ = new ANNdist [nr_points_];
-        nr_points_ = convertCloudToArray (points, dim, points_);
         // Create the kd_tree representation
 #ifdef USE_ANN
         ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);

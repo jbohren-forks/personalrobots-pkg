@@ -193,7 +193,7 @@ namespace cloud_octree
       if (!nextNode)
         return (empty_indices_);
       else if (nextNode->isLeaf ())
-        return ((Leaf*)nextNode)->getValue ();
+        return ((Leaf*)nextNode)->getIndices ();
 
       currentNode = (Branch*)nextNode;
     }
@@ -298,12 +298,12 @@ namespace cloud_octree
         // We have reached the max depth, set the leaf to new value then done
         if (depth >= m_max_depth_)
         {
-          ((Leaf*)next_node)->insertValue (new_idx);
+          ((Leaf*)next_node)->insertIndex (new_idx);
           break;
         }
 
         // Create a new branch with the all children leaves with the old value
-        next_node = new Branch(((Leaf*)next_node)->getValue ());
+        next_node = new Branch(((Leaf*)next_node)->getIndices ());
         current_node->setChild (address, next_node);
       }
 
@@ -331,9 +331,10 @@ namespace cloud_octree
   std::vector<Leaf*>
     Octree::getOccupiedLeaves ()
   {
+    int num_cells = getNumCells ();
     std::vector<Leaf*> leaves;
 
-    std::list< SpatialNode* > stack;
+    std::list<SpatialNode*> stack;
     SpatialNode* sn = new SpatialNode;
 
     sn->node_ = root_;
@@ -351,7 +352,15 @@ namespace cloud_octree
       {
         // Check if the node is a leaf
         if (sn->node_->isLeaf ())
+        {
+          ((Leaf*)sn->node_)->i_ = (int)(floor ((sn->cx_ - m_cen_[0]) / num_cells) + (num_cells / 2));
+          ((Leaf*)sn->node_)->j_ = (int)(floor ((sn->cy_ - m_cen_[1]) / num_cells) + (num_cells / 2));
+          ((Leaf*)sn->node_)->k_ = (int)(floor ((sn->cz_ - m_cen_[2]) / num_cells) + (num_cells / 2));
+          ((Leaf*)sn->node_)->cen_[0] = sn->cx_;
+          ((Leaf*)sn->node_)->cen_[1] = sn->cy_;
+          ((Leaf*)sn->node_)->cen_[2] = sn->cz_;
           leaves.push_back ((Leaf*)sn->node_);
+        }
         // Must be a branch then, get it's children
         else
           for (int i = 0; i < 8; i++)
@@ -378,7 +387,7 @@ namespace cloud_octree
   {
     std::vector<Leaf*> leaves;
 
-    std::list< SpatialNode* > stack;
+    std::list<SpatialNode*> stack;
     SpatialNode* sn = new SpatialNode;
 
     sn->node_ = root_;
@@ -397,7 +406,7 @@ namespace cloud_octree
         // Check if the node is a leaf
         if (sn->node_->isLeaf ())
         {
-          if (((Leaf*)sn->node_)->getValue ().size () >= min_points)
+          if (((Leaf*)sn->node_)->getIndices ().size () >= min_points)
             leaves.push_back ((Leaf*)sn->node_);
         }
         // Must be a branch then, get it's children

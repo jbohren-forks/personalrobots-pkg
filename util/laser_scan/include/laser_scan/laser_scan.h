@@ -49,7 +49,15 @@
  * \todo Other potential additions are upsampling and downsampling algorithms for the scans.
  */
 
-namespace laser_scan{
+namespace laser_scan
+{
+
+  /** \brief Define masks for output channels */
+  const int MASK_INTENSITY = 0x01;
+  const int MASK_INDEX     = 0x02;
+  const int MASK_DISTANCE  = 0x04;
+  const int DEFAULT_MASK   = (MASK_INTENSITY + MASK_INDEX);
+  
   /** \brief A Class to Project Laser Scan
    * This class will project laser scans into point clouds, and caches unit vectors 
    * between runs so as not to need to recalculate.  
@@ -67,7 +75,7 @@ namespace laser_scan{
        * \param range_cutoff An additional range cutoff which can be applied which is more limiting than max_range in the scan.
        * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
-      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false, int mask = DEFAULT_MASK);
 
 
       /** \brief Transform a std_msgs::LaserScan into a PointCloud in target frame */

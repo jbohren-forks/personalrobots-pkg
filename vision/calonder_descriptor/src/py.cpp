@@ -4,14 +4,92 @@
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 
+#include <boost/foreach.hpp>
 #include <highgui.h>
 #include <cvwimage.h>
-#include <cstdio>
+#include <algorithm>
+#include <cstdlib>
 #include <ctime>
 
 using namespace features;
 
-#include "generated.i"
+typedef struct {
+  PyObject_HEAD
+  BruteForceMatcher <float, int> *c;
+  std::vector<PyObject*> *sigs;
+} wrapped_BruteForceMatcher_t;
+
+static void
+wrapped_BruteForceMatcher_dealloc(PyObject *self)
+{
+  wrapped_BruteForceMatcher_t *pc = (wrapped_BruteForceMatcher_t*)self;
+  delete pc->c;
+  BOOST_FOREACH(PyObject *sig, *pc->sigs)
+    Py_DECREF(sig);
+  delete pc->sigs;
+  PyObject_Del(self);
+}
+
+PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args);
+PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args);
+
+/* Method table */
+static PyMethodDef wrapped_BruteForceMatcher_methods[] = {
+{"addSignature", wrapped_BruteForceMatcher_addSignature, METH_VARARGS},
+{"findMatch", wrapped_BruteForceMatcher_findMatch, METH_VARARGS},
+{NULL, NULL}
+};
+
+static PyObject *
+wrapped_BruteForceMatcher_GetAttr(PyObject *self, char *attrname)
+{
+  return Py_FindMethod(wrapped_BruteForceMatcher_methods, self, attrname);
+}
+
+static PyTypeObject wrapped_BruteForceMatcher_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "BruteForceMatcher",
+    sizeof(wrapped_BruteForceMatcher_t),
+    0,
+    (destructor)wrapped_BruteForceMatcher_dealloc,
+    0,
+    (getattrfunc)wrapped_BruteForceMatcher_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+    
+    0,
+    
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
+{
+  wrapped_BruteForceMatcher_t *object = PyObject_NEW(wrapped_BruteForceMatcher_t, &wrapped_BruteForceMatcher_Type);
+  int dimension;
+  if (!PyArg_ParseTuple(args, "i", &dimension))
+    return NULL;
+  object->c = new BruteForceMatcher <float, int>(dimension);
+  object->sigs = new std::vector<PyObject*>;
+  return (PyObject*)object;
+}
 
 typedef struct {
   PyObject_HEAD
@@ -95,19 +173,26 @@ classifier_dealloc(PyObject *self)
   PyObject_Del(self);
 }
 
-// TODO: allow specifying reduced dimension for compressive sensing
+// TODO: keyword arguments for training parameters
+//       allow training on multiple images
 PyObject *train(PyObject *self, PyObject *args)
 {
   classifier_t *pc = (classifier_t*)self;
 
   IplImage *input;
   PyObject *kp;
+  int num_trees = RTreeClassifier::DEFAULT_TREES;
+  int depth = RandomizedTree::DEFAULT_DEPTH;
+  int views = RandomizedTree::DEFAULT_VIEWS;
+  int dimension = RandomizedTree::DEFAULT_REDUCED_NUM_DIM;
 
   {
     char *imgdata;
     int imgdata_size, x, y;
-    if (!PyArg_ParseTuple(args, "s#iiO", &imgdata, &imgdata_size, &x, &y, &kp))
+    if (!PyArg_ParseTuple(args, "s#iiO|iiii", &imgdata, &imgdata_size, &x, &y,
+                          &kp, &num_trees, &depth, &views, &dimension))
       return NULL;
+    dimension = std::min(dimension, PyList_Size(kp));
     input = cvCreateImageHeader(cvSize(x, y), IPL_DEPTH_8U, 1);
     cvSetData(input, imgdata, x);
   }
@@ -118,9 +203,9 @@ PyObject *train(PyObject *self, PyObject *args)
     base_set.push_back( BaseKeypoint(x+16, y+16, input) );
   }
 
-  Rng rng( 0 );
-  //pc->classifier->train(base_set, rng, 25, 10, 20);
-  pc->classifier->train(base_set, rng, 25, 10, 1000, base_set.size());
+  //Rng rng( 0 );
+  Rng rng( std::time(0) );
+  pc->classifier->train(base_set, rng, num_trees, depth, views, dimension);
 
   Py_RETURN_NONE;
 }
@@ -158,8 +243,7 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   classifier_t *pc = (classifier_t*)self;
   signature_t *object = PyObject_NEW(signature_t, &signature_Type);
   object->size = pc->classifier->classes();
-  // TODO: alignment
-  object->data = (float*) malloc(object->size * sizeof(float));
+  posix_memalign((void**)&object->data, 16, object->size * sizeof(float));
   pc->classifier->getSignature(input, object->data);
   return (PyObject*)object;
 }
@@ -188,11 +272,10 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
     return NULL;
 
   signature_t *ps = (signature_t*)sig;
-  pm->c->setSize(ps->size); // TODO: this is kind of a hack
-  // FIXME: copying data to make sure matcher signatures stay in memory
-  float *data = (float*) malloc(ps->size * sizeof(float));
-  memcpy(data, ps->data, ps->size * sizeof(float));
-  pm->c->addSignature(data, 0);
+  pm->c->addSignature(ps->data, 0);
+  // claim reference to ensure sig isn't deleted prematurely!
+  Py_INCREF(sig);
+  pm->sigs->push_back(sig);
   Py_RETURN_NONE;
 }
 
@@ -204,20 +287,18 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
   int predicates_size;
   char *predicates = NULL;
 
-  printf("In wrapped findMatch, about to parse args\n");
   if (!PyArg_ParseTuple(args, "O|s#", &sig, &predicates, &predicates_size))
     return NULL;
   signature_t *ps = (signature_t*)sig;
 
   float distance;
   int index;
-  printf("About to try to find match\n");
   if (predicates == NULL)
     index = pm->c->findMatch(ps->data, &distance);
   else {
     index = pm->c->findMatchPredicated(ps->data, predicates, &distance);
   }
-  printf("Successful\n");
+
   if (index == -1)
     Py_RETURN_NONE;
   else
@@ -261,7 +342,7 @@ static PyTypeObject classifier_Type = {
 PyObject *classifier(PyObject *self, PyObject *args)
 {
     classifier_t *object = PyObject_NEW(classifier_t, &classifier_Type);
-    object->classifier = new RTreeClassifier;
+    object->classifier = new RTreeClassifier(true);
     return (PyObject*)object;
 }
 

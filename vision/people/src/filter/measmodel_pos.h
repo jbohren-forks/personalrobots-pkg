@@ -37,10 +37,6 @@
 #ifndef MEASMODEL_POS_H
 #define MEASMODEL_POS_H
 
-#define NUM_MEASMODEL_POS_COND_ARGS    1
-#define DIM_MEASMODEL_POS              13
-
-
 #include "state_pos_vel.h"
 #include "tf/tf.h"
 #include "gaussian_vector.h"
