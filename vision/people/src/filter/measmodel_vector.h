@@ -38,10 +38,6 @@
 #ifndef MEASMODEL_VECTOR_H
 #define MEASMODEL_VECTOR_H
 
-#define NUM_MEASMODEL_VECTOR_COND_ARGS    1
-#define DIM_MEASMODEL_VECTOR              3
-
-
 #include "tf/tf.h"
 #include "state_vector.h"
 #include "gaussian_vector.h"

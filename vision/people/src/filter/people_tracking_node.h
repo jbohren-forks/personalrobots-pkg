@@ -38,6 +38,7 @@
 #define __PEOPLE_TRACKING_NODE__
 
 #include <string>
+#include <boost/thread/mutex.hpp>
 
 // ros stuff
 #include <ros/node.h>
@@ -96,7 +97,7 @@ private:
   double freq_;
   BFL::StatePosVel sys_sigma_;
   std::string fixed_frame_;
-
+  boost::mutex filter_mutex_;
 
   std::vector<std_msgs::Point32> meas_visualize_;
   unsigned int meas_visualize_counter_;

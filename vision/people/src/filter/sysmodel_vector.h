@@ -34,13 +34,13 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef MEASMODEL_POS_H
-#define MEASMODEL_POS_H
+#ifndef SYSMODEL_VECTOR_H
+#define SYSMODEL_VECTOR_H
 
-#include "state_pos_vel.h"
-#include "tf/tf.h"
+
+#include "state_vector.h"
 #include "gaussian_vector.h"
-#include <model/measurementmodel.h>
+#include <model/systemmodel.h>
 #include <pdf/conditionalpdf.h>
 #include <wrappers/matrix/matrix_wrapper.h>
 #include <string>
@@ -48,29 +48,30 @@
 namespace BFL
 {
 
-  class MeasPdfPos 
-    : public BFL::ConditionalPdf<tf::Vector3, StatePosVel>
+  class SysPdfVector 
+    : public ConditionalPdf<StateVector, StateVector>
   {
   public:
     /// Constructor
-    MeasPdfPos(const tf::Vector3& sigma);
+    SysPdfVector(const StateVector& sigma);
     
     /// Destructor
-    virtual ~MeasPdfPos();
+    virtual ~SysPdfVector();
     
-    // set covariance
-    void CovarianceSet(const  MatrixWrapper::SymmetricMatrix& cov);
+    // set time
+    void SetDt(double dt) {dt_ = dt;};
 
     // Redefining pure virtual methods
-    virtual BFL::Probability ProbabilityGet(const tf::Vector3& input) const;
-    virtual bool SampleFrom (BFL::Sample<tf::Vector3>& one_sample, int method, void *args) const;  // Not applicable
-    virtual tf::Vector3 ExpectedValueGet() const; // Not applicable
+    virtual bool SampleFrom (BFL::Sample<StateVector>& one_sample, int method, void *args) const;  
+    virtual StateVector ExpectedValueGet() const; // not applicable
+    virtual Probability ProbabilityGet(const StateVector& state) const; // not applicable
     virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
 
 
   private:
-    GaussianVector meas_noise_;
-    
+    GaussianVector noise_;
+    double dt_;
+
   }; // class
   
 
@@ -78,24 +79,27 @@ namespace BFL
 
 
 
-  class MeasModelPos
-    : public BFL::MeasurementModel<tf::Vector3, StatePosVel>
+
+  class SysModelVector
+    : public SystemModel<StateVector>
   {
   public:
-    /// constructor
-    MeasModelPos(const tf::Vector3& sigma)
-      : BFL::MeasurementModel<tf::Vector3, StatePosVel>(new MeasPdfPos(sigma))
+    SysModelVector(const StateVector& sigma)
+      :SystemModel<StateVector>(new SysPdfVector(sigma))
     {};
 
     /// destructor
-    ~MeasModelPos()
-    {
-      delete MeasurementPdfGet();
-    };
+    ~SysModelVector()
+    { delete SystemPdfGet(); };
+
+    // set time
+    void SetDt(double dt) {((SysPdfVector*)SystemPdfGet())->SetDt(dt);};
 
   }; // class
+  
 
+  
 } //namespace
   
   
-#endif 
+#endif

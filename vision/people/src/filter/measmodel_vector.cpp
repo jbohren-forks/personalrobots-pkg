@@ -40,6 +40,9 @@ using namespace std;
 using namespace BFL;
 using namespace tf;
 
+static const unsigned int NUM_MEASMODEL_VECTOR_COND_ARGS  = 1;
+static const unsigned int DIM_MEASMODEL_VECTOR            = 3;
+
 
 // Constructor
 MeasPdfVector::MeasPdfVector(const StateVector& sigma)

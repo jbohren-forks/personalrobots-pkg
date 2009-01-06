@@ -43,8 +43,8 @@ using namespace BFL;
 using namespace tf;
 
 
-#define NUM_SYS_POS_VEL_COND_ARGS    1
-#define DIM_SYS_POS_VEL              6
+static const unsigned int NUM_SYS_POS_VEL_COND_ARGS = 1;
+static const unsigned int DIM_SYS_POS_VEL           = 6;
 
 
 // Constructor

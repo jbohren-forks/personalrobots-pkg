@@ -41,6 +41,11 @@ using namespace BFL;
 using namespace tf;
 
 
+static const unsigned int NUM_MEASMODEL_POS_COND_ARGS   = 1;
+static const unsigned int DIM_MEASMODEL_POS             = 13;
+
+
+
 // Constructor
 MeasPdfPos::MeasPdfPos(const Vector3& sigma)
   : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),

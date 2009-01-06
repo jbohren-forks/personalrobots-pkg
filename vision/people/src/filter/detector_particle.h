@@ -34,17 +34,17 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef __TRACKER_PARTICLE__
-#define __TRACKER_PARTICLE__
+#ifndef __DETECTOR_PARTICLE__
+#define __DETECTOR_PARTICLE__
 
 #include "tracker.h"
 
 // bayesian filtering
 #include <filter/bootstrapfilter.h>
-#include "state_pos_vel.h"
-#include "mcpdf_pos_vel.h"
-#include "sysmodel_pos_vel.h"
-#include "measmodel_pos.h"
+#include "state_vector.h"
+#include "mcpdf_vector.h"
+#include "measmodel_vector.h"
+#include "sysmodel_vector.h"
 
 // TF
 #include <tf/tf.h>
@@ -58,50 +58,49 @@
 namespace estimation
 {
 
-class TrackerParticle: public Tracker
+class DetectorParticle: public Tracker
 {
 public:
   /// constructor
-  TrackerParticle(unsigned int num_particles, const BFL::StatePosVel& sysnoise);
+  DetectorParticle(unsigned int num_particles, const BFL::StateVector& sysnoise, const BFL::StateVector& measnoise);
 
   /// destructor
-  virtual ~TrackerParticle();
+  virtual ~DetectorParticle();
 
-  /// initialize tracker
-  virtual void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time);
+  /// initialize detector
+  virtual void initialize(const BFL::StateVector& mu, const BFL::StateVector& sigma, const double time);
 
-  /// return if tracker was initialized
-  virtual bool isInitialized() const {return tracker_initialized_;};
+  /// return if detector was initialized
+  virtual bool isInitialized() const {return detector_initialized_;};
 
-  /// return measure for tracker quality: 0=bad 1=good
+  /// return measure for detector quality: 0=bad 1=good
   virtual double getQuality() const {return quality_;};
 
-  /// update tracker
+  /// update detector
   virtual bool updatePrediction(const double dt);
-  virtual bool updateCorrection(const tf::Vector3& meas, 
+  virtual bool updateCorrection(const BFL::StateVector& meas, 
 				const MatrixWrapper::SymmetricMatrix& cov,
 				const double time);
 
   /// get filter posterior
-  virtual void getEstimate(BFL::StatePosVel& est) const;
+  virtual void getEstimate(BFL::StateVector& est) const;
   virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
   // get evenly spaced particle cloud
-  void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
+  void getParticleCloud(const BFL::StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
-  MatrixWrapper::Matrix getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
+  MatrixWrapper::Matrix getHistogramPos(const BFL::StateVector& min, const BFL::StateVector& max, const BFL::StateVector& step) const;
 
 private:
   // pdf / model / filter
-  BFL::MCPdfPosVel                                          prior_;
-  BFL::BootstrapFilter<BFL::StatePosVel, tf::Vector3>*      filter_;
-  BFL::SysModelPosVel                                       sys_model_;
-  BFL::MeasModelPos                                         meas_model_;
+  BFL::MCPdfVector                                          prior_;
+  BFL::BootstrapFilter<BFL::StateVector, BFL::StateVector>* filter_;
+  BFL::SysModelVector                                       sys_model_;
+  BFL::MeasModelVector                                      meas_model_;
 
   // vars
-  bool tracker_initialized_;
+  bool detector_initialized_;
   double filter_time_, quality_;
   unsigned int num_particles_;
 
