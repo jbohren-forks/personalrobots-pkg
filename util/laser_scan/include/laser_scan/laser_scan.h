@@ -53,10 +53,10 @@ namespace laser_scan
 {
 
   /** \brief Define masks for output channels */
-  #define MASK_INTENSITY 0x01
-  #define MASK_INDEX     0x02
-  #define MASK_DISTANCE  0x03
-  #define DEFAULT_MASK   (MASK_INTENSITY + MASK_INDEX)
+  const int MASK_INTENSITY = 0x01;
+  const int MASK_INDEX     = 0x02;
+  const int MASK_DISTANCE  = 0x03;
+  const int DEFAULT_MASK   = (MASK_INTENSITY + MASK_INDEX);
   
   /** \brief A Class to Project Laser Scan
    * This class will project laser scans into point clouds, and caches unit vectors 
