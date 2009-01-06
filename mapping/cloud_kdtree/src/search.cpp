@@ -66,17 +66,17 @@ namespace cloud_kdtree
     * \param k the number of neighbors to search for
     */
   bool
-    KdTree::nearestKSearch (std_msgs::PointCloud points, unsigned int index, int k)
+    KdTree::nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k)
   {
-    if (dim_ > (3 + (int)points.chan.size ()))  // Presume that the user know what he's doing, but check for overflow
+    if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);
-    if (index >= points.pts.size ())
+    if (index >= points->pts.size ())
       return (false);
 
     ANNpoint p = annAllocPt (dim_);
-    p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
+    p[0] = points->pts.at (index).x; p[1] = points->pts.at (index).y; p[2] = points->pts.at (index).z;
     for (int d = 0; d < dim_ - 3; d++)
-      p[d + 3] = points.chan[d].vals.at (index);
+      p[d + 3] = points->chan[d].vals.at (index);
 
 #ifdef USE_ANN
     ann_kd_tree_->annkSearch (p, k, nn_idx_, nn_dists_, epsilon_);
@@ -84,6 +84,34 @@ namespace cloud_kdtree
     flann_find_nearest_neighbors_index (index_id_, p, 1, nn_idx_, nn_dists_, k, flann_param_.checks, &flann_param_);
 #endif
     annDeallocPt (p);
+
+    k_ = k;
+    last_call_type_ = K_SEARCH;
+    return (true);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Search for k-nearest neighbors for the given query point index.
+    * \note This method is to be used for extremely fast operations where we want to skip converting the point to
+    * a \a Point32 message in a loop. There are no internal checks to validate the given index so use it carefully!
+    * \param p_idx the given query point index
+    * \param k the number of neighbors to search for
+    */
+  bool
+    KdTree::nearestKSearch (int p_idx, int k)
+  {
+#ifdef USE_ANN
+    ann_kd_tree_->annkSearch (points_[p_idx], k, nn_idx_, nn_dists_, epsilon_);
+//     std::cerr << points_[p_idx][0] << " " << points_[p_idx][1] << " " << points_[p_idx][2] << std::endl;
+#else
+    ANNpoint p = annAllocPt (3);
+    p[0] = points_[p_idx * dim_ * sizeof (float) + 0];
+    p[1] = points_[p_idx * dim_ * sizeof (float) + 1];
+    p[2] = points_[p_idx * dim_ * sizeof (float) + 2];
+//     std::cerr << p[0] << " " << p[1] << " " << p[2] << std::endl;
+    flann_find_nearest_neighbors_index (index_id_, p, 1, nn_idx_, nn_dists_, k, flann_param_.checks, &flann_param_);
+    annDeallocPt (p);
+#endif
 
     k_ = k;
     last_call_type_ = K_SEARCH;
@@ -133,17 +161,17 @@ namespace cloud_kdtree
     * \param radius the radius of the sphere bounding all the query point's neighbors
     */
   bool
-    KdTree::radiusSearch (std_msgs::PointCloud points, unsigned int index, double radius)
+    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius)
   {
-    if (dim_ > (3 + (int)points.chan.size ()))  // Presume that the user know what he's doing, but check for overflow
+    if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);
-    if (index >= points.pts.size ())
+    if (index >= points->pts.size ())
       return (false);
 
     ANNpoint p = annAllocPt (dim_);
-    p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
+    p[0] = points->pts.at (index).x; p[1] = points->pts.at (index).y; p[2] = points->pts.at (index).z;
     for (int d = 0; d < dim_ - 3; d++)
-      p[d + 3] = points.chan[d].vals.at (index);
+      p[d + 3] = points->chan[d].vals.at (index);
 
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
