@@ -65,7 +65,8 @@ public:
 	static const double  DefTemplateMatchThreshold = 0;
 
 	// constants used in RANSAC
-	static const int DefNumRansacIter = 400; //< default num of iterations in RANSAC
+//	static const int DefNumRansacIter = 400; //< default num of iterations in RANSAC
+	static const int DefNumRansacIter = 100; //< default num of iterations in RANSAC
 	/// Default threshold for inliers checking in RANSAC
 	static const double DefInlierThreshold = 1.5;
 

@@ -244,7 +244,7 @@ for topic, msg, t in rosrecord.logplayer(filename):
       prev_wheel_o = wheel_o
       has_moved = True
 
-    if has_moved and start <= framecounter and (framecounter % 1) == 0:
+    if has_moved and start <= framecounter:
       for i,vo in enumerate(vos):
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
         vo.handle_frame(af)
@@ -377,6 +377,7 @@ pylab.ioff()
 pylab.show()
 
 for vo in vos:
+  print "***********"
   print vo.name()
   print "distance from start:", vo.pose.distance()
   print "planarity", vo.planarity

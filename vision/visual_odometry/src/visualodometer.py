@@ -180,6 +180,8 @@ class FeatureDetector:
 
 class FeatureDetectorFast(FeatureDetector):
 
+#  default_thresh = 10
+#  threshrange = (5,127)
   default_thresh = 10
   threshrange = (5,127)
 
@@ -331,7 +333,10 @@ class VisualOdometer:
     self.pose = Pose()
     self.inl = 0
     self.outl = 0
-    self.num_frames = 0
+    self.num_frames  = 0
+    self.tot_inliers = 0
+    self.tot_matches = 0
+    self.tot_points  = 0
     self.ext_frames = 1000000
     self.keyframe = None
     self.log_keyframes = []
@@ -363,14 +368,20 @@ class VisualOdometer:
 
   def summarize_timers(self):
     niter = self.num_frames
-    print niter, "frames"
-    print len(self.log_keyframes), "keyframes"
+    print ""
+    print "total number of keyframes/frames:", len(self.log_keyframes), "/", niter
+    print "average number of points  per frame: ", self.tot_points/niter
+    print "average number of matches per frame: ", self.tot_matches/niter
+    print "average number of inliers per frame: ", self.tot_inliers/niter
+    print ""
     if niter != 0:
       for n,t in self.timer.items():
         print "%-20s %fms" % (n, 1e3 * t.sum / niter)
       print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
-  targetkp = 400
+
+#  targetkp = 400
+  targetkp = 300
 
   def find_keypoints(self, frame):
     self.timer['feature'].start()
@@ -646,7 +657,10 @@ class VisualOdometer:
     self.pose = frame.pose
     self.prev_frame = frame
 
-    self.num_frames += 1
+    self.num_frames  += 1
+    self.tot_inliers += self.inl
+    self.tot_matches += len(self.pairs)
+    self.tot_points  += len(frame.kp2d)
 
     return self.pose
 
