@@ -86,9 +86,9 @@ class NavStackTest(unittest.TestCase):
         self.nav_tol      = 0.1
         self.odom_tol     = 1.0
         self.test_timeout = 50.0
-        # note: starting position of the robot is 25.65, 25.65 (center of map)
-        self.target_x =  25.65
-        self.target_y =  25.65
+        # note: starting position of the robot is 25.70, 25.70 (center of map)
+        self.target_x =  25.70
+        self.target_y =  25.70
         self.target_t =  0.0
 
         self.args = sys.argv
@@ -190,11 +190,17 @@ class NavStackTest(unittest.TestCase):
           if self.args[i] == '-nav_tol':
             if len(self.args) > i+1:
               self.nav_tol = float(self.args[i+1])
-              print "nav_tol set to:",self.nav_tol
+              if self.nav_tol == 0:
+                print "nav_tol check disabled"
+              else:
+                print "nav_tol set to:",self.nav_tol
           if self.args[i] == '-odom_tol':
             if len(self.args) > i+1:
               self.odom_tol = float(self.args[i+1])
-              print "odom_tol set to:",self.odom_tol
+              if self.odom_tol == 0:
+                print "odom_tol check disabled"
+              else:
+                print "odom_tol set to:",self.odom_tol
           if self.args[i] == '-timeout':
             if len(self.args) > i+1:
               self.test_timeout = float(self.args[i+1])
@@ -249,11 +255,21 @@ class NavStackTest(unittest.TestCase):
             nav_error  =  abs(self.p3d_x - self.target_x) \
                         + abs(self.p3d_y - self.target_y) \
                         + abs(nav_dyaw)
+            print "odom drift error: (",self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi,",",self.odom_y - self.p3d_y - self.odom_yi + self.p3d_yi,")"
+            print "nav translation error: (",self.p3d_x - self.target_x,",",self.p3d_y - self.target_y,")"
             print "time remaining: ", timeout_t - time.time()
-            print "nav error:" + str(nav_error) + " nav_tol:" + str(self.nav_tol) + " odom error:" + str(odom_error) + " odom_tol: " + str(self.odom_tol)
+            print "nav total error:" + str(nav_error) + " nav_tol:" + str(self.nav_tol) + " odom total error:" + str(odom_error) + " odom_tol: " + str(self.odom_tol)
 
-            if nav_error < self.nav_tol and self.bumped == False and odom_error < self.odom_tol:
-                self.success = True
+            self.success = True
+            # check to see if collision happened
+            if self.bumped == True:
+                self.success = False
+            # check to see if nav tolerance is ok
+            if self.nav_tol > 0 and nav_error > self.nav_tol:
+                self.success = False
+            # check to see if odom drift from ground truth tolerance is ok
+            if self.odom_tol > 0 and odom_error > self.odom_tol:
+                self.success = False
 
         self.assert_(self.success)
         
