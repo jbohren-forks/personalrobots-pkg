@@ -30,7 +30,6 @@
 /* author: Matei Ciocarlie */
 
 #include <ros/node.h>
-#include "rosthread/mutex.h"
 
 #include <std_msgs/PointCloud.h>
 

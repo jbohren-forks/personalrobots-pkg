@@ -33,7 +33,7 @@
 #define _scanlistennode_h_
 
 #include <ros/node.h>
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Empty.h>
@@ -59,7 +59,7 @@ class ScanListenNode : public ros::node
 	std_msgs::PointCloud mNewLine,mCurrentCloud;
 	std_msgs::Empty mEmptyMsg;
 
-	ros::thread::mutex mMutex;
+	boost::mutex mMutex;
 
 	void fullCloudCallback();
 	void cloudCallback();
