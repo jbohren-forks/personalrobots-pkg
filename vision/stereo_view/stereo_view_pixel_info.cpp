@@ -50,6 +50,7 @@
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"
@@ -65,6 +66,7 @@ using namespace std;
 struct MouseCallbackParams {
   IplImage* limage;
   IplImage* disp;
+  image_msgs::DisparityInfo* dispinfo;
   image_msgs::StereoInfo* stinfo;
   image_msgs::CamInfo* rcaminfo;
 };
@@ -96,13 +98,13 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
     g_cv_mutex.lock(); 
     rgb = cvGet2D(mcbparams->limage,y,x);
     if (mcbparams->disp) {
-      double d = ((mcbparams->stinfo->dpp)/4.0)*cvGetReal2D(mcbparams->disp,y,x);    
-      printf("Image (u,v,d): (%d,%d,%f); (R/gray,G,B): (%f,%f,%f); ", x,y,d/(mcbparams->stinfo->dpp), rgb.val[2],rgb.val[1],rgb.val[0] );
+      double d = ((mcbparams->dispinfo->dpp)/4.0)*cvGetReal2D(mcbparams->disp,y,x);    
+      printf("Image (u,v,d): (%d,%d,%f); (R/gray,G,B): (%f,%f,%f); ", x,y,d/(mcbparams->dispinfo->dpp), rgb.val[2],rgb.val[1],rgb.val[0] );
       if (mcbparams->rcaminfo) {
 	CvStereoCamModel* cam_model = new CvStereoCamModel(mcbparams->rcaminfo->P[0], mcbparams->rcaminfo->P[5], 
 							   -(mcbparams->rcaminfo->P[3])/(mcbparams->rcaminfo->P[0]), 
 							   mcbparams->rcaminfo->P[2], mcbparams->rcaminfo->P[2], 
-							   mcbparams->rcaminfo->P[6], 1.0/mcbparams->stinfo->dpp);
+							   mcbparams->rcaminfo->P[6], 1.0/mcbparams->dispinfo->dpp);
 	CvMat* uvd = cvCreateMat(1,3,CV_32FC1);
 	cvmSet(uvd,0,0,x);
 	cvmSet(uvd,0,1,y);
@@ -146,6 +148,7 @@ public:
   image_msgs::Image limage; /**< Left camera image msg. */
   image_msgs::Image rimage; /**< Right camera image msg. */
   image_msgs::Image dimage; /**< Disparity camera image msg. */
+  image_msgs::DisparityInfo dispinfo; /**< Stereo info msg. */
   image_msgs::StereoInfo stinfo; /**< Stereo info msg. */
   image_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
@@ -177,6 +180,7 @@ public:
     mcbparams_.limage = NULL;
     mcbparams_.disp = NULL;
     mcbparams_.rcaminfo = NULL;
+    mcbparams_.dispinfo = NULL;
     mcbparams_.stinfo = NULL;
     disp = NULL;
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
@@ -185,19 +189,23 @@ public:
     cvSetMouseCallback("left", on_mouse, &mcbparams_);
 
     std::list<std::string> left_list;
-    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
-    left_list.push_back(std::string("stereodcam/left/image_rect"));
+    left_list.push_back(std::string("stereo/left/image_rect_color"));
+    left_list.push_back(std::string("stereo/left/image_rect"));
+
 
     std::list<std::string> right_list;
-    right_list.push_back(std::string("stereodcam/right/image_rect_color"));
-    right_list.push_back(std::string("stereodcam/right/image_rect"));
+    right_list.push_back(std::string("stereo/right/image_rect_color"));
+    right_list.push_back(std::string("stereo/right/image_rect"));
+
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe("stereodcam/disparity", dimage, 1);
-    sync.subscribe("stereodcam/stereo_info", stinfo, 1);
-    sync.subscribe("stereodcam/right/cam_info", rcaminfo, 1);
+    sync.subscribe("stereo/disparity", dimage, 1);
+    sync.subscribe("stereo/disparity_info", dispinfo, 1);
+    sync.subscribe("stereo/stereo_info", stinfo, 1);
+    sync.subscribe("stereo/right/cam_info", rcaminfo, 1);
+    sync.ready();
   }
 
   ~StereoView()
@@ -242,9 +250,10 @@ public:
       // Disparity has to be scaled to be be nicely displayable
       mcbparams_.disp = NULL;
       dbridge.reallocIfNeeded(&disp, IPL_DEPTH_8U);
-      cvCvtScale(dbridge.toIpl(), disp, 4.0/stinfo.dpp);
+      cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
       cvShowImage("disparity", disp);
       mcbparams_.disp = disp;
+      mcbparams_.dispinfo = &dispinfo;
       mcbparams_.stinfo = &stinfo;
       mcbparams_.rcaminfo = &rcaminfo;
     }
@@ -287,6 +296,8 @@ public:
     if (dimage.header.stamp != t)
       printf("Timed out waiting for disparity image\n");
 
+    printf("\n");
+
     //Proceed to show images anyways
     image_cb_all(t);
   }
@@ -316,8 +327,8 @@ public:
       // Fetch color calibration parameters as necessary
       if (calib_color_)
       {
-        lcal.getFromParam("stereodcam/left/image_rect_color");
-        rcal.getFromParam("stereodcam/right/image_rect_color");
+        lcal.getFromParam("stereo/left/image_rect_color");
+        rcal.getFromParam("stereo/right/image_rect_color");
       }
 
       cv_mutex.unlock();

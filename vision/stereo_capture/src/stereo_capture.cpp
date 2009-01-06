@@ -44,6 +44,7 @@
 
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/Image.h"
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/UInt8.h" //for projector status
@@ -62,6 +63,7 @@ public:
   image_msgs::Image rimage;
   image_msgs::Image dimage;
   image_msgs::StereoInfo stinfo;
+  image_msgs::DisparityInfo dispinfo;
 
   image_msgs::CvBridge lbridge;
   image_msgs::CvBridge rbridge;
@@ -107,20 +109,21 @@ public:
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
     std::list<std::string> left_list;
-    left_list.push_back(std::string("dcam/left/image_rect_color"));
-    left_list.push_back(std::string("dcam/left/image_rect"));
+    left_list.push_back(std::string("stereo/left/image_rect_color"));
+    left_list.push_back(std::string("stereo/left/image_rect"));
 
     std::list<std::string> right_list;
-    right_list.push_back(std::string("dcam/right/image_rect_color"));
-    right_list.push_back(std::string("dcam/right/image_rect"));
+    right_list.push_back(std::string("stereo/right/image_rect_color"));
+    right_list.push_back(std::string("stereo/right/image_rect"));
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe("dcam/disparity", dimage, 1);
-    sync.subscribe("dcam/stereo_info", stinfo, 1);
+    sync.subscribe("stereo/disparity", dimage, 1);
+    sync.subscribe("stereo/stereo_info", stinfo, 1);
+    sync.subscribe("stereo/disparity_info", dispinfo, 1);
 
-    sync.subscribe("dcam/cloud", cloud, 1);
+    sync.subscribe("stereo/cloud", cloud, 1);
 
     subscribe("projector_status", projector_status, &StereoView::projector_status_change, 1);
   }
@@ -181,7 +184,7 @@ public:
     if (dbridge.fromImage(dimage))
     {
       IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-      cvCvtScale(dbridge.toIpl(), disp, 4.0/stinfo.dpp);
+      cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
 
       if(projector_status.data)
 	{

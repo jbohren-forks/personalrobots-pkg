@@ -33,7 +33,7 @@
 *********************************************************************/
 
 #include "ros/node.h"
-#include "std_srvs/Empty.h"
+#include "std_msgs/Empty.h"
 
 #include <string>
 
@@ -42,9 +42,15 @@ class CheckParams : public ros::node
 public:
   CheckParams() : ros::node("param_checker")
   {
-    std_srvs::Empty::request  req;
-    std_srvs::Empty::response res;
-    ros::service::call("stereodcam/check_params", req, res);
+    advertise<std_msgs::Empty>("stereodcam/check_params");
+    
+    usleep(100000);
+
+    std_msgs::Empty e;
+    
+    publish("stereodcam/check_params", e);
+
+    usleep(100000);
   }
 };
 

@@ -42,6 +42,7 @@
 
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
+#include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
@@ -101,6 +102,7 @@ public:
   image_msgs::Image limage_;
   image_msgs::Image dimage_;
   image_msgs::StereoInfo stinfo_;
+  image_msgs::DisparityInfo dispinfo_;
   image_msgs::CamInfo rcinfo_;
   image_msgs::CvBridge lbridge_;
   image_msgs::CvBridge dbridge_;
@@ -141,12 +143,13 @@ public:
 
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     std::list<std::string> left_list;
-    left_list.push_back(std::string("stereodcam/left/image_rect_color"));
-    //left_list.push_back(std::string("stereodcam/left/image_rect"));    
+    left_list.push_back(std::string("stereo/left/image_rect_color"));
+    //left_list.push_back(std::string("stereo/left/image_rect"));    
     sync_.subscribe(left_list,limage_,1);
-    sync_.subscribe("stereodcam/disparity",dimage_,1);
-    sync_.subscribe("stereodcam/stereo_info", stinfo_,1);
-    sync_.subscribe("stereodcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("stereo/disparity",dimage_,1);
+    sync_.subscribe("stereo/stereo_info", stinfo_,1);
+    sync_.subscribe("stereo/disparity_info", dispinfo_,1);
+    sync_.subscribe("stereo/right/cam_info",rcinfo_,1);
     sync_.ready();
     //subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
@@ -188,7 +191,7 @@ public:
     bool do_calib = false;
     if (limage_.encoding != "mono") {
       // If this is a color image, set the calibration and convert it.
-      if (calib_color_ && lcolor_cal_.getFromParam("stereodcam/left/image_rect_color")) {
+      if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
 	do_calib = true;      
       }
       // Convert the images to OpenCV format.
@@ -212,7 +215,7 @@ public:
       if (!cv_disp_image_out_) {
 	cv_disp_image_out_ = cvCreateImage(im_size,IPL_DEPTH_8U, 1);
       }
-      cvCvtScale(cv_disp_image_, cv_disp_image_out_, 4.0/stinfo_.dpp);
+      cvCvtScale(cv_disp_image_, cv_disp_image_out_, 4.0/dispinfo_.dpp);
     }
     
     // Convert the stereo calibration into a camera model.
@@ -226,7 +229,7 @@ public:
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
     //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
-    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
 
     //cv_mutex_.lock(); ///

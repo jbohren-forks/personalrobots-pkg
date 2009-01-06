@@ -61,10 +61,12 @@ class StereoProc : public ros::node
 
   image_msgs::RawStereo    raw_stereo_;
 
-  image_msgs::Image        img_;
-  std_msgs::PointCloud     cloud_;
-  image_msgs::CamInfo      cam_info_;
-  image_msgs::StereoInfo   stereo_info_;
+  image_msgs::Image         img_;
+  std_msgs::PointCloud      cloud_;
+  image_msgs::CamInfo       cam_info_;
+  image_msgs::DisparityInfo disparity_info_;
+  image_msgs::StereoInfo    stereo_info_;
+
 
   DiagnosticUpdater<StereoProc> diagnostic_;
   int count_;
@@ -72,21 +74,26 @@ class StereoProc : public ros::node
 
   string frame_id_;
 
+  std::string stereo_name_;
+
 public:
 
   cam::StereoData* stdata_;
 
   StereoProc() : ros::node("stereoproc"), diagnostic_(this), count_(0), stdata_(NULL)
   {
+
+    stereo_name_ = map_name("stereo") + std::string("/");
+
     diagnostic_.addUpdater( &StereoProc::freqStatus );
 
-    param("do_colorize", do_colorize_, false);
+    param(stereo_name_ + std::string("do_colorize"), do_colorize_, false);
 
-    param("do_rectify", do_rectify_, false);
+    param(stereo_name_ + std::string("do_rectify"), do_rectify_, false);
     
-    param("do_stereo", do_stereo_, false);
+    param(stereo_name_ + std::string("do_stereo"), do_stereo_, false);
     
-    param("do_calc_points", do_calc_points_, false);
+    param(stereo_name_ + std::string("do_calc_points"), do_calc_points_, false);
     
     // Must do stereo if calculating points
     do_stereo_ = do_stereo_ || do_calc_points_;
@@ -96,7 +103,12 @@ public:
     
     stdata_ = new cam::StereoData;
 
-    subscribe("raw_stereo", raw_stereo_, &StereoProc::rawCb, 1);
+    stdata_->setUniqueThresh(36);
+    stdata_->setTextureThresh(30);
+    stdata_->setSpeckleRegionSize(100);
+    stdata_->setSpeckleDiff(10);
+
+    subscribe(stereo_name_ + std::string("raw_stereo"), raw_stereo_, &StereoProc::rawCb, 1);
   }
 
 
@@ -141,11 +153,35 @@ public:
 
   void publishCam()
   {
-    publishImages("left/", stdata_->imLeft);
-    publishImages("right/", stdata_->imRight);
+    publishImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
+    publishImages(stereo_name_ + std::string("right/"), stdata_->imRight);
       
-    if (stdata_->imDisp)
+    if (stdata_->hasDisparity)
     {
+      disparity_info_.header.stamp = raw_stereo_.header.stamp;
+      disparity_info_.header.frame_id = raw_stereo_.header.frame_id;
+
+      disparity_info_.height = stdata_->imHeight;
+      disparity_info_.width = stdata_->imWidth;
+
+      disparity_info_.dpp = stdata_->dpp;
+      disparity_info_.num_disp = stdata_->numDisp;
+      disparity_info_.im_Dtop = stdata_->imDtop;
+      disparity_info_.im_Dleft = stdata_->imDleft;
+      disparity_info_.im_Dwidth = stdata_->imDwidth;
+      disparity_info_.im_Dheight = stdata_->imDheight;
+      disparity_info_.corr_size = stdata_->corrSize;
+      disparity_info_.filter_size = stdata_->filterSize;
+      disparity_info_.hor_offset = stdata_->horOffset;
+      disparity_info_.texture_thresh = stdata_->textureThresh;
+      disparity_info_.unique_thresh = stdata_->uniqueThresh;
+      disparity_info_.smooth_thresh = stdata_->smoothThresh;
+      disparity_info_.speckle_diff = stdata_->speckleDiff;
+      disparity_info_.speckle_region_size = stdata_->speckleRegionSize;
+      disparity_info_.unique_check = stdata_->unique_check;
+
+      publish(stereo_name_ + std::string("disparity_info"), disparity_info_);
+
       fillImage(img_,  "disparity",
                 stdata_->imHeight, stdata_->imWidth, 1,
                 "mono", "uint16",
@@ -153,11 +189,7 @@ public:
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish("disparity", img_);
-        
-      stereo_info_.has_disparity = true;
-    } else {
-      stereo_info_.has_disparity = false;
+      publish(stereo_name_ + std::string("disparity"), img_);
     }
 
     if (do_calc_points_)
@@ -182,7 +214,7 @@ public:
         cloud_.chan[0].vals[i] = *(float*)(&rgb);
       }
 
-      publish("cloud", cloud_);
+      publish(stereo_name_ + std::string("cloud"), cloud_);
     }
 
     stereo_info_.header.stamp = raw_stereo_.header.stamp;
@@ -190,28 +222,11 @@ public:
     stereo_info_.height = stdata_->imHeight;
     stereo_info_.width = stdata_->imWidth;
 
-    stereo_info_.dpp = stdata_->dpp;
-    stereo_info_.num_disp = stdata_->numDisp;
-    stereo_info_.im_Dtop = stdata_->imDtop;
-    stereo_info_.im_Dleft = stdata_->imDleft;
-    stereo_info_.im_Dwidth = stdata_->imDwidth;
-    stereo_info_.im_Dheight = stdata_->imDheight;
-    stereo_info_.corr_size = stdata_->corrSize;
-    stereo_info_.filter_size = stdata_->filterSize;
-    stereo_info_.hor_offset = stdata_->horOffset;
-    stereo_info_.texture_thresh = stdata_->textureThresh;
-    stereo_info_.unique_thresh = stdata_->uniqueThresh;
-    stereo_info_.smooth_thresh = stdata_->smoothThresh;
-    stereo_info_.speckle_diff = stdata_->speckleDiff;
-    stereo_info_.speckle_region_size = stdata_->speckleRegionSize;
-    stereo_info_.unique_check = stdata_->unique_check;
-
-
     memcpy((char*)(&stereo_info_.T[0]),  (char*)(stdata_->T),   3*sizeof(double));
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));
     memcpy((char*)(&stereo_info_.RP[0]), (char*)(stdata_->RP), 16*sizeof(double));
 
-    publish("stereo_info", stereo_info_);
+    publish(stereo_name_ + std::string("stereo_info"), stereo_info_);
   }
 
   void publishImages(std::string base_name, cam::ImageData* img_data)
@@ -220,87 +235,69 @@ public:
     {
       fillImage(img_,  "image_raw",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->imRaw );
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
 
       publish(base_name + std::string("image_raw"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
     }
 
     if (img_data->imType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->im );
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
       publish(base_name + std::string("image"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
     }
 
     if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
     {
       fillImage(img_,  "image_color",
                 img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "byte",
+                "rgb", "uint8",
                 img_data->imColor );
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
       publish(base_name + std::string("image_color"), img_);
-      cam_info_.has_image_color = true;
-    } else {
-      cam_info_.has_image_color = false;
     }
 
     if (img_data->imRectType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_rect",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->imRect );
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
       publish(base_name + std::string("image_rect"), img_);
-      cam_info_.has_image_rect = true;
-    } else {
-      cam_info_.has_image_rect = false;
     }
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
     {
       fillImage(img_,  "image_rect_color",
                 img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "byte",
+                "rgb", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
       publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
     }
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
     {
       fillImage(img_,  "image_rect_color",
                 img_data->imHeight, img_data->imWidth, 4,
-                "rgba", "byte",
+                "rgba", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
       publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
     }
 
 
@@ -342,16 +339,19 @@ public:
 
   void advertiseCam()
   {
-    advertise<image_msgs::StereoInfo>("stereo_info", 1);
+    advertise<image_msgs::StereoInfo>(stereo_name_ + std::string("stereo_info"), 1);
 
-    advertiseImages("left/", stdata_->imLeft);
-    advertiseImages("right/", stdata_->imRight);
+    advertiseImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
+    advertiseImages(stereo_name_ + std::string("right/"), stdata_->imRight);
     
-    if (stdata_->imDisp)
-      advertise<image_msgs::Image>("disparity", 1);
+    if (stdata_->hasDisparity)
+    {
+      advertise<image_msgs::DisparityInfo>(stereo_name_ + std::string("disparity_info"), 1);
+      advertise<image_msgs::Image>(stereo_name_ + std::string("disparity"), 1);
+    }
     
     if (do_calc_points_)
-      advertise<std_msgs::PointCloud>("cloud",1);
+      advertise<std_msgs::PointCloud>(stereo_name_ + std::string("cloud"),1);
   }
 
 

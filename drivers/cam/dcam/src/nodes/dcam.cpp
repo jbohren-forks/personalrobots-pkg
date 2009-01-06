@@ -198,80 +198,62 @@ public:
     {
       fillImage(img_,  "image_raw",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->imRaw );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_raw"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
     }
 
     if (img_data->imType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->im );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image"), img_);
-      cam_info_.has_image = true;
-    } else {
-      cam_info_.has_image = false;
     }
 
     if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
     {
       fillImage(img_,  "image_color",
                 img_data->imHeight, img_data->imWidth, 3,
-                "rgba", "byte",
+                "rgba", "uint8",
                 img_data->imColor );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_color"), img_);
-      cam_info_.has_image_color = true;
-    } else {
-      cam_info_.has_image_color = false;
     }
 
     if (img_data->imRectType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_rect",
                 img_data->imHeight, img_data->imWidth, 1,
-                "mono", "byte",
+                "mono", "uint8",
                 img_data->imRect );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_rect"), img_);
-      cam_info_.has_image_rect = true;
-    } else {
-      cam_info_.has_image_rect = false;
     }
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
     {
       fillImage(img_,  "image_rect_color",
                 img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "byte",
+                "rgb", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
     }
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
     {
       fillImage(img_,  "image_rect_color",
                 img_data->imHeight, img_data->imWidth, 4,
-                "rgba", "byte",
+                "rgba", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_rect_color"), img_);
-      cam_info_.has_image_rect_color = true;
-    } else {
-      cam_info_.has_image_rect_color = false;
     }
 
     cam_info_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);

@@ -90,11 +90,11 @@ namespace image_msgs
 
     bool fromImage(Image& rosimg, std::string encoding = "")
     {
-      if (rosimg.depth == "byte")
+      if (rosimg.depth == "uint8")
       {
-        cvInitImageHeader(rosimg_, cvSize(rosimg.byte_data.layout.dim[1].size, rosimg.byte_data.layout.dim[0].size),
-                          IPL_DEPTH_8U, rosimg.byte_data.layout.dim[2].size);
-        cvSetData(rosimg_, &(rosimg.byte_data.data[0]), rosimg.byte_data.layout.dim[1].stride);
+        cvInitImageHeader(rosimg_, cvSize(rosimg.uint8_data.layout.dim[1].size, rosimg.uint8_data.layout.dim[0].size),
+                          IPL_DEPTH_8U, rosimg.uint8_data.layout.dim[2].size);
+        cvSetData(rosimg_, &(rosimg.uint8_data.data[0]), rosimg.uint8_data.layout.dim[1].stride);
         img_ = rosimg_;
       } else if (rosimg.depth == "uint16") {
         cvInitImageHeader(rosimg_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size),

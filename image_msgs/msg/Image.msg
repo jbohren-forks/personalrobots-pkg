@@ -14,7 +14,7 @@ string encoding      # Specifies the color encoding of the data
                      #     other
 string depth         # Specifies the depth of the data:
                      #   Acceptable values:
-                     #    byte, uint16, int16, uint32, int32, uint64, int64, float32, float64
+                     #    uint8, int8, uint16, int16, uint32, int32, uint64, int64, float32, float64
 
 # Based on depth ONE of the following MultiArrays may contain data.
 # The multi-array MUST have 3 dimensions, labeled as "height",
@@ -26,7 +26,8 @@ string depth         # Specifies the depth of the data:
 # Height, width, and number of channels are specified in the dimension
 # sizes within the appropriate MultiArray
 
-std_msgs/ByteMultiArray    byte_data
+std_msgs/UInt8MultiArray   uint8_data
+std_msgs/Int8MultiArray    int8_data
 std_msgs/UInt16MultiArray  uint16_data   
 std_msgs/Int16MultiArray   int16_data
 std_msgs/UInt32MultiArray  uint32_data
