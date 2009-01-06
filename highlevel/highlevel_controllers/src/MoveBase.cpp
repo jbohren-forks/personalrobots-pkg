@@ -121,6 +121,7 @@ namespace ros {
       param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
+      xy_goal_tolerance_ = robotWidth_ / 2;
 
       // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
       double base_laser_update_rate(2.0);
