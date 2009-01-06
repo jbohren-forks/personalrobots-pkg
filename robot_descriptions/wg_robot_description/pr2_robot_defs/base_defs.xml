@@ -36,7 +36,7 @@
           <elem key="material">PR2/${parent}_${suffix}_wheel_link</elem>
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="wheel_convex" />
+          <mesh filename="wheel" />
         </geometry>
 
       </visual>
@@ -88,7 +88,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
-          <mesh filename="caster_convex" scale="1 1 1"/>
+          <mesh filename="caster" scale="1 1 1"/>
         </geometry>
       </visual>
 
@@ -144,7 +144,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="base_convex" />
+          <mesh filename="base" />
         </geometry>
       </visual>
 

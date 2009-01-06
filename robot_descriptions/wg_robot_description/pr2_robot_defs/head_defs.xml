@@ -34,7 +34,7 @@
           <elem key="material">Gazebo/PioneerBody</elem>
         </map>
         <geometry name="${name}_mount_visual">
-          <mesh filename="hok_tilt_convex" />
+          <mesh filename="hok_tilt" />
         </geometry>
       </visual>
 
@@ -245,7 +245,7 @@
           <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_pan_convex" />
+          <mesh filename="head_pan" />
         </geometry>
       </visual>
 
@@ -294,7 +294,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_tilt_convex" />
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 
