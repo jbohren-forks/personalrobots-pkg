@@ -32,7 +32,7 @@ public:
   // Caller is responsible for calling free() on returned signature
   //float* getSignature(IplImage* patch);
   
-  // sig must point to a memory block of at least classes()*sizeof(float|ushort) bytes
+  // sig must point to a memory block of at least classes()*sizeof(float|uint8_t) bytes
   void getSignature(IplImage *patch, uint8_t *sig);
   void getSignature(IplImage *patch, float *sig);
   void getSparseSignature(IplImage *patch, float *sig, float thresh);
@@ -49,8 +49,11 @@ public:
   void write(const char* file_name) const;
   void write(std::ostream &os) const;
 
-  // TODO: is there test code needing private access? Restore privacy.
-//private:  
+  // debug/experimental
+  void saveAllPosteriors(std::string file_url);
+  void setPosteriorsFromTextfile(std::string url, int red_dim);
+
+private:  
   int classes_;
   int original_num_classes_;
   std::vector<RandomizedTree> trees_;

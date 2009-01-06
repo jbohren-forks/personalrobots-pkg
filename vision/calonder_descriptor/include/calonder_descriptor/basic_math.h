@@ -87,6 +87,7 @@ inline int L1Distance_176(const uint8_t *s1, const uint8_t *s2)
   acc = _mm_add_epi16(acc,_mm_srli_si128(acc,4)); // add both halves
   return _mm_cvtsi128_si32(acc);
 #else
+  #error "just to let you know: using unoptimized L1 distance! now uncomment this line"
   return L1Distance(176, s1, s2);
 #endif
 }

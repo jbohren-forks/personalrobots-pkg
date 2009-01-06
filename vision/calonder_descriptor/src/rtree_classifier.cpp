@@ -164,7 +164,7 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
   posteriors = NULL;  
 
   // full quantization (experimental, later implicit)
-  #if 1
+  #if 0
     // find out the required right-shift needed to fit all sig values into an uint8_t
     int n_max = (1 << (8*sizeof(uint8_t))) - 1;
     int sum_max = ((1<<4) - 1)*trees_.size();
@@ -240,5 +240,41 @@ void RTreeClassifier::write(std::ostream &os) const
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it)
     tree_it->write(os);
 }
+
+void RTreeClassifier::saveAllPosteriors(std::string url)
+{  
+  for (int i=0; i<(int)trees_.size(); ++i)
+    trees_[i].savePosteriors(url, (i==0 ? false : true));
+  printf("[DEBUG] All posteriors saved to %s.\n", url.c_str());
+}
+
+void RTreeClassifier::setPosteriorsFromTextfile(std::string url, int red_dim)
+{
+  std::ifstream ifs(url.c_str());
+  for (int i=0; i<(int)trees_.size(); ++i)
+    for (int k=0; k<trees_[i].num_leaves_; ++k) {
+      float *post = trees_[i].getPosteriorByIndex(k);
+      for (int j=0; j<red_dim; ++j, ++post)
+        ifs >> *post;
+      assert(ifs.good());
+    }
+  ifs.close();
+  printf("[EXP] read entire tree from '%s'\n", url.c_str());  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 } // namespace features

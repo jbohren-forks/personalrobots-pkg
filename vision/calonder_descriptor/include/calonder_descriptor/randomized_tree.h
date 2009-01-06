@@ -73,7 +73,7 @@ public:
   void setKeepFloatPosteriors(bool b) { keep_float_posteriors_ = b; }
   
   // debug
-  void savePosteriors(std::string url);
+  void savePosteriors(std::string url, bool append=false);
   void savePosteriors2(std::string url);
   
 //private:
