@@ -8,6 +8,7 @@ Generate color calibration matrix from macbeth chart.
 <review status="unreviewed" notes=""/>
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
+<depend package="rosthread"/>
 <depend package="std_msgs"/>
 <depend package="std_srvs"/>
 <depend package="boost"/>
