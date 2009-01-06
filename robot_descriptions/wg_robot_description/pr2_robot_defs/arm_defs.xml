@@ -54,7 +54,7 @@
           <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_shoulder_pan_visual">
-          <mesh filename="shoulder_yaw" />
+          <mesh filename="shoulder_yaw_convex" />
         </geometry>
       </visual>
       <collision>
@@ -118,7 +118,7 @@
           <elem key="material">Gazebo/Grey</elem>
         </map>
         <geometry name="${side}_shoulder_lift_visual">
-          <mesh filename="shoulder_lift" />
+          <mesh filename="shoulder_lift_convex" />
         </geometry>
       </visual>
       <collision>
@@ -185,7 +185,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="upperarm_roll" />
+          <mesh filename="upperarm_roll_convex" />
         </geometry>
       </visual>
 
@@ -253,7 +253,7 @@
           <elem key="material">Gazebo/Grey</elem>
         </map>
         <geometry name="${side}_elbow_flex_visual">
-          <mesh filename="elbow_flex" />
+          <mesh filename="elbow_flex_convex" />
         </geometry>
       </visual>
       <collision>
@@ -366,7 +366,7 @@
           <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="forearm_roll" />
+          <mesh filename="forearm_roll_convex" />
         </geometry>
       </visual>
       <collision>
@@ -431,7 +431,7 @@
           <elem key="material">Gazebo/Grey</elem>
         </map>
         <geometry name="${side}_wrist_flex_visual">
-          <mesh filename="wrist_flex" />
+          <mesh filename="wrist_flex_convex" />
         </geometry>
       </visual>
       <collision>
@@ -487,7 +487,7 @@
           <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_wrist_roll_visual">
-          <mesh filename="wrist_roll" />
+          <mesh filename="wrist_roll_convex" />
         </geometry>
       </visual>
       <collision>

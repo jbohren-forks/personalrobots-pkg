@@ -33,7 +33,7 @@
 	  <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_ptz_pan_visual">
-          <mesh filename="ptz_base_${side}" />
+          <mesh filename="ptz_base_${side}_convex" />
         </geometry>
       </visual>
 
@@ -71,7 +71,7 @@
 	  <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_ptz_tilt_visual">
-          <mesh filename="ptz_${side}" />
+          <mesh filename="ptz_${side}_convex" />
         </geometry>
       </visual>
 
