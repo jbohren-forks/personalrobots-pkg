@@ -53,19 +53,20 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (std_msgs::PointCloud points, std_msgs::Point32 &centroid)
+      computeCentroid (std_msgs::PointCloud *points, std_msgs::Point32 &centroid)
     {
+      centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
-      for (unsigned int i = 0; i < points.get_pts_size (); i++)
+      for (unsigned int i = 0; i < points->pts.size (); i++)
       {
-        centroid.x += points.pts.at (i).x;
-        centroid.y += points.pts.at (i).y;
-        centroid.z += points.pts.at (i).z;
+        centroid.x += points->pts.at (i).x;
+        centroid.y += points->pts.at (i).y;
+        centroid.z += points->pts.at (i).z;
       }
 
-      centroid.x /= points.get_pts_size ();
-      centroid.y /= points.get_pts_size ();
-      centroid.z /= points.get_pts_size ();
+      centroid.x /= points->pts.size ();
+      centroid.y /= points->pts.size ();
+      centroid.z /= points->pts.size ();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,31 +76,120 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (std_msgs::PointCloud points, std::vector<int> indices, std_msgs::Point32 &centroid)
+      computeCentroid (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &centroid)
     {
+      centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
-      for (unsigned int i = 0; i < indices.size (); i++)
+      for (unsigned int i = 0; i < indices->size (); i++)
       {
-        centroid.x += points.pts.at (indices.at (i)).x;
-        centroid.y += points.pts.at (indices.at (i)).y;
-        centroid.z += points.pts.at (indices.at (i)).z;
+        centroid.x += points->pts.at (indices->at (i)).x;
+        centroid.y += points->pts.at (indices->at (i)).y;
+        centroid.z += points->pts.at (indices->at (i)).z;
       }
 
-      centroid.x /= indices.size ();
-      centroid.y /= indices.size ();
-      centroid.z /= indices.size ();
+      centroid.x /= indices->size ();
+      centroid.y /= indices->size ();
+      centroid.z /= indices->size ();
     }
 
-    void computeCentroid (std_msgs::PointCloud points, std_msgs::PointCloud &centroid);
-    void computeCentroid (std_msgs::PointCloud points, std::vector<int> indices, std_msgs::PointCloud &centroid);
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3x3 covariance matrix of a given set of points. The result is returned as a Eigen::Matrix3d.
+      * \note The (x-y-z) centroid is also returned as a Point32 message.
+      * \param points the input point cloud
+      * \param covariance_matrix the 3x3 covariance matrix
+      * \param centroid the computed centroid
+      */
+    inline void
+      computeCovarianceMatrix (std_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix, std_msgs::Point32 &centroid)
+    {
+      computeCentroid (points, centroid);
 
-    void computeCovarianceMatrix (std_msgs::PointCloud points, Eigen::Matrix3d &covariance_matrix);
-    void computeCovarianceMatrix (std_msgs::PointCloud points, Eigen::Matrix3d &covariance_matrix, std_msgs::Point32 &centroid);
-    void computeCovarianceMatrix (std_msgs::PointCloud points, std::vector<int> indices, Eigen::Matrix3d &covariance_matrix);
-    void computeCovarianceMatrix (std_msgs::PointCloud points, std::vector<int> indices, Eigen::Matrix3d &covariance_matrix, std_msgs::Point32 &centroid);
+      // Initialize to 0
+      covariance_matrix = Eigen::Matrix3d::Zero ();
 
-    void computeSurfaceNormalCurvature (std_msgs::PointCloud points, Eigen::Vector4d &plane_parameters, double &curvature);
-    void computeSurfaceNormalCurvature (std_msgs::PointCloud points, std::vector<int> indices, Eigen::Vector4d &plane_parameters, double &curvature);
+      // Sum of outer products
+      // covariance_matrix (k, i)  += points_c (j, k) * points_c (j, i);
+      for (unsigned int j = 0; j < points->pts.size (); j++)
+      {
+        covariance_matrix (0, 0) += (points->pts[j].x - centroid.x) * (points->pts[j].x - centroid.x);
+        covariance_matrix (0, 1) += (points->pts[j].x - centroid.x) * (points->pts[j].y - centroid.y);
+        covariance_matrix (0, 2) += (points->pts[j].x - centroid.x) * (points->pts[j].z - centroid.z);
+
+        covariance_matrix (1, 0) += (points->pts[j].y - centroid.y) * (points->pts[j].x - centroid.x);
+        covariance_matrix (1, 1) += (points->pts[j].y - centroid.y) * (points->pts[j].y - centroid.y);
+        covariance_matrix (1, 2) += (points->pts[j].y - centroid.y) * (points->pts[j].z - centroid.z);
+
+        covariance_matrix (2, 0) += (points->pts[j].z - centroid.z) * (points->pts[j].x - centroid.x);
+        covariance_matrix (2, 1) += (points->pts[j].z - centroid.z) * (points->pts[j].y - centroid.y);
+        covariance_matrix (2, 2) += (points->pts[j].z - centroid.z) * (points->pts[j].z - centroid.z);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3x3 covariance matrix of a given set of points. The result is returned as a Eigen::Matrix3d.
+      * \param points the input point cloud
+      * \param covariance_matrix the 3x3 covariance matrix
+      */
+    inline void
+      computeCovarianceMatrix (std_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix)
+    {
+      std_msgs::Point32 centroid;
+      computeCovarianceMatrix (points, covariance_matrix, centroid);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3x3 covariance matrix of a given set of points using their indices.
+      * The result is returned as a Eigen::Matrix3d.
+      * \note The (x-y-z) centroid is also returned as a Point32 message.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param covariance_matrix the 3x3 covariance matrix
+      * \param centroid the computed centroid
+      */
+    inline void
+      computeCovarianceMatrix (std_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix, std_msgs::Point32 &centroid)
+    {
+      computeCentroid (points, indices, centroid);
+
+      // Initialize to 0
+      covariance_matrix = Eigen::Matrix3d::Zero ();
+
+      for (unsigned int j = 0; j < indices->size (); j++)
+      {
+        covariance_matrix (0, 0) += (points->pts[indices->at (j)].x - centroid.x) * (points->pts[indices->at (j)].x - centroid.x);
+        covariance_matrix (0, 1) += (points->pts[indices->at (j)].x - centroid.x) * (points->pts[indices->at (j)].y - centroid.y);
+        covariance_matrix (0, 2) += (points->pts[indices->at (j)].x - centroid.x) * (points->pts[indices->at (j)].z - centroid.z);
+
+        covariance_matrix (1, 0) += (points->pts[indices->at (j)].y - centroid.y) * (points->pts[indices->at (j)].x - centroid.x);
+        covariance_matrix (1, 1) += (points->pts[indices->at (j)].y - centroid.y) * (points->pts[indices->at (j)].y - centroid.y);
+        covariance_matrix (1, 2) += (points->pts[indices->at (j)].y - centroid.y) * (points->pts[indices->at (j)].z - centroid.z);
+
+        covariance_matrix (2, 0) += (points->pts[indices->at (j)].z - centroid.z) * (points->pts[indices->at (j)].x - centroid.x);
+        covariance_matrix (2, 1) += (points->pts[indices->at (j)].z - centroid.z) * (points->pts[indices->at (j)].y - centroid.y);
+        covariance_matrix (2, 2) += (points->pts[indices->at (j)].z - centroid.z) * (points->pts[indices->at (j)].z - centroid.z);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3x3 covariance matrix of a given set of points using their indices.
+      * The result is returned as a Eigen::Matrix3d.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param covariance_matrix the 3x3 covariance matrix
+      */
+    inline void
+      computeCovarianceMatrix (std_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix)
+    {
+      std_msgs::Point32 centroid;
+      computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
+    }
+
+
+    void computeCentroid (std_msgs::PointCloud *points, std_msgs::PointCloud &centroid);
+    void computeCentroid (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointCloud &centroid);
+
+    void computeSurfaceNormalCurvature (std_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computeSurfaceNormalCurvature (std_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
   }
 }
