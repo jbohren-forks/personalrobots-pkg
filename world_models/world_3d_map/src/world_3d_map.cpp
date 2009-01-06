@@ -359,9 +359,9 @@ private:
 	  ROS_ERROR("Connectivity exception: %s\n", ex.what());
 	  break;
 	}
-      catch(...)
+      catch(std::runtime_error &ex)
 	{
-	  ROS_ERROR("Exception in point cloud computation\n");
+	  ROS_ERROR("Exception in point cloud computation \n %s", ex.what());
 	  break;
 	}
 
