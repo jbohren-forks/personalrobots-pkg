@@ -71,6 +71,7 @@ public:
   ~TransformListener()
   {
     node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
+    node_.unsubscribe("/reset_time", &TransformListener::reset_callback, this);
   };
 
   /* Methods from transformer unhiding them here */
