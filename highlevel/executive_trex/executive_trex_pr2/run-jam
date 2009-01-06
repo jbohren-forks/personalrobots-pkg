@@ -4,5 +4,5 @@
 cd `rospack find executive_trex_pr2`
 PLASMA_HOME=`rospack find trex`/PLASMA/
 
-jam exec_inputs
+jam $PARALLEL_JOBS exec_inputs
 

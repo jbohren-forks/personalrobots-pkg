@@ -10,7 +10,7 @@ source devConfig
 cd TREX
 
 # Build the nddl jar file used to parse input files
-jam -q nddl.jar
+jam $PARALLEL_JOBS -q nddl.jar
 
 if [ $? -ne 0 ] ; then
     echo "Jam of nddl.jar failed."
@@ -19,9 +19,9 @@ fi
 
 # Build the debug version
 if [ `uname` = Darwin ]; then
-  jam -q libTREX_g.dylib
+  jam $PARALLEL_JOBS -q libTREX_g.dylib
 else
-  jam -q libTREX_g.so
+  jam $PARALLEL_JOBS -q libTREX_g.so
 fi
 
 if [ $? -ne 0 ] ; then
@@ -31,9 +31,9 @@ fi
 
 # Build the optimized version
 if [ `uname` = Darwin ]; then
-  jam -sVARIANTS=OPTIMIZED -q libTREX_o.dylib
+  jam $PARALLEL_JOBS -sVARIANTS=OPTIMIZED -q libTREX_o.dylib
 else
-  jam -sVARIANTS=OPTIMIZED -q libTREX_o.so
+  jam $PARALLEL_JOBS -sVARIANTS=OPTIMIZED -q libTREX_o.so
 fi
 
 if [ $? -ne 0 ] ; then
