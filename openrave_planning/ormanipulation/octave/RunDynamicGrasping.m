@@ -39,6 +39,7 @@ MySwitchModels = @(x) SwitchModels(scenedata.SwitchModelPatterns, x);
 
 memory = [];
 memory.ignorelist = [];
+tic;
 
 while(1)
     orProblemSendCommand('releaseall',probs.manip);
@@ -72,12 +73,13 @@ while(1)
     display(['Grasping ' curobj.info.name ' numdests: ' num2str(size(curobj.dests,2))]);
         
     %% pick up and place one object
+    basetime = toc;
     [success, full_solution_index] = GraspAndPlaceObject(robot, curobj, squeeze, MySwitchModels, scenedata.SwitchModelPatterns);
 
     if( success )
-        display(sprintf('sucessfully manipulated obj %s', curobj.info.name));
+        display(sprintf('sucessfully manipulated obj %s, total time: %f', curobj.info.name, toc-basetime));
     else
-        display(sprintf('%s failed', curobj.info.name));
+        display(sprintf('%s failed, total time: %f', curobj.info.name, toc-basetime));
     end
 
     % switch back to real

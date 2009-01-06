@@ -81,9 +81,9 @@ while(curgrasp < size(grasps,1))
     g = transpose(grasps(curgrasp:end,:));
     
     offset = 0.02;
-    
+    basetime = toc;
     cmd = ['testallgrasps execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
-           ' seedik 1 seedgrasps 10 seeddests 8 randomdests 1 randomgrasps 1 ' ...
+           ' seedik 1 seedgrasps 5 seeddests 8 randomdests 1 randomgrasps 1 ' ...
            ' target ' curobj.info.name ' robothand ' handrobot.name ...
            ' robothandjoints ' sprintf('%d ', length(handjoints), handjoints) ...
            ' handjoints ' sprintf('%d ', length(handrobot.handjoints), handrobot.handjoints) ...
@@ -114,7 +114,7 @@ while(curgrasp < size(grasps,1))
 
 	putsuccess=1;
     grasp = grasps(curgrasp,:);
-    display(['grasp: ' sprintf('%d ', [curgrasp order(curgrasp)]) ]);
+    display(['grasp: ' sprintf('%d ', [curgrasp order(curgrasp)]) ' time: ' sprintf('%fs', toc-basetime)]);
         
     open_config = transpose(grasp(handrobot.grasp.joints));
 
