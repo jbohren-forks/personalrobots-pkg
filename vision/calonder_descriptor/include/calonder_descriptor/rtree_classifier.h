@@ -49,6 +49,7 @@ public:
   void write(const char* file_name) const;
   void write(std::ostream &os) const;
 
+  // TODO: is there test code needing private access? Restore privacy.
 //private:  
   int classes_;
   int original_num_classes_;
