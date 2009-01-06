@@ -39,14 +39,14 @@
 
  **/
 
-#include "ros/node.h"
-#include "std_msgs/PointCloud.h"
-#include "std_msgs/LaserScan.h"
+#include <ros/node.h>
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/LaserScan.h>
 
 #include <float.h>
 
 // Laser projection
-#include "laser_scan/laser_scan.h"
+#include <laser_scan/laser_scan.h>
 
 using namespace std_msgs;
 
@@ -203,7 +203,8 @@ class ScanShadowsFilter : public ros::node
       int n_scan = tilt_scan_msg_.ranges.size ();      // Save the number of measurements
 
       // Transform into a PointCloud message
-      projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_);//, true);
+      int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX;
+      projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
 
       /// ---[ Perhaps unnecessary, but find out which channel contains the index
       int c_idx = -1;
