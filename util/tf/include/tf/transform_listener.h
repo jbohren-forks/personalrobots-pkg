@@ -33,6 +33,7 @@
 #define TF_TRANSFORMLISTENER_H
 
 #include "std_msgs/PointCloud.h"
+#include "std_msgs/Empty.h"
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
 #include "ros/node.h"
@@ -61,6 +62,8 @@ public:
   {
     //  printf("Constructed rosTF\n");
     node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
+
+    node_.subscribe("/reset_time", empty_, &TransformListener::reset_callback, this,100); ///\todo magic number
 
     node_.advertise_service("~tf_frames", &TransformListener::getFrames, this);
   };
@@ -133,6 +136,9 @@ private:
   /** @brief a helper function to be used for both transfrom pointCloud methods */
   void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
 
+  /// clear the cached data
+  void reset_callback(){clear();};
+  std_msgs::Empty empty_;
 
 };
 }
