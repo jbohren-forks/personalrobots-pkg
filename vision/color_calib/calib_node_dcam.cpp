@@ -39,7 +39,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 
@@ -56,7 +56,7 @@ public:
   image_msgs::Image image;
   image_msgs::CvBridge bridge;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   Calibration color_cal;
 
