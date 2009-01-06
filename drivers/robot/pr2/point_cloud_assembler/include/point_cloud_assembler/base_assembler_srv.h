@@ -60,6 +60,7 @@ namespace point_cloud_assembler
  *  - \b "~tf_cache_time_secs" (double) - The cache time (in seconds) to holds past transforms
  *  - \b "~max_scans" (unsigned int) - The number of scans to store in the assembler's history, until they're thrown away
  *  - \b "~fixed_frame" (string) - The frame to which received data should immeadiately be transformed to
+ *  - \b "~downsampling_factor" (int) - Specifies how often to sample from a scan. 1 preserves all the data. 3 keeps only 1/3 of the points.
  *
  *  @section services ROS Service Calls
  *  - \b "~build_cloud" (BuildCloud.srv) - Accumulates scans between begin time and
@@ -114,6 +115,9 @@ private:
   //! \brief The frame to transform data into upon receipt
   std::string fixed_frame_ ;
 
+  //! \brief Specify how much to downsample the data. A value of 1 preserves all the data. 3 would keep 1/3 of the data.
+  unsigned int downsample_factor_ ;
+
 } ;
 
 template <class T>
@@ -146,6 +150,17 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::node(
   ROS_INFO("Fixed Frame: %s", fixed_frame_.c_str()) ;
   if (fixed_frame_ == "ERROR_NO_NAME")
     ROS_ERROR("Need to set parameter fixed_frame") ;
+
+  // ***** Set fixed_frame *****
+  int tmp_downsample_factor ;
+  param("~downsample_factor", tmp_downsample_factor, 1) ;
+  if (tmp_downsample_factor < 1)
+  {
+    ROS_ERROR("Parameter downsample_factor<1: %i", tmp_downsample_factor) ;
+    tmp_downsample_factor = 1 ;
+  }
+  downsample_factor_ = tmp_downsample_factor ;
+  ROS_INFO("Downsample Factor: %u", downsample_factor_) ;
 
   // ***** Start Services *****
   advertise_service(get_name()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
@@ -217,7 +232,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
   while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
           scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
   {
-    req_pts += scan_hist_[i].get_pts_size() ;
+    req_pts += (scan_hist_[i].get_pts_size()+downsample_factor_-1)/downsample_factor_ ;
     i++ ;
   }
   unsigned int past_end_index = i ;
@@ -246,7 +261,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
     unsigned int cloud_count = 0 ;
     for (i=start_index; i<past_end_index; i++)
     {
-      for(unsigned int j=0; j<scan_hist_[i].get_pts_size(); j++)
+      for(unsigned int j=0; j<scan_hist_[i].get_pts_size(); j+=downsample_factor_)
       {
         resp.cloud.pts[cloud_count].x = scan_hist_[i].pts[j].x ;
         resp.cloud.pts[cloud_count].y = scan_hist_[i].pts[j].y ;
