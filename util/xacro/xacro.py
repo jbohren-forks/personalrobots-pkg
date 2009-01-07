@@ -153,6 +153,8 @@ def process_includes(doc, base_dir):
     while elt:
         if elt.tagName == 'include':
             filename = os.path.join(base_dir, elt.getAttribute('filename'))
+            filename = eval_text(filename, {})
+            f = None
             try:
                 f = open(filename)
                 try:
@@ -160,7 +162,7 @@ def process_includes(doc, base_dir):
                 except Exception, e:
                     raise XacroException("included file [%s] generated an error during XML parsing: %s"%(filename, str(e)))
             finally:
-                f.close()
+                if f: f.close()
 
             # Replaces the include tag with the elements of the included file
             for c in child_elements(included.documentElement):
