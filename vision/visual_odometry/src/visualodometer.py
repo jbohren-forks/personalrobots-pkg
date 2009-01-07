@@ -103,8 +103,8 @@ class Pose:
     return "dist=%f" % (sqrt(sum([(a-b)**2 for a,b in zip(p0,p1)])))
 
   def compare(self, other):
-    p0 = self.xform(0, 0, 0)
-    p1 = other.xform(0, 0, 0)
+    p0 = numpy.array(self.xform(0, 0, 0))
+    p1 = numpy.array(other.xform(0, 0, 0))
     eu0 = self.euler()
     eu1 = other.euler()
     d = p0 - p1
@@ -146,6 +146,10 @@ class Pose:
   def assert_sane(self):
     rot = self.M[0:3,0:3]
     #assert numpy.alltrue(numpy.abs(((rot * rot.T) - numpy.identity(3))) < 1.0e-3)
+
+def from_xyz_euler(xyz, euler):
+  R = transformations.rotation_matrix_from_euler(euler[0], euler[1], euler[2], 'sxyz')
+  return Pose(R[:3,:3], xyz)
 
 import fast
 
@@ -340,6 +344,7 @@ class VisualOdometer:
     self.ext_frames = 1000000
     self.keyframe = None
     self.log_keyframes = []
+    self.log_keyposes = []
     self.pairs = []
     self.tracks = set()
     self.all_tracks = set()
@@ -466,7 +471,7 @@ class VisualOdometer:
       diff_pose = self.mkpose(rot, shift)
       if self.scavenge:
         (inl, rot, shift) = self.scavenger(diff_pose, f0, f1)
-    # for points x in f0, inlmap[x] has corresponding point in f1
+    # for points x in f0, pairmap[x] is the corresponding point in f1
     pairmap = dict([(p1,p0) for (p0,p1) in self.pe.inliers()])
 
     for t in self.tracks:
@@ -563,9 +568,10 @@ class VisualOdometer:
     fixed = self.posechain[-(fix_sz + free_sz):-(free_sz)]
     free = self.posechain[-(free_sz):]
     externals = sum([ f.externals for (f,_) in (fixed + free)], [])
-    #print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
+    print "SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
     if externals != []:
       fixed += externals
+      print "external SBA:", "fixed", [f.id for (f,_) in fixed], "free", [f.id for (f,_) in free]
     self.pe.sba([fp for (_,fp) in fixed], [fp for (_,fp) in free], [ t.sba_track for t in self.tracks ], niter)
     if 0:
       for (f,fp) in free:
@@ -583,6 +589,12 @@ class VisualOdometer:
           dst.pose.fromlist(fp.M)
           print "SBA corrected pose of frame", dst.id, "to", dst.pose.M
     self.timer['sba'].stop()
+
+  def process_frame(self, frame):
+    self.find_keypoints(frame)
+    self.find_disparities(frame)
+    self.collect_descriptors(frame)
+    frame.id = self.num_frames
 
   def add_external_frame(self, frame, fext):
     self.find_keypoints(fext)
@@ -602,6 +614,7 @@ class VisualOdometer:
   def change_keyframe(self, newkey):
     print "Change keyframe from", self.keyframe.id, "to", newkey.id
     self.log_keyframes.append(newkey.id)
+    self.log_keyposes.append(newkey.pose)
     oldkey = self.keyframe
     self.keyframe = newkey
 
@@ -649,6 +662,7 @@ class VisualOdometer:
       frame.pose = Pose()
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
+      self.log_keyposes.append(self.keyframe.pose)
       frame.inl = 999
       if self.sba:
         self.sba_add_frame(frame)
