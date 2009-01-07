@@ -134,6 +134,40 @@ namespace cloud_geometry
   double computeMedianAbsoluteDeviation (std_msgs::PointCloud points, double sigma);
   double computeMedianAbsoluteDeviation (std_msgs::PointCloud points, std::vector<int> indices, double sigma);
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the centralized moment at a 3D points patch
+    * \param points the point cloud data message
+    * \param p the p-dimension
+    * \param q the q-dimension
+    * \param r the r-dimension
+    */
+  inline double
+    computeCentralizedMoment (std_msgs::PointCloud *points, double p, double q, double r)
+  {
+    double result = 0.0;
+    for (unsigned int cp = 0; cp < points->pts.size (); cp++)
+      result += pow (points->pts[cp].x, p) * pow (points->pts[cp].y, q) * pow (points->pts[cp].z, r);
+
+    return (result);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the centralized moment at a 3D points patch, using their indices.
+    * \param points the point cloud data message
+    * \param indices the point cloud indices that need to be used
+    * \param p the p-dimension
+    * \param q the q-dimension
+    * \param r the r-dimension
+    */
+  inline double
+    computeCentralizedMoment (std_msgs::PointCloud *points, std::vector<int> *indices, double p, double q, double r)
+  {
+    double result = 0.0;
+    for (unsigned int cp = 0; cp < indices->size (); cp++)
+      result += pow (points->pts.at (indices->at (cp)).x, p) * pow (points->pts.at (indices->at (cp)).y, q) * pow (points->pts.at (indices->at (cp)).z, r);
+
+    return (result);
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute the cross product between two points (vectors).
