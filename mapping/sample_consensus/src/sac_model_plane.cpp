@@ -306,7 +306,7 @@ namespace sample_consensus
     double curvature;
 
     // Use Least-Squares to fit the plane through all the given sample points and find out its coefficients
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (*cloud_, inliers, plane_coefficients, curvature);
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_, &inliers, plane_coefficients, curvature);
 
     std::vector<double> refit (4);
     for (int d = 0; d < 4; d++)

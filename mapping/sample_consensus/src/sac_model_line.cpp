@@ -247,7 +247,7 @@ namespace sample_consensus
     std_msgs::Point32 centroid;
     // Compute the 3x3 covariance matrix
     Eigen::Matrix3d covariance_matrix;
-    cloud_geometry::nearest::computeCovarianceMatrix (*cloud_, inliers, covariance_matrix, centroid);
+    cloud_geometry::nearest::computeCovarianceMatrix (cloud_, &inliers, covariance_matrix, centroid);
 
     refit_coefficients[0] = centroid.x;
     refit_coefficients[1] = centroid.y;
