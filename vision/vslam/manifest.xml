@@ -1,0 +1,14 @@
+<package>
+  <description>
+    Visual Localisation and Mapping
+  </description>
+  <author>James Bowman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="visual_odometry"/>
+  <depend package="rospy"/>
+  <depend package="transformations"/>
+  <depend package="toro"/>
+  <depend package="render"/>
+  <depend package="place_recognition"/>
+</package>
