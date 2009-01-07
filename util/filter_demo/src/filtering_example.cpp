@@ -60,12 +60,12 @@ public:
     std::vector<double> temp(2);
     
     //hack for wait for service
-    while (!ros::service::call("generate_filter_coeffs", req, res))
+    while (!ros::service::call("filter_coeffs", req, res))
     {
       sleep(1);
     }
     
-    if (ros::service::call("generate_filter_coeffs", req, res))
+    if (ros::service::call("filter_coeffs", req, res))
     {
 
       std::ofstream outfile("output.txt");
