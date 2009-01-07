@@ -70,8 +70,8 @@ CMD_VEL         = [0,0,0,0,0,0,0]
 GRP_CMD_POS     = 0.3
 
 TARGET_DURATION = 1.0
-ROT_TARGET_TOL      = 0.01  #empirical test result john - 20090106
-POS_TARGET_TOL      = 0.01  #empirical test result john - 20090106
+ROT_TARGET_TOL      = 0.02  #empirical test result john - 20090106
+POS_TARGET_TOL      = 0.02  #empirical test result john - 20090106
 TEST_TIMEOUT    = 30.0
 
 # pre-recorded poses for above commands
