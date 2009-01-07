@@ -12,6 +12,7 @@
   <depend package="image_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
+  <depend package="boost"/>
   <depend package="color_calib"/>
   <depend package="rosthread"/>
 </package>
