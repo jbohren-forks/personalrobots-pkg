@@ -6,3 +6,5 @@ pytf:
 	g++ -c pytf_wrap.cxx -I/usr/include/python2.5 `rospack --lang=cpp --attrib=cflags export tf`
 	g++ -shared pytf_wrap.o $(LFLAGS) -Xlinker -export-dynamic -o _pytf.so
 
+clean:
+	rm -rf *.so *.cxx *.o *.py*

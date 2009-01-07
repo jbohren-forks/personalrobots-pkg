@@ -47,19 +47,13 @@ public:
 class pyTransformer
 {
 public:
-  /************* Constants ***********************/
-  static const unsigned int MAX_GRAPH_DEPTH = 100UL;   //!< The maximum number of time to recurse before assuming the tree has a loop.
-  static const int64_t DEFAULT_CACHE_TIME = 10ULL * 1000000000ULL;  //!< The default amount of time to cache data
-  static const int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0ULL; //!< The default amount of time to extrapolate
-
-
   /** Constructor 
    * \param interpolating Whether to interpolate, if this is false the closest value will be returned
    * \param cache_time How long to keep a history of transforms in nanoseconds
    * 
    */
   pyTransformer(bool interpolating = true, 
-              int64_t cache_time = DEFAULT_CACHE_TIME):
+              int64_t cache_time = 10LL * 1000000000LL):
     tf_(interpolating, cache_time){;};
   virtual ~pyTransformer(void){;};
   
