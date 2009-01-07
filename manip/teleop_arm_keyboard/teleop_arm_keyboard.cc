@@ -180,10 +180,10 @@ class TeleopArmKeyboardNode : public ros::node
       this->rArmCmd.margins[5] = 0;
       this->rArmCmd.margins[6] = 0;
 
-      advertise<pr2_mechanism_controllers::JointPosCmd>(LEFT_ARM_COMMAND_TOPIC);
-      advertise<pr2_mechanism_controllers::JointPosCmd>(RIGHT_ARM_COMMAND_TOPIC);
-      advertise<std_msgs::Float64>(LEFT_GRIPPER_COMMAND_TOPIC);
-      advertise<std_msgs::Float64>(RIGHT_GRIPPER_COMMAND_TOPIC);
+      advertise<pr2_mechanism_controllers::JointPosCmd>(LEFT_ARM_COMMAND_TOPIC,1);
+      advertise<pr2_mechanism_controllers::JointPosCmd>(RIGHT_ARM_COMMAND_TOPIC,1);
+      advertise<std_msgs::Float64>(LEFT_GRIPPER_COMMAND_TOPIC,1);
+      advertise<std_msgs::Float64>(RIGHT_GRIPPER_COMMAND_TOPIC,1);
 
       // deal with grippers separately
       this->lGripperCmd.data     = 0;

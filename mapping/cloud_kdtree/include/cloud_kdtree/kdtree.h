@@ -142,6 +142,14 @@ namespace cloud_kdtree
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
       virtual ~KdTree ()
       {
+        Clean ();
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Deletes all allocated data arrays and destroys the kd-tree structures. */
+      void
+        Clean ()
+      {
         // Data array cleanup
         if (points_ != NULL && nr_points_ != 0)
           annDeallocPts (points_);

@@ -30,7 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "cloud_geometry/nearest.h"
+#include <cloud_geometry/point.h>
+#include <cloud_geometry/nearest.h>
 
 namespace cloud_geometry
 {
@@ -189,5 +190,77 @@ namespace cloud_geometry
       curvature = fabs ( eigen_values (0) / (eigen_values (0) + eigen_values (1) + eigen_values (2)) );
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3 moment invariants (j1, j2, j3) for a given set of points.
+      * \param points the input point cloud
+      * \param j1 the first moment invariant
+      * \param j2 the second moment invariant
+      * \param j3 the third moment invariant
+      */
+    void
+      computeMomentInvariants (std_msgs::PointCloud *points, double &j1, double &j2, double &j3)
+    {
+      // Compute the centroid
+      std_msgs::Point32 centroid;
+      computeCentroid (points, centroid);
+
+      // Demean the pointset
+      std_msgs::PointCloud points_c;
+      points_c.pts.resize (points->pts.size ());
+      for (unsigned int i = 0; i < points->pts.size (); i++)
+      {
+        points_c.pts[i].x = points->pts[i].x - centroid.x;
+        points_c.pts[i].y = points->pts[i].y - centroid.y;
+        points_c.pts[i].z = points->pts[i].z - centroid.z;
+      }
+
+      double mu200 = computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
+      double mu020 = computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
+      double mu002 = computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
+      double mu110 = computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
+      double mu101 = computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
+      double mu011 = computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+
+      j1 = mu200 + mu020 + mu002;
+      j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
+      j3 = mu200*mu020*mu002 + 2*mu110*mu101*mu011 - mu002*mu110*mu110 - mu020*mu101*mu101 - mu200*mu011*mu011;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3 moment invariants (j1, j2, j3) for a given set of points, using their indices.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param j1 the first moment invariant
+      * \param j2 the second moment invariant
+      * \param j3 the third moment invariant
+      */
+    void
+      computeMomentInvariants (std_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3)
+    {
+      // Compute the centroid
+      std_msgs::Point32 centroid;
+      computeCentroid (points, indices, centroid);
+
+      // Demean the pointset
+      std_msgs::PointCloud points_c;
+      points_c.pts.resize (indices->size ());
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        points_c.pts[i].x = points->pts.at (indices->at (i)).x - centroid.x;
+        points_c.pts[i].y = points->pts.at (indices->at (i)).y - centroid.y;
+        points_c.pts[i].z = points->pts.at (indices->at (i)).z - centroid.z;
+      }
+
+      double mu200 = computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
+      double mu020 = computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
+      double mu002 = computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
+      double mu110 = computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
+      double mu101 = computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
+      double mu011 = computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+
+      j1 = mu200 + mu020 + mu002;
+      j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
+      j3 = mu200*mu020*mu002 + 2*mu110*mu101*mu011 - mu002*mu110*mu110 - mu020*mu101*mu101 - mu200*mu011*mu011;
+    }
   }
 }

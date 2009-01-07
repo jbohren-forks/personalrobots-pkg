@@ -34,6 +34,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "rosthread/mutex.h"
 #include "std_msgs/LaserScan.h"
 
 #include "filters/median.h"

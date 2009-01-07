@@ -58,39 +58,39 @@
 namespace estimation
 {
 
-class DetectorParticle: public Tracker
+class DetectorParticle
 {
 public:
   /// constructor
-  DetectorParticle(unsigned int num_particles, const BFL::StateVector& sysnoise, const BFL::StateVector& measnoise);
+  DetectorParticle(unsigned int num_particles);
 
   /// destructor
-  virtual ~DetectorParticle();
+  ~DetectorParticle();
 
   /// initialize detector
-  virtual void initialize(const BFL::StateVector& mu, const BFL::StateVector& sigma, const double time);
+  void initialize(const BFL::StateVector& mu, const BFL::StateVector& size, const double time);
 
   /// return if detector was initialized
-  virtual bool isInitialized() const {return detector_initialized_;};
+  bool isInitialized() const {return detector_initialized_;};
 
   /// return measure for detector quality: 0=bad 1=good
-  virtual double getQuality() const {return quality_;};
+  double getQuality() const {return quality_;};
 
   /// update detector
-  virtual bool updatePrediction(const double dt);
-  virtual bool updateCorrection(const BFL::StateVector& meas, 
+  bool updatePrediction(const double dt);
+  bool updateCorrection(const BFL::StateVector& meas, 
 				const MatrixWrapper::SymmetricMatrix& cov,
 				const double time);
 
   /// get filter posterior
-  virtual void getEstimate(BFL::StateVector& est) const;
-  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
+  void getEstimate(BFL::StateVector& est) const;
+  void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
   // get evenly spaced particle cloud
   void getParticleCloud(const BFL::StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogramPos(const BFL::StateVector& min, const BFL::StateVector& max, const BFL::StateVector& step) const;
+  MatrixWrapper::Matrix getHistogram(const BFL::StateVector& min, const BFL::StateVector& max, const BFL::StateVector& step) const;
 
 private:
   // pdf / model / filter

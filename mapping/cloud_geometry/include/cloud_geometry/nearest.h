@@ -191,6 +191,8 @@ namespace cloud_geometry
     void computeSurfaceNormalCurvature (std_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature);
     void computeSurfaceNormalCurvature (std_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
+    void computeMomentInvariants (std_msgs::PointCloud *points, double &j1, double &j2, double &j3);
+    void computeMomentInvariants (std_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3);
   }
 }
 

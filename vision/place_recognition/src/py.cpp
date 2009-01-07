@@ -320,18 +320,19 @@ PyObject *vttopN(PyObject *self, PyObject *args)
   std::vector<VocabularyTree::Match> matches;
 
   unsigned int N = ((vocabularytree_t*)self)->size;
-  matches.reserve(N);
-  vt->find(features, N, std::back_inserter(matches));
+  matches.reserve(N_show);
+  vt->find(features, N_show, std::back_inserter(matches));
 
   PyObject *l = PyList_New(N);
   for (unsigned j = 0; j < N; ++j)
     PyList_SetItem(l, j, PyFloat_FromDouble(0.0));
 
-  for (unsigned int j = 0; j < N_show; ++j) {
+  for (unsigned int j = 0; j < matches.size(); ++j) {
     unsigned int match_id = matches[j].id;
     assert(match_id < N);
     PyList_SetItem(l, match_id, PyFloat_FromDouble(matches[j].score));
   }
+  
 
   return l;
 }

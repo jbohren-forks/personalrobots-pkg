@@ -17,7 +17,7 @@
   <!-- declare the path where all models/textures/materials are stored -->
   <resource location="ros-pkg://wg_robot_description/models/pr2"/>
 
-  <include filename="../pr2_robot_defs/arm_grav_defs.xml" />
+  <include filename="../pr2_robot_defs/arm_defs.xml" />
   <include filename="../pr2_robot_defs/gripper_defs.xml" />
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
   <include filename="./groups_l_arm.xml" />

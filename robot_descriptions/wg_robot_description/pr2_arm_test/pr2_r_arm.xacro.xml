@@ -20,12 +20,12 @@
   <include filename="../pr2_robot_defs/arm_defs.xml" />
   <include filename="../pr2_robot_defs/gripper_defs.xml" />
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
-  <include filename="./groups_arm.xml" />
+  <include filename="./groups_r_arm.xml" />
 
-  <pr2_arm side="l" reflect="1" parent="base">
+  <pr2_arm side="r" reflect="1" parent="base">
     <origin xyz="0.0 0.0 1.0" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="l" parent="l_wrist_roll" />
+  <pr2_gripper side="r" parent="r_wrist_roll" />
 
   <!-- Solid Base -->
   <joint name="base_joint" type="planar"> 
@@ -62,13 +62,13 @@
   <map name="gazebo_material" flag="gazebo">
   <verbatim>
     <!-- ros_p3d for position groundtruth -->
-    <controller:ros_p3d name="p3d_l_wrist_controller" plugin="libros_p3d.so">
+    <controller:ros_p3d name="p3d_r_wrist_controller" plugin="libros_p3d.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>l_gripper_palm_link</bodyName>
-      <topicName>l_gripper_palm_pose_ground_truth</topicName>
+      <bodyName>r_gripper_palm_link</bodyName>
+      <topicName>r_gripper_palm_pose_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="p3d_l_wrist_position"/>
+      <interface:position name="p3d_r_wrist_position"/>
     </controller:ros_p3d>
   </verbatim>
   </map>

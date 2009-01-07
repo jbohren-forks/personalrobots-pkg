@@ -6,10 +6,10 @@ gensrv()
 add_subdirectory(test)
 
 rospack_add_library(filter_coefficient_server
-                    src/generate_filter_coeffs_client.cpp)
+                    src/filter_coeff_client.cpp)
 
 rospack_add_executable(filter_coeff_client
-                       src/generate_filter_coeffs_client.cpp)
+                       src/filter_coeff_client.cpp)
 
                       
 
