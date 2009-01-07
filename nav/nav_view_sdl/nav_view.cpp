@@ -93,7 +93,7 @@ Publishes to (name / type):
 
 // roscpp and friends
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "tf/transform_listener.h"
 
 // messages and services
@@ -137,7 +137,7 @@ public:
   bool full_transient_init_;
 
   // Lock for access to class members in callbacks
-  ros::thread::mutex lock;
+  boost::mutex lock;
 
   tf::TransformListener tf;
 
