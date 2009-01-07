@@ -1,0 +1,11 @@
+<package>
+  <description>
+    Simple renderer
+  </description>
+  <author>James Bowman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="vop"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
+</package>
