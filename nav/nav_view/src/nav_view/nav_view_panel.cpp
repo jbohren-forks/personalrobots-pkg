@@ -33,6 +33,7 @@
 
 #include "ros/common.h"
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include <tf/transform_listener.h>
 
 #include <Ogre.h>
