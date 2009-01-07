@@ -35,6 +35,7 @@
 #ifndef GOVERNOR_NODE_H_
 #define GOVERNOR_NODE_H_
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 
 #include <vector>
 
