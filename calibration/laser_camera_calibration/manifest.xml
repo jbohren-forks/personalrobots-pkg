@@ -1,10 +1,17 @@
 <package>
-  <description>Simultaneous 6D Laser and Camera Calibration</description>
-  <author>Rosen Diankov</author>
+  <description brief="6D Laser and Camera Calibration">
+    Package for gathering measurements from the robot joints, laser scans, and camera object detections,
+    and using those measurements to calibrate the laser and camera extrinsic parameters and joint offsets.
+    gatherdata.py - gathers the measurements and synchronize the timestamps. Use rosrecord on the newly published topics
+    runperception.m - Reads the synchornized messages and performs the optimization, use rosplay on the bag files.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="robot_msgs" />
   <depend package="std_msgs" />
   <depend package="rospy"/>
+  <depend package="rosoct"/>
+  <depend package="openraveros"/>
   <depend package="checkerboard_detector"/>
 </package>

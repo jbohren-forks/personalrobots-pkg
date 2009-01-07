@@ -1,0 +1,10 @@
+<!-- start openraveros server and set all the correct paths -->
+<launch>
+  <machine name="localhost-openrave" address="localhost"/>
+  <node machine="localhost-openrave" pkg="openraveros" type="openraveros" output="screen">
+    <env name="OPENRAVE_DATA" value="$(env OPENRAVE_DATA):$(find openrave)/share/openrave:$(find openrave_robot_description):$(find ormanipulation)"/>
+    <env name="OPENRAVE_PLUGINS" value="$(env OPENRAVE_PLUGINS):$(find openrave)/share/openrave/plugins:$(find orplugins)"/>
+  </node>
+
+<!--   <node pkg="laser_camera_calibration" type="runcalibration.m" output="screen"/> -->
+</launch>

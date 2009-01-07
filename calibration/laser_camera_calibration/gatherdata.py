@@ -64,7 +64,7 @@ class GatherData:
         self.numpublished = 0
 
         self.pub_objdet = rospy.Publisher("new_ObjectDetection", ObjectDetection)
-        self.pub_laser = rospy.Publisher("new_tile_scan", LaserScan)
+        self.pub_laser = rospy.Publisher("new_tilt_scan", LaserScan)
         self.pub_robot = rospy.Publisher("new_mechanism_state", MechanismState)
         rospy.Subscriber("ObjectDetection", ObjectDetection, self.callback_objdet, 1)
         rospy.Subscriber("tilt_scan", LaserScan, self.callback_laser, 1)
