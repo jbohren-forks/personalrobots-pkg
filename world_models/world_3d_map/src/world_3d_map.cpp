@@ -135,6 +135,7 @@ public:
     param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
     param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.03);
     param("world_3d_map/verbosity_level", m_verbose, 1);
+    param("world_3d_map/body_part_scale", m_bodyPartScale, 1.95);
 
     m_active = true;
     m_acceptScans = false;
@@ -310,7 +311,7 @@ private:
 		    continue;
 		  }
 		    
-		rp.body->setScale(1.75);
+		rp.body->setScale(m_bodyPartScale);
 		    
 		m_selfSeeParts.push_back(rp);
 	      }
@@ -464,16 +465,16 @@ private:
   std::vector<RobotPart>                   m_selfSeeParts;
   std::vector<std_msgs::PointCloud*> m_currentWorld;// Pointers to saved clouds
 
-    
+  double                           m_bodyPartScale;
   double                           m_maxPublishFrequency;
-  double m_baseLaserMaxRange;
-  double m_tiltLaserMaxRange;
+  double                           m_baseLaserMaxRange;
+  double                           m_tiltLaserMaxRange;
   double                           m_retainPointcloudFraction;    
   double                           m_retainAboveGroundThreshold;
   int                              m_verbose;
     
   std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
-  std_msgs::PointCloud      m_inputCloud; //Buffer for recieving cloud
+  std_msgs::PointCloud             m_inputCloud; //Buffer for recieving cloud
   std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan    
   pthread_t                       *m_publishingThread;
   ros::thread::mutex               m_worldDataMutex;

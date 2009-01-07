@@ -83,7 +83,7 @@ Publishes to (name / type):
 
 // roscpp
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseWithRatesStamped.h>

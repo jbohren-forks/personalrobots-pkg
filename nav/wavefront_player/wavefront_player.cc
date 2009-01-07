@@ -111,7 +111,7 @@ robot.
 
 // roscpp
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
 #include <std_msgs/Planner2DState.h>
@@ -213,7 +213,7 @@ class WavefrontNode: public ros::node
     tf::MessageNotifier<std_msgs::LaserScan>* scan_notifier;
 
     // Lock for access to class members in callbacks
-    ros::thread::mutex lock;
+    boost::mutex lock;
 
     // Message callbacks
     void goalReceived();

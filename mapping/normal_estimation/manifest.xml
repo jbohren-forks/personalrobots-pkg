@@ -1,0 +1,20 @@
+<package>
+  <description>
+    A node which estimates local surface properties at each point such as surface normals, curvature changes, moment invariants, etc.
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="cloud_kdtree" />
+  <depend package="cloud_geometry" />
+  <depend package="tf" />
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
+
+</package>

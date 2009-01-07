@@ -30,70 +30,73 @@
 % Original version: Melonee Wise <mwise@willowgarage.com>
 
 function res = filterserv(req)
-%filterserv Parses arguments for octave filtering functions.
+%filterserv - Parses arguments for octave filtering functions.
 
 res = req._create_response();
 method = req.name;
 
 switch method
+  % Parsing for butter
   case{'butter'} 
-    if(length(req.args)==2) %defualt lowpass
-      [res.b,res.a]=butter(str2num(req.args{1}),str2num(req.args{2}));
-    elseif(length(req.args)==3) 
-      if(strcmp(req.args{3},'high') || strcmp(req.args{3},'h') || strcmp(req.args{3},'low') || strcmp(req.args{3},'l'))%select type
-        [res.b,res.a]=butter(str2num(req.args{1}),str2num(req.args{2}), req.args{3});
-      else %bandstop
-        [res.b,res.a]=butter(str2num(req.args{1}),[str2num(req.args{2}), str2num(req.args{3})]);
+    if(length(req.args) == 2) % Defualt lowpass
+      [res.b, res.a] = butter(str2num(req.args{1}), str2num(req.args{2}));
+    elseif(length(req.args) == 3) 
+      if(strcmp(req.args{3}, 'high') || strcmp(req.args{3}, 'low'))% Select type
+        [res.b,res.a] = butter(str2num(req.args{1}), str2num(req.args{2}), req.args{3});
+      else % Bandstop
+        [res.b, res.a] = butter(str2num(req.args{1}), [str2num(req.args{2}) str2num(req.args{3})]);
       endif
-    elseif(length(req.args)==4) %bandstop
-      [res.b,res.a]=butter(str2num(req.args{1}),[str2num(req.args{2}) str2num(req.args{3})], req.args{4});
-    else %wrong number of arguments
-      res=[];
-    end
+    elseif(length(req.args) == 4) % Bandstop
+      [res.b, res.a]=butter(str2num(req.args{1}), [str2num(req.args{2}) str2num(req.args{3})], req.args{4});
+    else % Wrong number of arguments
+      res = [];
+    endif
+  % Parsing for cheby1  
   case{'cheby1'}
-    if(length(req.args)==3) %defualt lowpass
-      [res.b,res.a]=cheby1(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}));
-    elseif(length(req.args)==4) 
-      if(strcmp(req.args{4},'high') || strcmp(req.args{4},'h') || strcmp(req.args{4},'low') || strcmp(req.args{4},'l'))%select type
-        [res.b,res.a]=cheby1(str2num(req.args{1}),str2num(req.args{2}), str2num(req.args{3}), req.args{4});
-      else %bandstop
-        [res.b,res.a]=cheby1(str2num(req.args{1}),str2num(req.args{2}), [str2num(req.args{3}), str2num(req.args{4})]);
+    if(length(req.args) == 3) % Defualt lowpass
+      [res.b, res.a] = cheby1(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}));
+    elseif(length(req.args) == 4) 
+      if(strcmp(req.args{4}, 'high') || strcmp(req.args{4}, 'low'))% Select type
+        [res.b, res.a] = cheby1(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), req.args{4});
+      else % Bandstop
+        [res.b, res.a] = cheby1(str2num(req.args{1}), str2num(req.args{2}), [str2num(req.args{3}) str2num(req.args{4})]);
       endif
-    elseif(length(req.args)==5) %bandstop
-      [res.b,res.a]=cheby1(str2num(req.args{1}),str2num(req.args{2}),[str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
-    else %wrong number of arguments
-      res=[];
-    end
+    elseif(length(req.args) == 5) % Bandstop
+      [res.b, res.a] = cheby1(str2num(req.args{1}), str2num(req.args{2}), [str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
+    else % Wrong number of arguments
+      res = [];
+    endif
+  % Parsing for cheby2  
   case{'cheby2'}
-    if(length(req.args)==3) %defualt lowpass
+    if(length(req.args) == 3) % Defualt lowpass
       [res.b,res.a]=cheby2(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}));
-    elseif(length(req.args)==4)
-      if(strcmp(req.args{4},'high') || strcmp(req.args{4},'h') || strcmp(req.args{4},'low') || strcmp(req.args{4},'l'))%select type
-        [res.b,res.a]=cheby2(str2num(req.args{1}),str2num(req.args{2}), str2num(req.args{3}), req.args{4});
-      else %bandstop
-        [res.b,res.a]=cheby2(str2num(req.args{1}),str2num(req.args{2}), [str2num(req.args{3}), str2num(req.args{4})]);
+    elseif(length(req.args) == 4)
+      if(strcmp(req.args{4}, 'high') || strcmp(req.args{4}, 'low'))% Select type
+        [res.b, res.a] = cheby2(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), req.args{4});
+      else % Bandstop
+        [res.b, res.a] = cheby2(str2num(req.args{1}), str2num(req.args{2}), [str2num(req.args{3}) str2num(req.args{4})]);
       endif
-    elseif(length(req.args)==5) %bandstop
-      [res.b,res.a]=cheby2(str2num(req.args{1}),str2num(req.args{2}),[str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
-    else %wrong number of arguments
-      res=[];
-    end
+    elseif(length(req.args) == 5) % Bandstop
+      [res.b, res.a] = cheby2(str2num(req.args{1}), str2num(req.args{2}), [str2num(req.args{3}) str2num(req.args{4})], req.args{5}); 
+    else % Wrong number of arguments
+      res = [];
+    endif
+  % Parsing for ellip 
   case{'ellip'}
-    if(length(req.args)==4) %defualt lowpass
-      'here'
-      [res.b,res.a]=ellip(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),str2num(req.args{4}));
-    elseif(length(req.args)==5) 
-      if(strcmp(req.args{5},'high') || strcmp(req.args{5},'h') || strcmp(req.args{5},'low') || strcmp(req.args{5},'l'))%select type
-        [res.b,res.a]=ellip(str2num(req.args{1}),str2num(req.args{2}), str2num(req.args{3}),str2num(req.args{4}), req.args{5});
-      elseif %bandstop
-        [res.b,res.a]=ellip(str2num(req.args{1}),str2num(req.args{2}), str2num(req.args{3}),[str2num(req.args{4}), str2num(req.args{5})]);
+    if(length(req.args) == 4) % Defualt lowpass
+      [res.b, res.a]=ellip(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), str2num(req.args{4}));
+    elseif(length(req.args) == 5) 
+      if(strcmp(req.args{5}, 'high') || strcmp(req.args{5}, 'low'))% Select type
+        [res.b, res.a] = ellip(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), str2num(req.args{4}), req.args{5});
+      elseif % Bandstop
+        [res.b, res.a] = ellip(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), [str2num(req.args{4}) str2num(req.args{5})]);
       endif
-    elseif(length(req.args)==6) %bandstop
-      [res.b,res.a]=ellip(str2num(req.args{1}),str2num(req.args{2}),str2num(req.args{3}),[str2num(req.args{4}) str2num(req.args{5})], req.args{6}); 
-    else %wrong number of arguments
-      res=[];
-    end
+    elseif(length(req.args) == 6) % Bandstop
+      [res.b, res.a] = ellip(str2num(req.args{1}), str2num(req.args{2}), str2num(req.args{3}), [str2num(req.args{4}) str2num(req.args{5})], req.args{6}); 
+    else % Wrong number of arguments
+      res = [];
+    endif
   otherwise %filter doesn't exist
-    res=[];
-end
+    res = [];
+endswitch
 

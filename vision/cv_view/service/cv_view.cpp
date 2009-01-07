@@ -7,6 +7,7 @@
 #include "std_msgs/Image.h"
 #include "std_srvs/PolledImage.h"
 #include "image_utils/cv_bridge.h"
+#include "boost/thread/mutex.hpp"
 
 #include <sys/stat.h>
 
@@ -20,7 +21,7 @@ public:
   std_srvs::PolledImage::request  req;
   std_srvs::PolledImage::response res;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   IplImage *cv_image;
 

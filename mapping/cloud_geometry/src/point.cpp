@@ -249,4 +249,61 @@ namespace cloud_geometry
       max_pt.z = (points.pts.at (indices.at (i)).z > max_pt.z) ? points.pts.at (indices.at (i)).z : max_pt.z;
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the point indices from a cloud, whose normals are close to parallel with a given axis direction.
+    * \param points the point cloud message
+    * \param nx the normal X channel index
+    * \param ny the normal Y channel index
+    * \param nz the normal Z channel index
+    * \param axis the given axis direction
+    * \param eps_angle the maximum allowed difference threshold between the normal and the axis (in radians)
+    * \param indices the resultant indices
+    */
+  void
+    getPointIndicesAxisParallelNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                        std_msgs::Point32 axis, std::vector<int> &indices)
+  {
+    // Check all points
+    for (unsigned int i = 0; i < points->pts.size (); i++)
+    {
+      std_msgs::Point32 p;
+      p.x = points->chan[nx].vals[i];
+      p.y = points->chan[ny].vals[i];
+      p.z = points->chan[nz].vals[i];
+      // Compute the angle between their normal and the given axis
+      double angle = acos (dot (p, axis));
+      if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
+        indices.push_back (i);
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the point indices from a cloud, whose normals are close to perpendicular to a given axis direction.
+    * \param points the point cloud message
+    * \param nx the normal X channel index
+    * \param ny the normal Y channel index
+    * \param nz the normal Z channel index
+    * \param axis the given axis direction
+    * \param eps_angle the maximum allowed difference threshold between the normal and the axis (in radians)
+    * \param indices the resultant indices
+    */
+  void
+    getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                             std_msgs::Point32 axis, std::vector<int> &indices)
+  {
+    // Check all points
+    for (unsigned int i = 0; i < points->pts.size (); i++)
+    {
+      std_msgs::Point32 p;
+      p.x = points->chan[nx].vals[i];
+      p.y = points->chan[ny].vals[i];
+      p.z = points->chan[nz].vals[i];
+      // Compute the angle between their normal and the given axis
+      double angle = acos (dot (p, axis));
+      if (fabs (M_PI / 2.0 - angle) < eps_angle)
+        indices.push_back (i);
+    }
+  }
+
 }

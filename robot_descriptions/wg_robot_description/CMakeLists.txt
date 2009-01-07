@@ -34,12 +34,19 @@ add_custom_command(
   ARGS ${pr2prototype1}.xacro.xml > ${pr2prototype1}.xml
   DEPENDS ${pr2prototype1}.xacro.xml ${def_files})
 
-set(pr2arm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_arm")
+set(pr2larm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_l_arm")
 add_custom_command(
-  OUTPUT ${pr2arm}.xml
+  OUTPUT ${pr2larm}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2arm}.xacro.xml > ${pr2arm}.xml
-  DEPENDS ${pr2arm}.xacro.xml ${def_files})
+  ARGS ${pr2larm}.xacro.xml > ${pr2larm}.xml
+  DEPENDS ${pr2larm}.xacro.xml ${def_files})
+
+set(pr2rarm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_r_arm")
+add_custom_command(
+  OUTPUT ${pr2rarm}.xml
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${pr2rarm}.xacro.xml > ${pr2rarm}.xml
+  DEPENDS ${pr2rarm}.xacro.xml ${def_files})
 
 set(pr2gripper "${CMAKE_CURRENT_SOURCE_DIR}/pr2_gripper/pr2_gripper")
 add_custom_command(
@@ -114,4 +121,4 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2robot}.xml ${pr2prototype1}.xml ${pr2arm}.xml ${pr2gripper}.xml ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2robot}.xml ${pr2prototype1}.xml ${pr2larm}.xml ${pr2rarm}.xml ${pr2gripper}.xml ${pr2_gen_files})

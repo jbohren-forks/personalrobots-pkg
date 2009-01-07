@@ -1,11 +1,10 @@
- %module tf_swig
+ %module pytf
  %{
  /* Includes the header in the wrapper code */
- #include "tf/tf.h"
+ #include "pytf.h"
  %}
  
-
-%include "std_msgs/Pose.h"
+%include "std_string.i"
 
  /* Parse the header file to generate wrappers */
-
+%include "pytf.h"

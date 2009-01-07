@@ -37,6 +37,8 @@
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
 
+#include <cfloat>
+
 namespace cloud_geometry
 {
 
@@ -218,6 +220,61 @@ namespace cloud_geometry
     normalizePoint (std_msgs::Point32 &p)
   {
     normalizePoint (p, p);
+  }
+
+  void getPointIndicesAxisParallelNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                           std_msgs::Point32 axis, std::vector<int> &indices);
+  void getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                                std_msgs::Point32 axis, std::vector<int> &indices);
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud
+    * \param points the point cloud message
+    * \param minP the resultant minimum bounding box coordinates
+    * \param maxP the resultant maximum bounding box coordinates
+    */
+  inline void
+    getMinMax (std_msgs::PointCloud *points, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
+  {
+    minP.x = minP.y = minP.z = FLT_MAX;
+    maxP.x = maxP.y = maxP.z = FLT_MIN;
+
+    for (unsigned int i = 0; i < points->pts.size (); i++)
+    {
+      minP.x = (points->pts[i].x < minP.x) ? points->pts[i].x : minP.x;
+      minP.y = (points->pts[i].y < minP.y) ? points->pts[i].y : minP.y;
+      minP.z = (points->pts[i].z < minP.z) ? points->pts[i].z : minP.z;
+
+      maxP.x = (points->pts[i].x > maxP.x) ? points->pts[i].x : maxP.x;
+      maxP.y = (points->pts[i].y > maxP.y) ? points->pts[i].y : maxP.y;
+      maxP.z = (points->pts[i].z > maxP.z) ? points->pts[i].z : maxP.z;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud, using point indices
+    * \param points the point cloud message
+    * \param indices the point cloud indices to use
+    * \param minP the resultant minimum bounding box coordinates
+    * \param maxP the resultant maximum bounding box coordinates
+    */
+  inline void
+    getMinMax (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
+  {
+    minP.x = minP.y = minP.z = FLT_MAX;
+    maxP.x = maxP.y = maxP.z = FLT_MIN;
+
+    for (unsigned int i = 0; i < indices->size (); i++)
+    {
+      minP.x = (points->pts.at (indices->at (i)).x < minP.x) ? points->pts.at (indices->at (i)).x : minP.x;
+      minP.y = (points->pts.at (indices->at (i)).y < minP.y) ? points->pts.at (indices->at (i)).y : minP.y;
+      minP.z = (points->pts.at (indices->at (i)).z < minP.z) ? points->pts.at (indices->at (i)).z : minP.z;
+
+      maxP.x = (points->pts.at (indices->at (i)).x > maxP.x) ? points->pts.at (indices->at (i)).x : maxP.x;
+      maxP.y = (points->pts.at (indices->at (i)).y > maxP.y) ? points->pts.at (indices->at (i)).y : maxP.y;
+      maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
+    }
   }
 
 }

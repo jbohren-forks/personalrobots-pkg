@@ -1,0 +1,14 @@
+<package>
+  <description>A python implementation of the executive for milestone 1</description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="rosthread"/>
+  <depend package="rosconsole"/>
+  <depend package="rospy" />
+  <depend package="highlevel_controllers" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="gtest" />
+</package>

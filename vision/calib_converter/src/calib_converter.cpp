@@ -1,5 +1,5 @@
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include "boost/thread/mutex.hpp"
 #include <iostream>
 #include <fstream>
 #include "opencv/cxcore.h"
@@ -57,7 +57,7 @@ class calib_converter
 public:
   
 
-  ros::thread::mutex cv_mutex;  
+  boost::mutex cv_mutex;  
   ros::record::Player lp;
   map<string, imgData> images;
   std_msgs::ImageArray image_msg;

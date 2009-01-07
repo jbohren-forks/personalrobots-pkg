@@ -5,7 +5,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "std_msgs/ImageArray.h"
 #include "cv_view/Lines.h"
 #include "image_utils/cv_bridge.h"
@@ -27,7 +27,7 @@ public:
   std_msgs::ImageArray image_msg;
   cv_view::Lines lines_msg;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   char dir_name[256];
   int img_cnt;
