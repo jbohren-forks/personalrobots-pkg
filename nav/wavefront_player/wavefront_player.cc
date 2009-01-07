@@ -111,6 +111,7 @@ robot.
 
 // roscpp
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 
 // The messages that we'll use
 #include <std_msgs/Planner2DState.h>
