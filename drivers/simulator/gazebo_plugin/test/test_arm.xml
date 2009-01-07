@@ -2,7 +2,7 @@
   <master auto="start" />
 
     <!-- send single_link.xml to param server -->
-    <include file="$(find arm_gazebo)/arm_no_x.launch" />
+    <include file="$(find arm_gazebo)/l_arm_no_x.launch" />
 
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_test_arm"      pkg="gazebo_plugin" type="test_arm.py" />

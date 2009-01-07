@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <!-- ========================================= -->
+  <!-- right arm array -->
+  <controller name="left_arm_controller" type="ArmDynamicsControllerNode">
+    <listen_topic name="left_arm_commands" />
+    <kinematics>
+      <elem key="kdl_chain_name">left_arm</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">left_arm</elem>
+    </map>
+    <controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointEffortController">
+      <joint name="l_shoulder_pan_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_shoulder_lift_controller" topic="l_shoulder_lift_controller" type="JointEffortController">
+      <joint name="l_shoulder_lift_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_upper_arm_roll_controller" topic="l_upper_arm_roll_controller" type="JointEffortController">
+      <joint name="l_upper_arm_roll_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_elbow_flex_controller" topic="l_elbow_flex_controller" type="JointEffortController">
+      <joint name="l_elbow_flex_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_forearm_roll_controller" topic="l_forearm_roll_controller" type="JointEffortController">
+      <joint name="l_forearm_roll_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_wrist_flex_controller" topic="l_wrist_flex_controller" type="JointEffortController">
+      <joint name="l_wrist_flex_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+    <controller name="l_wrist_roll_controller" topic="l_wrist_roll_controller" type="JointEffortController">
+      <joint name="l_wrist_roll_joint" >
+        <pid p="0" d="0" i="0" iClamp="0" />
+      </joint>
+    </controller>
+  </controller>
+  <controller name="l_gripper_controller" topic="l_gripper_controller" type="JointPositionControllerNode">
+    <joint name="l_gripper_l_finger_joint">
+      <pid p="0.5" d="0.000001" i="0.001" iClamp="0.01" />
+    </joint>
+  </controller>
+</controllers>
