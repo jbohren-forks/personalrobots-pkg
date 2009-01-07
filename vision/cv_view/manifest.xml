@@ -14,5 +14,4 @@
   <depend package="roscpp"/>
   <depend package="boost"/>
   <depend package="color_calib"/>
-  <depend package="rosthread"/>
 </package>
