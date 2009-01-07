@@ -238,7 +238,7 @@ ArmPositionControllerNode::~ArmPositionControllerNode()
   if(ros_cb_ && topic_name_.c_str())
   {
     std::cout << "unsub arm controller" << topic_name_ << std::endl;
-    node_->unsubscribe(topic_name_);
+    node_->unsubscribe(topic_name_, &ArmPositionControllerNode::setJointPosSingleHeadless_cb, this);
   }
 
   delete c_;
