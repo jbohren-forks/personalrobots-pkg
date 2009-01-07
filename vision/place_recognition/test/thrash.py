@@ -12,10 +12,15 @@ import place_recognition
 
 ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
 
-vt = place_recognition.vocabularytree()
 random.seed(0)
 
-vt.build(random.sample(ims, 50), 5, 4, False)
+BUILD_TREE = True
+if BUILD_TREE:
+  vt = place_recognition.vocabularytree()
+  vt.build(random.sample(ims, 50), 5, 4, False)
+  vt.save("thrash.tree")
+else:
+  vt = place_recognition.load("thrash.tree")
 
 for (a,q) in zip(random.sample(ims, 100), random.sample(ims, 100)):
   print a, q
