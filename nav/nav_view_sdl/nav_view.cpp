@@ -93,6 +93,7 @@ Publishes to (name / type):
 
 // roscpp and friends
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "tf/transform_listener.h"
 
 // messages and services
