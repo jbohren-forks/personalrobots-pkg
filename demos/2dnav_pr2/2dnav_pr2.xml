@@ -88,6 +88,7 @@
     <param name="/costmap_2d/inflation_radius" value="0.65"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
 
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 10 Hz -->
@@ -98,6 +99,8 @@
 
     <!-- we don't have stereo data yet -->
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
+
+    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />
 
