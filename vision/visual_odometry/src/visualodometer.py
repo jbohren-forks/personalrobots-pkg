@@ -438,7 +438,7 @@ class VisualOdometer:
     self.num_frames += 1
     pairs = self.temporal_match(f0, f1)
     if len(pairs) > 10:
-      solution = self.solve(f0.kp, f1.kp, pairs, False)
+      solution = self.solve(f0.kp, f1.kp, pairs, True)
       (inl, rot, shift) = solution
       pose = self.mkpose(rot, shift)
       return (inl, pose)

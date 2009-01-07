@@ -4,6 +4,8 @@ rostools.update_path('vslam')
 import Image
 from votools import TreeOptimizer3
 import place_recognition
+from visualodometer import VisualOdometer, from_xyz_euler
+import pylab
 
 class Skeleton:
   def __init__(self, cam):
@@ -18,7 +20,7 @@ class Skeleton:
     else:
       self.vt = None
     self.place_ids = []
-    self.vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), scavenge = False)
+    self.vo = VisualOdometer(cam)
     self.termcrit = lambda count, err: (count > 100) or (err < 0.1)
 
   def add(self, this):
@@ -32,10 +34,12 @@ class Skeleton:
       self.nodes.add(this)
       self.edges.add( (prev, this) )
       self.pg.addIncrementalEdge(prev.id, this.id, relpose.xform(0,0,0), relpose.euler())
+      #print "added node at", this.pose.xform(0,0,0), "in graph as", self.newpose(this).xform(0,0,0)
 
       # XXX - waiting for fix from Patrick
       if len(self.nodes) > 20:
-        far = [ f for f in self.place_find(vo.keyframe.lf, 10) if abs(f.id - this.id) > 120]
+        #far = [ f for f in self.place_find(this.lf, 10) if abs(f.id - this.id) > 120]
+        far = [ f for f in self.place_find(this.lf, 10) if (f.id != this.id)]
         self.add_links(this, far)
 
       if self.vt:
@@ -57,7 +61,7 @@ class Skeleton:
     #self.pg.save("render5.graph")
 
   def newpose(self, f):
-    xyz,euler = skel.pg.vertex(f.id)
+    xyz,euler = self.pg.vertex(f.id)
     return from_xyz_euler(xyz, euler)
 
   def place_find(self, f, count = 10):
@@ -73,7 +77,8 @@ class Skeleton:
     id0 = this
     for inl,obs,id1 in coll:
       if 100 <= inl:
-        skel.addConstraint(id0, id1, obs)
+        self.addConstraint(id0, id1, obs)
+        print "ADDING CONSTRAINT"
     self.pg.initializeOnlineIterations()
     count = 0
     while not self.termcrit(count, self.pg.error()):
@@ -92,4 +97,3 @@ class Skeleton:
       p0 = pts[f0]
       p1 = pts[f1]
       pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), c = color)
-

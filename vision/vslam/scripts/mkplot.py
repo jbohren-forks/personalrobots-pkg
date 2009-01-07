@@ -22,7 +22,8 @@ import copy
 
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
-import fast
+from skeleton import Skeleton
+
 from math import *
 
 import camera
@@ -32,6 +33,7 @@ import numpy.linalg
 import pylab
 
 import rosrecord
+import transformations
 
 from vis import Vis
 
@@ -57,6 +59,7 @@ class imgAdapted:
     assert im.colorspace == 'mono8'
     self.size = (im.width, im.height)
     self.data = im.data
+    self.mode = "L"
   def tostring(self):
     return self.data
 
@@ -69,6 +72,7 @@ class dcamImage:
     assert d[0].label == "height"
     assert d[1].label == "width"
     self.size = (d[1].size, d[0].size)
+    self.mode = "L"
 
   def tostring(self):
     return self.data
@@ -82,15 +86,21 @@ filename = "2008-11-05-14-35-11-topic.bag"
 filename = "/u/prdata/videre-bags/vo1.bag"
 filename = sys.argv[1]
 framecounter = 0
-oe_x = []
-oe_y = []
 first_pair = None
 inliers = []
 
+start,end = 941,1000
+start,end = 20000,21300
+start,end = 20000,20970
+skipto = 12634364243
+start,end = 0,1300
 
 print "starting loop"
-for topic, msg, t in rosrecord.logplayer(filename):
-  print topic
+f = open(filename)
+for topic, msg, t in rosrecord.logplayer(f):
+  if f.tell() < skipto:
+    f.seek(skipto)
+  #print f.tell(), msg
   if rospy.is_shutdown():
     break
 
@@ -102,7 +112,8 @@ for topic, msg, t in rosrecord.logplayer(filename):
     cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 
     vos = [
-      VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+      VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+      VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
 
       #VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = (3,8,10)),
 
@@ -119,9 +130,6 @@ for topic, msg, t in rosrecord.logplayer(filename):
     vo_u = [ [] for i in vos]
     vo_v = [ [] for i in vos]
     trajectory = [ [] for i in vos]
-
-  start,end = 941,1000
-  start,end = 0,100
 
   if cam and topic.endswith("videre/images"):
     if framecounter == end:
@@ -150,20 +158,27 @@ for topic, msg, t in rosrecord.logplayer(filename):
   if topic == "/dcam/raw_stereo":
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
-      vos = [VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+      vos = [
+        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
+        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None),
             ]
       vo_x = [ [] for i in vos]
       vo_y = [ [] for i in vos]
       vo_u = [ [] for i in vos]
       vo_v = [ [] for i in vos]
       trajectory = [ [] for i in vos]
+      skel = Skeleton(cam)
+      oe_x = []
+      oe_y = []
+      oe_home = None
     if framecounter == end:
       break
     if start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
-        vis.show(msg.left_image.data, [])
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
         vo.handle_frame(af)
+        if i == 0:
+          skel.add(vo.keyframe)
         x,y,z = vo.pose.xform(0,0,0)
         trajectory[i].append((x,y,z))
         vo_x[i].append(x)
@@ -176,8 +191,16 @@ for topic, msg, t in rosrecord.logplayer(filename):
     framecounter += 1
 
   if topic.endswith("odom_estimation"):
-    oe_x.append(-msg.pose.position.y)
-    oe_y.append(msg.pose.position.x)
+    p = msg.pose.position
+    q = msg.pose.orientation
+    oe_pose = Pose(transformations.rotation_matrix_from_quaternion([q.x, q.y, q.z, q.w])[:3,:3], [p.x, p.y, p.z])
+    if cam:
+      if not oe_home:
+        oe_home = oe_pose
+      local = ~oe_home * oe_pose
+      (x,y,z) = local.xform(0,0,0)
+      oe_x.append(-y)
+      oe_y.append(x)
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
@@ -203,13 +226,16 @@ if 0:
   sys.exit(0)
 
 pylab.figure(figsize=(20,20))
-colors = [ 'blue', 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
+colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
   xs = numpy.array(vo_x[i])
   ys = numpy.array(vo_y[i])
-  xs -= 4.5 * 1e-3
-  f = -0.06
+  if 0:
+    xs -= 4.5 * 1e-3
+    f = -0.06
+  else:
+    f = 0.0
   xp = xs * cos(f) - ys * sin(f)
   yp = ys * cos(f) + xs * sin(f)
   pylab.plot(xp, yp, c = colors[i], label = vos[i].name())
@@ -220,6 +246,10 @@ for i in range(len(vos)):
   #pylab.scatter(xk, yk, c = colors[i], label = '_nolegend_')
 
 pylab.plot(oe_x, oe_y, c = 'green', label = 'wheel + IMU odometry')
+
+#skel.optimize()
+skel.plot('blue')
+
 xlim = pylab.xlim()
 ylim = pylab.ylim()
 xrange = xlim[1] - xlim[0]
