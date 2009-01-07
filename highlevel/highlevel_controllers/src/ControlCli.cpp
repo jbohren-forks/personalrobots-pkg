@@ -69,7 +69,7 @@ public:
     runCLI();
   }
   ~ControlCLI() {
-    delete publishLoop;
+
   }
   bool alive() { return !dead; }
 private:
