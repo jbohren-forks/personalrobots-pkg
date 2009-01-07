@@ -611,6 +611,21 @@ class VisualOdometer:
     frame.id = self.num_frames
     return self.handle_frame_0(frame)
 
+  # just set up the frame with descriptors, no VO processing
+  def setup_frame(self, frame):
+    self.find_keypoints(frame)
+    self.find_disparities(frame)
+    self.collect_descriptors(frame)
+    frame.id = self.num_frames
+  
+
+  # return inliers from a match
+  def check_inliers(self, frame1, frame2):
+    self.pairs = self.temporal_match(frame1, frame2)
+    solution = self.solve(frame1.kp, frame2.kp, self.pairs)
+    self.inl = solution[0]
+    
+
   def change_keyframe(self, newkey):
     print "Change keyframe from", self.keyframe.id, "to", newkey.id
     self.log_keyframes.append(newkey.id)
