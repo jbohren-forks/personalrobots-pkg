@@ -55,6 +55,7 @@ class Executive:
     self.recharger = recharger
     self.cycle_time = cycle_time
     self.state = "nav"
+    self.current_goal = None
 
   def legalStates(self):
     return self.navigator.legalState() and self.batt_monitor.legalState() and self.recharger.legalState()
@@ -67,7 +68,8 @@ class Executive:
           State Transitions from nav:
             1) nav --- robot is plugged in ---> recharge
             2) nav --- battery level is low --> nav_charge
-            3) nav --- robot is inactive or timeout is reached ---> nav
+            3) nav --- robot is inactive initially, reaches a goal, or timeout is reached ---> nav
+            4) nav --- robot is inactive and should be pursuing the current goal (move_base crashed) ---> nav
         """
         if self.batt_monitor.pluggedIn():
           self.recharger.charge(0, self.navigator.currentPosition())
@@ -78,9 +80,12 @@ class Executive:
           self.navigator.sendGoal(chrg_pts)
           self.state = "nav_charge"
           print "nav --> nav_charge"
-        elif not self.navigator.active() or self.navigator.timeUp():
-          goal_pts = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(goal_pts)
+        elif self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
+          self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
+          self.navigator.sendGoal(self.current_goal)
+          print "nav --> nav"
+        elif not self.navigator.active() and self.current_goal != None:
+          self.navigator.sendGoal(self.current_goal)
           print "nav --> nav"
       elif self.state == "recharge":
         """
@@ -88,6 +93,8 @@ class Executive:
             1) recharge --- robot is done charging ---> nav
         """
         if self.recharger.doneCharging():
+          #resume the current goal
+          self.navigator.sendGoal(self.current_goal)
           self.state = "nav"
           print "recharge --> nav"
       elif self.state == "nav_charge":
