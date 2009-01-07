@@ -4,7 +4,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "std_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
@@ -18,7 +18,7 @@ public:
   std_msgs::Image image_msg;
   CvBridge<std_msgs::Image> cv_bridge;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   IplImage *cv_image;
 
