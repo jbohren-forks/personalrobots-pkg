@@ -1,0 +1,25 @@
+<package>
+  <description brief="Robot Filter">
+    A class that serves a filter for point clouds. It removes
+    points that are inside of the robot. Formerly in world_3d_map,
+    it was extracted so that it could be used in other places,
+    such as the costmap.
+  </description>
+
+  <author>Ioan Sucan/isucan@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="tf"/>
+  <depend package="robot_model"/>
+  <depend package="collision_space"/>
+  <depend package="planning_models"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrobot_filter"/>
+  </export>
+  
+</package>
