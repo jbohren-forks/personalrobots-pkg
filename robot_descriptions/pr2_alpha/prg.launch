@@ -48,6 +48,18 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
+<!-- odom estimation -->
+  <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
+
+<!-- Stereo cam -->
+  <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
+  <param name="videre_mode" type="string" value="disparity_raw" />
+  <param name="fps"         type="double" value="15.0"/>
+  <param name="do_colorize" type="bool" value="False"/>
+  <param name="do_rectify" type="bool" value="False"/>
+  <param name="do_stereo" type="bool" value="False"/>
+</node>
+
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
