@@ -9,7 +9,7 @@ from filter_coefficient_server.srv import *
 
 def print_usage(exit_code = 0):
     print '''Commands:
-    <name> <args>      - Create controller with name and args
+    <name> <args>      - Create filter with name and args
     usage: filter_coeff_client butter 2 .1
     usage: filter_coeff_client butter 2 .1 high
 
