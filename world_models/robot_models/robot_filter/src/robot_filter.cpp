@@ -135,7 +135,7 @@ namespace robot_filter {
       addSelfSeeBodies();
     }
     
-    if(!m_model->getRobotState()) {
+    if (!m_model->getRobotState()) {
       ROS_WARN("Ignoring state update because I haven't yet received the robot description");
     } else {
       m_model->stateUpdate();
@@ -143,6 +143,11 @@ namespace robot_filter {
 	m_model->getKmodel()->computeTransforms(m_model->getRobotState()->getParams());
       if (m_model->getKmodelSimple())
 	m_model->getKmodelSimple()->computeTransforms(m_model->getRobotStateSimple()->getParams());
+    }
+
+    if (cloud.header.frame_id != "map") {
+      ROS_ERROR("Robot filter needs point clouds in the map frame. It was given a point cloud in the %s frame.",
+		cloud.header.frame_id.c_str());
     }
 
 
