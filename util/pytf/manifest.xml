@@ -10,6 +10,8 @@ Library for doing transformations.
 <url>http://pr.willowgarage.com</url>
 <depend package="rospy"/>
 <depend package="tf"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="swig"/>
+<sysdepend os="ubuntu" version="7.04-fiesty" package="swig"/>
 <export>
 <cpp cflags="-I${prefix}/include " lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
 </export>
