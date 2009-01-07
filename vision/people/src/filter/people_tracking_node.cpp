@@ -54,7 +54,6 @@ static const double       sequencer_delay            = 0.5;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 static const unsigned int num_particles_tracker      = 1000;
-static const unsigned int num_particles_detector     = 20000;
 
 
 namespace estimation
@@ -68,7 +67,6 @@ namespace estimation
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
-      detector_(num_particles_detector),
       robot_state_(*this, true),
       tracker_counter_(0),
       meas_visualize_(num_meas_show),
@@ -80,8 +78,6 @@ namespace estimation
       meas_visualize_[i].y = 0;
       meas_visualize_[i].z = 0;
     }
-    detector_.initialize(StateVector(0,0,0), StateVector(5,5,5), 0);
-
     // get parameters
     param("~/fixed_frame", fixed_frame_, string("default"));
     param("~/freq", freq_, 1.0);
@@ -98,15 +94,8 @@ namespace estimation
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<std_msgs::PointCloud>("people_detector",10);
     advertise<std_msgs::PointCloud>("people_tracker_filter_visualization",10);
     advertise<std_msgs::PointCloud>("people_tracker_measurements_visualization",10);
-
-    // DEBUG
-    std_msgs::PointCloud detector_visualize;
-    detector_.getParticleCloud(StateVector(0.1,0.1,0.1), 0.000000000001, detector_visualize);
-    publish("people_detector", detector_visualize);
-    cout << "PUBLISH" << endl;
   }
 
 
@@ -135,15 +124,7 @@ namespace estimation
     meas_rel.setData(StateVector(message->pos.x, message->pos.y, message->pos.z));
     meas_rel.stamp_    = message->header.stamp;
     meas_rel.frame_id_ = message->header.frame_id;
-    try {
-      robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
-    }
-    catch (tf::TransformException &e)
-    {
-      ROS_INFO("%s caught TF exception for %s from %s : %s\n", node_name_.c_str(), message->object_id.c_str(), message->name.c_str(), e.what());
-      return;
-    }
-
+    robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
 
     // get measurement covariance
     SymmetricMatrix cov(3);
@@ -153,12 +134,6 @@ namespace estimation
 
     // ----- LOCKED ------
     boost::mutex::scoped_lock lock(filter_mutex_);
-
-    // update detector
-    detector_.updateCorrection(meas, cov, time);
-    std_msgs::PointCloud detector_visualize;
-    detector_.getParticleCloud(StateVector(0.1,0.1,0.1), 0.001, detector_visualize);
-    publish("people_detector", detector_visualize);
 
     // update tracker if matching tracker found
     tracker_it_ = trackers_.find(name);
@@ -174,8 +149,8 @@ namespace estimation
       // TODO: WHAT SHOULD COVAR OF VEL BE??
       StatePosVel prior_sigma(StateVector(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), StateVector(0.0000001, 0.0000001, 0.0000001));
       name_new << "person " << tracker_counter_++;
-      //trackers_[name_new.str()] = new TrackerKalman(sys_sigma_);
-      trackers_[name_new.str()] = new TrackerParticle(num_particles_tracker, sys_sigma_);
+      trackers_[name_new.str()] = new TrackerKalman(sys_sigma_);
+      //trackers_[name_new.str()] = new TrackerParticle(num_particles_tracker, sys_sigma_);
       trackers_[name_new.str()]->initialize(meas, prior_sigma, time);
       ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), name_new.str().c_str());
     }
@@ -243,6 +218,7 @@ namespace estimation
 	weights[i] = rgb[min(998, 999-max(1, (int)trunc( it->second->getQuality()*999.0 )))];
 
 	// remove trackers that have zero quality
+	ROS_INFO("%s: quality of tracker %s = %f",node_name_.c_str(), it->first.c_str(), it->second->getQuality());
 	if (it->second->getQuality() <= 0){
 	  ROS_INFO("%s: Removing tracker %s",node_name_.c_str(), it->first.c_str());  
 	  trackers_.erase(it);

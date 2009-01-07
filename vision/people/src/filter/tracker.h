@@ -60,6 +60,9 @@ public:
   /// return measure for tracker quality: 0=bad 1=good
   virtual double getQuality() const = 0;
 
+  /// return the lifetime of the tracker
+  virtual double getLifetime() const = 0;
+
   /// update tracker
   virtual bool updatePrediction(const double dt) = 0;
   virtual bool updateCorrection(const tf::Vector3& meas, 
@@ -69,7 +72,6 @@ public:
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const = 0;
   virtual void getEstimate(robot_msgs::PositionMeasurement& est) const = 0;
-
 
 }; // class
 

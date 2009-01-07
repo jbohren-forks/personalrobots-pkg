@@ -84,6 +84,7 @@ namespace estimation
     tracker_initialized_ = true;
     quality_ = 1;
     filter_time_ = time;
+    init_time_ = time;
   }
 
 
@@ -167,6 +168,15 @@ namespace estimation
   {
     return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogramVel(min, max, step);
   };
+
+
+  double TrackerParticle::getLifetime() const
+  {
+    if (tracker_initialized_)
+      return filter_time_ - init_time_;
+    else
+      return 0;
+  }
 
 }; // namespace
 

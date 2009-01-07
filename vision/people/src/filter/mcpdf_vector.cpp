@@ -120,7 +120,7 @@
 	  t++;
 	}
     cout << "points size " << points.size() << endl;
-    cloud.header.frame_id = "odom";
+    cloud.header.frame_id = "base_link";
     cloud.pts  = points;
     channel.name = "rgb";
     channel.vals = weights;

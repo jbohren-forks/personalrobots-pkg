@@ -90,7 +90,6 @@ private:
   /// trackers
   std::map<std::string, Tracker*> trackers_;
   std::map<std::string, Tracker*>::iterator tracker_it_;
-  DetectorParticle detector_;
 
   // tf listener
   tf::TransformListener robot_state_;
