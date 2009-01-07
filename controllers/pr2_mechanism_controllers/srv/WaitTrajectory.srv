@@ -1,0 +1,5 @@
+## waits for a trajectory to finish or times out
+uint32 trajectoryid
+float32 timeout # if 0, waits indefinitely
+---
+uint8 timedout # 1 if timed out, 0 if any other error occurs

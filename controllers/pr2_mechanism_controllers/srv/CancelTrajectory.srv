@@ -1,0 +1,3 @@
+## cancels a trajectory(ies)
+uint32 trajectoryid # if 0, cancels all trajectories
+---
