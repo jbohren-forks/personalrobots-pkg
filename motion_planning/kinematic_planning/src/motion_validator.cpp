@@ -88,7 +88,7 @@ Provides (name/type):
 
 **/
 
-#include <planning_node_util/cnode.h>
+#include <robot_model/cnode.h>
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 
 #include <robot_srvs/ValidateKinematicPath.h>
@@ -101,7 +101,7 @@ Provides (name/type):
 #include <map>
 
 class MotionValidator : public ros::node,
-			public planning_node_util::NodeCollisionModel
+			public robot_model::NodeCollisionModel
 {
 public:
     
@@ -127,7 +127,7 @@ public:
     };    
     
     MotionValidator(const std::string &robot_model) : ros::node("motion_validator"),
-						      planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+						      robot_model::NodeCollisionModel(dynamic_cast<ros::node*>(this),
 											     robot_model)
     {
 	advertise_service("validate_path", &MotionValidator::validatePath);
@@ -205,7 +205,7 @@ public:
 
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeCollisionModel::setRobotDescription(file);	
+	robot_model::NodeCollisionModel::setRobotDescription(file);	
 	
 	printf("=======================================\n");	
 	m_kmodel->printModelInfo();

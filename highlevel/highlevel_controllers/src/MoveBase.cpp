@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <iterator>
 #include <angles/angles.h>
+#include <boost/thread.hpp>
 
 namespace ros {
   namespace highlevel_controllers {
@@ -293,7 +294,7 @@ namespace ros {
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
 
       // Spawn map update thread
-      map_update_thread_ = ros::thread::member_thread::startMemberFunctionThread<MoveBase>(this, &MoveBase::mapUpdateLoop);
+      map_update_thread_ = new boost::thread(boost::bind(&MoveBase::mapUpdateLoop, this));
 
       // Note: derived classes must initialize.
     }
@@ -302,7 +303,7 @@ namespace ros {
 
       active_ = false;
 
-      pthread_join(*map_update_thread_, NULL);
+      delete map_update_thread_;
 
       if(controller_ != NULL)
         delete controller_;

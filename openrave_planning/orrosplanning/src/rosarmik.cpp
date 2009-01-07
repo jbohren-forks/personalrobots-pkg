@@ -94,7 +94,7 @@ bool ROSArmIK::Init(RobotBase* probot, const RobotBase::Manipulator* pmanip, int
     axis.push_back(aj);
     an << 0.5 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(-1);
+    _vjointmult.push_back(1);
 
     // Forearm roll
     aj << 1 << 0 << 0;
@@ -499,4 +499,3 @@ NEWMAT::Matrix ROSArmIK::GetNewMat(const TransformMatrix& tm)
     nmT(4,1) = 0; nmT(4,2) = 0; nmT(4,3) = 0; nmT(4,4) = 1;
     return nmT;
 }
-

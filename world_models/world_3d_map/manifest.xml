@@ -4,6 +4,7 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
+<depend package="rosthread" />
 <depend package="std_msgs" />
 <depend package="tf" />
 <depend package="laser_scan" />
@@ -11,5 +12,5 @@
 <depend package="wg_robot_description_parser" /> 
 <depend package="planning_models" /> 
 <depend package="collision_space" /> 
-<depend package="planning_node_util" /> 
+<depend package="robot_model" /> 
 </package>

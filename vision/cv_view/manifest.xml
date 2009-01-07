@@ -13,4 +13,5 @@
   <depend package="image_utils"/>
   <depend package="roscpp"/>
   <depend package="color_calib"/>
+  <depend package="rosthread"/>
 </package>

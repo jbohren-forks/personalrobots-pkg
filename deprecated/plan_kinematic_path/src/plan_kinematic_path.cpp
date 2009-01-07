@@ -37,7 +37,7 @@
 
 /** This is a simple program for requesting a motion plan */
 
-#include <planning_node_util/knode.h>
+#include <robot_model/knode.h>
 
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
@@ -49,12 +49,12 @@
 #include <cassert>
 
 class PlanKinematicPath : public ros::node,
-			  public planning_node_util::NodeRobotModel
+			  public robot_model::NodeRobotModel
 {
 public:
     
     PlanKinematicPath(const std::string& robot_model) : ros::node("plan_kinematic_path"),
-							planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
+							robot_model::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
     }

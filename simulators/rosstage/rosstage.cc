@@ -88,6 +88,7 @@ Publishes to (name / type):
 #include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/Pose3D.h>
 #include <std_msgs/BaseVel.h>
+#include <rostools/Time.h>
 
 #include "tf/transform_broadcaster.h"
 
@@ -102,6 +103,7 @@ class StageNode : public ros::node
     std_msgs::LaserScan laserMsg;
     std_msgs::RobotBase2DOdom odomMsg;
     std_msgs::PoseWithRatesStamped groundTruthMsg;
+    rostools::Time timeMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     boost::mutex msg_lock;
@@ -224,6 +226,7 @@ StageNode::SubscribeModels()
   advertise<std_msgs::LaserScan>("base_scan",10);
   advertise<std_msgs::RobotBase2DOdom>("odom",10);
   advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth",10);
+  advertise<rostools::Time>("time",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
@@ -322,6 +325,12 @@ StageNode::Update()
 
   publish("base_pose_ground_truth", this->groundTruthMsg);
 
+
+
+  this->timeMsg.rostime = sim_time;
+  publish("time", this->timeMsg);
+  
+  
 }
 
 int 

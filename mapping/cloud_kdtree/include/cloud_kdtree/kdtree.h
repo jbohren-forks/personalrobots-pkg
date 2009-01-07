@@ -83,7 +83,7 @@ namespace cloud_kdtree
       /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         */
-      KdTree (std_msgs::PointCloud points)
+      KdTree (std_msgs::PointCloud *points)
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
@@ -98,6 +98,15 @@ namespace cloud_kdtree
         ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
 #else
         float speedup;
+        flann_param_.algorithm = KDTREE;
+        flann_param_.log_level = LOG_NONE;
+        flann_param_.log_destination = NULL;
+
+        flann_param_.checks = 32;
+        flann_param_.trees = 8;
+        flann_param_.branching = 32;
+        flann_param_.iterations = 7;
+        flann_param_.target_precision = -1;
         index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
         flann_log_verbosity (LOG_NONE);
 #endif
@@ -110,7 +119,7 @@ namespace cloud_kdtree
         * the first 3 channels in \a points are \<r,g,b\>, and dim equals 3, a resulting data point will contain
         * a 6D tuple: \<x,y,z,r,g,b\> and all subsequent nearest neighbor searches will be performed in that space.
         */
-      KdTree (std_msgs::PointCloud points, int dim)
+      KdTree (std_msgs::PointCloud *points, int dim)
       {
         dim_       = 3 + dim;     // default number of dimensions (3 = xyz) + the extra channels
 
@@ -149,15 +158,16 @@ namespace cloud_kdtree
 #endif
       }
 
-      int convertCloudToArray (std_msgs::PointCloud ros_cloud, ANNpointArray &ann_cloud);
-      int convertCloudToArray (std_msgs::PointCloud ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
-      int convertCloudToArray (std_msgs::PointCloud ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
+      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud);
+      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
+      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
 
       bool nearestKSearch (std_msgs::Point32 p_q, int k);
-      bool nearestKSearch (std_msgs::PointCloud points, unsigned int index, int k);
+      bool nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k);
+      bool nearestKSearch (int p_idx, int k);
 
       bool radiusSearch (std_msgs::Point32 p_q, double radius);
-      bool radiusSearch (std_msgs::PointCloud points, unsigned int index, double radius);
+      bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Obtain the neighbors' point indices on the last nearestKSearch or radiusSearch

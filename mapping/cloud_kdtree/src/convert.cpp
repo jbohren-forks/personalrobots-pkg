@@ -42,29 +42,29 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud ros_cloud, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty
-    if (ros_cloud.pts.size () == 0)
+    if (ros_cloud->pts.size () == 0)
     {
       ann_cloud = NULL;
       return (0);
     }
 
-    int nr_points = ros_cloud.pts.size ();
+    int nr_points = ros_cloud->pts.size ();
 
     ann_cloud = annAllocPts (nr_points, 3);       // default number of dimensions (3 = xyz)
 
     for (int cp = 0; cp < nr_points; cp++)
     {
 #ifdef USE_ANN
-      ann_cloud[cp][0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp][1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp][2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp][0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp][1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp][2] = ros_cloud->pts[cp].z;
 #else
-      ann_cloud[cp * 3 + 0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp * 3 + 1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp * 3 + 2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp * 3 + 0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp * 3 + 1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp * 3 + 2] = ros_cloud->pts[cp].z;
 #endif
     }
 
@@ -79,17 +79,17 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty, or if the requested number of dimensions is bigger than
     // what the ros_cloud message holds
-    if ( (ros_cloud.pts.size () == 0) || (nr_dimensions > ros_cloud.chan.size ()) )
+    if ( (ros_cloud->pts.size () == 0) || (nr_dimensions > ros_cloud->chan.size ()) )
     {
       ann_cloud = NULL;
       return (0);
     }
 
-    int nr_points = ros_cloud.pts.size ();
+    int nr_points = ros_cloud->pts.size ();
 
     ann_cloud = annAllocPts (nr_points, 3 + nr_dimensions);
 
@@ -97,20 +97,20 @@ namespace cloud_kdtree
     {
       // Copy the point data
 #ifdef USE_ANN
-      ann_cloud[cp][0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp][1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp][2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp][0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp][1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp][2] = ros_cloud->pts[cp].z;
 #else
-      ann_cloud[cp * (3 + nr_dimensions) + 0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp * (3 + nr_dimensions) + 1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp * (3 + nr_dimensions) + 2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp * (3 + nr_dimensions) + 0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp * (3 + nr_dimensions) + 1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp * (3 + nr_dimensions) + 2] = ros_cloud->pts[cp].z;
 #endif
       // Copy the remaining dimensions
       for (unsigned int d = 0; d < nr_dimensions; d++)
 #ifdef USE_ANN
-        ann_cloud[cp][d + 3] = ros_cloud.chan[d].vals[cp];
+        ann_cloud[cp][d + 3] = ros_cloud->chan[d].vals[cp];
 #else
-        ann_cloud[cp * (3 + nr_dimensions) + (d + 3)] = ros_cloud.chan[d].vals[cp];
+        ann_cloud[cp * (3 + nr_dimensions) + (d + 3)] = ros_cloud->chan[d].vals[cp];
 #endif
     }
 
@@ -125,40 +125,40 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty, or if the requested number of dimensions is bigger than
     // what the ros_cloud message holds
-    if ( (ros_cloud.pts.size () == 0) || (dimensions.size () > ros_cloud.chan.size ()) )
+    if ( (ros_cloud->pts.size () == 0) || (dimensions.size () > ros_cloud->chan.size ()) )
     {
       ann_cloud = NULL;
       return (0);
     }
 
-    int nr_points = ros_cloud.pts.size ();
+    int nr_points = ros_cloud->pts.size ();
 
     ann_cloud = annAllocPts (nr_points, 3 + dimensions.size ());
 
     for (int cp = 0; cp < nr_points; cp++)
     {
 #ifdef USE_ANN
-      ann_cloud[cp][0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp][1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp][2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp][0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp][1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp][2] = ros_cloud->pts[cp].z;
 #else
-      ann_cloud[cp * (3 + dimensions.size ()) + 0] = ros_cloud.pts[cp].x;
-      ann_cloud[cp * (3 + dimensions.size ()) + 1] = ros_cloud.pts[cp].y;
-      ann_cloud[cp * (3 + dimensions.size ()) + 2] = ros_cloud.pts[cp].z;
+      ann_cloud[cp * (3 + dimensions.size ()) + 0] = ros_cloud->pts[cp].x;
+      ann_cloud[cp * (3 + dimensions.size ()) + 1] = ros_cloud->pts[cp].y;
+      ann_cloud[cp * (3 + dimensions.size ()) + 2] = ros_cloud->pts[cp].z;
 #endif
       // Copy the remaining dimensions
       for (unsigned int d = 0; d < dimensions.size (); d++)
       {
         // Check if the values in 'dimensions' are valid
-        if ( (dimensions.at (d) > 0) && (dimensions.at (d) < ros_cloud.chan.size ()) )
+        if ( (dimensions.at (d) > 0) && (dimensions.at (d) < ros_cloud->chan.size ()) )
 #ifdef USE_ANN
-          ann_cloud[cp][d + 3] = ros_cloud.chan[dimensions.at (d)].vals[cp];
+          ann_cloud[cp][d + 3] = ros_cloud->chan[dimensions.at (d)].vals[cp];
 #else
-          ann_cloud[cp * (3 + dimensions.size ()) + (d + 3)] = ros_cloud.chan[dimensions.at (d)].vals[cp];
+          ann_cloud[cp * (3 + dimensions.size ()) + (d + 3)] = ros_cloud->chan[dimensions.at (d)].vals[cp];
 #endif
         else
         {

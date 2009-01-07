@@ -125,6 +125,8 @@ public:
 
     sync.subscribe("stereo/cloud", cloud, 1);
 
+    sync.ready();
+
     subscribe("projector_status", projector_status, &StereoView::projector_status_change, 1);
   }
 

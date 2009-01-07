@@ -37,7 +37,7 @@
 #ifndef H_HighlevelController
 
 #include <ros/node.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread.hpp>
 #include <rosconsole/rosconsole.h>
 #include <math.h>
 #include <iostream>
@@ -100,12 +100,12 @@ public:
     deactivate();
 
     // Start planner loop on a separate thread
-    plannerThread_ = ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  
+    plannerThread_ = new boost::thread(boost::bind(&HighlevelController<S, G>::plannerLoop, this));
   }
 
   virtual ~HighlevelController(){
     terminate();
-    pthread_join(*plannerThread_, NULL);
+    delete plannerThread_;
   }
 
   /**
@@ -429,8 +429,8 @@ private:
   State state; /*!< Tracks the overall state of the controller */
   double controllerCycleTime_; /*!< The duration for each control cycle */
   double plannerCycleTime_; /*!< The duration for each planner cycle. */
-  ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
-  pthread_t* plannerThread_; /*!< Thread running the planner loop */
+  boost::mutex lock_; /*!< Lock for access to class members in callbacks */
+  boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
 };
 

@@ -102,7 +102,7 @@
    - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
-#include <planning_node_util/knode.h>
+#include <robot_model/knode.h>
 
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
@@ -120,12 +120,12 @@
 #include <cmath>
 
 class World3DMap : public ros::node,
-		   public planning_node_util::NodeRobotModel
+		   public robot_model::NodeRobotModel
 {
 public:
     
-  World3DMap(const std::string &robot_model) : ros::node("world_3d_map"),
-					       planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
+  World3DMap(const std::string &robot_model_name) : ros::node("world_3d_map"),
+					       robot_model::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model_name)
   {
     advertise<std_msgs::PointCloud>("world_3d_map", 1);
 
@@ -163,7 +163,7 @@ public:
     
   virtual void setRobotDescription(robot_desc::URDF *file)
   {
-    planning_node_util::NodeRobotModel::setRobotDescription(file);
+    robot_model::NodeRobotModel::setRobotDescription(file);
     addSelfSeeBodies();
   }
     
@@ -188,7 +188,7 @@ private:
 	return;
       }
     //m_robotState->print();
-    planning_node_util::NodeRobotModel::stateUpdate();
+    robot_model::NodeRobotModel::stateUpdate();
     if (m_kmodel)
       m_kmodel->computeTransforms(m_robotState->getParams());
     if (m_kmodelSimple)
@@ -359,9 +359,9 @@ private:
 	  ROS_ERROR("Connectivity exception: %s\n", ex.what());
 	  break;
 	}
-      catch(...)
+      catch(std::runtime_error &ex)
 	{
-	  ROS_ERROR("Exception in point cloud computation\n");
+	  ROS_ERROR("Exception in point cloud computation \n %s", ex.what());
 	  break;
 	}
 

@@ -108,7 +108,7 @@ Publishes to (name/type):
 // Requirements for watchdog
 #include <highlevel_controllers/Ping.h>
 #include <sys/time.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread.hpp>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -215,7 +215,7 @@ namespace TREX {
 
     // Set up  watchdog thread message generation
     ros::node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
-    ros::thread::member_thread::startMemberFunctionThread(this, &Executive::watchDogLoop);
+    new boost::thread(boost::bind(&Executive::watchDogLoop, this));
 
     ROS_INFO("Executive created.\n");
   }

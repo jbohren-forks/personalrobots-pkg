@@ -108,8 +108,7 @@ namespace cloud_geometry
       k2 = (k0 + 2) % 3;
 
       // Compute a 2D centroid for two dimensions
-      Eigen::Vector2d centroid;
-      centroid.Zero ();
+      Eigen::Vector2d centroid (0, 0);
       for (unsigned int cp = 0; cp < epoints.size (); cp++)
       {
         centroid (0) += epoints[cp](k1);

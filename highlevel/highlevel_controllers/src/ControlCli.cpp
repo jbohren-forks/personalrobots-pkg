@@ -41,7 +41,7 @@
 #include <highlevel_controllers/RechargeGoal.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_msgs/BatteryState.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread.hpp>
 
 
 using namespace std;
@@ -62,14 +62,18 @@ public:
     batteryState_.energy_remaining = 1000;
     batteryState_.energy_capacity = 1000;
 
-    // Start a thread to publish batteryState at 10 Hz
-    ros::thread::member_thread::startMemberFunctionThread(this, &ControlCLI::publishingLoop);
+    // Start a thread to publish batteryState at 10 Hz 
+    publishLoop = boost::thread(boost::bind(&ControlCLI::publishingLoop, this));
 
     // Start the console
     runCLI();
   }
+  ~ControlCLI() {
+    delete publishLoop;
+  }
   bool alive() { return !dead; }
 private:
+  boost::thread publishLoop;
   bool dead;
 
   void publishingLoop(){
