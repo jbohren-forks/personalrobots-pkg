@@ -35,7 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include "detector_particle.h"
-#include "gaussian_vector.h"
+#include "uniform_vector.h"
 
 using namespace MatrixWrapper;
 using namespace BFL;
@@ -50,11 +50,11 @@ using namespace robot_msgs;
 namespace estimation
 {
   // constructor
-  DetectorParticle::DetectorParticle(unsigned int num_particles, const StateVector& sysnoise, const StateVector& measnoise):
+  DetectorParticle::DetectorParticle(unsigned int num_particles):
     prior_(num_particles),
     filter_(NULL),
-    sys_model_(sysnoise),
-    meas_model_(measnoise),
+    sys_model_(StateVector(0.1,0.1,0.1)),
+    meas_model_(StateVector(0.1,0.1,0.1)),
     detector_initialized_(false),
     num_particles_(num_particles)
   {};
@@ -68,15 +68,14 @@ namespace estimation
 
 
   // initialize prior density of filter 
-  void DetectorParticle::initialize(const StateVector& mu, const StateVector& sigma, const double time)
+  void DetectorParticle::initialize(const StateVector& mu, const StateVector& size, const double time)
   {
-    cout << "Initializing detector with " << num_particles_ << " particles, with covariance " 
-	 << sigma << " around " << mu << endl;
+    cout << "Initializing detector with " << num_particles_ << " particles, with uniform size " 
+	 << size << " around " << mu << endl;
 
-
-    GaussianVector gauss_vector(mu, sigma);
+    UniformVector uniform_vector(mu, size);
     vector<Sample<StateVector> > prior_samples(num_particles_);
-    gauss_vector.SampleFrom(prior_samples, num_particles_, CHOLESKY, NULL);
+    uniform_vector.SampleFrom(prior_samples, num_particles_, CHOLESKY, NULL);
     prior_.ListOfSamplesSet(prior_samples);
     filter_ = new BootstrapFilter<StateVector, StateVector>(&prior_, &prior_, 0, num_particles_/4.0);
 
@@ -155,9 +154,9 @@ namespace estimation
 
 
   /// Get histogram from certain area
-  Matrix DetectorParticle::getHistogramPos(const StateVector& min, const StateVector& max, const StateVector& step) const
+  Matrix DetectorParticle::getHistogram(const StateVector& min, const StateVector& max, const StateVector& step) const
   {
-    return ((MCPdfVector*)(filter_->PostGet()))->getHistogramPos(min, max, step);
+    return ((MCPdfVector*)(filter_->PostGet()))->getHistogram(min, max, step);
   };
 
 

@@ -35,6 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include "mcpdf_vector.h"
+#include "state_pos_vel.h"
 #include <assert.h>
 #include <vector>
 #include <std_msgs/Float64.h>
@@ -95,7 +96,7 @@
     }
 
     // get point cloud from histogram
-    Matrix hist = getHistogramPos(m, M, step);
+    Matrix hist = getHistogram(m, M, step);
     unsigned int row = hist.rows();
     unsigned int col = hist.columns();
     unsigned int total = 0;
@@ -103,6 +104,7 @@
     for (unsigned int r=1; r<= row; r++)
       for (unsigned int c=1; c<= col; c++)
 	if (hist(r,c) > threshold) total++;
+    cout << "size total " << total << endl;
 
     vector<std_msgs::Point32> points(total);
     vector<float> weights(total);
@@ -117,6 +119,7 @@
 	  weights[t] = rgb[999-(int)trunc(max(0.0,min(999.0,hist(r,c)*2*total*total)))];
 	  t++;
 	}
+    cout << "points size " << points.size() << endl;
     cloud.header.frame_id = "odom";
     cloud.pts  = points;
     channel.name = "rgb";
@@ -126,15 +129,8 @@
 
 
   /// Get histogram from pos
-  MatrixWrapper::Matrix MCPdfVector::getHistogramPos(const StateVector& m, const StateVector& M, const StateVector& step) const
-  { 
-    return getHistogram(m, M, step);
-  }
-
-
-  /// Get histogram from certain area
   MatrixWrapper::Matrix MCPdfVector::getHistogram(const StateVector& m, const StateVector& M, const StateVector& step) const
-  {  
+  { 
     unsigned int num_samples = _listOfSamples.size();
     unsigned int rows = round((M[0]-m[0])/step[0]);
     unsigned int cols = round((M[1]-m[1])/step[1]);

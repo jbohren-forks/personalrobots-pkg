@@ -47,6 +47,7 @@
 
 // people tracking stuff
 #include "tracker.h"
+#include "detector_particle.h"
 #include "gaussian_vector.h"
 
 // messages
@@ -89,6 +90,7 @@ private:
   /// trackers
   std::map<std::string, Tracker*> trackers_;
   std::map<std::string, Tracker*>::iterator tracker_it_;
+  DetectorParticle detector_;
 
   // tf listener
   tf::TransformListener robot_state_;

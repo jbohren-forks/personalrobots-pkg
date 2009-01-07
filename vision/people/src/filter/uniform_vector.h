@@ -34,39 +34,44 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef MCPDF_VECTOR_H
-#define MCPDF_VECTOR_H
+#ifndef UNIFORM_VECTOR_H
+#define UNIFORM_VECTOR_H
 
-#include <pdf/mcpdf.h>
-#include "state_vector.h"
+#include <pdf/pdf.h>
 #include <tf/tf.h>
-#include <std_msgs/PointCloud.h>
+#include "state_vector.h"
+
+
+
 
 namespace BFL
 {
-  /// Class representing a vector mcpdf
-  class MCPdfVector: public MCPdf<StateVector>
+  /// Class representing uniform vector
+  class UniformVector: public Pdf<StateVector>
     {
+    private:
+      StateVector mu_, size_;
+      double probability_;
+      
     public:
       /// Constructor
-      MCPdfVector (unsigned int num_samples);
+      UniformVector (const StateVector& mu, const StateVector& size);
 
       /// Destructor
-      virtual ~MCPdfVector();
+      virtual ~UniformVector();
 
-      /// Get evenly distributed particle cloud
-      void getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
-
-      /// Get pos histogram from certain area
-      MatrixWrapper::Matrix getHistogram(const StateVector& min, const StateVector& max, const StateVector& step) const;
+      /// output stream for UniformVector
+      friend std::ostream& operator<< (std::ostream& os, const UniformVector& g);
+    
+      // Redefinition of pure virtuals
+      virtual Probability ProbabilityGet(const StateVector& input) const;
+      bool SampleFrom (vector<Sample<StateVector> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;
+      virtual bool SampleFrom (Sample<StateVector>& one_sample, int method=DEFAULT, void * args=NULL) const;
 
       virtual StateVector ExpectedValueGet() const;
-      virtual WeightedSample<StateVector> SampleGet(unsigned int particle) const;
-      virtual unsigned int numParticlesGet() const;
+      virtual MatrixWrapper::SymmetricMatrix CovarianceGet() const;
 
     };
-
-
 
 } // end namespace
 #endif
