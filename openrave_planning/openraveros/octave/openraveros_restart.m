@@ -41,7 +41,7 @@ if( ~isempty(openraveros_globalsession) )
     end
 end
 
-if( ~exist('sessionserver','var') )
+if( ~exist('sessionserver','var') || isempty(sessionserver) )
     sessionserver = 'openrave_session';
 end
 openraveros_globalsession = openraveros_createsession(sessionserver);
