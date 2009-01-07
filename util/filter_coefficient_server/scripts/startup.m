@@ -29,10 +29,20 @@
 
 more off;
 
+% This adds the rosoct path.
 [status,rosoctpath] = system('rospack find rosoct');
 rosoctpath = strtrim(rosoctpath);
 addpath(fullfile(rosoctpath, 'octave'));
 
+% This adds the octave_forge package paths to octave.
+[status,rosoctpath] = system('rospack find octave_forge');
+rosoctpath = strtrim(rosoctpath);
+addpath(fullfile(rosoctpath, '/octave-forge-svn/main/signal/inst'));
+addpath(fullfile(rosoctpath, '/octave-forge-svn/main/specfun/inst'));
+addpath(fullfile(rosoctpath, '/octave-forge-svn/main/optim/inst'));
+addpath(fullfile(rosoctpath, '/octave-forge-svn/main/miscellaneous/inst'));
+
+% This adds the service
 rosoct_add_srvs('filter_coefficient_server');
 
 rosoct('shutdown');

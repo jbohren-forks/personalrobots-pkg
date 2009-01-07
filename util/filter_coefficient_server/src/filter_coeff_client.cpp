@@ -37,16 +37,16 @@
 class GenFilter : public ros::node
 {
 public:
-  GenFilter() : ros::node("generate_filter_coeffs_client")
+  GenFilter() : ros::node("filter_coeff_client")
   {
   }
-  bool call_add(std::string name, std::vector<std::string> args, std::vector<double> &a, std::vector<double> &b)
+  bool call_add(std::string name, std::vector<std::string> args, std::vector<double> &b, std::vector<double> &a)
   {
     filter_coefficient_server::Filter::request  req;
     filter_coefficient_server::Filter::response res;
     req.name = name;
     req.args = args;
-    if (ros::service::call("generate_filter_coeffs", req, res))
+    if (ros::service::call("filter_coeffs", req, res))
     {
       for(uint32_t i=0; i<res.a.size();i++)
       { 
@@ -69,10 +69,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   if (argc < 3)
   {
-    printf("usage: generate_filter_coeffs_client name args\n");
-    printf("usage: generate_filter_coeffs_client butter 2 .1\n");
-    printf("usage: generate_filter_coeffs_client butter 2 .1 high\n");
-    printf("usage: generate_filter_coeffs_client butter 2 .1 .5 stop\n");
+    printf("usage: filter_coeff_client name args\n");
+    printf("usage: filter_coeff_client butter 2 .1\n");
+    printf("usage: filter_coeff_client butter 2 .1 high\n");
+    printf("usage: filter_coeff_client butter 2 .1 .5 stop\n");
     return 1;
   }
   GenFilter a;
@@ -84,11 +84,11 @@ int main(int argc, char **argv)
     args.push_back(argv[i]);
   }
   
-  if (a.call_add(argv[1], args, tf_a, tf_b))
+  if (a.call_add(argv[1], args, tf_b, tf_a))
   {
     for(uint32_t i=0; i<tf_a.size();i++)
     {
-      printf("a[%d]:%f b[%d]:%f \n",i,tf_a[i],i,tf_b[i]);
+      printf("a[%d]:%f b[%d]:%f \n",i,i,tf_b[i], tf_a[i]);
     }
   }
   else

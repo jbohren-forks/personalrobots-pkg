@@ -36,9 +36,9 @@ rosoctpath = strtrim(rosoctpath);
 addpath(fullfile(rosoctpath, '/scripts'));
 startup;
 
-__rosoct_unadvertise_service('generate_filter_coeffs');
+__rosoct_unadvertise_service('filter_coeffs');
 % Creates the service
-suc = rosoct_advertise_service('generate_filter_coeffs',@filter_coefficient_server_Filter,@filterserv);
+suc = rosoct_advertise_service('filter_coeffs',@filter_coefficient_server_Filter,@filterserv);
 
 if( ~suc )
     error('failed to advertise service!');

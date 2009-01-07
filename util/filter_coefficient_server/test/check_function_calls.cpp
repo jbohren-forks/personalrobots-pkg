@@ -57,7 +57,7 @@ TEST(CheckFunctionCalls, checkButterLow)
   req.name = "butter";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -70,7 +70,7 @@ TEST(CheckFunctionCalls, checkButterLow)
   exp_a.push_back(-1.561018075800718);
   exp_a.push_back(0.641351538057563);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -102,7 +102,7 @@ TEST(CheckFunctionCalls, checkButterHigh)
   req.name = "butter";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -115,7 +115,7 @@ TEST(CheckFunctionCalls, checkButterHigh)
   exp_a.push_back(-1.561018075800718);
   exp_a.push_back(0.641351538057563);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -147,7 +147,7 @@ TEST(CheckFunctionCalls, checkButterBandstop3)
   req.name = "butter";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -165,7 +165,7 @@ TEST(CheckFunctionCalls, checkButterBandstop3)
   exp_a.push_back(-1.02551084771342);
   exp_a.push_back(0.272214937925008);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -198,7 +198,7 @@ TEST(CheckFunctionCalls, checkButterBandstop4)
   req.name = "butter";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -216,7 +216,7 @@ TEST(CheckFunctionCalls, checkButterBandstop4)
   exp_a.push_back(-1.02551084771342);
   exp_a.push_back(0.272214937925008);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -251,7 +251,7 @@ TEST(CheckFunctionCalls, checkCheby1Low)
   req.name = "cheby1";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -264,7 +264,7 @@ TEST(CheckFunctionCalls, checkCheby1Low)
   exp_a.push_back(-0.613126393211069);
   exp_a.push_back(0.273045514473463);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -297,7 +297,7 @@ TEST(CheckFunctionCalls, checkCheby1High)
   req.name = "cheby1";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -310,7 +310,7 @@ TEST(CheckFunctionCalls, checkCheby1High)
   exp_a.push_back(-1.531327486602936);
   exp_a.push_back(0.632102518362357);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -343,7 +343,7 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop4)
   req.name = "cheby1";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -361,7 +361,7 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop4)
   exp_a.push_back(-0.716435767244677);
   exp_a.push_back(0.273045514473463);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -395,7 +395,7 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop5)
   req.name = "cheby1";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -413,7 +413,7 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop5)
   exp_a.push_back(-1.727734116072243);
   exp_a.push_back(0.632102518362356);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -446,7 +446,7 @@ TEST(CheckFunctionCalls, checkCheby2Low)
   req.name = "cheby2";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -459,7 +459,7 @@ TEST(CheckFunctionCalls, checkCheby2Low)
   exp_a.push_back(-1.23844);
   exp_a.push_back(0.89181);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -492,7 +492,7 @@ TEST(CheckFunctionCalls, checkCheby2High)
   req.name = "cheby2";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -505,7 +505,7 @@ TEST(CheckFunctionCalls, checkCheby2High)
   exp_a.push_back(-1.73950);
   exp_a.push_back(0.93575);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -538,7 +538,7 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop4)
   req.name = "cheby2";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -556,7 +556,7 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop4)
   exp_a.push_back(-1.86773);
   exp_a.push_back(0.89181);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -590,7 +590,7 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop5)
   req.name = "cheby2";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -607,7 +607,7 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop5)
   exp_a.push_back(-2.23172);
   exp_a.push_back(0.93575);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -641,7 +641,7 @@ TEST(CheckFunctionCalls, checkEllipLow)
   req.name = "ellip";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -654,7 +654,7 @@ TEST(CheckFunctionCalls, checkEllipLow)
   exp_a.push_back(-0.62130);
   exp_a.push_back(0.85970);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -688,7 +688,7 @@ TEST(CheckFunctionCalls, checkEllipHigh)
   req.name = "ellip";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -701,7 +701,7 @@ TEST(CheckFunctionCalls, checkEllipHigh)
   exp_a.push_back(-0.52660);
   exp_a.push_back(0.85743);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -735,7 +735,7 @@ TEST(CheckFunctionCalls, checkEllipBandstop5)
   req.name = "ellip";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -754,7 +754,7 @@ TEST(CheckFunctionCalls, checkEllipBandstop5)
   exp_a.push_back(0.88026);
   
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {
@@ -789,7 +789,7 @@ TEST(CheckFunctionCalls, checkEllipBandstop6)
   req.name = "ellip";
   req.args = args;
   //hack for wait for service
-  while (!ros::service::call("generate_filter_coeffs", req, res))
+  while (!ros::service::call("filter_coeffs", req, res))
   {
     sleep(1);
   }
@@ -807,7 +807,7 @@ TEST(CheckFunctionCalls, checkEllipBandstop6)
   exp_a.push_back(0.49530);
   exp_a.push_back(0.87651);
   
-  if (ros::service::call("generate_filter_coeffs", req, res))
+  if (ros::service::call("filter_coeffs", req, res))
   {
     for(unsigned int i=0; i<res.a.size(); i++)
     {

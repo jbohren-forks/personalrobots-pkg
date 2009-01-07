@@ -6,10 +6,11 @@
   </description>
   <author>Melonee Wise/mwise@willowgarage.com</author>
   <license>BSD</license>
-  <review status="API" notes=""/>
+  <review status="API cleared" notes=""/>
   <url>http://pr.willowgarage.com</url>
   <depend package="misc_utils" />
   <depend package="rosoct" />
+  <depend package="octave_forge" />
   <export>
     <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>
