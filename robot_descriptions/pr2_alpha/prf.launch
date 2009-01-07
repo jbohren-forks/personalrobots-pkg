@@ -51,26 +51,14 @@
 <!-- odom estimation -->
   <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
 
-<!-- DCAM-->
-  <group ns="stereo">
-      <!-- video_mode should be one of the following:
-         640x480_videre_rectified:     Provides rectified images from the hw
-         Provides: left mono image
-         640x480_videre_disparity:     Disparity and rectification done on chip.
-         Provides: Disparity and left mono image
-         640x480_videre_disparity_raw: Disparity done on chip (debayer and rectification in software).
-         Provides: disparity and left color image.
-         640x480_videre_none:          No stereo on chip (all processing done in software).
-         Provides: all 3 images available
-  -->
-    <param name="videre_mode" type="str" value="rectified"/>
-    <param name="do_colorize" type="bool" value="False"/>
-    <param name="do_rectify" type="bool" value="False"/>
-    <param name="do_stereo" type="bool" value="False"/>
-    <param name="do_calc_points" type="bool" value="False"/>
-  </group>
-  <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
-  <node machine="three" pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+<!-- Stereo cam -->
+  <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
+  <param name="videre_mode" type="string" value="disparity_raw" />
+  <param name="fps"         type="double" value="15.0"/>
+  <param name="do_colorize" type="bool" value="False"/>
+  <param name="do_rectify" type="bool" value="False"/>
+  <param name="do_stereo" type="bool" value="False"/>
+</node>
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
