@@ -4,6 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
+  <depend package="boost" />
   <depend package="player" />
   <depend package="laser_scan" />
   <depend package="std_srvs" />
