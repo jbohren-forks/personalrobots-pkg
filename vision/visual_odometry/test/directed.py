@@ -246,7 +246,7 @@ class TestDirected(unittest.TestCase):
           expected.append(P)
           afs.append(SparseStereoFrame(imgStereo(li), imgStereo(ri)))
 
-      vo = VisualOdometer(cam)
+      vo = VisualOdometer(cam, descriptor_scheme = DescriptorSchemeCalonder())
       for i,(af,ep) in enumerate(zip(afs, expected)):
         vo.handle_frame(af)
         if 0:
@@ -376,5 +376,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('xtest_sim'))
+        suite.addTest(TestDirected('test_sim'))
         unittest.TextTestRunner(verbosity=2).run(suite)
