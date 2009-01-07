@@ -130,7 +130,7 @@ Provides (name/type):
 
 **/
 
-#include <planning_node_util/cnode.h>
+#include <robot_model/cnode.h>
 #include <std_msgs/String.h>
 
 #include "RKPModel.h"
@@ -140,12 +140,12 @@ Provides (name/type):
 #include <robot_srvs/NamedKinematicPlanState.h>
 
 class KinematicPlanning : public ros::node,
-			  public planning_node_util::NodeCollisionModel
+			  public robot_model::NodeCollisionModel
 {
 public:
 
     KinematicPlanning(const std::string &robot_model) : ros::node("kinematic_planning"),
-							planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+							robot_model::NodeCollisionModel(dynamic_cast<ros::node*>(this),
 											       robot_model)
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
@@ -345,7 +345,7 @@ public:
 
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeCollisionModel::setRobotDescription(file);	
+	robot_model::NodeCollisionModel::setRobotDescription(file);	
 	defaultPosition();
 	
 	printf("=======================================\n");	
@@ -400,6 +400,7 @@ private:
 	    const robot_desc::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "RRT");
 	}
+	
 	model->addRRT(options);
 	
 

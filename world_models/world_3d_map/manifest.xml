@@ -12,5 +12,5 @@
 <depend package="wg_robot_description_parser" /> 
 <depend package="planning_models" /> 
 <depend package="collision_space" /> 
-<depend package="planning_node_util" /> 
+<depend package="robot_model" /> 
 </package>
