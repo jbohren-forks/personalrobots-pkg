@@ -220,6 +220,11 @@ namespace cloud_geometry
     normalizePoint (p, p);
   }
 
+  void getPointIndicesAxisParallelNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                           std_msgs::Point32 axis, std::vector<int> &indices);
+  void getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
+                                                std_msgs::Point32 axis, std::vector<int> &indices);
+
 }
 
 #endif
