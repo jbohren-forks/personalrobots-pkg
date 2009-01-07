@@ -206,6 +206,7 @@ TEST(costmap, test15){
   p0->pts[0].y = 50;
   p0->pts[0].z = MAX_Z;
   p0->header.stamp = epoch;
+  p0->header.frame_id = "map";
   Observation o0(origin, p0);
   buffer.buffer_observation(o0);
   // Up to date - ignores the time stamp.
