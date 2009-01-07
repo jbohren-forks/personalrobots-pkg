@@ -9,8 +9,5 @@
 <depend package="tf" />
 <depend package="laser_scan" />
 <depend package="random_utils" /> 
-<depend package="wg_robot_description_parser" /> 
-<depend package="planning_models" /> 
-<depend package="collision_space" /> 
-<depend package="robot_model" /> 
+<depend package="robot_filter" /> 
 </package>
