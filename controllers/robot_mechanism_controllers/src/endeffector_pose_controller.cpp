@@ -38,10 +38,6 @@
 #include "robot_kinematics/robot_kinematics.h"
 #include "robot_mechanism_controllers/endeffector_pose_controller.h"
 
-static const double JOYSTICK_MAX_VEL = 0.1;
-static const double JOYSTICK_MAX_ROT = 0.05;
-static const double POSE_FEEDBACK    = 20.0;
-
 
 using namespace KDL;
 namespace controller {
@@ -65,6 +61,23 @@ EndeffectorPoseController::~EndeffectorPoseController()
 
 bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  fprintf(stderr, "initializing pose controller\n");
+
+  // test if we got robot pointer
+  assert(robot);
+  robot_ = robot;
+
+  // get pid controller
+  TiXmlElement *p_pose = config->FirstChildElement("pid_pose");
+  control_toolbox::Pid pid_pose;
+  pid_pose.initXml(p_pose);
+  for (unsigned int i=0; i<6; i++)
+    pid_controller_.push_back(pid_pose);
+  fprintf(stderr, "pid controllers created\n");
+
+  // time
+  last_time_ = robot->hw_->current_time_;
+
   // create twist controller
   twist_controller_.initXml(robot, config);
 
@@ -85,9 +98,6 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-
-  // test if we got robot pointer
-  assert(robot);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -153,17 +163,24 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 void EndeffectorPoseController::update()
 {
+  // get current time
+  double time = robot_->hw_->current_time_;
+  double dt = time - last_time_;
+
   // get current pose
   pose_meas_ = getPose();
 
   // pose feedback into twist
-  twist_out_ = diff(pose_meas_, pose_desi_);
-  //diff.RefPoint();
-  twist_out_ = twist_out_ * POSE_FEEDBACK;
+  Twist twist_error = diff(pose_desi_, pose_meas_);
+  for (unsigned int i=0; i<6; i++)
+    twist_out_(i) = pid_controller_[i].updatePid(twist_error(i), dt);
 
   // send twist to twist controller
   twist_controller_.twist_desi_ = twist_out_;
   twist_controller_.update();
+
+  // remember time
+  last_time_ = time;
 }
 
 
@@ -193,6 +210,13 @@ Frame EndeffectorPoseController::getPose()
 
 ROS_REGISTER_CONTROLLER(EndeffectorPoseControllerNode)
 
+EndeffectorPoseControllerNode::~EndeffectorPoseControllerNode()
+{
+  ros::node *node = ros::node::instance();
+
+  node->unsubscribe(topic_ + "/command");
+  node->unsubscribe(topic_ + "spacenav/joy");
+}
 
 
 bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -204,6 +228,10 @@ bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
     fprintf(stderr, "No topic given to EndeffectorPoseControllerNode\n");
     return false;
   }
+
+  // get parameters
+  node->param("arm_pose/joystick_max_trans", joystick_max_trans_, 0.0);
+  node->param("arm_pose/joystick_max_rot", joystick_max_rot_, 0.0);
 
   // initialize controller  
   if (!controller_.initXml(robot, config))
@@ -246,8 +274,8 @@ void EndeffectorPoseControllerNode::joystick()
 {
   // convert to pose command
   for (unsigned int i=0; i<3; i++){
-    joystick_twist_.vel(i) = joystick_msg_.axes[i]   * JOYSTICK_MAX_VEL;
-    joystick_twist_.rot(i) = joystick_msg_.axes[i+3] * JOYSTICK_MAX_ROT;
+    joystick_twist_.vel(i) = joystick_msg_.axes[i]   * joystick_max_trans_;
+    joystick_twist_.rot(i) = joystick_msg_.axes[i+3] * joystick_max_rot_;
   }
 
   controller_.pose_desi_  = addDelta(controller_.pose_desi_, joystick_twist_);

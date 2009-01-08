@@ -66,6 +66,13 @@ private:
   KDL::Frame getPose();
 
   unsigned int  num_joints_, num_segments_;
+  double last_time_;
+
+  // robot structure
+  mechanism::RobotState *robot_;       
+
+  // pid controllers
+  std::vector<control_toolbox::Pid> pid_controller_;     
 
   // kdl stuff for kinematics
   KDL::Chain             chain_;
@@ -85,7 +92,7 @@ class EndeffectorPoseControllerNode : public Controller
 {
  public:
   EndeffectorPoseControllerNode() {};
-  ~EndeffectorPoseControllerNode() {};
+  ~EndeffectorPoseControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -95,6 +102,9 @@ class EndeffectorPoseControllerNode : public Controller
   void joystick();
   
  private:
+  double joystick_max_trans_, joystick_max_rot_;
+  std::string topic_;
+
   EndeffectorPoseController controller_;
   SubscriptionGuard guard_command_;
 
