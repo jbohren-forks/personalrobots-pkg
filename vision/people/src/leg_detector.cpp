@@ -54,32 +54,46 @@ using namespace ros;
 class SavedFeature
 {
 public:
-  int id_;
+  static int nextid;
+  string id_;
   string object_id;
   ros::Time time_;
-  tf::Stamped<tf::Point> loc_;
-  vector<float>    features_;
-  vector<char>    color_;
+  //  list< tf::Stamped<tf::Point> > loc_hist_;
+  vector<char>     color_;
 
-  SavedFeature(int id, std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, vector<float> features, char r, char g, char b)
+  SavedFeature(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
   {
-    id_ = id;
+    //    id_ = std::string("track") + id;
+    char id[100];
+    snprintf(id,100,"legtrack%d", nextid++);
+    id_ = std::string(id);
+
     object_id = "none";
     time_ = scan.header.stamp;
-    loc_ = loc;
-    features_ = features;
-    color_.push_back(r);
-    color_.push_back(g);
-    color_.push_back(b);
+    //    loc_hist_.push_back(loc);
+
+    tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    tfl.setTransform(pose);
+
+    color_.push_back(rand()%255);
+    color_.push_back(rand()%255);
+    color_.push_back(rand()%255);
   }
 
-  void update(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, vector<float> features)
+  void update(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
   {
+
+    tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    tfl.setTransform(pose);
+
     time_ = scan.header.stamp;
-    loc_ = loc;
-    features_ = features;
+    //    loc_hist_.push_back(loc);
+    //    if (loc_hist_.size() > 20) // Make this time dependent somehow
+    //      loc_hist_.pop_front();
   }
 };
+
+int SavedFeature::nextid = 0;
 
 class PropagatedFeature
 {
@@ -93,12 +107,12 @@ public:
 class MatchedFeature
 {
 public:
-  list<SampleSet*>::iterator good_;
+  list<SampleSet*>::iterator candidate_;
   list<PropagatedFeature>::iterator closest_;
   float distance_;
 
-  MatchedFeature(list<SampleSet*>::iterator good, list<PropagatedFeature>::iterator closest, float distance)
-  : good_(good)
+  MatchedFeature(list<SampleSet*>::iterator candidate, list<PropagatedFeature>::iterator closest, float distance)
+  : candidate_(candidate)
   , closest_(closest)
   , distance_(distance)
   {}
@@ -112,7 +126,7 @@ public:
 class LegDetector : public node
 {
 public:
-  tf::TransformListener tf;
+  tf::TransformListener tfl_;
 
   std_msgs::LaserScan scan_;
   std_msgs::PointCloud cloud_;
@@ -134,9 +148,13 @@ public:
 
   int feature_id_;
 
+  float max_track_jump_;
+
+  float max_meas_jump_;
+
   robot_msgs::PositionMeasurement people_meas_;
 
-  LegDetector() : node("laser_processor"), tf(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0)
+  LegDetector() : node("laser_processor"), tfl_(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0), max_track_jump_(0.5), max_meas_jump_(0.5)
   {
     if (argc > 1) {
       forest.load(argv[1]);
@@ -146,6 +164,9 @@ public:
       printf("Please provide a trained random forests classifier as an input.\n");
       self_destruct();
     }
+
+    tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.1));
+
 
     subscribe("scan", scan_, &LegDetector::laserCallback, 10);
     advertise<std_msgs::PointCloud>("filt_cloud",10);
@@ -163,32 +184,28 @@ public:
 
     tf::PointMsgToTF(people_meas_.pos, pt);
 
-    tf::Stamped<tf::Point> loc(pt, people_meas_.header.stamp, people_meas_.header.frame_id);
-
     boost::mutex::scoped_lock lock(saved_mutex_);
 
     list<SavedFeature>::iterator closest = saved_features_.end();
-    float closest_dist = 1.0;
+    float closest_dist = max_meas_jump_;
       
     list<SavedFeature>::iterator it  = saved_features_.begin();
     list<SavedFeature>::iterator end = saved_features_.end();
 
     for (; it != end; ++it )
     {
+      // If we're already tracking the object
       if (it->object_id == people_meas_.object_id)
-        return;
+        return; // This should instead check that it's still close
 
-      try
-      {
-        tf.transformPoint(it->loc_.frame_id_, it->loc_.stamp_,
-                          loc, "odom", loc);
-      } 
-      catch (tf::TransformException& ex)
-      {
-      }
+      tf::Stamped<tf::Point> loc(pt, people_meas_.header.stamp, people_meas_.header.frame_id);
 
-      loc[2] = it->loc_[2];
-      float dist = loc.distance(it->loc_);
+
+      tfl_.transformPoint(it->id_, people_meas_.header.stamp,
+                            loc, "odom", loc);
+      loc[2] = 0.0;
+      
+      float dist = loc.length();
       if ( dist < closest_dist )
       {
         closest = it;
@@ -196,7 +213,7 @@ public:
       }
     }
 
-    if (closest_dist < 1.0)
+    if (closest_dist < max_meas_jump_)
       closest->object_id = people_meas_.object_id;
   }
 
@@ -226,8 +243,8 @@ public:
         ++sf_iter;
     }
 
-    // Build up the set of "good" clusters
-    list<SampleSet*> good;
+    // Build up the set of "candidate" clusters
+    list<SampleSet*> candidates;
 
     for (list<SampleSet*>::iterator i = processor.getClusters().begin();
          i != processor.getClusters().end();
@@ -240,7 +257,7 @@ public:
 
       if (forest.predict( tmp_mat ) > 0)
       {
-        good.push_back(*i);
+        candidates.push_back(*i);
       }
     }
 
@@ -250,30 +267,34 @@ public:
          sf_iter != saved_features_.end();
          sf_iter++)
     {
-      tf::Stamped<tf::Point> sf_loc;
-      if (tf.canTransform(scan_.header.frame_id, scan_.header.stamp,
-                          sf_iter->loc_.frame_id_, sf_iter->loc_.stamp_,
-                          "odom"))
-      {
-        tf.transformPoint(scan_.header.frame_id, scan_.header.stamp,
-                          sf_iter->loc_, "odom", sf_loc);
-      } else {
-        sf_loc = sf_iter->loc_;
-      }
-      propagated.push_back(PropagatedFeature(sf_iter, sf_loc));
+      tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  sf_iter->time_, sf_iter->id_);
+      tf::Stamped<tf::Point> inter_loc;
+      tf::Stamped<tf::Point> prop_loc;
+
+        //        tfl_.transformPoint(scan_.header.frame_id, scan_.header.stamp,
+        //                            orig_loc, "odom", prop_loc);
+
+      
+      tfl_.transformPoint("odom", orig_loc, inter_loc);
+
+      inter_loc.stamp_ = scan_.header.stamp;
+
+      tfl_.transformPoint(scan_.header.frame_id, inter_loc, prop_loc);
+
+      propagated.push_back(PropagatedFeature(sf_iter, prop_loc));
     }
 
     multiset<MatchedFeature> matches;
 
     //Find point which is closest to a saved feature, within threshold
-    for (list<SampleSet*>::iterator i = good.begin();
-         i != good.end();
+    for (list<SampleSet*>::iterator i = candidates.begin();
+         i != candidates.end();
          i++)
     {
       tf::Stamped<tf::Point> loc((*i)->center(), scan_.header.stamp, scan_.header.frame_id);
 
       list<PropagatedFeature>::iterator closest = propagated.end();
-      float closest_dist = 1.0;
+      float closest_dist = max_track_jump_;
       
       for (list<PropagatedFeature>::iterator pf_iter = propagated.begin();
            pf_iter != propagated.end();
@@ -288,10 +309,9 @@ public:
         }
       }
       
-      if (closest == propagated.end())
+      if (closest == propagated.end()) // Nothing close to it, start a new track
       {
-        vector<float> f = calcLegFeatures(*i, scan_);
-        list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(feature_id_++, scan_, loc, f, rand()%255, rand()%255, rand()%255));
+        list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, tfl_));
 
         (*i)->appendToCloud(cloud_, new_saved->color_[0], new_saved->color_[1], new_saved->color_[2]);
       }
@@ -311,11 +331,10 @@ public:
         if (matched_iter->closest_ == pf_iter)
         {
           // It was actually the closest... do our thing
-          vector<float> f = calcLegFeatures(*matched_iter->good_, scan_);
-          tf::Stamped<tf::Point> loc((*matched_iter->good_)->center(), scan_.header.stamp, scan_.header.frame_id);
-          matched_iter->closest_->saved_->update(scan_, loc, f);
+          tf::Stamped<tf::Point> loc((*matched_iter->candidate_)->center(), scan_.header.stamp, scan_.header.frame_id);
+          matched_iter->closest_->saved_->update(scan_, loc,tfl_);
           
-          (*matched_iter->good_)->appendToCloud(cloud_, matched_iter->closest_->saved_->color_[0], matched_iter->closest_->saved_->color_[1], matched_iter->closest_->saved_->color_[2]);
+          (*matched_iter->candidate_)->appendToCloud(cloud_, matched_iter->closest_->saved_->color_[0], matched_iter->closest_->saved_->color_[1], matched_iter->closest_->saved_->color_[2]);
 
           matches.erase(matched_iter);
           propagated.erase(pf_iter++);
@@ -330,10 +349,10 @@ public:
       if (!found)
       {
         // Search for new closest:
-        tf::Stamped<tf::Point> loc((*matched_iter->good_)->center(), scan_.header.stamp, scan_.header.frame_id);
+        tf::Stamped<tf::Point> loc((*matched_iter->candidate_)->center(), scan_.header.stamp, scan_.header.frame_id);
 
         list<PropagatedFeature>::iterator closest = propagated.end();
-        float closest_dist = 1.0;
+        float closest_dist = max_track_jump_;
       
         for (list<PropagatedFeature>::iterator remain_iter = propagated.begin();
              remain_iter != propagated.end();
@@ -350,15 +369,14 @@ public:
 
         if (closest == propagated.end())
         {
-          vector<float> f = calcLegFeatures(*matched_iter->good_, scan_);
-          list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(feature_id_++, scan_, loc, f, rand()%255, rand()%255, rand()%255));
+          list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, tfl_));
 
-          (*matched_iter->good_)->appendToCloud(cloud_, new_saved->color_[0], new_saved->color_[1], new_saved->color_[2]);
+          (*matched_iter->candidate_)->appendToCloud(cloud_, new_saved->color_[0], new_saved->color_[1], new_saved->color_[2]);
           matches.erase(matched_iter);
         }
         else
         {
-          matches.insert(MatchedFeature(matched_iter->good_,closest,closest_dist));
+          matches.insert(MatchedFeature(matched_iter->candidate_,closest,closest_dist));
           matches.erase(matched_iter);
         }
       }
@@ -376,13 +394,23 @@ public:
       if (sf_iter->object_id != "none" && sf_iter->time_ == scan_.header.stamp)
       {
 
+
+        tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  ros::Time(), sf_iter->id_);
+        tf::Stamped<tf::Point> prop_loc;
+
+
+        tfl_.transformPoint(scan_.header.frame_id, scan_.header.stamp,
+                          orig_loc, "odom", prop_loc);
+
         robot_msgs::PositionMeasurement pos;
 
         pos.header.stamp = sf_iter->time_;
-        pos.header.frame_id = sf_iter->loc_.frame_id_;
+        pos.header.frame_id = scan_.header.frame_id;
         pos.name = "leg_detector";
         pos.object_id = sf_iter->object_id;
-        tf::PointTFToMsg(sf_iter->loc_,pos.pos);
+
+        tf::PointTFToMsg(prop_loc,pos.pos);
+
         pos.reliability = 0.7;
         pos.covariance[0] = 0.09;
         pos.covariance[1] = 0.0;

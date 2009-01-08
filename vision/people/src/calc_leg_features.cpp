@@ -191,11 +191,16 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     }
   }
   CvMat* sol = cvCreateMat( 3, 1, CV_64FC1);
+
   cvSolve(A, B, sol, CV_SVD);
 
   float xc = cvmGet(sol, 0, 0);
   float yc = cvmGet(sol, 1, 0);
   float rc = sqrt(pow(xc,2) + pow(yc,2) - cvmGet(sol, 2, 0));
+
+  cvReleaseMat(&A);
+  cvReleaseMat(&B);
+  cvReleaseMat(&sol);
 
   float circularity = 0.0;
   for (SampleSet::iterator i = cluster->begin();
