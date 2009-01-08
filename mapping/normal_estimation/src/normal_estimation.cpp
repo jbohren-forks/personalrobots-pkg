@@ -111,7 +111,14 @@ class NormalEstimation : public ros::node
       // Set the viewpoint in the laser coordinate system to 0,0,0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
 
-      tf_.transformPoint ("base_link", viewpoint_laser, viewpoint_cloud);
+      try
+      {
+        tf_.transformPoint ("base_link", viewpoint_laser, viewpoint_cloud);
+      }
+      catch (tf::ConnectivityException)
+      {
+        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
+      }
 
       // Resize
 #ifdef DEBUG
