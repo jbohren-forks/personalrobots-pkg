@@ -266,9 +266,10 @@ class DescriptorScheme:
 class DescriptorSchemeSAD(DescriptorScheme):
 
   def collect(self, frame):
-    lgrad = " " * (frame.size[0] * frame.size[1])
-    VO.ost_do_prefilter_norm(frame.rawdata, lgrad, frame.size[0], frame.size[1], 31, scratch)
-    frame.descriptors = [ VO.grab_16x16(lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
+    if hasattr(frame, "lgrad"):
+      frame.lgrad = " " * (frame.size[0] * frame.size[1])
+      VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
+    frame.descriptors = [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
 
   def search(self, di, af1, hits):
       i = VO.sad_search(di, af1.descriptors, hits)
@@ -283,12 +284,12 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    self.cl.read('/u/prdata/calonder_trees/land50.trees')
+    self.cl.read('/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old')
 
   def collect(self, frame):
     frame.descriptors = []
     im = Image.fromstring("L", frame.size, frame.rawdata)
-    frame.matcher = calonder.BruteForceMatcher(len(frame.kp))
+    frame.matcher = calonder.BruteForceMatcher(176)
     for (x,y,d) in frame.kp:
       patch = im.crop((x-16,y-16,x+16,y+16))
       sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
@@ -353,6 +354,8 @@ class VisualOdometer:
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
     self.scavenge = kwargs.get('scavenge', False)
     self.sba = kwargs.get('sba', None)
+    self.targetkp = kwargs.get('targetkp', 300)
+
     self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
 
   def name(self):
@@ -379,9 +382,6 @@ class VisualOdometer:
         print "%-20s %fms" % (n, 1e3 * t.sum / niter)
       print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
-
-#  targetkp = 400
-  targetkp = 300
 
   def find_keypoints(self, frame):
     self.timer['feature'].start()
@@ -431,10 +431,13 @@ class VisualOdometer:
   def proximity(self, f0, f1):
     """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame to f0's frame.)"""
     self.num_frames += 1
+
     pairs = self.temporal_match(f0, f1)
+    print "got", len(pairs), "pairs"
     if len(pairs) > 10:
       solution = self.solve(f0.kp, f1.kp, pairs, True)
       (inl, rot, shift) = solution
+      print "....and", inl, "inliers"
       pose = self.mkpose(rot, shift)
       return (inl, pose)
     else:
