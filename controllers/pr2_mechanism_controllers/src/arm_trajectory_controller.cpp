@@ -256,6 +256,7 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   node_->unadvertise_service(service_prefix_ + "/set_target");
   */
   node_->unadvertise_service("set_arm_traj_srv");
+  node_->unadvertise_service("query_arm_traj_srv");
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -301,6 +302,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 */
 
    node_->advertise_service("set_arm_traj_srv", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   node_->advertise_service("query_arm_traj_srv", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
    
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
@@ -423,8 +425,7 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
       resp.done = 1;
     }
   }
-  else if(current_trajectory_id_ >= (int)req.trajectoryid)
-  {
+  else if(current_trajectory_id_ >= (int)req.trajectoryid){
     resp.trajectorytime = 0;
     resp.done = 1;
   }
