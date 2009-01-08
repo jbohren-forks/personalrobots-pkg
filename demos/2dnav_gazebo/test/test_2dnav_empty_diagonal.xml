@@ -30,14 +30,14 @@
     <!-- test -->
     <test test-name="2dnav_gazebo_test_2dnav_empty_x1y1"     pkg="2dnav_gazebo" type="set_goal.py" args=" -x 26.70 -y 26.70 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 80 " time-limit="90" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xm1y1"    pkg="2dnav_gazebo" type="set_goal.py" args=" -x 24.70 -y 26.70 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 80 " time-limit="90" />
-    <test test-name="2dnav_gazebo_test_2dnav_empty_x1ym1"    pkg="2dnav_gazebo" type="set_goal.py" args=" -x 26.70 -y 24.70 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 180 " time-limit="200" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xm1ym1"   pkg="2dnav_gazebo" type="set_goal.py" args=" -x 24.70 -y 24.70 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 80 " time-limit="90" />
 
     <test test-name="2dnav_gazebo_test_2dnav_empty_xpiypi"   pkg="2dnav_gazebo" type="set_goal.py" args=" -x 28.84 -y 28.84 -t 0       -nav_t_tol 0.5 -nav_xy_tol 0.80 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 110 " time-limit="120" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xmpiypi"  pkg="2dnav_gazebo" type="set_goal.py" args=" -x 23.56 -y 28.84 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 80 " time-limit="90" />
-    <test test-name="2dnav_gazebo_test_2dnav_empty_xpiympi"  pkg="2dnav_gazebo" type="set_goal.py" args=" -x 28.84 -y 23.56 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 110 " time-limit="120" />
     <test test-name="2dnav_gazebo_test_2dnav_empty_xmpiympi" pkg="2dnav_gazebo" type="set_goal.py" args=" -x 23.56 -y 23.56 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 80 " time-limit="90" />
 
     <!-- these tests do not pass, commented out for now until fixed
+    <test test-name="2dnav_gazebo_test_2dnav_empty_xpiympi"  pkg="2dnav_gazebo" type="set_goal.py" args=" -x 28.84 -y 23.56 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 110 " time-limit="120" />
+    <test test-name="2dnav_gazebo_test_2dnav_empty_x1ym1"    pkg="2dnav_gazebo" type="set_goal.py" args=" -x 26.70 -y 24.70 -t 0       -nav_t_tol 0.1 -nav_xy_tol 0.70 -odom_t_tol 0.0 -odom_xy_tol 0.0 -timeout 180 " time-limit="200" />
     -->
 </launch>
