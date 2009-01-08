@@ -82,6 +82,7 @@
     <param name="/costmap_2d/inflation_radius" value="0.55"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
 
