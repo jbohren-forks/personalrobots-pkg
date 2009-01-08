@@ -190,20 +190,28 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // r^2=y^2+z^2 with r = 1
   // x=1
 
+  ////////////////////////////////////////////
+  //
+  // Constraint Jacobian
+  //
+  ////////////////////////////////////////////
   // endeffector theta and radius from yz = (0,0)
   double ee_theta = atan2( endeffector_frame_.p(2),endeffector_frame_.p(1) );
 
-  double df_dx = 1.0; // we are describing a wall at constant x
+  double df_dx = -1.0; // we are describing a wall at constant x, x- side is allowed
   double df_dy = -cos(ee_theta); // radial lines toward origin
   double df_dz =  sin(ee_theta); // radial lines toward origin
 
   // Constraint Jacobian (normals to the constraint surface)
-  constraint_jac_(1,1)= df_dx;
-  constraint_jac_(2,2)= df_dy;
-  constraint_jac_(3,3)= df_dz;
+  constraint_jac_(0,0)= df_dx;
+  constraint_jac_(1,1)= df_dy;
+  constraint_jac_(2,2)= df_dz;
 
-  // Contraint wrench 
-
+  ////////////////////////////////////////////
+  //
+  // Contraint Wrench 
+  //
+  ////////////////////////////////////////////
   // x-direction force is a function of endeffector distance from the wall
   // @todo: FIXME: hardcoded wall at x=1
   double x_wall = 1.0; /// @todo: hardcoded x wall location
@@ -215,10 +223,10 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (x_distance >0 && x_distance < x_threshold)
   {
-    f_x = -exp(x_distance) * f_x_scale * df_dx; /// @todo: FIXME, some exponential function
+    f_x = exp(x_distance) * f_x_scale * df_dx; /// @todo: FIXME, some exponential function
   }
   else if (x_distance <= 0)
-    ROS_ERROR("x wall breach! by: %f m\n",x_distance);
+    ROS_ERROR("wall x breach! by: %f m\n",x_distance);
 
   /// yz-force magnitude is a function of endeffector distance from unit circle
   double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + endeffector_frame_.p(2)*endeffector_frame_.p(2) );
@@ -233,11 +241,15 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_distance > 0 && r_distance < r_threshold)
   {
-    f_y = -exp(r_distance) * f_y_scale * df_dy; /// @todo: FIXME, some exponential function
-    f_z = -exp(r_distance) * f_z_scale * df_dz; /// @todo: FIXME, some exponential function
+    f_y = exp(r_distance) * f_y_scale * df_dy; /// @todo: FIXME, some exponential function
+    f_z = exp(r_distance) * f_z_scale * df_dz; /// @todo: FIXME, some exponential function
   }
   else if (r_distance <= 0)
-    ROS_ERROR("wall_radius breach! by: %f m\n",r_distance);
+    ROS_ERROR("wall radius breach! by: %f m\n",r_distance);
+
+  constraint_wrench_(0) = f_x;
+  constraint_wrench_(1) = f_y;
+  constraint_wrench_(2) = f_z;
 }
 
 
