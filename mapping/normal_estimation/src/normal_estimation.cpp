@@ -58,6 +58,7 @@ moment invariants, etc.
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/intersections.h>
 
+//#define DEBUG
 #include <sys/time.h>
 
 using namespace std;
@@ -78,6 +79,7 @@ class NormalEstimation : public ros::node
     cloud_kdtree::KdTree *kdtree_;
 
     // Parameters
+    bool compute_moments_;
     double radius_;
     int k_;
 
@@ -86,6 +88,7 @@ class NormalEstimation : public ros::node
     {
       param ("~search_radius", radius_, 0.02);      // 2cm radius by default
       param ("~search_k_closest", k_, 30);          // 30 k-neighbors by default
+      param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
       subscribe ("tilt_laser_cloud", cloud_, &NormalEstimation::cloud_cb, 1);
       advertise<PointCloud> ("cloud_normals", 1);
@@ -111,9 +114,26 @@ class NormalEstimation : public ros::node
       tf_.transformPoint ("base_link", viewpoint_laser, viewpoint_cloud);
 
       // Resize
+#ifdef DEBUG
       cloud_normals_.header = cloud_.header;
       cloud_normals_.pts.resize (cloud_.pts.size ());
       cloud_normals_.chan[0].vals.resize (cloud_.pts.size ());
+#else
+      cloud_normals_ = cloud_;
+      cloud_normals_.chan.resize (cloud_.chan.size () + 7);     // Allocate 7 more channels
+      cloud_normals_.chan[cloud_.chan.size () + 0].name = "nx";
+      cloud_normals_.chan[cloud_.chan.size () + 1].name = "ny";
+      cloud_normals_.chan[cloud_.chan.size () + 2].name = "nz";
+      cloud_normals_.chan[cloud_.chan.size () + 3].name = "curvature";
+      if (compute_moments_)
+      {
+        cloud_normals_.chan[cloud_.chan.size () + 4].name = "j1";
+        cloud_normals_.chan[cloud_.chan.size () + 5].name = "j2";
+        cloud_normals_.chan[cloud_.chan.size () + 6].name = "j3";
+      }
+      for (unsigned int d = cloud_.chan.size (); d < cloud_normals_.chan.size (); d++)
+        cloud_normals_.chan[d].vals.resize (cloud_.pts.size ());
+#endif
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
@@ -140,7 +160,8 @@ class NormalEstimation : public ros::node
           Eigen::Vector4d plane_parameters;
           double curvature, j1, j2, j3;
           cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &indices_, plane_parameters, curvature);
-          cloud_geometry::nearest::computeMomentInvariants (&cloud_, &indices_, j1, j2, j3);
+          if (compute_moments_)
+            cloud_geometry::nearest::computeMomentInvariants (&cloud_, &indices_, j1, j2, j3);
 
           // See if we need to flip any plane normals
           vp_m.x = viewpoint_cloud.point.x - cloud_.pts[i].x;
@@ -158,22 +179,35 @@ class NormalEstimation : public ros::node
               plane_parameters (d) *= -1;
             nr_flipped++;
           }
-
+#ifdef DEBUG
           cloud_normals_.pts[nr_p].x = plane_parameters (0);
           cloud_normals_.pts[nr_p].y = plane_parameters (1);
           cloud_normals_.pts[nr_p].z = plane_parameters (2);
           cloud_normals_.chan[0].vals[nr_p] = fabs (plane_parameters (3));
+#else
+          cloud_normals_.chan[cloud_.chan.size () + 0].vals[nr_p] = plane_parameters (0);
+          cloud_normals_.chan[cloud_.chan.size () + 1].vals[nr_p] = plane_parameters (1);
+          cloud_normals_.chan[cloud_.chan.size () + 2].vals[nr_p] = plane_parameters (2);
+          cloud_normals_.chan[cloud_.chan.size () + 3].vals[nr_p] = fabs (plane_parameters (3));
+          if (compute_moments_)
+          {
+            cloud_normals_.chan[cloud_.chan.size () + 4].vals[nr_p] = j1;
+            cloud_normals_.chan[cloud_.chan.size () + 5].vals[nr_p] = j2;
+            cloud_normals_.chan[cloud_.chan.size () + 6].vals[nr_p] = j3;
+          }
+#endif
           nr_p++;
         }
         else
+        {
           ROS_ERROR ("Error estimating features for point index %d!", i);
+          nr_p++;
+        }
       }
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Local features estimated in %g seconds. Number of point normals flipped: %d.", time_spent, nr_flipped);
 
-      cloud_normals_.pts.resize (nr_p);
-      cloud_normals_.chan[0].vals.resize (nr_p);
       publish ("cloud_normals", cloud_normals_);
 
       kdtree_->Clean ();
