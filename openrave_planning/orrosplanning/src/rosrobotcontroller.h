@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -21,14 +21,15 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-// author: Rosen Diankov
 #ifndef RAVE_ROS_ROBOT_CONTROLLER
 #define RAVE_ROS_ROBOT_CONTROLLER
 
 #include <robot_msgs/MechanismState.h>
+#include <pr2_mechanism_controllers/StartTrajectory.h>
+#include <pr2_mechanism_controllers/CancelTrajectory.h>
+#include <pr2_mechanism_controllers/WaitTrajectory.h>
+#include <pr2_mechanism_controllers/QueryTrajectory.h>
 
-// controller for the SSC-32 board
 class ROSRobotController : public ControllerBase
 {
     enum ControllerState{
@@ -127,6 +128,7 @@ public:
 
     virtual bool SetDesired(const dReal* pValues)
     {
+        // set a path between the current and desired positions
         return true;
     }
 
@@ -307,6 +309,11 @@ private:
         // do some monitoring of the joint state (try to look for stalls)
     }
 
+    void ControllerThread()
+    {
+        
+    }
+
     RobotBase* _probot;           ///< robot owning this controller
 
     string _topic;
@@ -323,6 +330,8 @@ private:
     double _fTimeCommandStarted;
     const Trajectory* _ptraj;
 
+    // trajectory services
+    service::ServiceHandlePtr srvStartTrajectory, srvCancelTrajectory, srvWaitTrajectory, srvQueryTrajectory;
     bool _bIsDone;
     bool _bSendTimestamps; ///< if true, will send timestamps along with traj
     bool _bSubscribed; ///< if true, succesfully subscribed to the mechanism state msgs

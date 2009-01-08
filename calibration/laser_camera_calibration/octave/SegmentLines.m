@@ -38,7 +38,7 @@ if( ~exist('pointthresh','var') )
     pointthresh = 1;
 end
 
-thresh = 0.015;
+thresh = 0.025;
 linedata = [];
 
 % dists = polar_points(1,:);

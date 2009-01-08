@@ -8,9 +8,9 @@ startup;
 
 robot = SetupTableScene('data/pr2table_real.env.xml',1);
 
-Tcamera = [0 0 1 -0.05;
-           -1 0 0 -0.05;
-           0 -1 0 -0.095];
+Tcamera = [0 0 1 0.05;
+           -1 0 0 0.05;
+           0 -1 0 0.095];
 out = orProblemSendCommand(['createsystem ObjectTransform topic /checkerdetector/ObjectDetection thresh 0.1 robot ' sprintf('%d ', robot.id) ' matrixoffset ' sprintf('%f ', Tcamera(1:3,1:4))],probs.task);
 if( isempty(out) )
     error('failed to create checkerboard detector');

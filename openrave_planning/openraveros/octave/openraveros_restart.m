@@ -30,7 +30,15 @@
 function openraveros_restart(sessionserver,viewer)
 global openraveros_globalsession
 
-openraveros_startup();
+if( ~exist('sessionserver','var') || isempty(sessionserver) )
+    sessionserver = 'openrave_session';
+end
+
+if( ~exist('viewer','var') )
+    viewer = 'qtcoin';
+end
+
+openraveros_startup(sessionserver, 1, viewer);
 
 if( ~isempty(openraveros_globalsession) )
     %% send a dummy env_set command
@@ -41,19 +49,14 @@ if( ~isempty(openraveros_globalsession) )
     end
 end
 
-if( ~exist('sessionserver','var') || isempty(sessionserver) )
-    sessionserver = 'openrave_session';
-end
 openraveros_globalsession = openraveros_createsession(sessionserver);
-
-if( ~exist('viewer','var') )
-    viewer = 'qtcoin';
-end
 
 if( ~isempty(viewer) && ~isempty(openraveros_globalsession) )
     %% set the viewer
     reqset = openraveros_env_set();
-    reqset.setmask = reqset.Set_Viewer();
-    reqset.viewer = viewer;
+    if( ~isempty(viewer) )
+        reqset.setmask = reqset.Set_Viewer();
+        reqset.viewer = viewer;
+    end
     resset = rosoct_session_call(openraveros_globalsession.id,'env_set',reqset);
 end
