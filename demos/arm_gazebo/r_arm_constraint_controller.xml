@@ -1,0 +1,5 @@
+<controllers>
+  <controller type="EndeffectorConstraintControllerNode" name="arm_constraint" topic="arm_constraint">
+    <chain root="base_link" tip="r_wrist_roll_link" offset="0.0 0 0" />
+  </controller>
+</controllers>

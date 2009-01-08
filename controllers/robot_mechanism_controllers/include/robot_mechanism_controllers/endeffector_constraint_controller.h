@@ -47,6 +47,7 @@
 #include "Eigen/SVD"
 #include "Eigen/Core"
 #include "robot_kinematics/robot_kinematics.h"
+#include <std_msgs/VisualizationMarker.h>
 
 
 namespace controller {
@@ -76,6 +77,16 @@ private:
   Eigen::Matrix<float,6,6> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
   KDL::Frame endeffector_frame_;
+
+  // some parameters to define the constraint
+  double wall_x; /// @todo: hardcoded x wall location
+  double threshold_x; //@todo: hardcoded wall threshold, activate constraint force if closer than this
+  double wall_r; /// @todo: hardcoded wall_radius
+  double threshold_r; //@todo: hardcoded wall threshold, activate constraint force if closer than this
+  double f_x_max;
+  double f_y_max;
+  double f_z_max;
+
 };
 
 

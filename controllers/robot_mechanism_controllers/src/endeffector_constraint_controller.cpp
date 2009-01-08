@@ -84,6 +84,15 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   if (serial_chain == NULL)  
     fprintf(stderr, "Got NULL Chain\n") ;
 
+  // some parameters
+  node->param("constraint/wall_x",      wall_x, 0.75) ;
+  node->param("constraint/threshold_x", threshold_x, 0.2) ;
+  node->param("constraint/wall_r",      wall_r, 0.2) ;
+  node->param("constraint/threshold_r", threshold_r, 0.1) ;
+  node->param("constraint/f_x_max",     f_x_max, 20.0) ;
+  node->param("constraint/f_y_max",     f_y_max, 20.0) ;
+  node->param("constraint/f_z_max",     f_z_max, 20.0) ;
+
   // convert description to KDL chain
   chain_        = serial_chain->chain;
   num_joints_   = chain_.getNrOfJoints();
@@ -183,8 +192,8 @@ void EndeffectorConstraintController::update()
     jnt_torq(i) = 0;
     for (unsigned int j=0; j<6; j++)
     {
-      //jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
       jnt_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
+      jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j)); /// todo: project into null space first before adding
     }
     joints_[i]->commanded_effort_ = jnt_torq(i);
   }
@@ -207,7 +216,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
 
   double df_dx = -1.0; // we are describing a wall at constant x, x- side is allowed
   double df_dy = -cos(ee_theta); // radial lines toward origin
-  double df_dz =  sin(ee_theta); // radial lines toward origin
+  double df_dz = -sin(ee_theta); // radial lines toward origin
 
   // Constraint Jacobian (normals to the constraint surface)
   constraint_jac_(0,0)= df_dx;
@@ -221,42 +230,53 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   ////////////////////////////////////////////
   // x-direction force is a function of endeffector distance from the wall
   // @todo: FIXME: hardcoded wall at x=1
-  double x_wall = 1.0; /// @todo: hardcoded x wall location
-  double x_distance = x_wall - endeffector_frame_.p(0);
-  double x_threshold = 0.2; //@todo: hardcoded wall threshold, activate constraint force if closer than this
-  double f_x = 0;
-  double f_x_scale = 10; //@todo: f_x_scale * exp(distance) =  force applied in x direction
+  double x_distance = wall_x - endeffector_frame_.p(0);
+  double f_x;
 
   // assign x-direction constraint force f_x if within range of the wall
-  if (x_distance >0 && x_distance < x_threshold)
+  if (x_distance >0 && x_distance < threshold_x)
   {
-    f_x = exp(x_distance) * f_x_scale * df_dx; /// @todo: FIXME, some exponential function
+    f_x = x_distance/threshold_x * f_x_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (x_distance <= 0)
+  {
+    f_x = f_x_max;
     ROS_ERROR("wall x breach! by: %f m\n",x_distance);
+  }
+  else
+  {
+    f_x = 0;
+  }
 
   /// yz-force magnitude is a function of endeffector distance from unit circle
   double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + endeffector_frame_.p(2)*endeffector_frame_.p(2) );
-  double wall_radius = 1.0; /// @todo: hardcoded wall_radius
-  double r_distance = wall_radius - ee_radius;
-  double r_threshold = 0.2; //@todo: hardcoded wall threshold, activate constraint force if closer than this
-  double f_y_scale = 10; //@todo: f_y_scale * exp(distance) =  force applied in y direction
-  double f_z_scale = 10; //@todo: f_z_scale * exp(distance) =  force applied in z direction
-  double f_y = 0;
-  double f_z = 0;
+  double r_distance = wall_r - ee_radius;
+  double f_y, f_z;
 
   // assign x-direction constraint force f_x if within range of the wall
-  if (r_distance > 0 && r_distance < r_threshold)
+  if (r_distance > 0 && r_distance < threshold_r)
   {
-    f_y = exp(r_distance) * f_y_scale * df_dy; /// @todo: FIXME, some exponential function
-    f_z = exp(r_distance) * f_z_scale * df_dz; /// @todo: FIXME, some exponential function
+    f_y = r_distance/threshold_r * f_y_max; /// @todo: FIXME, replace with some exponential function
+    f_z = r_distance/threshold_r * f_z_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (r_distance <= 0)
+  {
+    f_y = f_y_max; /// @todo: FIXME, some exponential function
+    f_z = f_z_max; /// @todo: FIXME, some exponential function
     ROS_ERROR("wall radius breach! by: %f m\n",r_distance);
+  }
+  else
+  {
+    f_y = 0;
+    f_z = 0;
+  }
 
   constraint_wrench_(0) = f_x;
   constraint_wrench_(1) = f_y;
   constraint_wrench_(2) = f_z;
+
+  ROS_WARN("force magnitude (%f, %f, %f)\n",f_x,f_y,f_z);
+
 }
 
 
@@ -290,6 +310,30 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
   node->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorConstraintControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
+
+  node->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+
+  // visualization not working yet
+  std_msgs::VisualizationMarker marker;
+  marker.header.frame_id = "base_link";
+  marker.id = 0;
+  marker.type = 2;
+  marker.action = 0;
+  marker.x = 0.7;
+  marker.y = 0;
+  marker.z = 0;
+  marker.yaw = 0;
+  marker.pitch = 0;
+  marker.roll = 0.0;
+  marker.xScale = 0.01;
+  marker.yScale = 0.3;
+  marker.zScale = 0.3;
+  marker.alpha = 100;
+  marker.r = 0;
+  marker.g = 255;
+  marker.b = 0;
+  node->publish("visualizationMarker", marker );
+
 
   return true;
 }
