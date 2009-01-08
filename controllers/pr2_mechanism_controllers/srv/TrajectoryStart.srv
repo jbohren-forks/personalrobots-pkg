@@ -1,5 +1,6 @@
 ## Starts a trajectory
 JointTraj traj
+uint8 hastiming # if 1, use timestamps of trajectory points, otherwise do internal retiming
 uint8 requesttiming # if 1, send back the timestamps for every trajectory point (first point starts at 0)
 ---
 uint32 trajectoryid # unique trajectory id to be used for later referencing

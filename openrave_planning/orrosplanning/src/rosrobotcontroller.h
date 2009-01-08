@@ -32,20 +32,104 @@
 
 class ROSRobotController : public ControllerBase
 {
-    enum ControllerState{
+    enum ControllerState {
         None = 0,
         Servo, // done when servoed to position and the position is held
         Traj, // done when reaches last point
         Velocity // done when joints stop moving
     };
 
+    class TrajectoryController
+    {
+    public:
+        TrajectoryController(RobotBase* probot, const string& strTrajectoryServiceDir) : _probot(probot), _strTrajectoryServiceDir(strTrajectoryServiceDir) {}
+        virtual ~TrajectoryController() {
+            Destroy();
+        }
+
+        bool Init(ros::node* pnode)
+        {
+            assert(pnode != NULL);
+            Destroy();
+
+            _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::request, pr2_mechanism_controllers::TrajectoryStart::response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
+            _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::request, pr2_mechanism_controllers::TrajectoryCancel::response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
+            _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::request, pr2_mechanism_controllers::TrajectoryWait::response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
+            _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::request, pr2_mechanism_controllers::TrajectoryQuery::response>(_strTrajectoryServiceDir+"TrajectoryQuery", true);
+        
+            if( !_srvTrajectoryQuery ) {
+                RAVELOG_ERRORA("failed to find %s service\n", (_strTrajectoryServiceDir+"TrajectoryQuery").c_str());
+                return false;
+            }
+   
+            pr2_mechanism_controllers::TrajectoryQuery::request req;
+            pr2_mechanism_controllers::TrajectoryQuery::response res;
+            if( !_srvTrajectoryQuery->call(req,res) ) {
+                RAVELOG_ERRORA("failed to query trajectory service %s", _strTrajectoryServiceDir.c_str());
+                return false;
+            }
+
+            if( res.jointnames.size() == 0 ) {
+                RAVELOG_ERRORA("no joint names for trajectory service %s", _strTrajectoryServiceDir.c_str());
+                return false;
+            }
+
+            vector<string> vrobotjoints(_probot->GetJoints().size());
+            for(size_t i = 0; i < _probot->GetJoints().size(); ++i)
+                vrobotjoints[i] = _stdwcstombs(_probot->GetJoints()[i]->GetName());
+
+            _vjointmap.reserve(res.jointnames.size());
+            FOREACH(itname, res.jointnames) {
+                vector<string>::iterator itindex = find(vrobotjoints.begin(), vrobotjoints.end(), *itname);
+                if( itindex == vrobotjoints.end() ) {            
+                    RAVELOG_ERRORA("failed to find joint %s\n", itname->c_str());
+                    Destroy();
+                    return false;
+                }
+                _vjointmap.push_back((int)(itindex-vrobotjoints.begin()));
+            }
+
+            return true;
+        }
+
+        bool Destroy()
+        {
+            _vjointmap.clear();
+            _listTrajectories.clear();
+            _srvTrajectoryStart.reset();
+            _srvTrajectoryCancel.reset();
+            _srvTrajectoryWait.reset();
+            _srvTrajectoryQuery.reset();
+            return true;
+        }
+
+        void GetTrajPoint(const vector<dReal>& vrobotvalues, pr2_mechanism_controllers::JointTrajPoint& pt)
+        {
+            pt.positions.resize(_vjointmap.size());
+            typeof(pt.positions.begin()) itcontrollerpos = pt.positions.begin();
+            FOREACH(itindex, _vjointmap)
+                *itcontrollerpos++ = vrobotvalues[*itindex];
+        }
+
+        // trajectory services
+        RobotBase* _probot;
+        string _strTrajectoryServiceDir;
+        service::ServiceHandlePtr _srvTrajectoryStart, _srvTrajectoryCancel, _srvTrajectoryWait, _srvTrajectoryQuery;
+        vector<int> _vjointmap;
+        list<uint32_t> _listTrajectories; ///< trajectories currently pending for completion
+    };
+
 public:
     ROSRobotController(EnvironmentBase* penv) : ControllerBase(penv), _topic("mechanism_state"), _fTimeCommandStarted(0),
-        _ptraj(NULL), _bIsDone(false), _bSendTimestamps(false), _bSubscribed(false), _bCalibrated(false) {
+        _ptraj(NULL), _bIsDone(false), _bSendTimestamps(false), _bSubscribed(false), _bCalibrated(false), _bDestroyThread(false) {
+        _threadTrajectories = boost::thread(boost::bind(&ROSRobotController::_TrajectoryThread,this));
     }
 
     virtual ~ROSRobotController() {
         Destroy();
+
+        _bDestroyThread = true;
+        _threadTrajectories.join();
     }
 
     /// args format: host port [proxytype index]
@@ -92,6 +176,12 @@ public:
 
                     break;
                 }
+                else if( stricmp(cmd.c_str(), "trajectoryservice") == 0 ) {
+                    string servicedir;
+                    ss >> servicedir;
+                    boost::mutex::scoped_lock lock(_mutexTrajectories);
+                    _listControllers.push_back(boost::shared_ptr<TrajectoryController>(new TrajectoryController(_probot, servicedir)));
+                }
                 else break;
 
                 if( !ss ) {
@@ -120,6 +210,11 @@ public:
         _probot = NULL;
         _bIsDone = false;
         _setEnabledJoints.clear();
+
+        {
+            boost::mutex::scoped_lock lock(_mutexTrajectories);
+            _listControllers.clear();
+        }
     }
 
     virtual void Reset(int options)
@@ -128,13 +223,89 @@ public:
 
     virtual bool SetDesired(const dReal* pValues)
     {
+        boost::mutex::scoped_lock lock(_mutexTrajectories);
+
         // set a path between the current and desired positions
+        bool bSuccess = true;
+        pr2_mechanism_controllers::TrajectoryStart::request req;
+        pr2_mechanism_controllers::TrajectoryStart::response res;
+        
+        vector<dReal> vcurvalues, vnewvalues;
+        _probot->GetJointValues(vcurvalues);
+        
+        {
+            RobotBase::RobotStateSaver saver(_probot);
+            _probot->SetJointValues(NULL, NULL, pValues,true);
+            _probot->GetJointValues(vcurvalues);
+        }
+
+        FOREACH(ittrajcontroller, _listControllers) {
+            if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
+                RAVELOG_ERRORA("no start trajectory service\n");
+                bSuccess = false;
+                continue;
+            }
+
+            //req.requesttiming = 1; // request back the timestamps
+            req.hastiming = 0;
+            req.traj.points.resize(2);
+            (*ittrajcontroller)->GetTrajPoint(vcurvalues, req.traj.points[0]);
+            (*ittrajcontroller)->GetTrajPoint(vnewvalues, req.traj.points[1]);
+
+            if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
+                (*ittrajcontroller)->_listTrajectories.push_back(res.trajectoryid);
+            else {
+                RAVELOG_ERRORA("failed to start trajectory\n");
+                bSuccess = false;
+                continue;
+            }
+
+            RAVELOG_DEBUGA("started trajectory %d\n", res.trajectoryid);
+            //res.timestamps // final timestamps
+        }
+
         return true;
     }
 
     virtual bool SetPath(const Trajectory* ptraj)
     {
-        return true;
+        boost::mutex::scoped_lock lock(_mutexTrajectories);
+
+        bool bSuccess = true;
+        pr2_mechanism_controllers::TrajectoryStart::request req;
+        pr2_mechanism_controllers::TrajectoryStart::response res;
+        
+        FOREACH(ittrajcontroller, _listControllers) {
+            if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
+                RAVELOG_ERRORA("no start trajectory service\n");
+                bSuccess = false;
+                continue;
+            }
+
+            //req.requesttiming = 1; // request back the timestamps
+            req.hastiming = 0;
+            req.traj.points.resize(ptraj->GetPoints().size());
+            typeof(req.traj.points.begin()) ittraj = req.traj.points.begin(); 
+            FOREACHC(itpoint, ptraj->GetPoints()) {
+                ittraj->positions.reserve(itpoint->q.size()); ittraj->positions.resize(0);
+                FOREACHC(itq, itpoint->q)
+                    ittraj->positions.push_back(*itq);
+                ++ittraj;
+            }
+
+            if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
+                (*ittrajcontroller)->_listTrajectories.push_back(res.trajectoryid);
+            else {
+                RAVELOG_ERRORA("failed to start trajectory\n");
+                bSuccess = false;
+                continue;
+            }
+
+            RAVELOG_DEBUGA("started trajectory %d\n", res.trajectoryid);
+            //res.timestamps // final timestamps
+        }
+
+        return bSuccess;
     }
 
     virtual bool SetPath(const Trajectory* ptraj, int nTrajectoryId, float fDivergenceTime)
@@ -142,8 +313,6 @@ public:
         RAVELOG_ERRORA("ros controller does not support path with divergence");
         return false;
     }
-
-    virtual int GetDOF() { return _probot != NULL ? _probot->GetDOF() : 0; }
 
     virtual bool SimulationStep(float fTimeElapsed)
     {
@@ -248,6 +417,12 @@ private:
                 RAVELOG_DEBUGA("subscribed to %s\n", _topic.c_str());
             else
                 RAVELOG_ERRORA("failed to subscribe to %s\n", _topic.c_str());
+
+            if( _bSubscribed ) {
+                boost::mutex::scoped_lock lock(_mutexTrajectories);
+                FOREACH(it, _listControllers)
+                    (*it)->Init(pnode);
+            }
         }
     }
 
@@ -258,6 +433,10 @@ private:
             if( pnode != NULL ) {
                 pnode->unsubscribe(_topic.c_str());
                 RAVELOG_DEBUGA("unsubscribe from %s\n", _topic.c_str());
+
+                boost::mutex::scoped_lock lock(_mutexTrajectories);
+                FOREACH(it, _listControllers)
+                    (*it)->Destroy();
             }
             _bSubscribed = false;
         }
@@ -309,9 +488,58 @@ private:
         // do some monitoring of the joint state (try to look for stalls)
     }
 
+    void _TrajectoryThread()
+    {
+        while(!_bDestroyThread) {
+
+            pr2_mechanism_controllers::TrajectoryQuery::request req;
+            pr2_mechanism_controllers::TrajectoryQuery::response res;
+
+            // check if the first trajectory is done
+            boost::mutex::scoped_lock lock(_mutexTrajectories);
+            uint32_t trajectoryid;
+            bool bDone = true;
+
+            if( _listControllers.size() > 0 ) {
+                bool bPopTrajectory = true;
+
+                // check if done
+                FOREACH(ittraj, _listControllers) {
+                    assert( (*ittraj)->_listTrajectories.size() == _listControllers.front()->_listTrajectories.size());
+                    if( (*ittraj)->_listTrajectories.size() == 0 ) {
+                        bPopTrajectory = false;
+                        break;
+                    }
+                    req.trajectoryid = (*ittraj)->_listTrajectories.front();
+                    if( !(*ittraj)->_srvTrajectoryQuery->call(req,res) ) {
+                        RAVELOG_ERRORA("trajectory query failed\n");
+                        bPopTrajectory = false;
+                    }
+
+                    if( !res.done ) {
+                        bPopTrajectory = false;
+                        break;
+                    }
+                }
+
+                if( bPopTrajectory ) {
+                    RAVELOG_DEBUGA("robot trajectory finished, left: %d\n", _listControllers.front()->_listTrajectories.size());
+                    FOREACH(ittraj, _listControllers)
+                        (*ittraj)->_listTrajectories.pop_front();
+                }
+
+                bDone = _listControllers.front()->_listTrajectories.size()==0;
+            }
+
+            _bIsDone = bDone;
+            usleep(10000); // query every 10ms
+        }
+    }
+
     RobotBase* _probot;           ///< robot owning this controller
 
     string _topic;
+    
     robot_msgs::MechanismState _mstate_cb, _mstate;
     vector<dReal> _vecdesired;
     set< pair<string, int> > _setEnabledJoints; // set of enabled joints and their indices
@@ -321,16 +549,19 @@ private:
     int logid;
     
     map<int, int> _mapjoints; ///< maps mechanism state joints to robot joints
+    list<boost::shared_ptr<TrajectoryController> > _listControllers;
 
     double _fTimeCommandStarted;
     const Trajectory* _ptraj;
 
-    // trajectory services
-    service::ServiceHandlePtr srvStartTrajectory, srvCancelTrajectory, srvWaitTrajectory, srvQueryTrajectory;
+    boost::mutex _mutexTrajectories;
+    boost::thread _threadTrajectories;
+
     bool _bIsDone;
     bool _bSendTimestamps; ///< if true, will send timestamps along with traj
     bool _bSubscribed; ///< if true, succesfully subscribed to the mechanism state msgs
     bool _bCalibrated; ///< if true, mechanism state matches robot
+    bool _bDestroyThread; /// if true, destroy the thread
 };
 
 #endif

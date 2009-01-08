@@ -4,8 +4,6 @@ global updir probs
 cd(fullfile(rosoct_findpackage('ormanipulation'),'octave'));
 
 startup;
-%orEnvSetOptions('debug debug');
-
 robot = SetupTableScene('data/pr2table_real.env.xml',1);
 
 Tcamera = [0 0 1 0.05;

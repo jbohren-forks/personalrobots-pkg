@@ -35,7 +35,7 @@ class ROSSensorSystem : public SimpleSensorSystem<XMLID>
 public:
     ROSSensorSystem(EnvironmentBase* penv) : SimpleSensorSystem<XMLID>(penv), _bSubscribed(false)
     {
-
+        
     }
     virtual ~ROSSensorSystem() {
         Destroy();
