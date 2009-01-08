@@ -142,6 +142,10 @@ namespace controller
 
     int dimension_;
 
+    std::vector<double> joint_velocity_limits_;
+
+    std::string trajectory_type_;
+
     friend class ArmTrajectoryControllerNode;
   };
 
@@ -194,7 +198,7 @@ namespace controller
 
     void addTrajectoryToQueue(pr2_mechanism_controllers::JointTraj new_traj, int id);
 
-    int createTrajectory(const pr2_mechanism_controllers::JointTraj new_traj,trajectory::Trajectory &return_trajectory);
+    int createTrajectory(const pr2_mechanism_controllers::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
 
     private:
 
@@ -246,6 +250,9 @@ namespace controller
 
     int current_trajectory_id_;
 
+    std::map<int,int> joint_trajectory_status_;
+
+    std::map<int,double>joint_trajectory_time_;
   };
 
 }

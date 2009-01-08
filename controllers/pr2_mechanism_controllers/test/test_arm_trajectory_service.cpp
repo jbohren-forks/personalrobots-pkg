@@ -64,7 +64,7 @@ int main( int argc, char** argv )
   int num_joints = 7;
 
   req.traj.set_points_size(num_points);
-  req.requesttiming = 0;
+  req.requesttiming = 1;
 
   for(int i=0; i<num_points; i++)
     req.traj.points[i].set_positions_size(num_joints);
@@ -109,4 +109,10 @@ int main( int argc, char** argv )
   {
     ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
   }
+  sleep(10);
+  if(ros::service::call("query_arm_traj_srv", req_q, res_q))  
+  {
+    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+  }
+
 }
