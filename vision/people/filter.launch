@@ -1,6 +1,8 @@
 <launch>
 <param name="people_tracker/fixed_frame" type="string" value="odom"/>
 <param name="people_tracker/freq" value="10.0"/>
+<param name="people_tracker/start_distance_min" value="0.5"/>
+<param name="people_tracker/reliability_threshold" value="0.75"/>
 
 <!-- Particle without velocity model covariances -->
 <!--param name="people_tracker/sys_sigma_pos_x" value="0.2"/>

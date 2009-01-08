@@ -50,7 +50,8 @@ using namespace robot_msgs;
 namespace estimation
 {
   // constructor
-  TrackerParticle::TrackerParticle(unsigned int num_particles, const StatePosVel& sysnoise):
+  TrackerParticle::TrackerParticle(const string& name, unsigned int num_particles, const StatePosVel& sysnoise):
+    Tracker(name),
     prior_(num_particles),
     filter_(NULL),
     sys_model_(sysnoise),
@@ -150,7 +151,7 @@ namespace estimation
     est.pos.z = tmp.pos_[2];
 
     est.header.stamp.fromSec( filter_time_ );
-    est.header.frame_id = "odom_combined";
+    est.object_id = getName();
   }
 
 

@@ -61,7 +61,7 @@ class TrackerKalman: public Tracker
 {
 public:
   /// constructor
-  TrackerKalman(const BFL::StatePosVel& sysnoise);
+  TrackerKalman(const std::string& name, const BFL::StatePosVel& sysnoise);
 
   /// destructor
   virtual ~TrackerKalman();

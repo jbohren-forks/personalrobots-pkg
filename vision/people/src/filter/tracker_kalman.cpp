@@ -44,13 +44,14 @@ using namespace ros;
 using namespace robot_msgs;
 
 
-const static double damping_velocity = 0.8;
+const static double damping_velocity = 1.0;
 
 
 namespace estimation
 {
   // constructor
-  TrackerKalman::TrackerKalman(const StatePosVel& sysnoise):
+  TrackerKalman::TrackerKalman(const string& name, const StatePosVel& sysnoise):
+    Tracker(name),
     filter_(NULL),
     sys_pdf_(NULL),
     sys_model_(NULL),
@@ -192,7 +193,7 @@ namespace estimation
     est.pos.z = tmp(3);
 
     est.header.stamp.fromSec( filter_time_ );
-    est.header.frame_id = "odom_combined";
+    est.object_id = getName();
   }
 
 
