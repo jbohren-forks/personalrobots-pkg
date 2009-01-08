@@ -85,13 +85,13 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
     fprintf(stderr, "Got NULL Chain\n") ;
 
   // some parameters
-  node->param("constraint/wall_x",      wall_x, 0.75) ;
-  node->param("constraint/threshold_x", threshold_x, 0.2) ;
-  node->param("constraint/wall_r",      wall_r, 0.2) ;
-  node->param("constraint/threshold_r", threshold_r, 0.1) ;
-  node->param("constraint/f_x_max",     f_x_max, 20.0) ;
-  node->param("constraint/f_y_max",     f_y_max, 20.0) ;
-  node->param("constraint/f_z_max",     f_z_max, 20.0) ;
+  node->param("constraint/wall_x"       , wall_x      , 0.75) ; /// location of the wall
+  node->param("constraint/threshold_x"  , threshold_x , 0.2 ) ; /// distance within the wall to apply constraint force
+  node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
+  node->param("constraint/threshold_r"  , threshold_r , 0.1 ) ; /// radius over with constraint is applied
+  node->param("constraint/f_x_max"      , f_x_max     , 20.0) ; /// max x force
+  node->param("constraint/f_y_max"      , f_y_max     , 20.0) ; /// max y force
+  node->param("constraint/f_z_max"      , f_z_max     , 20.0) ; /// max z force
 
   // convert description to KDL chain
   chain_        = serial_chain->chain;
@@ -229,14 +229,13 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   //
   ////////////////////////////////////////////
   // x-direction force is a function of endeffector distance from the wall
-  // @todo: FIXME: hardcoded wall at x=1
   double x_distance = wall_x - endeffector_frame_.p(0);
   double f_x;
 
   // assign x-direction constraint force f_x if within range of the wall
   if (x_distance >0 && x_distance < threshold_x)
   {
-    f_x = x_distance/threshold_x * f_x_max; /// @todo: FIXME, replace with some exponential function
+    f_x = (threshold_x-x_distance)/threshold_x * f_x_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (x_distance <= 0)
   {
@@ -256,13 +255,13 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_distance > 0 && r_distance < threshold_r)
   {
-    f_y = r_distance/threshold_r * f_y_max; /// @todo: FIXME, replace with some exponential function
-    f_z = r_distance/threshold_r * f_z_max; /// @todo: FIXME, replace with some exponential function
+    f_y = (threshold_r-r_distance)/threshold_r * f_y_max; /// @todo: FIXME, replace with some exponential function
+    f_z = (threshold_r-r_distance)/threshold_r * f_z_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (r_distance <= 0)
   {
-    f_y = f_y_max; /// @todo: FIXME, some exponential function
-    f_z = f_z_max; /// @todo: FIXME, some exponential function
+    f_y = f_y_max;
+    f_z = f_z_max;
     ROS_ERROR("wall radius breach! by: %f m\n",r_distance);
   }
   else
@@ -275,7 +274,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   constraint_wrench_(1) = f_y;
   constraint_wrench_(2) = f_z;
 
-  ROS_WARN("force magnitude (%f, %f, %f)\n",f_x,f_y,f_z);
+  ROS_WARN("ee pos: (%f, %f, %f), force magnitude (%f, %f, %f)\n",endeffector_frame_.p(0),endeffector_frame_.p(1),endeffector_frame_.p(2),f_x,f_y,f_z);
 
 }
 

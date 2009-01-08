@@ -79,10 +79,10 @@ private:
   KDL::Frame endeffector_frame_;
 
   // some parameters to define the constraint
-  double wall_x; /// @todo: hardcoded x wall location
-  double threshold_x; //@todo: hardcoded wall threshold, activate constraint force if closer than this
-  double wall_r; /// @todo: hardcoded wall_radius
-  double threshold_r; //@todo: hardcoded wall threshold, activate constraint force if closer than this
+  double wall_x;
+  double threshold_x;
+  double wall_r;
+  double threshold_r;
   double f_x_max;
   double f_y_max;
   double f_z_max;
