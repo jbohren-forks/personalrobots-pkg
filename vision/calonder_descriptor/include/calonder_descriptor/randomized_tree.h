@@ -33,8 +33,12 @@ struct BaseKeypoint
   {}
 };
 
+class RTreeClassifier;
+
 class RandomizedTree
 {
+   friend class RTreeClassifier;
+   
 public:
   typedef enum { PDT_GAUSS=1, PDT_BERNOULLI, PDT_DBFRIENDLY } PHI_DISTR_TYPE;   // used in makeRandomMeasMatrix
   //typedef enum { PF_FLOAT=1, PF_UCHAR } POSTERIOR_FORMAT;
@@ -54,7 +58,8 @@ public:
              int num_quant_bits=0);
 
   // following two funcs are EXPERIMENTAL (do not use unless you know exactly what you do)
-  static void quantizeVector(float *vec, int dim, int N, float clamp[2], int clamp_mode=0);
+  static void quantizeVector(float *vec, int dim, int N, float bnds[2], int clamp_mode=0);
+  static void quantizeVector(float *src, int dim, int N, float bnds[2], uint8_t *dst);
   void quantizeLeaves(int num_quant_bits, float p1, float p2, int clamp_mode=0);
 
   // patch_data must be a 32x32 array (no row padding)
@@ -76,7 +81,7 @@ public:
   void savePosteriors(std::string url, bool append=false);
   void savePosteriors2(std::string url);
   
-//private:
+private:
   int classes_;
   int depth_;
   int num_leaves_;
@@ -182,5 +187,6 @@ inline FLT_T sample_normal(FLT_T mean, FLT_T sigma)
 }
 
 } // namespace features
+
 
 #endif

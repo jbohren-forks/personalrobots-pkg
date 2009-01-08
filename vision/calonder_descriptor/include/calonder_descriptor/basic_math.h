@@ -110,7 +110,7 @@ template<> struct L1DistanceFunc<uint8_t>
 {
   L1DistanceFunc(int = 0) {}
   int operator()(const uint8_t* a, const uint8_t* b) const {
-    return L1Distance_176(a, b);
+    return L1Distance(176, a, b);   // _176 stripped off, added 176 (argument)
   }
 };
 
