@@ -146,6 +146,8 @@ namespace controller
 
     std::string trajectory_type_;
 
+    double velocity_scaling_factor_;
+
     friend class ArmTrajectoryControllerNode;
   };
 

@@ -86,7 +86,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
     joint = (robot->getJointState(jpc->getJointName()))->joint_;
     if(joint)
-      joint_velocity_limits_.push_back(joint->velocity_limit_/4.0);
+      joint_velocity_limits_.push_back(joint->velocity_limit_*velocity_scaling_factor_);
 
     elt = elt->NextSiblingElement("controller");
   }
@@ -296,6 +296,11 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   service_prefix_ = config->Attribute("name");
   ROS_INFO("The service_prefix_ is %s",service_prefix_.c_str());
 
+  double scale;
+  node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
+
+  c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
+
   if(c_->initXml(robot, config))  // Parses subcontroller configuration
   {
 /*    node_->advertise_service(service_prefix_ + "/set_command", &ArmTrajectoryControllerNode::setJointPosHeadless, this);
@@ -463,15 +468,10 @@ int ArmTrajectoryControllerNode::createTrajectory(const pr2_mechanism_controller
   }
 
   tp.resize((int)new_traj.get_points_size());
-  int size = (int)new_traj.get_points_size();
-
-//  ROS_INFO("size: %d",size);
 
   for(int i=0; i < (int) new_traj.get_points_size(); i++)
   {
      tp[i].setDimension((int) c_->dimension_);
-//     ROS_INFO("size vec: %d",tp[i].q_.size());
-//     int dim = tp[i].q_.size();
      for(int j=0; j < (int) c_->dimension_; j++)
      {
         tp[i].q_[j] = new_traj.points[i].positions[j];
