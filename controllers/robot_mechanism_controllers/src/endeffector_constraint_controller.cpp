@@ -87,8 +87,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   // some parameters
   node->param("constraint/wall_x"       , wall_x      , 0.75) ; /// location of the wall
   node->param("constraint/threshold_x"  , threshold_x , 0.2 ) ; /// distance within the wall to apply constraint force
-  node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
-  node->param("constraint/threshold_r"  , threshold_r , 0.1 ) ; /// radius over with constraint is applied
+  node->param("constraint/wall_r"       , wall_r      , 0.1 ) ; /// cylinder radius
+  node->param("constraint/threshold_r"  , threshold_r , 0.05) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , 20.0) ; /// max x force
   node->param("constraint/f_y_max"      , f_y_max     , 20.0) ; /// max y force
   node->param("constraint/f_z_max"      , f_z_max     , 20.0) ; /// max z force
@@ -183,19 +183,62 @@ void EndeffectorConstraintController::update()
   jnt_to_pose_solver_->JntToCart(jnt_pos, endeffector_frame_);
   
   computeConstraintJacobian();
-  // multiply constraint jacobian by constraint wrench 
-  constraint_wrench_ = constraint_jac_ * constraint_wrench_;
 
-  // convert the wrench into joint torques
-  JntArray jnt_torq(num_joints_);
-  for (unsigned int i=0; i<num_joints_; i++){
-    jnt_torq(i) = 0;
+  // we can do either 1 or 2:
+  // 1. multiply constraint jacobian by constraint wrench to get final constraint wrench
+  // constraint_wrench_ = constraint_jac_ * constraint_wrench_;
+  // 2. multiply mechanism jacobian by constraint jacobian  to get joint space constraint jacobian
+  Eigen::MatrixXf joint_space_constraint_jacobian(num_joints_,6);
+  for (unsigned int i=0; i<num_joints_; i++)
+  {
     for (unsigned int j=0; j<6; j++)
     {
-      jnt_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
-      jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j)); /// todo: project into null space first before adding
+      joint_space_constraint_jacobian(i,j) = 0;
+      for (unsigned int k=0; k<6; k++)
+      {
+        joint_space_constraint_jacobian(i,j) += (jacobian(k,i) * constraint_jac_(k,j));
+      }
     }
-    joints_[i]->commanded_effort_ = jnt_torq(i);
+  }
+
+  // create projection matrix for null space of constraint jacobian
+  Eigen::MatrixXf tmp_identity((int)num_joints_,(int)num_joints_);
+  Eigen::MatrixXf constraint_null_space_projection_matrix((int)num_joints_,(int)num_joints_);
+  tmp_identity.setIdentity();
+  constraint_null_space_projection_matrix = tmp_identity - joint_space_constraint_jacobian * joint_space_constraint_jacobian.transpose();
+
+  // convert the wrench into joint torques
+  JntArray wrench_torq(num_joints_);
+  for (unsigned int i=0; i<num_joints_; i++)
+  {
+    wrench_torq(i) = 0;
+    for (unsigned int j=0; j<6; j++)
+    {
+      wrench_torq(i) += (jacobian(j,i) * wrench_desi_(j));
+    }
+  }
+
+  // project wrench torque into the null space of constraint jacobian
+  JntArray projected_wrench_torq(num_joints_);
+  for (unsigned int i=0; i<num_joints_; i++)
+  {
+    projected_wrench_torq(i) = 0;
+    for (unsigned int j=0; j<num_joints_; j++)
+    {
+      projected_wrench_torq(i) += (constraint_null_space_projection_matrix(i,j) * wrench_torq(j));
+    }
+  }
+
+  // convert the wrench into joint torques
+  JntArray constraint_torq(num_joints_);
+  for (unsigned int i=0; i<num_joints_; i++)
+  {
+    constraint_torq(i) = 0;
+    for (unsigned int j=0; j<6; j++)
+    {
+      constraint_torq(i) += (joint_space_constraint_jacobian(i,j) * constraint_wrench_(j));
+    }
+    joints_[i]->commanded_effort_ = constraint_torq(i) + projected_wrench_torq(i);
   }
 }
 
@@ -235,7 +278,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (x_distance >0 && x_distance < threshold_x)
   {
-    f_x = (threshold_x-x_distance)/threshold_x * f_x_max; /// @todo: FIXME, replace with some exponential function
+    f_x = pow((threshold_x-x_distance)/threshold_x,3) * f_x_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (x_distance <= 0)
   {
@@ -255,8 +298,8 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_distance > 0 && r_distance < threshold_r)
   {
-    f_y = (threshold_r-r_distance)/threshold_r * f_y_max; /// @todo: FIXME, replace with some exponential function
-    f_z = (threshold_r-r_distance)/threshold_r * f_z_max; /// @todo: FIXME, replace with some exponential function
+    f_y = pow((threshold_r-r_distance)/threshold_r,3) * f_y_max; /// @todo: FIXME, replace with some exponential function
+    f_z = pow((threshold_r-r_distance)/threshold_r,3) * f_z_max; /// @todo: FIXME, replace with some exponential function
   }
   else if (r_distance <= 0)
   {
