@@ -126,7 +126,7 @@ CMDPSTATE* ARAPlanner::GetState(int stateID, ARASearchStateSpace_t* pSearchState
 
 	if(stateID >= (int)environment_->StateID2IndexMapping.size())
 	{
-		printf("ERROR int GetState: stateID is invalid\n");
+          printf("ERROR int GetState: stateID %d is invalid\n", stateID);
 		exit(1);
 	}
 
