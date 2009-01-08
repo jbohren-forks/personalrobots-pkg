@@ -40,7 +40,7 @@
 #include <cfloat>
 
 #define __PEOPLE_DEBUG__ 0
-#define __PEOPLE_DISPLAY__ 1
+#define __PEOPLE_DISPLAY__ 0
 
 
 People::People():
@@ -53,6 +53,7 @@ People::People():
   cft_b_plane_(NULL),
   cft_r_plane_norm_(NULL),
   cft_g_plane_norm_(NULL),
+  cft_b_plane_norm_(NULL),
   cft_X_(NULL),
   cft_Y_(NULL),
   cft_Z_(NULL), 
@@ -62,6 +63,7 @@ People::People():
 #if __PEOPLE_DISPLAY__
   cvNamedWindow("Real face hist",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Current face hist", CV_WINDOW_AUTOSIZE);
+  //cvNamedWindow("blue", CV_WINDOW_AUTOSIZE);
 #endif
 
 }
@@ -69,21 +71,26 @@ People::People():
 People::~People() {
 
   for (uint i=0; i < list_.size(); i++) {
-    cvReleaseHist(&list_[i].face_color_hist);  list_[i].face_color_hist = 0;  
-    cvReleaseHist(&list_[i].shirt_color_hist); list_[i].shirt_color_hist = 0;
-    cvReleaseImage(&list_[i].body_mask_2d);    list_[i].body_mask_2d = 0;
-    cvReleaseImage(&list_[i].face_mask_2d);    list_[i].face_mask_2d = 0;
+    //freePerson(i);
+    if (list_[i].face_color_hist) {cvReleaseHist(&list_[i].face_color_hist);  list_[i].face_color_hist = 0;}
+    if (list_[i].shirt_color_hist) {cvReleaseHist(&list_[i].shirt_color_hist); list_[i].shirt_color_hist = 0;}
+    if (list_[i].body_mask_2d) {cvReleaseImage(&list_[i].body_mask_2d);    list_[i].body_mask_2d = 0;}
+    if (list_[i].face_mask_2d) {cvReleaseImage(&list_[i].face_mask_2d);    list_[i].face_mask_2d = 0;}
+  }
+  for (int i=list_.size(); i>0; i--) {
+    list_.pop_back();
   }
 
-  cvReleaseImage(&cv_image_gray_); cv_image_gray_ = 0;
-  cvReleaseMemStorage(&storage_); storage_ = 0;
-  cvReleaseHaarClassifierCascade(&cascade_); cascade_ = 0;
+  if (cv_image_gray_) {cvReleaseImage(&cv_image_gray_); cv_image_gray_ = 0; }
+  if (storage_) {cvReleaseMemStorage(&storage_); storage_ = 0; }
+  if (cascade_) {cvReleaseHaarClassifierCascade(&cascade_); cascade_ = 0; }
 
   cvReleaseImage(&cft_r_plane_); cft_r_plane_ = 0; 
   cvReleaseImage(&cft_g_plane_); cft_g_plane_ = 0;
   cvReleaseImage(&cft_b_plane_); cft_b_plane_ = 0;
   cvReleaseImage(&cft_r_plane_norm_); cft_r_plane_norm_ = 0;
   cvReleaseImage(&cft_g_plane_norm_); cft_g_plane_norm_ = 0; 
+  cvReleaseImage(&cft_b_plane_norm_); cft_b_plane_norm_ = 0; 
   cvReleaseImage(&cft_X_); cft_X_ = 0;
   cvReleaseImage(&cft_Y_); cft_Y_ = 0;
   cvReleaseImage(&cft_Z_); cft_Z_ = 0;
@@ -95,8 +102,17 @@ People::~People() {
 #if __PEOPLE_DISPLAY__
   cvDestroyWindow("Real face hist");
   cvDestroyWindow("Current face hist");
+  //cvDestroyWindow("blue");
 #endif
 
+}
+
+
+void People::freePerson(int iperson) {
+  if (list_[iperson].face_color_hist) {cvReleaseHist(&list_[iperson].face_color_hist);  list_[iperson].face_color_hist = 0;}
+  if (list_[iperson].shirt_color_hist) {cvReleaseHist(&list_[iperson].shirt_color_hist); list_[iperson].shirt_color_hist = 0;}
+  if (list_[iperson].body_mask_2d) {cvReleaseImage(&list_[iperson].body_mask_2d);    list_[iperson].body_mask_2d = 0;}
+  if (list_[iperson].face_mask_2d) {cvReleaseImage(&list_[iperson].face_mask_2d);    list_[iperson].face_mask_2d = 0;}
 }
 
 /**************** HELPER FCNS *************************************/
@@ -114,25 +130,28 @@ static void calc_weighted_rg_hist_with_depth_2(IplImage* imager, IplImage* image
   cz = cvmGet(center,0,2);
 
   // Set the entire histogram to a small number to avoid 0 bins (and division by zero later).
-  cvSet(hist->bins,cvScalar(0.0000001)); //band*band*DBL_MIN
+  cvSet(hist->bins,cvScalar(0.0000001));//0.0000001)); //band*band*DBL_MIN
   band = band*band;
   bbv1 = bbox.y;
   bbv2 = (bbox.y+bbox.height);//-1
   bbu1 =  bbox.x;
   bbu2 = (bbox.x+bbox.width);//-1
+  //printf("Calculating histogram around point: (%f %f %f) between u:%d-%d and v:%d-%d \n", cx, cy, cz, bbu1, bbu2, bbv1, bbv2 );
   for (int v = bbv1; v<bbv2; v++) {
     xptr = (float *)(X->imageData + v*X->widthStep) + bbox.x;
     yptr = (float *)(Y->imageData + v*Y->widthStep) + bbox.x;
     zptr = (float *)(Z->imageData + v*Z->widthStep) + bbox.x;
     for (int u = bbu1; u<bbu2; u++) {
       if (*zptr != 0.0) {
-	dz = ((*zptr) - cz); zptr++;
+	dz = ((*zptr) - cz); 
 	dx = ((*xptr) - cx); xptr++;
 	dy = ((*yptr) - cy); yptr++;
 	d = (dx*dx+dy*dy+dz*dz)/band;
 	rbin = floor(cvGetReal2D(imager,v-bbox.y,u-bbox.x)/2.0);
+	//cvSetReal2D(imager,v-bbox.y,u-bbox.x,255);
 	gbin = floor(cvGetReal2D(imageg,v-bbox.y,u-bbox.x)/2.0);
-	if (d <= 1.0 && 5 < rbin && rbin < 123 && 5 < gbin && gbin < 123) {
+	//cvSetReal2D(imageg,v-bbox.y,u-bbox.x,255);
+	if (d <= 1.0){// && 2 < rbin && rbin < 126 && 2 < gbin && gbin < 126) {
 	  //rbin = cvGetReal2D(imager,v-bbox.y,u-bbox.x);
 	  //rbin = (1.5*rbin <= 127) ? (int)1.5*rbin : 127;
 	  //gbin = (int)0.75*gbin;
@@ -142,6 +161,10 @@ static void calc_weighted_rg_hist_with_depth_2(IplImage* imager, IplImage* image
 	  cvSetReal2D(hist->bins, rbin, gbin, 1-d + cvGetReal2D(hist->bins,rbin,gbin)); 
 	  // Ignore normalization constant since we'll normalize the histogram below.
 	}
+      }
+      else {
+	//cvSetReal2D(imager,v-bbox.y,u-bbox.x,0);
+	//cvSetReal2D(imageg,v-bbox.y,u-bbox.x,0);	
       }
     }
   }
@@ -161,6 +184,28 @@ static CvRect center_size_to_rect_2d( CvScalar center, CvScalar size) {
 
 /*****************************************************************/
 
+
+// Set the tracking filter update time for a given person.
+void People::setTrackingFilterUpdateTime(ros::Time time, int iperson) {
+  list_[iperson].last_tracking_filter_update_time = time;
+} 
+
+// Return true if the time lapse between the last filter update and the
+// given time is less than a set threshold.
+bool People::isWithinTrackingFilterUpdateTimeThresh(ros::Time time, int iperson){
+  return (time - list_[iperson].last_tracking_filter_update_time <= ros::Duration().fromSec(TRACKING_FILTER_TIMEOUT_S));
+}
+
+void People::killIfFilterUpdateTimeout(ros::Time time){
+  for (uint iperson=0; iperson<list_.size(); iperson++) {
+    if ((time - list_[iperson].last_tracking_filter_update_time) > ros::Duration().fromSec(TRACKING_FILTER_TIMEOUT_S)) {
+      cout << "Removing person " << list_[iperson].id << endl;
+      freePerson(iperson);
+      list_.erase(list_.begin()+iperson);
+      iperson--;
+    }
+  }
+}
 
 // Set a person's id
 void People::setID(std::string id, int iperson){
@@ -230,11 +275,11 @@ int People::getNumPeople(){
 // Add an empty person to the list of people.
 void People::addPerson(){
   Person p;  
-  p.face_color_hist = NULL;
-  p.shirt_color_hist = NULL;
-  p.body_mask_2d = NULL;
-  p.face_mask_2d = NULL;
-  p.id = -1;
+  p.face_color_hist = 0;
+  p.shirt_color_hist = 0;
+  p.body_mask_2d = 0;
+  p.face_mask_2d = 0;
+  p.id = "";
   list_.push_back(p);
 }
 
@@ -464,6 +509,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       cvReleaseImage(&cft_b_plane_); cft_b_plane_ = 0;
       cvReleaseImage(&cft_r_plane_norm_); cft_r_plane_norm_ = 0; 
       cvReleaseImage(&cft_g_plane_norm_); cft_g_plane_norm_ = 0;
+      cvReleaseImage(&cft_b_plane_norm_); cft_b_plane_norm_ = 0;
       cvReleaseImage(&cft_X_); cft_X_ = 0;
       cvReleaseImage(&cft_Y_); cft_Y_ = 0;
       cvReleaseImage(&cft_Z_); cft_Z_ = 0; 
@@ -479,6 +525,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     cft_b_plane_ = cvCreateImage( imsize, IPL_DEPTH_8U, 1);
     cft_r_plane_norm_ = cvCreateImage( imsize, IPL_DEPTH_8U, 1);
     cft_g_plane_norm_ = cvCreateImage( imsize, IPL_DEPTH_8U, 1);
+    cft_b_plane_norm_ = cvCreateImage( imsize, IPL_DEPTH_8U, 1);
     cft_X_ = cvCreateImage( imsize, IPL_DEPTH_32F, 1 );
     cft_Y_ = cvCreateImage( imsize, IPL_DEPTH_32F, 1 );
     cft_Z_ = cvCreateImage( imsize, IPL_DEPTH_32F, 1 );
@@ -498,7 +545,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
   // Convert the image to the right colourspace.
   // Nothing needs to be done b/c we're going to use the R and G components and normalize the intensity.
   //cvCvtPixToPlane( image, cft_b_plane_, cft_g_plane_, cft_r_plane_, 0);
-  cvCvtPixToPlane( image, cft_b_plane_, cft_g_plane_norm_, cft_r_plane_norm_, 0);
+  cvCvtPixToPlane( image, cft_b_plane_norm_, cft_g_plane_norm_, cft_r_plane_norm_, 0);
   //cvEqualizeHist( cft_r_plane_, cft_r_plane_norm_);
   //cvEqualizeHist( cft_g_plane_, cft_g_plane_norm_);
 
@@ -589,8 +636,8 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       cvmSet(end_points,iperson,1,cvmGet(my_start_point,0,1));
       cvmSet(end_points,iperson,2,cvmGet(my_start_point,0,2));
       tracked_each[iperson] = false;
-      printf("bbox1 bad\n");
-      printf("x1,y1,x2,y2,w,h %f %f %f %f %d %d \n",cvmGet(four_corners_2d,0,0), cvmGet(four_corners_2d,0,1),cvmGet(four_corners_2d,1,0),cvmGet(four_corners_2d,2,1),imsize.width, imsize.height);
+      //printf("bbox1 bad\n");
+      //printf("x1,y1,x2,y2,w,h %f %f %f %f %d %d \n",cvmGet(four_corners_2d,0,0), cvmGet(four_corners_2d,0,1),cvmGet(four_corners_2d,1,0),cvmGet(four_corners_2d,2,1),imsize.width, imsize.height);
       continue;
     }
 
@@ -619,15 +666,15 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 
 
     /*** Mean shift iterations. ***/
-    int MAX_ITERS = 10; 
-    double EPS = 1.0; // Squared!!!
+    double EPS = COLOR_TRACK_EPS_M*COLOR_TRACK_EPS_M; // Squared!!!
     curr_point = cvCloneMat(my_start_point);
     cvSetZero(next_point);
     double bhat_coeff, bhat_coeff_new;
     double total_weight = 0.0;
     double wi = 0.0;
     int r_bin, g_bin;
-    int cp[3], u1, u2, v1, v2;
+    float cp[3];
+    int u1, u2, v1, v2;
     float *xptr, *yptr, *zptr, *nptr;
     uchar *rptr, *gptr;
     double kernel_mult = kernel_radius_m / t_person->face_size_3d;//4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
@@ -636,7 +683,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     // Compute the Bhattacharya coeff of the start hist vs the true face hist.
     bhat_coeff = cvCompareHist( t_person->face_color_hist, cft_start_hist_, CV_COMP_BHATTACHARYYA);
     int iter;
-    for (iter = 0; iter < MAX_ITERS; iter++) {
+    for (iter = 0; iter < COLOR_TRACK_MAX_ITERS; iter++) {
 
 #if __PEOPLE_DEBUG__
       printf("iter %d\n",iter);
@@ -681,6 +728,9 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 #if __PEOPLE_DEBUG__
       printf("ds ");
 #endif
+      int total_z=0;
+      int total_close=0;
+      int total_inbounds = 0;
       for (int v=v1; v<=v2; v++) {
 	xptr = (float*)(cft_X_->imageData + v*cft_X_->widthStep) + u1;
 	yptr = (float*)(cft_Y_->imageData + v*cft_Y_->widthStep) + u1;
@@ -693,23 +743,25 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	for (int u = u1; u<=u2; u++) {
 	  if ((*zptr) != 0.0) {
 
+	    total_z++;
+
 	    dx = (*xptr)-cp[0];
 	    dy = (*yptr)-cp[1];
 	    dz = (*zptr)-cp[2];
 	    d = (dx*dx + dy*dy + dz*dz)/denom;
 #if __PEOPLE_DEBUG__
-	    printf("%f ",(*zptr));
+	    printf("%f %f %f ",*zptr,cp[2],dz);
 #endif
 	    r_bin = (int)(floor((float)(*rptr)/2.0));
 	    g_bin = (int)(floor((float)(*gptr)/2.0));
-	    if (d <= 1.0 && 5 < r_bin && r_bin < 123 && 5 < g_bin && g_bin < 123) {
-	      //r_bin = (int)(floor((float)(*rptr)/2.0));
-	      //g_bin = (int)(floor((float)(*gptr)/2.0));
-
+	    if (d<=1.0) total_close++;
+	    if (d <= 1.0){// && 2 < r_bin && r_bin < 126 && 2 < g_bin && g_bin < 126) {
+	      total_inbounds++;
 	      //r_bin = (1.5*r_bin <= 127) ? (int)1.5*r_bin : 127;
 	      //g_bin = (int)0.75*g_bin;
 
 	      wi = sqrt(cvQueryHistValue_2D(t_person->face_color_hist,r_bin,g_bin)/cvQueryHistValue_2D(cft_start_hist_,r_bin,g_bin));
+	      //printf("rbin %d gbin %d facehist %f starthist %f sqrt %f\n",r_bin,g_bin,cvQueryHistValue_2D(t_person->face_color_hist,r_bin,g_bin),cvQueryHistValue_2D(cft_start_hist_,r_bin,g_bin), wi);
        	      total_weight += wi;
 	      nptr = (float *)(next_point->data.ptr);
 	      (*nptr) += wi*dx; nptr++;
@@ -722,6 +774,8 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	  rptr++; gptr++;
 	}
       }
+
+      //printf("\ntotal z %d, total_close %d,  total inbounds %d\n", total_z, total_close, total_inbounds);
 #if __PEOPLE_DEBUG__
       printf("\n\n\n");
 #endif
@@ -732,7 +786,8 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	printf("currpoint x %f y %f z %f\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2));
 	break;
       }
-      d = 0.0;
+      d = 0.0;      
+      //printf("0Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
       nptr = (float *)(next_point->data.ptr);
       for (int i=0; i<3; i++) {
 	(*nptr) /= total_weight;
@@ -741,9 +796,13 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	nptr++;
       } 
 
+      //printf("1Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
+
       bhat_coeff_new = 0.0;
       bool ok_adjust = true; 
-      while (d > EPS) {
+      while (true) {
+
+	//printf("2Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
 
 	// Compute the histogram and Bhattacharya coeff at the new position.
 	// Convert 3d point-size to 2d rectangle
@@ -777,21 +836,26 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	cvResetImageROI( cft_g_plane_norm_);
 	bhat_coeff_new = cvCompareHist( t_person->face_color_hist, cft_start_hist_, CV_COMP_BHATTACHARYYA);  
 
-	if (bhat_coeff_new < bhat_coeff) {
+	if ((d > EPS) && (bhat_coeff_new < bhat_coeff)) {
 	  d = 0.0;
 	  fptr = (float*)(next_point->data.ptr);
 	  // Set the next point as the avg of the next point and current point.
 	  for (int i=0; i<3; i++) {
+	    //printf("%f ", *fptr);
 	    (*fptr) += cp[i];
 	    (*fptr) /= 2.0;
 	    d += ((*fptr)-cp[i])*((*fptr)-cp[i]);
+	    //printf("%f ", *fptr);
 	    fptr++;
 	  }
+	  //printf("\n");
 	}
 	else {
 	  break;
 	}
       }
+
+      //printf("2Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
 
       cvCopy(next_point,curr_point);
       cvSetZero(next_point);
@@ -801,6 +865,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       if (d <= EPS || !ok_adjust) {
 	break;
       }
+
 
       // start_hist was already updated in the loop above.
       
@@ -813,11 +878,12 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       (*fptr2) = (*fptr1); fptr2++; fptr1++;;
     }
 
-#if 1 // __PEOPLE_DEBUG__
+
+#if __PEOPLE_DEBUG__
     printf("iter=%d, d=%f\n",iter, d);
 #endif
 
-#if 1 //__PEOPLE_DEBUG__
+#if __PEOPLE_DEBUG__
     printf("end point ");
     for (int i =0; i<3; i++) {
       printf("%f ",cvmGet(end_points,iperson,i));
@@ -839,6 +905,8 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	cptr++;
       }
     }
+
+    cvGetMinMaxHistValue( t_person->face_color_hist, &min, &max);
     for (int g=0; g<histsize.height; g++) {
       cptr = (uchar*)(hist_im->imageData + g*hist_im->widthStep);
       for (int r=0; r<histsize.width; r++) {
@@ -848,6 +916,10 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     }
     cvShowImage("Real face hist",hist_im_real);
     cvShowImage("Current face hist",hist_im);
+
+    //cvShowImage("Real face hist",cft_r_plane_norm_); //
+    //cvShowImage("Current face hist",cft_g_plane_norm_); //
+    //cvShowImage("blue",cft_b_plane_norm_); //
 #endif
 
   }
