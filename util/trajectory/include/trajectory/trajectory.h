@@ -205,6 +205,8 @@ namespace trajectory
 
     int getDuration(int index, double &duration);
 
+    int getTimeStamps(std::vector<double> &timestamps);
+
     int write(std::string filename, double dT);
 
     protected:
