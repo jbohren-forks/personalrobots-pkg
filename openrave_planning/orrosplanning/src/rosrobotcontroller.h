@@ -25,10 +25,10 @@
 #define RAVE_ROS_ROBOT_CONTROLLER
 
 #include <robot_msgs/MechanismState.h>
-#include <pr2_mechanism_controllers/StartTrajectory.h>
-#include <pr2_mechanism_controllers/CancelTrajectory.h>
-#include <pr2_mechanism_controllers/WaitTrajectory.h>
-#include <pr2_mechanism_controllers/QueryTrajectory.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+#include <pr2_mechanism_controllers/TrajectoryWait.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
 class ROSRobotController : public ControllerBase
 {
@@ -307,11 +307,6 @@ private:
         }
 
         // do some monitoring of the joint state (try to look for stalls)
-    }
-
-    void ControllerThread()
-    {
-        
     }
 
     RobotBase* _probot;           ///< robot owning this controller

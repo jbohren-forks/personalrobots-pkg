@@ -1,5 +1,10 @@
 ## queries where the current trajectory is along its path
+
+# if trajectoryid is 0, returns the timestamp of the current trajectory
+# and done is filled whenever all the trajectories have been finished
 uint32 trajectoryid
 ---
 uint8 done # 1 if trajectory is done, 0 if ongoing
 float32 trajectorytime # the current timestamp the trajectory is at. If the trajectory is finished, specifies the total time of the trajectory
+
+string[] jointnames # names of the joints that the controller expects
