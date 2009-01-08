@@ -1,4 +1,7 @@
 ## waits for a trajectory to finish or times out
+
+# if 0, waits for all trajectories, otherwise waits for the trajectory with the specified id
+# if no such trajectory exists return fail, if such a trajectory exists and is done already return immediately
 uint32 trajectoryid
 float32 timeout # if 0, waits indefinitely
 ---
