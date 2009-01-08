@@ -58,8 +58,8 @@ ArmTrajectoryController::ArmTrajectoryController() :
 ArmTrajectoryController::~ArmTrajectoryController()
 {
   // Assumes the joint controllers are owned by this class.
-  for(unsigned int i=0; i<joint_position_controllers_.size();++i)
-    delete joint_position_controllers_[i];
+  for(unsigned int i=0; i<joint_pd_controllers_.size();++i)
+    delete joint_pd_controllers_[i];
 }
 
 bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
@@ -75,18 +75,18 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
   {
-    JointPositionController * jpc = new JointPositionController();
+    JointPDController * jpc = new JointPDController();
 //    std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
     ROS_INFO("Joint Position Controller: %s , %s",(elt->Attribute("type")),(elt->Attribute("name")));
-    assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPositionController"));
+    assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPDController"));
 
-    joint_position_controllers_.push_back(jpc);
+    joint_pd_controllers_.push_back(jpc);
     if(!jpc->initXml(robot, elt))
       return false;
 
     joint = (robot->getJointState(jpc->getJointName()))->joint_;
     if(joint)
-      joint_velocity_limits.push_back(joint->velocity_limit_/1.0);
+      joint_velocity_limits.push_back(joint->velocity_limit_/4.0);
 
     elt = elt->NextSiblingElement("controller");
   }
@@ -102,20 +102,21 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
     trajectory_type = std::string(elt->Attribute("interpolation"));
     ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",trajectory_type.c_str());    
   }
-  joint_cmd_rt_.resize(joint_position_controllers_.size()); 
+  joint_cmd_rt_.resize(joint_pd_controllers_.size()); 
+  joint_cmd_dot_rt_.resize(joint_pd_controllers_.size()); 
 
-  joint_trajectory_ = new trajectory::Trajectory((int) joint_position_controllers_.size());
+  joint_trajectory_ = new trajectory::Trajectory((int) joint_pd_controllers_.size());
 
   joint_trajectory_->setMaxRates(joint_velocity_limits);
   joint_trajectory_->setInterpolationMethod(trajectory_type);
 
-  trajectory_point_.setDimension((int) joint_position_controllers_.size());
-  dimension_ = (int) joint_position_controllers_.size();
+  trajectory_point_.setDimension((int) joint_pd_controllers_.size());
+  dimension_ = (int) joint_pd_controllers_.size();
 
 
 // Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
   for(int j=0; j < dimension_; j++)
-    trajectory_point_.q_[j] = joint_position_controllers_[j]->joint_state_->position_;
+    trajectory_point_.q_[j] = joint_pd_controllers_[j]->joint_state_->position_;
   trajectory_point_.time_ = 0.0;
   trajectory_points_vector.push_back(trajectory_point_);
 
@@ -154,13 +155,13 @@ void ArmTrajectoryController::getJointPosCmd(pr2_mechanism_controllers::JointPos
 {
 }
 
-controller::JointPositionController* ArmTrajectoryController::getJointControllerByName(std::string name)
+controller::JointPDController* ArmTrajectoryController::getJointControllerByName(std::string name)
 {
-  for(int i=0; i< (int) joint_position_controllers_.size(); i++)
+  for(int i=0; i< (int) joint_pd_controllers_.size(); i++)
   {
-    if(joint_position_controllers_[i]->getJointName() == name)
+    if(joint_pd_controllers_[i]->getJointName() == name)
     {
-      return joint_position_controllers_[i];
+      return joint_pd_controllers_[i];
     }
   }
     return NULL;
@@ -168,9 +169,9 @@ controller::JointPositionController* ArmTrajectoryController::getJointController
 
 int ArmTrajectoryController::getJointControllerPosByName(std::string name)
 {
-  for(int i=0; i< (int) joint_position_controllers_.size(); i++)
+  for(int i=0; i< (int) joint_pd_controllers_.size(); i++)
   {
-    if(joint_position_controllers_[i]->getJointName() == name)
+    if(joint_pd_controllers_[i]->getJointName() == name)
     {
       return i;
     }
@@ -183,10 +184,15 @@ void ArmTrajectoryController::update(void)
   double start_time = now();
 
   double sample_time(0.0);
+
+  current_time_ = robot_->hw_->current_time_;
+
   if(refresh_rt_vals_)
   {
     trajectory_start_time_ = robot_->hw_->current_time_;
+    trajectory_end_time_ = joint_trajectory_->getTotalTime()+trajectory_start_time_;
     refresh_rt_vals_ = false;
+    trajectory_done_ = false;
   }
   if(arm_controller_lock_.trylock())
   {
@@ -197,14 +203,20 @@ void ArmTrajectoryController::update(void)
     for(unsigned int i=0; i < joint_cmd_rt_.size(); ++i)
     {
       joint_cmd_rt_[i] = trajectory_point_.q_[i];
+      joint_cmd_dot_rt_[i] = trajectory_point_.qdot_[i];
 //      cout << " " << joint_cmd_rt_[i];
     }
 //    cout << endl;
     arm_controller_lock_.unlock();
+
+    if(robot_->hw_->current_time_ >= trajectory_end_time_ && trajectory_done_ == false)
+    {
+      trajectory_done_= true;
+    }
   }
 
-  for(unsigned int i=0;i<joint_position_controllers_.size();++i)
-    joint_position_controllers_[i]->setCommand(joint_cmd_rt_[i]);
+  for(unsigned int i=0;i<joint_pd_controllers_.size();++i)
+    joint_pd_controllers_[i]->setCommand(joint_cmd_rt_[i],joint_cmd_dot_rt_[i]);
 
   updateJointControllers();
 
@@ -221,8 +233,8 @@ void ArmTrajectoryController::update(void)
 
 void ArmTrajectoryController::updateJointControllers(void)
 {
-  for(unsigned int i=0;i<joint_position_controllers_.size();++i)
-    joint_position_controllers_[i]->update();
+  for(unsigned int i=0;i<joint_pd_controllers_.size();++i)
+    joint_pd_controllers_[i]->update();
 }
 
 //------ Arm controller node --------
@@ -230,7 +242,7 @@ void ArmTrajectoryController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(ArmTrajectoryControllerNode)
 
 ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
-  : Controller(), node_(ros::node::instance())
+  : Controller(), node_(ros::node::instance()), request_trajectory_id_(1), current_trajectory_id_(0)
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmTrajectoryController();
@@ -243,17 +255,34 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   node_->unadvertise_service(service_prefix_ + "/get_command");
   node_->unadvertise_service(service_prefix_ + "/set_target");
   */
+  node_->unadvertise_service("set_arm_traj_srv");
+
    if(topic_name_ptr_ && topic_name_.c_str())
   {
     std::cout << "unsub arm controller" << topic_name_ << std::endl;
-    node_->unsubscribe(topic_name_, &ArmTrajectoryControllerNode::CmdTrajectoryReceived, this);
+    node_->unsubscribe(topic_name_);
   }
-
   delete c_;
 }
 
 void ArmTrajectoryControllerNode::update()
 {
+  if(c_->trajectory_done_)
+  {
+    if(joint_trajectory_vector_.size() > 0)
+    {
+      if(current_trajectory_id_ == joint_trajectory_id_.front())
+      {
+        joint_trajectory_vector_.erase(joint_trajectory_vector_.begin());
+        joint_trajectory_id_.erase(joint_trajectory_id_.begin());
+      }
+      if(joint_trajectory_vector_.size() > 0)
+      {
+        setTrajectoryCmdFromMsg(joint_trajectory_vector_.front()); 
+        current_trajectory_id_ = joint_trajectory_id_.front();
+      }
+    }
+  }
   c_->update();
 }
 
@@ -270,6 +299,9 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     node_->advertise_service(service_prefix_ + "/get_command", &ArmTrajectoryControllerNode::getJointPosCmd, this);
     node_->advertise_service(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
 */
+
+   node_->advertise_service("set_arm_traj_srv", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
     {
@@ -289,26 +321,25 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   return false;
 }
 
-void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
+void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(pr2_mechanism_controllers::JointTraj traj_msg)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
-
-  this->ros_lock_.lock();
-  tp.resize((int)traj_msg_.get_points_size()+1);
+  tp.resize((int)traj_msg.get_points_size()+1);
 
   //set first point in trajectory to current position of the arm
     tp[0].setDimension((int) c_->dimension_);
+
   for(int j=0; j < c_->dimension_; j++)
   {
-    tp[0].q_[j] = c_->joint_position_controllers_[j]->joint_state_->position_;
+    tp[0].q_[j] = c_->joint_pd_controllers_[j]->joint_state_->position_;
     tp[0].time_ = 0.0;
   }
 
-  if(traj_msg_.get_points_size() > 0)
+  if(traj_msg.get_points_size() > 0)
   {
-     if((int) traj_msg_.points[0].get_positions_size() != (int) c_->dimension_)
+     if((int) traj_msg.points[0].get_positions_size() != (int) c_->dimension_)
      {
-       ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) traj_msg_.points[0].get_positions_size(), (int) c_->dimension_);
+       ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) traj_msg.points[0].get_positions_size(), (int) c_->dimension_);
         return;
      }
   }
@@ -318,17 +349,23 @@ void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
      return;
   }
 
-  for(int i=0; i < (int) traj_msg_.get_points_size(); i++)
+  for(int i=0; i < (int) traj_msg.get_points_size(); i++)
   {
      tp[i+1].setDimension((int) c_->dimension_);
      for(int j=0; j < (int) c_->dimension_; j++)
      {
-        tp[i+1].q_[j] = traj_msg_.points[i].positions[j];
-        tp[i+1].time_ = traj_msg_.points[i].time;
+        tp[i+1].q_[j] = traj_msg.points[i].positions[j];
+        tp[i+1].time_ = traj_msg.points[i].time;
      }
   }
-
   this->c_->setTrajectoryCmd(tp);
+}
+
+void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
+{
+
+  this->ros_lock_.lock();
+  setTrajectoryCmdFromMsg(traj_msg_);
   this->ros_lock_.unlock();
 }
 
@@ -340,4 +377,123 @@ bool ArmTrajectoryControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJ
   c_->getJointPosCmd(cmd);
   resp.command = cmd;
   return true;
+}
+
+
+bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::request &req,
+                    pr2_mechanism_controllers::TrajectoryStart::response &resp)
+{
+  addTrajectoryToQueue(req.traj, request_trajectory_id_);
+  resp.trajectoryid = request_trajectory_id_;
+
+  if(req.requesttiming)
+  {
+    trajectory::Trajectory tmp(c_->dimension_);
+    createTrajectory(req.traj,tmp);
+    std::vector<double> timestamps;
+
+    resp.set_timestamps_size((int)req.traj.get_points_size());
+    timestamps.resize((int)req.traj.get_points_size());
+
+    tmp.getTimeStamps(timestamps);
+
+    for(int i=0; i < (int) req.traj.get_points_size(); i++)
+    {
+      resp.timestamps[i] = timestamps[i];
+    }
+  }
+
+  request_trajectory_id_++;
+  return true;
+}
+
+bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
+                                                    pr2_mechanism_controllers::TrajectoryQuery::response &resp)
+{
+  if(current_trajectory_id_ == (int) req.trajectoryid)
+  {
+    if(c_->current_time_ <= c_->trajectory_end_time_)
+    {
+      resp.trajectorytime = c_->current_time_-c_->trajectory_start_time_;
+      resp.done = 0;
+    }
+    else
+    {
+      resp.trajectorytime = c_->trajectory_end_time_ - c_->trajectory_start_time_;
+      resp.done = 1;
+    }
+  }
+  else if(current_trajectory_id_ >= (int)req.trajectoryid)
+  {
+    resp.trajectorytime = 0;
+    resp.done = 1;
+  }
+  else
+  {
+    resp.trajectorytime = 0;
+    resp.done = 2;
+  }
+  resp.set_jointnames_size(c_->dimension_);
+  for(int i=0; i < c_->dimension_; i++)
+  {
+    resp.jointnames[i] = c_->joint_pd_controllers_[i]->getJointName();
+    
+  }
+  return true;
+}
+
+int ArmTrajectoryControllerNode::createTrajectory(const pr2_mechanism_controllers::JointTraj new_traj,trajectory::Trajectory &return_trajectory)
+{
+  std::vector<trajectory::Trajectory::TPoint> tp;
+  tp.resize((int)new_traj.get_points_size());
+
+  if(new_traj.get_points_size() > 0)
+  {
+     if((int) new_traj.points[0].get_positions_size() != (int) c_->dimension_)
+     {
+       ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) new_traj.points[0].get_positions_size(), (int) c_->dimension_);
+        return -1;
+     }
+  }
+  else
+  {
+    ROS_WARN("Trajectory message has no way points");
+     return -1;
+  }
+
+  for(int i=0; i < (int) new_traj.get_points_size(); i++)
+  {
+     tp[i].setDimension((int) c_->dimension_);
+     for(int j=0; j < (int) c_->dimension_; j++)
+     {
+        tp[i].q_[j] = traj_msg_.points[i].positions[j];
+        tp[i].time_ = traj_msg_.points[i].time;
+     }
+  }
+  if(!return_trajectory.setTrajectory(tp))
+  {
+    ROS_WARN("Trajectory not set correctly");
+    return -1;
+  }
+  return 1;
+}
+
+void ArmTrajectoryControllerNode::addTrajectoryToQueue(pr2_mechanism_controllers::JointTraj new_traj, int id)
+{
+  joint_trajectory_vector_.push_back(new_traj);
+  joint_trajectory_id_.push_back(id);
+}
+
+void ArmTrajectoryControllerNode::deleteTrajectoryFromQueue(int id)
+{
+// do a linear search
+  for(int i = 0; i < (int) joint_trajectory_vector_.size(); i++)
+  {
+    if(joint_trajectory_id_[i] == id)
+    {
+      joint_trajectory_vector_.erase(joint_trajectory_vector_.begin()+i);
+      joint_trajectory_id_.erase(joint_trajectory_id_.begin()+i);
+      break;
+    }
+  }
 }

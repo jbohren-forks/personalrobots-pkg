@@ -41,6 +41,7 @@
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <robot_mechanism_controllers/joint_effort_controller.h>
+#include <robot_mechanism_controllers/joint_pd_controller.h>
 
 // Services
 #include <pr2_mechanism_controllers/SetJointPosCmd.h>
@@ -57,6 +58,9 @@
 
 #include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/JointTrajPoint.h>
+
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
@@ -105,17 +109,19 @@ namespace controller
 
     ros::thread::mutex arm_controller_lock_;
 
-    controller::JointPositionController* getJointControllerByName(std::string name);
+    controller::JointPDController* getJointControllerByName(std::string name);
 
     private:
 
-    std::vector<JointPositionController *> joint_position_controllers_;
+    std::vector<JointPDController *> joint_pd_controllers_;
 
     trajectory::Trajectory *joint_trajectory_;
 
     trajectory::Trajectory::TPoint trajectory_point_;
 
     std::vector<double> joint_cmd_rt_;
+
+    std::vector<double> joint_cmd_dot_rt_;
 
     mechanism::Robot* robot_;
 
@@ -127,6 +133,12 @@ namespace controller
     bool refresh_rt_vals_;
 
     double trajectory_start_time_;
+
+    double trajectory_end_time_;
+
+    double current_time_;
+
+    bool trajectory_done_;
 
     int dimension_;
 
@@ -172,6 +184,17 @@ namespace controller
     bool getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
                         pr2_mechanism_controllers::GetJointPosCmd::response &resp);
 
+    bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::request &req,
+                         pr2_mechanism_controllers::TrajectoryStart::response &resp);
+
+    bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
+                           pr2_mechanism_controllers::TrajectoryQuery::response &resp);
+
+    void deleteTrajectoryFromQueue(int id);
+
+    void addTrajectoryToQueue(pr2_mechanism_controllers::JointTraj new_traj, int id);
+
+    int createTrajectory(const pr2_mechanism_controllers::JointTraj new_traj,trajectory::Trajectory &return_trajectory);
 
     private:
 
@@ -211,8 +234,18 @@ namespace controller
      */
     void CmdTrajectoryReceived();
 
+    int trajectory_id_;
+
+    std::vector<pr2_mechanism_controllers::JointTraj> joint_trajectory_vector_;
+
+    std::vector<int> joint_trajectory_id_;
+
+    void setTrajectoryCmdFromMsg(pr2_mechanism_controllers::JointTraj traj_msg);
+
+    int request_trajectory_id_;
+
+    int current_trajectory_id_;
+
   };
 
 }
-
-
