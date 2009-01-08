@@ -552,6 +552,19 @@ int Trajectory::getDuration(int index, double &duration)
 
 }
 
+int Trajectory::getTimeStamps(std::vector<double> &timestamps)
+{
+  if((int) timestamps.size() != num_points_)
+  {
+    ROS_WARN("Size of timestamps vector %d does not match number of points in trajectory %d", timestamps.size(), num_points_);
+    return -1;
+  }
+  for(int i = 0; i < num_points_; i++)
+    timestamps[i] = tp_[i].time_;
+
+  return 1;
+}
+
 double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint &end)
 {
   double minJointTime(MAX_ALLOWABLE_TIME);

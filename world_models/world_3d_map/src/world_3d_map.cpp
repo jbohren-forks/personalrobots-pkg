@@ -102,16 +102,16 @@
    - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
-#include <robot_model/knode.h>
-
+#include <ros/node.h>
+#include <tf/transform_listener.h>
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
 
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
 
-#include <collision_space/util.h>
 #include <random_utils/random_utils.h>
+#include <robot_filter/RobotFilter.h>
 
 // Laser projection
 #include "laser_scan/laser_scan.h"
@@ -119,14 +119,15 @@
 #include <deque>
 #include <cmath>
 
-class World3DMap : public ros::node,
-		   public robot_model::NodeRobotModel
+class World3DMap : public ros::node
 {
 public:
     
-  World3DMap(const std::string &robot_model_name) : ros::node("world_3d_map"),
-					       robot_model::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model_name)
+  World3DMap(const std::string &robot_model_name) :
+    ros::node("world_3d_map"), m_tf(*this, true, 1000000000ULL)
   {
+    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
+
     advertise<std_msgs::PointCloud>("world_3d_map", 1);
 
     param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 10.0);
@@ -135,7 +136,9 @@ public:
     param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
     param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.03);
     param("world_3d_map/verbosity_level", m_verbose, 1);
-    param("world_3d_map/body_part_scale", m_bodyPartScale, 1.95);
+
+    double bodyPartScale;
+    param("world_3d_map/body_part_scale", bodyPartScale, 1.95);
 
     m_active = true;
     m_acceptScans = false;
@@ -147,10 +150,15 @@ public:
     subscribe("scan",  m_inputScan,  &World3DMap::scanCallback, 1);
     subscribe("cloud", m_inputCloud, &World3DMap::pointCloudCallback, 1);
     subscribe("base_scan", m_baseScanMsg, &World3DMap::baseScanCallback, 1);
+
+
+    m_robotFilter = new robot_filter::RobotFilter(this, robot_model_name, m_verbose, bodyPartScale);
   }
     
   ~World3DMap(void)
   {
+    delete m_robotFilter;
+
     /* terminate spawned threads */
     m_active = false;
 	
@@ -158,44 +166,25 @@ public:
     for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
       delete m_currentWorld[i];
 
-    for (unsigned int i = 0 ; i < m_selfSeeParts.size() ; ++i)
-      delete m_selfSeeParts[i].body;
   }
-    
-  virtual void setRobotDescription(robot_desc::URDF *file)
-  {
-    robot_model::NodeRobotModel::setRobotDescription(file);
-    addSelfSeeBodies();
-  }
-    
   void setAcceptScans(bool acceptScans)
   {
     m_acceptScans = acceptScans;
   }
+
+
+  void loadRobotDescription() {
+    m_robotFilter->loadRobotDescription();
+  }
+
+  void waitForState() {
+    m_robotFilter->waitForState();
+  }
+    
     
 private:
     
-  struct RobotPart
-  {
-    collision_space::bodies::Shape        *body;
-    planning_models::KinematicModel::Link *link;	
-  };
   
-  void stateUpdate(void)
-  {
-    if(!m_robotState)
-      {
-	ROS_WARN("Ignoring state update because I haven't yet received the robot description");
-	return;
-      }
-    //m_robotState->print();
-    robot_model::NodeRobotModel::stateUpdate();
-    if (m_kmodel)
-      m_kmodel->computeTransforms(m_robotState->getParams());
-    if (m_kmodelSimple)
-      m_kmodelSimple->computeTransforms(m_robotStateSimple->getParams());
-  }
-    
   void pointCloudCallback(void)
   {
     processData(m_inputCloud);
@@ -261,65 +250,6 @@ private:
       m_worldDataMutex.unlock();
     }
     delete d;
-  }
-    
-  void addSelfSeeBodies(void)
-  {
-    robot_desc::URDF::Group *ss = m_urdf->getGroup("self_see");
-    if (ss && ss->hasFlag("collision"))
-      {
-	for (unsigned int i = 0 ; i < ss->linkNames.size() ; ++i)
-	  {
-	    planning_models::KinematicModel::Link *link = m_kmodel->getLink(ss->linkNames[i]);
-	    if (link)
-	      {
-		RobotPart rp = { NULL, link };    
-		    
-		switch (link->shape->type)
-		  {
-		  case planning_models::KinematicModel::Shape::BOX:
-		    rp.body = new collision_space::bodies::Box();
-		    {
-		      const double* size = static_cast<planning_models::KinematicModel::Box*>(link->shape)->size;
-		      rp.body->setDimensions(size);
-		    }
-		    break;
-		  case planning_models::KinematicModel::Shape::SPHERE:
-		    rp.body = new collision_space::bodies::Sphere();
-		    {
-		      double size[1];
-		      size[0] = static_cast<planning_models::KinematicModel::Sphere*>(link->shape)->radius;
-		      rp.body->setDimensions(size);
-		    }
-		    break;
-		  case planning_models::KinematicModel::Shape::CYLINDER:
-		    rp.body = new collision_space::bodies::Cylinder();
-		    {
-		      double size[2];
-		      size[0] = static_cast<planning_models::KinematicModel::Cylinder*>(link->shape)->length;
-		      size[1] = static_cast<planning_models::KinematicModel::Cylinder*>(link->shape)->radius;
-		      rp.body->setDimensions(size);
-		    }
-		    break;
-		  default:
-		    break;
-		  }
-		    
-		if (!rp.body)
-		  {
-		    fprintf(stderr, "Unknown body type: %d\n", link->shape->type);
-		    continue;
-		  }
-		    
-		rp.body->setScale(m_bodyPartScale);
-		    
-		m_selfSeeParts.push_back(rp);
-	      }
-	  }
-      }
-	
-    if (m_verbose)
-      printf("Ignoring point cloud data that intersects with %d robot parts\n", m_selfSeeParts.size());
   }
     
   void processData(const std_msgs::PointCloud& local_cloud)
@@ -397,6 +327,13 @@ private:
 	delete cloudF;
 	cloudF = temp;
       }
+
+    if (cloudF)
+      {
+	std_msgs::PointCloud *temp = m_robotFilter->filter(*cloudF);
+	delete cloudF;
+	cloudF = temp;
+      }
     
     return cloudF;
   }
@@ -421,51 +358,40 @@ private:
     ROS_INFO("Filter 0 discarded %d points (%d left) \n", n - j, j);
 
     return copy;	
-  }    
-    
-  /** Remove points from the cloud if the robot sees parts of
-      itself. Works for pointclouds in the robot frame. \todo make the
-      comment true, separate function in 2.*/
+  } 
+
+
+
+  /** Remove points in the ground plane. Note that
+   in the future this could use Sachin's ransac
+   ground plane extract. */
   std_msgs::PointCloud* filter1(const std_msgs::PointCloud &cloud)
   {
+
+    if (cloud.header.frame_id != "map") {
+      ROS_ERROR("Cloud not in the robot frame in filter1. It is in the %s frame.", 
+		cloud.header.frame_id.c_str());
+    }
+
     std_msgs::PointCloud *copy = new std_msgs::PointCloud();
     copy->header = cloud.header;
-	
-    
-    for (int i = m_selfSeeParts.size() - 1 ; i >= 0 ; --i)
-      m_selfSeeParts[i].body->setPose(m_selfSeeParts[i].link->globalTrans);
-    
+
     unsigned int n = cloud.get_pts_size();
     unsigned int j = 0;
     copy->set_pts_size(n);	
     for (unsigned int k = 0 ; k < n ; ++k)
-      {
-	double x = cloud.pts[k].x;
-	double y = cloud.pts[k].y;
-	double z = cloud.pts[k].z;
-	    
-	if (z > m_retainAboveGroundThreshold)
-	  {
-	    bool keep = true;
-	    for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
-	      keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
-			     
-	    if (keep)
-	      copy->pts[j++] = cloud.pts[k];
-	  }
-      }
-
-    ROS_INFO("Filter 1 discarded %d points (%d left) \n", n - j, j);
-	
+      if (cloud.pts[k].z > m_retainAboveGroundThreshold)
+	copy->pts[j++] = cloud.pts[k];
     copy->set_pts_size(j);
+	
+    ROS_INFO("Filter 1 discarded %d points (%d left) \n", n - j, j);
 
-    return copy;
-  }
+    return copy;	
+  }       
+
     
-  std::vector<RobotPart>                   m_selfSeeParts;
   std::vector<std_msgs::PointCloud*> m_currentWorld;// Pointers to saved clouds
 
-  double                           m_bodyPartScale;
   double                           m_maxPublishFrequency;
   double                           m_baseLaserMaxRange;
   double                           m_tiltLaserMaxRange;
@@ -473,6 +399,8 @@ private:
   double                           m_retainAboveGroundThreshold;
   int                              m_verbose;
     
+  robot_filter::RobotFilter       *m_robotFilter;
+  tf::TransformListener            m_tf; 
   std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
   std_msgs::PointCloud             m_inputCloud; //Buffer for recieving cloud
   std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan    

@@ -8,6 +8,7 @@ import place_recognition
 import Image
 import time
 import timer
+import os
 
 from raytracer import object, sphere, isphere, render_stereo_scene, ray_camera, vec3, shadeLitCloud
 from math import *
@@ -55,38 +56,13 @@ else:
 from stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
 
-class imgStereo:
-  def __init__(self, im):
-    self.size = im.size
-    self.mode = "L"
-    self.data = im.tostring()
-  def tostring(self):
-    return self.data
-
-class PhonyVisualOdometer(VisualOdometer):
-  def find_keypoints(self, frame):
-    pass
-  def find_disparities(self, frame):
-    pass
-  def collect_descriptors(self, frame):
-    pass
-  def temporal_match(self, af0, af1, want_distances = False):
-    return [(i,i) for i in range(400)]
-
-points = [ (-1 + 2 * random.random(), -1 + 2 * random.random(), 1 + 5 * random.random()) for i in range(400)]
-
-class PhonyFrame:
-  def __init__(self, pose, cam):
-    p3d = [pose.xform(*p) for p in points]
-    self.kp = [cam.cam2pix(*p) for p in p3d]
-    def r(): return -0.5 + random.random() * 1
-    self.kp = [(x+r(),y+r(),d) for (x,y,d) in self.kp]
-
 #########################################################################
 
 #########################################################################
 vos = [
+  #VisualOdometer(stereo_cam, feature_detector = FeatureDetectorStar(), descriptor_scheme = DescriptorSchemeCalonder())
   VisualOdometer(stereo_cam, scavenge = False, sba=None, inlier_error_threshold = 3.0),
+
   #VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
 
   #VisualOdometer(stereo_cam, sba=(1,1,1)),
@@ -109,7 +85,7 @@ skel = Skeleton(stereo_cam)
 
 ground_truth = []
 started = time.time()
-for i in range(600):
+for i in range(100):
   print i
   if 0:
     desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
@@ -121,7 +97,7 @@ for i in range(600):
   ground_truth.append(desired_pose.xform(0,0,0))
   cam = ray_camera(desired_pose, stereo_cam)
 
-  if 0: # set to 1 for the first time to generate cache
+  if not os.access("/tmp/out%06d.png" % i, os.R_OK):
     imL = Image.new("RGB", (640,480))
     imR = Image.new("RGB", (640,480))
     imD = [ Image.new("F", (640,480)), Image.new("F", (640,480)), Image.new("F", (640,480)) ]
@@ -145,15 +121,15 @@ for i in range(600):
     imD[1].save("/tmp/out%06d-y.tiff" % i)
     imD[2].save("/tmp/out%06d-z.tiff" % i)
   else:
-    fn = i
-    im = Image.open("/tmp/out%06d.png" % fn)
+    im = Image.open("/tmp/out%06d.png" % i)
     imL,imR,_ = im.split()
 
   for j,vo in enumerate(vos):
-    f = SparseStereoFrame(imgStereo(imL), imgStereo(imR))
+    f = SparseStereoFrame(imL, imR)
 
     vo.handle_frame(f)
     skel.add(vo.keyframe)
+
 ended = time.time()
 took = ended - started
 print "Took", took, "so", 1000*took / i, "ms/frame"

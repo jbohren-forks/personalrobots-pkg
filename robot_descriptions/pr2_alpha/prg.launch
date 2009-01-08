@@ -12,8 +12,8 @@
   <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
 
 <!-- Joystick -->
-  <param name="joy/deadzone" value="5000"/>
-  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+  <param name="joy/deadzone" value="5000"/> 
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/> 
 
 <!-- spacenav -->
   <node machine="four" pkg="spacenav_node" type="spacenav_node" />
@@ -51,22 +51,25 @@
 <!-- odom estimation -->
   <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
 
-<!-- Stereo cam -->
-  <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
-  <param name="videre_mode" type="string" value="disparity_raw" />
-  <param name="fps"         type="double" value="15.0"/>
-  <param name="do_colorize" type="bool" value="False"/>
-  <param name="do_rectify" type="bool" value="False"/>
-  <param name="do_stereo" type="bool" value="False"/>
-</node>
-
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="xenomai"/>
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
+
+<!-- Stereo cam -->
+  <group ns="stereo">
+    <param name="videre_mode" type="str" value="disparity_raw"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+    <param name="fps" type="double" value="15.0"/>
+    <param name="frame_id" type="string" value="stereo_link"/>
+  </group>
+  <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
 
 </launch>
 

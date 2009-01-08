@@ -1,0 +1,42 @@
+<launch>
+  <machine name="localhost_cameras" address="localhost" default="false"/>  
+
+  <group ns="checkerdetector" clear_params="true">
+    <param name="display" type="int" value="1"/>
+    <param name="frame_id" type="string" value="head_tilt_link"/>
+    <param name="rect0_size_x" type="double" value="0.10740"/>
+    <param name="rect0_size_y" type="double" value="0.10757"/>
+    <param name="grid0_size_x" type="int" value="6"/>
+    <param name="grid0_size_y" type="int" value="8"/>
+    <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
+    <node machine="localhost_cameras" pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
+      <remap from="CamInfo" to="/stereo/left/cam_info"/>
+      <remap from="Image" to="/stereo/left/image_rect"/>
+      <!--       <env name="DISPLAY" value=":0.0"/> -->
+    </node>
+  </group>
+  
+  <!-- start nodding laser -->
+  <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
+  <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 10 .75 .25" />
+
+  <!-- start the filtering node -->
+  <node machine="localhost_cameras" pkg="laser_camera_calibration" type="gatherdata.py" output="screen">
+    <remap from="ObjectDetection" to="/checkerdetector/ObjectDetection"/>
+  </node>
+
+  <!-- start recording -->
+  <node pkg="rosrecord" type="rosrecord" args="-f $(find laser_camera_calibration)/lasercamcalib /new_ObjectDetection /new_tilt_scan /new_mechanism_state"/>
+
+  <!-- DCAM - this should be brough up with the robot, but in case they are not, comment this out -->
+<!--   <group ns="stereo">
+    <param name="videre_mode" type="str" value="rectified"/>
+    <param name="do_colorize" type="bool" value="False"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+  </group>
+
+  <node machine="camera-machine" pkg="dcam" type="stereodcam" respawn="false"/>
+  <node machine="camera-machine" pkg="stereo_image_proc" type="stereoproc" respawn="false"/> -->
+</launch>

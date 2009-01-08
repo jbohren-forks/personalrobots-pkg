@@ -40,6 +40,7 @@
 #include "state_pos_vel.h"
 #include <robot_msgs/PositionMeasurement.h>
 #include <wrappers/matrix/matrix_wrapper.h>
+#include <string>
 
 
 namespace estimation
@@ -48,8 +49,14 @@ namespace estimation
 class Tracker
 {
 public:
+  /// constructor
+  Tracker(const std::string& name): name_(name) {};
+
   /// destructor
   virtual ~Tracker() {};
+
+  /// return the name of the tracker
+  const std::string& getName() const {return name_;};
 
   /// initialize tracker
   virtual void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const double time) = 0;
@@ -59,6 +66,10 @@ public:
 
   /// return measure for tracker quality: 0=bad 1=good
   virtual double getQuality() const = 0;
+
+  /// return the lifetime of the tracker
+  virtual double getLifetime() const = 0;
+
 
   /// update tracker
   virtual bool updatePrediction(const double dt) = 0;
@@ -70,6 +81,8 @@ public:
   virtual void getEstimate(BFL::StatePosVel& est) const = 0;
   virtual void getEstimate(robot_msgs::PositionMeasurement& est) const = 0;
 
+private:
+  std::string name_;
 
 }; // class
 

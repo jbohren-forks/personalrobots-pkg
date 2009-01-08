@@ -87,6 +87,12 @@ namespace robot_model
     {
 
     public:
+        robot_desc::URDF* getUrdf() { return m_urdf; }
+        planning_models::KinematicModel* getKmodel() { return m_kmodel; }
+        planning_models::KinematicModel* getKmodelSimple() { return m_kmodelSimple; }
+        planning_models::KinematicModel::StateParams* getRobotState() { return m_robotState; }
+        planning_models::KinematicModel::StateParams* getRobotStateSimple() { return m_robotStateSimple; }
+      
 	
         NodeRobotModel(ros::node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
 	{
@@ -194,6 +200,10 @@ namespace robot_model
 		ros::Duration().fromSec(0.05).sleep();
 	}
 	
+	virtual void stateUpdate(void)
+	{
+	    m_haveState = m_haveBasePos && m_haveMechanismState;
+	}
     protected:
 	
 	void localizedPoseCallback(void)
@@ -288,10 +298,6 @@ namespace robot_model
 	    stateUpdate();
 	}
 	
-	virtual void stateUpdate(void)
-	{
-	    m_haveState = m_haveBasePos && m_haveMechanismState;
-	}
 	
 	tf::TransformListener                         m_tf; 
 	ros::node                                    *m_node;

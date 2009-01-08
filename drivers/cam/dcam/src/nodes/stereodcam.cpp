@@ -401,6 +401,7 @@ public:
     }
     
     cam_bridge::StereoDataToRawStereo(stcam_->stIm, raw_stereo_);
+    raw_stereo_.header.frame_id = frame_id_;
     publish(stereo_name_ + std::string("raw_stereo"), raw_stereo_);
 
     count_++;

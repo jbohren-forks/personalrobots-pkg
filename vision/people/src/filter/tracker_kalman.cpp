@@ -44,11 +44,14 @@ using namespace ros;
 using namespace robot_msgs;
 
 
+const static double damping_velocity = 1.0;
+
 
 namespace estimation
 {
   // constructor
-  TrackerKalman::TrackerKalman(const StatePosVel& sysnoise):
+  TrackerKalman::TrackerKalman(const string& name, const StatePosVel& sysnoise):
+    Tracker(name),
     filter_(NULL),
     sys_pdf_(NULL),
     sys_model_(NULL),
@@ -59,9 +62,10 @@ namespace estimation
   {
     // create sys model
     sys_matrix_ = 0;
-    for (unsigned int i=1; i<=6; i++)
+    for (unsigned int i=1; i<=3; i++){
       sys_matrix_(i,i) = 1;
-
+      sys_matrix_(i+3,i+3) = damping_velocity;
+    }
     ColumnVector sys_mu(6); sys_mu = 0;
     SymmetricMatrix sys_sigma(6); sys_sigma = 0;
     for (unsigned int i=0; i<3; i++){
@@ -118,6 +122,7 @@ namespace estimation
     tracker_initialized_ = true;
     quality_ = 1;
     filter_time_ = time;
+    init_time_ = time;
   }
 
 
@@ -188,7 +193,7 @@ namespace estimation
     est.pos.z = tmp(3);
 
     est.header.stamp.fromSec( filter_time_ );
-    est.header.frame_id = "odom_combined";
+    est.object_id = getName();
   }
 
 
@@ -203,6 +208,16 @@ namespace estimation
 
     return 1.0 - min(1.0, sigma_max / 1.5);
   }
+
+
+  double TrackerKalman::getLifetime() const
+  {
+    if (tracker_initialized_)
+      return filter_time_ - init_time_;
+    else
+      return 0;
+  }
+
 
 }; // namespace
 

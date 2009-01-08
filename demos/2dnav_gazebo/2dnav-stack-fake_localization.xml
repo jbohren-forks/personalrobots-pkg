@@ -82,12 +82,17 @@
     <param name="/costmap_2d/inflation_radius" value="0.55"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
 
     <param name="/trajectory_rollout/occdist_scale" type="double" value="0.002"/>
     <param name="/trajectory_rollout/yaw_goal_tolerance" type="double" value="0.1"/>
     <param name="/trajectory_rollout/xy_goal_tolerance" type="double" value="0.35"/>
+
+    <param name="/trajectory_rollout/sim_time" value="1.0" />
+    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/samples_per_dim" value="10" />
 
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->

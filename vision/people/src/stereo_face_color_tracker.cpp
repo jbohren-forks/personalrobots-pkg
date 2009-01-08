@@ -54,6 +54,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+#include <boost/thread/mutex.hpp>
 
 #include "people.h"
 #include "utils.h"
@@ -102,7 +103,8 @@ public:
 
   tf::TransformListener tf;
 
-  ros::thread::mutex cv_mutex_;
+  //ros::thread::mutex cv_mutex_;
+  boost::mutex cv_mutex_;
 
   StereoFaceColorTracker(bool detect_faces, const char *haar_filename, bool use_depth, bool calib_color) : 
     ros::node("stereo_face_color_tracker",ros::node::ANONYMOUS_NAME),
@@ -184,20 +186,23 @@ public:
     //if (init_pos_.name != "track_starter_gui") {
     //  return;
     //}
-
-    cv_mutex_.lock();
+    boost::mutex::scoped_lock lock(cv_mutex_);
+    //cv_mutex_.lock();
 
     // Check that the timestamp is close to the current time. If not, just wait for another message.
-    // (The time is in nanosecs, right?)
-    if ((init_pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {
-      cv_mutex_.unlock();
+    if ((init_pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {//2.0)) {
+      //printf("too delayed\n");
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
 
     // Check that we have the camera parameters. Otherwise, we can't convert the position
     // to image coords anyway, so we might as well ignore this message.
     if (cam_model_ == NULL) {
-      cv_mutex_.unlock();
+      printf("No cam model\n");
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
 
@@ -207,52 +212,55 @@ public:
     CvMat *four_corners_2d = cvCreateMat(4,3,CV_32FC1);
     CvMat *center_3d = cvCreateMat(1,3,CV_32FC1);
     CvMat *size_3d = cvCreateMat(1,3,CV_32FC1);
+    bool setface = false;
     if (iperson == -1) {
       // This is a new person, create them. Their histogram will be sent on the first tracking frame.
       people_->addPerson();
       iperson = people_->getNumPeople()-1;
       people_->setID(init_pos_.object_id,iperson);
       people_->setFaceSize3D(0, iperson);
+      setface = true;
     }
     else {
       // This is a person we've seen before.
       // Clear their face histogram.
       //people_->clearFaceColorHist(iperson);
     }
-    tf::Point pt;
-    tf::PointMsgToTF(init_pos_.pos, pt);
-    tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
-    try
-      {
-        tf.transformPoint("stereo_link", init_pos_.header.stamp, loc, "odom_combined", loc);
-      } 
-    catch (tf::TransformException& ex)
-      {
-	printf("caught exception\n\n\n");
-      }
+    if (setface) {
 
-    printf("before:\n");
-    people_->printFaceCenter3D(iperson);
-    people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
-    printf("after:\n");
-    people_->printFaceCenter3D(iperson);
-    cvmSet(center_3d,0,0,-loc[1]);
-    cvmSet(center_3d,0,1,-loc[2]);
-    cvmSet(center_3d,0,2,loc[0]);
-    cvSet(size_3d,cvScalar(people_->getFaceSize3D(iperson)));
-    printf("Face size on set %f\n", people_->getFaceSize3D(iperson));
-    people_->centerSizeToFourCorners(center_3d,size_3d,four_corners_3d);
-    cam_model_->cartToDisp(four_corners_3d, four_corners_2d);
-    people_->setFaceBbox2D(cvRect(cvmGet(four_corners_2d,0,0),cvmGet(four_corners_2d,0,1),
-				  cvmGet(four_corners_2d,1,0)-cvmGet(four_corners_2d,0,0),
-				  cvmGet(four_corners_2d,2,1)-cvmGet(four_corners_2d,0,1)),
-			   iperson);
-    
+      tf::Point pt;
+      tf::PointMsgToTF(init_pos_.pos, pt);
+      tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
+      try
+	{
+	  tf.transformPoint("stereo_link", init_pos_.header.stamp, loc, "odom", loc);
+	} 
+      catch (tf::TransformException& ex)
+	{
+	}
+
+      people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
+      printf("From filter: ");
+      people_->printFaceCenter3D(iperson);
+      cvmSet(center_3d,0,0,-loc[1]);
+      cvmSet(center_3d,0,1,-loc[2]);
+      cvmSet(center_3d,0,2,loc[0]);
+      cvSet(size_3d,cvScalar(people_->getFaceSize3D(iperson)));
+      people_->centerSizeToFourCorners(center_3d,size_3d,four_corners_3d);
+      cam_model_->cartToDisp(four_corners_3d, four_corners_2d);
+      people_->setFaceBbox2D(cvRect(cvmGet(four_corners_2d,0,0),cvmGet(four_corners_2d,0,1),
+				    cvmGet(four_corners_2d,1,0)-cvmGet(four_corners_2d,0,0),
+				    cvmGet(four_corners_2d,2,1)-cvmGet(four_corners_2d,0,1)),
+			     iperson);
+    }
+    people_->setTrackingFilterUpdateTime(init_pos_.header.stamp, iperson);
+
     cvReleaseMat(&four_corners_3d);
     cvReleaseMat(&four_corners_2d);
     cvReleaseMat(&center_3d);
     cvReleaseMat(&size_3d);
-    cv_mutex_.unlock();
+    lock.unlock();
+    //cv_mutex_.unlock();
   }
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
@@ -266,15 +274,17 @@ public:
     //double startt, endt;
     //startt = t.now().toSec();
 
-    cv_mutex_.lock();
+    //cv_mutex_.lock();
+    boost::mutex::scoped_lock lock(cv_mutex_);
  
     last_image_time_ = limage_.header.stamp;
-
+    
     CvSize im_size;
 
     if (limage_.encoding=="mono") {
       printf("The left image is not a color image.\n");
-      cv_mutex_.unlock();
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
 
@@ -283,6 +293,7 @@ public:
     if (!calib_color_) {
       if (lbridge_.fromImage(limage_,"bgr")) {
 	cv_image_left_ = lbridge_.toIpl();
+	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
       }
     }
     else if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
@@ -290,18 +301,23 @@ public:
       do_calib = true;
       if (lbridge_.fromImage(limage_,"bgr")) {
 	cv_image_left_ = lbridge_.toIpl();
+	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
 	lcolor_cal_.correctColor(cv_image_left_, cv_image_left_, true, true, COLOR_CAL_BGR);
 	
       }
     }
     else {
-      cv_mutex_.unlock();
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
-
+    
     if (dbridge_.fromImage(dimage_)) {
       cv_image_disp_ = dbridge_.toIpl();
+      //cvSet(cv_image_disp_,cvScalar(400));
+      //cvDilate(cv_image_disp_, cv_image_disp_);
     }
+    
 
     // Convert the stereo calibration into a camera model.
     if (cam_model_) {
@@ -416,22 +432,26 @@ public:
 
     }
 
+    // Kill anyone who hasn't received a filter update in a long time.
+    people_->killIfFilterUpdateTimeout(limage_.header.stamp);
+
     int npeople = people_->getNumPeople();
 
     if (npeople==0) {
       // No people to track, try again later.
-      cv_mutex_.unlock();
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
 
     CvMat *end_points = cvCreateMat(npeople,3,CV_32FC1);
-    double kernel_size_m = 0.4; 
-    printf("Face size before track %f\n", people_->getFaceSize3D(0));
+    double kernel_size_m = 0.40;//0.7;//0.4; 
     bool tracked_each[npeople];
     bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, kernel_size_m, 0, NULL, NULL, end_points, tracked_each);//0.3
     if (!did_track) {
       // If tracking failed, just return.
-      cv_mutex_.unlock();
+      //cv_mutex_.unlock();
+      lock.unlock();
       return;
     }
     // Copy endpoints and the new 2d bbox to the people structure.
@@ -466,6 +486,9 @@ public:
 		  cvPoint(cvmGet(four_corners_2d,3,0),cvmGet(four_corners_2d,3,1)),
 		  cvScalar(255,255,255)); 
 
+      printf("From tracking: ");
+      people_->printFaceCenter3D(iperson);
+
       // Publish the 3d head center for this person.
       pos.header.stamp = limage_.header.stamp;
       pos.name = "stereo_face_color_tracker";
@@ -473,12 +496,12 @@ public:
       pos.pos.x = cvmGet(end_points,iperson,2);
       pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
       pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
-      pos.header.frame_id = "stereo_link";
+      pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
       pos.reliability = 0.5;
       pos.initialization = 0;
-      pos.covariance[0] = 1.0;
-      pos.covariance[4] = 1.0;
-      pos.covariance[8] = 1.0;
+      pos.covariance[0] = 0.09; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;
+      pos.covariance[3] = 0.0;  pos.covariance[4] = 0.09; pos.covariance[5] = 0.0;
+      pos.covariance[6] = 0.0;  pos.covariance[7] = 0.0;  pos.covariance[8] = 0.09;
       publish("people_tracker_measurements",pos);
     }
 	  
@@ -494,9 +517,10 @@ public:
     }
     cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
-    cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
+    //cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif
-    cv_mutex_.unlock();       
+    //cv_mutex_.unlock();
+    lock.unlock();
 
     //endt = t.now().toSec();
     //printf("Start %f End %f Duration %f\n", startt, endt, endt-startt);
@@ -507,14 +531,16 @@ public:
   bool spin() {
     while (ok() && !quit_) {
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-      cv_mutex_.lock(); 
+      //cv_mutex_.lock(); 
+      boost::mutex::scoped_lock lock(cv_mutex_);
       // Get user input and allow OpenCV to refresh windows.
       int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
       if((c == 27)||(c == 'q')||(c == 'Q'))
 	quit_ = true;
-      cv_mutex_.unlock(); 
+      //cv_mutex_.unlock(); 
+      lock.unlock();
 #endif
       usleep(10000);
     }

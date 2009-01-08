@@ -6,6 +6,7 @@ rospack(robot_mechanism_controllers)
 genmsg()
 gensrv()
 rospack_add_library(robot_mechanism_controllers
+ src/endeffector_constraint_controller.cpp
  src/endeffector_pose_controller.cpp
  src/endeffector_twist_controller.cpp
  src/endeffector_wrench_controller.cpp

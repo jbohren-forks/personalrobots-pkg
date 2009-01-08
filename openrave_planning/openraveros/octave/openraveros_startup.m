@@ -26,7 +26,7 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 %%
 %% author: Rosen Diankov
-function openraveros_startup(sessionserver,createsession, veiwer)
+function openraveros_startup(sessionserver,createsession, viewer)
 global openraveros_globalsession
 persistent openraveros_initialized
 
@@ -46,15 +46,15 @@ if( isempty(openraveros_initialized))
     openraveros_initialized = 1;
 end
 
-if( ~exist('sessionserver','var') )
-    sessionserver = 'openrave_session';
-end
-
-if( ~exist('viewer','var') )
-    viewer = 'qtcoin';
-end
-
 if( createsession && isempty(openraveros_globalsession) )
+    if( ~exist('sessionserver','var') )
+        sessionserver = 'openrave_session';
+    end
+    
+    if( ~exist('viewer','var') )
+        viewer = 'qtcoin';
+    end
+
     req = openraveros_openrave_session();
     req.viewer = viewer; % default viewer
     while(1)

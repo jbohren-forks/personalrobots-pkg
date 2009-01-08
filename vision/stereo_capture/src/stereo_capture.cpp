@@ -80,6 +80,7 @@ public:
   IplImage* lastScaledDisparity;
   IplImage* lastLeft;
   IplImage* lastRight;
+  IplImage* lastNonTexDisp; //This is the disparity from the non-textured light
   
 
   TopicSynchronizer<StereoView> sync;
@@ -93,7 +94,7 @@ public:
   unsigned int fileNum;
 
   StereoView() : ros::node("stereo_view"), 
-                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastLeft(NULL), lastRight(NULL),
+                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), lastLeft(NULL), lastRight(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
 		 capture(false)
   {
@@ -144,6 +145,8 @@ public:
       cvReleaseImage(&lastLeft);
     if (lastRight)
       cvReleaseImage(&lastRight);
+    if(lastNonTexDisp)
+      cvReleaseImage(&lastNonTexDisp);
   }
 
   void projector_status_change()
@@ -197,25 +200,31 @@ public:
 	  if(lastScaledDisparity != NULL)
 	    cvReleaseImage(&lastScaledDisparity);	  
 	  lastScaledDisparity = cvCloneImage(disp);
-	}
+	} else { //Save non textured light disparity too
+          if(!lastNonTexDisp)
+            lastNonTexDisp = cvCloneImage(disp);
+          cvCopy(disp,lastNonTexDisp);
+        }
 	
       
       cvShowImage("disparity", disp);
       cvReleaseImage(&disp);
     }
     
-    if(capture)
+    if(capture) //Look here to save the non texture disparity image
       {
-	stringstream ss1, ss2, ss3, ss4;
+	stringstream ss1, ss2, ss3, ss4, ss5;
 	ss1<<fileName<<"L"<<fileNum<<".jpg";
 	ss2<<fileName<<"R"<<fileNum<<".jpg";
 	ss3<<fileName<<"D"<<fileNum<<".jpg";
 	ss4<<fileName<<"D"<<fileNum<<".u16";
-	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<<endl;
+        ss5<<fileName<<"d"<<fileNum<<".jpg";
+	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<< " " << ss5.str() << endl;
 	cvSaveImage(ss1.str().c_str(), lastLeft);
 	cvSaveImage(ss2.str().c_str(), lastRight);
 	cvSaveImage(ss3.str().c_str(), lastScaledDisparity);
 	cvSave(ss4.str().c_str(), lastDisparity);
+        cvSave(ss5.str().c_str(),lastNonTexDisp);
 	
 	fileNum++;
 	capture = false;

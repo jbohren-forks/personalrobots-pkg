@@ -82,13 +82,19 @@ $ people/bin/track_starter_gui
 
 #include "CvStereoCamModel.h"
 #include "utils.h"
+#include "ros/time.h"
 
-// Thresholds for the face detection algorithm
+// Thresholds for the face detection algorithm.
 #define FACE_SIZE_MIN_M 0.1
 #define FACE_SIZE_MAX_M 0.5
-#define FACE_SIZE_DEFAULT_M 0.075//0.1
 #define MAX_Z_M 10
 #define FACE_DIST 2.0 //0.4
+// Thresholds for the face color tracking algorithm.
+#define FACE_SIZE_DEFAULT_M 0.08//0.1
+#define COLOR_TRACK_MAX_ITERS 10
+#define COLOR_TRACK_EPS_M 0.01
+// Timeouts
+#define TRACKING_FILTER_TIMEOUT_S 5.0
 
 using namespace std;
 
@@ -106,8 +112,9 @@ struct Person {
   CvRect face_bbox_2d;
   IplImage *face_mask_2d;
   CvScalar face_center_3d;
-  std::string id;
+  string id;
   string name;
+  ros::Time last_tracking_filter_update_time;
 };
 
 
@@ -125,6 +132,8 @@ class People
   // Destroy a list of people.
   ~People();
 
+  void freePerson(int iperson);
+
   /*!
    * \brief Add a person to the list of people.
    */
@@ -134,6 +143,19 @@ class People
    * \brief Return the number of people.
    */
   int getNumPeople();
+
+
+  /*!
+   * \brief Set the tracking filter update time for a given person.
+   */
+  void setTrackingFilterUpdateTime(ros::Time time, int iperson);
+
+  /*!
+   * \brief Return true if the time lapse between the last filter update for a given person and the given time is less than a set threshold.
+   */
+  bool isWithinTrackingFilterUpdateTimeThresh(ros::Time time, int iperson);
+
+  void killIfFilterUpdateTimeout(ros::Time time);
 
   /*!
    * \brief Return the face size in 3D
@@ -252,6 +274,7 @@ class People
   IplImage *cft_b_plane_;
   IplImage *cft_r_plane_norm_;
   IplImage *cft_g_plane_norm_;
+  IplImage *cft_b_plane_norm_;
   CvMat *rbins_;
   CvMat *gbins_;
   /**< The 3d coords for each point. */

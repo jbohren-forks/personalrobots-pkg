@@ -114,7 +114,6 @@ namespace estimation
     // set covariance
     ((MeasPdfVector*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
 
-
     // update filter
     bool res = filter_->Update(&meas_model_, meas);
     if (!res) quality_ = 0;
@@ -146,7 +145,7 @@ namespace estimation
     est.pos.z = tmp[2];
 
     est.header.stamp.fromSec( filter_time_ );
-    est.header.frame_id = "odom_combined";
+    est.header.frame_id = "base_link";
   }
 
 

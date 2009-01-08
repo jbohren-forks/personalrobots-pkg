@@ -88,15 +88,13 @@ private:
   message_sequencing::TimeSequencer<robot_msgs::PositionMeasurement>  message_sequencer_;
 
   /// trackers
-  std::map<std::string, Tracker*> trackers_;
-  std::map<std::string, Tracker*>::iterator tracker_it_;
-  DetectorParticle detector_;
+  std::list<Tracker*> trackers_;
 
   // tf listener
   tf::TransformListener robot_state_;
 
   unsigned int tracker_counter_;
-  double freq_;
+  double freq_, start_distance_min_, reliability_threshold_;
   BFL::StatePosVel sys_sigma_;
   std::string fixed_frame_;
   boost::mutex filter_mutex_;

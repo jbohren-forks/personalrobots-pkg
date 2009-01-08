@@ -61,7 +61,7 @@ class TrackerKalman: public Tracker
 {
 public:
   /// constructor
-  TrackerKalman(const BFL::StatePosVel& sysnoise);
+  TrackerKalman(const std::string& name, const BFL::StatePosVel& sysnoise);
 
   /// destructor
   virtual ~TrackerKalman();
@@ -74,6 +74,9 @@ public:
 
   /// return measure for tracker quality: 0=bad 1=good
   virtual double getQuality() const {return quality_;};
+
+  /// return the lifetime of the tracker
+  virtual double getLifetime() const;
 
   /// update tracker
   virtual bool updatePrediction(const double dt);
@@ -100,7 +103,7 @@ private:
 
   // vars
   bool tracker_initialized_;
-  double filter_time_, quality_;
+  double init_time_, filter_time_, quality_;
 
 
 }; // class

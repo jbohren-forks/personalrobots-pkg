@@ -15,9 +15,12 @@ end
 
 robot = orEnvGetRobots(robotid);
 
-calibdata = startgathering(robot); 
+calibdata = startgathering(robot);
 
-[Tcamera, Tlaser, jointoffsets] = calibratevalues(calibdata, robot); % compute the calibration values
+Tcamerainit = [0 0 1 0.05;
+               -1 0 0 0.05;
+               0 -1 0 0.095];
+[Tcamera, Tlaser, jointoffsets] = calibratevalues(calibdata, robot, Tcamerainit); % compute the calibration values
 Tcamera
 Tlaser
 jointoffsets

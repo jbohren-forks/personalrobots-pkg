@@ -266,6 +266,21 @@ void RandomizedTree::quantizeLeaves(int num_quant_bits, float p1, float p2, int 
       quantizeVector(posteriors_[i], classes_, N, perc, clamp_mode);
 }
 
+float* RandomizedTree::getPosterior(uchar* patch_data)
+{
+  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch_data));
+}
+
+const float* RandomizedTree::getPosterior(uchar* patch_data) const
+{
+  return getPosteriorByIndex( getIndex(patch_data) );
+}
+
+uint8_t* RandomizedTree::getPosterior2(uchar* patch_data)
+{
+   return getPosteriorByIndex2( getIndex(patch_data) );
+}
+
 void RandomizedTree::quantizeVector(float *vec, int dim, int N, float bnds[2], int clamp_mode)
 {   
    float map_bnd[2] = {0.f,(float)N};          // bounds of quantized target interval we're mapping to
@@ -287,20 +302,16 @@ void RandomizedTree::quantizeVector(float *vec, int dim, int N, float bnds[2], i
 
 }
 
-float* RandomizedTree::getPosterior(uchar* patch_data)
-{
-  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch_data));
+void RandomizedTree::quantizeVector(float *vec, int dim, int N, float bnds[2], uint8_t *dst)
+{   
+   int map_bnd[2] = {0, N};          // bounds of quantized target interval we're mapping to
+   int tmp;
+   for (int k=0; k<dim; ++k, ++vec, ++dst) {
+      tmp = int((*vec - bnds[0])/(bnds[1] - bnds[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]);
+      *dst = (tmp<0) ? 0 : ((tmp>N) ? N : tmp);
+   }
 }
 
-const float* RandomizedTree::getPosterior(uchar* patch_data) const
-{
-  return getPosteriorByIndex( getIndex(patch_data) );
-}
-
-uint8_t* RandomizedTree::getPosterior2(uchar* patch_data)
-{
-   return getPosteriorByIndex2( getIndex(patch_data) );
-}
 
 void RandomizedTree::read(const char* file_name)
 {

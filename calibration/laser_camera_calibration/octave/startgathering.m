@@ -16,7 +16,7 @@ rosoct_add_msgs('std_msgs');
 rosoct_add_msgs('checkerboard_detector');
 rosoct_add_msgs('robot_msgs');
 
-queuesize = 1000;
+queuesize = 1000; % need big buffer
 __calibdata = {};
 lastobjdet = {};
 __iterationcount = 0;
@@ -28,7 +28,7 @@ end
 
 lastlaserscan = {};
 __rosoct_msg_unsubscribe("new_tile_scan");
-success = rosoct_subscribe("new_tile_scan", @std_msgs_LaserScan, @(msg) laserscancb(msg,robot),queuesize);
+success = rosoct_subscribe("new_tilt_scan", @std_msgs_LaserScan, @(msg) laserscancb(msg,robot),queuesize);
 if( ~success )
     error('subscribe failed');
 end
@@ -55,7 +55,7 @@ __rosoct_msg_unsubscribe("new_ObjectDetection");
 __rosoct_msg_unsubscribe("new_tile_scan");
 __rosoct_msg_unsubscribe("new_mechanism_state");
 
-display('gathering calibration done');
+display(sprintf('gathering calibration done, total extracted: %d, total parsed: %d', length(__calibdata), __iterationcount));
 calibdata = __calibdata;
 __calibdata = {};
 
@@ -125,10 +125,11 @@ if( length(validpoints)<2 )
 end
 
 laserpoints = laserpoints(:,validpoints);
-linedata = SegmentLines(laserpoints, laserscanmsg.range_max, 0);
+linedata = SegmentLines(laserpoints, laserscanmsg.range_max, 1);
 
 %% take the line intersecting with x-axis (middle of laser range)
-laserline = linedata(:,find( sign(linedata(2,:)) ~= sign(linedata(4,:)), 1, 'first'));
+ilaserline = find( sign(linedata(2,:)) ~= sign(linedata(4,:)), 1, 'first');
+laserline = linedata(:,ilaserline);
 if( isempty(laserline) )
     display('could not find laser line');
     return;
@@ -136,17 +137,61 @@ end
 
 %% threshold length of line
 laserdir = laserline(1:2)-laserline(3:4);
-if( norm(laserdir) < 0.8 )
-    display(sprintf('line not long enough %f', norm(laserdir)));
+if( norm(laserdir) < 0.6 || norm(laserdir) > 1.5 )
+    display(sprintf('line not right size %f', norm(laserdir)));
     return;
 end
 
-if( min(norm(laserline(1:2)),norm(laserline(3:4))) > 1.5 )
+if( min(norm(laserline(1:2)),norm(laserline(3:4))) > 2 )
     display('line is too far');
     return;
 end
 
+%% ground can still be detected as checkerboard, so look for discontinuities
+Nlaser = [laserdir(2);-laserdir(1);0]/norm(laserdir);
+Nlaser(3) = -dot(Nlaser(1:2),laserline(1:2));
+
+testpoints = [];
+iprevline = ilaserline-1;
+while(iprevline > 0)
+    if( norm(linedata(1:2,iprevline)-linedata(3:4,iprevline)) > 0.2 )
+        break;
+    end
+    iprevline = iprevline-1;
+end
+
+if( iprevline > 0 )
+    testpoints = [testpoints [reshape(linedata(:,iprevline), [2 2]); 1 1]];
+end
+
+inextline = ilaserline+1;
+while(inextline < size(linedata,2))
+    if( norm(linedata(1:2,inextline)-linedata(3:4,inextline)) > 0.2 )
+        break;
+    end
+    inextline = inextline+1;
+end
+
+if( inextline < size(linedata,2) )
+    testpoints = [testpoints [reshape(linedata(:,inextline), [2 2]); 1 1]];
+end
+
+if( isempty(testpoints) )
+    display('no points to compare displacement to');
+    return;
+end
+
+maxdisplacement = max(abs(transpose(Nlaser)*testpoints));
+if( maxdisplacement < 0.4 )
+    maxdisplacement
+    plot(laserline([1 3]),laserline([2 4]),'g','linewidth',5); drawnow;
+    display('displacement is off');
+    return;
+end
+
+plot(laserline([1 3]),laserline([2 4]),'r','linewidth',5); drawnow;
 data.laserline = laserline;
 
 __calibdata{end+1} = data;
 display(sprintf('adding data %d', length(__calibdata)));
+pause(4);

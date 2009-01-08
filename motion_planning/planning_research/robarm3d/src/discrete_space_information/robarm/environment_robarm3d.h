@@ -38,15 +38,11 @@ using namespace KDL;
 #define NUMOFLINKS 7
 #define NUMOFLINKS_DH 8
 
-#define ROBARM_LONGACTIONDIST_CELLS 20   //for PES max. distance in coord to a sample point. It should be exactly so for one of the coordinates and this or smaller for the rest
-
-#define ROBARM_MAXNUMOFLONGACTIONSUCCS ((int)pow((double)2*ROBARM_LONGACTIONDIST_CELLS, NUMOFLINKS))
-
 #define UNIFORM_COST 1	//all the joint actions have the same costs when set
 
 #define INVALID_NUMBER 999
 
-#define NUM_TRANS_MATRICES 360
+#define NUM_TRANS_MATRICES 360 //precomputed matrices
 
 
 // coords - used to pass around lists of valid cells
@@ -71,6 +67,10 @@ typedef struct STATE3D_t
 // robot arm physical configuration structure
 typedef struct ENV_ROBARM_CONFIG
 {
+    //epsilon to be used by planner
+    //this is the wrong place to store it, but it allows epsilon to be read in params.cfg
+    double epsilon;
+
     //environment dimensions (meters)
     double EnvWidth_m;
     double EnvHeight_m;
@@ -102,7 +102,7 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkGoalAngles_d[NUMOFLINKS];
 
     //3d grid of world space 
-    char*** Grid3D;     
+    char*** Grid3D;
     double GridCellWidth;   // cells are square
 
     //DH Parameters
@@ -116,14 +116,15 @@ typedef struct ENV_ROBARM_CONFIG
     double NegMotorLimits[NUMOFLINKS];
 
     //joint angle discretization
-    double angledelta[NUMOFLINKS]; 
-    int anglevals[NUMOFLINKS];     
+    double angledelta[NUMOFLINKS];
+    int anglevals[NUMOFLINKS];
 
     //for kinematic library use
     RobotKinematics pr2_kin;
     SerialChain *left_arm;
     JntArray *pr2_config;
 
+    //coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];
 
     //options
@@ -131,19 +132,30 @@ typedef struct ENV_ROBARM_CONFIG
     bool enforce_motor_limits;
     bool dijkstra_heuristic;
     bool endeff_check_only;
+    bool use_smooth_actions;
+    bool enforce_upright_gripper;
+    bool object_grasped;
+    double smoothing_weight;
+    double padding;
+    double gripper_orientation_moe; //gripper orientation margin of error
+    double grasped_object_length_m;
 
     //velocities
-    int nVelSucc;
+    int nSuccActions;
     double ** succ_vel;
     int ** ActionCosts;
 
     //for precomputing cos/sin & DH matrices 
     double cos_r[360];
     double sin_r[360];
-    double T_DH[4*NUM_TRANS_MATRICES][4][8];
+    double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS_DH];
 
-    //this should be moved to EnvironmentROBARM_t
-    double T_array[4][4][8];
+    double CellsPerAction;
+    double cost_per_cell;
+    double cost_sqrt2_move;
+    double cost_sqrt3_move;
+
+    double upright_gripper[3][3];
 
 } EnvROBARMConfig_t;
 
@@ -156,10 +168,8 @@ typedef struct ENVROBARMHASHENTRY
     short unsigned int wrist[3];
     short unsigned int elbow[3];
     short unsigned int endeff[3];
-    short unsigned int endeffx;
-    short unsigned int endeffy;
-    short unsigned int endeffz;
     short unsigned int action;
+    double orientation[3][3];
 } EnvROBARMHashEntry_t;
 
 // main structure that stores environment data used in planning
@@ -175,11 +185,11 @@ typedef struct
     //vector that maps from stateID to coords	
     vector<EnvROBARMHashEntry_t*> StateID2CoordTable;
 
-    //transformation matrices - maybe not needed
-    boost::numeric::ublas::matrix<double> T[NUMOFLINKS_DH];
+    //transformation matrices
+    double Trans[4][4][NUMOFLINKS_DH];
 
     //any additional variables
-    int* Heur;    // euclidean distance
+    int* Heur;
 }EnvironmentROBARM_t;
 
 class EnvironmentROBARM : public DiscreteSpaceInformation 
@@ -207,6 +217,8 @@ public:
     void PrintTimeStat(FILE* fOut);
     void outputangles(double angles[NUMOFLINKS], bool degrees);
     void CloseKinNode();
+    void OutputPlanningStats();
+    double GetEpsilon();
 
 private:
 
@@ -214,14 +226,18 @@ private:
     EnvROBARMConfig_t EnvROBARMCfg;
     EnvironmentROBARM_t EnvROBARM;
 
+    void GetSmoothSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+
     //hash table
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
     void PrintHashTableHist();
+    EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, short unsigned int action, bool bIsGoal);
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int action);
+//     EnvROBARMHashEntry_t* CreateNewHashEntrySet(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action);
 
     //initialization
-    void ReadParams(FILE* fCfg);
+    void ReadParamsFile(FILE* fCfg);
     void ReadConfiguration(FILE* fCfg);
     void InitializeEnvConfig();
     void CreateStartandGoalStates();
@@ -234,7 +250,8 @@ private:
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int*  pX, short unsigned int* pY, short unsigned int*  pZ, short unsigned int wrist[3], short unsigned int elbow[3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
@@ -247,9 +264,11 @@ private:
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
-    int cost(short unsigned int state1coord[], short unsigned int state2coord[],bool bState2IsGoal);
+    int cost(short unsigned int state1coord[], short unsigned int state2coord[], bool bState2IsGoal,short unsigned int action1, short unsigned int action2);
+    int cost(EnvROBARMHashEntry_t* HashEntry1, EnvROBARMHashEntry_t* HashEntry2, bool bState2IsGoal);
     int GetEdgeCost(int FromStateID, int ToStateID);
     void ComputeActionCosts();
+    void ComputeCostPerCell();
 
     //output
     void PrintHeader(FILE* fOut);
@@ -259,6 +278,7 @@ private:
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
     void OutputActionCostTable();
     void OutputActions();
+    void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
 
     //compute heuristic
     void InitializeKinNode();
@@ -280,6 +300,9 @@ private:
     void GetDHMatrix( double theta, int frame);
     void GetDHTransformations(double angles[NUMOFLINKS]);
     void Mult4x4(int A, int B, int C);
+
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3],double desired_orientation[3][3]);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action, double orientation[3][3]);
 };
 
 #endif

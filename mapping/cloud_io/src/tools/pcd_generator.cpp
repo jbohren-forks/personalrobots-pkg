@@ -76,7 +76,9 @@ class PCDGenerator: public ros::node
     int
       start ()
     {
-      return (cloud_io::loadPCDFile (file_name_.c_str (), msg_cloud_));
+      cloud_io::loadPCDFile (file_name_.c_str (), msg_cloud_);
+      msg_cloud_.header.frame_id = "base_link";
+      return (0);
     }
 
     ////////////////////////////////////////////////////////////////////////////////

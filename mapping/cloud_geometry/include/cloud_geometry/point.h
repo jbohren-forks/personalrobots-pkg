@@ -36,6 +36,7 @@
 // ROS includes
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
+#include <math.h>
 
 #include <cfloat>
 
@@ -275,6 +276,16 @@ namespace cloud_geometry
       maxP.y = (points->pts.at (indices->at (i)).y > maxP.y) ? points->pts.at (indices->at (i)).y : maxP.y;
       maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
     }
+  }
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Write the point data to screen (stderr)
+    * \param p the point
+    */
+  inline void
+    cerr_p (std_msgs::Point32 p)
+  {
+    std::cerr << p.x << " " << p.y << " " << p.z << std::endl;
   }
 
 }

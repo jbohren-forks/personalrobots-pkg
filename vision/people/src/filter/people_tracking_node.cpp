@@ -54,7 +54,6 @@ static const double       sequencer_delay            = 0.5;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 static const unsigned int num_particles_tracker      = 1000;
-static const unsigned int num_particles_detector     = 20000;
 
 
 namespace estimation
@@ -68,7 +67,6 @@ namespace estimation
 			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
-      detector_(num_particles_detector),
       robot_state_(*this, true),
       tracker_counter_(0),
       meas_visualize_(num_meas_show),
@@ -80,17 +78,18 @@ namespace estimation
       meas_visualize_[i].y = 0;
       meas_visualize_[i].z = 0;
     }
-    detector_.initialize(StateVector(0,0,0), StateVector(5,5,5), 0);
-
     // get parameters
     param("~/fixed_frame", fixed_frame_, string("default"));
     param("~/freq", freq_, 1.0);
+    param("~/start_distance_min", start_distance_min_, 0.0);
+    param("~/reliability_threshold", reliability_threshold_, 1.0);
     param("~/sys_sigma_pos_x", sys_sigma_.pos_[0], 0.0);
     param("~/sys_sigma_pos_y", sys_sigma_.pos_[1], 0.0);
     param("~/sys_sigma_pos_z", sys_sigma_.pos_[2], 0.0);
     param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0);
     param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
     param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
+
     sys_sigma_.pos_ /= freq_;
     sys_sigma_.vel_ /= freq_;
 
@@ -98,15 +97,8 @@ namespace estimation
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<std_msgs::PointCloud>("people_detector",10);
     advertise<std_msgs::PointCloud>("people_tracker_filter_visualization",10);
     advertise<std_msgs::PointCloud>("people_tracker_measurements_visualization",10);
-
-    // DEBUG
-    std_msgs::PointCloud detector_visualize;
-    detector_.getParticleCloud(StateVector(0.1,0.1,0.1), 0.000000000001, detector_visualize);
-    publish("people_detector", detector_visualize);
-    cout << "PUBLISH" << endl;
   }
 
 
@@ -116,8 +108,8 @@ namespace estimation
   PeopleTrackingNode::~PeopleTrackingNode()
   {
     // delete all trackers
-    for (map<string, Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++)
-      delete it->second;
+    for (list<Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++)
+      delete *it;
   };
 
 
@@ -126,24 +118,12 @@ namespace estimation
   // callback for messages
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
-    // get time and object name
-    double time(message->header.stamp.toSec());
-    string name(message->object_id);
-
     // get measurement in fixed frame
     Stamped<Vector3> meas_rel, meas;
     meas_rel.setData(StateVector(message->pos.x, message->pos.y, message->pos.z));
     meas_rel.stamp_    = message->header.stamp;
     meas_rel.frame_id_ = message->header.frame_id;
-    try {
-      robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
-    }
-    catch (tf::TransformException &e)
-    {
-      ROS_INFO("%s caught TF exception for %s from %s : %s\n", node_name_.c_str(), message->object_id.c_str(), message->name.c_str(), e.what());
-      return;
-    }
-
+    robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
 
     // get measurement covariance
     SymmetricMatrix cov(3);
@@ -154,30 +134,32 @@ namespace estimation
     // ----- LOCKED ------
     boost::mutex::scoped_lock lock(filter_mutex_);
 
-    // update detector
-    detector_.updateCorrection(meas, cov, time);
-    std_msgs::PointCloud detector_visualize;
-    detector_.getParticleCloud(StateVector(0.1,0.1,0.1), 0.001, detector_visualize);
-    publish("people_detector", detector_visualize);
-
     // update tracker if matching tracker found
-    tracker_it_ = trackers_.find(name);
-    if (tracker_it_ != trackers_.end()){
-      ROS_INFO("%s: Update tracker %s with measurement from %s",  
-	       node_name_.c_str(), name.c_str(), message->name.c_str());
-      tracker_it_->second->updateCorrection(meas, cov, time);
-    }
+    for (list<Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++)
+      if ((*it)->getName() == message->object_id)
+	(*it)->updateCorrection(meas, cov, message->header.stamp.toSec());
 
-    // initialize a new tracker when initialization flag is set
-    if (message->initialization == 1){
-      stringstream name_new;
-      // TODO: WHAT SHOULD COVAR OF VEL BE??
-      StatePosVel prior_sigma(StateVector(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), StateVector(0.0000001, 0.0000001, 0.0000001));
-      name_new << "person " << tracker_counter_++;
-      //trackers_[name_new.str()] = new TrackerKalman(sys_sigma_);
-      trackers_[name_new.str()] = new TrackerParticle(num_particles_tracker, sys_sigma_);
-      trackers_[name_new.str()]->initialize(meas, prior_sigma, time);
-      ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), name_new.str().c_str());
+    // check if reliable message with no name should be a new tracker
+    if (message->object_id == "" && message->reliability > reliability_threshold_){
+      double closest_tracker_dist = start_distance_min_;
+      StatePosVel est;
+      for (list<Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++){
+	(*it)->getEstimate(est);
+	double dst = sqrt(pow(est.pos_[0]-meas[0],2) + pow(est.pos_[1]-meas[1],2));
+	if (dst < closest_tracker_dist) closest_tracker_dist = dst;
+      }
+      // initialize a new tracker
+      if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
+	stringstream tracker_name;
+	StatePosVel prior_sigma(StateVector(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
+				StateVector(0.0000001, 0.0000001, 0.0000001));
+	tracker_name << "person " << tracker_counter_++;
+	Tracker* new_tracker = new TrackerKalman(tracker_name.str(), sys_sigma_);
+	//Tracker* new_tracker = new TrackerParticle(tracker_name.str(), num_particles_tracker, sys_sigma_);
+	new_tracker->initialize(meas, prior_sigma, message->header.stamp.toSec());
+	trackers_.push_back(new_tracker);
+	ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), tracker_name.str().c_str());
+      }
     }
     lock.unlock();
     // ------ LOCKED ------
@@ -193,7 +175,6 @@ namespace estimation
     meas_cloud.header.frame_id = meas.frame_id_;
     meas_cloud.pts = meas_visualize_;
     publish("people_tracker_measurements_visualization", meas_cloud);
-
   }
 
 
@@ -215,38 +196,42 @@ namespace estimation
     ROS_INFO("%s: People tracking manager stated.", node_name_.c_str());
 
     while (ok()){
+      // ------ LOCKED ------
+      boost::mutex::scoped_lock lock(filter_mutex_);
+
       // visualization variables
       vector<std_msgs::Point32> filter_visualize(trackers_.size());
       vector<float> weights(trackers_.size());
       std_msgs::ChannelFloat32 channel;
 
-
-      // ------ LOCKED ------
       // loop over trackers
-      boost::mutex::scoped_lock lock(filter_mutex_);
       unsigned int i=0;
-      for (map<string, Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++,i++){
-
+      list<Tracker*>::iterator it= trackers_.begin();
+      while (it!=trackers_.end()){
 	// update prediction
-	it->second->updatePrediction(1/freq_);
+	(*it)->updatePrediction(1/freq_);
 
 	// publish filter result
 	PositionMeasurement est_pos;
-	it->second->getEstimate(est_pos);
-	est_pos.object_id = it->first;
+	(*it)->getEstimate(est_pos);
 	est_pos.header.frame_id = fixed_frame_;
 	publish("people_tracker_filter", est_pos);
 
+	// visualize filter result
 	filter_visualize[i].x = est_pos.pos.x;
 	filter_visualize[i].y = est_pos.pos.y;
 	filter_visualize[i].z = est_pos.pos.z;
-	weights[i] = rgb[min(998, 999-max(1, (int)trunc( it->second->getQuality()*999.0 )))];
+	weights[i] = rgb[min(998, 999-max(1, (int)trunc( (*it)->getQuality()*999.0 )))];
 
 	// remove trackers that have zero quality
-	if (it->second->getQuality() <= 0){
-	  ROS_INFO("%s: Removing tracker %s",node_name_.c_str(), it->first.c_str());  
-	  trackers_.erase(it);
+	//ROS_INFO("%s: quality of tracker %s = %f",node_name_.c_str(), (*it)->getName().c_str(), (*it)->getQuality());
+	if ((*it)->getQuality() <= 0){
+	  ROS_INFO("%s: Removing tracker %s",node_name_.c_str(), (*it)->getName().c_str());  
+	  delete *it;
+	  trackers_.erase(it++);
 	}
+	else it++;
+	i++;
       }
       lock.unlock();
       // ------ LOCKED ------

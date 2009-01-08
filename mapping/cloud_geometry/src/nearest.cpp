@@ -102,7 +102,7 @@ namespace cloud_geometry
         centroid.pts[0].z += points->pts.at (indices->at (i)).z;
 
         for (unsigned int d = 0; d < points->get_chan_size (); d++)
-          centroid.chan[d].vals[0] += points->chan[d].vals[i];
+          centroid.chan[d].vals[0] += points->chan[d].vals.at (indices->at (i));
       }
 
       centroid.pts[0].x /= indices->size ();

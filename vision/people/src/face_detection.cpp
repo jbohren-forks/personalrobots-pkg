@@ -53,6 +53,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+#include <boost/thread/mutex.hpp>
 
 #include "people.h"
 #include "utils.h"
@@ -91,6 +92,7 @@ public:
  
   People *people_; /**< List of people and associated fcns. */
   const char *haar_filename_; /**< Training file for the haar cascade classifier. */
+  double reliability_; /**< Reliability of the predicitions. This should depend on the training file used. */
 
   bool external_init_; 
   robot_msgs::PositionMeasurement pos_; /**< The person position measurement to publish. */
@@ -102,20 +104,22 @@ public:
 
   tf::TransformListener tf;
 
-  ros::thread::mutex cv_mutex_;
+  //ros::thread::mutex cv_mutex_;
+  boost::mutex cv_mutex_;
 
   // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
-  FaceDetector(std::string node_name, const char *haar_filename, bool use_depth, bool do_display, bool external_init) : 
+  FaceDetector(std::string node_name, const char *haar_filename, double reliability, bool use_depth, bool do_display, bool external_init) : 
     ros::node(node_name ),
     sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
-    cv_image_left_(NULL),
-    cv_image_disp_(NULL),
+    cv_image_left_(0),
+    cv_image_disp_(0),
     do_display_(do_display),
-    cv_image_disp_out_(NULL),
+    cv_image_disp_out_(0),
     use_depth_(use_depth),
-    cam_model_(NULL),
-    people_(NULL),
+    cam_model_(0),
+    people_(0),
     haar_filename_(haar_filename),
+    reliability_(reliability),
     external_init_(external_init),
     quit_(false),
     node_name_(node_name),
@@ -133,8 +137,8 @@ public:
 
     // Subscribe to the images and parameters
     std::list<std::string> left_list;
-    //left_list.push_back(std::string("stereo/left/image_rect"));
-    left_list.push_back(std::string("stereo/left/image_rect_color"));
+    left_list.push_back(std::string("stereo/left/image_rect"));
+    //left_list.push_back(std::string("stereodcam/left/image_rect_color"));
     sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("stereo/disparity",dimage_,1);
     sync_.subscribe("stereo/stereo_info",stinfo_,1);
@@ -153,20 +157,22 @@ public:
   ~FaceDetector()
   {
 
-    if (cv_image_disp_out_) 
-      cvReleaseImage(&cv_image_disp_out_);
-    cv_image_disp_out_ = NULL;
+    if (cv_image_disp_out_) {
+      cvReleaseImage(&cv_image_disp_out_); cv_image_disp_out_ = 0;
+    }
 
     if (do_display_) {
       cvDestroyWindow("Face detector: Face Detection");
       cvDestroyWindow("Face detector: Disparity");
     }
 
-    if (cam_model_)
-      delete cam_model_;
+    if (cam_model_) {
+      delete cam_model_; cam_model_ = 0;
+    }
 
-    delete people_;
-
+    if (people_) {
+      delete people_; people_ = 0;
+    }
   }
 
   /*!
@@ -181,14 +187,14 @@ public:
     //if (pos_.name != "people_tracking_filter") {
     //  return;
     // }
-
-    cv_mutex_.lock();
+    boost::mutex::scoped_lock lock(cv_mutex_);
+    //cv_mutex_.lock();
 
     if ((pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {
-      cv_mutex_.unlock();
+      lock.unlock();
+      //cv_mutex_.unlock();
       return;
     }
-
 
     // Find the person in my list. If they don't exist, or this is an initialization, create them.
     // Otherwise, reset the position.
@@ -206,17 +212,17 @@ public:
     tf::Point pt;
     tf::PointMsgToTF(pos_.pos, pt);
     tf::Stamped<tf::Point> loc(pt, pos_.header.stamp, pos_.header.frame_id);
-    cout << loc[0] << " " << loc[1] <<" " <<  loc[2] << endl;
     try
       {
-        tf.transformPoint("stereo_link", loc, loc);//, pos_.header.stamp, loc, "odom_combined", loc);
+        tf.transformPoint("stereo_link", pos_.header.stamp, loc, "odom", loc);
       } 
     catch (tf::TransformException& ex)
       {
       }
-    cout << loc[0] <<" " <<  loc[1] <<" " <<  loc[2] << endl;
     people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
-    cv_mutex_.unlock();
+    people_->setTrackingFilterUpdateTime(pos_.header.stamp, iperson);
+    lock.unlock();
+    //cv_mutex_.unlock();
 
   }
 
@@ -238,10 +244,16 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
-
-    cv_mutex_.lock();
+    boost::mutex::scoped_lock lock(cv_mutex_);
+    //cv_mutex_.lock();
 
     last_image_time_ = limage_.header.stamp;
+    // Kill anyone who hasn't had a filter update in a given time.
+    people_->killIfFilterUpdateTimeout(limage_.header.stamp);
+    //if (!people_->getNumPeople()) {
+    //  cv_mutex_.unlock();
+    //  return;
+    //}
  
     CvSize im_size;
 
@@ -303,7 +315,8 @@ public:
 	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
 	    printf("close person %d \n", close_person);
 	    if (close_person < 0) {
-	      do_publish = false;
+	      //do_publish = false;
+	      id = "";
 	    }
 	    else {
 	      id = people_->getID(close_person);
@@ -318,8 +331,8 @@ public:
 	    pos.pos.x = cvmGet(xyz,0,2);
 	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
 	    pos.pos.z = -1.0*cvmGet(xyz,0,1);
-	    pos.header.frame_id = "stereo_link";
-	    pos.reliability = 0.8;
+	    pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
+	    pos.reliability = reliability_;
 	    pos.initialization = 0;
 	    pos.covariance[0] = 0.04;
 	    pos.covariance[1] = 0.0;
@@ -349,7 +362,8 @@ public:
       }
       
     }
-    cv_mutex_.unlock();
+    lock.unlock();
+    //cv_mutex_.unlock();
   }
 
 
@@ -359,18 +373,21 @@ public:
   bool spin() {
     while (ok() && !quit_) {
 
-	// Display all of the images.
-	cv_mutex_.lock();
+      // Display all of the images.
+      boost::mutex::scoped_lock lock(cv_mutex_);
+      //cv_mutex_.lock();
 
-	// Get user input and allow OpenCV to refresh windows.
-	int c = cvWaitKey(2);
-	c &= 0xFF;
-	// Quit on ESC, "q" or "Q"
-	if((c == 27)||(c == 'q')||(c == 'Q'))
-	  quit_ = true;
+      // Get user input and allow OpenCV to refresh windows.
+      int c = cvWaitKey(2);
+      c &= 0xFF;
+      // Quit on ESC, "q" or "Q"
+      if((c == 27)||(c == 'q')||(c == 'Q'))
+	quit_ = true;
 
-	cv_mutex_.unlock();
-	usleep(10000);
+      lock.unlock();
+      //cv_mutex_.unlock();
+ 
+      usleep(10000);
 
     }
     return true;
@@ -386,6 +403,7 @@ int main(int argc, char **argv)
   bool use_depth = true;
   bool do_display = true;
   bool external_init = true;
+  double reliability = 0.8;
 
   if (argc < 3) {
     cerr << "Node name ending and path to cascade file required.\n" << endl;
@@ -393,14 +411,17 @@ int main(int argc, char **argv)
   }
   char *haar_filename = argv[2];
   if (argc >= 4) {
-    do_display = atoi(argv[3]);
+    reliability = atof(argv[3]);
     if (argc >= 5) {
-      external_init = atoi(argv[4]);
+      do_display = atoi(argv[4]);
+      if (argc >= 6) {
+	external_init = atoi(argv[5]);
+      }
     }
   }
   ostringstream node_name;
   node_name << "face_detection_" << argv[1];
-  FaceDetector fd(node_name.str(), haar_filename, use_depth, do_display, external_init);
+  FaceDetector fd(node_name.str(), haar_filename, reliability, use_depth, do_display, external_init);
   
 
   fd.spin();

@@ -277,32 +277,27 @@ class DescriptorSchemeSAD(DescriptorScheme):
       else:
         return (i, 0)
 
-if 0:
-  import calonder
+import calonder
 
-  class DescriptorSchemeCalonder(DescriptorScheme):
-    def __init__(self):
-      self.cl = calonder.classifier()
-      #self.cl.setThreshold(0.0)
-      self.cl.read('/u/prdata/calonder_trees/land50.trees')
-      self.ma = calonder.BruteForceMatcher()
+class DescriptorSchemeCalonder(DescriptorScheme):
+  def __init__(self):
+    self.cl = calonder.classifier()
+    #self.cl.setThreshold(0.0)
+    self.cl.read('/u/prdata/calonder_trees/land50.trees')
 
-    def collect(self, frame):
-      frame.descriptors = []
-      im = Image.fromstring("L", frame.size, frame.rawdata)
-      frame.matcher = calonder.BruteForceMatcher()
-      for (x,y,d) in frame.kp:
-        patch = im.crop((x-16,y-16,x+16,y+16))
-        sig = self.cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-        frame.descriptors.append(sig)
-        frame.matcher.addSignature(sig)
+  def collect(self, frame):
+    frame.descriptors = []
+    im = Image.fromstring("L", frame.size, frame.rawdata)
+    frame.matcher = calonder.BruteForceMatcher(len(frame.kp))
+    for (x,y,d) in frame.kp:
+      patch = im.crop((x-16,y-16,x+16,y+16))
+      sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+      frame.descriptors.append(sig)
+      frame.matcher.addSignature(sig)
 
-    def search(self, di, af1, hits):
-      match = af1.matcher.findMatch(di, hits)
-      return match
-else:
-  class DescriptorSchemeCalonder(DescriptorScheme):
-    pass
+  def search(self, di, af1, hits):
+    match = af1.matcher.findMatch(di, hits)
+    return match
 
 uniq_track_id = 100
 
@@ -438,7 +433,7 @@ class VisualOdometer:
     self.num_frames += 1
     pairs = self.temporal_match(f0, f1)
     if len(pairs) > 10:
-      solution = self.solve(f0.kp, f1.kp, pairs, False)
+      solution = self.solve(f0.kp, f1.kp, pairs, True)
       (inl, rot, shift) = solution
       pose = self.mkpose(rot, shift)
       return (inl, pose)

@@ -358,7 +358,18 @@ void BaseControllerPos::getJointValues()
     speeds_are_valid = speeds_are_valid && !isinf(wheel_speed_actual_[i]) && !isnan(wheel_speed_actual_[i]);
 
   if(!speeds_are_valid)
+  {
     ROS_WARN("BaseControllerPos:: input speed values are inf or nan");
+    for(int i=0; i < num_wheels_; i++)
+    {
+      ROS_WARN("  wheel[%d] speed:%f\n",i,wheel_speed_actual_[i] );
+      wheel_speed_actual_[i] = 0;
+    }
+    for(int i=0; i < num_casters_; i++)
+    {
+      ROS_WARN("  steer[%d] angle:%f\n",i,steer_angle_actual_[i] );
+    }
+  }
 }
 
 void BaseControllerPos::computeWheelPositions()

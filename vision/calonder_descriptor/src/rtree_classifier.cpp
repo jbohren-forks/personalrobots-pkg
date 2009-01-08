@@ -164,7 +164,7 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
   posteriors = NULL;  
 
   // full quantization (experimental, later implicit)
-  #if 0
+  #if 1
     // find out the required right-shift needed to fit all sig values into an uint8_t
     int n_max = (1 << (8*sizeof(uint8_t))) - 1;
     int sum_max = ((1<<4) - 1)*trees_.size();

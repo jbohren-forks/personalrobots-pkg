@@ -75,9 +75,10 @@
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
-    <param name="move_base/controller_frequency" value="20.0"/>
-    <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <param name="move_base/controller_frequency" value="30.0"/>
+    <param name="move_base/planner_frequency" value="1.0"/>
+    <param name="move_base/plannerTimeLimit" value="0.5"/>
+    <param name="move_base/map_update_frequency" value="5.0"/>
     <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
     <param name="/costmap_2d/tilt_laser_max_range" value="2.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
@@ -88,6 +89,7 @@
     <param name="/costmap_2d/inflation_radius" value="0.65"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
 
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 10 Hz -->
@@ -99,7 +101,13 @@
     <!-- we don't have stereo data yet -->
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
 
-    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />
+    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
+    <param name="/trajectory_rollout/sim_time" value="1.0" />
+    <param name="/trajectory_rollout/sim_steps" value="40" />
+    <param name="/trajectory_rollout/samples_per_dim" value="10" />
+
+    <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />-->
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four"/>
 
     <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com raschemmel@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>

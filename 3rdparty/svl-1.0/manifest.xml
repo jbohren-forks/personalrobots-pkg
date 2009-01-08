@@ -1,6 +1,6 @@
 <package>
   <description>
-  The 'lite' version of the STAIR vision library.
+  The STAIR vision library.
   </description>
   <author>Stephen Gould, with ROS wrapping by Morgan Quigley</author>
   <license>BSD</license>
