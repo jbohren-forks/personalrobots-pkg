@@ -89,7 +89,7 @@ public:
     snprintf(id,100,"legtrack%d", nextid++);
     id_ = std::string(id);
 
-    object_id = "none";
+    object_id = "";
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
@@ -265,7 +265,7 @@ public:
           return; // This should instead check that it's still close
         else
         {
-          (*it)->object_id = "none";
+          (*it)->object_id = "";
         }
       }
     }
@@ -485,7 +485,7 @@ public:
         
           publish("people_tracker_measurements", pos);               
         }
-        else if ((*sf_iter)->object_id != "none")
+        else if ((*sf_iter)->object_id != "")
         {
           robot_msgs::PositionMeasurement pos;
 
