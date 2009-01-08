@@ -190,32 +190,54 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // r^2=y^2+z^2 with r = 1
   // x=1
 
-  double tmp_theta = atan2( endeffector_frame_.p(2),endeffector_frame_.p(1) );
+  // endeffector theta and radius from yz = (0,0)
+  double ee_theta = atan2( endeffector_frame_.p(2),endeffector_frame_.p(1) );
 
   double df_dx = 1.0; // we are describing a wall at constant x
-  double df_dy = -cos(tmp_theta); // radial lines toward origin
-  double df_dz =  sin(tmp_theta); // radial lines toward origin
+  double df_dy = -cos(ee_theta); // radial lines toward origin
+  double df_dz =  sin(ee_theta); // radial lines toward origin
 
-  // Constraint Jacobian
+  // Constraint Jacobian (normals to the constraint surface)
   constraint_jac_(1,1)= df_dx;
   constraint_jac_(2,2)= df_dy;
   constraint_jac_(3,3)= df_dz;
 
   // Contraint wrench 
-  //
-  // x-direction force is a function of endeffection distance from the wall
+
+  // x-direction force is a function of endeffector distance from the wall
   // @todo: FIXME: hardcoded wall at x=1
-  double x_distance = 1.0 - endeffector_fram_.p(0);
+  double x_wall = 1.0; /// @todo: hardcoded x wall location
+  double x_distance = x_wall - endeffector_fram_.p(0);
   double x_threshold = 0.2; //@todo: hardcoded wall threshold, activate constraint force if closer than this
   double f_x = 0;
+  double f_x_scale = 10; //@todo: f_x_scale * exp(distance) =  force applied in x direction
 
   // assign x-direction constraint force f_x if within range of the wall
   if (x_distance >0 && x_distance < x_threshold)
-    f_x = -exp(x_distance);
+  {
+    f_x = -exp(x_distance) * f_x_scale * df_dx; /// @todo: FIXME, some exponential function
+  }
   else if (x_distance <= 0)
-    ROS_ERROR("touching the wall %f\n",x_distance);
+    ROS_ERROR("x wall breach! by: %f m\n",x_distance);
 
+  /// yz-force magnitude is a function of endeffector distance from unit circle
+  double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + endeffector_frame_.p(2)*endeffector_frame_.p(2) );
+  double wall_radius = 1.0; /// @todo: hardcoded wall_radius
+  double r_distance = wall_radius - ee_radius;
+  double r_threshold = 0.2; //@todo: hardcoded wall threshold, activate constraint force if closer than this
+  double f_y_scale = 10; //@todo: f_y_scale * exp(distance) =  force applied in y direction
+  double f_z_scale = 10; //@todo: f_z_scale * exp(distance) =  force applied in z direction
+  double f_y = 0;
+  double f_z = 0;
 
+  // assign x-direction constraint force f_x if within range of the wall
+  if (r_distance > 0 && r_distance < r_threshold)
+  {
+    f_y = -exp(r_distance) * f_y_scale * df_dy; /// @todo: FIXME, some exponential function
+    f_z = -exp(r_distance) * f_z_scale * df_dz; /// @todo: FIXME, some exponential function
+  }
+  else if (r_distance <= 0)
+    ROS_ERROR("wall_radius breach! by: %f m\n",r_distance);
 }
 
 
