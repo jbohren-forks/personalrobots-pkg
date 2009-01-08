@@ -101,6 +101,9 @@
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
 
     <param name="/trajectory_rollout/occdist_scale" value="0.2" />
+    <param name="/trajectory_rollout/sim_time" value="1.0" />
+    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/samples_per_dim" value="10" />
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />
 
