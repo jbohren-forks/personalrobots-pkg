@@ -255,8 +255,8 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   node_->unadvertise_service(service_prefix_ + "/get_command");
   node_->unadvertise_service(service_prefix_ + "/set_target");
   */
-  node_->unadvertise_service("set_arm_traj_srv");
-  node_->unadvertise_service("query_arm_traj_srv");
+  node_->unadvertise_service("TrajectoryStart");
+  node_->unadvertise_service("TrajectoryQuery");
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -309,8 +309,8 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     node_->advertise_service(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
 */
 
-   node_->advertise_service("set_arm_traj_srv", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
-   node_->advertise_service("query_arm_traj_srv", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
+      node_->advertise_service("TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   node_->advertise_service("TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
    
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
