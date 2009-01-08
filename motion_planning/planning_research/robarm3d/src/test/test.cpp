@@ -1,7 +1,7 @@
 #include <iostream>
 #include "../headers.h"
 
-
+#define VERBOSE 1
 #define MAX_RUNTIME 40.0
 
 void PrintUsage(char *argv[])
@@ -14,7 +14,6 @@ int planrobarm(int argc, char *argv[])
     int bRet = 0;
     double allocated_time_secs = MAX_RUNTIME; //in seconds
     time_t t;
-//     time_t seconds;
     time(&t);
     MDPConfig MDPCfg;
 
@@ -54,7 +53,7 @@ int planrobarm(int argc, char *argv[])
     }
 
     //set epsilon
-    planner.set_initialsolution_eps(10.0);
+    planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
     //set search mode (true - settle with first solution)
     planner.set_search_mode(true);
@@ -69,9 +68,6 @@ int planrobarm(int argc, char *argv[])
 
     // create filename with current time
     string outputfile = "sol";
-//     seconds = (time(NULL))/3600;
-//     outputfile.append(ctime(&t));
-//     outputfile.append(itoa(seconds));
     outputfile.append(".txt");
 
     FILE* fSol = fopen(outputfile.c_str(), "w");
@@ -80,7 +76,13 @@ int planrobarm(int argc, char *argv[])
     }
     fclose(fSol);
 
+#if !USE_DH
     environment_robarm.CloseKinNode();
+#endif
+
+#if VERBOSE
+    environment_robarm.OutputPlanningStats();
+#endif
 
 //  	//print a path
 //     if(bRet)
@@ -92,17 +94,12 @@ int planrobarm(int argc, char *argv[])
 //         printf("Solution does not exist\n");
 // 
 //     fflush(NULL);
-    
+
     return bRet;
 }
 
 int main(int argc, char *argv[])
 {
-//     int argc2 = 0;
-//     char** argv2 = NULL;
-//     ros::init(argc2,argv2);
-//     ros::node calcFK_armplanner("calcFK_armplanner");
-
     if(argc != 2)
     {
         PrintUsage(argv);
@@ -111,9 +108,6 @@ int main(int argc, char *argv[])
 
     //robotarm planning
     planrobarm(argc, argv);
-
-//     ros::fini();
-//     sleep(1);
 
     return 0;
 }
