@@ -46,6 +46,7 @@
 #include "joy/Joy.h"
 #include "Eigen/SVD"
 #include "Eigen/Core"
+#include "robot_kinematics/robot_kinematics.h"
 
 
 namespace controller {
@@ -58,7 +59,7 @@ public:
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
-  void EndeffectorConstraintController::computeConstraintJacobian();
+  void computeConstraintJacobian();
   // input of the controller
   KDL::Wrench wrench_desi_;
 
@@ -68,12 +69,13 @@ private:
   // kdl stuff for kinematics
   KDL::Chain                 chain_;
   KDL::ChainJntToJacSolver*  jnt_to_jac_solver_;
+  KDL::ChainFkSolverPos* jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_; 
-  Matrix6f constraint_jac_;
-  Vector6f constraint_wrench_;
-  Frame endeffector_frame_;
+  Eigen::Matrix<float,6,6> constraint_jac_;
+  Eigen::Matrix<float,6,1> constraint_wrench_;
+  KDL::Frame endeffector_frame_;
 };
 
 

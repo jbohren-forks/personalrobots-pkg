@@ -33,7 +33,6 @@
 
 #include "urdf/parser.h"
 #include <algorithm>
-#include "robot_kinematics/robot_kinematics.h"
 #include "robot_mechanism_controllers/endeffector_constraint_controller.h"
 
 
@@ -49,6 +48,7 @@ ROS_REGISTER_CONTROLLER(EndeffectorConstraintController)
 
 EndeffectorConstraintController::EndeffectorConstraintController()
 : jnt_to_jac_solver_(NULL),
+  jnt_to_pose_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
 {
   constraint_jac_.setZero();
@@ -61,6 +61,7 @@ EndeffectorConstraintController::EndeffectorConstraintController()
 EndeffectorConstraintController::~EndeffectorConstraintController()
 {
   if (jnt_to_jac_solver_) delete jnt_to_jac_solver_;
+  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
 }
 
 
@@ -89,6 +90,7 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
+  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -215,7 +217,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // x-direction force is a function of endeffector distance from the wall
   // @todo: FIXME: hardcoded wall at x=1
   double x_wall = 1.0; /// @todo: hardcoded x wall location
-  double x_distance = x_wall - endeffector_fram_.p(0);
+  double x_distance = x_wall - endeffector_frame_.p(0);
   double x_threshold = 0.2; //@todo: hardcoded wall threshold, activate constraint force if closer than this
   double f_x = 0;
   double f_x_scale = 10; //@todo: f_x_scale * exp(distance) =  force applied in x direction
