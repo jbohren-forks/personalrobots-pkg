@@ -1,11 +1,7 @@
 <launch>
 
-<!-- Joystick -->
-<!--
-  <node pkg="spacenav_node" type="spacenav_node" />
--->
-
-<!-- Arm twist controller -->
+<!-- Arm trajectory controller -->
+  <param name="right_arm_controller/velocity_scaling_factor" type="double" value="0.25"/>
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/trajectory_controllers.xml" />
 
@@ -16,6 +12,8 @@
   <param name="joy_axis" value="2"/>
   <param name="joy_dead_zone" value="0.2"/>
 
+<!--
   <node pkg="teleop_joint_effort" type="teleop_joint_effort_button.py" output="screen" />
+-->
 
 </launch>
