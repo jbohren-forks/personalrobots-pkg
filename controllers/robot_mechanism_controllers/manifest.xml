@@ -19,6 +19,7 @@
   <depend package="kdl" />
   <depend package="angles" />
   <depend package="joy" />
+  <depend package="eigen" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
