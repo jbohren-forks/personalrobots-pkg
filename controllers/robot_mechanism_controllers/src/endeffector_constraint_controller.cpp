@@ -174,13 +174,18 @@ void EndeffectorConstraintController::update()
   jnt_to_pose_solver_->JntToCart(jnt_pos, endeffector_frame_);
   
   computeConstraintJacobian();
-  
+  // multiply constraint jacobian by constraint wrench 
+  constraint_wrench_ = constraint_jac_ * constraint_wrench_;
+
   // convert the wrench into joint torques
   JntArray jnt_torq(num_joints_);
   for (unsigned int i=0; i<num_joints_; i++){
     jnt_torq(i) = 0;
     for (unsigned int j=0; j<6; j++)
-      jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
+    {
+      //jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
+      jnt_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
+    }
     joints_[i]->commanded_effort_ = jnt_torq(i);
   }
 }
