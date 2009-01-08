@@ -45,7 +45,8 @@ include_directories(${PYTHON_INCLUDE_PATH})
 
 rospack_add_executable(leg_detector 
                        src/leg_detector.cpp 
-                       src/calc_leg_features.cpp)
+                       src/calc_leg_features.cpp
+                       src/filter/tracker_kalman.cpp)
 
 rospack_add_executable(train_leg_detector 
                        src/train_leg_detector.cpp 

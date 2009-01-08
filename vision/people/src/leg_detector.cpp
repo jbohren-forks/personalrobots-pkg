@@ -47,9 +47,21 @@
 
 #include "tf/transform_listener.h"
 
+#include "filter/tracker_kalman.h"
+#include "filter/state_pos_vel.h"
+#include "filter/state_vector.h"
+#include "filter/rgb.h"
+
+#include <algorithm>
+
 using namespace std;
 using namespace laser_processor;
 using namespace ros;
+
+using namespace estimation;
+using namespace BFL;
+
+using namespace MatrixWrapper;
 
 class SavedFeature
 {
@@ -58,60 +70,97 @@ public:
   string id_;
   string object_id;
   ros::Time time_;
-  //  list< tf::Stamped<tf::Point> > loc_hist_;
+  ros::Time meas_time_;
   vector<char>     color_;
 
-  SavedFeature(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
+  tf::TransformListener& tfl_;
+
+  BFL::StatePosVel sys_sigma_;
+  TrackerKalman filter_;
+
+  tf::Stamped<tf::Point> prop_loc_;
+
+  SavedFeature(tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
+    : tfl_(tfl)
+    , sys_sigma_(tf::Vector3(0.05/20.0,0.05/20.0,0.05/20.0), tf::Vector3(1.0/20.0,1.0/20.0,1.0/20.0))
+    , filter_(sys_sigma_)
   {
-    //    id_ = std::string("track") + id;
     char id[100];
     snprintf(id,100,"legtrack%d", nextid++);
     id_ = std::string(id);
 
     object_id = "none";
-    time_ = scan.header.stamp;
-    //    loc_hist_.push_back(loc);
+    time_ = loc.stamp_;
+    meas_time_ = loc.stamp_;
 
     tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
-    tfl.setTransform(pose);
+    tfl_.setTransform(pose);
+
+    StatePosVel prior_sigma(StateVector(0.1,0.1,0.1), StateVector(0.0000001, 0.0000001, 0.0000001));
+    filter_.initialize(loc, prior_sigma, time_.toSec());    
 
     color_.push_back(rand()%255);
     color_.push_back(rand()%255);
     color_.push_back(rand()%255);
   }
 
-  void update(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
+  void propagate(ros::Time time)
   {
+    ros::Duration dt = time - time_;
+    time_ = time;
 
+    filter_.updatePrediction(dt.toSec());
+
+    StatePosVel est;
+    filter_.getEstimate(est);
+
+    prop_loc_[0] = est.pos_[0];
+    prop_loc_[1] = est.pos_[1];
+    prop_loc_[2] = est.pos_[2];
+    prop_loc_.stamp_ = time;
+    prop_loc_.frame_id_ = "odom";
+
+    /*
+    tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  meas_time_, id_);
+    tf::Stamped<tf::Point> inter_loc;
+
+    tfl_.transformPoint("odom", orig_loc, inter_loc);
+      
+    inter_loc.stamp_ = time_;
+      
+    tfl_.transformPoint("odom", inter_loc, prop_loc_);
+    */
+    
+  }
+
+  void update(tf::Stamped<tf::Point> loc)
+  {
     tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
-    tfl.setTransform(pose);
+    tfl_.setTransform(pose);
 
-    time_ = scan.header.stamp;
-    //    loc_hist_.push_back(loc);
-    //    if (loc_hist_.size() > 20) // Make this time dependent somehow
-    //      loc_hist_.pop_front();
+    meas_time_ = loc.stamp_;
+    time_ = meas_time_;
+
+    SymmetricMatrix cov(3);
+    cov = 0.0;
+    cov(1,1) = 0.0025;
+    cov(2,2) = 0.0025;
+    cov(3,3) = 0.0025;
+
+    filter_.updateCorrection(loc, cov, time_.toSec());
   }
 };
 
 int SavedFeature::nextid = 0;
 
-class PropagatedFeature
-{
-public:
-  list<SavedFeature>::iterator saved_;
-  tf::Stamped<tf::Point> loc_;
-
-  PropagatedFeature(list<SavedFeature>::iterator saved, tf::Stamped<tf::Point> loc) : saved_(saved), loc_(loc) { }
-};
-
 class MatchedFeature
 {
 public:
-  list<SampleSet*>::iterator candidate_;
-  list<PropagatedFeature>::iterator closest_;
+  SampleSet* candidate_;
+  SavedFeature* closest_;
   float distance_;
 
-  MatchedFeature(list<SampleSet*>::iterator candidate, list<PropagatedFeature>::iterator closest, float distance)
+  MatchedFeature(SampleSet* candidate, SavedFeature* closest, float distance)
   : candidate_(candidate)
   , closest_(closest)
   , distance_(distance)
@@ -129,7 +178,7 @@ public:
   tf::TransformListener tfl_;
 
   std_msgs::LaserScan scan_;
-  std_msgs::PointCloud cloud_;
+  std_msgs::PointCloud filt_cloud_;
 
   ScanMask mask_;
 
@@ -143,7 +192,7 @@ public:
 
   char save_[100];
 
-  list<SavedFeature> saved_features_;
+  list<SavedFeature*> saved_features_;
   boost::mutex saved_mutex_;
 
   int feature_id_;
@@ -154,7 +203,7 @@ public:
 
   robot_msgs::PositionMeasurement people_meas_;
 
-  LegDetector() : node("laser_processor"), tfl_(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0), max_track_jump_(0.5), max_meas_jump_(0.5)
+  LegDetector() : node("laser_processor"), tfl_(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0), max_track_jump_(1.0), max_meas_jump_(1.0)
   {
     if (argc > 1) {
       forest.load(argv[1]);
@@ -165,11 +214,12 @@ public:
       self_destruct();
     }
 
-    tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.1));
+    tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.4));
 
 
     subscribe("scan", scan_, &LegDetector::laserCallback, 10);
     advertise<std_msgs::PointCloud>("filt_cloud",10);
+    advertise<std_msgs::PointCloud>("kalman_filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     subscribe("people_tracker_filter", people_meas_, &LegDetector::peopleCallback, 10);
 
@@ -186,22 +236,18 @@ public:
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
-    list<SavedFeature>::iterator closest = saved_features_.end();
+    list<SavedFeature*>::iterator closest = saved_features_.end();
     float closest_dist = max_meas_jump_;
       
-    list<SavedFeature>::iterator it  = saved_features_.begin();
-    list<SavedFeature>::iterator end = saved_features_.end();
+    list<SavedFeature*>::iterator it  = saved_features_.begin();
+    list<SavedFeature*>::iterator end = saved_features_.end();
 
     for (; it != end; ++it )
     {
-      // If we're already tracking the object
-      if (it->object_id == people_meas_.object_id)
-        return; // This should instead check that it's still close
-
       tf::Stamped<tf::Point> loc(pt, people_meas_.header.stamp, people_meas_.header.frame_id);
 
 
-      tfl_.transformPoint(it->id_, people_meas_.header.stamp,
+      tfl_.transformPoint((*it)->id_, people_meas_.header.stamp,
                             loc, "odom", loc);
       loc[2] = 0.0;
       
@@ -211,19 +257,30 @@ public:
         closest = it;
         closest_dist = dist;
       }
+
+      // If we're already tracking the object
+      if ((*it)->object_id == people_meas_.object_id)
+      {
+        if (dist < max_meas_jump_)
+          return; // This should instead check that it's still close
+        else
+        {
+          (*it)->object_id = "none";
+        }
+      }
     }
 
     if (closest_dist < max_meas_jump_)
-      closest->object_id = people_meas_.object_id;
+      (*closest)->object_id = people_meas_.object_id;
   }
 
   void laserCallback()
   {
 
-    cloud_.pts.clear();
-    cloud_.chan.clear();
-    cloud_.chan.resize(1);
-    cloud_.chan[0].name = "rgb";
+    filt_cloud_.pts.clear();
+    filt_cloud_.chan.clear();
+    filt_cloud_.chan.resize(1);
+    filt_cloud_.chan[0].name = "rgb";
 
     ScanProcessor processor(scan_, mask_);
 
@@ -232,13 +289,16 @@ public:
 
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
 
-    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-2.0);
+    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-5.0);
 
-    list<SavedFeature>::iterator sf_iter = saved_features_.begin();
+    list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
     while (sf_iter != saved_features_.end())
     {
-      if (sf_iter->time_ < purge)
+      if ((*sf_iter)->meas_time_ < purge)
+      {
+        delete (*sf_iter);
         saved_features_.erase(sf_iter++);
+      }
       else
         ++sf_iter;
     }
@@ -261,47 +321,34 @@ public:
       }
     }
 
-    // Transform our saved features forward in time.
-    list<PropagatedFeature> propagated;
-    for (list<SavedFeature>::iterator sf_iter = saved_features_.begin();
+    list<SavedFeature*> propagated;
+    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
          sf_iter != saved_features_.end();
          sf_iter++)
     {
-      tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  sf_iter->time_, sf_iter->id_);
-      tf::Stamped<tf::Point> inter_loc;
-      tf::Stamped<tf::Point> prop_loc;
-
-        //        tfl_.transformPoint(scan_.header.frame_id, scan_.header.stamp,
-        //                            orig_loc, "odom", prop_loc);
-
-      
-      tfl_.transformPoint("odom", orig_loc, inter_loc);
-
-      inter_loc.stamp_ = scan_.header.stamp;
-
-      tfl_.transformPoint(scan_.header.frame_id, inter_loc, prop_loc);
-
-      propagated.push_back(PropagatedFeature(sf_iter, prop_loc));
+      (*sf_iter)->propagate(scan_.header.stamp);
+      propagated.push_back(*sf_iter);
     }
 
     multiset<MatchedFeature> matches;
 
     //Find point which is closest to a saved feature, within threshold
-    for (list<SampleSet*>::iterator i = candidates.begin();
-         i != candidates.end();
-         i++)
+    for (list<SampleSet*>::iterator cf_iter = candidates.begin();
+         cf_iter != candidates.end();
+         cf_iter++)
     {
-      tf::Stamped<tf::Point> loc((*i)->center(), scan_.header.stamp, scan_.header.frame_id);
+      tf::Stamped<tf::Point> loc((*cf_iter)->center(), scan_.header.stamp, scan_.header.frame_id);
+      tfl_.transformPoint("odom", loc, loc);
 
-      list<PropagatedFeature>::iterator closest = propagated.end();
+      list<SavedFeature*>::iterator closest = propagated.end();
       float closest_dist = max_track_jump_;
       
-      for (list<PropagatedFeature>::iterator pf_iter = propagated.begin();
+      for (list<SavedFeature*>::iterator pf_iter = propagated.begin();
            pf_iter != propagated.end();
            pf_iter++)
       {
         // If it is close to a saved feature
-        float dist = loc.distance(pf_iter->loc_);
+        float dist = loc.distance((*pf_iter)->prop_loc_);
         if ( dist < closest_dist )
         {
           closest = pf_iter;
@@ -311,13 +358,13 @@ public:
       
       if (closest == propagated.end()) // Nothing close to it, start a new track
       {
-        list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, tfl_));
+        list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
 
-        (*i)->appendToCloud(cloud_, new_saved->color_[0], new_saved->color_[1], new_saved->color_[2]);
+        (*cf_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
       }
       else
       {
-        matches.insert(MatchedFeature(i,closest,closest_dist));
+        matches.insert(MatchedFeature(*cf_iter,*closest,closest_dist));
       }
     }
 
@@ -325,16 +372,18 @@ public:
     {
       multiset<MatchedFeature>::iterator matched_iter = matches.begin();
       bool found = false;
-      list<PropagatedFeature>::iterator pf_iter = propagated.begin();
+      list<SavedFeature*>::iterator pf_iter = propagated.begin();
       while (pf_iter != propagated.end())
       {
-        if (matched_iter->closest_ == pf_iter)
+        if (matched_iter->closest_ == *pf_iter)
         {
           // It was actually the closest... do our thing
-          tf::Stamped<tf::Point> loc((*matched_iter->candidate_)->center(), scan_.header.stamp, scan_.header.frame_id);
-          matched_iter->closest_->saved_->update(scan_, loc,tfl_);
+          tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan_.header.stamp, scan_.header.frame_id);
+          tfl_.transformPoint("odom", loc, loc);          
+
+          matched_iter->closest_->update(loc);
           
-          (*matched_iter->candidate_)->appendToCloud(cloud_, matched_iter->closest_->saved_->color_[0], matched_iter->closest_->saved_->color_[1], matched_iter->closest_->saved_->color_[2]);
+          matched_iter->candidate_->appendToCloud(filt_cloud_, matched_iter->closest_->color_[0], matched_iter->closest_->color_[1], matched_iter->closest_->color_[2]);
 
           matches.erase(matched_iter);
           propagated.erase(pf_iter++);
@@ -349,17 +398,18 @@ public:
       if (!found)
       {
         // Search for new closest:
-        tf::Stamped<tf::Point> loc((*matched_iter->candidate_)->center(), scan_.header.stamp, scan_.header.frame_id);
+        tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan_.header.stamp, scan_.header.frame_id);
+        tfl_.transformPoint("odom", loc, loc);
 
-        list<PropagatedFeature>::iterator closest = propagated.end();
+        list<SavedFeature*>::iterator closest = propagated.end();
         float closest_dist = max_track_jump_;
       
-        for (list<PropagatedFeature>::iterator remain_iter = propagated.begin();
+        for (list<SavedFeature*>::iterator remain_iter = propagated.begin();
              remain_iter != propagated.end();
              remain_iter++)
         {
           // If it is close to a saved feature
-          float dist = loc.distance(remain_iter->loc_);
+          float dist = loc.distance((*remain_iter)->prop_loc_);
           if ( dist < closest_dist )
           {
             closest = remain_iter;
@@ -369,63 +419,110 @@ public:
 
         if (closest == propagated.end())
         {
-          list<SavedFeature>::iterator new_saved = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, tfl_));
+          list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
 
-          (*matched_iter->candidate_)->appendToCloud(cloud_, new_saved->color_[0], new_saved->color_[1], new_saved->color_[2]);
+          matched_iter->candidate_->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
           matches.erase(matched_iter);
         }
         else
         {
-          matches.insert(MatchedFeature(matched_iter->candidate_,closest,closest_dist));
+          matches.insert(MatchedFeature(matched_iter->candidate_,*closest,closest_dist));
           matches.erase(matched_iter);
         }
       }
     }
 
-    cloud_.header = scan_.header;
-    publish("filt_cloud", cloud_);
+    filt_cloud_.header.stamp = scan_.header.stamp;
+    filt_cloud_.header.frame_id = scan_.header.frame_id;
+    publish("filt_cloud", filt_cloud_);
     cvReleaseMat(&tmp_mat);
 
-    for (list<SavedFeature>::iterator sf_iter = saved_features_.begin();
+    vector<std_msgs::Point32> filter_visualize(saved_features_.size());
+    vector<float> weights(saved_features_.size());
+    std_msgs::ChannelFloat32 channel;
+    int i = 0;
+
+    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
          sf_iter != saved_features_.end();
-         sf_iter++)
+         sf_iter++,i++)
     {
+      // publish filter result
+      StatePosVel est;
+      (*sf_iter)->filter_.getEstimate(est);
+      
+      filter_visualize[i].x = est.pos_[0];
+      filter_visualize[i].y = est.pos_[1];
+      filter_visualize[i].z = est.pos_[2];
 
-      if (sf_iter->object_id != "none" && sf_iter->time_ == scan_.header.stamp)
+      int rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | (*sf_iter)->color_[2];
+
+      weights[i] = *(float*)&(rgb);
+
+      if ((*sf_iter)->meas_time_ == scan_.header.stamp)
       {
+        if (est.vel_.length() > 0.5)
+        {
+          robot_msgs::PositionMeasurement pos;
 
-
-        tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  ros::Time(), sf_iter->id_);
-        tf::Stamped<tf::Point> prop_loc;
-
-
-        tfl_.transformPoint(scan_.header.frame_id, scan_.header.stamp,
-                          orig_loc, "odom", prop_loc);
-
-        robot_msgs::PositionMeasurement pos;
-
-        pos.header.stamp = sf_iter->time_;
-        pos.header.frame_id = scan_.header.frame_id;
-        pos.name = "leg_detector";
-        pos.object_id = sf_iter->object_id;
-
-        tf::PointTFToMsg(prop_loc,pos.pos);
-
-        pos.reliability = 0.7;
-        pos.covariance[0] = 0.09;
-        pos.covariance[1] = 0.0;
-        pos.covariance[2] = 0.0;
-        pos.covariance[3] = 0.0;
-        pos.covariance[4] = 0.09;
-        pos.covariance[5] = 0.0;
-        pos.covariance[6] = 0.0;
-        pos.covariance[7] = 0.0;
-        pos.covariance[8] = 10000.0;
-        pos.initialization = 0;
+          pos.header.stamp = (*sf_iter)->time_;
+          pos.header.frame_id = "odom";
+          pos.name = "leg_detector";
+          pos.object_id = (*sf_iter)->object_id;
+          pos.pos.x = est.pos_[0];
+          pos.pos.y = est.pos_[1];
+          pos.pos.z = est.pos_[2];
+          pos.reliability = 0.80;
+          pos.covariance[0] = 0.09;
+          pos.covariance[1] = 0.0;
+          pos.covariance[2] = 0.0;
+          pos.covariance[3] = 0.0;
+          pos.covariance[4] = 0.09;
+          pos.covariance[5] = 0.0;
+          pos.covariance[6] = 0.0;
+          pos.covariance[7] = 0.0;
+          pos.covariance[8] = 10000.0;
+          pos.initialization = 0;
         
-        publish("people_tracker_measurements", pos);        
+          publish("people_tracker_measurements", pos);               
+        }
+        else if ((*sf_iter)->object_id != "none")
+        {
+          robot_msgs::PositionMeasurement pos;
+
+          pos.header.stamp = (*sf_iter)->time_;
+          pos.header.frame_id = "odom";
+          pos.name = "leg_detector";
+          pos.object_id = (*sf_iter)->object_id;
+          pos.pos.x = est.pos_[0];
+          pos.pos.y = est.pos_[1];
+          pos.pos.z = est.pos_[2];
+          pos.reliability = 0.5;
+          pos.covariance[0] = 0.09;
+          pos.covariance[1] = 0.0;
+          pos.covariance[2] = 0.0;
+          pos.covariance[3] = 0.0;
+          pos.covariance[4] = 0.09;
+          pos.covariance[5] = 0.0;
+          pos.covariance[6] = 0.0;
+          pos.covariance[7] = 0.0;
+          pos.covariance[8] = 10000.0;
+          pos.initialization = 0;
+        
+          publish("people_tracker_measurements", pos);        
+        }
       }
     }
+
+    // visualize all trackers
+    channel.name = "rgb";
+    channel.vals = weights;
+    std_msgs::PointCloud  people_cloud; 
+    people_cloud.chan.push_back(channel);
+    people_cloud.header.frame_id = "odom";//scan_.header.frame_id;
+    people_cloud.header.stamp = scan_.header.stamp;
+    people_cloud.pts  = filter_visualize;
+    publish("kalman_filt_cloud", people_cloud);
+
   }
 
 };
