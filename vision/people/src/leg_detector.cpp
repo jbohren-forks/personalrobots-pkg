@@ -83,7 +83,7 @@ public:
   SavedFeature(tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
     : tfl_(tfl)
     , sys_sigma_(tf::Vector3(0.05/20.0,0.05/20.0,0.05/20.0), tf::Vector3(1.0/20.0,1.0/20.0,1.0/20.0))
-    , filter_(sys_sigma_)
+    , filter_("tracker_name",sys_sigma_)
   {
     char id[100];
     snprintf(id,100,"legtrack%d", nextid++);
