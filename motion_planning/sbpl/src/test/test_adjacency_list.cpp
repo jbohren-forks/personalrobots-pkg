@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../discrete_space_information/precomputed_adjacency_list/precomputed_adjacency_list.h"
+#include "../discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h"
 
 
 int main (int, char**)

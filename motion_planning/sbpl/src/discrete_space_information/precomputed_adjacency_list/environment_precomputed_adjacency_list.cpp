@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "precomputed_adjacency_list.h"
+#include "environment_precomputed_adjacency_list.h"
 
 
 AdjacencyListSBPLEnv::AdjacencyListSBPLEnv (vector<StateId> stateIds, vector<AdjacentStateVector> adjacencyVector, StateId startState, StateId goalState)

@@ -6,7 +6,7 @@ include_directories(${PROJECT_SOURCE_DIR}/code)
 rospack_add_library(sbpl 
                          src/discrete_space_information/nav2d/environment_nav2D.cpp
                          src/discrete_space_information/nav3dkin/environment_nav3Dkin.cpp
-			 src/discrete_space_information/precomputed_adjacency_list/precomputed_adjacency_list.cpp
+			 src/discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.cpp
                          src/discrete_space_information/navxythetalat/environment_navxythetalat.cpp
                          src/discrete_space_information/template/environment_XXX.cpp
                          src/discrete_space_information/robarm/environment_robarm.cpp
