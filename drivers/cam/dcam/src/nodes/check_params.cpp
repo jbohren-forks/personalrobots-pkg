@@ -42,13 +42,13 @@ class CheckParams : public ros::node
 public:
   CheckParams() : ros::node("param_checker")
   {
-    advertise<std_msgs::Empty>("stereodcam/check_params");
+    advertise<std_msgs::Empty>("stereo/check_params",1);
     
     usleep(100000);
 
     std_msgs::Empty e;
     
-    publish("stereodcam/check_params", e);
+    publish("stereo/check_params", e);
 
     usleep(100000);
   }
