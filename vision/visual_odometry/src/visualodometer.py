@@ -270,6 +270,7 @@ class DescriptorSchemeSAD(DescriptorScheme):
       frame.lgrad = " " * (frame.size[0] * frame.size[1])
       VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
     frame.descriptors = [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
+    frame.matcher = None
 
   def search(self, di, af1, hits):
       i = VO.sad_search(di, af1.descriptors, hits)
