@@ -85,7 +85,7 @@ skel = Skeleton(stereo_cam)
 
 ground_truth = []
 started = time.time()
-for i in range(100):
+for i in range(601):
   print i
   if 0:
     desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
@@ -150,6 +150,15 @@ for id in sorted([ f.id for f in skel.nodes ]):
   xyz,euler = skel.pg.vertex(id)
   newpose = from_xyz_euler(xyz, euler)
   sgd.append(newpose)
+
+for vo in vos:
+  print vo.name()
+  print "distance from start:", vo.pose.distance()
+  vo.summarize_timers()
+  print vo.log_keyframes
+  print
+
+skel.summarize_timers()
 
 pylab.plot([x for (x,y,z) in ground_truth], [z for (x,y,z) in ground_truth], c = 'green', label = 'ground truth')
 plot_poses(vo.log_keyposes, 'red', 'from VO')
