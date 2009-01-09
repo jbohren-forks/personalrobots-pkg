@@ -1,0 +1,21 @@
+<package>
+  <description>
+    A node which annotates 3D point cloud data with semantic labels.
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="cloud_io" />
+  <depend package="sample_consensus" />
+  <depend package="cloud_octree" />
+  <depend package="cloud_geometry" />
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
+
+</package>
