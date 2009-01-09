@@ -51,11 +51,13 @@ mesh.point_data.scalars.name = 'scalars'
 # Now view the data.
 def view():
     from enthought.mayavi.sources.vtk_data_source import VTKDataSource
+    from enthought.mayavi.modules.outline import Outline
     from enthought.mayavi.modules.surface import Surface
 
     mayavi.new_scene()
     src = VTKDataSource(data = mesh)
     mayavi.add_source(src)
+    mayavi.add_module(Outline())
     s = Surface()
     mayavi.add_module(s)
 
