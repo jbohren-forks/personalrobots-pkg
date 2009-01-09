@@ -5,6 +5,7 @@
 #include <cmath>
 #include <stdint.h>
 #include <emmintrin.h>
+#include <cstdio> // TODO: remove, debug only
 
 namespace features {
 
@@ -69,22 +70,21 @@ inline int L1Distance_176(const uint8_t *s1, const uint8_t *s2)
   __m128i acc, *acc1, *acc2;
   acc1 = (__m128i *)s1;
   acc2 = (__m128i *)s2;
-  
-  // abs diff of columns
-  
-  acc = _mm_sad_epu8(*acc1,*acc2);
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+1),*(acc2+1)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+2),*(acc2+2)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+3),*(acc2+3)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+4),*(acc2+4)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+5),*(acc2+5)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+6),*(acc2+6)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+7),*(acc2+7)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+8),*(acc2+8)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+9),*(acc2+9)));
-  acc = _mm_add_epi16(acc,_mm_sad_epu8(*(acc1+10),*(acc2+10)));
 
-  acc = _mm_add_epi16(acc,_mm_srli_si128(acc,4)); // add both halves
+  // abs diff of columns
+  acc = _mm_sad_epu8(acc1[0],acc2[0]);
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[1], acc2[1]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[2], acc2[2]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[3], acc2[3]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[4], acc2[4]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[5], acc2[5]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[6], acc2[6]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[7], acc2[7]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[8], acc2[8]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[9], acc2[9]));
+  acc = _mm_add_epi16(acc, _mm_sad_epu8(acc1[10], acc2[10]));
+
+  acc = _mm_add_epi16(acc, _mm_srli_si128(acc, 8)); // add both halves
   return _mm_cvtsi128_si32(acc);
 #else
   #error "just to let you know: using unoptimized L1 distance! now uncomment this line"
@@ -100,7 +100,7 @@ template<> struct L1DistanceFunc<float>
 {
   int dim;
   L1DistanceFunc(int dimension) : dim(dimension) {}
-  float operator()(const float* a, const float* b) const {
+  inline float operator()(const float* a, const float* b) const {
     return L1Distance(dim, a, b);
   }
 };
@@ -109,8 +109,8 @@ template<> struct L1DistanceFunc<float>
 template<> struct L1DistanceFunc<uint8_t>
 {
   L1DistanceFunc(int = 0) {}
-  int operator()(const uint8_t* a, const uint8_t* b) const {
-    return L1Distance(176, a, b);   // _176 stripped off, added 176 (argument)
+  inline int operator()(const uint8_t* a, const uint8_t* b) const {
+    return L1Distance_176(a, b);
   }
 };
 

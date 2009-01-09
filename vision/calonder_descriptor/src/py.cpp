@@ -13,9 +13,13 @@
 
 using namespace features;
 
+typedef float SigType;
+//typedef uint8_t SigType;
+typedef Promote<SigType>::type DistanceType;
+
 typedef struct {
   PyObject_HEAD
-  BruteForceMatcher <float, int> *c;
+  BruteForceMatcher <SigType, int> *c;
   std::vector<PyObject*> *sigs;
 } wrapped_BruteForceMatcher_t;
 
@@ -86,14 +90,14 @@ PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
   int dimension;
   if (!PyArg_ParseTuple(args, "i", &dimension))
     return NULL;
-  object->c = new BruteForceMatcher <float, int>(dimension);
+  object->c = new BruteForceMatcher <SigType, int>(dimension);
   object->sigs = new std::vector<PyObject*>;
   return (PyObject*)object;
 }
 
 typedef struct {
   PyObject_HEAD
-  float *data;
+  SigType *data;
   int size;
 } signature_t;
 
@@ -243,7 +247,7 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   classifier_t *pc = (classifier_t*)self;
   signature_t *object = PyObject_NEW(signature_t, &signature_Type);
   object->size = pc->classifier->classes();
-  posix_memalign((void**)&object->data, 16, object->size * sizeof(float));
+  posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
   pc->classifier->getSignature(input, object->data);
   return (PyObject*)object;
 }
@@ -291,7 +295,7 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
     return NULL;
   signature_t *ps = (signature_t*)sig;
 
-  float distance;
+  DistanceType distance;
   int index;
   if (predicates == NULL)
     index = pm->c->findMatch(ps->data, &distance);
