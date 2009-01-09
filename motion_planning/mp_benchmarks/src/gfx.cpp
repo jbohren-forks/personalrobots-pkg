@@ -440,6 +440,8 @@ namespace {
     glMatrixMode(GL_MODELVIEW);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
+    // workaround for segfault on glTranslated(iw->x, iw->y, 0);
+#ifdef UNDEFINED
     if (detailed) {
       // trace of thin footprints or inscribed circles along path
       double const llen(configptr->inscribedRadius / configptr->resolution / 2);
@@ -471,6 +473,7 @@ namespace {
 	    }
       }
     }
+#endif // UNDEFINED
     
     // start and goal, with inscribed, circumscribed, and thick footprint
     SBPLBenchmarkSetup::tasklist_t const & tl(configptr->setup.getTasks());
