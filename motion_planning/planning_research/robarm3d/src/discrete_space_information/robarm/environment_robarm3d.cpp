@@ -621,7 +621,7 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
     for(i = 0; i < NUMOFLINKS; i++)
     {
         fscanf(fCfg, "%s", sTemp);
-        EnvROBARMCfg.PosMotorLimits[i] = DEG2RAD(atof(sTemp));
+        EnvROBARMCfg.PosMotorLimits[i] = atof(sTemp);
     }
 
     //negmotorlimits(degrees)
@@ -629,7 +629,7 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
     for(i = 0; i < NUMOFLINKS; i++)
     {
         fscanf(fCfg, "%s", sTemp);
-        EnvROBARMCfg.NegMotorLimits[i] = DEG2RAD(atof(sTemp));
+        EnvROBARMCfg.NegMotorLimits[i] = atof(sTemp);
     }
 
     //allocate the 3D environment & fill set all cells to zero
