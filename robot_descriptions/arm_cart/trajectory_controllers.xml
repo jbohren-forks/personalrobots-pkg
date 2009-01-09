@@ -51,7 +51,7 @@
 
     <controller name="r_gripper_l_finger_controller" type="JointPDController">
       <joint name="r_gripper_l_finger_joint">
-        <pid p="10" i="0.1" d="0.5" iClamp="10.0" />
+        <pid p="20" i="0.4" d="0.5" iClamp="20.0" />
       </joint>
     </controller>
 
