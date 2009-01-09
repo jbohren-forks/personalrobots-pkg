@@ -79,8 +79,24 @@ public:
 
       tf::Stamped<tf::Transform> transform ;
 
-      tf_.lookupTransform(fixed_frame_, scan_in.header.frame_id, ray_time, transform) ;
-
+      try{
+        tf_.lookupTransform(fixed_frame_, scan_in.header.frame_id, ray_time, transform) ;
+      }
+      catch(tf::LookupException& ex) {
+        ROS_INFO("No Transform available Error\n");
+        continue;
+      }
+      catch(tf::ConnectivityException& ex) {
+        ROS_INFO("Connectivity Error\n");
+        continue;
+      }
+      catch(tf::ExtrapolationException& ex) {
+        ROS_INFO("Extrapolation Error\n");
+        continue;
+      }
+      catch(tf::TransformException e) {
+        continue;
+      }
       tf::PoseStampedTFToMsg(transform, scan_annotated.poses[i]) ;
     }
 
