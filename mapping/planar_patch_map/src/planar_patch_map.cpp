@@ -83,7 +83,7 @@ class PlanarPatchMap: public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlanarPatchMap () : ros::node ("planar_patch_map")
     {
-      param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 8);
+      param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 10);
 
       param ("~distance_min", d_min_, 0.10);
       param ("~distance_max", d_max_, 5.0);
@@ -111,7 +111,6 @@ class PlanarPatchMap: public ros::node
       sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, 0.02);
       model->setDataSet (points, indices);
 
-      PointCloud pts (*points);
       // Search for the best plane
       if (sac->computeModel ())
       {
@@ -150,7 +149,7 @@ class PlanarPatchMap: public ros::node
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO (" Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
 
       int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
       if (d_idx != -1)
@@ -172,7 +171,7 @@ class PlanarPatchMap: public ros::node
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("> Created octree with %d leaves (%d ndivs) in %g seconds.", octree_->getNumLeaves (), octree_->getNumCells (), time_spent);
+      ROS_INFO ("Created octree with %d leaves (%d ndivs) in %g seconds.", octree_->getNumLeaves (), octree_->getNumCells (), time_spent);
 
       // Initialize the polygonal map
       PolygonalMap pmap;
@@ -196,7 +195,7 @@ class PlanarPatchMap: public ros::node
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      fprintf (stderr, "> Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.\n", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
+      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
       publish ("planar_map", pmap);
 
       delete octree_;
