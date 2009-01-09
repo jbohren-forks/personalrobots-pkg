@@ -221,7 +221,7 @@ EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
   ros::node *node = ros::node::instance();
 
   node->unsubscribe(topic_ + "/command");
-  node->unsubscribe(topic_ + "spacenav/joy");
+  node->unsubscribe("spacenav/joy");
 }
 
 
@@ -246,12 +246,10 @@ bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXml
   // subscribe to twist commands
   node->subscribe(topic_ + "/command", twist_msg_,
                   &EndeffectorTwistControllerNode::command, this, 1);
-  guard_command_.set(topic_ + "/command");
 
   // subscribe to joystick commands
   node->subscribe("spacenav/joy", joystick_msg_,
                   &EndeffectorTwistControllerNode::joystick, this, 1);
-  guard_command_.set("spacenav/joy");
 
   return true;
 }
