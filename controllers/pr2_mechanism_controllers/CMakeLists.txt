@@ -40,3 +40,7 @@ target_link_libraries(testOdom pr2_mechanism_controllers)
 
 rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
 target_link_libraries(testTraj pr2_mechanism_controllers)
+
+rospack_add_executable(testTrajServ test/test_arm_trajectory_service.cpp)
+target_link_libraries(testTrajServ pr2_mechanism_controllers)
+

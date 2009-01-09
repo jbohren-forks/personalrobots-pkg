@@ -1,7 +1,7 @@
 <launch>
 
 <!-- Arm trajectory controller -->
-  <param name="right_arm_controller/velocity_scaling_factor" type="double" value="0.25"/>
+  <param name="right_arm_trajectory_controller/velocity_scaling_factor" type="double" value="0.25"/>
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/trajectory_controllers.xml" />
 

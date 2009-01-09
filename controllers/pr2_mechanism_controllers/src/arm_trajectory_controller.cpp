@@ -419,13 +419,31 @@ bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::Tra
 bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
                                                     pr2_mechanism_controllers::TrajectoryQuery::response &resp)
 {
+  resp.set_jointnames_size(c_->dimension_);
+  for(int i=0; i < c_->dimension_; i++)
+  {
+    resp.jointnames[i] = c_->joint_pd_controllers_[i]->getJointName();
+    
+  }
+
+  if(req.trajectoryid == 0)
+      {
+          resp.trajectorytime = 0;
+          if(joint_trajectory_vector_.size() == 0)
+              resp.done = 1;
+          else
+              resp.done = 0;
+          return true;
+      }
+
   std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)req.trajectoryid);
   if(it == joint_trajectory_status_.end())
     return false;
+  else
+      resp.done = it->second;
+  
 
-  resp.done = it->second;
-
-  if(current_trajectory_id_ == (int)req.trajectoryid)
+if(current_trajectory_id_ == (int)req.trajectoryid)
   {
     if((int) resp.done == 1)
       resp.trajectorytime = c_->trajectory_end_time_ - c_->trajectory_start_time_;
@@ -440,12 +458,8 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
 
     resp.trajectorytime = it_time->second;
   }
-  resp.set_jointnames_size(c_->dimension_);
-  for(int i=0; i < c_->dimension_; i++)
-  {
-    resp.jointnames[i] = c_->joint_pd_controllers_[i]->getJointName();
-    
-  }
+
+
   return true;
 }
 
