@@ -212,7 +212,7 @@ public:
     CvMat *four_corners_2d = cvCreateMat(4,3,CV_32FC1);
     CvMat *center_3d = cvCreateMat(1,3,CV_32FC1);
     CvMat *size_3d = cvCreateMat(1,3,CV_32FC1);
-    bool setface = false;
+    bool setface = true;
     if (iperson == -1) {
       // This is a new person, create them. Their histogram will be sent on the first tracking frame.
       people_->addPerson();
@@ -233,7 +233,8 @@ public:
       tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
       try
 	{
-	  tf.transformPoint("stereo_link", init_pos_.header.stamp, loc, "odom", loc);
+	  tf.transformPoint("stereo_link", init_pos_.header.stamp, loc, "odom", loc); 
+	  // Converts things through the fixed frame into a new time. Use this if you want to go to a different time than loc already has.
 	} 
       catch (tf::TransformException& ex)
 	{
@@ -271,8 +272,8 @@ public:
   void image_cb_all(ros::Time t)
   {
 
-    //double startt, endt;
-    //startt = t.now().toSec();
+    ros::Time startt, endt;
+    startt = t.now();
 
     //cv_mutex_.lock();
     boost::mutex::scoped_lock lock(cv_mutex_);
@@ -511,6 +512,10 @@ public:
     cvReleaseMat(&my_end_point);
     cvReleaseMat(&my_size);     
 
+    endt = t.now();
+    ros::Duration diff = endt-startt;
+    printf("Start %f End %f Duration %f\n", startt.toSec(), endt.toSec(), diff.toSec());
+
 #if  __FACE_COLOR_TRACKER_DISPLAY__
     if (!cv_image_disp_out_) {
       cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
@@ -522,8 +527,6 @@ public:
     //cv_mutex_.unlock();
     lock.unlock();
 
-    //endt = t.now().toSec();
-    //printf("Start %f End %f Duration %f\n", startt, endt, endt-startt);
   }
 
 
