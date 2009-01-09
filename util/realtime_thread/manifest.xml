@@ -1,0 +1,15 @@
+<package>
+  <description brief="Realtime thread functions">
+
+    Thread functions for use in realtime threads
+
+  </description>
+  <author>Rob Wheeler &lt;wheeler@willowgarage.com&gt;</author>
+  <license>BSD</license>
+  <review status="unreviewed"/>
+  <url>http://pr.willowgarage.com</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrealtime_thread" />
+  </export>
+</package>
+

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-set(ROS_BUILD_STATIC_LIBS true)
-set(ROS_BUILD_SHARED_LIBS false)
 rospack(robot_mechanism_controllers)
 genmsg()
 gensrv()

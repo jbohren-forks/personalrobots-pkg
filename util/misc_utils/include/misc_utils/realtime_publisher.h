@@ -38,11 +38,11 @@
 #ifndef REALTIME_PUBLISHER_H
 #define REALTIME_PUBLISHER_H
 
-#include <pthread.h>
 #include <string>
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 #include <rosthread/member_thread.h>
+#include <realtime_thread/realtime_thread.h>
 
 namespace misc_utils {
 
@@ -62,10 +62,10 @@ public:
 
     node_->advertise<Msg>(topic_, queue_size);
 
-    pthread_cond_init(&updated_cond_, NULL);
-    if (0 != pthread_mutex_init(&msg_lock_, NULL))
+    realtime_cond_create(&updated_cond_);
+    if (0 != realtime_mutex_create(&msg_lock_))
     {
-      perror("pthread_mutex_init");
+      perror("realtime_mutex_create");
       abort();
     }
     keep_running_ = true;
@@ -85,27 +85,27 @@ public:
     // process may still be publishing on the topic
     //node_->unadvertise(topic_);
 
-    // Destroy pthread resources
-    pthread_cond_destroy(&updated_cond_);
-    pthread_mutex_destroy(&msg_lock_);
+    // Destroy thread resources
+    realtime_cond_delete(&updated_cond_);
+    realtime_mutex_delete(&msg_lock_);
   }
 
   void stop()
   {
     keep_running_ = false;
-    pthread_cond_signal(&updated_cond_);  // So the publishing loop can exit
+    realtime_cond_signal(&updated_cond_);  // So the publishing loop can exit
   }
 
   Msg msg_;
 
   int lock()
   {
-    return pthread_mutex_lock(&msg_lock_);
+    return realtime_mutex_lock(&msg_lock_);
   }
 
   bool trylock()
   {
-    if (0 == pthread_mutex_trylock(&msg_lock_))
+    if (0 == realtime_mutex_trylock(&msg_lock_))
     {
       if (turn_ == REALTIME)
       {
@@ -113,7 +113,7 @@ public:
       }
       else
       {
-        pthread_mutex_unlock(&msg_lock_);
+        realtime_mutex_unlock(&msg_lock_);
         return false;
       }
     }
@@ -123,14 +123,14 @@ public:
 
   void unlock()
   {
-    pthread_mutex_unlock(&msg_lock_);
+    realtime_mutex_unlock(&msg_lock_);
   }
 
   void unlockAndPublish()
   {
     turn_ = NON_REALTIME;
-    pthread_mutex_unlock(&msg_lock_);
-    pthread_cond_signal(&updated_cond_);
+    realtime_mutex_unlock(&msg_lock_);
+    realtime_cond_signal(&updated_cond_);
   }
 
   bool is_running() const { return is_running_; }
@@ -142,17 +142,17 @@ public:
     while (keep_running_)
     {
       // Locks msg_ and copies it
-      pthread_mutex_lock(&msg_lock_);
+      realtime_mutex_lock(&msg_lock_);
       while (turn_ != NON_REALTIME)
       {
         if (!keep_running_)
           break;
-        pthread_cond_wait(&updated_cond_, &msg_lock_);
+        realtime_cond_wait(&updated_cond_, &msg_lock_);
       }
 
       Msg outgoing(msg_);
       turn_ = REALTIME;
-      pthread_mutex_unlock(&msg_lock_);
+      realtime_mutex_unlock(&msg_lock_);
 
       // Sends the outgoing message
       if (keep_running_)
@@ -170,8 +170,8 @@ private:
 
   pthread_t *thread_;
 
-  pthread_mutex_t msg_lock_;  // Protects msg_
-  pthread_cond_t updated_cond_;
+  RealtimeMutex msg_lock_;  // Protects msg_
+  RealtimeCond updated_cond_;
 
   enum {REALTIME, NON_REALTIME};
   int turn_;  // Who's turn is it to use msg_?

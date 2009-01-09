@@ -12,7 +12,7 @@ over Linux 2.6.24.19 for the AOpen system
 <review status="3rdparty" notes=""/>
 <url>http://www.xenomai.org/ http://www.kernel.org</url>
 <export>
-  <cpp lflags="`${prefix}/xenomai/bin/xeno-config --posix-ldflags`" cflags="`${prefix}/xenomai/bin/xeno-config --posix-cflags`"/>
+  <cpp lflags="`${prefix}/xenomai/bin/xeno-config --xeno-ldflags` -lnative" cflags="`${prefix}/xenomai/bin/xeno-config --xeno-cflags`"/>
   <doxymaker external="http://www.xenomai.org/documentation/trunk/html/api/index.html"/>
   <status api="cleared" code="under review"/>
 </export>
