@@ -13,7 +13,7 @@
     </map>
     <controller name="r_shoulder_pan_controller" topic="r_shoulder_pan_controller" type="JointPDController">
       <joint name="r_shoulder_pan_joint" >
-        <pid p="50.0" d="15.0" i="0.2" iClamp="100.0" />
+        <pid p="140.0" d="15.0" i="0.8" iClamp="100.0" />
       </joint>
     </controller>
     <controller name="r_shoulder_lift_controller" topic="r_shoulder_pitch_controller" type="JointPDController">
@@ -51,7 +51,7 @@
 
     <controller name="r_gripper_l_finger_controller" type="JointPDController">
       <joint name="r_gripper_l_finger_joint">
-        <pid p="20" i="0.4" d="0.5" iClamp="20.0" />
+        <pid p="30" i="0.1" d="0.5" iClamp="20.0" />
       </joint>
     </controller>
 
