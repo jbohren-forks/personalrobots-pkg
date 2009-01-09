@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: planar_patch_map.cpp 8082 2008-12-15 00:40:22Z veedee $
+ * $Id$
  *
  */
 

@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: cloud_downsampler.cpp 8974 2009-01-07 04:41:00Z veedee $
+ * $Id$
  *
  */
 
