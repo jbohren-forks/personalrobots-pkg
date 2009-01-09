@@ -7,7 +7,7 @@ XACRO = `rospack find xacro`/xacro.py
 URDF2GAZEBO = `rospack find gazebo_robot_description`/urdf2gazebo
 MODEL_FILE = `rospack find gazebo_robot_description`/world
 
-ROBOT = pr2_arm
+ROBOT = pr2_r_arm
 
 $(ROBOT).model: $(ROBOT).xacro.xml
 	$(XACRO) $^ > $(ROBOT).xml
