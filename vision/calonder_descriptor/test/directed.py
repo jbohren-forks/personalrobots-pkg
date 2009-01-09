@@ -24,7 +24,7 @@ class TestDirected(unittest.TestCase):
     def test_identity(self):
       im = Image.open("/u/konolige/vslam/data/indoor1/left-%04d.ppm" % 1000)
       kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1], 150, 40)]
-      dim = len(kp)
+      dim = 176
 
       cl1 = calonder.classifier()
 
@@ -37,12 +37,14 @@ class TestDirected(unittest.TestCase):
         ma = calonder.BruteForceMatcher(dim)
 
         sigs = []
+
         for (x,y) in kp:
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
           print ["%.3f" % x for x in sig.dump()]
           sigs.append(sig)
           ma.addSignature(sig)
+        print cl.getSignatures(im, kp)
 
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))
