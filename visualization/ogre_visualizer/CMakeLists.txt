@@ -31,13 +31,12 @@ set(WXSWIG_EXECUTABLE ${wxswig_PACKAGE_PATH}/bin/swig)
 
 # Add a custom command for generating the swig output files
 set(SWIG_INTERFACE_FILE ${PROJECT_SOURCE_DIR}/src/ogre_visualizer/ogre_visualizer.i)
-#set(SWIG_OUTPUT_CPP_FILE ${PROJECT_SOURCE_DIR}/src/ogre_visualizer/ogre_visualizer_swig_generated.cpp)
-set(SWIG_OUTPUT_CPP_FILE ogre_visualizer_swig_generated.cpp)
+set(SWIG_OUTPUT_CPP_FILE ${PROJECT_SOURCE_DIR}/src/ogre_visualizer/ogre_visualizer_swig_generated.cpp)
 set(SWIG_OUTPUT_PYTHON_FILE ${PROJECT_SOURCE_DIR}/lib/ogre_visualizer.py)
 set_source_files_properties(${SWIG_OUTPUT_CPP_FILE} PROPERTIES GENERATED true)
 add_custom_command(OUTPUT   ${SWIG_OUTPUT_CPP_FILE} 
                             ${SWIG_OUTPUT_PYTHON_FILE}
-                   COMMAND  ${WXSWIG_EXECUTABLE} ${SWIG_FLAGS} -o ${PROJECT_SOURCE_DIR}/${SWIG_OUTPUT_CPP_FILE} -outdir ../lib -module ${PROJECT_NAME} ${SWIG_INTERFACE_FILE}
+                   COMMAND  ${WXSWIG_EXECUTABLE} ${SWIG_FLAGS} -o ${SWIG_OUTPUT_CPP_FILE} -outdir ../lib -module ${PROJECT_NAME} ${SWIG_INTERFACE_FILE}
                    DEPENDS  ${SWIG_INTERFACE_FILE}
                             src/ogre_visualizer/display.i
                             src/ogre_visualizer/visualization_panel.i
