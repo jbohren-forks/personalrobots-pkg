@@ -55,6 +55,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+#include <boost/thread/mutex.hpp>
+
 using namespace std;
 
 struct PublishedPoint {
@@ -63,7 +65,8 @@ struct PublishedPoint {
 };
 
 vector<PublishedPoint> gxys;
-ros::thread::mutex g_selection_mutex;
+//ros::thread::mutex g_selection_mutex;
+boost::mutex g_selection_mutex;
 ros::Time g_last_image_time;
 bool g_do_cb;
 
@@ -72,24 +75,23 @@ using namespace std;
 
 void on_mouse(int event, int x, int y, int flags, void *params){
   
-  switch(event){
-  case CV_EVENT_MOUSEMOVE:
-    break;
-  case CV_EVENT_LBUTTONUP:
+  if (event==CV_EVENT_MOUSEMOVE) {
+  }
+  else if (event==CV_EVENT_LBUTTONDOWN) {
     // Add a clicked-on point to the list of points, to be published by the image callback on the next image.
-    g_selection_mutex.lock();
+    //g_selection_mutex.lock();
+    boost::mutex::scoped_lock sel_lock(g_selection_mutex);
     PublishedPoint p;
     p.xy = cvPoint(x,y);
     p.published = false;
     gxys.push_back(p);
     g_do_cb = true;
-    g_selection_mutex.unlock();
-    
-    break;
-    
-  default:
-    break;    
+    //g_selection_mutex.unlock();
+    sel_lock.unlock();
   }
+  else {
+  }
+  
 }
 
 /**
@@ -114,7 +116,8 @@ public:
   IplImage *cv_image_;
   IplImage *cv_disp_image_;
   IplImage *cv_disp_image_out_;
-  ros::thread::mutex cv_mutex_;
+  //ros::thread::mutex cv_mutex_;
+  boost::mutex cv_mutex_;
   robot_msgs::PositionMeasurement pos;
   TopicSynchronizer<TrackStarterGUI> sync_;
   
@@ -123,7 +126,7 @@ public:
     ros::node("track_starter_gui"),
     lcolor_cal_(this),
     quit_(false),
-    calib_color_(true),
+    calib_color_(false),
     cam_model_(NULL),
     uvd_(NULL),
     xyz_(NULL),
@@ -143,8 +146,8 @@ public:
 
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     std::list<std::string> left_list;
-    left_list.push_back(std::string("stereo/left/image_rect_color"));
-    //left_list.push_back(std::string("stereo/left/image_rect"));    
+    //left_list.push_back(std::string("stereodcam/left/image_rect_color"));
+    left_list.push_back(std::string("stereo/left/image_rect"));    
     sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("stereo/disparity",dimage_,1);
     sync_.subscribe("stereo/stereo_info", stinfo_,1);
@@ -180,13 +183,16 @@ public:
   // Image callback. Draws selected points on images, publishes the point messages, and copies the images to be displayed.
   void image_cb_all(ros::Time t){
 
-    cv_mutex_.lock();
+    //cv_mutex_.lock();
+    boost::mutex::scoped_lock sel_lock(g_selection_mutex);//cv_mutex_);
     if (!g_do_cb) {
-      cv_mutex_.unlock();
+      //cv_mutex_.unlock();
+      sel_lock.unlock();
       return;
     }
 
-    cv_mutex_.unlock();///
+    //cv_mutex_.unlock();///
+    sel_lock.unlock();
 
     bool do_calib = false;
     if (limage_.encoding != "mono") {
@@ -212,6 +218,7 @@ public:
 
     if (dbridge_.fromImage(dimage_)) {
       cv_disp_image_ = dbridge_.toIpl();
+      //cvSet(cv_disp_image_,cvScalar(400));
       if (!cv_disp_image_out_) {
 	cv_disp_image_out_ = cvCreateImage(im_size,IPL_DEPTH_8U, 1);
       }
@@ -228,12 +235,14 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
-    //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
+    //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
 
     //cv_mutex_.lock(); ///
-    g_selection_mutex.lock();
+    //g_selection_mutex.lock();
+    //boost::mutex::scoped_lock sel_lock(g_selection_mutex);
+    sel_lock.lock();
     for (uint i = 0; i<gxys.size(); i++) {
 
       if (cam_model_ && !gxys[i].published) {
@@ -273,7 +282,7 @@ public:
 	  robot_msgs::PositionMeasurement pm;
 	  pm.header.stamp = g_last_image_time;
 	  pm.name = "track_starter_gui";
-	  pm.object_id = gxys.size();   
+	  pm.object_id = "";//gxys.size();   
 	  cvmSet(uvd_,0,0,gxys[i].xy.x);
 	  cvmSet(uvd_,0,1,gxys[i].xy.y);
 	  cvmSet(uvd_,0,2,d);
@@ -282,7 +291,7 @@ public:
 	  pm.pos.y = -1.0*cvmGet(xyz_,0,0);
 	  pm.pos.z = -1.0*cvmGet(xyz_,0,1);
 	  printf("Publishing %f %f %f\n", cvmGet(xyz_,0,0),cvmGet(xyz_,0,1),cvmGet(xyz_,0,2));
-	  pm.header.frame_id = "stereo_link";
+	  pm.header.frame_id = limage_.header.frame_id;//"stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
 	  pm.covariance[0] = 0.09;
@@ -300,21 +309,23 @@ public:
       }
 
       cvCircle(cv_image_, gxys[i].xy, 2 , cvScalar(255,0,0) ,4);
+      cvCircle(cv_disp_image_out_, gxys[i].xy, 2 , cvScalar(4*255) ,4);
     }
 
     g_last_image_time = limage_.header.stamp;
-    g_selection_mutex.unlock();
+    //g_selection_mutex.unlock();
+    sel_lock.unlock();
 
-    cv_mutex_.lock();
+    //cv_mutex_.lock();
+    boost::mutex::scoped_lock lock(cv_mutex_);
     cvShowImage("Track Starter: Left Image", cv_image_);
     cvShowImage("Track Starter: Disparity", cv_disp_image_out_);
-    cv_mutex_.unlock();
+    //cv_mutex_.unlock();
+    lock.unlock();
   }
 
+  // Timeout callback
   void image_cb_timeout(ros::Time t) {   
-    if (!g_do_cb) {
-      return;
-    }
   }
 
   // Wait for thread to exit.
@@ -322,7 +333,8 @@ public:
 
     while (ok() && !quit_) {
       // Display the image
-      cv_mutex_.lock();
+      boost::mutex::scoped_lock lock(cv_mutex_);
+      //cv_mutex_.lock();
       int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
@@ -333,7 +345,8 @@ public:
       else if ((c=='p') || (c=='P')){
 	g_do_cb = 1-g_do_cb;
       }
-      cv_mutex_.unlock();
+      lock.unlock();
+      //cv_mutex_.unlock();
       usleep(10000);
 	
     }
