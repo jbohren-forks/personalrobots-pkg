@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="laser_scan_annotator" type="laser_scan_annotator_node" output="screen"  name="annotator_node">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="fixed_frame" type="string" value="base_link" />
+  </node>
+</launch>
