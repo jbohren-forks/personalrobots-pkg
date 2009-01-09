@@ -71,7 +71,7 @@ class SemanticPointAnnotator : public ros::node
     Point32 z_axis_;
 
     // Parameters
-    int sac_min_points_per_model_;
+    int sac_min_points_per_model_, sac_min_points_left_;
     double sac_distance_threshold_, eps_angle_;
 
     double rule_floor_, rule_ceiling_, rule_wall_;
@@ -86,6 +86,7 @@ class SemanticPointAnnotator : public ros::node
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
+      param ("~p_sac_min_points_left", sac_min_points_left_, 500);
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 20);   // 20 points
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
       param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
@@ -122,7 +123,7 @@ class SemanticPointAnnotator : public ros::node
 
       PointCloud pts (*points);
       int nr_points_left = indices->size ();
-      while (nr_points_left > sac_min_points_per_model_)
+      while (nr_points_left > sac_min_points_left_)
       {
         // Search for the best plane
         if (sac->computeModel ())
@@ -239,7 +240,6 @@ class SemanticPointAnnotator : public ros::node
         r = g = b = 1.0;
 
         // Test for wall
-        //if (-coeff[i][3] / coeff[i][2] < rule_wall_)
         if (maxP.z > rule_wall_)
         {
           r = rand () / (RAND_MAX + 1.0);
