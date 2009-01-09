@@ -11,7 +11,6 @@
 using namespace std; // Necessary because some of the below includes assume it
 #include "../../sbpl/headers.h"
 
-
 struct Adjacency
 {
   int neighbor;
@@ -20,6 +19,10 @@ struct Adjacency
 typedef vector<Adjacency> Adjacencies;
 
 
+/** \brief SBPL Environment represented as an adjacency list graph.
+ *
+ * \tparam Coords Coords is a type that has operator<< and heuristicDistanceTo (const Coords&) defined on it, and can be used as a key of an STL map.
+ */
 template <class Coords>
 class AdjacencyListSBPLEnv : public DiscreteSpaceInformation
 {
@@ -274,7 +277,7 @@ vector<Coords> AdjacencyListSBPLEnv<Coords>::findOptimalPath ()
   return solutionPoints;
 }
 
-// There's some side effect where you have to reset this every time you call planner
+// There's some side effect where you have to reset this every time you call the ARA planner
 template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::resetStateId2IndexMapping (void)
 {
