@@ -1,0 +1,11 @@
+<package>
+  <description>
+    toro
+  </description>
+  <author>Giorgio Grisetti; Cyrill Stachniss; Slawomir Grzonka; Wolfram Burgard</author>
+  <license>Creative Commons (Attribution-NonCommercial-ShareAlike)</license>
+  <review status="unreviewed" notes=""/>
+  <export>
+    <cpp cflags="-I${prefix}/toro_svn/trunk" lflags="-L${prefix}/toro_svn/trunk -ltoro3d -Wl,-rpath,${prefix}/toro_svn/trunk" />
+  </export>
+</package>
