@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cassert>
 #include <limits>
+#include <algorithm>
 
 namespace features {
 
@@ -665,7 +666,7 @@ typename FastKMeans<PointDataT>::DistanceFltT FastKMeans<PointDataT>::kmeans(Poi
                // Compute the new potential
                double newPot = 0;
                for (int i = 0; i < (int)npts; i++)
-                   newPot += min( squared_dist(&X[i*dim], &X[index*dim], dim), closestDistSq[i] );
+                   newPot += std::min( squared_dist(&X[i*dim], &X[index*dim], dim), closestDistSq[i] );
 
                // Store the best result
                if (bestNewPot < 0 || newPot < bestNewPot) {
@@ -679,7 +680,7 @@ typename FastKMeans<PointDataT>::DistanceFltT FastKMeans<PointDataT>::kmeans(Poi
            memcpy(&CX[centerCount*dim], &X[bestNewIndex*dim], dim*sizeof(float));	            
            currentPot = bestNewPot;
            for (int i = 0; i < (int)npts; i++)
-               closestDistSq[i] = min( squared_dist(&X[i*dim], &X[bestNewIndex*dim], dim), closestDistSq[i] );
+               closestDistSq[i] = std::min( squared_dist(&X[i*dim], &X[bestNewIndex*dim], dim), closestDistSq[i] );
        }
 
 	   delete[] closestDistSq;
