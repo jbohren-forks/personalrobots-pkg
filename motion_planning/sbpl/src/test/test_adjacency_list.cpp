@@ -1,36 +1,53 @@
 #include <iostream>
 #include "../discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h"
 
+struct Point2D
+{
+  Point2D(int newX, int newY) : x(newX), y(newY) {}
+
+  int heuristicDistanceTo (const Point2D& p) { int dx=p.x-x; int dy=p.y-y; int dist=(sqrt(dx*dx+dy*dy));  return dist; }
+
+  int x;
+  int y;
+};
+
+ostream& operator<< (ostream& stream, Point2D p)
+{
+  stream << "(" << p.x << ", " << p.y << ")";
+  return stream;
+}
+
+int operator< (const Point2D& p1, const Point2D& p2)
+{
+  return (p1.x<p2.x) || ((p1.x==p2.x) && (p1.y<p2.y));
+}
+
+
+
+
+
 
 int main (int, char**)
 {
-  // Creating the adjacency list
-  AdjacentState s12 = {2, 4};
-  AdjacentState s23 = {3, 5};
-  AdjacentState s14 = {4, 6};
-  AdjacentState s43 = {3, 2};
+  AdjacencyListSBPLEnv<Point2D> e;
+  Point2D p1(0,0);
+  Point2D p2(2,1);
+  Point2D p3(1,4);
+  Point2D p4(5,5);
 
-  AdjacentStateVector v1;
-  AdjacentStateVector v2;
-  AdjacentStateVector v3;
-  AdjacentStateVector v4;
-  
-  v1.push_back(s12);
-  v1.push_back(s14);
-  v2.push_back(s23);
-  v4.push_back(s43);
+  e.addPoint(p1);
+  e.addPoint(p2);
+  e.addPoint(p3);
+  e.addPoint(p4);
 
-  vector<AdjacentStateVector> adjacencies;
-  adjacencies.push_back(v1);
-  adjacencies.push_back(v2);
-  adjacencies.push_back(v3);
-  adjacencies.push_back(v4);
+  e.setCost(p1,p2,4);
+  e.setCost(p1,p3,6);
+  e.setCost(p3,p4,5);
+  e.setCost(p2,p4,15);
 
-  vector<int> ids;
-  for (int i=0; i<4; i++) {
-    ids.push_back(i+1);
-  }
-  AdjacencyListSBPLEnv e(ids, adjacencies, 1, 3);
+  e.setStartState(p1);
+  e.setGoalState(p4);
+
   e.writeToStream();
 
 
@@ -38,15 +55,19 @@ int main (int, char**)
   MDPConfig c;
   e.InitializeMDPCfg(&c);
 
-  // Initialize ARA planner
-  ARAPlanner p(&e, true);
-  p.set_start(c.startstateid);
-  p.set_goal(c.goalstateid);
 
 
   // Do planning
-  vector<int> solution;
-  p.replan(1.0, &solution);
+  vector<Point2D> solution = e.findOptimalPath ();
+  cout << "Returned plan is ";
+  for (unsigned int i=0; i<solution.size(); i++) {
+    cout << solution[i] << " ";
+  }
+  cout << endl;
+
+  e.setCost(p2,p4,1);
+  e.writeToStream();
+  solution = e.findOptimalPath ();
   cout << "Returned plan is ";
   for (unsigned int i=0; i<solution.size(); i++) {
     cout << solution[i] << " ";
