@@ -64,7 +64,7 @@ end
 
 orBodySetTransform(Target.id, [0 0 0], [1 0 0 0]); % identity
 
-standoffs = [0.01 0.025];
+standoffs = [0.01];
 rolls = [0 pi/2]; % hand is symmetric
 
 % start simulating grasps

@@ -7,4 +7,8 @@
 function values = orBodyGetTransform(bodyid)
 
 links = orBodyGetLinks(bodyid);
-values = links(:,1);
+if( ~isempty(links) )
+    values = links(:,1);
+else
+    values = [];
+end

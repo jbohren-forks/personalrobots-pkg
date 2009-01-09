@@ -201,9 +201,12 @@ public:
         // destroy environment specific state: problems, planners, figures
         _mapFigureIds.clear();
 
-        FOREACH(itprob, _mapproblems)
-            itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
-        _mapproblems.clear();
+        {
+            boost::mutex::scoped_lock lock(_mutexProblems);
+            FOREACH(itprob, _mapproblems)
+                itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
+            _mapproblems.clear();
+        }
         
         _mapplanners.clear();
     }
@@ -616,6 +619,8 @@ public:
         if( !pproblem )
             return false;
 
+        boost::mutex::scoped_lock lock(_mutexProblems);
+
         if( req.destroyduplicates ) {
             map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.begin();
             while(itprob != _mapproblems.end()) {
@@ -666,6 +671,7 @@ public:
 
     bool env_destroyproblem_srv(env_destroyproblem::request& req, env_destroyproblem::response& res)
     {
+        boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
         if( itprob == _mapproblems.end() )
             return false;
@@ -1012,6 +1018,7 @@ public:
     bool env_set_srv(env_set::request& req, env_set::response& res)
     {
         if( req.setmask & env_set::request::Set_Simulation ) {
+            LockEnvironment envlock(this);
             switch(req.sim_action) {
             case env_set::request::SimAction_Start:
                 if( req.sim_timestep > 0 )
@@ -1196,6 +1203,7 @@ public:
 
     bool problem_sendcommand_srv(problem_sendcommand::request& req, problem_sendcommand::response& res)
     {
+        boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
         if( itprob == _mapproblems.end() )
             return false;
@@ -1563,7 +1571,7 @@ private:
     /// viewer control variables
     boost::shared_ptr<RaveViewerBase> _pviewer;
     boost::thread _threadviewer;
-    boost::mutex _mutexViewer;
+    boost::mutex _mutexViewer, _mutexProblems;
     boost::condition _conditionViewer;
     
     /// workers

@@ -95,6 +95,7 @@ private:
         ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::startsubscriptions();
         
         if( _bSubscribed ) {
+            boost::mutex::scoped_lock lock(_mutex);
             ros::node* pnode = check_roscpp_nocreate();
             if( pnode != NULL ) { 
                 double tf_cache_time_secs;
@@ -155,7 +156,7 @@ private:
                 Transform tnew;
 
                 // if on robot, have to find the global transformation
-                if( bHasRobotTransform ) {
+                if( bHasRobotTransform && !!_tf ) {
                     posestamped.pose = GetPose(_toffset * GetTransform(itobj->pose));
                     posestamped.header = _topicmsg.header;
                     
@@ -164,8 +165,17 @@ private:
                         tnew = trobot * GetTransform(poseout.pose);
                     }
                     catch(tf::TransformException& ex) {
-                        RAVELOG_WARNA("failed to get tf frames %s (body link:%s) for object %s\n",posestamped.header.frame_id.c_str(), strrobotbaselink.c_str(), itobj->type.c_str());
-                        tnew = GetTransform(itobj->pose);
+
+                        try {
+                            // try getting the latest value by passing a 0 timestamp
+                            posestamped.header.stamp = ros::Time();
+                            _tf->transformPose(strrobotbaselink, posestamped, poseout);
+                            tnew = trobot * GetTransform(poseout.pose);
+                        }
+                        catch(tf::TransformException& ex) {
+                            RAVELOG_WARNA("failed to get tf frames %s (body link:%s) for object %s\n",posestamped.header.frame_id.c_str(), strrobotbaselink.c_str(), itobj->type.c_str());
+                            tnew = GetTransform(itobj->pose);
+                        }
                     }
                 }
                 else
@@ -222,12 +232,16 @@ private:
                     continue;
                 }
 
-                if( AddKinBody(pbody, NULL) == NULL ) {
+                BODY* b = AddKinBody(pbody, NULL);
+                if( b == NULL ) {
                     delete pbody;
                     continue;
                 }
 
-                pbody->SetTransform(itobj->second);
+                b->tnew = itobj->second;
+
+                // put somewhere at infinity until UpdateBodies thread gets to it
+                pbody->SetTransform(Transform(Vector(1,0,0,0), Vector(10000,10000,10000)));
             }
             GetEnv()->LockPhysics(false);
         }

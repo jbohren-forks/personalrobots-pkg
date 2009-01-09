@@ -83,7 +83,7 @@ end
 
 [dests, surfaceplane] = scenedata.GetDestsFn(); % compute a set of destinations
 
-offsetfromtable = 0.02; %% set destination a little above the table
+offsetfromtable = 0.04; %% set destination a little above the table
 distup = surfaceplane(1:3)*(transpose(surfaceplane(1:3))*curobj.info.T(1:3,4) + surfaceplane(4) + offsetfromtable);
 
 curobj.dests = zeros(size(dests));

@@ -10,4 +10,5 @@ addpath(fullfile(rosoct_findpackage('openrave'),'share','openrave','examples','g
 %% loop forever
 while(1)
     RunGrasps('grasp_pr2_ricebox.mat');
+    pause(0.1);
 end

@@ -9,7 +9,7 @@ robotid = orEnvCreateRobot('pr2','robots/pr2full.robot.xml');
 robot = orEnvGetRobots(robotid);
 orBodySetJointValues(robot.id,[ 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.05 0.000000 0.000000 0.000000 0.000000 0.000000 1.582704 1.081165 0.000000 -2.299995 -0.000000 0.000000 0.000000 -0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 -0.979114 -0.400000 0.000000 -1.535151 0.000000 0.000000 0.000000 0.000000 0.000000]);
 
-%orRobotControllerSet(robot.id, 'ROSRobot',  ['trajectoryservice /']);
+orRobotControllerSet(robot.id, 'ROSRobot',  ['trajectoryservice /']);
 
 probs.manip = orEnvCreateProblem('BaseManipulation',robot.name);
 imanipulator = 2;
@@ -34,14 +34,17 @@ for i = 1:size(Tgrippertraj,2)
     trajectory = [trajectory sscanf(iksol, '%f ')];
     pause(0.1);
 end
+trajectory = [trajectory trajectory(:,end:-1:1)];
 
 %% make a service call
 rosoct_add_srvs('pr2_mechanism_controllers');
+resquery = rosoct_service_call('/TrajectoryQuery',pr2_mechanism_controllers_TrajectoryQuery());
+
 req = pr2_mechanism_controllers_TrajectoryStart();
 req.traj.points = {};
 for i = 1:size(trajectory,2)
     req.traj.points{i} = pr2_mechanism_controllers_JointTrajPoint();
-    req.traj.points{i}.positions = trajectory(:,i);
+    req.traj.points{i}.positions = [trajectory(:,i);0.4];
 end
 res = rosoct_service_call('/TrajectoryStart',req);
 
