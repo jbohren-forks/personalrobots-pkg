@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="spine_trajectory_controller" type="ArmTrajectoryControllerNode">
+    <listen_topic name="spine_trajectory_command" />
+    <controller name="spine_controller" topic="spine_controller_topic" type="JointPDController">
+      <joint name="torso_lift_joint" >
+        <pid p="10.0" d="0.0" i="0.0" iClamp="0.0" />
+      </joint>
+    </controller>
+    <trajectory interpolation="cubic" />
+  </controller>
+</controllers>
