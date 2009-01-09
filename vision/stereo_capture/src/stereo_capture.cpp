@@ -256,11 +256,37 @@ public:
 
   }
 
+
+  /** \brief Transform a compact RGB color info into 3 floats */
+  void
+    transformRGB (float val, float &r, float &g, float &b)
+  {
+    int rgb = *reinterpret_cast<int*>(&val);
+    r = ((rgb >> 16) & 0xff) / 255.0f;
+    g = ((rgb >> 8) & 0xff) / 255.0f;
+    b = (rgb & 0xff) / 255.0f;
+  }
+  
   void write_out_point_cloud(string filename,  std_msgs::PointCloud &cloud_ )
   {
+    int c_idx = -1;
+    for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+    {
+      if (cloud_.chan[d].name == "rgb")
+        c_idx = d;
+    }
+    
+    
     ofstream fout(filename.c_str());
-    for(unsigned int i=0; i<cloud_.pts.size(); i++)
-      fout<<cloud_.pts[i].x<<" "<<cloud_.pts[i].y<<" "<<cloud_.pts[i].z<<endl;
+
+    float r = 0.0, g = 0.0, b = 0.0;
+    
+    for (unsigned int i=0; i<cloud_.pts.size(); i++)
+    {
+      if (c_idx != -1)
+        transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
+      fout << cloud_.pts[i].x << " " << cloud_.pts[i].y << " " << cloud_.pts[i].z << " " << r << " " << g << " " << b << endl;
+    }
     fout.close();
   }
 
