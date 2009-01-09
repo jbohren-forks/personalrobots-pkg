@@ -49,6 +49,7 @@ using namespace controller;
 using namespace control_toolbox;
 using namespace libTF;
 using namespace NEWMAT;
+using namespace tf;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
@@ -875,11 +876,18 @@ void BaseControllerNode::update()
       out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
       out.transform.translation.y = +x*sin(yaw) - y*cos(yaw);
       out.transform.translation.z = 0;
-      out.transform.rotation.x = 0;
-      out.transform.rotation.y = 0;
+      tf::Quaternion quat_trans = tf::Quaternion(-yaw,0.0,0.0);
+
+      out.transform.rotation.x = quat_trans.x();
+      out.transform.rotation.y = quat_trans.y();
+      out.transform.rotation.z = quat_trans.z();
+      out.transform.rotation.w = quat_trans.w();
+
+      //      out.transform.rotation.x = 0;
+      //      out.transform.rotation.y = 0;
       double angle = angles::normalize_angle(-yaw);
-      out.transform.rotation.z = sqrt(1/(1 + pow(angle, 2)));
-      out.transform.rotation.w = sqrt(pow(angle, 2) / (1 + pow(angle, 2)));
+      //      out.transform.rotation.z = sqrt(1/(1 + pow(angle, 2)));
+      //      out.transform.rotation.w = sqrt(pow(angle, 2) / (1 + pow(angle, 2)));
       //      out.pitch = 0;
       //out.yaw = 
 

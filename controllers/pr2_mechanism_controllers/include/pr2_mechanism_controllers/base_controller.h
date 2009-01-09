@@ -61,6 +61,7 @@
 #include <misc_utils/realtime_publisher.h>
 
 #include <tf/tfMessage.h>
+#include <tf/tf.h>
 
 #include <pthread.h>
 
