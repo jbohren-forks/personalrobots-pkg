@@ -215,7 +215,7 @@ EndeffectorPoseControllerNode::~EndeffectorPoseControllerNode()
   ros::node *node = ros::node::instance();
 
   node->unsubscribe(topic_ + "/command");
-  node->unsubscribe(topic_ + "spacenav/joy");
+  node->unsubscribe("spacenav/joy");
 }
 
 
@@ -223,8 +223,8 @@ bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 {
   // get name of topic to listen to
   ros::node *node = ros::node::instance();
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "") {
+  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic_ == "") {
     fprintf(stderr, "No topic given to EndeffectorPoseControllerNode\n");
     return false;
   }
@@ -238,14 +238,12 @@ bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
     return false;
   
   // subscribe to pose commands
-  node->subscribe(topic + "/command", pose_msg_,
+  node->subscribe(topic_ + "/command", pose_msg_,
                   &EndeffectorPoseControllerNode::command, this, 1);
-  guard_command_.set(topic + "/command");
 
   // subscribe to joystick commands
   node->subscribe("spacenav/joy", joystick_msg_,
                   &EndeffectorPoseControllerNode::joystick, this, 1);
-  guard_command_.set("spacenav/joy");
 
   joystick_twist_ = Twist::Zero();
   return true;
