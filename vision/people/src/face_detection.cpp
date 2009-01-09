@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include <boost/thread/mutex.hpp>
 
 #include "CvStereoCamModel.h"
 #include <robot_msgs/PositionMeasurement.h>
@@ -53,7 +53,6 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
-#include <boost/thread/mutex.hpp>
 
 #include "people.h"
 #include "utils.h"
@@ -95,17 +94,16 @@ public:
   double reliability_; /**< Reliability of the predicitions. This should depend on the training file used. */
 
   bool external_init_; 
-  robot_msgs::PositionMeasurement pos_; /**< The person position measurement to publish. */
+  robot_msgs::PositionMeasurement pos_; /**< A person position update from the filter. */
+  queue<robot_msgs::PositionMeasurement> pos_list_; /**< Queue of updated people positions from the filter. */
 
   bool quit_;
 
   std::string node_name_;
-  ros::Time last_image_time_;
 
   tf::TransformListener tf;
 
-  //ros::thread::mutex cv_mutex_;
-  boost::mutex cv_mutex_;
+  boost::mutex cv_mutex_, pos_mutex_;
 
   // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
   FaceDetector(std::string node_name, const char *haar_filename, double reliability, bool use_depth, bool do_display, bool external_init) : 
@@ -123,7 +121,6 @@ public:
     external_init_(external_init),
     quit_(false),
     node_name_(node_name),
-    last_image_time_(ros::Time().fromSec(0)),
     tf(*this)
   { 
     
@@ -183,47 +180,10 @@ public:
    */ 
   void pos_cb() {
 
-    // Check that the message came from the person filter, not one of the individual trackers.
-    //if (pos_.name != "people_tracking_filter") {
-    //  return;
-    // }
-    boost::mutex::scoped_lock lock(cv_mutex_);
-    //cv_mutex_.lock();
-
-    if ((pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {
-      lock.unlock();
-      //cv_mutex_.unlock();
-      return;
-    }
-
-    // Find the person in my list. If they don't exist, or this is an initialization, create them.
-    // Otherwise, reset the position.
-    int iperson = people_->findID(pos_.object_id);
-    if (pos_.initialization == 1 || iperson < 0) {
-      // Create a person with this id.
-      people_->addPerson();
-      iperson = people_->getNumPeople()-1;
-      people_->setID(pos_.object_id, iperson);
-    }
-    else {
-      // Person already exists.
-    }
-    // Set the position.
-    tf::Point pt;
-    tf::PointMsgToTF(pos_.pos, pt);
-    tf::Stamped<tf::Point> loc(pt, pos_.header.stamp, pos_.header.frame_id);
-    try
-      {
-        tf.transformPoint("stereo_link", pos_.header.stamp, loc, "odom", loc);
-      } 
-    catch (tf::TransformException& ex)
-      {
-      }
-    people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
-    people_->setTrackingFilterUpdateTime(pos_.header.stamp, iperson);
+    // Put the incoming position into the position queue. It'll be processed in the next image callback.
+    boost::mutex::scoped_lock lock(pos_mutex_);
+    pos_list_.push(pos_);
     lock.unlock();
-    //cv_mutex_.unlock();
-
   }
 
   /*!
@@ -244,35 +204,61 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
-    boost::mutex::scoped_lock lock(cv_mutex_);
-    //cv_mutex_.lock();
 
-    last_image_time_ = limage_.header.stamp;
+    // Update face positions from the filter.
+    robot_msgs::PositionMeasurement filter_pos;
+    int iperson;
+    boost::mutex::scoped_lock pos_lock(pos_mutex_);
+    while (!pos_list_.empty()) {
+      filter_pos = pos_list_.front();
+      if ((limage_.header.stamp - filter_pos.header.stamp) < ros::Duration().fromSec(2.0)) {
+	iperson = people_->findID(filter_pos.object_id);    
+	if (filter_pos.initialization == 1 || iperson < 0) {
+	  // Create a person with this id.
+	  people_->addPerson();
+	  iperson = people_->getNumPeople()-1;
+	  people_->setID(filter_pos.object_id, iperson);
+	}
+	else {
+	  // Person already exists.
+	}
+	// Set the position.
+	tf::Point pt;
+	tf::PointMsgToTF(filter_pos.pos, pt);
+	tf::Stamped<tf::Point> loc(pt, filter_pos.header.stamp, filter_pos.header.frame_id);
+	try {
+	  tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
+	} 
+	catch (tf::TransformException& ex) {
+	}
+	people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
+	people_->setTrackingFilterUpdateTime(filter_pos.header.stamp, iperson);
+      }
+      pos_list_.pop();
+    } 
+    pos_lock.unlock();
+
+    boost::mutex::scoped_lock lock(cv_mutex_);
+
     // Kill anyone who hasn't had a filter update in a given time.
     people_->killIfFilterUpdateTimeout(limage_.header.stamp);
-    //if (!people_->getNumPeople()) {
-    //  cv_mutex_.unlock();
-    //  return;
-    //}
  
     CvSize im_size;
 
     // Convert the images to OpenCV format
-    if (lbridge_.fromImage(limage_,"bgr")) {
+    if (lbridge_.fromImage(limage_,"bgr") && dbridge_.fromImage(dimage_)) {
       cv_image_left_ = lbridge_.toIpl();
-    }
-    if (dbridge_.fromImage(dimage_)) {
       cv_image_disp_ = dbridge_.toIpl();
+    }
+    else {
+      lock.unlock();
+      return;
     }
 
     // Convert the stereo calibration into a camera model.
-    if (cam_model_) {
-      delete cam_model_;
-    }
-    double Fx = rcinfo_.P[0];
-    double Fy = rcinfo_.P[5];
-    double Clx = rcinfo_.P[2];
-    double Crx = Clx;
+    if (cam_model_) delete cam_model_;
+    double Fx = rcinfo_.P[0];  double Fy = rcinfo_.P[5];
+    double Clx = rcinfo_.P[2]; double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
@@ -363,7 +349,6 @@ public:
       
     }
     lock.unlock();
-    //cv_mutex_.unlock();
   }
 
 
@@ -375,7 +360,6 @@ public:
 
       // Display all of the images.
       boost::mutex::scoped_lock lock(cv_mutex_);
-      //cv_mutex_.lock();
 
       // Get user input and allow OpenCV to refresh windows.
       int c = cvWaitKey(2);
@@ -384,9 +368,7 @@ public:
       if((c == 27)||(c == 'q')||(c == 'Q'))
 	quit_ = true;
 
-      lock.unlock();
-      //cv_mutex_.unlock();
- 
+      lock.unlock(); 
       usleep(10000);
 
     }
