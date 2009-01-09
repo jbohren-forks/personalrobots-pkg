@@ -3,6 +3,7 @@ VERSION = player_svn-r7125
 TARBALL = build/$(VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(VERSION).tar.bz2
 SOURCE_DIR = build/player-svn
+TARBALL_PATCH = cmake-2.4-ros.patch
 UNPACK_CMD = tar xf
 
 SVN_DIR = player-svn
@@ -15,7 +16,7 @@ all: player
 include $(shell rospack find mk)/download_unpack_build.mk
 
 
-CMAKE = `rospack find cmake`/cmake/bin/cmake 
+CMAKE = cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D CMAKE_INSTALL_PREFIX=$(PWD)/player \
 	     -D INCLUDE_RTK=OFF \

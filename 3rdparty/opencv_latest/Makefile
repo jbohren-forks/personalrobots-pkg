@@ -5,7 +5,7 @@ SVN_DIR = build/opencv-svn
 SVN_URL = https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/latest_tested_snapshot/opencv
 include $(shell rospack find mk)/svn_checkout.mk
 
-CMAKE = `rospack find cmake`/cmake/bin/cmake 
+CMAKE = cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D CMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR) \
              -D BUILD_PYTHON_SUPPORT=OFF

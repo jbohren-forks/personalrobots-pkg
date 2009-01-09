@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(dorylus)
 add_definitions(-Wall)
 add_definitions(-I`rospack find opencv_latest`/opencv-cvs/cxcore/include)

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(laser_scan)
 rospack_add_library(laser_scan src/laser_scan.cc )
 rospack_add_library(laser_median_filter src/median_filter.cpp )

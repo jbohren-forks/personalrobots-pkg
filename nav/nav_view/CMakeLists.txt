@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(nav_view)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -13,14 +13,8 @@ include_directories( src/nav_view )
 rospack_add_library(${PROJECT_NAME} src/nav_view/nav_view_panel.cpp
                                     src/nav_view/tools.cpp
                                     src/nav_view/nav_view_panel_generated.cpp)
-                                    
-                                    
+
 target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES})
-# swig python needs a shared library named _<modulename>.[so|dll|...]
-# this renames the output file to conform to that by prepending an underscore and removing the "lib" prefix
-set_target_properties(${PROJECT_NAME}
-                      PROPERTIES OUTPUT_NAME _${PROJECT_NAME}
-                      PREFIX "")
                                     
 rospack_add_executable(nav_view_exe src/test/nav_view_test.cpp)
 target_link_libraries(nav_view_exe ${PROJECT_NAME} ${wxWidgets_LIBRARIES})

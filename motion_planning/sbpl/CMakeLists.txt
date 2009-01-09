@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.4.6)
 set(ROS_BUILD_TYPE Release)
-include(rosbuild)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(sbpl)
 include_directories(${PROJECT_SOURCE_DIR}/code)
 rospack_add_library(sbpl 

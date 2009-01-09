@@ -5,7 +5,7 @@ SVN_URL = https://plplot.svn.sf.net/svnroot/plplot/trunk
 SVN_REVISION = -r 8746
 include $(shell rospack find mk)/svn_checkout.mk
 
-CMAKE = `rospack find cmake`/cmake/bin/cmake 
+CMAKE = cmake 
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/plplot \
 	-DPLD_wxwidgets:BOOL=ON
 

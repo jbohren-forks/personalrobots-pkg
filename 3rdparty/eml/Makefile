@@ -12,7 +12,7 @@ configured: $(SOURCE_DIR) Makefile
 	cd $(SOURCE_DIR) && \
 	mkdir -p build && \
 	cd build && \
-	`rospack find cmake`/cmake/bin/cmake -D RTNET_INSTALL_PATH=`rospack find rtnet`/rtnet -D XENOMAI_INSTALL_PATH=`rospack find xenomai`/xenomai -D CMAKE_INSTALL_PREFIX=`rospack find eml`/eml .. && \
+	cmake -D RTNET_INSTALL_PATH=`rospack find rtnet`/rtnet -D XENOMAI_INSTALL_PATH=`rospack find xenomai`/xenomai -D CMAKE_INSTALL_PREFIX=`rospack find eml`/eml .. && \
 	touch configured
 
 wiped: Makefile

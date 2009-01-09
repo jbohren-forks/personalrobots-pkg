@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.4.6)
 
 ### If you're trying to debug include directives or so, this here
 ### might help:

@@ -16,7 +16,7 @@ PATCH1 = kdl_patch29562.diff
 PATCH2 = kdl_patch_quaternion.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
-CMAKE = `rospack find cmake`/cmake/bin/cmake 
+CMAKE = cmake 
 BOOST_ROOT =$(shell rospack find boost)/boost
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DPYTHON_BINDINGS=OFF \
