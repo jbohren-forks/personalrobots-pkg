@@ -115,6 +115,7 @@ Publishes to (name/type):
 #include <stdlib.h>
 #include <unistd.h>
 
+bool g_playback = false;
 
 TREX::ExecutiveId node;
 
@@ -154,7 +155,7 @@ namespace TREX {
    * @brief Executive constructor sets up the trex agent instance
    */
   Executive::Executive()
-    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(isArg(argc, argv, "--playback"))
+    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(g_playback)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -330,6 +331,8 @@ int main(int argc, char **argv)
   }
 
   int success = 0;
+
+  g_playback = TREX::isArg(argc, argv, "--playback");
 
   try{
     node = TREX::Executive::request();
