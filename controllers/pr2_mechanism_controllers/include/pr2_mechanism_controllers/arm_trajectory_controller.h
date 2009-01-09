@@ -72,6 +72,8 @@
 namespace controller
 {
 
+  #define GOAL_REACHED_THRESHOLD 0.01
+
 // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
 
@@ -127,6 +129,8 @@ namespace controller
 
     void updateJointControllers(void);
 
+    bool reachedGoalPosition(std::vector<double> joint_cmd);
+
     int getJointControllerPosByName(std::string name);
 
     // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
@@ -149,6 +153,10 @@ namespace controller
     double velocity_scaling_factor_;
 
     friend class ArmTrajectoryControllerNode;
+
+    double trajectory_wait_time_;
+
+    std::vector<double> goal_reached_threshold_;
   };
 
 /** @class ArmTrajectoryControllerNode
@@ -196,11 +204,18 @@ namespace controller
     bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
                            pr2_mechanism_controllers::TrajectoryQuery::response &resp);
 
+    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
+                            pr2_mechanism_controllers::TrajectoryQuery::response &resp);
+
     void deleteTrajectoryFromQueue(int id);
 
     void addTrajectoryToQueue(pr2_mechanism_controllers::JointTraj new_traj, int id);
 
     int createTrajectory(const pr2_mechanism_controllers::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
+
+    void updateTrajectoryQueue(int last_trajectory_finish_status);
+
+    void getJointTrajectoryThresholds();
 
     private:
 
@@ -255,6 +270,19 @@ namespace controller
     std::map<int,int> joint_trajectory_status_;
 
     std::map<int,double>joint_trajectory_time_;
+
+    enum JointTrajectoryStatus{
+      ACTIVE,
+      DONE,
+      QUEUED,
+      DELETED,
+      FAILED,
+      CANCELED,
+      NUM_STATUS
+    };
+
+    double trajectory_wait_timeout_;
+
   };
 
 }
