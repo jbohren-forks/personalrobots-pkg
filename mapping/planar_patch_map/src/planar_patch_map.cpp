@@ -89,10 +89,7 @@ class PlanarPatchMap: public ros::node
       param ("~distance_max", d_max_, 5.0);
 
       subscribe ("tilt_laser_cloud", cloud_, &PlanarPatchMap::cloud_cb, 1);
-      //advertise<scan_utils::OctreeMsg> ("octree", 1);
       advertise<PolygonalMap> ("planar_map", 1);
-//       advertise<PointCloud> ("points_before", 1);
-       advertise<PointCloud> ("points_after", 1);
 
       leaf_width_ = 0.15f;
       octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
@@ -126,51 +123,23 @@ class PlanarPatchMap: public ros::node
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);
 
-        std::vector<double> cell_bounds (6);
-        octree->computeCellBounds (leaf, cell_bounds);
-
-//        std::cerr << leaf->cen_[0] << " " << leaf->cen_[1] << " " << leaf->cen_[2] << std::endl;
-        //cloud_geometry::intersections::planeWithCubeIntersection (coeff, cell_bounds, poly);
-        //poly.points.push_back (poly.points[0]);
-        // Compute a 2D convex hull in 3D
         cloud_geometry::areas::convexHull2D (model->getCloud (), inliers, coeff, poly);
-
-/**
-//poly.points.resize (inliers.size ());
-        pts.pts.resize (inliers.size ());
-        for (int d = 0; d < pts.get_chan_size (); d++)
-          pts.chan[d].vals.resize (inliers.size ());
-        for (unsigned int i = 0; i < poly.points.size (); i++)
-        {
-//poly.points[i].x = points->pts[inliers.at (i)].x;
-// poly.points[i].y = points->pts[inliers.at (i)].y;
-//poly.points[i].z = points->pts[inliers.at (i)].z;
-          pts.pts[i].x = poly.points[i].x;
-          pts.pts[i].y = poly.points[i].y;
-          pts.pts[i].z = poly.points[i].z;
-        }*/
-/*        std::cerr << "Points: " << poly.points.size () << std::endl;
-        for (int x = 0; x < poly.points.size (); x++)
-          std::cerr << poly.points[x].x << " " << poly.points[x].y << " " << poly.points[x].z << std::endl;*/
       }
-      ///publish ("points_after", pts);
-/*      PolygonalMap pmap;
-      pmap.polygons.push_back (poly);
-      publish ("planar_map", pmap);*/
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      filterCloudBasedOnDistance (std_msgs::PointCloud cloud_in, std_msgs::PointCloud &cloud_out,
+      filterCloudBasedOnDistance (std_msgs::PointCloud *cloud_in, std_msgs::PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
-      cloud_out.pts.resize (cloud_in.pts.size ());
+      cloud_out.pts.resize (cloud_in->pts.size ());
       int nr_p = 0;
 
       for (unsigned int i = 0; i < cloud_out.pts.size (); i++)
       {
-        if (cloud_in.chan[d_idx].vals[i] >= d_min && cloud_in.chan[d_idx].vals[i] <= d_max)
+        if (cloud_in->chan[d_idx].vals[i] >= d_min && cloud_in->chan[d_idx].vals[i] <= d_max)
         {
-          cloud_out.pts[nr_p] = cloud_in.pts[i];
+          cloud_out.pts[nr_p] = cloud_in->pts[i];
           nr_p++;
         }
       }
@@ -186,7 +155,7 @@ class PlanarPatchMap: public ros::node
       int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
       if (d_idx != -1)
       {
-        filterCloudBasedOnDistance (cloud_, cloud_f_, d_idx, d_min_, d_max_);
+        filterCloudBasedOnDistance (&cloud_, cloud_f_, d_idx, d_min_, d_max_);
         ROS_INFO ("Distance information present. Filtering points between %g and %g : %d / %d left.", d_min_, d_max_,
                   cloud_f_.pts.size (), cloud_.pts.size ());
       }
@@ -199,22 +168,7 @@ class PlanarPatchMap: public ros::node
       octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
       // Insert all data points into the octree
       for (unsigned int i = 0; i < cloud_f_.pts.size (); i++)
-      {
-/**        // Add the index of the current point to the appropriate cell.
-        // If the cell doesn't exist, it gets created
-        if (!octree_->testBounds (cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z))
-        {
-          fprintf (stderr, "Point outside bounds, will create new cell.\n");
-          //octree_->expandTo (cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
-//          octree_->insert (cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
-        }
-        (*octree_)(cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z).push_back (i);
-        */
-///        vector<int> idx = octree_->get (cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
-///        idx.push_back (i);
-//        vector <int> idx (1); idx[0] = i;
         octree_->insert (cloud_f_.pts[i].x, cloud_f_.pts[i].y, cloud_f_.pts[i].z, i);
-      }
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -224,15 +178,6 @@ class PlanarPatchMap: public ros::node
       PolygonalMap pmap;
       pmap.polygons.resize (octree_->getNumLeaves ());
       int nr_poly = 0;
-
-/**      std::set<cloud_octree::OctreeIndex> occupied_leaves_ = octree_->getOccupiedLeaves ();
-    for (std::set<cloud_octree::OctreeIndex>::iterator it = occupied_leaves_.begin (); it != occupied_leaves_.end (); ++it)
-    {
-      int i, j, k;
-      cloud_octree::OctreeIndex oi = *it;
-      oi.getIndex (i, j, k);
-      std::cerr << "Leaf at " << i << " " << j << " " << k << std::endl;
-    }*/
 
       std::vector<cloud_octree::Leaf*> leaves = octree_->getOccupiedLeaves ();
       int total_pts = 0;
@@ -254,46 +199,7 @@ class PlanarPatchMap: public ros::node
       fprintf (stderr, "> Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.\n", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
       publish ("planar_map", pmap);
 
-/*      int nr_cells = octree_->getNumCells ();
-      // Perform planar decomposition in each octree cell
-      int total_pts = 0;
-      for (int i = 0; i < nr_cells; i++)
-      {
-        for (int j = 0; j < nr_cells; j++)
-        {
-          for (int k = 0; k < nr_cells; k++)
-          {
-
-            vector<int> idx;
-            idx = octree_->cellGet (i, j, k);
-            if (idx.size () > 0)
-            {
-      std::cerr << "Nonempty Leaf at " << i << " " << j << " " << k << " " << idx.size () << std::endl;
-              // Get the point indices present in the i-j-k cell
-              vector<int> indices = octree_->cellGet (i, j, k);
-              fitSACPlane (&cloud_, octree_, indices, pmap.polygons[nr_poly]);
-              nr_poly++;
-              //cerr << i << "," << j << "," << k << " " << idx.size () << endl;
-              total_pts += idx.size ();
-            }
-          }
-        }
-      }
-      pmap.polygons.resize (nr_poly);
-      fprintf (stderr, "> Number of: [total points / points inserted / difference] : [%d / %d / %d]\n", cloud_.pts.size (), total_pts, (int)fabs (cloud_.pts.size () - total_pts));
-      publish ("planar_map", pmap);
-*/
-
-/*      scan_utils::OctreeMsg msg;
-      octree_->getAsMsg (msg);
-
-      Polygon3D p;
-      p.points.resize (3);
-      p.points[0].x = 1; p.points[0].y = 1; p.points[0].z = 1;
-      p.points[1].x = 2; p.points[1].y = 2; p.points[1].z = 2;
-      p.points[2].x = 3; p.points[2].y = 3; p.points[2].z = 3;
-
-      publish ("octree", msg);*/
+      delete octree_;
     }
 };
 
