@@ -49,6 +49,9 @@
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
       </collision>
       <map name="${prefix}_l_finger_sensor" flag="gazebo">
         <verbatim key="${prefix}_l_finger_bumper_sensor">
@@ -116,6 +119,9 @@
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
       </collision>
       <map name="${prefix}_r_finger_sensor" flag="gazebo">
         <verbatim key="${prefix}_r_finger_bumper_sensor">
@@ -183,6 +189,9 @@
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
       </collision>
       <map name="${prefix}_l_finger_tip_sensor" flag="gazebo">
         <verbatim key="${prefix}_l_finger_tip_bumper_sensor">
@@ -250,6 +259,9 @@
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
       </collision>
       <map name="${prefix}_r_finger_tip_sensor" flag="gazebo">
         <verbatim key="${prefix}_r_finger_tip_bumper_sensor">
@@ -384,6 +396,9 @@
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
       </collision>
       <map name="${side}_gripper_palm_sensor" flag="gazebo">
         <verbatim key="${side}_gripper_palm_bumper_sensor">
