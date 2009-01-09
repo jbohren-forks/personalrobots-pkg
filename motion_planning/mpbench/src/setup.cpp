@@ -454,8 +454,8 @@ namespace mpbench {
   createCostMap2D() const
   {
     boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
-    unsigned int const width(rdt->GetXEnd());
-    unsigned int const height(rdt->GetYEnd());
+    ssize_t const width(rdt->GetXEnd());
+    ssize_t const height(rdt->GetYEnd());
     std::vector<unsigned char> data;
     data.reserve(width * height);
     for (ssize_t iy(0); iy < height; ++iy)

@@ -318,7 +318,7 @@ void init_layout_two()
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(configptr->setup.getRawSFLTravmap()));
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   double const v_width(2.0 / tl.size());
-  for (int ix(0), itask(0); itask < tl.size(); ++ix)
+  for (int ix(0), itask(0); itask < static_cast<int>(tl.size()); ++ix)
     for (int iy(1); iy >= 0; --iy, ++itask) {
       ostringstream pdname;
       pdname << "plan" << itask;

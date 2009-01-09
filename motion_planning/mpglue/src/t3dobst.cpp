@@ -45,8 +45,8 @@ using namespace mpglue;
 using namespace costmap_2d;
 using namespace std;
 
-static int const width(5);
-static int const height(5);
+static unsigned int const width(5);
+static unsigned int const height(5);
 static double const startx(0);
 static double const starty(0);
 static double const starttheta(0);
@@ -71,9 +71,9 @@ void initMapdata(array_t & mapdata, value_t obstcost)
        << " * means obstacle (cost = " << (int) obstcost << ")\n"
        << " . means freespace (cost = 0)\n"
        << "-----------------------------\n";
-  for (int ix(0); ix < width; ++ix) {
+  for (unsigned int ix(0); ix < width; ++ix) {
     cout << "  ";
-    for (int iy(0); iy < height; ++iy)
+    for (unsigned int iy(0); iy < height; ++iy)
       if (gtObstacle(ix, iy)) {
 	cout << "*";
 	mapdata[iy * width + ix] = obstcost;
@@ -208,8 +208,8 @@ static bool checkNonWrap()
 static bool checkWrap()
 {
   static unsigned char const obst_cost_thresh(CostMap2D::LETHAL_OBSTACLE);
-  static double const resolution(0.1);
-  static double const window_length(0.1);
+//   static double const resolution(0.1);
+//   static double const window_length(0.1);
 
   footprint_t footprint;
   initOutline(footprint);
@@ -217,7 +217,7 @@ static bool checkWrap()
   std::vector<unsigned char> data(width * height);
   initMapdata(data, obst_cost_thresh);
 
-#warning 'FIX ME (CostMap2D ctor changed)'
+  // XXXX to do: FIX ME (CostMap2D ctor changed)
   cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
        << "adapt to the CostMap2D ctor changes\n";
   return false;

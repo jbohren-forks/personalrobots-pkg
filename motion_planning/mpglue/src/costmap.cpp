@@ -55,7 +55,8 @@ namespace {
     virtual ssize_t getYEnd() const { return cm_->getHeight(); }
     
     virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const
-    { return (index_x >= 0) && (index_x < cm_->getWidth()) && (index_y >= 0) && (index_y < cm_->getHeight()); }
+    { return (index_x >= 0) && (static_cast<size_t>(index_x) < cm_->getWidth())
+	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm_->getHeight()); }
     
     virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y, bool out_of_bounds_is_obstacle) const {
       if (isValidIndex(index_x, index_y))
@@ -176,7 +177,7 @@ namespace mpglue {
   Costmap * createCostmap(costmap_2d::CostMap2D const * cm)
   { return new cm2dCostmap(cm); }
   
-#warning 'Using RDTravmap instead of a raw TraversabilityMap is a big performance hit!'
+  // XXXX to do: Using RDTravmap instead of a raw TraversabilityMap is a performance hit
   Costmap * createCostmap(sfl::RDTravmap const * rdt)
   { return new sflCostmap(rdt); }
   

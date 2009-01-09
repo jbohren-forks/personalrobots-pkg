@@ -123,7 +123,7 @@ namespace mpglue {
     if (changedcellsV_.empty())
       return;
 
-#warning 'what a hack...'
+    // XXXX to do: what a hack...
     ChangedCellsGetter const * ccg(createChangedCellsGetter(changedcellsV_));
     planner->costs_changed(*ccg);
     delete ccg;
