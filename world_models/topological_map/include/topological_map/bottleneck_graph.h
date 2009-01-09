@@ -42,7 +42,15 @@ namespace topological_map
 
 
 // Vertex descriptions
-typedef std::pair<int,int> Coords; 
+struct Coords
+{
+  int first;
+  int second;
+
+  Coords(int f=0, int s=0) : first(f), second(s) {}
+};
+
+
 typedef std::set<Coords> Region;
 enum VertexType { BOTTLENECK, OPEN };
 struct VertexDescription
@@ -70,8 +78,6 @@ typedef boost::graph_traits<BottleneckGraph>::adjacency_iterator BottleneckAdjac
 
 // Typedefs for occupancy grids
 typedef boost::multi_array<bool, 2> GridArray;
-typedef GridArray::index grid_index;
-typedef GridArray::size_type grid_size;
 
 // Array mapping from grid cell to topological graph node
 typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
@@ -89,21 +95,24 @@ public:
 
   void setDims (int nr, int nc);
 
+  int regionId (int r, int c);
+  bool lookupVertex (int r, int c, BottleneckVertex* v);
+  VertexDescription vertexDescription (BottleneckVertex v) { return boost::get(desc_t(), graph, v); }
+
+
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);
   void printBottlenecks (void);
 
-  int regionId (int r, int c);
-  bool lookupVertex (int r, int c, BottleneckVertex* v);
-  VertexDescription vertexDescription (BottleneckVertex v) { return boost::get(desc_t(), graph, v); }
+private:
+  void writeToStream (std::ostream&);
+  void indexRegions (void);
 
   BottleneckGraph graph;
   RegionArray* regions;
   GridArray* isFree;
   int numRows, numCols;
-
-private:
-  void writeToStream (std::ostream&);
+  
 };
 
 

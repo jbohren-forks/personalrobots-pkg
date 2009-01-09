@@ -28,6 +28,55 @@
  */
 
 
+
+/** \author Bhaskara Marthi */
+
+/**
+
+   @mainpage
+
+   @htmlinclude ../manifest.html
+
+   @b ros_bottleneck_graph is a node that computes a topological graph from the static map.  Currently just keeps track of which vertex in the graph the robot is at any point.
+
+   <hr>
+
+   @section usage Usage
+
+   @subsection usage1 Usage 1
+
+   Required:
+   - --bottleneck-size, -b
+   - --inflation-radius, -r
+
+   Optional:
+   - --bottleneck-skip, -k
+   - --distance-lower-bound, -d
+   - --distance-upper-bound, -D
+   - --output-file, -o
+
+   @subsection usage2 Usage 2
+
+   Required:
+   - --input-file, -i
+
+
+   <hr>
+
+   @section topic ROS topics
+
+   Subscribes to:
+   - @b localizedpose
+
+   Services used:
+   - @b static_map.  Note: in the case of using the -i parameter to load the topological graph from a file, we're assuming the static map being provided has the same resolution as the one that was used to compute the saved graph.
+
+   <hr>
+
+   <hr>
+**/
+
+
 #include <getopt.h>
 #include <sysexits.h>
 #include <ros/node.h>
@@ -63,6 +112,10 @@ public:
 
 private:
 
+  // Disallow copy and assignment
+  BottleneckGraphRos (const BottleneckGraphRos&);
+  BottleneckGraphRos& operator= (const BottleneckGraphRos&);
+
 
   IndexedBottleneckGraph bottleneckGraph_;
   NodeStatus nodeStatus_;
@@ -95,6 +148,7 @@ BottleneckGraphRos::BottleneckGraphRos(char* filename) :
   ros::node("bottleneck_graph_ros")
 {
   bottleneckGraph_.readFromFile(filename);
+  nodeStatus_ = READY;
 }
 
 
@@ -196,14 +250,9 @@ void BottleneckGraphRos::writeToFile (char* filename)
 
 void BottleneckGraphRos::convertToMapIndices (double x, double y, int* r, int* c)
 {
-  // Almost certainly wrong, as it ignores origin
-  // Also need to check if x and y should be reversed
- 
+  // Wrong in general, as it ignores origin pose
   *r = (int)floor(y/resolution_);
   *c = (int)floor(x/resolution_);
-
-
-
 }
 
 
@@ -215,7 +264,7 @@ void exitWithUsage(void)
 {
   cout << "Usage 1:\n Required:\n  --bottleneck-size, -b\n  --inflation-radius, -r\n Optional:\n"
     "  --bottleneck-skip, -k\n  --distance-lower-bound, -d\n  --distance-upper-bound, -D\n  --output-file, -o\n"
-    "Usage 2:\n Required:\n  --input-file, -i\n  --map-resolution, -m";
+    "Usage 2:\n Required:\n  --input-file, -i";
   exit(EX_USAGE);
 }
 
@@ -298,8 +347,8 @@ int main(int argc, char** argv)
     ROS_INFO ("Creating bottleneck graph with bottleneck size %d, skip %d, inflation %d, distance lower bound %d, distance upper bound %d\n",
               bottleneckSize, bottleneckSkip, inflationRadius, distanceLower, distanceUpper);
     node = new topological_map::BottleneckGraphRos(bottleneckSize, bottleneckSkip, inflationRadius, distanceLower, distanceUpper);
-    node->setupTopics();
     node->loadMap();
+    node->setupTopics();
     node->computeBottleneckGraph();
     if (outputFile) {
       node->writeToFile(outputFile);
