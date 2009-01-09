@@ -18,7 +18,7 @@
   
   <!-- start nodding laser -->
   <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
-  <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 10 .75 .25" />
+  <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 10 .4 .1" />
 
   <!-- start the filtering node -->
   <node machine="localhost_cameras" pkg="laser_camera_calibration" type="gatherdata.py" output="screen">
