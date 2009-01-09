@@ -105,7 +105,7 @@ int main( int argc, char** argv )
 
   req_q.trajectoryid = atoi(argv[1]);
 
-  if(ros::service::call("TrajectoryQuery", req_q, res_q))  
+  if(ros::service::call("right_arm_controller/TrajectoryQuery", req_q, res_q))  
   {
     ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
   }
@@ -114,7 +114,7 @@ int main( int argc, char** argv )
           ROS_INFO("service call failed");
       }
   sleep(4);
-  if(ros::service::call("TrajectoryQuery", req_q, res_q))  
+  if(ros::service::call("right_arm_controller/TrajectoryQuery", req_q, res_q))  
   {
     ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
   }
