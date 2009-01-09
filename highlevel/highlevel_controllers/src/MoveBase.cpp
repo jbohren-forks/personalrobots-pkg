@@ -355,7 +355,7 @@ namespace ros {
      */
     void MoveBase::updateGoalMsg(){
       // Revert to static map on new goal. May result in oscillation, but requested by Eitan for the milestone
-      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+      updateCostMap(true);
 
       tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
       btQuaternion qt;
@@ -492,7 +492,7 @@ namespace ros {
      */
     void MoveBase::handlePlanningFailure(){
       ROS_DEBUG("No plan found. Handling planning failure");
-      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+      updateCostMap(true);
       stopRobot();
     }
 
@@ -878,6 +878,27 @@ namespace ros {
       return footprint_;
     }
 
+    void MoveBase::updateCostMap(bool static_map_reset){
+      ROS_DEBUG("Starting cost map update/n");
+      if(static_map_reset)
+        costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+
+      // Aggregate buffered observations across 3 sources
+      std::vector<costmap_2d::Observation> observations;
+      baseScanBuffer_->get_observations(observations);
+      tiltScanBuffer_->get_observations(observations);
+      lowObstacleBuffer_->get_observations(observations);
+      stereoCloudBuffer_->get_observations(observations);
+
+      ROS_DEBUG("Applying update with %d observations/n", observations.size());
+      // Apply to cost map
+      ros::Time start = ros::Time::now();
+      costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
+      double t_diff = (ros::Time::now() - start).toSec();
+      publishLocalCostMap();
+      ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+    }
+
     /**
      * Each update loop will query all observations and aggregate them and then apply
      * a batch update to the cost map
@@ -890,25 +911,10 @@ namespace ros {
       while (active_){
         //Avoids laser race conditions.
         if (isInitialized()) {
-
-          ROS_DEBUG("Starting cost map update/n");
+          //update the cost map without resetting to static map
           lock();
-
-          // Aggregate buffered observations across 3 sources
-          std::vector<costmap_2d::Observation> observations;
-          baseScanBuffer_->get_observations(observations);
-          tiltScanBuffer_->get_observations(observations);
-          lowObstacleBuffer_->get_observations(observations);
-          stereoCloudBuffer_->get_observations(observations);
-
-          ROS_DEBUG("Applying update with %d observations/n", observations.size());
-          // Apply to cost map
-	  ros::Time start = ros::Time::now();
-          costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
-          double t_diff = (ros::Time::now() - start).toSec();
-          publishLocalCostMap();
+          updateCostMap(false);
           unlock();
-          ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
         }
 
         d->sleep();

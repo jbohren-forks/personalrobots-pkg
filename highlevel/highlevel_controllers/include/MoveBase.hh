@@ -121,6 +121,8 @@ namespace ros {
        * @see publishPlan
        */
       void updatePlan(ompl::waypoint_plan_t const & newPlan);
+
+      void updateCostMap(bool static_map_reset);
       
       /**
        * @brief test the current plan for collisions with obstacles
