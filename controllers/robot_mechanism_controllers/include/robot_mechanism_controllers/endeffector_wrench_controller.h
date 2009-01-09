@@ -35,14 +35,13 @@
 #define ENDEFFECTOR_WRENCH_CONTEROLLER_H
 
 #include <vector>
-#include "kdl/chain.hpp"
-#include "kdl/frames.hpp"
+#include <kdl/chain.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
-#include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
-#include "misc_utils/advertised_service_guard.h"
 #include "joy/Joy.h"
 
 namespace controller {
@@ -90,7 +89,6 @@ class EndeffectorWrenchControllerNode : public Controller
   std::string topic_;
 
   EndeffectorWrenchController controller_;
-  SubscriptionGuard guard_command_;
 
   robot_msgs::Wrench wrench_msg_;
 };

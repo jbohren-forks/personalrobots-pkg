@@ -39,10 +39,8 @@
 #include "kdl/frames.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Twist.h"
-#include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
-#include "misc_utils/advertised_service_guard.h"
 #include "robot_mechanism_controllers/endeffector_wrench_controller.h"
 #include "joy/Joy.h"
 #include <control_toolbox/pid.h>
@@ -109,7 +107,6 @@ class EndeffectorTwistControllerNode : public Controller
   std::string topic_;
 
   EndeffectorTwistController controller_;
-  SubscriptionGuard guard_command_;
 
   robot_msgs::Twist twist_msg_;
   joy::Joy joystick_msg_;

@@ -209,7 +209,6 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   // subscribe to wrench commands
   node->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorWrenchControllerNode::command, this, 1);
-  guard_command_.set(topic_ + "/command");
 
   return true;
 }
