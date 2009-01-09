@@ -139,6 +139,7 @@ typedef struct ENV_ROBARM_CONFIG
     double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
+    double goal_moe_m;
 
     //velocities
     int nSuccActions;
@@ -198,7 +199,6 @@ class EnvironmentROBARM : public DiscreteSpaceInformation
 public:
 
     bool InitializeEnv(const char* sEnvFile);
-
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     int  GetFromToHeuristic(int FromStateID, int ToStateID);
     int  GetGoalHeuristic(int stateID);
@@ -215,7 +215,6 @@ public:
     ~EnvironmentROBARM(){};
 
     void PrintTimeStat(FILE* fOut);
-    void outputangles(double angles[NUMOFLINKS], bool degrees);
     void CloseKinNode();
     void OutputPlanningStats();
     double GetEpsilon();
@@ -226,15 +225,13 @@ private:
     EnvROBARMConfig_t EnvROBARMCfg;
     EnvironmentROBARM_t EnvROBARM;
 
-    void GetSmoothSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
-
     //hash table
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
     void PrintHashTableHist();
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, short unsigned int action, bool bIsGoal);
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int action);
-//     EnvROBARMHashEntry_t* CreateNewHashEntrySet(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action, double orientation[3][3]);
 
     //initialization
     void ReadParamsFile(FILE* fCfg);
@@ -242,7 +239,6 @@ private:
     void InitializeEnvConfig();
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
-    void ReadSuccActionsFile(FILE* fCfg);
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
@@ -250,8 +246,6 @@ private:
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
@@ -272,7 +266,7 @@ private:
 
     //output
     void PrintHeader(FILE* fOut);
-    void outputjointpositions(EnvROBARMHashEntry_t* H); // for early debugging - remove this 
+    void OutputJointPositions(EnvROBARMHashEntry_t* H); // for early debugging - remove this 
     void PrintConfiguration();
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
@@ -282,7 +276,6 @@ private:
 
     //compute heuristic
     void InitializeKinNode();
-    void ComputeForwardKinematics(double *angles, int f_num, double *x, double *y, double *z);
     void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
@@ -292,17 +285,13 @@ private:
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 
     //forward kinematics
-    void getDHMatrix(boost::numeric::ublas::matrix<double>*T, double alpha, double a, double d, double theta);
-    void getTransformations_robarm7d(boost::numeric::ublas::matrix<double> *T, double angle[NUMOFLINKS]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3],double desired_orientation[3][3]);
     void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
-    void GetPrecomputedDHMatrix(boost::numeric::ublas::matrix<double>*T, double theta, int frame);
-    void GetDHMatrix( double theta, int frame);
-    void GetDHTransformations(double angles[NUMOFLINKS]);
-    void Mult4x4(int A, int B, int C);
-
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3],double desired_orientation[3][3]);
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action, double orientation[3][3]);
+    void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
+    void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
 };
 
 #endif
