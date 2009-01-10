@@ -217,7 +217,7 @@ class NormalEstimation : public ros::node
 
       publish ("cloud_normals", cloud_normals_);
 
-      kdtree_->Clean ();
+      delete kdtree_;
     }
 };
 
