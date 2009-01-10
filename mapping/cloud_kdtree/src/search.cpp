@@ -122,9 +122,10 @@ namespace cloud_kdtree
   /** \brief Search for all the nearest neighbors of the query point in a given radius.
     * \param p_q the given query point
     * \param radius the radius of the sphere bounding all of \a p_q 's neighbors
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::Point32 p_q, double radius)
+    KdTree::radiusSearch (std_msgs::Point32 p_q, double radius, int max_nn)
   {
     if (dim_ != 3)          // We want to discourage 3-D searching when the tree is creating for a different n-D
       return (false);
@@ -134,6 +135,7 @@ namespace cloud_kdtree
 
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
     ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);
@@ -159,9 +161,10 @@ namespace cloud_kdtree
     * \param points the point cloud data
     * \param index the index in \a points representing the query point
     * \param radius the radius of the sphere bounding all the query point's neighbors
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius)
+    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn)
   {
     if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);
@@ -175,6 +178,7 @@ namespace cloud_kdtree
 
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
     ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);
