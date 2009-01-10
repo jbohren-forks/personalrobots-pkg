@@ -239,6 +239,7 @@ private:
     void InitializeEnvConfig();
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
+    double IsPathFeasible();
 
     //coordinate frame/angle functions
     void DiscretizeAngles();

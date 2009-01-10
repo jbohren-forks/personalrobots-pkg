@@ -52,9 +52,9 @@ int dz[DIRECTIONS] = {-1, -1, -1, -1, -1, -1, -1, -1, -1,    0,  0,  0,  0,  0, 
 
 static clock_t DH_time = 0;
 static clock_t KL_time = 0;
-// static clock_t time_gethash = 0;
 static clock_t check_collision_time = 0;
 static int num_forwardkinematics = 0;
+// static clock_t time_gethash = 0;
 // static int num_GetHashEntry = 0;
 
 
@@ -616,20 +616,43 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
         EnvROBARMCfg.DH_theta[i] = DEG2RAD(atof(sTemp));
     }
 
-    //posmotorlimits(degrees)
+    
+    //posmotorlimits(degrees or radians)
     fscanf(fCfg, "%s", sTemp);
-    for(i = 0; i < NUMOFLINKS; i++)
+    if(strcmp(sTemp,"posmotorlimits(degrees):") == 0)
     {
-        fscanf(fCfg, "%s", sTemp);
-        EnvROBARMCfg.PosMotorLimits[i] = atof(sTemp);
+        for(i = 0; i < NUMOFLINKS; i++)
+        {
+            fscanf(fCfg, "%s", sTemp);
+            EnvROBARMCfg.PosMotorLimits[i] = DEG2RAD(atof(sTemp));
+        }
+    }    
+    else //radians
+    {
+        for(i = 0; i < NUMOFLINKS; i++)
+        {
+            fscanf(fCfg, "%s", sTemp);
+            EnvROBARMCfg.PosMotorLimits[i] = atof(sTemp);
+        }
     }
-
-    //negmotorlimits(degrees)
+    
+    //negmotorlimits(degrees or radians)
     fscanf(fCfg, "%s", sTemp);
-    for(i = 0; i < NUMOFLINKS; i++)
+    if(strcmp(sTemp,"negmotorlimits(degrees):") == 0)
     {
-        fscanf(fCfg, "%s", sTemp);
-        EnvROBARMCfg.NegMotorLimits[i] = atof(sTemp);
+        for(i = 0; i < NUMOFLINKS; i++)
+        {
+            fscanf(fCfg, "%s", sTemp);
+            EnvROBARMCfg.NegMotorLimits[i] = DEG2RAD(atof(sTemp));
+        }
+    }
+    else //radians
+    {
+        for(i = 0; i < NUMOFLINKS; i++)
+        {
+            fscanf(fCfg, "%s", sTemp);
+            EnvROBARMCfg.NegMotorLimits[i] = atof(sTemp);
+        }
     }
 
     //allocate the 3D environment & fill set all cells to zero
@@ -988,18 +1011,15 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
         if(endeff[0] >= EnvROBARMCfg.EnvWidth_c || endeff[1] >= EnvROBARMCfg.EnvHeight_c || endeff[2] >= EnvROBARMCfg.EnvDepth_c)
             retval =  0;
 
-        //store the orientation for later use (checking gripper orientation or collision checking for obstaclein gripper)
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                orientation[i][j] = EnvROBARM.Trans[i][j][7];
-
         // check if orientation of gripper is upright
         if(EnvROBARMCfg.enforce_upright_gripper)
         {
             //only one element has to be checked for the upright gripper case
-            if (EnvROBARM.Trans[2][0][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
+            if (EnvROBARM.Trans[0][2][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe ||
+                EnvROBARM.Trans[2][1][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe  ||
+                EnvROBARM.Trans[1][0][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
                 retval = 0;
-
+    
             //NOTE: Add in ability to check for any desired_orientation
         }
 
@@ -1024,6 +1044,39 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
             retval =  0;
 
         KL_time += clock() - currenttime;
+
+
+
+        // check if orientation of gripper is upright
+        if(EnvROBARMCfg.enforce_upright_gripper)
+        {
+            //only one element has to be checked for the upright gripper case
+//             if (EnvROBARM.Trans[2][0][7] < -1.0 + EnvROBARMCfg.gripper_orientation_moe  ||
+//                 EnvROBARM.Trans[0][2][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)  ||
+//                 EnvROBARM.Trans[1][1][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
+
+            if (EnvROBARM.Trans[2][0][7] > -1.0 + EnvROBARMCfg.gripper_orientation_moe  ||
+                EnvROBARM.Trans[0][2][7] < 0.97 - EnvROBARMCfg.gripper_orientation_moe  ||
+                EnvROBARM.Trans[1][1][7] < 0.97 - EnvROBARMCfg.gripper_orientation_moe)
+                    retval = 0;
+            //NOTE: Add in ability to check for any desired_orientation
+        }
+    }
+//         for (int i = 0; i < 3; i++)
+//         {
+//             printf("\n");
+//             for(int j = 0; j < 3; j++)
+//             {
+//                 printf("%.2f  ",EnvROBARM.Trans[i][j][7]);
+//             }
+//         }
+//         printf("\n");
+
+    //store the orientation for later use (checking gripper orientation or collision checking for obstacle in gripper)
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+            orientation[i][j] = EnvROBARM.Trans[i][j][7];
     }
 
     return retval;
@@ -1500,32 +1553,34 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
                 retvalue = 0;
         }
 
-        //check line segment from origin of gripper to closed fingertips
-        double fingertips_g[3] = {0};
-        short unsigned int fingertips_s[3]; //these types are wrong
-
-        //the object is along the gripper's x-axis
-        fingertips_g[2] = .08 / EnvROBARMCfg.GridCellWidth;
-
-        //get position of one end of object in shoulder frame
-        //P_objectInshoulder = R_gripperToshoulder * P_objectIngripper + P_gripperInshoulder
-        fingertips_s[0] = (arm->orientation[0][0]*fingertips_g[0] + arm->orientation[0][1]*fingertips_g[1] + arm->orientation[0][2]*fingertips_g[2]) + arm->endeff[0];
-        fingertips_s[1] = (arm->orientation[1][0]*fingertips_g[0] + arm->orientation[1][1]*fingertips_g[1] + arm->orientation[1][2]*fingertips_g[2]) + arm->endeff[1];
-        fingertips_s[2] = (arm->orientation[2][0]*fingertips_g[0] + arm->orientation[2][1]*fingertips_g[1] + arm->orientation[2][2]*fingertips_g[2]) + arm->endeff[2];
-
-        //check if the line is a valid line segment
-        pTestedCells = NULL;
-        if(!IsValidLineSegment(arm->endeff[0],arm->endeff[1],arm->endeff[2],fingertips_s[0], fingertips_s[1],fingertips_s[2], Grid3D, pTestedCells))
+        if(EnvROBARMCfg.use_DH)
         {
-            if(pTestedCells == NULL)
+            //check line segment from origin of gripper to closed fingertips
+            double fingertips_g[3] = {0};
+            short unsigned int fingertips_s[3]; //these types are wrong
+    
+            //the object is along the gripper's x-axis
+            fingertips_g[2] = .08 / EnvROBARMCfg.GridCellWidth;
+    
+            //get position of one end of object in shoulder frame
+            //P_objectInshoulder = R_gripperToshoulder * P_objectIngripper + P_gripperInshoulder
+            fingertips_s[0] = (arm->orientation[0][0]*fingertips_g[0] + arm->orientation[0][1]*fingertips_g[1] + arm->orientation[0][2]*fingertips_g[2]) + arm->endeff[0];
+            fingertips_s[1] = (arm->orientation[1][0]*fingertips_g[0] + arm->orientation[1][1]*fingertips_g[1] + arm->orientation[1][2]*fingertips_g[2]) + arm->endeff[1];
+            fingertips_s[2] = (arm->orientation[2][0]*fingertips_g[0] + arm->orientation[2][1]*fingertips_g[1] + arm->orientation[2][2]*fingertips_g[2]) + arm->endeff[2];
+    
+            //check if the line is a valid line segment
+            pTestedCells = NULL;
+            if(!IsValidLineSegment(arm->endeff[0],arm->endeff[1],arm->endeff[2],fingertips_s[0], fingertips_s[1],fingertips_s[2], Grid3D, pTestedCells))
             {
-                check_collision_time += clock() - currenttime;
-                return 0;
+                if(pTestedCells == NULL)
+                {
+                    check_collision_time += clock() - currenttime;
+                    return 0;
+                }
+                else
+                    retvalue = 0;
             }
-            else
-                retvalue = 0;
         }
-
 //         printf("[IsValidCoord] elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u) fingertips: (%u %u %u)\n", arm->elbow[0],arm->elbow[1],arm->elbow[2],
 //                     arm->wrist[0],arm-> wrist[1], arm->wrist[2], arm->endeff[0], arm->endeff[1], arm->endeff[2], fingertips_s[0], fingertips_s[1], fingertips_s[2]);
 
@@ -1543,13 +1598,13 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
 
             //get position of one end of object in shoulder frame
             //P_objectInshoulder = R_gripperToshoulder * P_objectIngripper + P_gripperInshoulder
-            objectAbove_s[0] = (arm->orientation[0][0]*objectAbove_g[0] + arm->orientation[0][1]*objectAbove_g[1] + arm->orientation[0][2]*objectAbove_g[2]) + arm->endeff[0];
-            objectAbove_s[1] = (arm->orientation[1][0]*objectAbove_g[0] + arm->orientation[1][1]*objectAbove_g[1] + arm->orientation[1][2]*objectAbove_g[2]) + arm->endeff[1];
-            objectAbove_s[2] = (arm->orientation[2][0]*objectAbove_g[0] + arm->orientation[2][1]*objectAbove_g[1] + arm->orientation[2][2]*objectAbove_g[2]) + arm->endeff[2];
+            objectAbove_s[0] = (arm->orientation[0][0]*objectAbove_g[0] + arm->orientation[0][1]*objectAbove_g[1] + arm->orientation[0][2]* objectAbove_g[2]) + arm->endeff[0];
+            objectAbove_s[1] = (arm->orientation[1][0]*objectAbove_g[0] + arm->orientation[1][1]*objectAbove_g[1] + arm->orientation[1][2]* objectAbove_g[2]) + arm->endeff[1];
+            objectAbove_s[2] = (arm->orientation[2][0]*objectAbove_g[0] + arm->orientation[2][1]*objectAbove_g[1] + arm->orientation[2][2]* objectAbove_g[2]) + arm->endeff[2];
 
-            objectBelow_s[0] = (arm->orientation[0][0]*objectBelow_g[0] + arm->orientation[0][1]*objectBelow_g[1] + arm->orientation[0][2]*objectBelow_g[2]) + arm->endeff[0];
-            objectBelow_s[1] = (arm->orientation[1][0]*objectBelow_g[0] + arm->orientation[1][1]*objectBelow_g[1] + arm->orientation[1][2]*objectBelow_g[2]) + arm->endeff[1];
-            objectBelow_s[2] = (arm->orientation[2][0]*objectBelow_g[0] + arm->orientation[2][1]*objectBelow_g[1] + arm->orientation[2][2]*objectBelow_g[2]) + arm->endeff[2];
+            objectBelow_s[0] = (arm->orientation[0][0]*objectBelow_g[0] + arm->orientation[0][1]*objectBelow_g[1] + arm->orientation[0][2]* objectBelow_g[2]) + arm->endeff[0];
+            objectBelow_s[1] = (arm->orientation[1][0]*objectBelow_g[0] + arm->orientation[1][1]*objectBelow_g[1] + arm->orientation[1][2]* objectBelow_g[2]) + arm->endeff[1];
+            objectBelow_s[2] = (arm->orientation[2][0]*objectBelow_g[0] + arm->orientation[2][1]*objectBelow_g[1] + arm->orientation[2][2]* objectBelow_g[2]) + arm->endeff[2];
 
 //             printf("[IsValidCoord] objectAbove:(%.0f %.0f %.0f) objectBelow: (%.0f %.0f %.0f)\n",objectAbove_g[0], objectAbove_g[1], objectAbove_g[2], objectBelow_g[0], objectBelow_g[1], objectBelow_g[2]);
 //             printf("[IsValidCoord] objectAbove:(%u %u %u) objectBelow: (%u %u %u)\n",objectAbove_s[0], objectAbove_s[1], objectAbove_s[2], objectBelow_s[0], objectBelow_s[1], objectBelow_s[2]);
@@ -1765,9 +1820,10 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     EnvROBARMCfg.padding = 0.16;
     EnvROBARMCfg.smoothing_weight = 0.0;
     EnvROBARMCfg.use_smooth_actions = 1;
-    EnvROBARMCfg.gripper_orientation_moe = 0.0125;
-    EnvROBARMCfg.object_grasped = 1;
+    EnvROBARMCfg.gripper_orientation_moe =  .02; // 0.0125;
+    EnvROBARMCfg.object_grasped = 0;
     EnvROBARMCfg.grasped_object_length_m = .12;
+    EnvROBARMCfg.enforce_upright_gripper = 0;
     EnvROBARMCfg.goal_moe_m = .12;
 
     //parse the parameter file - temporary
@@ -1822,7 +1878,6 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     printf("EndEffector Check Only: %i\n", EnvROBARMCfg.endeff_check_only);
     printf("Smoothness Weight: %.3f\n", EnvROBARMCfg.smoothing_weight);
     printf("Obstacle Padding(meters): %.2f\n", EnvROBARMCfg.padding);
-    printf("Use parsed Successor Actions: %i\n", EnvROBARMCfg.use_smooth_actions);
     printf("\n");
 
     //output start to goal heuristic cost
@@ -1833,6 +1888,8 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 
     //output action costs
     OutputActionCostTable();
+
+    printf("The length of the distance from the shoulder to the goal is %.2f(cells)\n\n",IsPathFeasible());
 #endif
 
     return true;
@@ -2116,12 +2173,22 @@ void EnvironmentROBARM::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector
             //have to create a new entry
             ComputeContAngles(succcoord, angles);
             if(ComputeEndEffectorPos(angles, SuccTemp.endeff, SuccTemp.wrist, SuccTemp.elbow, SuccTemp.orientation, EnvROBARMCfg.upright_gripper) == false)
+            {
+//                 printf("bad: elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u)\n", SuccTemp.elbow[0], SuccTemp.elbow[1],SuccTemp.elbow[2],
+//                 SuccTemp.wrist[0],SuccTemp.wrist[1],SuccTemp.wrist[2],SuccTemp.endeff[0], SuccTemp.endeff[1], SuccTemp.endeff[2]);
                 continue;
+            }
+
+//             printf("good: elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u)\n", SuccTemp.elbow[0], SuccTemp.elbow[1],SuccTemp.elbow[2],
+//             SuccTemp.wrist[0],SuccTemp.wrist[1],SuccTemp.wrist[2],SuccTemp.endeff[0], SuccTemp.endeff[1], SuccTemp.endeff[2]);
 
             //skip invalid successors
             if(!IsValidCoord(succcoord,&SuccTemp))
+            {
+//                 printf("invalid: elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u)\n", SuccTemp.elbow[0], SuccTemp.elbow[1],SuccTemp.elbow[2],
+//             SuccTemp.wrist[0],SuccTemp.wrist[1],SuccTemp.wrist[2],SuccTemp.endeff[0], SuccTemp.endeff[1], SuccTemp.endeff[2]);
                 continue;
-
+            }
             //check if within goal_moe cells of the goal
             if(abs(HashEntry->endeff[0] - EnvROBARMCfg.EndEffGoalX_c) < goal_moe || abs(HashEntry->endeff[1] - EnvROBARMCfg.EndEffGoalY_c) < goal_moe || abs(HashEntry->endeff[2] - EnvROBARMCfg.EndEffGoalZ_c) < goal_moe) 
             {
@@ -2561,10 +2628,10 @@ void EnvironmentROBARM::PrintConfiguration()
     printf("\n\nMotor Limits:\n");
     printf("PosMotorLimits: ");
     for(i=0; i < NUMOFLINKS; i++) 
-        printf("%.2f  ",EnvROBARMCfg.PosMotorLimits[i]);
+        printf("%1.2f  ",EnvROBARMCfg.PosMotorLimits[i]);
     printf("\nNegMotorLimits: ");
     for(i=0; i < NUMOFLINKS; i++) 
-        printf("%.2f  ",EnvROBARMCfg.NegMotorLimits[i]);
+        printf("%1.2f  ",EnvROBARMCfg.NegMotorLimits[i]);
     printf("\n\n");
 }
 
@@ -2638,7 +2705,7 @@ void EnvironmentROBARM::InitializeKinNode()
     filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
     EnvROBARMCfg.pr2_kin.loadXML(filename.str());
 
-    EnvROBARMCfg.left_arm = EnvROBARMCfg.pr2_kin.getSerialChain("left_arm");    
+    EnvROBARMCfg.left_arm = EnvROBARMCfg.pr2_kin.getSerialChain("right_arm");
     assert(EnvROBARMCfg.left_arm);    
     EnvROBARMCfg.pr2_config = new JntArray(EnvROBARMCfg.left_arm->num_joints_);
 
@@ -2754,19 +2821,27 @@ void EnvironmentROBARM::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
 }
 
 //uses ros's KL Library
-void EnvironmentROBARM::ComputeForwardKinematics_ROS(double *angles, int f_num, double  *x, double *y, double *z)
+void EnvironmentROBARM::ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double*z)
 {
+    Frame f, f2;
     KDL::Vector gripper(0.0, 0.0, EnvROBARMCfg.DH_d[NUMOFLINKS_DH-1]);
 
     for(int i = 0; i < NUMOFLINKS; i++)
         (*EnvROBARMCfg.pr2_config)(i) = angles[i];
 
-    Frame f;
     EnvROBARMCfg.left_arm->computeFK((*EnvROBARMCfg.pr2_config),f,f_num);
+    
+//     EnvROBARMCfg.left_arm->computeFK((*EnvROBARMCfg.pr2_config), f2, 6);
 
     //add translation from wrist to end of fingers
     if(f_num == 7)
+    {
         f.p = f.M*gripper + f.p;
+
+        for(int i = 0; i < 3; i++)
+            for(int j = 0; j < 3; j++)
+                EnvROBARM.Trans[i][j][7] = f.M(i,j);
+    }
 
     //translate xyz coordinates from shoulder frame to base frame
     *x = f.p[0] + EnvROBARMCfg.BaseX_m;
@@ -2903,3 +2978,11 @@ void EnvironmentROBARM::ValidateDH2KinematicsLibrary()
             printf("DH: %i,%i,%i   KL: %i,%i,%i\n", endeff1[0],endeff1[1],endeff1[2],endeff2[0],endeff2[1],endeff2[2]);
     }
 }
+
+double EnvironmentROBARM::IsPathFeasible()
+{
+    return (double)sqrt((EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c)*(EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c) +
+                        (EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c)*(EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c) +
+                        (EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c)*(EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c));
+}                   
+
