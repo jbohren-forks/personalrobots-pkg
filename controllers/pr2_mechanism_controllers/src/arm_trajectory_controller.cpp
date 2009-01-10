@@ -259,7 +259,7 @@ void ArmTrajectoryController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(ArmTrajectoryControllerNode)
 
 ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
-  : Controller(), node_(ros::node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(0.0)
+  : Controller(), node_(ros::node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmTrajectoryController();
@@ -313,6 +313,10 @@ void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_fini
       current_trajectory_id_ = joint_trajectory_id_.front();
       joint_trajectory_status_[current_trajectory_id_] = ArmTrajectoryControllerNode::ACTIVE;
     }
+    else
+    {
+      current_trajectory_id_ = 0;
+    }
   }
 }
 
@@ -337,8 +341,8 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     node_->advertise_service(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
 */
 
-   node_->advertise_service(service_prefix_ + "TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
-   node_->advertise_service(service_prefix_ + "TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
+   node_->advertise_service(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   node_->advertise_service(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
    
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
@@ -367,7 +371,7 @@ void ArmTrajectoryControllerNode::getJointTrajectoryThresholds()
   c_->goal_reached_threshold_.resize(c_->dimension_);
   for(int i=0; i< c_->dimension_;i++)
   {
-    node_->param<double>(service_prefix_ + c_->joint_pd_controllers_[i]->getJointName() + "/goal_reached_threshold",c_->goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
+    node_->param<double>(service_prefix_ + "/" + c_->joint_pd_controllers_[i]->getJointName() + "/goal_reached_threshold",c_->goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
   }
 }
 
