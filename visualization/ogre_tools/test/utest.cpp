@@ -32,6 +32,9 @@
 #include <gtest/gtest.h>
 #include "../src/ogre_tools/fps_camera.h"
 #include "../src/ogre_tools/orbit_camera.h"
+#include "../src/ogre_tools/initialization.h"
+
+#include <ros/common.h>
 
 #include <Ogre.h>
 
@@ -55,7 +58,10 @@ public:
     g_root->loadPlugin( "RenderSystem_GL" );
     g_root->loadPlugin( "Plugin_OctreeSceneManager" );
 
-    Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+    std::string ogre_tools_path = ros::get_package_path(ROS_PACKAGE_NAME);
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media", "FileSystem", ROS_PACKAGE_NAME );
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
+    ogre_tools::initializeResources(ogre_tools::V_string());
 
     // Taken from gazebo
     Ogre::RenderSystemList *rsList = g_root->getAvailableRenderers();
