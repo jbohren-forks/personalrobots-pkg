@@ -2,18 +2,16 @@
 
 MPBENCH=`rospack find mpbench`/mpbench-base
 
-#CONSTANT_OPTS="-s office1 -r 0.05 -i 0.5 -d 1.3 -H 3.0"
-CONSTANT_OPTS="-s office1 -r 0.025 -i 0.5 -d 1.3 -H 3.0"
+CONSTANT_OPTS="-i 0.325 -c 0.46 -I 0.55 -d 1.2 -H 3 -m costmap_2d"
 
-A_OPT="-p"
-A_VAR="ARAPlanner ADPlanner"
+A_OPT="-s"
+A_VAR="office1 cubicle"
 
-B_OPT="-m"
-B_VAR="costmap_2d sfl"
-B_NOPTS="2"
+B_OPT="-p"
+B_VAR="ARAPlanner ADPlanner NavFn"
+B_NOPTS="3"
 
-#REST="-c:0.6:-I:1 -c:0.65:-I:1"
-REST="-c:0.6:-I:1 -c:0.65:-I:1 -c:0.7:-I:1 -c:0.9:-I:1 -c:0.6:-I:2 -c:0.65:-I:2 -c:0.7:-I:2 -c:0.9:-I:2 -c:1.4:-I:2 -c:1.9:-I:2"
+REST="-r:0.1 -r:0.05 -r:0.025"
 
 rm -f index.html
 
