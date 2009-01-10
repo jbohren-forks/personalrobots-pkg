@@ -1,5 +1,5 @@
 // Software License Agreement (BSD License)
-// Copyright (c) 2008, Willow Garage, Inc.
+// Copyright (c) 2008, Rosen Diankov (rdiankov@cs.cmu.edu)
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright notice,
@@ -21,8 +21,16 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-// author: Rosen Diankov
+
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+\author Rosen Diankov (rdiankov@cs.cmu.edu)
+
+@b SessionServer creates and manages a roscpp session that wraps various OpenRAVE services.
+ **/
 
 #include "openraveros.h"
 #include "rosserver.h"

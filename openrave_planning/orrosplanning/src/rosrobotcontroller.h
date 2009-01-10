@@ -52,10 +52,10 @@ class ROSRobotController : public ControllerBase
             assert(pnode != NULL);
             Destroy();
             
-            _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::request, pr2_mechanism_controllers::TrajectoryStart::response>(_strTrajectoryServiceDir+"TrajectoryStart", false);
-            _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::request, pr2_mechanism_controllers::TrajectoryCancel::response>(_strTrajectoryServiceDir+"TrajectoryCancel", false);
-            _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::request, pr2_mechanism_controllers::TrajectoryWait::response>(_strTrajectoryServiceDir+"TrajectoryWait", false);
-            _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::request, pr2_mechanism_controllers::TrajectoryQuery::response>(_strTrajectoryServiceDir+"TrajectoryQuery", false);
+            _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::request, pr2_mechanism_controllers::TrajectoryStart::response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
+            _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::request, pr2_mechanism_controllers::TrajectoryCancel::response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
+            _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::request, pr2_mechanism_controllers::TrajectoryWait::response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
+            _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::request, pr2_mechanism_controllers::TrajectoryQuery::response>(_strTrajectoryServiceDir+"TrajectoryQuery", true);
         
             if( !_srvTrajectoryQuery ) {
                 RAVELOG_ERRORA("failed to find %s service\n", (_strTrajectoryServiceDir+"TrajectoryQuery").c_str());
