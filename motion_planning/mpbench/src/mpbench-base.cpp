@@ -38,6 +38,7 @@
 #include <mpglue/sbpl_util.hh>
 #include <mpglue/environment.h>
 #include <mpglue/sbpl_planner.h>
+#include <mpglue/navfn_planner.h>
 #include <sfl/util/numeric.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
@@ -74,6 +75,7 @@ static bool websiteMode;
 static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<Environment> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
+static shared_ptr<CostmapPlanner> planner;
 static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
@@ -117,6 +119,7 @@ void cleanup()
   setup.reset();
   environment.reset();
   plannerMgr.reset();
+  planner.reset();
   logos.reset();
   planList.clear();
 }
@@ -540,22 +543,31 @@ void create_setup()
 	 environment->getName().c_str());
   *logos << "  environment name: " << environment->getName() << "\n" << flush;
   
-  *logos << "creating planner manager\n" << flush;
-  bool const forwardsearch(false);
-  plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-  if ( ! plannerMgr->select(plannerType, false, logos.get()))
-    errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
-  *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
+  // XXXX to do: most "environment" stuff is really specific to SBPL, should be confined there
+  
+  if ("NavFn" == plannerType) {
+    *logos << "creating NavFnPlanner\n" << flush;
+    planner.reset(new NavFnPlanner(environment->getCostmap(),
+				   environment->getIndexTransform()));
+  }
+  else {
+    *logos << "creating SBPLPlannerManager manager\n" << flush;
+    bool const forwardsearch(false);
+    plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
+    if ( ! plannerMgr->select(plannerType, false, logos.get()))
+      errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
+    *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
+    SBPLPlannerWrap * pwrap(new SBPLPlannerWrap(plannerMgr->getName(), environment->getName(),
+						plannerMgr->get_planner(), environment));
+    pwrap->stopAtFirstSolution(false);
+    pwrap->setAllocatedTime(numeric_limits<double>::max());
+    planner.reset(pwrap);
+  }
 }
 
 
 void run_tasks()
 {
-  SBPLPlannerWrap pwrap(plannerMgr->getName(), environment->getName(),
-			plannerMgr->get_planner(), environment);
-  pwrap.stopAtFirstSolution(false);
-  pwrap.setAllocatedTime(numeric_limits<double>::max());
-  
   *logos << "running tasks\n" << flush;
   try {
     SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
@@ -565,13 +577,13 @@ void run_tasks()
       
       *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
       
-      pwrap.setStart(task.start_x, task.start_y, task.start_th);
-      pwrap.setGoal(task.goal_x, task.goal_y, task.goal_th);
-      pwrap.forcePlanningFromScratch(task.from_scratch);
+      planner->setStart(task.start_x, task.start_y, task.start_th);
+      planner->setGoal(task.goal_x, task.goal_y, task.goal_th);
+      planner->forcePlanningFromScratch(task.from_scratch);
       
       shared_ptr<waypoint_plan_t> plan;
       try {
-	plan = pwrap.createPlan();
+	plan = planner->createPlan();
       }
       catch (std::exception const & ee) {
 	*logos << "\n==================================================\n"
@@ -585,7 +597,7 @@ void run_tasks()
 	bundle.push_back(plan);
       else
 	title = "  FAILURE";
-      shared_ptr<CostmapPlannerStats> stats(pwrap.copyStats());
+      shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
       stats->logStream(*logos, title, "    ");
       *logos << flush;
       plannerStats.push_back(stats);
