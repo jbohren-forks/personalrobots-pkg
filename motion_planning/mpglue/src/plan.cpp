@@ -38,6 +38,54 @@
 
 namespace mpglue {
   
+  
+  PlanConverter::
+  PlanConverter(waypoint_plan_t * plan)
+    : plan_length(0),
+      tangent_change(0),
+      direction_change(0),
+      plan_(plan),
+      count_(0),
+      prevx_(0),
+      prevy_(0),
+      prevtan_(0),
+      prevdir_(0)
+  {
+  }
+  
+  
+  void PlanConverter::
+  addWaypoint(std_msgs::Pose2DFloat32 const & waypoint)
+  {
+    if (0 < count_) {
+      double const dx(waypoint.x - prevx_);
+      double const dy(waypoint.y - prevy_);
+      plan_length += sqrt(pow(dx, 2) + pow(dy, 2));
+      direction_change += fabs(sfl::mod2pi(waypoint.th - prevdir_));
+      double const tangent(atan2(dy, dx));
+      if (1 < count_) // tangent change only available after 2nd point
+	tangent_change += fabs(sfl::mod2pi(tangent - prevtan_));
+      prevtan_ = tangent;
+    }
+    plan_->push_back(waypoint);
+    ++count_;
+    prevx_ = waypoint.x;
+    prevy_ = waypoint.y;
+    prevdir_ = waypoint.th;
+  }
+  
+  
+  void PlanConverter::
+  addWaypoint(double px, double py, double pth)
+  {
+    std_msgs::Pose2DFloat32 pp;
+    pp.x = px;
+    pp.y = py;
+    pp.th = pth;
+    addWaypoint(pp);
+  }
+  
+  
   void convertPlan(Environment const & environment,
 		   raw_sbpl_plan_t const & raw,
 		   waypoint_plan_t * plan,
@@ -45,46 +93,47 @@ namespace mpglue {
 		   double * optTangentChangeRad,
 		   double * optDirectionChangeRad)
   {
-    double tmpPlanLengthM;
-    double tmpTangentChangeRad;
-    double tmpDirectionChangeRad;
-    double * planLengthM(optPlanLengthM ? optPlanLengthM : &tmpPlanLengthM);
-    double * tangentChangeRad(optTangentChangeRad ? optTangentChangeRad : &tmpTangentChangeRad);
-    double * directionChangeRad(optDirectionChangeRad ? optDirectionChangeRad : &tmpDirectionChangeRad);
-    *planLengthM = 0;
-    *tangentChangeRad = 0;
-    *directionChangeRad = 0;
-    
-    double prevx(0), prevy(0), prevtan(0), prevdir(0);
-    prevtan = 42.17;	// to detect when it has been initialized (see 42 below)
-    for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it) {
-      std_msgs::Pose2DFloat32 const waypoint(environment.GetPoseFromState(*it));
-      
-      // update stats:
-      // - first round, nothing to do
-      // - second round, update path length only
-      // - third round, update path length and angular change
-      if (plan->empty()) {
-	prevx = waypoint.x;
-	prevy = waypoint.y;
-	prevdir = waypoint.th;
-      }
-      else {
-	double const dx(waypoint.x - prevx);
-	double const dy(waypoint.y - prevy);
-	*planLengthM += sqrt(pow(dx, 2) + pow(dy, 2));
-	*directionChangeRad += fabs(sfl::mod2pi(waypoint.th - prevdir));
-	double const tangent(atan2(dy, dx));
-	if (42 > prevtan) // see 42.17 above
-	  *tangentChangeRad += fabs(sfl::mod2pi(tangent - prevtan));
-	prevx = waypoint.x;
-	prevy = waypoint.y;
-	prevdir = waypoint.th;
-	prevtan = tangent;
-      }
-      
-      plan->push_back(waypoint);
+    PlanConverter pc(plan);
+    for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it)
+      pc.addWaypoint(environment.GetPoseFromState(*it));
+    if (optPlanLengthM)
+      *optPlanLengthM = pc.plan_length;
+    if (optTangentChangeRad)
+      *optTangentChangeRad = pc.tangent_change;
+    if (optDirectionChangeRad)
+      *optDirectionChangeRad = pc.direction_change;
+  }
+  
+  
+  /**
+     \todo Interpolation could easily be made optional using a bool param.
+  */
+  void convertPlan(IndexTransform const & itransform,
+		   float const * path_x,
+		   float const * path_y,
+		   int path_len,
+		   waypoint_plan_t * plan,
+		   double * optPlanLengthM,
+		   double * optTangentChangeRad,
+		   double * optDirectionChangeRad)
+  {
+    PlanConverter pc(plan);
+    double const resolution(itransform.getResolution());
+    for (int ii(0); ii < path_len; ++ii, ++path_x, ++path_y) {
+      ssize_t ix(static_cast<ssize_t>(rint(*path_x)));
+      ssize_t iy(static_cast<ssize_t>(rint(*path_y)));
+      double px, py;
+      itransform.indexToGlobal(ix, iy, &px, &py);
+      pc.addWaypoint(interpolateIndexToGlobal(ix, px, *path_x, resolution),
+		     interpolateIndexToGlobal(iy, py, *path_y, resolution),
+		     0);
     }
+    if (optPlanLengthM)
+      *optPlanLengthM = pc.plan_length;
+    if (optTangentChangeRad)
+      *optTangentChangeRad = pc.tangent_change;
+    if (optDirectionChangeRad)
+      *optDirectionChangeRad = pc.direction_change;
   }
   
 }

@@ -65,7 +65,7 @@ namespace mpglue {
     ssize_t goal_iy;	     /**< Y-index of the goal in the costmap */
     double goal_tol_distance;/**< maximum distance at which to stop planning */
     double goal_tol_angle;   /**< maximum heading error at which to stop planning */
-
+    
     bool success;             /**< whether planning was successfull */
     double actual_time_wall;     /**< duration actually used for planning (wallclock) */
     double actual_time_user;     /**< duration actually used for planning (user time) */

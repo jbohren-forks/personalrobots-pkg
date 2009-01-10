@@ -114,6 +114,10 @@ namespace mpglue {
   {
   };
   
+  template<typename index_type>
+  double interpolateIndexToGlobal(index_type dis_idx, double dis_glob, double idx, double res)
+  { return dis_glob + res * (idx - dis_idx); }
+  
   
   Costmap * createCostmap(costmap_2d::CostMap2D const * cm);
   Costmap * createCostmap(sfl::RDTravmap const * rdt);

@@ -10,6 +10,7 @@
  <depend package="costmap_2d"/>
  <depend package="sbpl"/>
  <depend package="libsunflower"/>
+ <depend package="navfn"/>
  <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
  </export>

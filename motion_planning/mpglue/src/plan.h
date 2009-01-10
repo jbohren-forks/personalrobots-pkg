@@ -44,6 +44,28 @@ namespace mpglue {
   typedef std::vector<std_msgs::Pose2DFloat32> waypoint_plan_t;
   
   class Environment;
+  class IndexTransform;
+  
+  
+  /**
+     Helper class for constructing waypoint_plan_t while updating plan
+     statistics.
+  */
+  class PlanConverter
+  {
+  public:
+    explicit PlanConverter(waypoint_plan_t * plan);
+    void addWaypoint(std_msgs::Pose2DFloat32 const & waypoint);
+    void addWaypoint(double px, double py, double pth);
+    
+    double plan_length, tangent_change, direction_change;
+    
+  private:
+    waypoint_plan_t * plan_;
+    size_t count_;
+    double prevx_, prevy_, prevtan_, prevdir_;
+  };
+  
   
   /**
      Convert a plan from a raw state ID sequence (as computed by
@@ -54,6 +76,36 @@ namespace mpglue {
 		   Environment const & environment,
 		   /** in: the raw plan */
 		   raw_sbpl_plan_t const & raw,
+		   /** out: the converted plan (it is just appended
+		       to, not cleared for you) */
+		   waypoint_plan_t * plan,
+		   /** optional out: the cumulated path length */
+		   double * optPlanLengthM,
+		   /** optional out: the cumulated change in the path
+		       tangential direction (the angle between the
+		       x-axis and the delta between two successive
+		       waypoints) */
+		   double * optTangentChangeRad,
+		   /** optional out: the cumulated change in the
+		       direction of the waypoints (the delta of
+		       std_msgs::Pose2DFloat32::th values).
+		       \note This only makes sense for plans that are
+		       aware of the robot's heading though. */
+		   double * optDirectionChangeRad);
+  
+  /**
+     Convert a plan from an float index-pair sequence (as computed by
+     NavFn) to waypoints that are understandable. Optionally provides
+     some statistics on the plan.
+  */
+  void convertPlan(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
+		   IndexTransform const & itransform,
+		   /** in: array of X-coordinates (continuous grid index). */
+		   float const * path_x,
+		   /** in: array of Y-coordinates (continuous grid index). */
+		   float const * path_y,
+		   /** in: the length of path_x[] and path_y[]. */
+		   int path_len,
 		   /** out: the converted plan (it is just appended
 		       to, not cleared for you) */
 		   waypoint_plan_t * plan,

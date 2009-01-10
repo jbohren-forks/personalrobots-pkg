@@ -15,10 +15,11 @@ rospack_add_library (mpglue
 		     src/costmap.cpp
 		     src/planner.cpp
 		     src/sbpl_planner.cpp
+		     src/navfn_planner.cpp
 		     src/footprint.cpp
 		     src/environment.cpp
 		     src/plan.cpp)
-target_link_libraries (mpglue costmap_2d)
+target_link_libraries (mpglue costmap_2d costmap_2d sunflower navfn)
 
 rospack_add_executable (t3dobst src/t3dobst.cpp)
-target_link_libraries (t3dobst mpglue costmap_2d sunflower)
+target_link_libraries (t3dobst mpglue)
