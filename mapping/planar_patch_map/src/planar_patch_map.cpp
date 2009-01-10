@@ -49,6 +49,7 @@
 // Sample Consensus
 #include <sample_consensus/sac.h>
 #include <sample_consensus/msac.h>
+#include <sample_consensus/ransac.h>
 #include <sample_consensus/sac_model_plane.h>
 
 // Cloud geometry
@@ -91,7 +92,7 @@ class PlanarPatchMap: public ros::node
       subscribe ("tilt_laser_cloud", cloud_, &PlanarPatchMap::cloud_cb, 1);
       advertise<PolygonalMap> ("planar_map", 1);
 
-      leaf_width_ = 0.15f;
+      leaf_width_ = 0.35f;
       octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
     }
 
@@ -108,7 +109,7 @@ class PlanarPatchMap: public ros::node
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, 0.02);
+      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, 0.02);
       model->setDataSet (points, indices);
 
       // Search for the best plane
@@ -196,6 +197,7 @@ class PlanarPatchMap: public ros::node
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
+      pmap.header = cloud_.header;
       publish ("planar_map", pmap);
 
       delete octree_;

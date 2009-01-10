@@ -51,6 +51,8 @@
 #include <sample_consensus/msac.h>
 #include <sample_consensus/sac_model_plane.h>
 
+#include <tf/transform_listener.h>
+
 // Cloud geometry
 #include <cloud_geometry/areas.h>
 #include <cloud_geometry/point.h>
@@ -70,6 +72,8 @@ class SemanticPointAnnotator : public ros::node
     PointCloud cloud_, cloud_annotated_;
     Point32 z_axis_;
 
+    tf::TransformListener tf_;
+
     // Parameters
     int sac_min_points_per_model_, sac_min_points_left_;
     double sac_distance_threshold_, eps_angle_;
@@ -78,7 +82,7 @@ class SemanticPointAnnotator : public ros::node
     double rule_table_min_, rule_table_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    SemanticPointAnnotator () : ros::node ("semantic_point_annotator")
+    SemanticPointAnnotator () : ros::node ("semantic_point_annotator"), tf_(*this)
     {
       param ("~rule_floor", rule_floor_, 0.1);           // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
@@ -87,7 +91,7 @@ class SemanticPointAnnotator : public ros::node
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
       param ("~p_sac_min_points_left", sac_min_points_left_, 500);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 20);   // 20 points
+      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
       param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
 
@@ -119,6 +123,8 @@ class SemanticPointAnnotator : public ros::node
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
       sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
+      sac->setMaxIterations (100);
+      sac->setProbability (0.95);
       model->setDataSet (points, *indices);
 
       PointCloud pts (*points);
@@ -129,13 +135,15 @@ class SemanticPointAnnotator : public ros::node
         if (sac->computeModel ())
         {
           // Obtain the inliers and the planar model coefficients
+          if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
+            break;
           inliers.push_back (sac->getInliers ());
           coeff.push_back (sac->computeCoefficients ());
           fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
                    coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
 
           // Project the inliers onto the model
-          model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
+          //model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
 
           // Remove the current inliers in the model
           nr_points_left = sac->removeInliers ();
@@ -147,10 +155,14 @@ class SemanticPointAnnotator : public ros::node
     // Callback
     void cloud_cb ()
     {
-      Point32 robot_origin;
-      robot_origin.x = robot_origin.y = robot_origin.z = 0.0;
+      PointStamped base_link_origin, map_origin;
+      base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
+      base_link_origin.header.frame_id = "base_link";
+      base_link_origin.header.stamp = 0;
 
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      tf_.transformPoint ("base_link", base_link_origin, map_origin);
+
+      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", cloud_.pts.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
 
       cloud_annotated_.header = cloud_.header;
 
@@ -193,6 +205,10 @@ class SemanticPointAnnotator : public ros::node
       cloud_annotated_.chan[2].vals.resize (total_p);
 
       // Get all planes parallel to the floor (perpendicular to Z)
+      Point32 robot_origin;
+      robot_origin.x = map_origin.point.x;
+      robot_origin.y = map_origin.point.y;
+      robot_origin.z = map_origin.point.z;
       for (unsigned int i = 0; i < inliers_parallel.size (); i++)
       {
         // Compute a distance from 0,0,0 to the plane
