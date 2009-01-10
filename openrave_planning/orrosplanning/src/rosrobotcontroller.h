@@ -264,6 +264,7 @@ public:
             }
 
             //req.requesttiming = 1; // request back the timestamps
+            _bIsDone = false;
             req.hastiming = 0;
             req.traj.points.resize(2);
             (*ittrajcontroller)->GetTrajPoint(_vcurvalues, req.traj.points[0]);
@@ -303,6 +304,7 @@ public:
             }
 
             //req.requesttiming = 1; // request back the timestamps
+            _bIsDone = false;
             req.hastiming = 0;
             req.traj.points.resize(ptraj->GetPoints().size());
             typeof(req.traj.points.begin()) ittraj = req.traj.points.begin(); 
@@ -515,8 +517,7 @@ private:
 
             // check if the first trajectory is done
             boost::mutex::scoped_lock lock(_mutexTrajectories);
-            bool bDone = true;
-
+            
             if( _listControllers.size() > 0 ) {
                 bool bPopTrajectory = true;
 
@@ -532,8 +533,11 @@ private:
                         RAVELOG_ERRORA("trajectory query failed\n");
                         bPopTrajectory = false;
                     }
-
-                    if( !res.done ) {
+                    
+                    if( !(res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Done ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Deleted ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Failed ||
+                          res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Canceled) ) {
                         bPopTrajectory = false;
                         break;
                     }
@@ -545,10 +549,12 @@ private:
                     RAVELOG_DEBUGA("robot trajectory finished, left: %d\n", _listControllers.front()->_listTrajectories.size());
                 }
 
-                bDone = _listControllers.front()->_listTrajectories.size()==0;
+                if( _bIsDone != _listControllers.front()->_listTrajectories.size()==0 ) {
+                    _bIsDone = _listControllers.front()->_listTrajectories.size()==0;
+                    RAVELOG_DEBUGA("done: %d\n", _bIsDone);
+                }
             }
 
-            _bIsDone = bDone;
             usleep(10000); // query every 10ms
         }
     }

@@ -45,6 +45,10 @@ public:
         : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _robotid(0), nNextId(1)
     {
     }
+    virtual ~ObjectTransformSystem() {
+        stopsubscriptions(); // need to stop the subscriptions because the virtual destructor will not call the overridden stopsubscriptions
+        ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::Destroy();
+    }
 
     virtual bool Init(istream& sinput)
     {
