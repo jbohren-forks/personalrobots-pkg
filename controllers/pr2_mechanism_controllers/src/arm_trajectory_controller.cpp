@@ -272,8 +272,8 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   node_->unadvertise_service(service_prefix_ + "/get_command");
   node_->unadvertise_service(service_prefix_ + "/set_target");
   */
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryStart");
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryQuery");
+  node_->unadvertise_service(service_prefix_ + "TrajectoryStart");
+  node_->unadvertise_service(service_prefix_ + "TrajectoryQuery");
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {

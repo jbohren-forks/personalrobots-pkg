@@ -1,6 +1,8 @@
-%% openraveros_restart(sessionserver, viewer)
+%% openraveros_restart(sessionserver, viewer, destroyall)
 %%
 %% restars an openraveros session if the current one is invalid
+%% if destroyall is 1 and openraveros cannot find a currently existing session,
+%%   destroys all other sessions before creating a new one
 
 %% Software License Agreement (BSD License)
 %% Copyright (c) 2008, Willow Garage, Inc.
@@ -27,8 +29,12 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 %%
 %% author: Rosen Diankov
-function openraveros_restart(sessionserver,viewer)
+function openraveros_restart(sessionserver,viewer,destroyall)
 global openraveros_globalsession
+
+if( ~exist('destroyall','var') )
+    destroyall = 0;
+end
 
 if( ~exist('sessionserver','var') || isempty(sessionserver) )
     sessionserver = 'openrave_session';
@@ -38,7 +44,7 @@ if( ~exist('viewer','var') )
     viewer = 'qtcoin';
 end
 
-openraveros_startup(sessionserver, 1, viewer);
+openraveros_startup(sessionserver, 1, viewer,destroyall);
 
 if( ~isempty(openraveros_globalsession) )
     %% send a dummy env_set command
@@ -46,6 +52,15 @@ if( ~isempty(openraveros_globalsession) )
     if( ~isempty(res) )
         %% success
         return;
+    end
+end
+
+if( destroyall )
+    reqdestroy = openraveros_openrave_session();
+    reqdestroy.sessionid = -1;
+    resdestroy = rosoct_service_call(sessionserver,reqdestroy);
+    if( isempty(resdestroy) )
+        warning('failed to destroy sessions');
     end
 end
 

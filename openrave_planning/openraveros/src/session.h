@@ -331,15 +331,23 @@ private:
     bool session_callback(openrave_session::request& req, openrave_session::response& res)
     {
         if( req.sessionid != 0 ) {
-            // destory the session
             boost::mutex::scoped_lock lock(_mutexsession);
-            if( _mapsessions.find(req.sessionid) != _mapsessions.end() ) {
+
+            if( req.sessionid == -1 ) {
+                // destroy all sessions
+                RAVELOG_DEBUGA("destroying all sessions\n");
+                _mapsessions.clear();
+            }
+            else {
+                // destory the session
+                if( _mapsessions.find(req.sessionid) == _mapsessions.end() )
+                    return false;
+                
                 _mapsessions.erase(req.sessionid);
                 RAVELOG_INFOA("destroyed openrave session: %d\n", req.sessionid);
-                return true;
             }
-            
-            return false;
+
+            return true;
         }
 
         int id = rand();

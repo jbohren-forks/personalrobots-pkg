@@ -83,5 +83,10 @@ while(1)
     end
 
     % switch back to real
+    sessionclone = openraveros_getglobalsession();
     setrealsession();
+    if( sessionclone.id ~= openraveros_getglobalsession().id )
+        %destroy
+        openraveros_destroysession(sessionclone);
+    end
 end

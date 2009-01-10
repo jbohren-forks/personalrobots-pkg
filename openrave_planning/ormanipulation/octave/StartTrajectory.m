@@ -19,9 +19,10 @@ prevprobs = probs;
 setrealsession();
 [out,trajsuc] = orProblemSendCommand(['traj stream ' trajdata],probs.manip);
 if( ~trajsuc )
+    display('trajectory failed');
     success = 0;
     setclonesession(prevsession);
-    probs = prevprobs;
+    probs = prevprobs
     return;
 end
 
@@ -46,7 +47,8 @@ while(dowait == 1 & (orEnvWait(robotid, 0.05) == 0) )
     end
 end
 
+display('wait ended');
 newjointconfig = orBodyGetJointValues(robotid);
 setclonesession(prevsession);
-probs = prevprobs;
+probs = prevprobs
 orBodySetJointValues(robotid,newjointconfig);

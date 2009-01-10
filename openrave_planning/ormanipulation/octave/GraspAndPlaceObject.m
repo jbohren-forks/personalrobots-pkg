@@ -315,9 +315,10 @@ while(curgrasp < size(grasps,1))
     if( squeezesuccess > 0 & putsuccess > 0 )
         display('success, putting down');
 
+        orBodySetJointValues(robotid,open_config,handjoints);
         % only break when succeeded        
         %orProblemSendCommand(['MoveHandStraight stepsize 0.003 minsteps ' sprintf('%f ', 90) ' maxsteps ' sprintf('%f ', 100) ' direction ' sprintf('%f ', updir')]);
-        %RobotGoInitial(robot);
+        RobotGoInitial(robot);
         
         if( MySwitchModels(0) )
             curobj.id = orEnvGetBody(curobj.info.name);
