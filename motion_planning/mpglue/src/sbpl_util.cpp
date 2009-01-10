@@ -34,47 +34,16 @@
 
 #include "sbpl_util.hh"
 #include "environment.h"
+#include "planner.h"
 #include <sbpl/headers.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <errno.h>
 #include <cstring>
 
-
 using namespace std;
 
-
-namespace {
-  
-  static map<string, string> planner_alias;
-  
-}
-
-
 namespace mpglue {
-  
-  
-  std::string canonicalPlannerName(std::string const & name_or_alias)
-  {
-    if (planner_alias.empty()) {
-      planner_alias.insert(make_pair("ARAPlanner", "ARAPlanner"));
-      planner_alias.insert(make_pair("ara",        "ARAPlanner"));
-      planner_alias.insert(make_pair("ARA",        "ARAPlanner"));
-      planner_alias.insert(make_pair("arastar",    "ARAPlanner"));
-      planner_alias.insert(make_pair("ARAStar",    "ARAPlanner"));
-
-      planner_alias.insert(make_pair("ADPlanner",  "ADPlanner"));
-      planner_alias.insert(make_pair("ad",         "ADPlanner"));
-      planner_alias.insert(make_pair("AD",         "ADPlanner"));
-      planner_alias.insert(make_pair("adstar",     "ADPlanner"));
-      planner_alias.insert(make_pair("ADStar",     "ADPlanner"));
-    }
-    
-    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
-    if (planner_alias.end() == is)
-      return "";
-    return is->second;
-  }
   
   
   SBPLPlanner * createSBPLPlanner(std::string const & name,
@@ -97,10 +66,7 @@ namespace mpglue {
     
     if (opt_err_os) {
       *opt_err_os << "mpglue::createSBPLPlanner(): no planner called \"name\"\n"
-		  << "  use \"ARAPlanner\" or \"ADPlanner\"\n"
-		  << "  or one of the registered aliases:\n";
-      for (map<string, string>::const_iterator is(planner_alias.begin()); is != planner_alias.end(); ++is)
-	*opt_err_os << "    " << is->first << " --> " << is->second << "\n";
+		  << "  use \"ARAPlanner\" or \"ADPlanner\"\n";
     }
     
     return 0;    

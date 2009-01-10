@@ -44,6 +44,10 @@
 
 namespace mpglue {
   
+  
+  std::string canonicalPlannerName(std::string const & name_or_alias);
+  
+  
   class Costmap;
   class IndexTransform;
   
@@ -116,6 +120,16 @@ namespace mpglue {
     /** Default implementation just stores the goal tolerance in the
 	stats__ field. */
     virtual void setGoalTolerance(double dist_tol, double angle_tol);
+
+    //////////////////////////////////////////////////
+    //////////////////////////////////////////////////
+    /**
+       \todo The presence of this no-op method is just a quick hack
+       for integration of NavFn.
+    */
+    virtual void forcePlanningFromScratch(bool flag) {}
+    //////////////////////////////////////////////////
+    //////////////////////////////////////////////////
     
     /** Calls preCreatePlan(), doCreatePlan(), and postCreatePlan() in
 	that order. If any of them throw an exception, the following

@@ -45,6 +45,35 @@ using namespace std;
 namespace mpglue {
   
   
+  std::string canonicalPlannerName(std::string const & name_or_alias)
+  {
+    static map<string, string> planner_alias;
+    if (planner_alias.empty()) {
+      planner_alias.insert(make_pair("ARAPlanner", "ARAPlanner"));
+      planner_alias.insert(make_pair("ara",        "ARAPlanner"));
+      planner_alias.insert(make_pair("ARA",        "ARAPlanner"));
+      planner_alias.insert(make_pair("arastar",    "ARAPlanner"));
+      planner_alias.insert(make_pair("ARAStar",    "ARAPlanner"));
+
+      planner_alias.insert(make_pair("ADPlanner",  "ADPlanner"));
+      planner_alias.insert(make_pair("ad",         "ADPlanner"));
+      planner_alias.insert(make_pair("AD",         "ADPlanner"));
+      planner_alias.insert(make_pair("adstar",     "ADPlanner"));
+      planner_alias.insert(make_pair("ADStar",     "ADPlanner"));
+
+      planner_alias.insert(make_pair("NavFn",      "NavFn"));
+      planner_alias.insert(make_pair("navfn",      "NavFn"));
+      planner_alias.insert(make_pair("nf",         "NavFn"));
+      planner_alias.insert(make_pair("NF",         "NavFn"));
+    }
+    
+    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+    if (planner_alias.end() == is)
+      return "";
+    return is->second;
+  }
+  
+  
   CostmapPlannerStats::
   CostmapPlannerStats()
     : start_x(0),

@@ -66,13 +66,6 @@ namespace mpglue {
   
   
   /**
-     Translate a name or alias into a string that createSBPLPlanner()
-     understands.
-  */
-  std::string canonicalPlannerName(std::string const & name_or_alias);
-  
-  
-  /**
      Create a planner subclass based on its name.
      
      \todo Use some sort of registry instead of hard-coded
