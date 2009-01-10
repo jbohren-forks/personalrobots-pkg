@@ -112,6 +112,7 @@
 
 #include <random_utils/random_utils.h>
 #include <robot_filter/RobotFilter.h>
+#include <tf/message_notifier.h>
 
 // Laser projection
 #include "laser_scan/laser_scan.h"
@@ -147,10 +148,19 @@ public:
     /* create a thread that handles the publishing of the data */	
     m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
-    subscribe("scan",  m_inputScan,  &World3DMap::scanCallback, 1);
-    subscribe("cloud", m_inputCloud, &World3DMap::pointCloudCallback, 1);
-    subscribe("base_scan", m_baseScanMsg, &World3DMap::baseScanCallback, 1);
+    subscribe("scan",  m_inputScan,  &World3DMap::doNothing, 1);
+    subscribe("cloud", m_inputCloud, &World3DMap::doNothing, 1);
+    subscribe("base_scan", m_baseScanMsg, &World3DMap::doNothing, 1);
 
+    m_scanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
+				 boost::bind(&World3DMap::scanCallback, this, _1),
+				 "scan", "map", 1);
+    m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
+				 boost::bind(&World3DMap::baseScanCallback, this, _1),
+				 "cloud", "map", 1);
+    m_cloudNotifier = new tf::MessageNotifier<std_msgs::PointCloud>(&m_tf, this, 
+				 boost::bind(&World3DMap::pointCloudCallback, this, _1),
+				 "base_scan", "map", 1);
 
     m_robotFilter = new robot_filter::RobotFilter(this, robot_model_name, m_verbose, bodyPartScale);
   }
@@ -158,6 +168,9 @@ public:
   ~World3DMap(void)
   {
     delete m_robotFilter;
+    delete m_scanNotifier;
+    delete m_baseScanNotifier;
+    delete m_cloudNotifier;
 
     /* terminate spawned threads */
     m_active = false;
@@ -183,26 +196,27 @@ public:
     
     
 private:
-    
+  void doNothing() {
+  }
   
-  void pointCloudCallback(void)
+  void pointCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
   {
-    processData(m_inputCloud);
+    processData(*message);
   }
     
-  void scanCallback(void)
+  void scanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
   {
     // Project laser into point cloud
     std_msgs::PointCloud local_cloud;
-    m_projector.projectLaser(m_inputScan, local_cloud, m_tiltLaserMaxRange);
+    m_projector.projectLaser(*message, local_cloud, m_tiltLaserMaxRange);
     processData(local_cloud);
   }
     
-  void baseScanCallback(void)
+  void baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
   {
     // Project laser into point cloud
     std_msgs::PointCloud local_cloud;
-    m_projector.projectLaser(m_baseScanMsg, local_cloud, m_baseLaserMaxRange);
+    m_projector.projectLaser(*message, local_cloud, m_baseLaserMaxRange);
     processData(local_cloud);
   }
 
@@ -411,6 +425,10 @@ private:
 
   laser_scan::LaserProjection m_projector; /**< Used to project laser scans */
   std::deque<std_msgs::PointCloud> point_clouds_;
+
+  tf::MessageNotifier<std_msgs::LaserScan>* m_scanNotifier;
+  tf::MessageNotifier<std_msgs::LaserScan>* m_baseScanNotifier;
+  tf::MessageNotifier<std_msgs::PointCloud>* m_cloudNotifier;
 };
 
 void usage(const char *progname)
