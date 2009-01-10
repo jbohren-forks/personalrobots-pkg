@@ -216,8 +216,6 @@ NavFn::setNavArr(int xs, int ys)
 // set up cost array, usually from ROS
 //
 
-#define COST_FACTOR 3
-
 void
 NavFn::setCostMap(const COSTTYPE *cmap, bool isROS)
 {
