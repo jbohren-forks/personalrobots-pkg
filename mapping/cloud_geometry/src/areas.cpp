@@ -81,6 +81,41 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the area of a 2D planar polygon patch - using a given normal
+      * \param polygon the planar polygon
+      * \param normal the plane normal
+      */
+    double
+      compute2DPolygonalArea (std_msgs::Polygon3D polygon, std::vector<double> normal)
+    {
+      int k0, k1, k2;
+
+      // Find axis with largest normal component and project onto perpendicular plane
+      k0 = (fabs (normal.at (0) ) > fabs (normal.at (1))) ? 0  : 1;
+      k0 = (fabs (normal.at (k0)) > fabs (normal.at (2))) ? k0 : 2;
+      k1 = (k0 + 1) % 3;
+      k2 = (k0 + 2) % 3;
+
+      // cos(theta), where theta is the angle between the polygon and the projected plane
+      double ct = fabs ( normal.at (k0) );
+
+      double area = 0;
+      float p_i[3], p_j[3];
+
+      for (unsigned int i = 0; i < polygon.points.size (); i++)
+      {
+        p_i[0] = polygon.points[i].x; p_i[1] = polygon.points[i].y; p_i[2] = polygon.points[i].z;
+        int j = (i + 1) % polygon.points.size ();
+        p_j[0] = polygon.points[j].x; p_j[1] = polygon.points[j].y; p_j[2] = polygon.points[j].z;
+
+        area += p_i[k1] * p_j[k2] - p_i[k2] * p_j[k1];
+      }
+      area = fabs (area) / (2 * ct);
+
+      return (area);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute a 2D convex hull in 3D space using Andrew's monotone chain algorithm
       * \param points the point cloud
       * \param indices the point indices to use from the cloud (they must form a planar model)

@@ -63,6 +63,7 @@ namespace cloud_geometry
     }
 
     double compute2DPolygonalArea (std_msgs::PointCloud points, std::vector<double> normal);
+    double compute2DPolygonalArea (std_msgs::Polygon3D polygon, std::vector<double> normal);
     void convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull);
     void convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull);
 
