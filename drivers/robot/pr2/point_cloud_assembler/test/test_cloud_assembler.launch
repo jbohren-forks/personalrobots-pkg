@@ -8,7 +8,7 @@
     <param name="downsample_factor" type="int" value="2" />
   </node>
 
-  <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" output="screen"  name="shadow_filter">
+  <node pkg="laser_scan" type="scan_shadows_filter_node" output="screen"  name="shadow_filter">
     <remap from="tilt_laser_cloud_filtered" to="tilt_laser_cloud_filtered"/>
     <remap from="tilt_scan" to="tilt_scan" />
   </node>
