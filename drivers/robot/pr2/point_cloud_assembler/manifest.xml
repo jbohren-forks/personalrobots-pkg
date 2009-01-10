@@ -16,7 +16,6 @@
   # For Testing
   <depend package="rostest"/>
   <depend package="gtest"/>
-  <depend package="scan_shadows_filter"/>
   <depend package="rosrecord" />
 </package>
 

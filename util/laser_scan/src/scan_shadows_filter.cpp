@@ -28,16 +28,11 @@
  *
  */
 
-/**
-@mainpage
-
-@htmlinclude manifest.html
-
+/*
 \author Radu Bogdan Rusu <rusu@cs.tum.edu>
 
-@b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
 
- **/
+ */
 
 #include <ros/node.h>
 #include <std_msgs/PointCloud.h>
@@ -50,6 +45,8 @@
 
 using namespace std_msgs;
 
+/** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
+ */
 class ScanShadowsFilter : public ros::node
 {
   public:
