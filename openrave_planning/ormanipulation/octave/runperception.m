@@ -21,3 +21,8 @@ out = orProblemSendCommand('createsystem PhaseSpace phase_space_snapshot',probs.
 if( isempty(out) )
     error('failed to create phasespace');
 end
+
+out = orProblemSendCommand('createsystem CollisionMap collision_map',probs.task);
+if( isempty(out) )
+    error('failed to create phasespace');
+end

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(laser_scan)
 rospack_add_library(laser_scan src/laser_scan.cc )
 rospack_add_library(laser_median_filter src/median_filter.cpp )

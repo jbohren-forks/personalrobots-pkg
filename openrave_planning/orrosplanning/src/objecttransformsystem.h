@@ -22,7 +22,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// author: Rosen Diankov
+// \author Rosen Diankov
 #ifndef OBJECTTRANSFORM_SENSOR_SYSTEM
 #define OBJECTTRANSFORM_SENSOR_SYSTEM
 
@@ -42,7 +42,7 @@ class ObjectTransformSystem : public ROSSensorSystem<checkerboard_detector::Obje
 {
 public:
     ObjectTransformSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _robotid(0), nNextId(1)
+        : ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>(penv), _robotid(0), _nNextId(1)
     {
     }
     virtual ~ObjectTransformSystem() {
@@ -227,7 +227,7 @@ private:
 
                 // append an id to the body
                 wstringstream ss;
-                ss << pbody->GetName() << nNextId++;
+                ss << pbody->GetName() << _nNextId++;
                 pbody->SetName(ss.str().c_str());
 
                 if( !GetEnv()->AddKinBody(pbody) ) {
@@ -238,7 +238,7 @@ private:
 
                 BODY* b = AddKinBody(pbody, NULL);
                 if( b == NULL ) {
-                    delete pbody;
+                    GetEnv()->RemoveKinBody(pbody, true);
                     continue;
                 }
 
@@ -272,7 +272,7 @@ private:
     int _robotid;
     Transform _toffset; ///< offset from tf frame
     dReal _fThreshSqr;
-    int nNextId;
+    int _nNextId;
 };
 
 #endif
