@@ -101,8 +101,10 @@ class NormalEstimation : public ros::node
       subscribe (cloud_topic.c_str (), cloud_, &NormalEstimation::cloud_cb, 1);
       advertise<PointCloud> ("cloud_normals", 1);
 
+#ifdef DEBUG
       cloud_normals_.chan.resize (1);
       cloud_normals_.chan[0].name = "intensities";
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,25 +164,24 @@ class NormalEstimation : public ros::node
 
       // Process all points
       gettimeofday (&t1, NULL);
-      int nr_flipped = 0;
+
+      vector<vector<int> > indices_all (cloud_.pts.size ());
+      for (int i = 0; i < (int)cloud_.pts.size (); i++)
+      {
+        indices_all[i].resize (k_);
+        vector<double> distances (k_);
+        kdtree_->nearestKSearch (i, k_, indices_all[i], distances);
+      }
 
       #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_.pts.size (); i++)
       {
-        vector<int> indices (k_);
-        vector<double> distances (k_);
-
-        #pragma omp critical
-        {
-          kdtree_->nearestKSearch (i, k_, indices, distances);
-        }
-
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &indices_, plane_parameters, curvature);
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &indices_all[i], plane_parameters, curvature);
         if (compute_moments_)
-          cloud_geometry::nearest::computeMomentInvariants (&cloud_, &indices, j1, j2, j3);
+          cloud_geometry::nearest::computeMomentInvariants (&cloud_, &indices_all[i], j1, j2, j3);
 
         // See if we need to flip any plane normals
         Point32 vp_m;
@@ -197,7 +198,6 @@ class NormalEstimation : public ros::node
         {
           for (int d = 0; d < 3; d++)
             plane_parameters (d) *= -1;
-          //nr_flipped++;
         }
 #ifdef DEBUG
         cloud_normals_.pts[i].x = plane_parameters (0);
@@ -220,7 +220,7 @@ class NormalEstimation : public ros::node
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Local features estimated in %g seconds. Number of point normals flipped: %d.", time_spent, nr_flipped);
+      ROS_INFO ("Local features estimated in %g seconds.", time_spent);
 
       publish ("cloud_normals", cloud_normals_);
 
