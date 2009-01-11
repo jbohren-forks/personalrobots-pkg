@@ -52,6 +52,7 @@ sizes.
 // Cloud geometry
 #include <cloud_geometry/point.h>
 
+#include "collision_map/Box3D.h"
 #include "collision_map/CollisionMap.h"
 #include <tf/transform_listener.h>
 #include <sys/time.h>
@@ -85,9 +86,9 @@ class CollisionMapper : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapper () : ros::node ("collision_map"), tf_(*this)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
-      param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
-      param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
+      param ("~leaf_width_x", leaf_width_.x, 0.05);       // 5cm diameter by default
+      param ("~leaf_width_y", leaf_width_.y, 0.05);       // 5cm diameter by default
+      param ("~leaf_width_z", leaf_width_.z, 0.05);       // 5cm diameter by default
 
       param ("~robot_max_x", robot_max_.x, 1.5);          // 1.5m radius by default
       param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
@@ -106,15 +107,29 @@ class CollisionMapper : public ros::node
     virtual ~CollisionMapper () { }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      updateParametersFromServer ()
+    {
+      if (has_param ("~leaf_width_x")) get_param ("~leaf_width_x", leaf_width_.x);
+      if (has_param ("~leaf_width_y")) get_param ("~leaf_width_y", leaf_width_.y);
+      if (has_param ("~leaf_width_z")) get_param ("~leaf_width_z", leaf_width_.z);
+
+      if (has_param ("~robot_max_x")) get_param ("~robot_max_x", robot_max_.x);
+      if (has_param ("~robot_max_y")) get_param ("~robot_max_y", robot_max_.y);
+      if (has_param ("~robot_max_z")) get_param ("~robot_max_z", robot_max_.z);
+
+      if (has_param ("~min_nr_points")) get_param ("~min_nr_points", min_nr_points_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
       // Copy the header (and implicitly the frame_id)
       c_map_.header = cloud_.header;
-      c_map_.centers.resize (cloud_.pts.size ());
-      c_map_.dimensions.resize (cloud_.pts.size ());
+      c_map_.boxes.resize (cloud_.pts.size ());
 
-      //updateParametersFromServer ();
+      updateParametersFromServer ();
       // Square the limits
       robot_max_.x *= robot_max_.x;
       robot_max_.y *= robot_max_.y;
@@ -204,22 +219,21 @@ class CollisionMapper : public ros::node
       {
         if (leaves_[cl].nr_points_ > min_nr_points_)
         {
-          c_map_.centers[nr_c].x = leaves_[cl].i_ * divB.x + minB.x;
-          c_map_.centers[nr_c].y = leaves_[cl].j_ * divB.y + minB.y;
-          c_map_.centers[nr_c].z = leaves_[cl].k_ * divB.z + minB.z;
-          c_map_.dimensions[nr_c].x = leaf_width_.x;
-          c_map_.dimensions[nr_c].y = leaf_width_.y;
-          c_map_.dimensions[nr_c].z = leaf_width_.z;
+          c_map_.boxes[nr_c].center.x = leaves_[cl].i_ * divB.x + minB.x;
+          c_map_.boxes[nr_c].center.y = leaves_[cl].j_ * divB.y + minB.y;
+          c_map_.boxes[nr_c].center.z = leaves_[cl].k_ * divB.z + minB.z;
+          c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
+          c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
+          c_map_.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
 
           nr_c++;
         }
       }
-      c_map_.centers.resize (nr_c);
-      c_map_.dimensions.resize (nr_c);
+      c_map_.boxes.resize (nr_c);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %d.", time_spent, c_map_.centers.size ());
+      ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %d.", time_spent, c_map_.boxes.size ());
 
       publish ("collision_map", c_map_);
     }
