@@ -83,9 +83,9 @@ class CollisionMapper : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapper () : ros::node ("collision_map"), tf_(*this)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.05);       // 5cm diameter by default
-      param ("~leaf_width_y", leaf_width_.y, 0.05);       // 5cm diameter by default
-      param ("~leaf_width_z", leaf_width_.z, 0.05);       // 5cm diameter by default
+      param ("~leaf_width_x", leaf_width_.x, 0.025);       // 2.5cm diameter by default
+      param ("~leaf_width_y", leaf_width_.y, 0.025);       // 2.5cm diameter by default
+      param ("~leaf_width_z", leaf_width_.z, 0.025);       // 2.5cm diameter by default
 
       param ("~robot_max_x", robot_max_.x, 1.5);          // 1.5m radius by default
       param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
@@ -96,7 +96,22 @@ class CollisionMapper : public ros::node
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
 
-      subscribe ("tilt_laser_cloud", cloud_, &CollisionMapper::cloud_cb, 1);
+      // Square the limits (simplified point distances below)
+      robot_max_.x = robot_max_.x * robot_max_.x;
+      robot_max_.y = robot_max_.y * robot_max_.y;
+      robot_max_.z = robot_max_.z * robot_max_.z;
+
+      string cloud_topic ("tilt_laser_cloud");
+
+      vector<pair<string, string> > t_list;
+      get_published_topics (&t_list);
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (cloud_topic) == string::npos)
+          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+      }
+
+      subscribe (cloud_topic.c_str (), cloud_, &CollisionMapper::cloud_cb, 1);
       advertise<collision_map::CollisionMap> ("collision_map", 1);
     }
 
@@ -111,9 +126,24 @@ class CollisionMapper : public ros::node
       if (has_param ("~leaf_width_y")) get_param ("~leaf_width_y", leaf_width_.y);
       if (has_param ("~leaf_width_z")) get_param ("~leaf_width_z", leaf_width_.z);
 
-      if (has_param ("~robot_max_x")) get_param ("~robot_max_x", robot_max_.x);
-      if (has_param ("~robot_max_y")) get_param ("~robot_max_y", robot_max_.y);
-      if (has_param ("~robot_max_z")) get_param ("~robot_max_z", robot_max_.z);
+      if (has_param ("~robot_max_x"))
+      {
+        double rx;
+        get_param ("~robot_max_x", rx);
+        robot_max_.x = rx * rx;
+      }
+      if (has_param ("~robot_max_y"))
+      {
+        double ry;
+        get_param ("~robot_max_y", ry);
+        robot_max_.y = ry * ry;
+      }
+      if (has_param ("~robot_max_z"))
+      {
+        double rz;
+        get_param ("~robot_max_z", rz);
+        robot_max_.z = rz * rz;
+      }
 
       if (has_param ("~min_nr_points")) get_param ("~min_nr_points", min_nr_points_);
     }
@@ -127,17 +157,21 @@ class CollisionMapper : public ros::node
       c_map_.boxes.resize (cloud_.pts.size ());
 
       updateParametersFromServer ();
-      // Square the limits
-      robot_max_.x *= robot_max_.x;
-      robot_max_.y *= robot_max_.y;
-      robot_max_.z *= robot_max_.z;
 
-      PointStamped base_link_origin, map_origin;
-      base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
-      base_link_origin.header.frame_id = "base_link";
-      base_link_origin.header.stamp = 0;
+      PointStamped base_origin, torso_lift_origin;
+      base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
+      base_origin.header.frame_id = "base_link";
+      base_origin.header.stamp = 0;
 
-//       tf_.transformPoint ("base_link", base_link_origin, map_origin);
+      try
+      {
+        tf_.transformPoint ("torso_lift_link", base_origin, torso_lift_origin);
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR ("TF not running or wrong TF frame specified! Defaulting to 0,0,0.");
+        torso_lift_origin = base_origin;
+      }
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
 
       timeval t1, t2;
@@ -154,9 +188,9 @@ class CollisionMapper : public ros::node
       for (unsigned int i = 0; i < cloud_.pts.size (); i++)
       {
         // We split the "distance" on all 3 dimensions to allow greater flexibility
-        distance_sqr_x = fabs ((cloud_.pts[i].x - base_link_origin.point.x) * (cloud_.pts[i].x - base_link_origin.point.x));
-        distance_sqr_y = fabs ((cloud_.pts[i].y - base_link_origin.point.y) * (cloud_.pts[i].y - base_link_origin.point.y));
-        distance_sqr_z = fabs ((cloud_.pts[i].z - base_link_origin.point.z) * (cloud_.pts[i].z - base_link_origin.point.z));
+        distance_sqr_x = fabs ((cloud_.pts[i].x - torso_lift_origin.point.x) * (cloud_.pts[i].x - torso_lift_origin.point.x));
+        distance_sqr_y = fabs ((cloud_.pts[i].y - torso_lift_origin.point.y) * (cloud_.pts[i].y - torso_lift_origin.point.y));
+        distance_sqr_z = fabs ((cloud_.pts[i].z - torso_lift_origin.point.z) * (cloud_.pts[i].z - torso_lift_origin.point.z));
 
         // If the point is within the bounds, use it for minP/maxP calculations
         if (distance_sqr_x < robot_max_.x && distance_sqr_y < robot_max_.y && distance_sqr_z < robot_max_.z)
@@ -222,12 +256,12 @@ class CollisionMapper : public ros::node
       {
         if (leaves_[cl].nr_points_ > min_nr_points_)
         {
-          c_map_.boxes[nr_c].center.x = leaves_[cl].i_ * divB.x + minB.x;
-          c_map_.boxes[nr_c].center.y = leaves_[cl].j_ * divB.y + minB.y;
-          c_map_.boxes[nr_c].center.z = leaves_[cl].k_ * divB.z + minB.z;
           c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
           c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
           c_map_.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
+          c_map_.boxes[nr_c].center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - c_map_.boxes[nr_c].extents.x; // + minB.x;
+          c_map_.boxes[nr_c].center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - c_map_.boxes[nr_c].extents.y; // + minB.y;
+          c_map_.boxes[nr_c].center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - c_map_.boxes[nr_c].extents.z; // + minB.z;
 
           nr_c++;
         }
