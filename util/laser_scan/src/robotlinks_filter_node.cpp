@@ -458,7 +458,7 @@ int main(int argc, char ** argv)
     ros::init(argc,argv);
     s_pmasternode.reset(new ros::node("robobtlinks_filter"));
 
-    if( !s_pmasternode->checkMaster() )
+    if( !s_pmasternode->check_master() )
         return -1;
     
     boost::shared_ptr<RobotLinksFilter> plinksfilter(new RobotLinksFilter(robotname, padding, bAccurateTiming));
