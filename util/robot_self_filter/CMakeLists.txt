@@ -3,6 +3,8 @@ include(rosbuild)
 set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(robot_self_filter)
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 rospack_add_executable(robotlinks_filter_node src/robotlinks_filter_node.cpp)
 target_link_libraries (robotlinks_filter_node openrave-core qhull)
 
