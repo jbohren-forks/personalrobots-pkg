@@ -49,9 +49,6 @@ sizes.
 #include <std_msgs/Point.h>
 #include <std_msgs/PointCloud.h>
 
-// Cloud geometry
-#include <cloud_geometry/point.h>
-
 #include "collision_map/Box3D.h"
 #include "collision_map/CollisionMap.h"
 #include <tf/transform_listener.h>
