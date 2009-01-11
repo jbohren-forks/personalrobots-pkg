@@ -22,19 +22,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
+/// \author Rosen Diankov (rdiankov@cs.cmu.edu)
 
-/**
-@mainpage
-
-@htmlinclude manifest.html
-
-\author Rosen Diankov (rdiankov@cs.cmu.edu)
-
-@b RobotLinksFilter removes all nodes that lie on the robot. Each robot link is approximated by a convex hull.
-
- **/
 #include <vector>
 #include <sstream>
+#include <cstdio>
 
 #include <ros/node.h>
 #include <std_msgs/PointCloud.h>
@@ -121,13 +113,13 @@ public:
         else
             ROS_ERROR("failed to init robot %s", robotname.c_str());
 
-        s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 10);
+        s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 2);
         s_pmasternode->advertise<std_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
     }
     virtual ~RobotLinksFilter()
     {
         if( s_pmasternode != NULL ) {
-            s_pmasternode->unsubscribe("tilt_scan");
+            s_pmasternode->unsubscribe("tilt_laser_cloud_filtered");
             s_pmasternode->unadvertise("robotlinks_cloud_filtered");
         }
     }
@@ -218,7 +210,7 @@ private:
         _pointcloudout.set_chan_size(_pointcloudin.chan.size());
         for(int ichan = 0; ichan < (int)_pointcloudin.chan.size(); ++ichan) {
             _pointcloudout.chan[ichan].name = _pointcloudin.chan[ichan].name;
-            _pointcloudout.chan[ichan].set_vals_size(_pointcloudin.chan[ichan].vals.size());
+            _pointcloudout.chan[ichan].set_vals_size(totalpoints);
         }
 
         for(int oldindex = 0, newindex = 0; oldindex < (int)_vlaserpoints.size(); ++oldindex) {
@@ -231,7 +223,7 @@ private:
             ++newindex;
         }
 
-        ROS_INFO("published %d points, processing time=%fs\n", totalpoints, (ros::Time::now()-stampprocess).toSec());
+        ROS_INFO("published %d points, processing time=%fs", totalpoints, (ros::Time::now()-stampprocess).toSec());
         s_pmasternode->publish("robotlinks_cloud_filtered",_pointcloudout);
     }
 
@@ -248,13 +240,19 @@ private:
         FOREACH(itp, pointcloudin.pts)
             vlaserpoints[index++] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),0);
 
-        FOREACH(ithull, _vLinkHulls) {
-            _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, stampstart, bttransform);
-            ithull->tstart = GetTransform(bttransform);
-            _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, stampend, bttransform);
-            ithull->tend = GetTransform(bttransform);
+        try {
+            FOREACH(ithull, _vLinkHulls) {
+                _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, stampstart, bttransform);
+                ithull->tstart = GetTransform(bttransform);
+                _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, stampend, bttransform);
+                ithull->tend = GetTransform(bttransform);
+            }
         }
-        
+        catch(tf::TransformException& ex) {
+            ROS_WARN("failed to get tf frame");
+            return;
+        }
+
         // points are independent from each and loop can be parallelized
         #pragma omp parallel for schedule(dynamic,128)
         for(int i = 0; i < (int)vlaserpoints.size(); ++i) {
@@ -266,7 +264,8 @@ private:
 
                 bool bInside = true;
                 FOREACH(itplane, ithull->vconvexhull) {
-                    if( dot4(*itplane,tinv * laserpoint.pt) > 0 ) {
+                    Vector v = tinv * laserpoint.pt; v.w = 1;
+                    if( dot4(*itplane,v) > 0 ) {
                         bInside = false;
                         break;
                     }
@@ -285,17 +284,28 @@ private:
     void PruneWithSimpleTiming(const std_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         tf::Stamped<btTransform> bttransform;
+        vlaserpoints.resize(0);
+        
+        // compute new hulls
+        try {
+            FOREACH(ithull, _vLinkHulls) {
+                _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, pointcloudin.header.stamp, bttransform);
+                ithull->tstart = GetTransform(bttransform);
+            }
+        }
+        catch(tf::TransformException& ex) {
+            ROS_WARN("failed to get tf frame");
+            return;
+        }
+        
         vlaserpoints.resize(pointcloudin.pts.size());
 
         int index = 0;
         FOREACH(itp, pointcloudin.pts)
             vlaserpoints[index++] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),0);
 
-        // compute new hulls
         FOREACH(ithull, _vLinkHulls) {
-            _tf->lookupTransform(pointcloudin.header.frame_id, ithull->tfframe, pointcloudin.header.stamp, bttransform);
-            TransformMatrix tinvstart = GetTransform(bttransform).inverse();
-
+            TransformMatrix tinvstart = ithull->tstart.inverse();
             ithull->vnewconvexhull.resize(ithull->vconvexhull.size());
             vector<Vector>::iterator itnewplane = ithull->vnewconvexhull.begin();
             FOREACH(itplane, ithull->vconvexhull) {
@@ -314,7 +324,7 @@ private:
             FOREACH(ithull, _vLinkHulls) {
 
                 bool bInside = true;
-                FOREACH(itplane, ithull->vconvexhull) {
+                FOREACH(itplane, ithull->vnewconvexhull) {
                     if( dot4(*itplane,laserpoint.pt) > 0 ) {
                         bInside = false;
                         break;
@@ -347,8 +357,8 @@ private:
         bool bSuccess = false;
         boolT ismalloc = 0;           // True if qhull should free points in qh_freeqhull() or reallocation  
         char flags[]= "qhull Tv"; // option flags for qhull, see qh_opt.htm 
-        FILE *outfile = NULL;    // output from qh_produce_output(), use NULL to skip qh_produce_output()  
-        FILE *errfile = stderr;    // error messages from qhull code  
+        FILE *outfile = NULL;    // stdout, output from qh_produce_output(), use NULL to skip qh_produce_output()  
+        FILE *errfile = tmpfile();    // stderr, error messages from qhull code  
         
         int exitcode= qh_new_qhull (dim, qpoints.size()/3, &qpoints[0], ismalloc, flags, outfile, errfile);
         if (!exitcode) { // no error
@@ -421,7 +431,7 @@ int main(int argc, char ** argv)
     }
 
     ros::init(argc,argv);
-    s_pmasternode.reset(new ros::node("roobtlinks_filter"));
+    s_pmasternode.reset(new ros::node("robobtlinks_filter"));
 
     if( !s_pmasternode->checkMaster() )
         return -1;
