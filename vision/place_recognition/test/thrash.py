@@ -1,5 +1,5 @@
 import rostools
-rostools.update_path('star_detector')
+rostools.update_path('place_recognition')
 import rostest
 import pylab, numpy
 import Image
