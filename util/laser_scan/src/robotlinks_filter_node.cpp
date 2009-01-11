@@ -161,7 +161,7 @@ public:
             // compute convex hull
             if( compute_convex_hull((*itlink)->GetCollisionData().vertices, ithull->vconvexhull) ) {
                 totalplanes += ithull->vconvexhull.size();
-                ROS_INFO("link %S convex hull has %d planes", (*itlink)->GetName(), ithull->vconvexhull.size());
+                ROS_DEBUG("link %S convex hull has %d planes", (*itlink)->GetName(), ithull->vconvexhull.size());
             }
             else
                 ROS_ERROR("failed to compute convex hull for link %S", (*itlink)->GetName());
@@ -231,14 +231,39 @@ private:
     /// Uses a different timestamp for every laser point cloud
     void PruneWithAccurateTiming(const std_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
-        ros::Time stampstart = pointcloudin.header.stamp, stampend = pointcloudin.header.stamp;
-        tf::Stamped<btTransform> bttransform;
-        vlaserpoints.resize(pointcloudin.pts.size());
-        
+        int istampchan = 0;
+        while(istampchan < (int)pointcloudin.chan.size()) {
+            if( pointcloudin.chan[istampchan].name == "stamps" )
+                break;
+            ++istampchan;
+        }
+
+        if( istampchan >= (int)pointcloudin.chan.size()) {
+            ROS_DEBUG("accurate timing needs 'stamp' channel to be published in point cloud, reverting to simple timing");
+            PruneWithSimpleTiming(pointcloudin, vlaserpoints);
+            return;
+        }
+
         // look for timestamp channel
+        float fdeltatime = 0;
+        for(int i = 0; i < (int)pointcloudin.chan[istampchan].vals.size(); ++i)
+            fdeltatime = pointcloudin.chan[istampchan].vals[i];
+            
+        if( fdeltatime == 0 ) {
+            PruneWithSimpleTiming(pointcloudin, vlaserpoints);
+            return;
+        }
+
+        vlaserpoints.resize(pointcloudin.pts.size());
+        float ideltatime=1.0f/fdeltatime;
         int index = 0;
-        FOREACH(itp, pointcloudin.pts)
-            vlaserpoints[index++] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),0);
+        FOREACH(itp, pointcloudin.pts) {
+            vlaserpoints[index] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),pointcloudin.chan[istampchan].vals[index]*ideltatime);
+            ++index;
+        }
+
+        ros::Time stampstart = pointcloudin.header.stamp, stampend = pointcloudin.header.stamp+ros::Duration().fromSec(fdeltatime);
+        tf::Stamped<btTransform> bttransform;
 
         try {
             FOREACH(ithull, _vLinkHulls) {
