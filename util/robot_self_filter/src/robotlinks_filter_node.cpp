@@ -279,7 +279,7 @@ private:
         }
 
         // points are independent from each and loop can be parallelized
-        #pragma omp parallel for schedule(dynamic,128)
+        #pragma omp parallel for schedule(dynamic,64)
         for(int i = 0; i < (int)vlaserpoints.size(); ++i) {
             LASERPOINT& laserpoint = vlaserpoints[i];
             FOREACH(ithull, _vLinkHulls) {
@@ -343,7 +343,7 @@ private:
         }
                     
         // points are independent from each and loop can be parallelized
-        #pragma omp parallel for schedule(dynamic,128)
+        #pragma omp parallel for schedule(dynamic,64)
         for(int i = 0; i < (int)vlaserpoints.size(); ++i) {
             LASERPOINT& laserpoint = vlaserpoints[i];
             FOREACH(ithull, _vLinkHulls) {

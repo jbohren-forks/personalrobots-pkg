@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+set(ROS_BUILD_TYPE RelDebInfo)
 rospack(robot_self_filter)
 
 rospack_add_executable(robotlinks_filter_node src/robotlinks_filter_node.cpp)
