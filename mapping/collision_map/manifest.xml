@@ -1,0 +1,19 @@
+<package>
+  <description>
+    A node providing a map of the occupied space around the robot as discretized boxes (center, dimension), useful for collision detection. 
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="cloud_geometry" />
+  <depend package="tf" />
+  
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
+
+</package>
