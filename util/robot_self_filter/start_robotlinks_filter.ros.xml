@@ -1,7 +1,7 @@
 <!-- start openraveros server and set all the correct paths -->
 <launch>
   <node pkg="laser_scan" type="scan_shadows_filter_node"/>
-  <node pkg="laser_scan" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.03 --accuratetiming 0" output="screen">
+  <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.03 --accuratetiming 0" output="screen">
     <env name="OPENRAVE_DATA" value="$(find openrave)/share/openrave:$(find openrave_robot_description)"/>
     <env name="OPENRAVE_PLUGINS" value="$(find openrave)/share/openrave/plugins"/>
   </node>

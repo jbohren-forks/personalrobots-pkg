@@ -4,7 +4,7 @@
 Helper functions for manipulating Lasers Scans
 
 </description>
-<author>Tully Foote, Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+<author>Tully Foote</author>
 <license>BSD</license>
 <review status="API cleared" notes=""/>
 <url>http://pr.willowgarage.com/wiki/laser_scan</url>
@@ -13,16 +13,6 @@ Helper functions for manipulating Lasers Scans
 <depend package="tf"/>
 <depend package="filters"/>
 <depend package="boost"/>
-
-<!-- openrave is necessary for getting the geometry of the links of the robot.
-     Cannot use URDF because openrave2urdf does not exist and some robots only have openrave descriptions. -->
-<depend package="openrave"/>
-<depend package="openrave_robot_description"/>
-
-<!-- qhull necessary for convex hull computation of robot links -->
-<sysdepend os="ubuntu" version="7.04-feisty" package="libqhull-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libqhull-dev"/>
-
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llaser_scan"/>
 </export>

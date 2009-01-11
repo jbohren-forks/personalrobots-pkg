@@ -1,0 +1,34 @@
+/**
+\mainpage
+This package is designed to provide helper functions/classes for working with laser scans.  It provides library functionality only.  
+
+
+\section projection Laser Scan Projection to Point Cloud
+laser_scan::LaserProjection provides a simple method to project laser scans into point clouds while discarding out of range measurements.  
+
+
+\section filters Laser Scan Filters 
+
+There are a number of filters
+which this class provides.  To provide easy laser scan filtering there
+is a factory class to provide easy creation and chaining of these
+filters as a input to any process.
+\todo implement and document (they're currently basically standalone nodes)
+
+\subsection median Median Filter
+laser_scan::LaserMedianFilter will median filter scans both in range and intensity.  
+
+\subsection mean Mean Filter
+\todo Document
+
+\subsection robotlinks_filter Robot Links Pruning Filter
+
+RobotLinksFilter removes all nodes that lie on the robot. Each robot link is approximated by a convex hull that is dynamically generated based on the mesh of the robot.
+
+\subsection shadows Scan Shadows Filter
+\todo document
+
+\subsection intensity Intensity Filter
+\todo document
+
+*/
