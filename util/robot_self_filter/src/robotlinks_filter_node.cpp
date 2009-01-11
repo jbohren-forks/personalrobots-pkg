@@ -223,7 +223,7 @@ private:
             ++newindex;
         }
 
-        ROS_INFO("published %d points, processing time=%fs", totalpoints, (ros::Time::now()-stampprocess).toSec());
+        ROS_DEBUG("robotlinks_filter_node published %d points, processing time=%fs", totalpoints, (ros::Time::now()-stampprocess).toSec());
         s_pmasternode->publish("robotlinks_cloud_filtered",_pointcloudout);
     }
 

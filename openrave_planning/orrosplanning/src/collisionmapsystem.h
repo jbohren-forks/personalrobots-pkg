@@ -54,6 +54,7 @@ private:
     void newdatacb()
     {
         // create the new kinbody
+        GetEnv()->LockPhysics(true);
         KinBody* pbody = GetEnv()->CreateKinBody();
 
         _vaabbs.resize(_topicmsg.boxes.size());
@@ -61,6 +62,7 @@ private:
         FOREACH(itmsgab, _topicmsg.boxes) {
             itab->pos = Vector(itmsgab->center.x, itmsgab->center.y, itmsgab->center.z);
             itab->extents = Vector(itmsgab->extents.x, itmsgab->extents.y, itmsgab->extents.z);
+            //RAVELOG_VERBOSEA("pos%d: %f %f %f\n", (int)(itmsgab-_topicmsg.boxes.begin()), itab->pos.x, itab->pos.y, itab->pos.z);
             ++itab;
         }
 
@@ -84,22 +86,27 @@ private:
 
         {
             boost::mutex::scoped_lock lock(_mutex);
-            GetEnv()->LockPhysics(true);
 
             // remove all unlocked bodies
             TYPEOF(_mapbodies.begin()) itbody = _mapbodies.begin();
             while(itbody != _mapbodies.end()) {
                 if( !itbody->second->IsLocked() ) {
+                    BODY* b = itbody->second.get();
+                    KinBody::Link* plink = itbody->second->GetOffsetLink();
+                    assert( plink != NULL );
+                    GetEnv()->RemoveKinBody(plink->GetParent());
                     _mapbodies.erase(itbody++);
                 }
                 else
                     ++itbody;
             }
-
-            GetEnv()->LockPhysics(false);
         }
         
-        BODY* b = AddKinBody(pbody, NULL);
+        GetEnv()->LockPhysics(false);
+
+        MocapData* pdata = new MocapData();
+        pdata->strOffsetLink = pbody->GetLinks().front()->GetName();
+        BODY* b = AddKinBody(pbody, pdata);
         if( b == NULL ) {
             RAVELOG_ERRORA("removing/destroying kinbody\n");
             GetEnv()->RemoveKinBody(pbody, true);
