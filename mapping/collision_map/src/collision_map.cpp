@@ -144,6 +144,9 @@ class CollisionMapper : public ros::node
       gettimeofday (&t1, NULL);
 
       // Get a set of point indices that respect our bounding limits around the robot
+      vector<int> indices (cloud_.pts.size ());
+      int nr_p = 0;
+
       Point32 minP, maxP;
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = FLT_MIN;
@@ -165,8 +168,11 @@ class CollisionMapper : public ros::node
           maxP.x = (cloud_.pts[i].x > maxP.x) ? cloud_.pts[i].x : maxP.x;
           maxP.y = (cloud_.pts[i].y > maxP.y) ? cloud_.pts[i].y : maxP.y;
           maxP.z = (cloud_.pts[i].z > maxP.z) ? cloud_.pts[i].z : maxP.z;
+          indices[nr_p] = i;
+          nr_p++;
         }
       }
+      indices.resize (nr_p);
 
       // Compute the minimum and maximum bounding box values
       Point32 minB, maxB, divB;
@@ -197,11 +203,11 @@ class CollisionMapper : public ros::node
       }
 
       // First pass: go over all points and count them into the right leaf
-      for (unsigned int cp = 0; cp < cloud_.pts.size (); cp++)
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        int i = (int)(floor (cloud_.pts[cp].x / leaf_width_.x));
-        int j = (int)(floor (cloud_.pts[cp].y / leaf_width_.y));
-        int k = (int)(floor (cloud_.pts[cp].z / leaf_width_.z));
+        int i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
+        int j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
+        int k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
         leaves_[idx].i_ = i;
