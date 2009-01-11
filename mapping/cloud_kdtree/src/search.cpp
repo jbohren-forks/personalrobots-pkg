@@ -119,6 +119,26 @@ namespace cloud_kdtree
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Search for k-nearest neighbors for the given query point index.
+    * \note This method is to be used for extremely fast operations where we want to skip converting the point to
+    * a \a Point32 message in a loop. There are no internal checks to validate the given index so use it carefully!
+    * \note assumes that indices is already sized to contain \a k elements. Used with OpenMP.
+    * \param p_idx the given query point index
+    * \param k the number of neighbors to search for
+    * \param indices the resulting point indices
+    */
+  bool
+    KdTree::nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances)
+  {
+#ifdef USE_ANN
+    ann_kd_tree_->annkSearch (points_[p_idx], k, &indices[0], &distances[0], epsilon_);
+#else
+    fprintf (stderr, "FL-ANN version is not implemented yet !");
+#endif
+    return (true);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Search for all the nearest neighbors of the query point in a given radius.
     * \param p_q the given query point
     * \param radius the radius of the sphere bounding all of \a p_q 's neighbors
