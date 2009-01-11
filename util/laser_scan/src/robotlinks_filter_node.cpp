@@ -427,7 +427,7 @@ int main(int argc, char ** argv)
     // parse the command line options
     string robotname;
     dReal padding = 0.01; // 0.01m padding
-    bool bAccurateTiming = true;
+    bool bAccurateTiming = false;
     int i = 1;
     while(i < argc) {
         if( strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0 ) {

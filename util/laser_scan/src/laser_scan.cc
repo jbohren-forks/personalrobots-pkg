@@ -87,7 +87,7 @@ namespace laser_scan
       idx_distance = chan_size;
     }
 
-    if (mask & MASK_TIMESTAMPS)
+    if (mask & MASK_TIMESTAMP)
     {
       int chan_size = cloud_out.get_chan_size ();
       cloud_out.set_chan_size (chan_size + 1);

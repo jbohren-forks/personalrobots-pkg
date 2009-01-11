@@ -56,7 +56,7 @@ namespace laser_scan
   const int MASK_INTENSITY = 0x01;
   const int MASK_INDEX     = 0x02;
   const int MASK_DISTANCE  = 0x04;
-  const int MASK_TIMESTAMPS = 0x08;
+  const int MASK_TIMESTAMP = 0x08;
   const int DEFAULT_MASK   = (MASK_INTENSITY + MASK_INDEX);
   
   /** \brief A Class to Project Laser Scan
