@@ -13,4 +13,6 @@ set_target_properties(pyplace_recognition PROPERTIES OUTPUT_NAME place_recogniti
 rospack_add_compile_flags(pyplace_recognition -g -Wno-missing-field-initializers -save-temps -msse3)
 
 #rospack_add_pyunit(test/directed.py)
-rospack_add_pyunit(test/thrash.py)
+# This test must be declared graphical, because it loads the pylab module,
+# which requires a display.
+rospack_add_pyunit_graphical(test/thrash.py)
