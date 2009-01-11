@@ -82,7 +82,7 @@ class PlanarPatchMap: public ros::node
     double d_min_, d_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlanarPatchMap () : ros::node ("planar_patch_map")
+    PlanarPatchMap () : ros::node ("planar_patch_map_omp")
     {
       param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 10);
 
@@ -103,7 +103,7 @@ class PlanarPatchMap: public ros::node
 
       advertise<PolygonalMap> ("planar_map", 1);
 
-      leaf_width_ = 0.15f;
+      leaf_width_ = 0.05f;
       octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
     }
 
@@ -127,8 +127,8 @@ class PlanarPatchMap: public ros::node
       if (sac->computeModel ())
       {
         // Obtain the inliers and the planar model coefficients
-        std::vector<int> inliers = sac->getInliers ();
-        std::vector<double> coeff = sac->computeCoefficients ();
+        vector<int> inliers = sac->getInliers ();
+        vector<double> coeff = sac->computeCoefficients ();
         ///fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model
@@ -140,7 +140,7 @@ class PlanarPatchMap: public ros::node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      filterCloudBasedOnDistance (std_msgs::PointCloud *cloud_in, std_msgs::PointCloud &cloud_out,
+      filterCloudBasedOnDistance (PointCloud *cloud_in, PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
       cloud_out.pts.resize (cloud_in->pts.size ());
@@ -188,26 +188,20 @@ class PlanarPatchMap: public ros::node
       // Initialize the polygonal map
       PolygonalMap pmap;
       pmap.polygons.resize (octree_->getNumLeaves ());
-      int nr_poly = 0;
 
       std::vector<cloud_octree::Leaf*> leaves = octree_->getOccupiedLeaves ();
-      int total_pts = 0;
 
       gettimeofday (&t1, NULL);
 
-      for (std::vector<cloud_octree::Leaf*>::iterator it = leaves.begin (); it != leaves.end (); ++it)
+      #pragma omp parallel for schedule(dynamic)
+      for (int cl = 0; cl < (int)leaves.size (); cl++)
       {
-        cloud_octree::Leaf* leaf = *it;
-        total_pts += leaf->getIndices ().size ();
-
-        fitSACPlane (&cloud_f_, octree_, leaf, pmap.polygons[nr_poly]);
-        nr_poly++;
+        fitSACPlane (&cloud_f_, octree_, leaves[cl], pmap.polygons[cl]);
       }
-      pmap.polygons.resize (nr_poly);
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
+      ROS_INFO ("Polygonal map created in %g seconds.", time_spent);
       pmap.header = cloud_.header;
       publish ("planar_map", pmap);
 
