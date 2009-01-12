@@ -69,7 +69,7 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
      * where v is an open region and w is a bottleneck.
      * Note that having a map like this implicitly assumes that BottleneckVertex objects have operator<
      * defined.  That is currently true because they come from a boost graph with vertex set of type vecS. */
-    VertexPairCellMap roadmapPoints;
+    VertexPairCellMap roadmap_points;
     
     BottleneckVertexIterator vertex_iter, end;
     for (tie(vertex_iter,end) = vertices(graph_); vertex_iter!=end; ++vertex_iter) {
@@ -77,13 +77,24 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
       if (desc.type == OPEN) {
 	BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
 	map<BottleneckVertex,GridCell> new_map;
-	roadmapPoints[*vertex_iter] = new_map;
+	roadmap_points[*vertex_iter] = new_map;
 	for (tie(adjacency_iter, adjacency_end) = boost::adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
 	  VertexDescription neighborDesc = vertexDescription (*adjacency_iter);
 	  GridCell borderPoint = pointOnBorder (desc.region, neighborDesc.region);
 	  roadmap->addPoint (borderPoint);
-	  roadmapPoints[*vertex_iter][*adjacency_iter] = borderPoint;
+	  roadmap_points[*vertex_iter][*adjacency_iter] = borderPoint;
 	}
+      }
+    }
+
+    
+    VertexPairCellMap::iterator vertex_pair_iter;
+    for (vertex_pair_iter=roadmap_points.begin(); vertex_pair_iter!=roadmap_points.end(); vertex_pair_iter++) {
+      for (target_vertex_iter = vertex_pair_iter.second.begin(); target_vertex_iter != vertex_pair_iter.second.end(); target_vertex_iter++) {
+        for (target_vertex_iter2 = vertex_pair_iter.second.begin(); target_vertex_iter2 != vertex_pair_iter.second.end(); target_vertex_iter2++) {
+          roadmap->setCost (target_vertex_iter->second, target_vertex_iter2->second);
+          cout << "Adding edge between " << target_vertex_iter->second << " and " << target_vertex_iter2.second << endl;
+        }
       }
     }
 
