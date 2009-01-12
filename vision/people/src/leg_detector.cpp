@@ -206,8 +206,7 @@ public:
 
   float max_meas_jump_;
 
-  robot_msgs::PositionMeasurement people_meas_;
-
+  MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
   MessageNotifier<std_msgs::LaserScan>*  laser_notifier_;
 
   LegDetector() : 
@@ -228,13 +227,18 @@ public:
       self_destruct();
     }
 
-    //tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.4));
-
+    // advertise topics
     advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<std_msgs::PointCloud>("kalman_filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
-    subscribe("people_tracker_filter", people_meas_, &LegDetector::peopleCallback, 10);
-    laser_notifier_ = new MessageNotifier<std_msgs::LaserScan>(&tfl_, this,  boost::bind(&LegDetector::laserCallback, this, _1), "scan", fixed_frame, 10);
+
+    // subscribe to topics
+    people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&tfl_, this,  
+									    boost::bind(&LegDetector::peopleCallback, this, _1), 
+									    "people_tracker_filter", fixed_frame, 10);
+    laser_notifier_ = new MessageNotifier<std_msgs::LaserScan>(&tfl_, this,  
+							       boost::bind(&LegDetector::laserCallback, this, _1), 
+							       "scan", fixed_frame, 10);
 
     feature_id_ = 0;
   }
@@ -242,15 +246,16 @@ public:
 
   ~LegDetector()
   {
+    delete people_notifier_;
     delete laser_notifier_;
   }
 
 
-  void peopleCallback()
+  void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
     tf::Point pt;
 
-    tf::PointMsgToTF(people_meas_.pos, pt);
+    tf::PointMsgToTF(people_meas->pos, pt);
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
@@ -262,10 +267,10 @@ public:
 
     for (; it != end; ++it )
     {
-      tf::Stamped<tf::Point> loc(pt, people_meas_.header.stamp, people_meas_.header.frame_id);
+      tf::Stamped<tf::Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
 
 
-      tfl_.transformPoint((*it)->id_, people_meas_.header.stamp,
+      tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
                             loc, fixed_frame, loc);
       loc[2] = 0.0;
       
@@ -277,7 +282,7 @@ public:
       }
 
       // If we're already tracking the object
-      if ((*it)->object_id == people_meas_.object_id)
+      if ((*it)->object_id == people_meas->object_id)
       {
         if (dist < max_meas_jump_)
           return; // This should instead check that it's still close
@@ -289,8 +294,10 @@ public:
     }
 
     if (closest_dist < max_meas_jump_)
-      (*closest)->object_id = people_meas_.object_id;
+      (*closest)->object_id = people_meas->object_id;
   }
+
+
 
   void laserCallback(const MessageNotifier<std_msgs::LaserScan>::MessagePtr& scan)
   {
