@@ -256,7 +256,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
       resp.cloud.chan[i].name = scan_hist_[start_index].chan[i].name ;
       resp.cloud.chan[i].set_vals_size(req_pts) ;
     }
-    resp.cloud.header.stamp = req.end ;
+    //resp.cloud.header.stamp = req.end ;
     resp.cloud.header.frame_id = fixed_frame_ ;
     unsigned int cloud_count = 0 ;
     for (i=start_index; i<past_end_index; i+=downsample_factor_)
@@ -271,6 +271,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::respo
 
         cloud_count++ ;
       }
+      resp.cloud.header.stamp = scan_hist_[i].header.stamp;
     }
   }
   scan_hist_mutex_.unlock() ;
