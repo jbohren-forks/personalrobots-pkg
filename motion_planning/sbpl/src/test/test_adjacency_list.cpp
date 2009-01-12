@@ -1,6 +1,8 @@
 #include <iostream>
 #include "../discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h"
 
+
+// 2d Points
 struct Point2D
 {
   Point2D(int newX, int newY) : x(newX), y(newY) {}
@@ -27,6 +29,20 @@ int operator< (const Point2D& p1, const Point2D& p2)
 
 
 
+void testPlanner (AdjacencyListSBPLEnv<Point2D>& e)
+{
+  e.writeToStream();
+  vector<Point2D> solution = e.findOptimalPath ();
+  cout << "Returned plan is ";
+  for (unsigned int i=0; i<solution.size(); i++) {
+    cout << solution[i] << " ";
+  }
+  cout << endl;
+}  
+
+
+
+
 int main (int, char**)
 {
   AdjacencyListSBPLEnv<Point2D> e;
@@ -36,9 +52,9 @@ int main (int, char**)
   Point2D p4(5,5);
 
   e.addPoint(p1);
-  e.addPoint(p2);
-  e.addPoint(p3);
   e.addPoint(p4);
+  e.addPoint(p3);
+  e.addPoint(p2);
 
   e.setCost(p1,p2,4);
   e.setCost(p1,p3,6);
@@ -48,32 +64,18 @@ int main (int, char**)
   e.setStartState(p1);
   e.setGoalState(p4);
 
-  e.writeToStream();
-
-
   // Initialize the MDPConfig (what does this do exactly?)
-  MDPConfig c;
-  e.InitializeMDPCfg(&c);
+  //MDPConfig c;
+  //e.InitializeMDPCfg(&c);
 
 
-
-  // Do planning
-  vector<Point2D> solution = e.findOptimalPath ();
-  cout << "Returned plan is ";
-  for (unsigned int i=0; i<solution.size(); i++) {
-    cout << solution[i] << " ";
-  }
-  cout << endl;
-
+  // Tests
+  testPlanner (e);
   e.setCost(p2,p4,1);
+  testPlanner (e);
+  e.removeLastPoints();
+  testPlanner (e);
   e.writeToStream();
-  solution = e.findOptimalPath ();
-  cout << "Returned plan is ";
-  for (unsigned int i=0; i<solution.size(); i++) {
-    cout << solution[i] << " ";
-  }
-  cout << endl;
-
   return 0;
 }
-  
+

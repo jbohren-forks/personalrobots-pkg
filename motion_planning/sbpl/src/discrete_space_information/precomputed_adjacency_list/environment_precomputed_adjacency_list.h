@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <map>
 #include <utility>
 #include <assert.h>
@@ -16,12 +17,15 @@ struct Adjacency
   int neighbor;
   int cost;
 };
-typedef vector<Adjacency> Adjacencies;
-
+typedef list<Adjacency> Adjacencies;
+typedef Adjacencies::iterator AdjListIterator;
 
 /** \brief SBPL Environment represented as an adjacency list graph.
  *
- * \tparam Coords Coords is a type that has operator<< and heuristicDistanceTo (const Coords&) defined on it, and can be used as a key of an STL map.
+ * \tparam Coords Coords must be a type that 1) has operator<< and heuristicDistanceTo (const Coords&) const defined on it 2) can be used as a key of an STL map
+ *
+ * Nodes of the graph are labelled with Coords.  Edges have integer costs attached to them.  ARA* planning is done on this graph, and the function heuristicDistanceTo
+ * is used as the admissible heuristic.
  */
 template <class Coords>
 class AdjacencyListSBPLEnv : public DiscreteSpaceInformation
@@ -31,10 +35,23 @@ public:
 
   AdjacencyListSBPLEnv ();
   void writeToStream (ostream& str = cout);
+
   void addPoint (const Coords& c);
+  bool hasPoint (const Coords& c);
+
+  /// Remove the last N points added using addPoint (and all their incident edges) in O(N) time
+  void removeLastPoints (unsigned int n=1);
+
+  /// \post An undirected edge exists between c1 and c2 with the given cost
+  /// cost, if not provided, defaults to the heuristic cost between c1 and c2
   void setCost (const Coords& c1, const Coords& c2, int cost);
+  void setCost (const Coords& c1, const Coords& c2);
+  
   void setStartState (const Coords& c);
   void setGoalState (const Coords& c);
+
+  /// Use ARA* to find an optimal path between the currently set start and goal states
+  /// \return Vector of states on the path
   vector<Coords> findOptimalPath (void);
 
   // Inherited DiscreteSpaceInformation ops
@@ -74,18 +91,24 @@ AdjacencyListSBPLEnv<Coords>::AdjacencyListSBPLEnv () : startStateId_(-1), goalS
 
 
 template <class Coords>
-void AdjacencyListSBPLEnv<Coords>::writeToStream (ostream& str)
+void AdjacencyListSBPLEnv<Coords>::writeToStream (ostream& str) 
 {
+  int numStates = points_.size();
   str << "Adjacency list SBPL Env " << endl;
   for (unsigned int i=0; i<points_.size(); i++) {
     str << i << ". " << points_[i] << ".  Neighbors: ";
-    for (unsigned int j=0; j<adjacencyVector_[i].size(); j++) {
-      Adjacency adj = adjacencyVector_[i][j];
-      str << "[" << points_[adj.neighbor] << " " << adj.cost << "] ";
+    for (AdjListIterator iter=adjacencyVector_[i].begin(); iter!=adjacencyVector_[i].end(); iter++) {
+      if (iter->neighbor < numStates) {
+	str << "[" << points_[iter->neighbor] << " " << iter->cost << "] ";
+      }
+      else {
+	str << "[To-Be-Deleted Edge] ";
+      }
     }
     str << endl;
   }
 }
+
 
 template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::addPoint (const Coords& c)
@@ -103,30 +126,69 @@ void AdjacencyListSBPLEnv<Coords>::addPoint (const Coords& c)
 }
 
 template <class Coords>
+bool AdjacencyListSBPLEnv<Coords>::hasPoint (const Coords& c)
+{
+  return !(pointIds_.find(c) == 0);
+}
+
+
+template <class Coords>
+void AdjacencyListSBPLEnv<Coords>::removeLastPoints (unsigned int n)
+{
+  // Note deleted points are not being removed from other points' adjacency lists to keep this constant time
+  // They will deleted as and when they're seen
+  assert (n<=points_.size());
+  for (unsigned int i=0; i<n; i++) {
+    points_.pop_back();
+  }
+}   
+
+
+template <class Coords>
+void AdjacencyListSBPLEnv<Coords>::setCost (const Coords& c1, const Coords& c2)
+{
+  setCost (c1, c2, c1.heuristicDistanceTo(c2));
+}
+
+template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::setCost (const Coords& c1, const Coords& c2, int cost)
 {
+  // Figure out indices of the given points
   typename map<Coords,int>::iterator i1 = pointIds_.find(c1);
   typename map<Coords,int>::iterator i2 = pointIds_.find(c2);
-
-  assert (i1);
-  assert (i2);
-
   int index1=i1->second;
   int index2=i2->second;
 
-  Adjacencies& adj = adjacencyVector_[index1];
-  unsigned int i, l=adj.size();
-  for (i=0; (i<l) && (adj[i].neighbor!=index2); i++);
-  if (i==l) {
-    Adjacency a;
-    a.neighbor=index2;
-    a.cost=cost;
-    adj.push_back(a);
-  }
-  else {
-    adj[i].cost = cost;
+  // Loop over which direction edge to add
+  for (unsigned int j=0; j<2; j++) {
+    int ind1, ind2;
+    if (j==0) {
+      ind1 = index1;
+      ind2 = index2;
+    }
+    else {
+      ind1 = index2;
+      ind2 = index1;
+    }
+
+    // Now set cost of edge from ind1 to ind2
+    Adjacencies& adj = adjacencyVector_[ind1];
+    AdjListIterator i, last=adj.end();
+    for (i=adj.begin(); (i!=last) && (i->neighbor!=ind2); i++);
+
+    // If edge does not exist add it, else just set the cost of the existing edge
+    if (i==last) {
+      Adjacency a;
+      a.neighbor=ind2;
+      a.cost=cost;
+      adj.insert(i, a);
+    }
+    else {
+      i->cost=cost;
+    }
   }
 }
+
 
 template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::setStartState (const Coords& c)
@@ -196,7 +258,7 @@ int AdjacencyListSBPLEnv<Coords>::SizeofCreatedEnv()
 template <class Coords>
 bool AdjacencyListSBPLEnv<Coords>::InitializeEnv (const char* sEnvFile)
 {
-  cout << "AdjacencyList initialization currently does nothing.";
+  // Nothing to do in initialization
   return true;
 }
 
@@ -211,11 +273,20 @@ void AdjacencyListSBPLEnv<Coords>::SetAllActionsandAllOutcomes(CMDPSTATE* state)
   }
 
   Adjacencies& v = adjacencyVector_[state->StateID];
-  for (unsigned int actionIndex=0; actionIndex<v.size(); actionIndex++) {
+  int numStates = points_.size();
+  int actionIndex=0;
+  AdjListIterator i=v.begin();
+
+  // Iterate over edges.  Also, remove ones that point to deleted vertices as we see them.
+  while (i!=v.end()) {
     CMDPACTION* action = state->AddAction(actionIndex);
-    Adjacency adj = v[actionIndex];
-    action->AddOutcome(adj.neighbor, adj.cost, 1.0);
-    cout << "Added transition to " << adj.neighbor << " with cost " << adj.cost << endl;
+    if (i->neighbor < numStates) { 
+      action->AddOutcome(i->neighbor, i->cost, 1.0);
+      i++;
+    }
+    else {
+      i=v.erase(i);
+    }
   }
 }
 
@@ -238,12 +309,20 @@ void AdjacencyListSBPLEnv<Coords>::GetSuccs(int SourceStateID, vector<int>* Succ
   }
 
   Adjacencies& v = adjacencyVector_[SourceStateID];
-  
-  for (unsigned int actionIndex=0; actionIndex<v.size(); actionIndex++) {
-    Adjacency adj = v[actionIndex];
-    SuccIDV->push_back(adj.neighbor);
-    CostV->push_back(adj.cost);
-    cout << "Added transition to " << adj.neighbor << " with cost " << adj.cost << endl;
+  int numStates = points_.size();
+  AdjListIterator i=v.begin();
+
+  // Iterate over edges.  Also, remove ones that point to deleted vertices as we see them.
+  while (i!=v.end()) {
+    if (i->neighbor < numStates) {
+      SuccIDV->push_back(i->neighbor);
+      CostV->push_back(i->cost);
+      i++;
+      // cout << "Added transition to " << adj.neighbor << " with cost " << adj.cost << endl;
+    }
+    else {
+      i = v.erase(i);
+    }
   }
 }
 
@@ -260,12 +339,9 @@ vector<Coords> AdjacencyListSBPLEnv<Coords>::findOptimalPath ()
   // Initialize ARA planner
   ARAPlanner p(this, true);
   p.set_start(startStateId_);
-  cout << "Hello" << endl;
   p.set_goal(goalStateId_);
-  cout << "Hello" << endl;
   vector<int> solution;
   p.replan(1.0, &solution);
-  cout << "Hello" << endl;
 
   vector<Coords> solutionPoints;
   for (unsigned int i=0; i<solution.size(); i++) {
