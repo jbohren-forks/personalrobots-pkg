@@ -262,7 +262,8 @@ class CollisionMapper : public ros::node
           c_map_.boxes[nr_c].center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - c_map_.boxes[nr_c].extents.x; // + minB.x;
           c_map_.boxes[nr_c].center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - c_map_.boxes[nr_c].extents.y; // + minB.y;
           c_map_.boxes[nr_c].center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - c_map_.boxes[nr_c].extents.z; // + minB.z;
-
+          c_map_.boxes[nr_c].axis.x = c_map_.boxes[nr_c].axis.y = c_map_.boxes[nr_c].axis.z = 0.0;
+          c_map_.boxes[nr_c].angle = 0.0;
           nr_c++;
         }
       }
