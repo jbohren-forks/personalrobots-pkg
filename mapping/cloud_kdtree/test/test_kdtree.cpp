@@ -67,7 +67,7 @@ TEST (CloudKdTree, Search)
   // Create a KdTree object
   KdTree* tree = new KdTree (&points);
 
-  state = tree->nearestKSearch (points.pts[0], 10);
+  state = tree->nearestKSearch (&points.pts[0], 10);
   EXPECT_EQ (state, true);
 
   tree->getNeighborsIndices (indices);
@@ -119,7 +119,7 @@ TEST (CloudKdTree, Search)
   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 
-  state = tree->radiusSearch (points.pts[0], 0.01);
+  state = tree->radiusSearch (&points.pts[0], 0.01);
   EXPECT_EQ (state, true);
 
   tree->getNeighborsIndices (indices);
