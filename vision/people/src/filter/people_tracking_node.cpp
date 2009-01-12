@@ -43,7 +43,6 @@
 
 
 using namespace std;
-using namespace ros;
 using namespace tf;
 using namespace BFL;
 using namespace robot_msgs;
@@ -90,9 +89,6 @@ namespace estimation
     param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
     param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
 
-    sys_sigma_.pos_ /= freq_;
-    sys_sigma_.vel_ /= freq_;
-
     // advertise filter output
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
@@ -136,9 +132,10 @@ namespace estimation
 
     // update tracker if matching tracker found
     for (list<Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++)
-      if ((*it)->getName() == message->object_id)
-	(*it)->updateCorrection(meas, cov, message->header.stamp.toSec());
-
+      if ((*it)->getName() == message->object_id){
+	(*it)->updatePrediction(message->header.stamp.toSec());
+	(*it)->updateCorrection(meas, cov);
+      }
     // check if reliable message with no name should be a new tracker
     if (message->object_id == "" && message->reliability > reliability_threshold_){
       double closest_tracker_dist = start_distance_min_;
@@ -208,8 +205,8 @@ namespace estimation
       unsigned int i=0;
       list<Tracker*>::iterator it= trackers_.begin();
       while (it!=trackers_.end()){
-	// update prediction
-	(*it)->updatePrediction(1/freq_);
+	// update prediction up to delayed time
+	(*it)->updatePrediction(ros::Time::now().toSec() - sequencer_delay);
 
 	// publish filter result
 	PositionMeasurement est_pos;
@@ -224,7 +221,7 @@ namespace estimation
 	weights[i] = rgb[min(998, 999-max(1, (int)trunc( (*it)->getQuality()*999.0 )))];
 
 	// remove trackers that have zero quality
-	//ROS_INFO("%s: quality of tracker %s = %f",node_name_.c_str(), (*it)->getName().c_str(), (*it)->getQuality());
+	ROS_INFO("%s: quality of tracker %s = %f",node_name_.c_str(), (*it)->getName().c_str(), (*it)->getQuality());
 	if ((*it)->getQuality() <= 0){
 	  ROS_INFO("%s: Removing tracker %s",node_name_.c_str(), (*it)->getName().c_str());  
 	  delete *it;

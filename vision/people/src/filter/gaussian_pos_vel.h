@@ -50,6 +50,7 @@ namespace BFL
     private:
       StatePosVel mu_, sigma_;
       GaussianVector gauss_pos_, gauss_vel_;
+      mutable double dt_;
       
     public:
       /// Constructor
@@ -61,6 +62,9 @@ namespace BFL
       /// output stream for GaussianPosVel
       friend std::ostream& operator<< (std::ostream& os, const GaussianPosVel& g);
     
+      // set time
+      void SetDt(double dt) const {dt_ = dt;};
+
       // Redefinition of pure virtuals
       virtual Probability ProbabilityGet(const StatePosVel& input) const;
       bool SampleFrom (vector<Sample<StatePosVel> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;

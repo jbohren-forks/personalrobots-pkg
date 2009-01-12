@@ -44,7 +44,7 @@ using namespace ros;
 using namespace robot_msgs;
 
 
-const static double damping_velocity = 1.0;
+const static double damping_velocity = 0.9;
 
 
 namespace estimation
@@ -67,12 +67,12 @@ namespace estimation
       sys_matrix_(i+3,i+3) = damping_velocity;
     }
     ColumnVector sys_mu(6); sys_mu = 0;
-    SymmetricMatrix sys_sigma(6); sys_sigma = 0;
+    sys_sigma_ = SymmetricMatrix(6); sys_sigma_ = 0;
     for (unsigned int i=0; i<3; i++){
-      sys_sigma(i+1, i+1) = pow(sysnoise.pos_[i],2);
-      sys_sigma(i+4, i+4) = pow(sysnoise.vel_[i],2);
+      sys_sigma_(i+1, i+1) = pow(sysnoise.pos_[i],2);
+      sys_sigma_(i+4, i+4) = pow(sysnoise.vel_[i],2);
     }
-    Gaussian sys_noise(sys_mu, sys_sigma);
+    Gaussian sys_noise(sys_mu, sys_sigma_);
     sys_pdf_   = new LinearAnalyticConditionalGaussian(sys_matrix_, sys_noise);
     sys_model_ = new LinearAnalyticSystemModelGaussianUncertainty(sys_pdf_);
 
@@ -129,33 +129,33 @@ namespace estimation
 
 
   // update filter prediction
-  bool TrackerKalman::updatePrediction(const double dt)
+  bool TrackerKalman::updatePrediction(const double time)
   {
-    calculateQuality();
+    bool res = true;
+    if (time > filter_time_){
+      // set dt in sys model
+      for (unsigned int i=1; i<=3; i++)
+	sys_matrix_(i, i+3) = time - filter_time_;
+      sys_pdf_->MatrixSet(0, sys_matrix_);
 
-    // set dt in sys model
-    for (unsigned int i=1; i<=3; i++)
-      sys_matrix_(i, i+3) = dt;
-    sys_pdf_->MatrixSet(0, sys_matrix_);
+      // scale system noise for dt
+      sys_pdf_->AdditiveNoiseSigmaSet(sys_sigma_ * pow(time - filter_time_,2));
+      filter_time_ = time;
 
-    // update filter
-    bool res = filter_->Update(sys_model_);
-    if (!res) quality_ = 0;
-    else quality_ = calculateQuality();
-
+      // update filter
+      res = filter_->Update(sys_model_);
+      if (!res) quality_ = 0;
+      else quality_ = calculateQuality();
+    }
     return res;
   };
 
 
 
   // update filter correction
-  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
+  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
-
     assert(cov.columns() == 3);
-
-    // set filter time
-    filter_time_ = time;
 
     // copy measurement
     ColumnVector meas_vec(3);
@@ -218,6 +218,13 @@ namespace estimation
       return 0;
   }
 
+  double TrackerKalman::getTime() const
+  {
+    if (tracker_initialized_)
+      return filter_time_;
+    else
+      return 0;
+  }
 
 }; // namespace
 

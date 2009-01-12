@@ -79,11 +79,13 @@ public:
   /// return the lifetime of the tracker
   virtual double getLifetime() const; 
 
+  /// return the time of the tracker
+  virtual double getTime() const;
+
   /// update tracker
-  virtual bool updatePrediction(const double dt);
+  virtual bool updatePrediction(const double time);
   virtual bool updateCorrection(const tf::Vector3& meas, 
-				const MatrixWrapper::SymmetricMatrix& cov,
-				const double time);
+				const MatrixWrapper::SymmetricMatrix& cov);
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const;
