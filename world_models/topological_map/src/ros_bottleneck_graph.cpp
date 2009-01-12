@@ -188,7 +188,10 @@ void BottleneckGraphRos::poseCallback (void)
 
     // Remove low-level cells from previous region and add the new ones
     roadmap_->removeLastPoints (num_added_roadmap_points_);
+    ROS_DEBUG ("Removed %d points from roadmap", num_added_roadmap_points_);
     num_added_roadmap_points_ = bottleneck_graph_.addRegionGridCells (roadmap_, region_id_);
+    ROS_DEBUG ("Added %d points to roadmap", num_added_roadmap_points_);
+
   }
 }
 

@@ -32,6 +32,7 @@
 #include <topological_map/bottleneck_graph.h>
 
 using namespace std; 
+using boost::adjacent_vertices;
 
 namespace topological_map
 {
@@ -78,7 +79,7 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
 	BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
 	map<BottleneckVertex,GridCell> new_map;
 	roadmap_points[*vertex_iter] = new_map;
-	for (tie(adjacency_iter, adjacency_end) = boost::adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
+	for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
 	  VertexDescription neighborDesc = vertexDescription (*adjacency_iter);
 	  GridCell borderPoint = pointOnBorder (desc.region, neighborDesc.region);
 	  roadmap->addPoint (borderPoint);
@@ -89,14 +90,38 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
 
     
     VertexPairCellMap::iterator vertex_pair_iter;
+
+    // Loop open regions
     for (vertex_pair_iter=roadmap_points.begin(); vertex_pair_iter!=roadmap_points.end(); vertex_pair_iter++) {
+
+
+      // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
       for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
+        GridCell roadmap_cell = target_vertex_iter->second;
+
+        // Loop again over such pairs so we can add edges between roadmap points within this open region
         for (VertexCellMap::iterator target_vertex_iter2 = vertex_pair_iter->second.begin(); target_vertex_iter2 != vertex_pair_iter->second.end(); target_vertex_iter2++) {
-          roadmap->setCost (target_vertex_iter->second, target_vertex_iter2->second);
-          cout << "Adding edge between " << target_vertex_iter->second << " and " << target_vertex_iter2->second << endl;
+          GridCell neighbor_cell = target_vertex_iter2->second;
+
+          // Add edges only between different cells, and only once
+          if (neighbor_cell < roadmap_cell) {
+            roadmap->setCost (target_vertex_iter->second, target_vertex_iter2->second);
+          }
+        }
+
+        // Loop over other neighbors of this bottleneck region
+        BottleneckVertex neighboring_vertex = target_vertex_iter->first;
+        BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
+        for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(neighboring_vertex, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
+          if (*adjacency_iter != vertex_pair_iter->first) {
+            roadmap->setCost (roadmap_points[*adjacency_iter][neighboring_vertex], roadmap_cell);
+          }
         }
       }
+
     }
+
+    
 
     /* TODO
        1. Look up online documentation
@@ -106,7 +131,6 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
        c) Add an edge between n and roadmapPoints[x][w]
     */
 
-    roadmap->writeToStream();
     return roadmap;
   }    
 

@@ -35,7 +35,7 @@
 
 using std::cout;
 using std::endl;
-
+using topological_map::GridCell;
 
 int main (int argc, char* argv[])
 {
@@ -115,10 +115,10 @@ int main (int argc, char* argv[])
       }
     }
     else {
-      grid.resize(boost::extents[12][12]);
-      for (int a=4; a<12; a+=4) {
-	for (int b=0; b<12; b++) {
-	  if ((b!=2) && (b!=6) && (b!=10)) {
+      grid.resize(boost::extents[15][15]);
+      for (int a=4; a<14; a+=5) {
+	for (int b=0; b<15; b++) {
+	  if ((b!=2) && (b!=7) && (b!=12)) {
 	    grid[b][a] = true;
 	    grid[a][b] = true;
 	  }
@@ -130,7 +130,26 @@ int main (int argc, char* argv[])
 
 
   g.printBottlenecks();
-  g.makeRoadmap();
+  topological_map::Roadmap* r=g.makeRoadmap();
+  r->writeToStream();
+
+  // Temp
+  if (domain == 2) {
+    g.addRegionGridCells(r, 1);
+    r->writeToStream();
+
+    GridCell start(0,0), goal(8,8);
+    r->setStartState(start);
+    r->setGoalState(goal);
+    vector<GridCell> solution=r->findOptimalPath();
+    cout << "Solution is ";
+    for (unsigned int i=0; i<solution.size(); i++) {
+      cout << solution[i] << " ";
+    }
+    cout << endl;
+  }
+  
+  
   if (outputFilename) {
     g.printBottlenecks(outputFilename);
   }

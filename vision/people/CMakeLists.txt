@@ -6,6 +6,9 @@ rospack(people)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
+rospack_add_executable(timing_diagnostics_node
+                       src/timing_diagnostics_node.cpp )
+
 rospack_add_executable(people_tracker
                        src/filter/uniform_vector.cpp 
                        src/filter/gaussian_vector.cpp 
@@ -18,7 +21,7 @@ rospack_add_executable(people_tracker
                        src/filter/measmodel_vector.cpp
 		       src/filter/tracker_particle.cpp 
 		       src/filter/tracker_kalman.cpp 
-		       src/filter/detector_particle.cpp 
+#		       src/filter/detector_particle.cpp 
 		       src/filter/people_tracking_node.cpp )
 
 rospack_add_executable(face_detector
