@@ -128,7 +128,7 @@ void AdjacencyListSBPLEnv<Coords>::addPoint (const Coords& c)
 template <class Coords>
 bool AdjacencyListSBPLEnv<Coords>::hasPoint (const Coords& c)
 {
-  return !(pointIds_.find(c) == 0);
+  return !(pointIds_.find(c) == pointIds_.end());
 }
 
 
@@ -194,7 +194,7 @@ template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::setStartState (const Coords& c)
 {
   typename map<Coords,int>::iterator i = pointIds_.find(c);
-  assert(i);
+  assert(i != pointIds_.end());
   startStateId_ = i->second;
 }
 
@@ -202,7 +202,7 @@ template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::setGoalState (const Coords& c)
 {
   typename map<Coords,int>::iterator i = pointIds_.find(c);
-  assert(i);
+  assert(i != pointIds_.end());
   goalStateId_ = i->second;
 }
 
