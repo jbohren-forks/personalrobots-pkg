@@ -57,6 +57,7 @@ __rosoct_msg_unsubscribe("new_mechanism_state");
 
 display(sprintf('gathering calibration done, total extracted: %d, total parsed: %d', length(__calibdata), __iterationcount));
 calibdata = __calibdata;
+save calibdata.mat calibdata
 __calibdata = {};
 
 function objdetcb(msg, robot)
@@ -194,4 +195,3 @@ data.laserline = laserline;
 
 __calibdata{end+1} = data;
 display(sprintf('adding data %d', length(__calibdata)));
-pause(4);

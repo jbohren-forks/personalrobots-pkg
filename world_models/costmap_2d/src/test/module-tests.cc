@@ -748,9 +748,11 @@ TEST(costmap, test16){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
   map.saveText("testmap.txt");
   map.saveBinary("testmap.bin");
+  map.savePgm("testmap.pgm");
   
   ASSERT_EQ(compareFiles("testmap.txt", "testmap_compare.txt"), true);
   ASSERT_EQ(compareFiles("testmap.bin", "testmap_compare.bin"), true);
+  ASSERT_EQ(compareFiles("testmap.pgm", "testmap_compare.pgm"), true);
 }
 
 

@@ -39,9 +39,7 @@
 #include "kdl/frames.hpp"
 #include "ros/node.h"
 #include "std_msgs/PoseStamped.h"
-#include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
-#include "misc_utils/advertised_service_guard.h"
 #include "robot_mechanism_controllers/endeffector_twist_controller.h"
 
 namespace controller {
@@ -106,7 +104,6 @@ class EndeffectorPoseControllerNode : public Controller
   std::string topic_;
 
   EndeffectorPoseController controller_;
-  SubscriptionGuard guard_command_;
 
   std_msgs::PoseStamped pose_msg_;
   joy::Joy joystick_msg_;

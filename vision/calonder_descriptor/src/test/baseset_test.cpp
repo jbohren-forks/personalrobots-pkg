@@ -59,7 +59,7 @@ selectBaseSet(std::vector<BaseKeypoint> &candidate_set,
 
 int main( int argc, char** argv )
 {
-  int classes = 300, reduced_classes = 0, samples = 200;
+  int classes = 300, reduced_classes = 0, samples = 200, num_quant_bits = 0;
   int trees = 0, depth = 0, views = 0;
   unsigned long seed = std::time(NULL);
   string patch_dir;
@@ -76,7 +76,8 @@ int main( int argc, char** argv )
     ("trees,t", po::value<int>(&trees)->default_value(20), "number of trees")
     ("depth,d", po::value<int>(&depth)->default_value(12), "tree depth")
     ("classes,c", po::value<int>(&classes)->default_value(300), "number of classes")
-    ("reduced,r", po::value<int>(&reduced_classes), "reduced number of classes");
+    ("reduced,r", po::value<int>(&reduced_classes), "reduced number of classes")
+    ("quant-bits,q", po::value<int>(&num_quant_bits), "quantization bits");
 
   po::options_description view_options("View options");
   view_options.add_options()
@@ -219,7 +220,8 @@ int main( int argc, char** argv )
     printf("Training classifier\n");
     {
       Timer timer("Training time");
-      classifier.train(base_set, rng, make_patch, trees, depth, views, reduced_classes);
+      classifier.train(base_set, rng, make_patch, trees, depth,
+                       views, reduced_classes, num_quant_bits);
     }
   }
   else {

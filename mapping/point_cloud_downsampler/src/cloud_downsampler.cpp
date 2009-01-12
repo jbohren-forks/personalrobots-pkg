@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: cloud_downsampler.cpp 8974 2009-01-07 04:41:00Z veedee $
+ * $Id$
  *
  */
 
@@ -74,9 +74,9 @@ class CloudDownsampler : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CloudDownsampler () : ros::node ("cloud_downsampler")
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.02);      // 2cm radius by default
-      param ("~leaf_width_y", leaf_width_.y, 0.02);      // 2cm radius by default
-      param ("~leaf_width_z", leaf_width_.z, 0.02);      // 2cm radius by default
+      param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
+      param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
+      param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 

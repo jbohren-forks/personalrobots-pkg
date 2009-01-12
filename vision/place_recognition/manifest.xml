@@ -12,6 +12,8 @@
   <depend package="star_detector"/>
   <depend package="calonder_descriptor"/>
   <depend package="visual_odometry"/>
+  <!-- pylab, from matplotlib, is used in tests -->
+  <depend package="matplotlib"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>
   </export>

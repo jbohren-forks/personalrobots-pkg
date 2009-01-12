@@ -397,7 +397,7 @@ protected:
                     KinBody::Link* plink = itbody->second->GetOffsetLink();
                     if( plink != NULL ) {                        
                         RAVELOG_DEBUGA("object %S expired %fs\n", plink->GetParent()->GetName(), (float)(curtime-itbody->second->lastupdated).toSec());
-                        GetEnv()->RemoveKinBody(plink->GetParent());
+                        GetEnv()->RemoveKinBody(plink->GetParent(), true);
                     }
 
                     GetEnv()->LockPhysics(false);

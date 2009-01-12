@@ -77,10 +77,10 @@ class SparseStereoFrame(Frame):
   def lookup_disparity(self, x, y):
     (w, h) = self.size
     if self.use_grad_img:
+      limg,rimg = self.lgrad, self.rgrad
+    else:
       limg = self.lf.tostring()
       rimg = self.rf.tostring()
-    else:
-      limg,rimg = self.lgrad, self.rgrad
     refpat = VO.grab_16x16(limg, w, x-7, y-7)
 
     # ftzero         31

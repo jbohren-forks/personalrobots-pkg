@@ -15,8 +15,10 @@ in a way that can be managed by the ROS dependency system.
   <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Wl,-rpath,${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
   <doxymaker external="http://opencvlibrary.sourceforge.net/" />
 </export>
-<sysdepend os="ubuntu" version="7.04-feisty" package="cvs"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="cvs"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libavformat-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libavformat-dev"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libavcodec-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libavcodec-dev"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libjasper-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libjasper-dev"/>
 <versioncontrol type="svn" url="https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/latest_tested_snapshot/opencv"/>

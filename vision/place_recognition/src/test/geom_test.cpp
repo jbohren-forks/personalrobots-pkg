@@ -1,5 +1,6 @@
 #include "place_recognition/vocabulary_tree.h"
 #include "place_recognition/sparse_stereo.h"
+#include "detectors.h"
 #include <iterator>
 #include <numeric>
 #include <sstream>
@@ -26,6 +27,7 @@ typedef cv::willow::Keypoints voKeypoints;
 static const char image_format[] = "/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff";
 static const char classifier_file[] = "/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees";
 static const unsigned int NUM_QUERIES = 78;
+static const unsigned int MAX_FEATURES = 400;
 
 int main(int argc, char** argv)
 { 
@@ -44,7 +46,7 @@ int main(int argc, char** argv)
   printf("%d database images\n", num_objs);
 
   // Prepare keypoint detector, classifier
-  StarDetector detector(cvSize(640, 480), 7, 10.0);
+  //StarDetector detector(cvSize(640, 480), 7, 10.0);
   std::vector<Keypoint> pts;
   RTreeClassifier classifier(true);
   classifier.read(classifier_file);
@@ -68,8 +70,12 @@ int main(int argc, char** argv)
     SparseStereoFrame frame(left, right);
 
     // Find keypoints in left image
-    pts.resize(0);
-    detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
+    //pts = starKeypoints(left.Ipl(), 7, 10.0);
+    //pts = siftKeypoints(left.Ipl());
+    pts = fastKeypoints(left.Ipl(), 18, 40);
+    //pts.resize(0);
+    //detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
+    //KeepBestPoints(pts, MAX_FEATURES);
 
     // Compute descriptors, disparities
     float* sig_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
@@ -109,11 +115,11 @@ int main(int argc, char** argv)
   
   // Train vocabulary tree
   VocabularyTree tree;
-  tree.build(features, objs, 5, 4);
-  /*
+  //tree.build(features, objs, 5, 4);
+  
   tree.build(features, objs, 5, 4, false);
   //tree.save("james4_empty.tree");
-  tree.load("james4_empty.tree");
+  //tree.load("james4_empty.tree");
   printf("Adding images to tree dynamically...\n");
   current_row = 0;
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
@@ -121,7 +127,7 @@ int main(int argc, char** argv)
     current_row += buffer_sizes[i];
     tree.insert(image_features);
   }
-  */
+  
   tree.save("james4.tree");
   //tree.load("james4.tree");
   

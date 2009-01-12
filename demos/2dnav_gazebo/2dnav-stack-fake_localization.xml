@@ -21,7 +21,7 @@
     <param name="/scan_shadows_filter/filter_min_angle" value="10"/>
     <param name="/scan_shadows_filter/filter_max_angle" value="170"/>
     <param name="/scan_shadows_filter/filter_window"    value="2"/>
-    <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" respawn="false" output="screen" />
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="false" output="screen" />
 
     <!-- wavefront_player settings -->
     <!--

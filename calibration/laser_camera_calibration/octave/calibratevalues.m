@@ -18,7 +18,9 @@ if( isempty(laser_tilt_mount_link) || isempty(laser_tilt_link) || isempty(head_t
 end
 
 % joint offsets to calibrate
-jointnames = {'head_pan_joint'};
+jointnames = {};
+%% uncomment this to calibrate the joint offsets
+%jointnames = {'head_pan_joint'};
 joints = []; 
 for i = 1:length(jointnames)
     joints(i) = find(cellfun(@(x) strcmp(x,jointnames{i}), robot.jointnames),1,'first');

@@ -4,9 +4,10 @@
 
   <!-- start openraveros server and set all the correct paths -->
   <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
-  <include file="$(find ormanipulation)/startchecker.ros.xml"/>
 
+  <include file="$(find ormanipulation)/startchecker.ros.xml"/>
   <node pkg="phase_space" type="phase_space_node"/>
+
   <!-- launch octave scripts to start the openrave client -->
   <node pkg="ormanipulation" type="runperception.m" output="screen"/>
 </launch>

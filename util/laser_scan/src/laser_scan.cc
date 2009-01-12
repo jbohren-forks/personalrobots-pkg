@@ -56,7 +56,7 @@ namespace laser_scan
     cloud_out.set_pts_size (scan_in.get_ranges_size ());
     
     // Define 3 indices in the channel array for each possible value type
-    int idx_intensity = -1, idx_index = -1, idx_distance = -1;
+    int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
     
     // Check if the intensity bit is set
     if ((mask & MASK_INTENSITY) && scan_in.get_intensities_size () > 0)
@@ -85,6 +85,15 @@ namespace laser_scan
       cloud_out.chan[chan_size].name = "distances";
       cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
       idx_distance = chan_size;
+    }
+
+    if (mask & MASK_TIMESTAMP)
+    {
+      int chan_size = cloud_out.get_chan_size ();
+      cloud_out.set_chan_size (chan_size + 1);
+      cloud_out.chan[chan_size].name = "stamps";
+      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      idx_timestamp = chan_size;
     }
 
     if (range_cutoff < 0)
@@ -117,6 +126,10 @@ namespace laser_scan
             if (idx_intensity != -1)
               cloud_out.chan[idx_intensity].vals[count] = scan_in.intensities[index];
           }
+
+          if( idx_timestamp != -1)
+              cloud_out.chan[idx_timestamp].vals[count] = (float)index*scan_in.time_increment;
+
           count++;
         }
       }

@@ -119,12 +119,33 @@ namespace cloud_kdtree
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Search for k-nearest neighbors for the given query point index.
+    * \note This method is to be used for extremely fast operations where we want to skip converting the point to
+    * a \a Point32 message in a loop. There are no internal checks to validate the given index so use it carefully!
+    * \note assumes that indices is already sized to contain \a k elements. Used with OpenMP.
+    * \param p_idx the given query point index
+    * \param k the number of neighbors to search for
+    * \param indices the resulting point indices
+    */
+  bool
+    KdTree::nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances)
+  {
+#ifdef USE_ANN
+    ann_kd_tree_->annkSearch (points_[p_idx], k, &indices[0], &distances[0], epsilon_);
+#else
+    fprintf (stderr, "FL-ANN version is not implemented yet !");
+#endif
+    return (true);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Search for all the nearest neighbors of the query point in a given radius.
     * \param p_q the given query point
     * \param radius the radius of the sphere bounding all of \a p_q 's neighbors
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::Point32 p_q, double radius)
+    KdTree::radiusSearch (std_msgs::Point32 p_q, double radius, int max_nn)
   {
     if (dim_ != 3)          // We want to discourage 3-D searching when the tree is creating for a different n-D
       return (false);
@@ -134,6 +155,7 @@ namespace cloud_kdtree
 
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
     ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);
@@ -159,9 +181,10 @@ namespace cloud_kdtree
     * \param points the point cloud data
     * \param index the index in \a points representing the query point
     * \param radius the radius of the sphere bounding all the query point's neighbors
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius)
+    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn)
   {
     if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);
@@ -175,6 +198,7 @@ namespace cloud_kdtree
 
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
     ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);

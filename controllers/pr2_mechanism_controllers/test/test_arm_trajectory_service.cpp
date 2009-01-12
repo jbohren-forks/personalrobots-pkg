@@ -98,21 +98,29 @@ int main( int argc, char** argv )
   req.traj.points[2].time = 0.0;
 
 
-  if (ros::service::call("set_arm_traj_srv", req, res))
+  if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", req, res))
   {
     ROS_INFO("Done");
   }
-
-  req_q.trajectoryid = 1;
-
-  if(ros::service::call("query_arm_traj_srv", req_q, res_q))  
-  {
-    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
-  }
   sleep(10);
-  if(ros::service::call("query_arm_traj_srv", req_q, res_q))  
+  req_q.trajectoryid = atoi(argv[1]);
+
+  if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery", req_q, res_q))  
   {
     ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
   }
+  else
+      {
+          ROS_INFO("service call failed");
+      }
+  sleep(4);
+  if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  {
+    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+  }
+  else
+      {
+          ROS_INFO("service call failed");
+      }
 
 }

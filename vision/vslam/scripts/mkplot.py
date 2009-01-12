@@ -37,6 +37,8 @@ import transformations
 
 from vis import Vis
 
+import pickle
+
 def planar(x, y, z):
   from scipy import optimize
 
@@ -86,12 +88,12 @@ if 0:
   start,end = 0,1300
 else:
   skipto = None
-  start,end = 0,1000
+  start,end = 0, 500
 
 print "starting loop"
 f = open(filename)
-for topic, msg, t in rosrecord.logplayer(f):
-  print topic
+for topic, msg, timeStamp in rosrecord.logplayer(filename):
+  print 'topic:',topic
   if skipto and (f.tell() < skipto):
     f.seek(skipto)
   #print f.tell(), msg
@@ -102,7 +104,9 @@ for topic, msg, t in rosrecord.logplayer(f):
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
       vos = [
-        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None,
+        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, 
+                            # sba = (10,10,10),
+                            sba = None,
                             inlier_thresh = 100,
                             position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
       ]
@@ -111,20 +115,29 @@ for topic, msg, t in rosrecord.logplayer(f):
       vo_u = [ [] for i in vos]
       vo_v = [ [] for i in vos]
       trajectory = [ [] for i in vos]
+      stampedTrajectory = [ [] for i in vos]
       skel = Skeleton(cam)
       oe_x = []
       oe_y = []
       oe_home = None
+      stampedGroundTruth = []
     if framecounter == end:
       break
     if start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
+        
+        # jdc debugging
+        Image.fromstring("L", af.size, af.rawdata).save("/tmp/mkplot-left.png")   
+             
         vo.handle_frame(af)
         if i == 0:
           skel.add(vo.keyframe)
         x,y,z = vo.pose.xform(0,0,0)
         trajectory[i].append((x,y,z))
+        # convert the time stampe to milliseconds in float
+        secs = timeStamp.secs + timeStamp.nsecs*1.e-9
+        stampedTrajectory[i].append((secs, x, y, z))
         vo_x[i].append(x)
         vo_y[i].append(z)
         x1,y1,z1 = vo.pose.xform(0,0,1)
@@ -149,9 +162,13 @@ for topic, msg, t in rosrecord.logplayer(f):
     if not oe_home:
       oe_home = oe_pose
     local = ~oe_home * oe_pose
-    (x,y,z) = local.xform(0,0,0)
+    (x,y,z) = local.xform(0,0,0) # ground truth x y z
+    # note that the phase space frame is x forward, y to left and z upward.
     oe_x.append(-y)
     oe_y.append(x)
+    # convert the time stamp to seconds in float
+    secs = timeStamp.secs + timeStamp.nsecs*1.e-9
+    stampedGroundTruth.append((secs, -y, -z, x))
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
@@ -178,6 +195,7 @@ if 0:
 
 pylab.figure(figsize=(20,20))
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
+  
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
   xs = numpy.array(vo_x[i])
@@ -213,6 +231,14 @@ pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
 pylab.show()
+
+#pickling
+output_trajectory = open('trajs.pkl','wb')
+output_gt         = open('gt.pkl', 'wb')
+pickle.dump(stampedTrajectory,  output_trajectory)
+pickle.dump(stampedGroundTruth, output_gt)
+output_trajectory.close()
+output_gt.close()
 
 for vo in vos:
   print vo.name()

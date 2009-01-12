@@ -1,5 +1,8 @@
-%% openraveros_startup(sessionserver, createsession, viewer)
+%% openraveros_startup(sessionserver, createsession, viewer, destroyall)
+%%
 %% adds all the necessary paths for the openraveros octave client
+%% if destroyall is 1 and openraveros cannot find a currently existing session,
+%%   destroys all other sessions before creating a new one
 
 %% Software License Agreement (BSD License)
 %% Copyright (c) 2008, Willow Garage, Inc.
@@ -26,12 +29,15 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 %%
 %% author: Rosen Diankov
-function openraveros_startup(sessionserver,createsession, viewer)
+function openraveros_startup(sessionserver,createsession, viewer, destroyall)
 global openraveros_globalsession
 persistent openraveros_initialized
 
 if( ~exist('createsession','var') )
     createsession = 1;
+end
+if( ~exist('destroyall','var') )
+    destroyall = 0;
 end
 
 if( isempty(openraveros_initialized))
@@ -55,6 +61,15 @@ if( createsession && isempty(openraveros_globalsession) )
         viewer = 'qtcoin';
     end
 
+    
+    if( destroyall )
+        reqdestroy = openraveros_openrave_session();
+        reqdestroy.sessionid = -1;
+        resdestroy = rosoct_service_call(sessionserver,reqdestroy);
+        if( isempty(resdestroy) )
+            warning('failed to destroy sessions');
+        end
+    end
     req = openraveros_openrave_session();
     req.viewer = viewer; % default viewer
     while(1)

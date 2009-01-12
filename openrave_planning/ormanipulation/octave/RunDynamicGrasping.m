@@ -30,9 +30,9 @@ function RunDynamicGrasping(robot, scenedata, simulation,squeeze)
 global updir probs realsession
 setrealsession();
 
-if( ~simulation )
-    DeleteObjects(scenedata.TargetObjPattern);
-end
+% if( ~simulation )
+%     DeleteObjects(scenedata.TargetObjPattern);
+% end
 
 MySwitchModels = @(x) SwitchModels(scenedata.SwitchModelPatterns, x);
 %MySwitchModels = @(x) 0;
@@ -66,7 +66,7 @@ while(1)
     curobj.info = orEnvGetBodies(curobj.id);
 
     if( isempty(curobj.info) )
-        display(sprintf('failed to get info for obj %d (might have been deleted)', curobj.info.name));
+        display(sprintf('failed to get info for obj %d (might have been deleted)', curobj.id));
         continue;
     end
 
@@ -83,5 +83,12 @@ while(1)
     end
 
     % switch back to real
+    sessionclone = openraveros_getglobalsession();
     setrealsession();
+    if( sessionclone.id ~= openraveros_getglobalsession().id )
+        %destroy
+        openraveros_destroysession(sessionclone);
+    end
+
+    input('press any key to get next measurement: ');
 end

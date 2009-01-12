@@ -198,6 +198,12 @@ namespace costmap_2d {
      * @param name The filename to save.
      */
     void saveBinary(std::string name);
+
+    /**
+     * @brief Saves a pgm image of the costmap.
+     * @param name The filename to save.
+     */
+    void savePgm(std::string file);
   private:
 
     /**

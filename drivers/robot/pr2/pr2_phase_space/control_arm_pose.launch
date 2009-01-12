@@ -1,0 +1,19 @@
+<launch>
+  <node pkg="pr2_phase_space" type="phase_space_pose_stamped" name="ps_arm_pose" args="cmd:=/arm_pose/command" output="screen">
+    <param name="body_id" type="int" value="1" />
+    <param name="num_to_skip" type="int" value="0" />
+    <param name="offset_trans_x" type="double"  value="-1.00" />
+    <param name="offset_trans_y" type="double"  value="0.5" />
+    <param name="offset_trans_z" type="double"  value="1.00" />
+    <param name="scale_trans_x" type="double" value="1.0" />
+    <param name="scale_trans_y" type="double" value="1.0" />
+    <param name="scale_trans_z" type="double" value="1.0" />
+
+    <param name="offset_rot_axis_x" type="double"    value="0.0" />
+    <param name="offset_rot_axis_y" type="double"    value="0.0" />
+    <param name="offset_rot_axis_z" type="double"    value="1.0" />
+    <param name="offset_rot_angle"  type="double"    value="0.0" />
+
+    <param name="frame_id" type="string" value="base_link" />
+  </node>
+</launch>

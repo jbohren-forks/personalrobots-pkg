@@ -142,14 +142,6 @@ namespace cloud_kdtree
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
       virtual ~KdTree ()
       {
-        Clean ();
-      }
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Deletes all allocated data arrays and destroys the kd-tree structures. */
-      void
-        Clean ()
-      {
         // Data array cleanup
         if (points_ != NULL && nr_points_ != 0)
           annDeallocPts (points_);
@@ -173,9 +165,10 @@ namespace cloud_kdtree
       bool nearestKSearch (std_msgs::Point32 p_q, int k);
       bool nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k);
       bool nearestKSearch (int p_idx, int k);
+      bool nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances);
 
-      bool radiusSearch (std_msgs::Point32 p_q, double radius);
-      bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius);
+      bool radiusSearch (std_msgs::Point32 p_q, double radius, int max_nn = INT_MAX);
+      bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn = INT_MAX);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Obtain the neighbors' point indices on the last nearestKSearch or radiusSearch

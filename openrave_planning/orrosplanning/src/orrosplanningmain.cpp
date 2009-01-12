@@ -22,12 +22,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// author: Rosen Diankov
+// \author Rosen Diankov
 #include "plugindefs.h"
 
 #include "rosarmik.h"
 #include "phasespacesystem.h"
 #include "objecttransformsystem.h"
+#include "collisionmapsystem.h"
 #include "rosrobotcontroller.h"
 #include "rosplanningproblem.h"
 
@@ -68,8 +69,10 @@ InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, Environme
     case PT_SensorSystem:
         if( wcsicmp(name, L"PhaseSpace") == 0 )
             return new PhaseSpaceMocapClient(penv);
-        if( wcsicmp(name, L"ObjectTransform") == 0 )
+        else if( wcsicmp(name, L"ObjectTransform") == 0 )
             return new ObjectTransformSystem(penv);
+        else if( wcsicmp(name, L"CollisionMap") == 0 )
+            return new CollisionMapSystem(penv);
         break;
     default:
         break;
@@ -86,9 +89,11 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
         return false;
     }
 
+    pinfo->controllers.push_back(L"ROSRobot");
     pinfo->iksolvers.push_back(L"ROSArmIK");
     pinfo->sensorsystems.push_back(L"PhaseSpace");
     pinfo->sensorsystems.push_back(L"ObjectTransform");
+    pinfo->sensorsystems.push_back(L"CollisionMap");
     pinfo->problems.push_back(L"ROSPlanning");
 
     return true;

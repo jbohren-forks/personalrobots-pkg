@@ -35,22 +35,22 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/multi_array.hpp>
-
+#include "gridcell.h"
+#include <discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h>
 
 namespace topological_map
 {
 
 
-// Vertex descriptions
-typedef std::pair<int,int> Coords; 
-typedef std::set<Coords> Region;
+
+typedef std::set<GridCell> Region;
 enum VertexType { BOTTLENECK, OPEN };
 struct VertexDescription
 {
-  VertexDescription () { region = new Region(); id=-2; }
+  VertexDescription () : id(-2) {}
 
   VertexType type;
-  Region* region;
+  Region region;
   int id;
 };
 
@@ -70,44 +70,58 @@ typedef boost::graph_traits<BottleneckGraph>::adjacency_iterator BottleneckAdjac
 
 // Typedefs for occupancy grids
 typedef boost::multi_array<bool, 2> GridArray;
-typedef GridArray::index grid_index;
-typedef GridArray::size_type grid_size;
 
 // Array mapping from grid cell to topological graph node
 typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 
-
+// Roadmap overlaid over topological map
+// Roadmap consists of grid cells, as opposed to topological map which consists of regions
+typedef AdjacencyListSBPLEnv<GridCell> Roadmap;
 
 // Externally used ops
 class IndexedBottleneckGraph
 {
 public:
-  IndexedBottleneckGraph () : numRows(-1), numCols(-1) {}
+  IndexedBottleneckGraph () : num_rows_(-1), num_cols_(-1) {}
 
-  void initializeFromGrid (GridArray g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
+  void initializeFromGrid (const GridArray& g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
   void readFromFile (const char* filename);
 
-  void setDims (int nr, int nc);
+  int regionId (int r, int c);
+  bool lookupVertex (int r, int c, BottleneckVertex* v);
+  VertexDescription vertexDescription (const BottleneckVertex& v) { return boost::get(desc_t(), graph_, v); }
+  
 
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);
   void printBottlenecks (void);
 
-  int regionId (int r, int c);
-  bool lookupVertex (int r, int c, BottleneckVertex* v);
-  VertexDescription vertexDescription (BottleneckVertex v) { return boost::get(desc_t(), graph, v); }
+  /*** Create and return (pointer to) an object of type AdjacencyListSBPLEnv<GridCell>
+   * Caller is considered to be the owner of the returned object
+   */
+  Roadmap* makeRoadmap ();
 
-  BottleneckGraph graph;
-  RegionArray* regions;
-  GridArray* isFree;
-  int numRows, numCols;
+  /** Add to the roadmap the grid cells in the given region (except the ones that are already in the roadmap).  Return the number of added 
+   *  cells (which can be passed to the removeLastPoints method of the roadmap to undo this operation. */
+  int addRegionGridCells (Roadmap* roadmap, int region_id);
 
 private:
   void writeToStream (std::ostream&);
+  void indexRegions (void);
+  void setDims (int nr, int nc);
+
+  BottleneckGraph graph_;
+  RegionArray grid_cell_vertex_;
+  map<int,BottleneckVertex> id_vertex_map_;
+
+  GridArray is_free_;
+  int num_rows_, num_cols_;
+  
 };
 
+GridCell pointOnBorder (const Region& r1, const Region& r2);
 
-
+   
 
 
 

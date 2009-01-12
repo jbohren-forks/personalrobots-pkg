@@ -30,15 +30,23 @@ CFLAGS += -I$(EIGEN)
 PLACE_RECOGNITION = $(shell rospack find place_recognition)
 CFLAGS += -I$(PLACE_RECOGNITION)/include
 LDFLAGS += -L$(PLACE_RECOGNITION)/lib -lplace_recognition -Wl,-rpath $(PLACE_RECOGNITION)/lib
+# SIFT (for comparison)
+SIFT_ROOT = /u/mihelich/packages/cvx_sift
+CFLAGS += -I$(SIFT_ROOT)
+LDFLAGS += -L$(SIFT_ROOT)/lib -lsift -Wl,-rpath $(SIFT_ROOT)/lib
+# FAST
+FAST_DIR = $(shell rospack find fast_detector)
+CFLAGS += -I$(FAST_DIR)/src
+LDFLAGS += -L$(FAST_DIR)/lib -lfast_detector -Wl,-rpath $(FAST_DIR)/lib
 # Optimization
 #CFLAGS += -O0
 CFLAGS += -O3
 CFLAGS += -msse2
 CFLAGS += -DNDEBUG
 
-SOURCES = 
+SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-PROGRAMS = vocab_test geom_test loop_test load_test kmeans_test
+PROGRAMS = vocab_test geom_test loop_test make_empty kmeans_test
 
 all: $(PROGRAMS)
 

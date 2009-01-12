@@ -11,4 +11,6 @@
   <depend package="toro"/>
   <depend package="render"/>
   <depend package="place_recognition"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="mayavi2"/>
+  <sysdepend os="ubuntu" version="8.10-Intrepid" package="mayavi2"/>
 </package>

@@ -64,7 +64,9 @@ class PCDGenerator: public ros::node
     PCDGenerator () : ros::node ("pcd_generator")
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
-      advertise<std_msgs::PointCloud>("cloud_pcd", 1);
+      string cloud_topic ("cloud_pcd");
+      advertise<std_msgs::PointCloud>(cloud_topic.c_str (), 1);
+      ROS_INFO ("Publishing data on topic %s.", cloud_topic.c_str ());
     }
 
     ~PCDGenerator ()

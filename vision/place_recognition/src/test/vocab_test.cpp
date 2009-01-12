@@ -2,12 +2,14 @@
 #include "place_recognition/vocabulary_tree.h"
 #include <string>
 #include <cstdlib>
+#include <fstream>
 #include <boost/foreach.hpp>
+#include <boost/timer.hpp>
 
 using namespace vision;
 
 static const char des_directory[] = "/u/mihelich/images/holidays/siftgeo/";
-static const unsigned int NUM_QUERIES = 5;
+static const unsigned int NUM_QUERIES = 50;
 
 int main(int argc, char** argv)
 {
@@ -16,6 +18,10 @@ int main(int argc, char** argv)
   std::vector<int> query_index;
   int num_objs = 0;
   int num_queries = 0;
+  double total_insertion_time = 0, wallclock_insertion_time = 0;
+  double total_training_query_time = 0, wallclock_training_query_time = 0;
+  double total_test_query_time = 0, wallclock_test_query_time = 0;
+  std::ofstream out;
 
   dir(des_directory, all_files);
   query_files.reserve(NUM_QUERIES);
@@ -68,10 +74,29 @@ int main(int argc, char** argv)
   
   // Train vocabulary tree
   VocabularyTree tree;
-  tree.build(features, objs, 5, 4);
-  //tree.build(features, objs, 5, 4, false);
-  printf("Saving...\n");
-  tree.save("test.tree");
+  if (argc < 2) {
+    tree.build(features, objs, 5, 4);
+    //tree.build(features, objs, 5, 4, false);
+    printf("Saving...\n");
+    tree.save("test.tree");
+  }
+  else {
+    tree.load(argv[1]);
+    current_row = 0;
+    out.open("insertion.out");
+    boost::timer wallclock_time;
+    for (int i = 0; i < num_objs; ++i) {
+      FeatureMatrix obj_features = features.block(current_row, 0, feature_counts[i], 128);
+      current_row += feature_counts[i];
+      boost::timer t;
+      tree.insert(obj_features);
+      double elapsed = t.elapsed();
+      total_insertion_time += elapsed;
+      out << elapsed << ' ' << feature_counts[i] << std::endl;
+    }
+    wallclock_insertion_time = wallclock_time.elapsed();
+    out.close();
+  }
     
   // Validation
   int training_correct = 0, query_correct = 0;
@@ -81,19 +106,29 @@ int main(int argc, char** argv)
   
   // Validate on training images
   current_row = 0;
+  out.open("train_query.out");
+  boost::timer query_timer;
   for (int i = 0; i < num_objs; ++i) {
     FeatureMatrix query = features.block(current_row, 0, feature_counts[i], 128);
     current_row += feature_counts[i];
     matches.resize(0);
+    boost::timer t;
     tree.find(query, N, std::back_inserter(matches));
-    if (matches[0].id == i) ++training_correct;
+    double elapsed = t.elapsed();
+    total_training_query_time += elapsed;
+    out << elapsed << ' ' << feature_counts[i] << std::endl;
+    if (matches[0].id == (uint)i) ++training_correct;
     printf("Training image %u, %u features\n", i, query.rows());
     BOOST_FOREACH( const VocabularyTree::Match& m, matches )
       printf("\tid = %u, score = %f\n", m.id, m.score);
   }
+  wallclock_training_query_time = query_timer.elapsed();
+  out.close();
     
   // Try query images
   unsigned int query_num = 0;
+  out.open("test_query.out");
+  query_timer.restart();
   printf("\n--------------\n\n");
   BOOST_FOREACH(std::string& file, query_files) {
     // Read descriptors from file
@@ -102,16 +137,34 @@ int main(int argc, char** argv)
     readSiftGeoDescriptors(file.c_str(), query);
 
     matches.resize(0);
+    boost::timer t;
     tree.find(query, N, std::back_inserter(matches));
+    double elapsed = t.elapsed();
+    total_test_query_time += elapsed;
+    out << elapsed << ' ' << count << std::endl;
     if (query_index[matches[0].id] == query_num) ++query_correct;
     printf("Query image %u, %u features\n", query_num++, query.rows());
     BOOST_FOREACH( const VocabularyTree::Match& m, matches )
       printf("\tid = %u corresponding to query %u, score = %f\n",
              m.id, query_index[m.id], m.score);
   }
+  wallclock_test_query_time = query_timer.elapsed();
+  out.close();
 
   printf("\nTraining set: %u / %u\nQuery set: %u / %u\n", training_correct,
          num_objs, query_correct, num_queries);
+
+  printf("Wallclock time for insertion: %fs\n", wallclock_insertion_time);
+  printf("Inserted %u objects in total time %fs, avg. %fs\n",
+         num_objs, total_insertion_time, total_insertion_time / num_objs);
+  printf("Wallclock time for training queries: %fs\n", wallclock_training_query_time);
+  printf("Queried %u objects in total time %fs, avg. %fs\n",
+         num_objs, total_training_query_time,
+         total_training_query_time / num_objs);
+  printf("Wallclock time for test queries: %fs\n", wallclock_test_query_time);
+  printf("Queried %u objects in total time %fs, avg. %fs\n",
+         NUM_QUERIES, total_test_query_time,
+         total_test_query_time / NUM_QUERIES);
   
   return 0;
 }

@@ -28,6 +28,7 @@
 function [robot, scenedata] = SetupTableScene(scene,realrobot,randomize)
 
 global updir probs robothome
+setrealsession();
 
 if( ~exist('realrobot','var') )
     realrobot = 0;
@@ -91,9 +92,23 @@ end
 orProblemSendCommand('setactivemanip 1',probs.manip); % right arm
 robot.activemanip = 2; % update
 
+tableaabb = [];
+tablepattern = '^willow_table$';
+bodies = orEnvGetBodies(0,openraveros_BodyInfo().Req_Names());
+for i = 1:length(bodies)
+    if( regexp(bodies{i}.name, tablepattern) )
+        Tidentity = eye(4);
+        Ttable = bodies{i}.T;
+        orBodySetTransform(bodies{i}.id,Tidentity(1:3,1:4));
+        ab = orBodyGetAABB(bodies{i}.id);
+        orBodySetTransform(bodies{i}.id,Ttable);
+        break;
+    end
+end
+
 scenedata.TargetObjPattern = TargetObjPattern;
 scenedata.SwitchModelPatterns = SwitchModelPatterns;
-scenedata.GetDestsFn = @() GetDests('^willow_table$');
+scenedata.GetDestsFn = @() GetDests(tablepattern, tableaabb);
 scenedata.SetupCloneFn = @() SetupClone(robot.name);
 
 updir = [0;0;1];
@@ -119,11 +134,11 @@ if( realrobot )
     enabledjoints([robot.manips{1}.armjoints; robot.manips{1}.handjoints]) = [];
     jointnames_cell = transpose(robot.jointnames(enabledjoints+1));
     jointnames_str = cell2mat (cellfun(@(x) [x ' '], jointnames_cell,'uniformoutput',false));
-    orRobotControllerSet(robot.id, 'ROSRobot',  ['joints ' jointnames_str]);
+    orRobotControllerSet(robot.id, 'ROSRobot',  ['trajectoryservice /right_arm_trajectory_controller/ joints ' jointnames_str]);
 end
 
 %% dests is a 12xN array where every column is a 3x4 matrix
-function [dests, surfaceplane] = GetDests(tablepattern)
+function [dests, surfaceplane] = GetDests(tablepattern, ab)
 
 dests = [];
 surfaceplane = [];
@@ -145,7 +160,11 @@ if( id == 0 )
 end
 
 %% table up is assumed to be +z, sample the +y axis of the table
-ab = orBodyGetAABB(id);
+if( isempty(ab) )
+    ab = orBodyGetAABB(id);
+    ab(1:3,1) = ab(1:3,1) - Ttable(1:3,4);
+end
+
 if( isempty(ab) )
     display('missed table, trying again');
     dests = GetDests(tablepattern);
@@ -153,7 +172,7 @@ if( isempty(ab) )
 end
 
 Nx = 4;
-Ny = 5;
+Ny = 10;
 X = [];
 Y = [];
 for x = 0:(Nx-1)
@@ -161,8 +180,8 @@ for x = 0:(Nx-1)
     Y = [Y 0.5*rand(1,Ny)/(Ny+1) + ([0:(Ny-1)]+0.5)/(Ny+1)];
 end
 
-offset = [ab(1,1)-ab(1,2);ab(2,1); ab(3,1)+ab(3,2)];
-trans = [offset(1)+2*ab(1,2)*X; offset(2)+ab(2,2)*Y; repmat(offset(3),size(X))];
+offset = [ab(1,1)-ab(1,2);ab(2,1)-ab(2,2); ab(3,1)+ab(3,2)];
+trans = [offset(1)+2*ab(1,2)*X; offset(2)+2*ab(2,2)*Y; repmat(offset(3),size(X))];
 trans = Ttable*[trans;ones(size(X))];
 
 Rots = [];

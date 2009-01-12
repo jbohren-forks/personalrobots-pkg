@@ -69,7 +69,7 @@ public:
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
 
-  std_msgs::PointCloud cloud;
+  std_msgs::PointCloud cloud,cloudNoTex;
 
   color_calib::Calibration lcal;
   color_calib::Calibration rcal;
@@ -86,6 +86,7 @@ public:
   TopicSynchronizer<StereoView> sync;
 
   bool capture;
+  bool captureNoTex;
   std_msgs::UInt8 projector_status;
 
   ros::thread::mutex cv_mutex;
@@ -96,14 +97,14 @@ public:
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), lastLeft(NULL), lastRight(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
-		 capture(false)
+		 capture(false), captureNoTex(false)
   {
     //param("~file_name", fileName, "stereoImage");  //Base string to use, images will be [base][L/R/D].jpg (left, right, disparity)
     //param("~start_number", fileNum, 0);  //Number to start with (i.e. if program crashes start with n+1
                                          //where n is the number of the last image saved
     
     fileName = "data/stereoImage";
-    fileNum = 0;
+    fileNum = 10;
 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -200,45 +201,92 @@ public:
 	  if(lastScaledDisparity != NULL)
 	    cvReleaseImage(&lastScaledDisparity);	  
 	  lastScaledDisparity = cvCloneImage(disp);
-	} else { //Save non textured light disparity too
-          if(!lastNonTexDisp)
-            lastNonTexDisp = cvCloneImage(disp);
-          cvCopy(disp,lastNonTexDisp);
-        }
-	
-      
+	} else //Save non textured light disparity too
+        { 
+          if(lastNonTexDisp != NULL)
+            cvReleaseImage(&lastNonTexDisp);
+          lastNonTexDisp = cvCloneImage(disp);
+          cloudNoTex = cloud;
+       }
       cvShowImage("disparity", disp);
       cvReleaseImage(&disp);
     }
     
-    if(capture) //Look here to save the non texture disparity image
+    if(capture && (lastDisparity != NULL)) //Look here to save the non texture disparity image
       {
-	stringstream ss1, ss2, ss3, ss4, ss5;
+        cout << "Shouldn't get here" << endl;
+	stringstream ss1, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
 	ss1<<fileName<<"L"<<fileNum<<".jpg";
 	ss2<<fileName<<"R"<<fileNum<<".jpg";
 	ss3<<fileName<<"D"<<fileNum<<".jpg";
 	ss4<<fileName<<"D"<<fileNum<<".u16";
         ss5<<fileName<<"d"<<fileNum<<".jpg";
+        sscloud<<fileName<<"_C"<<fileNum<<".txt";
+        sscloudNoTex<<fileName<<"_CnoTex"<<fileNum<<".txt";
 	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<< " " << ss5.str() << endl;
 	cvSaveImage(ss1.str().c_str(), lastLeft);
 	cvSaveImage(ss2.str().c_str(), lastRight);
 	cvSaveImage(ss3.str().c_str(), lastScaledDisparity);
 	cvSave(ss4.str().c_str(), lastDisparity);
-        cvSave(ss5.str().c_str(),lastNonTexDisp);
+        cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
+        write_out_point_cloud(sscloud.str(),cloud);
+        write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
 	
 	fileNum++;
 	capture = false;
       }
+    if(captureNoTex)
+    {
+	stringstream ss1, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
+	ss1<<fileName<<"L"<<fileNum<<".jpg";
+	ss2<<fileName<<"R"<<fileNum<<".jpg";
+        ss5<<fileName<<"d"<<fileNum<<".jpg";
+        sscloudNoTex<<fileName<<"_CnoTex"<<fileNum<<".txt";
+	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<< " " << ss5.str() << endl;
+	cvSaveImage(ss1.str().c_str(), lbridge.toIpl());
+	cvSaveImage(ss2.str().c_str(), rbridge.toIpl());
+        cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
+        write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
+	
+	fileNum++;
+	captureNoTex = false;
+    }
 
     cv_mutex.unlock();
 
   }
 
-  void write_out_point_cloud(string filename)
+
+  /** \brief Transform a compact RGB color info into 3 floats */
+  void
+    transformRGB (float val, float &r, float &g, float &b)
   {
-    ofstream fout("capturedCloud.txt");
-    for(unsigned int i=0; i<cloud.pts.size(); i++)
-      fout<<cloud.pts[i].x<<" "<<cloud.pts[i].y<<" "<<cloud.pts[i].z<<" 0.1 0.2 0.3"<<endl;
+    int rgb = *reinterpret_cast<int*>(&val);
+    r = ((rgb >> 16) & 0xff) / 255.0f;
+    g = ((rgb >> 8) & 0xff) / 255.0f;
+    b = (rgb & 0xff) / 255.0f;
+  }
+  
+  void write_out_point_cloud(string filename,  std_msgs::PointCloud &cloud_ )
+  {
+    int c_idx = -1;
+    for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+    {
+      if (cloud_.chan[d].name == "rgb")
+        c_idx = d;
+    }
+    
+    
+    ofstream fout(filename.c_str());
+
+    float r = 0.0, g = 0.0, b = 0.0;
+    
+    for (unsigned int i=0; i<cloud_.pts.size(); i++)
+    {
+      if (c_idx != -1)
+        transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
+      fout << cloud_.pts[i].x << " " << cloud_.pts[i].y << " " << cloud_.pts[i].z << " " << r << " " << g << " " << b << endl;
+    }
     fout.close();
   }
 
@@ -271,7 +319,11 @@ public:
       case 'c':
         capture = true;
         break;
-      }
+      case 's':
+         captureNoTex = true;
+         break;
+    }
+
 
       cv_mutex.unlock();
       usleep(10000);

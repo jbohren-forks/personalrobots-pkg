@@ -51,7 +51,7 @@ class ROSRobotController : public ControllerBase
         {
             assert(pnode != NULL);
             Destroy();
-
+            
             _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::request, pr2_mechanism_controllers::TrajectoryStart::response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
             _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::request, pr2_mechanism_controllers::TrajectoryCancel::response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
             _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::request, pr2_mechanism_controllers::TrajectoryWait::response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
@@ -61,16 +61,16 @@ class ROSRobotController : public ControllerBase
                 RAVELOG_ERRORA("failed to find %s service\n", (_strTrajectoryServiceDir+"TrajectoryQuery").c_str());
                 return false;
             }
-   
+        
             pr2_mechanism_controllers::TrajectoryQuery::request req;
             pr2_mechanism_controllers::TrajectoryQuery::response res;
             if( !_srvTrajectoryQuery->call(req,res) ) {
-                RAVELOG_ERRORA("failed to query trajectory service %s", _strTrajectoryServiceDir.c_str());
+                RAVELOG_ERRORA("failed to query trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
             }
 
             if( res.jointnames.size() == 0 ) {
-                RAVELOG_ERRORA("no joint names for trajectory service %s", _strTrajectoryServiceDir.c_str());
+                RAVELOG_ERRORA("no joint names for trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
             }
 
@@ -78,6 +78,8 @@ class ROSRobotController : public ControllerBase
             for(size_t i = 0; i < _probot->GetJoints().size(); ++i)
                 vrobotjoints[i] = _stdwcstombs(_probot->GetJoints()[i]->GetName());
 
+            stringstream ss;
+            ss << "roscontroller: " << _strTrajectoryServiceDir;
             _vjointmap.reserve(res.jointnames.size());
             FOREACH(itname, res.jointnames) {
                 vector<string>::iterator itindex = find(vrobotjoints.begin(), vrobotjoints.end(), *itname);
@@ -87,7 +89,11 @@ class ROSRobotController : public ControllerBase
                     return false;
                 }
                 _vjointmap.push_back((int)(itindex-vrobotjoints.begin()));
+                ss << " " << *itname << " (" << _vjointmap.back() << ")";
             }
+
+            ss << endl;
+            RAVELOG_DEBUGA(ss.str().c_str());
 
             return true;
         }
@@ -230,14 +236,31 @@ public:
         pr2_mechanism_controllers::TrajectoryStart::request req;
         pr2_mechanism_controllers::TrajectoryStart::response res;
         
-        vector<dReal> vcurvalues, vnewvalues;
-        _probot->GetJointValues(vcurvalues);
+        vector<dReal> vnewvalues;
         
         {
             RobotBase::RobotStateSaver saver(_probot);
             _probot->SetJointValues(NULL, NULL, pValues,true);
-            _probot->GetJointValues(vcurvalues);
+            _probot->GetJointValues(vnewvalues);
         }
+
+        // check if values are sufficiently different
+        if( _vcurvalues.size() == vnewvalues.size() ) {
+            dReal fthresh = 0.01;
+            bool bSendTraj = false;
+            for(size_t i = 0; i < _vcurvalues.size(); ++i) {
+                if( RaveFabs(_vcurvalues[i] - vnewvalues[i]) > fthresh ) {
+                    bSendTraj = true;
+                }
+            }
+
+            if( !bSendTraj ) {
+                RAVELOG_VERBOSEA("setdesired sent same joint value, ignoring\n");
+                return false;
+            }
+        }
+        else
+            RAVELOG_WARNA("number of current values (%d) != desird values (%d)\n", _vcurvalues.size(), vnewvalues.size());
 
         FOREACH(ittrajcontroller, _listControllers) {
             if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
@@ -247,9 +270,10 @@ public:
             }
 
             //req.requesttiming = 1; // request back the timestamps
+            _bIsDone = false;
             req.hastiming = 0;
             req.traj.points.resize(2);
-            (*ittrajcontroller)->GetTrajPoint(vcurvalues, req.traj.points[0]);
+            (*ittrajcontroller)->GetTrajPoint(_vcurvalues, req.traj.points[0]);
             (*ittrajcontroller)->GetTrajPoint(vnewvalues, req.traj.points[1]);
 
             if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
@@ -269,6 +293,9 @@ public:
 
     virtual bool SetPath(const Trajectory* ptraj)
     {
+        if( ptraj == NULL )
+            return false;
+
         boost::mutex::scoped_lock lock(_mutexTrajectories);
 
         bool bSuccess = true;
@@ -283,15 +310,12 @@ public:
             }
 
             //req.requesttiming = 1; // request back the timestamps
+            _bIsDone = false;
             req.hastiming = 0;
             req.traj.points.resize(ptraj->GetPoints().size());
             typeof(req.traj.points.begin()) ittraj = req.traj.points.begin(); 
-            FOREACHC(itpoint, ptraj->GetPoints()) {
-                ittraj->positions.reserve(itpoint->q.size()); ittraj->positions.resize(0);
-                FOREACHC(itq, itpoint->q)
-                    ittraj->positions.push_back(*itq);
-                ++ittraj;
-            }
+            FOREACHC(itpoint, ptraj->GetPoints())
+                (*ittrajcontroller)->GetTrajPoint(itpoint->q, *ittraj++);
 
             if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
                 (*ittrajcontroller)->_listTrajectories.push_back(res.trajectoryid);
@@ -329,7 +353,7 @@ public:
                 FOREACHC(itj, _mapjoints) {
                     values[itj->second] = _mstate.joint_states[itj->first].position;
                     while(values[itj->second] > vupper[itj->second] ) {
-                        if( values[itj->second]-vupper[itj->second] > PI )
+                        if( values[itj->second]-2*PI >= vlower[itj->second] )
                             values[itj->second] -= 2*PI;
                         else {
                             values[itj->second] = vupper[itj->second];
@@ -337,7 +361,7 @@ public:
                         }
                     }
                     while(values[itj->second] < vlower[itj->second] ) {
-                        if( values[itj->second]-vlower[itj->second] < -PI )
+                        if( values[itj->second]+2*PI <= vupper[itj->second] )
                             values[itj->second] += 2*PI;
                         else {
                             values[itj->second] = vlower[itj->second];
@@ -347,6 +371,7 @@ public:
                 }
 
                 ROS_ASSERT( (int)values.size() == _probot->GetDOF() );
+                _vcurvalues = values;
                 _probot->SetJointValues(NULL, NULL, &values[0], true);
             }
         }
@@ -444,47 +469,48 @@ private:
 
     virtual void mechanismstatecb()
     {
-        if( !_bCalibrated ) {
-            // check the robot joint/link names
-            do {
-                _mapjoints.clear();
-                FOREACH(itj, _setEnabledJoints) {
-                    bool bAdded = false;
-                    for(size_t j = 0; j < _mstate_cb.get_joint_states_size(); ++j) {
-                        if( itj->first == _mstate_cb.joint_states[j].name ) {
-                            _mapjoints[j] = itj->second;
-                            bAdded = true;
+        {
+            boost::mutex::scoped_lock lock(_mutexstate);
+
+            if( !_bCalibrated ) {
+                // check the robot joint/link names
+                do {
+                    _mapjoints.clear();
+                    FOREACH(itj, _setEnabledJoints) {
+                        bool bAdded = false;
+                        for(size_t j = 0; j < _mstate_cb.get_joint_states_size(); ++j) {
+                            if( itj->first == _mstate_cb.joint_states[j].name ) {
+                                _mapjoints[j] = itj->second;
+                                bAdded = true;
+                                break;
+                            }
+                        }
+                    
+                        if( !bAdded ) {
+                            RAVELOG_WARNA("could not find robot joint %s in mechanism state\n", itj->first.c_str());
                             break;
                         }
                     }
-                    
-                    if( !bAdded ) {
-                        RAVELOG_WARNA("could not find robot joint %s in mechanism state\n", itj->first.c_str());
+
+                    if( _mapjoints.size() != _setEnabledJoints.size() ) {
+                        _mapjoints.clear();
                         break;
                     }
-                }
 
-                if( _mapjoints.size() != _setEnabledJoints.size() ) {
-                    _mapjoints.clear();
-                    break;
-                }
+                    _bCalibrated = true;
+                } while(0);
+            }
+            else {
+                if( _probot->GetDOF() != (int)_mstate_cb.get_joint_states_size() )
+                    _bCalibrated = false;
+            }
 
-                _bCalibrated = true;
-            } while(0);
-        }
-        else {
-            if( _probot->GetDOF() != (int)_mstate_cb.get_joint_states_size() )
-                _bCalibrated = false;
-        }
+            if( !_bCalibrated )
+                return;
 
-        if( !_bCalibrated )
-            return;
-
-        {
-            boost::mutex::scoped_lock lock(_mutexstate);
             _mstate = _mstate_cb;
         }
-
+        
         // do some monitoring of the joint state (try to look for stalls)
     }
 
@@ -497,9 +523,7 @@ private:
 
             // check if the first trajectory is done
             boost::mutex::scoped_lock lock(_mutexTrajectories);
-            uint32_t trajectoryid;
-            bool bDone = true;
-
+            
             if( _listControllers.size() > 0 ) {
                 bool bPopTrajectory = true;
 
@@ -515,23 +539,28 @@ private:
                         RAVELOG_ERRORA("trajectory query failed\n");
                         bPopTrajectory = false;
                     }
-
-                    if( !res.done ) {
+                    
+                    if( !(res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Done ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Deleted ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Failed ||
+                          res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Canceled) ) {
                         bPopTrajectory = false;
                         break;
                     }
                 }
 
                 if( bPopTrajectory ) {
-                    RAVELOG_DEBUGA("robot trajectory finished, left: %d\n", _listControllers.front()->_listTrajectories.size());
                     FOREACH(ittraj, _listControllers)
                         (*ittraj)->_listTrajectories.pop_front();
+                    RAVELOG_DEBUGA("robot trajectory finished, left: %d\n", _listControllers.front()->_listTrajectories.size());
                 }
 
-                bDone = _listControllers.front()->_listTrajectories.size()==0;
+                if( _bIsDone != _listControllers.front()->_listTrajectories.size()==0 ) {
+                    _bIsDone = _listControllers.front()->_listTrajectories.size()==0;
+                    RAVELOG_DEBUGA("done: %d\n", _bIsDone);
+                }
             }
 
-            _bIsDone = bDone;
             usleep(10000); // query every 10ms
         }
     }
@@ -544,6 +573,7 @@ private:
     vector<dReal> _vecdesired;
     set< pair<string, int> > _setEnabledJoints; // set of enabled joints and their indices
     mutable boost::mutex _mutexstate;
+    vector<dReal> _vcurvalues; ///< current robot values
 
     ofstream flog;
     int logid;
@@ -561,7 +591,7 @@ private:
     bool _bSendTimestamps; ///< if true, will send timestamps along with traj
     bool _bSubscribed; ///< if true, succesfully subscribed to the mechanism state msgs
     bool _bCalibrated; ///< if true, mechanism state matches robot
-    bool _bDestroyThread; /// if true, destroy the thread
+    bool _bDestroyThread; ///< if true, destroy the thread
 };
 
 #endif

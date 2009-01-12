@@ -13,9 +13,13 @@
 
 using namespace features;
 
+typedef float SigType;
+//typedef uint8_t SigType;
+typedef Promote<SigType>::type DistanceType;
+
 typedef struct {
   PyObject_HEAD
-  BruteForceMatcher <float, int> *c;
+  BruteForceMatcher <SigType, int> *c;
   std::vector<PyObject*> *sigs;
 } wrapped_BruteForceMatcher_t;
 
@@ -86,14 +90,14 @@ PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
   int dimension;
   if (!PyArg_ParseTuple(args, "i", &dimension))
     return NULL;
-  object->c = new BruteForceMatcher <float, int>(dimension);
+  object->c = new BruteForceMatcher <SigType, int>(dimension);
   object->sigs = new std::vector<PyObject*>;
   return (PyObject*)object;
 }
 
 typedef struct {
   PyObject_HEAD
-  float *data;
+  SigType *data;
   int size;
 } signature_t;
 
@@ -243,9 +247,79 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   classifier_t *pc = (classifier_t*)self;
   signature_t *object = PyObject_NEW(signature_t, &signature_Type);
   object->size = pc->classifier->classes();
-  posix_memalign((void**)&object->data, 16, object->size * sizeof(float));
+  posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
   pc->classifier->getSignature(input, object->data);
   return (PyObject*)object;
+}
+
+static int im2arr(CvArr **dst, PyObject *src)
+{
+  int width, height;
+  if (!PyObject_HasAttrString(src, "size") ||
+      !PyObject_HasAttrString(src, "mode") ||
+      !PyObject_HasAttrString(src, "tostring"))
+    return 0;
+
+  if (!PyArg_ParseTuple(PyObject_GetAttrString(src, "size"), "ii", &width, &height))
+    return 0;
+
+  char *mode = PyString_AsString(PyObject_GetAttrString(src, "mode"));
+  int depth, nchannels, bps;
+  nchannels = (int)strlen(mode);
+  if (strcmp(mode, "F") == 0) {
+    depth = IPL_DEPTH_32F;
+    bps = 4;
+  } else {
+    depth = IPL_DEPTH_8U;
+    bps = 1;
+  }
+
+  char *string;
+  Py_ssize_t length;
+  PyString_AsStringAndSize(PyObject_CallObject(PyObject_GetAttrString(src, "tostring"), NULL), &string, &length);
+
+  *dst = cvCreateImageHeader(cvSize(width, height), depth, nchannels);
+  cvSetData(*dst, (void*)string, nchannels * bps * width);
+
+  return 1;
+}
+
+PyObject *getSignatures(PyObject *self, PyObject *args)
+{
+  classifier_t *pc = (classifier_t*)self;
+
+  PyObject *pim, *coords;
+  if (!PyArg_ParseTuple(args, "OO", &pim, &coords))
+    return NULL;
+
+  IplImage *cva;
+  IplImage subrect;
+  if (!im2arr((CvArr**)&cva, pim)) assert(0);
+
+  PyObject *r = PyList_New(0);
+
+  IplImage *input = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 1);
+
+  PyObject *iterator = PyObject_GetIter(coords);
+  PyObject *t;
+  assert(iterator != NULL);
+  while ((t = PyIter_Next(iterator)) != NULL) {
+    int x, y;
+    if (!PyArg_ParseTuple(t, "ii", &x, &y))
+        return NULL;
+    // cvGetSubRect(cva, (CvMat*)&subrect, cvRect(x - 16, y - 16, 32, 32));
+    // cvCopy(&subrect, input);
+
+    cvSetImageROI(cva, cvRect(x - 16, y - 16, 32, 32));
+    cvCopy(cva, input);
+
+    signature_t *object = PyObject_NEW(signature_t, &signature_Type);
+    object->size = pc->classifier->classes();
+    posix_memalign((void**)&object->data, 16, object->size * sizeof(float));
+    pc->classifier->getSignature(input, object->data);
+    PyList_Append(r, (PyObject*)object);
+  }
+  return r;
 }
 
 /* Method table */
@@ -254,6 +328,7 @@ static PyMethodDef classifier_methods[] = {
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},
   {"getSignature", getSignature, METH_VARARGS},
+  {"getSignatures", getSignatures, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -291,7 +366,7 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
     return NULL;
   signature_t *ps = (signature_t*)sig;
 
-  float distance;
+  DistanceType distance;
   int index;
   if (predicates == NULL)
     index = pm->c->findMatch(ps->data, &distance);

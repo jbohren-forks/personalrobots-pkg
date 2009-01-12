@@ -18,7 +18,11 @@ namespace po = boost::program_options;
 using namespace features;
 using std::string;
 
-void writeSignature(std::ostream &os, const float* sig, size_t size)
+//typedef float SigType;
+typedef uint8_t SigType;
+typedef Promote<SigType>::type DistanceType;
+
+void writeSignature(std::ostream &os, const SigType* sig, size_t size)
 {
   std::copy(sig, sig + size, std::ostream_iterator<float>(os, " "));
   os << std::endl;
@@ -130,13 +134,14 @@ int main( int argc, char** argv )
   keypts.erase(keypts.begin() + num_keypts, keypts.end());
 
   size_t sig_size = classifier.classes();
-  BruteForceMatcher<float, CvPoint> matcher(sig_size);
+  BruteForceMatcher<SigType, CvPoint> matcher(sig_size);
 
   // Extract patches and add their signatures to matcher database
   int index = 0;
-  float* sig_buffer = NULL;
-  posix_memalign(reinterpret_cast<void**>(&sig_buffer), 16, sig_size * sizeof(float) * keypts.size());
-  float* sig = sig_buffer;
+  SigType* sig_buffer = NULL;
+  posix_memalign(reinterpret_cast<void**>(&sig_buffer), 16,
+                 sig_size * sizeof(SigType) * keypts.size());
+  SigType* sig = sig_buffer;
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     cv::WImageView1_b view = extractPatch(src_img.Ipl(), pt);
     classifier.getSignature(view.Ipl(), sig);
@@ -154,11 +159,11 @@ int main( int argc, char** argv )
     sig += sig_size;
   }
 
-  float d1, d2;
+  DistanceType d1, d2;
   int correct = 0, second = -1;
   index = 0;
   CvRect window = cvRect(32, 32, 224, 224);
-  posix_memalign(reinterpret_cast<void**>(&sig), 16, sig_size * sizeof(float));
+  posix_memalign(reinterpret_cast<void**>(&sig), 16, sig_size * sizeof(SigType));
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     CvPoint warped_pt = MapPoint(cvPoint(pt.x, pt.y), transform);
     cv::WImageView1_b view = extractPatch(test_img.Ipl(), warped_pt);
@@ -177,7 +182,8 @@ int main( int argc, char** argv )
       CvPoint match_pt = matcher.getData(match);
       printf("\t(x, y) = (%i, %i)\n", match_pt.x, match_pt.y);
     }
-    printf("\td1 = %f, d2 = %f\n\td2/d1 = %f\n", d1, d2, d2/d1);
+    printf("\td1 = %f, d2 = %f\n\td2/d1 = %f\n",
+           (double)d1, (double)d2, double(d2)/d1);
 
     if (save_patches) {
       char file_name[128];

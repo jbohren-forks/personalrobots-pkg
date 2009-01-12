@@ -1,0 +1,23 @@
+<package>
+  <description>
+    A node which gets two 3D point clouds (one textured, one normal) from a stereo dcam, fits a plane to the textured cloud,
+    gets the blobs lying on it from the normal cloud, computes a convex hull, creates an RGB histogram and matches it using
+    HIK (the Histogram Intersection Kernel) to a "database" of previously stored models.
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="cloud_io" />
+  <depend package="cloud_kdtree" />
+  <depend package="sample_consensus" />
+  <depend package="cloud_geometry" />
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
+
+</package>

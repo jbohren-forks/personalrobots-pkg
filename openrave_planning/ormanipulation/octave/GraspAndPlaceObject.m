@@ -76,13 +76,11 @@ wristlinkid = robot.manips{robot.activemanip}.eelink;
 robotid = robot.id;
 
 while(curgrasp < size(grasps,1))
-                     
-    %% C++ grasp testing (fast)
     g = transpose(grasps(curgrasp:end,:));
     
     offset = 0.02;
     basetime = toc;
-    cmd = ['testallgrasps execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
+    cmd = ['testallgrasps maxiter 1000 execute 0 outputtraj palmdir ' sprintf('%f ', handrobot.palmdir) ...
            ' seedik 1 seedgrasps 5 seeddests 8 randomdests 1 randomgrasps 1 ' ...
            ' target ' curobj.info.name ' robothand ' handrobot.name ...
            ' robothandjoints ' sprintf('%d ', length(handjoints), handjoints) ...
@@ -175,11 +173,17 @@ while(curgrasp < size(grasps,1))
 %         orRobotControllerSend(robotid, 'ignoreproxy 1');
 %     else
         display('closing fingers');
-        [trajdata, success] = orProblemSendCommand(['CloseFingers execute 0 outputtraj offset ' sprintf('%f ', 0.04*ones(size(handjoints)))] , probs.manip);
+        closeoffset = 0.12;
+        [trajdata, success] = orProblemSendCommand(['CloseFingers execute 0 outputtraj offset ' sprintf('%f ', closeoffset*ones(size(handjoints)))] , probs.manip);
         if( ~success )
             error('failed to movehandstraight');
         end
-        success = StartTrajectory(robotid,trajdata);
+
+        %% hack for now
+        [trajvals,transvals,timevals] = ParseTrajData(trajdata);
+        trajvals(41,end) = 0.35;
+        newtrajdata = [sprintf('%d %d 13 ',size(trajvals,2), size(trajvals,1)) sprintf('%f ',[timevals;trajvals;transvals])];
+        success = StartTrajectory(robotid,newtrajdata);
         if( ~success )
             warning('failed to close fingers');
             return;
@@ -273,15 +277,17 @@ while(curgrasp < size(grasps,1))
         
     % move the hand down until collision
     display('moving hand down');
-    [trajdata, success] = orProblemSendCommand(['MoveHandStraight execute 0 outputtraj direction ' sprintf('%f ', -updir) ...
-                             ' maxdist ' sprintf('%f ', 0.3)],probs.manip);
+    [trajdata, success] = orProblemSendCommand(['MoveHandStraight ignorefirstcollision 0 execute 0 ' ...
+                                                ' outputtraj direction ' sprintf('%f ', -updir) ...
+                                                ' maxdist ' sprintf('%f ', 0.3)],probs.manip);
     if( ~success )
-        error('failed to movehandstraight');
-    end
-    success = StartTrajectory(robotid,trajdata);
-    if( ~success )
-        warning('failed to move hand straight');
-        return;
+        warning('failed to movehandstraight');
+    else
+        success = StartTrajectory(robotid,trajdata);
+        if( ~success )
+            warning('failed to move hand straight');
+            return;
+        end
     end
 
     display('opening hand');
@@ -295,10 +301,22 @@ while(curgrasp < size(grasps,1))
 
     %% cannot wait forever since hand might get stuck
     if( ~success )
-        error('failed to release fingers');
+        warning('problems releasing, releasing target first');
+        orProblemSendCommand('releaseall', probs.manip);
+        [trajdata, success] = orProblemSendCommand(['ReleaseFingers execute 0 outputtraj ' ...
+                                                    ' target ' curobj.info.name ...
+                                                    ' movingdir ' sprintf('%f ', handrobot.releasedir)], ...
+                                                   probs.manip);
+        if( ~success )
+            warning('failed to release fingers, forcing open');
+            success = RobotMoveJointValues(robotid,open_config,handjoints);
+        else
+            success = StartTrajectory(robotid,trajdata,4);
+        end
+    else
+        success = StartTrajectory(robotid,trajdata,4);
     end
-
-    success = StartTrajectory(robotid,trajdata,4);
+    
     if( ~success )
         warning('trajectory failed to release fingers');
         return;
@@ -307,12 +325,12 @@ while(curgrasp < size(grasps,1))
     %% now release object
     orProblemSendCommand('releaseall', probs.manip);
     
-    if( squeezesuccess > 0 & putsuccess > 0 )
+    if( squeezesuccess > 0 && putsuccess > 0 )
         display('success, putting down');
 
         % only break when succeeded        
         %orProblemSendCommand(['MoveHandStraight stepsize 0.003 minsteps ' sprintf('%f ', 90) ' maxsteps ' sprintf('%f ', 100) ' direction ' sprintf('%f ', updir')]);
-        %RobotGoInitial(robot);
+        RobotGoInitial(robot);
         
         if( MySwitchModels(0) )
             curobj.id = orEnvGetBody(curobj.info.name);

@@ -1,10 +1,42 @@
 #include "place_recognition/kmeans.h"
+#include "place_recognition/fast_kmeans.h"
 #include <algorithm>
 #include <limits>
 #include <cstdlib>
 #include <cassert>
 
 namespace vision {
+
+// TODO: change FastKMeans interface so don't need to do all this copying
+//namespace fast_implementation {
+
+int kmeans(const FeatureMatrix& features,
+           const std::vector<unsigned int>& input,
+           std::vector<int>& membership,
+           FeatureMatrix& clusters,
+           int k, float threshold)
+{
+  // TODO: change to passing features as float**
+  //std::vector<float*> pfeatures;
+  //pfeatures.reserve
+
+  FeatureMatrix input_features(input.size(), features.cols());
+  for (uint i = 0; i < input.size(); ++i)
+    input_features.row(i) = features.row( input[i] );
+  
+  features::FastKMeans<float> clusterer;
+  clusterer.setInitMethod(features::FastKMeans<float>::IM_KMEANSPP);
+  clusterer.run(input_features.data(),
+                input_features.rows(), input_features.cols(), k,
+                reinterpret_cast<uint*>(&membership[0]),
+                clusters.data());
+  return k; // TODO: return error instead?
+}
+
+//} // namespace fast_implementation
+
+// Hide slow kmeans implementation
+namespace naive_implementation {
 
 // Dirt simple method - take first k features as initial cluster centers
 void chooseCentersFirstK(const FeatureMatrix& features,
@@ -89,5 +121,7 @@ int kmeans(const FeatureMatrix& features,
 
   return k;
 }
+
+} // namespace naive_implementation
 
 } // namespace vision

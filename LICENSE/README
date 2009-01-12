@@ -10,3 +10,4 @@ code itself.  If you are writing C/C++ code under license 'foo', then
 you can simply paste the contents of 'foo-summary.c' into the top of
 each of your source files.  Be sure to fill in the PACKAGE_NAME, YEAR,
 and OWNER fields.
+

@@ -1,0 +1,16 @@
+<package>
+<description brief='Utility for annotating laser scans with pose information'>
+Utility for annotating laser scans with pose information
+</description>
+<author>Vijay Pradeep</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="std_msgs"/>
+<depend package="roscpp"/>
+<depend package="tf"/>
+<depend package="boost"/>
+<export>
+<cpp cflags="-I${prefix}/msg/cpp"/>
+</export>
+</package>

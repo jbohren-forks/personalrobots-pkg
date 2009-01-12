@@ -139,7 +139,7 @@ bool MoveArm::readJointValue(const robot_msgs::MechanismState& mechanismStateMsg
   return false;
 }
 
-static const double L1_JOINT_DIFF_MAX = .05;
+static const double L1_JOINT_DIFF_MAX = .12;
 
 MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
 		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
@@ -381,7 +381,7 @@ bool MoveArm::dispatchCommands(){
  * @todo Multi-axis joints.
  */
 void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCommand){
-    static const double TOLERANCE(0.25);
+    static const double TOLERANCE(0.05);
 
     // Set up message size
     armCommand.set_names_size(plan.path.states[currentWaypoint].get_names_size());

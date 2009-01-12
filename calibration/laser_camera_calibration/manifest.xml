@@ -6,6 +6,7 @@
     runperception.m - Reads the synchornized messages and performs the optimization, use rosplay on the bag files.
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <url>http://pr.willowgarage.com/wiki/laser_camera_calibration</url>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="robot_msgs" />

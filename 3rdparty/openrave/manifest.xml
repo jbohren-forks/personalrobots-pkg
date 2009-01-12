@@ -4,6 +4,7 @@
 
     For successful compilation, remove Qt3 development tools (qt3-dev-tools,libqt3-headers) to prevent conflict with Qt4.
   </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>LGPL</license>
   <review status="3rdparty" notes=""/>
   <export>

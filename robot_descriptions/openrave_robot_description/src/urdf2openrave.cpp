@@ -168,7 +168,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             
             s_listResourceNames.push_back(mesh->filename + ".iv");
             
-            string collisionfilename = string("convex/") + mesh->filename + string("_convex.iv");
+            string collisionfilename;
+
+            map<string, string> mcolinfo = link->collision->data.getMapTagValues("collision", "mesh");
+            if( mcolinfo["type"] == string("visual"))
+                collisionfilename = mesh->filename + string(".iv");
+            else
+                collisionfilename = string("convex/") + mesh->filename + string("_convex.iv");
 
             // check for convex meshes
             ifstream ifile((s_inresdir + collisionfilename).c_str(), ios_base::binary);

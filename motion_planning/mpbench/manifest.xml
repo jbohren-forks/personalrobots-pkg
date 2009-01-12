@@ -1,0 +1,11 @@
+<package>
+ <description brief="tools for comparing motion planners">
+ </description>
+ <author>Roland Philippsen</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+ <depend package="libsunflower"/>
+ <depend package="nepumuk"/>
+ <depend package="mpglue"/>
+</package>

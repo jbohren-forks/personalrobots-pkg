@@ -80,15 +80,16 @@ class ROSServer : public RaveServerBase
     class SendProblemWorker : public ServerWorker
     {
     public:
-        SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out) : _prob(prob), _cmd(cmd), _out(out) {}
+    SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out, bool& bSuccessful) : _prob(prob), _cmd(cmd), _out(out), _bSuccessful(bSuccessful) {}
         virtual void work() {
-            _prob->SendCommand(_cmd.c_str(),_out);
+            _bSuccessful = _prob->SendCommand(_cmd.c_str(),_out);
         }
 
     private:
         boost::shared_ptr<ProblemInstance> _prob;
         const string& _cmd;
         string& _out;
+        bool& _bSuccessful;
     };
 
     class LoadProblemWorker : public ServerWorker
@@ -201,9 +202,12 @@ public:
         // destroy environment specific state: problems, planners, figures
         _mapFigureIds.clear();
 
-        FOREACH(itprob, _mapproblems)
-            itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
-        _mapproblems.clear();
+        {
+            boost::mutex::scoped_lock lock(_mutexProblems);
+            FOREACH(itprob, _mapproblems)
+                itprob->second->GetEnv()->RemoveProblem(itprob->second.get());
+            _mapproblems.clear();
+        }
         
         _mapplanners.clear();
     }
@@ -616,6 +620,8 @@ public:
         if( !pproblem )
             return false;
 
+        boost::mutex::scoped_lock lock(_mutexProblems);
+
         if( req.destroyduplicates ) {
             map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.begin();
             while(itprob != _mapproblems.end()) {
@@ -666,6 +672,7 @@ public:
 
     bool env_destroyproblem_srv(env_destroyproblem::request& req, env_destroyproblem::response& res)
     {
+        boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
         if( itprob == _mapproblems.end() )
             return false;
@@ -1012,6 +1019,7 @@ public:
     bool env_set_srv(env_set::request& req, env_set::response& res)
     {
         if( req.setmask & env_set::request::Set_Simulation ) {
+            LockEnvironment envlock(this);
             switch(req.sim_action) {
             case env_set::request::SimAction_Start:
                 if( req.sim_timestep > 0 )
@@ -1196,12 +1204,14 @@ public:
 
     bool problem_sendcommand_srv(problem_sendcommand::request& req, problem_sendcommand::response& res)
     {
+        boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
         if( itprob == _mapproblems.end() )
             return false;
 
-        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output), true);
-        return true;
+        bool bSuccessful = false;
+        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output,bSuccessful), true);
+        return bSuccessful;
     }
 
     bool robot_controllersend_srv(robot_controllersend::request& req, robot_controllersend::response& res)
@@ -1563,7 +1573,7 @@ private:
     /// viewer control variables
     boost::shared_ptr<RaveViewerBase> _pviewer;
     boost::thread _threadviewer;
-    boost::mutex _mutexViewer;
+    boost::mutex _mutexViewer, _mutexProblems;
     boost::condition _conditionViewer;
     
     /// workers
