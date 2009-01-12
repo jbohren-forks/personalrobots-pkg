@@ -45,8 +45,12 @@ namespace {
   public:
     cm2dCostmap(costmap_2d::CostMap2D const * cm): cm_(cm) {}
     
-    virtual int getWSpaceObstacleCost() const { return costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE; }
-    virtual int getCSpaceObstacleCost() const { return costmap_2d::CostMap2D::LETHAL_OBSTACLE; }
+    // interestingly, LETHAL_OBSTACLE = 254 which is *higher* than
+    // INSCRIBED_INFLATED_OBSTACLE = 253, whereas by W-space obstacle
+    // here we mean a value higher than one that is C-space obstacle
+    
+    virtual int getWSpaceObstacleCost() const { return costmap_2d::CostMap2D::LETHAL_OBSTACLE; }
+    virtual int getCSpaceObstacleCost() const { return costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE; }
     virtual int getFreespaceCost() const { return 0; }
     
     virtual ssize_t getXBegin() const { return 0; }
@@ -60,13 +64,13 @@ namespace {
     
     virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y, bool out_of_bounds_is_obstacle) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
+	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::LETHAL_OBSTACLE;
       return out_of_bounds_is_obstacle;
     }
     
     virtual bool isCSpaceObstacle(ssize_t index_x, ssize_t index_y, bool out_of_bounds_is_obstacle) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::LETHAL_OBSTACLE;
+	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
       return out_of_bounds_is_obstacle;
     }
     
