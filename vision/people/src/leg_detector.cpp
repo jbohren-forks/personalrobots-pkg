@@ -108,7 +108,7 @@ public:
   {
     time_ = time;
 
-    filter_.updatePrediction(time);
+    filter_.updatePrediction(time.toSec());
 
     StatePosVel est;
     filter_.getEstimate(est);
