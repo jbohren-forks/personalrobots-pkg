@@ -48,6 +48,11 @@ int operator< (const GridCell& c, const GridCell& c2)
     return str;
   }
 
+// bool operator== (const GridCell& c, const GridCell& c2)
+// {
+//   return (c.first == c2.first) && (c.second == c2.second);
+// }
+
   int GridCell::heuristicDistanceTo (const GridCell& c) const
   { 
     int dx=c.first-first; 

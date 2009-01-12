@@ -50,7 +50,8 @@ struct GridCell
 };
  
  std::ostream& operator<< (std::ostream& str, const GridCell& g);
- int operator< (const GridCell& c, const GridCell& c2);
+int operator< (const GridCell& c, const GridCell& c2);
+
 
  typedef std::set<GridCell> Region;
 
