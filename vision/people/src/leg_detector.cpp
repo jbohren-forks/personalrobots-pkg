@@ -172,6 +172,9 @@ public:
   }
 };
 
+int g_argc;
+char** g_argv;
+
 class LegDetector : public node
 {
 public:
@@ -205,10 +208,10 @@ public:
 
   LegDetector() : node("laser_processor"), tfl_(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0), max_track_jump_(1.0), max_meas_jump_(1.0)
   {
-    if (argc > 1) {
-      forest.load(argv[1]);
+    if (g_argc > 1) {
+      forest.load(g_argv[1]);
       feat_count_ = forest.get_active_var_mask()->cols;
-      printf("Loaded forest with %d features: %s\n", feat_count_, argv[1]);
+      printf("Loaded forest with %d features: %s\n", feat_count_, g_argv[1]);
     } else {
       printf("Please provide a trained random forests classifier as an input.\n");
       self_destruct();
@@ -530,6 +533,8 @@ public:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
+  g_argc = argc;
+  g_argv = argv;
   LegDetector ld;
   ld.spin();
   ros::fini();
