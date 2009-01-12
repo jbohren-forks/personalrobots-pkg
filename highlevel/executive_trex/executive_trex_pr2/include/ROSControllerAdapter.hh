@@ -114,6 +114,7 @@ namespace TREX {
       G goalMsg;
       fillRequestParameters(goalMsg, goal);
       goalMsg.enable = enableController;
+      goalMsg.timeout = 0;
       ROS_DEBUG("[%d}Dispatching %s", getCurrentTick(), goal->toString().c_str());
       m_node->publishMsg<G>(goalTopic, goalMsg);
 

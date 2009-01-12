@@ -52,6 +52,7 @@ class RechargeAdapter:
     goal = RechargeGoal()
     goal.recharge_level = self.recharge_level
     goal.enable = 1
+    goal.timeout = 0
     goal.pose.x = pose[0]
     goal.pose.y = pose[1]
     goal.pose.th = pose[2]

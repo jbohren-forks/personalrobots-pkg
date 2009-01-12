@@ -4,3 +4,7 @@ robot_msgs/JointState[] configuration
 
 # Indicate if the goal is being enabled or disabled
 byte enable
+
+# Total timelimit for the controller, if a plan is not
+# found by this time, abort. Set it to zero for unlimited.
+float64 timeout

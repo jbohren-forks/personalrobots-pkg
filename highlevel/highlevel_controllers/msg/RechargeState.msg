@@ -9,6 +9,12 @@ byte valid
 # Have we arrived at the goal?
 byte done
 
+#Did the planner give up?
+byte aborted
+
+#Was the planner told to stop?
+byte preempted
+
 # Actual recharge level
 float32 recharge_level
 

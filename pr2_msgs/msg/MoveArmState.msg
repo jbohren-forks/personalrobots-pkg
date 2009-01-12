@@ -5,6 +5,10 @@ byte active
 byte valid
 #Did we actually successfully arrive at the goal?
 byte done
+#Did the planner give up?
+byte aborted
+#Was the planner told to stop?
+byte preempted
 #Current arm configuration
 robot_msgs/JointState[] configuration
 #Goal arm configuration
