@@ -50,7 +50,7 @@ namespace ros {
   namespace highlevel_controllers {
 
     MoveBase::MoveBase()
-      : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
+      : HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>("move_base", "state", "goal"),
       tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
