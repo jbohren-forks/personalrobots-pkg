@@ -106,10 +106,9 @@ public:
 
   void propagate(ros::Time time)
   {
-    ros::Duration dt = time - time_;
     time_ = time;
 
-    filter_.updatePrediction(dt.toSec());
+    filter_.updatePrediction(time.toSec());
 
     StatePosVel est;
     filter_.getEstimate(est);
@@ -147,7 +146,7 @@ public:
     cov(2,2) = 0.0025;
     cov(3,3) = 0.0025;
 
-    filter_.updateCorrection(loc, cov, time_.toSec());
+    filter_.updateCorrection(loc, cov);
   }
 };
 

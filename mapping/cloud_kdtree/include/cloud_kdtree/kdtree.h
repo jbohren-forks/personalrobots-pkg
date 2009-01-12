@@ -162,12 +162,12 @@ namespace cloud_kdtree
       int convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
       int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
 
-      bool nearestKSearch (std_msgs::Point32 p_q, int k);
+      bool nearestKSearch (std_msgs::Point32 *p_q, int k);
       bool nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k);
       bool nearestKSearch (int p_idx, int k);
       bool nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances);
 
-      bool radiusSearch (std_msgs::Point32 p_q, double radius, int max_nn = INT_MAX);
+      bool radiusSearch (std_msgs::Point32 *p_q, double radius, int max_nn = INT_MAX);
       bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn = INT_MAX);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,6 +216,14 @@ namespace cloud_kdtree
       inline void     annDeallocPts (ANNpointArray &pa) { free (pa); pa = NULL; }
 #endif
 
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Get the underlying 3D x,y,z values of a point given its index in the cloud
+        * \param idx the point index
+        * \param x the resultant X coordinate value of the point
+        * \param y the resultant Y coordinate value of the point
+        * \param z the resultant Z coordinate value of the point
+        */
+      inline void get3DPointAsFloat (int i, float &x, float &y, float &z) { x = points_[i][0]; y = points_[i][1]; z = points_[i][2]; }
 
     private:
 #ifdef USE_ANN

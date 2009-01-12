@@ -90,7 +90,17 @@ class NormalEstimation : public ros::node
       param ("~search_k_closest", k_, 30);          // 30 k-neighbors by default
       param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
-      subscribe ("tilt_laser_cloud", cloud_, &NormalEstimation::cloud_cb, 1);
+      string cloud_topic ("tilt_laser_cloud");
+
+      vector<pair<string, string> > t_list;
+      get_published_topics (&t_list);
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (cloud_topic) == string::npos)
+          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+      }
+
+      subscribe (cloud_topic.c_str (), cloud_, &NormalEstimation::cloud_cb, 1);
       advertise<PointCloud> ("cloud_normals", 1);
 
       cloud_normals_.chan.resize (1);

@@ -83,6 +83,7 @@ SysPdfPosVel::SampleFrom (Sample<StatePosVel>& one_sample, int method, void *arg
 
   // add noise
   Sample<StatePosVel> noise_sample;
+  noise_.SetDt(dt_);
   noise_.SampleFrom(noise_sample, method, args);
   res += noise_sample.ValueGet();
 

@@ -92,33 +92,30 @@ namespace estimation
 
 
   // update filter prediction
-  bool TrackerParticle::updatePrediction(const double dt)
+  bool TrackerParticle::updatePrediction(const double time)
   {
-    // set de in sys model
-    sys_model_.SetDt(dt);
+    bool res = true;
+    if (time > filter_time_){
+      // set dt in sys model
+      sys_model_.SetDt(time - filter_time_);
+      filter_time_ = time;
 
-    // update filter
-    cout << "< predction" << endl;
-    bool res = filter_->Update(&sys_model_);
-    if (!res) quality_ = 0;
-    cout << "predction >" << endl;
+      // update filter
+      res = filter_->Update(&sys_model_);
+      if (!res) quality_ = 0;
+    }
     return res;
   };
 
 
 
   // update filter correction
-  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
+  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
     assert(cov.columns() == 3);
 
-    // set filter time
-    filter_time_ = time;
-
     // set covariance
-    // TODO: remove uncomment
-    //((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
-
+    ((MeasPdfPos*)(meas_model_.MeasurementPdfGet()))->CovarianceSet(cov);
 
     // update filter
     bool res = filter_->Update(&meas_model_, meas);
@@ -179,6 +176,14 @@ namespace estimation
       return 0;
   }
 
+
+  double TrackerParticle::getTime() const
+  {
+    if (tracker_initialized_)
+      return filter_time_;
+    else
+      return 0;
+  }
 }; // namespace
 
 
