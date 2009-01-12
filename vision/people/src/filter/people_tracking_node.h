@@ -85,7 +85,7 @@ private:
   std::string node_name_;
 
   /// message sequencer
-  message_sequencing::TimeSequencer<robot_msgs::PositionMeasurement>  message_sequencer_;
+  message_sequencing::TimeSequencer<robot_msgs::PositionMeasurement>*  message_sequencer_;
 
   /// trackers
   std::list<Tracker*> trackers_;

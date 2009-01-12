@@ -228,7 +228,7 @@ public:
       self_destruct();
     }
 
-    tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.4));
+    //tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.4));
 
     advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<std_msgs::PointCloud>("kalman_filt_cloud",10);
@@ -248,7 +248,6 @@ public:
 
   void peopleCallback()
   {
-
     tf::Point pt;
 
     tf::PointMsgToTF(people_meas_.pos, pt);
