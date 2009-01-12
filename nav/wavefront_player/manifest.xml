@@ -8,6 +8,7 @@
   <depend package="player" />
   <depend package="laser_scan" />
   <depend package="std_srvs" />
+  <depend package="robot_msgs" />
   <depend package="tf"/>
   <export>
     <cpp cflags="-I${prefix}/srv/cpp"/>

@@ -114,8 +114,8 @@ robot.
 #include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
-#include <std_msgs/Planner2DState.h>
-#include <std_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DState.h>
+#include <robot_msgs/Planner2DGoal.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
@@ -202,11 +202,11 @@ class WavefrontNode: public ros::node
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
     // incoming/outgoing messages
-    std_msgs::Planner2DGoal goalMsg;
+    robot_msgs::Planner2DGoal goalMsg;
     //MsgRobotBase2DOdom odomMsg;
     std_msgs::Polyline2D polylineMsg;
     std_msgs::Polyline2D pointcloudMsg;
-    std_msgs::Planner2DState pstate;
+    robot_msgs::Planner2DState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
@@ -365,7 +365,7 @@ WavefrontNode::WavefrontNode() :
 
   this->firstodom = true;
 
-  advertise<std_msgs::Planner2DState>("state",1);
+  advertise<robot_msgs::Planner2DState>("state",1);
   advertise<std_msgs::Polyline2D>("gui_path",1);
   advertise<std_msgs::Polyline2D>("gui_laser",1);
   advertise<std_msgs::BaseVel>("cmd_vel",1);

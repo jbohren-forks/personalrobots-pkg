@@ -1,16 +1,16 @@
 #include "ROSControllerAdapter.hh"
 #include "IntervalDomain.hh"
 #include "Token.hh"
-#include <std_msgs/Planner2DState.h>
-#include <std_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DState.h>
+#include <robot_msgs/Planner2DGoal.h>
 
 namespace TREX {
 
-  class BaseControllerAdapter: public ROSControllerAdapter<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
+  class BaseControllerAdapter: public ROSControllerAdapter<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal> {
   public:
 
     BaseControllerAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSControllerAdapter<std_msgs::Planner2DState, std_msgs::Planner2DGoal>(agentName, configData){
+      : ROSControllerAdapter<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>(agentName, configData){
     }
 
     virtual ~BaseControllerAdapter(){}
@@ -29,7 +29,7 @@ namespace TREX {
       obs->push_back("th", new IntervalDomain(stateMsg.pos.th));
     }
 
-    void fillRequestParameters(std_msgs::Planner2DGoal& goalMsg, const TokenId& goalToken){
+    void fillRequestParameters(robot_msgs::Planner2DGoal& goalMsg, const TokenId& goalToken){
       const IntervalDomain& x = goalToken->getVariable("x")->lastDomain();
       const IntervalDomain& y = goalToken->getVariable("y")->lastDomain();
       const IntervalDomain& th = goalToken->getVariable("th")->lastDomain();

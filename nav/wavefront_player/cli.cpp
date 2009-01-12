@@ -1,14 +1,14 @@
 #include <cstdio>
 #include <stdlib.h>
 #include "ros/node.h"
-#include "std_msgs/Planner2DState.h"
-#include "std_msgs/Planner2DGoal.h"
+#include "robot_msgs/Planner2DState.h"
+#include "robot_msgs/Planner2DGoal.h"
 
 class WavefrontCLI : public ros::node
 {
 public:
-  std_msgs::Planner2DState wf_state;
-  std_msgs::Planner2DGoal wf_goal;
+  robot_msgs::Planner2DState wf_state;
+  robot_msgs::Planner2DGoal wf_goal;
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
   WavefrontCLI(double x, double y, double th) 
@@ -19,7 +19,7 @@ public:
     wf_goal.goal.th = th;
     wf_goal.enable = 1;
     subscribe("state", wf_state, &WavefrontCLI::state_cb, 1);
-    advertise<std_msgs::Planner2DGoal>("goal", 1);
+    advertise<robot_msgs::Planner2DGoal>("goal", 1);
   }
   void state_cb()
   {

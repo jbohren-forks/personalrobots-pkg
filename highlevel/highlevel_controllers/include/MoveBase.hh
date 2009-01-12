@@ -52,8 +52,8 @@
 #include <plan_wrap.h>
 
 // Message structures used
-#include <std_msgs/Planner2DState.h>
-#include <std_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DState.h>
+#include <robot_msgs/Planner2DGoal.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
@@ -73,7 +73,7 @@
 namespace ros {
   namespace highlevel_controllers {
 
-    class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
+    class MoveBase : public HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal> {
 
     public:
       

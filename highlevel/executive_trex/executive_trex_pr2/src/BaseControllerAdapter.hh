@@ -4,7 +4,7 @@
 #include "ROSAdapter.hh"
 
 // State Update messages
-#include <std_msgs/Planner2DState.h>
+#include <robot_msgs/Planner2DState.h>
 
 namespace TREX {
 
