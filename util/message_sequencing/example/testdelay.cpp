@@ -3,6 +3,9 @@
 #include "ros/time.h"
 
 
+int g_argc;
+char** g_argv;
+
 class TestDelay : public ros::node
 {
 
@@ -14,8 +17,8 @@ public:
 
   TestDelay() : ros::node("test_delay", ros::node::ANONYMOUS_NAME)
   {
-    delay.fromSec(atof(argv[1]));
-    num = atoi(argv[2]);
+    delay.fromSec(atof(g_argv[1]));
+    num = atoi(g_argv[2]);
 
     subscribe("orig",point,&TestDelay::cb,1);
     advertise<std_msgs::PointStamped>("delay",10);
@@ -32,6 +35,8 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv);
+  g_argc = argc;
+  g_argv = argv;
   TestDelay t;
   t.spin();
   ros::fini();
