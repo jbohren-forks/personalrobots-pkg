@@ -57,7 +57,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerPos)
 
 BaseControllerPos::BaseControllerPos() : num_wheels_(0), num_casters_(0)
 {
-   MAX_DT_ = 0.01;
+   MAX_DT_ = 0.001;
 
    max_accel_.x = 0.1;
    max_accel_.y = 0.1;
@@ -403,7 +403,7 @@ void BaseControllerPos::update()
    }
 
   double current_time = robot_state_->hw_->current_time_;
-  double dT = std::min<double>(current_time - last_time_,MAX_DT_);
+  double dT = std::max<double>(current_time - last_time_,MAX_DT_);
 
   if((current_time - cmd_received_timestamp_) > timeout_)
   {
@@ -624,7 +624,9 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
     }
 */  
     steer_position_desired_[i] = steer_angle_desired;
-    steer_velocity_desired_[i] = (steer_angle_desired_dt - steer_angle_desired)/dT - kp_speed_*error_steer;
+    if(fabs(dT) >= 1e-4)
+      steer_velocity_desired_[i] = (steer_angle_desired_dt - steer_angle_desired)/dT - kp_speed_*error_steer;
+
     //    ROS_INFO("Caster position desired: %d %f ",i,steer_position_desired_[i]);
   }
 }
