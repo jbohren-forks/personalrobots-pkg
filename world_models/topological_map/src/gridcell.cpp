@@ -27,38 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TOPOLOGICAL_MAP_ROADMAP_H
-#define TOPOLOGICAL_MAP_ROADMAP_H
+#include <stdlib.h>
+#include <math.h>
+#include <topological_map/gridcell.h>
 
-// Including this for now to get the Coords data type
-#include "bottleneck_graph.h"
+using namespace std;
 
 namespace topological_map
 {
 
-// Graph type
 
-
-class Roadmap 
+int operator< (const GridCell& c, const GridCell& c2)
 {
-public:
-  Roadmap ();
-  ~Roadmap ();
-
-  void addVertex (Coords c);
-  void setCost (Coords c1, Coords c2, double cost);
-  std::vector<Coords> getShortestPath (Coords c1, Coords c2);
-
-private:
-  
-  // Disallow copy and assignment
-  Roadmap (const Roadmap&);
-  Roadmap& operator= (const Roadmap&);
-
+  return (c.first < c2.first) || ((c.first == c2.first) && (c.second < c2.second));
 }
 
-} // topological_map
+  ostream& operator<< (ostream& str, const GridCell& c)
+  {
+    str << "(" << c.first << ", " << c.second << ")";
+    return str;
+  }
 
-#endif // TOPOLOGICAL_MAP_ROADMAP_H
+  int GridCell::heuristicDistanceTo (const GridCell& c) const
+  { 
+    int dx=c.first-first; 
+    int dy=c.second-second; 
+    int dist=(sqrt(dx*dx+dy*dy));  
+    return dist; 
+  }
 
 
+} // Namespace topological_map

@@ -91,16 +91,18 @@ using namespace std;
 namespace topological_map
 {
 
-enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, READY };
+  enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
 
 class BottleneckGraphRos: public ros::node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
   BottleneckGraphRos(char* filename);
+  ~BottleneckGraphRos();
 
   void loadMap(void);
   void computeBottleneckGraph(void);
+  void generateRoadmap(void);
   void setupTopics(void);
   void writeToFile(char*);
   void setResolution(double r) { resolution_=r; }
@@ -117,12 +119,14 @@ private:
   BottleneckGraphRos& operator= (const BottleneckGraphRos&);
 
 
-  IndexedBottleneckGraph bottleneckGraph_;
-  NodeStatus nodeStatus_;
-  GridArray* grid_;
+  IndexedBottleneckGraph bottleneck_graph_;
+  NodeStatus node_status_;
+  GridArray grid_;
+  Roadmap* roadmap_;
 
   int sx_, sy_;
-  int region_;
+  int region_id_;
+  int num_added_roadmap_points_;
   double resolution_;
 
   int size_, skip_, radius_, distanceMin_, distanceMax_;
@@ -135,21 +139,28 @@ private:
 
 
 /************************************************************
- * Constructors
+ * Constructors/destructors
  ************************************************************/
 
 BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : 
-  ros::node("bottleneck_graph_ros"), nodeStatus_(WAITING_FOR_MAP), size_(size), skip_(skip), radius_(radius),
-  distanceMin_(distanceMin), distanceMax_(distanceMax) 
+  ros::node("bottleneck_graph_ros"), node_status_(WAITING_FOR_MAP), num_added_roadmap_points_(0), 
+  size_(size), skip_(skip), radius_(radius), distanceMin_(distanceMin), distanceMax_(distanceMax) 
 {
 }
  
 BottleneckGraphRos::BottleneckGraphRos(char* filename) :
-  ros::node("bottleneck_graph_ros")
+  ros::node("bottleneck_graph_ros"), node_status_ (READY), num_added_roadmap_points_(0)
 {
-  bottleneckGraph_.readFromFile(filename);
-  nodeStatus_ = READY;
+  bottleneck_graph_.readFromFile(filename);
 }
+
+  BottleneckGraphRos::~BottleneckGraphRos()
+  {
+    if (roadmap_) {
+      delete roadmap_;
+    }
+  }
+
 
 
 
@@ -163,15 +174,21 @@ void BottleneckGraphRos::poseCallback (void)
 {
   int r, c;
   convertToMapIndices (pose_.pos.x, pose_.pos.y, &r,&c);
-  int region = bottleneckGraph_.regionId(r,c);
-  if (region!=region_) {
-    region_=region;
+  int region = bottleneck_graph_.regionId(r,c);
+  if (region!=region_id_) {
+    region_id_=region;
     BottleneckVertex v;
-    bottleneckGraph_.lookupVertex (r, c, &v);
-    if (bottleneckGraph_.vertexDescription(v).type == BOTTLENECK)
+    bottleneck_graph_.lookupVertex (r, c, &v);
+    if (bottleneck_graph_.vertexDescription(v).type == BOTTLENECK) {
       ROS_DEBUG ("Moving into bottleneck vertex %d", region);
-    else
+    }
+    else {
       ROS_DEBUG ("Moving into open vertex %d", region);
+    }
+
+    // Remove low-level cells from previous region and add the new ones
+    roadmap_->removeLastPoints (num_added_roadmap_points_);
+    num_added_roadmap_points_ = bottleneck_graph_.addRegionGridCells (roadmap_, region_id_);
   }
 }
 
@@ -184,10 +201,10 @@ void BottleneckGraphRos::poseCallback (void)
 void BottleneckGraphRos::computeBottleneckGraph (void)
 {
   ROS_INFO ("Computing bottleneck graph... (this could take a while)\n");
-  bottleneckGraph_.initializeFromGrid(*grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
-  nodeStatus_ = READY;
+  bottleneck_graph_.initializeFromGrid(grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
+  node_status_ = READY;
   ROS_INFO ("Done computing bottleneck graph\n");
-  bottleneckGraph_.printBottlenecks();
+  bottleneck_graph_.printBottlenecks();
 }  
 
 void BottleneckGraphRos::loadMap (void)
@@ -204,19 +221,19 @@ void BottleneckGraphRos::loadMap (void)
   }
   sleep(2);
   ROS_INFO ("Received a %d by %d map at %f m/pix.  Origin is %f, %f, %f.  \n", resp.map.width, resp.map.height, resp.map.resolution, resp.map.origin.x, resp.map.origin.y, resp.map.origin.th);
-  nodeStatus_ = CREATING_BOTTLENECK_GRAPH;
+  node_status_ = CREATING_BOTTLENECK_GRAPH;
   sx_ = resp.map.width;
   sy_ = resp.map.height;
   resolution_ = resp.map.resolution;
 
-  grid_ = new GridArray(boost::extents[sy_][sx_]);
+  grid_.resize(boost::extents[sy_][sx_]);
   
   int i = 0;
   bool expected[255];
   for (int r=0; r<sy_; r++) {
     for (int c=0; c<sx_; c++) {
       int val = resp.map.data[i++];
-      (*grid_)[r][c] = (val == 100);
+      grid_[r][c] = (val == 100);
       if ((val != 0) && (val != 100) && (val != 255) && !expected[val]) {
         expected[val] = true;
         ROS_WARN ("Treating unexpected val %d in returned static map as occupied\n", val);
@@ -231,13 +248,19 @@ void BottleneckGraphRos::setupTopics (void)
   ROS_INFO ("Setting up node topics");
   subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 100);
 
-} // namespace topological_map
+}
+
+void BottleneckGraphRos::generateRoadmap (void)
+{
+  node_status_ = COMPUTING_ROADMAP;
+  roadmap_ = bottleneck_graph_.makeRoadmap();
+}
 
 
 void BottleneckGraphRos::writeToFile (char* filename)
 {
   ROS_INFO ("Writing bottleneck graph to file %s", filename);
-  bottleneckGraph_.printBottlenecks(filename);
+  bottleneck_graph_.printBottlenecks(filename);
   ROS_INFO ("Done writing");
 }
 
@@ -355,6 +378,8 @@ int main(int argc, char** argv)
     }
   }
 
+  ROS_INFO ("Generating roadmap");
+  node->generateRoadmap();
   ROS_INFO ("Entering main loop");
   node->spin();
   node->shutdown();

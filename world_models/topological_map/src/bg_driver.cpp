@@ -89,37 +89,48 @@ int main (int argc, char* argv[])
       }
     }
   }
-  topological_map::GridArray *grid;
+  topological_map::GridArray grid;
   topological_map::IndexedBottleneckGraph g;
   if (inputFilename) {
     g.readFromFile (inputFilename);
   }
   else {
 
-    if ((bottleneckSize<0) || (domain>1)) {
+    if ((bottleneckSize<0) || (domain>2)) {
       exit(EX_USAGE);
     }
   
     if (domain==0) {
       // Initialize grid
-      grid = new topological_map::GridArray(boost::extents[4][5]);
-      (*grid)[0][2] = true;
-      (*grid)[2][2] = true;
-      (*grid)[3][2] = true;
+      grid.resize(boost::extents[4][5]);
+      grid[0][2] = true;
+      grid[2][2] = true;
+      grid[3][2] = true;
     }
-    else {
-      grid = new topological_map::GridArray(boost::extents[41][41]);
+    else if (domain == 1) {
+      grid.resize(boost::extents[41][41]);
       for (int i=0; i<20; i++) {
-        (*grid)[10][i] = true;
-        (*grid)[10][40-i] = true;
+        grid[10][i] = true;
+        grid[10][40-i] = true;
       }
     }
-      
-    g.initializeFromGrid(*grid, bottleneckSize, bottleneckSkip, inflationRadius, 1, 2);
+    else {
+      grid.resize(boost::extents[12][12]);
+      for (int a=4; a<12; a+=4) {
+	for (int b=0; b<12; b++) {
+	  if ((b!=2) && (b!=6) && (b!=10)) {
+	    grid[b][a] = true;
+	    grid[a][b] = true;
+	  }
+	}
+      }
+    }
+    g.initializeFromGrid(grid, bottleneckSize, bottleneckSkip, inflationRadius, 1, 2);
   }
 
 
   g.printBottlenecks();
+  g.makeRoadmap();
   if (outputFilename) {
     g.printBottlenecks(outputFilename);
   }
