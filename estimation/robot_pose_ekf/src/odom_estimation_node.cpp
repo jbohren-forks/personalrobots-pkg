@@ -56,7 +56,7 @@ namespace estimation
       node_name_(node_name),
       robot_state_(*this, true),
       odom_broadcaster_(*this),
-      vo_notifier_(&robot_state_, this,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10),
+      vo_notifier_(NULL),
       vel_desi_(2),
       vel_active_(false),
       odom_active_(false),
@@ -72,12 +72,7 @@ namespace estimation
     param(node_name_+"/odom_used", odom_used_, true);
     param(node_name_+"/imu_used",  imu_used_, true);
     param(node_name_+"/vo_used",   vo_used_, true);
-    if (odom_used_) ROS_INFO((node_name_+"  Odom sensor can be used").c_str());
-    else            ROS_INFO((node_name_+"  Odom sensor will NOT be used").c_str());
-    if (imu_used_)  ROS_INFO((node_name_+"  Imu sensor can be used").c_str());
-    else            ROS_INFO((node_name_+"  Imu sensor will NOT be used").c_str());
-    if (vo_used_)   ROS_INFO((node_name_+"  VO sensor can be used").c_str());
-    else            ROS_INFO((node_name_+"  VO sensor will NOT be used").c_str());
+
     // advertise our estimation
     advertise<robot_msgs::PoseWithCovariance>(node_name_+"/"+publish_name, 10);
 
@@ -89,8 +84,28 @@ namespace estimation
 
     // subscribe to messages
     subscribe("cmd_vel",      vel_,  &OdomEstimationNode::velCallback,  10);
-    subscribe("odom",         odom_, &OdomEstimationNode::odomCallback, 10);
-    subscribe("imu_data",     imu_,  &OdomEstimationNode::imuCallback,  10);
+
+    // subscribe to odom messages
+    if (odom_used_){
+      ROS_INFO((node_name_+"  Odom sensor can be used").c_str());
+      subscribe("odom",         odom_, &OdomEstimationNode::odomCallback, 10);
+    }
+    else ROS_INFO((node_name_+"  Odom sensor will NOT be used").c_str());
+
+    // subscribe to imu messages
+    if (imu_used_){
+      ROS_INFO((node_name_+"  Imu sensor can be used").c_str());
+      subscribe("imu_data",     imu_,  &OdomEstimationNode::imuCallback,  10);
+    }
+    else ROS_INFO((node_name_+"  Imu sensor will NOT be used").c_str());
+
+    // subscribe to vo messages
+    if (vo_used_){
+      ROS_INFO((node_name_+"  VO sensor can be used").c_str());
+      vo_notifier_ = new MessageNotifier<robot_msgs::VOPose>(&robot_state_, this,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10);
+    }
+    else ROS_INFO((node_name_+"  VO sensor will NOT be used").c_str());
+
 
 #ifdef __EKF_DEBUG_FILE__
     // open files for debugging
@@ -108,6 +123,8 @@ namespace estimation
 
   // destructor
   OdomEstimationNode::~OdomEstimationNode(){
+    if (vo_notifier_) delete vo_notifier_;
+
 #ifdef __EKF_DEBUG_FILE__
     // close files for debugging
     odom_file_.close();
@@ -126,45 +143,44 @@ namespace estimation
   // callback function for odom data
   void OdomEstimationNode::odomCallback()
   {
-    if (odom_used_){
-      // receive data 
-      boost::mutex::scoped_lock lock(odom_mutex_);
-      odom_stamp_ = odom_.header.stamp;
-      odom_time_  = Time::now();
-      odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
+    assert(odom_used_);
 
-      double norm = sqrt(pow(odom_.vel.x,2) + pow(odom_.vel.y,2) + pow(odom_.vel.th,2));
-      if (norm < EPS) 
-	odom_multiplier_ = 0.00001;
-      else
-	odom_multiplier_ = 1;
-
-      my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
-      
-      // activate odom
-      if (!odom_active_) {
-	if (!odom_initializing_){
-	  odom_initializing_ = true;
-	  odom_init_stamp_ = odom_stamp_;
-	  ROS_INFO((node_name_+"  Initializing Odom sensor").c_str());      
-	}
-	if ( filter_stamp_ >= odom_init_stamp_){
-	  odom_active_ = true;
-	  odom_initializing_ = false;
-	  ROS_INFO((node_name_+"  Odom sensor activated").c_str());      
-	}
-	else ROS_INFO("Will not activate Odom yet, because Odom measurements are still %f sec in the future.", 
-		      (odom_init_stamp_ - filter_stamp_).toSec());
+    // receive data 
+    boost::mutex::scoped_lock lock(odom_mutex_);
+    odom_stamp_ = odom_.header.stamp;
+    odom_time_  = Time::now();
+    odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
+    
+    double norm = sqrt(pow(odom_.vel.x,2) + pow(odom_.vel.y,2) + pow(odom_.vel.th,2));
+    if (norm < EPS) 
+      odom_multiplier_ = 0.00001;
+    else
+      odom_multiplier_ = 1;
+    
+    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
+    
+    // activate odom
+    if (!odom_active_) {
+      if (!odom_initializing_){
+	odom_initializing_ = true;
+	odom_init_stamp_ = odom_stamp_;
+	ROS_INFO((node_name_+"  Initializing Odom sensor").c_str());      
       }
-      
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      double tmp, yaw;
-      odom_meas_.getBasis().getEulerZYX(yaw, tmp, tmp);
-      odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
-#endif
-
+      if ( filter_stamp_ >= odom_init_stamp_){
+	odom_active_ = true;
+	odom_initializing_ = false;
+	ROS_INFO((node_name_+"  Odom sensor activated").c_str());      
+      }
+      else ROS_INFO("Will not activate Odom yet, because Odom measurements are still %f sec in the future.", 
+		    (odom_init_stamp_ - filter_stamp_).toSec());
     }
+    
+#ifdef __EKF_DEBUG_FILE__
+    // write to file
+    double tmp, yaw;
+    odom_meas_.getBasis().getEulerZYX(yaw, tmp, tmp);
+    odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
+#endif
   };
 
 
@@ -173,38 +189,37 @@ namespace estimation
   // callback function for imu data
   void OdomEstimationNode::imuCallback()
   {
-    if (imu_used_){
-      // receive data
-      boost::mutex::scoped_lock lock(imu_mutex_);
-      imu_stamp_ = imu_.header.stamp;
-      imu_time_  = Time::now();
-      PoseMsgToTF(imu_.pos, imu_meas_);
-      my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
-      
-      // activate imu
-      if (!imu_active_) {
-	if (!imu_initializing_){
-	  imu_initializing_ = true;
-	  imu_init_stamp_ = imu_stamp_;
-	  ROS_INFO((node_name_+"  Initializing Imu sensor").c_str());      
-	}
-	if ( filter_stamp_ >= imu_init_stamp_){
-	  imu_active_ = true;
-	  imu_initializing_ = false;
-	  ROS_INFO((node_name_+"  Imu sensor activated").c_str());      
-	}
-	else ROS_INFO("Will not activate IMU yet, because IMU measurements are still %f sec in the future.", 
-		      (imu_init_stamp_ - filter_stamp_).toSec());
+    assert(imu_used_);
+
+    // receive data
+    boost::mutex::scoped_lock lock(imu_mutex_);
+    imu_stamp_ = imu_.header.stamp;
+    imu_time_  = Time::now();
+    PoseMsgToTF(imu_.pos, imu_meas_);
+    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
+    
+    // activate imu
+    if (!imu_active_) {
+      if (!imu_initializing_){
+	imu_initializing_ = true;
+	imu_init_stamp_ = imu_stamp_;
+	ROS_INFO((node_name_+"  Initializing Imu sensor").c_str());      
       }
-      
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      double tmp, yaw;
-      imu_meas_.getBasis().getEulerZYX(yaw, tmp, tmp); 
-      imu_file_ << yaw << endl;
-#endif
-      
+      if ( filter_stamp_ >= imu_init_stamp_){
+	imu_active_ = true;
+	imu_initializing_ = false;
+	ROS_INFO((node_name_+"  Imu sensor activated").c_str());      
+      }
+      else ROS_INFO("Will not activate IMU yet, because IMU measurements are still %f sec in the future.", 
+		    (imu_init_stamp_ - filter_stamp_).toSec());
     }
+    
+#ifdef __EKF_DEBUG_FILE__
+    // write to file
+    double tmp, yaw;
+    imu_meas_.getBasis().getEulerZYX(yaw, tmp, tmp); 
+    imu_file_ << yaw << endl;
+#endif
   };
 
 
@@ -213,49 +228,48 @@ namespace estimation
   // callback function for VO data
   void OdomEstimationNode::voCallback(const MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo)
   {
-    if (vo_used_){
-      // get data
-      boost::mutex::scoped_lock lock(vo_mutex_);
-      vo_ = *vo;
-      vo_stamp_ = vo_.header.stamp;
-      vo_time_  = Time::now();
-      robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
-      PoseMsgToTF(vo_.pose, vo_meas_);
-      
-      // initialize
-      if (!vo_active_ && !vo_initializing_){
-	base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
-      }
-      // vo measurement as base transform
-      Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
-      my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
-				21.0-(min(200.0,(double)vo_.inliers)/10));
-      
-      // activate vo
-      if (!vo_active_) {
-	if (!vo_initializing_){
-	  vo_initializing_ = true;
-	  vo_init_stamp_ = vo_stamp_;
-	  ROS_INFO((node_name_+"  Initializing Vo sensor").c_str());      
-	}
-	if (filter_stamp_ >= vo_init_stamp_){
-	  vo_active_ = true;
-	  vo_initializing_ = false;
-	  ROS_INFO((node_name_+"  Vo sensor activated").c_str());      
-	}
-	else ROS_INFO("Will not activate VO yet, because VO measurements are still %f sec in the future.", 
-		      (vo_init_stamp_ - filter_stamp_).toSec());
-      }
-      
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      double Rx, Ry, Rz;
-      vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
-      vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
-	       << Rx << " " << Ry << " " << Rz << endl;
-#endif
+    assert(vo_used_);
 
+    // get data
+    boost::mutex::scoped_lock lock(vo_mutex_);
+    vo_ = *vo;
+    vo_stamp_ = vo_.header.stamp;
+    vo_time_  = Time::now();
+    robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
+    PoseMsgToTF(vo_.pose, vo_meas_);
+    
+    // initialize
+    if (!vo_active_ && !vo_initializing_){
+      base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
     }
+    // vo measurement as base transform
+    Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
+    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
+			      21.0-(min(200.0,(double)vo_.inliers)/10));
+    
+    // activate vo
+    if (!vo_active_) {
+      if (!vo_initializing_){
+	vo_initializing_ = true;
+	vo_init_stamp_ = vo_stamp_;
+	ROS_INFO((node_name_+"  Initializing Vo sensor").c_str());      
+      }
+      if (filter_stamp_ >= vo_init_stamp_){
+	vo_active_ = true;
+	vo_initializing_ = false;
+	ROS_INFO((node_name_+"  Vo sensor activated").c_str());      
+      }
+      else ROS_INFO("Will not activate VO yet, because VO measurements are still %f sec in the future.", 
+		    (vo_init_stamp_ - filter_stamp_).toSec());
+    }
+    
+#ifdef __EKF_DEBUG_FILE__
+    // write to file
+    double Rx, Ry, Rz;
+    vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
+    vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
+	     << Rx << " " << Ry << " " << Rz << endl;
+#endif
   };
 
 
