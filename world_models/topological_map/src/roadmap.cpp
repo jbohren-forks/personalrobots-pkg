@@ -90,10 +90,10 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
     
     VertexPairCellMap::iterator vertex_pair_iter;
     for (vertex_pair_iter=roadmap_points.begin(); vertex_pair_iter!=roadmap_points.end(); vertex_pair_iter++) {
-      for (target_vertex_iter = vertex_pair_iter.second.begin(); target_vertex_iter != vertex_pair_iter.second.end(); target_vertex_iter++) {
-        for (target_vertex_iter2 = vertex_pair_iter.second.begin(); target_vertex_iter2 != vertex_pair_iter.second.end(); target_vertex_iter2++) {
+      for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
+        for (VertexCellMap::iterator target_vertex_iter2 = vertex_pair_iter->second.begin(); target_vertex_iter2 != vertex_pair_iter->second.end(); target_vertex_iter2++) {
           roadmap->setCost (target_vertex_iter->second, target_vertex_iter2->second);
-          cout << "Adding edge between " << target_vertex_iter->second << " and " << target_vertex_iter2.second << endl;
+          cout << "Adding edge between " << target_vertex_iter->second << " and " << target_vertex_iter2->second << endl;
         }
       }
     }
