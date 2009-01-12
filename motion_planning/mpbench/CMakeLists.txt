@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 2.4.6)
 
 #set (ROS_BUILD_TYPE Release)
 set (ROS_BUILD_TYPE Debug)
-include (rosbuild)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions (-Wall)
 rospack (mpbench)
 
