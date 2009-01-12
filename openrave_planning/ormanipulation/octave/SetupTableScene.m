@@ -134,7 +134,7 @@ if( realrobot )
     enabledjoints([robot.manips{1}.armjoints; robot.manips{1}.handjoints]) = [];
     jointnames_cell = transpose(robot.jointnames(enabledjoints+1));
     jointnames_str = cell2mat (cellfun(@(x) [x ' '], jointnames_cell,'uniformoutput',false));
-    orRobotControllerSet(robot.id, 'ROSRobot',  ['trajectoryservice /right_arm_trajectory_controller joints ' jointnames_str]);
+    orRobotControllerSet(robot.id, 'ROSRobot',  ['trajectoryservice /right_arm_trajectory_controller/ joints ' jointnames_str]);
 end
 
 %% dests is a 12xN array where every column is a 3x4 matrix

@@ -50,5 +50,5 @@ end
 display('wait ended');
 newjointconfig = orBodyGetJointValues(robotid);
 setclonesession(prevsession);
-probs = prevprobs
+probs = prevprobs;
 orBodySetJointValues(robotid,newjointconfig);

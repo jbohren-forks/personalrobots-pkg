@@ -89,4 +89,6 @@ while(1)
         %destroy
         openraveros_destroysession(sessionclone);
     end
+
+    input('press any key to get next measurement: ');
 end

@@ -403,6 +403,7 @@ private:
         if (curlong || totlong)
             ROS_ERROR("qhull internal warning (main): did not free %d bytes of long memory (%d pieces)", totlong, curlong);
      
+        fclose(errfile);
         return bSuccess;
     }
 

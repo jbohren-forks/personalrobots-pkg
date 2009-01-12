@@ -65,12 +65,12 @@ class ROSRobotController : public ControllerBase
             pr2_mechanism_controllers::TrajectoryQuery::request req;
             pr2_mechanism_controllers::TrajectoryQuery::response res;
             if( !_srvTrajectoryQuery->call(req,res) ) {
-                RAVELOG_ERRORA("failed to query trajectory service %s", _strTrajectoryServiceDir.c_str());
+                RAVELOG_ERRORA("failed to query trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
             }
 
             if( res.jointnames.size() == 0 ) {
-                RAVELOG_ERRORA("no joint names for trajectory service %s", _strTrajectoryServiceDir.c_str());
+                RAVELOG_ERRORA("no joint names for trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
             }
 
@@ -78,6 +78,8 @@ class ROSRobotController : public ControllerBase
             for(size_t i = 0; i < _probot->GetJoints().size(); ++i)
                 vrobotjoints[i] = _stdwcstombs(_probot->GetJoints()[i]->GetName());
 
+            stringstream ss;
+            ss << "roscontroller: " << _strTrajectoryServiceDir;
             _vjointmap.reserve(res.jointnames.size());
             FOREACH(itname, res.jointnames) {
                 vector<string>::iterator itindex = find(vrobotjoints.begin(), vrobotjoints.end(), *itname);
@@ -87,7 +89,11 @@ class ROSRobotController : public ControllerBase
                     return false;
                 }
                 _vjointmap.push_back((int)(itindex-vrobotjoints.begin()));
+                ss << " " << *itname << " (" << _vjointmap.back() << ")";
             }
+
+            ss << endl;
+            RAVELOG_DEBUGA(ss.str().c_str());
 
             return true;
         }

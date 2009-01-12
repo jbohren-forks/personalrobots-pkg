@@ -40,21 +40,125 @@ class CollisionMapSystem : public ROSSensorSystem<collision_map::CollisionMap, C
 {
 public:
     CollisionMapSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>(penv), _nNextId(1)
+        : ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>(penv), _robotid(0), _nNextId(1), _bEnableCollisions(true)
     {
+    }
+    virtual ~CollisionMapSystem() {
+        stopsubscriptions(); // need to stop the subscriptions because the virtual destructor will not call the overridden stopsubscriptions
+        ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>::Destroy();
     }
 
     virtual bool Init(istream& sinput)
     {
+        _robotid = 0;
         _topic = "collision_map";
-        return ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>::Init(sinput);
+
+        string cmd;
+        while(!sinput.eof()) {
+            sinput >> cmd;
+            if( !sinput )
+                break;
+
+            if( stricmp(cmd.c_str(), "topic") == 0 )
+                sinput >> _topic;
+            else if( stricmp(cmd.c_str(), "collisions") == 0 )
+                sinput >> _bEnableCollisions;
+            else if( stricmp(cmd.c_str(), "robot") == 0 ) {
+                int id;
+                sinput >> id;
+                KinBody* pbody = GetEnv()->GetBodyFromNetworkId(id);
+                if( pbody != NULL )
+                    _robotid = id;
+
+                if( _robotid == 0 )
+                    RAVELOG_WARNA("failed to find robot with id %d\n", id);
+            }
+            else break;
+            
+            if( !sinput ) {
+                RAVELOG_ERRORA("failed\n");
+                return false;
+            }
+        }
+
+        startsubscriptions();
+        return _bSubscribed;
     }
 
 private:
+    virtual void startsubscriptions()
+    {
+        ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>::startsubscriptions();
+        
+        if( _bSubscribed ) {
+            boost::mutex::scoped_lock lock(_mutex);
+            ros::node* pnode = check_roscpp_nocreate();
+            if( pnode != NULL ) { 
+                double tf_cache_time_secs;
+                pnode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
+                if (tf_cache_time_secs < 0)
+                    RAVELOG_ERRORA("ROSSensorSystem: Parameter tf_cache_time_secs<0 (%f)\n", tf_cache_time_secs);
+                unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL;
+                _tf.reset(new tf::TransformListener(*pnode, true, tf_cache_time));
+                RAVELOG_INFOA("ROSSensorSystem: TF Cache Time: %f Seconds\n", tf_cache_time_secs);
+
+                // **** Set TF Extrapolation Limit ****
+                double tf_extrap_limit_secs ;
+                pnode->param("~tf_extrap_limit", tf_extrap_limit_secs, 0.00);
+                if (tf_extrap_limit_secs < 0.0)
+                    RAVELOG_ERRORA("ROSSensorSystem: parameter tf_extrap_limit<0 (%f)\n", tf_extrap_limit_secs);
+
+                ros::Duration extrap_limit;
+                extrap_limit.fromSec(tf_extrap_limit_secs);
+                _tf->setExtrapolationLimit(extrap_limit);
+                RAVELOG_INFOA("ROSSensorSystem: tf extrapolation Limit: %f Seconds\n", tf_extrap_limit_secs);
+            }
+        }
+    }
+
+    virtual void stopsubscriptions()
+    {
+        ROSSensorSystem<collision_map::CollisionMap, CollisionMapXMLID>::stopsubscriptions();
+        _tf.reset();
+    }
+
     void newdatacb()
     {
         // create the new kinbody
         GetEnv()->LockPhysics(true);
+
+        Transform tcollision;
+        string strrobotbaselink;
+        bool bHasRobotTransform = false;
+
+        if( _robotid != 0 ) {
+            KinBody* pbody = GetEnv()->GetBodyFromNetworkId(_robotid);
+            if( pbody != NULL ) {
+                bHasRobotTransform = true;
+                tcollision = pbody->GetTransform();
+                strrobotbaselink = _stdwcstombs(pbody->GetLinks().front()->GetName());
+            }
+        }
+
+        if( bHasRobotTransform && !!_tf ) {
+            tf::Stamped<btTransform> bttransform;
+
+            try {
+                _tf->lookupTransform(strrobotbaselink, _topicmsg.header.frame_id, _topicmsg.header.stamp, bttransform);
+                tcollision = tcollision * GetTransform(bttransform);
+            }
+            catch(tf::TransformException& ex) {
+                try {
+                    _tf->lookupTransform(strrobotbaselink, _topicmsg.header.frame_id, ros::Time(), bttransform);
+                    tcollision = tcollision * GetTransform(bttransform);
+                }
+                catch(tf::TransformException& ex) {
+                    RAVELOG_WARNA("failed to get tf frames %s (robot link:%s)\n", _topicmsg.header.frame_id.c_str(), strrobotbaselink.c_str());
+                    return;
+                }
+            }
+        }
+
         KinBody* pbody = GetEnv()->CreateKinBody();
 
         _vaabbs.resize(_topicmsg.boxes.size());
@@ -91,7 +195,6 @@ private:
             TYPEOF(_mapbodies.begin()) itbody = _mapbodies.begin();
             while(itbody != _mapbodies.end()) {
                 if( !itbody->second->IsLocked() ) {
-                    BODY* b = itbody->second.get();
                     KinBody::Link* plink = itbody->second->GetOffsetLink();
                     assert( plink != NULL );
                     GetEnv()->RemoveKinBody(plink->GetParent());
@@ -113,13 +216,18 @@ private:
         }
     }
 
-    Transform GetTransform(const std_msgs::Transform& pose)
+    Transform GetTransform(const btTransform& bt)
     {
-        return Transform(Vector(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z), Vector(pose.translation.x, pose.translation.y, pose.translation.z));
+        btQuaternion q = bt.getRotation();
+        btVector3 o = bt.getOrigin();
+        return Transform(Vector(q.w(),q.x(),q.y(),q.z()),Vector(o.x(),o.y(),o.z()));
     }
 
+    boost::shared_ptr<tf::TransformListener> _tf;
+    int _robotid;
     vector<AABB> _vaabbs;
     int _nNextId;
+    bool _bEnableCollisions;
 };
 
 #endif

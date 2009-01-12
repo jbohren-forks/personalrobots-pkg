@@ -81,6 +81,12 @@ if( isempty(curobj) && ~isempty(outmemory.ignorelist) && ~isempty(orderedtargets
     curobj = targetobjs{orderedtargets(1)};
 end
 
+if( isempty(curobj.info) )
+    display('invalid object');
+    curobj = [];
+    return;
+end
+
 [dests, surfaceplane] = scenedata.GetDestsFn(); % compute a set of destinations
 
 offsetfromtable = 0.04; %% set destination a little above the table

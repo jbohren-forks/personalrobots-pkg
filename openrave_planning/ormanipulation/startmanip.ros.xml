@@ -3,6 +3,7 @@
   <machine name="localhost" address="localhost" default="true"/>  
 
   <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
+
   <include file="$(find ormanipulation)/startchecker.ros.xml"/>
   <node pkg="phase_space" type="phase_space_node"/>
 

@@ -80,15 +80,16 @@ class ROSServer : public RaveServerBase
     class SendProblemWorker : public ServerWorker
     {
     public:
-        SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out) : _prob(prob), _cmd(cmd), _out(out) {}
+    SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out, bool& bSuccessful) : _prob(prob), _cmd(cmd), _out(out), _bSuccessful(bSuccessful) {}
         virtual void work() {
-            _prob->SendCommand(_cmd.c_str(),_out);
+            _bSuccessful = _prob->SendCommand(_cmd.c_str(),_out);
         }
 
     private:
         boost::shared_ptr<ProblemInstance> _prob;
         const string& _cmd;
         string& _out;
+        bool& _bSuccessful;
     };
 
     class LoadProblemWorker : public ServerWorker
@@ -1208,8 +1209,9 @@ public:
         if( itprob == _mapproblems.end() )
             return false;
 
-        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output), true);
-        return true;
+        bool bSuccessful = false;
+        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output,bSuccessful), true);
+        return bSuccessful;
     }
 
     bool robot_controllersend_srv(robot_controllersend::request& req, robot_controllersend::response& res)

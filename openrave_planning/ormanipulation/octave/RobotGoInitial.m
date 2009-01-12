@@ -27,19 +27,9 @@ if( ~success )
 end
 
 display('moving hand');
-
-prevsession = openraveros_getglobalsession();
-prevprobs = probs;
-setrealsession();
-orRobotSetDOFValues(robotid,home(handjoints+1),handjoints);
-pause(0.4); % pause a little to give a chance for controller to start
-success = WaitForRobot(robotid);
-setclonesession(prevsession);
-probs = prevprobs;
+success = RobotMoveJointValues(robotid, home(handjoints+1),handjoints)
 
 %orRobotSetActiveDOFs(robotid,0:(robot.dof-1));
 %curvalues = orRobotGetDOFValues(robotid);
 %orRobotStartActiveTrajectory(robotid,[curvalues home(:)]);
 %WaitForRobot(robotid);
-
-success = 1;
