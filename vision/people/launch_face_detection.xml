@@ -1,0 +1,6 @@
+<launch>
+  <!-- Face detection -->
+  <node pkg="people" type="face_detector" args="frontalface ./cascades/haarcascade_frontalface_alt.xml 0.9 0" output="screen" />
+  <node pkg="people" type="face_detector" args="profileface ./cascades/haarcascade_profileface.xml 0.7 0" output="screen" />
+</launch>
+
