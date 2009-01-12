@@ -1,0 +1,13 @@
+--- CMakeLists.txt	(revision 1484)
++++ CMakeLists.txt	(working copy)
+@@ -170,7 +170,9 @@
+             endforeach()
+ 
+             foreach(P "${ALIAS_LIBRARY_DIRS}")
+-                list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
++	    	if (${${P}})
++                    list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
++                endif(${${P}})
+             endforeach()
+ 
+             list(APPEND HIGHGUI_LIBRARIES ${${ALIAS_LIBRARIES}})
