@@ -49,7 +49,6 @@ sizes.
 #include <std_msgs/Point.h>
 #include <std_msgs/PointCloud.h>
 
-#include "collision_map/Box3D.h"
 #include "collision_map/CollisionMap.h"
 #include <tf/transform_listener.h>
 #include <sys/time.h>
