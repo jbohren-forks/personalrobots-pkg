@@ -35,7 +35,8 @@
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-80.0" />
     <param name="max_ang_degrees" type="double" value="80.0" />
-    <param name="skip" type="int" value="0" />
+    <!-- skip value of 1 runs it at 20Hz, anything higher and the data gets corrupted -->
+    <param name="skip" type="int" value="1" />
   </node>
 
 <!-- imu -->
