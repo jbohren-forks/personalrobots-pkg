@@ -99,7 +99,7 @@ private:
   std::string fixed_frame_;
   boost::mutex filter_mutex_;
 
-  std::vector<std_msgs::Point32> meas_visualize_;
+  std_msgs::PointCloud  meas_cloud_; 
   unsigned int meas_visualize_counter_;
 
 

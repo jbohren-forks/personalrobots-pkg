@@ -48,7 +48,6 @@ using namespace BFL;
 using namespace robot_msgs;
 
 
-static const unsigned int num_meas_show              = 10;
 static const double       sequencer_delay            = 0.5;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
@@ -67,16 +66,14 @@ namespace estimation
 			 ros::Duration().fromSec(sequencer_delay), 
 			 sequencer_internal_buffer, sequencer_subscribe_buffer),
       robot_state_(*this, true),
-      tracker_counter_(0),
-      meas_visualize_(num_meas_show),
-      meas_visualize_counter_(0)
+      tracker_counter_(0)
   {
     // initialize
-    for (unsigned int i=0; i<num_meas_show; i++){
-      meas_visualize_[i].x = 0;
-      meas_visualize_[i].y = 0;
-      meas_visualize_[i].z = 0;
-    }
+    meas_cloud_.pts = vector<std_msgs::Point32>(1);
+    meas_cloud_.pts[0].x = 0;
+    meas_cloud_.pts[0].y = 0;
+    meas_cloud_.pts[0].z = 0;
+
     // get parameters
     param("~/fixed_frame", fixed_frame_, string("default"));
     param("~/freq", freq_, 1.0);
@@ -163,15 +160,11 @@ namespace estimation
 
     
     // visualize measurement
-    meas_visualize_[meas_visualize_counter_].x = meas[0];
-    meas_visualize_[meas_visualize_counter_].y = meas[1];
-    meas_visualize_[meas_visualize_counter_].z = meas[2];
-    meas_visualize_counter_++;
-    if (meas_visualize_counter_ == num_meas_show) meas_visualize_counter_ = 0;
-    std_msgs::PointCloud  meas_cloud; 
-    meas_cloud.header.frame_id = meas.frame_id_;
-    meas_cloud.pts = meas_visualize_;
-    publish("people_tracker_measurements_visualization", meas_cloud);
+    meas_cloud_.pts[0].x = meas[0];
+    meas_cloud_.pts[0].y = meas[1];
+    meas_cloud_.pts[0].z = meas[2];
+    meas_cloud_.header.frame_id = meas.frame_id_;
+    publish("people_tracker_measurements_visualization", meas_cloud_);
   }
 
 
