@@ -57,6 +57,12 @@ public:
     ready = next_slot;
   }
 
+  // True iff new data is ready.
+  bool has_next()
+  {
+    return in_use != ready;
+  }
+
   // Called from realtime.  Returns the next available value.
   T& next()
   {
