@@ -30,6 +30,7 @@
 /** \author Sachin Chitta */
 
 #include "trajectory/trajectory.h"
+#include <cstdlib>
 
 #define MAX_ALLOWABLE_TIME 1.0e8
 #define EPS_TRAJECTORY 1.0e-8
@@ -450,9 +451,9 @@ double Trajectory::blendTime(double aa,double bb,double cc)
 
    double tb1 = (-bb + sqrt(disc))/(2*aa);
    double tb2 = (-bb - sqrt(disc))/(2*aa);
-   if(isnan(tb1))
+   if(std::isnan(tb1))
      tb1 = 0.0;
-   if(isnan(tb2))
+   if(std::isnan(tb2))
      tb2 = 0.0;
    return std::min(tb1,tb2);
 }
@@ -741,7 +742,7 @@ int Trajectory::parameterizeLinear()
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
-      if(isnan(temp[1]))
+      if(std::isnan(temp[1]))
         {
          temp[1] = 0.0;
 //         ROS_WARN("Zero duration between two trajectory points");
@@ -808,9 +809,9 @@ int Trajectory::parameterizeCubic()
       temp[1] = tp_[i-1].qdot_[j];
       temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
       temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
-      if(isnan(temp[2]))
+      if(std::isnan(temp[2]))
         temp[2] = 0.0;
-      if(isnan(temp[3]))
+      if(std::isnan(temp[3]))
         temp[3] = 0.0;
 
       tc.coeff_.push_back(temp);
