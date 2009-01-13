@@ -57,10 +57,12 @@
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/PointCloud.h>
 
 // For transform support
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/message_notifier.h>
 
 // Laser projection
 #include "laser_scan/laser_scan.h"
@@ -69,6 +71,10 @@
 #include <boost/thread.hpp>
 
 #include <list>
+
+namespace robot_filter {
+  class RobotFilter;
+}
 
 namespace ros {
   namespace highlevel_controllers {
@@ -167,6 +173,7 @@ namespace ros {
       void baseScanCallback();
       void tiltScanCallback();
       void tiltCloudCallback();
+      void tiltCloudCallbackTransform(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message);
       void groundPlaneCloudCallback();
       void stereoCloudCallback();
       void groundPlaneCallback();
@@ -260,6 +267,11 @@ namespace ros {
       // Tolerances for determining if goal has been reached
       double yaw_goal_tolerance_;
       double xy_goal_tolerance_;
+      
+      //Robot filter
+      robot_filter::RobotFilter* filter_;
+      tf::MessageNotifier<std_msgs::PointCloud>* tiltLaserNotifier_;
+
 
       //ground plane extraction
       ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;

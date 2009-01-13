@@ -34,15 +34,19 @@
 
 #include <costmap_2d/observation_buffer.h>
 
+namespace robot_filter {
+  class RobotFilter;
+}
+
 namespace costmap_2d {
 
   /**
    * @brief Extend base class to handle buffering until a transform is available, and to support locking for mult-threaded
    * access
    */
-  class BasicObservationBuffer: public ObservationBuffer {
+  class BasicObservationBuffer : public ObservationBuffer {
   public:
-    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ);
+    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter = NULL);
 
     virtual void buffer_cloud(const std_msgs::PointCloud& local_cloud);
 
@@ -64,6 +68,7 @@ namespace costmap_2d {
     std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
     ros::thread::mutex buffer_mutex_;
     const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
+    robot_filter::RobotFilter* filter_;
   };
 }
 #endif
