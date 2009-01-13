@@ -28,7 +28,7 @@ class TestDirected(unittest.TestCase):
 
       cl1 = calonder.classifier()
 
-      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim)
+      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim, 4)
       print "Writing to unittest.tree... ",
       cl1.write('unittest.tree')
       print "done"

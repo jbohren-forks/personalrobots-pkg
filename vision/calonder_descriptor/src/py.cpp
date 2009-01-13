@@ -13,8 +13,8 @@
 
 using namespace features;
 
-typedef float SigType;
-//typedef uint8_t SigType;
+//typedef float SigType;
+typedef uint8_t SigType;
 typedef Promote<SigType>::type DistanceType;
 
 typedef struct {
@@ -189,12 +189,14 @@ PyObject *train(PyObject *self, PyObject *args)
   int depth = RandomizedTree::DEFAULT_DEPTH;
   int views = RandomizedTree::DEFAULT_VIEWS;
   int dimension = RandomizedTree::DEFAULT_REDUCED_NUM_DIM;
+  int num_quant_bits = 0;
 
   {
     char *imgdata;
     int imgdata_size, x, y;
-    if (!PyArg_ParseTuple(args, "s#iiO|iiii", &imgdata, &imgdata_size, &x, &y,
-                          &kp, &num_trees, &depth, &views, &dimension))
+    if (!PyArg_ParseTuple(args, "s#iiO|iiiii", &imgdata, &imgdata_size,
+                          &x, &y, &kp, &num_trees, &depth, &views,
+                          &dimension, &num_quant_bits))
       return NULL;
     dimension = std::min(dimension, PyList_Size(kp));
     input = cvCreateImageHeader(cvSize(x, y), IPL_DEPTH_8U, 1);
@@ -209,7 +211,8 @@ PyObject *train(PyObject *self, PyObject *args)
 
   //Rng rng( 0 );
   Rng rng( std::time(0) );
-  pc->classifier->train(base_set, rng, num_trees, depth, views, dimension);
+  pc->classifier->train(base_set, rng, num_trees, depth,
+                        views, dimension, num_quant_bits);
 
   Py_RETURN_NONE;
 }

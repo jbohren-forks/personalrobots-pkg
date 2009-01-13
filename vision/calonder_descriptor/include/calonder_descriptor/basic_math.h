@@ -254,6 +254,17 @@ inline float L2Distance(int size, const float* a, const float* b)
    return squaredDistance(size, a, b);
 }
 
+inline int L2Distance(int size, const uint8_t* a, const uint8_t* b)
+{
+  int result = 0;
+  while (--size >= 0) {
+    int diff = *a - *b;
+    ++a; ++b;
+    result += diff*diff;
+  }
+  return result;
+}
+
 // infinity norm
 inline float LInfDistance(int size, const float* a, const float* b)
 {

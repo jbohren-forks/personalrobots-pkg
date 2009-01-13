@@ -53,7 +53,7 @@ private:
 template < typename SigElem, typename Data >
 inline
 BruteForceMatcher<SigElem, Data>::BruteForceMatcher(size_t signature_dimension)
-  : threshold_(std::numeric_limits<float>::max()),
+  : threshold_(std::numeric_limits<distance_type>::max()),
     dimension_(signature_dimension),
     distance_func(signature_dimension)
 {}
