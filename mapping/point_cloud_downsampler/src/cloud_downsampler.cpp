@@ -75,7 +75,7 @@ class CloudDownsampler : public ros::node
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 
-      param ("~cut_distance", cut_distance_, 10.0);         // 15m by default
+      param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
 
       string cloud_topic ("tilt_laser_cloud");
 

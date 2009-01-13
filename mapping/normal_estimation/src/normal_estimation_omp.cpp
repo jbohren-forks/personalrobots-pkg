@@ -97,9 +97,9 @@ class NormalEstimation : public ros::node
       param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
       param ("~downsample", downsample_, true);    // Downsample cloud before normal estimation
-      param ("~downsample_leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
-      param ("~downsample_leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
-      param ("~downsample_leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
+      param ("~downsample_leaf_width_x", leaf_width_.x, 0.02);      // 2cm radius by default
+      param ("~downsample_leaf_width_y", leaf_width_.y, 0.02);      // 2cm radius by default
+      param ("~downsample_leaf_width_z", leaf_width_.z, 0.02);      // 2cm radius by default
       param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
       if (downsample_)
@@ -128,9 +128,22 @@ class NormalEstimation : public ros::node
     virtual ~NormalEstimation () { }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      updateParametersFromServer ()
+    {
+      if (has_param ("~downsample_leaf_width_x")) get_param ("~downsample_leaf_width_x", leaf_width_.x);
+      if (has_param ("~downsample_leaf_width_y")) get_param ("~downsample_leaf_width_y", leaf_width_.y);
+      if (has_param ("~downsample_leaf_width_z")) get_param ("~downsample_leaf_width_z", leaf_width_.z);
+
+      if (has_param ("~cut_distance")) get_param ("~cut_distance", cut_distance_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
+      updateParametersFromServer ();
+
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
       if (cloud_.pts.size () == 0)
         return;

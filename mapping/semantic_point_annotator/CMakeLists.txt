@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(semantic_point_annotator)
-add_definitions(-Wall)
+add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

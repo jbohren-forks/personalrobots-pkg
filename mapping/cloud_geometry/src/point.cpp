@@ -317,7 +317,7 @@ namespace cloud_geometry
     */
   void
     downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
-                             std::vector<Leaf> &leaves, int d_idx, double cut_distance)
+                          std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     // Copy the header (and thus the frame_id) + allocate enough space for points
     points_down.header = points->header;
