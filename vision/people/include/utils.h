@@ -48,6 +48,18 @@
 
 using namespace std;
 
+/** 
+    A structure for holding information about boxes in 2d and 3d.
+*/
+struct Box2D3D {
+  CvScalar center2d;
+  CvScalar center3d;
+  double radius2d;
+  double radius3d;
+  CvRect box2d;
+  string status;
+};
+
 // Computes the median of the non-zero values in array arr between rows r1-r2 (inclusive) 
 // and columns c1-c2 (inclusive).
 // This is often used as a robust replacement for a mean.
