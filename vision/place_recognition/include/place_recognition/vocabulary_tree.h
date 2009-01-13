@@ -16,6 +16,7 @@
 #include <boost/cstdint.hpp>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib> // TODO: for abort, maybe can remove
 #include "place_recognition/kmeans.h" // TODO: only for FeatureMatrix typedef
 
 namespace vision {
@@ -126,6 +127,8 @@ public:
 
   typedef std::map< Node*, float > ImageVector;
 
+  Node* newNode();
+  
   void clearDatabaseAux(Node* node);
   
   void saveAux(Node* node, FILE* out, std::string indentation = "");
@@ -188,6 +191,16 @@ public:
   float bounds_[2];
   static const int QUANTIZE_N = 15; // TODO: OK to leave this hard-coded?
 };
+
+inline VocabularyTree::Node* VocabularyTree::newNode()
+{
+  Node* node = pool_.construct();
+  if (node == NULL) {
+    printf("Unable to construct node - pool out of memory!\n");
+    abort();
+  }
+  return node;
+}
 
 inline VocabularyTree::VocabularyTree()
   : root_(NULL), k_(0), levels_(0), dim_(0)

@@ -107,7 +107,7 @@ unsigned int VocabularyTree::insert(const FeatureMatrix& image_features)
 void VocabularyTree::constructVocabulary(const FeatureMatrix& features,
                                          const std::vector<unsigned int>& input)
 {
-  root_ = pool_.construct();
+  root_ = newNode();
   constructVocabularyAux(features, input, root_, 0);
 }
 
@@ -143,7 +143,7 @@ void VocabularyTree::constructVocabularyAux(const FeatureMatrix& features,
   node->children.resize(num_clusters);
   for(int i = 0; i < num_clusters; ++i)
   {
-    node->children[i] = pool_.construct();
+    node->children[i] = newNode();
 #ifdef USE_BYTE_SIGNATURES
     uint8_t** child_centroid = &node->children[i]->centroid;
     posix_memalign(reinterpret_cast<void**>(child_centroid), 16, dim_);
@@ -185,6 +185,14 @@ VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& featur
       nearest = *i;
       d_min = distance;
     }
+  }
+  // TODO: debugging code, remove
+  if (nearest == NULL) {
+    printf("ERROR: findNearestChild returning NULL\n");
+    if (node->children.empty())
+      printf("node->children is empty\n");
+    else
+      printf("node->children is not empty\n");
   }
   return nearest;
 }
@@ -439,7 +447,7 @@ void VocabularyTree::loadAux(Node* node, FILE* in, unsigned int indent_level)
   fscanf(in, "Children: %u\n", &num_children);
   node->children.reserve(num_children);
   for (unsigned int i = 0; i < num_children; ++i) {
-    Node* child = pool_.construct();
+    Node* child = newNode();
     node->children.push_back(child);
     loadAux(child, in, indent_level + 1);
   }
@@ -453,7 +461,7 @@ void VocabularyTree::load(const std::string& file)
   fscanf(in, "Levels: %u\n", &levels_);
   fscanf(in, "Dimension: %u\n", &dim_);
   fscanf(in, "Database images: %u\n", &db_size);
-  root_ = pool_.construct();
+  root_ = newNode();
   loadAux(root_, in);
   if (db_size > 0) {
     db_vectors_.resize(db_size);
