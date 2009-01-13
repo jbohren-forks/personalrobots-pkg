@@ -7,7 +7,7 @@
 namespace features {
 
 class RTreeClassifier
-{
+{   
 public:
   static const int DEFAULT_TREES = 50;
     
@@ -40,6 +40,7 @@ public:
   void getFloatSignature(IplImage *patch, float *sig) { getSignature(patch, sig); }
 
   static int countNonZeroElements(float *vec, int n, double tol=1e-10);
+  static inline void safeSignatureAlloc(uint8_t **sig, int num_sig=1, int sig_len=176);
     
   inline int classes() { return classes_; }
   inline int original_num_classes() { return original_num_classes_; }
@@ -53,7 +54,7 @@ public:
   void saveAllPosteriors(std::string file_url);
   void setPosteriorsFromTextfile(std::string url, int red_dim);
 
-private:  
+private:    
   int classes_;
   uint8_t **posteriors_;
   uint16_t *ptemp_;
@@ -61,6 +62,20 @@ private:
   std::vector<RandomizedTree> trees_;
   bool keep_floats_;
 };
+
+// Returns 16-byte aligned signatures that can be passed to getSignature().
+// Release by calling free() - NOT delete!
+//
+// note: 1) for num_sig>1 all signatures will still be 16-byte aligned, as
+//          long as sig_len%16 == 0 holds.
+//       2) casting necessary, otherwise it breaks gcc's strict aliasing rules
+inline void RTreeClassifier::safeSignatureAlloc(uint8_t **sig, int num_sig, int sig_len)
+{
+   assert(sig_len == 176);
+   void *p_sig;
+   posix_memalign(&p_sig, 16, num_sig*sig_len*sizeof(uint8_t));
+   *sig = reinterpret_cast<uint8_t*>(p_sig);
+}
 
 } // namespace features
 

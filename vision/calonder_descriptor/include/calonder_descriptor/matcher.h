@@ -119,7 +119,7 @@ int BruteForceMatcher<SigElem, Data>::findMatch(const SigElem* query_sig,
     }
     ++index;
   }
-
+//printf("best_dist=%i, t=%i\n", best_distance, threshold_);    
   *distance = best_distance;
   return match;
 }

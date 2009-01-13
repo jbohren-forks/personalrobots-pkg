@@ -87,7 +87,7 @@ inline int L1Distance_176(const uint8_t *s1, const uint8_t *s2)
   acc = _mm_add_epi16(acc, _mm_srli_si128(acc, 8)); // add both halves
   return _mm_cvtsi128_si32(acc);
 #else
-  #error "just to let you know: using unoptimized L1 distance! now uncomment this line"
+  #error "NOTE: you're about to use unoptimized L1 distance! If this is ok, you can uncomment this line." */
   return L1Distance(176, s1, s2);
 #endif
 }
@@ -243,7 +243,7 @@ template<> struct L1DistanceFunc<float>
 // TODO: currently assumes dimension == 176
 template<> struct L1DistanceFunc<uint8_t>
 {
-  L1DistanceFunc(int = 0) {}
+  L1DistanceFunc(int arg = 0) {}
   inline int operator()(const uint8_t* a, const uint8_t* b) const {
     return L1Distance_176(a, b);
   }
