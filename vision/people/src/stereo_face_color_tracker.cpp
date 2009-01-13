@@ -48,6 +48,7 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
+#include "image_msgs/ColoredLines.h"
 #include "topic_synchronizer.h"
 #include "tf/transform_listener.h"
 
@@ -304,7 +305,6 @@ public:
 	cv_image_left_ = lbridge_.toIpl();
 	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
 	lcolor_cal_.correctColor(cv_image_left_, cv_image_left_, true, true, COLOR_CAL_BGR);
-	
       }
     }
     else {
@@ -333,105 +333,6 @@ public:
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
     im_size = cvGetSize(cv_image_left_);
-
-    if (detect_faces_) {
-
-      int npeople = people_->getNumPeople();
-      if (!X_) {
-	X_ = cvCreateImage( im_size, IPL_DEPTH_32F, 1);
-	Y_ = cvCreateImage( im_size, IPL_DEPTH_32F, 1);
-	Z_ = cvCreateImage( im_size, IPL_DEPTH_32F, 1);	
-	xyz_ = cvCreateMat(im_size.width*im_size.height,3,CV_32FC1);
-	uvd_ = cvCreateMat(im_size.width*im_size.height,3,CV_32FC1);
-      }
-
-      CvSize roi_size;
-      double x_size, y_size,d;
-      CvScalar avgz;
-      CvMat *xyzpts = cvCreateMat(2,3,CV_32FC1), *uvdpts = cvCreateMat(2,3,CV_32FC1) ;
-      if (npeople == 0) {
-	vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
-#if __FACE_COLOR_TRACKER_DEBUG__
-	printf("Detected faces\n");
-#endif
-
-	float* fptr = (float*)(uvd_->data.ptr);
-	ushort* cptr = (ushort*)(cv_image_disp_->imageData);
-	for (int v =0; v < im_size.height; v++) {
-	  for (int u=0; u<im_size.width; u++) {
-	    *fptr = (float)u; fptr++;
-	    *fptr = (float)v; fptr++;
-	    *fptr = (float)(*cptr); cptr++; fptr++;
-	  }
-	}
-	fptr = NULL;
-	cam_model_->dispToCart(uvd_,xyz_);
-
-	float *fptrx = (float*)(X_->imageData);
-	float *fptry = (float*)(Y_->imageData);
-	float *fptrz = (float*)(Z_->imageData);
-	fptr = (float*)(xyz_->data.ptr);
-	for (int v =0; v < im_size.height; v++) {
-	  for (int u=0; u<im_size.width; u++) {
-	    *fptrx = *fptr; fptrx++; fptr++;
-	    *fptry = *fptr; fptry++; fptr++;
-	    *fptrz = *fptr; fptrz++; fptr++;
-	  }
-	}
-
-	for (unsigned int iface = 0; iface < faces_vector.size(); iface++) {
-	  people_->addPerson();
-	  people_->setFaceBbox2D(faces_vector[iface],iface);
-
-	  // Take the average valid Z within the face bounding box. Invalid values are 0.
-	  avgz.val[0] = cvMedianNonZeroElIn2DArr(Z_,
-						 faces_vector[iface].y+4,faces_vector[iface].y+faces_vector[iface].height-4,
-						 faces_vector[iface].x+4,faces_vector[iface].x+faces_vector[iface].width-4); 
-	  //CvRect tface = cvRect(faces_vector[iface].x+4, faces_vector[iface].y+4, faces_vector[iface].width-8, faces_vector[iface].height-8);
-	  //cvSetImageROI(Z_,tface);
-	  //avgz = cvSum(Z_);
-	  //avgz.val[0] /= cvCountNonZero(Z_);
-	  //cvResetImageROI(Z_);
-
-	  // Get the two diagonal corners of the bounding box in the camera frame.
-	  // Since not all pts will have x,y,z values, we'll take the average z, convert it to d,
-	  // and the real u,v values to approximate the corners.
-	  d = cam_model_->getDisparity(avgz.val[0]);
-	  cvmSet(uvdpts,0,0, faces_vector[iface].x);
-	  cvmSet(uvdpts,0,1, faces_vector[iface].y);
-	  cvmSet(uvdpts,0,2, d);
-	  cvmSet(uvdpts,1,0, faces_vector[iface].x+faces_vector[iface].width-1);
-	  cvmSet(uvdpts,1,1, faces_vector[iface].y+faces_vector[iface].height-1);
-	  cvmSet(uvdpts,1,2, d);
-	  cam_model_->dispToCart(uvdpts,xyzpts);
-
-	  x_size = (cvmGet(xyzpts,1,0)-cvmGet(xyzpts,0,0))/2.0;
-	  y_size = (cvmGet(xyzpts,1,1)-cvmGet(xyzpts,0,1))/2.0;
-	  people_->setFaceCenter3D((cvmGet(xyzpts,1,0)+cvmGet(xyzpts,0,0))/2.0,
-				   (cvmGet(xyzpts,1,1)+cvmGet(xyzpts,0,1))/2.0,
-				   cvmGet(xyzpts,0,2), iface);
-	  people_->setFaceSize3D((x_size>y_size) ? x_size : y_size , iface); 
-
-#if __FACE_COLOR_TRACKER_DEBUG_
-	  printf("face opp corners 2d %d %d %d %d\n",
-		 faces_vector[iface].x,faces_vector[iface].y,
-		 faces_vector[iface].x+faces_vector[iface].width-1, 
-		 faces_vector[iface].y+faces_vector[iface].height-1);
-	  printf("3d center %f %f %f\n", (cvmGet(xyzpts,1,0)+cvmGet(xyzpts,0,0))/2.0, (cvmGet(xyzpts,1,1)+cvmGet(xyzpts,0,1))/2.0,cvmGet(xyzpts,0,2));
-	  printf("3d size %f\n",people_->getFaceSize3D(iface));
-	  printf("Z within the face box:\n");
-	  
-	  for (int v=faces_vector[iface].y; v<=faces_vector[iface].y+faces_vector[iface].height; v++) {
-	    for (int u=faces_vector[iface].x; u<=faces_vector[iface].x+faces_vector[iface].width; u++) {
-	      printf("%4.0f ",cvGetReal2D(Z,v,u));
-	    }
-	    printf("\n");
-	  }
-#endif
-	}
-      }  
-
-    }
 
     // Kill anyone who hasn't received a filter update in a long time.
     people_->killIfFilterUpdateTimeout(limage_.header.stamp);
