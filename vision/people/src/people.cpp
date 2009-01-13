@@ -348,8 +348,9 @@ void People::clearFaceColorHist(int iperson) {
  * Output:
  * A vector of CvRects containing the bounding boxes around found faces.
  *********/ 
-vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model, bool do_draw) {
-  vector<CvRect> faces;
+vector<Box2D3D> People::detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model) {
+  vector<Box2D3D> faces;
+
 
   if (!cascade_) {
     cascade_ = (CvHaarClassifierCascade*)cvLoad(haar_classifier_filename);
@@ -361,8 +362,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
   if (!storage_) {
     storage_ = cvCreateMemStorage(0);
   }
-  CvSize im_size;
-  im_size = cvGetSize(image);
+  CvSize im_size = cvGetSize(image);
 
   // Convert the image to grayscale, if necessary.
   if (cv_image_gray_==NULL) {
@@ -385,51 +385,52 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
 
   // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
   CvScalar color = cvScalar(0,255,0);
-  CvRect one_face;
-  double avg_disp = 0.0, real_size;
-  int r,c;
+  Box2D3D one_face;
+  double avg_disp = 0.0;
   bool good_face;
+  CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
+  CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
   // For each face...
   for (int iface = 0; iface < face_seq->total; iface++) {
 
-    good_face = true;
-    color = cvScalar(0,255,0);
-
-    one_face = *(CvRect*)cvGetSeqElem(face_seq, iface);
+    one_face.status = "good";
+    one_face.box2d = *(CvRect*)cvGetSeqElem(face_seq, iface);
 
     if (disparity_image && cam_model) {
     
       // Get the median disparity in the middle half of the bounding box.
       avg_disp = cvMedianNonZeroElIn2DArr(disparity_image,
-					  floor(one_face.y+0.25*one_face.height),floor(one_face.y+0.75*one_face.height),
-					  floor(one_face.x+0.25*one_face.width), floor(one_face.x+0.75*one_face.width)); 
+					  floor(one_face.box2d.y+0.25*one_face.box2d.height),floor(one_face.box2d.y+0.75*one_face.box2d.height),
+					  floor(one_face.box2d.x+0.25*one_face.box2d.width), floor(one_face.box2d.x+0.75*one_face.box2d.width)); 
 
-      // If the disparity exists but the size is out of bounds, mark it red on the image and don't add it to the output vector.
-      if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_M) {
-	real_size = cam_model->getDeltaX(one_face.width,avg_disp);
-	if (real_size < FACE_SIZE_MIN_M || real_size > FACE_SIZE_MAX_M) {
-	  color = cvScalar(0,0,255);
-	  good_face = false;
+      one_face.center2d = cvScalar(one_face.box2d.x+one_face.box2d.width/2.0,
+				   one_face.box2d.y+one_face.box2d.height/2.0,
+				   avg_disp);
+      one_face.radius2d = one_face.box2d.width/2.0;
+
+      if (avg_disp > 0) {
+	one_face.radius3d = cam_model->getDeltaX(one_face.box2d.width,avg_disp)/2.0;
+	cvmSet(uvd,0,0,one_face.center2d.val[0]);
+	cvmSet(uvd,0,1,one_face.center2d.val[1]);
+	cvmSet(uvd,0,2,avg_disp);
+	cam_model->dispToCart(uvd,xyz);      
+	one_face.center3d = cvScalar(cvmGet(xyz,0,0),cvmGet(xyz,0,1),cvmGet(xyz,0,2));
+	if (one_face.center3d.val[3] > MAX_Z_M || 2.0*one_face.radius3d < FACE_SIZE_MIN_M || 2.0*one_face.radius3d > FACE_SIZE_MAX_M) {
+	  one_face.status = "bad";
 	}
       }
       else {
-	color = cvScalar(255,0,0);
+	one_face.radius3d = 0.0;     
+	one_face.center3d = cvScalar(0.0,0.0,0.0);
+	one_face.status = "unknown";
       }
     }
 
-    // Draw the bounding boxes.
-    if (do_draw) {
-      cvRectangle(image, cvPoint(one_face.x,one_face.y), cvPoint(one_face.x+one_face.width, one_face.y+one_face.height), color, 4);
-      if (disparity_image) {
-	cvRectangle(disparity_image, cvPoint(one_face.x,one_face.y), cvPoint(one_face.x+one_face.width, one_face.y+one_face.height), cvScalar(255), 4);
-      }
-    }
-
-    // Add good faces to the output vector.
-    if (good_face) {
-      faces.push_back(one_face);
-    }
+    // Add faces to the output vector.
+    faces.push_back(one_face);
   }
+  cvReleaseMat(&uvd); uvd = 0;
+  cvReleaseMat(&xyz); xyz = 0;
   return faces;
 }
 
