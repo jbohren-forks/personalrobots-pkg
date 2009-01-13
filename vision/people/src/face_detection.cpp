@@ -148,7 +148,9 @@ public:
     // Advertise a position measure message.
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
     // Advertise the rectangles to draw if stereo_view is running.
-    advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+    if (do_display_ == "remote") {
+      advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+    }
     // Subscribe to filter measurements.
     if (external_init_) {
       subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
@@ -277,7 +279,7 @@ public:
     im_size = cvGetSize(cv_image_left_);
     vector<Box2D3D> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_);
     image_msgs::ColoredLines all_cls;
-    vector<image_msgs::ColoredLine> lines(faces_vector.size());
+    vector<image_msgs::ColoredLine> lines(4*faces_vector.size());
     
 
     // Get the average (median) disparity in the middle half of the bounding box, and compute the face center in 3d. 
@@ -344,49 +346,7 @@ public:
 			cvPoint(one_face->box2d.x+one_face->box2d.width, one_face->box2d.y+one_face->box2d.height), color, 4);
 	  }
 	  else if (do_display_ == "remote") {
-	    //image_msgs::ColoredLine l;
-	    //all_cls.lines.push_back(l);
-	    //all_cls.lines.push_back(l);
-	    //all_cls.lines.push_back(l);
-	    //all_cls.lines.push_back(l);
-
-	    // 	  all_cls.lines[4*iface].r = color.val[2]; all_cls.lines[4*iface+1].r = all_cls.lines[4*iface].r; 
-	    // 	  all_cls.lines[4*iface+2].r = all_cls.lines[4*iface].r; all_cls.lines[4*iface+3].r = all_cls.lines[4*iface].r;
-	    // 	  all_cls.lines[4*iface].g = color.val[1]; all_cls.lines[4*iface+1].g = all_cls.lines[4*iface].g; 
-	    // 	  all_cls.lines[4*iface+2].g = all_cls.lines[4*iface].g; all_cls.lines[4*iface+3].g = all_cls.lines[4*iface].g;
-	    // 	  all_cls.lines[4*iface].b = color.val[0]; all_cls.lines[4*iface+1].b = all_cls.lines[4*iface].b; 
-	    // 	  all_cls.lines[4*iface+2].b = all_cls.lines[4*iface].b; all_cls.lines[4*iface+3].b = all_cls.lines[4*iface].b;
-
-	    // 	  all_cls.lines[4*iface].x0 = one_face->box2d.x; 
-	    // 	  all_cls.lines[4*iface].x1 = one_face->box2d.x + one_face->box2d.width;
-	    // 	  all_cls.lines[4*iface].y0 = one_face->box2d.y; 
-	    // 	  all_cls.lines[4*iface].y1 = one_face->box2d.y;
-
-	    // 	  all_cls.lines[4*iface+1].x0 = one_face->box2d.x; 
-	    // 	  all_cls.lines[4*iface+1].x1 = one_face->box2d.x;
-	    // 	  all_cls.lines[4*iface+1].y0 = one_face->box2d.y; 
-	    // 	  all_cls.lines[4*iface+1].y1 = one_face->box2d.y + one_face->box2d.height;
-
-	    // 	  all_cls.lines[4*iface+2].x0 = one_face->box2d.x; 
-	    // 	  all_cls.lines[4*iface+2].x1 = one_face->box2d.x + one_face->box2d.width;
-	    // 	  all_cls.lines[4*iface+2].y0 = one_face->box2d.y + one_face->box2d.height; 
-	    // 	  all_cls.lines[4*iface+2].y1 = one_face->box2d.y + one_face->box2d.height;
-
-	    // 	  all_cls.lines[4*iface+3].x0 = one_face->box2d.x + one_face->box2d.width; 
-	    // 	  all_cls.lines[4*iface+3].x1 = one_face->box2d.x + one_face->box2d.width;
-	    // 	  all_cls.lines[4*iface+3].y0 = one_face->box2d.y; 
-	    // 	  all_cls.lines[4*iface+3].y1 = one_face->box2d.y + one_face->box2d.height;
-
-	    // 	  all_cls.lines[4*iface].header.stamp = limage_.header.stamp;
-	    // 	  all_cls.lines[4*iface+1].header.stamp = limage_.header.stamp;
-	    // 	  all_cls.lines[4*iface+2].header.stamp = limage_.header.stamp;
-	    // 	  all_cls.lines[4*iface+3].header.stamp = limage_.header.stamp;
-	    // 	  all_cls.lines[4*iface].header.frame_id = limage_.header.frame_id;
-	    // 	  all_cls.lines[4*iface+1].header.frame_id = limage_.header.frame_id;
-	    // 	  all_cls.lines[4*iface+2].header.frame_id = limage_.header.frame_id;
-	    // 	  all_cls.lines[4*iface+3].header.frame_id = limage_.header.frame_id;
-	  
-	  
+	    
 	    lines[4*iface].r = color.val[2]; lines[4*iface+1].r = lines[4*iface].r; 
 	    lines[4*iface+2].r = lines[4*iface].r; lines[4*iface+3].r = lines[4*iface].r;
 	    lines[4*iface].g = color.val[1]; lines[4*iface+1].g = lines[4*iface].g; 
@@ -422,6 +382,7 @@ public:
 	    lines[4*iface+1].header.frame_id = limage_.header.frame_id;
 	    lines[4*iface+2].header.frame_id = limage_.header.frame_id;
 	    lines[4*iface+3].header.frame_id = limage_.header.frame_id;
+	  
 	  }
 	}	
       } // End for iface
