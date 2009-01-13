@@ -21,7 +21,7 @@
   <property name="wrist_flex_cal" value="0.04500" />
   <property name="wrist_roll_cal" value="0.00111" />
 
-  <macro name="pr2_upper_arm" params="side parent reflect *origin">
+  <macro name="pr2_shoulder" params="side parent reflect *origin">
 
     <!-- Shoulder pan -->
 
@@ -172,6 +172,59 @@
       <joint name="${side}_upper_arm_roll_joint" />
 
       <inertial>
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="${side}_shoulder_pan_visual">
+          <mesh filename="shoulder_yaw" scale="0.1 0.1 0.1"/>
+        </geometry>
+      </visual>
+      <collision> <!-- TODO: collision tag should be optional -->
+        <origin xyz="0.05 0 -0.2" rpy="0 0 0 " />
+        <geometry name="${side}_shoulder_pan_collision">
+          <box size="0.347 0.254 0.646" />
+        </geometry>
+      </collision>
+      <inertial> <!-- TODO: inertial tag should be optional -->
+        <mass value="16.29553" />
+        <com xyz="-0.005215 -0.030552 -0.175743" />
+        <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
+                 iyy="0.818419457224"  iyz="-0.033999499551"
+                 izz="0.13915007406" />
+      </inertial>
+
+      <map name="${side}_upper_arm_roll_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="${side}_upper_arm_roll_trans">
+      <actuator name="${side}_upper_arm_roll_motor" />
+      <joint name="${side}_upper_arm_roll_joint" />
+      <mechanicalReduction>32.65</mechanicalReduction>
+    </transmission>
+
+  </macro>
+
+
+
+  <!-- ============================   Upper Arm   ============================ -->
+
+
+  <macro name="pr2_upper_arm" params="side parent reflect">
+
+    <joint name="${side}_upper_arm_joint" type="fixed" />
+
+    <link name="${side}_upper_arm_link">
+      <parent name="${parent}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="${side}_upper_arm_joint" />
+
+      <inertial>
         <mass value="4.9481" />
         <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- x becomes y, y becomes z, z becomes x, not sure about the signs -->
         <inertia  ixx="0.01338328491" ixy="0.00011947689"  ixz="0.00154493231"
@@ -195,10 +248,11 @@
           <box size="0.362 0.144 0.157" />
         </geometry>
       </collision>
+
       <map name="${side}_upper_arm_roll_sensor" flag="gazebo">
         <verbatim key="${side}_upper_arm_roll_bumper_sensor">
           <sensor:contact name="${side}_upper_arm_roll_contact_sensor">
-            <geom>${side}_upper_arm_roll_collision</geom>
+            <geom>${side}_upper_arm_roll_collision</geom><!-- TODO -->
             <updateRate>1000.0</updateRate>
             <controller:ros_bumper name="${side}_upper_arm_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
@@ -210,16 +264,10 @@
         </verbatim>
       </map>
 
-      <map name="${side}_upper_arm_roll_gravity" flag="gazebo">
+      <map name="${side}_upper_arm_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
-
-    <transmission type="SimpleTransmission" name="${side}_upper_arm_roll_trans">
-      <actuator name="${side}_upper_arm_roll_motor" />
-      <joint name="${side}_upper_arm_roll_joint" />
-      <mechanicalReduction>32.65</mechanicalReduction>
-    </transmission>
 
     <!-- Elbow flex -->
 
@@ -236,7 +284,7 @@
     </joint>
 
     <link name="${side}_elbow_flex_link">
-      <parent name="${side}_upper_arm_roll_link" />
+      <parent name="${side}_upper_arm_link" />
       <origin xyz="0.4 0 0" rpy="0 0 0" />
       <joint name="${side}_elbow_flex_joint" />
 
@@ -330,13 +378,6 @@
       </verbatim>
     </map>
 
-
-  </macro>
-
-
-
-  <macro name="pr2_forearm" params="side parent reflect">
-
     <!-- Forearm roll -->
 
     <joint name="${side}_forearm_roll_joint" type="revolute">
@@ -350,9 +391,55 @@
     </joint>
 
     <link name="${side}_forearm_roll_link">
-      <parent name="${parent}_link" />
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${side}_elbow_flex_link" />
       <joint name="${side}_forearm_roll_joint" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="${side}_forearm_roll_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+
+      <visual><!-- TODO: need a mesh for this -->
+        <origin xyz="1 0 0" rpy="0 0 1.57" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="${side}_forearm_roll_visual">
+          <mesh filename="wheel" scale="6 6 6" />
+        </geometry>
+      </visual>
+      <collision> <!-- TODO: collision tag should be optional -->
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${side}_shoulder_pan_collision">
+          <box size="0.1 0.1 0.1" />
+        </geometry>
+      </collision>
+      <inertial> <!-- TODO: inertial tag should be optional -->
+        <mass value="16.29553" />
+        <com xyz="-0.005215 -0.030552 -0.175743" />
+        <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
+                 iyy="0.818419457224"  iyz="-0.033999499551"
+                 izz="0.13915007406" />
+      </inertial>
+    </link>
+
+    <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
+      <actuator name="${side}_forearm_roll_motor" />
+      <joint name="${side}_forearm_roll_joint" />
+      <mechanicalReduction>${576/25*55/14}</mechanicalReduction>
+    </transmission>
+
+  </macro>
+
+
+  <!-- ============================   Forearm   ============================ -->
+
+  <macro name="pr2_forearm" params="side parent reflect">
+
+    <joint name="${side}_forearm_joint" type="fixed" />
+    <link name="${side}_forearm_link">
+      <parent name="${parent}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="${side}_forearm_joint" />
       <inertial>
         <mass value="1.804155" />
         <com xyz="0.179474 -0.000058 0.013779" /> <!-- z to x, x to y, y to z -->
@@ -389,16 +476,10 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${side}_forearm_roll_gravity" flag="gazebo">
+      <map name="${side}_forearm_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
-
-    <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
-      <actuator name="${side}_forearm_roll_motor" />
-      <joint name="${side}_forearm_roll_joint" />
-      <mechanicalReduction>${576/25*55/14}</mechanicalReduction>
-    </transmission>
 
     <!-- Wrist flex -->
 
@@ -415,7 +496,7 @@
     </joint>
 
     <link name="${side}_wrist_flex_link">
-      <parent name="${side}_forearm_roll_link" />
+      <parent name="${side}_forearm_link" />
       <origin xyz="0.32025 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_flex_joint" />
       <inertial>
@@ -562,10 +643,11 @@
 
 
   <macro name="pr2_arm" params="side parent reflect *origin">
-    <pr2_upper_arm side="${side}" reflect="${reflect}" parent="${parent}">
+    <pr2_shoulder side="${side}" reflect="${reflect}" parent="${parent}">
       <insert_block name="origin" />
-    </pr2_upper_arm>
-    <pr2_forearm side="${side}" reflect="${reflect}" parent="${side}_elbow_flex" />
+    </pr2_shoulder>
+    <pr2_upper_arm side="${side}" reflect="${reflect}" parent="${side}_upper_arm_roll_link" />
+    <pr2_forearm side="${side}" reflect="${reflect}" parent="${side}_forearm_roll_link" />
   </macro>
 
 
