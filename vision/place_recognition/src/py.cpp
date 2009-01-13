@@ -54,7 +54,7 @@ static int im2arr(CvArr **dst, PyObject *src)
   return 1;
 }
 
-static const char classifier_file[] = "/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old";
+static const char classifier_file[] = "/u/prdata/calonder_trees/current.rtc";
 
 typedef struct {
   PyObject_HEAD

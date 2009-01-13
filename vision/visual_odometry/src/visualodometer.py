@@ -302,7 +302,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    self.cl.read('/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old')
+    self.cl.read('/u/prdata/calonder_trees/current.rtc')
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)
