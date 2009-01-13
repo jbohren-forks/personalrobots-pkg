@@ -96,8 +96,7 @@ unsigned int VocabularyTree::insert(const FeatureMatrix& image_features)
   unsigned int id = db_vectors_.size();
   db_vectors_.resize(id + 1);
   for (int i = 0; i < image_features.rows(); ++i)
-    addFeatureToDatabaseVector(root_, id, image_features.row(i));
-    
+    addFeatureToDatabaseVector(root_, id, image_features.row(i));    
   normalizeL1(db_vectors_[id]);
   
   return id;
