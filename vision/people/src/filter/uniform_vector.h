@@ -39,23 +39,21 @@
 
 #include <pdf/pdf.h>
 #include <tf/tf.h>
-#include "state_vector.h"
-
 
 
 
 namespace BFL
 {
   /// Class representing uniform vector
-  class UniformVector: public Pdf<StateVector>
+  class UniformVector: public Pdf<tf::Vector3>
     {
     private:
-      StateVector mu_, size_;
+      tf::Vector3 mu_, size_;
       double probability_;
       
     public:
       /// Constructor
-      UniformVector (const StateVector& mu, const StateVector& size);
+      UniformVector (const tf::Vector3& mu, const tf::Vector3& size);
 
       /// Destructor
       virtual ~UniformVector();
@@ -64,11 +62,11 @@ namespace BFL
       friend std::ostream& operator<< (std::ostream& os, const UniformVector& g);
     
       // Redefinition of pure virtuals
-      virtual Probability ProbabilityGet(const StateVector& input) const;
-      bool SampleFrom (vector<Sample<StateVector> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;
-      virtual bool SampleFrom (Sample<StateVector>& one_sample, int method=DEFAULT, void * args=NULL) const;
+      virtual Probability ProbabilityGet(const tf::Vector3& input) const;
+      bool SampleFrom (vector<Sample<tf::Vector3> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;
+      virtual bool SampleFrom (Sample<tf::Vector3>& one_sample, int method=DEFAULT, void * args=NULL) const;
 
-      virtual StateVector ExpectedValueGet() const;
+      virtual tf::Vector3 ExpectedValueGet() const;
       virtual MatrixWrapper::SymmetricMatrix CovarianceGet() const;
 
     };

@@ -38,14 +38,13 @@
 #define MCPDF_VECTOR_H
 
 #include <pdf/mcpdf.h>
-#include "state_vector.h"
 #include <tf/tf.h>
 #include <std_msgs/PointCloud.h>
 
 namespace BFL
 {
   /// Class representing a vector mcpdf
-  class MCPdfVector: public MCPdf<StateVector>
+  class MCPdfVector: public MCPdf<tf::Vector3>
     {
     public:
       /// Constructor
@@ -55,13 +54,13 @@ namespace BFL
       virtual ~MCPdfVector();
 
       /// Get evenly distributed particle cloud
-      void getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
+      void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
 
       /// Get pos histogram from certain area
-      MatrixWrapper::Matrix getHistogram(const StateVector& min, const StateVector& max, const StateVector& step) const;
+      MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
-      virtual StateVector ExpectedValueGet() const;
-      virtual WeightedSample<StateVector> SampleGet(unsigned int particle) const;
+      virtual tf::Vector3 ExpectedValueGet() const;
+      virtual WeightedSample<tf::Vector3> SampleGet(unsigned int particle) const;
       virtual unsigned int numParticlesGet() const;
 
     };

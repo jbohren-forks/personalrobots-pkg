@@ -48,9 +48,9 @@ static const unsigned int DIM_SYS_VECTOR            = 3;
 
 
 // Constructor
-SysPdfVector::SysPdfVector(const StateVector& sigma)
-  : ConditionalPdf<StateVector, StateVector>(DIM_SYS_VECTOR, NUM_SYS_VECTOR_COND_ARGS),
-    noise_(StateVector(0,0,0), sigma)
+SysPdfVector::SysPdfVector(const Vector3& sigma)
+  : ConditionalPdf<Vector3, Vector3>(DIM_SYS_VECTOR, NUM_SYS_VECTOR_COND_ARGS),
+    noise_(Vector3(0,0,0), sigma)
 {}
 
 
@@ -62,7 +62,7 @@ SysPdfVector::~SysPdfVector()
 
 
 Probability 
-SysPdfVector::ProbabilityGet(const StateVector& state) const
+SysPdfVector::ProbabilityGet(const Vector3& state) const
 {
   cerr << "SysPdfVector::ProbabilityGet Method not applicable" << endl;
   assert(0);
@@ -71,15 +71,15 @@ SysPdfVector::ProbabilityGet(const StateVector& state) const
 
 
 bool
-SysPdfVector::SampleFrom (Sample<StateVector>& one_sample, int method, void *args) const
+SysPdfVector::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
 {
-  StateVector& res = one_sample.ValueGet();
+  Vector3& res = one_sample.ValueGet();
 
   // get conditional argument: state
   res = this->ConditionalArgumentGet(0);
 
   // add noise
-  Sample<StateVector> noise_sample;
+  Sample<Vector3> noise_sample;
   noise_.SampleFrom(noise_sample, method, args);
   res += noise_sample.ValueGet();
 
@@ -87,12 +87,12 @@ SysPdfVector::SampleFrom (Sample<StateVector>& one_sample, int method, void *arg
 }
 
 
-StateVector
+Vector3
 SysPdfVector::ExpectedValueGet() const
 {
   cerr << "SysPdfVector::ExpectedValueGet Method not applicable" << endl;
   assert(0);
-  return StateVector();
+  return Vector3();
 
 }
 

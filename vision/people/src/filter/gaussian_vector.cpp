@@ -43,8 +43,8 @@ using namespace tf;
 
 namespace BFL
 {
-  GaussianVector::GaussianVector(const StateVector& mu, const StateVector& sigma)
-    : Pdf<StateVector> ( 1 ),
+  GaussianVector::GaussianVector(const Vector3& mu, const Vector3& sigma)
+    : Pdf<Vector3> ( 1 ),
       mu_(mu),
       sigma_(sigma),
       sigma_changed_(true)
@@ -64,13 +64,13 @@ namespace BFL
     return os;
   }
 
-  void GaussianVector::sigmaSet( const StateVector& sigma )
+  void GaussianVector::sigmaSet( const Vector3& sigma )
   {
     sigma_ = sigma;
     sigma_changed_ = true;
   }
 
-  Probability GaussianVector::ProbabilityGet(const StateVector& input) const
+  Probability GaussianVector::ProbabilityGet(const Vector3& input) const
   {
     if (sigma_changed_){
       sigma_changed_ = false;
@@ -81,7 +81,7 @@ namespace BFL
       sqrt_ = 1/ sqrt(M_PI*M_PI*M_PI* sigma_sq_[0] * sigma_sq_[1] * sigma_sq_[2]);
     }
 
-    StateVector diff = input - mu_;
+    Vector3 diff = input - mu_;
     return sqrt_ * exp( - (diff[0]*diff[0]/sigma_sq_[0])
 			- (diff[1]*diff[1]/sigma_sq_[1])
 			- (diff[2]*diff[2]/sigma_sq_[2]) );
@@ -89,10 +89,10 @@ namespace BFL
 
 
   bool
-  GaussianVector::SampleFrom (vector<Sample<StateVector> >& list_samples, const int num_samples, int method, void * args) const
+  GaussianVector::SampleFrom (vector<Sample<Vector3> >& list_samples, const int num_samples, int method, void * args) const
   {
     list_samples.resize(num_samples);
-    vector<Sample<StateVector> >::iterator sample_it = list_samples.begin();
+    vector<Sample<Vector3> >::iterator sample_it = list_samples.begin();
     for (sample_it=list_samples.begin(); sample_it!=list_samples.end(); sample_it++)
       SampleFrom( *sample_it, method, args);
 
@@ -101,16 +101,16 @@ namespace BFL
 
 
   bool
-  GaussianVector::SampleFrom (Sample<StateVector>& one_sample, int method, void * args) const
+  GaussianVector::SampleFrom (Sample<Vector3>& one_sample, int method, void * args) const
   {
-    one_sample.ValueSet( StateVector(rnorm(mu_[0], sigma_[0]), 
+    one_sample.ValueSet( Vector3(rnorm(mu_[0], sigma_[0]), 
 				 rnorm(mu_[1], sigma_[1]),
 				 rnorm(mu_[2], sigma_[2])));
     return true;
   }
 
 
-  StateVector
+  Vector3
   GaussianVector::ExpectedValueGet (  ) const 
   { 
     return mu_;

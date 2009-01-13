@@ -51,8 +51,6 @@ class StatePosVel
   /// Constructor
   StatePosVel(const tf::Vector3& pos=tf::Vector3(0,0,0), 
 	      const tf::Vector3& vel=tf::Vector3(0,0,0)):  pos_(pos), vel_(vel) {};
-  
-  StatePosVel(unsigned int dim):  pos_(tf::Vector3(0,0,0)), vel_(tf::Vector3(0,0,0)) {};
 
   /// Destructor
   ~StatePosVel() {};

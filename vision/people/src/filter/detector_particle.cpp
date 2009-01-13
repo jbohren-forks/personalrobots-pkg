@@ -53,8 +53,8 @@ namespace estimation
   DetectorParticle::DetectorParticle(unsigned int num_particles):
     prior_(num_particles),
     filter_(NULL),
-    sys_model_(StateVector(0.1,0.1,0.1)),
-    meas_model_(StateVector(0.1,0.1,0.1)),
+    sys_model_(Vector3(0.1,0.1,0.1)),
+    meas_model_(Vector3(0.1,0.1,0.1)),
     detector_initialized_(false),
     num_particles_(num_particles)
   {};
@@ -68,16 +68,16 @@ namespace estimation
 
 
   // initialize prior density of filter 
-  void DetectorParticle::initialize(const StateVector& mu, const StateVector& size, const double time)
+  void DetectorParticle::initialize(const Vector3& mu, const Vector3& size, const double time)
   {
     cout << "Initializing detector with " << num_particles_ << " particles, with uniform size " 
 	 << size << " around " << mu << endl;
 
     UniformVector uniform_vector(mu, size);
-    vector<Sample<StateVector> > prior_samples(num_particles_);
+    vector<Sample<Vector3> > prior_samples(num_particles_);
     uniform_vector.SampleFrom(prior_samples, num_particles_, CHOLESKY, NULL);
     prior_.ListOfSamplesSet(prior_samples);
-    filter_ = new BootstrapFilter<StateVector, StateVector>(&prior_, &prior_, 0, num_particles_/4.0);
+    filter_ = new BootstrapFilter<Vector3, Vector3>(&prior_, &prior_, 0, num_particles_/4.0);
 
     // detector initialized
     detector_initialized_ = true;
@@ -104,7 +104,7 @@ namespace estimation
 
 
   // update filter correction
-  bool DetectorParticle::updateCorrection(const StateVector&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
+  bool DetectorParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov, const double time)
   {
     assert(cov.columns() == 3);
 
@@ -123,14 +123,14 @@ namespace estimation
 
 
   // get evenly spaced particle cloud
-  void DetectorParticle::getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const
+  void DetectorParticle::getParticleCloud(const Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
   {
     ((MCPdfVector*)(filter_->PostGet()))->getParticleCloud(step, threshold, cloud);
   };
 
 
   // get most recent filter posterior 
-  void DetectorParticle::getEstimate(StateVector& est) const
+  void DetectorParticle::getEstimate(Vector3& est) const
   {
     est = ((MCPdfVector*)(filter_->PostGet()))->ExpectedValueGet();
   };
@@ -138,7 +138,7 @@ namespace estimation
 
   void DetectorParticle::getEstimate(PositionMeasurement& est) const
   {
-    StateVector tmp = filter_->PostGet()->ExpectedValueGet();
+    Vector3 tmp = filter_->PostGet()->ExpectedValueGet();
 
     est.pos.x = tmp[0];
     est.pos.y = tmp[1];
@@ -153,7 +153,7 @@ namespace estimation
 
 
   /// Get histogram from certain area
-  Matrix DetectorParticle::getHistogram(const StateVector& min, const StateVector& max, const StateVector& step) const
+  Matrix DetectorParticle::getHistogram(const Vector3& min, const Vector3& max, const Vector3& step) const
   {
     return ((MCPdfVector*)(filter_->PostGet()))->getHistogram(min, max, step);
   };

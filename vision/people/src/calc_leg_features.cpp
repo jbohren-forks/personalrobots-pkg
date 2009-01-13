@@ -116,7 +116,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   }
 
-  if (next_ind < scan.ranges.size())
+  if (next_ind < (int)scan.ranges.size())
   {
     Sample* next = Sample::Extract(next_ind, scan);
     if (next)
@@ -304,15 +304,15 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   {
     float mlx = (*first)->x - (*mid)->x;
     float mly = (*first)->y - (*mid)->y;
-    float L_ml = sqrt(mlx*mlx + mly*mly);
+    //float L_ml = sqrt(mlx*mlx + mly*mly);
 
     float mrx = (*last)->x - (*mid)->x;
     float mry = (*last)->y - (*mid)->y;
     float L_mr = sqrt(mrx*mrx + mry*mry);
 
-    float lrx = (*first)->x - (*last)->x;
-    float lry = (*first)->y - (*last)->y;
-    float L_lr = sqrt(lrx*lrx + lry*lry);
+    //float lrx = (*first)->x - (*last)->x;
+    //float lry = (*first)->y - (*last)->y;
+    //float L_lr = sqrt(lrx*lrx + lry*lry);
       
     float A = (mlx*mrx + mly*mry) / pow(L_mr, 2);
     float B = (mlx*mry - mly*mrx) / pow(L_mr, 2);

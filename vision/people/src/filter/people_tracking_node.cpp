@@ -118,7 +118,7 @@ namespace estimation
   {
     // get measurement in fixed frame
     Stamped<Vector3> meas_rel, meas;
-    meas_rel.setData(StateVector(message->pos.x, message->pos.y, message->pos.z));
+    meas_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
     meas_rel.stamp_    = message->header.stamp;
     meas_rel.frame_id_ = message->header.frame_id;
     robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
@@ -150,8 +150,8 @@ namespace estimation
       // initialize a new tracker
       if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
 	stringstream tracker_name;
-	StatePosVel prior_sigma(StateVector(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
-				StateVector(0.0000001, 0.0000001, 0.0000001));
+	StatePosVel prior_sigma(Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
+				Vector3(0.0000001, 0.0000001, 0.0000001));
 	tracker_name << "person " << tracker_counter_++;
 	Tracker* new_tracker = new TrackerKalman(tracker_name.str(), sys_sigma_);
 	//Tracker* new_tracker = new TrackerParticle(tracker_name.str(), num_particles_tracker, sys_sigma_);

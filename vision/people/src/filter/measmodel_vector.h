@@ -39,7 +39,6 @@
 #define MEASMODEL_VECTOR_H
 
 #include "tf/tf.h"
-#include "state_vector.h"
 #include "gaussian_vector.h"
 #include <model/measurementmodel.h>
 #include <pdf/conditionalpdf.h>
@@ -50,11 +49,11 @@ namespace BFL
 {
 
   class MeasPdfVector 
-    : public BFL::ConditionalPdf<StateVector, StateVector>
+    : public BFL::ConditionalPdf<tf::Vector3, tf::Vector3>
   {
   public:
     /// Constructor
-    MeasPdfVector(const StateVector& sigma);
+    MeasPdfVector(const tf::Vector3& sigma);
     
     /// Destructor
     virtual ~MeasPdfVector();
@@ -63,9 +62,9 @@ namespace BFL
     void CovarianceSet(const  MatrixWrapper::SymmetricMatrix& cov);
 
     // Redefining pure virtual methods
-    virtual BFL::Probability ProbabilityGet(const StateVector& input) const;
-    virtual bool SampleFrom (BFL::Sample<StateVector>& one_sample, int method, void *args) const;  // Not applicable
-    virtual StateVector ExpectedValueGet() const; // Not applicable
+    virtual BFL::Probability ProbabilityGet(const tf::Vector3& input) const;
+    virtual bool SampleFrom (BFL::Sample<tf::Vector3>& one_sample, int method, void *args) const;  // Not applicable
+    virtual tf::Vector3 ExpectedValueGet() const; // Not applicable
     virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
 
 
@@ -80,12 +79,12 @@ namespace BFL
 
 
   class MeasModelVector
-    : public BFL::MeasurementModel<StateVector, StateVector>
+    : public BFL::MeasurementModel<tf::Vector3, tf::Vector3>
   {
   public:
     /// constructor
-    MeasModelVector(const StateVector& sigma)
-      : BFL::MeasurementModel<StateVector, StateVector>(new MeasPdfVector(sigma))
+    MeasModelVector(const tf::Vector3& sigma)
+      : BFL::MeasurementModel<tf::Vector3, tf::Vector3>(new MeasPdfVector(sigma))
     {};
 
     /// destructor
