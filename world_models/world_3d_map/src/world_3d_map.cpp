@@ -148,19 +148,15 @@ public:
     /* create a thread that handles the publishing of the data */	
     m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
-    subscribe("scan",  m_inputScan,  &World3DMap::doNothing, 1);
-    subscribe("cloud", m_inputCloud, &World3DMap::doNothing, 1);
-    subscribe("base_scan", m_baseScanMsg, &World3DMap::doNothing, 1);
-
     m_scanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
 				 boost::bind(&World3DMap::scanCallback, this, _1),
-				 "scan", "map", 1);
+				 "scan", "map", 50);
     m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
 				 boost::bind(&World3DMap::baseScanCallback, this, _1),
-				 "cloud", "map", 1);
+				 "cloud", "map", 50);
     m_cloudNotifier = new tf::MessageNotifier<std_msgs::PointCloud>(&m_tf, this, 
 				 boost::bind(&World3DMap::pointCloudCallback, this, _1),
-				 "base_scan", "map", 1);
+				 "base_scan", "map", 50);
 
     m_robotFilter = new robot_filter::RobotFilter(this, robot_model_name, m_verbose, bodyPartScale);
   }
@@ -196,8 +192,6 @@ public:
     
     
 private:
-  void doNothing() {
-  }
   
   void pointCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
   {
