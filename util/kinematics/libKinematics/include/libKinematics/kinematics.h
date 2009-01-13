@@ -36,8 +36,11 @@
 #define MAX_NUM_JOINTS 64
 
 #include <iostream>
+#include <vector>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
+
+//using namespace std;
 
 namespace kinematics
 {
@@ -372,6 +375,16 @@ namespace kinematics
         \return Homogeneous matrix representation of the default/home position of the robot
       */
       void SetHomePosition(NEWMAT::Matrix g);
+
+    void SetJointLimits(const std::vector<double> &min_joint_limits, const std::vector<double> &max_joint_limits);
+
+    bool CheckJointLimits(const std::vector<double> &joint_values);
+
+    bool CheckJointLimits(const double &joint_value, const int &joint_num);
+
+    std::vector<double> min_joint_limits_;
+
+    std::vector<double> max_joint_limits_;
 
      protected:
       

@@ -42,6 +42,9 @@
 
 namespace kinematics
 {
+#define NUM_JOINTS_ARM7DOF 7
+#define IK_EPS 1e-6
+
   class arm7DOF : public kinematics::SerialRobot
   {
     public:
@@ -64,7 +67,15 @@ namespace kinematics
 
     void ComputeIKEfficientTheta3(NEWMAT::Matrix g, double t3);
 
+    double increment_;
+
+    bool computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_guess);
+
+    bool setAngleMultipliers(std::vector<double> angle_mult);
+
     private:
+
+    bool use_joint_limits_;
 
     double ap_[5];
 
@@ -73,6 +84,8 @@ namespace kinematics
     int solveCosineEqn(const double &a, const double &b, const double &c, double &soln1, double &soln2);
 
     std::vector<double> solution_;
+
+    std::vector<double> angle_multipliers_;
 
     NEWMAT::Matrix matInv(const NEWMAT::Matrix &g);
 
@@ -84,6 +97,19 @@ namespace kinematics
 
     int solve_quadratic(double a, double b, double c, double *x1, double *x2);
 
+    bool computeNewGuess(const double &initial_value, double &return_value, int joint_num);
+
+    int num_positive_increments_;
+
+    int num_negative_increments_;
+
+    bool positive_increment_valid_;
+
+    bool negative_increment_valid_;
+
+    bool last_increment_positive_;
+
+    bool last_increment_negative_;
 
   };
 }
