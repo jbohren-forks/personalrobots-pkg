@@ -31,12 +31,12 @@
 #define TOPOLOGICAL_MAP_BOTTLENECK_GRAPH_H
 
 #include <utility>
+#include <map>
 #include <iostream>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/multi_array.hpp>
 #include "gridcell.h"
-#include <discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h>
 
 namespace topological_map
 {
@@ -74,9 +74,6 @@ typedef boost::multi_array<bool, 2> GridArray;
 // Array mapping from grid cell to topological graph node
 typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 
-// Roadmap overlaid over topological map
-// Roadmap consists of grid cells, as opposed to topological map which consists of regions
-typedef AdjacencyListSBPLEnv<GridCell> Roadmap;
 
 // Externally used ops
 class IndexedBottleneckGraph
@@ -89,37 +86,28 @@ public:
 
   int regionId (int r, int c);
   bool lookupVertex (int r, int c, BottleneckVertex* v);
-  VertexDescription vertexDescription (const BottleneckVertex& v) { return boost::get(desc_t(), graph_, v); }
+  VertexDescription& vertexDescription (const BottleneckVertex& v) { return (boost::get(desc_t(), graph_))[v]; }
   
 
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);
   void printBottlenecks (void);
 
-  /*** Create and return (pointer to) an object of type AdjacencyListSBPLEnv<GridCell>
-   * Caller is considered to be the owner of the returned object
-   */
-  Roadmap* makeRoadmap ();
 
-  /** Add to the roadmap the grid cells in the given region (except the ones that are already in the roadmap).  Return the number of added 
-   *  cells (which can be passed to the removeLastPoints method of the roadmap to undo this operation. */
-  int addRegionGridCells (Roadmap* roadmap, int region_id);
+protected:
+  BottleneckGraph graph_;
+  std::map<int,BottleneckVertex> id_vertex_map_;
+  RegionArray grid_cell_vertex_;
+  GridArray is_free_;
+  int num_rows_, num_cols_;
 
 private:
   void writeToStream (std::ostream&);
   void indexRegions (void);
   void setDims (int nr, int nc);
-
-  BottleneckGraph graph_;
-  RegionArray grid_cell_vertex_;
-  map<int,BottleneckVertex> id_vertex_map_;
-
-  GridArray is_free_;
-  int num_rows_, num_cols_;
   
 };
 
-GridCell pointOnBorder (const Region& r1, const Region& r2);
 
    
 

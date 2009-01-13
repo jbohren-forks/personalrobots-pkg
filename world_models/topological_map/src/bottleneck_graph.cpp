@@ -33,7 +33,8 @@
 // 1) Often uses the fact that in boost graph adjacency list graphs with nodes stored in a vector,
 // the vertex descriptors are nonnegative integers (so it would all break if a different storage 
 // method was used)
-// 2) Runs really slow if compiled without optimization
+// 2) Also depends on fact that property maps for this type of graph (adjacency list) are lValuePropertyMaps
+// 3) Runs really slow if compiled without optimization
 
 
 #include <topological_map/bottleneck_graph.h>

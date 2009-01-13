@@ -29,7 +29,7 @@
 
 #include <iostream>
 #include <set>
-#include <topological_map/bottleneck_graph.h>
+#include <topological_map/roadmap_bottleneck_graph.h>
 
 using namespace std; 
 using boost::adjacent_vertices;
@@ -40,7 +40,19 @@ namespace topological_map
 const int g_dx[] = {1, -1, 0, 0};
 const int g_dy[] = {0, 0, -1, 1};
 
-GridCell pointOnBorder (const Region& r1, const Region& r2)
+
+
+RoadmapBottleneckGraph::RoadmapBottleneckGraph() : 
+  roadmap_(0), num_temporary_added_cells_(0) 
+{}
+
+RoadmapBottleneckGraph::~RoadmapBottleneckGraph()
+{
+  delete roadmap_;
+}
+
+
+GridCell RoadmapBottleneckGraph::pointOnBorder (const Region& r1, const Region& r2)
 {
   GridCell neighbor;
 
@@ -59,112 +71,150 @@ GridCell pointOnBorder (const Region& r1, const Region& r2)
 
 
 
-  Roadmap* IndexedBottleneckGraph::makeRoadmap ()
-  {
-    Roadmap* roadmap = new AdjacencyListSBPLEnv<GridCell>();
+void RoadmapBottleneckGraph::initializeRoadmap ()
+{
+  roadmap_ = new AdjacencyListSBPLEnv<GridCell>();
 
-    typedef map<BottleneckVertex,GridCell> VertexCellMap;
-    typedef map<BottleneckVertex,VertexCellMap> VertexPairCellMap;
 
-    /* Map from vertex v to another map from vertex w to added border point between regions v and w
-     * where v is an open region and w is a bottleneck.
-     * Note that having a map like this implicitly assumes that BottleneckVertex objects have operator<
-     * defined.  That is currently true because they come from a boost graph with vertex set of type vecS. */
-    VertexPairCellMap roadmap_points;
+  /* Map from vertex v to another map from vertex w to added border point between regions v and w
+   * where v is an open region and w is a bottleneck.
+   * Note that having a map like this implicitly assumes that BottleneckVertex objects have operator<
+   * defined.  That is currently true because they come from a boost graph with vertex set of type vecS. */
     
-    BottleneckVertexIterator vertex_iter, end;
-    for (tie(vertex_iter,end) = vertices(graph_); vertex_iter!=end; ++vertex_iter) {
-      VertexDescription desc = vertexDescription (*vertex_iter);
-      if (desc.type == OPEN) {
-	BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
-	map<BottleneckVertex,GridCell> new_map;
-	roadmap_points[*vertex_iter] = new_map;
-	for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
-	  VertexDescription neighborDesc = vertexDescription (*adjacency_iter);
-	  GridCell borderPoint = pointOnBorder (desc.region, neighborDesc.region);
-	  roadmap->addPoint (borderPoint);
-	  roadmap_points[*vertex_iter][*adjacency_iter] = borderPoint;
-	}
+  BottleneckVertexIterator vertex_iter, end;
+  for (tie(vertex_iter,end) = vertices(graph_); vertex_iter!=end; ++vertex_iter) {
+    VertexDescription desc = vertexDescription (*vertex_iter);
+    if (desc.type == OPEN) {
+      BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
+      map<BottleneckVertex,GridCell> new_map;
+      roadmap_points_[*vertex_iter] = new_map;
+      for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
+        VertexDescription neighborDesc = vertexDescription (*adjacency_iter);
+        GridCell borderPoint = pointOnBorder (desc.region, neighborDesc.region);
+        roadmap_->addPoint (borderPoint);
+        roadmap_points_[*vertex_iter][*adjacency_iter] = borderPoint;
       }
     }
-
-    
-    VertexPairCellMap::iterator vertex_pair_iter;
-
-    // Loop open regions
-    for (vertex_pair_iter=roadmap_points.begin(); vertex_pair_iter!=roadmap_points.end(); vertex_pair_iter++) {
-
-
-      // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
-      for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
-        GridCell roadmap_cell = target_vertex_iter->second;
-
-        // Loop again over such pairs so we can add edges between roadmap points within this open region
-        for (VertexCellMap::iterator target_vertex_iter2 = vertex_pair_iter->second.begin(); target_vertex_iter2 != vertex_pair_iter->second.end(); target_vertex_iter2++) {
-          GridCell neighbor_cell = target_vertex_iter2->second;
-
-          // Add edges only between different cells, and only once
-          if (neighbor_cell < roadmap_cell) {
-            roadmap->setCost (target_vertex_iter->second, target_vertex_iter2->second);
-          }
-        }
-
-        // Loop over other neighbors of this bottleneck region
-        BottleneckVertex neighboring_vertex = target_vertex_iter->first;
-        BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
-        for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(neighboring_vertex, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
-          if (*adjacency_iter != vertex_pair_iter->first) {
-            roadmap->setCost (roadmap_points[*adjacency_iter][neighboring_vertex], roadmap_cell);
-          }
-        }
-      }
-
-    }
-
-    
-
-    /* TODO
-       1. Look up online documentation
-       2. Iterate over (v,m) in VertexPairCellMap
-       a) Iterate over (w,n) pairs in map and add edges between them
-       b) Also, for each (w,n) pair: iterate over neighbors x of w in the bottleneck graph
-       c) Add an edge between n and roadmapPoints[x][w]
-    */
-
-    return roadmap;
-  }    
-
-  
-
-  int IndexedBottleneckGraph::addRegionGridCells (Roadmap* roadmap, int region_id)
-  {
-    BottleneckVertex v = id_vertex_map_[region_id];
-    VertexDescription desc = vertexDescription (v);
-    int num_added=0;
-    
-    for (Region::iterator grid_cell_iter = desc.region.begin(); grid_cell_iter != desc.region.end(); ++grid_cell_iter) {
-      if (!(roadmap->hasPoint(*grid_cell_iter))) {
-	roadmap->addPoint (*grid_cell_iter);
-	++num_added;
-	for (int i=0; i<4; i++) {
-	  GridCell neighbor(grid_cell_iter->first+g_dx[i], grid_cell_iter->second+g_dy[i]);
-	  if (roadmap->hasPoint(neighbor)) {
-	    roadmap->setCost (*grid_cell_iter, neighbor);
-	  }
-	}
-      }
-    }
-
-    return num_added;
   }
+
     
+  VertexPairCellMap::iterator vertex_pair_iter;
+
+  // Loop open regions
+  for (vertex_pair_iter=roadmap_points_.begin(); vertex_pair_iter!=roadmap_points_.end(); vertex_pair_iter++) {
+
+
+    // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
+    for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
+      GridCell roadmap_cell = target_vertex_iter->second;
+
+      // Loop again over such pairs so we can add edges between roadmap points within this open region
+      for (VertexCellMap::iterator target_vertex_iter2 = vertex_pair_iter->second.begin(); target_vertex_iter2 != vertex_pair_iter->second.end(); target_vertex_iter2++) {
+        GridCell neighbor_cell = target_vertex_iter2->second;
+
+        // Add edges only between different cells, and only once
+        if (neighbor_cell < roadmap_cell) {
+          roadmap_->setCost (target_vertex_iter->second, target_vertex_iter2->second);
+        }
+      }
+
+      // Loop over other neighbors of this bottleneck region
+      BottleneckVertex neighboring_vertex = target_vertex_iter->first;
+      BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
+      for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(neighboring_vertex, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
+        if (*adjacency_iter != vertex_pair_iter->first) {
+          roadmap_->setCost (roadmap_points_[*adjacency_iter][neighboring_vertex], roadmap_cell);
+        }
+      }
+    }
+
+  }
+}    
+
+
+
+
+vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (const GridCell& start, const GridCell& goal)
+{
+  int num_added=0;
+  num_added += ensureCellExists(start);
+  num_added += ensureCellExists(goal);
+  
+  roadmap_->setStartState(start);
+  roadmap_->setGoalState(goal);
+
+  vector<GridCell> solution = roadmap_->findOptimalPath();
+  roadmap_->removeLastPoints(num_added);
+  return solution;
+}
+
+
+
+void RoadmapBottleneckGraph::printRoadmap (void)
+{
+  roadmap_->writeToStream();
+}
+
+void RoadmapBottleneckGraph::switchToRegion (int region_id)
+{
+  removeLastAddedRegionCells();
+  addRegionGridCells (region_id);
+}
+
+void RoadmapBottleneckGraph::addRegionGridCells (int region_id)
+{
+  BottleneckVertex v = id_vertex_map_[region_id];
+  VertexDescription desc = vertexDescription (v);
     
-    
-    
+  for (Region::iterator grid_cell_iter = desc.region.begin(); grid_cell_iter != desc.region.end(); ++grid_cell_iter) {
+    if (!(roadmap_->hasPoint(*grid_cell_iter))) {
+      roadmap_->addPoint (*grid_cell_iter);
+      ++num_temporary_added_cells_;
+      for (int i=0; i<4; i++) {
+        GridCell neighbor(grid_cell_iter->first+g_dx[i], grid_cell_iter->second+g_dy[i]);
+        if (roadmap_->hasPoint(neighbor)) {
+          roadmap_->setCost (*grid_cell_iter, neighbor);
+        }
+      }
+    }
+  }
+}
+
+
+void RoadmapBottleneckGraph::removeLastAddedRegionCells (void)
+{
+  roadmap_->removeLastPoints (num_temporary_added_cells_);
+  num_temporary_added_cells_=0;
+}
 
 
 
+int RoadmapBottleneckGraph::ensureCellExists (const GridCell& cell)
+{
+  int r=cell.first;
+  int c=cell.second;
+  BottleneckVertex v;
+  lookupVertex(r, c, &v);
+  VertexDescription& desc = vertexDescription(v);
 
-
+  if (roadmap_->hasPoint(cell)) {
+    return 0;
+  }
+  else {
+    roadmap_->addPoint (cell);
+    if (desc.type == OPEN) {
+      for (VertexCellMap::iterator vertex_iter = roadmap_points_[v].begin(); vertex_iter != roadmap_points_[v].end(); vertex_iter++) {
+        GridCell other_cell = vertex_iter->second;
+        if ((other_cell<cell) || (cell<other_cell)) {
+          roadmap_->setCost(cell,other_cell);
+        }
+      }
+    }
+ 
+    return 1;
+  }
 
 }
+    
+
+} // namespace topological_map
