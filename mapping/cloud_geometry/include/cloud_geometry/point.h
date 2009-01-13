@@ -36,6 +36,7 @@
 // ROS includes
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
+#include <std_msgs/Point.h>
 #include <math.h>
 
 #include <cfloat>
@@ -43,7 +44,15 @@
 namespace cloud_geometry
 {
 
-  int getChannelIndex (std_msgs::PointCloud points, std::string channel_name);
+  /** \brief Simple leaf (3d box) structure) holding a centroid and the number of points in the leaf */
+  struct Leaf
+  {
+    float centroid_x, centroid_y, centroid_z;
+    int nr_points;
+  };
+
+
+  int getChannelIndex (std_msgs::PointCloud *points, std::string channel_name);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create a quick copy of a point and its associated channels and return the data as a float vector.
@@ -277,7 +286,10 @@ namespace cloud_geometry
       maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
     }
   }
-  
+
+  void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
+                             std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
+  void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
     * \param p the point
