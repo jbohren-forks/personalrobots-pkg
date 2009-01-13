@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="dorylus" type="dorylus_node" args="--mouse 10partyB-20_scenes-15hrs.dory"/>
-  <include file="$(find scene_labeler)/data_collection.xml"/>
-  <include file="$(find sensor_cart)/color_sensors.xml"/>
-</launch>
