@@ -53,6 +53,7 @@ import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest, rostools
 from std_msgs.msg import *
+from robot_msgs.msg import *
 from rostools.msg import *
 from transformations import *
 from numpy import *
