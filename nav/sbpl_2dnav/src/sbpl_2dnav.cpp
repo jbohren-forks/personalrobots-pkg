@@ -41,7 +41,7 @@
 #include <tf/transform_listener.h>
 
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DGoal.h>
 #include <pr2_msgs/OccDiff.h>
 #include <std_srvs/StaticMap.h>
 #include <pr2_srvs/TransientObstacles.h>
@@ -85,7 +85,7 @@ private:
 
   bool goal_set_;
 
-  std_msgs::Planner2DGoal goal_msg_;
+  robot_msgs::Planner2DGoal goal_msg_;
   std_msgs::Polyline2D pointcloud_msg_;
  pr2_msgs::OccDiff occ_diff_;
 };
