@@ -95,12 +95,6 @@ namespace costmap_2d {
 	continue;
       }
 
-      if (map_cloud->pts.empty()) {
-	ROS_ERROR("Cloud is empty.");
-	delete map_cloud;
-	continue;
-      }
-
       // Allocate and buffer the observation
       Observation obs(o, map_cloud);
       buffer_observation(obs);
