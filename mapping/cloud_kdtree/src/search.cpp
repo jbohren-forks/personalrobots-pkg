@@ -208,4 +208,21 @@ namespace cloud_kdtree
     last_call_type_ = RADIUS_SEARCH;
     return (true);
   }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Highgly optimized search for all the nearest neighbors of a query point given its internal index.
+    * \param index the index in the internal data model (created in the KdTree constructor) representing the query point
+    * \param radius the radius of the sphere bounding all the query point's neighbors
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
+    */
+  void
+    KdTree::radiusSearch (unsigned int index, double radius, int max_nn)
+  {
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
+    ann_kd_tree_->annkFRSearch (points_[index], radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
+
+    last_call_type_ = RADIUS_SEARCH;
+  }
 }

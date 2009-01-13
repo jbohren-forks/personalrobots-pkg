@@ -114,6 +114,34 @@ namespace cloud_kdtree
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for KdTree.
+        * \note ATTENTION: This method breaks the 1-1 mapping between the indices returned using \a getNeighborsIndices
+        * and the ones from the \a points message ! When using this method, make sure to get the underlying point data
+        * using the \a getPoint method
+        * \param points the ROS point cloud data array
+        * \param indices the point cloud indices
+        */
+      KdTree (std_msgs::PointCloud *points, std::vector<int> *indices)
+      {
+        epsilon_     = 0.0;   // default error bound value
+        dim_         = 3;     // default number of dimensions (3 = xyz)
+        bucket_size_ = 30;    // default bucket size value
+
+        // Allocate enough data
+        nr_points_ = convertCloudToArray (points, indices, points_);
+        nn_idx_    = new ANNidx [nr_points_];
+        nn_dists_  = new ANNdist [nr_points_];
+        // Create the kd_tree representation
+#ifdef USE_ANN
+        ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
+#else
+        float speedup;
+        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
+        flann_log_verbosity (LOG_NONE);
+#endif
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         * \param dim specify the number of extra channels that we want to include as part of a point. For example if
         * the first 3 channels in \a points are \<r,g,b\>, and dim equals 3, a resulting data point will contain
@@ -159,6 +187,7 @@ namespace cloud_kdtree
       }
 
       int convertCloudToArray (std_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud);
+      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud);
       int convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
       int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
 
@@ -169,6 +198,8 @@ namespace cloud_kdtree
 
       bool radiusSearch (std_msgs::Point32 *p_q, double radius, int max_nn = INT_MAX);
       bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn = INT_MAX);
+
+      void radiusSearch (unsigned int index, double radius, int max_nn = INT_MAX);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Obtain the neighbors' point indices on the last nearestKSearch or radiusSearch
@@ -217,13 +248,34 @@ namespace cloud_kdtree
 #endif
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Get the value of a point located at the given index as a Point32 message
+        * \note This method returns the data at the underlying point index with respect to the internal cloud model!
+        * The mapping is usually 1-1 with the PointCloud message given in the KdTree constructor, unless pointed otherwise.
+        * \param index the point index
+        * \param point the point data
+        */
+      inline void
+        getPoint (int index, std_msgs::Point32 &point)
+      {
+        point.x = points_[index][0];
+        point.y = points_[index][1];
+        point.z = points_[index][2];
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Get the underlying 3D x,y,z values of a point given its index in the cloud
         * \param idx the point index
         * \param x the resultant X coordinate value of the point
         * \param y the resultant Y coordinate value of the point
         * \param z the resultant Z coordinate value of the point
         */
-      inline void get3DPointAsFloat (int i, float &x, float &y, float &z) { x = points_[i][0]; y = points_[i][1]; z = points_[i][2]; }
+      inline void
+        get3DPoint (int idx, float &x, float &y, float &z)
+      {
+        x = points_[idx][0];
+        y = points_[idx][1];
+        z = points_[idx][2];
+      }
 
     private:
 #ifdef USE_ANN

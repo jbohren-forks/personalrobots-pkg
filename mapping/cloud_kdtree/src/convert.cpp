@@ -72,6 +72,46 @@ namespace cloud_kdtree
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Converts a ROS PointCloud message with a given set of indices to the internal ANN point array
+    * representation. Returns the number of points.
+    * \note ATTENTION: This method breaks the 1-1 mapping between the indices returned using \a getNeighborsIndices
+    * and the ones from the \a ros_cloud message ! When using this method, make sure to get the underlying point data
+    * using the \a getPoint method
+    * \param ros_cloud the ROS PointCloud message
+    * \param indices the point cloud indices
+    * \param ann_cloud the ANN point cloud array
+    */
+  int
+    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud)
+  {
+    // No point in doing anything if the array is empty
+    if (ros_cloud->pts.size () == 0 || indices->size () > ros_cloud->pts.size ())
+    {
+      ann_cloud = NULL;
+      return (0);
+    }
+
+    int nr_points = indices->size ();
+
+    ann_cloud = annAllocPts (nr_points, 3);       // default number of dimensions (3 = xyz)
+
+    for (int cp = 0; cp < nr_points; cp++)
+    {
+#ifdef USE_ANN
+      ann_cloud[cp][0] = ros_cloud->pts[indices->at (cp)].x;
+      ann_cloud[cp][1] = ros_cloud->pts[indices->at (cp)].y;
+      ann_cloud[cp][2] = ros_cloud->pts[indices->at (cp)].z;
+#else
+      ann_cloud[cp * 3 + 0] = ros_cloud->pts[indices->at (cp)].x;
+      ann_cloud[cp * 3 + 1] = ros_cloud->pts[indices->at (cp)].y;
+      ann_cloud[cp * 3 + 2] = ros_cloud->pts[indices->at (cp)].z;
+#endif
+    }
+
+    return (nr_points);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Converts a ROS PointCloud message to the internal ANN point array representation. Returns the number of
     * points.
     * \param ros_cloud the ROS PointCloud message
