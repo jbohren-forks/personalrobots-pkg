@@ -87,8 +87,8 @@ $ people/bin/track_starter_gui
 // Thresholds for the face detection algorithm.
 #define FACE_SIZE_MIN_M 0.1
 #define FACE_SIZE_MAX_M 0.5
-#define MAX_Z_M 10
-#define FACE_DIST 2.0 //0.4
+#define MAX_Z_M 8
+#define FACE_DIST 1.0 //0.4
 // Thresholds for the face color tracking algorithm.
 #define FACE_SIZE_DEFAULT_M 0.08//0.1
 #define COLOR_TRACK_MAX_ITERS 10
@@ -241,7 +241,7 @@ class People
    * Output:
    * A vector of CvRects containing the bounding boxes around found faces.
    */ 
-  vector<CvRect> detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model, bool do_draw);
+  vector<Box2D3D> detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
 
   // Detect only known faces in an image.
   void detectKnownFaces(){}
