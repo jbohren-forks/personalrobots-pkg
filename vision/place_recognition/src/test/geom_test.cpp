@@ -133,6 +133,8 @@ int main(int argc, char** argv)
   //tree.save("james4_empty.tree");
   //tree.load("james4_empty.tree");
   tree.load("/u/mihelich/images/holidays/holidays.tree");
+  printf("Done loading tree\n");
+#if 1
   printf("Adding images to tree dynamically...\n");
   current_row = 0;
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
@@ -152,8 +154,9 @@ int main(int argc, char** argv)
     tree.insert(feature_block);
 #endif
   }
+#endif
   
-  tree.save("james4.tree");
+  //tree.save("james4.tree");
   //tree.load("james4.tree");
 
   // Free training buffers
@@ -195,6 +198,7 @@ int main(int argc, char** argv)
     free(query);
 #else
     tree.find(query, N, std::back_inserter(matches));
+    //tree.findAndInsert(query, N, std::back_inserter(matches));
 #endif
     if (matches[0].id == i) ++training_correct;
 
@@ -210,7 +214,7 @@ int main(int argc, char** argv)
     // Camera parameters for james4
     pose_estimator.setCameraParams(432.0, 432.0, .088981, 313.7821, 313.7821, 220.407);
     distance_t distance; // dummy
-    for (unsigned int j = 0; j < N_show; ++j) {
+    for (unsigned int j = 0; j < std::min(N_show, matches.size()); ++j) {
       // Find matching keypoint pairs
       std::vector< std::pair<int, int> > match_index_pairs;
       unsigned int match_id = matches[j].id;

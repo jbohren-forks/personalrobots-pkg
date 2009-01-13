@@ -382,7 +382,7 @@ void VocabularyTree::saveAux(Node* node, FILE* out, std::string indentation)
     fprintf(out, "%sCentroid[0]: \n", indentation.c_str());
   else {
     fprintf(out, "%sCentroid[%d]: ", indentation.c_str(), dim_);
-    for (int i = 0; i < dim_; ++i)
+    for (unsigned int i = 0; i < dim_; ++i)
       fprintf(out, "%f ", node->centroid[i]);
     fprintf(out, "\n");
   }

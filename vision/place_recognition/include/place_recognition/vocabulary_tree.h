@@ -192,6 +192,11 @@ public:
   static const int QUANTIZE_N = 15; // TODO: OK to leave this hard-coded?
 };
 
+
+inline VocabularyTree::VocabularyTree()
+  : root_(NULL), k_(0), levels_(0), dim_(0)
+{}
+
 inline VocabularyTree::Node* VocabularyTree::newNode()
 {
   Node* node = pool_.construct();
@@ -201,10 +206,6 @@ inline VocabularyTree::Node* VocabularyTree::newNode()
   }
   return node;
 }
-
-inline VocabularyTree::VocabularyTree()
-  : root_(NULL), k_(0), levels_(0), dim_(0)
-{}
 
 #ifdef USE_BYTE_SIGNATURES
 template< typename OutputIterator >
