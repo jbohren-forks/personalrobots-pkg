@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 2 .75 .30" />
@@ -20,7 +20,7 @@
     <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
 
     <!-- Filter for tilt laser shadowing/veiling -->
-    <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" respawn="true" machine="three" />
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" />
 
     <param name="odom_estimation/freq" value="30.0"/>
     <param name="odom_estimation/sensor_timeout" value="1.0"/>
@@ -76,7 +76,7 @@
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
     <param name="move_base/controller_frequency" value="30.0"/>
-    <param name="move_base/planner_frequency" value="1.0"/>
+    <param name="move_base/planner_frequency" value="0.0"/>
     <param name="move_base/plannerTimeLimit" value="0.5"/>
     <param name="move_base/map_update_frequency" value="5.0"/>
     <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
@@ -89,7 +89,7 @@
     <param name="/costmap_2d/inflation_radius" value="0.65"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
-    <param name="/costmap_2d/raytrace_window" value="4.0"/>
+    <param name="/costmap_2d/raytrace_window" value="10.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
 
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 10 Hz -->
