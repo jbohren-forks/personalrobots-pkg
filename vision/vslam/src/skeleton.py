@@ -11,7 +11,8 @@ from timer import Timer
 import pylab, numpy
 
 class minimum_frame:
-  def __init__(self, kp, descriptors, matcher):
+  def __init__(self, id, kp, descriptors, matcher):
+    self.id = id
     self.kp = kp
     self.descriptors = descriptors
     self.matcher = matcher
@@ -111,8 +112,10 @@ class Skeleton:
     id0 = this
     for inl,obs,id1 in coll:
       if 100 <= inl:
+        old_error = self.pg.error()
         self.addConstraint(id0, id1, obs)
-        print "ADDING CONSTRAINT"
+        print "ADDED CONSTRAINT", id0.id, id1.id, "error changed from", old_error, "to", self.pg.error()
+          
     self.timer['toro opt'].start()
     self.pg.initializeOnlineIterations()
     count = 0
@@ -122,7 +125,7 @@ class Skeleton:
     self.timer['toro opt'].stop()
 
   def my_frame(self, id):
-    return minimum_frame(self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])
+    return minimum_frame(id, self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])
 
   def memoize_node_kp_d(self, af):
     self.timer['descriptors'].start()
@@ -141,14 +144,14 @@ class Skeleton:
     self.timer['descriptors'].stop()
 
   def PE(self, af0, af1):
-    if 0:
+    if False and af0.id == 1241:
       (f0,f1) = (self.my_frame(af0.id), self.my_frame(af1.id))
       pairs = self.vo.temporal_match(f0, f1)
       for (a,b) in pairs:
         pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
       pylab.imshow(numpy.fromstring(af0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
-      pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = 'f0 kp', c = 'red')
-      pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = 'f1 kp', c = 'green')
+      pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = '%d kp' % f0.id, c = 'red')
+      pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
       pylab.legend()
       pylab.show()
     return self.vo.proximity(self.my_frame(af0.id), self.my_frame(af1.id))
@@ -187,6 +190,8 @@ class Skeleton:
     return 1e3 * sum([t.sum for t in self.timer.values()]) / niter
 
   def summarize_timers(self):
+    print "Graph has", len(self.nodes), "nodes and", len(self.edges), "edges"
+    print
     niter = len(self.nodes)
     if niter != 0:
       for n,t in self.timer.items():

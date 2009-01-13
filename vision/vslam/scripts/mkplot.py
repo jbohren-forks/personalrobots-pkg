@@ -19,6 +19,7 @@ import random
 import unittest
 import math
 import copy
+import pickle
 
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
@@ -36,8 +37,6 @@ import rosrecord
 import transformations
 
 from vis import Vis
-
-import pickle
 
 def planar(x, y, z):
   from scipy import optimize
@@ -71,29 +70,24 @@ class dcamImage:
     return self.data
 
 cam = None
-filename = "/u/prdata/videre-bags/loop2-color.bag"
-filename = "/u/prdata/videre-bags/greenroom-2008-11-3-color.bag"
-filename = "2008-11-04-09-55-12-topic.bag"
-filename = "2008-11-04-14-44-56-topic.bag"
-filename = "2008-11-05-14-35-11-topic.bag"
-filename = "/u/prdata/videre-bags/vo1.bag"
 filename = sys.argv[1]
 framecounter = 0
 first_pair = None
 inliers = []
 
-if 0:
+if 1:
   start,end = 20000,21300
   skipto = 12634364243
-  start,end = 0,1300
+  start,end = 0,3300
 else:
   skipto = None
-  start,end = 0, 500
+  start,end = 0,5000
 
 print "starting loop"
-f = open(filename)
-for topic, msg, timeStamp in rosrecord.logplayer(filename):
-  print 'topic:',topic
+#f = open(filename)
+f = filename
+keys = set()
+for topic, msg, t in rosrecord.logplayer(f):
   if skipto and (f.tell() < skipto):
     f.seek(skipto)
   #print f.tell(), msg
@@ -103,10 +97,9 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
   if topic.endswith("stereo/raw_stereo") or topic.endswith("dcam/raw_stereo"):
     if not cam:
       cam = camera.StereoCamera(msg.right_info)
+      print cam.params
       vos = [
-        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, 
-                            # sba = (10,10,10),
-                            sba = None,
+        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None,
                             inlier_thresh = 100,
                             position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
       ]
@@ -115,29 +108,28 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
       vo_u = [ [] for i in vos]
       vo_v = [ [] for i in vos]
       trajectory = [ [] for i in vos]
-      stampedTrajectory = [ [] for i in vos]
       skel = Skeleton(cam)
       oe_x = []
       oe_y = []
       oe_home = None
-      stampedGroundTruth = []
     if framecounter == end:
       break
     if start <= framecounter and (framecounter % 1) == 0:
       for i,vo in enumerate(vos):
         af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
-        
-        # jdc debugging
-        Image.fromstring("L", af.size, af.rawdata).save("/tmp/mkplot-left.png")   
-             
         vo.handle_frame(af)
+        # Log keyframes into "pool_loop"
+        if not vo.keyframe.id in keys:
+          k = vo.keyframe
+          Image.fromstring("L", (640,480), k.lf.tostring()).save("pool_loop/%06dL.png" % len(keys))
+          Image.fromstring("L", (640,480), k.rf.tostring()).save("pool_loop/%06dR.png" % len(keys))
+          keys.add(k.id)
+
         if i == 0:
           skel.add(vo.keyframe)
+          vo.correct(skel.correct_frame_pose, af)
         x,y,z = vo.pose.xform(0,0,0)
         trajectory[i].append((x,y,z))
-        # convert the time stampe to milliseconds in float
-        secs = timeStamp.secs + timeStamp.nsecs*1.e-9
-        stampedTrajectory[i].append((secs, x, y, z))
         vo_x[i].append(x)
         vo_y[i].append(z)
         x1,y1,z1 = vo.pose.xform(0,0,1)
@@ -145,6 +137,65 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
         vo_v[i].append(z1 - z)
       print framecounter, vo.inl, "inliers"
       inliers.append(vo.inl)
+
+      if 0:
+        disk = {}
+        for i in range(len(vos)):
+          xs = numpy.array(vo_x[i])
+          ys = numpy.array(vo_y[i])
+          if 0:
+            xs -= 4.5 * 1e-3
+            fa = -0.06
+          else:
+            fa = 0.0
+          xp = xs * cos(fa) - ys * sin(fa)
+          yp = ys * cos(fa) + xs * sin(fa)
+          disk['xp'] = xp
+          disk['yp'] = yp
+
+        disk['oe_x'] = oe_x
+        disk['oe_y'] = oe_y
+
+        disk['graph'] = skel.drawable()
+
+        pf = open("foo%06d.pickle" % framecounter, 'w')
+        pickle.dump(disk, pf)
+        pf.close()
+        if 1:
+          Image.fromstring("L", (640,480), af.lf.tostring()).save("img%06d.png" % framecounter)
+
+    if False:
+      fig = pylab.figure(figsize=(10,10))
+      colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
+      for i in range(len(vos)):
+        xs = numpy.array(vo_x[i])
+        ys = numpy.array(vo_y[i])
+        if 0:
+          xs -= 4.5 * 1e-3
+          fa = -0.06
+        else:
+          fa = 0.0
+        xp = xs * cos(fa) - ys * sin(fa)
+        yp = ys * cos(fa) + xs * sin(fa)
+        pylab.plot(xp, yp, c = colors[i], label = vos[i].name())
+
+      pylab.plot(oe_x, oe_y, c = 'green', label = 'ground truth')
+
+      skel.plot('blue')
+
+      xlim = pylab.xlim()
+      ylim = pylab.ylim()
+      xrange = xlim[1] - xlim[0]
+      yrange = ylim[1] - ylim[0]
+      r = max(xrange, yrange) * 0.75
+      mid = sum(xlim) / 2
+      pylab.xlim(mid - r, mid + r)
+      mid = sum(ylim) / 2
+      pylab.ylim(mid - r, mid + r)
+      pylab.legend()
+      pylab.savefig("foo%06d.png" % framecounter, dpi=100)
+      pylab.close(fig)
+
     framecounter += 1
 
   def ground_truth(p, q):
@@ -162,40 +213,24 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
     if not oe_home:
       oe_home = oe_pose
     local = ~oe_home * oe_pose
-    (x,y,z) = local.xform(0,0,0) # ground truth x y z
-    # note that the phase space frame is x forward, y to left and z upward.
+    (x,y,z) = local.xform(0,0,0)
     oe_x.append(-y)
     oe_y.append(x)
-    # convert the time stamp to seconds in float
-    secs = timeStamp.secs + timeStamp.nsecs*1.e-9
-    stampedGroundTruth.append((secs, -y, -z, x))
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
 print "There are", len(set([t.p[-1] for t in vo.tracks if t.alive])), "unique endpoints on live tracks"
 
-quality_pose = Pose()
-if 0:
-  # Attempt to compute best possible end-to-end pose
-  vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True)
-  f0 = SparseStereoFrame(*first_pair)
-  f1 = SparseStereoFrame(imgL, imgR)
-  vo.handle_frame(f0)
-  vo.handle_frame(f1)
-  quality_pose = vo.pose
+for vo in vos:
+  print vo.name()
+  print "distance from start:", vo.pose.distance()
+  vo.summarize_timers()
+  print vo.log_keyframes
+  print
+skel.summarize_timers()
 
-if 0:
-  for t in vos[2].all_tracks:
-    pylab.plot([x for (x,y,d) in t.p], [y for (x,y,d) in t.p])
-  pylab.xlim((0, 640))
-  pylab.ylim((0, 480))
-  pylab.savefig("foo.png", dpi=200)
-  pylab.show()
-  sys.exit(0)
-
-pylab.figure(figsize=(20,20))
+pylab.figure(figsize=(10,10))
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
-  
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
   xs = numpy.array(vo_x[i])
@@ -231,20 +266,3 @@ pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
 pylab.show()
-
-#pickling
-output_trajectory = open('trajs.pkl','wb')
-output_gt         = open('gt.pkl', 'wb')
-pickle.dump(stampedTrajectory,  output_trajectory)
-pickle.dump(stampedGroundTruth, output_gt)
-output_trajectory.close()
-output_gt.close()
-
-for vo in vos:
-  print vo.name()
-  print "distance from start:", vo.pose.distance()
-  print "planarity", vo.planarity
-  print "pose", vo.pose.comparison(quality_pose)
-  vo.summarize_timers()
-  print vo.log_keyframes
-  print

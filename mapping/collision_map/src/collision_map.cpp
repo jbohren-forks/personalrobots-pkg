@@ -90,7 +90,7 @@ class CollisionMapper : public ros::node
       param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
       param ("~robot_max_z", robot_max_.z, 1.5);          // 1.5m radius by default
 
-      param ("~min_nr_points", min_nr_points_, 2);        // Need at least 2 points per box to consider it "occupied"
+      param ("~min_nr_points", min_nr_points_, 1);        // Need at least 2 points per box to consider it "occupied"
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
@@ -159,12 +159,13 @@ class CollisionMapper : public ros::node
 
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
-      base_origin.header.frame_id = "base_link";
+      base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = 0;
 
       try
       {
-        tf_.transformPoint ("torso_lift_link", base_origin, torso_lift_origin);
+        tf_.transformPoint ("base_link", base_origin, torso_lift_origin);
+        ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.point.x, torso_lift_origin.point.y, torso_lift_origin.point.z);
       }
       catch (tf::ConnectivityException)
       {
@@ -253,7 +254,7 @@ class CollisionMapper : public ros::node
       int nr_c = 0;
       for (unsigned int cl = 0; cl < leaves_.size (); cl++)
       {
-        if (leaves_[cl].nr_points_ > min_nr_points_)
+        if (leaves_[cl].nr_points_ >= min_nr_points_)
         {
           c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
           c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;

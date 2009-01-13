@@ -33,7 +33,7 @@
 #include "nav_view_panel_generated.h"
 
 #include "std_msgs/ParticleCloud2D.h"
-#include "std_msgs/Planner2DGoal.h"
+#include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
 #include "std_srvs/StaticMap.h"
@@ -206,7 +206,7 @@ protected:
   Ogre::TexturePtr map_texture_;
 
   std_msgs::ParticleCloud2D cloud_;
-  std_msgs::Planner2DGoal goal_;
+  robot_msgs::Planner2DGoal goal_;
   std_msgs::Polyline2D path_line_;
   std_msgs::Polyline2D local_path_;
   std_msgs::Polyline2D robot_footprint_;

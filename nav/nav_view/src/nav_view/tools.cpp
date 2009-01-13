@@ -158,7 +158,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
 
       if ( is_goal_ )
       {
-        std_msgs::Planner2DGoal goal;
+        robot_msgs::Planner2DGoal goal;
         goal.goal.x = pos_.x;
         goal.goal.y = pos_.y;
         goal.goal.th = angle;

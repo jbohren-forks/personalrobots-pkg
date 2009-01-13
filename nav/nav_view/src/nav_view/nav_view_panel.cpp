@@ -114,7 +114,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   render_panel_->getViewport()->setCamera( camera_ );
 
-  ros_node_->advertise<std_msgs::Planner2DGoal>("goal", 1);
+  ros_node_->advertise<robot_msgs::Planner2DGoal>("goal", 1);
   ros_node_->advertise<std_msgs::Pose2DFloat32>("initialpose", 1);
   ros_node_->subscribe("particlecloud", cloud_, &NavViewPanel::incomingParticleCloud, this, 1);
   ros_node_->subscribe("gui_path", path_line_, &NavViewPanel::incomingGuiPath, this, 1);

@@ -939,14 +939,44 @@ PyObject *pgrecomputeAllTransformations(PyObject *self, PyObject *args)
 
 PyObject *pgaddIncrementalEdge(PyObject *self, PyObject *args)
 {
+
+  static const double CLOSURE_XY_SIGMA = 0.01;
+  static const double CLOSURE_Z_SIGMA = 0.01;
+  static const double CLOSURE_ROLL_SIGMA = 0.0002;
+  static const double CLOSURE_PITCH_SIGMA = 0.0002;
+  static const double CLOSURE_YAW_SIGMA = 0.002;
+
   TreeOptimizer3 *to = ((treeoptimizer3_t*)self)->to;
   int i0, i1;
   double x, y, z;
   double roll, pitch, yaw;
-  PyArg_ParseTuple(args, "ii(ddd)(ddd)", &i0, &i1, &x, &y, &z, &roll, &pitch, &yaw);
+  double a, b, c, d, e, f;
+
+  a = 1.0 / CLOSURE_XY_SIGMA;
+  b = 1.0 / CLOSURE_XY_SIGMA;
+  c = 1.0 / CLOSURE_Z_SIGMA;
+  d = 1.0 / CLOSURE_ROLL_SIGMA;
+  e = 1.0 / CLOSURE_PITCH_SIGMA;
+  f = 1.0 / CLOSURE_YAW_SIGMA;
+
+  Information inf(6,6);
+  PyArg_ParseTuple(args, "ii(ddd)(ddd)|(dddddd)", &i0, &i1, &x, &y, &z, &roll, &pitch, &yaw, &a, &b, &c, &d, &e, &f);
   // Transformation t(Translation(0.0, 0.0, 0.0), Rotation(0.0, 0.0, 0.0, 0.0));
   Transformation t(x, y, z, roll, pitch, yaw);
+
+  // Set covariance for relative poses from VO and loop closures
+  inf[0][0] = a;
+  inf[1][1] = b;
+  inf[2][2] = c;
+  inf[3][3] = d;
+  inf[4][4] = e;
+  inf[5][5] = f;
+
+#if 0
   to->addIncrementalEdge(i0, i1, t, Information::I(6));
+#else
+  to->addIncrementalEdge(i0, i1, t, inf);
+#endif
   Py_RETURN_NONE;
 }
 
@@ -1044,8 +1074,100 @@ PyObject *mktreeoptimizer3(PyObject *self, PyObject *args)
 }
 
 /************************************************************************/
-// #include "place_recognition/vocabulary_tree.h"
-// #include "place_recognition/sparse_stereo.h"
+
+bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T)
+{
+  bool status = true;
+  double _Q[9], _W[9], _Ut[9], _Vt[9], _C0[3], _C1[3];
+  CvMat Q  = cvMat(3, 3, CV_64F, _Q); // Q = P1 * transpose(P0)
+  CvMat W  = cvMat(3, 3, CV_64F, _W); // Eigen matrix of Q. Q = U * W * transpose(V)
+  CvMat Ut = cvMat(3, 3, CV_64F, _Ut); // transpose(U)
+  CvMat Vt = cvMat(3, 3, CV_64F, _Vt); // transpose(V)
+  CvMat C0 = cvMat(3, 1, CV_64F, _C0); // centroid of the 3 points in P0
+  CvMat C1 = cvMat(3, 1, CV_64F, _C1); // centroid of the 3 points in P1
+  // compute the centroids of these 3 ponints for the two positions
+  //cvCVAPI(void)  cvReduce( const CvArr* src, CvArr* dst, int dim CV_DEFAULT(-1),
+//               int op CV_DEFAULT(CV_REDUCE_SUM) );
+  cvReduce(P0, &C0, -1, CV_REDUCE_AVG);
+  // compute the relative vectors of the two groups of points w.r.t. their centroids.
+  double _Temp[3*P0->cols];
+  CvMat Temp = cvMat(3, P0->cols, CV_64F, _Temp);
+  cvRepeat(&C0, &Temp);
+  cvSub(P0, &Temp, P0);
+
+  cvReduce(P1, &C1, -1, CV_REDUCE_AVG);
+  cvRepeat(&C1, &Temp);
+  cvSub(P1, &Temp, P1);
+
+  // Q = P1 * P0^T
+  cvGEMM(P1, P0, 1, NULL, 0, &Q, CV_GEMM_B_T);
+
+  // do a SVD on Q. Q = U*W*transpose(V)
+  // according to the documentation, specifying the flags speeds up the processing
+  cvSVD(&Q, &W, &Ut, &Vt, CV_SVD_MODIFY_A|CV_SVD_U_T|CV_SVD_V_T);
+
+  // R = U * S * V^T
+  double _S[] = {
+                  1.,0.,0.,
+                  0.,1.,0.,
+                  0.,0.,1.
+  };
+  CvMat S;
+  cvInitMatHeader(&S, 3, 3, CV_64FC1, _S);
+  if (cvDet(&Ut)*cvDet(&Vt)<0) {
+    // Ut*V is not a rotation matrix, although either of them are unitary
+    // we shall set the last diag entry of S to be -1
+    // so that Ut*S*V is a rotational matrix
+    // setting S[2,2] = -1
+    _S[8] = -1.;
+    double _UxS[9];
+    CvMat UxS;
+    cvInitMatHeader(&UxS, 3, 3, CV_64FC1, _UxS);
+    cvGEMM(&Ut, &S, 1, NULL, 0, &UxS, CV_GEMM_A_T);
+    cvGEMM(&UxS, &Vt, 1, NULL, 0, R, 0);
+  } else {
+    cvGEMM(&Ut, &Vt, 1, NULL, 0, R, CV_GEMM_A_T);
+  }
+
+  // t = centroid1 - R*centroid0
+  cvGEMM(R, &C0, -1, &C1, 1, T, 0);
+  return status;
+}
+
+static void unpackL(double *dst, PyObject *src)
+{
+  PyObject *iterator = PyObject_GetIter(src);
+  PyObject *d;
+  assert(iterator != NULL);
+  size_t i = 0;
+  while ((d = PyIter_Next(iterator)) != NULL) {
+    dst[i++] = PyFloat_AsDouble(d);
+  }
+}
+
+PyObject *SVD(PyObject *self, PyObject *args)
+{
+  PyObject *pP0, *pP1;
+  if (!PyArg_ParseTuple(args, "OO", &pP0, &pP1))
+    return NULL;
+
+  double _P0[9], _P1[9];
+  CvMat P0  = cvMat(3, 3, CV_64F, _P0);
+  CvMat P1  = cvMat(3, 3, CV_64F, _P1);
+
+  unpackL(_P0, pP0);
+  unpackL(_P1, pP1);
+
+  double _R[9], _T[3];
+  CvMat R = cvMat(3, 3, CV_64FC1, _R);
+  CvMat T = cvMat(3, 1, CV_64FC1, _T);
+  estimateLeastSquareInCol(&P0, &P1, &R, &T);
+  return Py_BuildValue("(ddddddddd)(ddd)(dddddddddddd)",
+    _R[0],_R[1],_R[2],_R[3],_R[4],_R[5],_R[6],_R[7],_R[8],
+    _T[0],_T[1],_T[2],
+    _R[0],_R[1],_R[2],_T[0], _R[3],_R[4],_R[5],_T[1], _R[6],_R[7],_R[8],_T[2]
+    );
+}
 
 /************************************************************************/
 
@@ -1061,6 +1183,7 @@ static PyMethodDef methods[] = {
   {"frame_pose", frame_pose, METH_VARARGS},
   {"imWindow", mkimWindow, METH_VARARGS},
   {"TreeOptimizer3", mktreeoptimizer3, METH_VARARGS},
+  {"SVD", SVD, METH_VARARGS},
 
   {"pose_estimator", pose_estimator, METH_VARARGS},
   {NULL, NULL, NULL},

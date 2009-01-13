@@ -55,6 +55,8 @@ public:
 
 private:  
   int classes_;
+  uint8_t **posteriors_;
+  uint16_t *ptemp_;
   int original_num_classes_;
   std::vector<RandomizedTree> trees_;
   bool keep_floats_;

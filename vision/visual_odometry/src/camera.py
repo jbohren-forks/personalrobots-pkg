@@ -38,20 +38,38 @@ class Camera:
 
   def pix2cam(self, u, v, d):
     """ takes pixel space u,v,d and returns camera space X,Y,Z """
-    res = numpy.dot(self.Q, numpy.array( [ [u], [v], [d], [1] ])).transpose()[0]
-    (x, y, z, w) = res
-    return (x / w, y / w, z / w)
+    if 0:
+      res = numpy.dot(self.Q, numpy.array( [ [u], [v], [d], [1] ])).transpose()[0]
+      (x, y, z, w) = res
+      return (x / w, y / w, z / w)
+    else:
+      (Fx, Fy, Tx, Clx, Crx, Cy) = self.params
+      x = u - Crx
+      y = v - Cy
+      z = Fx
+      w = d / Tx
+      return (x / w, y / w, z / w)
 
   def cam2pixLR(self, X, Y, Z):
     """ takes camera space (X,Y,Z) and returns the pixel space (u,v) for both cameras """
-    def xform(P, pt):
-      (x,y,w) = numpy.dot(P, pt).transpose()[0]
-      return (x/w, y/w)
-    campt = numpy.array([ [X], [Y], [Z], [1] ])
-    (xl,yl) = xform(self.Pl, campt)
-    (xr,yr) = xform(self.Pr, campt)
-    assert yl == yr
-    return ((xl,yl), (xr,yr))
+    if 0:
+      def xform(P, pt):
+        (x,y,w) = numpy.dot(P, pt).transpose()[0]
+        return (x/w, y/w)
+      campt = numpy.array([ [X], [Y], [Z], [1] ])
+      (xl,yl) = xform(self.Pl, campt)
+      (xr,yr) = xform(self.Pr, campt)
+      assert yl == yr
+      return ((xl,yl), (xr,yr))
+    else:
+      (Fx, Fy, Tx, Clx, Crx, Cy) = self.params
+      xl = Fx * X + Clx * Z
+      y = Fy * Y + Cy * Z
+      w = Z
+
+      xr = Fx * X + Crx * Z + (Fx * -Tx)
+      rw = 1.0 / w
+      return ((xl * rw, y * rw), (xr * rw, y * rw))
 
   def cam2pix(self, X, Y, Z):
     """ takes camera space (X,Y,Z) and returns the pixel space (x,y,d) for left camera"""

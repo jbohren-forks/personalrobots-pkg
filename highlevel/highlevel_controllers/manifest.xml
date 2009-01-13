@@ -27,6 +27,7 @@
  <depend package="rostime"/>
  <depend package="navfn"/>
  <depend package="angles"/>
+ <depend package="robot_filter"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

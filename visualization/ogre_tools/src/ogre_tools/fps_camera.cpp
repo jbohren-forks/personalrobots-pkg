@@ -209,4 +209,33 @@ void FPSCamera::scrollWheel( int diff )
   move( 0.0f, 0.0f, -diff * 0.01 );
 }
 
+void FPSCamera::fromString(const std::string& str)
+{
+  std::istringstream iss(str);
+
+  iss >> pitch_;
+  iss.ignore();
+  iss >> yaw_;
+  iss.ignore();
+
+  Ogre::Vector3 vec;
+  iss >> vec.x;
+  iss.ignore();
+  iss >> vec.y;
+  iss.ignore();
+  iss >> vec.z;
+  iss.ignore();
+  camera_->setPosition(vec);
+
+  update();
+}
+
+std::string FPSCamera::toString()
+{
+  std::ostringstream oss;
+  oss << pitch_ << " " << yaw_ << " " << camera_->getPosition().x << " " << camera_->getPosition().y << " " << camera_->getPosition().z;
+
+  return oss.str();
+}
+
 } // namespace ogre_tools

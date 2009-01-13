@@ -69,8 +69,8 @@ public:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    ros::node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), goalTopic(_goalTopic), 
-    controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL){
+    ros::node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), 
+    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), timeout(0, 0) {
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
@@ -146,6 +146,7 @@ public:
    * it will call the planner with the given timeout.
    */
   void plannerLoop(){
+    ros::Time lastPlan = ros::Time::now();
     while(ok() && !isTerminated()){
       ros::Time curr = ros::Time::now();
 
@@ -156,9 +157,16 @@ public:
 	  setValid(makePlan());
 	  if(!isValid()){
 	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
-	    lock();
+	    lock();	 
+	    if ((ros::Time::now() - lastPlan) < timeout && timeout.toSec() != 0.0) {
+	      this->stateMsg.aborted = true;
+	      ROS_ERROR("Controller timed out.");
+	    }	   
 	    handlePlanningFailure();
-	    unlock();
+	    unlock();	    
+	  } else {
+	    this->stateMsg.aborted = false;
+	    lastPlan = ros::Time::now();
 	  }
 	}
       }
@@ -187,6 +195,20 @@ protected:
   }
 
   /**
+   * @brief Access aborted state of the planner.
+   */
+  bool isAborted() {
+    return this->stateMsg.aborted;
+  }
+
+  /**
+   * @brief Access preempted state of the planner.
+   */
+  bool isPreempted() {
+    return this->stateMsg.preempted;
+  }
+
+  /**
    * @brief Activation of the controller will set the state, the stateMsg but indicate that the
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
@@ -197,6 +219,8 @@ protected:
     this->stateMsg.active = 1;
     this->stateMsg.valid = 0;
     this->stateMsg.done = 0;
+    this->stateMsg.aborted = 0;
+    this->stateMsg.preempted = 0;
 
     handleActivation();
   }
@@ -207,9 +231,15 @@ protected:
   void deactivate(){
     ROS_INFO("Deactivating controller\n");
 
+    if (this->state == ACTIVE) {
+      ROS_INFO("Controller preempted.");
+      this->stateMsg.preempted = 1;
+    }
+
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
+    this->stateMsg.aborted = 0;
 
     handleDeactivation();
   }
@@ -320,6 +350,13 @@ protected:
 private:
 
   void goalCallback(){
+    if (goalMsg.timeout < 0) {
+      ROS_ERROR("Controller was given negative timeout, setting to zero.");
+      timeout = ros::Duration().fromSec(0);
+    } else {
+      timeout = ros::Duration().fromSec(goalMsg.timeout);
+    }
+
     // Do nothing if not initialized
     if(!isInitialized() || isTerminated())
       return;
@@ -432,6 +469,7 @@ private:
   boost::mutex lock_; /*!< Lock for access to class members in callbacks */
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
+  ros::Duration timeout; /*< The time limit for planning failure. */
 };
 
 #endif

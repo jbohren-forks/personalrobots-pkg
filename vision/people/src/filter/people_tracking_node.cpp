@@ -46,9 +46,9 @@ using namespace std;
 using namespace tf;
 using namespace BFL;
 using namespace robot_msgs;
+using namespace message_sequencing;
 
-
-static const double       sequencer_delay            = 0.5;
+static const double       sequencer_delay            = 0.4;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 static const unsigned int num_particles_tracker      = 1000;
@@ -60,11 +60,6 @@ namespace estimation
   PeopleTrackingNode::PeopleTrackingNode(const string& node_name)
     : ros::node(node_name),
       node_name_(node_name),
-      message_sequencer_(this, "people_tracker_measurements", 
-			 boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
-			 boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
-			 ros::Duration().fromSec(sequencer_delay), 
-			 sequencer_internal_buffer, sequencer_subscribe_buffer),
       robot_state_(*this, true),
       tracker_counter_(0)
   {
@@ -92,6 +87,13 @@ namespace estimation
     // advertise visualization
     advertise<std_msgs::PointCloud>("people_tracker_filter_visualization",10);
     advertise<std_msgs::PointCloud>("people_tracker_measurements_visualization",10);
+
+    // register message sequencer
+    message_sequencer_ = new TimeSequencer<PositionMeasurement>(this, "people_tracker_measurements", 
+								boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
+								boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
+								ros::Duration().fromSec(sequencer_delay), 
+								sequencer_internal_buffer, sequencer_subscribe_buffer);
   }
 
 
@@ -100,6 +102,9 @@ namespace estimation
   // destructor
   PeopleTrackingNode::~PeopleTrackingNode()
   {
+    // delete sequencer
+    delete message_sequencer_;
+
     // delete all trackers
     for (list<Tracker*>::iterator it= trackers_.begin(); it!=trackers_.end(); it++)
       delete *it;

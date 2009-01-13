@@ -31,7 +31,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <sysexits.h>
-#include "topological_map/bottleneck_graph.h"
+#include "topological_map/roadmap_bottleneck_graph.h"
 
 using std::cout;
 using std::endl;
@@ -90,7 +90,7 @@ int main (int argc, char* argv[])
     }
   }
   topological_map::GridArray grid;
-  topological_map::IndexedBottleneckGraph g;
+  topological_map::RoadmapBottleneckGraph g;
   if (inputFilename) {
     g.readFromFile (inputFilename);
   }
@@ -130,23 +130,44 @@ int main (int argc, char* argv[])
 
 
   g.printBottlenecks();
-  topological_map::Roadmap* r=g.makeRoadmap();
-  r->writeToStream();
+  g.initializeRoadmap();
+  g.printRoadmap();
 
   // Temp
   if (domain == 2) {
-    g.addRegionGridCells(r, 1);
-    r->writeToStream();
+    g.switchToRegion (1);
+    g.printRoadmap();
 
     GridCell start(0,0), goal(8,8);
-    r->setStartState(start);
-    r->setGoalState(goal);
-    vector<GridCell> solution=r->findOptimalPath();
+    vector<GridCell> solution=g.findOptimalPath(start, goal);
     cout << "Solution is ";
     for (unsigned int i=0; i<solution.size(); i++) {
       cout << solution[i] << " ";
     }
     cout << endl;
+
+    g.switchToRegion (2);
+    g.printRoadmap();
+
+    start.second = 5;
+    goal.second = 6;
+    solution=g.findOptimalPath(start, goal);
+    cout << "Solution is ";
+    for (unsigned int i=0; i<solution.size(); i++) {
+      cout << solution[i] << " ";
+    }
+    cout << endl;
+
+    start.second = 0;
+
+    solution=g.findOptimalPath(start, goal);
+    cout << "Solution is ";
+    for (unsigned int i=0; i<solution.size(); i++) {
+      cout << solution[i] << " ";
+    }
+    cout << endl;
+
+    
   }
   
   

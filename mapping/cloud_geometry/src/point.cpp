@@ -43,10 +43,10 @@ namespace cloud_geometry
     * \param channel_name the string defining the channel name
     */
   int
-    getChannelIndex (std_msgs::PointCloud points, std::string channel_name)
+    getChannelIndex (std_msgs::PointCloud *points, std::string channel_name)
   {
-    for (unsigned int d = 0; d < points.chan.size (); d++)
-      if (points.chan[d].name == channel_name)
+    for (unsigned int d = 0; d < points->chan.size (); d++)
+      if (points->chan[d].name == channel_name)
         return (d);
     return (-1);
   }
@@ -306,4 +306,99 @@ namespace cloud_geometry
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Downsample a Point Cloud using a voxelized grid approach
+    * \param points a pointer to the point cloud message
+    * \param points_down the resultant downsampled point cloud
+    * \param leaf_size the voxel leaf dimensions
+    * \param leaves a vector of already existing leaves (empty for the first call)
+    * \param d_idx the index of the channel providing distance data (set to -1 if nonexistant)
+    * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
+    */
+  void
+    downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
+                          std::vector<Leaf> &leaves, int d_idx, double cut_distance)
+  {
+    // Copy the header (and thus the frame_id) + allocate enough space for points
+    points_down.header = points->header;
+    points_down.pts.resize (points->pts.size ());
+
+    std_msgs::Point32 minP, maxP, minB, maxB, divB;
+    getMinMax (points, minP, maxP);
+
+    // Compute the minimum and maximum bounding box values
+    minB.x = (int)(floor (minP.x / leaf_size.x));
+    maxB.x = (int)(floor (maxP.x / leaf_size.x));
+
+    minB.y = (int)(floor (minP.y / leaf_size.y));
+    maxB.y = (int)(floor (maxP.y / leaf_size.y));
+
+    minB.z = (int)(floor (minP.z / leaf_size.z));
+    maxB.z = (int)(floor (maxP.z / leaf_size.z));
+
+    // Compute the number of divisions needed along all axis
+    divB.x = maxB.x - minB.x + 1;
+    divB.y = maxB.y - minB.y + 1;
+    divB.z = maxB.z - minB.z + 1;
+
+    // Allocate the space needed
+    if (leaves.capacity () < divB.x * divB.y * divB.z)
+      leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
+
+    leaves.resize (divB.x * divB.y * divB.z);
+
+    for (unsigned int cl = 0; cl < leaves.size (); cl++)
+    {
+      if (leaves[cl].nr_points > 0)
+      {
+        leaves[cl].centroid_x = leaves[cl].centroid_y = leaves[cl].centroid_z = 0.0;
+        leaves[cl].nr_points = 0;
+      }
+    }
+
+    // First pass: go over all points and insert them into the right leaf
+    for (unsigned int cp = 0; cp < points->pts.size (); cp++)
+    {
+      if (d_idx != -1 && points->chan[d_idx].vals[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
+        continue;
+
+      int i = (int)(floor (points->pts[cp].x / leaf_size.x));
+      int j = (int)(floor (points->pts[cp].y / leaf_size.y));
+      int k = (int)(floor (points->pts[cp].z / leaf_size.z));
+
+      int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
+      leaves[idx].centroid_x += points->pts[cp].x;
+      leaves[idx].centroid_y += points->pts[cp].y;
+      leaves[idx].centroid_z += points->pts[cp].z;
+      leaves[idx].nr_points++;
+    }
+
+    // Second pass: go over all leaves and compute centroids
+    int nr_p = 0;
+    for (unsigned int cl = 0; cl < leaves.size (); cl++)
+    {
+      if (leaves[cl].nr_points > 0)
+      {
+        points_down.pts[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
+        points_down.pts[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
+        points_down.pts[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
+        nr_p++;
+      }
+    }
+    points_down.pts.resize (nr_p);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Downsample a Point Cloud using a voxelized grid approach
+    * \note this method should not be used in fast loops as it always reallocs the std::vector<Leaf> internally (!)
+    * \param points a pointer to the point cloud message
+    * \param points_down the resultant downsampled point cloud
+    * \param leaf_size the voxel leaf dimensions
+    */
+  void
+    downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size)
+  {
+    std::vector<Leaf> leaves;
+    downsamplePointCloud (points, points_down, leaf_size, leaves, -1);
+  }
 }

@@ -115,6 +115,8 @@ class NormalEstimation : public ros::node
     void cloud_cb ()
     {
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      if (cloud_.pts.size () == 0)
+        return;
 
       PointStamped viewpoint_laser, viewpoint_cloud;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
@@ -235,6 +237,9 @@ class NormalEstimation : public ros::node
 int
   main (int argc, char** argv)
 {
+  fprintf (stderr, "This version has been deprecated. Please use normal_estimation_omp instead.\n");
+  return (-1);
+
   ros::init (argc, argv);
 
   NormalEstimation p;

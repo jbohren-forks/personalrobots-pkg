@@ -45,12 +45,13 @@
 #include <iterator>
 #include <angles/angles.h>
 #include <boost/thread.hpp>
+#include <robot_filter/RobotFilter.h>
 
 namespace ros {
   namespace highlevel_controllers {
 
     MoveBase::MoveBase()
-      : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
+      : HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>("move_base", "state", "goal"),
       tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
@@ -141,23 +142,40 @@ namespace ros {
       param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
       param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
       param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
+
+      //Create robot filter
+      std::string robotName = "/robotdesc/pr2";
+      double bodypartScale = 2.4;
+      bool useFilter = false;
+      param("/costmap_2d/body_part_scale", bodypartScale, bodypartScale);
+      param("/costmap_2d/robot_name", robotName, robotName);
+      param("/costmap_2d/filter_robot_points", useFilter, useFilter);
+      
+      if (useFilter) {
+	filter_ = new robot_filter::RobotFilter((ros::node*)this, robotName, true, bodypartScale);
+	filter_->loadRobotDescription();
+	filter_->waitForState();
+      } else {
+	filter_ = NULL;
+      }
+
       // Then allocate observation buffers
       baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, 
 							       ros::Duration().fromSec(base_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
-							       inscribedRadius, minZ_, maxZ_);
+							       inscribedRadius, minZ_, maxZ_, filter_);
       tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, 
 							       ros::Duration().fromSec(tilt_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
-							       inscribedRadius, minZ_, maxZ_);
+							       inscribedRadius, minZ_, maxZ_, filter_);
       lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, 
 								  ros::Duration().fromSec(low_obstacle_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
-								  inscribedRadius, -10.0, maxZ_);
+								  inscribedRadius, -10.0, maxZ_, filter_);
       stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, 
 								  ros::Duration().fromSec(stereo_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
-								  inscribedRadius, minZ_, maxZ_);
+								  inscribedRadius, minZ_, maxZ_, filter_);
 
 
       // get map via RPC
@@ -285,7 +303,9 @@ namespace ros {
       // point clouds
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
       //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
-      subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
+      tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
+				 boost::bind(&MoveBase::tiltCloudCallbackTransform, this, _1),
+				 "tilt_laser_cloud_filtered", "map", 50);
       subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
       subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
       subscribe("obstacle_cloud",  groundPlaneCloudMsg_,  &MoveBase::groundPlaneCloudCallback, 1);
@@ -318,6 +338,8 @@ namespace ros {
       delete lowObstacleBuffer_;
       delete tiltScanBuffer_;
       delete stereoCloudBuffer_;
+      delete filter_;
+      delete tiltLaserNotifier_;
     }
 
     void MoveBase::updateGlobalPose(){ 
@@ -423,10 +445,10 @@ namespace ros {
       unlock();
     }
 
-    void MoveBase::tiltCloudCallback()
+    void MoveBase::tiltCloudCallbackTransform(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
     {
       lock();
-      tiltScanBuffer_->buffer_cloud(tiltCloudMsg_);
+      tiltScanBuffer_->buffer_cloud(*message);
       unlock();
     }
 

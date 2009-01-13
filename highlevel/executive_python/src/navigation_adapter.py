@@ -38,7 +38,7 @@ import rostools
 rostools.update_path('executive_python')
 import rospy
 import random
-from std_msgs.msg import Planner2DGoal, Planner2DState
+from robot_msgs.msg import Planner2DGoal, Planner2DState
 
 class NavigationAdapter:
   def __init__(self, no_plan_limit, time_limit, state_topic, goal_topic):
@@ -83,6 +83,7 @@ class NavigationAdapter:
     goal.goal.x = goal_pts[0]
     goal.goal.y = goal_pts[1]
     goal.goal.th = goal_pts[2]
+    goal.timeout = 0
     goal.enable = 1
 
     self.pub.publish(goal)

@@ -101,10 +101,15 @@
     <!-- we don't have stereo data yet -->
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
 
-    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
     <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_steps" value="40" />
-    <param name="/trajectory_rollout/samples_per_dim" value="10" />
+    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/samples_per_dim" value="20" />
+    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
+    <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four"/>

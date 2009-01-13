@@ -1,8 +1,5 @@
 Header header
-# The desired joint configuratin
-robot_msgs/JointState[] configuration
-
-# Indicate if the goal is being enabled or disabled
+std_msgs/Pose2DFloat32 goal
 byte enable
 
 # Total timelimit for the controller, if a plan is not

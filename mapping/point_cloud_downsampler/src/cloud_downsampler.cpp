@@ -53,12 +53,6 @@
 using namespace std;
 using namespace std_msgs;
 
-struct Leaf
-{
-  float centroid_x, centroid_y, centroid_z;
-  int nr_points;
-};
-
 class CloudDownsampler : public ros::node
 {
   public:
@@ -66,10 +60,11 @@ class CloudDownsampler : public ros::node
     // ROS messages
     PointCloud cloud_, cloud_down_;
 
-    vector<Leaf> leaves_;
+    vector<cloud_geometry::Leaf> leaves_;
 
     // Parameters
     Point leaf_width_;
+    double cut_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CloudDownsampler () : ros::node ("cloud_downsampler")
@@ -80,7 +75,19 @@ class CloudDownsampler : public ros::node
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 
-      subscribe ("tilt_laser_cloud", cloud_, &CloudDownsampler::cloud_cb, 1);
+      param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
+
+      string cloud_topic ("tilt_laser_cloud");
+
+      vector<pair<string, string> > t_list;
+      get_published_topics (&t_list);
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (cloud_topic) == string::npos)
+          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+      }
+
+      subscribe (cloud_topic.c_str (), cloud_, &CloudDownsampler::cloud_cb, 1);
       advertise<PointCloud> ("cloud_downsampled", 1);
     }
 
@@ -88,85 +95,18 @@ class CloudDownsampler : public ros::node
     virtual ~CloudDownsampler () { }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      downsampleCloud (PointCloud *cloud_in, PointCloud &cloud_out)
-    {
-      // Copy the header (and thus the frame_id) + allocate enough space for points
-      cloud_out.header = cloud_in->header;
-      cloud_out.pts.resize (cloud_in->pts.size ());
-
-      Point32 minP, maxP, minB, maxB, divB;
-      cloud_geometry::getMinMax (cloud_, minP, maxP);
-
-      // Compute the minimum and maximum bounding box values
-      minB.x = (int)(floor (minP.x / leaf_width_.x));
-      maxB.x = (int)(floor (maxP.x / leaf_width_.x));
-
-      minB.y = (int)(floor (minP.y / leaf_width_.y));
-      maxB.y = (int)(floor (maxP.y / leaf_width_.y));
-
-      minB.z = (int)(floor (minP.z / leaf_width_.z));
-      maxB.z = (int)(floor (maxP.z / leaf_width_.z));
-
-      // Compute the number of divisions needed along all axis
-      divB.x = maxB.x - minB.x + 1;
-      divB.y = maxB.y - minB.y + 1;
-      divB.z = maxB.z - minB.z + 1;
-
-      // Allocate the space needed
-      if (leaves_.capacity () < divB.x * divB.y * divB.z)
-        leaves_.reserve (1.5 * divB.x * divB.y * divB.z);
-
-      leaves_.resize (divB.x * divB.y * divB.z);
-
-      for (unsigned int cl = 0; cl < leaves_.size (); cl++)
-      {
-        if (leaves_[cl].nr_points > 0)
-        {
-          leaves_[cl].centroid_x = leaves_[cl].centroid_y = leaves_[cl].centroid_z = 0.0;
-          leaves_[cl].nr_points = 0;
-        }
-      }
-
-      // First pass: go over all points and insert them into the right leaf
-      for (unsigned int cp = 0; cp < cloud_.pts.size (); cp++)
-      {
-        int i = (int)(floor (cloud_.pts[cp].x / leaf_width_.x));
-        int j = (int)(floor (cloud_.pts[cp].y / leaf_width_.y));
-        int k = (int)(floor (cloud_.pts[cp].z / leaf_width_.z));
-
-        int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
-        leaves_[idx].centroid_x += cloud_.pts[cp].x;
-        leaves_[idx].centroid_y += cloud_.pts[cp].y;
-        leaves_[idx].centroid_z += cloud_.pts[cp].z;
-        leaves_[idx].nr_points++;
-      }
-
-      // Second pass: go over all leaves and compute centroids
-      int nr_p = 0;
-      for (unsigned int cl = 0; cl < leaves_.size (); cl++)
-      {
-        if (leaves_[cl].nr_points > 0)
-        {
-          cloud_out.pts[nr_p].x = leaves_[cl].centroid_x / leaves_[cl].nr_points;
-          cloud_out.pts[nr_p].y = leaves_[cl].centroid_y / leaves_[cl].nr_points;
-          cloud_out.pts[nr_p].z = leaves_[cl].centroid_z / leaves_[cl].nr_points;
-          nr_p++;
-        }
-      }
-      cloud_out.pts.resize (nr_p);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      if (cloud_.pts.size () == 0)
+        return;
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
 
-      downsampleCloud (&cloud_, cloud_down_);
+      int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
+      cloud_geometry::downsamplePointCloud (&cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);

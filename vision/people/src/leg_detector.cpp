@@ -43,9 +43,11 @@
 
 #include "robot_msgs/PositionMeasurement.h"
 
+
 #include "rostools/Header.h"
 
 #include "tf/transform_listener.h"
+#include <tf/message_notifier.h>
 
 #include "filter/tracker_kalman.h"
 #include "filter/state_pos_vel.h"
@@ -57,6 +59,7 @@
 using namespace std;
 using namespace laser_processor;
 using namespace ros;
+using namespace tf;
 
 using namespace estimation;
 using namespace BFL;
@@ -81,9 +84,9 @@ public:
   tf::Stamped<tf::Point> prop_loc_;
 
   SavedFeature(tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
-    : tfl_(tfl)
-    , sys_sigma_(tf::Vector3(0.05/20.0,0.05/20.0,0.05/20.0), tf::Vector3(1.0/20.0,1.0/20.0,1.0/20.0))
-    , filter_("tracker_name",sys_sigma_)
+    : tfl_(tfl),
+      sys_sigma_(tf::Vector3(0.05/20.0,0.05/20.0,0.05/20.0), tf::Vector3(1.0/20.0,1.0/20.0,1.0/20.0)),
+      filter_("tracker_name",sys_sigma_)
   {
     char id[100];
     snprintf(id,100,"legtrack%d", nextid++);
@@ -174,12 +177,14 @@ public:
 int g_argc;
 char** g_argv;
 
+static const string fixed_frame = "odom";
+
+
 class LegDetector : public node
 {
 public:
   tf::TransformListener tfl_;
 
-  std_msgs::LaserScan scan_;
   std_msgs::PointCloud filt_cloud_;
 
   ScanMask mask_;
@@ -203,9 +208,17 @@ public:
 
   float max_meas_jump_;
 
-  robot_msgs::PositionMeasurement people_meas_;
+  MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
+  MessageNotifier<std_msgs::LaserScan>*  laser_notifier_;
 
-  LegDetector() : node("laser_processor"), tfl_(*this), mask_count_(0), connected_thresh_(0.06), feat_count_(0), max_track_jump_(1.0), max_meas_jump_(1.0)
+  LegDetector() : 
+    node("laser_processor"), 
+    tfl_(*this), 
+    mask_count_(0), 
+    connected_thresh_(0.06), 
+    feat_count_(0), 
+    max_track_jump_(1.0), 
+    max_meas_jump_(1.0)
   {
     if (g_argc > 1) {
       forest.load(g_argv[1]);
@@ -216,25 +229,35 @@ public:
       self_destruct();
     }
 
-    tfl_.setExtrapolationLimit (ros::Duration().fromSec(0.4));
-
-
-    subscribe("scan", scan_, &LegDetector::laserCallback, 10);
+    // advertise topics
     advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<std_msgs::PointCloud>("kalman_filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
-    subscribe("people_tracker_filter", people_meas_, &LegDetector::peopleCallback, 10);
+
+    // subscribe to topics
+    people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&tfl_, this,  
+									    boost::bind(&LegDetector::peopleCallback, this, _1), 
+									    "people_tracker_filter", fixed_frame, 10);
+    laser_notifier_ = new MessageNotifier<std_msgs::LaserScan>(&tfl_, this,  
+							       boost::bind(&LegDetector::laserCallback, this, _1), 
+							       "scan", fixed_frame, 10);
 
     feature_id_ = 0;
   }
 
 
-  void peopleCallback()
+  ~LegDetector()
   {
+    delete people_notifier_;
+    delete laser_notifier_;
+  }
 
+
+  void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
+  {
     tf::Point pt;
 
-    tf::PointMsgToTF(people_meas_.pos, pt);
+    tf::PointMsgToTF(people_meas->pos, pt);
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
@@ -246,11 +269,11 @@ public:
 
     for (; it != end; ++it )
     {
-      tf::Stamped<tf::Point> loc(pt, people_meas_.header.stamp, people_meas_.header.frame_id);
+      tf::Stamped<tf::Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
 
 
-      tfl_.transformPoint((*it)->id_, people_meas_.header.stamp,
-                            loc, "odom", loc);
+      tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
+                            loc, fixed_frame, loc);
       loc[2] = 0.0;
       
       float dist = loc.length();
@@ -261,7 +284,7 @@ public:
       }
 
       // If we're already tracking the object
-      if ((*it)->object_id == people_meas_.object_id)
+      if ((*it)->object_id == people_meas->object_id)
       {
         if (dist < max_meas_jump_)
           return; // This should instead check that it's still close
@@ -273,25 +296,26 @@ public:
     }
 
     if (closest_dist < max_meas_jump_)
-      (*closest)->object_id = people_meas_.object_id;
+      (*closest)->object_id = people_meas->object_id;
   }
 
-  void laserCallback()
-  {
 
+
+  void laserCallback(const MessageNotifier<std_msgs::LaserScan>::MessagePtr& scan)
+  {
     filt_cloud_.pts.clear();
     filt_cloud_.chan.clear();
     filt_cloud_.chan.resize(1);
     filt_cloud_.chan[0].name = "rgb";
 
-    ScanProcessor processor(scan_, mask_);
+    ScanProcessor processor(*scan, mask_);
 
     processor.splitConnected(connected_thresh_);
     processor.removeLessThan(5);
 
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
 
-    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-5.0);
+    ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-5.0);
 
     list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
     while (sf_iter != saved_features_.end())
@@ -304,7 +328,6 @@ public:
       else
         ++sf_iter;
     }
-
     // Build up the set of "candidate" clusters
     list<SampleSet*> candidates;
 
@@ -312,7 +335,7 @@ public:
          i != processor.getClusters().end();
          i++)
     {
-      vector<float> f = calcLegFeatures(*i, scan_);
+      vector<float> f = calcLegFeatures(*i, *scan);
 
       for (int k = 0; k < feat_count_; k++)
         tmp_mat->data.fl[k] = (float)(f[k]);
@@ -328,7 +351,7 @@ public:
          sf_iter != saved_features_.end();
          sf_iter++)
     {
-      (*sf_iter)->propagate(scan_.header.stamp);
+      (*sf_iter)->propagate(scan->header.stamp);
       propagated.push_back(*sf_iter);
     }
 
@@ -339,7 +362,7 @@ public:
          cf_iter != candidates.end();
          cf_iter++)
     {
-      tf::Stamped<tf::Point> loc((*cf_iter)->center(), scan_.header.stamp, scan_.header.frame_id);
+      tf::Stamped<tf::Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
       tfl_.transformPoint("odom", loc, loc);
 
       list<SavedFeature*>::iterator closest = propagated.end();
@@ -380,7 +403,7 @@ public:
         if (matched_iter->closest_ == *pf_iter)
         {
           // It was actually the closest... do our thing
-          tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan_.header.stamp, scan_.header.frame_id);
+          tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
           tfl_.transformPoint("odom", loc, loc);          
 
           matched_iter->closest_->update(loc);
@@ -400,7 +423,7 @@ public:
       if (!found)
       {
         // Search for new closest:
-        tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan_.header.stamp, scan_.header.frame_id);
+        tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
         tfl_.transformPoint("odom", loc, loc);
 
         list<SavedFeature*>::iterator closest = propagated.end();
@@ -434,8 +457,8 @@ public:
       }
     }
 
-    filt_cloud_.header.stamp = scan_.header.stamp;
-    filt_cloud_.header.frame_id = scan_.header.frame_id;
+    filt_cloud_.header.stamp = scan->header.stamp;
+    filt_cloud_.header.frame_id = scan->header.frame_id;
     publish("filt_cloud", filt_cloud_);
     cvReleaseMat(&tmp_mat);
 
@@ -460,7 +483,7 @@ public:
 
       weights[i] = *(float*)&(rgb);
 
-      if ((*sf_iter)->meas_time_ == scan_.header.stamp)
+      if ((*sf_iter)->meas_time_ == scan->header.stamp)
       {
         if (est.vel_.length() > 0.5)
         {
@@ -521,7 +544,7 @@ public:
     std_msgs::PointCloud  people_cloud; 
     people_cloud.chan.push_back(channel);
     people_cloud.header.frame_id = "odom";//scan_.header.frame_id;
-    people_cloud.header.stamp = scan_.header.stamp;
+    people_cloud.header.stamp = scan->header.stamp;
     people_cloud.pts  = filter_visualize;
     publish("kalman_filt_cloud", people_cloud);
 

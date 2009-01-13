@@ -77,64 +77,12 @@
 **/
 
 
-#include <getopt.h>
-#include <sysexits.h>
-#include <ros/node.h>
-#include <rosconsole/rosconsole.h>
-#include <std_srvs/StaticMap.h>
-#include <std_msgs/RobotBase2DOdom.h>
-#include "topological_map/bottleneck_graph.h"
-
+#include <topological_map/ros_bottleneck_graph.h>
 
 using namespace std;
 
 namespace topological_map
 {
-
-  enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
-
-class BottleneckGraphRos: public ros::node
-{
-public:
-  BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
-  BottleneckGraphRos(char* filename);
-  ~BottleneckGraphRos();
-
-  void loadMap(void);
-  void computeBottleneckGraph(void);
-  void generateRoadmap(void);
-  void setupTopics(void);
-  void writeToFile(char*);
-  void setResolution(double r) { resolution_=r; }
-
-  void poseCallback(void);
-
-  void convertToMapIndices(double, double, int*, int*);
-
-
-private:
-
-  // Disallow copy and assignment
-  BottleneckGraphRos (const BottleneckGraphRos&);
-  BottleneckGraphRos& operator= (const BottleneckGraphRos&);
-
-
-  IndexedBottleneckGraph bottleneck_graph_;
-  NodeStatus node_status_;
-  GridArray grid_;
-  Roadmap* roadmap_;
-
-  int sx_, sy_;
-  int region_id_;
-  int num_added_roadmap_points_;
-  double resolution_;
-
-  int size_, skip_, radius_, distanceMin_, distanceMax_;
-
-  std_msgs::RobotBase2DOdom pose_;
-};
-
-
 
 
 
@@ -148,19 +96,15 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
 {
 }
  
+
 BottleneckGraphRos::BottleneckGraphRos(char* filename) :
   ros::node("bottleneck_graph_ros"), node_status_ (READY), num_added_roadmap_points_(0)
 {
   bottleneck_graph_.readFromFile(filename);
 }
 
-  BottleneckGraphRos::~BottleneckGraphRos()
-  {
-    if (roadmap_) {
-      delete roadmap_;
-    }
-  }
-
+BottleneckGraphRos::~BottleneckGraphRos()
+{}
 
 
 
@@ -187,13 +131,11 @@ void BottleneckGraphRos::poseCallback (void)
     }
 
     // Remove low-level cells from previous region and add the new ones
-    roadmap_->removeLastPoints (num_added_roadmap_points_);
-    ROS_DEBUG ("Removed %d points from roadmap", num_added_roadmap_points_);
-    num_added_roadmap_points_ = bottleneck_graph_.addRegionGridCells (roadmap_, region_id_);
-    ROS_DEBUG ("Added %d points to roadmap", num_added_roadmap_points_);
+    bottleneck_graph_.switchToRegion (region_id_);
 
   }
 }
+
 
 
 
@@ -256,7 +198,7 @@ void BottleneckGraphRos::setupTopics (void)
 void BottleneckGraphRos::generateRoadmap (void)
 {
   node_status_ = COMPUTING_ROADMAP;
-  roadmap_ = bottleneck_graph_.makeRoadmap();
+  bottleneck_graph_.initializeRoadmap();
 }
 
 
@@ -282,7 +224,10 @@ void BottleneckGraphRos::convertToMapIndices (double x, double y, int* r, int* c
 }
 
 
-} // End topological_map namespace
+} // namespace topological_map
+
+
+
 
 
 
@@ -293,6 +238,8 @@ void exitWithUsage(void)
     "Usage 2:\n Required:\n  --input-file, -i";
   exit(EX_USAGE);
 }
+
+
 
 
 
@@ -390,3 +337,5 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+

@@ -166,9 +166,9 @@ class SemanticPointAnnotator : public ros::node
 
       cloud_annotated_.header = cloud_.header;
 
-      int nx = cloud_geometry::getChannelIndex (cloud_, "nx");
-      int ny = cloud_geometry::getChannelIndex (cloud_, "ny");
-      int nz = cloud_geometry::getChannelIndex (cloud_, "nz");
+      int nx = cloud_geometry::getChannelIndex (&cloud_, "nx");
+      int ny = cloud_geometry::getChannelIndex (&cloud_, "ny");
+      int nz = cloud_geometry::getChannelIndex (&cloud_, "nz");
 
       if ( (cloud_.chan.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
       {

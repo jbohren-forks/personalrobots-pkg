@@ -194,17 +194,17 @@ namespace sample_consensus
     // Save the nx/ny/nz channel indices the first time we run this
     if (nx_idx_ == -1)
     {
-      nx_idx_ = cloud_geometry::getChannelIndex (*cloud_, "nx");
+      nx_idx_ = cloud_geometry::getChannelIndex (cloud_, "nx");
       if (nx_idx_ == -1) return (false);
     }
     if (ny_idx_ == -1)
     {
-      ny_idx_ = cloud_geometry::getChannelIndex (*cloud_, "ny");
+      ny_idx_ = cloud_geometry::getChannelIndex (cloud_, "ny");
       if (ny_idx_ == -1) return (false);
     }
     if (nz_idx_ == -1)
     {
-      nz_idx_ = cloud_geometry::getChannelIndex (*cloud_, "nz");
+      nz_idx_ = cloud_geometry::getChannelIndex (cloud_, "nz");
       if (nz_idx_ == -1) return (false);
     }
 

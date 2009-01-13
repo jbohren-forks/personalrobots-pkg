@@ -1,10 +1,11 @@
 #include <costmap_2d/basic_observation_buffer.h>
+#include <robot_filter/RobotFilter.h>
 
 namespace costmap_2d {
 
   BasicObservationBuffer::BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval, 
-				       double robotRadius, double minZ, double maxZ)
-    : ObservationBuffer(frame_id, keepAlive, refresh_interval), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ){}
+						 double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter)
+    : ObservationBuffer(frame_id, keepAlive, refresh_interval), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ), filter_(filter) {}
 
   void BasicObservationBuffer::buffer_cloud(const std_msgs::PointCloud& local_cloud)
   {
@@ -72,11 +73,27 @@ namespace costmap_2d {
 	newData = NULL;
       }
 
+      if (filter_) {
+	newData = filter_->filter(*map_cloud);
+      
+	if (map_cloud != NULL){
+	  delete map_cloud;
+	  map_cloud = NULL;
+	}
+	map_cloud = newData;
+	newData = NULL;
+      }
+
       // Get the point from whihc we ray trace
       std_msgs::Point o;
       o.x = map_origin.getX();
       o.y = map_origin.getY();
       o.z = map_origin.getZ();
+
+      if (!map_cloud) {
+	ROS_ERROR("Cloud is null.");
+	continue;
+      }
 
       // Allocate and buffer the observation
       Observation obs(o, map_cloud);

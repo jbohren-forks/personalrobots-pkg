@@ -10,6 +10,7 @@ namespace features {
 RTreeClassifier::RTreeClassifier(bool keep_floats)
   : classes_(0), keep_floats_(keep_floats)
 {
+  posteriors_ = NULL;
    //setReducedDim(DEFAULT_RED);
 }
 
@@ -124,6 +125,14 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 }
 
 
+// sum up 50 byte vectors of length 176
+// assume 5 bits max for input vector values
+// final shift is 3 bits right
+void sum_50c_176c(uint8_t **pp, uint8_t *sig)
+{
+  
+}
+
 void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
 {  
   // Need pointer to 32x32 patch data
@@ -144,43 +153,46 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
     patch_data = getData(patch);
   }
     
-  memset((void*)sig, 0, classes_ * sizeof(sig[0]));
   std::vector<RandomizedTree>::iterator tree_it;
  
   // get posteriors
-  uint8_t **posteriors = new uint8_t*[trees_.size()];  // TODO: move alloc outside this func
-  uint8_t **pp = posteriors;    
+  if (posteriors_ == NULL)
+    {
+      posteriors_ = new uint8_t*[trees_.size()];  
+      posix_memalign((void **)&ptemp_, 16, classes_*sizeof(uint16_t));
+    }
+  uint8_t **pp = posteriors_;    
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
     *pp = tree_it->getPosterior2(patch_data);       
 
+#if 1
   // sum them up
-  pp = posteriors;
+  pp = posteriors_;
+  sum_50t_176c(pp,sig,ptemp_);
+
+#else
+  memset((void*)sig, 0, classes_ * sizeof(sig[0]));
   uint16_t *sig16 = new uint16_t[classes_];
   memset((void*)sig16, 0, classes_ * sizeof(sig16[0]));
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
     add(classes_, sig16, *pp, sig16);
 
-  delete [] posteriors;
-  posteriors = NULL;  
-
   // full quantization (experimental, later implicit)
-  #if 1
-    // find out the required right-shift needed to fit all sig values into an uint8_t
-    int n_max = (1 << (8*sizeof(uint8_t))) - 1;
-    int sum_max = ((1<<4) - 1)*trees_.size();
-    int shift = 0;    
-    while ((sum_max>>shift) > n_max) shift++;
-    
-    for (int i = 0; i < classes_; ++i)
-      sig[i] = sig16[i] >> shift;
+  // find out the required right-shift needed to fit all sig values into an uint8_t
+  int n_max = (1 << (8*sizeof(uint8_t))) - 1;
+  int sum_max = ((1<<4) - 1)*trees_.size();
+  int shift = 0;    
+  while ((sum_max>>shift) > n_max) shift++;
+  
+  for (int i = 0; i < classes_; ++i)
+    sig[i] = sig16[i] >> shift;
 
-    static bool warned = false;
-    if (!warned) {
-      printf("[NOTE] RTC: signature quantization, shift=%i\n", shift);
-      warned = true;
-    }
-    
-  #endif
+  static bool warned = false;
+  if (!warned) {
+    printf("[NOTE] RTC: signature quantization, shift=%i\n", shift);
+    warned = true;
+  }
+#endif
 }
 
 

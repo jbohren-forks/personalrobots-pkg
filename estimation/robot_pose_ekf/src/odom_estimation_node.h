@@ -103,7 +103,7 @@ private:
   tf::TransformBroadcaster odom_broadcaster_;
 
   // message notifier for vo
-  tf::MessageNotifier<robot_msgs::VOPose>  vo_notifier_;
+  tf::MessageNotifier<robot_msgs::VOPose>*  vo_notifier_;
 
   // vectors
   MatrixWrapper::ColumnVector vel_desi_;

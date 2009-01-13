@@ -75,7 +75,7 @@ private:
   // Members
   vector<Coords> points_;
   map<Coords,int> pointIds_;
-  vector<Adjacencies> adjacencyVector_;
+  vector<Adjacencies> adjacency_vector_;
   int startStateId_;
   int goalStateId_;
 };
@@ -97,7 +97,7 @@ void AdjacencyListSBPLEnv<Coords>::writeToStream (ostream& str)
   str << "Adjacency list SBPL Env " << endl;
   for (unsigned int i=0; i<points_.size(); i++) {
     str << i << ". " << points_[i] << ".  Neighbors: ";
-    for (AdjListIterator iter=adjacencyVector_[i].begin(); iter!=adjacencyVector_[i].end(); iter++) {
+    for (AdjListIterator iter=adjacency_vector_[i].begin(); iter!=adjacency_vector_[i].end(); iter++) {
       if (iter->neighbor < numStates) {
 	str << "[" << points_[iter->neighbor] << " " << iter->cost << "] ";
       }
@@ -114,9 +114,9 @@ template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::addPoint (const Coords& c)
 {
   pointIds_[c] = points_.size();
-  points_.push_back(c);
   Adjacencies a;
-  adjacencyVector_.push_back(a);
+  points_.push_back(c);
+  adjacency_vector_.push_back(a);
 
   int* entry = new int[NUMOFINDICES_STATEID2IND];
   for (unsigned int i=0; i<NUMOFINDICES_STATEID2IND; i++) {
@@ -135,13 +135,31 @@ bool AdjacencyListSBPLEnv<Coords>::hasPoint (const Coords& c)
 template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::removeLastPoints (unsigned int n)
 {
-  // Note deleted points are not being removed from other points' adjacency lists to keep this constant time
-  // They will deleted as and when they're seen
   assert (n<=points_.size());
   for (unsigned int i=0; i<n; i++) {
+    int num_points=points_.size();
+    Adjacencies& a=adjacency_vector_.back();
+
+    // Iterate over neighbors of this currently-being-deleted point
+    for (Adjacencies::iterator adj_iter=a.begin(); adj_iter!=a.end(); adj_iter++) {
+      assert(adj_iter->neighbor<num_points);
+      Adjacencies& neighbor_adjacency_list=adjacency_vector_[adj_iter->neighbor];
+
+      // Iterate over neighbors of the neighbor
+      for (Adjacencies::iterator neighbor_adj_iter=neighbor_adjacency_list.begin(); neighbor_adj_iter!=neighbor_adjacency_list.end(); neighbor_adj_iter++) {
+
+        // When we find the entry for the current point, remove it and exit inner loop
+        if (neighbor_adj_iter->neighbor==num_points-1) {
+          neighbor_adjacency_list.erase(neighbor_adj_iter);
+          break;
+        }
+      }
+    }
+    adjacency_vector_.pop_back();
+    pointIds_.erase(points_.back());
     points_.pop_back();
   }
-}   
+}
 
 
 template <class Coords>
@@ -172,7 +190,8 @@ void AdjacencyListSBPLEnv<Coords>::setCost (const Coords& c1, const Coords& c2, 
     }
 
     // Now set cost of edge from ind1 to ind2
-    Adjacencies& adj = adjacencyVector_[ind1];
+    Adjacencies& adj = adjacency_vector_[ind1];
+
     AdjListIterator i, last=adj.end();
     for (i=adj.begin(); (i!=last) && (i->neighbor!=ind2); i++);
 
@@ -272,23 +291,17 @@ void AdjacencyListSBPLEnv<Coords>::SetAllActionsandAllOutcomes(CMDPSTATE* state)
     return;
   }
 
-  Adjacencies& v = adjacencyVector_[state->StateID];
-  int numStates = points_.size();
+  Adjacencies& v = adjacency_vector_[state->StateID];
   int actionIndex=0;
-  AdjListIterator i=v.begin();
 
-  // Iterate over edges.  Also, remove ones that point to deleted vertices as we see them.
-  while (i!=v.end()) {
+  for (AdjListIterator i=v.begin(); i!=v.end(); i++) {
     CMDPACTION* action = state->AddAction(actionIndex);
-    if (i->neighbor < numStates) { 
-      action->AddOutcome(i->neighbor, i->cost, 1.0);
-      i++;
-    }
-    else {
-      i=v.erase(i);
-    }
+    action->AddOutcome(i->neighbor, i->cost, 1.0);
   }
 }
+
+
+  
 
 template <class Coords>
 void AdjacencyListSBPLEnv<Coords>::SetAllPreds(CMDPSTATE* state)
@@ -308,21 +321,10 @@ void AdjacencyListSBPLEnv<Coords>::GetSuccs(int SourceStateID, vector<int>* Succ
     return;
   }
 
-  Adjacencies& v = adjacencyVector_[SourceStateID];
-  int numStates = points_.size();
-  AdjListIterator i=v.begin();
-
-  // Iterate over edges.  Also, remove ones that point to deleted vertices as we see them.
-  while (i!=v.end()) {
-    if (i->neighbor < numStates) {
-      SuccIDV->push_back(i->neighbor);
-      CostV->push_back(i->cost);
-      i++;
-      // cout << "Added transition to " << adj.neighbor << " with cost " << adj.cost << endl;
-    }
-    else {
-      i = v.erase(i);
-    }
+  Adjacencies& v = adjacency_vector_[SourceStateID];
+  for (AdjListIterator i=v.begin(); i!=v.end(); i++) {
+    SuccIDV->push_back(i->neighbor);
+    CostV->push_back(i->cost);
   }
 }
 

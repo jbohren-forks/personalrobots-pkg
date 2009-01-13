@@ -25,51 +25,76 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Conor McGann
  */
 
-#ifndef COSTMAP_2D_BASIC_OBSERVATION_BUFFER_H
-#define COSTMAP_2D_BASIC_OBSERVATION_BUFFER_H
 
-#include <costmap_2d/observation_buffer.h>
-#include <rosthread/mutex.h>
 
-namespace robot_filter {
-  class RobotFilter;
-}
 
-namespace costmap_2d {
+#ifndef TOPOLOGICAL_MAP_ROS_BOTTLENECK_GRAPH_H
+#define TOPOLOGICAL_MAP_ROS_BOTTLENECK_GRAPH_h
 
-  /**
-   * @brief Extend base class to handle buffering until a transform is available, and to support locking for mult-threaded
-   * access
-   */
-  class BasicObservationBuffer : public ObservationBuffer {
-  public:
-    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter = NULL);
 
-    virtual void buffer_cloud(const std_msgs::PointCloud& local_cloud);
+#include <getopt.h>
+#include <sysexits.h>
+#include <ros/node.h>
+#include <rosconsole/rosconsole.h>
+#include <std_srvs/StaticMap.h>
+#include <std_msgs/RobotBase2DOdom.h>
+#include "topological_map/roadmap_bottleneck_graph.h"
 
-    virtual void get_observations(std::vector<Observation>& observations);
 
-  private:
 
-    /**
-     * @brief Test if point in the square footprint of the robot
-     */
-    bool inFootprint(double x, double y) const;
+namespace topological_map
+{
 
-    /**
-     * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
-     * filter based on the min and max z values
-     */
-    std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
-    tf::TransformListener& tf_;
-    std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
-    ros::thread::mutex buffer_mutex_;
-    const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
-    robot_filter::RobotFilter* filter_;
-  };
-}
-#endif
+
+enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
+
+class BottleneckGraphRos: public ros::node
+{
+public:
+  BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
+  BottleneckGraphRos(char* filename);
+  ~BottleneckGraphRos();
+
+  void loadMap(void);
+  void computeBottleneckGraph(void);
+  void generateRoadmap(void);
+  void setupTopics(void);
+  void writeToFile(char*);
+  void setResolution(double r) { resolution_=r; }
+
+  void poseCallback(void);
+
+  void convertToMapIndices(double, double, int*, int*);
+
+
+private:
+
+  // Disallow copy and assignment
+  BottleneckGraphRos (const BottleneckGraphRos&);
+  BottleneckGraphRos& operator= (const BottleneckGraphRos&);
+
+
+  RoadmapBottleneckGraph bottleneck_graph_;
+  NodeStatus node_status_;
+  GridArray grid_;
+
+  int sx_, sy_;
+  int region_id_;
+  int num_added_roadmap_points_;
+  double resolution_;
+
+  int size_, skip_, radius_, distanceMin_, distanceMax_;
+
+  std_msgs::RobotBase2DOdom pose_;
+};
+
+
+
+} // namespace topological_map
+
+
+
+
+#endif // TOPOLOGICAL_MAP_ROS_BOTTLENECK_GRAPH_H
