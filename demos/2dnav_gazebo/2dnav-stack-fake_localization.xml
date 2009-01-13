@@ -85,6 +85,7 @@
     <param name="/costmap_2d/raytrace_window" value="4.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
+    <param name="/costmap_2d/filter_robot_points" type="bool" value="true"/>
 
     <param name="/trajectory_rollout/occdist_scale" type="double" value="0.002"/>
     <param name="/trajectory_rollout/yaw_goal_tolerance" type="double" value="0.1"/>
