@@ -236,6 +236,12 @@ PyObject *Cread(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *dimension(PyObject *self, PyObject *args)
+{
+  classifier_t *pc = (classifier_t*)self;
+  return Py_BuildValue("i", pc->classifier->classes());
+}
+
 PyObject *getSignature(PyObject *self, PyObject *args)
 {
   IplImage *input;
@@ -330,6 +336,7 @@ static PyMethodDef classifier_methods[] = {
   {"train", train, METH_VARARGS},
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},
+  {"dimension", dimension, METH_VARARGS},
   {"getSignature", getSignature, METH_VARARGS},
   {"getSignatures", getSignatures, METH_VARARGS},
   {NULL, NULL},
