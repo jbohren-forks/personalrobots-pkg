@@ -1,0 +1,383 @@
+Index: src/pdf/mcpdf.h
+===================================================================
+--- src/pdf/mcpdf.h	(revision 29808)
++++ src/pdf/mcpdf.h	(working copy)
+@@ -26,7 +26,7 @@
+  *   Foundation, Inc., 59 Temple Place,                                    *
+  *   Suite 330, Boston, MA  02111-1307  USA                                *
+  *                                                                         *
+- ***************************************************************************/ 
++ ***************************************************************************/
+ #ifndef MCPDF_H
+ #define MCPDF_H
+ 
+@@ -46,12 +46,12 @@
+       Pdf P(x), which can both be continu or discrete
+       @todo This class can and should be made far more efficient!!!
+   */
+-  template <typename T> class MCPdf: public Pdf<T> 
++  template <typename T> class MCPdf: public Pdf<T>
+     {
+     protected:
+ 
+       /// Sum of all weights: used for normalising purposes
+-      double _SumWeights; 
++      double _SumWeights;
+       /// STL-list containing the list of samples
+       vector<WeightedSample<T> > _listOfSamples;
+       /// STL-iterator
+@@ -61,7 +61,7 @@
+       /// STL-iterator for cumulative PDF list
+       //  typename vector<double>::iterator CumPDFit;
+ 
+-  
++
+       /// After updating weights, we have to recalculate the sum of weights
+       bool SumWeightsUpdate();
+       /// Normalizing the weights
+@@ -83,8 +83,7 @@
+     public:
+       /// Constructor
+       /** @param num_samples the number of samples this pdf has
+-	  @param dimension the dimension of these samples (necessary for
+-	  if you want to avoid too much memory allocation at runtime)
++	  @param dimension the dimension of these samples.  You can use this parameter to avoid runtime memory allocation and
+       */
+       MCPdf(unsigned int num_samples = 0, unsigned int dimension=0);
+       /// destructor
+@@ -94,7 +93,7 @@
+ 
+       // implemented virtual functions
+       bool SampleFrom (Sample<T>& one_sample, int method = DEFAULT, void * args = NULL) const;
+-      bool SampleFrom (vector<Sample<T> >& list_samples, const unsigned int num_samples, int method = DEFAULT, 
++      bool SampleFrom (vector<Sample<T> >& list_samples, const unsigned int num_samples, int method = DEFAULT,
+ 		       void * args = NULL) const;
+       T ExpectedValueGet() const;
+       MatrixWrapper::SymmetricMatrix CovarianceGet() const;
+@@ -105,8 +104,8 @@
+ 	  @see sample, weightedsample
+       */
+       void NumSamplesSet(unsigned int num_samples);
+-  
+ 
++
+       /// Get number of samples
+       /** @return the number of samples
+        */
+@@ -117,7 +116,7 @@
+           @param i the ith sample
+        */
+       const WeightedSample<T>& SampleGet(unsigned int i) const;
+-  
++
+       /// Set the list of weighted samples
+       /** @param list_of_samples an STL-list containing the list of all
+ 	  weighted samples
+@@ -158,19 +157,16 @@
+       /** @return a vector of doubles representing the CumulativePDF
+        */
+       vector<double> & CumulativePDFGet();
+-      
++
+     };
+ 
+   /////////////////////////////////////////////////////////////////
+   // Template Code here
+   /////////////////////////////////////////////////////////////////
+-  
++
+   // Constructor
+-  template <typename T> MCPdf<T>::MCPdf(unsigned int num_samples, unsigned int dimension) : 
++  template <typename T> MCPdf<T>::MCPdf(unsigned int num_samples, unsigned int dimension) :
+     Pdf<T>(dimension)
+-    , _CumSum(dimension)
+-    , _mean(dimension)
+-    , _diff(dimension)
+     , _covariance(dimension)
+     , _diffsum(dimension,dimension)
+     {
+@@ -185,12 +181,14 @@
+       // if (num_samples > 0)
+       cout << "MCPDF Constructor: NumSamples = " << _listOfSamples.size()
+ 	   << ", CumPDF Samples = " << _CumPDF.size()
+-	   << ", _SumWeights = " << _SumWeights << endl; 
++	   << ", _SumWeights = " << _SumWeights << endl;
+ #endif // __CONSTRUCTOR__
+     }
+ 
++
++
+   // Destructor
+-  template <typename T> 
++  template <typename T>
+     MCPdf<T>::~MCPdf()
+     {
+ #ifdef __DESTRUCTOR__
+@@ -199,7 +197,7 @@
+     }
+ 
+   // Copy constructor
+-  template <typename T> 
++  template <typename T>
+     MCPdf<T>::MCPdf(const MCPdf & pdf) : Pdf<T>(pdf)
+     , _CumSum(pdf.DimensionGet())
+     , _mean(pdf.DimensionGet())
+@@ -223,7 +221,7 @@
+   template <typename T> bool
+     MCPdf<T>::SampleFrom (vector<Sample<T> >& list_samples,
+ 			  const unsigned int numsamples,
+-			  int method, 
++			  int method,
+ 			  void * args) const
+     {
+       list_samples.resize(numsamples);
+@@ -234,7 +232,7 @@
+ 	    return Pdf<T>::SampleFrom(list_samples, numsamples,method,args);
+ 	  }
+ 	case RIPLEY: // Only possible here ( O(N) efficiency )
+-	  /* See 
++	  /* See
+ 	     @Book{		  ripley87,
+ 	     author	= {Ripley, Brian D.},
+ 	     title		= {Stochastic Simulation},
+@@ -272,9 +270,9 @@
+ 		    assert(index <= size);
+ 		    index++; it++; CumPDFit++;
+ 		  }
+-		it--; 
+-		*sit = *it; 
+-		it++; 
++		it--;
++		*sit = *it;
++		it++;
+ 		sit++;
+ 	      }
+ 	    return true;
+@@ -297,13 +295,13 @@
+ 	    // Sample from univariate uniform rng between 0 and 1;
+ 	    double unif_sample; unif_sample = runif();
+ 	    // Compare where we should be:
+-	    unsigned int index = 0; 
++	    unsigned int index = 0;
+ 	    unsigned int size; size = _listOfSamples.size();
+ 	    typename vector<WeightedSample<T> >::const_iterator it;
+-	    it = _listOfSamples.begin(); 
++	    it = _listOfSamples.begin();
+ 	    typename vector<double>::const_iterator CumPDFit;
+ 	    CumPDFit = _CumPDF.begin();
+-	    
++
+ 	    while ( unif_sample > *CumPDFit )
+ 	      {
+ 		// check for internal error
+@@ -323,12 +321,12 @@
+     }
+ 
+ 
+-  template <typename T> unsigned int MCPdf<T>::NumSamplesGet() const 
++  template <typename T> unsigned int MCPdf<T>::NumSamplesGet() const
+     {
+       return _listOfSamples.size();
+     }
+ 
+-  template <typename T> const WeightedSample<T>& 
++  template <typename T> const WeightedSample<T>&
+     MCPdf<T>::SampleGet(unsigned int i) const
+     {
+       assert(i < NumSamplesGet());
+@@ -336,7 +334,7 @@
+     }
+ 
+   // Get and set number of samples
+-  template <typename T> void 
++  template <typename T> void
+     MCPdf<T>::NumSamplesSet(unsigned int num_samples)
+     {
+ #ifdef __MCPDF_DEBUG__
+@@ -398,7 +396,7 @@
+       // Update the list of samples
+       for ( it = _listOfSamples.begin() ; it != _listOfSamples.end() ; it++ )
+ 	{
+-	  *it = *lit; ; 
++	  *it = *lit; ;
+ 	  it->WeightSet(1.0/numsamples);
+ 	  lit++;
+ 	}
+@@ -414,7 +412,7 @@
+       return true;
+     }
+ 
+-  template <typename T> const vector<WeightedSample<T> > & 
++  template <typename T> const vector<WeightedSample<T> > &
+     MCPdf<T>::ListOfSamplesGet() const
+     {
+       return _listOfSamples;
+@@ -447,7 +445,7 @@
+ 	  // Update the sumweights
+ 	  for ( it = _listOfSamples.begin() ; it != _listOfSamples.end() ; it++ )
+ 	    {
+-	      *it = *lit; ; 
++	      *it = *lit; ;
+ 	      it->WeightSet(1.0/numsamples);
+ 	      lit++;
+ 	    }
+@@ -461,7 +459,7 @@
+   template <typename T> bool
+     MCPdf<T>::SumWeightsUpdate()
+     {
+-      double SumOfWeights = 0.0; 
++      double SumOfWeights = 0.0;
+       double current_weight;
+       static typename vector<WeightedSample<T> >::iterator it;
+       for ( it = _listOfSamples.begin() ; it != _listOfSamples.end() ; it++ )
+@@ -502,10 +500,10 @@
+     }
+ 
+ 
+-  template <typename T> void 
++  template <typename T> void
+     MCPdf<T>::CumPDFUpdate()
+     {
+-      double CumSum=0.0; 
++      double CumSum=0.0;
+       static typename vector<double>::iterator CumPDFit;
+       static typename vector<WeightedSample<T> >::iterator it;
+       CumPDFit = _CumPDF.begin(); *CumPDFit = 0.0;
+@@ -524,8 +522,8 @@
+   template <typename T>
+     T MCPdf<T>::ExpectedValueGet (  ) const
+     {
+-      cerr << "MCPDF ExpectedValueGet: not implemented for the template parameters you use." 
+-	   << endl << "Use template specialization as shown in mcpdf.cpp " << endl; 
++      cerr << "MCPDF ExpectedValueGet: not implemented for the template parameters you use."
++	   << endl << "Use template specialization as shown in mcpdf.cpp " << endl;
+ 
+       assert(0);
+       T result;
+@@ -536,8 +534,8 @@
+   template <typename T>
+     MatrixWrapper::SymmetricMatrix MCPdf<T>::CovarianceGet (  ) const
+     {
+-      cerr << "MCPDF CovarianceGet: not implemented for the template parameters you use." 
+-	   << endl << "Use template specialization as shown in mcpdf.cpp " << endl; 
++      cerr << "MCPDF CovarianceGet: not implemented for the template parameters you use."
++	   << endl << "Use template specialization as shown in mcpdf.cpp " << endl;
+ 
+       assert(0);
+       MatrixWrapper::SymmetricMatrix result;
+@@ -553,9 +551,7 @@
+     }
+ 
+ 
+-  
++
+ } // End namespace BFL
+ 
+-#include "mcpdf.cpp"
+-
+ #endif
+Index: src/pdf/mcpdf.cpp
+===================================================================
+--- src/pdf/mcpdf.cpp	(revision 29808)
++++ src/pdf/mcpdf.cpp	(working copy)
+@@ -25,6 +25,32 @@
+ 
+ 
+   // Template Specialisation for T =ColumnVector
++
++  // Make sure no memory is allocated @runtime
++  // Constructor
++  template <> MCPdf<ColumnVector>::MCPdf(unsigned int num_samples, unsigned int dimension) :
++      Pdf<ColumnVector>(dimension)
++      , _CumSum(dimension)
++      , _mean(dimension)
++      , _diff(dimension)
++      , _covariance(dimension)
++      , _diffsum(dimension,dimension)
++      {
++        _SumWeights = 0;
++        WeightedSample<ColumnVector> my_sample(dimension);
++        _listOfSamples.insert(_listOfSamples.begin(),num_samples,my_sample);
++        _CumPDF.insert(_CumPDF.begin(),num_samples+1,0.0);
++
++       _los.assign(num_samples,WeightedSample<ColumnVector>(dimension));
++       _it_los = _los.begin();
++  #ifdef __CONSTRUCTOR__
++        // if (num_samples > 0)
++        cout << "MCPDF Constructor: NumSamples = " << _listOfSamples.size()
++             << ", CumPDF Samples = " << _CumPDF.size()
++             << ", _SumWeights = " << _SumWeights << endl;
++  #endif // __CONSTRUCTOR__
++      }
++
+   template <> inline
+   ColumnVector MCPdf<ColumnVector>::ExpectedValueGet (  ) const
+   {
+Index: src/pdf/CMakeLists.txt
+===================================================================
+--- src/pdf/CMakeLists.txt	(revision 29808)
++++ src/pdf/CMakeLists.txt	(working copy)
+@@ -1,10 +1,10 @@
+ GLOBAL_ADD_INCLUDE_DIR( ${CMAKE_SOURCE_DIR}/src/pdf )
+-GLOBAL_ADD_INCLUDE( bfl/pdf pdf.h conditionalpdf.h discretepdf.h discreteconditionalpdf.h mcpdf.h mcpdf.cpp 
++GLOBAL_ADD_INCLUDE( bfl/pdf pdf.h conditionalpdf.h discretepdf.h discreteconditionalpdf.h mcpdf.h 
+                             gaussian.h uniform.h conditionalgaussian.h conditionalgaussian_additivenoise.h analyticconditionalgaussian.h 
+                             analyticconditionalgaussian_additivenoise.h linearanalyticconditionalgaussian.h filterproposaldensity.h 
+                             EKF_proposaldensity.h)
+ GLOBAL_ADD_SRC ( pdf/analyticconditionalgaussian.cpp pdf/conditionalgaussian.cpp
+-                 pdf/gaussian.cpp pdf/uniform.cpp
++                 pdf/gaussian.cpp pdf/uniform.cpp pdf/mcpdf.cpp
+                  pdf/conditionalgaussian_additivenoise.cpp pdf/analyticconditionalgaussian_additivenoise.cpp 
+                  pdf/linearanalyticconditionalgaussian.cpp pdf/filterproposaldensity.cpp pdf/EKF_proposaldensity.cpp 
+                  pdf/discretepdf.cpp pdf/discreteconditionalpdf.cpp)
+Index: tests/pdf_test.cpp
+===================================================================
+--- tests/pdf_test.cpp	(revision 29808)
++++ tests/pdf_test.cpp	(working copy)
+@@ -729,3 +729,24 @@
+   CPPUNIT_ASSERT_EQUAL(approxEqual(test_diff, (Matrix)a_mcpdf_uint.CovarianceGet(),epsilon),true);
+   /* ProbabilityGet */
+ }
++
++
++
++class MyType
++{
++public:
++  // empty constructor
++  MyType() {};
++
++  // unsigned int constructor
++  //MyType(unsigned int dim) {};
++
++  ~MyType() {};
++};
++
++
++void 
++PdfTest::testMcpdfType()
++{
++  MCPdf<MyType> a_mcpdf(NUM_SAMPLES,DIMENSION);
++}
+Index: tests/pdf_test.hpp
+===================================================================
+--- tests/pdf_test.hpp	(revision 29808)
++++ tests/pdf_test.hpp	(working copy)
+@@ -42,6 +42,7 @@
+   CPPUNIT_TEST( testLinearAnalyticConditionalGaussian );
+   CPPUNIT_TEST( testDiscreteConditionalPdf );
+   CPPUNIT_TEST( testMcpdf );
++  CPPUNIT_TEST( testMcpdfType );
+   CPPUNIT_TEST_SUITE_END();
+ 
+   ColumnVector _mu;
+@@ -58,7 +59,8 @@
+   void testLinearAnalyticConditionalGaussian();
+   void testDiscreteConditionalPdf();
+   void testMcpdf();
+-
++  void testMcpdfType();
++  
+ private:
+   double epsilon;
+ 
