@@ -53,6 +53,9 @@
 
 #include <tf/transform_listener.h>
 
+// Kd Tree
+#include <cloud_kdtree/kdtree.h>
+
 // Cloud geometry
 #include <cloud_geometry/areas.h>
 #include <cloud_geometry/point.h>
@@ -84,20 +87,30 @@ class SemanticPointAnnotator : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     SemanticPointAnnotator () : ros::node ("semantic_point_annotator_omp"), tf_(*this)
     {
-      param ("~rule_floor", rule_floor_, 0.1);           // Rule for FLOOR
+      param ("~rule_floor", rule_floor_, 0.15);          // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
       param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
-      param ("~p_sac_min_points_left", sac_min_points_left_, 500);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
-      param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+      param ("~p_sac_min_points_left", sac_min_points_left_, 100);
+      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 50 points at high resolution
+      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.06);     // 3 cm
+      param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);     // conver to radians
+      eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
 
-      subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, 1);
+      string cloud_topic ("cloud_normals");
+
+      vector<pair<string, string> > t_list;
+      get_published_topics (&t_list);
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (cloud_topic) == string::npos)
+          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+      }
+
+      subscribe (cloud_topic.c_str (), cloud_, &SemanticPointAnnotator::cloud_cb, 1);
 
       advertise<PointCloud> ("cloud_annotated", 1);
 
@@ -112,6 +125,60 @@ class SemanticPointAnnotator : public ros::node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     virtual ~SemanticPointAnnotator () { }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+      * \param points pointer to the point cloud message
+      * \param indices pointer to a list of point indices
+      * \param tolerace the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters, unsigned int min_pts_per_cluster = 1)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+
+      vector<bool> processed;
+      processed.resize (indices->size (), false);
+
+      vector<int> nn_indices;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
+          tree->getNeighborsIndices (nn_indices);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)
+          {
+            if (!processed.at (nn_indices[j]))
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
+            }
+          }
+
+          sq_idx++;
+        }
+
+        if (seed_queue.size () >= min_pts_per_cluster)
+          clusters.push_back (seed_queue);
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -139,8 +206,9 @@ class SemanticPointAnnotator : public ros::node
             break;
           inliers.push_back (sac->getInliers ());
           coeff.push_back (sac->computeCoefficients ());
-          fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-                   coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+
+          //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+          //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
 
           // Project the inliers onto the model
           //model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
@@ -184,7 +252,7 @@ class SemanticPointAnnotator : public ros::node
       vector<vector<int> > inliers_parallel, inliers_perpendicular;
       vector<vector<double> > coeff_parallel, coeff_perpendicular;
 
-      #pragma omp sections nowait
+      #pragma omp sections
       {
         // ---[ Select points whose normals are parallel with the Z-axis
         #pragma omp section
@@ -259,6 +327,32 @@ class SemanticPointAnnotator : public ros::node
         }
       }
 
+      vector<vector<int> > clusters;
+      findClusters (&cloud_, &xy_axis_indices, 0.075, clusters, 10);
+      ROS_INFO ("Found %d clusters.", clusters.size ());
+
+      // note: the clusters are in the z_axis_indices space so instead of points[clusters[j]] we need to do points[z_axis_indices[clusters[j]]
+      nr_p = 0;
+      for (unsigned int cc = 0; cc < clusters.size (); cc++)
+      {
+        double r, g, b;
+        r = rand () / (RAND_MAX + 1.0);
+        g = rand () / (RAND_MAX + 1.0);
+        b = rand () / (RAND_MAX + 1.0);
+        for (unsigned int j = 0; j < clusters[cc].size (); j++)
+        {
+          cloud_annotated_.pts[nr_p].x = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].x;
+          cloud_annotated_.pts[nr_p].y = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].y;
+          cloud_annotated_.pts[nr_p].z = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].z;
+          //cloud_annotated_.chan[0].vals[i] = intensity_value;
+          cloud_annotated_.chan[0].vals[nr_p] = r;
+          cloud_annotated_.chan[1].vals[nr_p] = g;
+          cloud_annotated_.chan[2].vals[nr_p] = b;
+          nr_p++;
+        }
+      }
+
+      /**
       // Get all planes perpendicular to the floor (parallel to XY)
       for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
       {
@@ -291,11 +385,16 @@ class SemanticPointAnnotator : public ros::node
           cloud_annotated_.chan[2].vals[nr_p] = b;
           nr_p++;
         }
-      }
+      }*/
+
+      cloud_annotated_.pts.resize (nr_p);
+      cloud_annotated_.chan[0].vals.resize (nr_p);
+      cloud_annotated_.chan[1].vals.resize (nr_p);
+      cloud_annotated_.chan[2].vals.resize (nr_p);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of points with normals approximately parallel to the Z axis: %d (%g seconds).", z_axis_indices.size (), time_spent);
+      ROS_INFO ("Semantic annotations done in: %g seconds.", time_spent);
 
       publish ("cloud_annotated", cloud_annotated_);
     }

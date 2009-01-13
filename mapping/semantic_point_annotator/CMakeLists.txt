@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 include(rosbuild)
 set(ROS_BUILD_TYPE RelWithDebInfo)
+#set(ROS_BUILD_TYPE Debug)
 rospack(semantic_point_annotator)
 add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
 

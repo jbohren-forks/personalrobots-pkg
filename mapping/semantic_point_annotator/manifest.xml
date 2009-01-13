@@ -12,7 +12,7 @@
   <depend package="std_msgs" />
   <depend package="cloud_io" />
   <depend package="sample_consensus" />
-  <depend package="cloud_octree" />
+  <depend package="cloud_kdtree" />
   <depend package="cloud_geometry" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
