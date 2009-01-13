@@ -28,7 +28,7 @@ class TestDirected(unittest.TestCase):
 
       cl1 = calonder.classifier()
 
-      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim, 4)
+      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim, 0)
       print "Writing to unittest.tree... ",
       cl1.write('unittest.tree')
       print "done"
@@ -44,7 +44,7 @@ class TestDirected(unittest.TestCase):
           print ["%.3f" % x for x in sig.dump()]
           sigs.append(sig)
           ma.addSignature(sig)
-        print cl.getSignatures(im, kp)
+        #print cl.getSignatures(im, kp)
 
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))

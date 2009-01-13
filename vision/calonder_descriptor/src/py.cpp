@@ -13,8 +13,8 @@
 
 using namespace features;
 
-//typedef float SigType;
-typedef uint8_t SigType;
+typedef float SigType;
+//typedef uint8_t SigType;
 typedef Promote<SigType>::type DistanceType;
 
 typedef struct {
@@ -209,8 +209,8 @@ PyObject *train(PyObject *self, PyObject *args)
     base_set.push_back( BaseKeypoint(x+16, y+16, input) );
   }
 
-  //Rng rng( 0 );
-  Rng rng( std::time(0) );
+  Rng rng( 0 );
+  //Rng rng( std::time(0) );
   pc->classifier->train(base_set, rng, num_trees, depth,
                         views, dimension, num_quant_bits);
 
