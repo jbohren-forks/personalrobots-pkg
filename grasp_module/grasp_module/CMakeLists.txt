@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(grasp_module)
-add_definitions(-Wall)
-genmsg()
-gensrv()
-include_directories(msg/cpp srv/cpp)
