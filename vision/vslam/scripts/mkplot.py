@@ -245,7 +245,9 @@ stampedKeyFrameTrajectory = [ [] for i in vos]
 for i,vo in enumerate(vos):
   k=0;
   for keyframeId in vo.log_keyframes:
+    print 'keyframe id', keyframeId,i,k
     stampedKeyFrameTrajectory[i][k] = stampedTrajectory[i][keyframeId]
+    k+=1
     
 output_keyframe_trajectory = open('keyframe_trajs.pkl','wb')
 pickle.dump(stampedKeyFrameTrajectory, output_keyframe_trajectory)
