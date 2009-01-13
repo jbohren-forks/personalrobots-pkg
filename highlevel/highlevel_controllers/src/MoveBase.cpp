@@ -303,10 +303,9 @@ namespace ros {
       // point clouds
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
       //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
-      subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
       tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
 				 boost::bind(&MoveBase::tiltCloudCallbackTransform, this, _1),
-				 "tilt_laser_cloud_filtered", "map", 1);
+				 "tilt_laser_cloud_filtered", "map", 50);
       subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
       subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
       subscribe("obstacle_cloud",  groundPlaneCloudMsg_,  &MoveBase::groundPlaneCloudCallback, 1);
@@ -444,10 +443,6 @@ namespace ros {
       lock();
       tiltScanBuffer_->buffer_cloud(local_cloud);
       unlock();
-    }
-
-    void MoveBase::tiltCloudCallback()
-    {
     }
 
     void MoveBase::tiltCloudCallbackTransform(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
