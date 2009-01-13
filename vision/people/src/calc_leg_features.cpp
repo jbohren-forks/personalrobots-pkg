@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -57,7 +57,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   for (SampleSet::iterator i = cluster->begin();
        i != cluster->end();
        i++)
-      
+
   {
     x_mean += ((*i)->x)/num_points;
     y_mean += ((*i)->y)/num_points;
@@ -67,7 +67,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
 
   std::sort(x_median_set.begin(), x_median_set.end());
   std::sort(y_median_set.begin(), y_median_set.end());
-    
+
   float x_median = 0.5 * ( *(x_median_set.begin() + (num_points-1)/2) + *(x_median_set.begin() + num_points/2) );
   float y_median = 0.5 * ( *(y_median_set.begin() + (num_points-1)/2) + *(y_median_set.begin() + num_points/2) );
 
@@ -80,7 +80,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   for (SampleSet::iterator i = cluster->begin();
        i != cluster->end();
        i++)
-      
+
   {
     sum_std_diff += pow( (*i)->x - x_mean, 2) + pow((*i)->y - y_mean, 2);
     sum_med_diff += sqrt(pow( (*i)->x - x_median, 2) + pow((*i)->y - y_median, 2));
@@ -113,7 +113,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
       prev_jump = sqrt( pow( (*first)->x - prev->x, 2) + pow((*first)->y - prev->y, 2));
       delete prev;
     }
-    
+
   }
 
   if (next_ind < scan.ranges.size())
@@ -148,7 +148,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     }
   }
 
-  CvMat* W = cvCreateMat( 2, 2, CV_64FC1);        
+  CvMat* W = cvCreateMat( 2, 2, CV_64FC1);
   CvMat* U = cvCreateMat( num_points, 2, CV_64FC1);
   CvMat* V = cvCreateMat( 2, 2, CV_64FC1);
   cvSVD(points, W, U, V);
@@ -181,11 +181,11 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     {
       float x = (*i)->x;
       float y = (*i)->y;
-        
+
       cvmSet(A, j, 0, -2.0*x);
       cvmSet(A, j, 1, -2.0*y);
       cvmSet(A, j, 2, 1);
-        
+
       cvmSet(B, j, 0, -pow(x,2)-pow(y,2));
       j++;
     }
@@ -234,7 +234,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
   SampleSet::iterator mid = cluster->begin();
   mid++;
   SampleSet::iterator right = cluster->begin();
-    
+
   float ang_diff = 0.0;
 
   while (left != cluster->end())
@@ -250,7 +250,7 @@ vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
     float lrx = (*left)->x - (*right)->x;
     float lry = (*left)->y - (*right)->y;
     float L_lr = sqrt(lrx*lrx + lry*lry);
-      
+
     boundary_length += L_mr;
     sum_boundary_reg_sq += L_mr*L_mr;
     last_boundary_seg = L_ml;

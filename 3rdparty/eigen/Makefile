@@ -8,3 +8,9 @@ SOURCE_DIR  = build/eigen2
 include $(shell rospack find mk)/download_unpack_build.mk
 
 eigen: $(SOURCE_DIR)
+
+clean:
+	rm -rf $(SOURCE_DIR)
+
+wipe: clean
+	rm -rf build

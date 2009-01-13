@@ -37,6 +37,8 @@
 #include <ethercat/ethercat_xenomai_drv.h>
 #include <dll/ethercat_dll.h>
 
+#include <native/timer.h>
+
 EthercatHardware::EthercatHardware() :
   hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
@@ -63,9 +65,9 @@ static const int NSEC_PER_SEC = 1e+9;
 
 static double now()
 {
-  struct timespec n;
-  clock_gettime(CLOCK_REALTIME, &n);
-  return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
+  RTIME n;
+  n = rt_timer_read();
+  return double(n) / NSEC_PER_SEC;
 }
 
 void EthercatHardware::init(char *interface, bool allow_unprogrammed)

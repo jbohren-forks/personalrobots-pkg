@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(kinematic_calibration)
 genmsg()
 gensrv()
@@ -19,16 +19,14 @@ rospack_add_executable(sensor_kinematics_grabber src/sensor_kinematics_grabber.c
 target_link_libraries(sensor_kinematics_grabber kinematic_calibration)
 
 # ********** Tests **********
-rospack_add_gtest(jacobian_unittest test/jacobian_unittest.cpp)
-target_link_libraries(jacobian_unittest kinematic_calibration)
-set_target_properties(jacobian_unittest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_gtest(test/jacobian_unittest test/jacobian_unittest.cpp)
+target_link_libraries(test/jacobian_unittest kinematic_calibration)
 
 rospack_add_gtest(bridge_unittest test/bridge_unittest.cpp)
 target_link_libraries(bridge_unittest kinematic_calibration)
 
-rospack_add_gtest(chain_modifier_unittest test/chain_modifier_unittest.cpp)
-target_link_libraries(chain_modifier_unittest kinematic_calibration)
-set_target_properties(chain_modifier_unittest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_gtest(test/chain_modifier_unittest test/chain_modifier_unittest.cpp)
+target_link_libraries(test/chain_modifier_unittest kinematic_calibration)
 
 rospack_add_gtest(error_vec_marker_3d_unittest test/error_vec_marker_3d_unittest.cpp)
 target_link_libraries(error_vec_marker_3d_unittest kinematic_calibration)

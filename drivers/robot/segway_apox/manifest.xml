@@ -5,5 +5,6 @@
   <depend package="std_msgs"/>
   <depend package="roscpp"/>
   <depend package="tf"/>
+  <depend package="rosthread"/>
 </package>
 

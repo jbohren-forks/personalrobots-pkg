@@ -32,6 +32,7 @@
 
 #include "ros/node.h"
 #include "rosthread/condition.h"
+#include "rosthread/mutex.h"
 
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/LaserScan.h"

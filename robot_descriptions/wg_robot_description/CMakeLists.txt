@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(wg_robot_description)
 
 rospack_add_gtest(test_update test/test_update.cpp)
@@ -73,7 +73,9 @@ ELSE ( ${basename} MATCHES "_convex" )
 #convex decomposition obj files
 add_custom_command(
   OUTPUT ${basepath}/convex
-  COMMAND ${CMAKE_COMMAND} -E make_directory
+  # CMake 2.4 doesn't offer the make_directory command.
+  #COMMAND ${CMAKE_COMMAND} -E make_directory
+  COMMAND mkdir -p
   ARGS ${basepath}/convex)
 
 #create obj files for convex decomposition from stl files

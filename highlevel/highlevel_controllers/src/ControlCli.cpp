@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -63,22 +63,22 @@ public:
     batteryState_.energy_capacity = 1000;
 
     // Start a thread to publish batteryState at 10 Hz 
-    publishLoop = new boost::thread(boost::bind(&ControlCLI::publishingLoop, this));
+    publishLoop = boost::thread(boost::bind(&ControlCLI::publishingLoop, this));
 
     // Start the console
     runCLI();
   }
   ~ControlCLI() {
-    delete publishLoop;
+
   }
   bool alive() { return !dead; }
 private:
-  boost::thread *publishLoop;
+  boost::thread publishLoop;
   bool dead;
 
   void publishingLoop(){
     while (true) {
-      publish<robot_msgs::BatteryState>("bogus_battery_state", batteryState_);
+      publish("bogus_battery_state", batteryState_);
       usleep(100000);
     }
   }
@@ -92,7 +92,7 @@ private:
     names.push_back("l_wrist_flex_joint");
     names.push_back("l_wrist_roll_joint"); 
   }
-  
+
   void fillNamesRightArm(std::vector<std::string> &names) {
     names.push_back("r_shoulder_pan_joint");
     names.push_back("r_shoulder_lift_joint");
@@ -151,10 +151,10 @@ private:
       highlevel_controllers::RechargeGoal goal;
       goal.enable = 1;
       goal.recharge_level = recharge_level;
-      publish<highlevel_controllers::RechargeGoal>("recharge_goal", goal);
+      publish("recharge_goal", goal);
     } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");
-      
+
       robot_srvs::PlanNames::request namesReq;
       robot_srvs::PlanNames::response names;
       if (ros::service::call("plan_joint_state_names", namesReq, names)) {
@@ -165,11 +165,11 @@ private:
         printf("Error in service call.\n");
       }
 
-      
+
     } else if (c == 'I') {
       robot_msgs::MechanismState mechanismState;
       std::vector<std::string> names;
-      
+
       fillNamesLeftArm(names);
       fillNamesRightArm(names);
 
@@ -179,11 +179,11 @@ private:
         mechanismState.joint_states[i].name = names[i];
       }
       printf("Publishing states.\n");
-      publish<robot_msgs::MechanismState>("mechanism_state", mechanismState);
-      
+      publish("mechanism_state", mechanismState);
+
     } else if (c == 'S') {
       std::vector<std::string> names;
-      
+
       fillNamesRightArm(names);
 
       pr2_msgs::MoveArmGoal goalMsg;
@@ -204,13 +204,13 @@ private:
       }
       printf("\n");
 
-      publish<pr2_msgs::MoveArmGoal>("right_arm_goal", goalMsg);
+      publish("right_arm_goal", goalMsg);
 
     } else if (c == 'L' || c == 'R') {
       printf("%s Arm\n", c == 'L' ? "Left" : "Right");
 
       std::vector<std::string> names;
-      
+
       if (c == 'L') {
         fillNamesLeftArm(names);
       } else {
@@ -226,7 +226,7 @@ private:
                names[i].c_str());
 	goalMsg.configuration[i].name = names[i];
 	goalMsg.configuration[i].position = enterValue(-2 * M_PI, 2 * M_PI);
-        
+
       }
       printf("Publishing:");
       for (unsigned int i = 0; i < names.size(); i++) {
@@ -234,8 +234,8 @@ private:
       }
       printf("\n");
 
-      publish<pr2_msgs::MoveArmGoal>(c == 'L' ? "left_arm_goal" : "right_arm_goal", goalMsg);
-      
+      publish(c == 'L' ? "left_arm_goal" : "right_arm_goal", goalMsg);
+
     } else if (c == 'Q') {
       dead = true;
       return;
@@ -257,7 +257,7 @@ main(int argc, char** argv)
 {
 
   ros::init(argc,argv);
-  
+
   ControlCLI node;
   while (node.ok() && node.alive()) {
     usleep(100);

@@ -1,4 +1,4 @@
-all: freeimage
+all: installed
 
 TARBALL = build/FreeImage3110.zip
 TARBALL_URL = http://pr.willowgarage.com/downloads/FreeImage3110.zip
@@ -9,7 +9,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 ROOT = $(shell rospack find freeimage)/freeimage
 
-freeimage: $(SOURCE_DIR)
+installed: $(SOURCE_DIR) Makefile
 	@echo "making it"
 	@echo "ROOT is: $(ROOT)"
 	-mkdir -p freeimage
@@ -29,13 +29,13 @@ freeimage: $(SOURCE_DIR)
 	cd $(SOURCE_DIR) ; make $(PARALLEL_JOBS); make install
 	mkdir -p freeimage/lib/pkgconfig
 	sed 's%FREEIMAGE_PATH%$(shell rospack find freeimage)%g' freeimage.pc > freeimage/lib/pkgconfig/freeimage.pc
+	touch installed
 
 clean:
 	-cd freeimage-3.11.0 && make clean
-	rm -rf freeimage
+	rm -rf installed
 
-wipe:
-	rm -rf freeimage
+wipe: clean
 	rm -rf build
 
 .PHONY : clean download wipe

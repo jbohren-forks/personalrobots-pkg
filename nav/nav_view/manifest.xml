@@ -10,9 +10,7 @@
   <depend package="tf"/>
   <depend package="ogre"/>
   <depend package="ogre_tools"/>
-  <depend package="wxswig"/>
-  <depend package="wxPython_swig_interface"/>
   
-  <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib ${prefix}/lib/_nav_view.so"/>
+  <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnav_view"/>
   <python path="${prefix}/lib/"/>
 </package>

@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <ros/node.h>
+#include <ros/publisher.h>
 #include <ros/time.h>
 #include <collision_space/environmentODE.h>
 #include <algorithm>
@@ -78,7 +79,7 @@ public:
 	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, m_tm, "base", "map"));
     }
 
-    void subCb(ros::pub_sub_conn*)
+  void subCb(const ros::PublisherPtr&)
     {
       m_connected = true;
     }

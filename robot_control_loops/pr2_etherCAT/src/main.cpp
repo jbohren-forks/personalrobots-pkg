@@ -41,6 +41,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <native/task.h>
+#include <native/timer.h>
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
@@ -139,12 +141,12 @@ static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::Diagnos
 
 static inline double now()
 {
-  struct timespec n;
-  clock_gettime(CLOCK_MONOTONIC, &n);
-  return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
+  RTIME n;
+  n = rt_timer_read();
+  return double(n) / NSEC_PER_SEC;
 }
 
-static void *syncClocks(void *)
+static void syncClocks(void *)
 {
   while (!g_quit)
   {
@@ -156,10 +158,11 @@ static void *syncClocks(void *)
     clock_settime(CLOCK_REALTIME, &ts);
     usleep(200000);
   }
-  return 0;
 }
 
-void *controlLoop(void *)
+static RT_TASK clockTask, controlTask;
+
+void controlLoop(void *)
 {
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
 
@@ -213,16 +216,15 @@ void *controlLoop(void *)
 
   // Switch to hard real-time
 #if defined(__XENO__)
-  pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
+  rt_task_set_mode(0, T_PRIMARY|T_WARNSW, NULL);
 #endif
 
-  struct timespec tick;
-  clock_gettime(CLOCK_MONOTONIC, &tick);
-  int period = 1e+6; // 1 ms in nanoseconds
+  rt_task_set_periodic(NULL, TM_NOW, 1e+6);
 
   static int count = 0;
   while (!g_quit)
   {
+    rt_task_wait_period(NULL);
     double start = now();
     if (g_reset_motors)
     {
@@ -246,13 +248,6 @@ void *controlLoop(void *)
       count = 0;
     }
 
-    tick.tv_nsec += period;
-    while (tick.tv_nsec >= NSEC_PER_SEC)
-    {
-      tick.tv_nsec -= NSEC_PER_SEC;
-      tick.tv_sec++;
-    }
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
   }
 
   /* Shutdown all of the motors on exit */
@@ -263,14 +258,12 @@ void *controlLoop(void *)
   }
   ec.update(false);
 
-  publisher.stop();
-
   // Switch back from hard real-time
 #if defined(__XENO__)
-  pthread_set_mode_np(PTHREAD_PRIMARY, 0);
+  rt_task_set_mode(T_PRIMARY,0, NULL);
 #endif
 
-  return 0;
+  publisher.stop();
 }
 
 void quitRequested(int sig)
@@ -410,8 +403,9 @@ static void cleanupPidFile(void)
   unlink(PIDFILE);
 }
 
-static pthread_t rtThread, clockThread;
-static pthread_attr_t rtThreadAttr;
+#define CLOCK_PRIO 0
+#define CONTROL_PRIO 0
+
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
@@ -481,29 +475,40 @@ int main(int argc, char *argv[])
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
 
-  // Set up thread scheduler for realtime
-  pthread_attr_init(&rtThreadAttr);
-  pthread_attr_setinheritsched(&rtThreadAttr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&rtThreadAttr, SCHED_FIFO);
-
   node->advertise_service("shutdown", &Shutdown::shutdownService);
   node->advertise_service("reset_motors", &Reset::resetMotorsService);
 
   //Start thread
   int rv;
-  if ((rv = pthread_create(&clockThread, NULL, syncClocks, 0)) != 0)
+  if ((rv = rt_task_create(&clockTask, "clockTask", 0, CLOCK_PRIO, 0)) != 0)
   {
     ROS_FATAL("Unable to create clock synchronization thread: rv = %d\n", rv);
     ROS_BREAK();
   }
 
-  if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, 0)) != 0)
+  if ((rv = rt_task_start(&clockTask, syncClocks, NULL)) != 0)
+  {
+    ROS_FATAL("Unable to start clock synchronization thread: rv = %d\n", rv);
+    ROS_BREAK();
+  }
+
+  if ((rv = rt_task_create(&controlTask, "controlTask", 0, CONTROL_PRIO, T_JOINABLE)) != 0)
   {
     ROS_FATAL("Unable to create realtime thread: rv = %d\n", rv);
     ROS_BREAK();
   }
 
-  pthread_join(rtThread, 0);
+  if ((rv = rt_task_start(&controlTask, controlLoop, NULL)) != 0)
+  {
+    ROS_FATAL("Unable to start realtime thread: rv = %d\n", rv);
+    ROS_BREAK();
+  }
+
+  if ((rv = rt_task_join(&controlTask)) != 0)
+  {
+    ROS_FATAL("Unable to join realtime thread: rv = %d\n", rv);
+    ROS_BREAK();
+  }
 
   // Cleanup pid file
   cleanupPidFile();

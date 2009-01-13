@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -102,12 +102,12 @@ tf::Point SampleSet::center()
   for (iterator i = begin();
        i != end();
        i++)
-      
+
   {
     x_mean += ((*i)->x)/size();
     y_mean += ((*i)->y)/size();
   }
-  
+
   return tf::Point (x_mean, y_mean, 0.0);
 }
 
@@ -126,7 +126,7 @@ void ScanMask::addScan(std_msgs::LaserScan& scan)
   {
     throw std::runtime_error("laser_processor::ScanMask::addScan: inconsistantly sized scans added to mask");
   }
-  
+
   for (uint32_t i = 0; i < scan.ranges.size(); i++)
   {
     Sample* s = Sample::Extract(i, scan);
@@ -134,7 +134,7 @@ void ScanMask::addScan(std_msgs::LaserScan& scan)
     if (s != NULL)
     {
       SampleSet::iterator m = mask_.find(s);
-        
+
       if (m != mask_.end())
       {
         if ((*m)->range > s->range)
@@ -178,7 +178,7 @@ ScanProcessor::ScanProcessor(std_msgs::LaserScan& scan, ScanMask& mask_, float m
   for (uint32_t i = 0; i < scan.ranges.size(); i++)
   {
     Sample* s = Sample::Extract(i, scan);
-      
+
     if (s != NULL)
     {
       if (!mask_.hasSample(s, mask_threshold))
@@ -246,9 +246,9 @@ ScanProcessor::splitConnected(float thresh)
       while (s_q != sample_queue.end())
       {
         int expand = (int)(asin( thresh / (*s_q)->range ) / scan_.angle_increment);
-    
+
         SampleSet::iterator s_rest = (*c_iter)->begin();
-        
+
         while ( (s_rest != (*c_iter)->end() &&
                  (*s_rest)->index < (*s_q)->index + expand ) )
         {
@@ -279,7 +279,7 @@ ScanProcessor::splitConnected(float thresh)
 
     //Now that c_iter is empty, we can delete
     delete (*c_iter);
-      
+
     //And remove from the map
     clusters_.erase(c_iter++);
   }

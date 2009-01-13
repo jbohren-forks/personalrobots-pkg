@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include "ros/node.h"
+#include "ros/publisher.h"
 #include "robot_msgs/Planner2DState.h"
 #include "robot_msgs/Planner2DGoal.h"
 
@@ -11,7 +12,7 @@ public:
   robot_msgs::Planner2DGoal wf_goal;
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
-  WavefrontCLI(double x, double y, double th) 
+  WavefrontCLI(double x, double y, double th)
   : ros::node("wavefront_cli"), state(WF_IDLE)
   {
     wf_goal.goal.x  = x;
@@ -19,7 +20,7 @@ public:
     wf_goal.goal.th = th;
     wf_goal.enable = 1;
     subscribe("state", wf_state, &WavefrontCLI::state_cb, 1);
-    advertise<robot_msgs::Planner2DGoal>("goal", 1);
+    advertise("goal", wf_state, &WavefrontCLI::goal_subscriber_callback, 1);
   }
   void state_cb()
   {
@@ -34,11 +35,9 @@ public:
     publish("goal", wf_goal);
     ros::Duration().fromSec(0.5).sleep(); // hack to try and wait for the message to go
   }
-  virtual void peer_subscribe(const std::string &topic_name, 
-                              ros::pub_sub_conn * const psc)
+  void goal_subscriber_callback(const ros::PublisherPtr& pub)
   {
-    if (topic_name == "goal")
-      publish("goal", wf_goal);
+    publish("goal", wf_goal);
   }
 };
 
@@ -56,7 +55,7 @@ int main(int argc, char **argv)
   double max_secs = atof(argv[4]);
   WavefrontCLI wf_cli(atof(argv[1]), atof(argv[2]), atof(argv[3]));
   ros::Time t_start(ros::Time::now());
-  while (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE && 
+  while (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE &&
          ros::Time::now() - t_start < ros::Duration().fromSec(max_secs))
     ros::Duration().fromSec(0.1).sleep();
   if (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE) // didn't get there

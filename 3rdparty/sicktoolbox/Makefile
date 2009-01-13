@@ -1,19 +1,26 @@
-all: sicktoolbox
+all: installed
 
-download:
-	wget -nc -nv http://pr.willowgarage.com/downloads/sicktoolbox-1.0.tar.gz
+TARBALL = build/sicktoolbox-1.0.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/sicktoolbox-1.0.tar.gz
+SOURCE_DIR = build/sicktoolbox-1.0
+#MD5SUM_FILE = sicktoolbox-1.0.tar.gz.md5sum
+UNPACK_CMD = tar xzf
+TARBALL_PATCH = stdlib_include.patch
 
-sicktoolbox-1.0: download
-	#md5sum -c sicktoolbox-1.0.tar.gz.md5sum
-	tar xzf sicktoolbox-1.0.tar.gz && patch -p0 <stdlib_include.patch
+include $(shell rospack find mk)/download_unpack_build.mk
 
-sicktoolbox: sicktoolbox-1.0
-	cd sicktoolbox-1.0 && ./configure --prefix=$(PWD)/sicktoolbox
-	cd sicktoolbox-1.0 && make && make install
+installed: wiped $(SOURCE_DIR)
+	cd $(SOURCE_DIR) && ./configure --prefix=$(PWD)/sicktoolbox
+	cd $(SOURCE_DIR) && make && make install
+	touch installed
+
+wiped: Makefile
+	make wipe
+	touch wiped
 
 clean:
 	-rm -rf sicktoolbox-1.0 sicktoolbox
-	rm -f *~
+	rm -f *~ installed
 
 .PHONY : clean wipe
 

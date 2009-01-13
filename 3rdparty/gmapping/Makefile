@@ -1,4 +1,4 @@
-all: build
+all: installed
 
 TARBALL = build/gmapping_r39.tar.gz
 TARBALL_URL = http://pr.willowgarage.com/downloads/gmapping_r39.tar.gz
@@ -8,22 +8,10 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH = gmapping-r39.patch
 
-build: wiped install
-
-configured: $(SOURCE_DIR) Makefile
+installed: wiped $(SOURCE_DIR)
 	cd $(SOURCE_DIR) && patch -p0 < ../../$(PATCH) && ./configure
-	touch configured
-
-wiped: Makefile $(PATCH)
-	make wipe
-	touch wiped
-
-.PHONY: gmapping
-gmapping: configured
 	cd $(SOURCE_DIR) && make
-
-# Poor-man's install step
-install: gmapping
+	# Poor-man's install step
 	mkdir -p lib
 	cp $(SOURCE_DIR)/lib/* lib
 	mkdir -p include/gmapping/sensor/sensor_range
@@ -44,10 +32,15 @@ install: gmapping
 	cp $(SOURCE_DIR)/scanmatcher/*.h include/gmapping/scanmatcher
 	cp $(SOURCE_DIR)/log/*.h include/gmapping/log
 	cp $(SOURCE_DIR)/grid/*.h include/gmapping/grid
+	touch installed
+
+wiped: Makefile $(PATCH)
+	make wipe
+	touch wiped
 
 clean:
 	-cd $(SOURCE_DIR) && make clean
-	rm -rf include lib configured
+	rm -rf include lib installed
 wipe: clean
 	rm -rf build
 

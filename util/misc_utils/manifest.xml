@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com</url>
   <depend package="rosthread" />
   <depend package="roscpp" />
+  <depend package="realtime_thread" />
   <export>
     <cpp cflags="-I${prefix}/include" />
   </export>

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <unistd.h>
 #include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"

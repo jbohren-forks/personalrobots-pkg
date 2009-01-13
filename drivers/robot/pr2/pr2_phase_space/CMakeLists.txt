@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(pr2_phase_space)
 genmsg()
 #rospack_add_executable(phase_space_odometry src/phase_space_odometry.cpp)

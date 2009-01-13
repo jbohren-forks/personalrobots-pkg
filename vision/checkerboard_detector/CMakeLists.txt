@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(checkerboard_detector)
 rospack_add_executable(checkerboard_detector checkerboard_detector.cpp)
 
@@ -15,8 +15,8 @@ if( WIN32 )
 
     if( HAVE_OPENMP )
       add_definitions("/openmp")
-    endif()
-  endif()
+    endif(HAVE_OPENMP)
+  endif(HAVE_OMP_H)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   # check if compilers supports -fopenmp
@@ -27,8 +27,8 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     add_definitions("-fopenmp")
     target_link_libraries(checkerboard_detector gomp)
     set(OPENMP_LFLAGS "-lgomp")
-  endif()
-endif()
+  endif(HAVE_OPENMP AND HAS_GOMP_LIB)
+endif(WIN32)
 
 genmsg()
 

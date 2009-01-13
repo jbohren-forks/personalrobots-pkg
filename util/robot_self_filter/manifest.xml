@@ -4,7 +4,7 @@
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
-  <review status="API cleared" notes=""/>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/robot_self_filter</url>
   <depend package="laser_scan"/>
   <depend package="tf"/>

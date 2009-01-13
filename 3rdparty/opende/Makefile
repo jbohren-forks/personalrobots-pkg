@@ -10,7 +10,7 @@ ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: build
+all: installed
 
 SVN_DIR = opende-svn
 SVN_URL = https://opende.svn.sourceforge.net/svnroot/opende/trunk 
@@ -22,15 +22,9 @@ CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include'
 
 ROOT = $(shell rospack find opende)/opende
 
-build: SVN_UP_REVERT_PATCH opende
-
-configured: $(SVN_DIR) Makefile
+installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-new-trimesh --enable-shared $(CONFIGURE_FLAGS)
-	touch configured
-
-.PHONY: opende
-opende: configured
 	cd $(SVN_DIR) && make $(PARALLEL_JOBS)
 	cd $(SVN_DIR) && make install
 	@echo "patch ode-config to pass -Wl,-rpath,-L{exec_prefix}/lib"
@@ -39,9 +33,10 @@ opende: configured
 	@echo "patch ode.pc to pass -Wl,-rpath,-L{libdir}"
 	sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lode/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
 	#sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lode -Wl,-rpath,\/opt\/intel\/cc\/10.1.008\/lib -L\/opt\/intel\/cc\/10.1.008\/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
+	touch installed
 
 clean:
 	-cd $(SVN_DIR) && make clean
-	rm -rf opende configured
+	rm -rf opende installed
 wipe: clean
 	rm -rf $(SVN_DIR)

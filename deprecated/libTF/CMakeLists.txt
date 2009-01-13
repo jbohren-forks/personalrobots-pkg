@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(libTF)
 
 rospack_add_library(TF src/libTF.cpp src/Pose3DCache.cpp src/Pose3D.cpp)

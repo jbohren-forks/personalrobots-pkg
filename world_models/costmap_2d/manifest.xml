@@ -8,6 +8,7 @@
 <depend package="std_msgs" />
 <depend package="pr2_msgs" />
 <depend package="tf" />
+<depend package="rosthread"/>
 <depend package="robot_filter" />
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>

@@ -17,6 +17,7 @@
   <depend package="rostime" />
   <depend package="rospy" />
   <depend package="costmap_2d" />
+  <depend package="rosthread"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

@@ -1,4 +1,4 @@
-all: fl-ann
+all: installed
 
 TARBALL     = build/flann-1.11-src.zip
 TARBALL_URL = http://pr.willowgarage.com/downloads/flann-1.11-src.zip
@@ -8,9 +8,14 @@ TARBALL_PATCH = cmakelists.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-fl-ann: $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)
 	echo "Building FL-ANN..."
 	mkdir -p build/build && cd build/build && cmake ../flann-1.11-src/src && make
+	touch installed
+
+wiped: Makefile
+	make wipe
+	touch wiped
 
 wipe:
-	rm -rf build
+	rm -rf build installed

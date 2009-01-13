@@ -1,18 +1,19 @@
-all: velodyne-driver
+all: installed
 
-download: 
-	wget -nc -nv http://pr.willowgarage.com/downloads/velodyne-driver-1.0.tar.gz
+TARBALL = build/velodyne-driver-1.0.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/velodyne-driver-1.0.tar.gz
+SOURCE_DIR = build/velodynedriver-1.0
+UNPACK_CMD = tar xzf
+include $(shell rospack find mk)/download_unpack_build.mk
 
-velodyne-driver-1.0: download
-	tar -xzf velodyne-driver-1.0.tar.gz
-
-velodyne-driver: velodyne-driver-1.0
-	cd velodynedriver-1.0 && ./configure --prefix=$(PWD)/velodyne-driver
-	cd velodynedriver-1.0 && make && make install
+installed: $(SOURCE_DIR) Makefile
+	cd $(SOURCE_DIR) && ./configure --prefix=$(PWD)/velodyne-driver
+	cd $(SOURCE_DIR) && make && make install
+	touch installed
 
 clean:
 	-rm -rf velodynedriver-1.0 velodyne-driver
-	rm -f *~
+	rm -f *~ installed
 
 .PHONY : clean wipe
 

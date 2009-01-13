@@ -18,7 +18,8 @@
 #  $ make svn-all
 
 ##all: tarball-all
-all: svn-all
+#all: svn-all
+all: installed
 
 VERSION=     r912
 
@@ -33,13 +34,25 @@ SFL_DIR=     `rospack find libsunflower`/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/build/nepumuk-svn
-SVN_REV=     HEAD
+SVN_REVISION=     -r 960
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
 
 SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.expo layout.expo
 
 
-include $(shell rospack find mk)/download_unpack_build.mk
+#include $(shell rospack find mk)/download_unpack_build.mk
+include $(shell rospack find mk)/svn_checkout.mk
+
+installed: $(SVN_DIR) patched
+	cd $(SVN_DIR) && ./bootstrap-buildsystem.sh
+	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(SVN_DIR)/configure --prefix=$(INST_DIR) \
+                                                --with-sfl=$(SFL_DIR) \
+                                                --with-boost=$(BOOST_DIR)
+	$(MAKE) -C $(BUILD_DIR) install
+	for foo in $(SIMULINKS); do \
+	  test -L $$foo || ln -s $(INST_DIR)/bin/$$foo || exit 42; done
+	touch installed
 
 .PHONY: svn-all
 svn-all: checkout_or_update
@@ -78,10 +91,11 @@ $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 clean:
 	- rm $(SIMULINKS)
 	$(MAKE) -C $(BUILD_DIR) clean
+	rm -f installed
 
 distclean:
 	- rm $(SIMULINKS)
 	$(MAKE) -C $(BUILD_DIR) distclean
 
-wipe:
-	rm -rf $(BUILD_DIR) $(INST_DIR)
+wipe: clean
+	rm -rf build $(INST_DIR)

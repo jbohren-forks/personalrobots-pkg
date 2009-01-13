@@ -39,18 +39,18 @@ public:
 
   map<string, imgData> images;
 
-  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME), 
+  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME),
              img_cnt(0), made_dir(false), fix_color(false), recompand(false)
-  { 
+  {
     subscribe("images", image_msg, &CvView::image_cb, 1);
 
     time_t rawtime;
     struct tm* timeinfo;
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    sprintf(dir_name, "%s_images_%.2d%.2d%.2d_%.2d%.2d%.2d", 
-            get_name().c_str()+1, timeinfo->tm_mon + 1, timeinfo->tm_mday,
-            timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min, 
+    sprintf(dir_name, "%s_images_%.2d%.2d%.2d_%.2d%.2d%.2d",
+            getName().c_str()+1, timeinfo->tm_mon + 1, timeinfo->tm_mday,
+            timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min,
             timeinfo->tm_sec);
   }
 
@@ -89,11 +89,11 @@ public:
 
         if (j->second.bridge->to_cv(&j->second.cv_image))
         {
-          
+
           if (fix_color)
           {
             IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
-            
+
             j->second.color_cal->correctColor(j->second.cv_image, img, true, recompand, COLOR_CAL_BGR);
             cvShowImage(j->second.label.c_str(), img);
             cvReleaseImage(&img);
@@ -104,13 +104,13 @@ public:
           }
         }
       }
-      
+
     }
 
     cv_mutex.unlock();
   }
 
-  void check_keys() 
+  void check_keys()
   {
     cv_mutex.lock();
     int key = cvWaitKey(3);
@@ -127,16 +127,16 @@ public:
   }
 
   /*
-  void save_image() 
+  void save_image()
   {
-    if (!made_dir) 
+    if (!made_dir)
     {
-      if (mkdir(dir_name, 0755)) 
+      if (mkdir(dir_name, 0755))
       {
         printf("Failed to make directory: %s\n", dir_name);
         return;
-      } 
-      else 
+      }
+      else
         made_dir = true;
     }
     std::ostringstream oss;
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   CvView view;
-  while (view.ok()) 
+  while (view.ok())
   {
     usleep(10000);
     view.check_keys();

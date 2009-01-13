@@ -15,8 +15,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
- *  Author: John Hsu, David Li 
+ *
+ *  Author: John Hsu, David Li
  *  Description: A node used to send arm trajectory messages for path following
  *  Note: This class is for testing purposes only and will be obsoleted by a node that sends kinematic states
  */
@@ -51,7 +51,7 @@ class ArmTrajectoryNode : public ros::node
 
    double currentVelocity[6]; //Encode x,y,z,y,p,r for one time stamp
 
-    
+
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -141,11 +141,11 @@ void ArmTrajectoryNode::SendOneVelocity(){
     currentVelocity[3] = 0.0;
     currentVelocity[4] = 0.0;
     currentVelocity[5] = 0.0;
-	
+
 	currentMsg.set_pts_size(0);
  	currentMsg.set_vel_size(6);
 
-    for(int ii=0;ii<6;ii++){	
+    for(int ii=0;ii<6;ii++){
 	tmp_trajectory_v.data = currentVelocity[ii];
 	currentMsg.vel[ii] = tmp_trajectory_v;
 	}
@@ -184,7 +184,7 @@ ArmTrajectoryNode::SendTrajectory()
   this->armTrajectoryMsg.set_vel_size(this->trajectory_pts);
 
   for(int i=0;i< this->trajectory_pts ;i++)
-  { 
+  {
     this->armTrajectoryMsg.pts[i].x    = this->trajectory_p->buffer[i].x;
     this->armTrajectoryMsg.pts[i].y    = this->trajectory_p->buffer[i].y;
     this->armTrajectoryMsg.pts[i].z    = this->trajectory_p->buffer[i].z;
@@ -198,9 +198,9 @@ ArmTrajectoryNode::SendTrajectory()
 
 
 
-int 
+int
 main(int argc, char** argv)
-{ 
+{
   ros::init(argc,argv);
 
   ArmTrajectoryNode gn(argc,argv,argv[1]);
@@ -218,7 +218,7 @@ for(;;)
   gn.SendOneVelocity();
 
   std::cout << "Trajectory Sent on topic arm_trajectory" << std::endl;
-  
+
   exit(0);
 
 }

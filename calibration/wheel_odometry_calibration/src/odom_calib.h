@@ -36,6 +36,7 @@
 
 // ros stuff
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <tf/tf.h>
 #include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
 

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(mechanism_model)
 rospack_add_library( mechanism_model
   src/simple_transmission.cpp
@@ -10,6 +10,5 @@ rospack_add_library( mechanism_model
   src/chain.cpp
   src/wrist_transmission.cpp)
 
-rospack_add_gtest(test_FK test/test_FK.cpp)
-set_target_properties(test_FK PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
-target_link_libraries(test_FK mechanism_model)
+rospack_add_gtest(test/test_FK test/test_FK.cpp)
+target_link_libraries(test/test_FK mechanism_model)

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 include_directories(include/control_toolbox/eigen2)
 rospack(control_toolbox)
 genmsg()
@@ -13,9 +13,7 @@ rospack_add_library(control_toolbox
  src/base_position_pid.cpp
  )
  
-rospack_add_gtest(lqr_utils test/lqr_utils.cpp)
-set_target_properties(lqr_utils PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_gtest(test/lqr_utils test/lqr_utils.cpp)
 
-rospack_add_gtest(lqr test/lqr.cpp)
-set_target_properties(lqr PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_gtest(test/lqr test/lqr.cpp)
 # rospack_add_executable(test_linear test/linear.cpp)

@@ -33,6 +33,7 @@
 #define COSTMAP_2D_BASIC_OBSERVATION_BUFFER_H
 
 #include <costmap_2d/observation_buffer.h>
+#include <rosthread/mutex.h>
 
 namespace robot_filter {
   class RobotFilter;
