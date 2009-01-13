@@ -239,7 +239,7 @@ class ConvexPatchHistogram : public ros::node
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
       ROS_INFO ("Received %d data points.", cloud_textured_.pts.size ());
 
-      int c_idx = cloud_geometry::getChannelIndex (cloud_, "r");
+      int c_idx = cloud_geometry::getChannelIndex (&cloud_, "r");
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
