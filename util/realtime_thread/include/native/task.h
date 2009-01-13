@@ -225,11 +225,11 @@ extern "C" {
 int rt_task_shadow(RT_TASK *task,
 		   const char *name,
 		   int prio,
-		   int mode);
+		   int mode) __attribute__((weak));
 
 int rt_task_bind(RT_TASK *task,
 		 const char *name,
-		 RTIME timeout);
+		 RTIME timeout) __attribute__((weak));
 
 static inline int rt_task_unbind (RT_TASK *task)
 
@@ -238,7 +238,7 @@ static inline int rt_task_unbind (RT_TASK *task)
     return 0;
 }
 
-int rt_task_join(RT_TASK *task);
+int rt_task_join(RT_TASK *task) __attribute__((weak));
 
 #ifdef __cplusplus
 }
@@ -256,60 +256,60 @@ int rt_task_create(RT_TASK *task,
 		   const char *name,
 		   int stksize,
 		   int prio,
-		   int mode);
+		   int mode) __attribute__((weak));
 
 int rt_task_start(RT_TASK *task,
 		  void (*fun)(void *cookie),
-		  void *cookie);
+		  void *cookie)__attribute__((weak));
 
-int rt_task_suspend(RT_TASK *task);
+int rt_task_suspend(RT_TASK *task)__attribute__((weak));
 
-int rt_task_resume(RT_TASK *task);
+int rt_task_resume(RT_TASK *task)__attribute__((weak));
 
-int rt_task_delete(RT_TASK *task);
+int rt_task_delete(RT_TASK *task)__attribute__((weak));
 
-int rt_task_yield(void);
+int rt_task_yield(void)__attribute__((weak));
 
 int rt_task_set_periodic(RT_TASK *task,
 			 RTIME idate,
-			 RTIME period);
+			 RTIME period)__attribute__((weak));
 
-int rt_task_wait_period(unsigned long *overruns_r);
+int rt_task_wait_period(unsigned long *overruns_r)__attribute__((weak));
 
 int rt_task_set_priority(RT_TASK *task,
-			 int prio);
+			 int prio)__attribute__((weak));
 
-int rt_task_sleep(RTIME delay);
+int rt_task_sleep(RTIME delay)__attribute__((weak));
 
-int rt_task_sleep_until(RTIME date);
+int rt_task_sleep_until(RTIME date)__attribute__((weak));
 
-int rt_task_unblock(RT_TASK *task);
+int rt_task_unblock(RT_TASK *task)__attribute__((weak));
 
 int rt_task_inquire(RT_TASK *task,
-		     RT_TASK_INFO *info);
+		     RT_TASK_INFO *info)__attribute__((weak));
 
 int rt_task_notify(RT_TASK *task,
-		   rt_sigset_t signals);
+		   rt_sigset_t signals)__attribute__((weak));
 
 int rt_task_set_mode(int clrmask,
 		     int setmask,
-		     int *mode_r);
+		     int *mode_r)__attribute__((weak));
 
-RT_TASK *rt_task_self(void);
+RT_TASK *rt_task_self(void)__attribute__((weak));
 
 int rt_task_slice(RT_TASK *task,
-		  RTIME quantum);
+		  RTIME quantum)__attribute__((weak));
 
 ssize_t rt_task_send(RT_TASK *task,
 		     RT_TASK_MCB *mcb_s,
 		     RT_TASK_MCB *mcb_r,
-		     RTIME timeout);
+		     RTIME timeout)__attribute__((weak));
 
 int rt_task_receive(RT_TASK_MCB *mcb_r,
-		    RTIME timeout);
+		    RTIME timeout)__attribute__((weak));
 
 int rt_task_reply(int flowid,
-		  RT_TASK_MCB *mcb_s);
+		  RT_TASK_MCB *mcb_s)__attribute__((weak));
 
 static inline int rt_task_spawn(RT_TASK *task,
 				const char *name,

@@ -32,6 +32,7 @@
 
 #include <native/mutex.h>
 #include <native/cond.h>
+#include <native/task.h>
 #include <pthread.h>
 
 typedef union {
@@ -44,6 +45,10 @@ typedef union {
   pthread_cond_t pt;
 } RealtimeCond;
 
+typedef union {
+  RT_TASK rt;
+} RealtimeTask;
+
 int realtime_mutex_create(RealtimeMutex *mutex);
 int realtime_mutex_delete(RealtimeMutex *mutex);
 int realtime_mutex_lock(RealtimeMutex *mutex);
@@ -55,5 +60,6 @@ int realtime_cond_delete(RealtimeCond *cond);
 int realtime_cond_signal(RealtimeCond *cond);
 int realtime_cond_wait(RealtimeCond *cond, RealtimeMutex *mutex);
 
+int realtime_shadow_task(RealtimeTask *task);
 
 #endif

@@ -51,7 +51,7 @@ class RealtimePublisher
 {
 public:
   RealtimePublisher(const std::string &topic, int queue_size)
-    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), thread_(NULL), turn_(REALTIME)
+    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
     if ((node_ = ros::node::instance()) == NULL)
     {
@@ -62,15 +62,18 @@ public:
 
     node_->advertise<Msg>(topic_, queue_size);
 
-    realtime_cond_create(&updated_cond_);
+    if (0 != realtime_cond_create(&updated_cond_))
+    {
+      perror("realtime_cond_create");
+      abort();
+    }
     if (0 != realtime_mutex_create(&msg_lock_))
     {
       perror("realtime_mutex_create");
       abort();
     }
     keep_running_ = true;
-    thread_ = ros::thread::member_thread::startMemberFunctionThread<RealtimePublisher<Msg> >
-      (this, &RealtimePublisher::publishingLoop);
+    thread_ = ros::thread::member_thread::startMemberFunctionThread<RealtimePublisher<Msg> > (this, &RealtimePublisher::publishingLoop);
   }
 
   ~RealtimePublisher()
@@ -137,6 +140,12 @@ public:
 
   void publishingLoop()
   {
+    RealtimeTask task;
+    
+    int err = realtime_shadow_task(&task);
+    if (err)
+      ROS_WARN("Unable to shadow task: %d\n", err);
+
     is_running_ = true;
     turn_ = REALTIME;
     while (keep_running_)

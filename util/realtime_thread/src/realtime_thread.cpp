@@ -138,3 +138,14 @@ int realtime_cond_wait(RealtimeCond *cond, RealtimeMutex *mutex)
   return err;
 }
 
+int realtime_shadow_task(RealtimeTask *task)
+{
+  int err = 0;
+
+  if (rt_task_shadow)
+    err = rt_task_shadow(&task->rt, NULL, 0, 0);
+
+  // No pthread equivalent
+
+  return err;
+}
