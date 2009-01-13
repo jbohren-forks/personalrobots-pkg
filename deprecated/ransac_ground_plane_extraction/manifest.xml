@@ -2,7 +2,7 @@
 <description>RANSAC based ground plane extraction</description>
 <author>Sachin Chitta</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="deprecated" notes=""/>
 <depend package="rosconsole"/>
 <depend package="point_cloud_assembler" />
 <depend package="roscpp" />
