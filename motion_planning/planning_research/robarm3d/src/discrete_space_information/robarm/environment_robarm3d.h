@@ -219,6 +219,9 @@ public:
     void OutputPlanningStats();
     double GetEpsilon();
 
+    void InitializeStatistics(FILE* fCfg, int n);
+    bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
+
 private:
 
     //member data
