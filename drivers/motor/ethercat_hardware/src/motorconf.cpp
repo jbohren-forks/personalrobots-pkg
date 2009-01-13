@@ -48,6 +48,7 @@
 #include <boost/crc.hpp>
 #include <boost/foreach.hpp>
 
+
 vector<WG0X *> devices;
 
 typedef pair<string, string> ActuatorPair;
@@ -158,6 +159,7 @@ static struct
   bool program_;
   int device_;
   string motor_;
+  string actuators_;
 } g_options;
 
 void Usage(string msg = "")
@@ -239,16 +241,6 @@ int main(int argc, char *argv[])
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  // Parse configuration file
-  TiXmlDocument xml("actuators.conf");
-  if (xml.LoadFile())
-  {
-    parseConfig(xml.RootElement());
-  }
-  else
-  {
-    Usage("Unable to load configuration file");
-  }
   //
   // Parse options
   g_options.program_name_ = argv[0];
@@ -262,9 +254,10 @@ int main(int argc, char *argv[])
       {"device", required_argument, 0, 'd'},
       {"motor", required_argument, 0, 'm'},
       {"program", no_argument, 0, 'p'},
+      {"actuators", no_argument, 0, 'a'},
     };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "d:hi:m:n:p", long_options, &option_index);
+    int c = getopt_long(argc, argv, "d:hi:m:n:pa:", long_options, &option_index);
     if (c == -1) break;
     switch (c)
     {
@@ -286,6 +279,9 @@ int main(int argc, char *argv[])
       case 'p':
         g_options.program_ = 1;
         break;
+      case 'a':
+        g_options.actuators_ = optarg;
+        break;
     }
   }
 
@@ -297,6 +293,21 @@ int main(int argc, char *argv[])
   if (!g_options.interface_)
     Usage("You must specify a network interface");
 
+  // Parse configuration file
+  string filename = "actuators.conf";
+  if (g_options.actuators_ != "")
+    filename = g_options.actuators_;
+  printf("Filename: %s\nWith:%s\n",filename.c_str(), g_options.actuators_.c_str());
+  TiXmlDocument xml(filename);
+
+  if (xml.LoadFile())
+  {
+    parseConfig(xml.RootElement());
+  }
+  else
+  {
+    Usage("Unable to load configuration file");
+  }
 
   init(g_options.interface_);
 
