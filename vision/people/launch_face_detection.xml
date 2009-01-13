@@ -1,6 +1,7 @@
 <launch>
   <!-- Face detection -->
-  <node pkg="people" type="face_detector" args="frontalface ./cascades/haarcascade_frontalface_alt.xml 0.9 0" output="screen" />
-  <node pkg="people" type="face_detector" args="profileface ./cascades/haarcascade_profileface.xml 0.7 0" output="screen" />
+  <node pkg="people" type="face_detector" args="frontalface ./cascades/haarcascade_frontalface_alt.xml 0.9 none" output="screen" />
+  <node pkg="people" type="face_detector" args="profileface ./cascades/haarcascade_profileface.xml 0.7 none" output="screen" />\
+  <!-- args="<append to node name> <haar cascade path> <reliability to publish> <output mode: none, local, remote> -->
 </launch>
 
