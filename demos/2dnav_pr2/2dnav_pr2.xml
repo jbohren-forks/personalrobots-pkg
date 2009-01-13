@@ -43,8 +43,8 @@
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" machine="four" />
 
    <!-- For ground plane detection -->
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
-      <remap from="cloud_in" to="tilt_laser_cloud_filtered" />
+    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" machine="three" respawn="true">
+      <remap from="scan_in" to="tilt_laser_cloud_filtered" />
       <param name="tf_cache_time_secs" type="double" value="10.0" />
       <param name="tf_extrap_limit" type="double" value="0.01" />
       <param name="max_scans" type="int" value="400" />
@@ -79,7 +79,7 @@
     <param name="move_base/planner_frequency" value="0.0"/>
     <param name="move_base/plannerTimeLimit" value="0.5"/>
     <param name="move_base/map_update_frequency" value="5.0"/>
-    <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="20.0"/>
     <param name="/costmap_2d/tilt_laser_max_range" value="2.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
     <param name="/costmap_2d/no_information_value" value="255"/>
@@ -103,7 +103,7 @@
 
     <param name="/trajectory_rollout/sim_time" value="1.0" />
     <param name="/trajectory_rollout/sim_steps" value="20" />
-    <param name="/trajectory_rollout/samples_per_dim" value="20" />
+    <param name="/trajectory_rollout/samples_per_dim" value="25" />
     <param name="/trajectory_rollout/occdist_scale" value="0.2" />
     <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
     <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
@@ -112,7 +112,7 @@
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />-->
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four"/>
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen"/>
 
     <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com raschemmel@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
@@ -123,7 +123,7 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="true" machine="four" />
 
     <!-- For logging distance traveled -->
-    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /tf_message /localizedpose /odom /base_controller/odometer /odom_estimation /laser_controller/laser_scanner_signal" machine="two" />
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/milestone_trials/attempt /base_scan /mechanism_state /tilt_scan /tf_message /localizedpose /odom /base_controller/odometer /odom_estimation /laser_controller/laser_scanner_signal" machine="three" />
 
     <!-- For telling the robot to go charge -->
     <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" machine="four" />
