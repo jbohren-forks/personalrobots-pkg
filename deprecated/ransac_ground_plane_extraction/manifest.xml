@@ -1,0 +1,17 @@
+<package>
+<description>RANSAC based ground plane extraction</description>
+<author>Sachin Chitta</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<depend package="rosconsole"/>
+<depend package="point_cloud_assembler" />
+<depend package="roscpp" />
+<depend package="std_msgs" />
+<depend package="pr2_msgs" />
+<depend package="tf" />
+<depend package="scan_utils" />
+<depend package="pr2_msgs" />
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lransac_ground_plane_extraction"/>
+</export>
+</package>
