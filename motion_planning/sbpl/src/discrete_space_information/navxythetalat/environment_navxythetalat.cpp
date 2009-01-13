@@ -441,7 +441,8 @@ bool EnvironmentNAVXYTHETALAT::ReadinMotionPrimitive(SBPL_xytheta_mprimitive* pM
 	int endtheta_c = ContTheta2Disc(mp_endtheta_rad, NAVXYTHETALAT_THETADIRS);
 	if(endx_c != pMotPrim->endcell.x || endy_c != pMotPrim->endcell.y || endtheta_c != pMotPrim->endcell.theta)
 	{	
-		printf("ERROR: incorrect primitive %d last interm point %f %f %f does not match end pose %d %d %d\n", pMotPrim->motprimID,
+		printf("ERROR: incorrect primitive %d with startangle=%d last interm point %f %f %f does not match end pose %d %d %d\n", 
+			pMotPrim->motprimID, pMotPrim->starttheta_c,
 			pMotPrim->intermptV[pMotPrim->intermptV.size()-1].x, pMotPrim->intermptV[pMotPrim->intermptV.size()-1].y, pMotPrim->intermptV[pMotPrim->intermptV.size()-1].theta,
 			pMotPrim->endcell.x, pMotPrim->endcell.y,pMotPrim->endcell.theta);	
 			return false;
@@ -537,7 +538,7 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningDataforAction(EnvNAVXYTHETALATAc
 		startcell3d.y = - action->intersectingcellsV.at(i).y;
 
 		//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
-		endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAVXYTHETALAT_THETADIRS); 
+		endcell3d.theta = NORMALIZEDISCTHETA(action->endtheta, NAVXYTHETALAT_THETADIRS); 
 		endcell3d.x = startcell3d.x + action->dX; 
 		endcell3d.y = startcell3d.y + action->dY;
 
@@ -570,7 +571,7 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningDataforAction(EnvNAVXYTHETALATAc
 	startcell3d.y = - 0;
 
 	//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
-	endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAVXYTHETALAT_THETADIRS); 
+	endcell3d.theta = NORMALIZEDISCTHETA(action->endtheta, NAVXYTHETALAT_THETADIRS); 
 	endcell3d.x = startcell3d.x + action->dX; 
 	endcell3d.y = startcell3d.y + action->dY;
 
@@ -599,7 +600,7 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningDataforAction(EnvNAVXYTHETALATAc
 	startcell3d.y = - action->dY;
 
 	//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
-	endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAVXYTHETALAT_THETADIRS); 
+	endcell3d.theta = NORMALIZEDISCTHETA(action->endtheta, NAVXYTHETALAT_THETADIRS); 
 	endcell3d.x = startcell3d.x + action->dX; 
 	endcell3d.y = startcell3d.y + action->dY;
 
@@ -641,10 +642,9 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningData()
 	}
 }
 
-
-void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
+//here motionprimitivevector contains actions only for 0 angle
+void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
 {
-	EnvNAVXYTHETALATCfg.actionwidth = motionprimitiveV->size();
 
 	printf("Pre-computing action data...\n");
 	EnvNAVXYTHETALATCfg.ActionsV = new EnvNAVXYTHETALATAction_t* [NAVXYTHETALAT_THETADIRS];
@@ -662,9 +662,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>
 		sourcepose.y = DISCXY2CONT(0, EnvNAVXYTHETALATCfg.cellsize_m);
 		sourcepose.theta = DiscTheta2Cont(tind, NAVXYTHETALAT_THETADIRS);
 
-
 		//iterate over motion primitives
-		for(int aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
+		for(int aind = 0; aind < motionprimitiveV->size(); aind++)
 		{
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
 			double mp_endx_m = motionprimitiveV->at(aind).intermptV[motionprimitiveV->at(aind).intermptV.size()-1].x;
@@ -678,7 +677,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>
 			int endy_c = CONTXY2DISC(endy, EnvNAVXYTHETALATCfg.cellsize_m);
 
 			
-			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta = ContTheta2Disc(mp_endtheta_rad, NAVXYTHETALAT_THETADIRS);
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta = ContTheta2Disc(mp_endtheta_rad+sourcepose.theta, NAVXYTHETALAT_THETADIRS);
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = endx_c;
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = endy_c;
 			if(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY != 0 || EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX != 0)
@@ -718,22 +717,153 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>
 			RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 
 #if DEBUG
-			fprintf(fDeb, "action tind=%d aind=%d: dX=%d dY=%d dTheta=%d (%.2f degs -> %.2f degs) cost=%d (mprim: %.2f %.2f %.2f)\n",
+			fprintf(fDeb, "action tind=%d aind=%d: dX=%d dY=%d endtheta=%d (%.2f degs -> %.2f degs) cost=%d (mprim: %.2f %.2f %.2f)\n",
 				tind, aind, 			
 				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
-				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, sourcepose.theta*180/PI_CONST, 
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, sourcepose.theta*180/PI_CONST, 
 				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV[EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.size()-1].theta*180/PI_CONST,	
 				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost,
 				mp_endx_m, mp_endy_m, mp_endtheta_rad);
 #endif
 
 			//add to the list of backward actions
-			int targettheta = (tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta)%NAVXYTHETALAT_THETADIRS;
+			int targettheta = EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta;
 			if (targettheta < 0)
 				targettheta = targettheta + NAVXYTHETALAT_THETADIRS;
 			 EnvNAVXYTHETALATCfg.PredActionsV[targettheta].push_back(&(EnvNAVXYTHETALATCfg.ActionsV[tind][aind]));
 
 		}
+	}
+
+	//set number of actions
+	EnvNAVXYTHETALATCfg.actionwidth = motionprimitiveV->size();
+
+
+	//now compute replanning data
+	ComputeReplanningData();
+
+	printf("done pre-computing action data based on motion primitives\n");
+
+
+}
+
+
+//here motionprimitivevector contains actions for all angles
+void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
+{
+
+	printf("Pre-computing action data...\n");
+	EnvNAVXYTHETALATCfg.ActionsV = new EnvNAVXYTHETALATAction_t* [NAVXYTHETALAT_THETADIRS];
+	EnvNAVXYTHETALATCfg.PredActionsV = new vector<EnvNAVXYTHETALATAction_t*> [NAVXYTHETALAT_THETADIRS];
+	vector<sbpl_2Dcell_t> footprint;
+
+	if(motionprimitiveV->size()%NAVXYTHETALAT_THETADIRS != 0)
+	{
+		printf("ERROR: motionprimitives should be uniform across actions\n");
+		exit(1);
+	}
+
+	EnvNAVXYTHETALATCfg.actionwidth = ((int)motionprimitiveV->size())/NAVXYTHETALAT_THETADIRS;
+
+	//iterate over source angles
+	int maxnumofactions = 0;
+	for(int tind = 0; tind < NAVXYTHETALAT_THETADIRS; tind++)
+	{
+		EnvNAVXYTHETALATCfg.ActionsV[tind] = new EnvNAVXYTHETALATAction_t[EnvNAVXYTHETALATCfg.actionwidth];  
+
+		//compute sourcepose
+		EnvNAVXYTHETALAT3Dpt_t sourcepose;
+		sourcepose.x = DISCXY2CONT(0, EnvNAVXYTHETALATCfg.cellsize_m);
+		sourcepose.y = DISCXY2CONT(0, EnvNAVXYTHETALATCfg.cellsize_m);
+		sourcepose.theta = DiscTheta2Cont(tind, NAVXYTHETALAT_THETADIRS);
+
+
+		//iterate over motion primitives
+		int numofactions = 0;
+		int aind = -1;
+		for(int mind = 0; mind < (int)motionprimitiveV->size(); mind++)
+		{
+			//find a motion primitive for this angle
+			if(motionprimitiveV->at(mind).starttheta_c != tind)
+				continue;
+			
+			aind++;
+			numofactions++;
+
+			//start angle
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
+
+			//compute dislocation
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta = motionprimitiveV->at(mind).endcell.theta;
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = motionprimitiveV->at(mind).endcell.x;
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = motionprimitiveV->at(mind).endcell.y;
+
+			//compute cost
+			if(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY != 0 || EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX != 0)
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*
+								sqrt((double)(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
+								EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY))));
+			else //cost of turn in place
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(NAVXYTHETALAT_COSTMULT_MTOMM*
+						EnvNAVXYTHETALATCfg.timetoturn45degsinplace_secs*
+						fabs(computeMinUnsignedAngleDiff(DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS),
+														DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta, NAVXYTHETALAT_THETADIRS)))/(PI_CONST/4.0));
+			//use any additional cost multiplier
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost *= motionprimitiveV->at(mind).additionalactioncostmult;
+
+			//compute and store interm points as well as intersecting cells
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
+			for (int pind = 0; pind < (int)motionprimitiveV->at(mind).intermptV.size(); pind++)
+			{
+				EnvNAVXYTHETALAT3Dpt_t intermpt = motionprimitiveV->at(mind).intermptV[pind];
+		
+				//store it (they are with reference to 0,0,stattheta (not sourcepose.x,sourcepose.y,starttheta (that is, half-bin))
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.push_back(intermpt);
+
+				//now compute the intersecting cells (for this pose has to be translated by sourcepose.x,sourcepose.y
+				EnvNAVXYTHETALAT3Dpt_t pose;
+				pose = intermpt;
+				pose.x += sourcepose.x;
+				pose.y += sourcepose.y;
+				CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
+			}
+
+			//now remove the source footprint
+			RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
+
+#if DEBUG
+			fprintf(fDeb, "action tind=%d aind=%d: dX=%d dY=%d endtheta=%d (%.2f degs -> %.2f degs) cost=%d (mprimID %d: %d %d %d)\n",
+				tind, aind, 			
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, 
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV[0].theta*180/PI_CONST, 
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV[EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.size()-1].theta*180/PI_CONST,	
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost,
+				motionprimitiveV->at(mind).motprimID, 
+				motionprimitiveV->at(mind).endcell.x, motionprimitiveV->at(mind).endcell.y, motionprimitiveV->at(mind).endcell.theta); 
+#endif
+
+			//add to the list of backward actions
+			int targettheta = EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta;
+			if (targettheta < 0)
+				targettheta = targettheta + NAVXYTHETALAT_THETADIRS;
+			 EnvNAVXYTHETALATCfg.PredActionsV[targettheta].push_back(&(EnvNAVXYTHETALATCfg.ActionsV[tind][aind]));
+
+		}
+
+		if(maxnumofactions < numofactions)
+			maxnumofactions = numofactions;
+	}
+
+
+
+	//at this point we don't allow nonuniform number of actions
+	if(motionprimitiveV->size() != (int)(NAVXYTHETALAT_THETADIRS*maxnumofactions))
+	{
+		printf("ERROR: nonuniform number of actions is not supported (maxnumofactions=%d while motprims=%d thetas=%d\n",
+				maxnumofactions, motionprimitiveV->size(), NAVXYTHETALAT_THETADIRS);
+		exit(1);
 	}
 
 	//now compute replanning data
@@ -768,8 +898,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		for(; aind < 3; aind++)
 		{
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
-			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta = aind-1; //-1,0,1
-			double angle = DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS);
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta = (tind + aind - 1)%NAVXYTHETALAT_THETADIRS; //-1,0,1
+			double angle = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = (int)(cos(angle) + 0.5*(cos(angle)>0?1:-1));
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = (int)(sin(angle) + 0.5*(sin(angle)>0?1:-1));
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*sqrt((double)(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
@@ -785,13 +915,14 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 			RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 
 #if DEBUG
-			printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
-				tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, angle, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
+			printf("action tind=%d aind=%d: endtheta=%d (%f) dX=%d dY=%d cost=%d\n",
+				tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, angle, 
+				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
 				EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost);
 #endif
 
 			//add to the list of backward actions
-			int targettheta = (tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta)%NAVXYTHETALAT_THETADIRS;
+			int targettheta = EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta;
 			if (targettheta < 0)
 				targettheta = targettheta + NAVXYTHETALAT_THETADIRS;
 			 EnvNAVXYTHETALATCfg.PredActionsV[targettheta].push_back(&(EnvNAVXYTHETALATCfg.ActionsV[tind][aind]));
@@ -801,7 +932,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		//decrease and increase angle without movement
 		aind = 3;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
-		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta = -1; 
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta = tind-1;
+		if(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta < 0) EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta += NAVXYTHETALAT_THETADIRS;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = 0;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.timetoturn45degsinplace_secs);
@@ -810,20 +942,20 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		EnvNAVXYTHETALAT3Dpt_t pose;
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
-		pose.theta = DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS);
+		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 
 #if DEBUG
-		printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
-			tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS),
+		printf("action tind=%d aind=%d: endtheta=%d (%f) dX=%d dY=%d cost=%d\n",
+			tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS),
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost);
 #endif
 
 		//add to the list of backward actions
-		int targettheta = (tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta)%NAVXYTHETALAT_THETADIRS;
+		int targettheta = EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta;
 		if (targettheta < 0)
 			targettheta = targettheta + NAVXYTHETALAT_THETADIRS;
 		 EnvNAVXYTHETALATCfg.PredActionsV[targettheta].push_back(&(EnvNAVXYTHETALATCfg.ActionsV[tind][aind]));
@@ -831,7 +963,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 
 		aind = 4;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
-		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta = 1; 
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta = (tind + 1)%NAVXYTHETALAT_THETADIRS; 
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = 0;
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.timetoturn45degsinplace_secs);
@@ -839,21 +971,21 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		//compute intersecting cells
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
-		pose.theta = DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS);
+		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 
 
 #if DEBUG
-		printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
-			tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS),
+		printf("action tind=%d aind=%d: endtheta=%d (%f) dX=%d dY=%d cost=%d\n",
+			tind, aind, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS),
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY,
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost);
 #endif
 
 		//add to the list of backward actions
-		targettheta = (tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta)%NAVXYTHETALAT_THETADIRS;
+		targettheta = EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta;
 		if (targettheta < 0)
 			targettheta = targettheta + NAVXYTHETALAT_THETADIRS;
 		 EnvNAVXYTHETALATCfg.PredActionsV[targettheta].push_back(&(EnvNAVXYTHETALATCfg.ActionsV[tind][aind]));
@@ -915,7 +1047,7 @@ void EnvironmentNAVXYTHETALAT::InitializeEnvConfig(vector<SBPL_xytheta_mprimitiv
 	if(motionprimitiveV == NULL)
 		PrecomputeActions();
 	else
-		PrecomputeActions(motionprimitiveV);
+		PrecomputeActionswithCompleteMotionPrimitive(motionprimitiveV);
 
 
 }
@@ -1545,7 +1677,7 @@ int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
 
 	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[stateID];
 	int h2D = grid2Dsearch->getlowerboundoncostfromstart_inmm(HashEntry->X, HashEntry->Y);
-	int hEuclid = 0; //TODO (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, HashEntry->X, HashEntry->Y));
+	int hEuclid = (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, HashEntry->X, HashEntry->Y));
 		
 
 #if DEBUG
@@ -1596,7 +1728,7 @@ void EnvironmentNAVXYTHETALAT::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
         int newX = HashEntry->X + nav3daction->dX;
 		int newY = HashEntry->Y + nav3daction->dY;
-		int newTheta = NORMALIZEDISCTHETA(HashEntry->Theta + nav3daction->dTheta, NAVXYTHETALAT_THETADIRS);	
+		int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
 
         //skip the invalid cells
         if(bTestBounds){ //TODO - need to modify to take robot perimeter into account
@@ -1684,7 +1816,7 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
 		EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
         int newX = HashEntry->X + nav3daction->dX;
 		int newY = HashEntry->Y + nav3daction->dY;
-		int newTheta = NORMALIZEDISCTHETA(HashEntry->Theta + nav3daction->dTheta, NAVXYTHETALAT_THETADIRS);	
+		int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
 
         //skip the invalid cells
 		if(bTestBounds){ //TODO - need to modify to take robot perimeter into account
@@ -1747,7 +1879,7 @@ void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV,
 
         int predX = HashEntry->X - nav3daction->dX;
 		int predY = HashEntry->Y - nav3daction->dY;
-		int predTheta = NORMALIZEDISCTHETA(HashEntry->Theta - nav3daction->dTheta, NAVXYTHETALAT_THETADIRS);	
+		int predTheta = nav3daction->starttheta;	
 	
 	
 		//skip the invalid cells
@@ -2053,6 +2185,8 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 	vector<EnvNAVXYTHETALATAction_t*> actionV;
 	vector<int> CostV;
 	vector<int> SuccIDV;
+	int targetx_c, targety_c, targettheta_c;
+	int sourcex_c, sourcey_c, sourcetheta_c;
 
 	xythetaPath->clear();
 
@@ -2065,6 +2199,13 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 		int sourceID = stateIDPath->at(pind);
 		int targetID = stateIDPath->at(pind+1);
 
+#if DEBUG
+		GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c);
+		if(sourcex_c == 404 && sourcey_c == 16 && sourcetheta_c == 31)
+			printf("problem\n"); //TODO
+#endif
+
+
 		//get successors and pick the target via the cheapest action
 		SuccIDV.clear();
 		CostV.clear();
@@ -2073,8 +2214,24 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 		
 		int bestcost = INFINITECOST;
 		int bestsind = -1;
-		for(int sind = 0; sind < SuccIDV.size(); sind++)
+
+#if DEBUG
+		GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c);
+		GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c);
+		fprintf(fDeb, "looking for %d %d %d -> %d %d %d (numofsuccs=%d)\n", sourcex_c, sourcey_c, sourcetheta_c,
+					targetx_c, targety_c, targettheta_c, SuccIDV.size()); 
+
+#endif
+
+		for(int sind = 0; sind < (int)SuccIDV.size(); sind++)
 		{
+
+#if DEBUG
+		int x_c, y_c, theta_c;
+		GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c);
+		fprintf(fDeb, "succ: %d %d %d\n", x_c, y_c, theta_c); 
+#endif
+
 			if(SuccIDV[sind] == targetID && CostV[sind] <= bestcost)
 			{
 				bestcost = CostV[sind];
@@ -2083,7 +2240,11 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 		}
 		if(bestsind == -1)
 		{
-			printf("ERROR: successor not found\n");
+			printf("ERROR: successor not found for transition:\n");
+			GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c);
+			GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c);
+			printf("%d %d %d -> %d %d %d\n", sourcex_c, sourcey_c, sourcetheta_c,
+					targetx_c, targety_c, targettheta_c); 
 			exit(1);
 		}
 
