@@ -248,36 +248,52 @@ class SemanticPointAnnotator : public ros::node
       gettimeofday (&t1, NULL);
 
       int total_p1 = 0, total_p2 = 0, nr_p = 0;
-      vector<int> z_axis_indices, xy_axis_indices;
       vector<vector<int> > inliers_parallel, inliers_perpendicular;
       vector<vector<double> > coeff_parallel, coeff_perpendicular;
 
-      #pragma omp sections
+      #pragma omp parallel
       {
-        // ---[ Select points whose normals are parallel with the Z-axis
-        #pragma omp section
+        #pragma omp sections
         {
-          cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, z_axis_indices);
+          // ---[ Select points whose normals are parallel with the Z-axis
+          #pragma omp section
+          {
+            vector<int> indices;
+            cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices);
 
-          // Find all planes parallel with XY
-          fitSACPlane (&cloud_, &z_axis_indices, inliers_parallel, coeff_parallel);
+            vector<vector<int> > clusters;
+            findClusters (&cloud_, &indices, 0.075, clusters, 10);
 
-          // Mark points in the output cloud
-          for (unsigned int i = 0; i < inliers_parallel.size (); i++)
-            total_p1 += inliers_parallel[i].size ();
-        }
+            vector<vector<vector<int> > > all_cluster_inliers (clusters.size ());
+            vector<vector<vector<double> > > all_cluster_coeff (clusters.size ());
+            #pragma omp parallel for schedule(dynamic)
+            for (int cc = 0; cc < (int)clusters.size (); cc++)
+            {
+              // Find all planes parallel with XY
+              fitSACPlane (&cloud_, &clusters[cc], all_cluster_inliers[cc], all_cluster_coeff[cc]);
+              // Mark points in the output cloud
+/*              for (unsigned int i = 0; i < inliers_parallel.size (); i++)
+                total_p1 += inliers_parallel[i].size ();*/
+            }
 
-        // ---[ Select points whose normals are perpendicular to the Z-axis
-        #pragma omp section
-        {
-          cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, xy_axis_indices);
+          }
 
-          // Find all planes perpendicular to XY
-          fitSACPlane (&cloud_, &xy_axis_indices, inliers_perpendicular, coeff_perpendicular);
+          // ---[ Select points whose normals are perpendicular to the Z-axis
+          #pragma omp section
+          {
+            vector<int> indices;
+            cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices);
 
-          // Mark points in the output cloud
-          for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
-            total_p2 += inliers_perpendicular[i].size ();
+            vector<vector<int> > clusters;
+            findClusters (&cloud_, &indices, 0.075, clusters, 10);
+
+            // Find all planes perpendicular to XY
+            fitSACPlane (&cloud_, &indices, inliers_perpendicular, coeff_perpendicular);
+
+            // Mark points in the output cloud
+            for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
+              total_p2 += inliers_perpendicular[i].size ();
+          }
         }
       }
 
@@ -327,9 +343,7 @@ class SemanticPointAnnotator : public ros::node
         }
       }
 
-      vector<vector<int> > clusters;
-      findClusters (&cloud_, &xy_axis_indices, 0.075, clusters, 10);
-      ROS_INFO ("Found %d clusters.", clusters.size ());
+/**       ROS_INFO ("Found %d clusters.", clusters.size ());
 
       // note: the clusters are in the z_axis_indices space so instead of points[clusters[j]] we need to do points[z_axis_indices[clusters[j]]
       nr_p = 0;
@@ -350,7 +364,7 @@ class SemanticPointAnnotator : public ros::node
           cloud_annotated_.chan[2].vals[nr_p] = b;
           nr_p++;
         }
-      }
+      }*/
 
       /**
       // Get all planes perpendicular to the floor (parallel to XY)
