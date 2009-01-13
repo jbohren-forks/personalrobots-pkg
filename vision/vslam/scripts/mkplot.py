@@ -240,6 +240,17 @@ pickle.dump(stampedGroundTruth, output_gt)
 output_trajectory.close()
 output_gt.close()
 
+# extract the position of the key frames and pickle them
+stampedKeyFrameTrajectory = [ [] for i in vos]
+for i,vo in enumerate(vos):
+  k=0;
+  for keyframeId in vo.log_keyframes:
+    stampedKeyFrameTrajectory[i][k] = stampedTrajectory[i][keyframeId]
+    
+output_keyframe_trajectory = open('keyframe_trajs.pkl','wb')
+pickle.dump(stampedKeyFrameTrajectory, output_keyframe_trajectory)
+output_keyframe_trajectory.close()
+
 for vo in vos:
   print vo.name()
   print "distance from start:", vo.pose.distance()
