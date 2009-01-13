@@ -1,7 +1,13 @@
 #include "place_recognition/vocabulary_tree.h"
 #include "place_recognition/kmeans.h"
 #include <boost/foreach.hpp>
+#include <boost/accumulators/statistics/p_square_quantile.hpp>
 #include <limits>
+#ifdef USE_BYTE_SIGNATURES
+#include <cstdlib> // posix_memalign
+#include "calonder_descriptor/randomized_tree.h" // quantizeVector
+#include "calonder_descriptor/basic_math.h"
+#endif
 
 namespace vision {
 
@@ -15,14 +21,32 @@ void VocabularyTree::build( const FeatureMatrix& features,
   dim_ = features.cols();
   k_ = k;
   levels_ = levels;
+
+#ifdef USE_BYTE_SIGNATURES
+  // step 0: determine bounds to use for rescaling signatures
+  // estimate 5% and 95% quantiles
+  using namespace boost::accumulators;
+  typedef accumulator_set<float, boost::accumulators::features<tag::p_square_quantile> > accumulator_t;
+  accumulator_t acc05(quantile_probability = 0.05);
+  accumulator_t acc95(quantile_probability = 0.95);
+  for (const float *i = features.data(),
+         *ie = features.data() + features.rows()*features.cols();
+       i != ie; ++i) {
+    acc05(*i);
+    acc95(*i);
+  }
+  bounds_[0] = p_square_quantile(acc05);
+  bounds_[1] = p_square_quantile(acc95);
+  printf("Using bounds [%f, %f]\n", bounds_[0], bounds_[1]);
+#endif
   
-  // step 1: Tree Construction
+  // step 1: tree construction
   printf("Building tree...\n");
   std::vector<unsigned int> input(features.rows());
   for (unsigned int i = 0; i < input.size(); ++i) input[i] = i;
   constructVocabulary(features, input);
   
-  // step 2: Add Objs
+  // step 2: add objects
   printf("Adding objects...\n");
   for (int i = 0; i < features.rows(); ++i)
     addFeature(root_, objs[i], features.row(i));
@@ -54,16 +78,31 @@ void VocabularyTree::clearDatabase()
   clearDatabaseAux(root_);
 }
 
+#ifdef USE_BYTE_SIGNATURES
+unsigned int VocabularyTree::insert(const uint8_t* image_features,
+                                    unsigned int num_features)
+{
+  unsigned int id = db_vectors_.size();
+  db_vectors_.resize(id + 1);
+  for (unsigned int i = 0; i < num_features; ++i)
+    addFeatureToDatabaseVector(root_, id, image_features + i*dim_);
+  normalizeL1(db_vectors_[id]);
+  
+  return id;
+}
+#else
 unsigned int VocabularyTree::insert(const FeatureMatrix& image_features)
 {
   unsigned int id = db_vectors_.size();
   db_vectors_.resize(id + 1);
   for (int i = 0; i < image_features.rows(); ++i)
     addFeatureToDatabaseVector(root_, id, image_features.row(i));
+    
   normalizeL1(db_vectors_[id]);
   
   return id;
 }
+#endif
 
 // TODO: check if already an existing vocabulary?
 void VocabularyTree::constructVocabulary(const FeatureMatrix& features,
@@ -106,11 +145,35 @@ void VocabularyTree::constructVocabularyAux(const FeatureMatrix& features,
   for(int i = 0; i < num_clusters; ++i)
   {
     node->children[i] = pool_.construct();
+#ifdef USE_BYTE_SIGNATURES
+    uint8_t** child_centroid = &node->children[i]->centroid;
+    posix_memalign(reinterpret_cast<void**>(child_centroid), 16, dim_);
+    features::RandomizedTree::quantizeVector(const_cast<float*>(centroids.data() + i*dim_),
+                                             dim_, QUANTIZE_N, bounds_, *child_centroid);
+#else
     node->children[i]->centroid.set( centroids.row(i) );
+#endif
     constructVocabularyAux(features, children_input[i], node->children[i], level);
   }
 }
 
+#ifdef USE_BYTE_SIGNATURES
+VocabularyTree::Node*
+VocabularyTree::findNearestChild(Node* node, const uint8_t* feature)
+{
+  Node* nearest = NULL;
+  int d_min = std::numeric_limits<int>::max();
+  for (std::vector<Node*>::iterator i = node->children.begin(),
+         ie = node->children.end(); i != ie; ++i) {
+    int distance = features::L2Distance(dim_, feature, (*i)->centroid);
+    if (distance < d_min) {
+      nearest = *i;
+      d_min = distance;
+    }
+  }
+  return nearest;
+}
+#else
 VocabularyTree::Node*
 VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& feature)
 {
@@ -126,9 +189,36 @@ VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& featur
   }
   return nearest;
 }
+#endif
 
 // TODO: next 3 functions basically the same, would be nice to abstract
 //       this a bit
+#ifdef USE_BYTE_SIGNATURES
+void VocabularyTree::addFeature(Node* node, unsigned int object_id,
+                                const FeatureMatrix::RowXpr& feature)
+{
+  // Quantize feature
+  // TODO: don't allocate new uchar array every time
+  float* f = &const_cast<FeatureMatrix::RowXpr&>(feature)(0);
+  uint8_t* qf = NULL;
+  posix_memalign(reinterpret_cast<void**>(&qf), 16, dim_);
+  features::RandomizedTree::quantizeVector(f, dim_, QUANTIZE_N, bounds_, qf);
+  addFeature(node, object_id, qf);
+}
+
+void VocabularyTree::addFeature(Node* node, unsigned int object_id,
+                                const uint8_t* feature)
+{
+  if ( node->children.empty() ) {
+    // leaf node: increment entry for obj in inverted file
+    node->inverted_file[object_id]++;
+  }
+  else {
+    Node* nearest = findNearestChild(node, feature);
+    addFeature(nearest, object_id, feature);
+  }
+}
+#else
 void VocabularyTree::addFeature(Node* node, unsigned int object_id,
                                 const FeatureMatrix::RowXpr& feature)
 {
@@ -141,7 +231,34 @@ void VocabularyTree::addFeature(Node* node, unsigned int object_id,
     addFeature(nearest, object_id, feature);
   }
 }
+#endif
 
+#ifdef USE_BYTE_SIGNATURES
+void VocabularyTree::addFeatureToQuery(Node* node, ImageVector& vec,
+                                       const uint8_t* feature)
+{
+  if (node->weight > 0.0f)
+    vec[node] += node->weight;
+  if ( !node->children.empty() ) {
+    Node* nearest = findNearestChild(node, feature);
+    addFeatureToQuery(nearest, vec, feature);
+  }
+}
+
+void VocabularyTree::addFeatureToDatabaseVector(Node* node, unsigned int object_id,
+                                                const uint8_t* feature)
+{
+  if (node->weight > 0.0f)
+    db_vectors_[object_id][node] += node->weight;
+  if ( node->children.empty() ) {
+    node->inverted_file[object_id]++;
+  }
+  else {
+    Node* nearest = findNearestChild(node, feature);
+    addFeatureToDatabaseVector(nearest, object_id, feature);
+  }
+}
+#else
 void VocabularyTree::addFeatureToQuery(Node* node, ImageVector& vec,
                                        const FeatureMatrix::RowXpr& feature)
 {
@@ -166,6 +283,7 @@ void VocabularyTree::addFeatureToDatabaseVector(Node* node, unsigned int object_
     addFeatureToDatabaseVector(nearest, object_id, feature);
   }
 }
+#endif
 
 // TODO: could perhaps be optimized more, restructured
 // TODO: block longer lists?
@@ -250,12 +368,17 @@ void VocabularyTree::calculateDatabaseVectors()
 }
 
 // TODO: fix indentation, ugh
+// TODO: change to uint8_t centroids, don't bother saying centroid size
 void VocabularyTree::saveAux(Node* node, FILE* out, std::string indentation)
 {
-  fprintf(out, "%sCentroid[%d]: ", indentation.c_str(), node->centroid.size());
-  for (int i = 0; i < node->centroid.size(); ++i)
-    fprintf(out, "%f ", node->centroid[i]);
-  fprintf(out, "\n");
+  if (node == root_)
+    fprintf(out, "%sCentroid[0]: \n", indentation.c_str());
+  else {
+    fprintf(out, "%sCentroid[%d]: ", indentation.c_str(), dim_);
+    for (int i = 0; i < dim_; ++i)
+      fprintf(out, "%f ", node->centroid[i]);
+    fprintf(out, "\n");
+  }
 
   fprintf(out, "%sWeight: %f\n", indentation.c_str(), node->weight);
   
@@ -286,8 +409,13 @@ void VocabularyTree::loadAux(Node* node, FILE* in, unsigned int indent_level)
   int centroid_size = 0;
   //fseek(in, indentation, SEEK_CUR);
   fscanf(in, "Centroid[%d]: ", &centroid_size);
-  if (centroid_size != 0)
+  if (centroid_size != 0) {
+#ifdef USE_BYTE_SIGNATURES
+    posix_memalign((void**)&node->centroid, 16, centroid_size);
+#else
     node->centroid.resize(centroid_size);
+#endif
+  }
   for (int i = 0; i < centroid_size; ++i) {
     fscanf(in, "%f ", &node->centroid[i]);
   }
