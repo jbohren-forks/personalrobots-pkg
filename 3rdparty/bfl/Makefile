@@ -1,6 +1,4 @@
-.PHONY: $(SVN_DIR) bfl
-
-all: bfl
+all: installed
 
 SVN_REVISION= -r 29808
 SVN_DIR = bfl-svn
@@ -13,24 +11,16 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 
 include $(shell rospack find mk)/svn_checkout.mk
 
-
-
-build: wiped bfl
-
-
-configured: SVN_UP Makefile
+installed: $(SVN_DIR) patched
 	mkdir -p $(SVN_DIR)/build-boost
 	cd $(SVN_DIR)/build-boost && $(CMAKE) $(CMAKE_ARGS) ..
-	touch configured
-
-
-bfl:	configured
 	cd $(SVN_DIR)/build-boost && make $(PARALLEL_JOBS) && make install
+	touch installed
 
 clean:
 	rm -rf $(INSTALL_DIR)
 	rm -rf $(SVN_DIR)
-	rm -rf configured
+	rm -rf installed
 
 #test:
 #	cd $(SVN_DIR)/build-boost && make check

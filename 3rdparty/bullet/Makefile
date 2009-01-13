@@ -1,4 +1,4 @@
-all: build
+all: installed
 
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
@@ -28,7 +28,7 @@ BULLET_INC_DIRS = BulletSoftBody \
                   BulletDynamics/Character \
                   LinearMath \
 
-build: SVN_UP_REVERT_PATCH
+installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) .
 	# Bullet appears not be parallel-make safe
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) 
@@ -39,12 +39,13 @@ build: SVN_UP_REVERT_PATCH
 	cp $(BULLET_LIBS) lib
 	mkdir -p include
 	$(foreach d,$(BULLET_INC_DIRS), mkdir -p include/$(d) && cp $(SVN_DIR)/src/$(d)/*.h include/$(d);)
-	touch bullet
+	touch installed
 
 clean:
+	rm -f installed
 	-make -C $(SVN_DIR) clean
 
-wipe: 
-	-rm -f bullet patched
+wipe: clean
+	-rm -f patched
 	-rm -rf bullet_svn
 	-rm -rf build

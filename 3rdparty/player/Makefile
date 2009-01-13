@@ -11,7 +11,7 @@ SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/playe
 SVN_REVISION = -r 7125
 #include $(shell rospack find mk)/svn_checkout.mk
 
-all: player
+all: installed
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
@@ -142,18 +142,19 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D ENABLE_DRIVER_XSENSMT=OFF \
              -D ENABLE_DRIVER_YARPIMAGE=OFF
 
-configured: $(SOURCE_DIR) Makefile
+installed: wiped $(SOURCE_DIR)
 	mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
-	touch configured
-
-.PHONY: player
-player: configured
 	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) install
+	touch installed
+
+wiped: Makefile
+	make wipe
+	touch wiped
 
 clean:
 	rm -rf $(SOURCE_DIR)/build
-	rm -rf player configured
+	rm -rf player installed wiped
 
 wipe: clean
 	rm -rf build

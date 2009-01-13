@@ -1,4 +1,4 @@
-all: ann
+all: installed
 
 TARBALL     = build/ann_1.1.1.tar.gz
 TARBALL_URL = http://www.cs.umd.edu/~mount/ANN/Files/1.1.1/ann_1.1.1.tar.gz
@@ -8,8 +8,9 @@ TARBALL_PATCH = gcc43_shared.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-ann: $(SOURCE_DIR)
+installed: $(SOURCE_DIR) Makefile
 	echo "Building FL-ANN..."
 	cd build/ann_1.1.1 && make linux-shared-g++
+	touch installed
 wipe:
-	rm -rf build
+	rm -rf build installed

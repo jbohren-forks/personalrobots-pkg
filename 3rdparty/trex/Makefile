@@ -13,7 +13,13 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-all: trex plasma planworks includes
+#all: trex plasma planworks includes
+all: installed
+
+installed: Makefile
+	make trex planworks plasma 
+	./copyIncludes.sh
+	touch installed
 
 includes: trex PlanWorks PLASMA
 	./copyIncludes.sh
@@ -22,7 +28,9 @@ includes: trex PlanWorks PLASMA
 # GET plasma
 plasma:
 	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5163 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	@-cd PLASMA && $(SVN_CMDLINE) up -r 5163 ;
+	-if test "-r 5163" != "-r `svn info PLASMA | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd PLASMA && $(SVN_CMDLINE) up -r 5163 ; \
+	fi
 
 #install the patch
 #patch-PLASMA: PLASMA
@@ -33,12 +41,16 @@ plasma:
 # GET PlanWorks
 planworks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
-	@-cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
+	-if test "-r 5117" != "-r `svn info PlanWorks | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd PlanWorks && $(SVN_CMDLINE) up -r 5117; \
+        fi
 
 # Get TREX
 trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 50 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	@-cd TREX && $(SVN_CMDLINE) up -r 50 ;
+	-if test "-r 50" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd TREX && $(SVN_CMDLINE) up -r 50 ; \
+	fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
@@ -48,6 +60,6 @@ test: trex
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else cd TREX && jam agent-inputs && jam run-agent-module-tests; fi
 
 clean:
-	rm -rf PLASMA plasma TREX trex EUROPA logs PlanWorks planworks include
+	rm -rf PLASMA plasma TREX trex EUROPA logs PlanWorks planworks include installed
 
 wipe: clean
