@@ -43,6 +43,8 @@ from math import *
 import numpy
 import numpy.linalg
 
+import pylab
+
 scratch = " " * (640 * 480)
 
 import transformations
@@ -85,11 +87,15 @@ class Pose:
     return r
 
   def xform(self, x, y, z):
-    x,y,z,w = tuple(numpy.array(numpy.dot(self.M, numpy.array([x, y, z, 1]) ))[0])
-    x /= w
-    y /= w
-    z /= w
-    return (x,y,z)
+    if 0:
+      x,y,z,w = tuple(numpy.array(numpy.dot(self.M, numpy.array([x, y, z, 1]) ))[0])
+      assert w == 1.0
+      return (x,y,z)
+    else:
+      nx = float(self.M[0,0]) * x + float(self.M[0,1]) * y + float(self.M[0,2]) * z + float(self.M[0,3])
+      ny = float(self.M[1,0]) * x + float(self.M[1,1]) * y + float(self.M[1,2]) * z + float(self.M[1,3])
+      nz = float(self.M[2,0]) * x + float(self.M[2,1]) * y + float(self.M[2,2]) * z + float(self.M[2,3])
+      return (nx, ny, nz)
 
   def quaternion(self):
     return transformations.quaternion_from_rotation_matrix(self.M)
@@ -138,6 +144,11 @@ class Pose:
     th = self.qangle(other)
     d = sqrt(sum([(a - b)**2 for (a,b) in zip(p0, p1)]))
     return (d > pos_d) or (abs(th) > ori_d)
+
+  def d(self, other):
+    p0 = self.xform(0,0,0)
+    p1 = other.xform(0,0,0)
+    return sqrt(sum([(a - b)**2 for (a,b) in zip(p0, p1)]))
 
   def distance(self):
     x,y,z = self.xform(0,0,0)
@@ -191,7 +202,10 @@ class FeatureDetectorFast(FeatureDetector):
 
   def get_features(self, frame, target_points):
     assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
-    return fast.fast(frame.rawdata, frame.size[0], frame.size[1], int(self.thresh), 40)
+    feat = fast.fast(frame.rawdata, frame.size[0], frame.size[1], int(self.thresh), 40)
+
+    return [ (x,y) for (x,y) in feat if (16 <= x and x <= (640-16) and (16 <= y) and y < (480-16)) ]
+    return feat
 
 class FeatureDetector4x4:
 
@@ -202,13 +216,16 @@ class FeatureDetector4x4:
     return "4x4 " + self.fds[0].__class__.__name__
 
   def detect(self, frame, target_points):
-    w,h = frame.size
     master = Image.fromstring("L", frame.size, frame.rawdata)
     allpts = []
+    xbase = 16
+    ybase = 16
+    w = frame.size[0] - 32
+    h = frame.size[1] - 32
     for x in range(4):
       for y in range(4):
-        xleft = x * (w/4)
-        ytop = y * (h/4)
+        xleft = xbase + x * (w/4)
+        ytop = ybase + y * (h/4)
         subimage = master.crop((xleft, ytop, xleft + (w/4), ytop + (h/4)))
         assert subimage.size == ((w/4), (h/4))
 
@@ -288,14 +305,19 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     self.cl.read('/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old')
 
   def collect(self, frame):
-    frame.descriptors = []
     im = Image.fromstring("L", frame.size, frame.rawdata)
     frame.matcher = calonder.BruteForceMatcher(176)
-    for (x,y,d) in frame.kp:
-      patch = im.crop((x-16,y-16,x+16,y+16))
-      sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
-      frame.descriptors.append(sig)
-      frame.matcher.addSignature(sig)
+    if 0:
+      frame.descriptors = []
+      for (x,y,d) in frame.kp:
+        patch = im.crop((x-16,y-16,x+16,y+16))
+        sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+        frame.descriptors.append(sig)
+        frame.matcher.addSignature(sig)
+    else:
+      frame.descriptors = self.cl.getSignatures(im, [ (x,y) for (x,y,d) in frame.kp ])
+      for sig in frame.descriptors:
+        frame.matcher.addSignature(sig)
 
   def search(self, di, af1, hits):
     match = af1.matcher.findMatch(di, hits)
@@ -429,16 +451,23 @@ class VisualOdometer:
     #ps = Pose(numpy.mat([[1,0,0],[0,1,0],[0,0,1]]), numpy.array(shift))
     #return pr * ps
 
-  def proximity(self, f0, f1):
+  def proximity(self, f0, f1, scavenger = False):
     """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame to f0's frame.)"""
     self.num_frames += 1
 
     pairs = self.temporal_match(f0, f1)
-    print "got", len(pairs), "pairs"
+    #print "frames", (f0.id, f1.id), "got", len(pairs), "pairs",
     if len(pairs) > 10:
       solution = self.solve(f0.kp, f1.kp, pairs, True)
-      (inl, rot, shift) = solution
-      print "....and", inl, "inliers"
+      if scavenger and solution and solution[0] > 10:
+        (inl, rot, shift) = solution
+        pose = self.mkpose(rot, shift)
+        solution = self.scavenger(pose, f0, f1)
+      if solution:
+        (inl, rot, shift) = solution
+      else:
+        return (0, None)
+      #print "...and", inl, "inliers"
       pose = self.mkpose(rot, shift)
       return (inl, pose)
     else:
@@ -458,6 +487,15 @@ class VisualOdometer:
       if best != None:
         pairs.append((i, best[0], best[1]))
     self.pairs = [(i0,i1) for (i0,i1,d) in pairs]
+    if False:
+      f0,f1 = af0,af1
+      for (a,b) in self.pairs:
+        pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
+      pylab.imshow(numpy.fromstring(af0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
+      pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = '%d kp' % f0.id, c = 'red')
+      pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
+      pylab.legend()
+      pylab.show()
     solution = self.solve(af0.kp, af1.kp, self.pairs)
     return solution
 
@@ -616,14 +654,12 @@ class VisualOdometer:
     self.find_disparities(frame)
     self.collect_descriptors(frame)
     frame.id = self.num_frames
-  
 
   # return inliers from a match
   def check_inliers(self, frame1, frame2):
     self.pairs = self.temporal_match(frame1, frame2)
     solution = self.solve(frame1.kp, frame2.kp, self.pairs)
     self.inl = solution[0]
-    
 
   def change_keyframe(self, newkey):
     print "Change keyframe from", self.keyframe.id, "to", newkey.id
@@ -672,6 +708,7 @@ class VisualOdometer:
       Top = Tok * Tkp
       frame.pose = Top
       frame.inl = self.inl
+      frame.ref_frame_id = ref.id
     else:
       frame.pose = Pose()
       self.keyframe = frame
@@ -680,6 +717,7 @@ class VisualOdometer:
       frame.inl = 999
       if self.sba:
         self.sba_add_frame(frame)
+      frame.ref_frame_id = None
     self.pose.assert_sane()
 
     self.pose = frame.pose
@@ -692,35 +730,17 @@ class VisualOdometer:
 
     return self.pose
 
-  def lock_handle_frame(self, frame):
-    self.find_keypoints(frame)
-    self.find_disparities(frame)
-    self.collect_descriptors(frame)
-    frame.id = self.num_frames
-    if not self.prev_frame:
-      frame.inl = 999
-      frame.pose = Pose()
-      self.keyframe = frame
-    else:
-      ref = self.keyframe
-      self.pairs = self.temporal_match(ref, frame)
-      solution = self.solve(ref.kp, frame.kp, self.pairs)
-      (inl, rot, shift) = solution
-      diff_pose = self.mkpose(rot, shift)
-      if self.scavenge:
-        (inl, rot, shift) = self.scavenger(diff_pose, frame)
-        diff_pose = self.mkpose(rot, shift)
-      self.inl = inl
-      self.outl = len(self.pairs) - inl
-      frame.diff_pose = diff_pose
-      Tok = ref.pose
-      Tkp = diff_pose
-      Top = Tok * Tkp
-      frame.pose = Top
-      frame.inl = self.inl
-    if self.sba:
-      self.sba_handle_frame(frame)
-    self.prev_frame = frame
-    self.pose = frame.pose
-    self.num_frames += 1
-    return self.pose
+  def correct(self, corrmap, current_frame):
+    p = corrmap(self.keyframe.id)
+    if p:
+      self.keyframe.pose = p
+    print "current", current_frame.id, "prev", self.prev_frame.id, "key", self.keyframe.id
+    for f in [ current_frame, self.prev_frame ]:
+      if f and f.ref_frame_id:
+        p = corrmap(f.ref_frame_id)
+        if p:
+          Tok = p
+          Tkp = f.diff_pose
+          Top = Tok * Tkp
+          print "** CORRECTED by", f.pose.d(Top), "**", "key", f.ref_frame_id, "of frame", f.id
+          f.pose = Top
