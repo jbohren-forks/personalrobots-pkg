@@ -67,16 +67,17 @@ static string baseFilename();
 static string sanitizeSpec(string const & spec);
 
 static bool enableGfx;
-static string plannerType;
+static string planner_spec;
+static vector<string> planner_name;
 static string costmapType;
 static string environmentType;
 static SetupOptions opt;
 static bool websiteMode;
 
 static shared_ptr<Setup> setup;
-static shared_ptr<Environment> environment;
-static shared_ptr<SBPLPlannerManager> plannerMgr;
-static shared_ptr<CostmapPlanner> planner;
+static vector<shared_ptr<Environment> > environment;
+static vector<shared_ptr<SBPLPlannerManager> > plannerMgr;
+static vector<shared_ptr<CostmapPlanner> > planner;
 static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
@@ -96,7 +97,8 @@ int main(int argc, char ** argv)
   print_summary();
   if (enableGfx)
     display(gfx::Configuration(*setup,
-			       *environment,
+			       planner_name,
+			       *environment[0],	// XXXX quick hack
 			       opt,
 			       websiteMode,
 			       baseFilename(),
@@ -105,7 +107,7 @@ int main(int argc, char ** argv)
 			       "3DKIN" != environmentType,
 			       *logos),
 	    opt.spec.c_str(),
-	    1, // hack: layoutID
+	    3, // hack: layoutID
 	    &argc, argv);
 }
 
@@ -115,9 +117,9 @@ void cleanup()
   if (logos)
     *logos << "byebye!\n" << flush;
   setup.reset();
-  environment.reset();
-  plannerMgr.reset();
-  planner.reset();
+  environment.clear();
+  plannerMgr.clear();
+  planner.clear();
   logos.reset();
   resultlist.clear();
 }
@@ -127,7 +129,7 @@ void usage(ostream & os)
 {
   os << "options:\n"
      << "   -h               help (this message)\n"
-     << "   -p  <name>       name of the SBPL planner\n"
+     << "   -p  <spec>       colon-separated planner names\n"
      << "   -m  <name>       name of the costmap implementation\n"
      << "   -e  <name>       environment representation type\n"
      << "   -s  <spec>       setup specification, e.g. hc:office1 or pgm:costs.pgm:tasks.xml\n"
@@ -149,7 +151,7 @@ void usage(ostream & os)
 static string summarizeOptions()
 {
   ostringstream os;
-  os << "-p" << canonicalPlannerName(plannerType)
+  os << "-p" << sanitizeSpec(planner_spec)
      << "-s" << sanitizeSpec(opt.spec)
      << "-m" << costmapType
      << "-e" << canonicalEnvironmentName(environmentType)
@@ -206,7 +208,7 @@ static void sanitizeOptions()
     opt.inflation_radius = opt.inscribed_radius;
   if (opt.circumscribed_radius > opt.inflation_radius)
     opt.inflation_radius = opt.circumscribed_radius;
-  plannerType = canonicalPlannerName(plannerType);
+  ////  plannerType = canonicalPlannerName(plannerType);
   environmentType = canonicalEnvironmentName(environmentType);
 }
 
@@ -217,7 +219,7 @@ void parse_options(int argc, char ** argv)
   enableGfx = true;
   
   // default values for options
-  plannerType = "ARAPlanner";
+  planner_spec = "ara:ad:nf";
   costmapType = "costmap_2d";
   environmentType = "2D";
   websiteMode = false;
@@ -239,11 +241,11 @@ void parse_options(int argc, char ** argv)
       case 'p':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -p requires a name argument\n";
+ 	  cerr << argv[0] << ": -p requires a spec argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	plannerType = argv[ii];
+	planner_spec = argv[ii];
  	break;
 	
       case 's':
@@ -444,163 +446,153 @@ void create_setup()
     errx(EXIT_FAILURE, "create_setup(): could not create setup from spec \"%s\"",
 	 opt.spec.c_str());
   setup->dumpDescription(*logos, "", "  ");
-  *logos << flush
-	 << "creating environment of type " << environmentType
+  
+  {
+    string spec(planner_spec);
+    string head;
+    while (sfl::splitstring(spec, ':', head, spec)) {
+      string name(canonicalPlannerName(head));
+      if ( ! name.empty()) {
+	planner_name.push_back(name);
+	*logos << "added planner name " << name << "\n" << flush;
+      }
+    }
+  }
+  if (planner_name.empty())
+    errx(EXIT_FAILURE, "create_setup(): no valid planner names in spec \"%s\"",
+	 planner_spec.c_str());
+  
+  // XXXX to do: most "environment" stuff is really specific to SBPL, should be confined there
+  
+  *logos << "creating " << planner_name.size() << " environment(s) of type " << environmentType
 	 << " for map type " << costmapType << "\n" << flush;
   
   if ("2D" == environmentType) {
     unsigned char const
       obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-    environment.reset(new Environment2D(setup->getCostmap(),
-					setup->getIndexTransform(),
-					0, 0, // start INDEX (ix, iy)
-					0, 0, // goal INDEX x (ix, iy)
-					obst_cost_thresh));
+    for (size_t ii(0); ii < planner_name.size(); ++ii) {
+      shared_ptr<Environment> foo(new Environment2D(setup->getCostmap(),
+						    setup->getIndexTransform(),
+						    0, 0, // start INDEX (ix, iy)
+						    0, 0, // goal INDEX x (ix, iy)
+						    obst_cost_thresh));
+      environment.push_back(foo);
+    }
   }
   else if ("3DKIN" == environmentType) {
     unsigned char const
       obst_cost_thresh(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
     // how about making these configurable?
-    double const goaltol_x(0.5 * opt.inscribed_radius);
+    double const goaltol_x(0.5 * opt.inscribed_radius);	// XXXX to do: use task::goal
     double const goaltol_y(0.5 * opt.inscribed_radius);
     double const goaltol_theta(M_PI);
     double const nominalvel_mpersecs(0.6); // human leisurely walking speed
     double const timetoturn45degsinplace_secs(0.6); // guesstimate
-    environment.reset(new Environment3DKIN(setup->getCostmap(),
-					   setup->getIndexTransform(),
-					   obst_cost_thresh,
-					   0, 0, 0, // start POSE (x, y, th)
-					   0, 0, 0, // goal POSE (x, y, th)
-					   goaltol_x, goaltol_y, goaltol_theta,
-					   getFootprint(), nominalvel_mpersecs,
-					   timetoturn45degsinplace_secs));
-    static bool const do_sanity_check(false);
-    if (do_sanity_check) {
-      Costmap const & cm(*setup->getCostmap());
-      bool sane(true);
-      cout << "3DKIN costmap sanity check:\n"
-	   << " * correct obstacle\n"
-	   << " O missing obstacle\n"
-	   << " . correct freespace\n"
-	   << " x missing freespace\n"
-	   << " @ missing information\n";
-      for (ssize_t ix(0); ix < cm.getXEnd(); ++ix) {
-	cout << "  ";
-	for (ssize_t iy(0); iy < cm.getYEnd(); ++iy) {
-	  int cost;
-	  if ( !  cm.getCost(ix, iy, &cost)) {
-	    cout << "@";
-	    sane = false;
-	  }
-	  else if (cost >= obst_cost_thresh) {
-	    if (environment->IsObstacle(ix, iy))
-	      cout << "*";
-	    else {
-	      cout << "O";
-	      sane = false;
-	    }
-	  }
-	  else {
-	    if ( ! environment->IsObstacle(ix, iy))
-	      cout << ".";
-	    else {
-	      cout << "x";
-	      sane = false;
-	    }
-	  }
-	}
-	cout << "\n";
-      }
-      if ( ! sane)
-	errx(EXIT_FAILURE, "3DKIN environment is not sane");
+    for (size_t ii(0); ii < planner_name.size(); ++ii) {
+      shared_ptr<Environment> foo(new Environment3DKIN(setup->getCostmap(),
+						       setup->getIndexTransform(),
+						       obst_cost_thresh,
+						       0, 0, 0, // start POSE (x, y, th)
+						       0, 0, 0, // goal POSE (x, y, th)
+						       goaltol_x, goaltol_y, goaltol_theta,
+						       getFootprint(), nominalvel_mpersecs,
+						       timetoturn45degsinplace_secs));
+      environment.push_back(foo);
     }
   }
   else {
     errx(EXIT_FAILURE, "invalid environmentType \"%s\", use 2D or 3DKIN", environmentType.c_str());
   }
   
-  MDPConfig mdpConfig;
-  if ( ! environment->InitializeMDPCfg(&mdpConfig))
-    errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed on environment %s",
-	 environment->getName().c_str());
-  *logos << "  environment name: " << environment->getName() << "\n" << flush;
-  
-  // XXXX to do: most "environment" stuff is really specific to SBPL, should be confined there
-  
-  if ("NavFn" == plannerType) {
-    *logos << "creating NavFnPlanner\n" << flush;
-    planner.reset(new NavFnPlanner(environment->getCostmap(),
-				   environment->getIndexTransform()));
+  for (size_t in(0); in < planner_name.size(); ++in) {
+    if ("NavFn" == planner_name[in]) {
+      *logos << "creating NavFnPlanner\n" << flush;
+      shared_ptr<CostmapPlanner> foo(new NavFnPlanner(environment[in]->getCostmap(),
+						      environment[in]->getIndexTransform()));
+      planner.push_back(foo);
+    }
+    else {
+      *logos << "creating SBPLPlannerManager manager\n" << flush;
+      bool const forwardsearch(false); // XXXX to do: add an option for this
+      MDPConfig mdpConfig;
+      if ( ! environment[in]->InitializeMDPCfg(&mdpConfig))
+	errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed");
+      shared_ptr<SBPLPlannerManager>
+	mgr(new SBPLPlannerManager(environment[in]->getDSI(), forwardsearch, &mdpConfig));
+      plannerMgr.push_back(mgr);
+      if ( ! mgr->select(planner_name[in], false, logos.get()))
+	errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", planner_name[in].c_str());
+      *logos << "  planner name: " << mgr->getName() << "\n" << flush;
+      shared_ptr<SBPLPlannerWrap>
+	pwrap(new SBPLPlannerWrap(mgr->getName(), environment[in]->getName(),
+				  mgr->get_planner(), environment[in]));
+      pwrap->stopAtFirstSolution(false); // XXXX to do: use task::start
+      pwrap->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(pwrap);
+    }
   }
-  else {
-    *logos << "creating SBPLPlannerManager manager\n" << flush;
-    bool const forwardsearch(false);
-    plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-    if ( ! plannerMgr->select(plannerType, false, logos.get()))
-      errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
-    *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
-    SBPLPlannerWrap * pwrap(new SBPLPlannerWrap(plannerMgr->getName(), environment->getName(),
-						plannerMgr->get_planner(), environment));
-    pwrap->stopAtFirstSolution(false);
-    pwrap->setAllocatedTime(numeric_limits<double>::max());
-    planner.reset(pwrap);
-  }
+  
+  *logos << "finished creating setup\n" << flush;
 }
 
 
 void run_tasks()
 {
-  *logos << "running tasks\n" << flush;
   try {
-    tasklist_t const & tasklist(setup->getTasks());
-    for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
-      if ( ! tasklist[task_id])
-	errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
-      task::setup const task(*tasklist[task_id]);
-      if (task.start.empty())
-	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
+    for (size_t planner_id(0); planner_id < planner.size(); ++planner_id) {
+      *logos << "running tasks for planner " << planner_id << "\n" << flush;
       
-      *logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
-      planner->setGoal(task.goal.px, task.goal.py, task.goal.pth);
-      planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
+      tasklist_t const & tasklist(setup->getTasks());
+      for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
+	if ( ! tasklist[task_id])
+	  errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
+	task::setup const task(*tasklist[task_id]);
+	if (task.start.empty())
+	  errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
-      for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
-	task::startspec const & start(task.start[episode_id]);
+	*logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+	planner[planner_id]->setGoal(task.goal.px, task.goal.py, task.goal.pth);
+	planner[planner_id]->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
+      
+	for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
+	  task::startspec const & start(task.start[episode_id]);
 	
-	planner->setStart(start.px, start.py, start.pth);
-	planner->forcePlanningFromScratch(start.from_scratch);
+	  planner[planner_id]->setStart(start.px, start.py, start.pth);
+	  planner[planner_id]->forcePlanningFromScratch(start.from_scratch);
 	
-	shared_ptr<waypoint_plan_t> plan;
-	try {
-	  plan = planner->createPlan();
-	}
-	catch (std::exception const & ee) {
-	  *logos << "\n==================================================\n"
-		 << "  EXCEPTION from createPlan():\n"
-		 << ee.what()
-		 << "\n==================================================\n" << flush;
-	}
+	  shared_ptr<waypoint_plan_t> plan;
+	  try {
+	    plan = planner[planner_id]->createPlan();
+	  }
+	  catch (std::exception const & ee) {
+	    *logos << "\n==================================================\n"
+		   << "  EXCEPTION from createPlan():\n"
+		   << ee.what()
+		   << "\n==================================================\n" << flush;
+	  }
 	
-	string title;
-	if (plan)
-	  title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
-	else
-	  title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
-	shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
-	stats->logStream(*logos, title, "    ");
-	*logos << flush;
+	  string title;
+	  if (plan)
+	    title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
+	  else
+	    title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
+	  shared_ptr<CostmapPlannerStats> stats(planner[planner_id]->copyStats());
+	  stats->logStream(*logos, title, "    ");
+	  *logos << flush;
+	  
+	  shared_ptr<task::result>
+	    result(new task::result(planner_id,
+				    task_id,
+				    episode_id,
+				    start,
+				    task.goal,
+				    plan,
+				    stats));
 	
-	shared_ptr<task::result>
-	  result(new task::result(task_id,
-				  episode_id,
-				  start,
-				  task.goal,
-				  plan,
-				  stats));
-	
-	resultlist.push_back(result);
-      }	// endfor(episode)
-    } // endfor(task)
+	  resultlist.push_back(result);
+	} // endfor(episode)
+      } // endfor(task)
+    } // endfor(planner)
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "EXCEPTION in run_tasks():\n%s", ee.what());

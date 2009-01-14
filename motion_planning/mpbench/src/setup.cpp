@@ -688,13 +688,15 @@ namespace mpbench {
     }
     
     result::
-    result(size_t _task_id,
+    result(size_t _planner_id,
+	   size_t _task_id,
 	   size_t _episode_id,
 	   startspec const & _start,
 	   goalspec const & _goal,
 	   boost::shared_ptr<mpglue::waypoint_plan_t> _plan,
 	   boost::shared_ptr<mpglue::CostmapPlannerStats> _stats)
-      : task_id(_task_id),
+      : planner_id(_planner_id),
+	task_id(_task_id),
 	episode_id(_episode_id),
 	start(_start),
 	goal(_goal),

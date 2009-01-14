@@ -64,6 +64,7 @@ static double glut_aspect(1); 	// desired width / height (defined in init_layout
 
 static void init_layout_one();
 static void init_layout_two();
+static void init_layout_three();
 static void draw();
 static void reshape(int width, int height);
 static void keyboard(unsigned char key, int mx, int my);
@@ -93,6 +94,7 @@ namespace mpbench {
     
     Configuration::
     Configuration(Setup const & _setup,
+		  std::vector<std::string> const & _planner_name,
 		  Environment const & _environment,
 		  SetupOptions const & opt,
 		  bool _websiteMode,
@@ -102,6 +104,7 @@ namespace mpbench {
 		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
       : setup(_setup),
+	planner_name(_planner_name),
 	environment(_environment),
 	resolution(opt.resolution),
 	inscribedRadius(opt.inscribed_radius),
@@ -129,6 +132,9 @@ namespace mpbench {
 	break;
       case 2:
 	init_layout_two();
+	break;
+      case 3:
+	init_layout_three();
 	break;
       default:
 	errx(EXIT_FAILURE, "mpbench::gfx::display(): invalid layoutID %zu", layoutID);
@@ -169,9 +175,12 @@ namespace {
   
   class PlanDrawing: npm::Drawing {
   public:
-    PlanDrawing(std::string const & name, ssize_t task_id, ssize_t episode_id, bool detailed);
+    PlanDrawing(std::string const & name,
+		ssize_t task_id, ssize_t task_id, ssize_t episode_id,
+		bool detailed);
     virtual void Draw();
     
+    ssize_t const planner_id;
     ssize_t const task_id;
     ssize_t const episode_id;
     bool const detailed;
@@ -268,7 +277,7 @@ void init_layout_one()
   new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
-  new PlanDrawing("plan", -1, -1, false);
+  new PlanDrawing("plan", -1, -1, -1, false);
   
   npm::View * view;
   
@@ -317,14 +326,13 @@ void init_layout_two()
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   glut_aspect = ceil(tl.size() * 0.5) * (x1 - x0) / (2 * (y1 - y0));
   
-  shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(configptr->setup.getRawSFLTravmap()));
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   double const v_width(2.0 / tl.size());
   for (int ix(0), itask(0); itask < static_cast<int>(tl.size()); ++ix)
     for (int iy(1); iy >= 0; --iy, ++itask) {
       ostringstream pdname;
       pdname << "plan" << itask;
-      new PlanDrawing(pdname.str(), itask, -1, true);
+      new PlanDrawing(pdname.str(), -1, itask, -1, true);
       npm::View *
 	view(new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >()));
       // beware of weird npm::View::Configure() param order: x, y, width, height
@@ -335,6 +343,46 @@ void init_layout_two()
       if ( ! view->AddDrawing(pdname.str()))
 	errx(EXIT_FAILURE, "no drawing called \"%s\"", pdname.str().c_str());
     }
+}
+
+
+void init_layout_three()
+{  
+  double x0, y0, x1, y1;
+  configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+  new npm::StillCamera("travmap",
+		       x0, y0, x1, y1,
+   		       npm::Instance<npm::UniqueManager<npm::Camera> >());
+  size_t const nplanners(configptr->planner_name.size());
+  double const ncols(nplanners + 1.0);
+  glut_aspect = ncols * (x1 - x0) / (y1 - y0);
+  
+  new npm::TraversabilityDrawing("costmap", new CostMapProxy());
+  double const v_width(1.0 / ncols);
+  npm::View * view(new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >()));
+  // beware of weird npm::View::Configure() param order: x, y, width, height
+  view->Configure(0, 0, v_width, 1);
+  if ( ! view->SetCamera("travmap"))
+    errx(EXIT_FAILURE, "no camera called \"travmap\"");
+  if ( ! view->AddDrawing("costmap"))
+    errx(EXIT_FAILURE, "no drawing called \"costmap\"");
+
+  new npm::TraversabilityDrawing("costmap_dark", new CostMapProxy(),
+				 npm::TraversabilityDrawing::MINIMAL_DARK);
+  for (size_t ip(0); ip < nplanners; ++ip) {
+    ostringstream pdname;
+    pdname << "planner" << ip;
+    new PlanDrawing(pdname.str(), ip, -1, -1, false);
+    view = new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >());
+    // beware of weird npm::View::Configure() param order: x, y, width, height
+    view->Configure((ip + 1) * v_width, 0, v_width, 1);
+    if ( ! view->SetCamera("travmap"))
+      errx(EXIT_FAILURE, "no camera called \"travmap\"");
+    if ( ! view->AddDrawing("costmap_dark"))
+      errx(EXIT_FAILURE, "no drawing called \"costmap_dark\"");
+    if ( ! view->AddDrawing(pdname.str()))
+      errx(EXIT_FAILURE, "no drawing called \"%s\"", pdname.str().c_str());
+  }
 }
 
 
@@ -412,10 +460,13 @@ void keyboard(unsigned char key, int mx, int my)
 namespace {
   
   PlanDrawing::
-  PlanDrawing(std::string const & name, ssize_t _task_id, ssize_t _episode_id, bool _detailed)
+  PlanDrawing(std::string const & name,
+	      ssize_t _planner_id, ssize_t _task_id, ssize_t _episode_id,
+	      bool _detailed)
     : npm::Drawing(name,
 		   "the plans that ... were planned",
 		   npm::Instance<npm::UniqueManager<npm::Drawing> >()),
+      planner_id(_planner_id),
       task_id(_task_id),
       episode_id(_episode_id),
       detailed(_detailed)
@@ -516,6 +567,8 @@ namespace {
 	 ir != configptr->resultlist.end(); ++ir) {
       shared_ptr<task::result> result(*ir);
       if ( ! result)
+	continue;
+      if ((planner_id >= 0) && (planner_id != result->planner_id))
 	continue;
       if ((task_id >= 0) && (task_id != result->task_id))
 	continue;

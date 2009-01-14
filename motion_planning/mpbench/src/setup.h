@@ -100,13 +100,15 @@ namespace mpbench {
     };
     
     struct result {
-      result(size_t task_id,
+      result(size_t planner_id,
+	     size_t task_id,
 	     size_t episode_id,
 	     startspec const & start,
 	     goalspec const & goal,
 	     boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 	     boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
       
+      size_t planner_id;
       size_t task_id;
       size_t episode_id;
       startspec start;

@@ -46,6 +46,7 @@ namespace mpbench {
     
     struct Configuration {
       Configuration(Setup const & setup,
+		    std::vector<std::string> const & planner_name,
 		    mpglue::Environment const & environment,
 		    SetupOptions const & opt,
 		    bool websiteMode,
@@ -56,6 +57,7 @@ namespace mpbench {
 		    std::ostream & logOs);
       
       Setup const & setup;
+      std::vector<std::string> const & planner_name;
       mpglue::Environment const & environment;
       double const resolution;
       double const inscribedRadius;
