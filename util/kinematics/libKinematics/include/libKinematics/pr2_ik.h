@@ -71,6 +71,8 @@ namespace kinematics
 
     bool computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_guess);
 
+    bool computeIKFastWithConstraints(NEWMAT::Matrix g, int joint_num, double initial_guess);
+
     bool setAngleMultipliers(std::vector<double> angle_mult);
 
     private:

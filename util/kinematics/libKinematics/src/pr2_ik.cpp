@@ -987,6 +987,65 @@ bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_gues
 //      printf("current_guess:: %f\n",current_guess);
       if(solution_ik_.size() > 0)
       {
+            return true;
+      }
+      if(!computeNewGuess(initial_guess,current_guess,joint_num))
+      {
+        return false;
+      }
+    }
+  }
+
+  return false;
+
+}
+
+
+bool arm7DOF::computeIKFastWithConstraints(NEWMAT::Matrix g, int joint_num, double initial_guess)
+{
+  if(!(joint_num == 0 || joint_num == 2))
+  {
+    printf("arm7DOF kinematics: inverse kinematics only supported with joint number 0 or 2 as a free joint");
+    return false;
+  }
+
+  PrintMatrix(g,"IK::transform");
+
+  double current_guess = initial_guess;
+
+  num_positive_increments_ = 1;
+  num_negative_increments_ = 0;
+
+  positive_increment_valid_ = true;
+  negative_increment_valid_ = true;
+  last_increment_negative_ = false;
+  last_increment_positive_ = true;
+
+  if(joint_num == 0)
+  {   
+    while(1)
+    {
+      ComputeIKEfficient(g,current_guess);
+      if(solution_ik_.size() > 0)
+      {
+        return true;
+      }
+      if(!computeNewGuess(initial_guess,current_guess,joint_num))
+      {
+        return false;
+      }
+    }
+  }
+
+
+  if(joint_num == 2)
+  {   
+    while(1)
+    {
+      ComputeIKEfficientTheta3(g,current_guess);
+//      printf("current_guess:: %f\n",current_guess);
+      if(solution_ik_.size() > 0)
+      {
         for(int i=0; i<(int)solution_ik_.size(); i++)
         {
           if(solution_ik_[i][1] < 0)
@@ -1003,5 +1062,4 @@ bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_gues
   }
 
   return false;
-
 }
