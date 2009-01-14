@@ -1002,6 +1002,24 @@ bool EnvironmentNAV3DKIN::InitializeEnv(const char* sEnvFile, const vector<sbpl_
 }
 
 
+bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
+					const unsigned char* mapdata,
+					const vector<sbpl_2Dpt_t> & perimeterptsV,
+					double cellsize_m, double nominalvel_mpersecs,
+					double timetoturn45degsinplace_secs, 
+					unsigned char obsthresh)
+{
+  // use (0,0,0) for start and goal, and default goal tolerances, all
+  // this is not really used anyway at the moment
+  return InitializeEnv(width, height, mapdata,
+		       0, 0, 0, 0, 0, 0,
+		       ENVNAV3DKIN_DEFAULT_TOL_XY,
+		       ENVNAV3DKIN_DEFAULT_TOL_XY,
+		       ENVNAV3DKIN_DEFAULT_TOL_TH,
+		       perimeterptsV, cellsize_m, nominalvel_mpersecs,
+		       timetoturn45degsinplace_secs, obsthresh);
+}
+
 
 bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					const unsigned char* mapdata,
@@ -1467,6 +1485,12 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 
     return EnvNAV3DKIN.goalstateid;    
 
+}
+
+
+void EnvironmentNAV3DKIN::SetGoalTolerance(double tol_x, double tol_y, double tol_theta)
+{
+  /* not used yet */
 }
 
 

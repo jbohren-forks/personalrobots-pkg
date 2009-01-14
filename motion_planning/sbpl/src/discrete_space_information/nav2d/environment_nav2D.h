@@ -117,8 +117,13 @@ public:
                        const unsigned char* mapdata,
                        int startx, int starty,
                        int goalx, int goaly, unsigned char obsthresh);
+    bool InitializeEnv(int width, int height,
+		       /** if mapdata is NULL the grid is initialized to all freespace */
+                       const unsigned char* mapdata, unsigned char obsthresh);
+
     int SetStart(int x, int y);
     int SetGoal(int x, int y);
+    void SetGoalTolerance(double tol_x, double tol_y, double tol_theta); /**< not used yet */
     bool UpdateCost(int x, int y, unsigned char newcost);
 	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 

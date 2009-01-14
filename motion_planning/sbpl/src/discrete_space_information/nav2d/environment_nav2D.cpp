@@ -434,6 +434,15 @@ bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 }
 
 
+bool EnvironmentNAV2D::InitializeEnv(int width, int height,
+				     const unsigned char* mapdata,
+				     unsigned char obsthresh)
+{
+  return InitializeEnv(width, height, mapdata,
+		       0, 0, 0, 0, // just use (0,0) for start and goal
+		       obsthresh);
+}
+
 
 bool EnvironmentNAV2D::InitializeEnv(int width, int height,
 					const unsigned char* mapdata,
@@ -880,6 +889,12 @@ int EnvironmentNAV2D::SetGoal(int x, int y){
 
     return EnvNAV2D.goalstateid;    
 
+}
+
+
+void EnvironmentNAV2D::SetGoalTolerance(double tol_x, double tol_y, double tol_theta)
+{
+  /* not used yet */
 }
 
 
