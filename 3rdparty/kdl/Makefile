@@ -9,6 +9,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH1 = kdl_patch29562.diff
 PATCH2 = kdl_patch_quaternion.diff
+PATCH3=  kdl_patch_jnteff.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = cmake 
@@ -22,6 +23,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 installed: wiped $(SOURCE_DIR)
 	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH1)
 	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH2)
+	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH3)
 	-mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) && make install

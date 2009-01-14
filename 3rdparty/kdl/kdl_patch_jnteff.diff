@@ -1,0 +1,323 @@
+Index: src/chaineffsolver.cpp
+===================================================================
+--- src/chaineffsolver.cpp	(revision 0)
++++ src/chaineffsolver.cpp	(revision 0)
+@@ -0,0 +1,78 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com>
++
++// Version: 1.0
++// Author: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++/* author: Wim Meeussen */
++
++
++#include "chaineffsolver.hpp"
++#include "chainjnttojacsolver.hpp"
++
++namespace KDL {
++
++
++  ChainFEffSolver::ChainFEffSolver(const Chain& chain)
++    : jnt_to_jac_solver_(chain),
++      num_joints_(chain.getNrOfJoints()),
++      num_segments_(chain.getNrOfSegments()),
++      jacobian_(num_joints_, num_segments_)
++  {
++
++  }
++
++  int ChainFEffSolver::JntToCart(const JntArray& q, const JntArrayEff& eff_in, Wrench& wrench_out, int segmentNr)
++  {
++    jnt_to_jac_solver_.JntToJac(q, jacobian_);
++
++    // convert the joint efforts into wrench
++    // not implemented yet
++    assert(0);
++
++    return 0;
++  }
++
++
++
++
++  ChainIEffSolver::ChainIEffSolver(const Chain& chain)
++    : jnt_to_jac_solver_(chain),
++      num_joints_(chain.getNrOfJoints()),
++      num_segments_(chain.getNrOfSegments()),
++      jacobian_(num_joints_, num_segments_)
++  {
++  }
++
++
++  int ChainIEffSolver::CartToJnt(const JntArray& q, const Wrench& wrench_in, JntArrayEff& eff_out, int segmentNr)
++  {
++    jnt_to_jac_solver_.JntToJac(q, jacobian_);
++
++    // convert the wrench into joint efforts
++    for (unsigned int i=0; i<num_joints_; i++){
++      eff_out.eff(i) = 0;
++      for (unsigned int j=0; j<6; j++)
++	eff_out.eff(i) += (jacobian_(j,i) * wrench_in(j));
++    }
++
++    return 0;
++  }
++
++
++}//end of namespace KDL
+Index: src/jntarrayeff.hpp
+===================================================================
+--- src/jntarrayeff.hpp	(revision 0)
++++ src/jntarrayeff.hpp	(revision 0)
+@@ -0,0 +1,54 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com
++
++// Version: 1.0
++// Author: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++/* author: Wim Meeussen */
++
++#ifndef KDL_JNTARRAYEFF_HPP
++#define KDL_JNTARRAYEFF_HPP
++
++#include "utilities/utility.h"
++#include "jntarray.hpp"
++
++namespace KDL
++{
++
++    class JntArrayEff
++    {
++    public:
++        JntArray eff;
++    public:
++        JntArrayEff(unsigned int size);
++        JntArrayEff(const JntArray& eff);
++
++        JntArray value()const;
++        JntArray deriv()const;
++
++        friend void Add(const JntArrayEff& src1,const JntArrayEff& src2,JntArrayEff& dest);
++        friend void Substract(const JntArrayEff& src1,const JntArrayEff& src2,JntArrayEff& dest);
++        friend void Multiply(const JntArrayEff& src,const double& faceff,JntArrayEff& dest);
++        friend void Divide(const JntArrayEff& src,const double& faceff,JntArrayEff& dest);
++        friend void SetToZero(JntArrayEff& array);
++        friend bool Equal(const JntArrayEff& src1,const JntArrayEff& src2,double eps=epsilon);
++
++    };
++}
++
++#endif
+Index: src/chaineffsolver.hpp
+===================================================================
+--- src/chaineffsolver.hpp	(revision 0)
++++ src/chaineffsolver.hpp	(revision 0)
+@@ -0,0 +1,98 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com>
++
++// Version: 1.0
++// Author: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++/* author: Wim Meeussen */
++
++
++#ifndef KDL_CHAIN_EFFSOLVER_HPP
++#define KDL_CHAIN_EFFSOLVER_HPP
++
++#include "chain.hpp"
++#include "jntarrayeff.hpp"
++#include "chainjnttojacsolver.hpp"
++
++namespace KDL {
++
++    /**
++	  * \brief This <strong>abstract</strong> class encapsulates a
++	  * solver to convert joint efforts into a wrench
++     *
++     * @ingroup KinematicFamily
++     */
++
++    //Forward definition
++    class ChainFEffSolver {
++    public:
++        /**
++         * Calculate forward position kinematics for a KDL::Chain,
++         * from joint coordinates to cartesian pose.
++         *
++         * @param eff_in input joint efforts
++         * @param wrench_out output wrench
++         *
++         * @return if < 0 something went wrong
++         */
++        virtual int JntToCart(const JntArray& q, const JntArrayEff& eff_in, Wrench& wrench_out, int segmentNr=-1);
++        ChainFEffSolver(const Chain& chain);
++        virtual ~ChainFEffSolver(){};
++
++    private:
++      ChainJntToJacSolver jnt_to_jac_solver_;
++      unsigned int num_joints_, num_segments_;
++      Jacobian jacobian_;
++    };
++
++
++
++
++    /**
++	  * \brief This <strong>abstract</strong> class encapsulates a
++	  * solver to convert a wrench into joint efforts
++     *
++     * @ingroup KinematicFamily
++     */
++
++    //inverse definition
++    class ChainIEffSolver {
++    public:
++        /**
++         * Calculate forward position kinematics for a KDL::Chain,
++         * from joint coordinates to cartesian pose.
++         *
++         * @param wrench_in input wrench
++         * @param eff_out the output joint efforts
++         *
++         * @return if < 0 something went wrong
++         */
++        virtual int CartToJnt(const JntArray& q, const Wrench& wrench_in, JntArrayEff& eff_out, int segmentNr=-1);
++        ChainIEffSolver(const Chain& chain);
++        virtual ~ChainIEffSolver(){};
++
++    private:
++      ChainJntToJacSolver jnt_to_jac_solver_;
++      unsigned int num_joints_, num_segments_;
++      Jacobian jacobian_;
++    };
++
++
++}//end of namespace KDL
++
++#endif
+Index: src/jntarrayeff.cpp
+===================================================================
+--- src/jntarrayeff.cpp	(revision 0)
++++ src/jntarrayeff.cpp	(revision 0)
+@@ -0,0 +1,73 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com
++
++// Version: 1.0
++// Author: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++/* author: Wim Meeussen */
++
++#include "jntarrayeff.hpp"
++
++namespace KDL
++{
++    JntArrayEff::JntArrayEff(unsigned int size):
++        eff(size)
++    {
++    }
++    JntArrayEff::JntArrayEff(const JntArray& effin):
++        eff(effin)
++    {
++    }
++
++    JntArray JntArrayEff::value()const
++    {
++        return eff;
++    }
++
++    void Add(const JntArrayEff& src1,const JntArrayEff& src2,JntArrayEff& dest)
++    {
++        Add(src1.eff,src2.eff,dest.eff);
++    }
++
++    void Substract(const JntArrayEff& src1,const JntArrayEff& src2,JntArrayEff& dest)
++    {
++        Substract(src1.eff,src2.eff,dest.eff);
++    }
++
++    void Multiply(const JntArrayEff& src,const double& faceff,JntArrayEff& dest)
++    {
++        Multiply(src.eff,faceff,dest.eff);
++    }
++
++    void Divide(const JntArrayEff& src,const double& faceff,JntArrayEff& dest)
++    {
++        Divide(src.eff,faceff,dest.eff);
++    }
++
++    void SetToZero(JntArrayEff& array)
++    {
++        SetToZero(array.eff);
++    }
++
++    bool Eeffual(const JntArrayEff& src1,const JntArrayEff& src2,double eps)
++    {
++        return Eeffual(src1.eff,src2.eff,eps);
++    }
++}
++
++
