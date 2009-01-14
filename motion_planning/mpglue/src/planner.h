@@ -121,15 +121,10 @@ namespace mpglue {
 	stats__ field. */
     virtual void setGoalTolerance(double dist_tol, double angle_tol);
 
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
-    /**
-       \todo The presence of this no-op method is just a quick hack
-       for integration of NavFn.
-    */
+    /** Overridden in DynamicCostmapPlanner. Basic CostmapPlanner is
+	assumed to always replan from scratch anyways, so this is just
+	a stub here. */
     virtual void forcePlanningFromScratch(bool flag) {}
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
     
     /** Calls preCreatePlan(), doCreatePlan(), and postCreatePlan() in
 	that order. If any of them throw an exception, the following
@@ -170,7 +165,9 @@ namespace mpglue {
     
     /** Hook for subclasses. Called by createPlan() after calling
 	doCreatePlan(). Subclasses must call their superclass'
-	implementation at the beginning of their override. */
+	implementation at the beginning of their override. The base
+	implementation here simply resets the three flags
+	start_changed_, goal_pose_changed_, and goal_tol_changed_. */
     virtual void postCreatePlan() throw(std::exception);
     
     /** \note Two underscores because implementing subclasses might
@@ -178,6 +175,10 @@ namespace mpglue {
     CostmapPlannerStats & stats__;
     boost::shared_ptr<Costmap const> costmap_;
     boost::shared_ptr<IndexTransform const> itransform_;
+    
+    bool start_changed_;
+    bool goal_pose_changed_;
+    bool goal_tol_changed_;
   };
   
   
@@ -202,7 +203,7 @@ namespace mpglue {
     /** Default implementation just sets a flag in the stats__
 	field. */
     virtual void forcePlanningFromScratch(bool flag);
-
+    
     /** Default implementation just sets a flag in the stats__
 	field. */
     virtual void flushCostChanges(bool flag);
@@ -212,14 +213,17 @@ namespace mpglue {
 			  boost::shared_ptr<Costmap const> costmap,
 			  boost::shared_ptr<IndexTransform const> itransform);
     
-    /** Calls CostmapPlanner::postCreatePlan() and then resets the two
-	flags in DynamicCostmapPlannerStats. */
+    /** Calls CostmapPlanner::postCreatePlan() and then resets the
+	plan_from_scratch_changed_ and flush_cost_changes_changed_. */
     virtual void postCreatePlan() throw(std::exception);
     
     /** \note This shadows the identically named stats in
 	CostmapPlanner, which is OK because it ends up being the same
-	object anyway. */    
+	object anyway. */
     DynamicCostmapPlannerStats & stats__;
+    
+    bool plan_from_scratch_changed_;
+    bool flush_cost_changes_changed_;
   };
   
   

@@ -151,7 +151,10 @@ namespace mpglue {
 		 boost::shared_ptr<IndexTransform const> itransform)
     : stats__(stats),
       costmap_(costmap),
-      itransform_(itransform)
+      itransform_(itransform),
+      start_changed_(false),
+      goal_pose_changed_(false),
+      goal_tol_changed_(false)
   {
   }
   
@@ -179,6 +182,7 @@ namespace mpglue {
     stats__.start_th = pth;
     stats__.start_ix = ix;
     stats__.start_iy = iy;
+    start_changed_ = true;
   }
   
   
@@ -199,6 +203,7 @@ namespace mpglue {
     stats__.goal_th = pth;
     stats__.goal_ix = ix;
     stats__.goal_iy = iy;
+    goal_pose_changed_ = true;
   }
   
   
@@ -207,6 +212,7 @@ namespace mpglue {
   {
     stats__.goal_tol_distance = dist_tol;
     stats__.goal_tol_angle = angle_tol;
+    goal_tol_changed_ = true;
   }
   
   
@@ -254,6 +260,9 @@ namespace mpglue {
   void CostmapPlanner::
   postCreatePlan() throw(std::exception)
   {
+    start_changed_ = false;
+    goal_pose_changed_ = false;
+    goal_tol_changed_ = false;
   }
   
   
@@ -304,7 +313,9 @@ namespace mpglue {
 			boost::shared_ptr<Costmap const> costmap,
 			boost::shared_ptr<IndexTransform const> itransform)
     : CostmapPlanner(stats, costmap, itransform),
-      stats__(stats)
+      stats__(stats),
+      plan_from_scratch_changed_(false),
+      flush_cost_changes_changed_(false)
   {
   }
   
@@ -312,14 +323,20 @@ namespace mpglue {
   void DynamicCostmapPlanner::
   forcePlanningFromScratch(bool flag)
   {
-    stats__.plan_from_scratch = flag;
+    if (flag != stats__.plan_from_scratch) {
+      stats__.plan_from_scratch = flag;
+      plan_from_scratch_changed_ = true;
+    }
   }
   
   
   void DynamicCostmapPlanner::
   flushCostChanges(bool flag)
   {
-    stats__.flush_cost_changes = flag;
+    if (flag != stats__.flush_cost_changes) {
+      stats__.flush_cost_changes = flag;
+      flush_cost_changes_changed_ = true;
+    }
   }
   
   
@@ -329,8 +346,8 @@ namespace mpglue {
     // do not forget to call superclass!
     CostmapPlanner::postCreatePlan();
     
-    stats__.plan_from_scratch = false;
-    stats__.flush_cost_changes = false;
+    plan_from_scratch_changed_ = false;
+    flush_cost_changes_changed_ = false;
   }
   
   

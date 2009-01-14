@@ -102,40 +102,48 @@ namespace mpglue {
   void SBPLPlannerWrap::
   preCreatePlan() throw(std::exception)
   {
-    stats_.start_state = environment_->SetStart(stats_.start_x, stats_.start_y, stats_.start_th);
-    stats_.goal_state = environment_->SetStart(stats_.goal_x, stats_.goal_y, stats_.goal_th);
-    if ((0 > stats_.start_state) || (0 > stats_.goal_state)) {
-      ostringstream os;
-      os << "ERROR in mpglue::SBPLPlannerWrap::preCreatePlan(): invalid goal and/or start\n"
-	 << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
-	 << stats_.start_th << "\n"
-	 << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
-	 << "  start state: " << stats_.start_state << "\n"
-	 << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
-	 << stats_.goal_th << "\n"
-	 << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
-	 << "  goal state: " << stats_.goal_state << "\n";
-      throw out_of_range(os.str());
+    if (start_changed_) {
+      stats_.start_state = environment_->SetStart(stats_.start_x, stats_.start_y, stats_.start_th);
+      if (0 > stats_.start_state) {
+	ostringstream os;
+	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): invalid start\n"
+	   << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
+	   << stats_.start_th << "\n"
+	   << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
+	   << "  start state: " << stats_.start_state << "\n";
+	throw out_of_range(os.str());
+      }
+      if (1 != planner_->set_start(stats_.start_state)) {
+	ostringstream os;
+	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_start() failed\n"
+	   << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
+	   << stats_.start_th << "\n"
+	   << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
+	   << "  start state: " << stats_.start_state << "\n";
+	throw runtime_error(os.str());
+      }
     }
     
-    if (1 != planner_->set_start(stats_.start_state)) {
-      ostringstream os;
-      os << "ERROR in mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_start() failed\n"
-	 << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
-	 << stats_.start_th << "\n"
-	 << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
-	 << "  start state: " << stats_.start_state << "\n";
-      throw runtime_error(os.str());
-    }
-    
-    if (1 != planner_->set_goal(stats_.goal_state)) {
-      ostringstream os;
-      os << "ERROR in mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_goal() failed\n"
-	 << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
-	 << stats_.goal_th << "\n"
-	 << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
-	 << "  goal state: " << stats_.goal_state << "\n";
-      throw runtime_error(os.str());
+    if (goal_pose_changed_) {
+      stats_.goal_state = environment_->SetGoal(stats_.goal_x, stats_.goal_y, stats_.goal_th);
+      if (0 > stats_.goal_state) {
+	ostringstream os;
+	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): invalid goal\n"
+	   << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
+	   << stats_.goal_th << "\n"
+	   << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
+	   << "  goal state: " << stats_.goal_state << "\n";
+	throw out_of_range(os.str());
+      }
+      if (1 != planner_->set_goal(stats_.goal_state)) {
+	ostringstream os;
+	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_goal() failed\n"
+	   << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
+	   << stats_.goal_th << "\n"
+	   << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
+	   << "  goal state: " << stats_.goal_state << "\n";
+	throw runtime_error(os.str());
+      }
     }
     
     if (stats_.plan_from_scratch)
