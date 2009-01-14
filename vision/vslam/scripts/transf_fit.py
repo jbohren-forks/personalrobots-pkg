@@ -33,7 +33,6 @@ def match_trajectory_points(trj0, trj1, time_stamp_offset):
         matched = True
 
         trj2[i] = array([time_stamp0, trj1[j][1], trj1[j][2], trj1[j][3]])
-        # print 'matching point', trj0[i], trj2[i]
       else:
         # move on to next point on trj1
         j+=1
@@ -50,12 +49,12 @@ def transf_curve(curve, pose):
     curve1[i] = [t, x01, y01, z01]
   return curve1
   
-def scale_curve(curve, scale):
+def scale_curve3(curve, scale):
   curvelen = len(curve)
   curve1=zeros((curvelen, 4))
   for i in range(0, curvelen):
     t, x, y, z = curve[i]
-    curve1[i] = [t, x*scale, y*scale, z*scale]
+    curve1[i] = [t, x*scale[0], y*scale[1], z*scale[2]]
   return curve1
   
 def error_func(transf, curve0, curve1):
@@ -121,6 +120,30 @@ def transf_fit_angle_scale_time(transf, curve0, curve1):
   curve01 = scale_curve(curve01, s)
   curve01 = curve01 + array([t, 0.0, 0.0, 0.0])
   
+  return ((curve01-curve1)**2).sum()  
+  
+def transf_fit_angle_scale(transf, curve0, curve1):
+  # no translation
+  p = [0.,0.,0.]
+  # euler angles
+  e = transf[0:3]
+  # scale 
+  s = transf[3]
+  pose = Pose(transformations.rotation_matrix_from_euler(e[0], e[1], e[2], 'sxyz')[:3,:3], p)
+  curve01 = transf_curve(curve0, pose)
+  curve01 = scale_curve(curve01, s)
+  return ((curve01-curve1)**2).sum()  
+  
+def transf_fit_angle_scale3(transf, curve0, curve1):
+  # no translation
+  p = [0.,0.,0.]
+  # euler angles
+  e = transf[0:3]
+  # scale 
+  s = transf[3:6]
+  pose = Pose(transformations.rotation_matrix_from_euler(e[0], e[1], e[2], 'sxyz')[:3,:3], p)
+  curve01 = transf_curve(curve0, pose)
+  curve01 = scale_curve3(curve01, s)
   return ((curve01-curve1)**2).sum()  
   
 def transf_fit_angle(transf, curve0, curve1):
