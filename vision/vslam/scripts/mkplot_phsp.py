@@ -128,7 +128,7 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
         VisualOdometer(cam, 
                        # scavenge = True, 
                        scavenge = False, 
-                       #feature_detector = FeatureDetectorFast(), 
+                       # feature_detector = FeatureDetectorFast(), 
                        feature_detector = FeatureDetectorHarris(), 
                        inlier_error_threshold = 3.0, 
                        # sba = (1,100,10),
@@ -301,7 +301,7 @@ if skel:
     t = id_to_timestamp[f.id]
     skel_nodes.append([t,x,y,z])
   # sort nodes by timestamp
-  sorted(skel_nodes, key=operator.itemgetter(0))
+  skel_nodes = sorted(skel_nodes, key=operator.itemgetter(0))
   output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
   pickle.dump(skel_nodes, output_skeleton_nodes)
   output_skeleton_nodes.close()
