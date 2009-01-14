@@ -194,6 +194,15 @@ int main(int argc, char **argv)
 
  kn.arm_kinematics_->computeIKFast(g,2,kn.init_solution_theta3_);
 
+ for(int i=0; i < kn.arm_kinematics_->solution_ik_.size(); i++)
+ { 
+   for(int j=0; j< 7; j++)
+   {
+     printf("%f ",kn.arm_kinematics_->solution_ik_[i][j]);
+   }
+   printf("\n");
+ }
+
   ros::fini();
   return 0;
 }
