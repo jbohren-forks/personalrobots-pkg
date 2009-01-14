@@ -231,7 +231,7 @@ protected:
   void deactivate(){
     ROS_INFO("Deactivating controller\n");
 
-    if (this->state == ACTIVE) {
+    if (this->state == ACTIVE && !this->stateMsg.done) {
       ROS_INFO("Controller preempted.");
       this->stateMsg.preempted = 1;
     }
