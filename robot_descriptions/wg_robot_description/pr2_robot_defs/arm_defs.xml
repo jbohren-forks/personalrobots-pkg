@@ -38,7 +38,7 @@
     </joint>
 
     <link name="${side}_shoulder_pan_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${side}_shoulder_pan_joint" />
       <inertial>
@@ -174,13 +174,13 @@
       <inertial>
       </inertial>
 
-      <visual>
+      <visual> <!-- TODO: This component doesn't actually have a mesh -->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="${side}_shoulder_pan_visual">
-          <mesh filename="shoulder_yaw" scale="0.1 0.1 0.1"/>
+        <geometry name="${side}_upper_arm_roll_visual">
+          <mesh filename="wheel" scale="6 6 6" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
