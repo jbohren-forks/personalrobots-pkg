@@ -19,6 +19,7 @@ import random
 import unittest
 import math
 import copy
+import operator
 
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
@@ -294,7 +295,13 @@ output_keyframe_trajectory.close()
 # pickling the skeleton
 if skel:
   id_to_timestamp = dict([ (i, stampedTrajectory[0][i][0]) for i in range(0,len(stampedTrajectory[0])) ])
-  skel_nodes = [(id_to_timestamp[f.id], skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes]
+  skel_nodes = []
+  for f in skel.nodes:
+    x, y, z = skel.newpose(f.id).xform(0,0,0)
+    t = id_to_timestamp[f.id]
+    skel_nodes.append([t,x,y,z])
+  # sort nodes by timestamp
+  sorted(skel_nodes, key=operator.itemgetter(0))
   output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
   pickle.dump(skel_nodes, output_skeleton_nodes)
   output_skeleton_nodes.close()
