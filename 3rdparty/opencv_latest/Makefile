@@ -25,6 +25,6 @@ clean:
 	rm -rf $(INSTALL_DIR) installed
 
 wipe: clean
-	rm -rf build
+	rm -rf build patched
 
 .PHONY : clean download
