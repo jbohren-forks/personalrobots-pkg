@@ -1,0 +1,23 @@
+#include "nav.init.nddl"
+
+/**
+ * Tests if the aborted flag is set when the goal is in an obstacle.
+ */
+
+rejectable(moveBase.Active g0);
+g0.x = 13.0;
+g0.y = 25.0;
+g0.th= 0.5;
+g0.timeout = 3;
+//assertCompleted(g0.state);
+
+rejectable(moveBase.Active g1);
+g1.x = 13.0;
+g1.y = 22.0;
+g1.th= 0.5;
+g1.timeout = 1;
+//assertCompleted(g1.state);
+
+
+
+
