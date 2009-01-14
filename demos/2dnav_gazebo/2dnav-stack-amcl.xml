@@ -104,6 +104,11 @@
     <param name="/trajectory_rollout/sim_time" value="1.0" />
     <param name="/trajectory_rollout/sim_steps" value="20" />
     <param name="/trajectory_rollout/samples_per_dim" value="10" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
+    <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
 
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
