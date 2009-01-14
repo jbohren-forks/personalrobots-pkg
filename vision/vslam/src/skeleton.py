@@ -35,9 +35,9 @@ class Skeleton:
     self.node_kp = {}
     self.node_descriptors = {}
     self.node_matcher = {}
-
-    self.termcrit = lambda count, delta: ((count > 10) or (delta < 1e-3))
+    self.termcrit = lambda count, delta: ((count > 10) or (delta < 1e-1))
     self.pr_maximum = 15    # How many out of PR's places to consider for GCC
+    self.node_vdist = 15                # how many frame to wait to put in a skeleton node
 
     self.timer = {}
     for t in ['toro add', 'toro opt', 'pr add', 'pr search', 'gcc', 'descriptors']:
@@ -51,7 +51,7 @@ class Skeleton:
       prev = max(byid)[1]
 
       # Ignore the node if there are less than 15 frames since the previous node
-      if (this.id - prev.id) < 15:
+      if (this.id - prev.id) < self.node_vdist:
         return
 
       relpose = ~prev.pose * this.pose
@@ -115,16 +115,28 @@ class Skeleton:
         self.addConstraint(id0, id1, obs)
         print "ADDED CONSTRAINT", id0.id, id1.id, "error changed from", old_error, "to", self.pg.error()
           
+    t0 = self.timer['toro opt'].sum
     self.timer['toro opt'].start()
     self.pg.initializeOnlineIterations()
     count = 0
+    self.pg.iterate()                   # error can go way up on first iterate
     prev_e = self.pg.error()
     self.pg.iterate()
+    print
+    print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
     while not self.termcrit(count, prev_e - self.pg.error()):
       prev_e = self.pg.error()
       self.pg.iterate()
       count += 1
     self.timer['toro opt'].stop()
+    t1 = self.timer['toro opt'].sum
+    td = t1 - t0
+    if (td > 0.300):                    # too large, stretch frame additions
+      self.node_vdist = 15 + (td - 0.4)*100
+    else:
+      self.node_vdist = 15
+    print "OPT TIMER ", 1000.0*(t1-t0), "  ITERATIONS ", count, "  FRAMES ", self.node_vdist, "  ERROR ", self.pg.error()
+    print
 
   def my_frame(self, id):
     return minimum_frame(id, self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])

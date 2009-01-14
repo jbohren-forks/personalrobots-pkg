@@ -75,13 +75,13 @@ framecounter = 0
 first_pair = None
 inliers = []
 
-if 1:
+if 0:
   start,end = 20000,21300
   skipto = 12634364243
   start,end = 0,3300
 else:
   skipto = None
-  start,end = 0,5000
+  start,end = 140,30000
 
 print "starting loop"
 #f = open(filename)
@@ -99,7 +99,7 @@ for topic, msg, t in rosrecord.logplayer(f):
       cam = camera.StereoCamera(msg.right_info)
       print cam.params
       vos = [
-        VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None,
+        VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None,
                             inlier_thresh = 100,
                             position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
       ]
@@ -121,8 +121,8 @@ for topic, msg, t in rosrecord.logplayer(f):
         # Log keyframes into "pool_loop"
         if not vo.keyframe.id in keys:
           k = vo.keyframe
-          Image.fromstring("L", (640,480), k.lf.tostring()).save("pool_loop/%06dL.png" % len(keys))
-          Image.fromstring("L", (640,480), k.rf.tostring()).save("pool_loop/%06dR.png" % len(keys))
+#          Image.fromstring("L", (640,480), k.lf.tostring()).save("pool_loop/%06dL.png" % len(keys))
+#          Image.fromstring("L", (640,480), k.rf.tostring()).save("pool_loop/%06dR.png" % len(keys))
           keys.add(k.id)
 
         if i == 0:
@@ -233,6 +233,7 @@ pylab.figure(figsize=(10,10))
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
+  print "planarity", vos[i].planarity
   xs = numpy.array(vo_x[i])
   ys = numpy.array(vo_y[i])
   if 0:
@@ -251,8 +252,21 @@ for i in range(len(vos)):
 
 pylab.plot(oe_x, oe_y, c = 'green', label = ground_truth_label)
 
-#skel.optimize()
+pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
+nodepts = pts.values()
+pval = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
+print "planarity of skeleton: ", pval
+
+skel.optimize()
+
+pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
+nodepts = pts.values()
+pval = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
+print "planarity of skeleton: ", pval
+
 skel.plot('blue')
+
+
 
 xlim = pylab.xlim()
 ylim = pylab.ylim()
