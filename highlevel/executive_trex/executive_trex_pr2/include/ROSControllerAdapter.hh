@@ -4,6 +4,7 @@
 #include "ROSAdapter.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
+#include "BoolDomain.hh"
 
 namespace TREX {
 
@@ -82,6 +83,8 @@ namespace TREX {
       if(state == INACTIVE){
 	obs = new ObservationByValue(timelineName, inactivePredicate);
 	fillInactiveObservationParameters(obs);
+	obs->push_back("aborted", new BoolDomain(stateMsg.aborted));
+	obs->push_back("preempted", new BoolDomain(stateMsg.preempted));
       }
       else {
 	obs = new ObservationByValue(timelineName, activePredicate);
@@ -115,6 +118,12 @@ namespace TREX {
       fillRequestParameters(goalMsg, goal);
       goalMsg.enable = enableController;
       goalMsg.timeout = 0;
+      if (goal->getVariable("timeout")) {
+	const IntervalDomain& dom = goal->getVariable("timeout")->lastDomain();
+	if (dom.isSingleton()) {
+	  goalMsg.timeout = dom.getSingletonValue();
+	}
+      }
       ROS_DEBUG("[%d}Dispatching %s", getCurrentTick(), goal->toString().c_str());
       m_node->publishMsg<G>(goalTopic, goalMsg);
 
@@ -124,6 +133,7 @@ namespace TREX {
       if(!enableController){
 	stateMsg.lock();
 	stateMsg.active = false;
+	stateMsg.preempted = true;
 	handleCallback();
 	stateMsg.unlock();
       }
