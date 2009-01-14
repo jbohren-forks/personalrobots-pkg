@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef MPGLUE_ENVIRONMENT_HPP
-#define MPGLUE_ENVIRONMENT_HPP
+#ifndef MPGLUE_SBPL_ENVIRONMENT_HPP
+#define MPGLUE_SBPL_ENVIRONMENT_HPP
 
 #include <mpglue/costmap.h>
 #include <mpglue/footprint.h>
@@ -45,8 +45,6 @@
 
 class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
-class EnvironmentNAV2D;	        /**< see motion_planning/sbpl/src/discrete_space_information/nav2d/environment_nav2D.h */
-class EnvironmentNAV3DKIN;      /**< see motion_planning/sbpl/src/discrete_space_information/nav3dkin/environment_nav3Dkin.h */
 class ChangedCellsGetter;
 
 // would like to forward-declare, but in mdpconfig.h it's a typedef'ed
@@ -68,18 +66,12 @@ using std::vector;
 namespace mpglue {
   
   
-  std::string canonicalEnvironmentName(std::string const & name_or_alias);
-  
-  
   /** Helper class for abstracting away the usage (or not) of the
       robot's heading during planning. Represents a common (tweaked)
       subset of the DiscreteSpaceInformation-subclasses that are
       employed by SBPLPlanner subclasses.
-  
-      \todo Rename SBPLEnvironment, and maybe extract a more generic
-      base class.
   */
-  class Environment
+  class SBPLEnvironment
   {
   public:
     ////     struct invalid_pose: public std::runtime_error
@@ -88,9 +80,9 @@ namespace mpglue {
     struct invalid_state: public std::runtime_error
     { invalid_state(std::string const & method, int state); };
     
-    Environment(boost::shared_ptr<Costmap> cm,
-		boost::shared_ptr<IndexTransform const> it);
-    virtual ~Environment();
+    SBPLEnvironment(boost::shared_ptr<Costmap> cm,
+		    boost::shared_ptr<IndexTransform const> it);
+    virtual ~SBPLEnvironment();
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
@@ -131,6 +123,8 @@ namespace mpglue {
     /** \return The stateID of the goal, or -1 if it lies outside the map. */
     virtual int SetGoal(double px, double py, double pth) = 0;
     
+    virtual void SetGoalTolerance(double tol_xy, double tol_th) = 0;
+    
     /** \note see SetGoal(double, double, double) */
     int SetGoal(std_msgs::Pose2DFloat32 const & goal)
     { return SetGoal(goal.x, goal.y, goal.th) ; }
@@ -161,89 +155,17 @@ namespace mpglue {
   };
   
   
-  /** Wraps an EnvironmentNAV2D instance (which it construct and owns
-      for you). */
-  class Environment2D
-    : public Environment
-  {
-  public:
-    Environment2D(boost::shared_ptr<Costmap> cm,
-		  boost::shared_ptr<IndexTransform const> it,
-		  int startx, int starty,
-		  int goalx, int goaly,
-		  unsigned char obsthresh);
-    virtual ~Environment2D();
-    
-    virtual DiscreteSpaceInformation * getDSI();
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
-    
-    virtual bool IsWithinMapCell(int ix, int iy) const;
-    virtual unsigned char GetMapCost(int ix, int iy) const;
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
-    virtual int SetStart(double px, double py, double pth);
-    virtual int SetGoal(double px, double py, double pth);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
-    
-  protected:
-    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
-    
-    /** \note This is mutable because GetStateFromPose() can
-	conceivable change the underlying EnvironmentNAV2D, which we
-	don't care about here. */
-    mutable EnvironmentNAV2D * env_;
-  };
+  SBPLEnvironment * create2DEnvironment(boost::shared_ptr<Costmap> cm,
+					boost::shared_ptr<IndexTransform const> it,
+					int obst_cost_thresh);
   
+  SBPLEnvironment * create3DKINEnvironment(boost::shared_ptr<Costmap> cm,
+					   boost::shared_ptr<IndexTransform const> it,
+					   int obst_cost_thresh,
+					   footprint_t const & footprint,
+					   double nominalvel_mpersecs,
+					   double timetoturn45degsinplace_secs);
   
-  /** Wraps an EnvironmentNAV3DKIN instance (which it construct and owns
-      for you). */
-  class Environment3DKIN
-    : public Environment
-  {
-  public:    
-    Environment3DKIN(boost::shared_ptr<Costmap> cm,
-		     boost::shared_ptr<IndexTransform const> it,
-		     /** Use
-			 costmap_2d::CostMap2D::LETHAL_OBSTACLE
-			 for workspace-only obstacles,
-			 costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE
-			 for obstacles blown up by the
-			 inscribed radius, etc */
-		     unsigned char obst_cost_thresh,
-		     double startx, double starty, double starttheta,
-		     double goalx, double goaly, double goaltheta,
-		     double goaltol_x, double goaltol_y, double goaltol_theta,
-		     footprint_t const & footprint,
-		     double nominalvel_mpersecs,
-		     double timetoturn45degsinplace_secs);
-    virtual ~Environment3DKIN();
-    
-    virtual DiscreteSpaceInformation * getDSI();
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
-    
-    virtual bool IsWithinMapCell(int ix, int iy) const;
-    virtual unsigned char GetMapCost(int ix, int iy) const;
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
-    virtual int SetStart(double px, double py, double pth);
-    virtual int SetGoal(double px, double py, double pth);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
-    
-  protected:
-    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
-    
-    unsigned char obst_cost_thresh_;
-    
-    /** \note This is mutable because GetStateFromPose() can
-	conceivable change the underlying EnvironmentNAV3DKIN, which we
-	don't care about here. */
-    mutable EnvironmentNAV3DKIN * env_;
-  };
-
 }
 
-#endif // MPGLUE_ENVIRONMENT_HPP
+#endif // MPGLUE_SBPL_ENVIRONMENT_HPP

@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "environment.h"
+#include "sbpl_environment.h"
 #include <costmap_2d/costmap_2d.h>
 #include <sbpl/headers.h>
 
+using namespace mpglue;
 using namespace std;
-
 
 namespace {
   
@@ -72,35 +72,108 @@ namespace {
     mutable std::vector<int> predsOfChangedCells_;
   };
   
+  
+  class SBPLEnvironment2D
+    : public SBPLEnvironment
+  {
+  public:
+    SBPLEnvironment2D(boost::shared_ptr<Costmap> cm,
+		      boost::shared_ptr<IndexTransform const> it,
+		      int obsthresh);
+    virtual ~SBPLEnvironment2D();
+    
+    virtual DiscreteSpaceInformation * getDSI();
+    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
+    
+    virtual bool IsWithinMapCell(int ix, int iy) const;
+    virtual unsigned char GetMapCost(int ix, int iy) const;
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
+    virtual int SetStart(double px, double py, double pth);
+    virtual int SetGoal(double px, double py, double pth);
+    virtual void SetGoalTolerance(double tol_xy, double tol_th);
+    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
+    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
+    virtual std::string getName() const;
+    
+  protected:
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
+    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    
+    /** \note This is mutable because GetStateFromPose() can
+	conceivable change the underlying EnvironmentNAV2D, which we
+	don't care about here. */
+    mutable EnvironmentNAV2D * env_;
+  };
+  
+  
+  /** Wraps an EnvironmentNAV3DKIN instance (which it construct and owns
+      for you). */
+  class SBPLEnvironment3DKIN
+    : public SBPLEnvironment
+  {
+  public:
+    SBPLEnvironment3DKIN(boost::shared_ptr<Costmap> cm,
+			 boost::shared_ptr<IndexTransform const> it,
+			 int obst_cost_thresh,
+			 footprint_t const & footprint,
+			 double nominalvel_mpersecs,
+			 double timetoturn45degsinplace_secs);
+    virtual ~SBPLEnvironment3DKIN();
+    
+    virtual DiscreteSpaceInformation * getDSI();
+    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
+    
+    virtual bool IsWithinMapCell(int ix, int iy) const;
+    virtual unsigned char GetMapCost(int ix, int iy) const;
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
+    virtual int SetStart(double px, double py, double pth);
+    virtual int SetGoal(double px, double py, double pth);
+    virtual void SetGoalTolerance(double tol_xy, double tol_th);
+    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
+    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
+    virtual std::string getName() const;
+    
+  protected:
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
+    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    
+    int obst_cost_thresh_;
+    
+    /** \note This is mutable because GetStateFromPose() can
+	conceivable change the underlying EnvironmentNAV3DKIN, which we
+	don't care about here. */
+    mutable EnvironmentNAV3DKIN * env_;
+  };
+  
 }
 
 
 namespace mpglue {
   
   
-  Environment::invalid_state::
+  SBPLEnvironment::invalid_state::
   invalid_state(std::string const & method, int state)
     : std::runtime_error(mk_invalid_state_str(method, state))
   {
   }
   
   
-  Environment::
-  Environment(boost::shared_ptr<Costmap> cm,
-	      boost::shared_ptr<IndexTransform const> it)
+  SBPLEnvironment::
+  SBPLEnvironment(boost::shared_ptr<Costmap> cm,
+		  boost::shared_ptr<IndexTransform const> it)
     : cm_(cm),
       it_(it)
   {
   }
   
   
-  Environment::
-  ~Environment()
+  SBPLEnvironment::
+  ~SBPLEnvironment()
   {
   }
   
   
-  bool Environment::
+  bool SBPLEnvironment::
   UpdateCost(int ix, int iy, unsigned char newcost)
   {
     if ( ! IsWithinMapCell(ix, iy))
@@ -117,7 +190,7 @@ namespace mpglue {
   }
   
   
-  void Environment::
+  void SBPLEnvironment::
   FlushCostUpdates(SBPLPlanner * planner)
   {
     if (changedcellsV_.empty())
@@ -131,13 +204,37 @@ namespace mpglue {
   }
   
   
-  Environment2D::
-  Environment2D(boost::shared_ptr<Costmap> cm,
-		boost::shared_ptr<IndexTransform const> it,
-		int startx, int starty,
-		int goalx, int goaly,
-		unsigned char obsthresh)
-    : Environment(cm, it),
+  SBPLEnvironment * create2DEnvironment(boost::shared_ptr<Costmap> cm,
+					boost::shared_ptr<IndexTransform const> it,
+					int obst_cost_thresh)
+  {
+    SBPLEnvironment2D * env(new SBPLEnvironment2D(cm, it, obst_cost_thresh));
+    return env;
+  }
+  
+  
+  SBPLEnvironment * create3DKINEnvironment(boost::shared_ptr<Costmap> cm,
+					   boost::shared_ptr<IndexTransform const> it,
+					   int obst_cost_thresh,
+					   footprint_t const & footprint,
+					   double nominalvel_mpersecs,
+					   double timetoturn45degsinplace_secs)
+  {
+    SBPLEnvironment3DKIN * env(new SBPLEnvironment3DKIN(cm, it, obst_cost_thresh,
+							footprint, nominalvel_mpersecs,
+							timetoturn45degsinplace_secs));
+    return env;
+  }
+
+}
+
+namespace {
+  
+  SBPLEnvironment2D::
+  SBPLEnvironment2D(boost::shared_ptr<Costmap> cm,
+		    boost::shared_ptr<IndexTransform const> it,
+		    int obsthresh)
+    : SBPLEnvironment(cm, it),
       env_(new EnvironmentNAV2D())
   {
     // good: Take advantage of the fact that InitializeEnv() can take
@@ -151,7 +248,7 @@ namespace mpglue {
     env_->InitializeEnv(cm->getXEnd(), // width
 			cm->getYEnd(), // height
 			0,	// mapdata
-			startx, starty, goalx, goaly, obsthresh);
+			obsthresh);
     
     // as above, assume getXBegin() and getYBegin() are always zero
     for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
@@ -163,35 +260,35 @@ namespace mpglue {
   }
   
   
-  Environment2D::
-  ~Environment2D()
+  SBPLEnvironment2D::
+  ~SBPLEnvironment2D()
   {
     delete env_;
   }
   
   
-  DiscreteSpaceInformation * Environment2D::
+  DiscreteSpaceInformation * SBPLEnvironment2D::
   getDSI()
   {
     return env_;
   }
   
   
-  bool Environment2D::
+  bool SBPLEnvironment2D::
   InitializeMDPCfg(MDPConfig *MDPCfg)
   {
     return env_->InitializeMDPCfg(MDPCfg);
   }
   
   
-  bool Environment2D::
+  bool SBPLEnvironment2D::
   IsWithinMapCell(int ix, int iy) const
   {
     return env_->IsWithinMapCell(ix, iy);
   }
   
   
-  bool Environment2D::
+  bool SBPLEnvironment2D::
   DoUpdateCost(int ix, int iy, unsigned char newcost)
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
@@ -200,14 +297,14 @@ namespace mpglue {
   }
 
 
-  ChangedCellsGetter const * Environment2D::
+  ChangedCellsGetter const * SBPLEnvironment2D::
   createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
   {
     return new myChangedCellsGetter<EnvironmentNAV2D>(env_, changedcellsV);
   }
   
   
-  unsigned char Environment2D::
+  unsigned char SBPLEnvironment2D::
   GetMapCost(int ix, int iy) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
@@ -216,7 +313,7 @@ namespace mpglue {
   }
   
   
-  bool Environment2D::
+  bool SBPLEnvironment2D::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
@@ -225,7 +322,7 @@ namespace mpglue {
   }
   
   
-  int Environment2D::
+  int SBPLEnvironment2D::
   SetStart(double px, double py, double pth)
   {
     ssize_t ix, iy;
@@ -234,7 +331,7 @@ namespace mpglue {
   }
   
   
-  int Environment2D::
+  int SBPLEnvironment2D::
   SetGoal(double px, double py, double pth)
   {
     ssize_t ix, iy;
@@ -243,14 +340,21 @@ namespace mpglue {
   }
   
   
+  void SBPLEnvironment2D::
+  SetGoalTolerance(double tol_xy, double tol_th)
+  {
+    env_->SetGoalTolerance(tol_xy, tol_xy, tol_th);
+  }
+  
+  
   /** \note Always sets pose.th == -42 so people can detect that it is
       undefined. */
-  std_msgs::Pose2DFloat32 Environment2D::
+  std_msgs::Pose2DFloat32 SBPLEnvironment2D::
   GetPoseFromState(int stateID) const
     throw(invalid_state)
   {
     if (0 > stateID)
-      throw invalid_state("Environment2D::GetPoseFromState()", stateID);
+      throw invalid_state("SBPLEnvironment2D::GetPoseFromState()", stateID);
     int ix, iy;
     env_->GetCoordFromState(stateID, ix, iy);
     // by construction (ix,iy) is always inside the map (otherwise we
@@ -265,7 +369,7 @@ namespace mpglue {
   }
   
   
-  int Environment2D::
+  int SBPLEnvironment2D::
   GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
   {
     ssize_t ix, iy;
@@ -276,7 +380,7 @@ namespace mpglue {
   }
   
   
-  std::string Environment2D::
+  std::string SBPLEnvironment2D::
   getName() const
   {
     std::string name("2D");
@@ -284,17 +388,14 @@ namespace mpglue {
   }
   
   
-  Environment3DKIN::
-  Environment3DKIN(boost::shared_ptr<Costmap> cm,
-		   boost::shared_ptr<IndexTransform const> it,
-		   unsigned char obst_cost_thresh,
-		   double startx, double starty, double starttheta,
-		   double goalx, double goaly, double goaltheta,
-		   double goaltol_x, double goaltol_y, double goaltol_theta,
-		   footprint_t const & footprint,
-		   double nominalvel_mpersecs,
-		   double timetoturn45degsinplace_secs)
-    : Environment(cm, it),
+  SBPLEnvironment3DKIN::
+  SBPLEnvironment3DKIN(boost::shared_ptr<Costmap> cm,
+		       boost::shared_ptr<IndexTransform const> it,
+		       int obst_cost_thresh,
+		       footprint_t const & footprint,
+		       double nominalvel_mpersecs,
+		       double timetoturn45degsinplace_secs)
+    : SBPLEnvironment(cm, it),
       obst_cost_thresh_(obst_cost_thresh),
       env_(new EnvironmentNAV3DKIN())
   {
@@ -317,14 +418,11 @@ namespace mpglue {
     // use growable costmaps).
     //
     // also there is quite a bit of code duplication between this, the
-    // Environment2D ctor, and
-    // Environment3DKIN::DoUpdateCost()...
+    // SBPLEnvironment2D ctor, and
+    // SBPLEnvironment3DKIN::DoUpdateCost()...
     env_->InitializeEnv(cm->getXEnd(), // width
 			cm->getYEnd(), // height
 			0,	// mapdata
-			startx, starty, starttheta,
-			goalx, goaly, goaltheta,
-			goaltol_x, goaltol_y, goaltol_theta,
 			perimeterptsV, it->getResolution(), nominalvel_mpersecs,
 			timetoturn45degsinplace_secs, obst_cost_thresh);
     
@@ -338,28 +436,28 @@ namespace mpglue {
   }
   
   
-  Environment3DKIN::
-  ~Environment3DKIN()
+  SBPLEnvironment3DKIN::
+  ~SBPLEnvironment3DKIN()
   {
     delete env_;
   }
   
   
-  DiscreteSpaceInformation * Environment3DKIN::
+  DiscreteSpaceInformation * SBPLEnvironment3DKIN::
   getDSI()
   {
     return env_;
   }
   
   
-  bool Environment3DKIN::
+  bool SBPLEnvironment3DKIN::
   InitializeMDPCfg(MDPConfig *MDPCfg)
   {
     return env_->InitializeMDPCfg(MDPCfg);
   }
   
   
-  bool Environment3DKIN::
+  bool SBPLEnvironment3DKIN::
   IsWithinMapCell(int ix, int iy) const
   {
     return env_->IsWithinMapCell(ix, iy);
@@ -369,11 +467,11 @@ namespace mpglue {
   /**
      \note Remapping the cost to binary obstacle info {0,1} actually
      confuses the check for actually changed costs in the
-     Environment::UpdateCost() method. However, this is bound
+     SBPLEnvironment::UpdateCost() method. However, this is bound
      to change as soon as the 3DKIN environment starts dealing with
      uniform obstacle costs.
   */
-  bool Environment3DKIN::
+  bool SBPLEnvironment3DKIN::
   DoUpdateCost(int ix, int iy, unsigned char newcost)
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
@@ -384,14 +482,14 @@ namespace mpglue {
   }
 
 
-  ChangedCellsGetter const * Environment3DKIN::
+  ChangedCellsGetter const * SBPLEnvironment3DKIN::
   createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
   {
     return new myChangedCellsGetter<EnvironmentNAV3DKIN>(env_, changedcellsV);
   }
   
   
-  unsigned char Environment3DKIN::
+  unsigned char SBPLEnvironment3DKIN::
   GetMapCost(int ix, int iy) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
@@ -402,7 +500,7 @@ namespace mpglue {
   }
   
   
-  bool Environment3DKIN::
+  bool SBPLEnvironment3DKIN::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
@@ -411,7 +509,7 @@ namespace mpglue {
   }
   
   
-  int Environment3DKIN::
+  int SBPLEnvironment3DKIN::
   SetStart(double px, double py, double pth)
   {
     // assume global and map frame are the same
@@ -419,7 +517,7 @@ namespace mpglue {
   }
   
   
-  int Environment3DKIN::
+  int SBPLEnvironment3DKIN::
   SetGoal(double px, double py, double pth)
   {
     // assume global and map frame are the same
@@ -427,12 +525,19 @@ namespace mpglue {
   }
   
   
-  std_msgs::Pose2DFloat32 Environment3DKIN::
+  void SBPLEnvironment3DKIN::
+  SetGoalTolerance(double tol_xy, double tol_th)
+  {
+    env_->SetGoalTolerance(tol_xy, tol_xy, tol_th);
+  }
+  
+  
+  std_msgs::Pose2DFloat32 SBPLEnvironment3DKIN::
   GetPoseFromState(int stateID) const
     throw(invalid_state)
   {
     if (0 > stateID)
-      throw invalid_state("Environment3D::GetPoseFromState()", stateID);
+      throw invalid_state("SBPLEnvironment3D::GetPoseFromState()", stateID);
     int ix, iy, ith;
     env_->GetCoordFromState(stateID, ix, iy, ith);
     // we know stateID is valid, thus we can ignore the
@@ -447,7 +552,7 @@ namespace mpglue {
   }
   
   
-  int Environment3DKIN::
+  int SBPLEnvironment3DKIN::
   GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
   {
     int ix, iy, ith;
@@ -457,31 +562,11 @@ namespace mpglue {
   }
   
   
-  std::string Environment3DKIN::
+  std::string SBPLEnvironment3DKIN::
   getName() const
   {
     std::string name("3DKIN");
     return name;
-  }
-  
-  
-  std::string canonicalEnvironmentName(std::string const & name_or_alias)
-  {
-    static map<string, string> environment_alias;
-    if (environment_alias.empty()) {
-      environment_alias.insert(make_pair("2D",    "2D"));
-      environment_alias.insert(make_pair("2d",    "2D"));
-      environment_alias.insert(make_pair("2",     "2D"));
-      environment_alias.insert(make_pair("3DKIN", "3DKIN"));
-      environment_alias.insert(make_pair("3D",    "3DKIN"));
-      environment_alias.insert(make_pair("3d",    "3DKIN"));
-      environment_alias.insert(make_pair("3",     "3DKIN"));
-    }
-    
-    map<string, string>::const_iterator is(environment_alias.find(name_or_alias));
-    if (environment_alias.end() == is)
-      return "";
-    return is->second;
   }
   
 }

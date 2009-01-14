@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include "sbpl_planner.h"
-#include "environment.h"
+#include "sbpl_environment.h"
 #include <sbpl/headers.h>
 #include <sstream>
 
@@ -44,11 +44,8 @@ namespace mpglue {
   
   
   SBPLPlannerStats::
-  SBPLPlannerStats(std::string const & _planner_type,
-		   std::string const & _environment_type)
-    : IncrementalCostmapPlannerStats(),
-      planner_type(_planner_type),
-      environment_type(_environment_type),
+  SBPLPlannerStats()
+    : AnytimeCostmapPlannerStats(),
       goal_state(-1),
       start_state(-1),
       status(0),
@@ -72,10 +69,8 @@ namespace mpglue {
 	    std::string const & title,
 	    std::string const & prefix) const
   {
-    IncrementalCostmapPlannerStats::logStream(os, title, prefix);
-    os << prefix << "planner_type:              " << planner_type << "\n"
-       << prefix << "environment_type:          " << environment_type << "\n"
-       << prefix << "goal_state:                " << goal_state << "\n"
+    AnytimeCostmapPlannerStats::logStream(os, title, prefix);
+    os << prefix << "goal_state:                " << goal_state << "\n"
        << prefix << "start_state:               " << start_state << "\n"
        << prefix << "status:                    " << status << "\n"
        << prefix << "number_of_expands:         " << number_of_expands << "\n"
@@ -85,16 +80,13 @@ namespace mpglue {
   
   
   SBPLPlannerWrap::
-  SBPLPlannerWrap(std::string const & planner_type,
-		  std::string const & environment_type,
-		  boost::shared_ptr<SBPLPlanner> planner,
-		  boost::shared_ptr<Environment> environment)
-    : IncrementalCostmapPlanner(stats_,
-				environment->getCostmap(),
-				environment->getIndexTransform()),
+  SBPLPlannerWrap(boost::shared_ptr<SBPLEnvironment> environment,
+		  boost::shared_ptr<SBPLPlanner> planner)
+    : AnytimeCostmapPlanner(stats_,
+			    environment->getCostmap(),
+			    environment->getIndexTransform()),
       planner_(planner),
-      environment_(environment),
-      stats_(planner_type, environment_type)
+      environment_(environment)
   {
   }
   
@@ -146,6 +138,12 @@ namespace mpglue {
       }
     }
     
+    if (goal_tol_changed_) {
+      environment_->SetGoalTolerance(stats_.goal_tol_distance, stats_.goal_tol_angle);
+      // XXXX to do: also tell planner? but goal tolerances are
+      // completely ignored by sbpl anyway...
+    }
+    
     if (stats_.plan_from_scratch)
       planner_->force_planning_from_scratch();
     
@@ -158,7 +156,7 @@ namespace mpglue {
       planner_->set_search_mode(false);
     
     // do not forget to call superclass
-    IncrementalCostmapPlanner::preCreatePlan();
+    AnytimeCostmapPlanner::preCreatePlan();
   }
   
   
@@ -185,10 +183,70 @@ namespace mpglue {
   postCreatePlan() throw(std::exception)
   {
     // do not forget to call superclass
-    IncrementalCostmapPlanner::postCreatePlan();
+    AnytimeCostmapPlanner::postCreatePlan();
     
     stats_.number_of_expands = planner_->get_n_expands();
     stats_.solution_epsilon = planner_->get_solution_eps();
+  }
+  
+  
+  SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<Costmap> cm,
+				    boost::shared_ptr<IndexTransform const> it,
+				    bool forward_search,
+				    int obst_cost_thresh)
+  {
+    shared_ptr<SBPLEnvironment> environment(create2DEnvironment(cm, it, obst_cost_thresh));
+    shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
+    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+    return result;
+  }
+  
+  
+  SBPLPlannerWrap * createADStar2D(boost::shared_ptr<Costmap> cm,
+				   boost::shared_ptr<IndexTransform const> it,
+				   bool forward_search,
+				   int obst_cost_thresh)
+  {
+    shared_ptr<SBPLEnvironment> environment(create2DEnvironment(cm, it, obst_cost_thresh));
+    shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
+    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+    return result;
+  }
+  
+  
+  SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<Costmap> cm,
+				       boost::shared_ptr<IndexTransform const> it,
+				       bool forward_search,
+				       int obst_cost_thresh,
+				       footprint_t const & footprint,
+				       double nominalvel_mpersecs,
+				       double timetoturn45degsinplace_secs)
+  {
+    shared_ptr<SBPLEnvironment> environment(create3DKINEnvironment(cm, it, obst_cost_thresh,
+								   footprint,
+								   nominalvel_mpersecs,
+								   timetoturn45degsinplace_secs));
+    shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
+    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+    return result;
+  }
+  
+  
+  SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<Costmap> cm,
+				      boost::shared_ptr<IndexTransform const> it,
+				      bool forward_search,
+				      int obst_cost_thresh,
+				      footprint_t const & footprint,
+				      double nominalvel_mpersecs,
+				      double timetoturn45degsinplace_secs)
+  {
+    shared_ptr<SBPLEnvironment> environment(create3DKINEnvironment(cm, it, obst_cost_thresh,
+								   footprint,
+								   nominalvel_mpersecs,
+								   timetoturn45degsinplace_secs));
+    shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
+    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+    return result;
   }
   
 }

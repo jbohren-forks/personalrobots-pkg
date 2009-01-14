@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include "plan.h"
-#include "environment.h"
+#include "sbpl_environment.h"
 #include <sfl/util/numeric.hpp>
 
 namespace mpglue {
@@ -86,7 +86,7 @@ namespace mpglue {
   }
   
   
-  void convertPlan(Environment const & environment,
+  void convertPlan(SBPLEnvironment const & environment,
 		   raw_sbpl_plan_t const & raw,
 		   waypoint_plan_t * plan,
 		   double * optPlanLengthM,

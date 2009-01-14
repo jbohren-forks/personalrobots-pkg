@@ -43,7 +43,7 @@ namespace mpglue {
   typedef std::vector<int> raw_sbpl_plan_t;
   typedef std::vector<std_msgs::Pose2DFloat32> waypoint_plan_t;
   
-  class Environment;
+  class SBPLEnvironment;
   class IndexTransform;
   
   
@@ -73,7 +73,7 @@ namespace mpglue {
      understandable. Optionally provides some statistics on the plan.
   */
   void convertPlan(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
-		   Environment const & environment,
+		   SBPLEnvironment const & environment,
 		   /** in: the raw plan */
 		   raw_sbpl_plan_t const & raw,
 		   /** out: the converted plan (it is just appended

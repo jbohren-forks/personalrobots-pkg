@@ -38,22 +38,22 @@
 #define MPGLUE_SBPL_PLANNER_HPP
 
 #include <mpglue/planner.h>
+#include <mpglue/footprint.h>
 
 class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 
 namespace mpglue {
   
+  class SBPLEnvironment;
+  
   struct SBPLPlannerStats
-    : public IncrementalCostmapPlannerStats {
-    SBPLPlannerStats(std::string const & planner_type,
-		     std::string const & environment_type);
+    : public AnytimeCostmapPlannerStats {
+    SBPLPlannerStats();
     virtual SBPLPlannerStats * copy() const;
     
-    std::string const planner_type;     /**< name of the planner (an SBPLPlanner subclass) */
-    std::string const environment_type; /**< name of the environment type (2D, 3DKIN, ...) */
     int goal_state;                     /**< stateID of the goal (from costmap indices) */
     int start_state;                    /**< stateID of the start (from costmap indices) */
-    int status;                         /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
+    int status;                         /**< return value of replan() (i.e. success == 1) */
     int number_of_expands;              /**< number of state expansions, or -1 if not available */
     int solution_cost;                  /**< cost of the solution, as given by replan() */
     double solution_epsilon;            /**< the "epsilon" value used to compute the solution */
@@ -65,13 +65,11 @@ namespace mpglue {
   
   
   class SBPLPlannerWrap
-    : public IncrementalCostmapPlanner
+    : public AnytimeCostmapPlanner
   {
   public:
-    SBPLPlannerWrap(std::string const & planner_type,
-		    std::string const & environment_type,
-		    boost::shared_ptr<SBPLPlanner> planner,
-		    boost::shared_ptr<Environment> environment);
+    SBPLPlannerWrap(boost::shared_ptr<SBPLEnvironment> environment,
+		    boost::shared_ptr<SBPLPlanner> planner);
     
   protected:
     virtual void preCreatePlan() throw(std::exception);
@@ -79,9 +77,36 @@ namespace mpglue {
     virtual void postCreatePlan() throw(std::exception);
     
     boost::shared_ptr<SBPLPlanner> planner_;
-    boost::shared_ptr<Environment> environment_;
+    boost::shared_ptr<SBPLEnvironment> environment_;
     SBPLPlannerStats stats_;
   };
+  
+  
+  SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<Costmap> cm,
+				    boost::shared_ptr<IndexTransform const> it,
+				    bool forward_search,
+				    int obst_cost_thresh);
+  
+  SBPLPlannerWrap * createADStar2D(boost::shared_ptr<Costmap> cm,
+				   boost::shared_ptr<IndexTransform const> it,
+				   bool forward_search,
+				   int obst_cost_thresh);
+  
+  SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<Costmap> cm,
+				       boost::shared_ptr<IndexTransform const> it,
+				       bool forward_search,
+				       int obst_cost_thresh,
+				       footprint_t const & footprint,
+				       double nominalvel_mpersecs,
+				       double timetoturn45degsinplace_secs);
+  
+  SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<Costmap> cm,
+				      boost::shared_ptr<IndexTransform const> it,
+				      bool forward_search,
+				      int obst_cost_thresh,
+				      footprint_t const & footprint,
+				      double nominalvel_mpersecs,
+				      double timetoturn45degsinplace_secs);
   
 }
 
