@@ -77,7 +77,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   // assert that the body by bodyName exists
   if (this->myParent->GetBody(bodyName == NULL))
-    ROS_FATAL("ros_p3d plugin error: bodyName: %s does not exist\n",bodyName);
+    ROS_FATAL("ros_p3d plugin error: bodyName: %s does not exist\n",bodyName.c_str());
 
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
