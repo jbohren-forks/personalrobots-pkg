@@ -1,11 +1,10 @@
 <package>
   <description>A ROS node to provide access to SCIP2.0-compliant Hokuyo laser devices.</description>
   <author>Brian P. Gerkey, Jeremy Leibs</author>
-  <license>BSD</license>
-  <review status="API cleared" notes="iTully to code review"/>
+  <license>LGPL</license>
+  <review status="API cleared" notes="Tully to code review"/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="hokuyo_driver" />
   <depend package="self_test" />
   <depend package="diagnostic_updater" />
   <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>
