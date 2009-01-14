@@ -138,7 +138,9 @@ class NormalEstimation : public ros::node
       if (hasParam ("~cut_distance"))
       {
         getParam ("~cut_distance", cut_distance_);
-        leaves_.clear ();
+        leaves_.resize (0);
+        leaves_.reserve (0);
+        ROS_INFO ("Done clearing leaves.");
       }
     }
 
