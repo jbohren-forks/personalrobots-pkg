@@ -9,6 +9,7 @@ from stereo import SparseStereoFrame
 from timer import Timer
 
 import pylab, numpy
+import random
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors, matcher):
@@ -25,14 +26,7 @@ class Skeleton:
     self.pg = TreeOptimizer3()
     self.pg.initializeOnlineOptimization()
     if 1:
-      if 0:
-        self.vt = place_recognition.vocabularytree()
-        ims = [Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (200 * i)) for i in range(10)]
-        #ims = [Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
-        self.vt.build(ims, 5, 4, False)
-        self.vt.save("snap.tree")
-      else:
-        self.vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree")
+      self.vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree")
     else:
       self.vt = None
     self.place_ids = []
@@ -76,8 +70,7 @@ class Skeleton:
         self.add_links(this, far)
 
       self.timer['pr add'].start()
-      if self.vt:
-        self.vt.add(this.lf, this_d)
+      # if self.vt: self.vt.add(this.lf, this_d)
       self.timer['pr add'].stop()
       self.place_ids.append(this)
 
@@ -104,9 +97,9 @@ class Skeleton:
   def place_find(self, lf, descriptors):
     if self.vt:
       self.timer['pr search'].start()
-      scores = self.vt.topN(lf, descriptors, len(self.place_ids))
+      scores = self.vt.topN(lf, descriptors, len(self.place_ids), True)
       self.timer['pr search'].stop()
-      assert len(scores) == len(self.place_ids)
+      assert len(scores) == len(self.place_ids)+1
       return [id for (_,id) in sorted(zip(scores, self.place_ids))][:self.pr_maximum]
     else:
       return self.place_ids
@@ -132,7 +125,6 @@ class Skeleton:
       self.pg.iterate()
       count += 1
     self.timer['toro opt'].stop()
-    print count, "toro iters"
 
   def my_frame(self, id):
     return minimum_frame(id, self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])

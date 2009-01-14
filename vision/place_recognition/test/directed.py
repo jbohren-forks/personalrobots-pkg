@@ -30,7 +30,7 @@ if 1:
     sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, 10.0, 10.0)
     kp = [ (x,y) for (x,y,s,r) in sd.detect(frame.rawdata) ]
     cl = calonder.classifier()
-    cl.read('/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old')
+    cl.read('/u/prdata/calonder_trees/current.rtc')
 
     descriptors = []
     im = Image.fromstring("L", frame.size, frame.rawdata)

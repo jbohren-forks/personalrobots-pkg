@@ -281,7 +281,8 @@ PyObject *vttopN(PyObject *self, PyObject *args)
   unsigned int N_show = 10;
   PyObject *query_image;
   PyObject *descriptors;
-  if (!PyArg_ParseTuple(args, "OOi", &query_image, &descriptors, &N_show))
+  int insert = 0;
+  if (!PyArg_ParseTuple(args, "OOi|i", &query_image, &descriptors, &N_show, &insert))
     return NULL;
 
   std::vector<VocabularyTree::Match> matches;
@@ -290,11 +291,17 @@ PyObject *vttopN(PyObject *self, PyObject *args)
 #ifdef USE_BYTE_SIGNATURES
   unsigned int num_features = 0;
   sig_data_t *features = extract_features(self, query_image, &num_features, descriptors);
-  vt->find(features, num_features, N_show, std::back_inserter(matches));
+  if (insert)
+    vt->findAndInsert(features, num_features, N_show, std::back_inserter(matches));
+  else
+    vt->find(features, num_features, N_show, std::back_inserter(matches));
   free(features);
 #else
   FeatureMatrix features = extract_features(self, query_image, descriptors);
-  vt->find(features, N_show, std::back_inserter(matches));
+  if (insert)
+    vt->findAndInsert(features, N_show, std::back_inserter(matches));
+  else
+    vt->find(features, N_show, std::back_inserter(matches));
 #endif
 
   unsigned int N = ((vocabularytree_t*)self)->vt->databaseSize();
