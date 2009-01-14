@@ -55,10 +55,10 @@ static void create_setup();
 static std::string baseFilename();
 
 static string costmapType;
-static SBPLBenchmarkOptions opt;
+static SetupOptions opt;
 static string travmapFilename;
 
-static shared_ptr<SBPLBenchmarkSetup> setup;
+static shared_ptr<Setup> setup;
 
 
 int main(int argc, char ** argv)

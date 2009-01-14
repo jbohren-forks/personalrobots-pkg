@@ -67,12 +67,10 @@ static bool enableGfx;
 static string plannerType;
 static string costmapType;
 static string environmentType;
-static SBPLBenchmarkOptions opt;
-static string travmapFilename;
-static string costmapFilename;
+static SetupOptions opt;
 static bool websiteMode;
 
-static shared_ptr<SBPLBenchmarkSetup> setup;
+static shared_ptr<Setup> setup;
 static shared_ptr<Environment> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<CostmapPlanner> planner;
@@ -80,10 +78,7 @@ static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
 
-static planList_t planList;
-
-typedef vector<shared_ptr<CostmapPlannerStats> > plannerStats_t;
-static plannerStats_t plannerStats;
+static resultlist_t resultlist;
 
 
 int main(int argc, char ** argv)
@@ -103,10 +98,10 @@ int main(int argc, char ** argv)
 			       websiteMode,
 			       baseFilename(),
 			       getFootprint(),
-			       planList,
+			       resultlist,
 			       "3DKIN" != environmentType,
 			       *logos),
-	    opt.name.c_str(),
+	    opt.spec.c_str(),
 	    1, // hack: layoutID
 	    &argc, argv);
 }
@@ -121,7 +116,7 @@ void cleanup()
   plannerMgr.reset();
   planner.reset();
   logos.reset();
-  planList.clear();
+  resultlist.clear();
 }
 
 
@@ -132,17 +127,17 @@ void usage(ostream & os)
      << "   -p  <name>       name of the SBPL planner\n"
      << "   -m  <name>       name of the costmap implementation\n"
      << "   -e  <name>       environment representation type\n"
-     << "   -s  <name>       name of the setup\n"
+     << "   -s  <spec>       setup specification, e.g. hc:office1 or pgm:costs.pgm:tasks.xml\n"
      << "   -r  <cellsize>   set grid resolution\n"
      << "   -i  <in-radius>  set INSCRIBED radius\n"
      << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
      << "   -I  <inflate-r>  set INFLATION radius\n"
      << "   -d  <doorwidth>  set width of doors (office setups)\n"
      << "   -H  <hallwidth>  set width of hallways (office setups)\n"
-     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
-     << "   -g  <gray>       cutoff for obstacles in PGM images (for -s pgm)\n"
-     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
-     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
+    ////     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
+     << "   -g  <gray>       cutoff for obstacles in PGM images\n"
+    ////     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
+    ////     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
      << "   -X               dump filename base to stdout (use as last option)\n"
      << "   -W               run in website generation mode\n";
 }
@@ -152,7 +147,7 @@ static string summarizeOptions()
 {
   ostringstream os;
   os << "-p" << canonicalPlannerName(plannerType)
-     << "-s" << opt.name
+     << "-s" << opt.spec
      << "-m" << costmapType
      << "-e" << canonicalEnvironmentName(environmentType)
      << "-r" << (int) rint(1e3 * opt.resolution)
@@ -193,10 +188,8 @@ void parse_options(int argc, char ** argv)
   plannerType = "ARAPlanner";
   costmapType = "costmap_2d";
   environmentType = "2D";
-  travmapFilename = "";
-  costmapFilename = "";
   websiteMode = false;
-  // most other options handled through SBPLBenchmarkOptions
+  // most other options handled through SetupOptions
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -224,11 +217,11 @@ void parse_options(int argc, char ** argv)
       case 's':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -s requires a name argument\n";
+ 	  cerr << argv[0] << ": -s requires a spec argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	opt.name = argv[ii];
+	opt.spec = argv[ii];
  	break;
 	
       case 'm':
@@ -359,16 +352,6 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
-      case 'n':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -n requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	opt.pgm_filename = argv[ii];
- 	break;
-	
       case 'g':
 	++ii;
  	if (ii >= argc) {
@@ -385,26 +368,6 @@ void parse_options(int argc, char ** argv)
 	    exit(EXIT_FAILURE);
 	  }
 	}
- 	break;
-	
-      case 'o':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -o requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	travmapFilename = argv[ii];
- 	break;
-	
-      case 'O':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -O requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	costmapFilename = argv[ii];
  	break;
 	
       case 'X':
@@ -438,29 +401,16 @@ void create_setup()
 	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
 	 costmapType.c_str());
   
-  *logos << "creating setup \"" << opt.name << "\"\n" << flush;
-  {
-    shared_ptr<ostream> dump_os;
-    if ( ! travmapFilename.empty()) {
-      dump_os.reset(new ofstream(travmapFilename.c_str()));
-      if ( ! (*dump_os)) {
-	*logos << "could not open travmap file " << travmapFilename << "\n" << flush;
-	dump_os.reset();
-      }
-    }
-    setup.reset(createBenchmark(opt, logos.get(), dump_os.get()));
-    if ( ! setup)
-      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", opt.name.c_str());
-    if ( ! costmapFilename.empty()) {
-      dump_os.reset(new ofstream(costmapFilename.c_str()));
-      if ( ! (*dump_os))
-	*logos << "could not open costmap file " << costmapFilename << "\n" << flush;
-      else {
-	*logos << "writing costmap_2d::CostMap2d\n";
-	*dump_os << setup->getRaw2DCostmap().toString();
-      }
-    }
+  *logos << "creating setup \"" << opt.spec << "\"\n" << flush;
+  try {
+    setup.reset(createSetup(opt, logos.get()));
   }
+  catch (std::exception const & ee) {
+    errx(EXIT_FAILURE, "create_setup(): EXCEPTION %s", ee.what());
+  }
+  if ( ! setup)
+    errx(EXIT_FAILURE, "create_setup(): could not create setup from spec \"%s\"",
+	 opt.spec.c_str());
   setup->dumpDescription(*logos, "", "  ");
   *logos << flush
 	 << "creating environment of type " << environmentType
@@ -570,16 +520,22 @@ void run_tasks()
 {
   *logos << "running tasks\n" << flush;
   try {
-    SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
-    for (size_t ii(0); ii < tasklist.size(); ++ii) {
-      planBundle_t bundle;
-      SBPLBenchmarkSetup::task const & task(tasklist[ii]);
+    tasklist_t const & tasklist(setup->getTasks());
+    for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {// XXXX to do: use iterator
+      if ( ! tasklist[task_id])
+	errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
+      task::setup const task(*tasklist[task_id]);
       
-      *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
+      size_t const episode_id(0); // XXXX to do: loop over task.start
+      if (task.start.empty())
+	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no start", task_id);
+      task::startspec const & start(task.start[0]);
       
-      planner->setStart(task.start_x, task.start_y, task.start_th);
-      planner->setGoal(task.goal_x, task.goal_y, task.goal_th);
-      planner->forcePlanningFromScratch(task.from_scratch);
+      *logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+      
+      planner->setStart(start.px, start.py, start.pth);
+      planner->setGoal(task.goal.px, task.goal.py, task.goal.pth); // XXXX to do: only at init, and set tolerance as well
+      planner->forcePlanningFromScratch(start.from_scratch);
       
       shared_ptr<waypoint_plan_t> plan;
       try {
@@ -593,22 +549,21 @@ void run_tasks()
       }
       
       char const * title("  SUCCESS");
-      if (plan)			// maybe also push failed plans?
-	bundle.push_back(plan);
-      else
+      if ( ! plan)
 	title = "  FAILURE";
       shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
       stats->logStream(*logos, title, "    ");
       *logos << flush;
-      plannerStats.push_back(stats);
       
-      // Well... this ends up copying a std::vector of
-      // boost::shared_ptr instances, could probably be smarter about
-      // it. Also we will end up storing empty bundles, which is
-      // actually what we want because for failed tasks we still want
-      // to plot the start and goal poses (see gfx.cpp), but there
-      // must be a neater solution to this.
-      planList.insert(make_pair(ii, bundle));
+      shared_ptr<task::result>
+	result(new task::result(task_id,
+				episode_id,
+				start,
+				task.goal,
+				plan,
+				stats));
+      
+      resultlist.push_back(result);
     }
   }
   catch (std::exception const & ee) {
@@ -625,16 +580,21 @@ void print_summary()
   double t_fail(0);
   double lplan(0);
   double rplan(0);
-  for (plannerStats_t::const_iterator ie(plannerStats.begin()); ie != plannerStats.end(); ++ie) {
-    if ((*ie)->success) {
+  for (resultlist_t::const_iterator ie(resultlist.begin()); ie != resultlist.end(); ++ie) {
+    shared_ptr<task::result> result(*ie);
+    if ( ! result)
+      errx(EXIT_FAILURE, "print_summary(): void result");
+    if ( ! result->stats)
+      errx(EXIT_FAILURE, "print_summary(): void stats");
+    if (result->stats->success) {
       ++n_success;
-      t_success += (*ie)->actual_time_wall;
-      lplan += (*ie)->plan_length;
-      rplan += (*ie)->plan_angle_change;
+      t_success += result->stats->actual_time_wall;
+      lplan += result->stats->plan_length;
+      rplan += result->stats->plan_angle_change;
     }
     else {
       ++n_fail;
-      t_fail += (*ie)->actual_time_wall;
+      t_fail += result->stats->actual_time_wall;
     }
   }
   rplan *= 180.0 / M_PI;

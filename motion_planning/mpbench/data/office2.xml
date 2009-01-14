@@ -1,0 +1,34 @@
+<setup>
+  <map>
+    <init>
+      <!-- outer bounding box -->
+      <addline>  0    0     9    0   </addline>
+      <addline>  0    0     0   15   </addline>
+      <addline>  0   15     9   15   </addline>
+      <addline>  9    0     9   15   </addline>
+      <!-- two long walls along y-axis, each with a door near the northern end -->
+      <addline>  3    9     3   12.6 </addline>
+      <addline>  3   15     3   13.8 </addline>
+      <addline>  6    3     6   12.6 </addline>
+      <addline>  6   15     6   13.8 </addline>
+      <!-- some shorter walls along x-axis -->
+      <addline>  0    3     1.5  3   </addline>
+      <addline>  0    6     1.5  6   </addline>
+      <addline>  4.5  3     6    3   </addline>
+      <!-- y-axis wall with two office doors -->
+      <addline>  1.5  0     1.5  0.6 </addline>
+      <addline>  1.5  1.8   1.5  4.2 </addline>
+      <addline>  1.5  5.4   1.5  6   </addline>
+    </init>
+    <change>
+      <rmline>   0.2  3     1.3  3   </rmline>
+      <addline>  1.5  4.2   1.5  5.4 </addline>
+    </change>
+  </map>
+  <task>
+    <description>through door or around hall</description>
+    <goal>         4.5  13.5  0  0.3  4 </goal>
+    <start> true   1.5  13.5  0         </start>
+    <start> false  1.5  12.5  0         </start>
+  </task>
+</setup>

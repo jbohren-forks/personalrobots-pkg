@@ -66,11 +66,11 @@ static bool enableGfx;
 static string plannerType;
 static string costmapType;
 static string environmentType;
-static SBPLBenchmarkOptions opt;
+static SetupOptions opt;
 static bool websiteMode;
 static double allocTimeMS;
 
-static shared_ptr<SBPLBenchmarkSetup> setup;
+static shared_ptr<Setup> setup;
 static shared_ptr<Environment> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<ostream> logos;
@@ -194,7 +194,7 @@ void parse_options(int argc, char ** argv)
   environmentType = "2D";
   websiteMode = false;
   allocTimeMS = 50;
-  // most other options handled through SBPLBenchmarkOptions
+  // most other options handled through SetupOptions
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -534,11 +534,11 @@ void run_tasks()
   *logos << "running tasks\n" << flush;
   
   IndexTransform const & it(*setup->getIndexTransform());
-  SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
+  Setup::tasklist_t const & tasklist(setup->getTasks());
   for (size_t ii(0); ii < tasklist.size(); ++ii) {
     planBundle_t bundle;
     SBPLPlannerStatsEntry statsEntry(plannerMgr->getName(), environment->getName());
-    SBPLBenchmarkSetup::task const & task(tasklist[ii]);
+    Setup::task const & task(tasklist[ii]);
     
     *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
       

@@ -92,13 +92,13 @@ namespace mpbench {
     
     
     Configuration::
-    Configuration(SBPLBenchmarkSetup const & _setup,
+    Configuration(Setup const & _setup,
 		  Environment const & _environment,
-		  SBPLBenchmarkOptions const & opt,
+		  SetupOptions const & opt,
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
 		  footprint_t const & _footprint,
-		  planList_t const & _planList,
+		  resultlist_t const & _resultlist,
 		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
       : setup(_setup),
@@ -109,7 +109,7 @@ namespace mpbench {
 	websiteMode(_websiteMode),
 	baseFilename(_baseFilename),
 	footprint(_footprint),
-	planList(_planList),
+	resultlist(_resultlist),
 	ignorePlanTheta(_ignorePlanTheta),
 	logOs(_logOs)
     {
@@ -169,10 +169,12 @@ namespace {
   
   class PlanDrawing: npm::Drawing {
   public:
-    PlanDrawing(std::string const & name, ssize_t taskNumber);
+    PlanDrawing(std::string const & name, ssize_t task_id, ssize_t episode_id, bool detailed);
     virtual void Draw();
     
-    ssize_t const taskNumber;
+    ssize_t const task_id;
+    ssize_t const episode_id;
+    bool const detailed;
   };
   
   class CostMapProxy: public npm::TravProxyAPI {
@@ -266,7 +268,7 @@ void init_layout_one()
   new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
-  new PlanDrawing("plan", -1);
+  new PlanDrawing("plan", -1, -1, false);
   
   npm::View * view;
   
@@ -301,7 +303,7 @@ void init_layout_one()
 
 void init_layout_two()
 {
-  SBPLBenchmarkSetup::tasklist_t const & tl(configptr->setup.getTasks());
+  tasklist_t const & tl(configptr->setup.getTasks());
   if (tl.empty()) {
     // avoid div by zero
     init_layout_one();
@@ -322,7 +324,7 @@ void init_layout_two()
     for (int iy(1); iy >= 0; --iy, ++itask) {
       ostringstream pdname;
       pdname << "plan" << itask;
-      new PlanDrawing(pdname.str(), itask);
+      new PlanDrawing(pdname.str(), itask, -1, true);
       npm::View *
 	view(new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >()));
       // beware of weird npm::View::Configure() param order: x, y, width, height
@@ -410,11 +412,13 @@ void keyboard(unsigned char key, int mx, int my)
 namespace {
   
   PlanDrawing::
-  PlanDrawing(std::string const & name, ssize_t _taskNumber)
+  PlanDrawing(std::string const & name, ssize_t _task_id, ssize_t _episode_id, bool _detailed)
     : npm::Drawing(name,
 		   "the plans that ... were planned",
 		   npm::Instance<npm::UniqueManager<npm::Drawing> >()),
-      taskNumber(_taskNumber)
+      task_id(_task_id),
+      episode_id(_episode_id),
+      detailed(_detailed)
   {
   }
   
@@ -428,120 +432,96 @@ namespace {
   }
   
   
-  static void drawPlan(planList_t::const_iterator pbegin,
-		       planList_t::const_iterator pend,
-		       bool detailed)
+  static void drawResult(task::result const & result, bool detailed)
   {
-    typedef planList_t::const_iterator pli_t;
-    typedef planBundle_t::const_iterator pbi_t;
     typedef waypoint_plan_t::const_iterator wpi_t;
+    shared_ptr<mpglue::waypoint_plan_t> plan(result.plan);
     
     glMatrixMode(GL_MODELVIEW);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
-    // XXXX to do: This segfaults on the line glTranslated(iw->x, iw->y, 0);
-    // Not a high priotity to fix though
-#ifdef UNDEFINED
     if (detailed) {
       // trace of thin footprints or inscribed circles along path
       double const llen(configptr->inscribedRadius / configptr->resolution / 2);
       size_t const skip(static_cast<size_t>(ceil(llen)));
       glColor3d(0.5, 1, 0);
       glLineWidth(1);
-      if (configptr->ignorePlanTheta) {
-	for (pli_t il(pbegin); il != pend; ++il)
-	  for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib)
-	    for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); iw += skip) {
-	      glPushMatrix();
-	      glTranslated(iw->x, iw->y, 0);
-	      gluDisk(wrap_glu_quadric_instance(),
-		      configptr->inscribedRadius,
-		      configptr->inscribedRadius,
-		      36, 1);
-	      glPopMatrix();
-	    }
-      }
-      else {
-	for (pli_t il(pbegin); il != pend; ++il)
-	  for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib)
-	    for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); iw += skip) {
-	      glPushMatrix();
-	      glTranslated(iw->x, iw->y, 0);
-	      glRotated(180 * iw->th / M_PI, 0, 0, 1);
-	      drawFootprint();
-	      glPopMatrix();
-	    }
-      }
-    }
-#endif // UNDEFINED
+      if (plan) {
+	for (wpi_t iw(plan->begin()); iw != plan->end(); iw += skip) {
+	  glPushMatrix();
+	  glTranslated(iw->x, iw->y, 0);
+	  if (configptr->ignorePlanTheta) {
+	    gluDisk(wrap_glu_quadric_instance(),
+		    configptr->inscribedRadius,
+		    configptr->inscribedRadius,
+		    36, 1);
+	  }
+	  else {
+	    glRotated(180 * iw->th / M_PI, 0, 0, 1);
+	    drawFootprint();
+	  }
+	  glPopMatrix();
+	} // endfor(plan)
+      }	// endif(plan)
+    } // endif(detailed)
     
-    // start and goal, with inscribed, circumscribed, and thick footprint
-    SBPLBenchmarkSetup::tasklist_t const & tl(configptr->setup.getTasks());
-    glColor3d(0.5, 1, 0);
-    for (pli_t il(pbegin); il != pend; ++il) {
-      glPushMatrix();
-      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(),
-	      configptr->inscribedRadius,
-	      configptr->inscribedRadius,
-	      36, 1);
-      glPopMatrix();
-    }
-    for (pli_t il(pbegin); il != pend; ++il) {
-      glPushMatrix();
-      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(),
-	      configptr->circumscribedRadius,
-	      configptr->circumscribedRadius,
-	      36, 1);
-      glPopMatrix();
-    }    
+    task::startspec const & start(result.start);
+    glPushMatrix();
+    glTranslated(start.px, start.py, 0);
+    //       glColor3d(0.5, 1, 0);
+    //       glLineWidth(1);
+    //       gluDisk(wrap_glu_quadric_instance(),
+    // 	      configptr->inscribedRadius,
+    // 	      configptr->inscribedRadius,
+    // 	      36, 1);
+    //       gluDisk(wrap_glu_quadric_instance(),
+    // 	      configptr->circumscribedRadius,
+    // 	      configptr->circumscribedRadius,
+    // 	      36, 1);
     glColor3d(1, 1, 0);
     glLineWidth(3);
-    for (pli_t il(pbegin); il != pend; ++il) {
-      glPushMatrix();
-      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
-      glRotated(180 * tl[il->first].start_th / M_PI, 0, 0, 1);
-      drawFootprint();
-      glPopMatrix();
-    }
-
-    // goal tolerance
-    //  glColor3d(1, 0.5, 0);
-    //  for (vector<size_t>::const_iterator itask(tnums.begin()); itask != tnums.end(); ++itask) {
-    //     glPushMatrix();
-    //     glTranslated(tl[il->first].goal_x, tl[il->first].goal_y, 0);
-    //     gluDisk(wrap_glu_quadric_instance(), tl[il->first].goal_tol_xy, tl[il->first].goal_tol_xy, 36, 1);
-    //     glPopMatrix();
-    //   }
+    glRotated(180 * start.pth / M_PI, 0, 0, 1);
+    drawFootprint();
+    glPopMatrix();
     
-    // path yellow
-    glColor3d(1, 1, 0);
-    if (detailed)
-      glLineWidth(3);		// make it stand out among the rest
-    else
-      glLineWidth(1);
-    for (pli_t il(pbegin); il != pend; ++il)
-      for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib) {
-	glBegin(GL_LINE_STRIP);
-	for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); ++iw)
-	  glVertex2d(iw->x, iw->y);
-	glEnd();
-      }
+    task::goalspec const & goal(result.goal);
+    glPushMatrix();
+    glTranslated(goal.px, goal.py, 0);
+    glColor3d(1, 0.5, 0);
+    glLineWidth(1);
+    gluDisk(wrap_glu_quadric_instance(),
+	    goal.tol_xy,
+	    goal.tol_xy,
+	    36, 1);
+    glPopMatrix();
+    
+    if (plan) {
+      glColor3d(1, 1, 0);
+      if (detailed)
+	glLineWidth(3);		// make it stand out among the rest
+      else
+	glLineWidth(1);
+      glBegin(GL_LINE_STRIP);
+      for (wpi_t iw(plan->begin()); iw != plan->end(); ++iw)
+	glVertex2d(iw->x, iw->y);
+      glEnd();
+    }
   }
   
   
   void PlanDrawing::
   Draw()
   {
-    if (0 > taskNumber)
-      drawPlan(configptr->planList.begin(), configptr->planList.end(), true);
-    else {
-      // this is historically overly generic (works for multimaps as
-      // well as maps), but should not hurt
-      pair<planList_t::const_iterator, planList_t::const_iterator>
-	prange(configptr->planList.equal_range(taskNumber));
-      drawPlan(prange.first, prange.second, false);
+    for (resultlist_t::const_iterator ir(configptr->resultlist.begin());
+	 ir != configptr->resultlist.end(); ++ir) {
+      shared_ptr<task::result> result(*ir);
+      if ( ! result)
+	continue;
+      if ((task_id >= 0) && (task_id != result->task_id))
+	continue;
+      if ((episode_id >= 0) && (episode_id != result->episode_id))
+	continue;
+      drawResult(*result, detailed);
     }
   }
   

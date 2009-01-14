@@ -32,54 +32,95 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef MPBENCH_BENCHMARK_GFX_HPP
-#define MPBENCH_BENCHMARK_GFX_HPP
+/** \file parse.h Some utilities for parsing XML files using expat. */
+
+#ifndef MPBENCH_PARSE_H
+#define MPBENCH_PARSE_H
+
+// entire file
+#ifdef MPBENCH_HAVE_EXPAT
 
 #include <mpbench/setup.hpp>
-#include <mpglue/sbpl_util.hh>
-#include <mpglue/footprint.h>
-#include <mpglue/plan.h>
+#include <expat.h>
+#include <boost/shared_ptr.hpp>
+#include <string>
+#include <stdexcept>
+#include <stack>
 
 namespace mpbench {
   
-  namespace gfx {
+  class StringBuffer
+  {
+  public:
+    StringBuffer();
     
-    struct Configuration {
-      Configuration(Setup const & setup,
-		    mpglue::Environment const & environment,
-		    SetupOptions const & opt,
-		    bool websiteMode,
-		    std::string const & baseFilename,
-		    mpglue::footprint_t const & footprint,
-		    resultlist_t const & resultlist,
-		    bool ignorePlanTheta,
-		    std::ostream & logOs);
-      
-      Setup const & setup;
-      mpglue::Environment const & environment;
-      double const resolution;
-      double const inscribedRadius;
-      double const circumscribedRadius;
-      bool const websiteMode;
-      std::string const baseFilename;
-      mpglue::footprint_t const & footprint;
-      resultlist_t const & resultlist;
-      bool const ignorePlanTheta;
-      mutable std::ostream & logOs;
-    };
+    void Append(const XML_Char * s, int len);
+    std::string const & GetString() const;
+    bool Empty() const;
     
-    /** Does not return, ends up calling exit() when the user presses
-	'q'. Does not support being called multiple times from within
-	a given process. It always takes one screenshot without
-	prefix. You can make further screenshots by pressing 'p'. In
-	websiteMode, it just ends up taking two screenshots (one big
-	one small) and then calls exit(). */
-    void display(Configuration const & config, char const * windowName,
-		 /** XXXX temporary hack */
-		 size_t layoutID,
-		 int * argc, char ** argv);
+  private:
+    std::string m_string;
+    char m_lastchar;
+  };
+  
+  
+  class File
+  {
+  public:
+    File(char const * path, int flags) throw (std::runtime_error);
+    File(char const * path, int flags, mode_t mode)
+      throw (std::runtime_error);
     
-  }
+    ~File();
+    
+    int fd;
+  };
+  
+  
+  typedef enum {
+    SETUP,
+    MAP,
+    INIT,
+    CHANGE,
+    ADDLINE,
+    RMLINE,
+    TASK,
+    DESCRIPTION,
+    GOAL,
+    START,
+    NONE
+  } tag_t;
+  
+  tag_t getTag(std::string const & tag_name) throw(std::runtime_error);
+  
+  typedef std::stack<tag_t> tag_stack_t;
+  
+  class Setup;
+  
+  class SetupParser
+  {
+  public:
+    SetupParser();
+    virtual ~SetupParser();
+    
+    void Parse(std::string xml_filename, Setup * setup, std::ostream * progress_os)
+      throw(std::runtime_error);
+    
+    // Everything is public for easy access from C callback functions.
+    
+    XML_ParserStruct * parser;
+    boost::shared_ptr<StringBuffer> buffer;
+    tag_stack_t tag_stack;
+    std::string filename;
+    boost::shared_ptr<File> file;
+    int bufsize;
+    Setup * setup;
+    std::ostream * progress_os;
+    task::setup tmp_task;
+  };
+  
 }
 
-#endif // MPBENCH_BENCHMARK_GFX_HPP
+#endif // MPBENCH_HAVE_EXPAT
+
+#endif // MPBENCH_PARSE_H

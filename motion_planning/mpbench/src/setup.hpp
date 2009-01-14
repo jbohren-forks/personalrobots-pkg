@@ -38,9 +38,12 @@
 #define MPBENCH_BENCHMARK_SETUP_HPP
 
 #include <mpglue/costmap.h>
+#include <mpglue/plan.h>
+#include <mpglue/planner.h>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace sfl {
   class Mapper2d;
@@ -53,44 +56,91 @@ namespace costmap_2d {
 
 namespace mpbench {
   
-  
-  class SBPLBenchmarkSetup
-  {
-  public:
-    struct task {
-      task(std::string const & description,
-	   bool from_scratch,
-	   double start_x, double start_y, double start_th, 
-	   double goal_x, double goal_y, double goal_th, 
-	   double goal_tol_xy, double goal_tol_th);
+  namespace task {
+    
+    struct startspec {
+      startspec(bool from_scratch,
+// 		bool use_initial_solution,
+// 		bool allow_iteration,
+// 		double alloc_time,
+		double start_x,
+		double start_y,
+		double start_th);
       
-      std::string description;
       bool from_scratch;
-      double start_x, start_y, start_th;
-      double goal_x, goal_y, goal_th;
-      double goal_tol_xy, goal_tol_th;
+//       bool use_initial_solution;
+//       bool allow_iteration;
+//       double alloc_time;
+      double px;
+      double py;
+      double pth;
     };
     
-    typedef std::vector<task> tasklist_t;
+    struct goalspec {
+      goalspec(double goal_x,
+	       double goal_y,
+	       double goal_th, 
+	       double goal_tol_xy,
+	       double goal_tol_th);
+      
+      double px;
+      double py;
+      double pth;
+      double tol_xy;
+      double tol_th;
+    };
     
+    struct setup {
+      setup(std::string const & description, goalspec const & goal);
+      setup(setup const & orig);
+      
+      std::string description;
+      goalspec goal;
+      std::vector<startspec> start;
+    };
     
-    SBPLBenchmarkSetup(/** name of the setup */
-		       std::string const & name,
-		       /** cell size [m] (square cells) */
-		       double resolution,
-		       /** inscribed radius of the robot [m] */
-		       double inscribed_radius,
-		       /** circumscribed radius of the robot [m] */
-		       double circumscribed_radius,
-		       /** distance from obstacles where cells become
-			   freespace [m] */
-		       double inflation_radius,
-		       /** the cost value at or above which a cell is
-			   considered an obstacle */
-		       int obstacle_cost,
-		       bool use_sfl_costs);
+    struct result {
+      result(size_t task_id,
+	     size_t episode_id,
+	     startspec const & start,
+	     goalspec const & goal,
+	     boost::shared_ptr<mpglue::waypoint_plan_t> plan,
+	     boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
+      
+      size_t task_id;
+      size_t episode_id;
+      startspec start;
+      goalspec goal;
+      boost::shared_ptr<mpglue::waypoint_plan_t> plan;
+      boost::shared_ptr<mpglue::CostmapPlannerStats> stats;
+    };
     
-    virtual ~SBPLBenchmarkSetup();
+  }
+  
+  typedef std::vector<boost::shared_ptr<task::setup> > tasklist_t;
+  typedef std::vector<boost::shared_ptr<task::result> > resultlist_t;
+  
+  
+  class Setup
+  {
+  public:
+    Setup(/** name of the setup */
+	  std::string const & name,
+	  /** cell size [m] (square cells) */
+	  double resolution,
+	  /** inscribed radius of the robot [m] */
+	  double inscribed_radius,
+	  /** circumscribed radius of the robot [m] */
+	  double circumscribed_radius,
+	  /** distance from obstacles where cells become
+	      freespace [m] */
+	  double inflation_radius,
+	  /** the cost value at or above which a cell is
+	      considered an obstacle */
+	  int obstacle_cost,
+	  bool use_sfl_costs);
+    
+    virtual ~Setup();
     
     /**
        Print a human-readable description of the setup to a
@@ -135,13 +185,15 @@ namespace mpbench {
 		   std::ostream * progress_os);
     
     /**
-       Add a task to the task list.
+       Add a (copy of a) task to the task list.
     */
-    void addTask(std::string const & description,
-		 bool from_scratch,
-		 double start_x, double start_y, double start_th, 
-		 double goal_x, double goal_y, double goal_th, 
-		 double goal_tol_xy, double goal_tol_th);
+    void addTask(task::setup const & setup);
+    
+    void legacyAddTask(std::string const & description,
+		       bool from_scratch,
+		       double start_x, double start_y, double start_th, 
+		       double goal_x, double goal_y, double goal_th, 
+		       double goal_tol_xy, double goal_tol_th);
     
     boost::shared_ptr<sfl::RDTravmap> getRawSFLTravmap() const;
     costmap_2d::CostMap2D const & getRaw2DCostmap() const;
@@ -178,11 +230,11 @@ namespace mpbench {
   };
   
   
-  struct SBPLBenchmarkOptions {
+  struct SetupOptions {
     // fills in some "sensible" default values
-    SBPLBenchmarkOptions();
+    SetupOptions();
     
-    std::string name;
+    std::string spec;
     double resolution;
     double inscribed_radius;
     double circumscribed_radius;
@@ -191,15 +243,13 @@ namespace mpbench {
     bool use_sfl_cost;
     double door_width;
     double hall_width;
-    std::string pgm_filename;
     unsigned int obstacle_gray;
     bool invert_gray;
   };
   
   
-  SBPLBenchmarkSetup * createBenchmark(SBPLBenchmarkOptions const & opt,
-				       std::ostream * progress_os,
-				       std::ostream * travmap_os);
+  Setup * createSetup(SetupOptions const & opt, std::ostream * progress_os)
+    throw(std::runtime_error);
   
 }
 
