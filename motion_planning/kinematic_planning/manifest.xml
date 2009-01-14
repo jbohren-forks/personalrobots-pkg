@@ -10,6 +10,5 @@
   <depend package="robot_srvs" />
   <depend package="robot_model" />
   <depend package="ompl" />
-  <depend package="profiling_utils" />
   <depend package="string_utils" />
 </package>
