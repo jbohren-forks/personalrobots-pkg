@@ -615,13 +615,23 @@ namespace mpbench {
     dumpSubDescription(os, prefix);
     os << prefix << "tasks:\n";
     for (tasklist_t::const_iterator it(tasklist_.begin()); it != tasklist_.end(); ++it) {
-      os << prefix << "  - " << (*it)->description << "\n";
+      os << prefix << "  - " << (*it)->description;
       if ((*it)->start.empty())
-	os << prefix << "    (no episode)\n";
+	os << prefix << " (no episode)\n";
       else if (1 == (*it)->start.size())
-	os << prefix << "    (1 episode)\n";
+	os << prefix << " (1 episode)\n";
       else
-	os << prefix << "    (" << (*it)->start.size() << " episodes)\n";
+	os << prefix << " (" << (*it)->start.size() << " episodes)\n";
+      os << prefix << "    goal " << (*it)->goal.px << "  " << (*it)->goal.py << "  "
+	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
+      for (vector<task::startspec>::const_iterator is((*it)->start.begin());
+	   is != (*it)->start.end(); ++is) {
+	if (is->from_scratch)
+	  os << prefix << "    start TRUE  ";
+	else
+	  os << prefix << "    start FALSE ";
+	os << is->px << "  " << is->py << "  " << is->pth << "\n";
+      }
     }
   }
   

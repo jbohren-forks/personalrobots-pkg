@@ -40,9 +40,11 @@
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/navfn_planner.h>
 #include <sfl/util/numeric.hpp>
+#include <sfl/util/strutil.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
 #include <iomanip>
+#include <set>
 
 extern "C" {
 #include <err.h>
@@ -61,7 +63,8 @@ static void run_tasks();
 static void print_summary();
 
 static footprint_t const & getFootprint();
-static std::string baseFilename();
+static string baseFilename();
+static string sanitizeSpec(string const & spec);
 
 static bool enableGfx;
 static string plannerType;
@@ -147,7 +150,7 @@ static string summarizeOptions()
 {
   ostringstream os;
   os << "-p" << canonicalPlannerName(plannerType)
-     << "-s" << opt.spec
+     << "-s" << sanitizeSpec(opt.spec)
      << "-m" << costmapType
      << "-e" << canonicalEnvironmentName(environmentType)
      << "-r" << (int) rint(1e3 * opt.resolution)
@@ -163,6 +166,35 @@ static string summarizeOptions()
 std::string baseFilename()
 {
   return "mpbench-" + summarizeOptions();
+}
+
+
+string sanitizeSpec(string const & spec)
+{
+  static set<char> forbidden;
+  if (forbidden.empty()) {
+    for (char cc(0); cc <= '*'; ++cc)
+      forbidden.insert(cc);
+    forbidden.insert('.');
+    forbidden.insert('/');
+    forbidden.insert(':');
+    forbidden.insert(';');
+    forbidden.insert('<');
+    forbidden.insert('>');
+    forbidden.insert('?');
+    forbidden.insert('@');
+    forbidden.insert('[');
+    forbidden.insert('\\');
+    forbidden.insert(']');
+    forbidden.insert('`');
+    for (char cc(0x7f); cc >= '{'; --cc)
+      forbidden.insert(cc);
+  }
+  string foo(spec);
+  for (string::iterator is(foo.begin()); is != foo.end(); ++is)
+    if (forbidden.end() != forbidden.find(*is))
+      *is = '_';
+  return foo;
 }
 
 
@@ -521,50 +553,54 @@ void run_tasks()
   *logos << "running tasks\n" << flush;
   try {
     tasklist_t const & tasklist(setup->getTasks());
-    for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {// XXXX to do: use iterator
+    for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
       if ( ! tasklist[task_id])
 	errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
       task::setup const task(*tasklist[task_id]);
-      
-      size_t const episode_id(0); // XXXX to do: loop over task.start
       if (task.start.empty())
-	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no start", task_id);
-      task::startspec const & start(task.start[0]);
+	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
       *logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+      planner->setGoal(task.goal.px, task.goal.py, task.goal.pth);
+      planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
-      planner->setStart(start.px, start.py, start.pth);
-      planner->setGoal(task.goal.px, task.goal.py, task.goal.pth); // XXXX to do: only at init, and set tolerance as well
-      planner->forcePlanningFromScratch(start.from_scratch);
-      
-      shared_ptr<waypoint_plan_t> plan;
-      try {
-	plan = planner->createPlan();
-      }
-      catch (std::exception const & ee) {
-	*logos << "\n==================================================\n"
-	       << "  EXCEPTION from createPlan():\n"
-	       << ee.what()
-	       << "\n==================================================\n" << flush;
-      }
-      
-      char const * title("  SUCCESS");
-      if ( ! plan)
-	title = "  FAILURE";
-      shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
-      stats->logStream(*logos, title, "    ");
-      *logos << flush;
-      
-      shared_ptr<task::result>
-	result(new task::result(task_id,
-				episode_id,
-				start,
-				task.goal,
-				plan,
-				stats));
-      
-      resultlist.push_back(result);
-    }
+      for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
+	task::startspec const & start(task.start[episode_id]);
+	
+	planner->setStart(start.px, start.py, start.pth);
+	planner->forcePlanningFromScratch(start.from_scratch);
+	
+	shared_ptr<waypoint_plan_t> plan;
+	try {
+	  plan = planner->createPlan();
+	}
+	catch (std::exception const & ee) {
+	  *logos << "\n==================================================\n"
+		 << "  EXCEPTION from createPlan():\n"
+		 << ee.what()
+		 << "\n==================================================\n" << flush;
+	}
+	
+	string title;
+	if (plan)
+	  title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
+	else
+	  title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
+	shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
+	stats->logStream(*logos, title, "    ");
+	*logos << flush;
+	
+	shared_ptr<task::result>
+	  result(new task::result(task_id,
+				  episode_id,
+				  start,
+				  task.goal,
+				  plan,
+				  stats));
+	
+	resultlist.push_back(result);
+      }	// endfor(episode)
+    } // endfor(task)
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "EXCEPTION in run_tasks():\n%s", ee.what());

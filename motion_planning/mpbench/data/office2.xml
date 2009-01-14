@@ -27,8 +27,13 @@
   </map>
   <task>
     <description>through door or around hall</description>
-    <goal>         4.5  13.5  0  0.3  4 </goal>
-    <start> true   1.5  13.5  0         </start>
-    <start> false  1.5  12.5  0         </start>
+    <goal>         4.5  13.5   0     0.3  4 </goal>
+    <start> true   1.5  13.5  -1.55         </start>
+    <start> false  1.5  12.5  -1.55         </start>
+    <start> false  1.5  11.5  -1.55         </start>
+    <start> false  1.5  10.5  -1.55         </start>
+    <start> false  1.5   9.5  -1.55         </start>
+    <start> false  1.5   8.5  -1.55         </start>
+    <start> false  1.5   7.5  -1.55         </start>
   </task>
 </setup>

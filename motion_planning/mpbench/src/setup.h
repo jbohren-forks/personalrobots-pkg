@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \file setup.hpp */
+/** \file setup.h */
 
 #ifndef MPBENCH_BENCHMARK_SETUP_HPP
 #define MPBENCH_BENCHMARK_SETUP_HPP
