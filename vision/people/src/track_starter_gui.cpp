@@ -65,7 +65,6 @@ struct PublishedPoint {
 };
 
 vector<PublishedPoint> gxys;
-//ros::thread::mutex g_selection_mutex;
 boost::mutex g_selection_mutex;
 ros::Time g_last_image_time;
 bool g_do_cb;
@@ -79,14 +78,12 @@ void on_mouse(int event, int x, int y, int flags, void *params){
   }
   else if (event==CV_EVENT_LBUTTONDOWN) {
     // Add a clicked-on point to the list of points, to be published by the image callback on the next image.
-    //g_selection_mutex.lock();
     boost::mutex::scoped_lock sel_lock(g_selection_mutex);
     PublishedPoint p;
     p.xy = cvPoint(x,y);
     p.published = false;
     gxys.push_back(p);
     g_do_cb = true;
-    //g_selection_mutex.unlock();
     sel_lock.unlock();
   }
   else {
@@ -116,7 +113,6 @@ public:
   IplImage *cv_image_;
   IplImage *cv_disp_image_;
   IplImage *cv_disp_image_out_;
-  //ros::thread::mutex cv_mutex_;
   boost::mutex cv_mutex_;
   robot_msgs::PositionMeasurement pos;
   TopicSynchronizer<TrackStarterGUI> sync_;
@@ -183,15 +179,12 @@ public:
   // Image callback. Draws selected points on images, publishes the point messages, and copies the images to be displayed.
   void image_cb_all(ros::Time t){
 
-    //cv_mutex_.lock();
     boost::mutex::scoped_lock sel_lock(g_selection_mutex);//cv_mutex_);
     if (!g_do_cb) {
-      //cv_mutex_.unlock();
       sel_lock.unlock();
       return;
     }
 
-    //cv_mutex_.unlock();///
     sel_lock.unlock();
 
     bool do_calib = false;
@@ -238,10 +231,6 @@ public:
     //printf("%f %f %f %f %f %f %f\n", Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
-
-    //cv_mutex_.lock(); ///
-    //g_selection_mutex.lock();
-    //boost::mutex::scoped_lock sel_lock(g_selection_mutex);
     sel_lock.lock();
     for (uint i = 0; i<gxys.size(); i++) {
 
@@ -313,14 +302,11 @@ public:
     }
 
     g_last_image_time = limage_.header.stamp;
-    //g_selection_mutex.unlock();
     sel_lock.unlock();
 
-    //cv_mutex_.lock();
     boost::mutex::scoped_lock lock(cv_mutex_);
     cvShowImage("Track Starter: Left Image", cv_image_);
     cvShowImage("Track Starter: Disparity", cv_disp_image_out_);
-    //cv_mutex_.unlock();
     lock.unlock();
   }
 
@@ -334,7 +320,6 @@ public:
     while (ok() && !quit_) {
       // Display the image
       boost::mutex::scoped_lock lock(cv_mutex_);
-      //cv_mutex_.lock();
       int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
@@ -346,7 +331,6 @@ public:
 	g_do_cb = 1-g_do_cb;
       }
       lock.unlock();
-      //cv_mutex_.unlock();
       usleep(10000);
 	
     }
