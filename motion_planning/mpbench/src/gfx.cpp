@@ -34,7 +34,6 @@
 
 #include "gfx.h"
 
-#include <mpglue/environment.h>
 #include <costmap_2d/costmap_2d.h>
 #include <npm/common/wrap_glu.hpp>
 #include <npm/common/wrap_glut.hpp>
@@ -95,7 +94,6 @@ namespace mpbench {
     Configuration::
     Configuration(Setup const & _setup,
 		  std::vector<std::string> const & _planner_name,
-		  Environment const & _environment,
 		  SetupOptions const & opt,
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
@@ -105,7 +103,6 @@ namespace mpbench {
 		  std::ostream & _logOs)
       : setup(_setup),
 	planner_name(_planner_name),
-	environment(_environment),
 	resolution(opt.resolution),
 	inscribedRadius(opt.inscribed_radius),
 	circumscribedRadius(opt.circumscribed_radius),
@@ -237,30 +234,6 @@ namespace {
     sfl::GridFrame gframe;
   };
   
-  class EnvWrapProxy: public CostMapProxy {
-  public:
-    EnvWrapProxy() {
-      if (dynamic_cast<Environment3DKIN const *>(&configptr->environment))
-	env3d = true;
-      else
-	env3d = false; }
-    
-    virtual int GetObstacle() const {
-      if (env3d)
-	return 1;
-      return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
-
-    virtual int GetValue(ssize_t ix, ssize_t iy) const {
-      if (env3d) {
-	if (configptr->environment.IsObstacle(ix, iy, false))
-	  return 1;
-	return 0;
-      }
-      return costmap.getCost(ix, iy); }
-    
-    bool env3d;
-  };
-  
 }
 
 
@@ -276,7 +249,7 @@ void init_layout_one()
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(configptr->setup.getRawSFLTravmap()));
   new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
-  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
+  ////  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
   new PlanDrawing("plan", -1, -1, -1, false);
   
   npm::View * view;
@@ -303,8 +276,8 @@ void init_layout_one()
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(0.66, 0, 0.33, 1);
   view->SetCamera("travmap");
-  if ( ! view->AddDrawing("envwrap"))
-    errx(EXIT_FAILURE, "no drawing called \"envwrap\"");
+////   if ( ! view->AddDrawing("envwrap"))
+////     errx(EXIT_FAILURE, "no drawing called \"envwrap\"");
   if ( ! view->AddDrawing("plan"))
     errx(EXIT_FAILURE, "no drawing called \"plan\"");
 }

@@ -35,8 +35,6 @@
 #include "setup.h"
 #include "gfx.h"
 #include <costmap_2d/costmap_2d.h>
-#include <mpglue/sbpl_util.hh>
-#include <mpglue/environment.h>
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/navfn_planner.h>
 #include <sfl/util/numeric.hpp>
@@ -61,6 +59,7 @@ static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
 static void print_summary();
+static std::string canonicalPlannerName(std::string const & name_or_alias);
 
 static footprint_t const & getFootprint();
 static string baseFilename();
@@ -70,13 +69,10 @@ static bool enableGfx;
 static string planner_spec;
 static vector<string> planner_name;
 static string costmapType;
-static string environmentType;
 static SetupOptions opt;
 static bool websiteMode;
 
 static shared_ptr<Setup> setup;
-static vector<shared_ptr<Environment> > environment;
-static vector<shared_ptr<SBPLPlannerManager> > plannerMgr;
 static vector<shared_ptr<CostmapPlanner> > planner;
 static shared_ptr<ostream> logos;
 
@@ -98,13 +94,12 @@ int main(int argc, char ** argv)
   if (enableGfx)
     display(gfx::Configuration(*setup,
 			       planner_name,
-			       *environment[0],	// XXXX quick hack
 			       opt,
 			       websiteMode,
 			       baseFilename(),
 			       getFootprint(),
 			       resultlist,
-			       "3DKIN" != environmentType,
+			       true, // XXXX to do: depends on 3DKIN
 			       *logos),
 	    opt.spec.c_str(),
 	    3, // hack: layoutID
@@ -117,8 +112,6 @@ void cleanup()
   if (logos)
     *logos << "byebye!\n" << flush;
   setup.reset();
-  environment.clear();
-  plannerMgr.clear();
   planner.clear();
   logos.reset();
   resultlist.clear();
@@ -131,7 +124,7 @@ void usage(ostream & os)
      << "   -h               help (this message)\n"
      << "   -p  <spec>       colon-separated planner names\n"
      << "   -m  <name>       name of the costmap implementation\n"
-     << "   -e  <name>       environment representation type\n"
+    ////     << "   -e  <name>       environment representation type\n"
      << "   -s  <spec>       setup specification, e.g. hc:office1 or pgm:costs.pgm:tasks.xml\n"
      << "   -r  <cellsize>   set grid resolution\n"
      << "   -i  <in-radius>  set INSCRIBED radius\n"
@@ -154,7 +147,7 @@ static string summarizeOptions()
   os << "-p" << sanitizeSpec(planner_spec)
      << "-s" << sanitizeSpec(opt.spec)
      << "-m" << costmapType
-     << "-e" << canonicalEnvironmentName(environmentType)
+    ////     << "-e" << canonicalEnvironmentName(environmentType)
      << "-r" << (int) rint(1e3 * opt.resolution)
      << "-i" << (int) rint(1e3 * opt.inscribed_radius)
      << "-c" << (int) rint(1e3 * opt.circumscribed_radius)
@@ -208,8 +201,6 @@ static void sanitizeOptions()
     opt.inflation_radius = opt.inscribed_radius;
   if (opt.circumscribed_radius > opt.inflation_radius)
     opt.inflation_radius = opt.circumscribed_radius;
-  ////  plannerType = canonicalPlannerName(plannerType);
-  environmentType = canonicalEnvironmentName(environmentType);
 }
 
 
@@ -221,7 +212,7 @@ void parse_options(int argc, char ** argv)
   // default values for options
   planner_spec = "ara:ad:nf";
   costmapType = "costmap_2d";
-  environmentType = "2D";
+  ////  environmentType = "2D";
   websiteMode = false;
   // most other options handled through SetupOptions
   
@@ -266,16 +257,6 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	costmapType = argv[ii];
- 	break;
-	
-      case 'e':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -e requires a name argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	environmentType = argv[ii];
  	break;
 	
       case 'r':
@@ -462,73 +443,72 @@ void create_setup()
     errx(EXIT_FAILURE, "create_setup(): no valid planner names in spec \"%s\"",
 	 planner_spec.c_str());
   
-  // XXXX to do: most "environment" stuff is really specific to SBPL, should be confined there
-  
-  *logos << "creating " << planner_name.size() << " environment(s) of type " << environmentType
-	 << " for map type " << costmapType << "\n" << flush;
-  
-  if ("2D" == environmentType) {
-    unsigned char const
-      obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-    for (size_t ii(0); ii < planner_name.size(); ++ii) {
-      shared_ptr<Environment> foo(new Environment2D(setup->getCostmap(),
-						    setup->getIndexTransform(),
-						    0, 0, // start INDEX (ix, iy)
-						    0, 0, // goal INDEX x (ix, iy)
-						    obst_cost_thresh));
-      environment.push_back(foo);
-    }
-  }
-  else if ("3DKIN" == environmentType) {
-    unsigned char const
-      obst_cost_thresh(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
-    // how about making these configurable?
-    double const goaltol_x(0.5 * opt.inscribed_radius);	// XXXX to do: use task::goal
-    double const goaltol_y(0.5 * opt.inscribed_radius);
-    double const goaltol_theta(M_PI);
-    double const nominalvel_mpersecs(0.6); // human leisurely walking speed
-    double const timetoturn45degsinplace_secs(0.6); // guesstimate
-    for (size_t ii(0); ii < planner_name.size(); ++ii) {
-      shared_ptr<Environment> foo(new Environment3DKIN(setup->getCostmap(),
-						       setup->getIndexTransform(),
-						       obst_cost_thresh,
-						       0, 0, 0, // start POSE (x, y, th)
-						       0, 0, 0, // goal POSE (x, y, th)
-						       goaltol_x, goaltol_y, goaltol_theta,
-						       getFootprint(), nominalvel_mpersecs,
-						       timetoturn45degsinplace_secs));
-      environment.push_back(foo);
-    }
-  }
-  else {
-    errx(EXIT_FAILURE, "invalid environmentType \"%s\", use 2D or 3DKIN", environmentType.c_str());
-  }
+  bool const forwardsearch(false); // XXXX to do: add an option for this
+  int const obstcost_thresh_2d(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+  int const obstcost_thresh_3dkin(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
+  double const nominalvel_mpersecs(0.6); // XXXX to do: config! human leisurely walking speed
+  double const timetoturn45degsinplace_secs(0.6); // XXXX to do: config! guesstimate
   
   for (size_t in(0); in < planner_name.size(); ++in) {
     if ("NavFn" == planner_name[in]) {
       *logos << "creating NavFnPlanner\n" << flush;
-      shared_ptr<CostmapPlanner> foo(new NavFnPlanner(environment[in]->getCostmap(),
-						      environment[in]->getIndexTransform()));
+      shared_ptr<CostmapPlanner> foo(new NavFnPlanner(setup->getCostmap(),
+						      setup->getIndexTransform()));
+      planner.push_back(foo);
+    }
+    else if ("ARAStar2D" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createARAStar2D(setup->getCostmap(),
+						      setup->getIndexTransform(),
+						      forwardsearch,
+						      obstcost_thresh_2d));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createARAStar2D() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ADStar2D" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createADStar2D(setup->getCostmap(),
+						     setup->getIndexTransform(),
+						     forwardsearch,
+						     obstcost_thresh_2d));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createADStar2D() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ARAStar3DKIN" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createARAStar3DKIN(setup->getCostmap(),
+							 setup->getIndexTransform(),
+							 forwardsearch,
+							 obstcost_thresh_3dkin,
+							 getFootprint(),
+							 nominalvel_mpersecs,
+							 timetoturn45degsinplace_secs));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createARAStar3DKIN() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ADStar3DKIN" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createADStar3DKIN(setup->getCostmap(),
+							setup->getIndexTransform(),
+							forwardsearch,
+							obstcost_thresh_3dkin,
+							getFootprint(),
+							nominalvel_mpersecs,
+							timetoturn45degsinplace_secs));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createADStar3DKIN() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
       planner.push_back(foo);
     }
     else {
-      *logos << "creating SBPLPlannerManager manager\n" << flush;
-      bool const forwardsearch(false); // XXXX to do: add an option for this
-      MDPConfig mdpConfig;
-      if ( ! environment[in]->InitializeMDPCfg(&mdpConfig))
-	errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed");
-      shared_ptr<SBPLPlannerManager>
-	mgr(new SBPLPlannerManager(environment[in]->getDSI(), forwardsearch, &mdpConfig));
-      plannerMgr.push_back(mgr);
-      if ( ! mgr->select(planner_name[in], false, logos.get()))
-	errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", planner_name[in].c_str());
-      *logos << "  planner name: " << mgr->getName() << "\n" << flush;
-      shared_ptr<SBPLPlannerWrap>
-	pwrap(new SBPLPlannerWrap(mgr->getName(), environment[in]->getName(),
-				  mgr->get_planner(), environment[in]));
-      pwrap->stopAtFirstSolution(false); // XXXX to do: use task::start
-      pwrap->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      planner.push_back(pwrap);
+      errx(EXIT_FAILURE, "create_setup(): invalid planner name \"%s\"",
+	   planner_name[in].c_str());
     }
   }
   
@@ -666,4 +646,48 @@ footprint_t const & getFootprint()
     initSimpleFootprint(*footprint, opt.inscribed_radius, opt.circumscribed_radius);
   }
   return *footprint;
+}
+
+
+std::string canonicalPlannerName(std::string const & name_or_alias)
+{
+  static map<string, string> planner_alias;
+  if (planner_alias.empty()) {
+    planner_alias.insert(make_pair("ARAStar2D",    "ARAStar2D"));
+    planner_alias.insert(make_pair("ara",          "ARAStar2D"));
+    planner_alias.insert(make_pair("ARA",          "ARAStar2D"));
+    planner_alias.insert(make_pair("arastar",      "ARAStar2D"));
+    planner_alias.insert(make_pair("ARAStar",      "ARAStar2D"));
+    planner_alias.insert(make_pair("ara2d",        "ARAStar2D"));
+    planner_alias.insert(make_pair("ARA2D",        "ARAStar2D"));
+    planner_alias.insert(make_pair("arastar2d",    "ARAStar2D"));
+    
+    planner_alias.insert(make_pair("ARAStar3DKIN", "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ara3d",        "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ARA3D",        "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("arastar3d",    "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ARAStar3D",    "ARAStar3DKIN"));
+    
+    planner_alias.insert(make_pair("ADStar2D",     "ADStar2D"));
+    planner_alias.insert(make_pair("ad",           "ADStar2D"));
+    planner_alias.insert(make_pair("AD",           "ADStar2D"));
+    planner_alias.insert(make_pair("adstar",       "ADStar2D"));
+    planner_alias.insert(make_pair("ADStar",       "ADStar2D"));
+
+    planner_alias.insert(make_pair("ADStar3DKIN",  "ADStar3DKIN"));
+    planner_alias.insert(make_pair("ad3d",         "ADStar3DKIN"));
+    planner_alias.insert(make_pair("AD3D",         "ADStar3DKIN"));
+    planner_alias.insert(make_pair("adstar3d",     "ADStar3DKIN"));
+    planner_alias.insert(make_pair("ADStar3D",     "ADStar3DKIN"));
+
+    planner_alias.insert(make_pair("NavFn",        "NavFn"));
+    planner_alias.insert(make_pair("navfn",        "NavFn"));
+    planner_alias.insert(make_pair("nf",           "NavFn"));
+    planner_alias.insert(make_pair("NF",           "NavFn"));
+  }
+  
+  map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+  if (planner_alias.end() == is)
+    return "";
+  return is->second;
 }

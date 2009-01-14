@@ -36,7 +36,6 @@
 #define MPBENCH_BENCHMARK_GFX_HPP
 
 #include <mpbench/setup.h>
-#include <mpglue/sbpl_util.hh>
 #include <mpglue/footprint.h>
 #include <mpglue/plan.h>
 
@@ -47,7 +46,6 @@ namespace mpbench {
     struct Configuration {
       Configuration(Setup const & setup,
 		    std::vector<std::string> const & planner_name,
-		    mpglue::Environment const & environment,
 		    SetupOptions const & opt,
 		    bool websiteMode,
 		    std::string const & baseFilename,
@@ -58,7 +56,6 @@ namespace mpbench {
       
       Setup const & setup;
       std::vector<std::string> const & planner_name;
-      mpglue::Environment const & environment;
       double const resolution;
       double const inscribedRadius;
       double const circumscribedRadius;
