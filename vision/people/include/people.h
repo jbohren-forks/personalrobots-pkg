@@ -83,6 +83,10 @@ $ people/bin/track_starter_gui
 #include "CvStereoCamModel.h"
 #include "utils.h"
 #include "ros/time.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread/thread.hpp>
+
 
 // Thresholds for the face detection algorithm.
 #define FACE_SIZE_MIN_M 0.1
@@ -241,7 +245,7 @@ class People
    * Output:
    * A vector of CvRects containing the bounding boxes around found faces.
    */ 
-  vector<Box2D3D> detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
+  vector<Box2D3D> detectAllFaces(IplImage *image, uint num_cascades, string* haar_classifier_filenames, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
 
   // Detect only known faces in an image.
   void detectKnownFaces(){}
@@ -260,12 +264,17 @@ class People
 
   /**< The list of people. */
   vector<Person> list_;
-  /**< Classifier cascade for face detection. */
-  CvHaarClassifierCascade *cascade_;
-  /**< Storage for OpenCV functions. */
-  CvMemStorage *storage_;
+
   /**< Grayscale image (to avoid reallocating an image each time an OpenCV function is run.) */
   IplImage *cv_image_gray_;
+  
+  boost::mutex face_mutex_;
+
+  /* Structures for the face detector. */
+  /**< Classifier cascade for face detection. */
+  vector<CvHaarClassifierCascade*>cascades_;
+  /**< Storage for OpenCV functions. */
+  vector<CvMemStorage*>storages_;
 
   /* Structures for the color face tracker (cft).*/
   /**< Color planes and normalized color planes. */
@@ -286,6 +295,7 @@ class People
   CvHistogram *cft_start_hist_;
   CvHistogram *cft_ratio_hist_;
 
+  void faceDetectionThread(uint i, IplImage *disparity_image, CvStereoCamModel *cam_model, vector<Box2D3D> *faces);
 
 };
 
