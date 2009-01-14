@@ -295,9 +295,8 @@ output_keyframe_trajectory.close()
 if skel:
   id_to_timestamp = dict([ (i, stampedTrajectory[i][0]) for i in range(0,len(stampedTrajectory)) ])
   skel_nodes = [(id_to_timestamp[f.id], skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes]
-  nodepts = pts.values()
   output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
-  pickle.dump(nodepts, output_skeleton_nodes)
+  pickle.dump(skel_nodes, output_skeleton_nodes)
   output_skeleton_nodes.close()
   
   pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
