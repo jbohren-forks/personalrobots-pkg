@@ -13,8 +13,8 @@
 
 using namespace features;
 
-typedef float SigType;
-//typedef uint8_t SigType;
+//typedef float SigType;
+typedef uint8_t SigType;
 typedef Promote<SigType>::type DistanceType;
 
 typedef struct {

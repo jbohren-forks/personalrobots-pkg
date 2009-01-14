@@ -1,7 +1,7 @@
 #ifndef _VOCABULARY_TREE_H_
 #define _VOCABULARY_TREE_H_
 
-//#define USE_BYTE_SIGNATURES
+#define USE_BYTE_SIGNATURES
 
 #include <vector>
 #include <map>
