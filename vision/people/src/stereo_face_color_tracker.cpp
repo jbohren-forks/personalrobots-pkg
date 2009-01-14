@@ -104,7 +104,6 @@ public:
 
   tf::TransformListener tf;
 
-  //ros::thread::mutex cv_mutex_;
   boost::mutex cv_mutex_;
 
   StereoFaceColorTracker(bool detect_faces, const char *haar_filename, bool use_depth, bool calib_color) : 
@@ -188,12 +187,10 @@ public:
     //  return;
     //}
     boost::mutex::scoped_lock lock(cv_mutex_);
-    //cv_mutex_.lock();
 
     // Check that the timestamp is close to the current time. If not, just wait for another message.
     if ((init_pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {//2.0)) {
       //printf("too delayed\n");
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -202,7 +199,6 @@ public:
     // to image coords anyway, so we might as well ignore this message.
     if (cam_model_ == NULL) {
       printf("No cam model\n");
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -262,7 +258,6 @@ public:
     cvReleaseMat(&center_3d);
     cvReleaseMat(&size_3d);
     lock.unlock();
-    //cv_mutex_.unlock();
   }
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
@@ -276,7 +271,6 @@ public:
     ros::Time startt, endt;
     startt = t.now();
 
-    //cv_mutex_.lock();
     boost::mutex::scoped_lock lock(cv_mutex_);
  
     last_image_time_ = limage_.header.stamp;
@@ -285,7 +279,6 @@ public:
 
     if (limage_.encoding=="mono") {
       printf("The left image is not a color image.\n");
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -308,7 +301,6 @@ public:
       }
     }
     else {
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -341,7 +333,6 @@ public:
 
     if (npeople==0) {
       // No people to track, try again later.
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -352,7 +343,6 @@ public:
     bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, kernel_size_m, 0, NULL, NULL, end_points, tracked_each);//0.3
     if (!did_track) {
       // If tracking failed, just return.
-      //cv_mutex_.unlock();
       lock.unlock();
       return;
     }
@@ -425,7 +415,6 @@ public:
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
     //cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif
-    //cv_mutex_.unlock();
     lock.unlock();
 
   }
@@ -435,7 +424,6 @@ public:
   bool spin() {
     while (ok() && !quit_) {
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-      //cv_mutex_.lock(); 
       boost::mutex::scoped_lock lock(cv_mutex_);
       // Get user input and allow OpenCV to refresh windows.
       int c = cvWaitKey(2);
@@ -443,7 +431,6 @@ public:
       // Quit on ESC, "q" or "Q"
       if((c == 27)||(c == 'q')||(c == 'Q'))
 	quit_ = true;
-      //cv_mutex_.unlock(); 
       lock.unlock();
 #endif
       usleep(10000);
