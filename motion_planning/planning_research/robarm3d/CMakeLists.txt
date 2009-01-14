@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
 rospack(robarm3d)
 
 include_directories(${PROJECT_SOURCE_DIR}/code)
@@ -11,8 +11,11 @@ rospack_add_library(robarm3d
 # Build executables in the bin directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(plan_path src/test/test.cpp)
-rospack_add_executable(sim_path src/test/simulate_arm_path.cpp)
-target_link_libraries(plan_path robarm3d)
-# rospack_add_compile_flags(plan_path "-g -pg")
+# # rospack_add_executable(plan_path_stats src/test/plan_path_stats.cpp)
+# rospack_add_executable(plan_path_stats src/test/test_path_planner.cpp)
+rospack_add_executable(planPathROS src/test/plan_path_ROS.cpp)
+
+# rospack_add_executable(sim_path src/test/simulate_arm_path.cpp)
+target_link_libraries(planPathROS robarm3d)
+# rospack_add_compile_flags(plan_path_stats "-g")
 # rospack_add_link_flags(plan_path )

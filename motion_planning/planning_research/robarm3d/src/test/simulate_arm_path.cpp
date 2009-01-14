@@ -36,13 +36,23 @@
 #include <fstream>
 #include <vector>
 #include <ros/node.h>
-#include <pr2_mechanism_controllers/JointTraj.h>
-#include "robot_msgs/MechanismState.h"
-
 #include "time.h"
 #include "robot_msgs/MechanismState.h"
+#include "std_msgs/Float64.h"
+#include "pr2_mechanism_controllers/JointPosCmd.h"
+
+#define GRIPPER_ROLL_LEFT_JOINT 4
+#define WRIST_FLEX_LEFT_JOINT 5
+#define FOREARM_ROLL_LEFT_JOINT 6
+#define ELBOW_FLEX_LEFT_JOINT 7
+#define UPPERARM_ROLL_LEFT_JOINT 8
+#define SHOULDER_PITCH_LEFT_JOINT 9
+#define SHOULDER_PAN_LEFT_JOINT 10
+#define FINGER_L_LEFT_JOINT 3
+#define FINGER_R_LEFT_JOINT 1
 
 #define MOE .05
+
 #define NUMOFLINKS 7
 #define PI_CONST 3.141592653
 
@@ -53,8 +63,56 @@ void finalize(int donecare)
   done = 1;
 }
 
-// parse trajectory file
-std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
+class set_arm_traj
+{
+  public:
+
+    robot_msgs::MechanismState in;  // Our input msg
+    pr2_mechanism_controllers::JointPosCmd LeftArmCmd;
+
+    set_arm_traj()
+    {
+        //set number of joints to command
+        LeftArmCmd.set_names_size(7);
+        LeftArmCmd.set_positions_size(7);
+        LeftArmCmd.set_margins_size(7);
+        LeftArmCmd.timeout = 10;
+
+        // names of joints to control
+        LeftArmCmd.names[0] = "shoulder_pan_left_joint";
+        LeftArmCmd.names[1] = "shoulder_pitch_left_joint";
+        LeftArmCmd.names[2] = "upperarm_roll_left_joint";
+        LeftArmCmd.names[3] = "elbow_flex_left_joint";
+        LeftArmCmd.names[4] = "forearm_roll_left_joint";
+        LeftArmCmd.names[5] = "wrist_flex_left_joint";
+        LeftArmCmd.names[6] = "gripper_roll_left_joint";
+
+        LeftArmCmd.positions[0] = 0;
+        LeftArmCmd.positions[1] = 0;
+        LeftArmCmd.positions[2] = 0;
+        LeftArmCmd.positions[3] = 0;
+        LeftArmCmd.positions[4] = 0;
+        LeftArmCmd.positions[5] = 0;
+        LeftArmCmd.positions[6] = 0;
+
+        // margin of allowable error
+        LeftArmCmd.margins[0] = 0.0;
+        LeftArmCmd.margins[1] = 0.0;
+        LeftArmCmd.margins[2] = 0.0;
+        LeftArmCmd.margins[3] = 0.0;
+        LeftArmCmd.margins[4] = 0.0;
+        LeftArmCmd.margins[5] = 0.0;
+        LeftArmCmd.margins[6] = 0.0;
+    }
+
+    ~set_arm_traj() {}
+
+    void doNothing()
+    {
+    }
+};
+
+std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg) // std::vector <std::vector <float> > traj)
 {
     char sTemp[1024];
     int i;
@@ -67,7 +125,7 @@ std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
         fscanf(fCfg, "%s", sTemp);
         if (strcmp(sTemp, "angles:") == 0)
         {
-            for(i = 0; i < 7; i++)
+            for(i = 0; i < NUMOFLINKS; i++)
             {
                 fscanf(fCfg, "%s", sTemp);
                 curr_angle[i] = atof(sTemp);
@@ -76,11 +134,7 @@ std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
                     curr_angle[i] = -360.0 + curr_angle[i];
 
                 curr_angle[i] = curr_angle[i]*(PI_CONST/180.0);
-
-//                 printf("%-3.3f  ",curr_angle[i]);
             }
-//             printf("\n");
-
 
             // bad way to do this (skip text we don't want to parse)
             fscanf(fCfg, "%s", sTemp);
@@ -110,8 +164,8 @@ std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
             else
             {
                 for(i = 0; i < NUMOFLINKS; i++)
-                    printf("%-3.3f  ",curr_angle[i]);
-                printf("\n");
+                    std::cout << curr_angle[i] << "  ";
+                std::cout << std::endl;
             }
 
             //add angle vector to vector list
@@ -121,16 +175,9 @@ std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
     return traj;
 }
 
+
 int main( int argc, char** argv )
 {
-
-    /*********** Initialize ROS  ****************/
-    ros::init(argc,argv);
-    ros::node *node = new ros::node("arm_trajectory_controller");
-
-    signal(SIGINT,  finalize);
-    signal(SIGQUIT, finalize);
-    signal(SIGTERM, finalize);
 
     /*********** Parse the Trajectory file ************/
     // parse the trajectory file
@@ -144,57 +191,124 @@ int main( int argc, char** argv )
     traj = ReadTrajectoryFile(fCfg);
     printf("There are %i steps to this trajectory\n",traj.size());
 
+    /*********** Initialize ROS  ****************/
+    ros::init(argc,argv);
+    ros::node *node = new ros::node("test_arm_traj"); 
+
+    set_arm_traj sat;
+    node->subscribe("mechanism_state",sat.in, &set_arm_traj::doNothing,10);
+
+    signal(SIGINT,  finalize);
+    signal(SIGQUIT, finalize);
+    signal(SIGTERM, finalize);
+
     /*********** Start moving the robot ************/
-    pr2_mechanism_controllers::JointTraj cmd;
 
-//     std_msgs::Float64 GripperPos;
-//     GripperPos.data = 0.5;
-//     bool open_gripper = 0, close_gripper = 0;
-// 
-//     node->advertise<std_msgs::Float64>("gripper_left_controller/set_command",10);
-//     sleep(.025);
+    double run_time = 15.0;
+    ros::Time iteration_time;
+    bool run_time_set = true;
+    int m,n,g;
+    std_msgs::Float64 GripperPos;
+    GripperPos.data = 1.0;
+    bool open_gripper = 0,close_gripper = 0;
+    node->advertise<pr2_mechanism_controllers::JointPosCmd>("left_arm_commands",10);
+    sleep(1);
+    node->advertise<std_msgs::Float64>("gripper_left_controller/set_command",10);
+    sleep(1);
+    node->publish("left_arm_commands", sat.LeftArmCmd);
+//     node->publish("gripper_left_controller/set_command", GripperPos);
+//     sleep(3);
 
-    int num_points = traj.size();
-    int num_joints = NUMOFLINKS;
+    // close gripper around stick
+//     GripperPos.data = 0.0;
+//     node->publish("gripper_left_controller/set_command", GripperPos);
 
-    cmd.set_points_size(num_points);
+    ros::Time start_time = ros::Time::now();
+    ros::Duration sleep_time(0.01);
 
-    for(int i=0; i < num_points; i++)
-        cmd.points[i].set_positions_size(num_joints);
-
-    for(int i=0; i < num_points; i++)
+    //subtract one for now because the goal is all zeros
+    for (m = 0; m < int(traj.size()); m++)
     {
-        cmd.points[i].positions[0] = traj[i].at(0);
-        cmd.points[i].positions[1] = traj[i].at(1);
-        cmd.points[i].positions[2] = traj[i].at(2);
-        cmd.points[i].positions[3] = traj[i].at(3);
-        cmd.points[i].positions[4] = traj[i].at(4);
-        cmd.points[i].positions[5] = traj[i].at(5);
-        cmd.points[i].positions[6] = traj[i].at(6);
-        cmd.points[i].time = 0.0;
+        iteration_time = ros::Time::now();
+        done = 0;
+
+        open_gripper = close_gripper = true;
+
+        for(n = 0; n < NUMOFLINKS; n++)
+        {
+            sat.LeftArmCmd.positions[n] = double(traj[m].at(n));
+            if(sat.LeftArmCmd.positions[n] != -1)
+                close_gripper = false;
+            if(sat.LeftArmCmd.positions[n] != -2)
+                open_gripper = false;
+        }
+
+        if (open_gripper)
+        {
+            GripperPos.data = 1.0;
+            node->publish("gripper_left_controller/set_command", GripperPos);
+            sleep(.25);
+            continue;
+        }
+        if (close_gripper)
+        {
+            GripperPos.data = 0.0;
+            node->publish("gripper_left_controller/set_command", GripperPos);
+            sleep(2.5);
+            continue;
+        }
+        // publish output
+        node->publish("left_arm_commands", sat.LeftArmCmd);
+
+        while(!done)
+        {
+//             ros::Duration delta_time = ros::Time::now() - start_time;
+            ros::Duration delta_time = ros::Time::now() - iteration_time;
+
+            if(run_time_set && delta_time.toSec() > run_time)
+            {
+                printf("It's taking too long to get to waypoint #%i...\n\n",m+1);
+                g = 6;
+                for (int i = GRIPPER_ROLL_LEFT_JOINT; i <= SHOULDER_PAN_LEFT_JOINT; i++)
+                {
+                    printf("%s: %2.3f (%2.3f)\n", sat.in.joint_states[i].name.c_str(),sat.in.joint_states[i].position, traj[m].at(g));
+                    g--;
+                }
+                printf("\n");
+                break;
+            }
+
+            if ((sat.in.joint_states[GRIPPER_ROLL_LEFT_JOINT].position + MOE >= traj[m].at(6) &&
+                 sat.in.joint_states[GRIPPER_ROLL_LEFT_JOINT].position - MOE <= traj[m].at(6)) &&
+                (sat.in.joint_states[WRIST_FLEX_LEFT_JOINT].position + MOE >= traj[m].at(5) &&
+                 sat.in.joint_states[WRIST_FLEX_LEFT_JOINT].position - MOE <= traj[m].at(5)) &&
+                (sat.in.joint_states[FOREARM_ROLL_LEFT_JOINT].position + MOE >= traj[m].at(4) &&
+                 sat.in.joint_states[FOREARM_ROLL_LEFT_JOINT].position - MOE <= traj[m].at(4)) &&
+                (sat.in.joint_states[ELBOW_FLEX_LEFT_JOINT].position + MOE >= traj[m].at(3) &&
+                 sat.in.joint_states[ELBOW_FLEX_LEFT_JOINT].position - MOE <= traj[m].at(3)) &&
+                (sat.in.joint_states[UPPERARM_ROLL_LEFT_JOINT].position + MOE >= traj[m].at(2) &&
+                 sat.in.joint_states[UPPERARM_ROLL_LEFT_JOINT].position - MOE <= traj[m].at(2)) &&
+                (sat.in.joint_states[SHOULDER_PITCH_LEFT_JOINT].position + MOE >= traj[m].at(1) &&
+                 sat.in.joint_states[SHOULDER_PITCH_LEFT_JOINT].position - MOE <= traj[m].at(1)) &&
+                (sat.in.joint_states[SHOULDER_PAN_LEFT_JOINT].position + MOE >= traj[m].at(0) &&
+                 sat.in.joint_states[SHOULDER_PAN_LEFT_JOINT].position - MOE <= traj[m].at(0)))
+            {
+                printf("\nArm is at waypoint #%i of %i\n\n", m+1, traj.size());
+                g = 6;
+                for (int i = GRIPPER_ROLL_LEFT_JOINT; i <= SHOULDER_PAN_LEFT_JOINT; i++)
+                {
+                    printf("%s: %2.3f (%2.3f)\n", sat.in.joint_states[i].name.c_str(),sat.in.joint_states[i].position, traj[m].at(g));
+                    g--;
+                }
+                printf("\n");
+                done = 1;
+            }
+            sleep_time.sleep();
+        }
     }
 
-
-  node->advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command",1);
-  sleep(1);
-  node->publish("arm_trajectory_command",cmd);
-  sleep(4);
-
-  ros::Time start_time = ros::Time::now();
-  ros::Duration sleep_time = ros::Duration().fromSec(0.01);
-
-/*  while(!done)
-  {
-    ros::Duration delta_time = ros::Time::now() - start_time;
-    sleep_time.sleep();
-  }
-*/
-  ros::fini();
+    node->unsubscribe("mechanism_state");
+    node->unadvertise("left_arm_commands");
+    ros::fini();
+    return 0;
 }
-
-class set_arm_traj
-{
-  public:
-    robot_msgs::MechanismState in;
-    void doNothing() {}
-};

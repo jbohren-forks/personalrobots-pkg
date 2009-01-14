@@ -96,7 +96,12 @@ typedef struct ENV_ROBARM_CONFIG
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
 
-    //end effector goal orientation
+    //alternate end effector goal - for taking in a goal during runtime
+    int UseAlternateGoal;
+    double altEndEffGoal_m[3];
+    double altLinkGoalAngles_d[NUMOFLINKS];
+
+    //goal orientation
     double EndEffGoalOrientation[3][3];
     double GoalOrientationMOE[3][3];
 
@@ -214,6 +219,8 @@ public:
     void SetAllPreds(CMDPSTATE* state);
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
+    void SetEndEffGoal(double* position, int numofpositions);
+    void StateID2Angles(int stateID, double* angles_r);
 
     int	 SizeofCreatedEnv();
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
@@ -250,6 +257,7 @@ private:
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
     double IsPathFeasible();
+
 
     //coordinate frame/angle functions
     void DiscretizeAngles();

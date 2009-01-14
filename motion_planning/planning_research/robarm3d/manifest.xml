@@ -14,7 +14,7 @@
   <url></url>
   
   <export>
-      <cpp cflags="-I${prefix}/src -O3" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+      <cpp cflags="-I${prefix}/src -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
   </export>
   
 </package>

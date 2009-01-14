@@ -1,24 +1,27 @@
 #include <iostream>
 #include "../headers.h"
+#include <pr2_mechanism_controllers/JointTraj.h>
 
 #define VERBOSE 1
-#define MAX_RUNTIME 40.0
+#define MAX_RUNTIME 60.0
 
 void PrintUsage(char *argv[])
 {
     printf("USAGE: %s <cfg file>\n", argv[0]);
 }
 
-int planrobarm(int argc, char *argv[])
+int planrobarmROS(int argc, char *argv[])
 {
     int bRet = 0;
     double allocated_time_secs = MAX_RUNTIME; //in seconds
-    time_t t;
-    time(&t);
+    unsigned int i = 0;
     MDPConfig MDPCfg;
 
     //Initialize Environment (should be called before initializing anything else)
     EnvironmentROBARM environment_robarm;
+
+//NOTE: If you want to set a goal from here, you MUST do it before you run InitializeEnv
+//     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));
 
     if(!environment_robarm.InitializeEnv(argv[1]))
     {
@@ -56,7 +59,7 @@ int planrobarm(int argc, char *argv[])
     planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
     //set search mode (true - settle with first solution)
-    planner.set_search_mode(true);
+//     planner.set_search_mode(true);
 
     printf("start planning...\n");
     bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
@@ -66,16 +69,6 @@ int planrobarm(int argc, char *argv[])
     printf("done planning\n");
     std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
-    // create filename with current time
-    string outputfile = "sol";
-    outputfile.append(".txt");
-
-    FILE* fSol = fopen(outputfile.c_str(), "w");
-    for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-        environment_robarm.PrintState(solution_stateIDs_V[i], true, fSol);
-    }
-    fclose(fSol);
-
 #if !USE_DH
     environment_robarm.CloseKinNode();
 #endif
@@ -84,16 +77,26 @@ int planrobarm(int argc, char *argv[])
     environment_robarm.OutputPlanningStats();
 #endif
 
-//  	//print a path
-//     if(bRet)
-//     {
-// 		//print the solution
-//         printf("Solution is found\n");
-//     }
-//     else
-//         printf("Solution does not exist\n");
-// 
-//     fflush(NULL);
+    //create a ROS JointTraj message for path that was generated
+    double angles_r[NUMOFLINKS];
+    pr2_mechanism_controllers::JointTraj armpath;
+    armpath.set_points_size(solution_stateIDs_V.size());
+
+
+    for(i = 0; i < solution_stateIDs_V.size(); i++)
+        armpath.points[i].set_positions_size(NUMOFLINKS);
+
+    for(i = 0; i < solution_stateIDs_V.size(); i++) 
+    {
+        environment_robarm.StateID2Angles(solution_stateIDs_V[i], angles_r);
+
+        for (unsigned int p = 0; p < 7; p++)
+            armpath.points[i].positions[p] = angles_r[p];
+
+        armpath.points[i].time = 0.0;
+    }
+
+    //send out the message....
 
     return bRet;
 }
@@ -107,7 +110,7 @@ int main(int argc, char *argv[])
     }
 
     //robotarm planning
-    planrobarm(argc, argv);
+    planrobarmROS(argc, argv);
 
     return 0;
 }

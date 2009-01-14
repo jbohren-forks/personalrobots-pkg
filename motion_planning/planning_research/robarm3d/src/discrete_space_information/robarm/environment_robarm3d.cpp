@@ -1068,32 +1068,26 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
         if (EnvROBARM.Trans[2][0][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
             retval = 0;
     }
-//NOTE: Tried to get it working with RPY    
-//     if(EnvROBARMCfg.enforce_upright_gripper)
-//     {
-//         rpy[0] = atan(orientation[1][0] / orientation[0][0]);
-//         rpy[1] = atan(-orientation[2][1] / sqrt(orientation[2][1]*orientation[2][1] + orientation[2][2]*orientation[2][2]));
-//         rpy[2] = atan(orientation[2][1] / orientation[2][2]);
-// 
-//         if(fabs(rpy[0]-EnvROBARMCfg.EndEffGoalRPY[0]) > EnvROBARMCfg.goal_moe_r ||
-//             fabs(rpy[1]-EnvROBARMCfg.EndEffGoalRPY[1]) > EnvROBARMCfg.goal_moe_r ||
-//             fabs(rpy[2]-EnvROBARMCfg.EndEffGoalRPY[2]) > EnvROBARMCfg.goal_moe_r)
-//             retval = 0;
-//     }
+/*NOTE: Tried to get it working with RPY    
+    if(EnvROBARMCfg.enforce_upright_gripper)
+    {
+        rpy[0] = atan(orientation[1][0] / orientation[0][0]);
+        rpy[1] = atan(-orientation[2][1] / sqrt(orientation[2][1]*orientation[2][1] + orientation[2][2]*orientation[2][2]));
+        rpy[2] = atan(orientation[2][1] / orientation[2][2]);
 
+        if(fabs(rpy[0]-EnvROBARMCfg.EndEffGoalRPY[0]) > EnvROBARMCfg.goal_moe_r ||
+            fabs(rpy[1]-EnvROBARMCfg.EndEffGoalRPY[1]) > EnvROBARMCfg.goal_moe_r ||
+            fabs(rpy[2]-EnvROBARMCfg.EndEffGoalRPY[2]) > EnvROBARMCfg.goal_moe_r)
+            retval = 0;
+    }
+*/
     //store the orientation for later use (checking gripper orientation or collision checking for obstacle in gripper)
     for (int i = 0; i < 3; i++)
     {
-//     printf("\n");
         for (int j = 0; j < 3; j++)
-        {
             orientation[i][j] = EnvROBARM.Trans[i][j][7];
-//             printf("%.2f  ",orientation[i][j]);
-        }
     }
-//     printf("\n");
-//     printf("rpy: %.2f %.2f %.2f\n",rpy[0], rpy[1],rpy[2]);
-    
+
     return retval;
 }
 
@@ -1831,6 +1825,7 @@ bool EnvironmentROBARM::InitializeEnvironment()
 //----------------------------------------------------------------------
 
 //-----------interface with outside functions---------------------------
+
 bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 {
     // default values - temporary location
@@ -1849,6 +1844,7 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     EnvROBARMCfg.JointSpaceGoal = 0;
     EnvROBARMCfg.goal_moe_r = .15;
     EnvROBARMCfg.checkEndEffGoalOrientation = 0;
+//     EnvROBARMCfg.UseAlternateGoal = 0;
 
     //parse the parameter file - temporary
     char parFile[] = "params.cfg";
@@ -1867,6 +1863,24 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 	exit(1);
     }
     ReadConfiguration(fCfg);
+
+
+    if(EnvROBARMCfg.UseAlternateGoal == 1)
+    {
+	ContXYZ2Cell(EnvROBARMCfg.altEndEffGoal_m[0],EnvROBARMCfg.altEndEffGoal_m[1],EnvROBARMCfg.altEndEffGoal_m[2], 
+                        &EnvROBARMCfg.EndEffGoalX_c, &EnvROBARMCfg.EndEffGoalY_c, &EnvROBARMCfg.EndEffGoalZ_c);
+	
+        //set goalangle to invalid number
+        EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+    }
+    if(EnvROBARMCfg.UseAlternateGoal == 2)
+    {
+        for(int i = 0; i < 7; i++)
+            EnvROBARMCfg.LinkGoalAngles_d[i] = EnvROBARMCfg.altLinkGoalAngles_d[i];
+
+        //so the goal's xyz location can be calculated after the initialization completes
+        EnvROBARMCfg.JointSpaceGoal = 1;
+    }
 
     //initialize forward kinematics
     if (!EnvROBARMCfg.use_DH)
@@ -1934,6 +1948,7 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 #endif
     return true;
 }
+
 
 bool EnvironmentROBARM::InitializeMDPCfg(MDPConfig *MDPCfg)
 {
@@ -3056,12 +3071,46 @@ void EnvironmentROBARM::ValidateDH2KinematicsLibrary()
     }
 }
 
-double EnvironmentROBARM::IsPathFeasible()
+double EnvironmentROBARM::IsPathFeasible() //a dumb function. fix this
 {
     return (double)sqrt((EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c)*(EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c) +
                         (EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c)*(EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c) +
                         (EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c)*(EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c));
-}                   
+}
+
+void EnvironmentROBARM::SetEndEffGoal(double* position, int numofpositions)
+{
+    //Goal is in world frame (xyz) in meters
+    if(numofpositions == 3)
+    {
+        EnvROBARMCfg.altEndEffGoal_m[0] = position[0];
+        EnvROBARMCfg.altEndEffGoal_m[1] = position[1];
+        EnvROBARMCfg.altEndEffGoal_m[2] = position[2];
+
+        //set goalangle to invalid number
+        EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+
+        //use the alternate goal 
+        EnvROBARMCfg.UseAlternateGoal = 1;
+    }
+    //Goal is a joint space vector in radians
+    else if(numofpositions == 7)
+    {
+        for(int i = 0; i < 7; i++)
+            EnvROBARMCfg.altLinkGoalAngles_d[i] = DEG2RAD(position[i]);
+
+        //so the goal's location can be calculated after the initialization completes
+        EnvROBARMCfg.JointSpaceGoal = 1;
+
+        //use the alternate goal 
+        EnvROBARMCfg.UseAlternateGoal = 2;
+    }
+    else
+    {
+        printf("[SetGoal] Invalid length of input vector.\n");
+        EnvROBARMCfg.UseAlternateGoal = 0;
+    }
+}
 
 
 //-------------------- For Taking Statistics ---------------------------
@@ -3184,5 +3233,24 @@ void EnvironmentROBARM::InitializeStatistics(FILE* fCfg, int n)
 //     }
 }
 
+void EnvironmentROBARM::StateID2Angles(int stateID, double* angles_r)
+{
+    bool bGoal = false;
+    EnvROBARMHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[stateID];
 
+    if(stateID == EnvROBARM.goalHashEntry->stateID)
+        bGoal = true;
+
+    if(bGoal)
+        ComputeContAngles(EnvROBARMCfg.goalcoords, angles_r);
+    else
+        ComputeContAngles(HashEntry->coord, angles_r);
+
+    //convert angles from positive values in radians (from 0->6.28) to centered around 0 (not really needed)
+    for (int i = 0; i < NUMOFLINKS; i++)
+    {
+        if(angles_r[i] >= PI_CONST)
+            angles_r[i] = -2.0*PI_CONST + angles_r[i];
+    }
+}
 

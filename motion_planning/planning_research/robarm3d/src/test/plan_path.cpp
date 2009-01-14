@@ -2,17 +2,14 @@
 #include "../headers.h"
 
 #define VERBOSE 1
-#define MAX_RUNTIME 300.0
-#define NUM_RUNS 150
-#define START 6
-
+#define MAX_RUNTIME 120.0
 
 void PrintUsage(char *argv[])
 {
     printf("USAGE: %s <cfg file>\n", argv[0]);
 }
 
-int planrobarm(int argc, char *argv[], int cntr)
+int planrobarm(int argc, char *argv[])
 {
     int bRet = 0;
     double allocated_time_secs = MAX_RUNTIME; //in seconds
@@ -21,19 +18,20 @@ int planrobarm(int argc, char *argv[], int cntr)
     //Initialize Environment (should be called before initializing anything else)
     EnvironmentROBARM environment_robarm;
 
-    if(!environment_robarm.InitializeEnvForStats(argv[1],cntr))
+//NOTE: If you want to set a goal from here, you MUST do it before you run InitializeEnv
+//     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));
+
+    if(!environment_robarm.InitializeEnv(argv[1]))
     {
         printf("ERROR: InitializeEnv failed\n");
-//         exit(1);
-        return 0;
+        exit(1);
     }
 
     //Initialize MDP Info
     if(!environment_robarm.InitializeMDPCfg(&MDPCfg))
     {
         printf("ERROR: InitializeMDPCfg failed\n");
-//         exit(1);
-        return 0;
+        exit(1);
     }
 
     //plan a path
@@ -47,14 +45,12 @@ int planrobarm(int argc, char *argv[], int cntr)
     {
         printf("ERROR: failed to set start state\n");
         exit(1);
-//         return;
     }
 
     if(planner.set_goal(MDPCfg.goalstateid) == 0)
     {
         printf("ERROR: failed to set goal state\n");
-//         exit(1);
-        return 0;
+        exit(1);
     }
 
     //set epsilon
@@ -71,6 +67,26 @@ int planrobarm(int argc, char *argv[], int cntr)
     printf("done planning\n");
     std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
+    // create filename with current time
+    string outputfile = "sol";
+    outputfile.append(".txt");
+
+    FILE* fSol = fopen(outputfile.c_str(), "w");
+    for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+        environment_robarm.PrintState(solution_stateIDs_V[i], true, fSol);
+    }
+    fclose(fSol);
+
+    //to get the trajectory as an array
+//     double angles_r[NUMOFLINKS];
+//     for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) 
+//     {
+//         environment_robarm.StateID2Angles(solution_stateIDs_V[i], angles_r);
+//         for (int p = 0; p < 7; p++)
+//             printf("% 0.2f  ",angles_r[p]);
+//         printf("\n");
+//     }
+    
 #if !USE_DH
     environment_robarm.CloseKinNode();
 #endif
@@ -90,12 +106,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    for (int i = START; i < NUM_RUNS; i++)
-    {
-        printf("---------------\nRUN #%i\n---------------\n", i);
-        //robotarm planning
-        planrobarm(argc, argv,i);
-    }
+    //robotarm planning
+    planrobarm(argc, argv);
 
     return 0;
 }

@@ -67,7 +67,8 @@ using namespace std;
 #include <robot_kinematics/robot_kinematics.h>
 #include <unistd.h>
 #include <ros/node.h>
-                 
+#include <pr2_mechanism_controllers/JointTraj.h>
+
 using namespace robot_kinematics;
 using namespace KDL;
                  
