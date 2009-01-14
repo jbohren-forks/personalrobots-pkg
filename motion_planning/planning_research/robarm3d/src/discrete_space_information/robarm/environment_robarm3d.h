@@ -91,10 +91,14 @@ typedef struct ENV_ROBARM_CONFIG
     double BaseY_m;
     double BaseZ_m;
 
-    //end effector goal position (goal cell)
+    //end effector goal position (cell)
     short unsigned int EndEffGoalX_c;
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
+
+    //end effector goal orientation
+    double EndEffGoalOrientation[3][3];
+    double GoalOrientationMOE[3][3];
 
     //robot arm dimensions/positions
     double LinkLength_m[NUMOFLINKS];
@@ -134,12 +138,14 @@ typedef struct ENV_ROBARM_CONFIG
     bool endeff_check_only;
     bool use_smooth_actions;
     bool enforce_upright_gripper;
+    bool checkEndEffGoalOrientation;
     bool object_grasped;
     double smoothing_weight;
     double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     double goal_moe_m;
+    double goal_moe_r;
 
     //velocities
     int nSuccActions;
@@ -156,7 +162,8 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_sqrt2_move;
     double cost_sqrt3_move;
 
-    double upright_gripper[3][3];
+    //a bad hack
+    bool JointSpaceGoal;
 
 } EnvROBARMConfig_t;
 
@@ -277,6 +284,7 @@ private:
     void OutputActionCostTable();
     void OutputActions();
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
+    void PrintAbridgedConfiguration();
 
     //compute heuristic
     void InitializeKinNode();
