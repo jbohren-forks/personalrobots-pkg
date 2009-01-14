@@ -199,7 +199,10 @@ class NormalEstimation : public ros::node
       }
 
       // Allocate the extra needed channels
-      cloud_normals_.chan.resize (original_chan_size + 7);     // Allocate 7 more channels
+      if (compute_moments_)
+        cloud_normals_.chan.resize (original_chan_size + 7);     // Allocate 7 more channels
+      else
+        cloud_normals_.chan.resize (original_chan_size + 4);     // Allocate 4 more channels
       cloud_normals_.chan[original_chan_size + 0].name = "nx";
       cloud_normals_.chan[original_chan_size + 1].name = "ny";
       cloud_normals_.chan[original_chan_size + 2].name = "nz";
