@@ -25,6 +25,7 @@ void VocabularyTree::build( const FeatureMatrix& features,
 #ifdef USE_BYTE_SIGNATURES
   // step 0: determine bounds to use for rescaling signatures
   // estimate 5% and 95% quantiles
+  printf("Estimating quantization bounds...\n");
   using namespace boost::accumulators;
   typedef accumulator_set<float, boost::accumulators::features<tag::p_square_quantile> > accumulator_t;
   accumulator_t acc05(quantile_probability = 0.05);
@@ -37,7 +38,7 @@ void VocabularyTree::build( const FeatureMatrix& features,
   }
   bounds_[0] = p_square_quantile(acc05);
   bounds_[1] = p_square_quantile(acc95);
-  printf("Using bounds [%f, %f]\n", bounds_[0], bounds_[1]);
+  printf("\tUsing bounds [%f, %f]\n", bounds_[0], bounds_[1]);
 #endif
   
   // step 1: tree construction
@@ -382,8 +383,13 @@ void VocabularyTree::saveAux(Node* node, FILE* out, std::string indentation)
     fprintf(out, "%sCentroid[0]: \n", indentation.c_str());
   else {
     fprintf(out, "%sCentroid[%d]: ", indentation.c_str(), dim_);
-    for (unsigned int i = 0; i < dim_; ++i)
+    for (unsigned int i = 0; i < dim_; ++i) {
+#ifdef USE_BYTE_SIGNATURES
+      fprintf(out, "%u ", node->centroid[i]);
+#else
       fprintf(out, "%f ", node->centroid[i]);
+#endif
+    }
     fprintf(out, "\n");
   }
 
@@ -424,7 +430,13 @@ void VocabularyTree::loadAux(Node* node, FILE* in, unsigned int indent_level)
 #endif
   }
   for (int i = 0; i < centroid_size; ++i) {
+#ifdef USE_BYTE_SIGNATURES
+    unsigned int elem;
+    fscanf(in, "%u ", &elem);
+    node->centroid[i] = elem;
+#else
     fscanf(in, "%f ", &node->centroid[i]);
+#endif
   }
   fscanf(in, "\n");
 
