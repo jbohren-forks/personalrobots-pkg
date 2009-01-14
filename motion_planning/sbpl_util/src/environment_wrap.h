@@ -50,7 +50,7 @@ class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
 class EnvironmentNAV2D;	        /**< see motion_planning/sbpl/src/discrete_space_information/nav2d/environment_nav2D.h */
 class EnvironmentNAV3DKIN;      /**< see motion_planning/sbpl/src/discrete_space_information/nav3dkin/environment_nav3Dkin.h */
-class ChangedCellsGetter;
+class StateChangeQuery;
 
 // would like to forward-declare, but in mdpconfig.h it's a typedef'ed
 // anonymous struct and GCC chokes on that... great
@@ -59,7 +59,7 @@ class ChangedCellsGetter;
 
 // Would like to forward-declare, but nav2dcell_t is used within a
 // std::vector<> ... see also the comments in
-// sbpl/src/planners/planner.h about the ChangedCellsGetter
+// sbpl/src/planners/planner.h about the StateChangeQuery
 // class. Also, environment_nav2D.h needs some other includes to be
 // present and uses std::vector without the std:: prefix, so we
 // unfortunately have to add a using directive here.
@@ -141,8 +141,7 @@ namespace ompl {
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost) = 0;
     
-    /** \todo XXXX HACKHACKHACK! */
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
     
     CostmapWrap * cm_;
     bool const own_cm_;
@@ -183,7 +182,7 @@ namespace ompl {
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
     
     /** \note This is mutable because GetStateFromPose() can
 	conceivable change the underlying EnvironmentNAV2D, which we
@@ -231,7 +230,7 @@ namespace ompl {
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
     
     unsigned char obst_cost_thresh_;
     

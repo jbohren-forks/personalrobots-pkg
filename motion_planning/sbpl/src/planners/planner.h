@@ -72,7 +72,7 @@ public:
 class DiscreteSpaceInformation;
 
 /**
-   (Temporary?) utility for unified notification of cost changes
+   Utility for unified notification of cost changes
    across all SBPLPlanner subtypes. Ideally we would have a simple
    unified interface, such as std::vector<nav2dcell_t>, but the
    current separation of planner and environment representation code
@@ -83,7 +83,7 @@ class DiscreteSpaceInformation;
    that class in sbpl/src/planners/ADStar/adplanner.h (to be moved up
    the hierarchy when we generalize).
 */
-class ChangedCellsGetter;
+class StateChangeQuery;
 
 class SBPLPlanner
 {
@@ -113,7 +113,7 @@ public:
 
     // Notifies the planner that costs have changed. May need to be specialized for different subclasses in terms of what to
     // do here
-	virtual void costs_changed(ChangedCellsGetter const & changedcells) = 0;
+	virtual void costs_changed(StateChangeQuery const & stateChange) = 0;
   
   /** \return The "epsilon" value of the solution last computed by
       replan(), if such an epsilon is used by the planner. The base

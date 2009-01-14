@@ -1172,7 +1172,7 @@ int ARAPlanner::set_start(int start_stateID)
 
 
 
-void ARAPlanner::costs_changed(ChangedCellsGetter const & changedcells)
+void ARAPlanner::costs_changed(StateChangeQuery const & stateChange)
 {
 
 

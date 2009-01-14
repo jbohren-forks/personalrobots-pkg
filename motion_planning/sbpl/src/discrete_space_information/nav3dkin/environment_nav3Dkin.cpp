@@ -1600,6 +1600,35 @@ void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t> const * cha
 }
 
 
+void EnvironmentNAV3DKIN::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
+{
+	nav2dcell_t cell;
+	EnvNAV3DKIN3Dcell_t affectedcell;
+	EnvNAV3DKINHashEntry_t* affectedHashEntry;
+
+
+	for(int i = 0; i < (int)changedcellsV->size(); i++) 
+	{
+		cell = changedcellsV->at(i);
+			
+		//now iterate over all states that could potentially be affected
+		for(int sind = 0; sind < (int)affectedsuccstatesV.size(); sind++)
+		{
+			affectedcell = affectedsuccstatesV.at(sind);
+
+			//translate to correct for the offset
+			affectedcell.x = affectedcell.x + cell.x;
+			affectedcell.y = affectedcell.y + cell.y;
+
+			//insert only if it was actually generated
+		    affectedHashEntry = GetHashEntry(affectedcell.x, affectedcell.y, affectedcell.theta);
+			if(affectedHashEntry != NULL)
+				succs_of_changededgesIDV->push_back(affectedHashEntry->stateID);
+		}
+	}
+}
+
+
 bool EnvironmentNAV3DKIN::IsObstacle(int x, int y)
 {
 

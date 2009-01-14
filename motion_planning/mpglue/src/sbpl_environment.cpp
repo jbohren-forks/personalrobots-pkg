@@ -48,28 +48,37 @@ namespace {
   }
   
   template<typename env_type>
-  class myChangedCellsGetter
-    : public ChangedCellsGetter
+  class myStateChangeQuery
+    : public StateChangeQuery
   {
   public:
-    myChangedCellsGetter(env_type * env,
-			 std::vector<nav2dcell_t> const & changedcellsV)
+    myStateChangeQuery(env_type * env,
+		       std::vector<nav2dcell_t> const & changedcellsV)
       : env_(env),
 	changedcellsV_(changedcellsV)
     {
     }
     
     // lazy init, because we do not always end up calling this method
-    virtual std::vector<int> const * getPredsOfChangedCells() const
+    virtual std::vector<int> const * getPredecessors() const
     {
       if (predsOfChangedCells_.empty() && ( ! changedcellsV_.empty()))
 	env_->GetPredsofChangedEdges(&changedcellsV_, &predsOfChangedCells_);
       return &predsOfChangedCells_;
     }
     
+    // lazy init, because we do not always end up calling this method
+    virtual std::vector<int> const * getSuccessors() const
+    {
+      if (succsOfChangedCells_.empty() && ( ! changedcellsV_.empty()))
+	env_->GetSuccsofChangedEdges(&changedcellsV_, &succsOfChangedCells_);
+      return &succsOfChangedCells_;
+    }
+    
     env_type * env_;
     std::vector<nav2dcell_t> const & changedcellsV_;
     mutable std::vector<int> predsOfChangedCells_;
+    mutable std::vector<int> succsOfChangedCells_;
   };
   
   
@@ -97,7 +106,7 @@ namespace {
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
     
     /** \note This is mutable because GetStateFromPose() can
 	conceivable change the underlying EnvironmentNAV2D, which we
@@ -135,7 +144,7 @@ namespace {
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
     
     int obst_cost_thresh_;
     
@@ -197,7 +206,7 @@ namespace mpglue {
       return;
 
     // XXXX to do: what a hack...
-    ChangedCellsGetter const * ccg(createChangedCellsGetter(changedcellsV_));
+    StateChangeQuery const * ccg(createStateChangeQuery(changedcellsV_));
     planner->costs_changed(*ccg);
     delete ccg;
     changedcellsV_.clear();
@@ -297,10 +306,10 @@ namespace {
   }
 
 
-  ChangedCellsGetter const * SBPLEnvironment2D::
-  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  StateChangeQuery const * SBPLEnvironment2D::
+  createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
   {
-    return new myChangedCellsGetter<EnvironmentNAV2D>(env_, changedcellsV);
+    return new myStateChangeQuery<EnvironmentNAV2D>(env_, changedcellsV);
   }
   
   
@@ -482,10 +491,10 @@ namespace {
   }
 
 
-  ChangedCellsGetter const * SBPLEnvironment3DKIN::
-  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  StateChangeQuery const * SBPLEnvironment3DKIN::
+  createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
   {
-    return new myChangedCellsGetter<EnvironmentNAV3DKIN>(env_, changedcellsV);
+    return new myStateChangeQuery<EnvironmentNAV3DKIN>(env_, changedcellsV);
   }
   
   

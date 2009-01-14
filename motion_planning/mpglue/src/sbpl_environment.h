@@ -45,7 +45,7 @@
 
 class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
-class ChangedCellsGetter;
+class StateChangeQuery;
 
 // would like to forward-declare, but in mdpconfig.h it's a typedef'ed
 // anonymous struct and GCC chokes on that... great
@@ -54,7 +54,7 @@ class ChangedCellsGetter;
 
 // Would like to forward-declare, but nav2dcell_t is used within a
 // std::vector<> ... see also the comments in
-// sbpl/src/planners/planner.h about the ChangedCellsGetter
+// sbpl/src/planners/planner.h about the StateChangeQuery
 // class. Also, environment_nav2D.h needs some other includes to be
 // present and uses std::vector without the std:: prefix, so we
 // unfortunately have to add a using directive here.
@@ -144,8 +144,7 @@ namespace mpglue {
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost) = 0;
     
-    /** \todo XXXX HACKHACKHACK! */
-    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
+    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
     
     boost::shared_ptr<Costmap> cm_;
     boost::shared_ptr<IndexTransform const> it_;
