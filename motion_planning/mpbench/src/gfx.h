@@ -35,7 +35,7 @@
 #ifndef MPBENCH_BENCHMARK_GFX_HPP
 #define MPBENCH_BENCHMARK_GFX_HPP
 
-#include <mpbench/setup.hpp>
+#include <mpbench/setup.h>
 #include <mpglue/sbpl_util.hh>
 #include <mpglue/footprint.h>
 #include <mpglue/plan.h>

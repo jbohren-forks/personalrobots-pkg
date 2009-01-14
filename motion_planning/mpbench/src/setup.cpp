@@ -34,7 +34,7 @@
 
 /** \file setup.cpp  */
 
-#include "setup.hpp"
+#include "setup.h"
 #include "parse.h"
 #include <costmap_2d/costmap_2d.h>
 #include <sfl/gplan/GridFrame.hpp>

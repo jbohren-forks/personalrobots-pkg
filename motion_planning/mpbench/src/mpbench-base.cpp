@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "setup.hpp"
-#include "gfx.hpp"
+#include "setup.h"
+#include "gfx.h"
 #include <costmap_2d/costmap_2d.h>
 #include <mpglue/sbpl_util.hh>
 #include <mpglue/environment.h>

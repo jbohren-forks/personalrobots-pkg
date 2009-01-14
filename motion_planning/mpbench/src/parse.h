@@ -40,7 +40,7 @@
 // entire file
 #ifdef MPBENCH_HAVE_EXPAT
 
-#include <mpbench/setup.hpp>
+#include <mpbench/setup.h>
 #include <expat.h>
 #include <boost/shared_ptr.hpp>
 #include <string>

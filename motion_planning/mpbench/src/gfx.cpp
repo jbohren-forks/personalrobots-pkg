@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "gfx.hpp"
+#include "gfx.h"
 
 #include <mpglue/environment.h>
 #include <costmap_2d/costmap_2d.h>
