@@ -58,6 +58,7 @@ struct Box2D3D {
   double radius3d;
   CvRect box2d;
   string status;
+  int id;
 };
 
 // Computes the median of the non-zero values in array arr between rows r1-r2 (inclusive) 
