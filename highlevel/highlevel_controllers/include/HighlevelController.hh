@@ -159,13 +159,14 @@ public:
 	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
 	    lock();	 
 	    if ((ros::Time::now() - lastPlan) < timeout && timeout.toSec() != 0.0) {
-	      this->stateMsg.aborted = true;
+	      this->stateMsg.aborted = 1;
 	      ROS_ERROR("Controller timed out.");
+	      deactivate();
 	    }	   
 	    handlePlanningFailure();
 	    unlock();	    
 	  } else {
-	    this->stateMsg.aborted = false;
+	    this->stateMsg.aborted = 0;
 	    lastPlan = ros::Time::now();
 	  }
 	}
@@ -239,7 +240,6 @@ protected:
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
-    this->stateMsg.aborted = 0;
 
     handleDeactivation();
   }
