@@ -292,21 +292,24 @@ pickle.dump(stampedKeyFrameTrajectory, output_keyframe_trajectory)
 output_keyframe_trajectory.close()
 
 # pickling the skeleton
-if 1 and skel:
-  pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
+if skel:
+  id_to_timestamp = dict([ (i, stampedTrajectory[i][0]) for i in range(0,len(stampedTrajectory)) ])
+  skel_nodes = [(id_to_timestamp[f.id], skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes]
   nodepts = pts.values()
+  output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
+  pickle.dump(nodepts, output_skeleton_nodes)
+  output_skeleton_nodes.close()
+  
+  pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
 
   skel_edges = []
   for (f0,f1) in skel.edges:
     p0 = pts[f0]
     p1 = pts[f1]
     skel_edges.append([p0, p1])
-  output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
   output_skeleton_edges = open('skeleton_edges.pkl','wb')
-  pickle.dump(nodepts, output_skeleton_nodes)
   pickle.dump(skel_edges, output_skeleton_edges)
   output_skeleton_edges.close()
-  output_skeleton_nodes.close()
     
 for vo in vos:
   print vo.name()
