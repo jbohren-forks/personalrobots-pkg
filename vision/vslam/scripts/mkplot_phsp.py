@@ -293,7 +293,7 @@ output_keyframe_trajectory.close()
 
 # pickling the skeleton
 if skel:
-  id_to_timestamp = dict([ (i, stampedTrajectory[i][0]) for i in range(0,len(stampedTrajectory)) ])
+  id_to_timestamp = dict([ (i, stampedTrajectory[0][i][0]) for i in range(0,len(stampedTrajectory[0])) ])
   print 'dict', id_to_timestamp
   skel_nodes = [(id_to_timestamp[f.id], skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes]
   output_skeleton_nodes = open('skeleton_nodes.pkl','wb')
