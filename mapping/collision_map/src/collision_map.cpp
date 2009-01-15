@@ -103,7 +103,7 @@ class CollisionMapper : public ros::node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      get_published_topics (&t_list);
+      getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
@@ -121,30 +121,30 @@ class CollisionMapper : public ros::node
     void
       updateParametersFromServer ()
     {
-      if (has_param ("~leaf_width_x")) get_param ("~leaf_width_x", leaf_width_.x);
-      if (has_param ("~leaf_width_y")) get_param ("~leaf_width_y", leaf_width_.y);
-      if (has_param ("~leaf_width_z")) get_param ("~leaf_width_z", leaf_width_.z);
+      if (hasParam ("~leaf_width_x")) getParam ("~leaf_width_x", leaf_width_.x);
+      if (hasParam ("~leaf_width_y")) getParam ("~leaf_width_y", leaf_width_.y);
+      if (hasParam ("~leaf_width_z")) getParam ("~leaf_width_z", leaf_width_.z);
 
-      if (has_param ("~robot_max_x"))
+      if (hasParam ("~robot_max_x"))
       {
         double rx;
-        get_param ("~robot_max_x", rx);
+        getParam ("~robot_max_x", rx);
         robot_max_.x = rx * rx;
       }
-      if (has_param ("~robot_max_y"))
+      if (hasParam ("~robot_max_y"))
       {
         double ry;
-        get_param ("~robot_max_y", ry);
+        getParam ("~robot_max_y", ry);
         robot_max_.y = ry * ry;
       }
-      if (has_param ("~robot_max_z"))
+      if (hasParam ("~robot_max_z"))
       {
         double rz;
-        get_param ("~robot_max_z", rz);
+        getParam ("~robot_max_z", rz);
         robot_max_.z = rz * rz;
       }
 
-      if (has_param ("~min_nr_points")) get_param ("~min_nr_points", min_nr_points_);
+      if (hasParam ("~min_nr_points")) getParam ("~min_nr_points", min_nr_points_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
