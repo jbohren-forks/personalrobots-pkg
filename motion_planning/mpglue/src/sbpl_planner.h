@@ -71,6 +71,13 @@ namespace mpglue {
     SBPLPlannerWrap(boost::shared_ptr<SBPLEnvironment> environment,
 		    boost::shared_ptr<SBPLPlanner> planner);
     
+    // grr, shared_ptr can be used covariantly...
+    virtual boost::shared_ptr<SBPLPlannerStats> copyMyStats() const
+    {
+      boost::shared_ptr<SBPLPlannerStats> stats(stats_.copy());
+      return stats;
+    }
+    
   protected:
     virtual void preCreatePlan() throw(std::exception);
     virtual boost::shared_ptr<waypoint_plan_t> doCreatePlan() throw(std::exception);
