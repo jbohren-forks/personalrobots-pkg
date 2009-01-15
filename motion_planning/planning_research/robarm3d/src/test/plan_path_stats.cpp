@@ -4,7 +4,7 @@
 #define VERBOSE 1
 #define MAX_RUNTIME 300.0
 #define NUM_RUNS 150
-#define START 6
+#define START 10
 
 
 void PrintUsage(char *argv[])

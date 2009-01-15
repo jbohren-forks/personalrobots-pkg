@@ -1082,12 +1082,14 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
     }
 */
     //store the orientation for later use (checking gripper orientation or collision checking for obstacle in gripper)
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-            orientation[i][j] = EnvROBARM.Trans[i][j][7];
+    if(EnvROBARMCfg.enforce_upright_gripper ||  EnvROBARMCfg.checkEndEffGoalOrientation)
+    { 
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+                orientation[i][j] = EnvROBARM.Trans[i][j][7];
+        }
     }
-
     return retval;
 }
 
@@ -3214,11 +3216,11 @@ void EnvironmentROBARM::InitializeStatistics(FILE* fCfg, int n)
 
     //end effector goal x
     fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.EndEffGoalX_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth;
+    EnvROBARMCfg.EndEffGoalX_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth + 0.5;
     fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.EndEffGoalY_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth;
+    EnvROBARMCfg.EndEffGoalY_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth + 0.5;
     fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.EndEffGoalZ_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth;
+    EnvROBARMCfg.EndEffGoalZ_c = atof(sTemp)/EnvROBARMCfg.GridCellWidth + 0.5;
 
 
 //         if(stop == n)
