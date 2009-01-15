@@ -1,0 +1,6 @@
+<package>
+  <description>Vijay's prototype idea of a reatime (single thread) scheduler</description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="Experimental" notes=""/>
+</package>
