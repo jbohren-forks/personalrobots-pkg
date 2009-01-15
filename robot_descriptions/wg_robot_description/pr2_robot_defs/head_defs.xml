@@ -19,7 +19,7 @@
     </joint>
 
     <link name="${name}_mount_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
       <inertial>
@@ -124,7 +124,7 @@
     <joint name="${name}_joint" type="fixed" />
 
     <sensor name="${name}_link" type="camera">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -228,7 +228,7 @@
     </transmission>
 
     <link name="${name}_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -278,7 +278,7 @@
     </transmission>
 
     <link name="${name}_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -313,11 +313,11 @@
       <insert_block name="origin" />
     </pr2_head_pan>
 
-    <pr2_head_tilt name="${name}_tilt" parent="${name}_pan">
+    <pr2_head_tilt name="${name}_tilt" parent="${name}_pan_link">
       <origin xyz="0.058 0 0" rpy="0 0 0" />
     </pr2_head_tilt>
 
-    <stereo_camera name="stereo" parent="${name}_tilt">
+    <stereo_camera name="stereo" parent="${name}_tilt_link">
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
     </stereo_camera>
   </macro>

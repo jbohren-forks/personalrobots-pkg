@@ -1,6 +1,8 @@
 #ifndef _VOCABULARY_TREE_H_
 #define _VOCABULARY_TREE_H_
 
+#define USE_BYTE_SIGNATURES
+
 #include <vector>
 #include <map>
 #include <iterator>
@@ -11,15 +13,20 @@
 #include <boost/noncopyable.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
+#include <boost/cstdint.hpp>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib> // TODO: for abort, maybe can remove
 #include "place_recognition/kmeans.h" // TODO: only for FeatureMatrix typedef
 
 namespace vision {
 
+using boost::uint8_t;
+
 // TODO: template on feature dimension / matrix type?
 //       good for speed, memory management...
 // TODO: const correctness in API
+// NOTE: training requires float signatures, query/insert require uchar signatures
 class VocabularyTree : boost::noncopyable
 {
 public:
@@ -57,12 +64,33 @@ public:
 
   //! Find the top N database vectors matching the query
   template< typename OutputIterator >
+#ifdef USE_BYTE_SIGNATURES
+  void find(const uint8_t* query, unsigned int num_features, unsigned int N,
+            OutputIterator output);
+#else
   void find(const FeatureMatrix& query, unsigned int N, OutputIterator output);
+#endif
 
   //! Save an image represented by its feature descriptors for future lookup
+#ifdef USE_BYTE_SIGNATURES
+  unsigned int insert(const uint8_t* image_features, unsigned int num_features);
+#else
   unsigned int insert(const FeatureMatrix& image_features);
+#endif
 
-  // TODO: combined find + insertion for efficiency? findAndRetain & insertRetainedQuery?
+  //! Find the top N database vectors matching the query, then add the query
+  //! to the database. ~2x as fast as calling find and insert separately.
+  template< typename OutputIterator >
+#ifdef USE_BYTE_SIGNATURES
+  unsigned int findAndInsert(const uint8_t* features, unsigned int num_features,
+                             unsigned int N, OutputIterator output);
+#else
+  unsigned int findAndInsert(const FeatureMatrix& features, unsigned int N,
+                             OutputIterator output);
+#endif
+
+  
+  // TODO: combined query + conditional insert?
 
   //! Returns number of images saved in the database
   unsigned int databaseSize() { return db_vectors_.size(); }
@@ -71,7 +99,7 @@ public:
   void save(const std::string& file);
   void load(const std::string& file);
   
-private:
+//private:
   typedef std::map<unsigned int, unsigned int> InvertedFile;
   typedef std::back_insert_iterator< std::vector<unsigned int> > IdOutputIterator;
   
@@ -79,9 +107,19 @@ private:
   // TODO: think more on child memory management
   struct Node
   {
-    Node() : weight(0.0f) {}
+    Node() : weight(0.0f) {
+#ifdef USE_BYTE_SIGNATURES
+      centroid = NULL;
+#endif
+    }
+
+#ifdef USE_BYTE_SIGNATURES
+    ~Node() { free(centroid); }
     
+    uint8_t* centroid;
+#else
     Eigen::VectorXf centroid;
+#endif
     std::vector<Node*> children;
     InvertedFile inverted_file;
     float weight;
@@ -89,6 +127,8 @@ private:
 
   typedef std::map< Node*, float > ImageVector;
 
+  Node* newNode();
+  
   void clearDatabaseAux(Node* node);
   
   void saveAux(Node* node, FILE* out, std::string indentation = "");
@@ -102,16 +142,28 @@ private:
                               const std::vector<unsigned int>& input,
                               Node* node, unsigned int level);
 
+#ifdef USE_BYTE_SIGNATURES
+  Node* findNearestChild(Node* node, const uint8_t* feature);
+#else
   Node* findNearestChild(Node* node, const FeatureMatrix::RowXpr& feature);
+#endif
 
   void addFeature(Node* node, unsigned int object_id,
                   const FeatureMatrix::RowXpr& feature);
-  
+#ifdef USE_BYTE_SIGNATURES
+  void addFeature(Node* node, unsigned int object_id, const uint8_t* feature);
+
+  void addFeatureToQuery(Node* node, ImageVector& vec, const uint8_t* feature);
+
+  void addFeatureToDatabaseVector(Node* node, unsigned int object_id,
+                                  const uint8_t* feature);
+#else  
   void addFeatureToQuery(Node* node, ImageVector& vec,
                          const FeatureMatrix::RowXpr& feature);
 
   void addFeatureToDatabaseVector(Node* node, unsigned int object_id,
                                   const FeatureMatrix::RowXpr& feature);
+#endif
 
   float tfIdfWeight(size_t N_i);
   
@@ -136,6 +188,8 @@ private:
   unsigned int levels_; // max # levels
   unsigned int dim_; // descriptor dimension
   std::vector< ImageVector > db_vectors_; // precomputed database vectors
+  float bounds_[2];
+  static const int QUANTIZE_N = 15; // TODO: OK to leave this hard-coded?
 };
 
 
@@ -143,21 +197,32 @@ inline VocabularyTree::VocabularyTree()
   : root_(NULL), k_(0), levels_(0), dim_(0)
 {}
 
+inline VocabularyTree::Node* VocabularyTree::newNode()
+{
+  Node* node = pool_.construct();
+  if (node == NULL) {
+    printf("Unable to construct node - pool out of memory!\n");
+    abort();
+  }
+  return node;
+}
+
+#ifdef USE_BYTE_SIGNATURES
 template< typename OutputIterator >
-void VocabularyTree::find(const FeatureMatrix& query, unsigned int N,
-                          OutputIterator output)
+void VocabularyTree::find(const uint8_t* query, unsigned int num_features,
+                          unsigned int N, OutputIterator output)
 {
   ImageVector query_vec;
 
-  for (int i = 0; i < query.rows(); ++i)
-    addFeatureToQuery(root_, query_vec, query.row(i));
+  for (unsigned int i = 0; i < num_features; ++i)
+    addFeatureToQuery(root_, query_vec, query + i*dim_);
   normalizeL1(query_vec);
-  printf("Size of query_vec: %u\n", query_vec.size());
+  //printf("Size of query_vec: %u\n", query_vec.size());
 
   // accumulate the best N matches
   using namespace boost::accumulators;
   typedef tag::tail<left> bestN_tag;
-  accumulator_set<Match, features<bestN_tag> > acc(bestN_tag::cache_size = N);
+  accumulator_set<Match, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
 
   // TODO: only compute distances against objects from inverted files
   for (unsigned int i = 0; i < db_vectors_.size(); ++i) {
@@ -168,19 +233,111 @@ void VocabularyTree::find(const FeatureMatrix& query, unsigned int N,
   extractor<bestN_tag> bestN;
   std::copy(bestN(acc).begin(), bestN(acc).end(), output);
 }
+#else
+template< typename OutputIterator >
+void VocabularyTree::find(const FeatureMatrix& query, unsigned int N,
+                          OutputIterator output)
+{
+  ImageVector query_vec;
+
+  for (int i = 0; i < query.rows(); ++i)
+    addFeatureToQuery(root_, query_vec, query.row(i));
+  normalizeL1(query_vec);
+  //printf("Size of query_vec: %u\n", query_vec.size());
+
+  // accumulate the best N matches
+  using namespace boost::accumulators;
+  typedef tag::tail<left> bestN_tag;
+  accumulator_set<Match, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
+
+  // TODO: only compute distances against objects from inverted files
+  for (unsigned int i = 0; i < db_vectors_.size(); ++i) {
+    float distance = distanceL1(query_vec, db_vectors_[i]);
+    acc( Match(i, distance) );
+  }
+
+  extractor<bestN_tag> bestN;
+  std::copy(bestN(acc).begin(), bestN(acc).end(), output);
+}
+#endif
+
+#ifdef USE_BYTE_SIGNATURES
+template< typename OutputIterator >
+unsigned int VocabularyTree::findAndInsert(const uint8_t* features,
+                                           unsigned int num_features,
+                                           unsigned int N, OutputIterator output)
+{
+  unsigned int id = db_vectors_.size();
+  db_vectors_.resize(id + 1);
+  for (unsigned int i = 0; i < num_features; ++i)
+    addFeatureToDatabaseVector(root_, id, features + i*dim_);
+  normalizeL1(db_vectors_[id]);
+
+  // accumulate the best N matches
+  using namespace boost::accumulators;
+  typedef tag::tail<left> bestN_tag;
+  accumulator_set<Match, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
+
+  // TODO: only compute distances against objects from inverted files
+  for (unsigned int i = 0; i < id; ++i) {
+    float distance = distanceL1(db_vectors_[id], db_vectors_[i]);
+    acc( Match(i, distance) );
+  }
+
+  extractor<bestN_tag> bestN;
+  std::copy(bestN(acc).begin(), bestN(acc).end(), output);
+  
+  return id;
+}
+#else
+template< typename OutputIterator >
+unsigned int VocabularyTree::findAndInsert(const FeatureMatrix& features,
+                                           unsigned int N, OutputIterator output)
+{
+  // Construct query vector appended to database
+  unsigned int id = db_vectors_.size();
+  db_vectors_.resize(id + 1);
+  for (int i = 0; i < features.rows(); ++i)
+    addFeatureToDatabaseVector(root_, id, features.row(i));
+  normalizeL1(db_vectors_[id]);
+
+  // accumulate the best N matches
+  using namespace boost::accumulators;
+  typedef tag::tail<left> bestN_tag;
+  accumulator_set<Match, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
+
+  // TODO: only compute distances against objects from inverted files
+  for (unsigned int i = 0; i < id; ++i) {
+    float distance = distanceL1(db_vectors_[id], db_vectors_[i]);
+    acc( Match(i, distance) );
+  }
+
+  extractor<bestN_tag> bestN;
+  std::copy(bestN(acc).begin(), bestN(acc).end(), output);
+  
+  return id;
+}
+#endif
 
 inline float VocabularyTree::tfIdfWeight(size_t N_i)
 {
+  // TODO: this is kludgy, but can't allow inf weights!
+  if (N_i == 0)
+    return 1.0f;
   return log( (float)db_vectors_.size() / (float)N_i );
 }
 
 inline void VocabularyTree::normalizeL1(ImageVector& vec)
 {
+  assert(!vec.empty());
+
   float sum = 0.0f;
   for (ImageVector::iterator i = vec.begin(), ie = vec.end();
        i != ie; ++i)
     sum += i->second;
 
+  assert(sum != 0.0f);
+  
   float inv_sum = 1.0f / sum;
   for (ImageVector::iterator i = vec.begin(), ie = vec.end();
        i != ie; ++i)

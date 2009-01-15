@@ -120,10 +120,14 @@ class ArmState extends AgentTimeline {
  * Encapsulate Behaviors that have a state of active or inactive
  */
 class Behavior extends AgentTimeline {
-	predicate Inactive{}
+	predicate Inactive{
+	  bool aborted;
+	  bool preempted;
+	}
 
 	predicate Active{
 	  int dispatch_time; // The time at which the goal was dispatched
+	  int timeout; // The timelimit for the sum of all planner runs
 	  precedes(dispatch_time, start); // This is a <= constraint
 	}
 

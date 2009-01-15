@@ -1002,6 +1002,24 @@ bool EnvironmentNAV3DKIN::InitializeEnv(const char* sEnvFile, const vector<sbpl_
 }
 
 
+bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
+					const unsigned char* mapdata,
+					const vector<sbpl_2Dpt_t> & perimeterptsV,
+					double cellsize_m, double nominalvel_mpersecs,
+					double timetoturn45degsinplace_secs, 
+					unsigned char obsthresh)
+{
+  // use (0,0,0) for start and goal, and default goal tolerances, all
+  // this is not really used anyway at the moment
+  return InitializeEnv(width, height, mapdata,
+		       0, 0, 0, 0, 0, 0,
+		       ENVNAV3DKIN_DEFAULT_TOL_XY,
+		       ENVNAV3DKIN_DEFAULT_TOL_XY,
+		       ENVNAV3DKIN_DEFAULT_TOL_TH,
+		       perimeterptsV, cellsize_m, nominalvel_mpersecs,
+		       timetoturn45degsinplace_secs, obsthresh);
+}
+
 
 bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					const unsigned char* mapdata,
@@ -1470,6 +1488,12 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 }
 
 
+void EnvironmentNAV3DKIN::SetGoalTolerance(double tol_x, double tol_y, double tol_theta)
+{
+  /* not used yet */
+}
+
+
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 
@@ -1571,6 +1595,35 @@ void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t> const * cha
 		    affectedHashEntry = GetHashEntry(affectedcell.x, affectedcell.y, affectedcell.theta);
 			if(affectedHashEntry != NULL)
 				preds_of_changededgesIDV->push_back(affectedHashEntry->stateID);
+		}
+	}
+}
+
+
+void EnvironmentNAV3DKIN::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
+{
+	nav2dcell_t cell;
+	EnvNAV3DKIN3Dcell_t affectedcell;
+	EnvNAV3DKINHashEntry_t* affectedHashEntry;
+
+
+	for(int i = 0; i < (int)changedcellsV->size(); i++) 
+	{
+		cell = changedcellsV->at(i);
+			
+		//now iterate over all states that could potentially be affected
+		for(int sind = 0; sind < (int)affectedsuccstatesV.size(); sind++)
+		{
+			affectedcell = affectedsuccstatesV.at(sind);
+
+			//translate to correct for the offset
+			affectedcell.x = affectedcell.x + cell.x;
+			affectedcell.y = affectedcell.y + cell.y;
+
+			//insert only if it was actually generated
+		    affectedHashEntry = GetHashEntry(affectedcell.x, affectedcell.y, affectedcell.theta);
+			if(affectedHashEntry != NULL)
+				succs_of_changededgesIDV->push_back(affectedHashEntry->stateID);
 		}
 	}
 }

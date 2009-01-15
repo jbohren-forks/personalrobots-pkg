@@ -302,9 +302,8 @@ namespace ros {
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
-      //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
       tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
-				 boost::bind(&MoveBase::tiltCloudCallbackTransform, this, _1),
+				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", "map", 50);
       subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
       subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
@@ -445,7 +444,7 @@ namespace ros {
       unlock();
     }
 
-    void MoveBase::tiltCloudCallbackTransform(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
+    void MoveBase::tiltCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
     {
       lock();
       tiltScanBuffer_->buffer_cloud(*message);

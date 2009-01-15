@@ -1,4 +1,0 @@
-object_msg obj
-int32 resolution
----
-graspPoint_msg[] graspPoints

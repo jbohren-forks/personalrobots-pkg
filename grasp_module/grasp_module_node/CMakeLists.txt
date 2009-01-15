@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(grasp_module_node)
-add_definitions(-Wall)
-rospack_add_executable(gm_node src/main.cpp src/graspModuleNode.cpp)
-rospack_add_executable(gm_test src/gm_test.cpp)

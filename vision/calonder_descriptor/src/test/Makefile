@@ -6,9 +6,9 @@ CV_LATEST = $(shell rospack find opencv_latest)/opencv
 CFLAGS += -I$(CV_LATEST)/include/opencv
 LDFLAGS = -L$(CV_LATEST)/lib -lcv -lhighgui
 # Boost
+BOOST_ROOT = $(shell rospack find boost)/boost
 CFLAGS += -I$(BOOST_ROOT)/include
-LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-mt -lboost_filesystem-mt
-#LDFLAGS += -lboost_thread-mt
+LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-mt -lboost_thread-mt
 # Descriptor
 CALONDER = $(shell rospack find calonder_descriptor)
 CFLAGS += -I/usr/include -I$(CALONDER)/include
@@ -18,12 +18,13 @@ STAR_DIR = $(shell rospack find star_detector)
 CFLAGS += -I/usr/include -I$(STAR_DIR)/include -I$(STAR_DIR)/src/test
 LDFLAGS += -L$(STAR_DIR)/lib -lstarfeature
 # Google CPU profiler
-CFLAGS += -I/usr/local/include
-LDFLAGS += -L/usr/local/lib -lprofiler
+#CFLAGS += -I/usr/local/include
+#LDFLAGS += -L/usr/local/lib -lprofiler
 # GSL
 #CFLAGS += -DHAVE_GSL
 #LDFLAGS += -L/usr/lib -lgsl -lgslcblas
 # SIFT (get rid of this?)
+SIFT_ROOT = /u/mihelich/packages/cvx_sift
 CFLAGS += -I$(SIFT_ROOT)
 LDFLAGS += -L$(SIFT_ROOT)/lib -lsift
 # FAST

@@ -22,16 +22,16 @@
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
   <include filename="./groups_r_arm.xml" />
 
-  <pr2_arm side="r" reflect="1" parent="base">
+  <pr2_arm side="r" reflect="1" parent="base_link">
     <origin xyz="0.0 0.0 1.0" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="r" parent="r_wrist_roll" />
+  <pr2_gripper side="r" parent="r_wrist_roll_link" />
 
   <!-- Solid Base -->
   <joint name="base_joint" type="planar"> 
   </joint>
   <link name="base_link"><!-- link specifying the base of the robot -->
-    <parent name=" world" />
+    <parent name="world" />
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" 0 0 0.002 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
     <joint name="base_joint" />

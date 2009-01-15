@@ -306,11 +306,14 @@ void SerialRobot::Initialize(int nJoints)
 {
    numberJoints = nJoints;
    joints = new Joint[numberJoints];
+   min_joint_limits_.resize(numberJoints);
+   max_joint_limits_.resize(numberJoints);
 }
 
 SerialRobot::~SerialRobot()
 {
-   joints = NULL;
+  delete [] joints;
+//   joints = NULL;
 };
 
 void SerialRobot::SetHomePosition(NEWMAT::Matrix g)
@@ -330,6 +333,8 @@ void SerialRobot::AddJoint(NEWMAT::Matrix jin, double p[])
    joints[jointCount].twist = jin;
    joints[jointCount].jointId = jointCount;
    joints[jointCount].linkPose = Translate(p);
+   min_joint_limits_[jointCount] = -M_PI;
+   max_joint_limits_[jointCount] = M_PI;
 #ifdef DEBUG
    cout << "AddJoint:: " << joints[jointCount].linkPose << endl;
    cout << "Link pose" << endl <<  joints[jointCount].linkPose << endl;
@@ -443,7 +448,35 @@ void SerialRobot::AddJoint(NEWMAT::Matrix p, NEWMAT::Matrix axis, string joint_t
   AddJoint(jj,p1);
 };
 
+void SerialRobot::SetJointLimits(const std::vector<double> &min_joint_limits, const std::vector<double> &max_joint_limits)
+{
+  if((int) min_joint_limits.size() != numberJoints || (int) max_joint_limits.size() != numberJoints)
+  {
+    printf("SerialRobot::SetJointLimits:: number of elements in min or max vectors do not match number of joint %d",jointCount);
+  }
+  for(int i=0; i < numberJoints; i++)
+  {
+    min_joint_limits_[i] = min_joint_limits[i];
+    max_joint_limits_[i] = max_joint_limits[i];
+  }
+}
 
+bool SerialRobot::CheckJointLimits(const std::vector<double> &joint_values)
+{
+  for(int i=0; i<numberJoints; i++)
+  {
+    if(!CheckJointLimits(joint_values[i],i))
+      return false;
+  }
+  return true;
+}
+
+bool SerialRobot::CheckJointLimits(const double &joint_value, const int &joint_num)
+{
+ if(joint_value < min_joint_limits_[joint_num] || joint_value > max_joint_limits_[joint_num])
+   return false;
+ return true;
+}
 
 NEWMAT::Matrix SerialRobot::GetLinkPose(int id, double angles[])
 {

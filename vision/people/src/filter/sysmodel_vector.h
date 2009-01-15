@@ -38,7 +38,6 @@
 #define SYSMODEL_VECTOR_H
 
 
-#include "state_vector.h"
 #include "gaussian_vector.h"
 #include <model/systemmodel.h>
 #include <pdf/conditionalpdf.h>
@@ -49,11 +48,11 @@ namespace BFL
 {
 
   class SysPdfVector 
-    : public ConditionalPdf<StateVector, StateVector>
+    : public ConditionalPdf<tf::Vector3, tf::Vector3>
   {
   public:
     /// Constructor
-    SysPdfVector(const StateVector& sigma);
+    SysPdfVector(const tf::Vector3& sigma);
     
     /// Destructor
     virtual ~SysPdfVector();
@@ -62,9 +61,9 @@ namespace BFL
     void SetDt(double dt) {dt_ = dt;};
 
     // Redefining pure virtual methods
-    virtual bool SampleFrom (BFL::Sample<StateVector>& one_sample, int method, void *args) const;  
-    virtual StateVector ExpectedValueGet() const; // not applicable
-    virtual Probability ProbabilityGet(const StateVector& state) const; // not applicable
+    virtual bool SampleFrom (BFL::Sample<tf::Vector3>& one_sample, int method, void *args) const;  
+    virtual tf::Vector3 ExpectedValueGet() const; // not applicable
+    virtual Probability ProbabilityGet(const tf::Vector3& state) const; // not applicable
     virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
 
 
@@ -81,11 +80,11 @@ namespace BFL
 
 
   class SysModelVector
-    : public SystemModel<StateVector>
+    : public SystemModel<tf::Vector3>
   {
   public:
-    SysModelVector(const StateVector& sigma)
-      :SystemModel<StateVector>(new SysPdfVector(sigma))
+    SysModelVector(const tf::Vector3& sigma)
+      :SystemModel<tf::Vector3>(new SysPdfVector(sigma))
     {};
 
     /// destructor

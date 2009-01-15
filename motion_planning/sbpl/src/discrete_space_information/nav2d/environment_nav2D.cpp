@@ -434,6 +434,15 @@ bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 }
 
 
+bool EnvironmentNAV2D::InitializeEnv(int width, int height,
+				     const unsigned char* mapdata,
+				     unsigned char obsthresh)
+{
+  return InitializeEnv(width, height, mapdata,
+		       0, 0, 0, 0, // just use (0,0) for start and goal
+		       obsthresh);
+}
+
 
 bool EnvironmentNAV2D::InitializeEnv(int width, int height,
 					const unsigned char* mapdata,
@@ -874,9 +883,18 @@ int EnvironmentNAV2D::SetGoal(int x, int y){
         OutHashEntry = CreateNewHashEntry(x, y);
     }
     EnvNAV2D.goalstateid = OutHashEntry->stateID;
+	EnvNAV2DCfg.EndX_c = x;
+	EnvNAV2DCfg.EndY_c = x;
+
 
     return EnvNAV2D.goalstateid;    
 
+}
+
+
+void EnvironmentNAV2D::SetGoalTolerance(double tol_x, double tol_y, double tol_theta)
+{
+  /* not used yet */
 }
 
 
@@ -901,6 +919,8 @@ int EnvironmentNAV2D::SetStart(int x, int y){
         OutHashEntry = CreateNewHashEntry(x, y);
     }
     EnvNAV2D.startstateid = OutHashEntry->stateID;
+	EnvNAV2DCfg.StartX_c = x;
+	EnvNAV2DCfg.StartY_c = x;
 
     return EnvNAV2D.startstateid;    
 
@@ -950,6 +970,27 @@ void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t> const * change
 			if(affx < 0 || affx >= EnvNAV2DCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV2DCfg.EnvHeight_c)
 				continue;
 			preds_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy));
+		}
+	}
+}
+
+
+// identical to GetPredsofChangedEdges except for changing "preds"
+// into "succs"... can probably have just one method.
+void EnvironmentNAV2D::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
+{
+	nav2dcell_t cell;
+
+	for(int i = 0; i < (int)changedcellsV->size(); i++)
+	{
+		cell = changedcellsV->at(i);
+		succs_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y));
+		for(int j = 0; j < 8; j++){
+			int affx = cell.x + EnvNAV2DCfg.dXY[j][0];
+			int affy = cell.y + EnvNAV2DCfg.dXY[j][1];
+			if(affx < 0 || affx >= EnvNAV2DCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV2DCfg.EnvHeight_c)
+				continue;
+			succs_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy));
 		}
 	}
 }

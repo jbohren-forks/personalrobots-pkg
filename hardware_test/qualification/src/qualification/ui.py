@@ -127,7 +127,7 @@ class InstructionsPanel(wx.Panel):
     self._cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
     
   def on_continue(self, event):
-    self._manager.start_subtest(0)
+    self._manager.test_startup()
     
   def on_cancel(self, event):
     self._manager.cancel("Cancel button pressed")
@@ -154,6 +154,23 @@ class WaitingPanel(wx.Panel):
     
   def on_cancel(self, event):
     self._manager.cancel("Cancel button pressed")
+    
+class PrestartupPanel(wx.Panel):
+  def __init__(self, parent, resource, qualification_frame):
+    wx.Panel.__init__(self, parent)
+    
+    self._manager = qualification_frame
+    
+    self._panel = resource.LoadPanel(self, 'prestartup_panel')
+    self._sizer = wx.BoxSizer(wx.HORIZONTAL)
+    
+    self._progress_label = xrc.XRCCTRL(self._panel, 'progress_label')
+    self._progress_label.SetLabel("Running pre_startup scripts...")
+    
+    self._sizer.Add(self._panel, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+    self.SetSizer(self._sizer)
+    self.Layout()
+    self.Fit()
     
 class ImagePanel(wx.Panel):
   def __init__(self, parent, id, image_data):
@@ -315,12 +332,15 @@ class RoslaunchProcessListener(roslaunch.pmon.ProcessListener):
   def has_any_process_died_badly(self):
     return self._died_badly
   def process_died(self, process_name, exit_code):
-    if exit_code != 0:
+    print "%s died with exit code %s"%(process_name, exit_code)
+    if exit_code != None and exit_code != 0:
       self._died_badly = True
 
 class QualificationFrame(wx.Frame):
   def __init__(self, parent):
     wx.Frame.__init__(self, parent, wx.ID_ANY, "Qualification")
+
+    self._result_service = None
     
     tests_xml_path = os.path.join(TESTS_DIR, 'tests.xml')
     self._tests = {}
@@ -386,6 +406,7 @@ class QualificationFrame(wx.Frame):
   def start_tests(self, serial):
     short_serial = serial[0:7]
     test_dir = os.path.join(TESTS_DIR, self._tests[short_serial])
+    self._test_dir = test_dir
     self.log('Starting test %s'%(self._tests[short_serial]))
     
     self._tests_start_date = datetime.datetime.now()
@@ -405,8 +426,29 @@ class QualificationFrame(wx.Frame):
     
     self._core_launch = self.launch_core()
     
-    rospy.Service('test_result', TestResult, self.subtest_callback)
+    if (self._result_service != None):
+      self._result_service.shutdown()
+      self._result_service = None
+
+    self._result_service = rospy.Service('test_result', TestResult, self.subtest_callback)
     
+    rework_reason = wx.GetTextFromUser("If this hardware has previously been qualified, and has been reworked in some way, please enter the reason for the re-work", "Rework?", "", self)
+    if (len(rework_reason) > 0):
+      invent = self.get_inventory_object()
+      if (invent != None):
+        invent.setNote(self._current_serial, "Hardware rework, reason given: %s"%(rework_reason))
+    
+    if (self._current_test.getInstructionsFile() != None):
+      self.set_top_panel(InstructionsPanel(self._top_panel, self._res, self, os.path.join(test_dir, self._current_test.getInstructionsFile())))
+    else:
+      self.test_startup()
+      
+  def test_startup(self):
+    self.set_top_panel(PrestartupPanel(self._top_panel, self._res, self))
+    wx.CallAfter(self.test_startup_real)
+    
+  def test_startup_real(self):
+    test_dir = self._test_dir
     # Run any pre_startup scripts synchronously
     if (len(self._current_test.pre_startup_scripts) > 0):
       for script in self._current_test.pre_startup_scripts:
@@ -442,11 +484,8 @@ class QualificationFrame(wx.Frame):
         return
     else:
       self.log('No startup script')
-    
-    if (self._current_test.getInstructionsFile() != None):
-      self.set_top_panel(InstructionsPanel(self._top_panel, self._res, self, os.path.join(test_dir, self._current_test.getInstructionsFile())))
-    else:
-      self.start_subtest(0)
+      
+    self.start_subtest(0)
     
   def start_subtest(self, index):
     self._subtest_index = index
@@ -711,6 +750,8 @@ class QualificationFrame(wx.Frame):
         wx.MessageBox(s, 'Invalid roslaunch file', wx.OK|wx.ICON_ERROR, self)
         self.cancel(s)
         return
+
+      self._shutdown_launch.spin()
     else:
       self.log('No shutdown script')
         

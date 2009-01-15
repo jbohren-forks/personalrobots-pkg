@@ -91,15 +91,27 @@ typedef struct ENV_ROBARM_CONFIG
     double BaseY_m;
     double BaseZ_m;
 
-    //end effector goal position (goal cell)
+    //end effector goal position (cell)
     short unsigned int EndEffGoalX_c;
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
+
+    //alternate end effector goal - for taking in a goal during runtime
+    int UseAlternateGoal;
+    double altEndEffGoal_m[3];
+    double altLinkGoalAngles_d[NUMOFLINKS];
+
+    //goal orientation
+    double EndEffGoalOrientation[3][3];
+    double GoalOrientationMOE[3][3];
 
     //robot arm dimensions/positions
     double LinkLength_m[NUMOFLINKS];
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
+
+    int UseAlternateStart;
+    double altLinkStartAngles_d[NUMOFLINKS];
 
     //3d grid of world space 
     char*** Grid3D;
@@ -134,12 +146,14 @@ typedef struct ENV_ROBARM_CONFIG
     bool endeff_check_only;
     bool use_smooth_actions;
     bool enforce_upright_gripper;
+    bool checkEndEffGoalOrientation;
     bool object_grasped;
     double smoothing_weight;
     double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     double goal_moe_m;
+    double goal_moe_r;
 
     //velocities
     int nSuccActions;
@@ -156,7 +170,8 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_sqrt2_move;
     double cost_sqrt3_move;
 
-    double upright_gripper[3][3];
+    //a bad hack
+    bool JointSpaceGoal;
 
 } EnvROBARMConfig_t;
 
@@ -207,6 +222,9 @@ public:
     void SetAllPreds(CMDPSTATE* state);
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
+    void SetEndEffGoal(double* position, int numofpositions);
+    void SetStartAngles(double angles[NUMOFLINKS], bool bRad);
+    void StateID2Angles(int stateID, double* angles_r);
 
     int	 SizeofCreatedEnv();
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
@@ -218,6 +236,9 @@ public:
     void CloseKinNode();
     void OutputPlanningStats();
     double GetEpsilon();
+
+    void InitializeStatistics(FILE* fCfg, int n);
+    bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
 private:
 
@@ -241,12 +262,14 @@ private:
     bool InitializeEnvironment();
     double IsPathFeasible();
 
+
     //coordinate frame/angle functions
     void DiscretizeAngles();
     void Cell2ContXY(int x, int y, int z, double *pX, double *pY, double *pZ);
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
+    void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
@@ -274,6 +297,7 @@ private:
     void OutputActionCostTable();
     void OutputActions();
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
+    void PrintAbridgedConfiguration();
 
     //compute heuristic
     void InitializeKinNode();

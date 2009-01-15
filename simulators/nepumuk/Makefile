@@ -21,11 +21,12 @@
 #all: svn-all
 all: installed
 
-VERSION=     r912
+TARBALL_VERSION=   r912
+SVN_REVISION=    -r 964
 
-TARBALL=     build/nepumuk-$(VERSION).tar.gz
-TARBALL_URL= http://downloads.sourceforge.net/libsunflower/nepumuk-$(VERSION).tar.gz
-SOURCE_DIR=  $(PWD)/build/nepumuk-$(VERSION)
+TARBALL=     build/nepumuk-$(TARBALL_VERSION).tar.gz
+TARBALL_URL= http://downloads.sourceforge.net/libsunflower/nepumuk-$(TARBALL_VERSION).tar.gz
+SOURCE_DIR=  $(PWD)/build/nepumuk-$(TARBALL_VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
@@ -34,7 +35,6 @@ SFL_DIR=     `rospack find libsunflower`/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/build/nepumuk-svn
-SVN_REVISION=     -r 960
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
 
 SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.expo layout.expo

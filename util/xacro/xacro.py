@@ -152,8 +152,9 @@ def process_includes(doc, base_dir):
     elt = next_element(previous)
     while elt:
         if elt.tagName == 'include':
-            filename = os.path.join(base_dir, elt.getAttribute('filename'))
-            filename = eval_text(filename, {})
+            filename = eval_text(elt.getAttribute('filename'), {})
+            if not os.path.isabs(filename):
+                filename = os.path.join(base_dir, filename)
             f = None
             try:
                 f = open(filename)

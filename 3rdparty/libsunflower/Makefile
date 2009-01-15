@@ -18,11 +18,12 @@
 #all: svn-all
 all: installed
 
-VERSION=     r910
+TARBALL_VERSION=   r910
+SVN_REVISION=    -r 963
 
-TARBALL=     build/libsunflower-$(VERSION).tar.gz
-TARBALL_URL= http://pr.willowgarage.com/downloads/libsunflower-$(VERSION).tar.gz
-SOURCE_DIR=  $(PWD)/build/libsunflower-$(VERSION)
+TARBALL=     build/libsunflower-$(TARBALL_VERSION).tar.gz
+TARBALL_URL= http://pr.willowgarage.com/downloads/libsunflower-$(TARBALL_VERSION).tar.gz
+SOURCE_DIR=  $(PWD)/build/libsunflower-$(TARBALL_VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
@@ -30,7 +31,6 @@ ESTAR_DIR=   `rospack find estar`/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/build/sunflower-svn
-SVN_REVISION=     -r 960
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower
 
 #include $(shell rospack find mk)/download_unpack_build.mk

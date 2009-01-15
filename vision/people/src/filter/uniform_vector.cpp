@@ -43,8 +43,8 @@ using namespace tf;
 
 namespace BFL
 {
-  UniformVector::UniformVector(const StateVector& mu, const StateVector& size)
-    : Pdf<StateVector> ( 1 ),
+  UniformVector::UniformVector(const Vector3& mu, const Vector3& size)
+    : Pdf<Vector3> ( 1 ),
       mu_(mu),
       size_(size)
   {
@@ -67,7 +67,7 @@ namespace BFL
 
 
 
-  Probability UniformVector::ProbabilityGet(const StateVector& input) const
+  Probability UniformVector::ProbabilityGet(const Vector3& input) const
   {
     for (unsigned int i=0; i<3; i++){
       if (input[i] < (mu_[0] - (size_[0]))) return 0;
@@ -78,10 +78,10 @@ namespace BFL
 
 
   bool
-  UniformVector::SampleFrom (vector<Sample<StateVector> >& list_samples, const int num_samples, int method, void * args) const
+  UniformVector::SampleFrom (vector<Sample<Vector3> >& list_samples, const int num_samples, int method, void * args) const
   {
     list_samples.resize(num_samples);
-    vector<Sample<StateVector> >::iterator sample_it = list_samples.begin();
+    vector<Sample<Vector3> >::iterator sample_it = list_samples.begin();
     for (sample_it=list_samples.begin(); sample_it!=list_samples.end(); sample_it++)
       SampleFrom( *sample_it, method, args);
 
@@ -90,16 +90,16 @@ namespace BFL
 
 
   bool
-  UniformVector::SampleFrom (Sample<StateVector>& one_sample, int method, void * args) const
+  UniformVector::SampleFrom (Sample<Vector3>& one_sample, int method, void * args) const
   {
-    one_sample.ValueSet( StateVector( ((runif() - 0.5) * 2 * size_[0]) + mu_[0], 
+    one_sample.ValueSet( Vector3( ((runif() - 0.5) * 2 * size_[0]) + mu_[0], 
 				      ((runif() - 0.5) * 2 * size_[1]) + mu_[1], 
 				      ((runif() - 0.5) * 2 * size_[2]) + mu_[2]));
     return true;
   }
 
 
-  StateVector
+  Vector3
   UniformVector::ExpectedValueGet (  ) const 
   { 
     return mu_;

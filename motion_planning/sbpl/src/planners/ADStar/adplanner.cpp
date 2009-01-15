@@ -1510,9 +1510,12 @@ int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 }
 
 
-void ADPlanner::costs_changed(ChangedCellsGetter const & changedcells)
+void ADPlanner::costs_changed(StateChangeQuery const & stateChange)
 {
-  Update_SearchSuccs_of_ChangedEdges(changedcells.getPredsOfChangedCells()); //TODO - change as it is assumes backward search
+  if (bforwardsearch)
+    Update_SearchSuccs_of_ChangedEdges(stateChange.getSuccessors());
+  else
+    Update_SearchSuccs_of_ChangedEdges(stateChange.getPredecessors());
 }
 
 

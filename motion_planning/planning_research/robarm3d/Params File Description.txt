@@ -1,0 +1,31 @@
+EPSILON: 10.0                   // the starting value of epsilon used in the search
+USE_DH: 1                       // Forward Kinematics: 1:DH Convention   0:KDL, reads arm dimensions from pr2_arm.xml
+ENFORCE_MOTOR_LIMITS: 1         // enforce motor limits
+DIJKSTRA_HEURISTIC: 1           // Heuristic: 1:Dijkstra's Algorithm on a 3D map   0:Euclidean Distance on a 3D map
+ENDEFF_CHECK_ONLY: 0            // 1:Only do collision detection on end effector
+PADDING: 0.1                    // padding of obstacles in meters
+SMOOTHING_WEIGHT: 0.000         // weight to be applied to change in accelerations between actions
+USE_SMOOTH_ACTIONS: 0           // 1:use the 8th dimension of smoothing  0: baseline 7D algorithm
+UPRIGHT_GRIPPER_WHOLE_PATH: 1   // 1:hold the gripper upright the entire trajectory
+CHECK_GOAL_ORIENTATION: 0       // 1:check goal orientation to be the same as the orientation in the environment file
+OBJECT_GRASPED: 0               // 1:the gripper is holding a cylindrical object (it does collision detection on it)
+GRASPED_OBJECT_LENGTH(meters): 0.0  //the length in meters of the object being held
+GOAL_MOE(meters): 0.06          // margin of error for reaching the goal location in meters.
+Actions: 7 7                    // the successor actions available to choose from. 7: number of actions to use, 7: number of values in each action (don't change)
+5 0 0 0 0 0 0                   // the actions are in degrees. the first 7 are the most basic primitives, moving one joint at a time (in both direction, +5,-5)
+0 5 0 0 0 0 0
+0 0 10 0 0 0 0
+0 0 0 5 0 0 0
+0 0 0 0 10 0 0
+0 0 0 0 0 5 0
+0 0 0 0 0 0 5
+10 0 10 0 0 0 0
+5 0 0 5 0 0 0
+0 0 0 0 5 0 5
+5 0 10 0 0 5 0
+0 5 0 10 0 0 0
+0 0 10 0 0 0 5
+0 0 5 0 0 10 0
+10 0 0 0 0 10 0
+10 0 5 5 0 5 0
+10 0 0 5 0 10 0

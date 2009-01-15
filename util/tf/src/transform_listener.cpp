@@ -181,7 +181,7 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
 
 void TransformListener::subscription_callback()
 {
-  for (uint i = 0; i < msg_in_.transforms.size(); i++)
+  for (unsigned int i = 0; i < msg_in_.transforms.size(); i++)
   {
     Stamped<Transform> trans;
     TransformStampedMsgToTF(msg_in_.transforms[i], trans);

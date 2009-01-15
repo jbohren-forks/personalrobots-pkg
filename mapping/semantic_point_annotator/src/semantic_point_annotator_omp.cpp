@@ -53,6 +53,9 @@
 
 #include <tf/transform_listener.h>
 
+// Kd Tree
+#include <cloud_kdtree/kdtree.h>
+
 // Cloud geometry
 #include <cloud_geometry/areas.h>
 #include <cloud_geometry/point.h>
@@ -63,6 +66,12 @@
 
 using namespace std;
 using namespace std_msgs;
+
+struct Region
+{
+  char region_type;
+  vector<int> indices;
+};
 
 class SemanticPointAnnotator : public ros::node
 {
@@ -76,7 +85,7 @@ class SemanticPointAnnotator : public ros::node
 
     // Parameters
     int sac_min_points_per_model_, sac_min_points_left_;
-    double sac_distance_threshold_, eps_angle_;
+    double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
     double rule_floor_, rule_ceiling_, rule_wall_;
     double rule_table_min_, rule_table_max_;
@@ -84,20 +93,33 @@ class SemanticPointAnnotator : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     SemanticPointAnnotator () : ros::node ("semantic_point_annotator_omp"), tf_(*this)
     {
-      param ("~rule_floor", rule_floor_, 0.1);           // Rule for FLOOR
+      param ("~rule_floor", rule_floor_, 0.15);          // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
       param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
-      param ("~p_sac_min_points_left", sac_min_points_left_, 500);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
-      param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+      param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
+      region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
 
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);     // conver to radians
+      param ("~p_sac_min_points_left", sac_min_points_left_, 100);
+      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);   // 50 points at high resolution
+      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
+      param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
-      subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, 1);
+      eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
+
+      string cloud_topic ("cloud_normals");
+
+      vector<pair<string, string> > t_list;
+      getPublishedTopics (&t_list);
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (cloud_topic) == string::npos)
+          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+      }
+
+      subscribe (cloud_topic.c_str (), cloud_, &SemanticPointAnnotator::cloud_cb, 1);
 
       advertise<PointCloud> ("cloud_annotated", 1);
 
@@ -112,6 +134,90 @@ class SemanticPointAnnotator : public ros::node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     virtual ~SemanticPointAnnotator () { }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+      * \param points pointer to the point cloud message
+      * \param indices pointer to a list of point indices
+      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters
+      * \param nx_idx
+      * \param ny_idx
+      * \param nz_idx
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<Region> &clusters,
+                    int nx_idx, int ny_idx, int nz_idx, 
+                    unsigned int min_pts_per_cluster = 1)
+    {
+      int c_idx = cloud_geometry::getChannelIndex (points, "curvature");
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (indices->size (), false);
+
+      vector<int> nn_indices;
+      // Process all points in the indices vector
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
+          tree->getNeighborsIndices (nn_indices);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)
+          {
+            if (!processed.at (nn_indices[j]))
+            {
+              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+              // [-1;1]
+              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
+              {
+                processed[nn_indices[j]] = true;
+                seed_queue.push_back (nn_indices[j]);
+              }
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          Region r;
+          //r.indices = seed_queue;
+          r.indices.resize (seed_queue.size ());
+          for (unsigned int j = 0; j < r.indices.size (); j++)
+            r.indices[j] = indices->at (seed_queue[j]);
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -139,11 +245,12 @@ class SemanticPointAnnotator : public ros::node
             break;
           inliers.push_back (sac->getInliers ());
           coeff.push_back (sac->computeCoefficients ());
-          fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-                   coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+
+          //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+          //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
 
           // Project the inliers onto the model
-          //model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
+          model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
 
           // Remove the current inliers in the model
           nr_points_left = sac->removeInliers ();
@@ -166,9 +273,9 @@ class SemanticPointAnnotator : public ros::node
 
       cloud_annotated_.header = cloud_.header;
 
-      int nx = cloud_geometry::getChannelIndex (cloud_, "nx");
-      int ny = cloud_geometry::getChannelIndex (cloud_, "ny");
-      int nz = cloud_geometry::getChannelIndex (cloud_, "nz");
+      int nx = cloud_geometry::getChannelIndex (&cloud_, "nx");
+      int ny = cloud_geometry::getChannelIndex (&cloud_, "ny");
+      int nz = cloud_geometry::getChannelIndex (&cloud_, "nz");
 
       if ( (cloud_.chan.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
       {
@@ -177,47 +284,130 @@ class SemanticPointAnnotator : public ros::node
       }
 
       timeval t1, t2;
+      double time_spent;
       gettimeofday (&t1, NULL);
 
-      int total_p1 = 0, total_p2 = 0, nr_p = 0;
-      vector<int> z_axis_indices, xy_axis_indices;
-      vector<vector<int> > inliers_parallel, inliers_perpendicular;
-      vector<vector<double> > coeff_parallel, coeff_perpendicular;
+      // ---[ Select points whose normals are parallel with the Z-axis
+      vector<int> indices_z;
+      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_z);
 
-      #pragma omp sections nowait
-      {
-        // ---[ Select points whose normals are parallel with the Z-axis
-        #pragma omp section
-        {
-          cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, z_axis_indices);
+      // ---[ Select points whose normals are perpendicular to the Z-axis
+      vector<int> indices_xy;
+      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_xy);
 
-          // Find all planes parallel with XY
-          fitSACPlane (&cloud_, &z_axis_indices, inliers_parallel, coeff_parallel);
+      vector<Region> clusters;
+      // Split the Z-parallel points into clusters
+      findClusters (&cloud_, &indices_z, 0.075, clusters, nx, ny, nz, 10);
+      int z_c = clusters.size ();
+      for (int i = 0; i < z_c; i++)
+        clusters[i].region_type = 0;
 
-          // Mark points in the output cloud
-          for (unsigned int i = 0; i < inliers_parallel.size (); i++)
-            total_p1 += inliers_parallel[i].size ();
-        }
+      // Split the Z-perpendicular points into clusters
+      findClusters (&cloud_, &indices_xy, 0.075, clusters, nx, ny, nz, 10);
+      for (unsigned int i = z_c; i < clusters.size (); i++)
+        clusters[i].region_type = 1;
 
-        // ---[ Select points whose normals are perpendicular to the Z-axis
-        #pragma omp section
-        {
-          cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, xy_axis_indices);
+      // Compute the total number of points in all clusters
+      int total_p = 0;
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
+        total_p += clusters[cc].indices.size ();
 
-          // Find all planes perpendicular to XY
-          fitSACPlane (&cloud_, &xy_axis_indices, inliers_perpendicular, coeff_perpendicular);
+      gettimeofday (&t2, NULL);
+      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      ROS_INFO ("Found %d clusters with %d points in %g seconds.", clusters.size (), total_p, time_spent);
+      gettimeofday (&t1, NULL);
 
-          // Mark points in the output cloud
-          for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
-            total_p2 += inliers_perpendicular[i].size ();
-        }
-      }
+      vector<vector<vector<int> > > all_cluster_inliers (clusters.size ());
+      vector<vector<vector<double> > > all_cluster_coeff (clusters.size ());
 
-      int total_p = total_p1 + total_p2;
+      // Reserve enough space
       cloud_annotated_.pts.resize (total_p);
       cloud_annotated_.chan[0].vals.resize (total_p);
       cloud_annotated_.chan[1].vals.resize (total_p);
       cloud_annotated_.chan[2].vals.resize (total_p);
+
+      int nr_p = 0;
+
+      // Process all clusters in parallel
+      #pragma omp parallel for schedule(dynamic)
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
+      {
+        // Find all planes in this cluster
+        fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
+      }
+
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
+      {
+        double r, g, b;
+
+        // Get the planes in this cluster
+        vector<vector<int> > *planes_inliers  = &all_cluster_inliers[cc];
+        ///vector<vector<double> > *planes_coeff = &all_cluster_coeff[cc];
+
+        // For every plane in this cluster
+        for (unsigned int j = 0; j < planes_inliers->size (); j++)
+        {
+          r = rand () / (RAND_MAX + 1.0);
+          g = rand () / (RAND_MAX + 1.0);
+          b = rand () / (RAND_MAX + 1.0);
+
+          vector<int> *plane_inliers = &planes_inliers->at (j);
+          // Mark all the points inside
+          for (unsigned int k = 0; k < plane_inliers->size (); k++)
+          {
+            switch (clusters[cc].region_type)
+            {
+              case 0:     // Z-parallel
+              {
+                cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
+                cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
+                cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
+                break;
+              }
+              case 1:     // Z-perpendicular
+              {
+                cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
+                cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
+                cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
+                break;
+              }
+            }
+            cloud_annotated_.chan[0].vals[nr_p] = r;
+            cloud_annotated_.chan[1].vals[nr_p] = g;
+            cloud_annotated_.chan[2].vals[nr_p] = b;
+            nr_p++;
+          }
+        }
+/*        r = rand () / (RAND_MAX + 1.0);
+        g = rand () / (RAND_MAX + 1.0);
+        b = rand () / (RAND_MAX + 1.0);
+        for (unsigned int j = 0; j < clusters[cc].indices.size (); j++)
+        {
+          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (clusters[cc].indices.at (j)).x;
+          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (clusters[cc].indices.at (j)).y;
+          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (clusters[cc].indices.at (j)).z;
+          cloud_annotated_.chan[0].vals[nr_p] = r;
+          cloud_annotated_.chan[1].vals[nr_p] = g;
+          cloud_annotated_.chan[2].vals[nr_p] = b;
+          nr_p++;
+        }*/
+      }
+
+      gettimeofday (&t2, NULL);
+      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      ROS_INFO ("Cloud annotated in: %g seconds.", time_spent);
+      gettimeofday (&t1, NULL); 
+      cloud_annotated_.pts.resize (nr_p);
+      cloud_annotated_.chan[0].vals.resize (nr_p);
+      cloud_annotated_.chan[1].vals.resize (nr_p);
+      cloud_annotated_.chan[2].vals.resize (nr_p);
+
+      publish ("cloud_annotated", cloud_annotated_);
+
+      return;
+
+      vector<vector<int> > inliers_parallel, inliers_perpendicular;
+      vector<vector<double> > coeff_parallel, coeff_perpendicular;
 
       // Get all planes parallel to the floor (perpendicular to Z)
       Point32 robot_origin;
@@ -259,6 +449,30 @@ class SemanticPointAnnotator : public ros::node
         }
       }
 
+/**       ROS_INFO ("Found %d clusters.", clusters.size ());
+
+      // note: the clusters are in the z_axis_indices space so instead of points[clusters[j]] we need to do points[z_axis_indices[clusters[j]]
+      nr_p = 0;
+      for (unsigned int cc = 0; cc < clusters.size (); cc++)
+      {
+        double r, g, b;
+        r = rand () / (RAND_MAX + 1.0);
+        g = rand () / (RAND_MAX + 1.0);
+        b = rand () / (RAND_MAX + 1.0);
+        for (unsigned int j = 0; j < clusters[cc].size (); j++)
+        {
+          cloud_annotated_.pts[nr_p].x = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].x;
+          cloud_annotated_.pts[nr_p].y = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].y;
+          cloud_annotated_.pts[nr_p].z = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].z;
+          //cloud_annotated_.chan[0].vals[i] = intensity_value;
+          cloud_annotated_.chan[0].vals[nr_p] = r;
+          cloud_annotated_.chan[1].vals[nr_p] = g;
+          cloud_annotated_.chan[2].vals[nr_p] = b;
+          nr_p++;
+        }
+      }*/
+
+      /**
       // Get all planes perpendicular to the floor (parallel to XY)
       for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
       {
@@ -291,13 +505,7 @@ class SemanticPointAnnotator : public ros::node
           cloud_annotated_.chan[2].vals[nr_p] = b;
           nr_p++;
         }
-      }
-
-      gettimeofday (&t2, NULL);
-      double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of points with normals approximately parallel to the Z axis: %d (%g seconds).", z_axis_indices.size (), time_spent);
-
-      publish ("cloud_annotated", cloud_annotated_);
+      }*/
     }
 };
 

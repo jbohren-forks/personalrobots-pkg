@@ -146,6 +146,7 @@ static inline double now()
   return double(n) / NSEC_PER_SEC;
 }
 
+/*
 static void syncClocks(void *)
 {
   while (!g_quit)
@@ -159,6 +160,7 @@ static void syncClocks(void *)
     usleep(200000);
   }
 }
+*/
 
 static RT_TASK clockTask, controlTask;
 
@@ -480,6 +482,7 @@ int main(int argc, char *argv[])
 
   //Start thread
   int rv;
+#if 0
   if ((rv = rt_task_create(&clockTask, "clockTask", 0, CLOCK_PRIO, 0)) != 0)
   {
     ROS_FATAL("Unable to create clock synchronization thread: rv = %d\n", rv);
@@ -491,6 +494,7 @@ int main(int argc, char *argv[])
     ROS_FATAL("Unable to start clock synchronization thread: rv = %d\n", rv);
     ROS_BREAK();
   }
+#endif
 
   if ((rv = rt_task_create(&controlTask, "controlTask", 0, CONTROL_PRIO, T_JOINABLE)) != 0)
   {

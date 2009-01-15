@@ -24,11 +24,12 @@ class TestDirected(unittest.TestCase):
     def test_identity(self):
       im = Image.open("/u/konolige/vslam/data/indoor1/left-%04d.ppm" % 1000)
       kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1], 150, 40)]
-      dim = 176
+      dim = 176 # actual dimension will be min(176, |kp|)
 
       cl1 = calonder.classifier()
 
-      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim)
+      cl1.train(im.tostring(), im.size[0], im.size[1], kp, 25, 10, 1000, dim, 0)
+      dim = cl1.dimension()
       print "Writing to unittest.tree... ",
       cl1.write('unittest.tree')
       print "done"
@@ -44,7 +45,7 @@ class TestDirected(unittest.TestCase):
           print ["%.3f" % x for x in sig.dump()]
           sigs.append(sig)
           ma.addSignature(sig)
-        print cl.getSignatures(im, kp)
+        #print cl.getSignatures(im, kp)
 
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))

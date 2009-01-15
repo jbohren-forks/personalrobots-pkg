@@ -51,7 +51,6 @@
 
 #include "filter/tracker_kalman.h"
 #include "filter/state_pos_vel.h"
-#include "filter/state_vector.h"
 #include "filter/rgb.h"
 
 #include <algorithm>
@@ -60,10 +59,8 @@ using namespace std;
 using namespace laser_processor;
 using namespace ros;
 using namespace tf;
-
 using namespace estimation;
 using namespace BFL;
-
 using namespace MatrixWrapper;
 
 class SavedFeature
@@ -76,16 +73,16 @@ public:
   ros::Time meas_time_;
   vector<char>     color_;
 
-  tf::TransformListener& tfl_;
+  TransformListener& tfl_;
 
   BFL::StatePosVel sys_sigma_;
   TrackerKalman filter_;
 
-  tf::Stamped<tf::Point> prop_loc_;
+  Stamped<Point> prop_loc_;
 
-  SavedFeature(tf::Stamped<tf::Point> loc, tf::TransformListener& tfl)
+  SavedFeature(Stamped<Point> loc, TransformListener& tfl)
     : tfl_(tfl),
-      sys_sigma_(tf::Vector3(0.05/20.0,0.05/20.0,0.05/20.0), tf::Vector3(1.0/20.0,1.0/20.0,1.0/20.0)),
+      sys_sigma_(Vector3(0.05, 0.05, 0.05), Vector3(1.0, 1.0, 1.0)),
       filter_("tracker_name",sys_sigma_)
   {
     char id[100];
@@ -93,13 +90,13 @@ public:
     id_ = std::string(id);
 
     object_id = "";
-    time_ = loc.stamp_;
+   time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
-    tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
     tfl_.setTransform(pose);
 
-    StatePosVel prior_sigma(StateVector(0.1,0.1,0.1), StateVector(0.0000001, 0.0000001, 0.0000001));
+    StatePosVel prior_sigma(Vector3(0.1,0.1,0.1), Vector3(0.0000001, 0.0000001, 0.0000001));
     filter_.initialize(loc, prior_sigma, time_.toSec());    
 
     color_.push_back(rand()%255);
@@ -123,8 +120,8 @@ public:
     prop_loc_.frame_id_ = "odom";
 
     /*
-    tf::Stamped<tf::Point> orig_loc(tf::Point(0,0,0),  meas_time_, id_);
-    tf::Stamped<tf::Point> inter_loc;
+    Stamped<Point> orig_loc(Point(0,0,0),  meas_time_, id_);
+    Stamped<Point> inter_loc;
 
     tfl_.transformPoint("odom", orig_loc, inter_loc);
       
@@ -135,9 +132,9 @@ public:
     
   }
 
-  void update(tf::Stamped<tf::Point> loc)
+  void update(Stamped<Point> loc)
   {
-    tf::Stamped<btTransform> pose( btTransform(tf::Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
     tfl_.setTransform(pose);
 
     meas_time_ = loc.stamp_;
@@ -154,6 +151,9 @@ public:
 };
 
 int SavedFeature::nextid = 0;
+
+
+
 
 class MatchedFeature
 {
@@ -183,7 +183,7 @@ static const string fixed_frame = "odom";
 class LegDetector : public node
 {
 public:
-  tf::TransformListener tfl_;
+  TransformListener tfl_;
 
   std_msgs::PointCloud filt_cloud_;
 
@@ -253,11 +253,13 @@ public:
   }
 
 
+
+
   void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
-    tf::Point pt;
+    Point pt;
 
-    tf::PointMsgToTF(people_meas->pos, pt);
+    PointMsgToTF(people_meas->pos, pt);
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
@@ -269,7 +271,7 @@ public:
 
     for (; it != end; ++it )
     {
-      tf::Stamped<tf::Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+      Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
 
 
       tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
@@ -362,7 +364,7 @@ public:
          cf_iter != candidates.end();
          cf_iter++)
     {
-      tf::Stamped<tf::Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
+      Stamped<Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
       tfl_.transformPoint("odom", loc, loc);
 
       list<SavedFeature*>::iterator closest = propagated.end();
@@ -403,7 +405,7 @@ public:
         if (matched_iter->closest_ == *pf_iter)
         {
           // It was actually the closest... do our thing
-          tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
+          Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
           tfl_.transformPoint("odom", loc, loc);          
 
           matched_iter->closest_->update(loc);
@@ -423,7 +425,7 @@ public:
       if (!found)
       {
         // Search for new closest:
-        tf::Stamped<tf::Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
+        Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
         tfl_.transformPoint("odom", loc, loc);
 
         list<SavedFeature*>::iterator closest = propagated.end();

@@ -182,7 +182,6 @@ void RandomizedTree::compressLeaves(size_t reduced_num_dim)
    float *cs_phi = new float[reduced_num_dim * classes_];         // reduced_num_dim x classes_
    makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
 
-   #if 1   // real code 
    float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // temp, num_leaves_ x reduced_num_dim
    for (int i=0; i<num_leaves_; ++i) {
       float *post = getPosteriorByIndex(i);
@@ -190,18 +189,6 @@ void RandomizedTree::compressLeaves(size_t reduced_num_dim)
       cblas_sgemv(CblasRowMajor, CblasNoTrans, reduced_num_dim, classes_, 1.f, cs_phi,
                   classes_, post, 1, 0.f, prod, 1);       
    }
-   #else  // test code
-   float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // temp, num_leaves_ x reduced_num_dim
-   for (int i=0; i<num_leaves_; ++i) {
-      float *post = getPosteriorByIndex(i);
-      for (int s=0; s<164; ++s) {
-         cs_posteriors[s] = (post[0] + post[1] + post[2] + post[3] + post[4])/5.f;
-         post += 3;
-      }
-      cs_posteriors[164] = (post[0] + post[1])/2;
-      memset(&cs_posteriors[165], 0, 12*sizeof(float));
-   }
-   #endif
 
    // copy new posteriors
    freePosteriors();

@@ -118,9 +118,9 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   #else
     // TODO: get rid of this multiply (-> number of trees is known at train 
     // time, exploit it in RandomizedTree::finalize())
-    //float normalizer = 1.0f / trees_.size();
-    //for (int i = 0; i < classes_; ++i)
-    //  sig[i] *= normalizer;
+    float normalizer = 1.0f / trees_.size();
+    for (int i = 0; i < classes_; ++i)
+      sig[i] *= normalizer;
   #endif
 }
 
@@ -164,15 +164,15 @@ void RTreeClassifier::getSignature(IplImage* patch, uint8_t *sig)
   uint8_t **pp = posteriors_;    
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
     *pp = tree_it->getPosterior2(patch_data);       
+  pp = posteriors_;
 
 #if 1
-  // sum them up
-  pp = posteriors_;
+  // sum them up  
   sum_50t_176c(pp,sig,ptemp_);
 
 #else
   memset((void*)sig, 0, classes_ * sizeof(sig[0]));
-  uint16_t *sig16 = new uint16_t[classes_];
+  uint16_t *sig16 = new uint16_t[classes_];           // TODO: make member, no alloc here
   memset((void*)sig16, 0, classes_ * sizeof(sig16[0]));
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
     add(classes_, sig16, *pp, sig16);
@@ -273,20 +273,5 @@ void RTreeClassifier::setPosteriorsFromTextfile(std::string url, int red_dim)
   ifs.close();
   printf("[EXP] read entire tree from '%s'\n", url.c_str());  
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 } // namespace features

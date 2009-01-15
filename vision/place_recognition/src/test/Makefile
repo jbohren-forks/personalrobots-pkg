@@ -42,7 +42,7 @@ LDFLAGS += -L$(FAST_DIR)/lib -lfast_detector -Wl,-rpath $(FAST_DIR)/lib
 #CFLAGS += -O0
 CFLAGS += -O3
 CFLAGS += -msse2
-CFLAGS += -DNDEBUG
+#CFLAGS += -DNDEBUG
 
 SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)

@@ -1,0 +1,18 @@
+<package>
+<description>Utility library for processing scanned point clouds</description>
+<author>Matei Ciocarlie</author>
+<license>BSD</license>
+<review status="deprecated" notes=""/>
+<depend package="roscpp" />
+<depend package="boost" />
+<depend package="std_msgs" />
+<depend package="newmat10" />
+<depend package="libTF" />
+<!-- <depend package="VTK" /> -->
+<sysdepend os="ubuntu" version="7.04-feisty" package="libvtk5-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libvtk5-dev"/>
+<!-- TODO: get the link flags some other way, preferably from VTK itself -->
+<export>
+  <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -llistennode -Wl,-rpath,${prefix}/lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkftgl -lvtkHybrid -lvtkFiltering -lvtkGraphics"/>
+</export>
+</package>

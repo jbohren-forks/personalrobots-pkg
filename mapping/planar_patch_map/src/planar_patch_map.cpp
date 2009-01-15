@@ -163,7 +163,7 @@ class PlanarPatchMap: public ros::node
     {
       ROS_INFO ("Received %d data points.", cloud_.pts.size ());
 
-      int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
+      int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
       if (d_idx != -1)
       {
         filterCloudBasedOnDistance (&cloud_, cloud_f_, d_idx, d_min_, d_max_);

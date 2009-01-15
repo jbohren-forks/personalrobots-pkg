@@ -25,9 +25,16 @@ typedef cv::willow::Keypoint voKeypoint;
 typedef cv::willow::Keypoints voKeypoints;
 
 static const char image_format[] = "/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff";
-static const char classifier_file[] = "/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees";
+static const char classifier_file[] = "/u/prdata/calonder_trees/current.rtc";
 static const unsigned int NUM_QUERIES = 78;
 static const unsigned int MAX_FEATURES = 400;
+
+#ifdef USE_BYTE_SIGNATURES
+typedef uint8_t sig_t;
+#else
+typedef float sig_t;
+#endif
+typedef Promote<sig_t>::type distance_t;
 
 int main(int argc, char** argv)
 { 
@@ -53,12 +60,13 @@ int main(int argc, char** argv)
   unsigned int dimension = classifier.classes();
 
   // Compute features and their descriptors for each object (image)
-  std::vector<float*> buffers;
+  std::vector<float*> train_buffers;
+  std::vector<sig_t*> test_buffers;
   std::vector<size_t> buffer_sizes;
   std::vector<unsigned int> objs;
   // Save features for each image
   std::vector<voKeypoints> image_pts(num_objs);
-  std::vector< std::vector<float*> > image_features(num_objs);
+  std::vector< std::vector<sig_t*> > image_features(num_objs);
   int obj = 0;
   BOOST_FOREACH( std::string file, query_files ) {
     // Load left/right images
@@ -78,24 +86,30 @@ int main(int argc, char** argv)
     //KeepBestPoints(pts, MAX_FEATURES);
 
     // Compute descriptors, disparities
-    float* sig_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
-    buffers.push_back(sig_buffer);
+    float* train_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
+    train_buffers.push_back(train_buffer);
     buffer_sizes.push_back(pts.size());
-    float* sig = sig_buffer;
+    float* train_sig = train_buffer;
+    sig_t* test_buffer;
+    posix_memalign((void**)&test_buffer, 16, dimension * pts.size() * sizeof(sig_t));
+    test_buffers.push_back(test_buffer);
+    sig_t* test_sig = test_buffer;
     BOOST_FOREACH( const Keypoint& pt, pts ) {
       // Signature
       cv::WImageView1_b view = extractPatch(left.Ipl(), pt);
-      classifier.getSignature(view.Ipl(), sig);
+      classifier.getSignature(view.Ipl(), train_sig);
+      classifier.getSignature(view.Ipl(), test_sig);
       objs.push_back(obj);
 
       // Disparity
       double d = frame.lookupDisparity(pt.x, pt.y);
       if (d > 0) {
         image_pts[obj].push_back( voKeypoint(pt.x, pt.y, d, pt.response, pt.scale, NULL) );
-        image_features[obj].push_back(sig);
+        image_features[obj].push_back(test_sig);
       }
 
-      sig += dimension;
+      train_sig += dimension;
+      test_sig += dimension;
     }
     ++obj;
   }
@@ -105,31 +119,50 @@ int main(int argc, char** argv)
   // Copy into single Eigen matrix
   FeatureMatrix features((int)num_features, (int)dimension);
   size_t current_row = 0;
-  for (unsigned int i = 0; i < buffers.size(); ++i) {
+  for (unsigned int i = 0; i < train_buffers.size(); ++i) {
     features.block(current_row, 0, buffer_sizes[i], dimension) =
-      Eigen::Map<FeatureMatrix>(buffers[i], buffer_sizes[i], dimension);
+      Eigen::Map<FeatureMatrix>(train_buffers[i], buffer_sizes[i], dimension);
     current_row += buffer_sizes[i];
-    free(buffers[i]);
   }
-  buffers.clear();
   
   // Train vocabulary tree
   VocabularyTree tree;
   //tree.build(features, objs, 5, 4);
   
-  tree.build(features, objs, 5, 4, false);
+  //tree.build(features, objs, 5, 4, false);
   //tree.save("james4_empty.tree");
   //tree.load("james4_empty.tree");
+  tree.load("/u/mihelich/images/holidays/holidays.tree");
+  printf("Done loading tree\n");
+#if 1
   printf("Adding images to tree dynamically...\n");
   current_row = 0;
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
-    FeatureMatrix image_features = features.block(current_row, 0, buffer_sizes[i], dimension);
+#ifdef USE_BYTE_SIGNATURES
+    sig_t* feature_block = NULL;
+    posix_memalign((void**)&feature_block, 16, buffer_sizes[i]*dimension*sizeof(sig_t));
+    for (unsigned int j = 0; j < buffer_sizes[i]; ++j) {
+      memcpy((void*)(feature_block + j*dimension), (void*)(test_buffers[i] + j*dimension),
+             dimension*sizeof(sig_t));
+    }
     current_row += buffer_sizes[i];
-    tree.insert(image_features);
+    tree.insert(feature_block, buffer_sizes[i]);
+    free(feature_block);
+#else
+    FeatureMatrix feature_block = features.block(current_row, 0, buffer_sizes[i], dimension);
+    current_row += buffer_sizes[i];
+    tree.insert(feature_block);
+#endif
   }
+#endif
   
-  tree.save("james4.tree");
+  //tree.save("james4.tree");
   //tree.load("james4.tree");
+
+  // Free training buffers
+  for (unsigned int i = 0; i < train_buffers.size(); ++i) {
+    free(train_buffers[i]);
+  }
   
   // Validation
   int training_correct = 0;
@@ -144,18 +177,34 @@ int main(int argc, char** argv)
   // Validate on training images
   current_row = 0;
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
+    // Construct query matrix
+#ifdef USE_BYTE_SIGNATURES
+    sig_t* query = NULL;
+    posix_memalign((void**)&query, 16, buffer_sizes[i]*dimension*sizeof(sig_t));
+    for (unsigned int j = 0; j < buffer_sizes[i]; ++j) {
+      memcpy((void*)(query + j*dimension), (void*)(test_buffers[i] + j*dimension),
+             dimension*sizeof(sig_t));
+    }
+#else
     FeatureMatrix query = features.block(current_row, 0, buffer_sizes[i], dimension);
+#endif
     current_row += buffer_sizes[i];
-    printf("Training image %u, %u features\n", i, query.rows());
+    printf("Training image %u, %u features\n", i, buffer_sizes[i]);
 
     // Find top N matches
     matches.resize(0);
+#ifdef USE_BYTE_SIGNATURES
+    tree.find(query, buffer_sizes[i], N, std::back_inserter(matches));
+    free(query);
+#else
     tree.find(query, N, std::back_inserter(matches));
+    //tree.findAndInsert(query, N, std::back_inserter(matches));
+#endif
     if (matches[0].id == i) ++training_correct;
 
     // Set up matcher for signatures in query image
-    BruteForceMatcher<float, int> matcher(dimension);
-    BOOST_FOREACH( float* sig, image_features[i] )
+    BruteForceMatcher<sig_t, int> matcher(dimension);
+    BOOST_FOREACH( sig_t* sig, image_features[i] )
       matcher.addSignature(sig, 0);
     
     // Geometric check (find number of inliers)
@@ -164,13 +213,13 @@ int main(int argc, char** argv)
     pose_estimator.setNumRansacIterations(15);
     // Camera parameters for james4
     pose_estimator.setCameraParams(432.0, 432.0, .088981, 313.7821, 313.7821, 220.407);
-    float distance; // dummy
-    for (unsigned int j = 0; j < N_show; ++j) {
+    distance_t distance; // dummy
+    for (unsigned int j = 0; j < std::min(N_show, matches.size()); ++j) {
       // Find matching keypoint pairs
       std::vector< std::pair<int, int> > match_index_pairs;
       unsigned int match_id = matches[j].id;
       for (int index2 = 0; index2 < (int)image_features[match_id].size(); ++index2) {
-        float* sig = image_features[match_id][index2];
+        sig_t* sig = image_features[match_id][index2];
         int index1 = matcher.findMatch(sig, &distance);
         if (index1 >= 0)
           match_index_pairs.push_back( std::make_pair(index1, index2) );
@@ -197,6 +246,11 @@ int main(int argc, char** argv)
       confusion_file << confusion(i, j) << " ";
     }
     confusion_file << std::endl;
+  }
+
+  // Free buffers
+  for (unsigned int i = 0; i < test_buffers.size(); ++i) {
+    free(test_buffers[i]);
   }
     
   return 0;

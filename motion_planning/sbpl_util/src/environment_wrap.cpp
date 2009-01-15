@@ -48,11 +48,11 @@ namespace {
   }
   
   template<typename env_type>
-  class myChangedCellsGetter
-    : public ChangedCellsGetter
+  class myStateChangeQuery
+    : public StateChangeQuery
   {
   public:
-    myChangedCellsGetter(env_type * env,
+    myStateChangeQuery(env_type * env,
 			 std::vector<nav2dcell_t> const & changedcellsV)
       : env_(env),
 	changedcellsV_(changedcellsV)
@@ -60,16 +60,25 @@ namespace {
     }
     
     // lazy init, because we do not always end up calling this method
-    virtual std::vector<int> const * getPredsOfChangedCells() const
+    virtual std::vector<int> const * getPredecessors() const
     {
       if (predsOfChangedCells_.empty() && ( ! changedcellsV_.empty()))
 	env_->GetPredsofChangedEdges(&changedcellsV_, &predsOfChangedCells_);
       return &predsOfChangedCells_;
     }
     
+    // lazy init, because we do not always end up calling this method
+    virtual std::vector<int> const * getSuccessors() const
+    {
+      if (succsOfChangedCells_.empty() && ( ! changedcellsV_.empty()))
+	env_->GetSuccsofChangedEdges(&changedcellsV_, &succsOfChangedCells_);
+      return &succsOfChangedCells_;
+    }
+    
     env_type * env_;
     std::vector<nav2dcell_t> const & changedcellsV_;
     mutable std::vector<int> predsOfChangedCells_;
+    mutable std::vector<int> succsOfChangedCells_;
   };
   
 }
@@ -132,7 +141,7 @@ namespace ompl {
       return;
 
 #warning 'what a hack...'
-    ChangedCellsGetter const * ccg(createChangedCellsGetter(changedcellsV_));
+    StateChangeQuery const * ccg(createStateChangeQuery(changedcellsV_));
     planner->costs_changed(*ccg);
     delete ccg;
     changedcellsV_.clear();
@@ -210,10 +219,10 @@ namespace ompl {
   }
 
 
-  ChangedCellsGetter const * EnvironmentWrapper2D::
-  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  StateChangeQuery const * EnvironmentWrapper2D::
+  createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
   {
-    return new myChangedCellsGetter<EnvironmentNAV2D>(env_, changedcellsV);
+    return new myStateChangeQuery<EnvironmentNAV2D>(env_, changedcellsV);
   }
   
   
@@ -396,10 +405,10 @@ namespace ompl {
   }
 
 
-  ChangedCellsGetter const * EnvironmentWrapper3DKIN::
-  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  StateChangeQuery const * EnvironmentWrapper3DKIN::
+  createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
   {
-    return new myChangedCellsGetter<EnvironmentNAV3DKIN>(env_, changedcellsV);
+    return new myStateChangeQuery<EnvironmentNAV3DKIN>(env_, changedcellsV);
   }
   
   

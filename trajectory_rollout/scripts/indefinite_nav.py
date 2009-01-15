@@ -4,8 +4,8 @@ import rostools
 rostools.update_path('trajectory_rollout')
 
 import sys, time, traceback, logging, rospy, random
-from std_msgs.msg import Planner2DGoal
-from std_msgs.msg import Planner2DState
+from robot_msgs.msg import Planner2DGoal
+from robot_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 

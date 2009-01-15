@@ -41,7 +41,6 @@
 
 // bayesian filtering
 #include <filter/bootstrapfilter.h>
-#include "state_vector.h"
 #include "mcpdf_vector.h"
 #include "measmodel_vector.h"
 #include "sysmodel_vector.h"
@@ -68,7 +67,7 @@ public:
   ~DetectorParticle();
 
   /// initialize detector
-  void initialize(const BFL::StateVector& mu, const BFL::StateVector& size, const double time);
+  void initialize(const tf::Vector3& mu, const tf::Vector3& size, const double time);
 
   /// return if detector was initialized
   bool isInitialized() const {return detector_initialized_;};
@@ -78,24 +77,24 @@ public:
 
   /// update detector
   bool updatePrediction(const double dt);
-  bool updateCorrection(const BFL::StateVector& meas, 
+  bool updateCorrection(const tf::Vector3& meas, 
 				const MatrixWrapper::SymmetricMatrix& cov,
 				const double time);
 
   /// get filter posterior
-  void getEstimate(BFL::StateVector& est) const;
+  void getEstimate(tf::Vector3& est) const;
   void getEstimate(robot_msgs::PositionMeasurement& est) const;
 
   // get evenly spaced particle cloud
-  void getParticleCloud(const BFL::StateVector& step, double threshold, std_msgs::PointCloud& cloud) const;
+  void getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const;
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogram(const BFL::StateVector& min, const BFL::StateVector& max, const BFL::StateVector& step) const;
+  MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
 private:
   // pdf / model / filter
   BFL::MCPdfVector                                          prior_;
-  BFL::BootstrapFilter<BFL::StateVector, BFL::StateVector>* filter_;
+  BFL::BootstrapFilter<tf::Vector3, tf::Vector3>* filter_;
   BFL::SysModelVector                                       sys_model_;
   BFL::MeasModelVector                                      meas_model_;
 

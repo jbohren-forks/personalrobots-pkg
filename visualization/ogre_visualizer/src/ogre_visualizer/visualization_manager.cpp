@@ -235,11 +235,7 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
   if ( needs_reset_ )
   {
     needs_reset_ = false;
-    resetDisplays();
-    tf_->clear();
-
-    ros_time_begin_ = ros::Time();
-    wall_clock_begin_ = ros::Time();
+    resetTime();
   }
 
   static float time_update_timer = 0.0f;
@@ -277,6 +273,15 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
     wall_clock_property_->changed();
     wall_clock_elapsed_property_->changed();
   }
+}
+
+void VisualizationManager::resetTime()
+{
+  resetDisplays();
+  tf_->clear();
+
+  ros_time_begin_ = ros::Time();
+  wall_clock_begin_ = ros::Time();
 }
 
 std::string getCategoryLabel( DisplayInfo* info )
@@ -514,6 +519,8 @@ void VisualizationManager::setDisplayEnabled( Display* display, bool enabled )
 }
 
 #define PROPERTY_GRID_CONFIG wxT("Property Grid State")
+#define CAMERA_TYPE wxT("Camera Type")
+#define CAMERA_CONFIG wxT("Camera Config")
 
 void VisualizationManager::loadConfig( wxConfigBase* config )
 {
@@ -547,6 +554,19 @@ void VisualizationManager::loadConfig( wxConfigBase* config )
   {
     vis_panel_->getPropertyGrid()->RestoreEditableState( grid_state );
   }
+
+  wxString camera_type;
+  if (config->Read(CAMERA_TYPE, &camera_type))
+  {
+    if (vis_panel_->setCurrentCamera((const char*)camera_type.fn_str()))
+    {
+      wxString camera_config;
+      if (config->Read(CAMERA_CONFIG, &camera_config))
+      {
+        vis_panel_->getCurrentCamera()->fromString((const char*)camera_config.fn_str());
+      }
+    }
+  }
 }
 
 void VisualizationManager::saveConfig( wxConfigBase* config )
@@ -568,6 +588,9 @@ void VisualizationManager::saveConfig( wxConfigBase* config )
   property_manager_->save( config );
 
   config->Write( PROPERTY_GRID_CONFIG, vis_panel_->getPropertyGrid()->SaveEditableState() );
+
+  config->Write(CAMERA_TYPE, wxString::FromAscii(vis_panel_->getCurrentCameraType()));
+  config->Write(CAMERA_CONFIG, wxString::FromAscii(vis_panel_->getCurrentCamera()->toString().c_str()));
 }
 
 bool VisualizationManager::registerFactory( const std::string& type, const std::string& description, DisplayFactory* factory )

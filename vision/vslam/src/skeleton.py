@@ -9,6 +9,7 @@ from stereo import SparseStereoFrame
 from timer import Timer
 
 import pylab, numpy
+import random
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors, matcher):
@@ -25,10 +26,7 @@ class Skeleton:
     self.pg = TreeOptimizer3()
     self.pg.initializeOnlineOptimization()
     if 1:
-      self.vt = place_recognition.vocabularytree()
-      ims = [Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (200 * i)) for i in range(10)]
-      #ims = [Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
-      self.vt.build(ims, 5, 4, False)
+      self.vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree")
     else:
       self.vt = None
     self.place_ids = []
@@ -37,7 +35,9 @@ class Skeleton:
     self.node_kp = {}
     self.node_descriptors = {}
     self.node_matcher = {}
-    self.termcrit = lambda count, err: (count > 5) or (err < 1.0)
+    self.termcrit = lambda count, delta: ((count > 10) or (delta < 1e-1))
+    self.pr_maximum = 15    # How many out of PR's places to consider for GCC
+    self.node_vdist = 15                # how many frame to wait to put in a skeleton node
 
     self.timer = {}
     for t in ['toro add', 'toro opt', 'pr add', 'pr search', 'gcc', 'descriptors']:
@@ -51,7 +51,7 @@ class Skeleton:
       prev = max(byid)[1]
 
       # Ignore the node if there are less than 15 frames since the previous node
-      if (this.id - prev.id) < 15:
+      if (this.id - prev.id) < self.node_vdist:
         return
 
       relpose = ~prev.pose * this.pose
@@ -66,12 +66,11 @@ class Skeleton:
       self.memoize_node_kp_d(this)
       this_d = self.node_descriptors[this.id]
       if len(self.nodes) > 1:
-        far = [ f for f in self.place_find(this.lf, this_d, 10) if (not f.id in [this.id, prev.id])]
+        far = [ f for f in self.place_find(this.lf, this_d) if (not f.id in [this.id, prev.id])]
         self.add_links(this, far)
 
       self.timer['pr add'].start()
-      if self.vt:
-        self.vt.add(this.lf, this_d)
+      # if self.vt: self.vt.add(this.lf, this_d)
       self.timer['pr add'].stop()
       self.place_ids.append(this)
 
@@ -95,13 +94,13 @@ class Skeleton:
     xyz,euler = self.pg.vertex(id)
     return from_xyz_euler(xyz, euler)
 
-  def place_find(self, lf, descriptors, count = 10):
+  def place_find(self, lf, descriptors):
     if self.vt:
       self.timer['pr search'].start()
-      scores = self.vt.topN(lf, descriptors, count)
+      scores = self.vt.topN(lf, descriptors, len(self.place_ids), True)
       self.timer['pr search'].stop()
-      assert len(scores) == len(self.place_ids)
-      return [id for (_,id) in sorted(zip(scores, self.place_ids), reverse=True)][:count]
+      assert len(scores) == len(self.place_ids)+1
+      return [id for (_,id) in sorted(zip(scores, self.place_ids))][:self.pr_maximum]
     else:
       return self.place_ids
 
@@ -116,13 +115,28 @@ class Skeleton:
         self.addConstraint(id0, id1, obs)
         print "ADDED CONSTRAINT", id0.id, id1.id, "error changed from", old_error, "to", self.pg.error()
           
+    t0 = self.timer['toro opt'].sum
     self.timer['toro opt'].start()
     self.pg.initializeOnlineIterations()
     count = 0
-    while not self.termcrit(count, self.pg.error()):
+    self.pg.iterate()                   # error can go way up on first iterate
+    prev_e = self.pg.error()
+    self.pg.iterate()
+    print
+    print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
+    while not self.termcrit(count, prev_e - self.pg.error()):
+      prev_e = self.pg.error()
       self.pg.iterate()
       count += 1
     self.timer['toro opt'].stop()
+    t1 = self.timer['toro opt'].sum
+    td = t1 - t0
+    if (td > 0.300):                    # too large, stretch frame additions
+      self.node_vdist = 15 + (td - 0.4)*100
+    else:
+      self.node_vdist = 15
+    print "OPT TIMER ", 1000.0*(t1-t0), "  ITERATIONS ", count, "  FRAMES ", self.node_vdist, "  ERROR ", self.pg.error()
+    print
 
   def my_frame(self, id):
     return minimum_frame(id, self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])

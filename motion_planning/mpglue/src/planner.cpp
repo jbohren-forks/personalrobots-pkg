@@ -34,44 +34,17 @@
 
 #include "planner.h"
 #include "costmap.h"
+#include <sfl/util/strutil.hpp>
 #include <sbpl/headers.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <fstream>
 
+using sfl::to_string;
 using namespace boost;
 using namespace std;
 
 namespace mpglue {
-  
-  
-  std::string canonicalPlannerName(std::string const & name_or_alias)
-  {
-    static map<string, string> planner_alias;
-    if (planner_alias.empty()) {
-      planner_alias.insert(make_pair("ARAPlanner", "ARAPlanner"));
-      planner_alias.insert(make_pair("ara",        "ARAPlanner"));
-      planner_alias.insert(make_pair("ARA",        "ARAPlanner"));
-      planner_alias.insert(make_pair("arastar",    "ARAPlanner"));
-      planner_alias.insert(make_pair("ARAStar",    "ARAPlanner"));
-
-      planner_alias.insert(make_pair("ADPlanner",  "ADPlanner"));
-      planner_alias.insert(make_pair("ad",         "ADPlanner"));
-      planner_alias.insert(make_pair("AD",         "ADPlanner"));
-      planner_alias.insert(make_pair("adstar",     "ADPlanner"));
-      planner_alias.insert(make_pair("ADStar",     "ADPlanner"));
-
-      planner_alias.insert(make_pair("NavFn",      "NavFn"));
-      planner_alias.insert(make_pair("navfn",      "NavFn"));
-      planner_alias.insert(make_pair("nf",         "NavFn"));
-      planner_alias.insert(make_pair("NF",         "NavFn"));
-    }
-    
-    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
-    if (planner_alias.end() == is)
-      return "";
-    return is->second;
-  }
   
   
   CostmapPlannerStats::
@@ -88,6 +61,8 @@ namespace mpglue {
       goal_iy(0),
       goal_tol_distance(0),
       goal_tol_angle(0),
+      plan_from_scratch(false),
+      flush_cost_changes(false),
       success(false),
       actual_time_wall(0),
       actual_time_user(0),
@@ -133,12 +108,11 @@ namespace mpglue {
     os << prefix << "goal pose:                 " << goal_x << "  " << goal_y << "  " << goal_th << "\n"
        << prefix << "goal grid:                 " << goal_ix << "  " << goal_iy << "\n"
        << prefix << "start pose:                " << start_x << "  " << start_y << "  " << start_th << "\n"
-       << prefix << "start grid:                " << start_ix << "  " << start_iy << "\n";
-    if (success)
-      os << prefix << "success:                   TRUE\n";
-    else
-      os << prefix << "success:                   FALSE\n";
-    os << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall << "\n"
+       << prefix << "start grid:                " << start_ix << "  " << start_iy << "\n"
+       << prefix << "plan_from_scratch:         " << to_string(plan_from_scratch) << "\n"
+       << prefix << "flush_cost_changes:        " << to_string(flush_cost_changes) << "\n"
+       << prefix << "success:                   " << to_string(success) << "\n"
+       << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall << "\n"
        << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user << "\n"
        << prefix << "plan_length [m]:           " << plan_length << "\n"
        << prefix << "plan_rotation [rad]:       " << plan_angle_change << "\n";
@@ -151,7 +125,12 @@ namespace mpglue {
 		 boost::shared_ptr<IndexTransform const> itransform)
     : stats__(stats),
       costmap_(costmap),
-      itransform_(itransform)
+      itransform_(itransform),
+      start_changed_(false),
+      goal_pose_changed_(false),
+      goal_tol_changed_(false),
+      plan_from_scratch_changed_(false),
+      flush_cost_changes_changed_(false)
   {
   }
   
@@ -179,6 +158,7 @@ namespace mpglue {
     stats__.start_th = pth;
     stats__.start_ix = ix;
     stats__.start_iy = iy;
+    start_changed_ = true;
   }
   
   
@@ -199,6 +179,7 @@ namespace mpglue {
     stats__.goal_th = pth;
     stats__.goal_ix = ix;
     stats__.goal_iy = iy;
+    goal_pose_changed_ = true;
   }
   
   
@@ -207,6 +188,7 @@ namespace mpglue {
   {
     stats__.goal_tol_distance = dist_tol;
     stats__.goal_tol_angle = angle_tol;
+    goal_tol_changed_ = true;
   }
   
   
@@ -254,6 +236,11 @@ namespace mpglue {
   void CostmapPlanner::
   postCreatePlan() throw(std::exception)
   {
+    start_changed_ = false;
+    goal_pose_changed_ = false;
+    goal_tol_changed_ = false;
+    plan_from_scratch_changed_ = false;
+    flush_cost_changes_changed_ = false;
   }
   
   
@@ -265,42 +252,56 @@ namespace mpglue {
   }
   
   
-  DynamicCostmapPlannerStats::
-  DynamicCostmapPlannerStats()
+  void CostmapPlanner::
+  forcePlanningFromScratch(bool flag)
+  {
+    if (flag != stats__.plan_from_scratch) {
+      stats__.plan_from_scratch = flag;
+      plan_from_scratch_changed_ = true;
+    }
+  }
+  
+  
+  void CostmapPlanner::
+  flushCostChanges(bool flag)
+  {
+    if (flag != stats__.flush_cost_changes) {
+      stats__.flush_cost_changes = flag;
+      flush_cost_changes_changed_ = true;
+    }
+  }
+  
+  
+  AnytimeCostmapPlannerStats::
+  AnytimeCostmapPlannerStats()
     : CostmapPlannerStats(),
-      plan_from_scratch(false),
-      flush_cost_changes(false)
+      stop_at_first_solution(false),
+      allocated_time(std::numeric_limits<double>::max())
   {
   }
   
   
-  DynamicCostmapPlannerStats * DynamicCostmapPlannerStats::
+  AnytimeCostmapPlannerStats * AnytimeCostmapPlannerStats::
   copy() const
   {
-    DynamicCostmapPlannerStats * foo(new DynamicCostmapPlannerStats(*this));
+    AnytimeCostmapPlannerStats * foo(new AnytimeCostmapPlannerStats(*this));
     return foo;
   }
   
   
-  void DynamicCostmapPlannerStats::
+  void AnytimeCostmapPlannerStats::
   logStream(std::ostream & os,
 	    std::string const & title,
 	    std::string const & prefix) const
   {
     CostmapPlannerStats::logStream(os, title, prefix);
-    if (plan_from_scratch)
-      os << prefix << "plan_from_scratch:         TRUE\n";
-    else
-      os << prefix << "plan_from_scratch:         FALSE\n";
-    if (flush_cost_changes)
-      os << prefix << "flush_cost_changes:        TRUE\n";
-    else
-      os << prefix << "flush_cost_changes:        FALSE\n";
+    os << prefix << "stop_at_first_solution:    " << to_string(stop_at_first_solution) << "\n"
+       << prefix << "time allocated [ms]:       " << 1.0e3 * allocated_time << "\n";
   }
+
   
-  
-  DynamicCostmapPlanner::
-  DynamicCostmapPlanner(DynamicCostmapPlannerStats & stats,
+  AnytimeCostmapPlanner::
+  AnytimeCostmapPlanner(AnytimeCostmapPlannerStats & stats,
 			boost::shared_ptr<Costmap const> costmap,
 			boost::shared_ptr<IndexTransform const> itransform)
     : CostmapPlanner(stats, costmap, itransform),
@@ -309,83 +310,30 @@ namespace mpglue {
   }
   
   
-  void DynamicCostmapPlanner::
-  forcePlanningFromScratch(bool flag)
-  {
-    stats__.plan_from_scratch = flag;
-  }
-  
-  
-  void DynamicCostmapPlanner::
-  flushCostChanges(bool flag)
-  {
-    stats__.flush_cost_changes = flag;
-  }
-  
-  
-  void DynamicCostmapPlanner::
-  postCreatePlan() throw(std::exception)
-  {
-    // do not forget to call superclass!
-    CostmapPlanner::postCreatePlan();
-    
-    stats__.plan_from_scratch = false;
-    stats__.flush_cost_changes = false;
-  }
-  
-  
-  IncrementalCostmapPlannerStats::
-  IncrementalCostmapPlannerStats()
-    : DynamicCostmapPlannerStats(),
-      stop_at_first_solution(false),
-      allocated_time(std::numeric_limits<double>::max())
-  {
-  }
-  
-  
-  IncrementalCostmapPlannerStats * IncrementalCostmapPlannerStats::
-  copy() const
-  {
-    IncrementalCostmapPlannerStats * foo(new IncrementalCostmapPlannerStats(*this));
-    return foo;
-  }
-  
-  
-  void IncrementalCostmapPlannerStats::
-  logStream(std::ostream & os,
-	    std::string const & title,
-	    std::string const & prefix) const
-  {
-    DynamicCostmapPlannerStats::logStream(os, title, prefix);
-    if (stop_at_first_solution)
-      os << prefix << "stop_at_first_solution:    TRUE\n";
-    else
-      os << prefix << "stop_at_first_solution:    FALSE\n";
-    os << prefix << "time allocated [ms]:       " << 1.0e3 * allocated_time << "\n";
-  }
-
-  
-  IncrementalCostmapPlanner::
-  IncrementalCostmapPlanner(IncrementalCostmapPlannerStats & stats,
-			    boost::shared_ptr<Costmap const> costmap,
-			    boost::shared_ptr<IndexTransform const> itransform)
-    : DynamicCostmapPlanner(stats, costmap, itransform),
-      stats__(stats)
-  {
-  }
-  
-  
-  void IncrementalCostmapPlanner::
+  void AnytimeCostmapPlanner::
   stopAtFirstSolution(bool flag)
   {
-    stats__.stop_at_first_solution = flag;
+    if (flag != stats__.stop_at_first_solution) {
+      stats__.stop_at_first_solution = flag;
+      stop_at_first_solution_changed_ = true;
+    }
   }
 
 
-  void IncrementalCostmapPlanner::
+  void AnytimeCostmapPlanner::
   setAllocatedTime(double seconds)
   {
     stats__.allocated_time = seconds;
+    allocated_time_changed_ = true;
   }
+  
+  
+  void AnytimeCostmapPlanner::
+  postCreatePlan() throw(std::exception)
+  {
+    stop_at_first_solution_changed_ = false;
+    allocated_time_changed_ = false;
+  }
+
   
 }

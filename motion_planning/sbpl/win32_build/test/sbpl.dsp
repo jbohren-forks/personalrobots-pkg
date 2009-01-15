@@ -115,17 +115,7 @@ SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.cpp
 
 SOURCE=..\..\src\discrete_space_information\template\environment_XXX.cpp
 # PROP Exclude_From_Scan -1
-
-!IF  "$(CFG)" == "sbpl - Win32 Release"
-
 # PROP BASE Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "sbpl - Win32 Debug"
-
-# PROP BASE Exclude_From_Build 1
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

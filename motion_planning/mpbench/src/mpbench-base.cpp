@@ -32,17 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "setup.hpp"
-#include "gfx.hpp"
+#include "setup.h"
+#include "gfx.h"
 #include <costmap_2d/costmap_2d.h>
-#include <mpglue/sbpl_util.hh>
-#include <mpglue/environment.h>
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/navfn_planner.h>
 #include <sfl/util/numeric.hpp>
+#include <sfl/util/strutil.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
 #include <iomanip>
+#include <set>
 
 extern "C" {
 #include <err.h>
@@ -59,31 +59,26 @@ static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
 static void print_summary();
+static std::string canonicalPlannerName(std::string const & name_or_alias);
 
 static footprint_t const & getFootprint();
-static std::string baseFilename();
+static string baseFilename();
+static string sanitizeSpec(string const & spec);
 
 static bool enableGfx;
-static string plannerType;
+static string planner_spec;
+static vector<string> planner_name;
 static string costmapType;
-static string environmentType;
-static SBPLBenchmarkOptions opt;
-static string travmapFilename;
-static string costmapFilename;
+static SetupOptions opt;
 static bool websiteMode;
 
-static shared_ptr<SBPLBenchmarkSetup> setup;
-static shared_ptr<Environment> environment;
-static shared_ptr<SBPLPlannerManager> plannerMgr;
-static shared_ptr<CostmapPlanner> planner;
+static shared_ptr<Setup> setup;
+static vector<shared_ptr<CostmapPlanner> > planner;
 static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
 
-static planList_t planList;
-
-typedef vector<shared_ptr<CostmapPlannerStats> > plannerStats_t;
-static plannerStats_t plannerStats;
+static resultlist_t resultlist;
 
 
 int main(int argc, char ** argv)
@@ -98,16 +93,16 @@ int main(int argc, char ** argv)
   print_summary();
   if (enableGfx)
     display(gfx::Configuration(*setup,
-			       *environment,
+			       planner_name,
 			       opt,
 			       websiteMode,
 			       baseFilename(),
 			       getFootprint(),
-			       planList,
-			       "3DKIN" != environmentType,
+			       resultlist,
+			       true, // XXXX to do: depends on 3DKIN
 			       *logos),
-	    opt.name.c_str(),
-	    1, // hack: layoutID
+	    opt.spec.c_str(),
+	    3, // hack: layoutID
 	    &argc, argv);
 }
 
@@ -117,11 +112,9 @@ void cleanup()
   if (logos)
     *logos << "byebye!\n" << flush;
   setup.reset();
-  environment.reset();
-  plannerMgr.reset();
-  planner.reset();
+  planner.clear();
   logos.reset();
-  planList.clear();
+  resultlist.clear();
 }
 
 
@@ -129,20 +122,20 @@ void usage(ostream & os)
 {
   os << "options:\n"
      << "   -h               help (this message)\n"
-     << "   -p  <name>       name of the SBPL planner\n"
+     << "   -p  <spec>       colon-separated planner names\n"
      << "   -m  <name>       name of the costmap implementation\n"
-     << "   -e  <name>       environment representation type\n"
-     << "   -s  <name>       name of the setup\n"
+    ////     << "   -e  <name>       environment representation type\n"
+     << "   -s  <spec>       setup specification, e.g. hc:office1 or pgm:costs.pgm:tasks.xml\n"
      << "   -r  <cellsize>   set grid resolution\n"
      << "   -i  <in-radius>  set INSCRIBED radius\n"
      << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
      << "   -I  <inflate-r>  set INFLATION radius\n"
      << "   -d  <doorwidth>  set width of doors (office setups)\n"
      << "   -H  <hallwidth>  set width of hallways (office setups)\n"
-     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
-     << "   -g  <gray>       cutoff for obstacles in PGM images (for -s pgm)\n"
-     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
-     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
+    ////     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
+     << "   -g  <gray>       cutoff for obstacles in PGM images\n"
+    ////     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
+    ////     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
      << "   -X               dump filename base to stdout (use as last option)\n"
      << "   -W               run in website generation mode\n";
 }
@@ -151,10 +144,10 @@ void usage(ostream & os)
 static string summarizeOptions()
 {
   ostringstream os;
-  os << "-p" << canonicalPlannerName(plannerType)
-     << "-s" << opt.name
+  os << "-p" << sanitizeSpec(planner_spec)
+     << "-s" << sanitizeSpec(opt.spec)
      << "-m" << costmapType
-     << "-e" << canonicalEnvironmentName(environmentType)
+    ////     << "-e" << canonicalEnvironmentName(environmentType)
      << "-r" << (int) rint(1e3 * opt.resolution)
      << "-i" << (int) rint(1e3 * opt.inscribed_radius)
      << "-c" << (int) rint(1e3 * opt.circumscribed_radius)
@@ -171,6 +164,35 @@ std::string baseFilename()
 }
 
 
+string sanitizeSpec(string const & spec)
+{
+  static set<char> forbidden;
+  if (forbidden.empty()) {
+    for (char cc(0); cc <= '*'; ++cc)
+      forbidden.insert(cc);
+    forbidden.insert('.');
+    forbidden.insert('/');
+    forbidden.insert(':');
+    forbidden.insert(';');
+    forbidden.insert('<');
+    forbidden.insert('>');
+    forbidden.insert('?');
+    forbidden.insert('@');
+    forbidden.insert('[');
+    forbidden.insert('\\');
+    forbidden.insert(']');
+    forbidden.insert('`');
+    for (char cc(0x7f); cc >= '{'; --cc)
+      forbidden.insert(cc);
+  }
+  string foo(spec);
+  for (string::iterator is(foo.begin()); is != foo.end(); ++is)
+    if (forbidden.end() != forbidden.find(*is))
+      *is = '_';
+  return foo;
+}
+
+
 static void sanitizeOptions()
 {
   if (opt.inscribed_radius > opt.circumscribed_radius)
@@ -179,8 +201,6 @@ static void sanitizeOptions()
     opt.inflation_radius = opt.inscribed_radius;
   if (opt.circumscribed_radius > opt.inflation_radius)
     opt.inflation_radius = opt.circumscribed_radius;
-  plannerType = canonicalPlannerName(plannerType);
-  environmentType = canonicalEnvironmentName(environmentType);
 }
 
 
@@ -190,13 +210,11 @@ void parse_options(int argc, char ** argv)
   enableGfx = true;
   
   // default values for options
-  plannerType = "ARAPlanner";
+  planner_spec = "ara:ad:nf";
   costmapType = "costmap_2d";
-  environmentType = "2D";
-  travmapFilename = "";
-  costmapFilename = "";
+  ////  environmentType = "2D";
   websiteMode = false;
-  // most other options handled through SBPLBenchmarkOptions
+  // most other options handled through SetupOptions
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -214,21 +232,21 @@ void parse_options(int argc, char ** argv)
       case 'p':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -p requires a name argument\n";
+ 	  cerr << argv[0] << ": -p requires a spec argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	plannerType = argv[ii];
+	planner_spec = argv[ii];
  	break;
 	
       case 's':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -s requires a name argument\n";
+ 	  cerr << argv[0] << ": -s requires a spec argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	opt.name = argv[ii];
+	opt.spec = argv[ii];
  	break;
 	
       case 'm':
@@ -239,16 +257,6 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	costmapType = argv[ii];
- 	break;
-	
-      case 'e':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -e requires a name argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	environmentType = argv[ii];
  	break;
 	
       case 'r':
@@ -359,16 +367,6 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
-      case 'n':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -n requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	opt.pgm_filename = argv[ii];
- 	break;
-	
       case 'g':
 	++ii;
  	if (ii >= argc) {
@@ -385,26 +383,6 @@ void parse_options(int argc, char ** argv)
 	    exit(EXIT_FAILURE);
 	  }
 	}
- 	break;
-	
-      case 'o':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -o requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	travmapFilename = argv[ii];
- 	break;
-	
-      case 'O':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -O requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	costmapFilename = argv[ii];
  	break;
 	
       case 'X':
@@ -438,178 +416,246 @@ void create_setup()
 	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
 	 costmapType.c_str());
   
-  *logos << "creating setup \"" << opt.name << "\"\n" << flush;
-  {
-    shared_ptr<ostream> dump_os;
-    if ( ! travmapFilename.empty()) {
-      dump_os.reset(new ofstream(travmapFilename.c_str()));
-      if ( ! (*dump_os)) {
-	*logos << "could not open travmap file " << travmapFilename << "\n" << flush;
-	dump_os.reset();
-      }
-    }
-    setup.reset(createBenchmark(opt, logos.get(), dump_os.get()));
-    if ( ! setup)
-      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", opt.name.c_str());
-    if ( ! costmapFilename.empty()) {
-      dump_os.reset(new ofstream(costmapFilename.c_str()));
-      if ( ! (*dump_os))
-	*logos << "could not open costmap file " << costmapFilename << "\n" << flush;
-      else {
-	*logos << "writing costmap_2d::CostMap2d\n";
-	*dump_os << setup->getRaw2DCostmap().toString();
-      }
-    }
+  *logos << "creating setup \"" << opt.spec << "\"\n" << flush;
+  try {
+    setup.reset(createSetup(opt, logos.get()));
   }
+  catch (std::exception const & ee) {
+    errx(EXIT_FAILURE, "create_setup(): EXCEPTION %s", ee.what());
+  }
+  if ( ! setup)
+    errx(EXIT_FAILURE, "create_setup(): could not create setup from spec \"%s\"",
+	 opt.spec.c_str());
   setup->dumpDescription(*logos, "", "  ");
-  *logos << flush
-	 << "creating environment of type " << environmentType
-	 << " for map type " << costmapType << "\n" << flush;
   
-  if ("2D" == environmentType) {
-    unsigned char const
-      obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-    environment.reset(new Environment2D(setup->getCostmap(),
-					setup->getIndexTransform(),
-					0, 0, // start INDEX (ix, iy)
-					0, 0, // goal INDEX x (ix, iy)
-					obst_cost_thresh));
-  }
-  else if ("3DKIN" == environmentType) {
-    unsigned char const
-      obst_cost_thresh(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
-    // how about making these configurable?
-    double const goaltol_x(0.5 * opt.inscribed_radius);
-    double const goaltol_y(0.5 * opt.inscribed_radius);
-    double const goaltol_theta(M_PI);
-    double const nominalvel_mpersecs(0.6); // human leisurely walking speed
-    double const timetoturn45degsinplace_secs(0.6); // guesstimate
-    environment.reset(new Environment3DKIN(setup->getCostmap(),
-					   setup->getIndexTransform(),
-					   obst_cost_thresh,
-					   0, 0, 0, // start POSE (x, y, th)
-					   0, 0, 0, // goal POSE (x, y, th)
-					   goaltol_x, goaltol_y, goaltol_theta,
-					   getFootprint(), nominalvel_mpersecs,
-					   timetoturn45degsinplace_secs));
-    static bool const do_sanity_check(false);
-    if (do_sanity_check) {
-      Costmap const & cm(*setup->getCostmap());
-      bool sane(true);
-      cout << "3DKIN costmap sanity check:\n"
-	   << " * correct obstacle\n"
-	   << " O missing obstacle\n"
-	   << " . correct freespace\n"
-	   << " x missing freespace\n"
-	   << " @ missing information\n";
-      for (ssize_t ix(0); ix < cm.getXEnd(); ++ix) {
-	cout << "  ";
-	for (ssize_t iy(0); iy < cm.getYEnd(); ++iy) {
-	  int cost;
-	  if ( !  cm.getCost(ix, iy, &cost)) {
-	    cout << "@";
-	    sane = false;
-	  }
-	  else if (cost >= obst_cost_thresh) {
-	    if (environment->IsObstacle(ix, iy))
-	      cout << "*";
-	    else {
-	      cout << "O";
-	      sane = false;
-	    }
-	  }
-	  else {
-	    if ( ! environment->IsObstacle(ix, iy))
-	      cout << ".";
-	    else {
-	      cout << "x";
-	      sane = false;
-	    }
-	  }
-	}
-	cout << "\n";
+  {
+    string spec(planner_spec);
+    string head;
+    while (sfl::splitstring(spec, ':', head, spec)) {
+      string name(canonicalPlannerName(head));
+      bool const strict_name_check(true);
+      if ( ! name.empty()) {
+	planner_name.push_back(name);
+	*logos << "added planner name " << name << "\n" << flush;
       }
-      if ( ! sane)
-	errx(EXIT_FAILURE, "3DKIN environment is not sane");
+      else if (strict_name_check)
+	errx(EXIT_FAILURE, "create_setup(): strict_name_check failed on \"%s\"", head.c_str());
     }
   }
-  else {
-    errx(EXIT_FAILURE, "invalid environmentType \"%s\", use 2D or 3DKIN", environmentType.c_str());
+  if (planner_name.empty())
+    errx(EXIT_FAILURE, "create_setup(): no valid planner names in spec \"%s\"",
+	 planner_spec.c_str());
+  
+  bool const forwardsearch(false); // XXXX to do: add an option for this
+  int const obstcost_thresh_2d(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+  int const obstcost_thresh_3dkin(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
+  double const nominalvel_mpersecs(0.6); // XXXX to do: config! human leisurely walking speed
+  double const timetoturn45degsinplace_secs(0.6); // XXXX to do: config! guesstimate
+  
+  for (size_t in(0); in < planner_name.size(); ++in) {
+    if ("NavFn" == planner_name[in]) {
+      *logos << "creating NavFnPlanner\n" << flush;
+      shared_ptr<CostmapPlanner> foo(new NavFnPlanner(setup->getCostmap(),
+						      setup->getIndexTransform()));
+      planner.push_back(foo);
+    }
+    else if ("ARAStar2D" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createARAStar2D(setup->getCostmap(),
+						      setup->getIndexTransform(),
+						      forwardsearch,
+						      obstcost_thresh_2d));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createARAStar2D() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ADStar2D" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createADStar2D(setup->getCostmap(),
+						     setup->getIndexTransform(),
+						     forwardsearch,
+						     obstcost_thresh_2d));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createADStar2D() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ARAStar3DKIN" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createARAStar3DKIN(setup->getCostmap(),
+							 setup->getIndexTransform(),
+							 forwardsearch,
+							 obstcost_thresh_3dkin,
+							 getFootprint(),
+							 nominalvel_mpersecs,
+							 timetoturn45degsinplace_secs));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createARAStar3DKIN() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else if ("ADStar3DKIN" == planner_name[in]) {
+      shared_ptr<SBPLPlannerWrap> foo(createADStar3DKIN(setup->getCostmap(),
+							setup->getIndexTransform(),
+							forwardsearch,
+							obstcost_thresh_3dkin,
+							getFootprint(),
+							nominalvel_mpersecs,
+							timetoturn45degsinplace_secs));
+      if ( ! foo)
+	errx(EXIT_FAILURE, "create_setup(): createADStar3DKIN() failed");
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      planner.push_back(foo);
+    }
+    else {
+      errx(EXIT_FAILURE, "create_setup(): invalid planner name \"%s\"",
+	   planner_name[in].c_str());
+    }
   }
   
-  MDPConfig mdpConfig;
-  if ( ! environment->InitializeMDPCfg(&mdpConfig))
-    errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed on environment %s",
-	 environment->getName().c_str());
-  *logos << "  environment name: " << environment->getName() << "\n" << flush;
+  *logos << "finished creating setup\n" << flush;
+}
+
+
+static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_id,
+			     task::startspec const & start, task::goalspec const & goal,
+			     SBPLPlannerWrap & planner_ref)
+{
+  double prev_epsilon(-1);
+  double cumul_allocated_time(0);
+  double cumul_actual_time_wall(0);
+  double cumul_actual_time_user(0);
+  int cumul_expands(0);
   
-  // XXXX to do: most "environment" stuff is really specific to SBPL, should be confined there
+  for (size_t jj(0); true; ++jj) {
+    
+    shared_ptr<waypoint_plan_t> plan;
+    plan = planner_ref.createPlan();
+    shared_ptr<SBPLPlannerStats> stats(planner_ref.copyMyStats());
+    
+    if ( ! plan) {
+      // giving up immediately sort of precludes the possibility that
+      // the planner was not given enough time, or that it has not
+      // been given a chance of coming up with an initial solution
+      // before... ah well, cannot handle every possible case.
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + ": FAILURE", "    ");
+      *logos << flush;
+      shared_ptr<task::result>
+	result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+      resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
+      break;
+    }
+    
+    if (0 < stats->number_of_expands)
+      cumul_expands += stats->number_of_expands;
+    
+    if (stats->solution_epsilon > 0) {
+      if ((prev_epsilon > 0) && (fabs(prev_epsilon - stats->solution_epsilon) < 1e-9)) {
+	stats->allocated_time = cumul_allocated_time;
+	stats->actual_time_wall = cumul_actual_time_wall;
+	stats->actual_time_user = cumul_actual_time_user;
+	stats->number_of_expands = cumul_expands;
+	stats->logStream(*logos,  "  episode " + sfl::to_string(episode_id) + " FINAL: cumul:",
+			 "    ");
+	*logos << flush;
+	//// do NOT add to overall stats because of cumulated times
+	break;
+      }
+    }
+    
+    cumul_allocated_time += stats->allocated_time;
+    cumul_actual_time_wall += stats->actual_time_wall;
+    cumul_actual_time_user += stats->actual_time_user;
+    
+    if (0 == jj)
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + "  FIRST_SOLUTION", "    ");
+    else
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + "  IMPROVED", "    ");
+    *logos << flush;
+    shared_ptr<task::result>
+      result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+    resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
+    
+    prev_epsilon = stats->solution_epsilon;
+  }  
+}
+
+
+static void plan_once(size_t planner_id, size_t task_id, size_t episode_id,
+		      task::startspec const & start, task::goalspec const & goal,
+		      CostmapPlanner & planner_ref)
+{
+  shared_ptr<waypoint_plan_t> plan;
+  try {
+    plan = planner_ref.createPlan();
+  }
+  catch (std::exception const & ee) {
+    *logos << "\n==================================================\n"
+	   << "  plan_once(): EXCEPTION from createPlan():\n"
+	   << ee.what()
+	   << "\n==================================================\n" << flush;
+  }
   
-  if ("NavFn" == plannerType) {
-    *logos << "creating NavFnPlanner\n" << flush;
-    planner.reset(new NavFnPlanner(environment->getCostmap(),
-				   environment->getIndexTransform()));
-  }
-  else {
-    *logos << "creating SBPLPlannerManager manager\n" << flush;
-    bool const forwardsearch(false);
-    plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-    if ( ! plannerMgr->select(plannerType, false, logos.get()))
-      errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
-    *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
-    SBPLPlannerWrap * pwrap(new SBPLPlannerWrap(plannerMgr->getName(), environment->getName(),
-						plannerMgr->get_planner(), environment));
-    pwrap->stopAtFirstSolution(false);
-    pwrap->setAllocatedTime(numeric_limits<double>::max());
-    planner.reset(pwrap);
-  }
+  string title;
+  if (plan)
+    title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
+  else
+    title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
+  shared_ptr<CostmapPlannerStats> stats(planner_ref.copyStats());
+  stats->logStream(*logos, title, "    ");
+  *logos << flush;
+  
+  shared_ptr<task::result>
+    result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+  resultlist.push_back(result);
 }
 
 
 void run_tasks()
 {
-  *logos << "running tasks\n" << flush;
   try {
-    SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
-    for (size_t ii(0); ii < tasklist.size(); ++ii) {
-      planBundle_t bundle;
-      SBPLBenchmarkSetup::task const & task(tasklist[ii]);
+    for (size_t planner_id(0); planner_id < planner.size(); ++planner_id) {
+      *logos << "running tasks for planner " << planner_id << "\n" << flush;
       
-      *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
+      tasklist_t const & tasklist(setup->getTasks());
+      for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
+	if ( ! tasklist[task_id])
+	  errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
+	task::setup const task(*tasklist[task_id]);
+	if (task.start.empty())
+	  errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
-      planner->setStart(task.start_x, task.start_y, task.start_th);
-      planner->setGoal(task.goal_x, task.goal_y, task.goal_th);
-      planner->forcePlanningFromScratch(task.from_scratch);
+	*logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+	planner[planner_id]->setGoal(task.goal.px, task.goal.py, task.goal.pth);
+	planner[planner_id]->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
-      shared_ptr<waypoint_plan_t> plan;
-      try {
-	plan = planner->createPlan();
-      }
-      catch (std::exception const & ee) {
-	*logos << "\n==================================================\n"
-	       << "  EXCEPTION from createPlan():\n"
-	       << ee.what()
-	       << "\n==================================================\n" << flush;
-      }
-      
-      char const * title("  SUCCESS");
-      if (plan)			// maybe also push failed plans?
-	bundle.push_back(plan);
-      else
-	title = "  FAILURE";
-      shared_ptr<CostmapPlannerStats> stats(planner->copyStats());
-      stats->logStream(*logos, title, "    ");
-      *logos << flush;
-      plannerStats.push_back(stats);
-      
-      // Well... this ends up copying a std::vector of
-      // boost::shared_ptr instances, could probably be smarter about
-      // it. Also we will end up storing empty bundles, which is
-      // actually what we want because for failed tasks we still want
-      // to plot the start and goal poses (see gfx.cpp), but there
-      // must be a neater solution to this.
-      planList.insert(make_pair(ii, bundle));
-    }
+	for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
+	  task::startspec const & start(task.start[episode_id]);
+	  CostmapPlanner * costmap_planner(planner[planner_id].get());
+	  
+	  costmap_planner->setStart(start.FOOpx, start.FOOpy, start.FOOpth);
+	  costmap_planner->forcePlanningFromScratch(start.FOOfrom_scratch);
+	  
+	  // not all planners can be run iteratively...
+	  SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(costmap_planner));
+	  if ( ! sbpl_planner)
+	    plan_once(planner_id, task_id, episode_id, start, task.goal, *costmap_planner);
+	  else {
+	    sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+	    sbpl_planner->setAllocatedTime(start.alloc_time);
+	    if (start.allow_iteration)
+	      plan_iteratively(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
+	    else
+	      plan_once(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
+	  }
+	} // endfor(episode)
+      } // endfor(task)
+    } // endfor(planner)
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "EXCEPTION in run_tasks():\n%s", ee.what());
@@ -625,16 +671,21 @@ void print_summary()
   double t_fail(0);
   double lplan(0);
   double rplan(0);
-  for (plannerStats_t::const_iterator ie(plannerStats.begin()); ie != plannerStats.end(); ++ie) {
-    if ((*ie)->success) {
+  for (resultlist_t::const_iterator ie(resultlist.begin()); ie != resultlist.end(); ++ie) {
+    shared_ptr<task::result> result(*ie);
+    if ( ! result)
+      errx(EXIT_FAILURE, "print_summary(): void result");
+    if ( ! result->stats)
+      errx(EXIT_FAILURE, "print_summary(): void stats");
+    if (result->stats->success) {
       ++n_success;
-      t_success += (*ie)->actual_time_wall;
-      lplan += (*ie)->plan_length;
-      rplan += (*ie)->plan_angle_change;
+      t_success += result->stats->actual_time_wall;
+      lplan += result->stats->plan_length;
+      rplan += result->stats->plan_angle_change;
     }
     else {
       ++n_fail;
-      t_fail += (*ie)->actual_time_wall;
+      t_fail += result->stats->actual_time_wall;
     }
   }
   rplan *= 180.0 / M_PI;
@@ -678,4 +729,48 @@ footprint_t const & getFootprint()
     initSimpleFootprint(*footprint, opt.inscribed_radius, opt.circumscribed_radius);
   }
   return *footprint;
+}
+
+
+std::string canonicalPlannerName(std::string const & name_or_alias)
+{
+  static map<string, string> planner_alias;
+  if (planner_alias.empty()) {
+    planner_alias.insert(make_pair("ARAStar2D",    "ARAStar2D"));
+    planner_alias.insert(make_pair("ara",          "ARAStar2D"));
+    planner_alias.insert(make_pair("ARA",          "ARAStar2D"));
+    planner_alias.insert(make_pair("arastar",      "ARAStar2D"));
+    planner_alias.insert(make_pair("ARAStar",      "ARAStar2D"));
+    planner_alias.insert(make_pair("ara2d",        "ARAStar2D"));
+    planner_alias.insert(make_pair("ARA2D",        "ARAStar2D"));
+    planner_alias.insert(make_pair("arastar2d",    "ARAStar2D"));
+    
+    planner_alias.insert(make_pair("ARAStar3DKIN", "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ara3d",        "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ARA3D",        "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("arastar3d",    "ARAStar3DKIN"));
+    planner_alias.insert(make_pair("ARAStar3D",    "ARAStar3DKIN"));
+    
+    planner_alias.insert(make_pair("ADStar2D",     "ADStar2D"));
+    planner_alias.insert(make_pair("ad",           "ADStar2D"));
+    planner_alias.insert(make_pair("AD",           "ADStar2D"));
+    planner_alias.insert(make_pair("adstar",       "ADStar2D"));
+    planner_alias.insert(make_pair("ADStar",       "ADStar2D"));
+
+    planner_alias.insert(make_pair("ADStar3DKIN",  "ADStar3DKIN"));
+    planner_alias.insert(make_pair("ad3d",         "ADStar3DKIN"));
+    planner_alias.insert(make_pair("AD3D",         "ADStar3DKIN"));
+    planner_alias.insert(make_pair("adstar3d",     "ADStar3DKIN"));
+    planner_alias.insert(make_pair("ADStar3D",     "ADStar3DKIN"));
+
+    planner_alias.insert(make_pair("NavFn",        "NavFn"));
+    planner_alias.insert(make_pair("navfn",        "NavFn"));
+    planner_alias.insert(make_pair("nf",           "NavFn"));
+    planner_alias.insert(make_pair("NF",           "NavFn"));
+  }
+  
+  map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+  if (planner_alias.end() == is)
+    return "";
+  return is->second;
 }

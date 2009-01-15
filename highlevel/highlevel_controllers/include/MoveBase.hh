@@ -172,7 +172,7 @@ namespace ros {
        */
       void baseScanCallback();
       void tiltScanCallback();
-      void tiltCloudCallbackTransform(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message);
+      void tiltCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message);
       void groundPlaneCloudCallback();
       void stereoCloudCallback();
       void groundPlaneCallback();

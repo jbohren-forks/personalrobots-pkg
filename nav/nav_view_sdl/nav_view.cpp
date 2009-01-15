@@ -98,7 +98,7 @@ Publishes to (name / type):
 
 // messages and services
 #include "std_msgs/ParticleCloud2D.h"
-#include "std_msgs/Planner2DGoal.h"
+#include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
 #include "pr2_msgs/OccDiff.h"
@@ -115,7 +115,7 @@ class NavView : public ros::node, public ros::SDLGL
 {
 public:
   std_msgs::ParticleCloud2D cloud;
-  std_msgs::Planner2DGoal goal;
+  robot_msgs::Planner2DGoal goal;
   std_msgs::Polyline2D pathline;
   std_msgs::Polyline2D local_path;
   std_msgs::Polyline2D robot_footprint;
@@ -146,7 +146,7 @@ public:
                        tf(*this,false)
   {
     param("max_frame_rate", max_frame_rate, 5.0);
-    advertise<std_msgs::Planner2DGoal>("goal",1);
+    advertise<robot_msgs::Planner2DGoal>("goal",1);
     advertise<std_msgs::Pose2DFloat32>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
     subscribe("gui_path", pathline, &NavView::generic_cb,1);

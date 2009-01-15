@@ -52,7 +52,7 @@ class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space
 
 // Would like to forward-declare, but nav2dcell_t is used within a
 // std::vector<> ... see also the comments in
-// sbpl/src/planners/planner.h about the ChangedCellsGetter
+// sbpl/src/planners/planner.h about the StateChangeQuery
 // class. Also, environment_nav2D.h needs some other includes to be
 // present and uses std::vector without the std:: prefix, so we
 // unfortunately have to add a using directive here.

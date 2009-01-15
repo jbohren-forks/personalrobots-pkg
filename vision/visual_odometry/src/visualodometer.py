@@ -283,7 +283,7 @@ class DescriptorScheme:
 class DescriptorSchemeSAD(DescriptorScheme):
 
   def collect(self, frame):
-    if hasattr(frame, "lgrad"):
+    if not hasattr(frame, "lgrad"):
       frame.lgrad = " " * (frame.size[0] * frame.size[1])
       VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
     frame.descriptors = [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
@@ -302,7 +302,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    self.cl.read('/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old')
+    self.cl.read('/u/prdata/calonder_trees/current.rtc')
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)

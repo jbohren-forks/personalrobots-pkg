@@ -45,9 +45,6 @@
 namespace mpglue {
   
   
-  std::string canonicalPlannerName(std::string const & name_or_alias);
-  
-  
   class Costmap;
   class IndexTransform;
   
@@ -70,9 +67,12 @@ namespace mpglue {
     double goal_tol_distance;/**< maximum distance at which to stop planning */
     double goal_tol_angle;   /**< maximum heading error at which to stop planning */
     
+    bool plan_from_scratch;  /**< whether to discard any previous solutions */
+    bool flush_cost_changes; /**< whether costs have changed since previous createPlan() */
+    
     bool success;             /**< whether planning was successfull */
-    double actual_time_wall;     /**< duration actually used for planning (wallclock) */
-    double actual_time_user;     /**< duration actually used for planning (user time) */
+    double actual_time_wall;  /**< duration actually used for planning (wallclock) */
+    double actual_time_user;  /**< duration actually used for planning (user time) */
     
     // XXXX to do: avoid forcing subclass implementers to update these manually...
     double plan_length;       /**< cumulated Euclidean distance between planned waypoints */
@@ -120,16 +120,14 @@ namespace mpglue {
     /** Default implementation just stores the goal tolerance in the
 	stats__ field. */
     virtual void setGoalTolerance(double dist_tol, double angle_tol);
-
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
-    /**
-       \todo The presence of this no-op method is just a quick hack
-       for integration of NavFn.
-    */
-    virtual void forcePlanningFromScratch(bool flag) {}
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
+    
+    /** Default implementation just sets a flag in the stats__
+	field. */
+    virtual void forcePlanningFromScratch(bool flag);
+    
+    /** Default implementation just sets a flag in the stats__
+	field. */
+    virtual void flushCostChanges(bool flag);
     
     /** Calls preCreatePlan(), doCreatePlan(), and postCreatePlan() in
 	that order. If any of them throw an exception, the following
@@ -170,7 +168,8 @@ namespace mpglue {
     
     /** Hook for subclasses. Called by createPlan() after calling
 	doCreatePlan(). Subclasses must call their superclass'
-	implementation at the beginning of their override. */
+	implementation at the beginning of their override. The base
+	implementation here simply resets the foo_changed_ flags. */
     virtual void postCreatePlan() throw(std::exception);
     
     /** \note Two underscores because implementing subclasses might
@@ -178,55 +177,19 @@ namespace mpglue {
     CostmapPlannerStats & stats__;
     boost::shared_ptr<Costmap const> costmap_;
     boost::shared_ptr<IndexTransform const> itransform_;
+    
+    bool start_changed_;
+    bool goal_pose_changed_;
+    bool goal_tol_changed_;
+    bool plan_from_scratch_changed_;
+    bool flush_cost_changes_changed_;
   };
   
   
-  struct DynamicCostmapPlannerStats
+  struct AnytimeCostmapPlannerStats
     : public CostmapPlannerStats {
-    DynamicCostmapPlannerStats();
-    virtual DynamicCostmapPlannerStats * copy() const;
-    
-    bool plan_from_scratch;  /**< whether to discard any previous solutions */
-    bool flush_cost_changes; /**< whether costs have changed since previous createPlan() */
-    
-    virtual void logStream(std::ostream & os,
-			   std::string const & title,
-			   std::string const & prefix) const;
-  };
-  
-  
-  class DynamicCostmapPlanner
-    : public CostmapPlanner
-  {
-  public:
-    /** Default implementation just sets a flag in the stats__
-	field. */
-    virtual void forcePlanningFromScratch(bool flag);
-
-    /** Default implementation just sets a flag in the stats__
-	field. */
-    virtual void flushCostChanges(bool flag);
-    
-  protected:
-    DynamicCostmapPlanner(DynamicCostmapPlannerStats & stats,
-			  boost::shared_ptr<Costmap const> costmap,
-			  boost::shared_ptr<IndexTransform const> itransform);
-    
-    /** Calls CostmapPlanner::postCreatePlan() and then resets the two
-	flags in DynamicCostmapPlannerStats. */
-    virtual void postCreatePlan() throw(std::exception);
-    
-    /** \note This shadows the identically named stats in
-	CostmapPlanner, which is OK because it ends up being the same
-	object anyway. */    
-    DynamicCostmapPlannerStats & stats__;
-  };
-  
-  
-  struct IncrementalCostmapPlannerStats
-    : public DynamicCostmapPlannerStats {
-    IncrementalCostmapPlannerStats();
-    virtual IncrementalCostmapPlannerStats * copy() const;
+    AnytimeCostmapPlannerStats();
+    virtual AnytimeCostmapPlannerStats * copy() const;
     
     bool stop_at_first_solution; /**< whether to just plan until any plan is found */
     double allocated_time;       /**< duration available for planning */
@@ -237,8 +200,8 @@ namespace mpglue {
   };
   
   
-  class IncrementalCostmapPlanner
-    : public DynamicCostmapPlanner
+  class AnytimeCostmapPlanner
+    : public CostmapPlanner
   {
   public:
     /** Default implementation just sets a flag in the stats__
@@ -250,14 +213,21 @@ namespace mpglue {
     virtual void setAllocatedTime(double seconds);
     
   protected:
-    IncrementalCostmapPlanner(IncrementalCostmapPlannerStats & stats,
-			      boost::shared_ptr<Costmap const> costmap,
-			      boost::shared_ptr<IndexTransform const> itransform);
+    AnytimeCostmapPlanner(AnytimeCostmapPlannerStats & stats,
+			  boost::shared_ptr<Costmap const> costmap,
+			  boost::shared_ptr<IndexTransform const> itransform);
+    
+    /** Calls CostmapPlanner::postCreatePlan() and then likewise
+	resets the foo_changed_ flags. */
+    virtual void postCreatePlan() throw(std::exception);
     
     /** \note This shadows the identically named stats in
-	DynamicCostmapPlanner, which is OK because it ends up being
-	the same object anyway. */    
-    IncrementalCostmapPlannerStats & stats__;
+	CostmapPlanner, which is OK because it ends up being the same
+	object anyway. */    
+    AnytimeCostmapPlannerStats & stats__;
+
+    bool stop_at_first_solution_changed_;
+    double allocated_time_changed_;
   };
   
 }

@@ -13,8 +13,8 @@
 
 using namespace features;
 
-typedef float SigType;
-//typedef uint8_t SigType;
+//typedef float SigType;
+typedef uint8_t SigType;
 typedef Promote<SigType>::type DistanceType;
 
 typedef struct {
@@ -189,12 +189,14 @@ PyObject *train(PyObject *self, PyObject *args)
   int depth = RandomizedTree::DEFAULT_DEPTH;
   int views = RandomizedTree::DEFAULT_VIEWS;
   int dimension = RandomizedTree::DEFAULT_REDUCED_NUM_DIM;
+  int num_quant_bits = 0;
 
   {
     char *imgdata;
     int imgdata_size, x, y;
-    if (!PyArg_ParseTuple(args, "s#iiO|iiii", &imgdata, &imgdata_size, &x, &y,
-                          &kp, &num_trees, &depth, &views, &dimension))
+    if (!PyArg_ParseTuple(args, "s#iiO|iiiii", &imgdata, &imgdata_size,
+                          &x, &y, &kp, &num_trees, &depth, &views,
+                          &dimension, &num_quant_bits))
       return NULL;
     dimension = std::min(dimension, PyList_Size(kp));
     input = cvCreateImageHeader(cvSize(x, y), IPL_DEPTH_8U, 1);
@@ -207,9 +209,10 @@ PyObject *train(PyObject *self, PyObject *args)
     base_set.push_back( BaseKeypoint(x+16, y+16, input) );
   }
 
-  //Rng rng( 0 );
-  Rng rng( std::time(0) );
-  pc->classifier->train(base_set, rng, num_trees, depth, views, dimension);
+  Rng rng( 0 );
+  //Rng rng( std::time(0) );
+  pc->classifier->train(base_set, rng, num_trees, depth,
+                        views, dimension, num_quant_bits);
 
   Py_RETURN_NONE;
 }
@@ -231,6 +234,12 @@ PyObject *Cread(PyObject *self, PyObject *args)
     return NULL;
   pc->classifier->read(filename);
   Py_RETURN_NONE;
+}
+
+PyObject *dimension(PyObject *self, PyObject *args)
+{
+  classifier_t *pc = (classifier_t*)self;
+  return Py_BuildValue("i", pc->classifier->classes());
 }
 
 PyObject *getSignature(PyObject *self, PyObject *args)
@@ -327,6 +336,7 @@ static PyMethodDef classifier_methods[] = {
   {"train", train, METH_VARARGS},
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},
+  {"dimension", dimension, METH_VARARGS},
   {"getSignature", getSignature, METH_VARARGS},
   {"getSignatures", getSignatures, METH_VARARGS},
   {NULL, NULL},

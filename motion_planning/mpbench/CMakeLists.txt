@@ -20,6 +20,10 @@ LIST (APPEND MPBENCH_LIBS
       nepumuk
       png)
 
+LIST (APPEND MPBENCH_SRCS
+      src/setup.cpp
+      src/gfx.cpp)
+
 SET (CMAKE_REQUIRED_INCLUDES /usr/local/include)
 INCLUDE_DIRECTORIES (/usr/local/include)
 LINK_DIRECTORIES (/usr/local/lib)
@@ -32,6 +36,15 @@ IF (${MPBENCH_HAVE_NETPGM})
   ADD_DEFINITIONS (-DMPBENCH_HAVE_NETPGM)
   LIST (APPEND MPBENCH_LIBS netpbm)
 ENDIF (${MPBENCH_HAVE_NETPGM})
+
+INCLUDE (CheckIncludeFile)
+CHECK_INCLUDE_FILE (expat.h MPBENCH_HAVE_EXPAT)
+IF (${MPBENCH_HAVE_EXPAT})
+  MESSAGE (STATUS "found expat.h")
+  ADD_DEFINITIONS (-DMPBENCH_HAVE_EXPAT)
+  LIST (APPEND MPBENCH_LIBS expat)
+  LIST (APPEND MPBENCH_SRCS src/parse.cpp)
+ENDIF (${MPBENCH_HAVE_EXPAT})
 
 INCLUDE (FindOpenGL)
 IF (OPENGL_FOUND)
@@ -92,7 +105,7 @@ ENDIF(WIN32)
 
 ##################################################
 
-rospack_add_library (mpbench src/setup.cpp src/gfx.cpp)
+rospack_add_library (mpbench ${MPBENCH_SRCS})
 
 rospack_add_executable (mpbench-base src/mpbench-base.cpp)
 target_link_libraries (mpbench-base ${MPBENCH_LIBS})

@@ -1,0 +1,7 @@
+to plan a path for ROS:
+
+rosrun robarm3d plan_path_ROS {env file}
+
+ex: rosrun robarm3d plan_path_ROS env_examples/robarm/window.cfg
+
+Sachin - feel free to edit this one. I had it create a JointTraj message but it doesn't send it yet.

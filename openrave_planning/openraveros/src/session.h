@@ -321,11 +321,11 @@ private:
     template <class MReq>
     SessionState getstate(const MReq& req)
     {
-        if( !req.__service_header )
+        if( !req.__connection_header )
             return SessionState();
 
-        ros::MSGHEADERMAP::const_iterator it = req.__service_header->find(_sessionname);
-        if( it == req.__service_header->end() )
+        ros::M_string::const_iterator it = req.__connection_header->find(_sessionname);
+        if( it == req.__connection_header->end() )
             return SessionState();
 
         boost::mutex::scoped_lock lock(_mutexsession);

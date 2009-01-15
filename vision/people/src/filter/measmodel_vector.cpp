@@ -45,9 +45,9 @@ static const unsigned int DIM_MEASMODEL_VECTOR            = 3;
 
 
 // Constructor
-MeasPdfVector::MeasPdfVector(const StateVector& sigma)
-  : ConditionalPdf<StateVector, StateVector>(DIM_MEASMODEL_VECTOR, NUM_MEASMODEL_VECTOR_COND_ARGS),
-    meas_noise_(StateVector(0,0,0), sigma)
+MeasPdfVector::MeasPdfVector(const Vector3& sigma)
+  : ConditionalPdf<Vector3, Vector3>(DIM_MEASMODEL_VECTOR, NUM_MEASMODEL_VECTOR_COND_ARGS),
+    meas_noise_(Vector3(0,0,0), sigma)
 {}
 
 
@@ -58,7 +58,7 @@ MeasPdfVector::~MeasPdfVector()
 
 
 Probability 
-MeasPdfVector::ProbabilityGet(const StateVector& measurement) const
+MeasPdfVector::ProbabilityGet(const Vector3& measurement) const
 {
   return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0));
 }
@@ -66,7 +66,7 @@ MeasPdfVector::ProbabilityGet(const StateVector& measurement) const
 
 
 bool
-MeasPdfVector::SampleFrom (Sample<StateVector>& one_sample, int method, void *args) const
+MeasPdfVector::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
 {
   cerr << "MeasPdfVector::SampleFrom Method not applicable" << endl;
   assert(0);
@@ -76,11 +76,11 @@ MeasPdfVector::SampleFrom (Sample<StateVector>& one_sample, int method, void *ar
 
 
 
-StateVector
+Vector3
 MeasPdfVector::ExpectedValueGet() const
 {
   cerr << "MeasPdfVector::ExpectedValueGet Method not applicable" << endl;
-  StateVector result;
+  Vector3 result;
   assert(0);
   return result;
 }
@@ -101,7 +101,7 @@ MeasPdfVector::CovarianceGet() const
 void
 MeasPdfVector::CovarianceSet(const MatrixWrapper::SymmetricMatrix& cov)
 {
-  StateVector cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
+  Vector3 cov_vec(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3)));
   meas_noise_.sigmaSet(cov_vec);
 }
 

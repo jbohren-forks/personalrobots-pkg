@@ -4,7 +4,7 @@ import rostools
 rostools.update_path('trajectory_rollout')
 
 import sys, traceback, logging, rospy
-from std_msgs.msg import Planner2DGoal
+from robot_msgs.msg import Planner2DGoal
 
 NAME = 'goal_listener'
 

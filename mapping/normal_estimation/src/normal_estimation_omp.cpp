@@ -108,7 +108,7 @@ class NormalEstimation : public ros::node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      get_published_topics (&t_list);
+      getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
@@ -131,11 +131,17 @@ class NormalEstimation : public ros::node
     void
       updateParametersFromServer ()
     {
-      if (has_param ("~downsample_leaf_width_x")) get_param ("~downsample_leaf_width_x", leaf_width_.x);
-      if (has_param ("~downsample_leaf_width_y")) get_param ("~downsample_leaf_width_y", leaf_width_.y);
-      if (has_param ("~downsample_leaf_width_z")) get_param ("~downsample_leaf_width_z", leaf_width_.z);
+      if (hasParam ("~downsample_leaf_width_x")) getParam ("~downsample_leaf_width_x", leaf_width_.x);
+      if (hasParam ("~downsample_leaf_width_y")) getParam ("~downsample_leaf_width_y", leaf_width_.y);
+      if (hasParam ("~downsample_leaf_width_z")) getParam ("~downsample_leaf_width_z", leaf_width_.z);
 
-      if (has_param ("~cut_distance")) get_param ("~cut_distance", cut_distance_);
+      if (hasParam ("~cut_distance"))
+      {
+        getParam ("~cut_distance", cut_distance_);
+        leaves_.resize (0);
+        leaves_.reserve (0);
+        ROS_INFO ("Done clearing leaves.");
+      }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +205,10 @@ class NormalEstimation : public ros::node
       }
 
       // Allocate the extra needed channels
-      cloud_normals_.chan.resize (original_chan_size + 7);     // Allocate 7 more channels
+      if (compute_moments_)
+        cloud_normals_.chan.resize (original_chan_size + 7);     // Allocate 7 more channels
+      else
+        cloud_normals_.chan.resize (original_chan_size + 4);     // Allocate 4 more channels
       cloud_normals_.chan[original_chan_size + 0].name = "nx";
       cloud_normals_.chan[original_chan_size + 1].name = "ny";
       cloud_normals_.chan[original_chan_size + 2].name = "nz";

@@ -16,3 +16,4 @@ uint8 done # 1 if trajectory is done, 0 if ongoing, 2 if queued, 3 if deleted, 4
 float32 trajectorytime # the current timestamp the trajectory is at. If the trajectory is finished, specifies the total time of the trajectory
 
 string[] jointnames # names of the joints that the controller expects
+float64[] jointpositions # joint values

@@ -132,8 +132,6 @@ TEST_F(TestEKF, test)
   ASSERT_TRUE(node_->unsubscribe("odom"));
 
   // check if callback was called enough times
-  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!  " << ekf_counter_ << std::endl;
-  printf("???????????????????????? %\n", ekf_counter_);
   ASSERT_TRUE(ekf_counter_ > 200);
 
   // check if time interval is correct

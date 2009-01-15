@@ -11,6 +11,7 @@ SubDir test_executive_trex_pr2 ;
 		[ FDirName $(TESTEXEC_HOME) wpc.0 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) wpc.1 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) wpc.2 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) wpc.3 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) miles.0 pr2.exec.nddl ]

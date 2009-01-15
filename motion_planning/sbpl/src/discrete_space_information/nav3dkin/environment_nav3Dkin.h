@@ -35,6 +35,11 @@
 
 #define ENVNAV3DKIN_DEFAULTOBSTHRESH 254	//see explanation of the value below
 
+// not used yet -- default linear goal tolerance along x and y
+#define ENVNAV3DKIN_DEFAULT_TOL_XY 0.3
+
+// not used yet -- default angular goal tolerance
+#define ENVNAV3DKIN_DEFAULT_TOL_TH 3.14159265358979323846
 
 //definition of theta orientations
 //0 - is aligned with X-axis in the positive direction (1,0 in polar coordinates)
@@ -163,7 +168,15 @@ public:
 	int	 SizeofCreatedEnv();
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
-
+  
+  bool InitializeEnv(int width, int height,
+		     /** if mapdata is NULL the grid is initialized to all freespace */
+		     const unsigned char* mapdata,
+		     const vector<sbpl_2Dpt_t> & perimeterptsV,
+		     double cellsize_m, double nominalvel_mpersecs,
+		     double timetoturn45degsinplace_secs, 
+		     unsigned char obsthresh);
+  
     bool InitializeEnv(int width, int height,
 		       /** if mapdata is NULL the grid is initialized to all freespace */
                        const unsigned char* mapdata,
@@ -175,8 +188,10 @@ public:
 					   unsigned char obsthresh);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
+    void SetGoalTolerance(double tol_x, double tol_y, double tol_theta); /**< not used yet */
     bool UpdateCost(int x, int y, unsigned char newcost);
 	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
+	void GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV);
 
 
 	void GetCoordFromState(int stateID, int& x, int& y, int& theta) const;

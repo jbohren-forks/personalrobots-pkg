@@ -32,12 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <std_msgs/Planner2DGoal.h>
-#include <std_msgs/Planner2DState.h>
+#include <robot_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DState.h>
 #include <ros/node.h>
 #include <iostream>
 
 using namespace std;
+using namespace robot_msgs;
 using namespace std_msgs;
 
 

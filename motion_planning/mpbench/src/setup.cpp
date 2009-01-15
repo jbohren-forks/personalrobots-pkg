@@ -34,11 +34,13 @@
 
 /** \file setup.cpp  */
 
-#include "setup.hpp"
+#include "setup.h"
+#include "parse.h"
 #include <costmap_2d/costmap_2d.h>
 #include <sfl/gplan/GridFrame.hpp>
 #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
+#include <sfl/util/strutil.hpp>
 #include <errno.h>
 #include <cstring>
 #include <err.h>
@@ -55,12 +57,14 @@ extern "C" {
 
 using sfl::minval;
 using sfl::maxval;
+using sfl::to_string;
+using namespace boost;
 using namespace std;
 
 namespace {
   
   
-  void drawDots(mpbench::SBPLBenchmarkSetup & setup,
+  void drawDots(mpbench::Setup & setup,
 		double hall, double door,
 		std::ostream * progress_os)
   {
@@ -72,16 +76,16 @@ namespace {
     
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
-    setup.addTask("left to right", true,
+    setup.legacyAddTask("left to right", true,
 		     0, 0.5 * hall, 0,
 		  hall, 0.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("right to left", false,
+    setup.legacyAddTask("right to left", false,
 		  hall, 0.5 * hall, 0,
 		     0, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
   
-  void drawSquare(mpbench::SBPLBenchmarkSetup & setup,
+  void drawSquare(mpbench::Setup & setup,
 		  double hall, double door,
 		  std::ostream * progress_os)
   {
@@ -92,16 +96,16 @@ namespace {
 
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
-    setup.addTask("left to right", true,
+    setup.legacyAddTask("left to right", true,
 		         door, 0.5 * hall,   M_PI / 4,
 		  hall - door, 0.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("right to left", false,
+    setup.legacyAddTask("right to left", false,
 		  hall - door, 0.5 * hall, - M_PI / 4,
 		         door, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
   
-  void drawOffice1(mpbench::SBPLBenchmarkSetup & setup,
+  void drawOffice1(mpbench::Setup & setup,
 		   double hall, double door,
 		   std::ostream * progress_os)
   {
@@ -133,40 +137,42 @@ namespace {
     
     double const tol_xy(0.25 * door);
     double const tol_th(M_PI);
-    setup.addTask("through door or around hall", true,
+    setup.legacyAddTask("through door or around hall", true,
 		  0.5 * hall, 4.5 * hall, 0,
 		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("through door or around hall, return trip", false,
+    setup.legacyAddTask("through door or around hall, return trip", false,
 		  1.5 * hall, 4.5 * hall, 0,
 		  0.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("through door or around long hall", true,
+    setup.legacyAddTask("through door or around long hall", true,
 		  1.5 * hall, 4.5 * hall, 0,
 		  2.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("through door or around long hall, return trip", false,
+    setup.legacyAddTask("through door or around long hall, return trip", false,
 		  2.5 * hall, 4.5 * hall, 0,
 		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("office to office", true,
+    setup.legacyAddTask("office to office", true,
 		  0.25 * hall, 0.5 * hall, 0,
 		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("office to office, return trip", false,
+    setup.legacyAddTask("office to office, return trip", false,
 		  0.25 * hall, 1.5 * hall, 0,
 		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("office to hall", true,
+    setup.legacyAddTask("office to hall", true,
 		  0.25 * hall, 0.5 * hall, 0,
 		         hall,       hall, 0, tol_xy, tol_th);
-    setup.addTask("office to hall, return trip", false,
+    setup.legacyAddTask("office to hall, return trip", false,
 		         hall,        hall, 0,
 		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("hall to office", true,
+    setup.legacyAddTask("hall to office", true,
 		         hall,       hall, 0,
 		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
-    setup.addTask("hall to office, return trip", false,
+    setup.legacyAddTask("hall to office, return trip", false,
 		  0.25 * hall, 1.5 * hall, 0,
 		         hall,       hall, 0, tol_xy, tol_th);
   }
   
   
-  void drawCubicle(mpbench::SBPLBenchmarkSetup & setup,
+  void drawCubicle(mpbench::Setup & setup,
+		   bool incremental,
+		   bool minimal,
 		   double hall, double door,
 		   size_t ncube,
 		   std::ostream * progress_os)
@@ -220,29 +226,55 @@ namespace {
     double const tol_th(M_PI);
     double const gx(0.5 * R0 * cos(M_PI / 8));
     double const gy(0.5 * R0 * sin(M_PI / 8) + yoff);
+    double const alloc_time(0.001);
     for (size_t ii(0); ii < ncube; ++ii) {
       ostringstream os;
       os << "from hall to cubicle " << ii;
-      setup.addTask(os.str(), true, gx, gy, 0,
-		    (R0 + hall / 2) * cos(ii * alpha),
-		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
-		    0, tol_xy, tol_th);
+      if (incremental) {
+	mpbench::task::setup foo(os.str(),
+				 mpbench::task::goalspec((R0 + hall / 2) * cos(ii * alpha),
+							 (R0 + hall / 2) * sin(ii * alpha) + yoff,
+							 0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600, gx, gy, 0));
+	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time, gx, gy, 0));
+	setup.addTask(foo);
+      }
+      else
+	setup.legacyAddTask(os.str(), true, gx, gy, 0,
+			    (R0 + hall / 2) * cos(ii * alpha),
+			    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+			    0, tol_xy, tol_th);
+      if (minimal)
+	break;
       os << ", return trip";
-      setup.addTask(os.str(), false,
-		    (R0 + hall / 2) * cos(ii * alpha),
-		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
-		    0, gx, gy, 0, tol_xy, tol_th);
+      if (incremental) {
+	mpbench::task::setup foo(os.str(),
+				 mpbench::task::goalspec(gx, gy, 0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600,
+						     (R0 + hall / 2) * cos(ii * alpha),
+						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
+						     0));
+	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time,
+						     (R0 + hall / 2) * cos(ii * alpha),
+						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
+						     0));
+	setup.addTask(foo);
+      }
+      else
+	setup.legacyAddTask(os.str(), false,
+			    (R0 + hall / 2) * cos(ii * alpha),
+			    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+			    0, gx, gy, 0, tol_xy, tol_th);
     }
   }
   
   
 #ifdef MPBENCH_HAVE_NETPGM
-  void readNetPGM(mpbench::SBPLBenchmarkSetup & setup,
+  void readNetPGM(mpbench::Setup & setup,
 		  FILE * pgmfile,
 		  unsigned int obstacle_gray,
 		  bool invert_gray,
-		  double resolution,
-		  std::ostream * progress_os)
+		  double resolution)
   {
     // not sure how to properly handle this, the doc does not say
     // whether it supports being initialized more than once...
@@ -264,7 +296,7 @@ namespace {
       for (int jj(ncols - 1); jj >= 0; --jj)
 	if ((       invert_gray  && (obstacle_gray >= row[jj]))
 	    || (( ! invert_gray) && (obstacle_gray <= row[jj])))
-	  setup.drawPoint(jj * resolution, ii * resolution, progress_os);
+	  setup.drawPoint(jj * resolution, ii * resolution, 0);
     }
     pgm_freerow(row);
   }
@@ -272,7 +304,7 @@ namespace {
   
   
   class OfficeBenchmark
-    : public mpbench::SBPLBenchmarkSetup
+    : public mpbench::Setup
   {
   protected:
     OfficeBenchmark(std::string const & name,
@@ -301,8 +333,7 @@ namespace {
 				    bool use_sfl_cost,
 				    double door_width,
 				    double hall_width,
-				    std::ostream * progress_os,
-				    std::ostream * travmap_os);
+				    std::ostream * progress_os);
     
     virtual void dumpSubDescription(std::ostream & os,
 				    std::string const & prefix) const;
@@ -312,17 +343,29 @@ namespace {
   };
   
   
-  mpbench::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
-						   unsigned int obstacle_gray,
-						   bool invert_gray,
-						   double resolution,
-						   double inscribed_radius,
-						   double circumscribed_radius,
-						   double inflation_radius,
-						   int obstacle_cost,
-						   bool use_sfl_cost,
-						   std::ostream * progress_os,
-						   std::ostream * travmap_os);
+  mpbench::Setup * createNetPGMBenchmark(std::string const & pgmFileName,
+					 std::string const & xmlFileName,
+					 unsigned int obstacle_gray,
+					 bool invert_gray,
+					 double resolution,
+					 double inscribed_radius,
+					 double circumscribed_radius,
+					 double inflation_radius,
+					 int obstacle_cost,
+					 bool use_sfl_cost,
+					 std::ostream * progress_os) throw(runtime_error);
+  
+  void readXML(string const & xmlFileName, mpbench::Setup * setup, std::ostream * progress_os)
+    throw(runtime_error);  
+  
+  mpbench::Setup * createXMLBenchmark(std::string const & xmlFileName,
+				      double resolution,
+				      double inscribed_radius,
+				      double circumscribed_radius,
+				      double inflation_radius,
+				      int obstacle_cost,
+				      bool use_sfl_cost,
+				      std::ostream * progress_os) throw(runtime_error);
   
 }
 
@@ -330,8 +373,8 @@ namespace {
 namespace mpbench {
   
   
-  SBPLBenchmarkSetup::
-  SBPLBenchmarkSetup(std::string const & _name,
+  Setup::
+  Setup(std::string const & _name,
 		     double _resolution,
 		     double _inscribed_radius,
 		     double _circumscribed_radius,
@@ -367,25 +410,25 @@ namespace mpbench {
   }
   
   
-  SBPLBenchmarkSetup::
-  ~SBPLBenchmarkSetup()
+  Setup::
+  ~Setup()
   {
   }
 
 
-  void SBPLBenchmarkSetup::
+  void Setup::
   dumpTravmap(std::ostream & os) const
   {
     getRawSFLTravmap()->DumpMap(&os);
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   drawLine(double x0, double y0, double x1, double y1,
 	   std::ostream * progress_os)
   {
     if (progress_os)
-      *progress_os << "SBPLBenchmarkSetup::drawLine(" << x0 << "  " << y0 << "  "
+      *progress_os << "Setup::drawLine(" << x0 << "  " << y0 << "  "
 		   << x1 << "  " << y1 << ")\n" << flush;
     sfl::Mapper2d::buffered_obstacle_adder boa(m2d_.get(), 0);
     m2d_->gridframe.DrawGlobalLine(x0, y0, x1, y1,
@@ -399,12 +442,12 @@ namespace mpbench {
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   drawPoint(double xx, double yy,
 	    std::ostream * progress_os)
   {
     if (progress_os)
-      *progress_os << "SBPLBenchmarkSetup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
+      *progress_os << "Setup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
     m2d_->AddBufferedObstacle(xx, yy, 0);
     bbx0_ = minval(bbx0_, xx);
     bby0_ = minval(bby0_, yy);
@@ -413,19 +456,32 @@ namespace mpbench {
   }
   
   
-  void SBPLBenchmarkSetup::
-  addTask(std::string const & description,
-	  bool from_scratch,
-	  double start_x, double start_y, double start_th, 
-	  double goal_x, double goal_y, double goal_th, 
-	  double goal_tol_xy, double goal_tol_th)
+  void Setup::
+  legacyAddTask(std::string const & description,
+		bool from_scratch,
+		double start_x, double start_y, double start_th, 
+		double goal_x, double goal_y, double goal_th, 
+		double goal_tol_xy, double goal_tol_th)
   {
-    tasklist_.push_back(task(description, from_scratch, start_x, start_y, start_th,
-			     goal_x, goal_y, goal_th, goal_tol_xy, goal_tol_th));
+    shared_ptr<task::setup>
+      setup(new task::setup(description, task::goalspec(goal_x, goal_y, goal_th,
+							goal_tol_xy, goal_tol_th)));
+    setup->start.push_back(task::startspec(from_scratch,
+					   false, false, numeric_limits<double>::max(),
+					   start_x, start_y, start_th));
+    tasklist_.push_back(setup);
   }
   
   
-  boost::shared_ptr<sfl::RDTravmap> SBPLBenchmarkSetup::
+  void Setup::
+  addTask(task::setup const & setup)
+  {
+    shared_ptr<task::setup> foo(new task::setup(setup));
+    tasklist_.push_back(foo);
+  }
+  
+  
+  boost::shared_ptr<sfl::RDTravmap> Setup::
   getRawSFLTravmap() const
   {
     if ( ! rdtravmap_)
@@ -434,7 +490,7 @@ namespace mpbench {
   }
   
   
-  costmap_2d::CostMap2D const & SBPLBenchmarkSetup::
+  costmap_2d::CostMap2D const & Setup::
   getRaw2DCostmap() const
   {
     if ( ! costmap_)
@@ -443,14 +499,14 @@ namespace mpbench {
   }
   
   
-  SBPLBenchmarkSetup::tasklist_t const & SBPLBenchmarkSetup::
+  tasklist_t const & Setup::
   getTasks() const
   {
     return tasklist_;
   }
   
   
-  costmap_2d::CostMap2D * SBPLBenchmarkSetup::
+  costmap_2d::CostMap2D * Setup::
   createCostMap2D() const
   {
     boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
@@ -514,7 +570,7 @@ namespace {
 		  bool use_sfl_cost,
 		  double _door_width,
 		  double _hall_width)
-    : SBPLBenchmarkSetup(name, resolution,
+    : Setup(name, resolution,
 			 inscribed_radius, circumscribed_radius, inflation_radius,
 			 obstacle_cost, use_sfl_cost),
       door_width(_door_width),
@@ -533,8 +589,7 @@ namespace {
 	 bool use_sfl_cost,
 	 double door_width,
 	 double hall_width,
-	 std::ostream * progress_os,
-	 std::ostream * travmap_os)
+	 std::ostream * progress_os)
   {
     OfficeBenchmark * setup(new OfficeBenchmark(name, resolution,
 						inscribed_radius,
@@ -551,7 +606,11 @@ namespace {
     else if ("office1" == name)
       drawOffice1(*setup, hall_width, door_width, progress_os);
     else if ("cubicle" == name)
-      drawCubicle(*setup, hall_width, door_width, 3, progress_os);
+      drawCubicle(*setup, false, false, hall_width, door_width, 3, progress_os);
+    else if ("cubicle2" == name)
+      drawCubicle(*setup, true, false, hall_width, door_width, 3, progress_os);
+    else if ("cubicle3" == name)
+      drawCubicle(*setup, true, true, hall_width, door_width, 3, progress_os);
     else {
       delete setup;
       if (progress_os)
@@ -560,11 +619,6 @@ namespace {
 		     << "  square: a square of hall_width side length\n"
 		     << "  office1: two offices, two hallways, some doors\n" << flush;
       return 0;
-    }
-    if (travmap_os) {
-      if (progress_os)
-	*progress_os << "saving sfl::TraversabilityMap\n";
-      setup->dumpTravmap(*travmap_os);
     }
     return setup;
   }
@@ -582,7 +636,7 @@ namespace {
 
 namespace mpbench {  
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())
@@ -596,12 +650,28 @@ namespace mpbench {
        << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n");
     dumpSubDescription(os, prefix);
     os << prefix << "tasks:\n";
-    for (size_t ii(0); ii < tasklist_.size(); ++ii)
-      os << prefix << "  [" << ii << "] " << tasklist_[ii].description << "\n";
+    for (tasklist_t::const_iterator it(tasklist_.begin()); it != tasklist_.end(); ++it) {
+      os << prefix << "  - " << (*it)->description;
+      if ((*it)->start.empty())
+	os << prefix << " (no episode)\n";
+      else if (1 == (*it)->start.size())
+	os << prefix << " (1 episode)\n";
+      else
+	os << prefix << " (" << (*it)->start.size() << " episodes)\n";
+      os << prefix << "    goal " << (*it)->goal.px << "  " << (*it)->goal.py << "  "
+	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
+      for (vector<task::startspec>::const_iterator is((*it)->start.begin());
+	   is != (*it)->start.end(); ++is)
+	os << prefix << "    start " << to_string(is->FOOfrom_scratch)
+	   << " " << to_string(is->use_initial_solution)
+	   << " " << to_string(is->allow_iteration)
+	   << " " << is->alloc_time
+	   << " " << is->FOOpx << "  " << is->FOOpy << "  " << is->FOOpth << "\n";
+    }
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   dumpSubDescription(std::ostream & os,
 		     std::string const & prefix) const
   {
@@ -609,27 +679,77 @@ namespace mpbench {
   }
   
   
-  SBPLBenchmarkSetup::task::
-  task(std::string const & _description,
-       bool _from_scratch,
-       double _start_x, double _start_y, double _start_th, 
-       double _goal_x, double _goal_y, double _goal_th, 
-       double _goal_tol_xy, double _goal_tol_th)
-    : description(_description),
-      from_scratch(_from_scratch),
-      start_x(_start_x),
-      start_y(_start_y),
-      start_th(_start_th),
-      goal_x(_goal_x),
-      goal_y(_goal_y),
-      goal_th(_goal_th),
-      goal_tol_xy(_goal_tol_xy),
-      goal_tol_th(_goal_tol_th)
-  {
+  namespace task {
+    
+    startspec::
+    startspec(bool _from_scratch,
+	      bool _use_initial_solution,
+	      bool _allow_iteration,
+	      double _alloc_time,
+	      double start_x,
+	      double start_y,
+	      double start_th)
+      : FOOfrom_scratch(_from_scratch),
+	use_initial_solution(_use_initial_solution),
+	allow_iteration(_allow_iteration),
+	alloc_time(_alloc_time),
+	FOOpx(start_x),
+	FOOpy(start_y),
+	FOOpth(start_th)
+    {
+    }
+    
+    goalspec::
+    goalspec(double goal_x,
+	     double goal_y,
+	     double goal_th, 
+	     double goal_tol_xy,
+	     double goal_tol_th)
+      : px(goal_x),
+	py(goal_y),
+	pth(goal_th),
+	tol_xy(goal_tol_xy),
+	tol_th(goal_tol_th)
+    {
+    }
+    
+    setup::
+    setup(std::string const & _description, goalspec const & _goal)
+      : description(_description),
+	goal(_goal)
+    {
+    }
+    
+    setup::
+    setup(setup const & orig)
+      : description(orig.description),
+	goal(orig.goal),
+	start(orig.start)
+    {
+    }
+    
+    result::
+    result(size_t _planner_id,
+	   size_t _task_id,
+	   size_t _episode_id,
+	   startspec const & _start,
+	   goalspec const & _goal,
+	   boost::shared_ptr<mpglue::waypoint_plan_t> _plan,
+	   boost::shared_ptr<mpglue::CostmapPlannerStats> _stats)
+      : planner_id(_planner_id),
+	task_id(_task_id),
+	episode_id(_episode_id),
+	start(_start),
+	goal(_goal),
+	plan(_plan),
+	stats(_stats)      
+    {
+    }
+    
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const
   {
     x0 = bbx0_ - resolution;
@@ -639,7 +759,7 @@ namespace mpbench {
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
     x0 = bbx0_ - inscribed_radius;
@@ -649,7 +769,7 @@ namespace mpbench {
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
     x0 = bbx0_ - circumscribed_radius;
@@ -659,7 +779,7 @@ namespace mpbench {
   }
   
   
-  void SBPLBenchmarkSetup::
+  void Setup::
   getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
     x0 = bbx0_ - inflation_radius;
@@ -669,7 +789,7 @@ namespace mpbench {
   }
   
   
-  boost::shared_ptr<mpglue::Costmap> SBPLBenchmarkSetup::
+  boost::shared_ptr<mpglue::Costmap> Setup::
   getCostmap() const
   {
     if (costmapWrap_)
@@ -682,7 +802,7 @@ namespace mpbench {
   }
   
   
-  boost::shared_ptr<mpglue::IndexTransform> SBPLBenchmarkSetup::
+  boost::shared_ptr<mpglue::IndexTransform> Setup::
   getIndexTransform() const
   {
     if (indexTransform_)
@@ -695,9 +815,9 @@ namespace mpbench {
   }
   
   
-  SBPLBenchmarkOptions::
-  SBPLBenchmarkOptions()
-    : name("office1"),
+  SetupOptions::
+  SetupOptions()
+    : spec("hc:office1"),
       resolution(0.05),
       inscribed_radius(0.325),	// from highlevel_controllers/test/launch_move_base.xml r7215
       circumscribed_radius(0.46), // dito
@@ -706,19 +826,38 @@ namespace mpbench {
       use_sfl_cost(false),
       door_width(1.2),
       hall_width(3),
-      pgm_filename("pgm/willow-clip0-r50.pgm"),
       obstacle_gray(64),
       invert_gray(true)
   {
   }
   
   
-  SBPLBenchmarkSetup * createBenchmark(SBPLBenchmarkOptions const & opt,
-				       std::ostream * progress_os,
-				       std::ostream * travmap_os)
+  Setup * createSetup(SetupOptions const & opt,
+		      std::ostream * progress_os)
+    throw(std::runtime_error)
   {
-    if ("pgm" == opt.name)
-      return createNetPGMBenchmark(opt.pgm_filename,
+    string spec(opt.spec);
+    string format;
+    if ( ! sfl::splitstring(spec, ':', format, spec))
+      throw runtime_error("mpbench::createSetup(): could not extract format from \""
+			  + opt.spec + "\"");
+    if ("hc" == format)
+      return OfficeBenchmark::create(spec,
+				     opt.resolution,
+				     opt.inscribed_radius,
+				     opt.circumscribed_radius,
+				     opt.inflation_radius,
+				     opt.obstacle_cost,
+				     opt.use_sfl_cost,
+				     opt.door_width,
+				     opt.hall_width,
+				     progress_os);
+    if ("pgm" == format) {
+      string pgm_filename;
+      string xml_filename;
+      sfl::splitstring(spec, ':', pgm_filename, xml_filename);
+      return createNetPGMBenchmark(pgm_filename,
+				   xml_filename,
 				   opt.obstacle_gray,
 				   opt.invert_gray,
 				   opt.resolution,
@@ -727,69 +866,131 @@ namespace mpbench {
 				   opt.inflation_radius,
 				   opt.obstacle_cost,
 				   opt.use_sfl_cost,
-				   progress_os,
-				   travmap_os);
-    return OfficeBenchmark::create(opt.name,
-				   opt.resolution,
-				   opt.inscribed_radius,
-				   opt.circumscribed_radius,
-				   opt.inflation_radius,
-				   opt.obstacle_cost,
-				   opt.use_sfl_cost,
-				   opt.door_width,
-				   opt.hall_width,
-				   progress_os,
-				   travmap_os);
+				   progress_os);
+    }
+    if ("xml" == format)
+      return createXMLBenchmark(spec,
+				opt.resolution,
+				opt.inscribed_radius,
+				opt.circumscribed_radius,
+				opt.inflation_radius,
+				opt.obstacle_cost,
+				opt.use_sfl_cost,
+				progress_os);
+    throw runtime_error("mpbench::createSetup(): invalid format \"" + format + "\"");
+    return 0;
   }
   
 }
 
 namespace {
   
-  mpbench::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
-						   unsigned int obstacle_gray,
-						   bool invert_gray,
-						   double resolution,
-						   double inscribed_radius,
-						   double circumscribed_radius,
-						   double inflation_radius,
-						   int obstacle_cost,
-						   bool use_sfl_cost,
-						   std::ostream * progress_os,
-						   std::ostream * travmap_os)
+  mpbench::Setup * createNetPGMBenchmark(std::string const & pgmFileName,
+					 std::string const & xmlFileName,
+					 unsigned int obstacle_gray,
+					 bool invert_gray,
+					 double resolution,
+					 double inscribed_radius,
+					 double circumscribed_radius,
+					 double inflation_radius,
+					 int obstacle_cost,
+					 bool use_sfl_cost,
+					 std::ostream * progress_os) throw(runtime_error)
   {
-    mpbench::SBPLBenchmarkSetup * bench(0);
+    mpbench::Setup * bench(0);
 
 #ifndef MPBENCH_HAVE_NETPGM
-
+    
     if (progress_os)
       *progress_os << "ERROR in createNetPGMBenchmark(): no support for netpgm!\n"
-		   << "  Install the netpbm libraries and headers and recompile\n"
-		   << "  mp_benchmarks, for example under Ubuntu Feisty the package\n"
+		   << "  Install the netpbm libraries and headers and recompile.\n"
+		   << "  For example under Ubuntu Feisty the package\n"
 		   << "  libnetpbm10-dev does the trick.\n";
-    warn("in createNetPGMBenchmark(): no support for netpgm\n");
-    return bench;
+    throw runtime_error("sorry, no support for netpgm");
     
 #else // MPBENCH_HAVE_NETPGM
     
     FILE * pgmfile(fopen(pgmFileName.c_str(), "rb"));
     if ( ! pgmfile) {
+      ostringstream os;
+      os << "createNetPGMBenchmark(): fopen(" << pgmFileName << "): " << strerror(errno);
       if (progress_os)
-	*progress_os << "ERROR in createNetPGMBenchmark(): fopen(" << pgmFileName << ") failed\n";
-      warn("in createNetPGMBenchmark(): fopen(%s)", pgmFileName.c_str());
-      return bench;
+	*progress_os << "ERROR in " << os.str() << "\n";
+      throw runtime_error(os.str());
     }
-    bench = new mpbench::SBPLBenchmarkSetup("pgm", resolution, inscribed_radius, circumscribed_radius,
-					 inflation_radius, obstacle_cost, use_sfl_cost);
-    readNetPGM(*bench, pgmfile, obstacle_gray, invert_gray, resolution, progress_os);
-    if (travmap_os) {
-      if (progress_os)
-	*progress_os << "createNetPGMBenchmark(): saving sfl::TraversabilityMap\n";
-      bench->dumpTravmap(*travmap_os);
-    }
-    return bench;
-
+    bench = new mpbench::Setup(pgmFileName + ":" + xmlFileName,
+			       resolution, inscribed_radius, circumscribed_radius,
+			       inflation_radius, obstacle_cost, use_sfl_cost);
+    if (progress_os)
+      *progress_os << "createNetPGMBenchmark(): translating PGM file " << pgmFileName << "\n";
+    readNetPGM(*bench, pgmfile, obstacle_gray, invert_gray, resolution);
+    if ( ! xmlFileName.empty())
+      readXML(xmlFileName, bench, progress_os);
+    
 #endif // MPBENCH_HAVE_NETPGM
+    
+    return bench;
   }
   
+  
+  void readXML(string const & xmlFileName, mpbench::Setup * setup, std::ostream * progress_os)
+    throw(runtime_error)
+  {
+    
+#ifndef MPBENCH_HAVE_EXPAT
+    
+    if (progress_os)
+      *progress_os << "no support for XML!\n"
+		   << "  Install the expat library and recompile.\n"
+		   << "  For example under Ubuntu Feisty the package\n"
+		   << "  libexpat1-dev does the trick.\n";
+    throw runtime_error("sorry, no support for XML");
+    
+#else // MPBENCH_HAVE_EXPAT
+    
+    if (progress_os)
+      *progress_os << "parsing XML file " << xmlFileName << "\n";
+    mpbench::SetupParser sp;
+    sp.Parse(xmlFileName, setup, progress_os);
+    
+#endif // MPBENCH_HAVE_EXPAT    
+    
+  }
+  
+  
+  mpbench::Setup * createXMLBenchmark(std::string const & xmlFileName,
+				      double resolution,
+				      double inscribed_radius,
+				      double circumscribed_radius,
+				      double inflation_radius,
+				      int obstacle_cost,
+				      bool use_sfl_cost,
+				      std::ostream * progress_os) throw(runtime_error)
+  {
+    mpbench::Setup * bench(0);
+    
+    
+#ifndef MPBENCH_HAVE_EXPAT
+    
+    if (progress_os)
+      *progress_os << "no support for XML!\n"
+		   << "  Install the expat library and recompile.\n"
+		   << "  For example under Ubuntu Feisty the package\n"
+		   << "  libexpat1-dev does the trick.\n";
+    throw runtime_error("sorry, no support for XML");
+    
+#else // MPBENCH_HAVE_EXPAT
+    
+    bench = new mpbench::Setup(xmlFileName,
+			       resolution, inscribed_radius, circumscribed_radius,
+			       inflation_radius, obstacle_cost, use_sfl_cost);
+    if (progress_os)
+      *progress_os << "createXMLBenchmark(): parsing " << xmlFileName << "\n";
+    readXML(xmlFileName, bench, progress_os);
+    
+#endif // MPBENCH_HAVE_EXPAT
+    
+    return bench;    
+  }
+
 }

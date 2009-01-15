@@ -171,7 +171,7 @@ namespace estimation
 	odom_initializing_ = false;
 	ROS_INFO((node_name_+"  Odom sensor activated").c_str());      
       }
-      else ROS_INFO("Will not activate Odom yet, because Odom measurements are still %f sec in the future.", 
+      else ROS_INFO("Waiting to activate Odom, because Odom measurements are still %f sec in the future.", 
 		    (odom_init_stamp_ - filter_stamp_).toSec());
     }
     
@@ -210,7 +210,7 @@ namespace estimation
 	imu_initializing_ = false;
 	ROS_INFO((node_name_+"  Imu sensor activated").c_str());      
       }
-      else ROS_INFO("Will not activate IMU yet, because IMU measurements are still %f sec in the future.", 
+      else ROS_INFO("Waiting to activate IMU, because IMU measurements are still %f sec in the future.", 
 		    (imu_init_stamp_ - filter_stamp_).toSec());
     }
     
@@ -259,7 +259,7 @@ namespace estimation
 	vo_initializing_ = false;
 	ROS_INFO((node_name_+"  Vo sensor activated").c_str());      
       }
-      else ROS_INFO("Will not activate VO yet, because VO measurements are still %f sec in the future.", 
+      else ROS_INFO("Waiting to activate VO, because VO measurements are still %f sec in the future.", 
 		    (vo_init_stamp_ - filter_stamp_).toSec());
     }
     
@@ -297,6 +297,12 @@ namespace estimation
       boost::mutex::scoped_lock odom_lock(odom_mutex_);
       boost::mutex::scoped_lock imu_lock(imu_mutex_);
       boost::mutex::scoped_lock vo_lock(vo_mutex_);
+
+      // check for timing problems
+      if ( (odom_initializing_ || odom_active_) && (imu_initializing_ || imu_active_) ){
+	double diff = fabs( Duration(odom_stamp_ - imu_stamp_).toSec() );
+	if (diff > 1.0) ROS_ERROR("SYSTEM HAS TIMING PROBLEMS: timestamps of odometry and imu are %f seconds apart.", diff);
+      }
 
       // initial value for filter stamp; keep this stamp when no sensors are active
       filter_stamp_ = Time::now();

@@ -29,7 +29,7 @@ namespace TREX {
     Observation* getObservation();
     void dispatchRequest(const TokenId& goal, bool enabled);
 
-    std_msgs::Planner2DState m_msgPlanner2DState;
+    robot_msgs::Planner2DState m_msgPlanner2DState;
     State m_state;
     int m_lastPublished;
     TICK m_lastUpdated;

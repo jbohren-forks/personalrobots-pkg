@@ -3,6 +3,7 @@ all: installed
 SVN_REVISION= -r 29808
 SVN_DIR = bfl-svn
 SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/bfl
+SVN_PATCH = mcpdf.patch warning.patch
 INSTALL_DIR = bfl-boost
 CMAKE = cmake
 BOOST_ROOT =$(shell rospack find boost)/boost 
@@ -22,5 +23,3 @@ clean:
 	rm -rf $(SVN_DIR)
 	rm -rf installed
 
-#test:
-#	cd $(SVN_DIR)/build-boost && make check

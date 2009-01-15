@@ -74,8 +74,12 @@ RosP3D::~RosP3D()
 void RosP3D::LoadChild(XMLConfigNode *node)
 {
   std::string bodyName = node->GetString("bodyName", "", 1);
+
+  // assert that the body by bodyName exists
+  if (dynamic_cast<Body*>(this->myParent->GetBody(bodyName)) == NULL)
+    ROS_FATAL("ros_p3d plugin error: bodyName: %s does not exist\n",bodyName.c_str());
+
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
-//  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
   this->topicName     = node->GetString("topicName", "ground_truth", 1);
   this->frameName     = node->GetString("frameName", "", 1);

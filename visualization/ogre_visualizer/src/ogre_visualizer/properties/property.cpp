@@ -308,11 +308,18 @@ void StringProperty::loadFromConfig( wxConfigBase* config )
   set( (const char*)val.mb_str() );
 }
 
+void ROSTopicStringProperty::setMessageType(const std::string& message_type)
+{
+  message_type_ = message_type;
+  ros_topic_property_->setMessageType(message_type);
+}
+
 void ROSTopicStringProperty::writeToGrid()
 {
   if ( !property_ )
   {
-    property_ = grid_->AppendIn( parent_->getPGProperty(), new ROSTopicProperty( ros::node::instance(), name_, prefix_ + name_, wxString::FromAscii( get().c_str() ) ) );
+    ros_topic_property_ = new ROSTopicProperty( ros::node::instance(), message_type_, name_, prefix_ + name_, wxString::FromAscii( get().c_str() ) );
+    property_ = grid_->AppendIn( parent_->getPGProperty(), ros_topic_property_ );
 
     if ( !hasSetter() )
     {
@@ -401,6 +408,14 @@ void EnumProperty::addOption( const std::string& name, int value )
   writeToGrid();
 }
 
+void EnumProperty::clear ()
+{
+  wxPGChoices& choices = grid_->GetPropertyChoices( property_ );
+  choices.Clear ();
+
+  writeToGrid();
+}
+
 void EnumProperty::writeToGrid()
 {
   if ( !property_ )
@@ -431,7 +446,7 @@ void EnumProperty::saveToConfig( wxConfigBase* config )
 
 void EnumProperty::loadFromConfig( wxConfigBase* config )
 {
-  long val;
+  long val = 0xffffffff;
   if (!config->Read( prefix_ + name_, &val, get() ))
   {
     V_wxString::iterator it = legacy_names_.begin();

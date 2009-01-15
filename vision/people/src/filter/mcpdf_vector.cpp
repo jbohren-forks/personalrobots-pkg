@@ -50,13 +50,13 @@
 
 
   MCPdfVector::MCPdfVector (unsigned int num_samples) 
-    : MCPdf<StateVector> ( num_samples, NUM_CONDARG )
+    : MCPdf<Vector3> ( num_samples, NUM_CONDARG )
   {}
 
   MCPdfVector::~MCPdfVector(){}
 
 
-  WeightedSample<StateVector>
+  WeightedSample<Vector3>
   MCPdfVector::SampleGet(unsigned int particle) const
   {
     assert ((int)particle >= 0 && particle < _listOfSamples.size());
@@ -64,31 +64,31 @@
   }
 
 
-  StateVector MCPdfVector::ExpectedValueGet() const
+  Vector3 MCPdfVector::ExpectedValueGet() const
   {
-    StateVector pos(0,0,0); 
+    Vector3 pos(0,0,0); 
     double current_weight;
-    std::vector<WeightedSample<StateVector> >::const_iterator it_los;
+    std::vector<WeightedSample<Vector3> >::const_iterator it_los;
     for ( it_los = _listOfSamples.begin() ; it_los != _listOfSamples.end() ; it_los++ ){
       current_weight = it_los->WeightGet();
       pos += (it_los->ValueGet() * current_weight);
     }
 
-    return StateVector(pos);
+    return Vector3(pos);
   }
 
 
   /// Get evenly distributed particle cloud
-  void MCPdfVector::getParticleCloud(const StateVector& step, double threshold, std_msgs::PointCloud& cloud) const
+  void MCPdfVector::getParticleCloud(const Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
   { 
     unsigned int num_samples = _listOfSamples.size();
     assert(num_samples > 0);
-    StateVector m = _listOfSamples[0].ValueGet();
-    StateVector M = _listOfSamples[0].ValueGet();
+    Vector3 m = _listOfSamples[0].ValueGet();
+    Vector3 M = _listOfSamples[0].ValueGet();
 
     // calculate min and max
     for (unsigned int s=0; s<num_samples; s++){
-      StateVector v = _listOfSamples[s].ValueGet();
+      Vector3 v = _listOfSamples[s].ValueGet();
       for (unsigned int i=0; i<3; i++){
 	if (v[i] < m[i]) m[i] = v[i];
 	if (v[i] > M[i]) M[i] = v[i];
@@ -129,7 +129,7 @@
 
 
   /// Get histogram from pos
-  MatrixWrapper::Matrix MCPdfVector::getHistogram(const StateVector& m, const StateVector& M, const StateVector& step) const
+  MatrixWrapper::Matrix MCPdfVector::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step) const
   { 
     unsigned int num_samples = _listOfSamples.size();
     unsigned int rows = round((M[0]-m[0])/step[0]);
@@ -139,7 +139,7 @@
 
     // calculate histogram
     for (unsigned int i=0; i<num_samples; i++){
-      StateVector rel(_listOfSamples[i].ValueGet() - m);
+      Vector3 rel(_listOfSamples[i].ValueGet() - m);
       unsigned int r = round(rel[0] / step[0]);
       unsigned int c = round(rel[1] / step[1]);
       if (r >= 1 && c >= 1 && r <= rows && c <= cols)

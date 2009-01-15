@@ -22,6 +22,13 @@ using boost::format;
 using namespace features;
 using namespace vision;
 
+#ifdef USE_BYTE_SIGNATURES
+typedef uint8_t sig_data_t;
+#else
+typedef float sig_data_t;
+#endif
+typedef Promote<sig_data_t>::type distance_t;
+
 static int im2arr(CvArr **dst, PyObject *src)
 {
   int width, height;
@@ -54,30 +61,31 @@ static int im2arr(CvArr **dst, PyObject *src)
   return 1;
 }
 
-static const char classifier_file[] = "/u/mihelich/ros/ros-pkg/vision/calonder_descriptor/src/test/land50_cs.trees.old";
+static const char classifier_file[] = "/u/prdata/calonder_trees/current.rtc";
 
 typedef struct {
   PyObject_HEAD
   VocabularyTree *vt;
-  int size;
   RTreeClassifier *classifier;
 } vocabularytree_t;
 
 typedef struct {
   PyObject_HEAD
-  float *data;
+  sig_data_t *data;
   int size;
 } signature_t;
 
-static FeatureMatrix extract_features(PyObject *self, PyObject *pim, PyObject *descriptors)
+static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
+                                            PyObject *descriptors)
 {
   RTreeClassifier *classifier = ((vocabularytree_t*)self)->classifier;
   unsigned int dimension = classifier->classes();
 
-  std::vector<float*> image_features;
+  FeatureMatrix image_features;
 
   if (descriptors == NULL) {
     // Prepare keypoint detector, classifier
+    // TODO: use FAST instead?
     StarDetector detector(cvSize(640, 480), 5, 10.0);
     std::vector<Keypoint> pts;
 
@@ -87,49 +95,111 @@ static FeatureMatrix extract_features(PyObject *self, PyObject *pim, PyObject *d
     if (!im2arr(&cva, pim)) assert(0);
     CvArr *local = cvCreateImage(cvGetSize(cva), IPL_DEPTH_8U, 1);
     cvCopy(cva, local);
-    // Load left/right images
     cv::WImageBuffer1_b left( (IplImage*)local );
 
-    // Find keypoints in left image
-    pts.resize(0);
+    // Find keypoints
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
     printf("[Star detector gave %d points, dimension %d]\n", pts.size(), dimension);
 
-    // Compute descriptors, disparities
-    float* sig_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
-    float* sig = sig_buffer;
+    // Compute descriptors
+    image_features.resize(pts.size(), dimension);
+    float* sig = image_features.data();
+    
     BOOST_FOREACH( const Keypoint& pt, pts ) {
       // Signature
       cv::WImageView1_b view = extractPatch(left.Ipl(), pt);
       classifier->getSignature(view.Ipl(), sig);
 
-      image_features.push_back(sig);
-
       sig += dimension;
     }
   } else {
+    if (sizeof(float) != sizeof(sig_data_t)) {
+      printf("ERROR: We have problems in extract_float_features!\n");
+      abort();
+    }
+    
+    unsigned int size = PySequence_Size(descriptors);
+    image_features.resize(size, dimension);
+    float *dst = image_features.data();
     PyObject *iterator = PyObject_GetIter(descriptors);
     PyObject *d;
     assert(iterator != NULL);
     while ((d = PyIter_Next(iterator)) != NULL) {
       signature_t *sig = (signature_t*)d;
-      image_features.push_back(sig->data);
+      memcpy((char*)dst, (char*)sig->data, dimension * sizeof(float));
+      dst += dimension;
     }
   }
 
-  // Copy into single Eigen matrix
-  size_t num_features = image_features.size();
-  FeatureMatrix features((int)num_features, (int)dimension);
-  size_t current_row = 0;
-  for (int i = 0; i < (int)num_features; i++) {
-    features.block(current_row, 0, 1, dimension) =
-      Eigen::Map<FeatureMatrix>(image_features[i], 1, dimension);
-    current_row += 1;
-  }
-
-  return features;
+  return image_features;
 }
 
+
+#ifdef USE_BYTE_SIGNATURES
+static sig_data_t* extract_features(PyObject *self, PyObject *pim,
+                                    unsigned int *num_features, PyObject *descriptors)
+{
+  RTreeClassifier *classifier = ((vocabularytree_t*)self)->classifier;
+  unsigned int dimension = classifier->classes();
+
+  sig_data_t *image_features;
+
+  if (descriptors == NULL) {
+    // Prepare keypoint detector, classifier
+    // TODO: use FAST instead?
+    StarDetector detector(cvSize(640, 480), 5, 10.0);
+    std::vector<Keypoint> pts;
+
+    // Compute features and their descriptors for each object (image)
+
+    CvArr *cva;
+    if (!im2arr(&cva, pim)) assert(0);
+    CvArr *local = cvCreateImage(cvGetSize(cva), IPL_DEPTH_8U, 1);
+    cvCopy(cva, local);
+    cv::WImageBuffer1_b left( (IplImage*)local );
+
+    // Find keypoints
+    detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
+    printf("[Star detector gave %d points, dimension %d]\n", pts.size(), dimension);
+
+    // Compute descriptors
+    *num_features = pts.size();
+    posix_memalign((void**)&image_features, 16, pts.size()*dimension*sizeof(sig_data_t));
+    sig_data_t* sig = image_features;
+
+    BOOST_FOREACH( const Keypoint& pt, pts ) {
+      // Signature
+      cv::WImageView1_b view = extractPatch(left.Ipl(), pt);
+      classifier->getSignature(view.Ipl(), sig);
+
+      sig += dimension;
+    }
+  } else {
+    unsigned int size = PySequence_Size(descriptors);
+    *num_features = size;
+    posix_memalign((void**)&image_features, 16, size*dimension*sizeof(sig_data_t));
+    sig_data_t *dst = image_features;
+    PyObject *iterator = PyObject_GetIter(descriptors);
+    PyObject *d;
+    assert(iterator != NULL);
+    while ((d = PyIter_Next(iterator)) != NULL) {
+      signature_t *sig = (signature_t*)d;
+      memcpy((char*)dst, (char*)sig->data, dimension * sizeof(sig_data_t));
+      dst += dimension;
+    }
+  }
+
+  return image_features;
+}
+#else
+static inline FeatureMatrix extract_features(PyObject *self, PyObject *pim, PyObject *descriptors)
+{
+  return extract_float_features(self, pim, descriptors);
+}
+#endif
+
+// NOTE: Uses float signatures, but self-contained. Should be able to get away with this
+//       even if calonder_descriptor bindings use byte signatures.
 PyObject *vtbuild(PyObject *self, PyObject *args)
 {
   VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
@@ -143,12 +213,6 @@ PyObject *vtbuild(PyObject *self, PyObject *args)
     return NULL;
 
   srand(0);
-  if (keep_training_images) {
-    ((vocabularytree_t*)self)->size = PySequence_Size(training_images);
-  } else {
-    ((vocabularytree_t*)self)->size = 0;
-  }
-
 
   PyObject *iterator = PyObject_GetIter(training_images);
   PyObject *pil_im;
@@ -159,7 +223,7 @@ PyObject *vtbuild(PyObject *self, PyObject *args)
   int obj = 0;
   int rows = 0;
   while ((pil_im = PyIter_Next(iterator)) != NULL) {
-    FeatureMatrix f = extract_features(self, pil_im, NULL);
+    FeatureMatrix f = extract_float_features(self, pil_im, NULL);
     rows += f.rows();
     for (int i = 0; i < f.rows(); i++)
       objs.push_back(obj);
@@ -183,7 +247,179 @@ PyObject *vtbuild(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *vtadd(PyObject *self, PyObject *args)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+  PyObject *pil, *descriptors = NULL;
+  if (!PyArg_ParseTuple(args, "O|O", &pil, &descriptors))
+    return NULL;
+#ifdef USE_BYTE_SIGNATURES
+  unsigned int num_features = 0;
+  sig_data_t *features = extract_features(self, pil, &num_features, descriptors);
+  vt->insert(features, num_features);
+  free(features);
+#else
+  vt->insert(extract_features(self, pil, descriptors));
+#endif
+  Py_RETURN_NONE;
+}
 
+PyObject *vtsave(PyObject *self, PyObject *args)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+  char *filename;
+  if (!PyArg_ParseTuple(args, "s", &filename))
+    return NULL;
+  vt->save(filename);
+  Py_RETURN_NONE;
+}
+
+PyObject *vttopN(PyObject *self, PyObject *args)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+
+  unsigned int N_show = 10;
+  PyObject *query_image;
+  PyObject *descriptors;
+  int insert = 0;
+  if (!PyArg_ParseTuple(args, "OOi|i", &query_image, &descriptors, &N_show, &insert))
+    return NULL;
+
+  std::vector<VocabularyTree::Match> matches;
+  matches.reserve(N_show);
+  
+#ifdef USE_BYTE_SIGNATURES
+  unsigned int num_features = 0;
+  sig_data_t *features = extract_features(self, query_image, &num_features, descriptors);
+  if (insert)
+    vt->findAndInsert(features, num_features, N_show, std::back_inserter(matches));
+  else
+    vt->find(features, num_features, N_show, std::back_inserter(matches));
+  free(features);
+#else
+  FeatureMatrix features = extract_features(self, query_image, descriptors);
+  if (insert)
+    vt->findAndInsert(features, N_show, std::back_inserter(matches));
+  else
+    vt->find(features, N_show, std::back_inserter(matches));
+#endif
+
+  unsigned int N = ((vocabularytree_t*)self)->vt->databaseSize();
+  PyObject *l = PyList_New(N);
+  for (unsigned j = 0; j < N; ++j)
+    PyList_SetItem(l, j, PyFloat_FromDouble(0.0));
+
+  for (unsigned int j = 0; j < matches.size(); ++j) {
+    unsigned int match_id = matches[j].id;
+    assert(match_id < N);
+    PyList_SetItem(l, match_id, PyFloat_FromDouble(matches[j].score));
+  }
+  
+
+  return l;
+}
+
+/* Method table */
+static PyMethodDef vocabularytree_methods[] = {
+  {"save", vtsave, METH_VARARGS},
+  {"build", vtbuild, METH_VARARGS},
+  {"add", vtadd, METH_VARARGS},
+  //{"query", vtquery, METH_VARARGS},
+  {"topN", vttopN, METH_VARARGS},
+  {NULL, NULL},
+};
+
+static PyObject *
+vocabularytree_GetAttr(PyObject *self, char *attrname)
+{
+    return Py_FindMethod(vocabularytree_methods, self, attrname);
+}
+
+static void
+vocabularytree_dealloc(PyObject *self)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+  delete vt;
+  PyObject_Del(self);
+}
+
+static PyTypeObject vocabularytree_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "VocabularyTree",
+    sizeof(vocabularytree_t),
+    0,
+    (destructor)vocabularytree_dealloc,
+    0,
+    (getattrfunc)vocabularytree_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    0,
+
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+PyObject *mkvocabularytree(PyObject *self, PyObject *args)
+{
+  vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
+  object->vt = new VocabularyTree();
+  object->classifier = new RTreeClassifier(true);
+  object->classifier->read(classifier_file);
+
+  return (PyObject*)object;
+}
+
+
+PyObject *mkload(PyObject *self, PyObject *args)
+{
+  char *filename;
+  if (!PyArg_ParseTuple(args, "s", &filename))
+    return NULL;
+
+  vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
+  object->vt = new VocabularyTree();
+  object->classifier = new RTreeClassifier(true);
+  object->classifier->read(classifier_file);
+  object->vt->load(filename);
+
+  return (PyObject*)object;
+}
+
+static PyMethodDef methods[] = {
+  {"vocabularytree", mkvocabularytree, METH_VARARGS},
+  {"load", mkload, METH_VARARGS},
+  {NULL, NULL},
+};
+
+extern "C" void initplace_recognition()
+{
+    PyObject *m, *d;
+
+    m = Py_InitModule("place_recognition", methods);
+    d = PyModule_GetDict(m);
+}
+
+
+// Don't need this anymore?
+/*
 PyObject *vtquery(PyObject *self, PyObject *args)
 {
   VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
@@ -193,6 +429,7 @@ PyObject *vtquery(PyObject *self, PyObject *args)
     return NULL;
 
   // Prepare keypoint detector, classifier
+  // TODO: change to FAST? do some of this elsewhere?
   StarDetector detector(cvSize(640, 480), 7, 10.0);
   std::vector<Keypoint> pts;
   RTreeClassifier classifier(true);
@@ -295,156 +532,4 @@ PyObject *vtquery(PyObject *self, PyObject *args)
   }
   return r;
 }
-
-PyObject *vtadd(PyObject *self, PyObject *args)
-{
-  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
-  PyObject *pil, *descriptors = NULL;
-  if (!PyArg_ParseTuple(args, "O|O", &pil, &descriptors))
-    return NULL;
-  vt->insert(extract_features(self, pil, descriptors));
-  ((vocabularytree_t*)self)->size++;
-  Py_RETURN_NONE;
-}
-
-PyObject *vtsave(PyObject *self, PyObject *args)
-{
-  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
-  char *filename;
-  if (!PyArg_ParseTuple(args, "s", &filename))
-    return NULL;
-  vt->save(filename);
-  Py_RETURN_NONE;
-}
-
-PyObject *vttopN(PyObject *self, PyObject *args)
-{
-  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
-
-  unsigned int N_show = 10;
-  PyObject *query_image;
-  PyObject *descriptors;
-  if (!PyArg_ParseTuple(args, "OOi", &query_image, &descriptors, &N_show))
-    return NULL;
-
-  FeatureMatrix features = extract_features(self, query_image, descriptors);
-
-  std::vector<VocabularyTree::Match> matches;
-
-  unsigned int N = ((vocabularytree_t*)self)->size;
-  matches.reserve(N_show);
-
-  PyObject *l = PyList_New(N);
-  for (unsigned j = 0; j < N; ++j)
-    PyList_SetItem(l, j, PyFloat_FromDouble(0.0));
-
-  vt->find(features, N_show, std::back_inserter(matches));
-  for (unsigned int j = 0; j < matches.size(); ++j) {
-    unsigned int match_id = matches[j].id;
-    assert(match_id < N);
-    PyList_SetItem(l, match_id, PyFloat_FromDouble(matches[j].score));
-  }
-  
-
-  return l;
-}
-
-/* Method table */
-static PyMethodDef vocabularytree_methods[] = {
-  {"save", vtsave, METH_VARARGS},
-  {"build", vtbuild, METH_VARARGS},
-  {"add", vtadd, METH_VARARGS},
-  {"query", vtquery, METH_VARARGS},
-  {"topN", vttopN, METH_VARARGS},
-  {NULL, NULL},
-};
-
-static PyObject *
-vocabularytree_GetAttr(PyObject *self, char *attrname)
-{
-    return Py_FindMethod(vocabularytree_methods, self, attrname);
-}
-
-static void
-vocabularytree_dealloc(PyObject *self)
-{
-  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
-  delete vt;
-  PyObject_Del(self);
-}
-
-static PyTypeObject vocabularytree_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,
-    "VocabularyTree",
-    sizeof(vocabularytree_t),
-    0,
-    (destructor)vocabularytree_dealloc,
-    0,
-    (getattrfunc)vocabularytree_GetAttr,
-    0,
-    0,
-    0, // repr
-    0,
-    0,
-    0,
-
-    0,
-    0,
-    0,
-    0,
-    0,
-
-    0,
-
-    Py_TPFLAGS_CHECKTYPES,
-
-    0,
-    0,
-    0,
-    0
-
-    /* the rest are NULLs */
-};
-
-PyObject *mkvocabularytree(PyObject *self, PyObject *args)
-{
-  vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
-  object->vt = new VocabularyTree();
-  object->size = 0;
-  object->classifier = new RTreeClassifier(true);
-  object->classifier->read(classifier_file);
-
-  return (PyObject*)object;
-}
-
-
-PyObject *mkload(PyObject *self, PyObject *args)
-{
-  char *filename;
-  if (!PyArg_ParseTuple(args, "s", &filename))
-    return NULL;
-
-  vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
-  object->vt = new VocabularyTree();
-  object->size = 0;
-  object->classifier = new RTreeClassifier(true);
-  object->classifier->read(classifier_file);
-  object->vt->load(filename);
-
-  return (PyObject*)object;
-}
-
-static PyMethodDef methods[] = {
-  {"vocabularytree", mkvocabularytree, METH_VARARGS},
-  {"load", mkload, METH_VARARGS},
-  {NULL, NULL},
-};
-
-extern "C" void initplace_recognition()
-{
-    PyObject *m, *d;
-
-    m = Py_InitModule("place_recognition", methods);
-    d = PyModule_GetDict(m);
-}
+*/

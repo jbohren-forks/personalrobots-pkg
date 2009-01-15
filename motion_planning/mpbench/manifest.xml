@@ -8,4 +8,5 @@
  <depend package="libsunflower"/>
  <depend package="nepumuk"/>
  <depend package="mpglue"/>
+ <sysdepend os="ubuntu" version="7.04-feisty" package="libexpat1-dev"/>
 </package>

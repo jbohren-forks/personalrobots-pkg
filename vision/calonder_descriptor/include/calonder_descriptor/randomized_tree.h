@@ -33,13 +33,10 @@ struct BaseKeypoint
   {}
 };
 
-class RTreeClassifier;
-
 class RandomizedTree
-{
-   friend class RTreeClassifier;
-   
+{  
 public:
+  friend class RTreeClassifier;
   typedef enum { PDT_GAUSS=1, PDT_BERNOULLI, PDT_DBFRIENDLY } PHI_DISTR_TYPE;   // used in makeRandomMeasMatrix
   //typedef enum { PF_FLOAT=1, PF_UCHAR } POSTERIOR_FORMAT;
   

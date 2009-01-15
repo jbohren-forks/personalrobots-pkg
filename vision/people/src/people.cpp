@@ -45,8 +45,6 @@
 
 People::People():
   list_(NULL),
-  cascade_(NULL),
-  storage_(NULL),
   cv_image_gray_(NULL),
   cft_r_plane_(NULL),
   cft_g_plane_(NULL),
@@ -82,8 +80,10 @@ People::~People() {
   }
 
   if (cv_image_gray_) {cvReleaseImage(&cv_image_gray_); cv_image_gray_ = 0; }
-  if (storage_) {cvReleaseMemStorage(&storage_); storage_ = 0; }
-  if (cascade_) {cvReleaseHaarClassifierCascade(&cascade_); cascade_ = 0; }
+  for (uint i=0; i<storages_.size(); i++) {
+    if (storages_[i]) {cvReleaseMemStorage(&storages_[i]); storages_[i] = 0; }
+    if (cascades_[i]) {cvReleaseHaarClassifierCascade(&cascades_[i]); cascades_[i] = 0; }
+  }
 
   cvReleaseImage(&cft_r_plane_); cft_r_plane_ = 0; 
   cvReleaseImage(&cft_g_plane_); cft_g_plane_ = 0;
@@ -171,14 +171,6 @@ static void calc_weighted_rg_hist_with_depth_2(IplImage* imager, IplImage* image
 
   cvNormalizeHist(hist,1.0);
   
-}
-
-
-
-// Takes in a rectangle center and size and outputs the corresponding CvRect structure. Note: no type checking is performed.
-static CvRect center_size_to_rect_2d( CvScalar center, CvScalar size) {
-  CvRect rect = cvRect(center.val[0]-size.val[0], center.val[1]-size.val[1], size.val[0]*2, size.val[1]*2);
-  return rect;
 }
 
 
@@ -336,6 +328,7 @@ void People::clearFaceColorHist(int iperson) {
   list_[iperson].face_color_hist = 0;
 }
 
+
 /********
  * Detect all faces in an image.
  * Input:
@@ -348,21 +341,28 @@ void People::clearFaceColorHist(int iperson) {
  * Output:
  * A vector of CvRects containing the bounding boxes around found faces.
  *********/ 
-vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifier_filename, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model, bool do_draw) {
-  vector<CvRect> faces;
+vector<Box2D3D> People::detectAllFaces(IplImage *image, uint num_cascades, string* haar_classifier_filenames, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model) {
+  vector<Box2D3D> faces;
 
-  if (!cascade_) {
-    cascade_ = (CvHaarClassifierCascade*)cvLoad(haar_classifier_filename);
-    if (!cascade_) {
-      std::cerr << "Cascade file " << haar_classifier_filename << " doesn't exist.\n" << std::endl;
+  for (uint i=0; i<num_cascades; i++) {
+    if (cascades_.size()<num_cascades) { 
+      cascades_.push_back((CvHaarClassifierCascade*)cvLoad(haar_classifier_filenames[i].c_str()));
+    }
+    else if (!cascades_[i]) {
+      cascades_[i] = (CvHaarClassifierCascade*)cvLoad(haar_classifier_filenames[i].c_str());
+    }
+    if (!cascades_[i]) {
+      std::cerr << "Cascade file " << haar_classifier_filenames[i] << " doesn't exist.\n" << std::endl;
       return faces;
     }
+    if (storages_.size()<num_cascades) {
+      storages_.push_back(cvCreateMemStorage(0));
+    }
+    else if (!storages_[i]) {
+      storages_[i] = cvCreateMemStorage(0);
+    }
   }
-  if (!storage_) {
-    storage_ = cvCreateMemStorage(0);
-  }
-  CvSize im_size;
-  im_size = cvGetSize(image);
+  CvSize im_size = cvGetSize(image);
 
   // Convert the image to grayscale, if necessary.
   if (cv_image_gray_==NULL) {
@@ -379,58 +379,77 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
     return faces;
   }
 
+  // Spawn one thread per cascade to actually find the faces.
+  boost::thread* threads[num_cascades];
+  for (uint i=0; i<num_cascades; i++) {
+    threads[i] = new boost::thread(boost::bind(&People::faceDetectionThread,this,i,disparity_image,cam_model,&faces));
+    threads[i]->join();
+  }
+  for (uint i=0; i< num_cascades; i++) {
+    delete threads[i];
+  }
+
+  return faces;
+}
+
+
+void People::faceDetectionThread(uint i, IplImage *disparity_image, CvStereoCamModel *cam_model, vector<Box2D3D> *faces) {
+
   // Find the faces using OpenCV's haar cascade object detector.
-  CvSeq* face_seq = cvHaarDetectObjects(cv_image_gray_, cascade_, storage_, 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
- 
+  CvSeq *face_seq = cvHaarDetectObjects(cv_image_gray_, cascades_[i], storages_[i], 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
 
   // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
   CvScalar color = cvScalar(0,255,0);
-  CvRect one_face;
-  double avg_disp = 0.0, real_size;
-  int r,c;
-  bool good_face;
+  Box2D3D one_face;
+  double avg_disp = 0.0;
+  CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
+  CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
   // For each face...
   for (int iface = 0; iface < face_seq->total; iface++) {
 
-    good_face = true;
-    color = cvScalar(0,255,0);
-
-    one_face = *(CvRect*)cvGetSeqElem(face_seq, iface);
+    one_face.status = "good";
+    one_face.box2d = *(CvRect*)cvGetSeqElem(face_seq, iface);
+    one_face.id = i; // The cascade that computed this face.
 
     if (disparity_image && cam_model) {
     
       // Get the median disparity in the middle half of the bounding box.
       avg_disp = cvMedianNonZeroElIn2DArr(disparity_image,
-					  floor(one_face.y+0.25*one_face.height),floor(one_face.y+0.75*one_face.height),
-					  floor(one_face.x+0.25*one_face.width), floor(one_face.x+0.75*one_face.width)); 
+					  floor(one_face.box2d.y+0.25*one_face.box2d.height),floor(one_face.box2d.y+0.75*one_face.box2d.height),
+					  floor(one_face.box2d.x+0.25*one_face.box2d.width), floor(one_face.box2d.x+0.75*one_face.box2d.width)); 
 
-      // If the disparity exists but the size is out of bounds, mark it red on the image and don't add it to the output vector.
-      if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_M) {
-	real_size = cam_model->getDeltaX(one_face.width,avg_disp);
-	if (real_size < FACE_SIZE_MIN_M || real_size > FACE_SIZE_MAX_M) {
-	  color = cvScalar(0,0,255);
-	  good_face = false;
+      one_face.center2d = cvScalar(one_face.box2d.x+one_face.box2d.width/2.0,
+				   one_face.box2d.y+one_face.box2d.height/2.0,
+				   avg_disp);
+      one_face.radius2d = one_face.box2d.width/2.0;
+
+      if (avg_disp > 0) {
+	one_face.radius3d = cam_model->getDeltaX(one_face.box2d.width,avg_disp)/2.0;
+	cvmSet(uvd,0,0,one_face.center2d.val[0]);
+	cvmSet(uvd,0,1,one_face.center2d.val[1]);
+	cvmSet(uvd,0,2,avg_disp);
+	cam_model->dispToCart(uvd,xyz);      
+	one_face.center3d = cvScalar(cvmGet(xyz,0,0),cvmGet(xyz,0,1),cvmGet(xyz,0,2));
+	if (one_face.center3d.val[3] > MAX_Z_M || 2.0*one_face.radius3d < FACE_SIZE_MIN_M || 2.0*one_face.radius3d > FACE_SIZE_MAX_M) {
+	  one_face.status = "bad";
 	}
       }
       else {
-	color = cvScalar(255,0,0);
+	one_face.radius3d = 0.0;     
+	one_face.center3d = cvScalar(0.0,0.0,0.0);
+	one_face.status = "unknown";
       }
     }
 
-    // Draw the bounding boxes.
-    if (do_draw) {
-      cvRectangle(image, cvPoint(one_face.x,one_face.y), cvPoint(one_face.x+one_face.width, one_face.y+one_face.height), color, 4);
-      if (disparity_image) {
-	cvRectangle(disparity_image, cvPoint(one_face.x,one_face.y), cvPoint(one_face.x+one_face.width, one_face.y+one_face.height), cvScalar(255), 4);
-      }
-    }
-
-    // Add good faces to the output vector.
-    if (good_face) {
-      faces.push_back(one_face);
-    }
+    // Add faces to the output vector.
+    // lock faces
+    boost::mutex::scoped_lock lock(face_mutex_);
+    faces->push_back(one_face);
+    lock.unlock();
   }
-  return faces;
+  cvReleaseMat(&uvd); uvd = 0;
+  cvReleaseMat(&xyz); xyz = 0;
+
 }
 
 

@@ -1,41 +1,42 @@
 /**********************************************************************
-*
-* Software License Agreement (BSD License)
-* 
-*  Copyright (c) 2008, Willow Garage, Inc.
-*  All rights reserved.
-* 
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-* 
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-* 
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
+ *
+ * Software License Agreement (BSD License)
+ * 
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ * 
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ * 
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ * 
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 #include "ros/node.h"
 #include <boost/thread/mutex.hpp>
@@ -47,6 +48,8 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
+#include "image_msgs/ColoredLine.h"
+#include "image_msgs/ColoredLines.h"
 #include "topic_synchronizer.h"
 #include "tf/transform_listener.h"
 
@@ -83,19 +86,25 @@ public:
   // The left and disparity images.
   IplImage *cv_image_left_; /**< Left image. */
   IplImage *cv_image_disp_; /**< Disparity image. */
-  bool do_display_; /**< True/false display face detections. */
+  string do_display_; /**< True/false display face detections. */
   IplImage *cv_image_disp_out_; /**< Display image. */
 
   bool use_depth_; /**< True/false use depth information. */
   CvStereoCamModel *cam_model_; /**< A model of the stereo cameras. */
  
   People *people_; /**< List of people and associated fcns. */
-  const char *haar_filename_; /**< Training file for the haar cascade classifier. */
-  double reliability_; /**< Reliability of the predicitions. This should depend on the training file used. */
+  int num_filenames_;
+  string *names_; /**< The name of each detector. Ie frontalface, profileface. These will be the names in the published face location msgs. */
+  string *haar_filenames_; /**< Training file for the haar cascade classifier. */
+  double *reliabilities_; /**< Reliability of the predictions. This should depend on the training file used. */
 
   bool external_init_; 
   robot_msgs::PositionMeasurement pos_; /**< A person position update from the filter. */
-  queue<robot_msgs::PositionMeasurement> pos_list_; /**< Queue of updated people positions from the filter. */
+  struct RestampedPositionMeasurement {
+    ros::Time restamp;
+    robot_msgs::PositionMeasurement pos;
+  };
+  map<string, RestampedPositionMeasurement> pos_list_; /**< Queue of updated people positions from the filter. */
 
   bool quit_;
 
@@ -106,8 +115,8 @@ public:
   boost::mutex cv_mutex_, pos_mutex_;
 
   // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
-  FaceDetector(std::string node_name, const char *haar_filename, double reliability, bool use_depth, bool do_display, bool external_init) : 
-    ros::node(node_name ),
+  FaceDetector(string node_name, int num_filenames, string *names, string *haar_filenames, double *reliabilities, bool use_depth, string do_display, bool external_init) : 
+    ros::node("face_detector", ros::node::ANONYMOUS_NAME),
     sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
     cv_image_left_(0),
     cv_image_disp_(0),
@@ -116,15 +125,17 @@ public:
     use_depth_(use_depth),
     cam_model_(0),
     people_(0),
-    haar_filename_(haar_filename),
-    reliability_(reliability),
+    num_filenames_(num_filenames),
+    names_(names),
+    haar_filenames_(haar_filenames),
+    reliabilities_(reliabilities),
     external_init_(external_init),
     quit_(false),
     node_name_(node_name),
     tf(*this)
   { 
     
-    if (do_display_) {
+    if (do_display_ == "local") {
       // OpenCV: pop up an OpenCV highgui window
       cvNamedWindow("Face detector: Disparity",CV_WINDOW_AUTOSIZE);
       cvNamedWindow("Face detector: Face Detection", CV_WINDOW_AUTOSIZE);
@@ -145,6 +156,11 @@ public:
 
     // Advertise a position measure message.
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+    // Advertise the rectangles to draw if stereo_view is running.
+    if (do_display_ == "remote") {
+      advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+    }
+    // Subscribe to filter measurements.
     if (external_init_) {
       subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
     }
@@ -158,7 +174,7 @@ public:
       cvReleaseImage(&cv_image_disp_out_); cv_image_disp_out_ = 0;
     }
 
-    if (do_display_) {
+    if (do_display_ == "local") {
       cvDestroyWindow("Face detector: Face Detection");
       cvDestroyWindow("Face detector: Disparity");
     }
@@ -182,8 +198,19 @@ public:
 
     // Put the incoming position into the position queue. It'll be processed in the next image callback.
     boost::mutex::scoped_lock lock(pos_mutex_);
-    pos_list_.push(pos_);
+    map<string, RestampedPositionMeasurement>::iterator it;
+    it = pos_list_.find(pos_.object_id);
+    RestampedPositionMeasurement rpm;
+    rpm.pos = pos_;
+    rpm.restamp = pos_.header.stamp;
+    if (it == pos_list_.end()) {
+      pos_list_.insert(pair<string, RestampedPositionMeasurement>(pos_.object_id, rpm));
+    }
+    else if (pos_.header.stamp - (*it).second.pos.header.stamp > -1.0 ){
+      (*it).second = rpm;
+    }
     lock.unlock();
+
   }
 
   /*!
@@ -192,6 +219,7 @@ public:
    * If unsynced stereo msgs are received, do nothing. 
    */
   void image_cb_timeout(ros::Time t) {
+    cout << "In timeout" << endl;
   }
 
   /*! 
@@ -204,44 +232,12 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
+    ros::Time startt, endt;
+    startt = t.now();
 
-    // Update face positions from the filter.
-    robot_msgs::PositionMeasurement filter_pos;
-    int iperson;
-    boost::mutex::scoped_lock pos_lock(pos_mutex_);
-    while (!pos_list_.empty()) {
-      filter_pos = pos_list_.front();
-      if ((limage_.header.stamp - filter_pos.header.stamp) < ros::Duration().fromSec(2.0)) {
-	iperson = people_->findID(filter_pos.object_id);    
-	if (filter_pos.initialization == 1 || iperson < 0) {
-	  // Create a person with this id.
-	  people_->addPerson();
-	  iperson = people_->getNumPeople()-1;
-	  people_->setID(filter_pos.object_id, iperson);
-	}
-	else {
-	  // Person already exists.
-	}
-	// Set the position.
-	tf::Point pt;
-	tf::PointMsgToTF(filter_pos.pos, pt);
-	tf::Stamped<tf::Point> loc(pt, filter_pos.header.stamp, filter_pos.header.frame_id);
-	try {
-	  tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
-	} 
-	catch (tf::TransformException& ex) {
-	}
-	people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
-	people_->setTrackingFilterUpdateTime(filter_pos.header.stamp, iperson);
-      }
-      pos_list_.pop();
-    } 
-    pos_lock.unlock();
-
-    boost::mutex::scoped_lock lock(cv_mutex_);
-
-    // Kill anyone who hasn't had a filter update in a given time.
-    people_->killIfFilterUpdateTimeout(limage_.header.stamp);
+    if (do_display_ == "local") {
+      cv_mutex_.lock();
+    }
  
     CvSize im_size;
 
@@ -251,7 +247,6 @@ public:
       cv_image_disp_ = dbridge_.toIpl();
     }
     else {
-      lock.unlock();
       return;
     }
 
@@ -263,92 +258,177 @@ public:
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
  
-    if ( cv_image_left_ )  {
-      im_size = cvGetSize(cv_image_left_);
-      vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
+    im_size = cvGetSize(cv_image_left_);
+    vector<Box2D3D> faces_vector = people_->detectAllFaces(cv_image_left_, num_filenames_, haar_filenames_, 1.0, cv_image_disp_, cam_model_);
+ 
+    image_msgs::ColoredLines all_cls;
+    vector<image_msgs::ColoredLine> lines;   
 
-      // Get the average (median) disparity in the middle half of the bounding box, and compute the face center in 3d. 
-      // Publish the face center as a track point.
-      if (cv_image_disp_ && cam_model_) {
-	int r, c, good_pix;
-	ushort* ptr;
-	double avg_disp;
-	CvRect *one_face;
-	robot_msgs::PositionMeasurement pos;
-	CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
-	CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
-	for (uint iface = 0; iface < faces_vector.size(); iface++) {
-	  one_face = &faces_vector[iface];
-	  good_pix = 0;
-	  avg_disp = 0;
+    if (faces_vector.size() > 0 ) {
 
-	  // Get the median disparity in the middle half of the bounding box.
-	  avg_disp = cvMedianNonZeroElIn2DArr(cv_image_disp_,
-					      floor(one_face->y+0.25*one_face->height),floor(one_face->y+0.75*one_face->height),
-					      floor(one_face->x+0.25*one_face->width), floor(one_face->x+0.75*one_face->width)); 
+      // Transform the positions of the known faces and remove anyone who hasn't had an update in a long time.
+      boost::mutex::scoped_lock pos_lock(pos_mutex_);
+      map<string, RestampedPositionMeasurement>::iterator it;
+      for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
+	if ((limage_.header.stamp - (*it).second.restamp) > ros::Duration().fromSec(5.0)) {
+	  // Position is too old, kill the person.
+	  pos_list_.erase(it);
+	}
+	else {
+	  // Transform the person to this time. Note that their pos time is updated but not their restamp. 
+	  tf::Point pt;
+	  tf::PointMsgToTF((*it).second.pos.pos, pt);
+	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
+	  try {
+	    tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
+	    (*it).second.pos.header.stamp = limage_.header.stamp;
+	  } 
+	  catch (tf::TransformException& ex) {
+	  }
+	}
+      } 
+      // End filter face position update
 
-	  cvmSet(uvd,0,0,one_face->x+one_face->width/2.0);
-	  cvmSet(uvd,0,1,one_face->y+one_face->height/2.0);
-	  cvmSet(uvd,0,2,avg_disp);
-	  cam_model_->dispToCart(uvd,xyz);
+      if (do_display_ == "remote"){
+	lines.resize(4*faces_vector.size());
+      }
+
+      // Associate the found faces with previously seen faces, and publish all good face centers.
+      Box2D3D *one_face;
+      robot_msgs::PositionMeasurement pos;
+      for (uint iface = 0; iface < faces_vector.size(); iface++) {
+	one_face = &faces_vector[iface];
 	  
-	  bool do_publish = true;
-	  std::string id = "-1";
-	  if (external_init_) {
-	    // Check if this person's face is close enough to one of the previously known faces and associate it.
-	    // If not, don't publish it.
-	    // If yes, set it's new position and publish it.
-	    int close_person = people_->findPersonFaceLTDist3D(FACE_DIST, cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
-	    printf("close person %d \n", close_person);
-	    if (close_person < 0) {
-	      //do_publish = false;
-	      id = "";
+	if (one_face->status != "bad") {
+	  std::string id = "";
+
+	  // Convert the face format to a PositionMeasurement msg.
+	  pos.header.stamp = limage_.header.stamp;
+	  pos.name = names_[0];
+	  pos.pos.x = one_face->center3d.val[2]; 
+	  pos.pos.y = -1.0*one_face->center3d.val[0];
+	  pos.pos.z = -1.0*one_face->center3d.val[1]; 
+	  pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
+	  pos.reliability = reliabilities_[0];
+	  pos.initialization = 0;
+	  pos.covariance[0] = 0.04; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;
+	  pos.covariance[3] = 0.0;  pos.covariance[4] = 0.04; pos.covariance[5] = 0.0;
+	  pos.covariance[6] = 0.0;  pos.covariance[7] = 0.0;  pos.covariance[8] = 0.04;
+
+	  // Check if this person's face is close enough to one of the previously known faces and associate it.
+	  // Otherwise publish it with an empty id.
+	  double dist, mindist = 1000000.0;
+	  map<string, RestampedPositionMeasurement>::iterator close_it = pos_list_.end();
+	  for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
+	    dist = pow((*it).second.pos.pos.x - pos.pos.x, 2.0) + pow((*it).second.pos.pos.y - pos.pos.y, 2.0) + pow((*it).second.pos.pos.z - pos.pos.z, 2.0);
+	    if (dist < FACE_DIST && dist < mindist) {
+	      mindist = dist;
+	      close_it = it;
+	    }
+	  }
+	  if (close_it != pos_list_.end()) {
+	    (*close_it).second.restamp = limage_.header.stamp;
+	    pos.object_id = (*close_it).second.pos.object_id;
+	  }
+	  else {
+	    pos.object_id = "";
+	  }
+	  cout << "Closest person: " << pos.object_id << endl;
+	  publish("people_tracker_measurements",pos);
+	}
+
+      } // end for iface
+      pos_lock.unlock();
+      // Done associating faces.
+
+      // Draw an appropriately colored rectangle on the display image.
+      if (do_display_ != "none") {
+	for (uint iface = 0; iface < faces_vector.size(); iface++) {	
+	  if (do_display_ != "none") { 
+	    CvScalar color;
+	    if (one_face->status == "good") {
+	      color = cvScalar(0,255,0);
+	    }
+	    else if (one_face->status == "unknown") {
+	      color = cvScalar(255,0,0);
 	    }
 	    else {
-	      id = people_->getID(close_person);
-	      people_->setFaceCenter3D(cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2), close_person);
+	      color = cvScalar(0,0,255);
 	    }
-	  }
 
-	  if (do_publish) {
-	    pos.header.stamp = limage_.header.stamp;
-	    pos.name = node_name_;
-	    pos.object_id = id;
-	    pos.pos.x = cvmGet(xyz,0,2);
-	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
-	    pos.pos.z = -1.0*cvmGet(xyz,0,1);
-	    pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
-	    pos.reliability = reliability_;
-	    pos.initialization = 0;
-	    pos.covariance[0] = 0.04;
-	    pos.covariance[1] = 0.0;
-	    pos.covariance[2] = 0.0;
-	    pos.covariance[3] = 0.0;
-	    pos.covariance[4] = 0.04;
-	    pos.covariance[5] = 0.0;
-	    pos.covariance[6] = 0.0;
-	    pos.covariance[7] = 0.0;
-	    pos.covariance[8] = 0.04;
-	    publish("people_tracker_measurements",pos);
-	  }
-	}
+	    if (do_display_ == "local") {
+	      cvRectangle(cv_image_left_, 
+			  cvPoint(one_face->box2d.x,one_face->box2d.y), 
+			  cvPoint(one_face->box2d.x+one_face->box2d.width, one_face->box2d.y+one_face->box2d.height), color, 4);
+	    }
+	    else if (do_display_ == "remote") {
+	    
+	      lines[4*iface].r = color.val[2]; lines[4*iface+1].r = lines[4*iface].r; 
+	      lines[4*iface+2].r = lines[4*iface].r; lines[4*iface+3].r = lines[4*iface].r;
+	      lines[4*iface].g = color.val[1]; lines[4*iface+1].g = lines[4*iface].g; 
+	      lines[4*iface+2].g = lines[4*iface].g; lines[4*iface+3].g = lines[4*iface].g;
+	      lines[4*iface].b = color.val[0]; lines[4*iface+1].b = lines[4*iface].b; 
+	      lines[4*iface+2].b = lines[4*iface].b; lines[4*iface+3].b = lines[4*iface].b;
 
-	cvReleaseMat(&uvd);
-	cvReleaseMat(&xyz);	
-      
-	if (do_display_) {
-	  if (!cv_image_disp_out_) {
-	    cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-	  }
-	  cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
+	      lines[4*iface].x0 = one_face->box2d.x; 
+	      lines[4*iface].x1 = one_face->box2d.x + one_face->box2d.width;
+	      lines[4*iface].y0 = one_face->box2d.y; 
+	      lines[4*iface].y1 = one_face->box2d.y;
 
-	  cvShowImage("Face detector: Face Detection",cv_image_left_);
-	  cvShowImage("Face detector: Disparity",cv_image_disp_out_);
-	}
+	      lines[4*iface+1].x0 = one_face->box2d.x; 
+	      lines[4*iface+1].x1 = one_face->box2d.x;
+	      lines[4*iface+1].y0 = one_face->box2d.y; 
+	      lines[4*iface+1].y1 = one_face->box2d.y + one_face->box2d.height;
+
+	      lines[4*iface+2].x0 = one_face->box2d.x; 
+	      lines[4*iface+2].x1 = one_face->box2d.x + one_face->box2d.width;
+	      lines[4*iface+2].y0 = one_face->box2d.y + one_face->box2d.height; 
+	      lines[4*iface+2].y1 = one_face->box2d.y + one_face->box2d.height;
+
+	      lines[4*iface+3].x0 = one_face->box2d.x + one_face->box2d.width; 
+	      lines[4*iface+3].x1 = one_face->box2d.x + one_face->box2d.width;
+	      lines[4*iface+3].y0 = one_face->box2d.y; 
+	      lines[4*iface+3].y1 = one_face->box2d.y + one_face->box2d.height;
+
+	      lines[4*iface].header.stamp = limage_.header.stamp;
+	      lines[4*iface+1].header.stamp = limage_.header.stamp;
+	      lines[4*iface+2].header.stamp = limage_.header.stamp;
+	      lines[4*iface+3].header.stamp = limage_.header.stamp;
+	      lines[4*iface].header.frame_id = limage_.header.frame_id;
+	      lines[4*iface+1].header.frame_id = limage_.header.frame_id;
+	      lines[4*iface+2].header.frame_id = limage_.header.frame_id;
+	      lines[4*iface+3].header.frame_id = limage_.header.frame_id;
+	  
+	    }
+	  }	
+	} // End for iface
       }
-      
+
     }
-    lock.unlock();
+
+    // Display
+    if (do_display_ == "remote") {
+      all_cls.header.stamp = limage_.header.stamp;
+      all_cls.label = node_name_;
+      all_cls.header.frame_id = limage_.header.frame_id;
+      all_cls.lines = lines;
+      publish("lines_to_draw",all_cls);
+    }
+    else if (do_display_ == "local") {
+      if (!cv_image_disp_out_) {
+	cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+      }
+      cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
+      cvShowImage("Face detector: Face Detection",cv_image_left_);
+      cvShowImage("Face detector: Disparity",cv_image_disp_out_);
+
+      cv_mutex_.unlock();
+    }
+    // Done display
+
+    endt = t.now();
+    ros::Duration diff = endt-startt;
+    printf("Image callback duration = %fsec\n", diff.toSec());
   }
 
 
@@ -358,17 +438,19 @@ public:
   bool spin() {
     while (ok() && !quit_) {
 
-      // Display all of the images.
-      boost::mutex::scoped_lock lock(cv_mutex_);
+      if (do_display_ == "local") {
+	// Display all of the images.
+	boost::mutex::scoped_lock lock(cv_mutex_);
 
-      // Get user input and allow OpenCV to refresh windows.
-      int c = cvWaitKey(2);
-      c &= 0xFF;
-      // Quit on ESC, "q" or "Q"
-      if((c == 27)||(c == 'q')||(c == 'Q'))
-	quit_ = true;
+	// Get user input and allow OpenCV to refresh windows.
+	int c = cvWaitKey(2);
+	c &= 0xFF;
+	// Quit on ESC, "q" or "Q"
+	if((c == 27)||(c == 'q')||(c == 'Q'))
+	  quit_ = true;
 
-      lock.unlock(); 
+	lock.unlock(); 
+      }
       usleep(10000);
 
     }
@@ -383,28 +465,44 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
-  bool do_display = true;
+  string do_display = "none";
   bool external_init = true;
-  double reliability = 0.8;
 
-  if (argc < 3) {
-    cerr << "Node name ending and path to cascade file required.\n" << endl;
+  if (argc < 2) {
+    cerr << "A path to the file containing the experiment list is required.\n" << endl;
     return 0;
   }
-  char *haar_filename = argv[2];
-  if (argc >= 4) {
-    reliability = atof(argv[3]);
-    if (argc >= 5) {
-      do_display = atoi(argv[4]);
-      if (argc >= 6) {
-	external_init = atoi(argv[5]);
-      }
+  if (argc >= 3) {
+    do_display = argv[2];
+    if (argc >= 4) {
+      external_init = atoi(argv[3]);
     }
   }
-  ostringstream node_name;
-  node_name << "face_detection_" << argv[1];
-  FaceDetector fd(node_name.str(), haar_filename, reliability, use_depth, do_display, external_init);
+
+  ifstream expfile(argv[1]);
+  if (!expfile.is_open()) {
+    cerr << "File " << argv[1] << " cannot be opened" << endl;
+    return 0;
+  }
+  int numlines;
+  expfile >> numlines;
+  double reliabilities[numlines];
+  string haar_filenames[numlines];
+  string names[numlines];
+  for (int i=0; i<numlines; i++) {
+    if (expfile.eof()) {
+      cerr << "File " << argv[1] << " has an incorrect number of lines." << endl;
+      return 0;
+    }
+    expfile >> names[i];
+    expfile >> haar_filenames[i];
+    expfile >> reliabilities[i];
+  }
   
+
+  ostringstream node_name;
+  node_name << "face_detection"; //_" << argv[1];
+  FaceDetector fd(node_name.str(), numlines, names, haar_filenames, reliabilities, use_depth, do_display, external_init);
 
   fd.spin();
   ros::fini();

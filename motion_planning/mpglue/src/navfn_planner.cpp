@@ -47,8 +47,7 @@ namespace mpglue {
   
   
   /**
-     \todo Should not hardcode the translation from costmap to navfn
-     cost scales. Also should find a way to handle cost changes.
+     \todo find a way to handle cost changes
   */
   void NavFnPlanner::
   preCreatePlan() throw(std::exception)
@@ -76,11 +75,15 @@ namespace mpglue {
 	}
     }
     
-    int foo[2] = { stats_.start_ix, stats_.start_iy };
-    planner_->setStart(foo);
-    foo[0] = stats_.goal_ix;
-    foo[1] = stats_.goal_iy;
-    planner_->setGoal(foo);
+    if (start_changed_) {
+      int foo[2] = { stats_.start_ix, stats_.start_iy };
+      planner_->setStart(foo);
+    }
+    
+    if (goal_pose_changed_) {
+      int foo[2] = { stats_.goal_ix, stats_.goal_iy };
+      planner_->setGoal(foo);
+    }
   }
   
   

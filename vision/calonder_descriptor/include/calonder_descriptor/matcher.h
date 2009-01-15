@@ -53,7 +53,7 @@ private:
 template < typename SigElem, typename Data >
 inline
 BruteForceMatcher<SigElem, Data>::BruteForceMatcher(size_t signature_dimension)
-  : threshold_(std::numeric_limits<float>::max()),
+  : threshold_(std::numeric_limits<distance_type>::max()),
     dimension_(signature_dimension),
     distance_func(signature_dimension)
 {}
@@ -119,7 +119,7 @@ int BruteForceMatcher<SigElem, Data>::findMatch(const SigElem* query_sig,
     }
     ++index;
   }
-
+//printf("best_dist=%i, t=%i\n", best_distance, threshold_);    
   *distance = best_distance;
   return match;
 }

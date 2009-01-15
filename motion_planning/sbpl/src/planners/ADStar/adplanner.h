@@ -114,7 +114,7 @@ public:
     int force_planning_from_scratch(); 
 	
 	int set_search_mode(bool bSearchUntilFirstSolution);
-	void costs_changed(ChangedCellsGetter const & changedcells);
+	void costs_changed(StateChangeQuery const & stateChange);
 
 
 	void update_succs_of_changededges(vector<int>* succsIDV);
@@ -239,11 +239,12 @@ private:
    See comments in sbpl/src/planners/planner.h about the what and why
    of this class.
 */
-class ChangedCellsGetter
+class StateChangeQuery
 {
 public:
-  virtual ~ChangedCellsGetter() {}
-  virtual std::vector<int> const * getPredsOfChangedCells() const = 0;
+  virtual ~StateChangeQuery() {}
+  virtual std::vector<int> const * getPredecessors() const = 0;
+  virtual std::vector<int> const * getSuccessors() const = 0;
 };
 
 

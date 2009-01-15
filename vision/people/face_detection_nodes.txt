@@ -1,0 +1,4 @@
+2
+frontalface ./cascades/haarcascade_frontalface_alt.xml 0.9
+profileface ./cascades/haarcascade_profileface.xml 0.7
+

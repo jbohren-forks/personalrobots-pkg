@@ -73,7 +73,7 @@ typedef struct
 	char starttheta;
 	char dX;
 	char dY;
-	char dTheta;
+	char endtheta;
 	unsigned int cost; 
 	vector<sbpl_2Dcell_t> intersectingcellsV;
 	//start at 0,0,starttheta and end at endcell in continuous domain with half-bin less to account for 0,0 start
@@ -273,7 +273,8 @@ public:
 				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV);
 	
 	bool InitGeneral( vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
-	void PrecomputeActions(vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
+	void PrecomputeActionswithBaseMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
+	void PrecomputeActionswithCompleteMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
 	void PrecomputeActions();
 
 	EnvNAVXYTHETALATHashEntry_t* GetHashEntry(int X, int Y, int Theta);
