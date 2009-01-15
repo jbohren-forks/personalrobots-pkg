@@ -8,7 +8,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH = gmapping-r39.patch
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && patch -p0 < ../../$(PATCH) && ./configure
 	cd $(SOURCE_DIR) && make
 	# Poor-man's install step

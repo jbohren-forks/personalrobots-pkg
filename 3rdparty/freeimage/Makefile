@@ -9,7 +9,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 ROOT = $(shell rospack find freeimage)/freeimage
 
-installed: $(SOURCE_DIR) Makefile
+installed: $(SOURCE_DIR)/unpacked Makefile
 	@echo "making it"
 	@echo "ROOT is: $(ROOT)"
 	-mkdir -p freeimage

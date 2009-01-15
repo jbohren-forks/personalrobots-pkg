@@ -6,7 +6,7 @@ SOURCE_DIR = build/eml-svn
 UNPACK_CMD = tar xjf
 include $(shell rospack find mk)/download_unpack_build.mk
 
-installed: wiped $(SOURCE_DIR) Makefile
+installed: wiped $(SOURCE_DIR)/unpacked Makefile
 	cd $(SOURCE_DIR) && \
 	mkdir -p build && \
 	cd build && \

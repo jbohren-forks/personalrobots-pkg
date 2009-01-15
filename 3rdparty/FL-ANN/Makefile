@@ -8,7 +8,7 @@ TARBALL_PATCH = cmakelists.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	echo "Building FL-ANN..."
 	mkdir -p build/build && cd build/build && cmake ../flann-1.11-src/src && make
 	touch installed

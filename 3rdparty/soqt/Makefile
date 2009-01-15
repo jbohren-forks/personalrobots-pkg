@@ -9,7 +9,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH=soqt_qt4.patch
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && patch -s -N -p1 < ../../$(PATCH) || echo
 	cd $(SOURCE_DIR) && autoconf && ./configure --prefix=$(PWD)
 	cd $(SOURCE_DIR) && make && make install

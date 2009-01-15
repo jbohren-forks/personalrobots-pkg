@@ -6,7 +6,7 @@ SOURCE_DIR = build/velodynedriver-1.0
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack_build.mk
 
-installed: $(SOURCE_DIR) Makefile
+installed: $(SOURCE_DIR)/unpacked Makefile
 	cd $(SOURCE_DIR) && ./configure --prefix=$(PWD)/velodyne-driver
 	cd $(SOURCE_DIR) && make && make install
 	touch installed
