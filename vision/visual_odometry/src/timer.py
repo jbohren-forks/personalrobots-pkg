@@ -4,9 +4,13 @@ import time
 class Timer:
   def __init__(self):
     self.sum = 0
+    self.log = []
+
   def reset(self):
     self.sum = 0
   def start(self):
-    self.sum -= time.time()
+    self.started = time.time()
   def stop(self):
-    self.sum += time.time()
+    took = time.time() - self.started
+    self.sum += took
+    self.log.append(took)

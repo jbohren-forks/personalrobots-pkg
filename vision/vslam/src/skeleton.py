@@ -10,6 +10,7 @@ from timer import Timer
 
 import pylab, numpy
 import random
+import pickle
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors, matcher):
@@ -40,7 +41,7 @@ class Skeleton:
     self.node_vdist = 15                # how many frame to wait to put in a skeleton node
 
     self.timer = {}
-    for t in ['toro add', 'toro opt', 'pr add', 'pr search', 'gcc', 'descriptors']:
+    for t in ['toro add', 'toro opt', 'place recognition', 'gcc', 'descriptors']:
       self.timer[t] = Timer()
 
   def add(self, this):
@@ -69,9 +70,6 @@ class Skeleton:
         far = [ f for f in self.place_find(this.lf, this_d) if (not f.id in [this.id, prev.id])]
         self.add_links(this, far)
 
-      self.timer['pr add'].start()
-      # if self.vt: self.vt.add(this.lf, this_d)
-      self.timer['pr add'].stop()
       self.place_ids.append(this)
 
   def addConstraint(self, prev, this, relpose):
@@ -96,9 +94,9 @@ class Skeleton:
 
   def place_find(self, lf, descriptors):
     if self.vt:
-      self.timer['pr search'].start()
+      self.timer['place recognition'].start()
       scores = self.vt.topN(lf, descriptors, len(self.place_ids), True)
-      self.timer['pr search'].stop()
+      self.timer['place recognition'].stop()
       assert len(scores) == len(self.place_ids)+1
       return [id for (_,id) in sorted(zip(scores, self.place_ids))][:self.pr_maximum]
     else:
@@ -191,13 +189,17 @@ class Skeleton:
     pts = dict([ (f,self.newpose(f.id).xform(0,0,0)) for f in self.nodes ])
     nodepts = pts.values()
     pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = color, label = 'after SGD')
-    for (f,(x,y,z)) in pts.items():
-      pylab.annotate('%d' % f.id, (float(x), float(z)))
+    #for (f,(x,y,z)) in pts.items():
+    #  pylab.annotate('%d' % f.id, (float(x), float(z)))
 
     for (f0,f1) in self.edges:
       p0 = pts[f0]
       p1 = pts[f1]
       pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), c = color)
+
+  def summary(self):
+    pts = dict([ (f.id,self.newpose(f.id).xform(0,0,0)) for f in self.nodes ])
+    return (pts, [ (f0.id, f1.id) for (f0,f1) in self.edges ])
 
   def average_time_per_frame(self):
     niter = len(self.nodes)
@@ -212,3 +214,9 @@ class Skeleton:
         print "%-20s %fms" % (n, 1e3 * t.sum / niter)
       print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
     #self.vo.summarize_timers()
+
+  def dump_timers(self, filename):
+    f = open(filename, 'w')
+    d = dict([ (nm, tm.log) for (nm, tm) in self.timer.items() ])
+    pickle.dump(d, f)
+    f.close()
