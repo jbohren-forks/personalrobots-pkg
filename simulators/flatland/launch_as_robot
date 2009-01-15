@@ -1,3 +1,0 @@
-#!/bin/bash
-export ROS_NAMESPACE=$ROS_NAMESPACE/robot
-xterm -e `rospack find flatland`/flatland &
