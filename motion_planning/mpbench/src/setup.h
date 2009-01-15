@@ -60,20 +60,20 @@ namespace mpbench {
     
     struct startspec {
       startspec(bool from_scratch,
-// 		bool use_initial_solution,
-// 		bool allow_iteration,
-// 		double alloc_time,
+ 		bool use_initial_solution,
+ 		bool allow_iteration,
+ 		double alloc_time,
 		double start_x,
 		double start_y,
 		double start_th);
       
-      bool from_scratch;
-//       bool use_initial_solution;
-//       bool allow_iteration;
-//       double alloc_time;
-      double px;
-      double py;
-      double pth;
+      bool FOOfrom_scratch;
+      bool use_initial_solution;
+      bool allow_iteration;
+      double alloc_time;
+      double FOOpx;
+      double FOOpy;
+      double FOOpth;
     };
     
     struct goalspec {

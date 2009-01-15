@@ -491,7 +491,7 @@ namespace {
     
     task::startspec const & start(result.start);
     glPushMatrix();
-    glTranslated(start.px, start.py, 0);
+    glTranslated(start.FOOpx, start.FOOpy, 0);
     //       glColor3d(0.5, 1, 0);
     //       glLineWidth(1);
     //       gluDisk(wrap_glu_quadric_instance(),
@@ -504,7 +504,7 @@ namespace {
     // 	      36, 1);
     glColor3d(1, 1, 0);
     glLineWidth(3);
-    glRotated(180 * start.pth / M_PI, 0, 0, 1);
+    glRotated(180 * start.FOOpth / M_PI, 0, 0, 1);
     drawFootprint();
     glPopMatrix();
     

@@ -57,6 +57,7 @@ extern "C" {
 
 using sfl::minval;
 using sfl::maxval;
+using sfl::to_string;
 using namespace boost;
 using namespace std;
 
@@ -170,6 +171,8 @@ namespace {
   
   
   void drawCubicle(mpbench::Setup & setup,
+		   bool incremental,
+		   bool minimal,
 		   double hall, double door,
 		   size_t ncube,
 		   std::ostream * progress_os)
@@ -223,18 +226,45 @@ namespace {
     double const tol_th(M_PI);
     double const gx(0.5 * R0 * cos(M_PI / 8));
     double const gy(0.5 * R0 * sin(M_PI / 8) + yoff);
+    double const alloc_time(0.001);
     for (size_t ii(0); ii < ncube; ++ii) {
       ostringstream os;
       os << "from hall to cubicle " << ii;
-      setup.legacyAddTask(os.str(), true, gx, gy, 0,
-		    (R0 + hall / 2) * cos(ii * alpha),
-		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
-		    0, tol_xy, tol_th);
+      if (incremental) {
+	mpbench::task::setup foo(os.str(),
+				 mpbench::task::goalspec((R0 + hall / 2) * cos(ii * alpha),
+							 (R0 + hall / 2) * sin(ii * alpha) + yoff,
+							 0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600, gx, gy, 0));
+	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time, gx, gy, 0));
+	setup.addTask(foo);
+      }
+      else
+	setup.legacyAddTask(os.str(), true, gx, gy, 0,
+			    (R0 + hall / 2) * cos(ii * alpha),
+			    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+			    0, tol_xy, tol_th);
+      if (minimal)
+	break;
       os << ", return trip";
-      setup.legacyAddTask(os.str(), false,
-		    (R0 + hall / 2) * cos(ii * alpha),
-		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
-		    0, gx, gy, 0, tol_xy, tol_th);
+      if (incremental) {
+	mpbench::task::setup foo(os.str(),
+				 mpbench::task::goalspec(gx, gy, 0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600,
+						     (R0 + hall / 2) * cos(ii * alpha),
+						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
+						     0));
+	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time,
+						     (R0 + hall / 2) * cos(ii * alpha),
+						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
+						     0));
+	setup.addTask(foo);
+      }
+      else
+	setup.legacyAddTask(os.str(), false,
+			    (R0 + hall / 2) * cos(ii * alpha),
+			    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+			    0, gx, gy, 0, tol_xy, tol_th);
     }
   }
   
@@ -436,7 +466,9 @@ namespace mpbench {
     shared_ptr<task::setup>
       setup(new task::setup(description, task::goalspec(goal_x, goal_y, goal_th,
 							goal_tol_xy, goal_tol_th)));
-    setup->start.push_back(task::startspec(from_scratch, start_x, start_y, start_th));
+    setup->start.push_back(task::startspec(from_scratch,
+					   false, false, numeric_limits<double>::max(),
+					   start_x, start_y, start_th));
     tasklist_.push_back(setup);
   }
   
@@ -574,7 +606,11 @@ namespace {
     else if ("office1" == name)
       drawOffice1(*setup, hall_width, door_width, progress_os);
     else if ("cubicle" == name)
-      drawCubicle(*setup, hall_width, door_width, 3, progress_os);
+      drawCubicle(*setup, false, false, hall_width, door_width, 3, progress_os);
+    else if ("cubicle2" == name)
+      drawCubicle(*setup, true, false, hall_width, door_width, 3, progress_os);
+    else if ("cubicle3" == name)
+      drawCubicle(*setup, true, true, hall_width, door_width, 3, progress_os);
     else {
       delete setup;
       if (progress_os)
@@ -625,13 +661,12 @@ namespace mpbench {
       os << prefix << "    goal " << (*it)->goal.px << "  " << (*it)->goal.py << "  "
 	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
       for (vector<task::startspec>::const_iterator is((*it)->start.begin());
-	   is != (*it)->start.end(); ++is) {
-	if (is->from_scratch)
-	  os << prefix << "    start TRUE  ";
-	else
-	  os << prefix << "    start FALSE ";
-	os << is->px << "  " << is->py << "  " << is->pth << "\n";
-      }
+	   is != (*it)->start.end(); ++is)
+	os << prefix << "    start " << to_string(is->FOOfrom_scratch)
+	   << " " << to_string(is->use_initial_solution)
+	   << " " << to_string(is->allow_iteration)
+	   << " " << is->alloc_time
+	   << " " << is->FOOpx << "  " << is->FOOpy << "  " << is->FOOpth << "\n";
     }
   }
   
@@ -648,13 +683,19 @@ namespace mpbench {
     
     startspec::
     startspec(bool _from_scratch,
+	      bool _use_initial_solution,
+	      bool _allow_iteration,
+	      double _alloc_time,
 	      double start_x,
 	      double start_y,
 	      double start_th)
-      : from_scratch(_from_scratch),
-	px(start_x),
-	py(start_y),
-	pth(start_th)
+      : FOOfrom_scratch(_from_scratch),
+	use_initial_solution(_use_initial_solution),
+	allow_iteration(_allow_iteration),
+	alloc_time(_alloc_time),
+	FOOpx(start_x),
+	FOOpy(start_y),
+	FOOpth(start_th)
     {
     }
     

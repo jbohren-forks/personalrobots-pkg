@@ -337,11 +337,17 @@ void end_element_handler(void * user_data,
       double px, py, pth;
       is >> from_scratch_str >> px >> py >> pth;
       if ( ! is)
-	throwme(sp, "could not read from_scratch px py pth from \"" + sp->buffer->GetString() + "\"");
+	throwme(sp, "could not read from_scratch px py pth from \""
+		+ sp->buffer->GetString() + "\"");
       bool from_scratch;
       if ( ! sfl::string_to(from_scratch_str, from_scratch))
 	throwme(sp, "could not convert \"" + sp->buffer->GetString() + "\" to boolean");
-      sp->tmp_task.start.push_back(task::startspec(from_scratch, px, py, pth));
+      // XXXX to do: parse other parameters as well
+      bool const use_initial_solution(false);
+      bool const allow_iteration(false);
+      double const alloc_time(numeric_limits<double>::max());
+      sp->tmp_task.start.push_back(task::startspec(from_scratch, use_initial_solution,
+						   allow_iteration, alloc_time, px, py, pth));
     }
     break;
     

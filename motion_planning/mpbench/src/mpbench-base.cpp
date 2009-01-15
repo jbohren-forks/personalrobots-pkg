@@ -433,10 +433,13 @@ void create_setup()
     string head;
     while (sfl::splitstring(spec, ':', head, spec)) {
       string name(canonicalPlannerName(head));
+      bool const strict_name_check(true);
       if ( ! name.empty()) {
 	planner_name.push_back(name);
 	*logos << "added planner name " << name << "\n" << flush;
       }
+      else if (strict_name_check)
+	errx(EXIT_FAILURE, "create_setup(): strict_name_check failed on \"%s\"", head.c_str());
     }
   }
   if (planner_name.empty())
@@ -516,6 +519,103 @@ void create_setup()
 }
 
 
+static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_id,
+			     task::startspec const & start, task::goalspec const & goal,
+			     SBPLPlannerWrap & planner_ref)
+{
+  double prev_epsilon(-1);
+  double cumul_allocated_time(0);
+  double cumul_actual_time_wall(0);
+  double cumul_actual_time_user(0);
+  int cumul_expands(0);
+  
+  for (size_t jj(0); true; ++jj) {
+    
+    shared_ptr<waypoint_plan_t> plan;
+    plan = planner_ref.createPlan();
+    shared_ptr<SBPLPlannerStats> stats(planner_ref.copyMyStats());
+    
+    if ( ! plan) {
+      // giving up immediately sort of precludes the possibility that
+      // the planner was not given enough time, or that it has not
+      // been given a chance of coming up with an initial solution
+      // before... ah well, cannot handle every possible case.
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + ": FAILURE", "    ");
+      *logos << flush;
+      shared_ptr<task::result>
+	result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+      resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
+      break;
+    }
+    
+    if (0 < stats->number_of_expands)
+      cumul_expands += stats->number_of_expands;
+    
+    if (stats->solution_epsilon > 0) {
+      if ((prev_epsilon > 0) && (fabs(prev_epsilon - stats->solution_epsilon) < 1e-9)) {
+	stats->allocated_time = cumul_allocated_time;
+	stats->actual_time_wall = cumul_actual_time_wall;
+	stats->actual_time_user = cumul_actual_time_user;
+	stats->number_of_expands = cumul_expands;
+	stats->logStream(*logos,  "  episode " + sfl::to_string(episode_id) + " FINAL: cumul:",
+			 "    ");
+	*logos << flush;
+	//// do NOT add to overall stats because of cumulated times
+	break;
+      }
+    }
+    
+    cumul_allocated_time += stats->allocated_time;
+    cumul_actual_time_wall += stats->actual_time_wall;
+    cumul_actual_time_user += stats->actual_time_user;
+    
+    if (0 == jj)
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + "  FIRST_SOLUTION", "    ");
+    else
+      stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
+		       + sfl::to_string(jj) + "  IMPROVED", "    ");
+    *logos << flush;
+    shared_ptr<task::result>
+      result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+    resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
+    
+    prev_epsilon = stats->solution_epsilon;
+  }  
+}
+
+
+static void plan_once(size_t planner_id, size_t task_id, size_t episode_id,
+		      task::startspec const & start, task::goalspec const & goal,
+		      CostmapPlanner & planner_ref)
+{
+  shared_ptr<waypoint_plan_t> plan;
+  try {
+    plan = planner_ref.createPlan();
+  }
+  catch (std::exception const & ee) {
+    *logos << "\n==================================================\n"
+	   << "  plan_once(): EXCEPTION from createPlan():\n"
+	   << ee.what()
+	   << "\n==================================================\n" << flush;
+  }
+  
+  string title;
+  if (plan)
+    title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
+  else
+    title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
+  shared_ptr<CostmapPlannerStats> stats(planner_ref.copyStats());
+  stats->logStream(*logos, title, "    ");
+  *logos << flush;
+  
+  shared_ptr<task::result>
+    result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+  resultlist.push_back(result);
+}
+
+
 void run_tasks()
 {
   try {
@@ -536,40 +636,23 @@ void run_tasks()
       
 	for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
 	  task::startspec const & start(task.start[episode_id]);
-	
-	  planner[planner_id]->setStart(start.px, start.py, start.pth);
-	  planner[planner_id]->forcePlanningFromScratch(start.from_scratch);
-	
-	  shared_ptr<waypoint_plan_t> plan;
-	  try {
-	    plan = planner[planner_id]->createPlan();
-	  }
-	  catch (std::exception const & ee) {
-	    *logos << "\n==================================================\n"
-		   << "  EXCEPTION from createPlan():\n"
-		   << ee.what()
-		   << "\n==================================================\n" << flush;
-	  }
-	
-	  string title;
-	  if (plan)
-	    title = "  episode " + sfl::to_string(episode_id) + ": SUCCESS";
-	  else
-	    title = "  episode " + sfl::to_string(episode_id) + ": FAILURE";
-	  shared_ptr<CostmapPlannerStats> stats(planner[planner_id]->copyStats());
-	  stats->logStream(*logos, title, "    ");
-	  *logos << flush;
+	  CostmapPlanner * costmap_planner(planner[planner_id].get());
 	  
-	  shared_ptr<task::result>
-	    result(new task::result(planner_id,
-				    task_id,
-				    episode_id,
-				    start,
-				    task.goal,
-				    plan,
-				    stats));
-	
-	  resultlist.push_back(result);
+	  costmap_planner->setStart(start.FOOpx, start.FOOpy, start.FOOpth);
+	  costmap_planner->forcePlanningFromScratch(start.FOOfrom_scratch);
+	  
+	  // not all planners can be run iteratively...
+	  SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(costmap_planner));
+	  if ( ! sbpl_planner)
+	    plan_once(planner_id, task_id, episode_id, start, task.goal, *costmap_planner);
+	  else {
+	    sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+	    sbpl_planner->setAllocatedTime(start.alloc_time);
+	    if (start.allow_iteration)
+	      plan_iteratively(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
+	    else
+	      plan_once(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
+	  }
 	} // endfor(episode)
       } // endfor(task)
     } // endfor(planner)
