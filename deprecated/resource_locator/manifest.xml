@@ -7,7 +7,7 @@
   </description>
   <author>Rosen Diankov, Ioan Sucan </author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="deprecated" notes="replaced by mechanism_model + xacro"/>
 
   <depend package="rosconsole" />
   <depend package="boost"/>
