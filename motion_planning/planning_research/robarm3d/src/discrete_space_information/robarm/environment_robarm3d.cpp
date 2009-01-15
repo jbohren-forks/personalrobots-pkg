@@ -502,14 +502,36 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
 	exit(1);
     }
 
-    //basexyz(cells): 
+    //basexyz
     fscanf(fCfg, "%s", sTemp);
-    fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.BaseX_c = atoi(sTemp);
-    fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.BaseY_c = atoi(sTemp);
-    fscanf(fCfg, "%s", sTemp);
-    EnvROBARMCfg.BaseZ_c = atoi(sTemp);
+    if(strcmp(sTemp, "basexyz(cells):") == 0)
+    {
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseX_c = atoi(sTemp);
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseY_c = atoi(sTemp);
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseZ_c = atoi(sTemp);
+
+        //convert shoulder base from cell to real world coords
+        Cell2ContXY(EnvROBARMCfg.BaseX_c, EnvROBARMCfg.BaseY_c, EnvROBARMCfg.BaseZ_c, &(EnvROBARMCfg.BaseX_m), &(EnvROBARMCfg.BaseY_m), &(EnvROBARMCfg.BaseZ_m)); 
+    }
+    else if(strcmp(sTemp, "basexyz(meters):") == 0)
+    {
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseX_m = atof(sTemp);
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseY_m = atof(sTemp);
+        fscanf(fCfg, "%s", sTemp);
+        EnvROBARMCfg.BaseZ_m = atof(sTemp);
+
+        ContXYZ2Cell(EnvROBARMCfg.BaseX_m, EnvROBARMCfg.BaseY_m, EnvROBARMCfg.BaseZ_m, &(EnvROBARMCfg.BaseX_c), &(EnvROBARMCfg.BaseY_c), &(EnvROBARMCfg.BaseZ_c)); 
+    }
+    else
+    {
+        printf("Error: Invalid 'basexyz' descriptor in environment file.\n");
+        exit(0);
+    }
 
     //linklengths(meters): 
     fscanf(fCfg, "%s", sTemp);	
@@ -996,6 +1018,27 @@ void EnvironmentROBARM::ContXYZ2Cell(double x, double y, double z, short unsigne
     if( z < 0) *pZ = 0;
     if( *pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
 }
+
+// convert a point in real world to a cell in occupancy grid 
+void EnvironmentROBARM::ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ)
+{
+    // offset the arm in the map so that it is placed in the middle of the world 
+    int yoffset_c = (EnvROBARMCfg.EnvWidth_c-1) / 2;
+
+    //take the nearest cell
+    *pX = (int)((x/EnvROBARMCfg.GridCellWidth));// + X_OFFSET_C);
+    if( x < 0) *pX = 0;
+    if( *pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
+
+    *pY = (int)((y/EnvROBARMCfg.GridCellWidth) + yoffset_c);//Y_OFFSET_C);
+    if( y + (yoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pY = 0;
+    if( *pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
+
+    *pZ = (int)((z/EnvROBARMCfg.GridCellWidth));// + Z_OFFSET_C);
+    if( z < 0) *pZ = 0;
+    if( *pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
+}
+
 
 //returns 1 if end effector within space, 0 otherwise
 int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3], double desired_orientation[3][3])

@@ -269,6 +269,7 @@ private:
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
+    void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
