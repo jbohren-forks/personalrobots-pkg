@@ -85,7 +85,7 @@ class SemanticPointAnnotator : public ros::node
 
     // Parameters
     int sac_min_points_per_model_, sac_min_points_left_;
-    double sac_distance_threshold_, eps_angle_;
+    double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
     double rule_floor_, rule_ceiling_, rule_wall_;
     double rule_table_min_, rule_table_max_;
@@ -99,6 +99,9 @@ class SemanticPointAnnotator : public ros::node
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
+      param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
+      region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
+
       param ("~p_sac_min_points_left", sac_min_points_left_, 100);
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);   // 50 points at high resolution
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
@@ -109,7 +112,7 @@ class SemanticPointAnnotator : public ros::node
       string cloud_topic ("cloud_normals");
 
       vector<pair<string, string> > t_list;
-      get_published_topics (&t_list);
+      getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
@@ -138,10 +141,15 @@ class SemanticPointAnnotator : public ros::node
       * \param indices pointer to a list of point indices
       * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
       * \param clusters the resultant clusters
+      * \param nx_idx
+      * \param ny_idx
+      * \param nz_idx
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<Region> &clusters, unsigned int min_pts_per_cluster = 1)
+      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<Region> &clusters,
+                    int nx_idx, int ny_idx, int nz_idx, 
+                    unsigned int min_pts_per_cluster = 1)
     {
       int c_idx = cloud_geometry::getChannelIndex (points, "curvature");
       // Create a tree for these points
@@ -162,6 +170,10 @@ class SemanticPointAnnotator : public ros::node
         int sq_idx = 0;
         seed_queue.push_back (i);
 
+        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+
         processed[i] = true;
 
         while (sq_idx < (int)seed_queue.size ())
@@ -173,7 +185,14 @@ class SemanticPointAnnotator : public ros::node
           {
             if (!processed.at (nn_indices[j]))
             {
-              if (points->chan[c_idx].vals[indices->at (nn_indices[j])] < 1)
+              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+              // [-1;1]
+              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
               {
                 processed[nn_indices[j]] = true;
                 seed_queue.push_back (nn_indices[j]);
@@ -231,7 +250,7 @@ class SemanticPointAnnotator : public ros::node
           //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
 
           // Project the inliers onto the model
-          //model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
+          model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
 
           // Remove the current inliers in the model
           nr_points_left = sac->removeInliers ();
@@ -278,13 +297,13 @@ class SemanticPointAnnotator : public ros::node
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
-      findClusters (&cloud_, &indices_z, 0.075, clusters, 10);
+      findClusters (&cloud_, &indices_z, 0.075, clusters, nx, ny, nz, 10);
       int z_c = clusters.size ();
       for (int i = 0; i < z_c; i++)
         clusters[i].region_type = 0;
 
       // Split the Z-perpendicular points into clusters
-      findClusters (&cloud_, &indices_xy, 0.075, clusters, 10);
+      findClusters (&cloud_, &indices_xy, 0.075, clusters, nx, ny, nz, 10);
       for (unsigned int i = z_c; i < clusters.size (); i++)
         clusters[i].region_type = 1;
 
@@ -364,24 +383,9 @@ class SemanticPointAnnotator : public ros::node
         b = rand () / (RAND_MAX + 1.0);
         for (unsigned int j = 0; j < clusters[cc].indices.size (); j++)
         {
-          switch (clusters[cc].region_type)
-          {
-            case 0:
-            {
-              cloud_annotated_.pts[nr_p].x = cloud_.pts[indices_z[clusters[cc].indices.at (j)]].x;
-              cloud_annotated_.pts[nr_p].y = cloud_.pts[indices_z[clusters[cc].indices.at (j)]].y;
-              cloud_annotated_.pts[nr_p].z = cloud_.pts[indices_z[clusters[cc].indices.at (j)]].z;
-              break;
-            }
-            case 1:
-            {
-              cloud_annotated_.pts[nr_p].x = cloud_.pts[indices_xy[clusters[cc].indices.at (j)]].x;
-              cloud_annotated_.pts[nr_p].y = cloud_.pts[indices_xy[clusters[cc].indices.at (j)]].y;
-              cloud_annotated_.pts[nr_p].z = cloud_.pts[indices_xy[clusters[cc].indices.at (j)]].z;
-              break;
-            }
-          }
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
+          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (clusters[cc].indices.at (j)).x;
+          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (clusters[cc].indices.at (j)).y;
+          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (clusters[cc].indices.at (j)).z;
           cloud_annotated_.chan[0].vals[nr_p] = r;
           cloud_annotated_.chan[1].vals[nr_p] = g;
           cloud_annotated_.chan[2].vals[nr_p] = b;
