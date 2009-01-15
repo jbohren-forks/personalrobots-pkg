@@ -47,6 +47,25 @@
 namespace rt_scheduler
 {
 
+#define REGISTER_RT_TYPE(T) \
+  void registerPort(OutputPort<T>* port, const std::string& name) \
+  { \
+    std::pair< std::string, OutputPort<T>* > entry(name, port) ; \
+    ports_##T.push_back(entry) ; \
+  } \
+  \
+  void find(OutputPort<T>* &port, const std::string& name) \
+  { \
+    port = NULL ; \
+    for (unsigned int i=0; i < ports_##T.size(); i++) \
+    { \
+      if (ports_##T[i].first == name) \
+        port = ports_##T[i].second ; \
+    } \
+  } \
+  \
+  std::vector< std::pair<std::string, OutputPort<T>* > > ports_##T
+
 class Oracle
 {
 public:
@@ -56,24 +75,9 @@ public:
   ~Oracle()
   {  }
 
-  void registerPort(OutputPort<int>* port, const std::string& name)
-  {
-    std::pair< std::string, OutputPort<int>* > entry(name, port) ;
-    ports_.push_back(entry) ;
-  }
-
-  void find(OutputPort<int>* &port, const std::string& name)
-  {
-    port = NULL ;
-    for (unsigned int i=0; i < ports_.size(); i++)
-    {
-      if (ports_[i].first == name)
-        port = ports_[i].second ;
-    }
-  }
+  REGISTER_RT_TYPE(int) ;
 
 private:
-  std::vector< std::pair<std::string, OutputPort<int>* > > ports_ ;
 } ;
 
 }
