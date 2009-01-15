@@ -27,6 +27,7 @@
  <depend package="sbpl_util"/>
  <depend package="rostime"/>
  <depend package="navfn"/>
+ <depend package="topological_map"/>
  <depend package="angles"/>
  <depend package="robot_filter"/>
 
