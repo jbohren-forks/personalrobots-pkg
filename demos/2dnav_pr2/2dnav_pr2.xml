@@ -22,10 +22,13 @@
     <!-- Filter for tilt laser shadowing/veiling -->
     <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" />
 
-    <param name="odom_estimation/freq" value="30.0"/>
-    <param name="odom_estimation/sensor_timeout" value="1.0"/>
-    <param name="odom_estimation/exact_time_mode" value="true"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" respawn="true" machine="four" />
+    <param name="robot_pose_ekf/freq" value="500.0"/>
+    <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+    <param name="robot_pose_ekf/odom_used" value="true"/>
+    <param name="robot_pose_ekf/imu_used" value="true"/>
+    <param name="robot_pose_ekf/vo_used" value="false"/>
+    
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four"/>
 
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="true" machine="four" />
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
@@ -102,11 +105,11 @@
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
 
     <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/sim_steps" value="10" />
     <param name="/trajectory_rollout/samples_per_dim" value="25" />
     <param name="/trajectory_rollout/occdist_scale" value="0.2" />
-    <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
-    <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
     <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
