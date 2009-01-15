@@ -63,13 +63,16 @@
 
    <hr>
 
-   @section topic ROS topics
+   @section Topics and services
 
    Subscribes to:
    - @b localizedpose
 
    Services used:
    - @b static_map.  Note: in the case of using the -i parameter to load the topological graph from a file, we're assuming the static map being provided has the same resolution as the one that was used to compute the saved graph.
+
+   Services provided:
+   - @b navigation_plan.
 
    <hr>
 
@@ -98,9 +101,10 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
  
 
 BottleneckGraphRos::BottleneckGraphRos(char* filename) :
-  ros::node("bottleneck_graph_ros"), node_status_ (READY), num_added_roadmap_points_(0)
+  ros::node("bottleneck_graph_ros"), num_added_roadmap_points_(0)
 {
   bottleneck_graph_.readFromFile(filename);
+  node_status_ = READY;
 }
 
 BottleneckGraphRos::~BottleneckGraphRos()
@@ -117,25 +121,30 @@ BottleneckGraphRos::~BottleneckGraphRos()
 void BottleneckGraphRos::poseCallback (void)
 {
   int r, c;
-  convertToMapIndices (pose_.pos.x, pose_.pos.y, &r,&c);
-  int region = bottleneck_graph_.regionId(r,c);
-  if (region!=region_id_) {
-    region_id_=region;
-    BottleneckVertex v;
-    bottleneck_graph_.lookupVertex (r, c, &v);
-    if (bottleneck_graph_.vertexDescription(v).type == BOTTLENECK) {
-      ROS_DEBUG ("Moving into bottleneck vertex %d", region);
-    }
-    else {
-      ROS_DEBUG ("Moving into open vertex %d", region);
-    }
+  if ((node_status_==READY) && bottleneck_graph_.isReady()) {
+    lock_.lock();
 
-    // Remove low-level cells from previous region and add the new ones
-    bottleneck_graph_.switchToRegion (region_id_);
+    convertToMapIndices (pose_.pos.x, pose_.pos.y, &r,&c);
+    int region = bottleneck_graph_.regionId(r,c);
+    if (region!=region_id_) {
+      region_id_=region;
+      BottleneckVertex v;
+      bottleneck_graph_.lookupVertex (r, c, &v);
+      if (bottleneck_graph_.vertexDescription(v).type == BOTTLENECK) {
+        ROS_DEBUG ("Moving into bottleneck vertex %d", region);
+      }
+      else {
+        ROS_DEBUG ("Moving into open vertex %d", region);
+      }
+
+      // Remove low-level cells from previous region and add the new ones
+      bottleneck_graph_.switchToRegion (region_id_);
+    }
+    
+    lock_.unlock();
 
   }
 }
-
 
 
 
@@ -145,16 +154,19 @@ void BottleneckGraphRos::poseCallback (void)
 
 void BottleneckGraphRos::computeBottleneckGraph (void)
 {
+  lock_.lock();
   ROS_INFO ("Computing bottleneck graph... (this could take a while)\n");
   bottleneck_graph_.initializeFromGrid(grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
-  node_status_ = READY;
   ROS_INFO ("Done computing bottleneck graph\n");
-  bottleneck_graph_.printBottlenecks();
+  //bottleneck_graph_.printBottlenecks();
+  node_status_=READY;
+  lock_.unlock();
 }  
 
 void BottleneckGraphRos::loadMap (void)
 {
     
+  lock_.lock();
   std_srvs::StaticMap::request req;
   std_srvs::StaticMap::response resp;
   ROS_INFO ("Requesting map... \n");
@@ -185,13 +197,14 @@ void BottleneckGraphRos::loadMap (void)
       }
     }
   }
+  lock_.unlock();
 }
 
 void BottleneckGraphRos::setupTopics (void)
 {
   // Subscribe to 2d position
   ROS_INFO ("Setting up node topics");
-  subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 100);
+  subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 10);
 
 }
 
@@ -205,7 +218,10 @@ void BottleneckGraphRos::generateRoadmap (void)
 void BottleneckGraphRos::writeToFile (char* filename)
 {
   ROS_INFO ("Writing bottleneck graph to file %s", filename);
+  lock_.lock();
+  ROS_DEBUG ("Writing acquired lock");
   bottleneck_graph_.printBottlenecks(filename);
+  lock_.unlock();
   ROS_INFO ("Done writing");
 }
 
@@ -252,6 +268,7 @@ int main(int argc, char** argv)
   int distanceUpper=2;
   char* inputFile=0;
   char* outputFile=0;
+  char* pgmOutputFile=0;
 
 
   while (1) {
@@ -263,10 +280,11 @@ int main(int argc, char** argv)
        {"distance-upper-bound", required_argument, 0, 'D'},
        {"input-file", required_argument, 0, 'i'},
        {"output-file", required_argument, 0, 'o'},
+       {"pgm-output-file", required_argument, 0, 'p'},
        {0, 0, 0, 0}};
 
     int option_index=0;
-    int c = getopt_long (argc, argv, "b:k:r:d:D:i:o:", options, &option_index);
+    int c = getopt_long (argc, argv, "b:k:r:d:D:i:o:p:", options, &option_index);
     if (c==-1) {
       break;
     }
@@ -295,6 +313,9 @@ int main(int argc, char** argv)
         break;
       case 'o':
         outputFile=optarg;
+        break;
+      case 'p':
+        pgmOutputFile=optarg;
         break;
       case '?':
         exitWithUsage();
@@ -327,6 +348,12 @@ int main(int argc, char** argv)
       node->writeToFile(outputFile);
     }
   }
+  if (pgmOutputFile) {
+    // node->writePgmFile(pgmOutputFile);
+  }
+  
+
+
 
   ROS_INFO ("Generating roadmap");
   node->generateRoadmap();

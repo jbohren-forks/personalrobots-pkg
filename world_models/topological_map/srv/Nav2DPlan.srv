@@ -1,0 +1,8 @@
+# Service implemented by 2d navigation planners
+std_msgs/Pose2DFloat32 start
+std_msgs/Pose2DFloat32 goal
+
+---
+# Response is an array of waypoints, where the first one is the start and the last is the goal
+std_msgs/Pose2DFloat32[] waypoints
+

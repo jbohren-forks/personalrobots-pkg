@@ -79,7 +79,7 @@ typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 class IndexedBottleneckGraph
 {
 public:
-  IndexedBottleneckGraph () : num_rows_(-1), num_cols_(-1) {}
+  IndexedBottleneckGraph () : num_rows_(-1), num_cols_(-1), ready_(false) {}
 
   void initializeFromGrid (const GridArray& g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
   void readFromFile (const char* filename);
@@ -92,6 +92,8 @@ public:
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);
   void printBottlenecks (void);
+  bool isReady();
+  void setReady(bool);
 
 
 protected:
@@ -100,11 +102,15 @@ protected:
   RegionArray grid_cell_vertex_;
   GridArray is_free_;
   int num_rows_, num_cols_;
+  bool ready_;
+
 
 private:
   void writeToStream (std::ostream&);
   void indexRegions (void);
   void setDims (int nr, int nc);
+
+
   
 };
 

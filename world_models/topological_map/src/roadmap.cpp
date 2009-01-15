@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <set>
+#include <rosconsole/rosconsole.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
 using namespace std; 
@@ -43,7 +44,7 @@ const int g_dy[] = {0, 0, -1, 1};
 
 
 RoadmapBottleneckGraph::RoadmapBottleneckGraph() : 
-  roadmap_(0), num_temporary_added_cells_(0) 
+  roadmap_(0), num_temporary_added_cells_(0), current_region_(-1) 
 {}
 
 RoadmapBottleneckGraph::~RoadmapBottleneckGraph()
@@ -102,6 +103,7 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
 
   // Loop open regions
   for (vertex_pair_iter=roadmap_points_.begin(); vertex_pair_iter!=roadmap_points_.end(); vertex_pair_iter++) {
+    ROS_DEBUG ("Generating roadmap points in region %d", vertexDescription(vertex_pair_iter->first).id);
 
 
     // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
@@ -132,16 +134,35 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
 }    
 
 
+void RoadmapBottleneckGraph::setGoalState (const GridCell& goal)
+{
+  goal_ = goal;
+}
+
+void RoadmapBottleneckGraph::setStartState (const GridCell& start)
+{
+  start_ = start;
+  switchToRegion (regionId(start.first, start.second));
+}
+
 
 
 vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (const GridCell& start, const GridCell& goal)
 {
+  setStartState(start);
+  setGoalState(goal);
+  return findOptimalPath ();
+}
+
+
+vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (void)
+{
   int num_added=0;
-  num_added += ensureCellExists(start);
-  num_added += ensureCellExists(goal);
+  num_added += ensureCellExists(start_);
+  num_added += ensureCellExists(goal_);
   
-  roadmap_->setStartState(start);
-  roadmap_->setGoalState(goal);
+  roadmap_->setStartState(start_);
+  roadmap_->setGoalState(goal_);
 
   vector<GridCell> solution = roadmap_->findOptimalPath();
   roadmap_->removeLastPoints(num_added);
@@ -157,8 +178,11 @@ void RoadmapBottleneckGraph::printRoadmap (void)
 
 void RoadmapBottleneckGraph::switchToRegion (int region_id)
 {
-  removeLastAddedRegionCells();
-  addRegionGridCells (region_id);
+  if (region_id != current_region_) {
+    current_region_ = region_id;
+    removeLastAddedRegionCells();
+    addRegionGridCells (region_id);
+  }
 }
 
 void RoadmapBottleneckGraph::addRegionGridCells (int region_id)
