@@ -77,6 +77,16 @@ int planrobarmROS(int argc, char *argv[])
     environment_robarm.OutputPlanningStats();
 #endif
 
+    // create filename with current time
+    string outputfile = "sol";
+    outputfile.append(".txt");
+
+    FILE* fSol = fopen(outputfile.c_str(), "w");
+    for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+        environment_robarm.PrintState(solution_stateIDs_V[i], true, fSol);
+    }
+    fclose(fSol);
+    
     //create a ROS JointTraj message for path that was generated
     double angles_r[NUMOFLINKS];
     pr2_mechanism_controllers::JointTraj armpath;
