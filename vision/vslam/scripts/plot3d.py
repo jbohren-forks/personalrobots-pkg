@@ -236,7 +236,9 @@ def view():
   from enthought.mayavi.modules.axes import Axes
   from enthought.mayavi.modules.text import Text
     
-  mayavi.new_scene()
+  scene = mayavi.new_scene()
+  scene.scene.background=(1.0,1.0,1.0)
+  scene.scene.foreground=(0.0,0.0,0.0)
   trj_src = VTKDataSource(data = trj_curve)
   mayavi.add_source(trj_src)
   # mayavi.add_module(Outline())
