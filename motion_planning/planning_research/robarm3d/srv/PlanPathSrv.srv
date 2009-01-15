@@ -1,0 +1,4 @@
+pr2_mechanism_controllers/JointTrajPoint start
+std_msgs/Point goal
+---
+pr2_mechanism_controllers/JointTraj traj
