@@ -82,9 +82,9 @@ class CollisionMapper : public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapper () : ros::node ("collision_map"), tf_(*this)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.025);       // 2.5cm diameter by default
-      param ("~leaf_width_y", leaf_width_.y, 0.025);       // 2.5cm diameter by default
-      param ("~leaf_width_z", leaf_width_.z, 0.025);       // 2.5cm diameter by default
+      param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
+      param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default
+      param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
 
       param ("~robot_max_x", robot_max_.x, 1.5);          // 1.5m radius by default
       param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
