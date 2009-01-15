@@ -27,5 +27,8 @@ target_link_libraries(sim_path robarm3d)
 rospack_add_executable(planPathNode src/test/plan_path_node.cpp)
 target_link_libraries(planPathNode robarm3d)
 
+rospack_add_executable(executePlan src/test/test_plan_path.cpp)
+target_link_libraries(executePlan robarm3d)
+
 # rospack_add_compile_flags(plan_path_stats "-g")
 # rospack_add_link_flags(plan_path )

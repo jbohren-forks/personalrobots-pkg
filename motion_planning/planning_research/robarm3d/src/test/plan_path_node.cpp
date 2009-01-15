@@ -4,9 +4,18 @@ using namespace std;
 using namespace plan_path_node;
 
 PlanPathNode::PlanPathNode(std::string node_name):ros::node(node_name)
-{};
+{
+};
 
-PlanPathNode::~PlanPathNode(){};
+void PlanPathNode::init()
+{
+  this->advertise_service("plan_path_node/GetPlan", &PlanPathNode::planPath, this);
+}
+
+PlanPathNode::~PlanPathNode()
+{
+  this->unadvertise_service("plan_path_node/GetPlan");
+};
 
 void PrintUsage(char *argv[])
 {
@@ -154,7 +163,7 @@ int main(int argc, char *argv[])
 
   ros::init(argc, argv);
   PlanPathNode node("arm_plan_path");
-
+  node.init();
   node.filename_ = std::string(argv[1]);
 
   try {

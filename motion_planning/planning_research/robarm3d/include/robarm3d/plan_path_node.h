@@ -57,6 +57,8 @@ namespace plan_path_node
 
     bool planPath(robarm3d::PlanPathSrv::request &req, robarm3d::PlanPathSrv::response &resp);
 
+    void init();
+
   };
 }
 
