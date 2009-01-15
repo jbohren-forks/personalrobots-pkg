@@ -110,6 +110,9 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
 
+    int UseAlternateStart;
+    double altLinkStartAngles_d[NUMOFLINKS];
+
     //3d grid of world space 
     char*** Grid3D;
     double GridCellWidth;   // cells are square
@@ -220,6 +223,7 @@ public:
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
     void SetEndEffGoal(double* position, int numofpositions);
+    void SetStartAngles(double angles[NUMOFLINKS], bool bRad);
     void StateID2Angles(int stateID, double* angles_r);
 
     int	 SizeofCreatedEnv();

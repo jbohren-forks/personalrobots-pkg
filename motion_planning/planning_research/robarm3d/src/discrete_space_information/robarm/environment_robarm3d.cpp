@@ -1866,6 +1866,12 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     }
     ReadConfiguration(fCfg);
 
+    //check if the user inputted a different starting position from the parsed one
+    if(EnvROBARMCfg.UseAlternateStart == 1)
+    {
+        for(int i = 0; i < NUMOFLINKS; i++)
+            EnvROBARMCfg.LinkStartAngles_d[i] = EnvROBARMCfg.altLinkStartAngles_d[i];
+    }
 
     if(EnvROBARMCfg.UseAlternateGoal == 1)
     {
@@ -3111,6 +3117,35 @@ void EnvironmentROBARM::SetEndEffGoal(double* position, int numofpositions)
     {
         printf("[SetGoal] Invalid length of input vector.\n");
         EnvROBARMCfg.UseAlternateGoal = 0;
+    }
+}
+
+void EnvironmentROBARM::SetStartAngles(double angles[NUMOFLINKS], bool bRad)
+{
+    //starting joint configuration
+    if(bRad)
+    {
+        for(unsigned int i = 0; i < NUMOFLINKS; i++)
+        {
+            if(angles[i] < 0)
+                EnvROBARMCfg.altLinkStartAngles_d[i] = RAD2DEG(angles[i] + PI_CONST*2); //fmod(RAD2DEG(angles[i]),360.0);
+            else
+                EnvROBARMCfg.altLinkStartAngles_d[i] = RAD2DEG(angles[i]);
+        }
+        //use the alternate goal 
+        EnvROBARMCfg.UseAlternateStart = 1;
+    }
+    else //input is in degrees
+    {
+        for(unsigned int i = 0; i < NUMOFLINKS; i++)
+        {
+            if(angles[i] < 0)
+                EnvROBARMCfg.altLinkStartAngles_d[i] =  angles[i] + 360.0; //fmod(angles[i],360.0);
+            else
+                EnvROBARMCfg.altLinkStartAngles_d[i] =  angles[i];
+        }
+        //use the alternate goal 
+        EnvROBARMCfg.UseAlternateStart = 1;
     }
 }
 
