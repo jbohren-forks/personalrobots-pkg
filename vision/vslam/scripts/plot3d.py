@@ -9,6 +9,12 @@ import pickle
 import pprint
 import operator
 
+from numpy import array
+import numpy
+import transformations
+from transf_fit import *
+# from skeleton import Skeleton
+
 # load pickled files
 #trajs_filename = 'trajs.pkl'
 trajs_filename = 'keyframe_trajs.pkl'
@@ -42,19 +48,6 @@ if draw_skeleton:
 #   for x, y, z in trajectory[i]:
 #     print x, y, z
 
-# The following *optional* two lines allow a user to call this script
-# as either `python script.py` or `mayavi2 script.py`.  These two
-# lines must be placed before any other mayavi imports.
-from enthought.mayavi.scripts import mayavi2
-mayavi2.standalone(globals())
-
-from numpy import array
-from enthought.tvtk.api import tvtk
-import numpy
-import transformations
-from transf_fit import *
-
-
 # The numpy array data.
 st_trj_points = array(trajectory[0])
 trj_numpts = len(trajectory[0])
@@ -64,8 +57,10 @@ gt_numpts = len(gt)
 
 st_skel_nodes = array(skeleton_nodes)
 
-time_stamp_offset  = st_gt_points[0][0]-st_trj_points[0][0]
+time_stamp_offset  = st_gt_points[0][0]-st_skel_nodes[0][0]
 time_stamp_offset2 = st_gt_points[gt_numpts-1][0]-st_trj_points[trj_numpts-1][0]
+time_stamp_offset = .000
+st_skel_nodes[0][0] = st_gt_points[0][0] # adjust the time stamp of the first noode since it is not moving anyway.
 print 'timestamps', 'phase space:', st_gt_points[0][0], 'vo:', st_trj_points[0][0],
 print 'offset:', time_stamp_offset, 'offset2:', time_stamp_offset2
 
@@ -90,6 +85,8 @@ transf0=[shift0[0], shift0[1], shift0[2], euler0[0], euler0[1], euler0[2], scale
 # transf_fit = transf_fit_angle
 transf_fit = transf_fit_angle_scale3
 transf00 = euler0 + scale0
+#transf_fit = transf_fit_angle_scale
+#transf00 = euler0 + [1.0]
 
 # transf = fmin_powell(transf_fit, transf00, args=(st_gt_points_matched, st_trj_points))
 # print 'fmin_powell, transf', transf
@@ -98,8 +95,8 @@ transf00 = euler0 + scale0
 transf = fmin_cg(transf_fit, transf00, fprime=None, args=(st_gt_points_matched, st_skel_nodes))
 print 'fmin_cg, transf', transf
 
-transf = [0.,0.,0.,.975, .975, .975]
-
+#transf = [0.,0.,0.,.975, .975, .975]
+#transf[3:6] = [.975, .975, .975]
 
 # translation vector
 # p = transf[0:3]
@@ -108,12 +105,13 @@ p = [0.,0.,0.]
 # e = transf[3:6]
 e = transf[0:3]
 s = transf[3:6]
+# s = [transf[3], transf[3], transf[3]]
   
 pose = Pose(transformations.rotation_matrix_from_euler(e[0], e[1], e[2], 'sxyz')[:3,:3], p)
 
 #st_gt_points = transf_curve(st_gt_points, pose)
 #st_gt_points = scale_curve(st_gt_points, s)
-#st_gt_points = st_gt_points_matched
+# st_gt_points = st_gt_points_matched
 
 if 1:
   st_gt_points = transf_curve(st_gt_points, pose)
@@ -139,6 +137,9 @@ print 'sqrt of mean of sq of errors (RMSE) of all vo key frames', root_mean_squa
 dt, dx, dy, dz = st_gt_points_matched[-1]-st_skel_nodes[-1]
 error_endpoint = sqrt(dx*dx+dy*dy+dz*dz)
 print 'L-2 norm of errors at end point (vslam node vs groundtruth)', error_endpoint
+dt, dx, dy, dz = st_gt_points_matched[-1]-st_trj_points[-1]
+error_endpoint = sqrt(dx*dx+dy*dy+dz*dz)
+print 'L-2 norm of errors at end point (vo end point vs groundtruth)', error_endpoint
 
 # compute the length of trajectory
 x0,y0,z0=0.,0.,0.
@@ -178,6 +179,10 @@ col0 = numpy.arange(0,gt_numpts-1,1)
 col1 = numpy.arange(1,gt_numpts,1)
 gt_lines=array([col0, col1]).transpose()
 
+
+
+from enthought.tvtk.api import tvtk
+from enthought.mayavi.scripts import mayavi2
 
 # The TVTK dataset.
 trj_curve = tvtk.PolyData(points=trj_points, lines=trj_lines)
@@ -223,50 +228,61 @@ if draw_skeleton:
 #w.write()
 
 # Now view the data.
+@mayavi2.standalone
 def view():
-    from enthought.mayavi.sources.vtk_data_source import VTKDataSource
-    from enthought.mayavi.modules.outline import Outline
-    from enthought.mayavi.modules.surface import Surface
-
-    mayavi.new_scene()
-    trj_src = VTKDataSource(data = trj_curve)
-    mayavi.add_source(trj_src)
-    mayavi.add_module(Outline())
-    s = Surface()
-    mayavi.add_module(s)
-    s.actor.property.set(representation = 'w', color=(1.,0.,0.), line_width=1)
-
-    gt_src = VTKDataSource(data = gt_curve)
-    mayavi.add_source(gt_src)
-    mayavi.add_module(Outline())
-    s = Surface()
-    mayavi.add_module(s)
-    s.actor.property.set(representation = 'w', color=(0.,1.,0.), line_width=2)
+  from enthought.mayavi.sources.vtk_data_source import VTKDataSource
+  #from enthought.mayavi.modules.outline import Outline
+  from enthought.mayavi.modules.surface import Surface
+  from enthought.mayavi.modules.axes import Axes
+  from enthought.mayavi.modules.text import Text
     
-    # skeleton nodes
-    if draw_skeleton:
-      # draw the nodes
-      skel_node_src = VTKDataSource(data = skel_nodes_pts)
-      mayavi.add_source(skel_node_src)
-      mayavi.add_module(Outline())
-      s = Surface()
-      mayavi.add_module(s)
-      s.actor.property.set(representation = 'p', point_size = 4, color=(0.,0.,1.0))
-      
-      # draw edges between nodes
-      skel_curve_src = VTKDataSource(data = skel_curve)
-      mayavi.add_source(skel_curve_src)
-      mayavi.add_module(Outline())
-      s = Surface()
-      mayavi.add_module(s)
-      s.actor.property.set(representation = 'w', color=(1.,0.,1.0), line_width=2)
-      
-      # draw the links
-      skel_edge_src = VTKDataSource(data = skel_edges)
-      mayavi.add_source(skel_edge_src)
-      mayavi.add_module(Outline())
-      s = Surface()
-      mayavi.add_module(s)
-      s.actor.property.set(representation = 'w', color=(0.,0.,1.), line_width=1)
+  mayavi.new_scene()
+  trj_src = VTKDataSource(data = trj_curve)
+  mayavi.add_source(trj_src)
+  # mayavi.add_module(Outline())
+  s = Surface()
+  mayavi.add_module(s)
+  s.actor.property.set(representation = 'w', color=(1.,0.,0.), line_width=1)
 
-view()
+  gt_src = VTKDataSource(data = gt_curve)
+  mayavi.add_source(gt_src)
+  #mayavi.add_module(Outline())
+  s = Surface()
+  mayavi.add_module(s)
+  s.actor.property.set(representation = 'w', color=(0.,1.,0.), line_width=2)
+    
+  # skeleton nodes
+  if draw_skeleton:
+    # draw the nodes
+    skel_node_src = VTKDataSource(data = skel_nodes_pts)
+    mayavi.add_source(skel_node_src)
+    #mayavi.add_module(Outline())
+    s = Surface()
+    mayavi.add_module(s)
+    s.actor.property.set(representation = 'p', point_size = 4, color=(0.,0.,1.0))
+      
+    # draw edges between nodes
+    skel_curve_src = VTKDataSource(data = skel_curve)
+    mayavi.add_source(skel_curve_src)
+    #mayavi.add_module(Outline())
+    s = Surface()
+    mayavi.add_module(s)
+    s.actor.property.set(representation = 'w', color=(1.,0.,1.0), line_width=2)
+      
+    # draw the links
+    skel_edge_src = VTKDataSource(data = skel_edges)
+    mayavi.add_source(skel_edge_src)
+    #mayavi.add_module(Outline())
+    s = Surface()
+    mayavi.add_module(s)
+    s.actor.property.set(representation = 'w', color=(0.,0.,1.), line_width=1)
+    
+  a = Axes()
+  mayavi.add_module(a)
+  # Put up some text.
+  t = Text(text='VSLAM vs PhaseSpace', x_position=0.2, y_position=0.9, width=0.8)
+  t.property.color = 1, 1, 0  # Bright yellow, yeah!
+  mayavi.add_module(t)
+
+if __name__ == '__main__':
+  view()

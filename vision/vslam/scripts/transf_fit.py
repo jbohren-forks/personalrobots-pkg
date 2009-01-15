@@ -2,10 +2,10 @@
 
 import rostools
 rostools.update_path('vslam')
-import rostest
-import rospy
+#import rostest
+#import rospy
 
-from pylab import *
+#from pylab import *
 from numpy import *
 from scipy.optimize import fmin
 from scipy.optimize import fmin_bfgs
@@ -31,8 +31,11 @@ def match_trajectory_points(trj0, trj1, time_stamp_offset):
       after  = trj1[j+1][0]-time_stamp_offset
       if before<=time_stamp0 and after>=time_stamp0:
         matched = True
-
-        trj2[i] = array([time_stamp0, trj1[j][1], trj1[j][2], trj1[j][3]])
+        interval = after-before
+        w0 = (after - time_stamp0)/interval
+        w1 = (time_stamp0 - before)/interval
+        t, x,y,z = trj1[j]*w0 + trj1[j+1]*w1
+        trj2[i] = array([time_stamp0, x, y, z])
       else:
         # move on to next point on trj1
         j+=1
@@ -55,6 +58,14 @@ def scale_curve3(curve, scale):
   for i in range(0, curvelen):
     t, x, y, z = curve[i]
     curve1[i] = [t, x*scale[0], y*scale[1], z*scale[2]]
+  return curve1
+  
+def scale_curve(curve, scale):
+  curvelen = len(curve)
+  curve1=zeros((curvelen, 4))
+  for i in range(0, curvelen):
+    t, x, y, z = curve[i]
+    curve1[i] = [t, x*scale, y*scale, z*scale]
   return curve1
   
 def error_func(transf, curve0, curve1):
