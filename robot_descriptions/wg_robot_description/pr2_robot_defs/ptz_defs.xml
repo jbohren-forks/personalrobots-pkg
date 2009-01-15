@@ -15,7 +15,7 @@
     </joint>
 
     <link name="${side}_ptz_pan_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${side}_ptz_pan_joint" />
 
