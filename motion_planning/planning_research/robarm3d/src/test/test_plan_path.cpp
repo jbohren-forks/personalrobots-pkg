@@ -6,10 +6,49 @@
 
 static int done = 0;
 
+static const double GRIPPER_OPEN = 0.5;
+static const double GRIPPER_CLOSE = 0.0;
+
+
 void finalize(int donecare)
 {
   done = 1;
 }
+
+void actuateGripper(int open)
+{
+  pr2_mechanism_controllers::TrajectoryStart::request  req_gripper_traj_start;
+  pr2_mechanism_controllers::TrajectoryStart::response res_gripper_traj_start;
+
+  pr2_mechanism_controllers::TrajectoryQuery::request  req_gripper_traj_query;
+  pr2_mechanism_controllers::TrajectoryQuery::response res_gripper_traj_query;
+
+  if(open)
+    req_gripper_traj_start.traj.points[0].positions[0] = GRIPPER_OPEN;
+  else
+    req_gripper_traj_start.traj.points[0].positions[0] = GRIPPER_CLOSE;
+
+  if (ros::service::call("gripper_trajectory_controller/TrajectoryStart", req_gripper_traj_start, res_gripper_traj_start))
+  {
+    ROS_INFO("Actuated gripper");
+  }
+
+  int done = -1;
+  req_gripper_traj_query.trajectoryid = res_gripper_traj_start.trajectoryid;
+  while(!(done == res_gripper_traj_query.State_Done || done == res_gripper_traj_query.State_Failed))
+  {
+    if(ros::service::call("gripper_trajectory_controller/TrajectoryQuery", req_gripper_traj_query, res_gripper_traj_query))  
+    {
+      done = res_gripper_traj_query.done;
+    }
+    else
+    {
+      ROS_ERROR("Trajectory query failed");
+    }
+
+  } 
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -77,3 +116,5 @@ int main(int argc, char *argv[])
   ros::fini();
   return 1;
 }
+
+

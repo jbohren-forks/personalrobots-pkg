@@ -170,33 +170,28 @@
       <parent name="${side}_shoulder_lift_link" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_upper_arm_roll_joint" />
-
       <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.01" ixy="0.00"  ixz="0.00"
+                  iyy="0.01" iyz="0.00"
+                  izz="0.01" />
       </inertial>
-
       <visual> <!-- TODO: This component doesn't actually have a mesh -->
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="wheel" scale="6 6 6" />
+          <mesh filename="wheel" scale="1 1 1" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
-        <origin xyz="0.05 0 -0.2" rpy="0 0 0 " />
-        <geometry name="${side}_shoulder_pan_collision">
-          <box size="0.347 0.254 0.646" />
+        <origin xyz="0.0 0 0" rpy="0 0 ${M_PI/2}" />
+        <geometry name="${side}_upper_arm_roll_collision">
+          <box size="0.1 0.1 0.1" />
         </geometry>
       </collision>
-      <inertial> <!-- TODO: inertial tag should be optional -->
-        <mass value="16.29553" />
-        <com xyz="-0.005215 -0.030552 -0.175743" />
-        <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
-                 iyy="0.818419457224"  iyz="-0.033999499551"
-                 izz="0.13915007406" />
-      </inertial>
-
       <map name="${side}_upper_arm_roll_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
@@ -237,28 +232,28 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="upperarm_roll" />
+        <geometry name="${side}_upper_arm_visual">
+          <mesh filename="upper_arm" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.3 0 0" rpy="0 0 0" />
-        <geometry name="${side}_upper_arm_roll_collision">
+        <geometry name="${side}_upper_arm_collision">
           <box size="0.362 0.144 0.157" />
         </geometry>
       </collision>
 
-      <map name="${side}_upper_arm_roll_sensor" flag="gazebo">
-        <verbatim key="${side}_upper_arm_roll_bumper_sensor">
-          <sensor:contact name="${side}_upper_arm_roll_contact_sensor">
-            <geom>${side}_upper_arm_roll_collision</geom><!-- TODO -->
+      <map name="${side}_upper_arm_sensor" flag="gazebo">
+        <verbatim key="${side}_upper_arm_bumper_sensor">
+          <sensor:contact name="${side}_upper_arm_contact_sensor">
+            <geom>${side}_upper_arm_collision</geom><!-- TODO -->
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_upper_arm_roll_ros_bumper_controller" plugin="libros_bumper.so">
+            <controller:ros_bumper name="${side}_upper_arm_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
-              <bumperTopicName>${side}_upper_arm_roll_bumper</bumperTopicName>
-              <interface:bumper name="${side}_upper_arm_roll_ros_bumper_iface" />
+              <bumperTopicName>${side}_upper_arm_bumper</bumperTopicName>
+              <interface:bumper name="${side}_upper_arm_ros_bumper_iface" />
             </controller:ros_bumper>
           </sensor:contact>
         </verbatim>
@@ -356,14 +351,14 @@
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_shoulder_lift_position_iface" />
         </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_upper_arm_roll_controller" plugin="libros_p3d.so">
+        <controller:ros_p3d name="p3d_${side}_upper_arm_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_upper_arm_roll_link</bodyName>
-          <topicName>${side}_upper_arm_roll_pose_ground_truth</topicName>
+          <bodyName>${side}_upper_arm_link</bodyName>
+          <topicName>${side}_upper_arm_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
-          <interface:position name="p3d_${side}_upper_arm_roll_position_iface" />
+          <interface:position name="p3d_${side}_upper_arm_position_iface" />
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_elbow_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
@@ -394,32 +389,31 @@
       <parent name="${side}_elbow_flex_link" />
       <joint name="${side}_forearm_roll_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <map name="${side}_forearm_roll_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
-      </map>
-
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.01" ixy="0.00"  ixz="0.00"
+                  iyy="0.01" iyz="0.00"
+                  izz="0.01" />
+      </inertial>
       <visual><!-- TODO: need a mesh for this -->
-        <origin xyz="1 0 0" rpy="0 0 1.57" />
+        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="wheel" scale="6 6 6" />
+          <mesh filename="wheel" scale="1 1 1" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${side}_shoulder_pan_collision">
+        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
+        <geometry name="${side}_forearm_roll_collision">
           <box size="0.1 0.1 0.1" />
         </geometry>
       </collision>
-      <inertial> <!-- TODO: inertial tag should be optional -->
-        <mass value="16.29553" />
-        <com xyz="-0.005215 -0.030552 -0.175743" />
-        <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
-                 iyy="0.818419457224"  iyz="-0.033999499551"
-                 izz="0.13915007406" />
-      </inertial>
+      <map name="${side}_forearm_roll_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
     </link>
 
     <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
@@ -452,26 +446,26 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="forearm_roll" />
+        <geometry name="${side}_forearm_visual">
+          <mesh filename="forearm" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.22 0 0" rpy="0 0 0" />
-        <geometry name="${side}_forearm_roll_collision">
+        <geometry name="${side}_forearm_collision">
           <box size="0.27 0.12 0.08" />
         </geometry>
       </collision>
-      <map name="${side}_forearm_roll_sensor" flag="gazebo">
-        <verbatim key="${side}_forearm_roll_bumper_sensor">
-          <sensor:contact name="${side}_forearm_roll_contact_sensor">
-            <geom>${side}_forearm_roll_collision</geom>
+      <map name="${side}_forearm_sensor" flag="gazebo">
+        <verbatim key="${side}_forearm_bumper_sensor">
+          <sensor:contact name="${side}_forearm_contact_sensor">
+            <geom>${side}_forearm_collision</geom>
             <updateRate>1000.0</updateRate>
-            <controller:ros_bumper name="${side}_forearm_roll_ros_bumper_controller" plugin="libros_bumper.so">
+            <controller:ros_bumper name="${side}_forearm_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>1000.0</updateRate>
-              <bumperTopicName>${side}_forearm_roll_bumper</bumperTopicName>
-              <interface:bumper name="${side}_forearm_roll_ros_bumper_iface" />
+              <bumperTopicName>${side}_forearm_bumper</bumperTopicName>
+              <interface:bumper name="${side}_forearm_ros_bumper_iface" />
             </controller:ros_bumper>
           </sensor:contact>
         </verbatim>
@@ -607,14 +601,14 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${side}_forearm">
         <!--
-        <controller:ros_p3d name="p3d_${side}_forearm_roll_controller" plugin="libros_p3d.so">
+        <controller:ros_p3d name="p3d_${side}_forearm_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_forearm_roll_link</bodyName>
-          <topicName>${side}_forearm_roll_pose_ground_truth</topicName>
+          <bodyName>${side}_forearm_link</bodyName>
+          <topicName>${side}_forearm_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
-          <interface:position name="p3d_${side}_forearm_roll_position_iface" />
+          <interface:position name="p3d_${side}_forearm_position_iface" />
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_wrist_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>

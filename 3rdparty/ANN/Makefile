@@ -8,7 +8,7 @@ TARBALL_PATCH = gcc43_shared.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-installed: $(SOURCE_DIR) Makefile
+installed: $(SOURCE_DIR)/unpacked Makefile
 	echo "Building FL-ANN..."
 	cd build/ann_1.1.1 && make linux-shared-g++
 	touch installed

@@ -9,7 +9,7 @@ TARBALL_PATCH = stdlib_include.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && ./configure --prefix=$(PWD)/sicktoolbox
 	cd $(SOURCE_DIR) && make && make install
 	touch installed

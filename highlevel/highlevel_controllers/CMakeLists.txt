@@ -25,6 +25,10 @@ target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
 rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)
 target_link_libraries(move_base_navfn highlevel_controllers navfn)
 
+# move_base_topological
+rospack_add_executable(move_base_topological src/move_base_topological.cpp)
+target_link_libraries(move_base_topological highlevel_controllers topological_map)
+
 # MoveArmEndEffector
 rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
 

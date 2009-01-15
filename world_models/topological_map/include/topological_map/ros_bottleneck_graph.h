@@ -36,6 +36,7 @@
 
 #include <getopt.h>
 #include <sysexits.h>
+#include <boost/thread.hpp>
 #include <ros/node.h>
 #include <rosconsole/rosconsole.h>
 #include <std_srvs/StaticMap.h>
@@ -86,6 +87,8 @@ private:
   double resolution_;
 
   int size_, skip_, radius_, distanceMin_, distanceMax_;
+
+  boost::mutex lock_;
 
   std_msgs::RobotBase2DOdom pose_;
 };

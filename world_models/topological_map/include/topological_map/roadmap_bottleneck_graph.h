@@ -56,12 +56,21 @@ public:
 
   void printRoadmap ();
 
+  /// Set start state to this grid cell.  Also, call switchToRegion on the containing region
+  void setStartState (const GridCell& start);
+
+  /// Set end state to this grid cell.
+  void setGoalState (const GridCell& goal);
+
+  /// Find optimal path between start and goal
+  vector<GridCell> findOptimalPath (void);
+
+  /// Set start and goal, then find the optimal path
+  vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal);
 
   /// Make it so that roadmap is low-level in given region and high-level elsewhere
   void switchToRegion (int region_id);
 
-  /// Find optimal path between configurations
-  vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal);
 
 
   
@@ -78,8 +87,12 @@ private:
   void removeLastAddedRegionCells ();
 
   GridCell pointOnBorder (const Region& r1, const Region& r2);
+
   Roadmap* roadmap_;
+  GridCell start_;
+  GridCell goal_;
   int num_temporary_added_cells_;
+  int current_region_;
   VertexPairCellMap roadmap_points_;
 };
 

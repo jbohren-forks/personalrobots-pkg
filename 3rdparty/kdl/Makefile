@@ -20,7 +20,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DBOOST_INCLUDEDIR:STRING=$(BOOST_ROOT)/include \
   	-DBOOST_LIBRARYDIR:STRING=$(BOOST_ROOT)/lib
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH1)
 	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH2)
 	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH3)

@@ -8,7 +8,7 @@ UNPACK_CMD = tar xzf
 NUMPY_PATH = `rospack find numpy`/src
 include $(shell rospack find mk)/download_unpack_build.mk
 
-scipy: $(SOURCE_DIR)
+scipy: $(SOURCE_DIR)/unpacked
 	rm -rf src
 	mkdir -p src
 	cd $(SOURCE_DIR) && PYTHONPATH=${PYTHONPATH}:${NUMPY_PATH} python setup.py build && PYTHONPATH=${PYTHONPATH}:${NUMPY_PATH}  python setup.py install --prefix ../src

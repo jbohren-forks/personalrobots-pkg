@@ -403,8 +403,7 @@ void IndexedBottleneckGraph::readFromFile(const char* filename)
   }
 
   ROS_DEBUG ("Finished reading bottleneck graph");
-
-  printBottleneckGraph();
+  setReady(true);
 
 }
 
@@ -732,6 +731,16 @@ void IndexedBottleneckGraph::setDims (int nr, int nc)
   is_free_.resize(boost::extents[num_rows_][num_cols_]);
 }
 
+bool IndexedBottleneckGraph::isReady (void)
+{
+  return ready_;
+}
+
+void IndexedBottleneckGraph::setReady (bool ready)
+{
+  ready_=ready;
+}
+
 
 
 /************************************************************
@@ -748,7 +757,7 @@ GridGraph makeGraphFromGrid (const GridArray& grid, int inflationRadius)
   GridCellMap coords = get (coords_t(), gr.g);
   int threshold = inflationRadius*inflationRadius;
 
-  ROS_DEBUG_NAMED ("bottleneck_finder", "Constructing map graph\n");
+  ROS_DEBUG_NAMED ("bottleneck_finder", "Constructing map graph of size %d by %d\n", dims[0], dims[1]);
   
   for (int r=0; r!=(int)dims[0]; r++) {
     ROS_DEBUG_COND_NAMED (!(r%10), "bottleneck_finder"," Row %d", r);
@@ -918,7 +927,7 @@ void IndexedBottleneckGraph::initializeFromGrid (const GridArray& grid, int bott
   indexRegions();
   
   ROS_INFO_NAMED ("bottleneck_finder", "Finished bottleneck graph computation");
-
+  setReady(true);
 }
 
 

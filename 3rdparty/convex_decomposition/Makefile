@@ -11,7 +11,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 ROOT = $(shell rospack find convex_decomposition)/convex_decomposition
 
-installed: wiped $(SOURCE_DIR)
+installed: wiped $(SOURCE_DIR)/unpacked
 	@echo "making it"
 	@echo "ROOT is: $(ROOT)"
 	-mkdir -p $(ROOT)
