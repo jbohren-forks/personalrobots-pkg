@@ -1322,7 +1322,7 @@ int EnvironmentROBARM::IsValidLineSegment(short unsigned int x0, short unsigned 
 
 int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D, vector<CELLV>* pTestedCells)
 {
-    double angles[NUMOFLINKS];
+    double angles[NUMOFLINKS], angles_0[NUMOFLINKS];
     int retvalue = 1;
     short unsigned int wrist[3], elbow[3], endeff[3];
 
@@ -1332,29 +1332,89 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], char**
     ComputeContAngles(coord, angles);
 
     // check motor limits
+//     if(EnvROBARMCfg.enforce_motor_limits)
+//     {
+//         //convert angles from positive values in radians (from 0->6.28) to centered around 0
+//         for (int i = 0; i < NUMOFLINKS; i++)
+//         {
+//             if(angles[i] >= PI_CONST)
+//                 angles_0[i] = -2.0*PI_CONST + angles[i];
+//         }
+// 
+//         //shoulder pan - Left is Positive Direction
+//         if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] && angles_0[0] < 6.283-EnvROBARMCfg.NegMotorLimits[0])
+//             return 0;
+//         //shoulder pitch - Down is Positive Direction
+//         if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] && angles_0[1] < 6.283-EnvROBARMCfg.NegMotorLimits[1])
+//             return 0;
+//         //upperarm roll
+//         if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] && angles_0[2] < 6.283-EnvROBARMCfg.NegMotorLimits[2])
+//             return 0;
+//         //elbow flex - Down is Positive Direction
+//         if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] && angles_0[3] < 6.283-EnvROBARMCfg.NegMotorLimits[3])
+//             return 0;
+//         //forearm roll
+//         if (angles_0[4] > EnvROBARMCfg.PosMotorLimits[4] && angles_0[4] < 6.283-EnvROBARMCfg.NegMotorLimits[4])
+//             return 0;
+//         //wrist flex - Down is Positive Direction
+//         if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] && angles_0[5] < 6.283-EnvROBARMCfg.NegMotorLimits[5])
+//             return 0;
+//         //wrist roll
+//         if (angles_0[6] > EnvROBARMCfg.PosMotorLimits[6] && angles_0[6] < 6.283-EnvROBARMCfg.NegMotorLimits[6])
+//             return 0;
+//     }
+
     if(EnvROBARMCfg.enforce_motor_limits)
     {
+        //convert angles from positive values in radians (from 0->6.28) to centered around 0
+        for (int i = 0; i < NUMOFLINKS; i++)
+        {
+            angles_0[i] = angles[i];
+            if(angles[i] >= PI_CONST)
+                angles_0[i] = -2.0*PI_CONST + angles[i];
+        }
         //shoulder pan - Left is Positive Direction
-        if (angles[0] > EnvROBARMCfg.PosMotorLimits[0] && angles[0] < 6.283-EnvROBARMCfg.NegMotorLimits[0])
+        if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] || angles_0[0] < EnvROBARMCfg.NegMotorLimits[0])
+        {
+            printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]);
             return 0;
+        }
         //shoulder pitch - Down is Positive Direction
-        if (angles[1] > EnvROBARMCfg.PosMotorLimits[1] && angles[1] < 6.283-EnvROBARMCfg.NegMotorLimits[1])
+        if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] || angles_0[1] < EnvROBARMCfg.NegMotorLimits[1])
+        {
+            printf("Error: Breaking shoulder pitch limit (%.2f)\n",angles_0[1]);
             return 0;
+        }
         //upperarm roll
-        if (angles[2] > EnvROBARMCfg.PosMotorLimits[2] && angles[2] < 6.283-EnvROBARMCfg.NegMotorLimits[2])
+        if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] || angles_0[2] < EnvROBARMCfg.NegMotorLimits[2])
+        {
+            printf("Error: Breaking upperarm roll limit (%.2f)\n",angles_0[2]);
             return 0;
+        }
         //elbow flex - Down is Positive Direction
-        if (angles[3] > EnvROBARMCfg.PosMotorLimits[3] && angles[3] < 6.283-EnvROBARMCfg.NegMotorLimits[3])
+        if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] || angles_0[3] < EnvROBARMCfg.NegMotorLimits[3])
+        {
+            printf("Error: Breaking elbow flex limit (%.2f)\n",angles_0[3]);
             return 0;
+        }
         //forearm roll
-        if (angles[4] > EnvROBARMCfg.PosMotorLimits[4] && angles[4] < 6.283-EnvROBARMCfg.NegMotorLimits[4])
+        if (angles_0[4] > EnvROBARMCfg.PosMotorLimits[4] || angles_0[4] < EnvROBARMCfg.NegMotorLimits[4])
+        {
+            printf("Error: Breaking forearm roll limit (%.2f)\n",angles_0[4]);
             return 0;
+        }
         //wrist flex - Down is Positive Direction
-        if (angles[5] > EnvROBARMCfg.PosMotorLimits[5] && angles[5] < 6.283-EnvROBARMCfg.NegMotorLimits[5])
+        if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] || angles_0[5] < EnvROBARMCfg.NegMotorLimits[5])
+        {
+            printf("Error: Breaking wrist flex limit (%.2f)\n",angles_0[5]);
             return 0;
+        }
         //wrist roll
-        if (angles[6] > EnvROBARMCfg.PosMotorLimits[6] && angles[6] < 6.283-EnvROBARMCfg.NegMotorLimits[6])
+        if (angles_0[6] > EnvROBARMCfg.PosMotorLimits[6] || angles_0[6] < EnvROBARMCfg.NegMotorLimits[6])
+        {
+            printf("Error: Breaking wrist roll limit (%.2f)\n",angles_0[6]);
             return 0;
+        }
     }
 
     clock_t currenttime = clock();
@@ -1507,7 +1567,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], char**
 
 int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm)
 {
-    double angles[NUMOFLINKS];
+    double angles[NUMOFLINKS], angles_0[NUMOFLINKS];
     int retvalue = 1;
 
     char*** Grid3D= EnvROBARMCfg.Grid3D;
@@ -1516,29 +1576,83 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
     ComputeContAngles(coord, angles);
 
     // check motor limits
+//     if(EnvROBARMCfg.enforce_motor_limits)
+//     {
+//         //shoulder pan - Left is Positive Direction
+//         if (angles[0] > EnvROBARMCfg.PosMotorLimits[0] && angles[0] < 6.283-EnvROBARMCfg.NegMotorLimits[0])
+//             return 0;
+//         //shoulder pitch - Down is Positive Direction
+//         if (angles[1] > EnvROBARMCfg.PosMotorLimits[1] && angles[1] < 6.283-EnvROBARMCfg.NegMotorLimits[1])
+//             return 0;
+//         //upperarm roll
+//         if (angles[2] > EnvROBARMCfg.PosMotorLimits[2] && angles[2] < 6.283-EnvROBARMCfg.NegMotorLimits[2])
+//             return 0;
+//         //elbow flex - Down is Positive Direction
+//         if (angles[3] > EnvROBARMCfg.PosMotorLimits[3] && angles[3] < 6.283-EnvROBARMCfg.NegMotorLimits[3])
+//             return 0;
+//         //forearm roll
+//         if (angles[4] > EnvROBARMCfg.PosMotorLimits[4] && angles[4] < 6.283-EnvROBARMCfg.NegMotorLimits[4])
+//             return 0;
+//         //wrist flex - Down is Positive Direction
+//         if (angles[5] > EnvROBARMCfg.PosMotorLimits[5] && angles[5] < 6.283-EnvROBARMCfg.NegMotorLimits[5])
+//             return 0;
+//         //wrist roll
+//         if (angles[6] > EnvROBARMCfg.PosMotorLimits[6] && angles[6] < 6.283-EnvROBARMCfg.NegMotorLimits[6])
+//             return 0;
+//     }
+
+    // check motor limits
     if(EnvROBARMCfg.enforce_motor_limits)
     {
+        //convert angles from positive values in radians (from 0->6.28) to centered around 0
+        for (int i = 0; i < NUMOFLINKS; i++)
+        {
+            angles_0[i] = angles[i];
+            if(angles[i] >= PI_CONST)
+                angles_0[i] = -2.0*PI_CONST + angles[i];
+        }
         //shoulder pan - Left is Positive Direction
-        if (angles[0] > EnvROBARMCfg.PosMotorLimits[0] && angles[0] < 6.283-EnvROBARMCfg.NegMotorLimits[0])
+        if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] || angles_0[0] < EnvROBARMCfg.NegMotorLimits[0])
+        {
+            printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]);
             return 0;
+        }
         //shoulder pitch - Down is Positive Direction
-        if (angles[1] > EnvROBARMCfg.PosMotorLimits[1] && angles[1] < 6.283-EnvROBARMCfg.NegMotorLimits[1])
+        if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] || angles_0[1] < EnvROBARMCfg.NegMotorLimits[1])
+        {
+            printf("Error: Breaking shoulder pitch limit (%.2f)\n",angles_0[1]);
             return 0;
+        }
         //upperarm roll
-        if (angles[2] > EnvROBARMCfg.PosMotorLimits[2] && angles[2] < 6.283-EnvROBARMCfg.NegMotorLimits[2])
+        if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] || angles_0[2] < EnvROBARMCfg.NegMotorLimits[2])
+        {
+            printf("Error: Breaking upperarm roll limit (%.2f)\n",angles_0[2]);
             return 0;
+        }
         //elbow flex - Down is Positive Direction
-        if (angles[3] > EnvROBARMCfg.PosMotorLimits[3] && angles[3] < 6.283-EnvROBARMCfg.NegMotorLimits[3])
+        if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] || angles_0[3] < EnvROBARMCfg.NegMotorLimits[3])
+        {
+            printf("Error: Breaking elbow flex limit (%.2f)\n",angles_0[3]);
             return 0;
+        }
         //forearm roll
-        if (angles[4] > EnvROBARMCfg.PosMotorLimits[4] && angles[4] < 6.283-EnvROBARMCfg.NegMotorLimits[4])
+        if (angles_0[4] > EnvROBARMCfg.PosMotorLimits[4] || angles_0[4] < EnvROBARMCfg.NegMotorLimits[4])
+        {
+            printf("Error: Breaking forearm roll limit (%.2f)\n",angles_0[4]);
             return 0;
+        }
         //wrist flex - Down is Positive Direction
-        if (angles[5] > EnvROBARMCfg.PosMotorLimits[5] && angles[5] < 6.283-EnvROBARMCfg.NegMotorLimits[5])
+        if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] || angles_0[5] < EnvROBARMCfg.NegMotorLimits[5])
+        {
+            printf("Error: Breaking wrist flex limit (%.2f)\n",angles_0[5]);
             return 0;
+        }
         //wrist roll
-        if (angles[6] > EnvROBARMCfg.PosMotorLimits[6] && angles[6] < 6.283-EnvROBARMCfg.NegMotorLimits[6])
+        if (angles_0[6] > EnvROBARMCfg.PosMotorLimits[6] || angles_0[6] < EnvROBARMCfg.NegMotorLimits[6])
+        {
+            printf("Error: Breaking wrist roll limit (%.2f)\n",angles_0[6]);
             return 0;
+        }
     }
 
     clock_t currenttime = clock();
@@ -1579,6 +1693,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
         if(arm->endeff[0] >= EnvROBARMCfg.EnvWidth_c || arm->endeff[1] >= EnvROBARMCfg.EnvHeight_c || arm->endeff[2] >= EnvROBARMCfg.EnvDepth_c)
         {
             check_collision_time += clock() - currenttime;
+            printf("Error: The end effector is out of bounds.\n");
             return 0;
         }
 
@@ -1589,6 +1704,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
             Grid3D[arm->elbow[0]][arm->elbow[1]][arm->elbow[2]] == 1)
         {
             check_collision_time += clock() - currenttime;
+            printf("Error: The end effector is touching an obstacle.\n");
             return 0;
         }
 
@@ -1601,6 +1717,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
             if(pTestedCells == NULL)
             {
                 check_collision_time += clock() - currenttime;
+                printf("Error: A link is colliding with an obstacle.\n");
                 return 0;
             }
             else
@@ -1629,6 +1746,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
                 if(pTestedCells == NULL)
                 {
                     check_collision_time += clock() - currenttime;
+                    printf("Error: The tip of the gripper is touching an obstacle.\n");
                     return 0;
                 }
                 else
@@ -1670,10 +1788,14 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
                 if(pTestedCells == NULL)
                 {
                     check_collision_time += clock() - currenttime;
+                    printf("Error: The object in the gripper is touching an obstacle.\n");
                     return 0;
                 }
                 else
+                {
+                    printf("Error: The object in the gripper is touching an obstacle.\n");
                     retvalue = 0;
+                }
             }
 
 //         printf("[IsValidCoord] elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u) object: (%u %u %u)\n", arm->elbow[0],arm->elbow[1],arm->elbow[2],
@@ -1838,8 +1960,10 @@ bool EnvironmentROBARM::InitializeEnvironment()
     EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, wrist, elbow, 0);
 
     if(!IsValidCoord(EnvROBARM.startHashEntry->coord))
+    {
         printf("Start Hash Entry is invalid\n");
-
+        return false;
+    }
     //check the validity of both goal and start configurations
     //testing for EnvROBARMCfg.EndEffGoalX_c < 0  and EnvROBARMCfg.EndEffGoalY_c < 0 is useless since they are unsigned 
 //     if(!IsValidCoord(EnvROBARM.startHashEntry->coord) || EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c ||
@@ -1852,7 +1976,7 @@ bool EnvironmentROBARM::InitializeEnvironment()
     if(EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c || EnvROBARMCfg.EndEffGoalY_c >= EnvROBARMCfg.EnvHeight_c || 
         EnvROBARMCfg.EndEffGoalZ_c >= EnvROBARMCfg.EnvDepth_c)
     {
-        printf("End effector goal position is invalid (%u %u %u).\n",EnvROBARMCfg.EndEffGoalX_c,EnvROBARMCfg.EndEffGoalY_c,EnvROBARMCfg.EndEffGoalZ_c);
+        printf("End effector goal position is out of bounds (%u %u %u).\n",EnvROBARMCfg.EndEffGoalX_c,EnvROBARMCfg.EndEffGoalY_c,EnvROBARMCfg.EndEffGoalZ_c);
         return false;
     }
 
