@@ -4,8 +4,8 @@
 int main(int, char **)
 {
   IRobotCreate robot;
-  double x, y, th;
-  robot.getEncoders(x, y, th);
-  ROS_DEBUG("encoders: %f, %f, %f", x, y, th);
+  //double x, y, th;
+  //robot.getEncoders(x, y, th);
+  //ROS_DEBUG("encoders: %f, %f, %f", x, y, th);
   return 0;
 }

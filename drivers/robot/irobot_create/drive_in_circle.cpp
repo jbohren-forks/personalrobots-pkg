@@ -9,7 +9,7 @@ int main(int, char **)
 //  robot.getAngle();
 
   
-  double angle = 0.001; double velocity = 0.3;
+  //double angle = 0.001; double velocity = 0.3;
   double l_vel = 0.4; double r_vel = 0.4;
 /*  
   while (true) {

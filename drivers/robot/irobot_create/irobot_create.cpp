@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "rosconsole/rosconsole.h"
 #include "irobot_create/irobot_create.h"
 
