@@ -464,10 +464,11 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
                                                     pr2_mechanism_controllers::TrajectoryQuery::response &resp)
 {
   resp.set_jointnames_size(c_->dimension_);
+  resp.set_jointpositions_size(c_->dimension_);
   for(int i=0; i < c_->dimension_; i++)
   {
     resp.jointnames[i] = c_->joint_pd_controllers_[i]->getJointName();
-    
+    resp.jointpositions[i] = c_->joint_pd_controllers_[i]->joint_state_->position_;
   }
 
   if(req.trajectoryid == 0)
