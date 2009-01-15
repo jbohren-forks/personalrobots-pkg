@@ -97,11 +97,12 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
   std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
 #if !USE_DH
-  environment_robarm.CloseKinNode();
+//  environment_robarm.CloseKinNode();
 #endif
 
 #if VERBOSE
-  environment_robarm.OutputPlanningStats();
+  printf("printing statistics");
+//  environment_robarm.OutputPlanningStats();
 #endif
 
 /*    // create filename with current time
@@ -116,12 +117,14 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
 */  
   //create a ROS JointTraj message for path that was generated
   double angles_r[NUMOFLINKS];
-//    pr2_mechanism_controllers::JointTraj armpath;
+//   pr2_mechanism_controllers::JointTraj armpath;
+   printf("ready to fill trajectory");
 
-  if(bRet)
+   if(bRet)
   {
     armpath.set_points_size(solution_stateIDs_V.size());
 
+   printf("filling trajectory");
 
     for(i = 0; i < solution_stateIDs_V.size(); i++)
       armpath.points[i].set_positions_size(NUMOFLINKS);
@@ -137,16 +140,20 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
     }
   }
   //send out the message....
-
+   printf("Returning from function call");
   return bRet;
 }
 
 
 bool PlanPathNode::planPath(robarm3d::PlanPathSrv::request &req, robarm3d::PlanPathSrv::response &resp)
 {
-  int bRet = planrobarmROS(req.start,req.goal,resp.traj);
+  pr2_mechanism_controllers::JointTraj traj; 
+  int bRet = planrobarmROS(req.start,req.goal,traj);
   if(bRet)
+  {
+   resp.traj = traj;
     return true;
+  }
   else
     return false;
 }
@@ -162,7 +169,7 @@ int main(int argc, char *argv[])
   }
 
   ros::init(argc, argv);
-  PlanPathNode node("arm_plan_path");
+  PlanPathNode node("plan_path_node");
   node.init();
   node.filename_ = std::string(argv[1]);
 

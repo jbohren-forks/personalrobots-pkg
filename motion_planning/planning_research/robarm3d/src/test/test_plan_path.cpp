@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
   req_plan_path.goal.x = 0.75;
   req_plan_path.goal.y = 0.0;
-  req_plan_path.goal.z = 0.0;
+  req_plan_path.goal.z = 1.0;
 
   if(ros::service::call("plan_path_node/GetPlan",req_plan_path,res_plan_path))
   {
