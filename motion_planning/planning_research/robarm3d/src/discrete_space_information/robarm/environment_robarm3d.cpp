@@ -43,7 +43,7 @@
 #define OUTPUT_OBSTACLES 0
 #define VERBOSE 1
 #define OUPUT_DEGREES 1
-
+#define DEBUG_MOTOR_LIMITS 0
 // number of successors to a cell (for dyjkstra's heuristic)
 #define DIRECTIONS 26
 
@@ -1364,6 +1364,7 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], char**
 //             return 0;
 //     }
 
+    // check motor limits
     if(EnvROBARMCfg.enforce_motor_limits)
     {
         //convert angles from positive values in radians (from 0->6.28) to centered around 0
@@ -1376,43 +1377,57 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], char**
         //shoulder pan - Left is Positive Direction
         if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] || angles_0[0] < EnvROBARMCfg.NegMotorLimits[0])
         {
-            printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]);
+#if DEBUG_MOTOR_LIMITS
+        printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]); 
+#endif
             return 0;
         }
         //shoulder pitch - Down is Positive Direction
         if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] || angles_0[1] < EnvROBARMCfg.NegMotorLimits[1])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking shoulder pitch limit (%.2f)\n",angles_0[1]);
+#endif
             return 0;
         }
         //upperarm roll
         if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] || angles_0[2] < EnvROBARMCfg.NegMotorLimits[2])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking upperarm roll limit (%.2f)\n",angles_0[2]);
+#endif
             return 0;
         }
         //elbow flex - Down is Positive Direction
         if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] || angles_0[3] < EnvROBARMCfg.NegMotorLimits[3])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking elbow flex limit (%.2f)\n",angles_0[3]);
+#endif
             return 0;
         }
         //forearm roll
         if (angles_0[4] > EnvROBARMCfg.PosMotorLimits[4] || angles_0[4] < EnvROBARMCfg.NegMotorLimits[4])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking forearm roll limit (%.2f)\n",angles_0[4]);
+#endif
             return 0;
         }
         //wrist flex - Down is Positive Direction
         if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] || angles_0[5] < EnvROBARMCfg.NegMotorLimits[5])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking wrist flex limit (%.2f)\n",angles_0[5]);
+#endif
             return 0;
         }
         //wrist roll
         if (angles_0[6] > EnvROBARMCfg.PosMotorLimits[6] || angles_0[6] < EnvROBARMCfg.NegMotorLimits[6])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking wrist roll limit (%.2f)\n",angles_0[6]);
+#endif
             return 0;
         }
     }
@@ -1614,43 +1629,57 @@ int EnvironmentROBARM::IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROB
         //shoulder pan - Left is Positive Direction
         if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] || angles_0[0] < EnvROBARMCfg.NegMotorLimits[0])
         {
-            printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]);
+#if DEBUG_MOTOR_LIMITS
+        printf("Error: Breaking shoulder pan limit (%.2f)\n",angles_0[0]); 
+#endif
             return 0;
         }
         //shoulder pitch - Down is Positive Direction
         if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] || angles_0[1] < EnvROBARMCfg.NegMotorLimits[1])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking shoulder pitch limit (%.2f)\n",angles_0[1]);
+#endif
             return 0;
         }
         //upperarm roll
         if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] || angles_0[2] < EnvROBARMCfg.NegMotorLimits[2])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking upperarm roll limit (%.2f)\n",angles_0[2]);
+#endif
             return 0;
         }
         //elbow flex - Down is Positive Direction
         if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] || angles_0[3] < EnvROBARMCfg.NegMotorLimits[3])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking elbow flex limit (%.2f)\n",angles_0[3]);
+#endif
             return 0;
         }
         //forearm roll
         if (angles_0[4] > EnvROBARMCfg.PosMotorLimits[4] || angles_0[4] < EnvROBARMCfg.NegMotorLimits[4])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking forearm roll limit (%.2f)\n",angles_0[4]);
+#endif
             return 0;
         }
         //wrist flex - Down is Positive Direction
         if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] || angles_0[5] < EnvROBARMCfg.NegMotorLimits[5])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking wrist flex limit (%.2f)\n",angles_0[5]);
+#endif
             return 0;
         }
         //wrist roll
         if (angles_0[6] > EnvROBARMCfg.PosMotorLimits[6] || angles_0[6] < EnvROBARMCfg.NegMotorLimits[6])
         {
+#if DEBUG_MOTOR_LIMITS
             printf("Error: Breaking wrist roll limit (%.2f)\n",angles_0[6]);
+#endif
             return 0;
         }
     }
