@@ -671,7 +671,7 @@
                  actuator="${side}_shoulder_lift_motor"
                  transmission="${side}_shoulder_lift_trans"
                  velocity="-1.0" />
-      <pid p="7" i="0.5" d="0" iClamp="1.0" />
+      <pid p="9" i="1.0" d="0" iClamp="6.0" />
     </controller>
 
     <controller name="cal_${side}_upper_arm_roll" topic="cal_${side}_upper_arm_roll"
