@@ -71,7 +71,7 @@
     </joint>
 
     <link name="${suffix}_caster_rotation_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${suffix}_caster_rotation_joint" />
 
@@ -233,16 +233,16 @@
     </sensor>
 
 
-    <pr2_caster suffix="fl" parent="${name}">
+    <pr2_caster suffix="fl" parent="${name}_link">
       <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="fr" parent="${name}">
+    <pr2_caster suffix="fr" parent="${name}_link">
       <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="bl" parent="${name}">
+    <pr2_caster suffix="bl" parent="${name}_link">
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="br" parent="${name}">
+    <pr2_caster suffix="br" parent="${name}_link">
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
 

@@ -23,7 +23,7 @@
     </joint>
 
     <link name="${prefix}_l_finger_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <origin xyz="0.07751 ${1*0.01} 0" rpy="0 0 ${gripper_min_angle}" />
 
       <joint name="${prefix}_l_finger_joint" />
@@ -93,7 +93,7 @@
     </joint>
 
     <link name="${prefix}_r_finger_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <origin xyz="0.07751 ${-1*0.01} 0" rpy="0 0 ${-gripper_min_angle}" />
 
       <joint name="${prefix}_r_finger_joint" />
@@ -369,7 +369,7 @@
   <macro name="pr2_gripper" params="side parent">
     <joint name="${side}_gripper_palm_joint" type="fixed" />
     <link name="${side}_gripper_palm_link">
-      <parent name="${parent}_link" />
+      <parent name="${parent}" />
       <joint name="${side}_gripper_palm_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <inertial>
@@ -436,7 +436,7 @@
     </map>
 
 
-    <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm" />
+    <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
     <!-- sin(angle*reduction) = motor_encoder * A + B -->
     <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0002193927" B="0.530981135">
