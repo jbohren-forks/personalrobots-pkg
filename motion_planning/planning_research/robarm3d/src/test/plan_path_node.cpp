@@ -30,8 +30,9 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
   for(int i=0; i<NUMOFLINKS; i++)
   {
     start_pos[i] = start.positions[i];
+    printf(" %f ",start_pos[i]);
   }
-
+  printf("\n");
   goal_pos[0] = goal.x;
   goal_pos[1] = goal.y;
   goal_pos[2] = goal.z;
@@ -48,7 +49,7 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
 //     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));
   environment_robarm.SetEndEffGoal(goal_pos, 3);
 
-  environment_robarm.SetStartAngles(start_pos, 1);
+  environment_robarm.SetStartAngles(start_pos, true);
 
   if(!environment_robarm.InitializeEnv(filename_.c_str()))
   {
