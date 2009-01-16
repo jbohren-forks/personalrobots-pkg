@@ -207,7 +207,7 @@ private:
         
         GetEnv()->LockPhysics(false);
 
-        MocapData* pdata = new MocapData();
+        XMLData* pdata = new XMLData();
         pdata->strOffsetLink = pbody->GetLinks().front()->GetName();
         BODY* b = AddKinBody(pbody, pdata);
         if( b == NULL ) {

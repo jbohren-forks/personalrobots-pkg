@@ -11,8 +11,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #rospack_add_executable(normal_estimation_node src/normal_estimation.cpp)
 #target_link_libraries(normal_estimation_node lapack)
 
-rospack_add_executable(normal_estimation_omp_node src/normal_estimation_omp.cpp)
-target_link_libraries(normal_estimation_omp_node lapack)
+rospack_add_executable(normal_estimation_node src/normal_estimation_omp.cpp)
+target_link_libraries(normal_estimation_node lapack)
 
 # check for OpenMP
 include(CheckIncludeFile)
@@ -37,7 +37,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   if( HAVE_OPENMP AND HAS_GOMP_LIB )
     add_definitions("-fopenmp")
-    target_link_libraries(normal_estimation_omp_node gomp)
+    target_link_libraries(normal_estimation_node gomp)
     set(OPENMP_LFLAGS "-lgomp")
   endif( HAVE_OPENMP AND HAS_GOMP_LIB )
 endif( WIN32 )

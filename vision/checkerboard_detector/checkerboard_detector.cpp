@@ -170,7 +170,7 @@ public:
         IplImage *pimggray = _cvbridge.toIpl();
         if( display ) {
             // copy the raw image
-            if( frame != NULL && (frame->width != _caminfomsg.width || frame->height != _caminfomsg.height) ) {
+            if( frame != NULL && (frame->width != (int)_caminfomsg.width || frame->height != (int)_caminfomsg.height) ) {
                 cvReleaseImage(&frame);
                 frame = NULL;
             }
@@ -183,7 +183,7 @@ public:
         vector<checkerboard_detector::Object6DPose> vobjects;
 
         #pragma omp parallel for schedule(dynamic,1)
-        for(size_t i = 0; i < vcheckers.size(); ++i) {
+        for(int i = 0; i < (int)vcheckers.size(); ++i) {
             CHECKERBOARD& cb = vcheckers[i];
             int ncorners;
             checkerboard_detector::Object6DPose objpose;
@@ -251,8 +251,8 @@ public:
         _objdetmsg.header.frame_id = frame_id;
         publish("ObjectDetection", _objdetmsg);
 
-        ROS_INFO("checkerboard: image: %dx%d (size=%d), num: %d, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
-                _imagemsg.uint8_data.data.size(), _objdetmsg.get_objects_size(),
+        ROS_INFO("checkerboard: image: %ux%u (size=%u), num: %u, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
+                 (unsigned int)_imagemsg.uint8_data.data.size(), (unsigned int)_objdetmsg.get_objects_size(),
                 (float)(ros::Time::now()-lasttime).toSec());
         lasttime = ros::Time::now();
         

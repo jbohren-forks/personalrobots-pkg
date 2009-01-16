@@ -28,4 +28,4 @@ rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initia
 rospack_add_gtest(test/utest test/CvTest3DPoseEstimate.cpp test/utest.cpp)
 target_link_libraries(test/utest visual_odometry)
 
-rospack_add_pyunit(test/directed.py)
+rospack_add_pyunit_graphical(test/directed.py)

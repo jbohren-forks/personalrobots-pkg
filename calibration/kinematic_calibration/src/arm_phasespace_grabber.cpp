@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "robot_msgs/MechanismState.h"
-#include "phase_space/PhaseSpaceSnapshot.h"
+#include "robot_msgs/MocapSnapshot.h"
 #include "robot_kinematics/robot_kinematics.h"
 
 #include "kdl/chain.hpp"
@@ -111,7 +111,7 @@ public:
         case ' ':
         {
           printf("Capturing...\n") ;
-          phase_space::PhaseSpaceMarker cur_marker ;
+          robot_msgs::MocapMarker cur_marker ;
 
           //GetMarker(cur_marker, marker_id_) ;
 
@@ -138,7 +138,7 @@ public:
           robot_kinematics::RobotKinematics robot_kinematics ;
           string robot_desc ;
           param("robotdesc/pr2", robot_desc, string("")) ;
-          printf("RobotDesc.length() = %u\n", robot_desc.length()) ;
+          printf("RobotDesc.length() = %u\n", (unsigned int)robot_desc.length()) ;
 
           robot_kinematics.loadString(robot_desc.c_str()) ;
 
@@ -238,7 +238,7 @@ public:
     return true ;
   }
 
-  void GetMarker(phase_space::PhaseSpaceMarker& marker, int id)
+    void GetMarker(robot_msgs::MocapMarker& marker, int id)
   {
     bool marker_found = false ;
 
@@ -304,10 +304,10 @@ public:
   }
 
 private:
-  phase_space::PhaseSpaceSnapshot snapshot_ ;
+    robot_msgs::MocapSnapshot snapshot_ ;
   robot_msgs::MechanismState mech_state_ ;
 
-  phase_space::PhaseSpaceSnapshot safe_snapshot_ ;
+    robot_msgs::MocapSnapshot safe_snapshot_ ;
   int marker_id_ ;
 
   robot_msgs::MechanismState safe_mech_state_ ;

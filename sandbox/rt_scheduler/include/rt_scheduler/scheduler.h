@@ -40,6 +40,7 @@
 
 
 #include <vector>
+#include <utility>
 
 #include "rt_scheduler/rt_node.h"
 
@@ -51,27 +52,41 @@ namespace rt_scheduler
 class Scheduler : public rt_scheduler::RtNode
 {
 public:
-  Scheduler()
-  {  }
+
+  //Scheduler(Scheduler* parent, Oracle* oracle, std::string name) : RtNode(parent, oracle, name)
+  Scheduler(Scheduler* parent, std::string name) : RtNode(parent, name)
+  {
+    active_ = true ;
+  }
 
   ~Scheduler()
   {  }
 
   void add(RtNode* node)
   {
-    node_list_.push_back(node) ;
-    printf("Adding %s to scheduler\n", node->name_.c_str()) ;
+    if (active_)
+    {
+      std::string rel_name = node->getRelativeName(this) ;
+      node_list_.push_back(NodeListElem(rel_name, node )) ;
+      printf("Adding %s to scheduler %s\n", rel_name.c_str(), name_.c_str() ) ;
+    }
+    else
+      parent_->add(node) ;
   }
 
   bool update()
   {
-    bool success = true ;
-    for (unsigned int i=0; i < exec_order_.size(); i++)
+    if (active_)
     {
-      printf("Updating Node #%u: %s\n", exec_order_[i], node_list_[exec_order_[i]]->name_.c_str()) ;
-      success = success && node_list_[exec_order_[i]]->update() ;
+      bool success = true ;
+      for (unsigned int i=0; i < exec_order_.size(); i++)
+      {
+        printf("Updating Node #%u: %s\n", exec_order_[i], node_list_[exec_order_[i]].node_->name_.c_str()) ;
+        success = success && node_list_[exec_order_[i]].node_->update() ;
+      }
+      return success ;
     }
-    return success ;
+    return true ;
   }
 
   // A super dumb, dangerous scheduler
@@ -80,20 +95,48 @@ public:
     printf("Dependencies:\n") ;
     for (unsigned int i=0; i<node_list_.size(); i++)
     {
-      for (unsigned int j=0; j<node_list_[i]->deps_.size(); j++)
-        printf("  %s -> %s\n", node_list_[i]->name_.c_str(), node_list_[i]->deps_[j]->name_.c_str()) ;
+      for (unsigned int j=0; j<node_list_[i].node_->deps_.size(); j++)
+        printf("  %s -> %s\n", node_list_[i].node_->name_.c_str(), node_list_[i].node_->deps_[j].dep_node_->name_.c_str()) ;
     }
-
 
     exec_order_.resize(node_list_.size()) ;
     for (unsigned int i=0; i<exec_order_.size(); i++)
       exec_order_[i] = i ;
   }
 
-private:
-  std::vector<RtNode*> node_list_ ;
-  std::vector<unsigned int> exec_order_ ;
+  /*static Scheduler* findNextActive(std::list<Scheduler*>::iterator it, const std::list<Scheduler*>::iterator& end)
+  {
+    while( it!=end && !(*it)->active_ )
+      ++it ;
+    if (it == end)
+      return NULL ;
+    else
+      return *it ;
+  }*/
 
+  static Scheduler* findNextActive(unsigned int start, const std::vector<Scheduler*>& scheduler_list)
+  {
+    unsigned int i=start ;
+    while( i < scheduler_list.size() && !scheduler_list[i]->active_ )
+      i++ ;
+    if (i == scheduler_list.size())
+      return NULL ;
+    else
+      return scheduler_list[i] ;
+  }
+
+  bool active_ ;
+private:
+  class NodeListElem
+  {
+  public:
+    NodeListElem(std::string name, RtNode* node) : name_(name), node_(node) { } ;
+    std::string name_ ;
+    RtNode* node_ ;
+  } ;
+
+  std::vector<NodeListElem> node_list_ ;
+  std::vector<unsigned int> exec_order_ ;
 } ;
 
 }

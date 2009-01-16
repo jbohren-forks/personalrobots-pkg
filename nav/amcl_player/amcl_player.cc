@@ -191,6 +191,10 @@ class AmclNode: public ros::Node, public Driver
 
     // buffer of not-yet-transformed scans
     std::deque<std_msgs::LaserScan> laser_scans;
+    
+    //time for tolerance on the published transform, 
+    //basically defines how long a map->odom transform is good for
+    double transform_tolerance_;
 };
 
 #define USAGE "USAGE: amcl_player"
@@ -364,6 +368,7 @@ AmclNode::AmclNode() :
   param("pf_min_d", d_thresh, 0.2);
   param("pf_min_a", a_thresh, M_PI/6.0);
   param("pf_odom_frame_id", odom_frame_id, string("odom"));
+  param("pf_transform_tolerance", transform_tolerance_, 0.0);
   // Annoyingly, we have to convert them back to strings for insertion into
   // Player's config file object
   char valbuf[1024];
@@ -488,9 +493,13 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     catch(tf::TransformException e){
       return(0);
     }
+    
+    //we want to send a transform that is good up until a tolerance time so that odom can be used
+    ros::Time transform_expiration;
+    transform_expiration.fromSec(hdr->timestamp + transform_tolerance_);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ),
-                                                        t, "map",odom_frame_id));
+                                                        transform_expiration, "map",odom_frame_id));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",

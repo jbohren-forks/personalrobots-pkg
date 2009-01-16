@@ -99,6 +99,7 @@ namespace costmap_2d {
       Observation obs(o, map_cloud);
       buffer_observation(obs);
       map_cloud = NULL;
+      newData = NULL;
     }
 
     // In case we get thrown out on the second transform - clean up

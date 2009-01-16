@@ -5,6 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
+  <depend package="robot_msgs" />
   <depend package="rospy" />
   <sysdepend os="ubuntu" version="8.04-hardy" package="libstdc++5"/>
   

@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "robot_msgs/MechanismState.h"
-#include "phase_space/PhaseSpaceSnapshot.h"
+#include "robot_msgs/MocapSnapshot.h"
 
 #include "std_msgs/PointCloud.h"
 

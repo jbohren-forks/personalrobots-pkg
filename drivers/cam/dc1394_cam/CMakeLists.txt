@@ -13,6 +13,8 @@ include_directories(${SDL_INCLUDE_DIRS})
 link_directories(${SDL_LIBRARY_DIRS})
 
 rospack_add_library(dc1394cam src/dc1394_cam/dc1394_cam.cpp)
+rospack_add_compile_flags(dc1394cam "-fPIC")
+
 # librt is needed for clock_gettime();  not sure how this interacts with
 # real-time....
 target_link_libraries(dc1394cam rt)

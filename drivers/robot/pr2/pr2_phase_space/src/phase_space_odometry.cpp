@@ -35,15 +35,15 @@
 //! \author Vijay Pradeep
 
 /****
- * This node takes the PhaseSpaceSnapshot packet and repackages into a form that can be used with the odometry
+ * This node takes the MocapSnapshot packet and repackages into a form that can be used with the odometry
  */
 
 #include "ros/node.h"
 
 // Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-#include "phase_space/PhaseSpaceBody.h"
+#include "robot_msgs/MocapSnapshot.h"
+#include "robot_msgs/MocapMarker.h"
+#include "robot_msgs/MocapBody.h"
 
 #include "std_msgs/TransformWithRateStamped.h"
 
@@ -84,7 +84,7 @@ public :
   
 private :
   
-  phase_space::PhaseSpaceSnapshot snapshot_ ;
+  robot_msgs::MocapSnapshot snapshot_ ;
   
   int publish_count_ ;
   

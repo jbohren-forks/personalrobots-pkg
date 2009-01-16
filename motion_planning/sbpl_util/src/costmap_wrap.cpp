@@ -43,7 +43,7 @@ namespace {
   
   class cm2dCostmapWrap: public ompl::CostmapWrap {
   public:
-    cm2dCostmapWrap(costmap_2d::CostMap2D const * cm): cm_(cm) {}
+    cm2dCostmapWrap(costmap_2d::CostMapAccessor const * cm): cm_(cm) {}
     
     virtual int getWSpaceObstacleCost() const { return costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE; }
     virtual int getCSpaceObstacleCost() const { return costmap_2d::CostMap2D::LETHAL_OBSTACLE; }
@@ -82,13 +82,13 @@ namespace {
       return true;
     }
     
-    costmap_2d::CostMap2D const * cm_;
+    costmap_2d::CostMapAccessor const * cm_;
   };
   
   
   class cm2dTransformWrap: public ompl::IndexTransformWrap {
   public:
-    cm2dTransformWrap(costmap_2d::CostMap2D const * cm): cm_(cm) {}
+    cm2dTransformWrap(costmap_2d::CostMapAccessor const * cm): cm_(cm) {}
     
     virtual void globalToIndex(double global_x, double global_y, ssize_t * index_x, ssize_t * index_y) const {
       unsigned int ix, iy;
@@ -102,7 +102,7 @@ namespace {
     
     virtual double getResolution() const { return cm_->getResolution(); }
     
-    costmap_2d::CostMap2D const * cm_;
+    costmap_2d::CostMapAccessor const * cm_;
   };
   
   
@@ -173,14 +173,14 @@ namespace {
 
 namespace ompl {
   
-  CostmapWrap * createCostmapWrap(costmap_2d::CostMap2D const * cm)
+  CostmapWrap * createCostmapWrap(costmap_2d::CostMapAccessor const * cm)
   { return new cm2dCostmapWrap(cm); }
   
 #warning 'Using RDTravmap instead of a raw TraversabilityMap is a big performance hit!'
   CostmapWrap * createCostmapWrap(sfl::RDTravmap const * rdt)
   { return new sflCostmapWrap(rdt); }
   
-  IndexTransformWrap * createIndexTransformWrap(costmap_2d::CostMap2D const * cm)
+  IndexTransformWrap * createIndexTransformWrap(costmap_2d::CostMapAccessor const * cm)
   { return new cm2dTransformWrap(cm); }
   
   IndexTransformWrap * createIndexTransformWrap(sfl::GridFrame const * gf)

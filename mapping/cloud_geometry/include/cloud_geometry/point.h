@@ -48,7 +48,12 @@ namespace cloud_geometry
   struct Leaf
   {
     float centroid_x, centroid_y, centroid_z;
-    int nr_points;
+    unsigned short nr_points;
+  };
+  struct SimplifiedLeaf
+  {
+    unsigned short i, j, k;
+    unsigned short nr_points;
   };
 
 
@@ -136,9 +141,6 @@ namespace cloud_geometry
     for (unsigned int d = 0; d < channels.size (); d++)
       array[3 + d] = points.chan[channels.at (d)].vals[index];
   }
-
-  void getMinMax (std_msgs::PointCloud points, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt);
-  void getMinMax (std_msgs::PointCloud points, std::vector<int> indices, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt);
 
   std_msgs::Point32 computeMedian (std_msgs::PointCloud points);
   std_msgs::Point32 computeMedian (std_msgs::PointCloud points, std::vector<int> indices);
@@ -284,6 +286,36 @@ namespace cloud_geometry
       maxP.x = (points->pts.at (indices->at (i)).x > maxP.x) ? points->pts.at (indices->at (i)).x : maxP.x;
       maxP.y = (points->pts.at (indices->at (i)).y > maxP.y) ? points->pts.at (indices->at (i)).y : maxP.y;
       maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
+    * in a given pointcloud, without considering points outside of a distance threshold from the laser origin
+    * \param points the point cloud data message
+    * \param min_pt the resultant minimum bounds
+    * \param max_pt the resultant maximum bounds
+    * \param c_idx the index of the channel holding distance information
+    * \param cut_distance a maximum admissible distance threshold for points from the laser origin
+    */
+  inline void
+    getMinMax (std_msgs::PointCloud *points, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt,
+               int c_idx, double cut_distance)
+  {
+    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
+    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
+
+    for (unsigned int i = 0; i < points->pts.size (); i++)
+    {
+      if (points->chan[c_idx].vals[i] > cut_distance)
+        continue;
+      min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
+      min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
+      min_pt.z = (points->pts[i].z < min_pt.z) ? points->pts[i].z : min_pt.z;
+
+      max_pt.x = (points->pts[i].x > max_pt.x) ? points->pts[i].x : max_pt.x;
+      max_pt.y = (points->pts[i].y > max_pt.y) ? points->pts[i].y : max_pt.y;
+      max_pt.z = (points->pts[i].z > max_pt.z) ? points->pts[i].z : max_pt.z;
     }
   }
 

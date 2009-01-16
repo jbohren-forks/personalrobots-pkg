@@ -48,9 +48,6 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
-<!-- odom estimation -->
-  <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
-
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 

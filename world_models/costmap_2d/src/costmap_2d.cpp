@@ -536,19 +536,31 @@ namespace costmap_2d {
 
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
     : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
-        computeWY(costMap, maxSize, poseX, poseY), 
-        computeSize(maxSize, costMap.getResolution()), 
-        computeSize(maxSize, costMap.getResolution()), 
-        costMap.getResolution()), costMap_(costMap),
-    maxSize_(maxSize){
+			  computeWY(costMap, maxSize, poseX, poseY), 
+			  computeSize(maxSize, costMap.getResolution()), 
+			  computeSize(maxSize, costMap.getResolution()), 
+			  costMap.getResolution()), 
+      costMap_(costMap), maxSize_(maxSize){
 
-      setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
+    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
-      // Set robot position
-      updateForRobotPosition(poseX, poseY);
+    // Set robot position
+    updateForRobotPosition(poseX, poseY);
 
-      ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
-    }
+    ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
+  }
+
+  CostMapAccessor::CostMapAccessor(const CostMap2D& costMap)
+    : ObstacleMapAccessor(0.0, 0.0, costMap.getWidth(), costMap.getHeight(),  costMap.getResolution()), 
+      costMap_(costMap), maxSize_(0.0), mx_0_(0), my_0_(0){
+
+    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
+
+    // Set values from source
+    refresh();
+
+    ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
+  }
 
   void CostMapAccessor::updateForRobotPosition(double wx, double wy){
     if(wx < 0 || wx > costMap_.getResolution() * costMap_.getWidth())
@@ -559,19 +571,12 @@ namespace costmap_2d {
 
     origin_x_ = computeWX(costMap_, maxSize_, wx, wy);
     origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
-    costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
+    costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_);
 
     ROS_DEBUG( "Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
         origin_x_, origin_y_, maxSize_, wx, wy);
 
-    // Now update all the cells from the cost map
-    for(unsigned int x = 0; x < width_; x++){
-      for (unsigned int y = 0; y < height_; y++){
-        unsigned int ind = x + y * width_;
-        unsigned int global_ind = mx_0_ + x + (my_0_ + y) * costMap_.getWidth();
-        costData_[ind] = costMap_[global_ind];
-      }
-    }
+    refresh();
   }
 
 
@@ -581,7 +586,15 @@ namespace costmap_2d {
     return cellWidth;
   }
 
-
-
+  void CostMapAccessor::refresh(){
+    // Now update all the cells from the cost map
+    for(unsigned int x = 0; x < width_; x++){
+      for (unsigned int y = 0; y < height_; y++){
+        unsigned int ind = x + y * width_;
+        unsigned int global_ind = mx_0_ + x + (my_0_ + y) * costMap_.getWidth();
+        costData_[ind] = costMap_[global_ind];
+      }
+    }
+  }
 
 }

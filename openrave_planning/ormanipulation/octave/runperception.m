@@ -1,4 +1,7 @@
 #!/usr/bin/env octave
+[status,rosoctpath] = system(['rospack find rosoct']);
+rosoctpath = strtrim(rosoctpath);
+addpath(fullfile(rosoctpath, 'octave'));
 cd(fullfile(rosoct_findpackage('ormanipulation'),'octave'));
 
 global updir probs
@@ -26,7 +29,7 @@ if( isempty(out) )
 end
 
 %% phase space system
-out = orProblemSendCommand('createsystem PhaseSpace phase_space_snapshot',probs.task);
+out = orProblemSendCommand('createsystem ROSMocap phase_space_snapshot',probs.task);
 if( isempty(out) )
     error('failed to create phasespace');
 end

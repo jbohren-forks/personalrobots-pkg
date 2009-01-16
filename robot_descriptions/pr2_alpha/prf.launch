@@ -48,9 +48,6 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
-<!-- odom estimation -->
-  <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
-
 <!-- Stereo cam -->
   <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
   <param name="videre_mode" type="string" value="disparity_raw" />

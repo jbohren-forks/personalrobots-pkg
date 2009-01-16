@@ -203,54 +203,6 @@ namespace cloud_geometry
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
-    * in a given pointcloud.
-    * \param points the point cloud data message
-    */
-  void
-    getMinMax (std_msgs::PointCloud points, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt)
-  {
-    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < points.pts.size (); i++)
-    {
-      min_pt.x = (points.pts[i].x < min_pt.x) ? points.pts[i].x : min_pt.x;
-      min_pt.y = (points.pts[i].y < min_pt.y) ? points.pts[i].y : min_pt.y;
-      min_pt.z = (points.pts[i].z < min_pt.z) ? points.pts[i].z : min_pt.z;
-
-      max_pt.x = (points.pts[i].x > max_pt.x) ? points.pts[i].x : max_pt.x;
-      max_pt.y = (points.pts[i].y > max_pt.y) ? points.pts[i].y : max_pt.y;
-      max_pt.z = (points.pts[i].z > max_pt.z) ? points.pts[i].z : max_pt.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
-    * in a given point cloud using a set of given indices.
-    * \param points the point cloud data message
-    * \param indices the point indices
-    */
-  void
-    getMinMax (std_msgs::PointCloud points, std::vector<int> indices,
-               std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt)
-  {
-    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < indices.size (); i++)
-    {
-      min_pt.x = (points.pts.at (indices.at (i)).x < min_pt.x) ? points.pts.at (indices.at (i)).x : min_pt.x;
-      min_pt.y = (points.pts.at (indices.at (i)).y < min_pt.y) ? points.pts.at (indices.at (i)).y : min_pt.y;
-      min_pt.z = (points.pts.at (indices.at (i)).z < min_pt.z) ? points.pts.at (indices.at (i)).z : min_pt.z;
-
-      max_pt.x = (points.pts.at (indices.at (i)).x > max_pt.x) ? points.pts.at (indices.at (i)).x : max_pt.x;
-      max_pt.y = (points.pts.at (indices.at (i)).y > max_pt.y) ? points.pts.at (indices.at (i)).y : max_pt.y;
-      max_pt.z = (points.pts.at (indices.at (i)).z > max_pt.z) ? points.pts.at (indices.at (i)).z : max_pt.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get the point indices from a cloud, whose normals are close to parallel with a given axis direction.
     * \param points the point cloud message
     * \param nx the normal X channel index
@@ -324,7 +276,7 @@ namespace cloud_geometry
     points_down.pts.resize (points->pts.size ());
 
     std_msgs::Point32 minP, maxP, minB, maxB, divB;
-    getMinMax (points, minP, maxP);
+    getMinMax (points, minP, maxP, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
     minB.x = (int)(floor (minP.x / leaf_size.x));
@@ -342,10 +294,17 @@ namespace cloud_geometry
     divB.z = maxB.z - minB.z + 1;
 
     // Allocate the space needed
-    if (leaves.capacity () < divB.x * divB.y * divB.z)
-      leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
-
-    leaves.resize (divB.x * divB.y * divB.z);
+    try
+    {
+      if (leaves.capacity () < divB.x * divB.y * divB.z)
+        leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
+      leaves.resize (divB.x * divB.y * divB.z);
+    }
+    catch (std::bad_alloc)
+    {
+      ROS_ERROR ("Attempting to allocate a vector of %ld (%d x %d x %d) leaf elements (%g total)", divB.x * divB.y * divB.z,
+                 divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
+    }
 
     for (unsigned int cl = 0; cl < leaves.size (); cl++)
     {

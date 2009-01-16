@@ -100,7 +100,7 @@ namespace ros {
        * @brief Accessor for the cost map. Use mainly for initialization
        * of specialized map strunture for planning
        */
-      const CostMap2D& getCostMap() const {return *costMap_;}
+      const CostMapAccessor& getCostMap() const {return *global_map_accessor_;}
 
       /**
        * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
@@ -128,7 +128,7 @@ namespace ros {
        */
       void updatePlan(ompl::waypoint_plan_t const & newPlan);
 
-      void updateCostMap(bool static_map_reset);
+      void updateCostMap();
       
       /**
        * @brief test the current plan for collisions with obstacles
@@ -239,8 +239,8 @@ namespace ros {
       VelocityController* controller_;
 
       CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
-
-      CostMapAccessor* ma_; /**< Sliding read-only window on the cost map */
+      CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
+      CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
 
       tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
@@ -271,6 +271,8 @@ namespace ros {
       robot_filter::RobotFilter* filter_;
       tf::MessageNotifier<std_msgs::PointCloud>* tiltLaserNotifier_;
 
+      //flag for reseting the costmap.
+      bool reset_cost_map_;
 
       //ground plane extraction
       ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;

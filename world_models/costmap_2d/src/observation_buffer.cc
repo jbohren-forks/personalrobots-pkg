@@ -77,8 +77,17 @@ namespace costmap_2d {
       //	observation.cloud_->header.stamp.toSec(), last_updated_.toSec());
     }
 
-    // If the duration is 0, then we just keep the latest one, so we clear out all existing observations
-    while(!buffer_.empty()){
+    // Otherwise just store it and indicate success
+    buffer_.push_back(observation);
+    return true;
+  }
+
+  void ObservationBuffer::get_observations(std::vector<Observation>& observations){
+    // If the duration is 0, then we just keep the latest one, so we must have a limit of one.
+    // If the duration is non-zero, we want to delete all the observations.
+    unsigned int min_observations = (keep_alive_ == 0) ? 1 : 0;
+
+    while(buffer_.size() > min_observations){
       std::list<Observation>::iterator it = buffer_.begin();
       // Get the current one, and check if still alive. if so
       Observation& obs = *it;
@@ -90,12 +99,6 @@ namespace costmap_2d {
         break;
     }
 
-    // Otherwise just store it and indicate success
-    buffer_.push_back(observation);
-    return true;
-  }
-
-  void ObservationBuffer::get_observations(std::vector<Observation>& observations){
     // Add all remaining observations to the output
     for(std::list<Observation>::const_iterator it = buffer_.begin(); it != buffer_.end(); ++it){
       observations.push_back(*it);

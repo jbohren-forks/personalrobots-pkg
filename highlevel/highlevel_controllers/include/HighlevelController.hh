@@ -466,7 +466,7 @@ private:
   State state; /*!< Tracks the overall state of the controller */
   double controllerCycleTime_; /*!< The duration for each control cycle */
   double plannerCycleTime_; /*!< The duration for each planner cycle. */
-  boost::mutex lock_; /*!< Lock for access to class members in callbacks */
+  boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
   ros::Duration timeout; /*< The time limit for planning failure. */

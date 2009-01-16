@@ -35,7 +35,7 @@
 //! \author Vijay Pradeep
 
 /****
- * This node takes the PhaseSpaceSnapshot packet and repackages a marker as a point_stamped message
+ * This node takes the MocapSnapshot packet and repackages a marker as a point_stamped message
  */
 
 #include <string>
@@ -43,9 +43,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-#include "phase_space/PhaseSpaceBody.h"
+#include "robot_msgs/MocapSnapshot.h"
+#include "robot_msgs/MocapMarker.h"
+#include "robot_msgs/MocapBody.h"
 
 #include "std_msgs/PoseStamped.h"
 
@@ -57,12 +57,12 @@ namespace pr2_phase_space
 {
 
 /**
- * \brief Listens for a PhaseSpaceSnapshot message and then publishes it as a PoseStamped message, based on a
+ * \brief Listens for a MocapSnapshot message and then publishes it as a PoseStamped message, based on a
  * series a parameters.
  * @section topic ROS topics
  * Subscribes to (name [type]):
- * - @b "phase_space_snapshot" [phase_space/PhaseSpaceSnapshot] : The current state of the phasespace system,
- *               which is normally published by phase_space::PhaseSpaceNode
+ * - @b "phase_space_snapshot" [phase_space/MocapSnapshot] : The current state of the phasespace system,
+ *               which is normally published by robot_msgs::MocapSnapshot
  *
  * Publishes to (name [type]):
  * - @b "cmd" [std_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
@@ -134,7 +134,7 @@ public :
     {
       if (snapshot_.bodies[i].id == body_id_)                   // Did we find our body?
       {
-        const phase_space::PhaseSpaceBody& cur_body = snapshot_.bodies[i] ;
+        const robot_msgs::MocapBody& cur_body = snapshot_.bodies[i] ;
 
         // Define our starting frame
         tf::Quaternion rot_phasespace ;
@@ -166,7 +166,7 @@ public :
   }
 
 private :
-  phase_space::PhaseSpaceSnapshot snapshot_ ;
+  robot_msgs::MocapSnapshot snapshot_ ;
 
   tf::Transform transform_ ;
 

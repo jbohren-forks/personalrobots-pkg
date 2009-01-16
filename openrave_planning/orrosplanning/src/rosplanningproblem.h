@@ -33,7 +33,7 @@ class ROSPlanningProblem : public CmdProblemInstance
 public:
     ROSPlanningProblem(EnvironmentBase* penv) : CmdProblemInstance(penv)
     {
-        PhaseSpaceMocapClient::RegisterXMLReader(GetEnv());
+        ROSMocapSystem::RegisterXMLReader(GetEnv());
     }
     virtual ~ROSPlanningProblem() {
         Destroy();

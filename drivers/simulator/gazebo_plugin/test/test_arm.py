@@ -93,12 +93,12 @@ TARGET_GRIPPER_QW     =  -0.887542456622
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
         super(ArmTest, self).__init__(*args)
-        self.arm_success = False
-        self.grp_success = False
-        self.reached_target_arm = False
-        self.reached_target_gripper = False
-        self.duration_start_gripper = 0
-        self.duration_start_arm = 0
+        self.palm_success = False
+        self.reached_target_palm = False
+        self.duration_start_palm = 0
+        self.fngr_success = False
+        self.reached_target_fngr = False
+        self.duration_start_fngr = 0
 
 
     def printP3D(self, p3d):
@@ -117,101 +117,103 @@ class ArmTest(unittest.TestCase):
         print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
         print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
 
-    def gripperP3dInput(self, p3d):
+    def fngrP3dInput(self, p3d):
         i = 0
         pos_error = abs(p3d.pos.position.x - TARGET_GRIPPER_TX) + \
                     abs(p3d.pos.position.y - TARGET_GRIPPER_TY) + \
                     abs(p3d.pos.position.z - TARGET_GRIPPER_TZ)
 
+        #target pose rotation matrix
         target_rm = rotation_matrix_from_quaternion([TARGET_GRIPPER_QX  \
                                                     ,TARGET_GRIPPER_QY  \
                                                     ,TARGET_GRIPPER_QZ  \
                                                     ,TARGET_GRIPPER_QW])
 
+        #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
                     ,p3d.pos.orientation.y  \
                     ,p3d.pos.orientation.z  \
                     ,p3d.pos.orientation.w]
 
+        # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
         target_q_inv = quaternion_from_rotation_matrix( linalg.inv(target_rm) )
-
         rot_euler = euler_from_quaternion( quaternion_multiply(p3d_q, target_q_inv) )
-
         rot_error = abs( rot_euler[0] ) + \
                     abs( rot_euler[1] ) + \
                     abs( rot_euler[2] )
 
-        print " gripper Error pos: " + str(pos_error) + " rot: " + str(rot_error)
+        print " fngr Error pos: " + str(pos_error) + " rot: " + str(rot_error)
         #self.printP3D(p3d)
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
-        if self.reached_target_gripper:
-          print " gripper duration: " + str(time.time() - self.duration_start_gripper)
+        if self.reached_target_fngr:
+          print " fngr duration: " + str(time.time() - self.duration_start_fngr)
           if rot_error < ROT_TARGET_TOL and pos_error < POS_TARGET_TOL:
-            if time.time() - self.duration_start_gripper > TARGET_DURATION:
-              self.grp_success = True
+            if time.time() - self.duration_start_fngr > TARGET_DURATION:
+              self.fngr_success = True
           else:
             # failed to maintain target vw, reset duration
-            self.grp_success = False
-            self.reached_target_gripper = False
+            self.fngr_success = False
+            self.reached_target_fngr = False
         else:
           if rot_error < ROT_TARGET_TOL and pos_error < POS_TARGET_TOL:
-            self.reached_target_gripper = True
-            self.duration_start_gripper = time.time()
+            self.reached_target_fngr = True
+            self.duration_start_fngr = time.time()
 
-    def armP3dInput(self, p3d):
+    def palmP3dInput(self, p3d):
         i = 0
         pos_error = abs(p3d.pos.position.x - TARGET_ARM_TX) + \
                     abs(p3d.pos.position.y - TARGET_ARM_TY) + \
                     abs(p3d.pos.position.z - TARGET_ARM_TZ)
 
+        #target pose rotation matrix
         target_rm = rotation_matrix_from_quaternion([TARGET_ARM_QX  \
                                                     ,TARGET_ARM_QY  \
                                                     ,TARGET_ARM_QZ  \
                                                     ,TARGET_ARM_QW])
 
+        #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
                     ,p3d.pos.orientation.y  \
                     ,p3d.pos.orientation.z  \
                     ,p3d.pos.orientation.w]
 
+        # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
         target_q_inv = quaternion_from_rotation_matrix( linalg.inv(target_rm) )
-
         rot_euler = euler_from_quaternion( quaternion_multiply(p3d_q, target_q_inv) )
-
         rot_error = abs( rot_euler[0] ) + \
                     abs( rot_euler[1] ) + \
                     abs( rot_euler[2] )
 
-        print " arm Error pos: " + str(pos_error) + " rot: " + str(rot_error)
+        print " palm Error pos: " + str(pos_error) + " rot: " + str(rot_error)
         #self.printP3D(p3d)
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
-        if self.reached_target_arm:
-          print " arm duration: " + str(time.time() - self.duration_start_arm)
+        if self.reached_target_palm:
+          print " palm duration: " + str(time.time() - self.duration_start_palm)
           if rot_error < ROT_TARGET_TOL and pos_error < POS_TARGET_TOL:
-            if time.time() - self.duration_start_arm > TARGET_DURATION:
-              self.arm_success = True
+            if time.time() - self.duration_start_palm > TARGET_DURATION:
+              self.palm_success = True
           else:
             # failed to maintain target vw, reset duration
-            self.arm_success = False
-            self.reached_target_arm = False
+            self.palm_success = False
+            self.reached_target_palm = False
         else:
           if rot_error < ROT_TARGET_TOL and pos_error < POS_TARGET_TOL:
-            self.reached_target_arm = True
-            self.duration_start_arm = time.time()
+            self.reached_target_palm = True
+            self.duration_start_palm = time.time()
     
     def test_arm(self):
         print "LNK\n"
         pub_arm = rospy.Publisher("left_arm_commands", JointPosCmd)
         pub_gripper = rospy.Publisher("l_gripper_controller/set_command", Float64)
-        rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.armP3dInput)
-        rospy.Subscriber("l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.gripperP3dInput)
+        rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.palmP3dInput)
+        rospy.Subscriber("l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.fngrP3dInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_TIMEOUT
-        while not rospy.is_shutdown() and (not self.arm_success or not self.grp_success) and time.time() < timeout_t:
+        while not rospy.is_shutdown() and (not self.palm_success or not self.fngr_success) and time.time() < timeout_t:
             pub_arm.publish(JointPosCmd(ARM_JNT_NAMES,CMD_POS,CMD_VEL,0))
             pub_gripper.publish(Float64(GRP_CMD_POS))
             time.sleep(1.0)
-        self.assert_(self.arm_success and self.grp_success)
+        self.assert_(self.palm_success and self.fngr_success)
 if __name__ == '__main__':
     rostest.run(PKG, sys.argv[0], ArmTest, sys.argv) #, text_mode=True)
 

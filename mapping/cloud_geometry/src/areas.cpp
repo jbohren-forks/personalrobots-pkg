@@ -213,7 +213,7 @@ namespace cloud_geometry
       convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull)
     {
       int nr_points = points.size ();
-      hull.points.resize (nr_points);
+      hull.points.resize (nr_points + 1);
 
       // Indices for bottom and top of the stack
       int bot = 0, top = -1;

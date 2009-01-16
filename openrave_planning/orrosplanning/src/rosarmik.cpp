@@ -365,7 +365,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
         // find the first valid solutino that satisfies joint constraints and collisions
         if( !checkjointangles(vravesol) )
             continue;
-        
+
         // check for self collisions (does WAM ever self-collide?)
         _probot->SetActiveDOFValues(NULL, &vravesol[0]);
         
@@ -467,12 +467,12 @@ bool ROSArmIK::GetFreeParameters(dReal* pFreeParameters) const
     const RobotBase::Manipulator* pmanip = _probot->GetActiveManipulator();
     if( pmanip == NULL )
         return false;
+    assert( _qlower.size() > 2 && _qupper.size() > 2 );
     assert( pmanip->_vecarmjoints.size() > 0 && pmanip->_vecarmjoints[2] < _probot->GetDOF());
-    assert( _qlower.size() > 0 && _qupper.size() > 0 );
-
+    
     dReal values[3];
     _probot->GetJointFromDOFIndex(pmanip->_vecarmjoints[2])->GetValues(values);
-    pFreeParameters[0] = (values[2]-_qlower[2])*fiFreeParam;
+    pFreeParameters[0] = (values[0]-_qlower[2])*fiFreeParam;
     return true;
 }
 

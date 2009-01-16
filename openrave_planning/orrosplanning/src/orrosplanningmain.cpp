@@ -26,7 +26,7 @@
 #include "plugindefs.h"
 
 #include "rosarmik.h"
-#include "phasespacesystem.h"
+#include "mocapsystem.h"
 #include "objecttransformsystem.h"
 #include "collisionmapsystem.h"
 #include "rosrobotcontroller.h"
@@ -67,8 +67,8 @@ InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, Environme
             return new ROSPlanningProblem(penv);
         break;
     case PT_SensorSystem:
-        if( wcsicmp(name, L"PhaseSpace") == 0 )
-            return new PhaseSpaceMocapClient(penv);
+        if( wcsicmp(name, L"ROSMocap") == 0 )
+            return new ROSMocapSystem(penv);
         else if( wcsicmp(name, L"ObjectTransform") == 0 )
             return new ObjectTransformSystem(penv);
         else if( wcsicmp(name, L"CollisionMap") == 0 )
@@ -85,16 +85,16 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
 {
     if( pinfo == NULL ) return false;
     if( size != sizeof(PLUGININFO) ) {
-        printf("bad plugin info sizes %d != %d\n", size, sizeof(PLUGININFO));
+        RAVELOG_ERRORA("bad plugin info sizes %d != %d\n", size, sizeof(PLUGININFO));
         return false;
     }
 
     pinfo->controllers.push_back(L"ROSRobot");
     pinfo->iksolvers.push_back(L"ROSArmIK");
-    pinfo->sensorsystems.push_back(L"PhaseSpace");
+    pinfo->problems.push_back(L"ROSPlanning");
+    pinfo->sensorsystems.push_back(L"ROSMocap");
     pinfo->sensorsystems.push_back(L"ObjectTransform");
     pinfo->sensorsystems.push_back(L"CollisionMap");
-    pinfo->problems.push_back(L"ROSPlanning");
 
     return true;
 }
