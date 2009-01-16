@@ -113,7 +113,7 @@ Index: src/chaineffsolver.hpp
 ===================================================================
 --- src/chaineffsolver.hpp	(revision 0)
 +++ src/chaineffsolver.hpp	(revision 0)
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,68 @@
 +// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com>
 +
 +// Version: 1.0
@@ -149,40 +149,8 @@ Index: src/chaineffsolver.hpp
 +
 +    /**
 +	  * \brief This <strong>abstract</strong> class encapsulates a
-+	  * solver to convert joint efforts into a wrench
-+     *
-+     * @ingroup KinematicFamily
-+     */
-+
-+    //Forward definition
-+    class ChainFEffSolver {
-+    public:
-+        /**
-+         * Calculate forward position kinematics for a KDL::Chain,
-+         * from joint coordinates to cartesian pose.
-+         *
-+         * @param eff_in input joint efforts
-+         * @param wrench_out output wrench
-+         *
-+         * @return if < 0 something went wrong
-+         */
-+        virtual int JntToCart(const JntArray& q, const JntArray& eff_in, Wrench& wrench_out, int segmentNr=-1);
-+        ChainFEffSolver(const Chain& chain);
-+        virtual ~ChainFEffSolver(){};
-+
-+    private:
-+      ChainJntToJacSolver jnt_to_jac_solver_;
-+      unsigned int num_joints_, num_segments_;
-+      Jacobian jacobian_;
-+    };
-+
-+
-+
-+
-+    /**
-+	  * \brief This <strong>abstract</strong> class encapsulates a
 +	  * solver to convert a wrench into joint efforts
-+n     *
++     *
 +     * @ingroup KinematicFamily
 +     */
 +

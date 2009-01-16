@@ -9,7 +9,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH1 = kdl_patch29562.diff
 PATCH2 = kdl_patch_quaternion.diff
-PATCH3=  kdl_patch_chaineff.diff
+PATCH3=  kdl_patch_chaineff2.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = cmake 
