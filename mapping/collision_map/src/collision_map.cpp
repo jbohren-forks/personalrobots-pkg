@@ -78,13 +78,20 @@ class CollisionMapper : public ros::node
     Point leaf_width_, robot_max_;
 
     int min_nr_points_;
+    
+    int object_data_type_;
+    double sphere_radius_;
+    
+    enum ObjectTypes { O_SPHERE, O_ORIENTEDBOX };
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapper () : ros::node ("collision_map"), tf_(*this)
     {
+      param ("~object_type", object_data_type_, (int)O_SPHERE);
       param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
       param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default
       param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
+      param ("~sphere_radius", sphere_radius_, 0.015);     // 1.5cm radius by default
 
       param ("~robot_max_x", robot_max_.x, 1.5);          // 1.5m radius by default
       param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
@@ -124,6 +131,7 @@ class CollisionMapper : public ros::node
       if (hasParam ("~leaf_width_x")) getParam ("~leaf_width_x", leaf_width_.x);
       if (hasParam ("~leaf_width_y")) getParam ("~leaf_width_y", leaf_width_.y);
       if (hasParam ("~leaf_width_z")) getParam ("~leaf_width_z", leaf_width_.z);
+      if (hasParam ("~sphere_radius")) getParam ("~sphere_radius", sphere_radius_);
 
       if (hasParam ("~robot_max_x"))
       {
@@ -145,6 +153,7 @@ class CollisionMapper : public ros::node
       }
 
       if (hasParam ("~min_nr_points")) getParam ("~min_nr_points", min_nr_points_);
+      if (hasParam ("~object_type")) getParam ("~object_type", object_data_type_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,6 +165,8 @@ class CollisionMapper : public ros::node
       c_map_.boxes.resize (cloud_.pts.size ());
 
       updateParametersFromServer ();
+      
+      double sphere_diameter = 2 * sphere_radius_;
 
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
@@ -207,17 +218,33 @@ class CollisionMapper : public ros::node
         }
       }
       indices.resize (nr_p);
-
+      
       // Compute the minimum and maximum bounding box values
       Point32 minB, maxB, divB;
-      minB.x = (int)(floor (minP.x / leaf_width_.x));
-      maxB.x = (int)(floor (maxP.x / leaf_width_.x));
+      
+      if (object_data_type_ == O_SPHERE)
+      {
+        minB.x = (int)(floor (minP.x / sphere_diameter));
+        maxB.x = (int)(floor (maxP.x / sphere_diameter));
 
-      minB.y = (int)(floor (minP.y / leaf_width_.y));
-      maxB.y = (int)(floor (maxP.y / leaf_width_.y));
+        minB.y = (int)(floor (minP.y / sphere_diameter));
+        maxB.y = (int)(floor (maxP.y / sphere_diameter));
 
-      minB.z = (int)(floor (minP.z / leaf_width_.z));
-      maxB.z = (int)(floor (maxP.z / leaf_width_.z));
+        minB.z = (int)(floor (minP.z / sphere_diameter));
+        maxB.z = (int)(floor (maxP.z / sphere_diameter));
+
+      }
+      else if (object_data_type_ == O_ORIENTEDBOX)
+      {
+        minB.x = (int)(floor (minP.x / leaf_width_.x));
+        maxB.x = (int)(floor (maxP.x / leaf_width_.x));
+
+        minB.y = (int)(floor (minP.y / leaf_width_.y));
+        maxB.y = (int)(floor (maxP.y / leaf_width_.y));
+
+        minB.z = (int)(floor (minP.z / leaf_width_.z));
+        maxB.z = (int)(floor (maxP.z / leaf_width_.z));
+      }
 
       // Compute the number of divisions needed along all axis
       divB.x = maxB.x - minB.x + 1;
@@ -237,11 +264,21 @@ class CollisionMapper : public ros::node
       }
 
       // First pass: go over all points and count them into the right leaf
+      int i = 0, j = 0, k = 0;
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        int i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
-        int j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
-        int k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
+        if (object_data_type_ == O_SPHERE)
+        {
+          i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
+          j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
+          k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
+        }
+        else if (object_data_type_ == O_ORIENTEDBOX)
+        {
+          i = (int)(floor (cloud_.pts[indices.at (cp)].x / sphere_diameter));
+          j = (int)(floor (cloud_.pts[indices.at (cp)].y / sphere_diameter));
+          k = (int)(floor (cloud_.pts[indices.at (cp)].z / sphere_diameter));
+        }
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
         leaves_[idx].i_ = i;
@@ -256,18 +293,31 @@ class CollisionMapper : public ros::node
       {
         if (leaves_[cl].nr_points_ >= min_nr_points_)
         {
-          c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
-          c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
-          c_map_.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
-          c_map_.boxes[nr_c].center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - c_map_.boxes[nr_c].extents.x; // + minB.x;
-          c_map_.boxes[nr_c].center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - c_map_.boxes[nr_c].extents.y; // + minB.y;
-          c_map_.boxes[nr_c].center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - c_map_.boxes[nr_c].extents.z; // + minB.z;
-          c_map_.boxes[nr_c].axis.x = c_map_.boxes[nr_c].axis.y = c_map_.boxes[nr_c].axis.z = 0.0;
-          c_map_.boxes[nr_c].angle = 0.0;
+          if (object_data_type_ == O_SPHERE)
+          {
+            c_map_.spheres[nr_c].radius = sphere_radius_;
+            c_map_.spheres[nr_c].center.x = (leaves_[cl].i_ + 1) * sphere_diameter - sphere_radius_;
+            c_map_.spheres[nr_c].center.y = (leaves_[cl].j_ + 1) * sphere_diameter - sphere_radius_;
+            c_map_.spheres[nr_c].center.z = (leaves_[cl].k_ + 1) * sphere_diameter - sphere_radius_;
+          }
+          else if (object_data_type_ == O_ORIENTEDBOX)
+          {
+            c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
+            c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
+            c_map_.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
+            c_map_.boxes[nr_c].center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - c_map_.boxes[nr_c].extents.x; // + minB.x;
+            c_map_.boxes[nr_c].center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - c_map_.boxes[nr_c].extents.y; // + minB.y;
+            c_map_.boxes[nr_c].center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - c_map_.boxes[nr_c].extents.z; // + minB.z;
+            c_map_.boxes[nr_c].axis.x = c_map_.boxes[nr_c].axis.y = c_map_.boxes[nr_c].axis.z = 0.0;
+            c_map_.boxes[nr_c].angle = 0.0;
+          }
           nr_c++;
         }
       }
-      c_map_.boxes.resize (nr_c);
+      if (object_data_type_ == O_SPHERE)
+        c_map_.spheres.resize (nr_c);
+      if (object_data_type_ == O_ORIENTEDBOX)
+        c_map_.boxes.resize (nr_c);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
