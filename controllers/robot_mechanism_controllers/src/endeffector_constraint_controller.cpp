@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
@@ -53,6 +54,7 @@ EndeffectorConstraintController::EndeffectorConstraintController()
 {
   constraint_jac_.setZero();
   constraint_wrench_.setZero();
+  constraint_force_.setZero();
   printf("EndeffectorConstraintController constructor\n");
 }
 
@@ -85,13 +87,13 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
     fprintf(stderr, "Got NULL Chain\n") ;
 
   // some parameters
-  node->param("constraint/wall_x"       , wall_x      , 0.75) ; /// location of the wall
+  node->param("constraint/wall_x"       , wall_x      , 0.6) ; /// location of the wall
   node->param("constraint/threshold_x"  , threshold_x , 0.2 ) ; /// distance within the wall to apply constraint force
-  node->param("constraint/wall_r"       , wall_r      , 0.1 ) ; /// cylinder radius
+  node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
   node->param("constraint/threshold_r"  , threshold_r , 0.05) ; /// radius over with constraint is applied
-  node->param("constraint/f_x_max"      , f_x_max     , 20.0) ; /// max x force
-  node->param("constraint/f_y_max"      , f_y_max     , 20.0) ; /// max y force
-  node->param("constraint/f_z_max"      , f_z_max     , 20.0) ; /// max z force
+  node->param("constraint/f_x_max"      , f_x_max     , -20.0) ; /// max x force
+  node->param("constraint/f_y_max"      , f_r_max     , -20.0) ; /// max r force
+
 
   // convert description to KDL chain
   chain_        = serial_chain->chain;
@@ -184,50 +186,7 @@ void EndeffectorConstraintController::update()
   
   computeConstraintJacobian();
 
-  // we can do either 1 or 2:
-  // 1. multiply constraint jacobian by constraint wrench to get final constraint wrench
-  // constraint_wrench_ = constraint_jac_ * constraint_wrench_;
-  // 2. multiply mechanism jacobian by constraint jacobian  to get joint space constraint jacobian
-  Eigen::MatrixXf joint_space_constraint_jacobian(num_joints_,6);
-  for (unsigned int i=0; i<num_joints_; i++)
-  {
-    for (unsigned int j=0; j<6; j++)
-    {
-      joint_space_constraint_jacobian(i,j) = 0;
-      for (unsigned int k=0; k<6; k++)
-      {
-        joint_space_constraint_jacobian(i,j) += (jacobian(k,i) * constraint_jac_(k,j));
-      }
-    }
-  }
-
-  // create projection matrix for null space of constraint jacobian
-  Eigen::MatrixXf tmp_identity((int)num_joints_,(int)num_joints_);
-  Eigen::MatrixXf constraint_null_space_projection_matrix((int)num_joints_,(int)num_joints_);
-  tmp_identity.setIdentity();
-  constraint_null_space_projection_matrix = tmp_identity - joint_space_constraint_jacobian * joint_space_constraint_jacobian.transpose();
-
-  // convert the wrench into joint torques
-  JntArray wrench_torq(num_joints_);
-  for (unsigned int i=0; i<num_joints_; i++)
-  {
-    wrench_torq(i) = 0;
-    for (unsigned int j=0; j<6; j++)
-    {
-      wrench_torq(i) += (jacobian(j,i) * wrench_desi_(j));
-    }
-  }
-
-  // project wrench torque into the null space of constraint jacobian
-  JntArray projected_wrench_torq(num_joints_);
-  for (unsigned int i=0; i<num_joints_; i++)
-  {
-    projected_wrench_torq(i) = 0;
-    for (unsigned int j=0; j<num_joints_; j++)
-    {
-      projected_wrench_torq(i) += (constraint_null_space_projection_matrix(i,j) * wrench_torq(j));
-    }
-  }
+  constraint_wrench_ = constraint_jac_ * constraint_force_;
 
   // convert the wrench into joint torques
   JntArray constraint_torq(num_joints_);
@@ -236,54 +195,36 @@ void EndeffectorConstraintController::update()
     constraint_torq(i) = 0;
     for (unsigned int j=0; j<6; j++)
     {
-      constraint_torq(i) += (joint_space_constraint_jacobian(i,j) * constraint_wrench_(j));
+      constraint_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
     }
-    joints_[i]->commanded_effort_ = constraint_torq(i) + projected_wrench_torq(i);
+    joints_[i]->commanded_effort_ = constraint_torq(i);
   }
 }
 
 
 void EndeffectorConstraintController::computeConstraintJacobian()
 {
-  // Constraint equations 
-  // r^2=y^2+z^2 with r = 1
-  // x=1
-
-  ////////////////////////////////////////////
-  //
-  // Constraint Jacobian
-  //
-  ////////////////////////////////////////////
-  // endeffector theta and radius from yz = (0,0)
-  double ee_theta = atan2( endeffector_frame_.p(2),endeffector_frame_.p(1) );
-
-  double df_dx = -1.0; // we are describing a wall at constant x, x- side is allowed
-  double df_dy = -cos(ee_theta); // radial lines toward origin
-  double df_dz = -sin(ee_theta); // radial lines toward origin
-
-  // Constraint Jacobian (normals to the constraint surface)
-  constraint_jac_(0,0)= df_dx;
-  constraint_jac_(1,1)= df_dy;
-  constraint_jac_(2,2)= df_dz;
-
-  ////////////////////////////////////////////
-  //
-  // Contraint Wrench 
-  //
-  ////////////////////////////////////////////
-  // x-direction force is a function of endeffector distance from the wall
-  double x_distance = wall_x - endeffector_frame_.p(0);
-  double f_x;
-
-  // assign x-direction constraint force f_x if within range of the wall
-  if (x_distance >0 && x_distance < threshold_x)
+  //clear force vector
+  double f_x = 0;
+  double f_r = 0;
+  
+  double ee_theta = atan2((endeffector_frame_.p(2)-1),endeffector_frame_.p(1) );
+  
+  //Constarint for a cylinder centered around the x axis
+  constraint_jac_(0,0) = 1; // this is the end of the cylinder
+  constraint_jac_(1,1) = cos(ee_theta);
+  constraint_jac_(2,1) = sin(ee_theta)+1;
+ 
+  //Constraint Force Vector
+  double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
+  ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
+  if (x_dist_to_wall > 0)
   {
-    f_x = pow((threshold_x-x_distance)/threshold_x,3) * f_x_max; /// @todo: FIXME, replace with some exponential function
-  }
-  else if (x_distance <= 0)
-  {
-    f_x = f_x_max;
-    ROS_ERROR("wall x breach! by: %f m\n",x_distance);
+    f_x = pow(x_dist_to_wall,3) * f_x_max; /// @todo: FIXME, replace with some exponential function
+    if(x_dist_to_wall > threshold_x)
+    {
+      ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
+    }
   }
   else
   {
@@ -291,53 +232,48 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   }
 
   /// yz-force magnitude is a function of endeffector distance from unit circle
-  double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + endeffector_frame_.p(2)*endeffector_frame_.p(2) );
-  double r_distance = wall_r - ee_radius;
-  double f_y, f_z;
+  double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + (endeffector_frame_.p(2))*(endeffector_frame_.p(2)) );
+  double r_dist_to_wall = ee_radius - wall_r + threshold_r;
 
   // assign x-direction constraint force f_x if within range of the wall
-  if (r_distance > 0 && r_distance < threshold_r)
+  if (r_dist_to_wall > 0)
   {
-    f_y = pow((threshold_r-r_distance)/threshold_r,3) * f_y_max; /// @todo: FIXME, replace with some exponential function
-    f_z = pow((threshold_r-r_distance)/threshold_r,3) * f_z_max; /// @todo: FIXME, replace with some exponential function
-  }
-  else if (r_distance <= 0)
-  {
-    f_y = f_y_max;
-    f_z = f_z_max;
-    ROS_ERROR("wall radius breach! by: %f m\n",r_distance);
+    f_r =0;// pow(r_dist_to_wall,3) * f_r_max;
+    if(r_dist_to_wall > threshold_r)
+    {
+      //ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
+    } 
   }
   else
   {
-    f_y = 0;
-    f_z = 0;
+    f_r = 0;
   }
-
-  constraint_wrench_(0) = f_x;
-  constraint_wrench_(1) = f_y;
-  constraint_wrench_(2) = f_z;
-
-  ROS_WARN("ee pos: (%f, %f, %f), force magnitude (%f, %f, %f)\n",endeffector_frame_.p(0),endeffector_frame_.p(1),endeffector_frame_.p(2),f_x,f_y,f_z);
+  
+  constraint_force_(0) = f_x;
+  constraint_force_(1) = f_r;
 
 }
-
-
 
 
 
 
 ROS_REGISTER_CONTROLLER(EndeffectorConstraintControllerNode)
 
+
+EndeffectorConstraintControllerNode::EndeffectorConstraintControllerNode()
+: node_(ros::node::instance())
+{
+}
+
+
 EndeffectorConstraintControllerNode::~EndeffectorConstraintControllerNode()
 {
-  ros::node *node = ros::node::instance();
-  node->unsubscribe(topic_ + "/command");
+  node_->unsubscribe(topic_ + "/command");
 }
 
 bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to from xml file
-  ros::node *node = ros::node::instance();
   topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic_ == "") {
     fprintf(stderr, "No topic given to EndeffectorConstraintControllerNode\n");
@@ -348,33 +284,12 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
   if (!controller_.initXml(robot, config))
     return false;
   
+  assert(node_);
   // subscribe to wrench commands
-  node->subscribe(topic_ + "/command", wrench_msg_,
+  node_->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorConstraintControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
-
-  node->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
-
-  // visualization not working yet
-  std_msgs::VisualizationMarker marker;
-  marker.header.frame_id = "base_link";
-  marker.id = 0;
-  marker.type = 2;
-  marker.action = 0;
-  marker.x = 0.7;
-  marker.y = 0;
-  marker.z = 0;
-  marker.yaw = 0;
-  marker.pitch = 0;
-  marker.roll = 0.0;
-  marker.xScale = 0.01;
-  marker.yScale = 0.3;
-  marker.zScale = 0.3;
-  marker.alpha = 100;
-  marker.r = 0;
-  marker.g = 255;
-  marker.b = 0;
-  node->publish("visualizationMarker", marker );
+  node_->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
 
 
   return true;
@@ -384,11 +299,64 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
 void EndeffectorConstraintControllerNode::update()
 {
   controller_.update();
+  static int count=0;\
+  count++;
+  if (count%100==0)
+  {
+    
+    std_msgs::VisualizationMarker marker;
+    marker.header.frame_id = "base_link";
+    marker.id = 0;
+    marker.type = 1;
+    marker.action = 0;
+    marker.x = 0.6;
+    marker.y = 0;
+    marker.z = 0;
+    marker.yaw = 0;
+    marker.pitch = 0;
+    marker.roll = 0.0;
+    marker.xScale = 0.01;
+    marker.yScale = 10;
+    marker.zScale = 10;
+    marker.alpha = 200;
+    marker.r = 0;
+    marker.g = 255;
+    marker.b = 0;
+    node_->publish("visualizationMarker", marker );
+  }
+  
+  if (count%100==0)
+  {
+
+    std_msgs::VisualizationMarker marker;
+    marker.header.frame_id = "base_link";
+    marker.id = 1;
+    marker.type = 2;
+    marker.action = 0;
+    marker.x = 0.6;
+    marker.y = 0;
+    marker.z = 1;
+    marker.yaw = 0;
+    marker.pitch = 0;
+    marker.roll = 0.0;
+    marker.xScale = 0.01;
+    marker.yScale = 0.2;
+    marker.zScale = 0.2;
+    marker.alpha = 200;
+    marker.r = 255;
+    marker.g = 0;
+    marker.b = 0;
+    node_->publish("visualizationMarker", marker );
+  }
+  
+  
+  
 }
 
 
 void EndeffectorConstraintControllerNode::command()
 {
+  
   // convert to wrench command
   controller_.wrench_desi_.force(0) = wrench_msg_.force.x;
   controller_.wrench_desi_.force(1) = wrench_msg_.force.y;
@@ -396,6 +364,8 @@ void EndeffectorConstraintControllerNode::command()
   controller_.wrench_desi_.torque(0) = wrench_msg_.torque.x;
   controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
   controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
+  
+  ROS_WARN("force magnitude (%f, %f, %f)\n",controller_.wrench_desi_.force(0),controller_.wrench_desi_.force(1),controller_.wrench_desi_.force(1));
 }
 
 }; // namespace
