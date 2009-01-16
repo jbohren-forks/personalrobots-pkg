@@ -73,8 +73,8 @@ namespace costmap_2d {
     }
     
     if((last_updated_ - observation.cloud_->header.stamp) > keep_alive_){
-      //ROS_ERROR("Observation just recived at (%f) is out of date. Now = %f\n",
-      //	observation.cloud_->header.stamp.toSec(), last_updated_.toSec());
+      ROS_ERROR("Observation just recived at (%f) is out of date. Now = %f\n",
+		observation.cloud_->header.stamp.toSec(), last_updated_.toSec());
     }
 
     // Otherwise just store it and indicate success
