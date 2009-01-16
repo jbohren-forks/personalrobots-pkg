@@ -302,7 +302,7 @@ namespace cloud_geometry
     }
     catch (std::bad_alloc)
     {
-      ROS_ERROR ("Attempting to allocate a vector of %g (%g x %g x %g) leaf elements (%g total)", divB.x * divB.y * divB.z,
+      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", divB.x * divB.y * divB.z,
                  divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
     }
 

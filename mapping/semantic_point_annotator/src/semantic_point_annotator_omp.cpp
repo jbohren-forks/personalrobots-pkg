@@ -90,21 +90,28 @@ class SemanticPointAnnotator : public ros::node
     double rule_floor_, rule_ceiling_, rule_wall_;
     double rule_table_min_, rule_table_max_;
 
+    double region_growing_tolerance_;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     SemanticPointAnnotator () : ros::node ("semantic_point_annotator_omp"), tf_(*this)
     {
-      param ("~rule_floor", rule_floor_, 0.15);          // Rule for FLOOR
+      param ("~rule_floor", rule_floor_, 0.2);          // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
       param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
+      param ("~region_growing_tolerance", region_growing_tolerance_, 0.25);  // 10 cm
+      
       param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
       region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
 
-      param ("~p_sac_min_points_left", sac_min_points_left_, 100);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);   // 50 points at high resolution
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
+      param ("~p_sac_min_points_left", sac_min_points_left_, 10);
+      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);   // 50 points at high resolution
+
+      // This should be set to whatever the leaf_width factor is in the downsampler
+      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.06);     // 6 cm
+      
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
       eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
@@ -113,11 +120,17 @@ class SemanticPointAnnotator : public ros::node
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
+      bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
-          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+        {
+          topic_found = true;
+          break;
+        }
       }
+      if (!topic_found)
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       subscribe (cloud_topic.c_str (), cloud_, &SemanticPointAnnotator::cloud_cb, 1);
 
@@ -151,7 +164,6 @@ class SemanticPointAnnotator : public ros::node
                     int nx_idx, int ny_idx, int nz_idx, 
                     unsigned int min_pts_per_cluster = 1)
     {
-      int c_idx = cloud_geometry::getChannelIndex (points, "curvature");
       // Create a tree for these points
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
 
@@ -229,8 +241,8 @@ class SemanticPointAnnotator : public ros::node
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
       sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (100);
-      sac->setProbability (0.95);
+      sac->setMaxIterations (120);
+      sac->setProbability (0.99);
       model->setDataSet (points, *indices);
 
       PointCloud pts (*points);
@@ -257,6 +269,58 @@ class SemanticPointAnnotator : public ros::node
         }
       }
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      getObjectClassForParallel (vector<double> *coeff, PointStamped map_origin,
+                                 double &r, double &g, double &b)
+    {
+      // Get all planes parallel to the floor (perpendicular to Z)
+      Point32 robot_origin;
+      robot_origin.x = map_origin.point.x;
+      robot_origin.y = map_origin.point.y;
+      robot_origin.z = map_origin.point.z;
+
+      // Compute a distance from 0,0,0 to the plane
+      double distance = cloud_geometry::distances::pointToPlaneDistance (robot_origin, *coeff);
+
+      // Test for floor
+      if (distance < rule_floor_)
+      {
+        r = 0.6; g = 0.67; b = 0.01;
+      }
+      // Test for ceiling
+      if (distance > rule_ceiling_)
+      {
+        r = 0.8; g = 0.63; b = 0.33;
+      }
+      // Test for tables
+      if (distance > rule_table_min_ && distance < rule_table_max_)
+      {
+        r = 0.0; g = 1.0; b = 0.0;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      getObjectClassForPerpendicular (PointCloud *points, vector<int> *indices,
+                                      double &r, double &g, double &b)
+    {
+      // Get the minimum and maximum bounds of the plane
+      Point32 minP, maxP;
+      cloud_geometry::getMinMax (points, indices, minP, maxP);
+      // Test for wall
+      if (maxP.z > rule_wall_)
+      {
+        r = rand () / (RAND_MAX + 1.0);
+        g = rand () / (RAND_MAX + 1.0);
+        b = rand () / (RAND_MAX + 1.0);
+        r = r * .3;
+        b = b * .3 + .7;
+        g = g * .3;
+      }
+    }
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
@@ -297,13 +361,13 @@ class SemanticPointAnnotator : public ros::node
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
-      findClusters (&cloud_, &indices_z, 0.075, clusters, nx, ny, nz, 10);
+      findClusters (&cloud_, &indices_z, region_growing_tolerance_, clusters, nx, ny, nz, 10);
       int z_c = clusters.size ();
       for (int i = 0; i < z_c; i++)
         clusters[i].region_type = 0;
 
       // Split the Z-perpendicular points into clusters
-      findClusters (&cloud_, &indices_xy, 0.075, clusters, nx, ny, nz, 10);
+      findClusters (&cloud_, &indices_xy, region_growing_tolerance_, clusters, nx, ny, nz, 10);
       for (unsigned int i = z_c; i < clusters.size (); i++)
         clusters[i].region_type = 1;
 
@@ -339,39 +403,40 @@ class SemanticPointAnnotator : public ros::node
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         double r, g, b;
+        r = g = b = 1.0;
 
         // Get the planes in this cluster
         vector<vector<int> > *planes_inliers  = &all_cluster_inliers[cc];
-        ///vector<vector<double> > *planes_coeff = &all_cluster_coeff[cc];
+        vector<vector<double> > *planes_coeff = &all_cluster_coeff[cc];
 
         // For every plane in this cluster
         for (unsigned int j = 0; j < planes_inliers->size (); j++)
         {
-          r = rand () / (RAND_MAX + 1.0);
-          g = rand () / (RAND_MAX + 1.0);
-          b = rand () / (RAND_MAX + 1.0);
+//           r = rand () / (RAND_MAX + 1.0);
+//           g = rand () / (RAND_MAX + 1.0);
+//           b = rand () / (RAND_MAX + 1.0);
 
-          vector<int> *plane_inliers = &planes_inliers->at (j);
+          vector<int> *plane_inliers   = &planes_inliers->at (j);
+          vector<double> *plane_coeffs = &planes_coeff->at (j);
           // Mark all the points inside
+          switch (clusters[cc].region_type)
+          {
+            case 0:     // Z-parallel
+            {
+              getObjectClassForParallel (plane_coeffs, map_origin, r, g, b);
+              break;
+            }
+            case 1:     // Z-perpendicular
+            {
+              getObjectClassForPerpendicular (&cloud_, plane_inliers, r, g, b);
+              break;
+            }
+          }
           for (unsigned int k = 0; k < plane_inliers->size (); k++)
           {
-            switch (clusters[cc].region_type)
-            {
-              case 0:     // Z-parallel
-              {
-                cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
-                cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
-                cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
-                break;
-              }
-              case 1:     // Z-perpendicular
-              {
-                cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
-                cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
-                cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
-                break;
-              }
-            }
+            cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
+            cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
+            cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
             cloud_annotated_.chan[0].vals[nr_p] = r;
             cloud_annotated_.chan[1].vals[nr_p] = g;
             cloud_annotated_.chan[2].vals[nr_p] = b;
@@ -406,48 +471,6 @@ class SemanticPointAnnotator : public ros::node
 
       return;
 
-      vector<vector<int> > inliers_parallel, inliers_perpendicular;
-      vector<vector<double> > coeff_parallel, coeff_perpendicular;
-
-      // Get all planes parallel to the floor (perpendicular to Z)
-      Point32 robot_origin;
-      robot_origin.x = map_origin.point.x;
-      robot_origin.y = map_origin.point.y;
-      robot_origin.z = map_origin.point.z;
-      for (unsigned int i = 0; i < inliers_parallel.size (); i++)
-      {
-        // Compute a distance from 0,0,0 to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (robot_origin, coeff_parallel[i]);
-
-        double r = 1.0, g = 1.0, b = 1.0;
-        // Test for floor
-        if (distance < rule_floor_)
-        {
-          r = 0.6; g = 0.67; b = 0.01;
-        }
-        // Test for ceiling
-        if (distance > rule_ceiling_)
-        {
-          r = 0.8; g = 0.63; b = 0.33;
-        }
-        // Test for tables
-        if (distance > rule_table_min_ && distance < rule_table_max_)
-        {
-          r = 0.0; g = 1.0; b = 0.0;
-        }
-
-        for (unsigned int j = 0; j < inliers_parallel[i].size (); j++)
-        {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (inliers_parallel[i].at (j)).x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (inliers_parallel[i].at (j)).y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (inliers_parallel[i].at (j)).z;
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
-          nr_p++;
-        }
-      }
 
 /**       ROS_INFO ("Found %d clusters.", clusters.size ());
 
@@ -472,40 +495,6 @@ class SemanticPointAnnotator : public ros::node
         }
       }*/
 
-      /**
-      // Get all planes perpendicular to the floor (parallel to XY)
-      for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
-      {
-//        float intensity_value = rand () / (RAND_MAX + 1.0);    // Get a random value for the intensity
-        // Get the minimum and maximum bounds of the plane
-        Point32 minP, maxP;
-        cloud_geometry::getMinMax (cloud_, inliers_perpendicular[i], minP, maxP);
-
-        double r, g, b;
-        r = g = b = 1.0;
-
-        // Test for wall
-        if (maxP.z > rule_wall_)
-        {
-          r = rand () / (RAND_MAX + 1.0);
-          g = rand () / (RAND_MAX + 1.0);
-          b = rand () / (RAND_MAX + 1.0);
-          r = r * .3;
-          b = b * .3 + .7;
-          g = g * .3;
-        }
-        for (unsigned int j = 0; j < inliers_perpendicular[i].size (); j++)
-        {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (inliers_perpendicular[i].at (j)).x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (inliers_perpendicular[i].at (j)).y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (inliers_perpendicular[i].at (j)).z;
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
-          nr_p++;
-        }
-      }*/
     }
 };
 

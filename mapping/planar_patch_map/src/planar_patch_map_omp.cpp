@@ -74,7 +74,7 @@ class PlanarPatchMap: public ros::node
     PointCloud cloud_, cloud_f_;
 
     // Octree stuff
-    cloud_octree::Octree *octree_;
+//    cloud_octree::Octree *octree_;
     float leaf_width_;
 
     // Parameters
@@ -84,7 +84,7 @@ class PlanarPatchMap: public ros::node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlanarPatchMap () : ros::node ("planar_patch_map_omp")
     {
-      param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 10);
+      param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 6);
 
       param ("~distance_min", d_min_, 0.10);
       param ("~distance_max", d_max_, 10.0);
@@ -103,8 +103,8 @@ class PlanarPatchMap: public ros::node
 
       advertise<PolygonalMap> ("planar_map", 1);
 
-      leaf_width_ = 0.05f;
-      octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
+      leaf_width_ = 0.2f;
+//      octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,7 +120,7 @@ class PlanarPatchMap: public ros::node
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, 0.02);
+      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, 0.05);
       model->setDataSet (points, indices);
 
       // Search for the best plane
@@ -132,7 +132,7 @@ class PlanarPatchMap: public ros::node
         ///fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model
-        model->projectPointsInPlace (inliers, coeff);
+        //model->projectPointsInPlace (inliers, coeff);
 
         cloud_geometry::areas::convexHull2D (model->getCloud (), inliers, coeff, poly);
       }
@@ -176,7 +176,7 @@ class PlanarPatchMap: public ros::node
       timeval t1, t2;
       gettimeofday (&t1, NULL);
 
-      octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
+     cloud_octree::Octree *octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
       // Insert all data points into the octree
       for (unsigned int i = 0; i < cloud_f_.pts.size (); i++)
         octree_->insert (cloud_f_.pts[i].x, cloud_f_.pts[i].y, cloud_f_.pts[i].z, i);
@@ -205,7 +205,8 @@ class PlanarPatchMap: public ros::node
       pmap.header = cloud_.header;
       publish ("planar_map", pmap);
 
-      delete octree_;
+      if (octree_)
+        delete octree_;
     }
 };
 

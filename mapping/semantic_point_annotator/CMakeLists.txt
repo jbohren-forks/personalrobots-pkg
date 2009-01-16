@@ -30,7 +30,6 @@ if( WIN32 )
     endif( HAVE_OPENMP )
   endif( HAVE_OMP_H )
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-
   # check if compilers supports -fopenmp
   check_cxx_compiler_flag(-fopenmp HAVE_OPENMP)
   check_library_exists(gomp omp_get_num_threads "" HAS_GOMP_LIB)
