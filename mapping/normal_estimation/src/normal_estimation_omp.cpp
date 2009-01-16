@@ -109,11 +109,17 @@ class NormalEstimation : public ros::node
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
+      bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
-        if (it->first.find (cloud_topic) == string::npos)
-          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+        if (it->first.find (cloud_topic) != string::npos)
+        {
+          topic_found = true;
+          break;
+        }
       }
+      if (!topic_found)
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       subscribe (cloud_topic.c_str (), cloud_, &NormalEstimation::cloud_cb, 1);
       advertise<PointCloud> ("cloud_normals", 1);
