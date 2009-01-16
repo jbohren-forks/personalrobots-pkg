@@ -12,6 +12,7 @@
   <depend package="image_msgs" />
   <depend package="newmat10"/>
   <depend package="rosthread"/>
+  <depend package="pr2_mechanism_controllers" />
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
