@@ -27,8 +27,8 @@ if( WIN32 )
 
     if( HAVE_OPENMP )
       add_definitions("/openmp")
-    endif()
-  endif()
+    endif( HAVE_OPENMP )
+  endif( HAVE_OMP_H )
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   # check if compilers supports -fopenmp
@@ -39,5 +39,5 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     add_definitions("-fopenmp")
     target_link_libraries(semantic_point_annotator_omp_node gomp)
     set(OPENMP_LFLAGS "-lgomp")
-  endif()
-endif()
+  endif( HAVE_OPENMP AND HAS_GOMP_LIB )
+endif( WIN32 )
