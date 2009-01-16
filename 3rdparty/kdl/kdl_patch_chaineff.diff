@@ -1,0 +1,216 @@
+Index: src/chaineffsolver.cpp
+===================================================================
+--- src/chaineffsolver.cpp	(revision 0)
++++ src/chaineffsolver.cpp	(revision 0)
+@@ -0,0 +1,106 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com>
++
++// Version: 1.0
++// Author: Wim Meeussen
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++
++
++#include "chaineffsolver.hpp"
++#include <iostream>
++
++using namespace std;
++
++namespace KDL {
++
++
++  ChainIEffSolver::ChainIEffSolver(const Chain& chain)
++    : num_joints_(chain.getNrOfJoints()),
++      num_segments_(chain.getNrOfSegments()),
++      jacobian_(num_joints_, num_segments_),
++      chain_(chain),
++      wrenches_(num_segments_)
++
++  {
++    // set all wrenches to 0
++    for (unsigned int i=0; i<num_segments_; i++)
++      wrenches_[i] = Wrench::Zero();
++}
++
++
++  int ChainIEffSolver::CartToJnt(const JntArray& q, const Wrench wrench_in, JntArray& eff_out, int segment_nr)
++  {
++    assert(segment_nr < num_segments_);
++    assert(segment_nr >= -1);
++    if (segment_nr == -1) segment_nr = num_segments_ -1;
++
++    wrenches_[segment_nr] = wrench_in;
++    int res = CartToJnt(q, wrenches_, eff_out);
++    wrenches_[segment_nr] = Wrench::Zero();
++
++    return res;
++  }
++
++
++  int ChainIEffSolver::CartToJnt(const JntArray& q, const vector<Wrench>& wrench_in, JntArray& eff_out)
++  {
++    assert(q.rows() == num_joints_);
++    assert(wrench_in.size() == num_segments_);
++
++    Jacobian jac(num_joints_, num_segments_);
++    Frame T_tmp = Frame::Identity();
++    Twist t_tmp = Twist::Zero();
++
++    for (unsigned int j=0; j<num_joints_; j++)
++      eff_out(j) = 0;
++
++    int j=0;
++    Frame total;
++
++    for (unsigned int i=0;i<num_segments_;i++) {
++      // segment has a joint
++      if (chain_.getSegment(i).getJoint().getType()!=Joint::None){
++	total = T_tmp * chain_.getSegment(i).pose(q(j));
++
++	//changing base of new segment's twist to base frame
++	t_tmp = T_tmp.M * chain_.getSegment(i).twist(q(j), 1.0);
++      }
++      // segment has no joint
++      else
++	total = T_tmp * chain_.getSegment(i).pose(0.0);
++
++      // Changing Refpoint of all jac columns to new ee 
++      changeRefPoint(jac, total.p - T_tmp.p, jac);
++
++      // Only increase jointnr if the segment has a joint
++      if(chain_.getSegment(i).getJoint().getType()!=Joint::None){
++	jac.twists[j] = t_tmp;
++	j++;
++      }
++      T_tmp = total;
++
++      // calculate torque caused by wrench i in joints 0->j
++      for (unsigned int k=0; k<j; k++)
++	for (unsigned int l=0; l<6; l++)
++	  eff_out(k) += (jac(l,k) * wrench_in[i](l)); 
++    }
++    return 0;
++  }
++
++
++}//end of namespace KDL
+Index: src/chaineffsolver.hpp
+===================================================================
+--- src/chaineffsolver.hpp	(revision 0)
++++ src/chaineffsolver.hpp	(revision 0)
+@@ -0,0 +1,100 @@
++// Copyright  (C)  2009 Willow Garage <meeussen at willowgarage dot com>
++
++// Version: 1.0
++// Author: Wim Meeussen
++// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
++// URL: http://www.orocos.org/kdl
++
++// This library is free software; you can redistribute it and/or
++// modify it under the terms of the GNU Lesser General Public
++// License as published by the Free Software Foundation; either
++// version 2.1 of the License, or (at your option) any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++// Lesser General Public License for more details.
++
++// You should have received a copy of the GNU Lesser General Public
++// License along with this library; if not, write to the Free Software
++// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++
++#ifndef KDL_CHAIN_EFFSOLVER_HPP
++#define KDL_CHAIN_EFFSOLVER_HPP
++
++#include "chain.hpp"
++#include "jntarray.hpp"
++#include "chainjnttojacsolver.hpp"
++#include "chainfksolverpos_recursive.hpp"
++
++
++namespace KDL {
++
++    /**
++	  * \brief This <strong>abstract</strong> class encapsulates a
++	  * solver to convert joint efforts into a wrench
++     *
++     * @ingroup KinematicFamily
++     */
++
++    //Forward definition
++    class ChainFEffSolver {
++    public:
++        /**
++         * Calculate forward position kinematics for a KDL::Chain,
++         * from joint coordinates to cartesian pose.
++         *
++         * @param eff_in input joint efforts
++         * @param wrench_out output wrench
++         *
++         * @return if < 0 something went wrong
++         */
++        virtual int JntToCart(const JntArray& q, const JntArray& eff_in, Wrench& wrench_out, int segmentNr=-1);
++        ChainFEffSolver(const Chain& chain);
++        virtual ~ChainFEffSolver(){};
++
++    private:
++      ChainJntToJacSolver jnt_to_jac_solver_;
++      unsigned int num_joints_, num_segments_;
++      Jacobian jacobian_;
++    };
++
++
++
++
++    /**
++	  * \brief This <strong>abstract</strong> class encapsulates a
++	  * solver to convert a wrench into joint efforts
++n     *
++     * @ingroup KinematicFamily
++     */
++
++    //inverse definition
++    class ChainIEffSolver {
++    public:
++        /**
++         * Calculate forward position kinematics for a KDL::Chain,
++         * from joint coordinates to cartesian pose.
++         *
++         * @param wrench_in vector of wrenches applied to each segment. Ref frame base, ref point segment
++         * @param eff_out the output joint efforts
++         *
++         * @return if < 0 something went wrong
++         */
++        int CartToJnt(const JntArray& q, const std::vector<Wrench>& wrench_in, JntArray& eff_out);
++        int CartToJnt(const JntArray& q, const Wrench wrench_in, JntArray& eff_out, int segment_nr=-1);
++        ChainIEffSolver(const Chain& chain);
++        ~ChainIEffSolver(){};
++
++    private:
++      unsigned int num_joints_, num_segments_;
++      Jacobian jacobian_;
++      Chain chain_;
++      std::vector<Wrench> wrenches_;
++    };
++
++
++}//end of namespace KDL
++
++#endif
