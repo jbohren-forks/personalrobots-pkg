@@ -48,7 +48,12 @@ namespace cloud_geometry
   struct Leaf
   {
     float centroid_x, centroid_y, centroid_z;
-    int nr_points;
+    unsigned short nr_points;
+  };
+  struct SimplifiedLeaf
+  {
+    unsigned short i, j, k;
+    unsigned short nr_points;
   };
 
 

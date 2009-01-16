@@ -294,10 +294,17 @@ namespace cloud_geometry
     divB.z = maxB.z - minB.z + 1;
 
     // Allocate the space needed
-    if (leaves.capacity () < divB.x * divB.y * divB.z)
-      leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
-
-    leaves.resize (divB.x * divB.y * divB.z);
+    try
+    {
+      if (leaves.capacity () < divB.x * divB.y * divB.z)
+        leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
+      leaves.resize (divB.x * divB.y * divB.z);
+    }
+    catch (std::bad_alloc)
+    {
+      ROS_ERROR ("Attempting to allocate a vector of %ld (%d x %d x %d) leaf elements (%g total)", divB.x * divB.y * divB.z,
+                 divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
+    }
 
     for (unsigned int cl = 0; cl < leaves.size (); cl++)
     {
