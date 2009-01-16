@@ -78,7 +78,7 @@ public:
   bool calib_color_;
   bool recompand_;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   StereoView() : ros::Node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),

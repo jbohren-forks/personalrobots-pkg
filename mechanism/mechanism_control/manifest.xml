@@ -5,7 +5,7 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
-<depend package="rosthread"/>
+<depend package="boost"/>
 <depend package="roscpp" />
 <depend package="hardware_interface"/>
 <depend package="tinyxml"/>

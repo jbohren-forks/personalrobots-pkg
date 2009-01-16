@@ -171,7 +171,7 @@ void ArmDynamicsController::update(void)
 //  cout << "Updating dynamics controller " << std::endl;
   double time = robot_->hw_->current_time_;
 
-  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.try_lock())
   {
     for(unsigned int i=0; i < num_joints_; ++i)
     {

@@ -31,7 +31,7 @@
 #include <gazebo/Controller.hh>
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 #include <std_msgs/LaserScan.h>
 
 namespace gazebo
@@ -159,7 +159,7 @@ class RosLaser : public Controller
   private: double GaussianKernel(double mu,double sigma);
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
-  private: ros::thread::mutex lock;
+  private: boost::mutex lock;
 
 };
 

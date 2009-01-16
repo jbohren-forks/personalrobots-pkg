@@ -38,7 +38,7 @@
 
 // ROS stuff
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 // Controllers
 #include <mechanism_model/controller.h>

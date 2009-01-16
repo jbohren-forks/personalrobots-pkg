@@ -87,7 +87,7 @@ void usage()
 }
 
 IplImage *image = NULL; // the input image coming across the wire
-ros::thread::mutex image_mutex;
+boost::mutex image_mutex;
 
 class Classify : public ros::Node
 {

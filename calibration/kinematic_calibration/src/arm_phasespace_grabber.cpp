@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "robot_msgs/MechanismState.h"
 #include "phase_space/PhaseSpaceSnapshot.h"
 #include "robot_kinematics/robot_kinematics.h"
@@ -43,35 +43,35 @@
 #include "kdl/chain.hpp"
 
 #include <unistd.h>
-#include <termios.h> 
+#include <termios.h>
 
 using namespace std ;
 
 namespace kinematic_calibration
 {
-  
+
 
 class ArmPhaseSpaceGrabber : public ros::Node
 {
 
 public:
-  
 
-  
+
+
   ArmPhaseSpaceGrabber() : ros::Node("arm_phase_space_grabber")
   {
     marker_id_ = 1 ;
-    
+
     subscribe("phase_space_snapshot", snapshot_, &ArmPhaseSpaceGrabber::SnapshotCallback, 2) ;
     subscribe("mechanism_state", mech_state_, &ArmPhaseSpaceGrabber::MechStateCallback, 2) ;
   }
-  
+
   ~ArmPhaseSpaceGrabber()
   {
     unsubscribe("phase_space_snapshot") ;
     unsubscribe("MechanismState") ;
   }
-  
+
   bool spin()
   {
     // Setup terminal settings for getchar
@@ -84,15 +84,15 @@ public:
     flags.c_cc[VMIN]  = 0;     // i.e. min 1 char for blocking, 0 chars for non-blocking
     flags.c_cc[VTIME] = 0;     // block if waiting for char
     tcsetattr(fd,TCSANOW,&flags);
-    
+
     KDL::Chain chain ;
-    
+
     vector<string> joint_names ;
-    
+
     bool result ;
     result = LoadJointNames("./joint_names.xml", joint_names) ;
-    
-    
+
+
     const string state_data_filename = "./state_data.txt" ;
     FILE* state_data_out ;
     state_data_out = fopen(state_data_filename.c_str(), "w") ;
@@ -101,28 +101,28 @@ public:
       printf("Error opening state_data file\n") ;
       return false ;
     }
-    
+
     while (ok())
     {
       char c = getchar() ;
-      
+
       switch (c)
       {
         case ' ':
         {
           printf("Capturing...\n") ;
           phase_space::PhaseSpaceMarker cur_marker ;
-          
+
           //GetMarker(cur_marker, marker_id_) ;
 
           vector<double> joint_angles ;
           GetJointAngles(joint_names, joint_angles) ;
-          
+
           // Print Marker Location
           printf("% 15.10f  % 15.10f  % 15.10f  ", cur_marker.location.x, cur_marker.location.y, cur_marker.location.z) ;
           fprintf(state_data_out, "% 15.10f  % 15.10f  % 15.10f  ", cur_marker.location.x, cur_marker.location.y, cur_marker.location.z) ;
 
-          
+
           // Print Joint Angles
           for (unsigned int i=0; i<joint_angles.size(); i++)
           {
@@ -130,20 +130,20 @@ public:
             fprintf(state_data_out, "% 15.10f  ", joint_angles[i]) ;
           }
           printf("\n") ;
-          
+
           break ;
-        } 
+        }
         case 'c':                       // Build kinematic chain for arm
         {
           robot_kinematics::RobotKinematics robot_kinematics ;
           string robot_desc ;
           param("robotdesc/pr2", robot_desc, string("")) ;
           printf("RobotDesc.length() = %u\n", robot_desc.length()) ;
-          
+
           robot_kinematics.loadString(robot_desc.c_str()) ;
 
           robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm") ;
-          
+
           if (serial_chain == NULL)
           {
             printf("Got NULL Chain\n") ;
@@ -162,7 +162,7 @@ public:
             printf("Error opening file\n") ;
             break ;
           }
-          
+
           for (unsigned int i=0; i < chain.getNrOfSegments(); i++)
           {
             printf("Segment #%u\n", i) ;
@@ -171,7 +171,7 @@ public:
               printf("% 15.10f  ", chain.getSegment(i).getFrameToTip().p(j) ) ;
             printf("\n") ;
 
-            
+
             KDL::Vector rot_axis ;
             double rot_ang = chain.getSegment(i).getFrameToTip().M.GetRotAngle(rot_axis) ;
 
@@ -182,29 +182,29 @@ public:
             printf("\n") ;
             printf("     Angle:     % 15.10f\n", rot_ang) ;
 
-            KDL::Vector rot_vec = rot_ang * rot_axis ; 
-            
+            KDL::Vector rot_vec = rot_ang * rot_axis ;
+
             for (unsigned int j=0; j<3; j++)
               fprintf(model_out, "% 15.10f  ", chain.getSegment(i).getFrameToTip().p(j) ) ;
             for (unsigned int j=0; j<3; j++)
               fprintf(model_out, "% 15.10f  ", rot_vec(j)) ;
             fprintf(model_out, "\n") ;
-            
 
-            
+
+
             //printf("     Product:   ") ;
             //for (unsigned int j=0; j<3; j++)
             //  printf("% 15.10f  ", rot_vec(j)) ;
             printf("\n\n") ;
           }
           fclose(model_out) ;
-          
+
           break ;
-        } 
+        }
         default:
           break ;
       }
-      
+
       usleep(1000) ;
       fflush(stdout) ;
     }
@@ -213,16 +213,16 @@ public:
     tcsetattr(fd,TCSANOW, &prev_flags) ;         // Undo any terminal changes that we made
     return true ;
   }
-  
+
   bool LoadJointNames(const string& joint_names_file, vector<string>& joint_names)
   {
     TiXmlDocument xml ;
     xml.LoadFile(joint_names_file.c_str()) ;
     TiXmlElement *config = xml.RootElement();
-    
+
     if (config == NULL)
       return false ;
-    
+
     // Extract the joint names
     TiXmlElement *joint_name_elem = config->FirstChildElement("joint_name") ;
 
@@ -232,22 +232,22 @@ public:
       const char* name = joint_name_elem->Attribute("name") ;
       printf("Found a joint_name: %s\n", name) ;
       joint_names.push_back(name) ;
-      
+
       joint_name_elem = joint_name_elem->NextSiblingElement("joint_name") ;
     }
     return true ;
   }
-  
+
   void GetMarker(phase_space::PhaseSpaceMarker& marker, int id)
   {
     bool marker_found = false ;
-    
+
     // Grab phasespace marker
     printf("  Looking for marker %u...", id) ;
     fflush(stdout) ;
     while (ok() && !marker_found)
     {
-      
+
       snapshot_lock_.lock() ;
       for (unsigned int i=0; i < safe_snapshot_.get_markers_size(); i++)
       {
@@ -266,16 +266,16 @@ public:
       usleep(100) ;
     }
   }
-  
+
   void GetJointAngles(const vector<string>& names, vector<double>& angles)
   {
     // Grab mechanism state and put it in a local copy
     mech_lock_.lock() ;
     robot_msgs::MechanismState mech_state = safe_mech_state_ ;
-    mech_lock_.unlock() ;    
-    
+    mech_lock_.unlock() ;
+
     angles.resize(names.size()) ;
-    
+
     for (unsigned int i=0; i < names.size(); i++)
     {
       for (unsigned int j=0; j < mech_state.get_joint_states_size(); j++)
@@ -288,32 +288,32 @@ public:
       }
     }
   }
-  
+
   void MechStateCallback()
   {
     mech_lock_.lock() ;
     safe_mech_state_ = mech_state_ ;
     mech_lock_.unlock() ;
   }
-  
+
   void SnapshotCallback()
   {
     snapshot_lock_.lock() ;
     safe_snapshot_ = snapshot_ ;
     snapshot_lock_.unlock() ;
   }
-  
+
 private:
   phase_space::PhaseSpaceSnapshot snapshot_ ;
   robot_msgs::MechanismState mech_state_ ;
 
   phase_space::PhaseSpaceSnapshot safe_snapshot_ ;
   int marker_id_ ;
-  
+
   robot_msgs::MechanismState safe_mech_state_ ;
-  
-  ros::thread::mutex mech_lock_ ;
-  ros::thread::mutex snapshot_lock_ ;
+
+  boost::mutex mech_lock_ ;
+  boost::mutex snapshot_lock_ ;
 } ;
 
 }
@@ -323,11 +323,11 @@ using namespace kinematic_calibration ;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv) ;
-  
-  ArmPhaseSpaceGrabber grabber ; 
+
+  ArmPhaseSpaceGrabber grabber ;
   grabber.spin() ;
-  
+
   ros::fini() ;
-  
+
   return 0 ;
 }

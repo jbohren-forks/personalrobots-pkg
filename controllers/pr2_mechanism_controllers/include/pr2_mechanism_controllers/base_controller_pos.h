@@ -486,7 +486,7 @@ namespace controller
     /*!
      * \brief mutex lock for setting and getting ros messages
      */
-    ros::thread::mutex ros_lock_;
+    boost::mutex ros_lock_;
 
     /*!
      * \brief std_msgs representation of an odometry message

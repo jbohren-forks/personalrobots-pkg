@@ -175,7 +175,7 @@ void PR2ArmDynamicsController::update(void)
 //  cout << "Updating dynamics controller " << std::endl;
   double time = robot_->hw_->current_time_;
 
-  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.try_lock())
   {
     for(unsigned int i=0; i < num_joints_; ++i)
     {
@@ -217,8 +217,8 @@ void PR2ArmDynamicsController::computeControlTorque(const double &time)
     kdl_q(i) = joint_effort_controllers_[i]->joint_state_->position_;
     kdl_q_uncompensated(i) = kdl_q(i);
   }
-  kdl_q_uncompensated(4) = 0.0;  
-  kdl_q_uncompensated(5) = 0.0;  
+  kdl_q_uncompensated(4) = 0.0;
+  kdl_q_uncompensated(5) = 0.0;
   kdl_q_uncompensated(6) = 0.0;
 
   arm_chain_->computeGravityTerms(kdl_q,gravity_torque_);
@@ -257,7 +257,7 @@ void PR2ArmDynamicsController::computeControlTorque(const double &time)
 
     static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
     if (p.trylock()) {
-      char buf[1000];       
+      char buf[1000];
       sprintf(buf, "Joint torques %d:: %s, %15.6lf %15.61f %15.61f %15.61f\n", i, joint_effort_controllers_[i]->joint_state_->joint_->name_.c_str(),control_torque_[i],gravity_torque_[i][2],gravity_torque_uncompensated_[i][2],pid_torque);
       p.msg_.data = std::string(buf);
       p.unlockAndPublish();

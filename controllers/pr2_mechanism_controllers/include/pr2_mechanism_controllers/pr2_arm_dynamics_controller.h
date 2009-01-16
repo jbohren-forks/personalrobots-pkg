@@ -35,7 +35,7 @@
 #pragma once
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 #include <mechanism_model/controller.h>
 #include <mechanism_model/joint.h>
@@ -112,7 +112,7 @@ public:
   */
   virtual void update(void); // Real time safe.
 
-  ros::thread::mutex arm_controller_lock_;
+  boost::mutex arm_controller_lock_;
 
 //  void setJointGains(const pr2_mechanism_controllers::SetJointGains::request &req);
 

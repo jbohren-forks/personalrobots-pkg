@@ -185,7 +185,7 @@ int ArmPositionController::getJointControllerPosByName(std::string name)
 
 void ArmPositionController::update(void)
 {
-  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.try_lock())
   {
     assert(goals_.size() == goals_rt_.size());
     for(unsigned int i=0; i<goals_.size(); ++i)

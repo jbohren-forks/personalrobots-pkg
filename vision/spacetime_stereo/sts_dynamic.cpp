@@ -226,7 +226,7 @@ class SpacetimeStereoNode : public ros::Node
 	bool builtBridge;
 	CvBridge<std_msgs::Image> *left_bridge_in;
 	CvBridge<std_msgs::Image> *right_bridge_in;
-	//ros::thread::mutex frame_mutex_;
+	//boost::mutex frame_mutex_;
 
 	bool IsCal;	
 	//calib_params cpar;

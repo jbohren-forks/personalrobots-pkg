@@ -29,8 +29,7 @@
  */
 
 #include "mechanism_control/mechanism_control.h"
-#include "rosthread/member_thread.h"
-#include "misc_utils/mutex_guard.h"
+#include <boost/thread/thread.hpp>
 #include "rosconsole/rosconsole.h"
 
 using namespace mechanism;
@@ -114,7 +113,7 @@ void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
 
 bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
-  misc_utils::MutexGuard guard(&controllers_lock_);
+  boost::mutex::scoped_lock lock(controllers_lock_);
 
   if (getControllerByName(name))
     return false;

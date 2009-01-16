@@ -40,8 +40,8 @@
 
 #include <string>
 #include <ros/node.h>
-#include <rosthread/mutex.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <realtime_thread/realtime_thread.h>
 
 namespace misc_utils {
@@ -73,7 +73,7 @@ public:
       abort();
     }
     keep_running_ = true;
-    thread_ = ros::thread::member_thread::startMemberFunctionThread<RealtimePublisher<Msg> > (this, &RealtimePublisher::publishingLoop);
+    thread_ = boost::thread(&RealtimePublisher::publishingLoop, this);
   }
 
   ~RealtimePublisher()
@@ -83,7 +83,7 @@ public:
       usleep(100);
 
     // TODO: fix when multiple nodes per process are supported
-    
+
     // Don't unadvertise topic because other threads within the
     // process may still be publishing on the topic
     //node_->unadvertise(topic_);
@@ -141,7 +141,7 @@ public:
   void publishingLoop()
   {
     RealtimeTask task;
-    
+
     int err = realtime_shadow_task(&task);
     if (err)
       ROS_WARN("Unable to shadow task: %d\n", err);
@@ -177,7 +177,7 @@ private:
   bool is_running_;
   bool keep_running_;
 
-  pthread_t *thread_;
+  boost::thread thread_;
 
   RealtimeMutex msg_lock_;  // Protects msg_
   RealtimeCond updated_cond_;

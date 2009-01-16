@@ -145,7 +145,7 @@ void ArmVelocityController::getCurrentConfiguration(std::vector<double> &vec)
 
 void ArmVelocityController::update(void)
 {
-  if(arm_controller_lock_.trylock())
+  if(arm_controller_lock_.try_lock())
   {
     assert(goals_.size() == goals_rt_.size());
     for(unsigned int i=0; i<goals_.size(); ++i)

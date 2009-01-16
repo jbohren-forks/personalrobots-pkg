@@ -11,7 +11,7 @@
 <depend package="std_msgs"/>
 <depend package="robot_msgs"/>
 <depend package="std_srvs"/>
-<depend package="rosthread"/>
+<depend package="boost"/>
 <depend package="string_utils"/>
 <depend package="opencv_latest"/>
 <depend package="stereo_utils"/>

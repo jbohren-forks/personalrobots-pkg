@@ -40,7 +40,7 @@ public:
   double robot_x, robot_y, robot_th, robot_tv, robot_rv;
   double start_time;
   FILE *f;
-  ros::thread::mutex log_mutex;
+  boost::mutex log_mutex;
   CarmenLogger() : ros::Node("carmenLogger"), 
                    robot_x(0), robot_y(0), robot_th(0), start_time(0)
   {

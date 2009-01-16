@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -39,12 +39,12 @@
 #ifndef TOPIC_SYNCHRONIZER_HH
 #define TOPIC_SYNCHRONIZER_HH
 
-#include "rosthread/mutex.h"
-#include "rosthread/condition.h"
+#include "boost/thread/mutex.hpp"
+#include "boost/thread/condition_variable.hpp"
 #include "ros/time.h"
 
   //! A templated class for synchronizing incoming topics
-  /*! 
+  /*!
    * The Topic Synchronizer should be templated by your node, and is
    * passed a function pointer at construction to be called every time
    * all of your topics have arrived.
@@ -56,8 +56,8 @@ class TopicSynchronizer
   class UnsubscribeList
   {
     std::list<std::string> list_;
-    ros::thread::mutex list_mutex_;
-    
+    boost::mutex list_mutex_;
+
   public:
     UnsubscribeList(std::list<std::string>& l) : list_(l) { }
 
@@ -67,7 +67,7 @@ class TopicSynchronizer
       std::list<std::string>::iterator i = list_.begin();
       while (i != list_.end() && *i != topic)
         i++;
-      
+
       if (i != list_.end())
       {
         i++;
@@ -89,7 +89,7 @@ class TopicSynchronizer
 
   public:
 
-    UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {} 
+    UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {}
 
     void doUnsubscribe(ros::Node* node)
     {
@@ -110,9 +110,11 @@ class TopicSynchronizer
 
   //! The callback to be called if timed out
   void (N::*timeout_callback_)(ros::Time);
-  
+
   //! The condition variable used for synchronization
-  ros::thread::condition cond_all_;
+  boost::condition_variable cond_all_;
+  //! The mutex used for synchronization
+  boost::mutex cond_mutex_;
 
   //! The number of expected incoming messages
   int expected_count_;
@@ -144,43 +146,43 @@ class TopicSynchronizer
 
     ros::Time* time = (ros::Time*)(p);
 
-    cond_all_.lock();
-
-    // If first to get message, wait for others
-    if (count_ == 0)
     {
-      wait_for_others(time);
-      return;
-    }
+      boost::mutex::scoped_lock lock(cond_mutex_);
 
-    // If behind, skip
-    if (*time < waiting_time_)
-    {
-      cond_all_.unlock();
-      return;
-    }
-
-    // If at time, increment count, possibly signal, and wait
-    if (*time == waiting_time_)
-    {
-      count_++;
-      if (count_ == expected_count_)
+      // If first to get message, wait for others
+      if (count_ == 0)
       {
-        cond_all_.broadcast();
+        wait_for_others(lock, time);
+        return;
       }
 
-      while (!done_ && *time == waiting_time_)
-        cond_all_.wait();
-      
-      cond_all_.unlock();
-      return;
-    }
+      // If behind, skip
+      if (*time < waiting_time_)
+      {
+        return;
+      }
 
-    // If ahead, wakeup others, and ten wait for others
-    if (*time > waiting_time_)
-    {
-      cond_all_.broadcast();
-      wait_for_others(time);
+      // If at time, increment count, possibly signal, and wait
+      if (*time == waiting_time_)
+      {
+        count_++;
+        if (count_ == expected_count_)
+        {
+          cond_all_.notify_all();
+        }
+
+        while (!done_ && *time == waiting_time_)
+          cond_all_.wait(lock);
+
+        return;
+      }
+
+      // If ahead, wakeup others, and ten wait for others
+      if (*time > waiting_time_)
+      {
+        cond_all_.notify_all();
+        wait_for_others(lock, time);
+      }
     }
   }
 
@@ -198,9 +200,10 @@ class TopicSynchronizer
 
   //! The function called in a message cb to wait for other messages
   /*!
+   * \param lock The lock currently held
    * \param time  The time that is being waited for
    */
-  void wait_for_others(ros::Time* time)
+  void wait_for_others(boost::mutex::scoped_lock& lock, ros::Time* time)
   {
     count_ = 1;
     done_ = false;
@@ -209,34 +212,39 @@ class TopicSynchronizer
     bool timed_out = false;
 
     while (count_ < expected_count_ && *time == waiting_time_ && !timed_out)
-      if (!cond_all_.timed_wait(timeout_))
+    {
+      if (!cond_all_.timed_wait(lock, boost::get_system_time() + boost::posix_time::seconds(timeout_.toSec())))
       {
         timed_out = true;
         if (timeout_callback_)
+        {
           (*node_.*timeout_callback_)(*time);
+        }
       }
+    }
 
     if (*time == waiting_time_ && !timed_out)
+    {
       (*node_.*callback_)(*time);
+    }
 
     if (*time == waiting_time_)
     {
       done_ = true;
       count_ = 0;
-      cond_all_.broadcast();
+      cond_all_.notify_all();
     }
-    cond_all_.unlock();
   }
 
   public:
 
   //! Constructor
-  /*! 
+  /*!
    * The constructor for the TopicSynchronizer
    *
    * \param node             A pointer to your node.
    * \param callback         A pointer to the callback to invoke when all messages have arrived
-   * \param timeout          The duration 
+   * \param timeout          The duration
    * \param timeout_callback A callback which is triggered when the timeout expires
    */
   TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_(timeout), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
@@ -261,7 +269,7 @@ class TopicSynchronizer
   }
 
   //! Subscribe
-  /*! 
+  /*!
    * The synchronized subscribe call.  Call this to subscribe for topics you want
    * to be synchronized.
    *
