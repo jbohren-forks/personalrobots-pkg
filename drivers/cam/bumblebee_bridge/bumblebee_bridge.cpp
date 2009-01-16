@@ -47,7 +47,7 @@ class BumblebeeBridge : public ros::Node
 public:
   BumblebeeBridge() : ros::Node("bumblebee_bridge")
   {
-    advertise_service("stereo", &BumblebeeBridge::stereo);
+    advertiseService("stereo", &BumblebeeBridge::stereo);
   }
   bool stereo(std_srvs::PolledStereoCloud::request  &req,
               std_srvs::PolledStereoCloud::response &res)

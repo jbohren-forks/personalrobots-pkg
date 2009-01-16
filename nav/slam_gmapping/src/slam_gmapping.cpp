@@ -66,7 +66,7 @@ SlamGMapping::SlamGMapping()
   got_first_scan_ = false;
 
   node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
-  node_->advertise_service("dynamic_map", &SlamGMapping::map_cb, this);
+  node_->advertiseService("dynamic_map", &SlamGMapping::map_cb, this);
   
   // Parameters used by our GMapping wrapper
   double tmp;

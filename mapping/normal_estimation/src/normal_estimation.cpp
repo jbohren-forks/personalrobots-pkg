@@ -93,7 +93,7 @@ class NormalEstimation : public ros::Node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      get_published_topics (&t_list);
+      getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)

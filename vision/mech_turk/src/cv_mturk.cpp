@@ -118,7 +118,7 @@ std::string cvGetString(std::string prompt, std::string init)
         case 'Q':    
 		printf("Bye bye\n");
 		cvReleaseImage(&cv_img_to_label);
-		self_destruct();
+		shutdown();
 		break;
 	case 'h': //Help
 	case 'H':
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   CvMTurk view;
-  view.spin();  //infinite loop in node which calls back to image_cb() "image call back".  exit by calling self_destruct()
+  view.spin();  //infinite loop in node which calls back to image_cb() "image call back".  exit by calling shutdown()
   ros::fini();
   return 0;
 }

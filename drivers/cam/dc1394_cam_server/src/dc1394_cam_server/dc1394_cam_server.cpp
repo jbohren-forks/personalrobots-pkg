@@ -91,17 +91,17 @@ public:
     uint32_t min;
     uint32_t max;
     cd.cam->getFeatureBoundaries(feature, min, max);
-    set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
-    set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
+    setParam(cd.name + string("/") + param_name + string("_min"), (int)(min));
+    setParam(cd.name + string("/") + param_name + string("_max"), (int)(max));
   }
 
   void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
   {
     string p = cd.name + string("/") + param_name;
-    if (has_param(p))
+    if (hasParam(p))
     {
       XmlRpc::XmlRpcValue val;
-      get_param(p, val);
+      getParam(p, val);
       
       if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
         if (val == string("auto"))
@@ -130,15 +130,15 @@ public:
     string p_b = cd.name + string("/") + param_name + string("_b");
     string p_r = cd.name + string("/") + param_name + string("_r");
 
-    if (has_param(p_b) && has_param(p_r))
+    if (hasParam(p_b) && hasParam(p_r))
     {
       XmlRpc::XmlRpcValue val;
       XmlRpc::XmlRpcValue val_b;
       XmlRpc::XmlRpcValue val_r;
 
-      get_param(p, val);
-      get_param(p_b, val_b);
-      get_param(p_r, val_r);
+      getParam(p, val);
+      getParam(p_b, val_b);
+      getParam(p_r, val_r);
       
       if (val.getType() == XmlRpc::XmlRpcValue::TypeString && val == string("auto"))
         cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
@@ -189,7 +189,7 @@ public:
 
   Dc1394CamServer() : ros::Node("dc1394_cam_server")
   {
-    advertise_service("~check_params", &Dc1394CamServer::checkFeatureService);
+    advertiseService("~check_params", &Dc1394CamServer::checkFeatureService);
 
     dc1394_cam::init();
 
@@ -210,10 +210,10 @@ public:
       param(cd.name + string("/frameid"), cd.frameid, oss.str());
 
       uint64_t guid;
-      if (has_param(cd.name + string("/guid")))
+      if (hasParam(cd.name + string("/guid")))
       {
         string guid_str;
-        get_param(cd.name + string("/guid"), guid_str);
+        getParam(cd.name + string("/guid"), guid_str);
         
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {
@@ -306,7 +306,7 @@ public:
           colorize = false;
       }
 
-      if (has_param(cd.name + string("/colorize")))
+      if (hasParam(cd.name + string("/colorize")))
         param(cd.name + string("/colorize"), colorize, false);
           
 
@@ -565,8 +565,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   //Keep things from dying poorly
-  signal(SIGHUP, ros::basic_sigint_handler);
-  signal(SIGPIPE, ros::basic_sigint_handler);
+  signal(SIGHUP, ros::basicSigintHandler);
+  signal(SIGPIPE, ros::basicSigintHandler);
 
   
   Dc1394CamServer dc;

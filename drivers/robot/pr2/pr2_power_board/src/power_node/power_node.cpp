@@ -514,7 +514,7 @@ PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
     my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
   }
 
-  advertise_service("power_board_control", &PowerBoard::commandCallback);
+  advertiseService("power_board_control", &PowerBoard::commandCallback);
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
   

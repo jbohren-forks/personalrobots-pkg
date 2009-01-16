@@ -61,12 +61,12 @@ color_calib::Calibration::getFromParam(std::string topic_name)
 {
   if (node_)
   {
-    std::string color_cal_str = (node_->map_name(topic_name) + std::string("/color_cal"));
+    std::string color_cal_str = (node_->mapName(topic_name) + std::string("/color_cal"));
 
-    if (node_->has_param(color_cal_str))
+    if (node_->hasParam(color_cal_str))
     {
       XmlRpc::XmlRpcValue xml_color_cal;
-      node_->get_param(color_cal_str, xml_color_cal);
+      node_->getParam(color_cal_str, xml_color_cal);
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
         {
@@ -84,14 +84,14 @@ color_calib::Calibration::setParam(std::string topic_name)
 {
   if (node_)
   {
-    std::string color_cal_str = (node_->map_name(topic_name) + std::string("/color_cal"));
+    std::string color_cal_str = (node_->mapName(topic_name) + std::string("/color_cal"));
 
     XmlRpc::XmlRpcValue xml_color_cal;
     for (int i = 2; i >= 0; i--)
       for (int j = 0; j < 3; j++)
         xml_color_cal[3*i + j] = cvmGet(color_cal_, i, j);
     
-    node_->set_param(color_cal_str, xml_color_cal);
+    node_->setParam(color_cal_str, xml_color_cal);
 
     return true;
   }

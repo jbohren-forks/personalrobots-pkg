@@ -101,7 +101,7 @@ public:
 
         if (status.name != "None")
         {
-          status.name = node_->get_name() + std::string(": ") + status.name;
+          status.name = node_->getName() + std::string(": ") + status.name;
           status_vec.push_back(status);
         }
       }

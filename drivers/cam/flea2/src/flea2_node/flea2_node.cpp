@@ -44,7 +44,7 @@ public:
 
   Flea2_Node() : ros::Node("flea2")
   {
-    advertise<std_msgs::Image>("image");
+    advertise<std_msgs::Image>("image", 1);
 
     flea2.set_shutter(0.8);
     flea2.set_gamma(0.24);

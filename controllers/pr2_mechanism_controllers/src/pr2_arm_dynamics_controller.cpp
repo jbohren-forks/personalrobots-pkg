@@ -336,15 +336,15 @@ bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlE
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command_array", &PR2ArmDynamicsControllerNode::setJointSrv, this);
-    node->advertise_service(prefix + "/get_command", &PR2ArmDynamicsControllerNode::getJointCmd, this);
+    node->advertiseService(prefix + "/set_command_array", &PR2ArmDynamicsControllerNode::setJointSrv, this);
+    node->advertiseService(prefix + "/get_command", &PR2ArmDynamicsControllerNode::getJointCmd, this);
 
 // Parses kinematics description
     std::string pr2Contents;
     std::string pr2_uncompensated;
 
-    node->get_param("robotdesc/pr2_uncompensated", pr2_uncompensated);
-    node->get_param("robotdesc/pr2", pr2Contents);
+    node->getParam("robotdesc/pr2_uncompensated", pr2_uncompensated);
+    node->getParam("robotdesc/pr2", pr2Contents);
 
     c_->pr2_kin_.loadString(pr2Contents.c_str());
     c_->pr2_kin_uncompensated_.loadString(pr2_uncompensated.c_str());

@@ -81,23 +81,23 @@ public:
             string type;
 
             sprintf(str,"grid%d_size_x",index);
-            if( !get_param(str,dimx) )
+            if( !getParam(str,dimx) )
                 break;
             
             sprintf(str,"grid%d_size_y",index);
-            if( !get_param(str,dimy) )
+            if( !getParam(str,dimy) )
                 break;
 
             sprintf(str,"rect%d_size_x",index);
-            if( !get_param(str,fRectSize[0]) )
+            if( !getParam(str,fRectSize[0]) )
                 break;
 
             sprintf(str,"rect%d_size_y",index);
-            if( !get_param(str,fRectSize[1]) )
+            if( !getParam(str,fRectSize[1]) )
                 break;
 
             sprintf(str,"type%d",index);
-            if( !get_param(str,type) ) {
+            if( !getParam(str,type) ) {
                 sprintf(str,"checker%dx%d", dimx, dimy);
                 type = str;
             }

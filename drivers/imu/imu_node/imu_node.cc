@@ -127,7 +127,7 @@ public:
   {
     advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
 
-    advertise_service("imu/add_offset", &ImuNode::addOffset, this);
+    advertiseService("imu/add_offset", &ImuNode::addOffset, this);
 
     param("~port", port, string("/dev/ttyUSB0"));
 
@@ -286,7 +286,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (num_subscribers("imu_data") == 0 )
+    if (numSubscribers("imu_data") == 0 )
     {
       status.level = 0;
       status.message = "No operation interrupted.";
@@ -493,7 +493,7 @@ public:
     imu.set_fixed_offset(offset_);
 
     // write changes to param server
-    set_param("~time_offset", offset_);
+    setParam("~time_offset", offset_);
 
     // set response
     resp.total_offset = offset_;

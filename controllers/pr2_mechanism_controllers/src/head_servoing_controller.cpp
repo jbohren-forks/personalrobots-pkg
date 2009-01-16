@@ -217,7 +217,7 @@ bool HeadServoingControllerNode::initXml(mechanism::RobotState * robot, TiXmlEle
   node_->subscribe(service_prefix_ + "/frame_track_point", frame_track_point_, &HeadServoingControllerNode::frameTrackPoint, this, 1);
   guard_frame_track_point_.set(service_prefix_ + "/frame_track_point");
   //services
-  node_->advertise_service(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
+  node_->advertiseService(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
   node_->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
   return true;

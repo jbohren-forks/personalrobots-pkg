@@ -145,7 +145,7 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
   ros::Node * const node = ros::Node::instance();
   ROS_ASSERT(node);
   std::string desc_content;
-  node->get_param("robotdesc/"+desc_name, desc_content);
+  node->getParam("robotdesc/"+desc_name, desc_content);
   if(!init(desc_content, chain_name))
   {
     ROS_ERROR("Failed to initialize model kinematics");

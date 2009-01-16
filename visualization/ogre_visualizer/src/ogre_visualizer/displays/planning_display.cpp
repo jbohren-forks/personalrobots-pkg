@@ -154,7 +154,7 @@ bool PlanningDisplay::isCollisionVisible()
 void PlanningDisplay::load()
 {
   std::string content;
-  ros_node_->get_param(description_param_, content);
+  ros_node_->getParam(description_param_, content);
   robot_desc::URDF file;
   file.loadString(content.c_str());
 

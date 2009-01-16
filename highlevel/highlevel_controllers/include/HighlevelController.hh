@@ -337,7 +337,7 @@ protected:
 
   template <class T>
   void local_param(const std::string& localName, T& param, const T& defaultValue){
-    std::string globalName = get_name() + "/" + localName;
+    std::string globalName = getName() + "/" + localName;
     Node::param<T>(globalName, param, defaultValue);
     std::stringstream ss;
     ss << param;

@@ -130,7 +130,7 @@ public:
 						      robot_model::NodeCollisionModel(dynamic_cast<ros::Node*>(this),
 											     robot_model)
     {
-	advertise_service("validate_path", &MotionValidator::validatePath);
+	advertiseService("validate_path", &MotionValidator::validatePath);
     }
     
     /** Free the memory */

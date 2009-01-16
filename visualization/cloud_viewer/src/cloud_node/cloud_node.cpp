@@ -79,11 +79,11 @@ public:
 
   Cloud_Node() : ros::Node("cloud_viewer"), level(20), spread(400), buf_read_ind(0), buf_use_ind(1), cloud_cnt(0), made_dir(false)
   {
-    subscribe("cloud", cloud, &Cloud_Node::cloud_callback);
-    subscribe("shutter", shutter, &Cloud_Node::shutter_callback);
+    subscribe("cloud", cloud, &Cloud_Node::cloud_callback, 1);
+    subscribe("shutter", shutter, &Cloud_Node::shutter_callback, 1);
 
     if (!init_gui(1024, 768))
-      self_destruct();
+      shutdown();
 
     cloud_viewer.set_opengl_params(1024,768);
 

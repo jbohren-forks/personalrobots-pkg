@@ -158,7 +158,7 @@ public:
     if(n_val_ == 0) {
       subscribe("gui_laser", laserscan, &NavView::generic_cb,1);
     } else {
-      subscribe("transient_obstacles_diff", occ_diff_, &NavView::occDiffCallback);
+      subscribe("transient_obstacles_diff", occ_diff_, &NavView::occDiffCallback, 1);
     }
     gwidth = 640;
     gheight = 480;

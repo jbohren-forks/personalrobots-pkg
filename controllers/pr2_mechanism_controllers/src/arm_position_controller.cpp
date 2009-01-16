@@ -230,10 +230,10 @@ ArmPositionControllerNode::ArmPositionControllerNode()
 
 ArmPositionControllerNode::~ArmPositionControllerNode()
 {
-  node_->unadvertise_service(service_prefix_ + "/set_command");
-  node_->unadvertise_service(service_prefix_ + "/set_command_array");
-  node_->unadvertise_service(service_prefix_ + "/get_command");
-  node_->unadvertise_service(service_prefix_ + "/set_target");
+  node_->unadvertiseService(service_prefix_ + "/set_command");
+  node_->unadvertiseService(service_prefix_ + "/set_command_array");
+  node_->unadvertiseService(service_prefix_ + "/get_command");
+  node_->unadvertiseService(service_prefix_ + "/set_target");
 
   if(ros_cb_ && topic_name_.c_str())
   {
@@ -257,10 +257,10 @@ bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node_->advertise_service(service_prefix_ + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
-    node_->advertise_service(service_prefix_ + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
-    node_->advertise_service(service_prefix_ + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
-    node_->advertise_service(service_prefix_ + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
+    node_->advertiseService(service_prefix_ + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
+    node_->advertiseService(service_prefix_ + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
+    node_->advertiseService(service_prefix_ + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+    node_->advertiseService(service_prefix_ + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
 
     ros_cb_ = config->FirstChildElement("listen_topic");
     if(ros_cb_)

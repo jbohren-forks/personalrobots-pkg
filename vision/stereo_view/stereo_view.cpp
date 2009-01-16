@@ -90,20 +90,20 @@ public:
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
     std::list<std::string> left_list;
-    left_list.push_back(map_name("stereo") + std::string("/left/image_rect_color"));
-    left_list.push_back(map_name("stereo") + std::string("/left/image_rect"));
+    left_list.push_back(mapName("stereo") + std::string("/left/image_rect_color"));
+    left_list.push_back(mapName("stereo") + std::string("/left/image_rect"));
 
 
     std::list<std::string> right_list;
-    right_list.push_back(map_name("stereo") + std::string("/right/image_rect_color"));
-    right_list.push_back(map_name("stereo") + std::string("/right/image_rect"));
+    right_list.push_back(mapName("stereo") + std::string("/right/image_rect_color"));
+    right_list.push_back(mapName("stereo") + std::string("/right/image_rect"));
 
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
 
-    sync.subscribe(map_name("stereo") + "/disparity", dimage, 1);
-    sync.subscribe(map_name("stereo") + "/stereo_info", stinfo, 1);
-    sync.subscribe(map_name("stereo") + "/disparity_info", dinfo, 1);
+    sync.subscribe(mapName("stereo") + "/disparity", dimage, 1);
+    sync.subscribe(mapName("stereo") + "/stereo_info", stinfo, 1);
+    sync.subscribe(mapName("stereo") + "/disparity_info", dinfo, 1);
 
     sync.ready();
   }
@@ -192,8 +192,8 @@ public:
       // Fetch color calibration parameters as necessary
       if (calib_color_)
       {
-        lcal.getFromParam(map_name("stereo") + "/left/image_rect_color");
-        rcal.getFromParam(map_name("stereo") + "/right/image_rect_color");
+        lcal.getFromParam(mapName("stereo") + "/left/image_rect_color");
+        rcal.getFromParam(mapName("stereo") + "/right/image_rect_color");
       }
 
       cv_mutex.unlock();

@@ -79,10 +79,10 @@ public:
     if (num_cams > 0)
     {
       uint64_t guid;
-      if (has_param("~guid"))
+      if (hasParam("~guid"))
       {
         string guid_str;
-        get_param("~guid", guid_str);
+        getParam("~guid", guid_str);
         
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {

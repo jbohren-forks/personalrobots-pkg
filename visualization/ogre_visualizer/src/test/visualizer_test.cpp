@@ -68,7 +68,7 @@ public:
 
     root_ = Ogre::Root::getSingletonPtr();
 
-    std::string mediaPath = ros::get_package_path( "gazebo_robot_description" );
+    std::string mediaPath = ros::getPackagePath( "gazebo_robot_description" );
     mediaPath += "/world/Media/";
     ogre_tools::V_string paths;
     paths.push_back( mediaPath );

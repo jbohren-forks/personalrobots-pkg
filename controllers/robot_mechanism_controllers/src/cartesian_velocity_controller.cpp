@@ -132,10 +132,10 @@ bool CartesianVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXm
   if (!c_.initXml(robot, config))
     return false;
 
-  node->advertise_service(topic + "/set_command",
+  node->advertiseService(topic + "/set_command",
                           &CartesianVelocityControllerNode::setCommand, this);
   guard_set_command_.set(topic + "/set_command");
-  node->advertise_service(topic + "/get_actual",
+  node->advertiseService(topic + "/get_actual",
                           &CartesianVelocityControllerNode::getActual, this);
   guard_get_actual_.set(topic + "/get_actual");
 

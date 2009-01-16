@@ -50,7 +50,7 @@ public:
   ~AdvertisedServiceGuard()
   {
     if (valid_)
-      ros::Node::instance()->unadvertise_service(service_name_);
+      ros::Node::instance()->unadvertiseService(service_name_);
   }
 
   void set(const std::string &service_name)

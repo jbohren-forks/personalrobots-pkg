@@ -163,7 +163,7 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   ROS_INFO("Downsample Factor: %u", downsample_factor_) ;
 
   // ***** Start Services *****
-  advertise_service(get_name()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
+  advertiseService(getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
 
   // ***** Start Listening to Data *****
   scan_notifier_ = new tf::MessageNotifier<T>(tf_, this, boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
@@ -173,7 +173,7 @@ template <class T>
 BaseAssemblerSrv<T>::~BaseAssemblerSrv()
 {
   delete scan_notifier_ ;
-  unadvertise_service(get_name()+"/build_cloud") ;
+  unadvertiseService(getName()+"/build_cloud") ;
   delete tf_ ;
 }
 

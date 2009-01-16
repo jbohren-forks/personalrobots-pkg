@@ -20,11 +20,11 @@ class TeleopBase : public Node
   TeleopBase(bool deadman_no_publish = false) : Node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3), deadman_no_publish_(deadman_no_publish)
       {
          cmd.vx = cmd.vy = cmd.vw = 0;
-         if (!has_param("max_vx") || !get_param("max_vx", max_vx))
+         if (!hasParam("max_vx") || !getParam("max_vx", max_vx))
             ROS_WARN("maximum linear velocity (max_vx) not set. Assuming 0.6");
-         if (!has_param("max_vy") || !get_param("max_vy", max_vy))
+         if (!hasParam("max_vy") || !getParam("max_vy", max_vy))
             ROS_WARN("maximum linear velocity (max_vy) not set. Assuming 0.6");
-         if (!has_param("max_vw") || !get_param("max_vw", max_vw))
+         if (!hasParam("max_vw") || !getParam("max_vw", max_vw))
             ROS_WARN("maximum angular velocity (max_vw) not set. Assuming 0.3");
          param<int>("axis_vx", axis_vx, 1);
          param<int>("axis_vw", axis_vw, 0);

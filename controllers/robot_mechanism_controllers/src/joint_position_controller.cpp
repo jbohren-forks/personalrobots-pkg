@@ -180,7 +180,7 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointPositionControllerNode::setCommand, this, 1);
   guard_set_command_.set(service_prefix_ + "/set_command");
   //services
-  node_->advertise_service(service_prefix_ + "/get_command", &JointPositionControllerNode::getCommand, this);
+  node_->advertiseService(service_prefix_ + "/get_command", &JointPositionControllerNode::getCommand, this);
   guard_get_command_.set(service_prefix_ + "/get_command");
 
   return true;

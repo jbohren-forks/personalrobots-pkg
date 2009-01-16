@@ -96,7 +96,7 @@ public:
 
           cvTransform(img2, corrected_img, color_cal.getCal(COLOR_CAL_BGR));
 
-          color_cal.setParam(map_name("images") + std::string("/") + l);
+          color_cal.setParam(mapName("images") + std::string("/") + l);
 
           cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
           cvShowImage("color_rect", corrected_img);
@@ -114,7 +114,7 @@ public:
   {
     boost::mutex::scoped_lock lock(cv_mutex);
     if (cvWaitKey(3) == 10)
-      self_destruct();
+      shutdown();
   }
 
 };

@@ -58,7 +58,7 @@ int main( int argc, char** argv )
   ros::Node test_kin("test_kin");
 
   std::string pr2Content;
-  test_kin.get_param("robotdesc/pr2",pr2Content);
+  test_kin.getParam("robotdesc/pr2",pr2Content);
 
   RobotKinematics pr2_kin;
   pr2_kin.loadString(pr2Content.c_str());  // parse the big pr2.xml string from ros

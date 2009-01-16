@@ -83,7 +83,7 @@ public:
   StereoProc() : ros::Node("stereoproc"), diagnostic_(this), count_(0), stdata_(NULL)
   {
 
-    stereo_name_ = map_name("stereo") + std::string("/");
+    stereo_name_ = mapName("stereo") + std::string("/");
 
     diagnostic_.addUpdater( &StereoProc::freqStatus );
 

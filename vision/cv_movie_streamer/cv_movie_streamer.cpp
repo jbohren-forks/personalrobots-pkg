@@ -22,7 +22,7 @@ public:
   : Node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   {
-    advertise<std_msgs::Image>("image");
+    advertise<std_msgs::Image>("image", 1);
   }
   void stream_movie()
   {

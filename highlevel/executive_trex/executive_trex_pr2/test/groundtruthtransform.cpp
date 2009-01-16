@@ -14,7 +14,7 @@ public:
   tf::TransformListener tf;
 
   GroundTruthTransform() : ros::Node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
-    advertise<std_msgs::Point32>("groundtruthposition");
+    advertise<std_msgs::Point32>("groundtruthposition", 1);
   }
 
   void speak() {

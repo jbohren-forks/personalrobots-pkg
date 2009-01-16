@@ -149,7 +149,7 @@ namespace ros {
 	  local_param("plannerTimeLimit", blah, -1); // parameters are picky about dots
 	  if (0 > blah) {
 	    ROS_ERROR("invalid or no %s/plannerTimeLimit specified: %g",
-		      get_name().c_str(), plannerTimeLimit_);
+		      getName().c_str(), plannerTimeLimit_);
 	    throw int(7);
 	  }
 	  plannerTimeLimit_ = blah;

@@ -191,7 +191,7 @@ void controlLoop(void *)
     printf("Xml file not found, reading from parameter server\n");
     assert(ros::Node::instance());
     std::string result;
-    if (ros::Node::instance()->get_param(g_options.xml_, result))
+    if (ros::Node::instance()->getParam(g_options.xml_, result))
       xml.Parse(result.c_str());
   }
   urdf::normalizeXml(xml.RootElement());
@@ -477,8 +477,8 @@ int main(int argc, char *argv[])
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
 
-  node->advertise_service("shutdown", &Shutdown::shutdownService);
-  node->advertise_service("reset_motors", &Reset::resetMotorsService);
+  node->advertiseService("shutdown", &Shutdown::shutdownService);
+  node->advertiseService("reset_motors", &Reset::resetMotorsService);
 
   //Start thread
   int rv;

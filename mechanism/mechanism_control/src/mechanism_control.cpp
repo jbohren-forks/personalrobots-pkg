@@ -224,13 +224,13 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 
 
   // Advertise services
-  node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
+  node_->advertiseService("list_controllers", &MechanismControlNode::listControllers, this);
   list_controllers_guard_.set("list_controllers");
-  node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
+  node_->advertiseService("list_controller_types", &MechanismControlNode::listControllerTypes, this);
   list_controller_types_guard_.set("list_controller_types");
-  node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
+  node_->advertiseService("spawn_controller", &MechanismControlNode::spawnController, this);
   spawn_controller_guard_.set("spawn_controller");
-  node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
+  node_->advertiseService("kill_controller", &MechanismControlNode::killController, this);
   kill_controller_guard_.set("kill_controller");
 
   return true;

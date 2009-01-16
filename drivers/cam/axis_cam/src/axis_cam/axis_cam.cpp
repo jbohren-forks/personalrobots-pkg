@@ -58,7 +58,7 @@ public:
   {
     advertise<std_msgs::Image>("image", 1);
     advertise<std_msgs::ImageArray>("images", 1);
-    advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
+    advertiseService("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
     printf("axis_ptz host set to [%s]\n", axis_host.c_str());

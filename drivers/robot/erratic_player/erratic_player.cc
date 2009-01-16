@@ -117,7 +117,7 @@ class ErraticNode: public ros::Node
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
 
-      advertise<std_msgs::RobotBase2DOdom>("odom");
+      advertise<std_msgs::RobotBase2DOdom>("odom", 1);
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
@@ -173,7 +173,7 @@ class ErraticNode: public ros::Node
       }
       else
       {
-        subscribe("cmd_vel", cmdvel, &ErraticNode::cmdvelReceived);
+        subscribe("cmd_vel", cmdvel, &ErraticNode::cmdvelReceived, 1);
         return(0);
       }
     }

@@ -38,10 +38,10 @@
 
 ScanListenNode::ScanListenNode() : ros::Node("ros_graspit")
 {
-	subscribe("full_cloud", mNewCloud, &ScanListenNode::fullCloudCallback);
-	subscribe("cloud", mNewLine, &ScanListenNode::cloudCallback);
-	subscribe("shutter", mEmptyMsg, &ScanListenNode::shutterCallback);
-	fprintf(stderr,"ROS Scanner created and subscribed!\n");
+  subscribe("full_cloud", mNewCloud, &ScanListenNode::fullCloudCallback, 1);
+  subscribe("cloud", mNewLine, &ScanListenNode::cloudCallback, 1);
+  subscribe("shutter", mEmptyMsg, &ScanListenNode::shutterCallback, 1);
+  fprintf(stderr,"ROS Scanner created and subscribed!\n");
 }
 
 ScanListenNode::~ScanListenNode()

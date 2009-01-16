@@ -148,7 +148,7 @@ CostMap2DRos::CostMap2DRos() :
                     0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
   
   advertise<pr2_msgs::OccDiff>("transient_obstacles_diff");
-  advertise_service("transient_obstacles_full", &CostMap2DRos::fullTransientObstacleCallback);
+  advertiseService("transient_obstacles_full", &CostMap2DRos::fullTransientObstacleCallback);
   subscribe("scan", laser_msg_, &CostMap2DRos::laserReceived);
   
 }

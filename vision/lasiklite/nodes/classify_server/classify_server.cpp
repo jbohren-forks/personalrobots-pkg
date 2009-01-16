@@ -77,7 +77,7 @@ class Classify : public ros::Node
   public:
     Classify() : ros::Node("lasiklite_classify_server")
     {
-      advertise_service("lasiklite_classify_service", &Classify::doClassify);
+      advertiseService("lasiklite_classify_service", &Classify::doClassify);
     }
 
     bool doClassify(lasiklite::classify_srv::request  &req,
@@ -85,7 +85,7 @@ class Classify : public ros::Node
     {
       printf("colorspace = [%s]\n", req.img.colorspace.c_str());
       CvBridge<std_msgs::Image> cv_bridge(&req.img);
-      string lasiklite_pkg_path = ros::get_package_path("lasiklite");
+      string lasiklite_pkg_path = ros::getPackagePath("lasiklite");
 
 
       cv_bridge.to_cv(&image);

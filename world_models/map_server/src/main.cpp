@@ -155,7 +155,7 @@ int main(int argc, char **argv)
     ms.meta_data_message_.width = ms.map_resp_.map.width;
     ms.meta_data_message_.height = ms.map_resp_.map.height;
     ms.meta_data_message_.origin = ms.map_resp_.map.origin;
-    ms.advertise_service("static_map", &MapServer::mapCallback);
+    ms.advertiseService("static_map", &MapServer::mapCallback);
     ms.advertise("map_metadata", ms.meta_data_message_, &MapServer::metadataSubscriptionCallback, 1);
 
     ms.spin();

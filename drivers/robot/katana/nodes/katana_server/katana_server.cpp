@@ -25,19 +25,19 @@ class KatanaServer : public ros::Node
     Katana *katana;
     KatanaServer() : ros::Node("katana_server")
     {
-      advertise_service("katana_calibrate_service", &KatanaServer::calibrateSrv);
-      advertise_service("katana_move_upright_service", &KatanaServer::move_to_upright);
-      advertise_service("katana_back_to_upright_service", &KatanaServer::move_back_to_upright);
-      advertise_service("katana_move_for_camera_service", &KatanaServer::move_for_camera);
-      advertise_service("katana_get_joint_angles_service", &KatanaServer::get_current_joint_angles);
-      advertise_service("katana_move_joints_single_service", &KatanaServer::moveJointsSingle);
-      advertise_service("katana_move_joint_sequence_rad_service", &KatanaServer::moveJointsSeqRad);
-      advertise_service("katana_move_joint_sequence_deg_service", &KatanaServer::moveJointsSeqDeg);
-      advertise_service("katana_gripper_cmd_service", &KatanaServer::gripperCmd);
-      advertise_service("katana_gripper_position_service", &KatanaServer::gripperPositionCmd);
-      advertise_service("katana_ik_calculate_service", &KatanaServer::ik_calculate_srv);
-      advertise_service("katana_get_pose_service", &KatanaServer::get_current_pose);
-      advertise_service("katana_move_linear_service", &KatanaServer::move_robot_linear);
+      advertiseService("katana_calibrate_service", &KatanaServer::calibrateSrv);
+      advertiseService("katana_move_upright_service", &KatanaServer::move_to_upright);
+      advertiseService("katana_back_to_upright_service", &KatanaServer::move_back_to_upright);
+      advertiseService("katana_move_for_camera_service", &KatanaServer::move_for_camera);
+      advertiseService("katana_get_joint_angles_service", &KatanaServer::get_current_joint_angles);
+      advertiseService("katana_move_joints_single_service", &KatanaServer::moveJointsSingle);
+      advertiseService("katana_move_joint_sequence_rad_service", &KatanaServer::moveJointsSeqRad);
+      advertiseService("katana_move_joint_sequence_deg_service", &KatanaServer::moveJointsSeqDeg);
+      advertiseService("katana_gripper_cmd_service", &KatanaServer::gripperCmd);
+      advertiseService("katana_gripper_position_service", &KatanaServer::gripperPositionCmd);
+      advertiseService("katana_ik_calculate_service", &KatanaServer::ik_calculate_srv);
+      advertiseService("katana_get_pose_service", &KatanaServer::get_current_pose);
+      advertiseService("katana_move_linear_service", &KatanaServer::move_robot_linear);
       katana = new Katana();
     }
     virtual ~KatanaServer() { delete katana; }

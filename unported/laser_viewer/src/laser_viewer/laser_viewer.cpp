@@ -300,7 +300,7 @@ void
 quit(int sig) 
 {
   SDL_Quit();
-  ros::basic_sigint_handler(sig);
+  ros::basicSigintHandler(sig);
 }
 
 int main(int argc, char **argv)

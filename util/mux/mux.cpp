@@ -85,15 +85,15 @@ public:
   Mux(string outTopic, string selTopic, vector<string> inTopics) 
   : Node("mux"), selectedTopic(NULL), outTopicName(outTopic)
   {
-    subscribe(selTopic, topicSelMsg, &Mux::sel_cb);
-    advertise<ShapeShifter>(outTopic);
-    advertise_service(selTopic + string("Srv"), &Mux::selSrvCB);
+    subscribe(selTopic, topicSelMsg, &Mux::sel_cb, 1);
+    advertise<ShapeShifter>(outTopic, 1);
+    advertiseService(selTopic + string("Srv"), &Mux::selSrvCB, 1);
     numInTopics = inTopics.size();
     inMsgs = new ShapeShifter[numInTopics];
     for (size_t i = 0; i < numInTopics; i++)
     {
       inMsgs[i].topicName = inTopics[i];
-      subscribe(inTopics[i], inMsgs[i], &Mux::in_cb, &inMsgs[i]);
+      subscribe(inTopics[i], inMsgs[i], &Mux::in_cb, &inMsgs[i], 1);
     }
     // by default, select the first topic
     if (numInTopics > 0)

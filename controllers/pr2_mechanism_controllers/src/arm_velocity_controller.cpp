@@ -209,7 +209,7 @@ bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
 
   // Parses kinematics description
   std::string pr2Contents;
-  node->get_param("robotdesc/pr2", pr2Contents);
+  node->getParam("robotdesc/pr2", pr2Contents);
   while (!pr2_kin_.loadString(pr2Contents.c_str())) // retry if load fails
   {
     std::cout << "WARNING: waitig for robotdesc/pr2 xml string on param server.  run roslaunch send.xml or similar." << std::endl;
@@ -222,14 +222,14 @@ bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command", &ArmVelocityControllerNode::setJointVelCmd, this);
-    node->advertise_service(prefix + "/get_command", &ArmVelocityControllerNode::getJointVelCmd, this);
+    node->advertiseService(prefix + "/set_command", &ArmVelocityControllerNode::setJointVelCmd, this);
+    node->advertiseService(prefix + "/get_command", &ArmVelocityControllerNode::getJointVelCmd, this);
 
-    node->advertise_service(prefix + "/set_joint_gains", &ArmVelocityControllerNode::setJointGains, this);
-    node->advertise_service(prefix + "/get_joint_gains", &ArmVelocityControllerNode::getJointGains, this);
+    node->advertiseService(prefix + "/set_joint_gains", &ArmVelocityControllerNode::setJointGains, this);
+    node->advertiseService(prefix + "/get_joint_gains", &ArmVelocityControllerNode::getJointGains, this);
 
-    node->advertise_service(prefix + "/set_cartesian_vel", &ArmVelocityControllerNode::setCartesianVelCmd, this);
-    node->advertise_service(prefix + "/get_cartesian_vel", &ArmVelocityControllerNode::getCartesianVelCmd, this);
+    node->advertiseService(prefix + "/set_cartesian_vel", &ArmVelocityControllerNode::setCartesianVelCmd, this);
+    node->advertiseService(prefix + "/get_cartesian_vel", &ArmVelocityControllerNode::getCartesianVelCmd, this);
     return true;
   }
   return false;

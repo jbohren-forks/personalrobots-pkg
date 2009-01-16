@@ -110,7 +110,7 @@ public:
     cv_mutex.lock();
 
     if (cvWaitKey(3) == 10)
-      self_destruct();
+      shutdown();
 
     cv_mutex.unlock();
   }

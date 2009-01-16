@@ -75,7 +75,7 @@ public:
 
   SelfTest(T* node) : node_(node), pretest_(NULL), posttest_(NULL)
   {
-    node_->advertise_service("~self_test", &SelfTest::doTest, this);
+    node_->advertiseService("~self_test", &SelfTest::doTest, this);
     count = 0;
     waiting = false;
     ready   = false;

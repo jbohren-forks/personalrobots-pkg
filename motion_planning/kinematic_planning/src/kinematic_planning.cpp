@@ -148,10 +148,10 @@ public:
 							robot_model::NodeCollisionModel(dynamic_cast<ros::Node*>(this),
 											       robot_model)
     {
-	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
-	advertise_service("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
-	advertise_service("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
-	advertise_service("plan_joint_state_names", &KinematicPlanning::planJointNames);
+	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
+	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
+	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
+	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
 	advertise<std_msgs::String>("planning_statistics", 10);
     }
     

@@ -267,13 +267,13 @@ ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
 
 ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
 {
-  /* node_->unadvertise_service(service_prefix_ + "/set_command");
-  node_->unadvertise_service(service_prefix_ + "/set_command_array");
-  node_->unadvertise_service(service_prefix_ + "/get_command");
-  node_->unadvertise_service(service_prefix_ + "/set_target");
+  /* node_->unadvertiseService(service_prefix_ + "/set_command");
+  node_->unadvertiseService(service_prefix_ + "/set_command_array");
+  node_->unadvertiseService(service_prefix_ + "/get_command");
+  node_->unadvertiseService(service_prefix_ + "/set_target");
   */
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryStart");
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryQuery");
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryStart");
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryQuery");
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -335,14 +335,14 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   if(c_->initXml(robot, config))  // Parses subcontroller configuration
   {
-/*    node_->advertise_service(service_prefix_ + "/set_command", &ArmTrajectoryControllerNode::setJointPosHeadless, this);
-    node_->advertise_service(service_prefix_ + "/set_command_array", &ArmTrajectoryControllerNode::setJointPosSrv, this);
-    node_->advertise_service(service_prefix_ + "/get_command", &ArmTrajectoryControllerNode::getJointPosCmd, this);
-    node_->advertise_service(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
+/*    node_->advertiseService(service_prefix_ + "/set_command", &ArmTrajectoryControllerNode::setJointPosHeadless, this);
+    node_->advertiseService(service_prefix_ + "/set_command_array", &ArmTrajectoryControllerNode::setJointPosSrv, this);
+    node_->advertiseService(service_prefix_ + "/get_command", &ArmTrajectoryControllerNode::getJointPosCmd, this);
+    node_->advertiseService(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
 */
 
-   node_->advertise_service(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
-   node_->advertise_service(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
+   node_->advertiseService(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   node_->advertiseService(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
 
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)

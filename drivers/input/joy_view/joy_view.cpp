@@ -14,7 +14,7 @@ public:
 
   JoyView() : Node("joy_view")
   {
-    subscribe("joy", joy, &JoyView::joy_cb);
+    subscribe("joy", joy, &JoyView::joy_cb, 1);
     init_gui(640, 480, "nav view");
   }
   void joy_cb()

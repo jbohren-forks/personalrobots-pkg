@@ -226,7 +226,7 @@ public:
       printf("Loaded forest with %d features: %s\n", feat_count_, g_argv[1]);
     } else {
       printf("Please provide a trained random forests classifier as an input.\n");
-      self_destruct();
+      shutdown();
     }
 
     // advertise topics

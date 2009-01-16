@@ -54,13 +54,13 @@ bool LibKinematicsNode::initializeKinematicModel()
   std::vector<robot_desc::URDF::Group*> groups;
 
 
-  (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+  (ros::g_node)->getParam("robotdesc/pr2",xml_content);
 
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
   {
     ROS_INFO("WARNING: grasp point node is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
-    (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+    (ros::g_node)->getParam("robotdesc/pr2",xml_content);
     usleep(100000);
   }
 

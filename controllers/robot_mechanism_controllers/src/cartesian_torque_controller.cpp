@@ -175,7 +175,7 @@ bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   if (!c_.initXml(robot, config))
     return false;
 
-//  node->advertise_service(topic + "/set_command",
+//  node->advertiseService(topic + "/set_command",
 //                          &CartesianTorqueControllerNode::setCommand, this);
 //  guard_set_command_.set(topic + "/set_command");
 

@@ -56,7 +56,7 @@ GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec)
   //so we can draw the robot footprint to help with debugging
   advertise<std_msgs::Polyline2D>("robot_footprint", 10);
 
-  advertise<std_msgs::BaseVel>("cmd_vel");
+  advertise<std_msgs::BaseVel>("cmd_vel", 1);
   subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
   subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
 }

@@ -80,7 +80,7 @@ public:
         images[l].cv_image = 0;
         images[l].color_cal = new color_calib::Calibration(this);
 
-        std::string color_cal_str = map_name("images") + std::string("/") + images[l].label;
+        std::string color_cal_str = mapName("images") + std::string("/") + images[l].label;
         images[l].color_cal->getFromParam(color_cal_str);
       } else {
 

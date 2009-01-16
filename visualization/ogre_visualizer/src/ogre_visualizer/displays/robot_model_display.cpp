@@ -172,7 +172,7 @@ bool RobotModelDisplay::isCollisionVisible()
 void RobotModelDisplay::load()
 {
   std::string content;
-  ros_node_->get_param(description_param_, content);
+  ros_node_->getParam(description_param_, content);
 
   if ( content == robot_description_ )
   {

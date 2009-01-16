@@ -146,10 +146,10 @@ bool CartesianOrientationControllerNode::initXml(mechanism::RobotState *robot, T
     return false;
 
   /*
-  node->advertise_service(topic + "/set_command",
+  node->advertiseService(topic + "/set_command",
                           &CartesianOrientationControllerNode::setCommand, this);
   guard_set_command_.set(topic + "/set_command");
-  node->advertise_service(topic + "/get_actual",
+  node->advertiseService(topic + "/get_actual",
                           &CartesianOrientationControllerNode::getActual, this);
   guard_get_actual_.set(topic + "/get_actual");
 

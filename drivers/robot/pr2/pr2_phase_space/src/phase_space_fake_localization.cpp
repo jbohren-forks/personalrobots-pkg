@@ -74,8 +74,8 @@ public :
     param("~publish_transform", publish_transform_, true) ;
     param("~base_id", base_id_, 1) ;
 
-    advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-    advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth") ;
+    advertise<std_msgs::RobotBase2DOdom>("localizedpose", 1);
+    advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster(*this);
 

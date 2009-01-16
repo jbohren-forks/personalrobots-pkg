@@ -3024,7 +3024,7 @@ void EnvironmentROBARM::InitializeKinNode()
 
 //     printf("Node initialized.\n");
     /*std::string pr2Content;
-    calcFK_armplanner.get_param("robotdesc/pr2",pr2Content);  
+    calcFK_armplanner.getParam("robotdesc/pr2",pr2Content);  
     EnvROBARMCfg.pr2_kin.loadString(pr2Content.c_str());*/
 
     KL_time += clock() - currenttime;

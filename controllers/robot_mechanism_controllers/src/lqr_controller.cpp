@@ -192,8 +192,8 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_target", &LQRControllerNode::setTargetSrv, this);
-    node->advertise_service(prefix + "/set_command", &LQRControllerNode::setLQRParamsSrv, this);
+    node->advertiseService(prefix + "/set_target", &LQRControllerNode::setTargetSrv, this);
+    node->advertiseService(prefix + "/set_command", &LQRControllerNode::setLQRParamsSrv, this);
 
     TiXmlElement *model_xml = config->FirstChildElement("model");
     if(!model_xml)

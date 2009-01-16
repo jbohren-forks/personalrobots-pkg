@@ -108,7 +108,7 @@ void ArmTrajectoryNode::finalize(int)
 int
 ArmTrajectoryNode::AdvertiseMessages()
 {
-  advertise<std_msgs::ArmTrajectory>("arm_trajectory");
+  advertise<std_msgs::ArmTrajectory>("arm_trajectory", 1);
   return(0);
 }
 

@@ -181,17 +181,17 @@ public:
     // Register a frequency status updater
     diagnostic_.addUpdater( &StereoDcamNode::freqStatus );
 
-    stereo_name_ = map_name("stereo") + std::string("/");
+    stereo_name_ = mapName("stereo") + std::string("/");
 
     // If there is a camera...
     if (num_cams > 0)
     {
       // Check our gui parameter, or else use first camera
       uint64_t guid;
-      if (has_param(stereo_name_+ std::string("guid")))
+      if (hasParam(stereo_name_+ std::string("guid")))
       {
         string guid_str;
-        get_param(stereo_name_ + std::string("guid"), guid_str);
+        getParam(stereo_name_ + std::string("guid"), guid_str);
         
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {
@@ -256,14 +256,14 @@ public:
 
       // Fetch the camera string and send it to the parameter server if people want it (they shouldn't)
       std::string params(stcam_->getParameters());
-      set_param(stereo_name_ + std::string("params"), params);
+      setParam(stereo_name_ + std::string("params"), params);
 
-      set_param(stereo_name_ + std::string("exposure_max"), (int)stcam_->expMax);
-      set_param(stereo_name_ + std::string("exposure_min"), (int)stcam_->expMin);
-      set_param(stereo_name_ + std::string("gain_max"), (int)stcam_->gainMax);
-      set_param(stereo_name_ + std::string("gain_min"), (int)stcam_->gainMin);
-      set_param(stereo_name_ + std::string("brightness_max"), (int)stcam_->brightMax);
-      set_param(stereo_name_ + std::string("brightness_min"), (int)stcam_->brightMin);
+      setParam(stereo_name_ + std::string("exposure_max"), (int)stcam_->expMax);
+      setParam(stereo_name_ + std::string("exposure_min"), (int)stcam_->expMin);
+      setParam(stereo_name_ + std::string("gain_max"), (int)stcam_->gainMax);
+      setParam(stereo_name_ + std::string("gain_min"), (int)stcam_->gainMin);
+      setParam(stereo_name_ + std::string("brightness_max"), (int)stcam_->brightMax);
+      setParam(stereo_name_ + std::string("brightness_min"), (int)stcam_->brightMin);
 
       // Configure camera
       stcam_->setFormat(mode, fps, speed);
@@ -287,7 +287,7 @@ public:
 
     } else {
       ROS_FATAL("stereodcam: No cameras found\n");
-      self_destruct();
+      shutdown();
     }
   }
 
@@ -317,7 +317,7 @@ public:
 
   void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
   {
-    if (has_param(stereo_name_ +  param_name) || has_param(stereo_name_ +  param_name + std::string("_auto")))
+    if (hasParam(stereo_name_ +  param_name) || hasParam(stereo_name_ +  param_name + std::string("_auto")))
     {
 
       int val = 0;
@@ -340,7 +340,7 @@ public:
 
   void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
   {
-    if (has_param(stereo_name_ +  param_name))
+    if (hasParam(stereo_name_ +  param_name))
     {
       bool on = false;
 
@@ -359,7 +359,7 @@ public:
 
   void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
   {
-    if (has_param(stereo_name_ +  param_name))
+    if (hasParam(stereo_name_ +  param_name))
     {
 
       int val = 0;
