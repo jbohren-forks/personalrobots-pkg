@@ -39,8 +39,13 @@
 #ifndef TOPIC_SYNCHRONIZER_HH
 #define TOPIC_SYNCHRONIZER_HH
 
-#include "rosthread/mutex.h"
-#include "rosthread/condition.h"
+
+#include <boost/thread.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
+
+//#include "rosthread/mutex.h"
+//#include "rosthread/condition.h"
+
 #include "ros/time.h"
 
   //! A templated class for synchronizing incoming topics
@@ -56,7 +61,8 @@ class TopicSynchronizer
   class UnsubscribeList
   {
     std::list<std::string> list_;
-    ros::thread::mutex list_mutex_;
+    boost::mutex list_mutex_;
+    //    ros::thread::mutex list_mutex_;
     
   public:
     UnsubscribeList(std::list<std::string>& l) : list_(l) { }
@@ -106,13 +112,16 @@ class TopicSynchronizer
   void (N::*callback_)(ros::Time);
 
   //! Timeout duration
-  ros::Duration timeout_;
+  boost::posix_time::time_duration timeout_;
+  //  ros::Duration timeout_;
 
   //! The callback to be called if timed out
   void (N::*timeout_callback_)(ros::Time);
   
-  //! The condition variable used for synchronization
-  ros::thread::condition cond_all_;
+  //! The condition variable and mutex used for synchronization
+  boost::condition_variable cond_all_;
+  boost::mutex              cond_all_mutex_;
+  //  ros::thread::condition cond_all_;
 
   //! The number of expected incoming messages
   int expected_count_;
@@ -144,19 +153,21 @@ class TopicSynchronizer
 
     ros::Time* time = (ros::Time*)(p);
 
-    cond_all_.lock();
+
+    boost::unique_lock<boost::mutex> lock(cond_all_mutex_);
+    //    cond_all_mutex_.lock();
 
     // If first to get message, wait for others
     if (count_ == 0)
     {
-      wait_for_others(time);
+      wait_for_others(time, lock);
       return;
     }
 
     // If behind, skip
     if (*time < waiting_time_)
     {
-      cond_all_.unlock();
+      //      cond_all_mutex_.unlock();
       return;
     }
 
@@ -166,21 +177,21 @@ class TopicSynchronizer
       count_++;
       if (count_ == expected_count_)
       {
-        cond_all_.broadcast();
+        cond_all_.notify_all();
       }
 
       while (!done_ && *time == waiting_time_)
-        cond_all_.wait();
+        cond_all_.wait(lock);
       
-      cond_all_.unlock();
+      //      cond_all_mutex_.unlock();
       return;
     }
 
     // If ahead, wakeup others, and ten wait for others
     if (*time > waiting_time_)
     {
-      cond_all_.broadcast();
-      wait_for_others(time);
+      cond_all_.notify_all();
+      wait_for_others(time, lock);
     }
   }
 
@@ -200,7 +211,7 @@ class TopicSynchronizer
   /*!
    * \param time  The time that is being waited for
    */
-  void wait_for_others(ros::Time* time)
+  void wait_for_others(ros::Time* time, boost::unique_lock<boost::mutex>& lock)
   {
     count_ = 1;
     done_ = false;
@@ -209,7 +220,7 @@ class TopicSynchronizer
     bool timed_out = false;
 
     while (count_ < expected_count_ && *time == waiting_time_ && !timed_out)
-      if (!cond_all_.timed_wait(timeout_))
+      if (!cond_all_.timed_wait(lock, timeout_))
       {
         timed_out = true;
         if (timeout_callback_)
@@ -223,9 +234,9 @@ class TopicSynchronizer
     {
       done_ = true;
       count_ = 0;
-      cond_all_.broadcast();
+      cond_all_.notify_all();
     }
-    cond_all_.unlock();
+        //    cond_all_mutex_.unlock();
   }
 
   public:
@@ -239,8 +250,10 @@ class TopicSynchronizer
    * \param timeout          The duration 
    * \param timeout_callback A callback which is triggered when the timeout expires
    */
-  TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_(timeout), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
-  { }
+  TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
+  {
+    timeout_ = boost::posix_time::nanosec(timeout.toNSec());
+  }
 
   //! Destructor
   ~TopicSynchronizer()

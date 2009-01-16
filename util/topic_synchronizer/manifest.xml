@@ -7,7 +7,7 @@
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <export>
-    <cpp cflags="-I${prefix}"/>
+    <cpp cflags="-I${prefix} -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG"/>
   </export>
   <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
 </package>

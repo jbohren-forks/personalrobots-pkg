@@ -61,6 +61,8 @@
 
 #include "topic_synchronizer.h"
 
+#include <boost/thread.hpp>
+
 using namespace std;
 
 struct MouseCallbackParams {
@@ -72,7 +74,7 @@ struct MouseCallbackParams {
 };
 
 //ros::thread::mutex cv_mutex;
-ros::thread::mutex g_cv_mutex;
+boost::mutex g_cv_mutex;
 
 /*!
  * \brief Click on a point in the left image to get 2d, color and 3d information.
@@ -170,7 +172,7 @@ public:
 
   MouseCallbackParams mcbparams_; /**< Parameters for the mouse callback. */
 
-  ros::thread::mutex cv_mutex; 
+  boost::mutex cv_mutex; 
 
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
