@@ -151,7 +151,7 @@ public:
         }
         
         RobotBase* probot = penv->GetRobots().front();    
-        ROS_INFO("generating convex hulls for robot %S, num links: %d", probot->GetName(), probot->GetLinks().size());
+        ROS_INFO("generating convex hulls for robot %S, num links: %lu", probot->GetName(), probot->GetLinks().size());
 
         ros::Time starthull = ros::Time::now();
         _vLinkHulls.resize(probot->GetLinks().size());
@@ -161,7 +161,7 @@ public:
             // compute convex hull
             if( compute_convex_hull((*itlink)->GetCollisionData().vertices, ithull->vconvexhull) ) {
                 totalplanes += ithull->vconvexhull.size();
-                ROS_DEBUG("link %S convex hull has %d planes", (*itlink)->GetName(), ithull->vconvexhull.size());
+                ROS_DEBUG("link %S convex hull has %lu planes", (*itlink)->GetName(), ithull->vconvexhull.size());
             }
             else
                 ROS_ERROR("failed to compute convex hull for link %S", (*itlink)->GetName());
@@ -170,7 +170,7 @@ public:
             ++ithull;
         }
 
-        ROS_INFO("total convex planes: %d, time: %fs", totalplanes, (ros::Time::now()-starthull).toSec());
+        ROS_INFO("total convex planes: %lu, time: %fs", totalplanes, (ros::Time::now()-starthull).toSec());
 
         return true;
     }
@@ -459,7 +459,7 @@ int main(int argc, char ** argv)
     ros::init(argc,argv);
     s_pmasternode.reset(new ros::node("robobtlinks_filter"));
 
-    if( !s_pmasternode->check_master() )
+    if( !s_pmasternode->checkMaster() )
         return -1;
     
     boost::shared_ptr<RobotLinksFilter> plinksfilter(new RobotLinksFilter(robotname, padding, bAccurateTiming));

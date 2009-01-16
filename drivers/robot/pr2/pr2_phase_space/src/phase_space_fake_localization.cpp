@@ -35,15 +35,15 @@
 //! \author Sachin Chitta
 
 /****
- * This node takes the PhaseSpaceSnapshot packet and repackages into a form that can be used with the odometry
+ * This node takes the MocapSnapshot packet and repackages into a form that can be used with the odometry
  */
 
 #include "ros/node.h"
 
 // Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-#include "phase_space/PhaseSpaceBody.h"
+#include "robot_msgs/MocapSnapshot.h"
+#include "robot_msgs/MocapMarker.h"
+#include "robot_msgs/MocapBody.h"
 
 #include "std_msgs/Transform.h"
 #include "std_msgs/RobotBase2DOdom.h"
@@ -101,7 +101,7 @@ public :
     {
       if (snapshot_.bodies[i].id == base_id_)                                       // Check if we found the robot base in the list of rigid bodies
       {
-        const phase_space::PhaseSpaceBody& body = snapshot_.bodies[0] ;
+        const robot_msgs::MocapBody& body = snapshot_.bodies[0] ;
 
         // Build Transform Message
         tf::Transform mytf;
@@ -150,7 +150,7 @@ public :
 
 private:
 
-  phase_space::PhaseSpaceSnapshot snapshot_;
+  robot_msgs::MocapSnapshot snapshot_;
   std_msgs::RobotBase2DOdom m_currentPos;
   tf::TransformBroadcaster *m_tfServer;
   unsigned int publish_success_count_ ;

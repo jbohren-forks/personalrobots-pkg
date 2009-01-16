@@ -48,9 +48,9 @@
 #include "owl.h"
 
 // Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-#include "phase_space/PhaseSpaceBody.h"
+#include "robot_msgs/MocapSnapshot.h"
+#include "robot_msgs/MocapMarker.h"
+#include "robot_msgs/MocapBody.h"
 
 namespace phase_space
 {
@@ -68,13 +68,13 @@ public :
   bool spin() ;
 
 private :
-  int grabMarkers(PhaseSpaceSnapshot& snapshot) ;
-  int grabBodies (PhaseSpaceSnapshot& snapshot) ;
-  void grabTime  (PhaseSpaceSnapshot& snapshot) ;
-  void copyMarkerToMessage(const OWLMarker& owl_marker, PhaseSpaceMarker& msg_marker) ;
-  void copyBodyToMessage(const OWLRigid& owl_body, PhaseSpaceBody& msg_body) ;
+  int grabMarkers(robot_msgs::MocapSnapshot& snapshot) ;
+  int grabBodies (robot_msgs::MocapSnapshot& snapshot) ;
+  void grabTime  (robot_msgs::MocapSnapshot& snapshot) ;
+  void copyMarkerToMessage(const OWLMarker& owl_marker, robot_msgs::MocapMarker& msg_marker) ;
+  void copyBodyToMessage(const OWLRigid& owl_body, robot_msgs::MocapBody& msg_body) ;
   void owlPrintError(const char *s, int n) ;
-  void dispSnapshot(const PhaseSpaceSnapshot& snapshot) ;
+  void dispSnapshot(const robot_msgs::MocapSnapshot& snapshot) ;
 } ;
 
 }

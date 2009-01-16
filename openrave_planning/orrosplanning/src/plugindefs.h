@@ -179,7 +179,7 @@ inline ros::node* check_roscpp()
     // start roscpp
     ros::node* pnode = ros::node::instance();
 
-    if( pnode && !pnode->check_master() ) {
+    if( pnode && !pnode->checkMaster() ) {
         ros::fini();
         delete pnode;
         return NULL;
@@ -195,7 +195,7 @@ inline ros::node* check_roscpp()
             
         pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME|ros::node::DONT_ADD_ROSOUT_APPENDER);
             
-        bool bCheckMaster = pnode->check_master();
+        bool bCheckMaster = pnode->checkMaster();
         ros::fini();
         delete pnode;
 
@@ -215,7 +215,7 @@ inline ros::node* check_roscpp()
 inline ros::node* check_roscpp_nocreate()
 {
     ros::node* pnode = ros::node::instance();
-    return (pnode && pnode->check_master()) ? pnode : NULL;
+    return (pnode && pnode->checkMaster()) ? pnode : NULL;
 }
     
 #endif

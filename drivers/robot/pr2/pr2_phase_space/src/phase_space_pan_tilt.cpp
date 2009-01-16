@@ -35,7 +35,7 @@
 //! \author Vijay Pradeep
 
 /****
- * This node takes the PhaseSpaceSnapshot packet and repackages to work with the pan_tilt tracker
+ * This node takes the MocapSnapshot packet and repackages to work with the pan_tilt tracker
  */
 
 #include <string>
@@ -43,9 +43,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-#include "phase_space/PhaseSpaceBody.h"
+#include "robot_msgs/MocapSnapshot.h"
+#include "robot_msgs/MocapMarker.h"
+#include "robot_msgs/MocapBody.h"
 
 #include "std_msgs/PointStamped.h"
 
@@ -79,7 +79,7 @@ public :
       if (snapshot_.get_markers_size() == 0)
         return ;
 
-      phase_space::PhaseSpaceMarker& cur_marker = snapshot_.markers[0] ;
+      robot_msgs::MocapMarker& cur_marker = snapshot_.markers[0] ;
       
       std_msgs::PointStamped target_point ;
       target_point.header = snapshot_.header ;
@@ -93,7 +93,7 @@ public :
   
 private :
   const string topic ;
-  phase_space::PhaseSpaceSnapshot snapshot_ ;
+  robot_msgs::MocapSnapshot snapshot_ ;
   
   int publish_count_ ;
   

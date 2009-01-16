@@ -172,7 +172,7 @@ class CollisionMapper : public ros::node
         ROS_ERROR ("TF not running or wrong TF frame specified! Defaulting to 0,0,0.");
         torso_lift_origin = base_origin;
       }
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.pts.size ());
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
@@ -271,7 +271,7 @@ class CollisionMapper : public ros::node
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %d.", time_spent, c_map_.boxes.size ());
+      ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
 
       publish ("collision_map", c_map_);
     }

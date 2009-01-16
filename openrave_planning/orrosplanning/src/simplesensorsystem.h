@@ -33,13 +33,13 @@ template <typename XMLID>
 class SimpleSensorSystem : public SensorSystemBase
 {
 public:
-    class MocapData : public XMLReadable
+    class XMLData : public XMLReadable
     {
     public:
-        MocapData() {}
+        XMLData() {}
         virtual const char* GetXMLId() { return XMLID::GetXMLId(); }
 
-        virtual void copy(const MocapData* pdata) {
+        virtual void copy(const XMLData* pdata) {
             assert( pdata != NULL );
             *this = *pdata;
         }
@@ -53,7 +53,7 @@ public:
     class BODY : public BODYBASE
     {
     public:
-        BODY(KinBody* pbody, MocapData* pdata) : bPresent(false), bEnabled(true), bLock(false)
+        BODY(KinBody* pbody, XMLData* pdata) : bPresent(false), bEnabled(true), bLock(false)
         {
             assert( pbody != NULL && pdata != NULL);
             _initdata.reset(pdata);
@@ -104,7 +104,7 @@ public:
 
         ros::Time lastupdated;
         Transform tnew; ///< most recent transform that is was set
-        boost::shared_ptr<MocapData> _initdata;
+        boost::shared_ptr<XMLData> _initdata;
 
     private:
         bool bPresent; 
@@ -120,14 +120,14 @@ public:
     class SimpleXMLReader : public BaseXMLReader
     {
     public:
-        SimpleXMLReader(MocapData* pMocap, const char **atts) {
+        SimpleXMLReader(XMLData* pMocap, const char **atts) {
             _pMocap = pMocap;
             if( _pMocap == NULL )
-                _pMocap = new MocapData();
+                _pMocap = new XMLData();
         }
         virtual ~SimpleXMLReader() { delete _pMocap; }
         
-        void* Release() { MocapData* temp = _pMocap; _pMocap = NULL; return temp; }
+        void* Release() { XMLData* temp = _pMocap; _pMocap = NULL; return temp; }
 
         virtual void startElement(void *ctx, const char *name, const char **atts) {}
         virtual bool endElement(void *ctx, const char *name)
@@ -192,7 +192,7 @@ public:
         }
 
     protected:
-        MocapData* _pMocap;
+        XMLData* _pMocap;
         stringstream ss;
     };
 
@@ -231,7 +231,7 @@ public:
     {
         // go through all bodies in the environment and check for mocap data
         FOREACHC(itbody, vbodies) {
-            MocapData* pmocapdata = (MocapData*)((*itbody)->GetExtraInterface(XMLID::GetXMLId()));
+            XMLData* pmocapdata = (XMLData*)((*itbody)->GetExtraInterface(XMLID::GetXMLId()));
             if( pmocapdata != NULL ) {
                 BODY* p = AddKinBody(*itbody, pmocapdata);
                 if( p != NULL ) {
@@ -248,9 +248,9 @@ public:
             return false;
         assert( pbody->GetEnv() == GetEnv() );
     
-        const MocapData* pdata = (const MocapData*)_pdata;
+        const XMLData* pdata = (const XMLData*)_pdata;
         if( pdata == NULL ) {
-            pdata = (const MocapData*)(pbody->GetExtraInterface(XMLID::GetXMLId()));
+            pdata = (const XMLData*)(pbody->GetExtraInterface(XMLID::GetXMLId()));
             if( pdata == NULL ) {
                 RAVELOG_ERRORA("failed to find mocap data for body %S\n", pbody->GetName());
                 return NULL;
@@ -263,7 +263,7 @@ public:
             return NULL;
         }
         
-        BODY* b = CreateBODY(pbody, (const MocapData*)pdata);            
+        BODY* b = CreateBODY(pbody, (const XMLData*)pdata);            
         _mapbodies[pbody->GetNetworkId()].reset(b);
         RAVELOG_DEBUGA("system adding body %S, total: %d\n", pbody->GetName(), _mapbodies.size());
         return b;
@@ -343,9 +343,9 @@ public:
     }
 
 protected:
-    virtual BODY* CreateBODY(KinBody* pbody, const MocapData* pdata)
+    virtual BODY* CreateBODY(KinBody* pbody, const XMLData* pdata)
     {
-        MocapData* pnewdata = new MocapData();
+        XMLData* pnewdata = new XMLData();
         pnewdata->copy(pdata);
         BODY* b = new BODY(pbody, pnewdata);
         return b;
@@ -422,7 +422,7 @@ protected:
 
 #ifdef RAVE_REGISTER_BOOST
 #include BOOST_TYPEOF_INCREMENT_REGISTRATION_GROUP()
-BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::MocapData, 1)
+BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::XMLData, 1)
 BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::BODY, 1)
 BOOST_TYPEOF_REGISTER_TEMPLATE(SimpleSensorSystem::SimpleXMLReader, 1)
 #endif

@@ -131,6 +131,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
         
     TiXmlElement *body = new TiXmlElement("body");
     body->SetAttribute("name", link->name);
+    printf("name: %s\n", link->name.c_str());
 	
     // compute global transform
     btTransform localTransform;

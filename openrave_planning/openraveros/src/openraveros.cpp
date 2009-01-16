@@ -146,6 +146,6 @@ int main(int argc, char ** argv)
 
 void sigint_handler(int)
 {
-    s_sessionserver->selfDestruct();
-    s_pmasternode->selfDestruct();
+    s_sessionserver->shutdown();
+    s_pmasternode->shutdown();
 }

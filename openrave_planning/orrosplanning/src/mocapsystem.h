@@ -27,40 +27,40 @@
 #define PHASESPACE_MOCAP_SYSTEM
 
 #include "rossensorsystem.h"
-#include "phase_space/PhaseSpaceSnapshot.h"
+#include "robot_msgs/MocapSnapshot.h"
 
 // used to update objects through a mocap system
-class PhaseSpaceXMLID
+class MocapXMLID
 {
 public:
     static const char* GetXMLId() { return "phasespace"; }
 };
 
-class PhaseSpaceMocapClient : public ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>
+class ROSMocapSystem : public ROSSensorSystem<robot_msgs::MocapSnapshot, MocapXMLID>
 {
 public:
-    PhaseSpaceMocapClient(EnvironmentBase* penv)
-        : ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>(penv)
+    ROSMocapSystem(EnvironmentBase* penv)
+        : ROSSensorSystem<robot_msgs::MocapSnapshot, MocapXMLID>(penv)
     {
     }
 
     virtual bool Init(istream& sinput)
     {
-        _topic = "phase_space_snapshot";
-        return ROSSensorSystem<phase_space::PhaseSpaceSnapshot, PhaseSpaceXMLID>::Init(sinput);
+        _topic = "robot_msgs_snapshot";
+        return ROSSensorSystem<robot_msgs::MocapSnapshot, MocapXMLID>::Init(sinput);
     }
 
 private:
     void newdatacb()
     {
         list< SNAPSHOT > listbodies;
-        list< const phase_space::PhaseSpaceBody* > listnewbodies;
+        list< const robot_msgs::MocapBody* > listnewbodies;
 
         {
             boost::mutex::scoped_lock lock(_mutex);
 
             for (unsigned int i=0; i<_topicmsg.get_bodies_size(); i++) {
-                const phase_space::PhaseSpaceBody& psbody = _topicmsg.bodies[i];
+                const robot_msgs::MocapBody& psbody = _topicmsg.bodies[i];
 
                 boost::shared_ptr<BODY> b;
                 Transform tnew = GetTransform(psbody.pose);

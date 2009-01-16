@@ -175,7 +175,7 @@ public:
 
     void Destroy()
     {
-        selfDestruct();
+        shutdown();
 
         node* pnode = node::instance();
         if( pnode == NULL )
@@ -228,7 +228,7 @@ public:
         };
     }
 
-    virtual void selfDestruct()
+    virtual void shutdown()
     {
         _ok = false;
         boost::mutex::scoped_lock lockcreate(_mutexViewer);
