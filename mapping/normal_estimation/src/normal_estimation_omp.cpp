@@ -259,7 +259,7 @@ class NormalEstimation : public ros::node
       ROS_INFO ("Nearest neighbors found in %g seconds.", time_spent);
 
       gettimeofday (&t1, NULL);
-      #pragma omp parallel for schedule(dynamic)
+//      #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
