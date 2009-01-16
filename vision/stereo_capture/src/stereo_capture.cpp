@@ -53,6 +53,8 @@
 
 #include "topic_synchronizer.h"
 
+#include <boost/thread.hpp>
+
 using namespace std;
 
 class StereoView : public ros::node
@@ -89,7 +91,7 @@ public:
   bool captureNoTex;
   std_msgs::UInt8 projector_status;
 
-  ros::thread::mutex cv_mutex;
+  boost::mutex cv_mutex;
 
   string fileName;
   unsigned int fileNum;
