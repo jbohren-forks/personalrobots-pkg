@@ -111,11 +111,17 @@ class CollisionMapper : public ros::node
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
+      bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
-        if (it->first.find (cloud_topic) == string::npos)
-          ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
+        if (it->first.find (cloud_topic) != string::npos)
+        {
+          topic_found = true;
+          break;
+        }
       }
+      if (!topic_found)
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       subscribe (cloud_topic.c_str (), cloud_, &CollisionMapper::cloud_cb, 1);
       advertise<collision_map::CollisionMap> ("collision_map", 1);
@@ -269,15 +275,15 @@ class CollisionMapper : public ros::node
       {
         if (object_data_type_ == O_SPHERE)
         {
-          i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
-          j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
-          k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
-        }
-        else if (object_data_type_ == O_ORIENTEDBOX)
-        {
           i = (int)(floor (cloud_.pts[indices.at (cp)].x / sphere_diameter));
           j = (int)(floor (cloud_.pts[indices.at (cp)].y / sphere_diameter));
           k = (int)(floor (cloud_.pts[indices.at (cp)].z / sphere_diameter));
+        }
+        else if (object_data_type_ == O_ORIENTEDBOX)
+        {
+          i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
+          j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
+          k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
         }
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
