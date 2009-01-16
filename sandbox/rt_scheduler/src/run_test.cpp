@@ -45,7 +45,7 @@ using namespace rt_scheduler ;
 class Talker : public rt_scheduler::RtNode
 {
 public:
-  Talker(int start, int inc) : out_(this)
+  Talker(Scheduler* parent, std::string name, Oracle* oracle, int start, int inc) : RtNode(parent, name), out_(this)
   {
     state_ = start ;
     inc_ = inc ;
@@ -70,10 +70,10 @@ public:
 class Adder : public rt_scheduler::RtNode
 {
 public:
-  Adder(Oracle& oracle, std::string name) : rt_scheduler::RtNode(name), in_A_(this),
-                                            in_B_(this), out_(this)
+  Adder(Scheduler* parent, std::string name, Oracle* oracle) : RtNode(parent, name), in_A_(this),
+                                                                in_B_(this), out_(this)
   {
-    oracle.registerPort(&out_, name+"/out") ;
+    //oracle.registerPort(&out_, name+"/out") ;
   }
 
   ~Adder()
@@ -111,10 +111,10 @@ public:
   OutputPort<int> out_ ;
 } ;
 
-class Doubler : public rt_scheduler::RtNode
+class Doubler : public RtNode
 {
 public:
-  Doubler(std::string name) : rt_scheduler::RtNode(name), in_(this)
+  Doubler(Scheduler* parent, std::string name) : RtNode(parent, name), in_(this)
   {
 
   }
@@ -149,38 +149,51 @@ int main(int argc, char** argv)
 {
   // Initialize
   Oracle oracle ;
+  Scheduler controllers(NULL, "controllers") ;
+  Scheduler group_A(&controllers, "Group_A") ;
+  group_A.active_ = false ;
 
-  Talker talker_A(5,2) ;
-  Talker talker_B(10,-1) ;
-  Adder adder(oracle, "Adder") ;
-  Doubler doubler("Doubler") ;
+  Talker talker_A(&group_A, string("talkerA"), &oracle, 5,2) ;
+  Talker talker_B(&group_A, string("talkerB"), &oracle, 10,-1) ;
+  Adder adder_A(&group_A, string("AdderA"), &oracle) ;
 
-  talker_A.name_ = "TalkerA" ;
-  talker_B.name_ = "TalkerB" ;
+  Talker talker_C(&controllers, string("talkerC"), &oracle, 0,100) ;
+  Adder adder_B(&controllers, string("AdderB"), &oracle) ;
+  Doubler doubler(&controllers, string("Doubler")) ;
 
   // Connect ports together
-  adder.in_A_.Link(&talker_A.out_) ;
-  adder.in_B_.Link(&talker_B.out_) ;
+  Link<int> link_1, link_2, link_3 ;
+  Link<int> link_4, link_5 ;
 
-  OutputPort<int>* port ;
-  oracle.find(port, "Adder/out") ;
-  if(port != NULL)
-    doubler.in_.Link(port) ;
+  printf("Atempting link1...\n") ;
+  if(!link_1.makeLink(&talker_A.out_, &adder_A.in_A_))
+    printf("Error making link 1\n") ;
   else
-    printf("Oracle could not find port") ;
+    printf("Success\n") ;
 
-  // Add to the scheduler
-  Scheduler scheduler ;
-  scheduler.add(&talker_A) ;
-  scheduler.add(&talker_B) ;
-  scheduler.add(&adder) ;
-  scheduler.add(&doubler) ;
+  printf("Atempting link2...\n") ;
+  if(!link_2.makeLink(&talker_B.out_, &adder_A.in_B_))
+    printf("Error making link 2\n") ;
+  else
+    printf("Success\n") ;
 
-  scheduler.updateExecutionOrder() ;
+  printf("Atempting link3...\n") ;
+  if(!link_3.makeLink(&adder_A.out_, &adder_B.in_A_))
+    printf("Error making link 3\n") ;
+  else
+    printf("Success\n") ;
+
+  if(!link_4.makeLink(&talker_C.out_, &adder_B.in_B_))
+    printf("Error making link 4\n") ;
+  if(!link_5.makeLink(&adder_B.out_, &doubler.in_))
+    printf("Error making link 5\n") ;
+
+  controllers.updateExecutionOrder() ;
+  group_A.updateExecutionOrder() ;
 
   while(true)
   {
-    scheduler.update() ;
+    controllers.update() ;
     getchar() ;
   }
 
