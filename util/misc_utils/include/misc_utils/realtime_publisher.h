@@ -170,9 +170,10 @@ public:
     is_running_ = false;
   }
 
+  std::string topic_;
+
 private:
 
-  std::string topic_;
   ros::node *node_;
   bool is_running_;
   bool keep_running_;
