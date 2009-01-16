@@ -514,13 +514,24 @@ dcam::Dcam::start()
   CHECK_ERR_CLEAN( dc1394_video_set_transmission(dcCam, DC1394_ON), 
 		   "Could not start camera iso transmission");
 
-  // now check if we have started transmission, no error from set_transmission
-  dc1394switch_t pwr;
-  dc1394_video_get_transmission(dcCam, &pwr);
-  if (pwr == DC1394_OFF)
-    throw DcamException("Could not start ISO transmission");
 
-  started = true;
+  // Some camera take a little while to start.  We check 10 times over the course of a second:
+  int tries = 10;
+  
+  while (tries-- > 0)
+  {
+    // now check if we have started transmission, no error from set_transmission
+    dc1394switch_t pwr;
+    dc1394_video_get_transmission(dcCam, &pwr);
+    if (pwr == DC1394_ON)
+    {
+      started = true;
+      return;
+    }
+    usleep(10000);
+  }
+
+  throw DcamException("Camera iso transmission did not actually start.");
 }
 
 

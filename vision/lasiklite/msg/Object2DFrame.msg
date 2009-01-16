@@ -1,1 +1,0 @@
-Object2D[] objects

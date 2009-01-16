@@ -50,11 +50,6 @@ namespace cloud_geometry
     float centroid_x, centroid_y, centroid_z;
     unsigned short nr_points;
   };
-  struct SimplifiedLeaf
-  {
-    unsigned short i, j, k;
-    unsigned short nr_points;
-  };
 
 
   int getChannelIndex (std_msgs::PointCloud *points, std::string channel_name);

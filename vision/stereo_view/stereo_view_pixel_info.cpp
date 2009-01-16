@@ -61,6 +61,8 @@
 
 #include "topic_synchronizer.h"
 
+#include <boost/thread.hpp>
+
 using namespace std;
 
 struct MouseCallbackParams {

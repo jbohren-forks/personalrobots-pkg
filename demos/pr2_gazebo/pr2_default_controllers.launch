@@ -2,8 +2,6 @@
     <param name="base_controller/odom_publish_rate" value="10" />
 
     <!--node pkg="mechanism_control" type="mech.py" args="sp $(find pr2_gazebo)/controllers_2dnav_test.xml" respawn="false" output="screen" /-->
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/l_arm_default_controller.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/r_arm_default_controller.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
     <!--node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2_prototype1/controllers_base.xml" output="screen"/-->
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base.xml" output="screen"/>
     <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2_prototype1/controllers_head_torso_gazebo.xml" output="screen"/>

@@ -3,12 +3,26 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "simple_options/simple_options.h"
 #include "std_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 using namespace std;
 using namespace ros;
+
+map<string, string> parse_simple_options(int argc, char **argv, int start)
+{
+  map<string, string> opts;
+  for (int i = start; i < argc; i++)
+  {
+    char *eq;
+    if (!(eq = strchr(argv[i], '=')))
+      continue;
+    string key(argv[i], (eq - argv[i]));
+    string value(eq + 1);
+    opts[key] = value;
+  }
+  return opts;
+}
 
 class CvMovieStreamer : public Node
 {
@@ -72,7 +86,7 @@ int main(int argc, char **argv)
     printf("  quality=85           : jpeg compression quality of frames\n\n");
     return 1;
   }
-  map<string,string> opts = simple_options::parse(argc, argv, 2);
+  map<string,string> opts = parse_simple_options(argc, argv, 2);
   int delay = 5, loop = 0, quality = 90;
   for (map<string,string>::iterator i = opts.begin(); i != opts.end(); ++i)
   {

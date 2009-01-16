@@ -289,9 +289,9 @@ namespace cloud_geometry
     maxB.z = (int)(floor (maxP.z / leaf_size.z));
 
     // Compute the number of divisions needed along all axis
-    divB.x = maxB.x - minB.x + 1;
-    divB.y = maxB.y - minB.y + 1;
-    divB.z = maxB.z - minB.z + 1;
+    divB.x = (int)(maxB.x - minB.x + 1);
+    divB.y = (int)(maxB.y - minB.y + 1);
+    divB.z = (int)(maxB.z - minB.z + 1);
 
     // Allocate the space needed
     try
@@ -302,7 +302,7 @@ namespace cloud_geometry
     }
     catch (std::bad_alloc)
     {
-      ROS_ERROR ("Attempting to allocate a vector of %ld (%d x %d x %d) leaf elements (%g total)", divB.x * divB.y * divB.z,
+      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", divB.x * divB.y * divB.z,
                  divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
     }
 

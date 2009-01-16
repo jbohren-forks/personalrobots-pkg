@@ -44,7 +44,7 @@
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "joy/Joy.h"
-#include "Eigen/SVD"
+#include "Eigen/LU"
 #include "Eigen/Core"
 #include "robot_kinematics/robot_kinematics.h"
 #include <std_msgs/VisualizationMarker.h>
@@ -74,8 +74,9 @@ private:
 
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_; 
-  Eigen::Matrix<float,6,6> constraint_jac_;
+  Eigen::Matrix<float,6,2> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
+  Eigen::Matrix<float,2,1> constraint_force_;
   KDL::Frame endeffector_frame_;
 
   // some parameters to define the constraint
@@ -84,8 +85,8 @@ private:
   double wall_r;
   double threshold_r;
   double f_x_max;
-  double f_y_max;
-  double f_z_max;
+  double f_r_max;
+
 
 };
 
@@ -97,7 +98,7 @@ private:
 class EndeffectorConstraintControllerNode : public Controller
 {
  public:
-  EndeffectorConstraintControllerNode() {};
+  EndeffectorConstraintControllerNode();
   ~EndeffectorConstraintControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
@@ -106,7 +107,7 @@ class EndeffectorConstraintControllerNode : public Controller
 
  private:
   std::string topic_;
-
+  ros::node *node_;     
   EndeffectorConstraintController controller_;
   SubscriptionGuard guard_command_;
 

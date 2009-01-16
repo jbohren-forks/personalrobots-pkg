@@ -182,7 +182,14 @@ class NormalEstimation : public ros::Node
       {
         gettimeofday (&t1, NULL);
         int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
-        cloud_geometry::downsamplePointCloud (&cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+        try
+        {
+          cloud_geometry::downsamplePointCloud (&cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+        }
+        catch (std::bad_alloc)
+        {
+//          cloud_geometry::downsamplePointCloudSet (&cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
+        }
 
         gettimeofday (&t2, NULL);
         time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -259,7 +266,7 @@ class NormalEstimation : public ros::Node
       ROS_INFO ("Nearest neighbors found in %g seconds.", time_spent);
 
       gettimeofday (&t1, NULL);
-      #pragma omp parallel for schedule(dynamic)
+//      #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)

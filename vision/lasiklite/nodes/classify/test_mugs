@@ -1,3 +1,0 @@
-#!/bin/bash
-xterm -e "cd `rospack find cv_movie_streamer` && ./cv_movie_streamer ../borg_pwned.avi" &
-xterm -e "cd `rospack find lasiklite`/nodes/classify && ./mugs" &

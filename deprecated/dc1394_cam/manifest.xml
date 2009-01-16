@@ -1,0 +1,13 @@
+<package>
+  <description>A node and utilities for connecting to firewire cameras</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="libdc1394v2"/>
+  <depend package="opencv_latest"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldc1394cam"/>
+  </export>
+  <url></url>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl1.2-dev"/>
+</package>
