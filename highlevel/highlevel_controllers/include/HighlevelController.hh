@@ -38,7 +38,7 @@
 
 #include <ros/node.h>
 #include <boost/thread.hpp>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <math.h>
 #include <iostream>
 #include <sstream>

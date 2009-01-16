@@ -80,7 +80,7 @@ Publishes to (name / type):
 
 #include <angles/angles.h>
 
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 #include "tf/transform_broadcaster.h"
 

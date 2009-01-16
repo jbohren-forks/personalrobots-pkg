@@ -53,7 +53,7 @@
 */
 
 #include "costmap_2d/costmap2d_pqueue_benchmark.h"
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 #include "ros/common.h"
 #include <algorithm>
 #include <set>

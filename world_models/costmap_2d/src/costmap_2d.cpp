@@ -51,7 +51,7 @@
 */
 
 #include "costmap_2d/costmap_2d.h"
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 #include "ros/common.h"
 #include <algorithm>
 #include <set>

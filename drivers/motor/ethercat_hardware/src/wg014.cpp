@@ -35,7 +35,7 @@
 #include <ethercat_hardware/wg014.h>
 #include <iomanip>
 
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 static bool reg = DeviceFactory::Instance().Register(WG014::PRODUCT_CODE, deviceCreator<WG014>);
 

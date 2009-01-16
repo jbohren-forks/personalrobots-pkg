@@ -81,7 +81,7 @@ Publishes to (name/type):
 // For integration of testing. Ros console needs to be defined early to avoid conflict in warning
 // declaration somewhere in the include tree.
 #include <gtest/gtest.h>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 #include "TestMonitor.hh"
 #include "Nddl.hh"

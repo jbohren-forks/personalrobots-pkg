@@ -30,7 +30,7 @@
 
 #include "mechanism_control/mechanism_control.h"
 #include <boost/thread/thread.hpp>
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 using namespace mechanism;
 

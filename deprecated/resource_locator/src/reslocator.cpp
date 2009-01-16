@@ -35,7 +35,7 @@
 /** \author Rosen Diankov, Ioan Sucan */
 
 #include <reslocator/reslocator.h>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <boost/regex.hpp>
 
 

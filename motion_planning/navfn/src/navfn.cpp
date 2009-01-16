@@ -38,7 +38,7 @@
 //
 
 #include"navfn.h"
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 //
 // function to perform nav fn calculation

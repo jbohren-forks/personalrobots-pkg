@@ -29,7 +29,7 @@
 
 #include <iostream>
 #include <set>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
 using namespace std; 

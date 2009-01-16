@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 #include "gmapping/sensor/sensor_range/rangesensor.h"
 #include "gmapping/sensor/sensor_odometry/odometrysensor.h"

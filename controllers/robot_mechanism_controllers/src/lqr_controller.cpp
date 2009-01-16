@@ -37,7 +37,7 @@
 #include <mechanism_model/joint.h>
 #include <control_toolbox/LQRDP.h>
 #include <Eigen/Array>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 #include <robot_mechanism_controllers/ros_serialchain_model.h>
 

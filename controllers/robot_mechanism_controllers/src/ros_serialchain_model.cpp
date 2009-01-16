@@ -33,7 +33,7 @@
  *********************************************************************/
  
  #include <ros/node.h>
- #include <rosconsole/rosconsole.h>
+ #include <ros/console.h>
  #include <mechanism_model/robot.h>
  #include <mechanism_model/joint.h>
  #include <robot_msgs/JointCmd.h>

@@ -38,7 +38,7 @@
 #include <sysexits.h>
 #include <boost/thread.hpp>
 #include <ros/node.h>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include "topological_map/roadmap_bottleneck_graph.h"

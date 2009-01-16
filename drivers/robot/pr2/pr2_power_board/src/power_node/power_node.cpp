@@ -55,7 +55,7 @@
 #include "power_node.h"
 #include "robot_msgs/DiagnosticMessage.h"
 #include "rosconsole/macros_generated.h"
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 using namespace std;
 

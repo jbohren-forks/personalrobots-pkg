@@ -86,7 +86,7 @@ Publishes to (name / type):
 
 #include <deque>
 
-#include "rosconsole/rosassert.h"
+#include "ros/assert.h"
 
 // For core Player stuff (message queues, config file objects, etc.)
 #include "libplayercore/playercore.h"

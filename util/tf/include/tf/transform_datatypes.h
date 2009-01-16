@@ -44,7 +44,7 @@
 #include "LinearMath/btTransform.h"
 #include "ros/time.h"
 
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 namespace tf
 {
