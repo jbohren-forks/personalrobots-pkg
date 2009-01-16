@@ -316,9 +316,20 @@ namespace costmap_2d {
     CostMapAccessor(const CostMap2D& costMap, double maxSize, double pose_x, double pose_y);
 
     /**
+     * @broef Constructor
+     * Use when we want to access the whole cost map rather than a window
+     */
+    CostMapAccessor(const CostMap2D& costMap);
+
+    /**
      * @brief Set the pose for the robot. Will adjust other parameters accordingly.
      */
     void updateForRobotPosition(double wx, double wy);
+
+    /**
+     * @brief Refresh the copied cost data structure from the source cost map
+     */
+    void refresh();
 
   private:
 

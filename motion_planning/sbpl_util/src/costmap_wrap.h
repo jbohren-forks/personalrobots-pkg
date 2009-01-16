@@ -41,6 +41,7 @@
 
 namespace costmap_2d {
   class CostMap2D;
+  class CostMapAccessor;
 }
 
 namespace sfl {
@@ -105,10 +106,10 @@ namespace ompl {
   typedef GenericIndexTransformWrap<ssize_t> IndexTransformWrap;
   
   
-  CostmapWrap * createCostmapWrap(costmap_2d::CostMap2D const * cm);
+  CostmapWrap * createCostmapWrap(costmap_2d::CostMapAccessor const * cm);
   CostmapWrap * createCostmapWrap(sfl::RDTravmap const * rdt);
   
-  IndexTransformWrap * createIndexTransformWrap(costmap_2d::CostMap2D const * cm);
+  IndexTransformWrap * createIndexTransformWrap(costmap_2d::CostMapAccessor const * cm);
   IndexTransformWrap * createIndexTransformWrap(sfl::GridFrame const * gf);
   
 }

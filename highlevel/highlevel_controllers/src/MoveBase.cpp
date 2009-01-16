@@ -55,12 +55,13 @@ namespace ros {
       tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
-      ma_(NULL),
+      local_map_accessor_(NULL),
+      global_map_accessor_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
       minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
       yaw_goal_tolerance_(0.1),
-      xy_goal_tolerance_(robotWidth_ / 2)
+	xy_goal_tolerance_(robotWidth_ / 2), reset_cost_map_(false)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.setIdentity();
@@ -244,7 +245,8 @@ namespace ros {
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
 
-      ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
+      global_map_accessor_ = new CostMapAccessor(*costMap_);
+      local_map_accessor_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
 
       std_msgs::Point2DFloat32 pt;
       //create a square footprint
@@ -266,7 +268,7 @@ namespace ros {
       pt.y = 0;
       footprint_.push_back(pt);
 
-      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
+      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *local_map_accessor_,
           sim_time,
           sim_steps,
 	  samples_per_dim,
@@ -327,8 +329,12 @@ namespace ros {
       if(controller_ != NULL)
         delete controller_;
 
-      if(ma_ != NULL)
-        delete ma_;
+      if(local_map_accessor_ != NULL)
+        delete local_map_accessor_;
+ 
+      if(global_map_accessor_ != NULL)
+        delete global_map_accessor_;
+
 
       if(costMap_ != NULL)
         delete costMap_;
@@ -367,7 +373,7 @@ namespace ros {
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       ROS_DEBUG("Received new position (x=%f, y=%f, th=%f)", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
 
-      ma_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+      local_map_accessor_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
     }
 
 
@@ -376,7 +382,7 @@ namespace ros {
      */
     void MoveBase::updateGoalMsg(){
       // Revert to static map on new goal. May result in oscillation, but requested by Eitan for the milestone
-      updateCostMap(true);
+      reset_cost_map_ = true;
 
       tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
       btQuaternion qt;
@@ -513,7 +519,7 @@ namespace ros {
      */
     void MoveBase::handlePlanningFailure(){
       ROS_DEBUG("No plan found. Handling planning failure");
-      updateCostMap(true);
+      reset_cost_map_ = true;
       stopRobot();
     }
 
@@ -665,9 +671,6 @@ namespace ros {
       bool planOk = checkWatchDog() && isValid();
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
-      // Update the cost map window
-      ma_->updateForRobotPosition(global_pose_.getOrigin().getX(), global_pose_.getOrigin().getY());
-
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
       if(planOk && plan_.empty()){
@@ -758,12 +761,9 @@ namespace ros {
 
     /**
      * @brief Utility to output local obstacles. Make the local cost map accessor. It is very cheap :-) Then
-     * render the obstacles.
+     * render the obstacles. Note that the rendered window is typically larger than the local map for control
      */
     void MoveBase::publishLocalCostMap() {
- 
-
-
       double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
       CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
@@ -898,26 +898,40 @@ namespace ros {
     MoveBase::footprint_t const & MoveBase::getFootprint() const{
       return footprint_;
     }
+    
+    void MoveBase::updateCostMap() {
+      if (reset_cost_map_) {
+	costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+      }
 
-    void MoveBase::updateCostMap(bool static_map_reset){
       ROS_DEBUG("Starting cost map update/n");
-      if(static_map_reset)
-        costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
-
-      // Aggregate buffered observations across 3 sources
+      
+      lock();
+      // Aggregate buffered observations across all sources. Must be thread safe
       std::vector<costmap_2d::Observation> observations;
       baseScanBuffer_->get_observations(observations);
       tiltScanBuffer_->get_observations(observations);
       lowObstacleBuffer_->get_observations(observations);
       stereoCloudBuffer_->get_observations(observations);
-
+      unlock();
+      
       ROS_DEBUG("Applying update with %d observations/n", observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
       costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
       double t_diff = (ros::Time::now() - start).toSec();
-      publishLocalCostMap();
       ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+      
+      // Finally, we must extract the cost data that we have computed and:
+      // 1. Refresh the local_map_accessor for the controller
+      // 2. Refresh the global_map accessor for the planner
+      // 3. Publish the local cost map window
+      lock();
+      local_map_accessor_->refresh();
+      global_map_accessor_->refresh();
+      publishLocalCostMap();
+      reset_cost_map_ = false;
+      unlock();
     }
 
     /**
@@ -932,10 +946,7 @@ namespace ros {
       while (active_){
         //Avoids laser race conditions.
         if (isInitialized()) {
-          //update the cost map without resetting to static map
-          lock();
-          updateCostMap(false);
-          unlock();
+	  updateCostMap();
         }
 
         d->sleep();

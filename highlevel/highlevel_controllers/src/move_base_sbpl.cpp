@@ -167,7 +167,7 @@ namespace ros {
 						ompl::createIndexTransformWrap(&getCostMap()), true,
 						0, 0, 0, 0,
 						CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-	}
+	  }
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
 	  string obst_cost_thresh_str;
@@ -248,7 +248,7 @@ namespace ros {
     }
 
     bool MoveBaseSBPL::isMapDataOK() {
-      const CostMap2D& cm = getCostMap();
+      const CostMapAccessor& cm = getCostMap();
       
       for(unsigned int i = 0; i<cm.getWidth(); i++){
 	for(unsigned int j = 0; j < cm.getHeight(); j++){
@@ -273,7 +273,7 @@ namespace ros {
       try {
 	// Update costs
 	lock();
-	const CostMap2D& cm = getCostMap();
+	const CostMapAccessor& cm = getCostMap();
 	unsigned int x = cm.getWidth();
 	while(x > 0){
 	  x--;
