@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+"""    Usage: python plot_phsp.py <bag>
+"""
+
 import rostools
 rostools.update_path('vslam')
 import rospy
@@ -64,6 +67,9 @@ delta_time_mean = delta_time.mean()
 
 print 'mean dela time, in hz', delta_time_mean, 1/delta_time_mean
 print 'variance delta time', delta_time.var()
+
+large_time_gaps = [d for d in delta_time if d > 2*delta_time_mean]
+print 'num of large time gaps: ', len(large_time_gaps)
 
 # Now view the data.
 try:
