@@ -63,7 +63,7 @@ using namespace std;
 /**
  * @brief Map generation node.
  */
-class MapGenerator : public ros::node {
+class MapGenerator : public ros::Node {
 public:
   MapGenerator(string servname);
 };
@@ -72,7 +72,7 @@ public:
  * @brief Create the map generation node and save the map.
  * @param servname The name of the service.
  */
-MapGenerator::MapGenerator(string servname) : ros::node("map_generator") {
+MapGenerator::MapGenerator(string servname) : ros::Node("map_generator") {
   puts("Requesting the map...");
   std_srvs::StaticMap::request  req;
   std_srvs::StaticMap::response resp;

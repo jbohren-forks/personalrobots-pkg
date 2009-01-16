@@ -120,7 +120,7 @@ CartesianVelocityControllerNode::~CartesianVelocityControllerNode()
 
 bool CartesianVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")

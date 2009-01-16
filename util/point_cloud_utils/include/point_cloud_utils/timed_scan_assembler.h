@@ -45,7 +45,7 @@ namespace point_cloud_utils
 class TimedScanAssembler
 {
 public:
-  TimedScanAssembler(ros::node& rosnode) ;
+  TimedScanAssembler(ros::Node& rosnode) ;
   ~TimedScanAssembler() ;
   
   /**
@@ -70,7 +70,7 @@ private:
   ros::Duration duration_ ;
   ros::Time exit_time_ ;
   
-  ros::node& rosnode_ ;
+  ros::Node& rosnode_ ;
 
   ros::thread::condition done_condition_ ;
   ros::thread::mutex done_lock_ ;

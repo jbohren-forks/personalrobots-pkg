@@ -430,7 +430,7 @@ LaserScannerController::ProfileExecutionState LaserScannerController::getProfile
 }
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
-LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::node::instance())
+LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::Node::instance())
 {
   c_ = new LaserScannerController();
   prev_profile_exec_state_ = LaserScannerController::NOT_APPLICABLE ;

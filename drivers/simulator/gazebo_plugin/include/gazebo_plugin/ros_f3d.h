@@ -95,7 +95,7 @@ class RosF3D : public Controller
 
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::node *rosnode;
+  private: ros::Node *rosnode;
 
   /// \brief ROS Vector3Stamped message
   private: std_msgs::Vector3Stamped vector3Msg;

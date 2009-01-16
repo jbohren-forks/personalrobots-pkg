@@ -120,12 +120,12 @@
 #include <deque>
 #include <cmath>
 
-class World3DMap : public ros::node
+class World3DMap : public ros::Node
 {
 public:
     
   World3DMap(const std::string &robot_model_name) :
-    ros::node("world_3d_map"), m_tf(*this, true, 1000000000ULL)
+    ros::Node("world_3d_map"), m_tf(*this, true, 1000000000ULL)
   {
     m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 

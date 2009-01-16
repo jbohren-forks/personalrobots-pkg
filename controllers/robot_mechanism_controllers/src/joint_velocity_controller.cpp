@@ -134,7 +134,7 @@ void JointVelocityController::update()
 //------ Joint Velocity controller node --------
 ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
 
-JointVelocityControllerNode::JointVelocityControllerNode(): node_(ros::node::instance())
+JointVelocityControllerNode::JointVelocityControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointVelocityController();
 }

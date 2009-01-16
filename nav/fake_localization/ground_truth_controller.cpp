@@ -45,7 +45,7 @@ using namespace std ;
 namespace fake_localization
 {
 
-class GroundTruthController : public ros::node
+class GroundTruthController : public ros::Node
 {
 public:
   std_msgs::PoseWithRatesStamped  m_ground_truth_ ;                     //!< Message on which we receive ground truth info
@@ -55,7 +55,7 @@ public:
   ros::Time prev_time_ ;
   std_msgs::Point cmd_ ;
   
-  GroundTruthController() : ros::node("ground_truth_controller")
+  GroundTruthController() : ros::Node("ground_truth_controller")
   {
     xyt_target_.setX(0) ;
     xyt_target_.setY(0) ;

@@ -53,7 +53,7 @@
 using namespace std;
 using namespace std_msgs;
 
-class CloudDownsampler : public ros::node
+class CloudDownsampler : public ros::Node
 {
   public:
 
@@ -67,7 +67,7 @@ class CloudDownsampler : public ros::node
     double cut_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CloudDownsampler () : ros::node ("cloud_downsampler")
+    CloudDownsampler () : ros::Node ("cloud_downsampler")
     {
       param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
       param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default

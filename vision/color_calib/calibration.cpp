@@ -40,7 +40,7 @@
 
 using namespace color_calib;
 
-color_calib::Calibration::Calibration(ros::node* node) : node_(node), color_cal_(NULL)
+color_calib::Calibration::Calibration(ros::Node* node) : node_(node), color_cal_(NULL)
 {
   color_cal_ = cvCreateMat(3, 3, CV_32FC1);
   color_cal_bgr_ = cvCreateMat(3, 3, CV_32FC1);

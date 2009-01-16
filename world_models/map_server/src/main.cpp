@@ -96,11 +96,11 @@ Offers (name/type):
 #include "map_server/image_loader.h"
 #include "std_msgs/MapMetaData.h"
 
-class MapServer : public ros::node
+class MapServer : public ros::Node
 {
   public:
     /** Trivial constructor */
-    MapServer() : ros::node("map_server") {}
+    MapServer() : ros::Node("map_server") {}
 
     /** Callback invoked when someone requests our service */
     bool mapCallback(std_srvs::StaticMap::request  &req,

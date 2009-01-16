@@ -47,12 +47,12 @@ namespace color_calib
 
   class Calibration
   {
-    ros::node* node_;
+    ros::Node* node_;
 
     CvMat* color_cal_;
     CvMat* color_cal_bgr_;
   public:
-    Calibration(ros::node* node);
+    Calibration(ros::Node* node);
     ~Calibration();
 
     bool getFromParam(std::string topic_name_);

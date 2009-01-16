@@ -78,7 +78,7 @@ namespace robot_filter {
     };
     std::vector<RobotPart>                   m_selfSeeParts;
     double                                   m_bodyPartScale;
-    ros::node                               *m_node;
+    ros::Node                               *m_node;
     robot_model::NodeRobotModel             *m_model;
     bool                                     m_verbose;
 
@@ -89,7 +89,7 @@ namespace robot_filter {
     void waitForState();
     std_msgs::PointCloud* filter(const std_msgs::PointCloud &cloud);
 
-    RobotFilter(ros::node* node, std::string robot_model_name, bool verbose, double bodyPartScale);
+    RobotFilter(ros::Node* node, std::string robot_model_name, bool verbose, double bodyPartScale);
     ~RobotFilter();
   };
   

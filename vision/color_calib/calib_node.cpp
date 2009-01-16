@@ -50,7 +50,7 @@
 using namespace std;
 using namespace color_calib;
 
-class ColorCalib : public ros::node
+class ColorCalib : public ros::Node
 {
 public:
   std_msgs::ImageArray image_msg;
@@ -61,7 +61,7 @@ public:
 
   Calibration color_cal;
 
-  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), first(true), color_cal(this)
+  ColorCalib() : Node("color_calib", ros::Node::ANONYMOUS_NAME), first(true), color_cal(this)
   { 
     subscribe("images", image_msg, &ColorCalib::image_cb, 1);
   }

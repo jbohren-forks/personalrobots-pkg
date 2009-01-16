@@ -73,7 +73,7 @@ public:
   CamTypes  cam_type;
 };
 
-class Dc1394CamServer : public ros::node
+class Dc1394CamServer : public ros::Node
 {
 public:
 
@@ -187,7 +187,7 @@ public:
   }
 
 
-  Dc1394CamServer() : ros::node("dc1394_cam_server")
+  Dc1394CamServer() : ros::Node("dc1394_cam_server")
   {
     advertise_service("~check_params", &Dc1394CamServer::checkFeatureService);
 

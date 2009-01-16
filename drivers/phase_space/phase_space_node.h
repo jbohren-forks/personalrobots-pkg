@@ -55,7 +55,7 @@
 namespace phase_space
 {
 
-class PhaseSpaceNode : public ros::node
+class PhaseSpaceNode : public ros::Node
 {
 public :
 

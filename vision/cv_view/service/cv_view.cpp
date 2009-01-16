@@ -13,7 +13,7 @@
 
 using namespace std;
 
-class CvView : public ros::node
+class CvView : public ros::Node
 {
 public:
   CvBridge<std_msgs::Image> cv_bridge;
@@ -25,7 +25,7 @@ public:
 
   IplImage *cv_image;
 
-  CvView() : node("cv_view"), cv_bridge(&(res.image), CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U),
+  CvView() : Node("cv_view"), cv_bridge(&(res.image), CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U),
              cv_image(0)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);

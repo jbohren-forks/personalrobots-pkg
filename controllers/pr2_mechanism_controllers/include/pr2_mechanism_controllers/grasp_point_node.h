@@ -54,7 +54,7 @@ namespace grasp_point_node
 
   #define NUM_JOINTS 7
 
-  class GraspPointNode : public ros::node
+  class GraspPointNode : public ros::Node
   {
     /**
      * @brief Generate a arm trajectory to get to a grasp point

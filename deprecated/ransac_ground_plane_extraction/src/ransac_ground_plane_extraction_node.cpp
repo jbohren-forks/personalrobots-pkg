@@ -36,7 +36,7 @@
 
 using namespace ransac_ground_plane_extraction;
 
-RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false),
+RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string node_name):ros::Node(node_name),obstacle_cloud_(NULL),publish_obstacle_cloud_(false),
            tf_(*this, true, 10000000000ULL) // cache for 10 sec, no extrapolation
 {
   std::string publish_obstacle_cloud;

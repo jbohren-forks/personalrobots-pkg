@@ -190,7 +190,7 @@ void ArmVelocityControllerNode::update()
 bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   // Parses controller configuration.

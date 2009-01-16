@@ -3,7 +3,7 @@
 using namespace std;
 using namespace plan_path_node;
 
-PlanPathNode::PlanPathNode(std::string node_name):ros::node(node_name)
+PlanPathNode::PlanPathNode(std::string node_name):ros::Node(node_name)
 {
 };
 

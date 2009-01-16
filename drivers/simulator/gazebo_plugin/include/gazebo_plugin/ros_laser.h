@@ -141,7 +141,7 @@ class RosLaser : public Controller
   private: RaySensor *myParent;
 
   /// \brief pointer to ros node
-  private: ros::node *rosnode;
+  private: ros::Node *rosnode;
 
   /// \brief ros message
   private: std_msgs::LaserScan laserMsg;

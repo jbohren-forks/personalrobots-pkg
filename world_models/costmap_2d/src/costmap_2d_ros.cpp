@@ -63,7 +63,7 @@ static const double WINDOW_LENGTH = 1.0;
 //laser range value - hits beyond this get discard
 static const double LASER_MAX_RANGE = 4.0;
 
-class CostMap2DRos: public ros::node
+class CostMap2DRos: public ros::Node
 {
 
 public:
@@ -110,7 +110,7 @@ private:
 
 
 CostMap2DRos::CostMap2DRos() :
-  ros::node("costmap2d_ros"),
+  ros::Node("costmap2d_ros"),
   tf_(*this, true, 1 * 1000000000ULL, 0ULL),
   costmap_(WINDOW_LENGTH)
 {

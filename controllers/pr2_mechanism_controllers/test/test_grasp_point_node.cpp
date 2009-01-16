@@ -48,7 +48,7 @@ int main( int argc, char** argv )
 
   /*********** Initialize ROS  ****************/
   ros::init(argc,argv);
-  ros::node *node = new ros::node("grasp_point_client"); 
+  ros::Node *node = new ros::Node("grasp_point_client"); 
 
   signal(SIGINT,  finalize);
   signal(SIGQUIT, finalize);

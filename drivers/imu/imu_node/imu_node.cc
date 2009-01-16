@@ -100,7 +100,7 @@ Reads the following parameters from the parameter server
 
 using namespace std;
 
-class ImuNode: public ros::node
+class ImuNode: public ros::Node
 {
 public:
   MS_3DMGX2::IMU imu;
@@ -123,7 +123,7 @@ public:
   
   double offset_;
 
-  ImuNode() : ros::node("imu"), count_(0), self_test_(this), diagnostic_(this)
+  ImuNode() : ros::Node("imu"), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
 

@@ -78,10 +78,10 @@ namespace pr2_phase_space
  *   - @b ~offset_rot_axis_x, @b ~offset_rot_axis_y, @b ~offset_rot_axis_z : Defines the rotation axis of the transform
  *   - @b ~offset_rot_angle : Defines the rotation angle of the transform
  */
-class PhaseSpacePoseStamped : public ros::node
+class PhaseSpacePoseStamped : public ros::Node
 {
 public :
-  PhaseSpacePoseStamped() : ros::node("phase_space_point_stamped")
+  PhaseSpacePoseStamped() : ros::Node("phase_space_point_stamped")
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePoseStamped::snapshotCallback, 10) ;
     advertise<std_msgs::PoseStamped>("cmd", 1) ;

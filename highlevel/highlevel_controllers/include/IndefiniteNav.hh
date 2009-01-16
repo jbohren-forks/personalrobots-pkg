@@ -45,7 +45,7 @@ using namespace std_msgs;
 namespace ros {
   namespace highlevel_controllers {
     
-    class IndefiniteNav : public ros::node {
+    class IndefiniteNav : public ros::Node {
 
     public:
 

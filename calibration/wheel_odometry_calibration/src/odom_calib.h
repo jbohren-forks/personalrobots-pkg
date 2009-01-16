@@ -50,7 +50,7 @@
 namespace calibration
 {
 
-class odom_calib: public ros::node
+class odom_calib: public ros::Node
 {
 public:
   /// constructor

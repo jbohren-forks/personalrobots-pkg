@@ -7,7 +7,7 @@ class Test
   public:
     Test()
     {
-      node_ = new ros::node("test");
+      node_ = new ros::Node("test");
       tf_ = new tf::TransformListener(*node_, true, 
                                       10000000000ULL);
       tf_->setExtrapolationLimit( ros::Duration().fromSec(0.2));
@@ -50,7 +50,7 @@ class Test
     void spin() { node_->spin(); }
 
   private:
-    ros::node* node_;
+    ros::Node* node_;
     tf::TransformListener* tf_;
     std_msgs::LaserScan scan_;
 };

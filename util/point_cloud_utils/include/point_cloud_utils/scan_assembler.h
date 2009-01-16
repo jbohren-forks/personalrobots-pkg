@@ -52,7 +52,7 @@ class ScanAssembler
 {
 public:
 
-  ScanAssembler(ros::node& cur_node) ;
+  ScanAssembler(ros::Node& cur_node) ;
   ~ScanAssembler() ;
   
   /**

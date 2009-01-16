@@ -53,11 +53,11 @@ public:
   RealtimePublisher(const std::string &topic, int queue_size)
     : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
-    if ((node_ = ros::node::instance()) == NULL)
+    if ((node_ = ros::Node::instance()) == NULL)
     {
       int argc = 0;  char **argv = NULL;
       ros::init(argc, argv);
-      node_ = new ros::node("realtime_publisher", ros::node::DONT_HANDLE_SIGINT);
+      node_ = new ros::Node("realtime_publisher", ros::Node::DONT_HANDLE_SIGINT);
     }
 
     node_->advertise<Msg>(topic_, queue_size);
@@ -173,7 +173,7 @@ public:
 private:
 
   std::string topic_;
-  ros::node *node_;
+  ros::Node *node_;
   bool is_running_;
   bool keep_running_;
 

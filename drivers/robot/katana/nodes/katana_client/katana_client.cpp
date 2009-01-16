@@ -8,10 +8,10 @@ using std::vector;
 using std::endl;
 using std::string;
 
-class KatanaClient : public ros::node
+class KatanaClient : public ros::Node
 {
 public:
-  KatanaClient() : ros::node("katana_client")
+  KatanaClient() : ros::Node("katana_client")
   {
   }
   void move_for_camera()

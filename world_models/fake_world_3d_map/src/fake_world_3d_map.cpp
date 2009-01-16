@@ -87,11 +87,11 @@ Provides (name/type):
 #include <random_utils/random_utils.h>
 #include <cstdio>
 
-class FakeWorld3DMap : public ros::node
+class FakeWorld3DMap : public ros::Node
 {
 public:
     
-    FakeWorld3DMap(void) : ros::node("world_3d_map")
+    FakeWorld3DMap(void) : ros::Node("world_3d_map")
     {
 	advertise<std_msgs::PointCloud>("world_3d_map", 1);
 	random_utils::init(&m_rng);

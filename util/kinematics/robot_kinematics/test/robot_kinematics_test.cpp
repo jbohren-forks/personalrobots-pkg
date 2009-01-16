@@ -55,7 +55,7 @@ int main( int argc, char** argv )
   //Initialize ROS
   ros::init(argc, argv);
 
-  ros::node test_kin("test_kin");
+  ros::Node test_kin("test_kin");
 
   std::string pr2Content;
   test_kin.get_param("robotdesc/pr2",pr2Content);

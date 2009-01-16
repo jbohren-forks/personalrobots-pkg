@@ -33,7 +33,7 @@
 using namespace std_msgs ;
 using namespace point_cloud_utils ;
 
-TimedScanAssembler::TimedScanAssembler(ros::node& rosnode) : rosnode_(rosnode), scan_assembler_(rosnode)
+TimedScanAssembler::TimedScanAssembler(ros::Node& rosnode) : rosnode_(rosnode), scan_assembler_(rosnode)
 {
 
 }

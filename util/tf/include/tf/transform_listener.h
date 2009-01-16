@@ -46,14 +46,14 @@ namespace tf{
 class TransformListener : public Transformer { //subscribes to message and automatically stores incoming data
 
 private:
-  ros::node& node_;
+  ros::Node& node_;
 
 public:
   /**@brief Constructor for transform listener
-   * \param rosnode A reference to an instance of a ros::node for communication
+   * \param rosnode A reference to an instance of a ros::Node for communication
    * \param interpolating Whether to interpolate or return the closest
    * \param max_cache_time How long to store transform information */
-  TransformListener(ros::node & rosnode,
+  TransformListener(ros::Node & rosnode,
                     bool interpolating = true,
                     int64_t max_cache_time = DEFAULT_CACHE_TIME):
     Transformer(interpolating,

@@ -34,7 +34,7 @@
 
 using namespace ros;
 
-class CVCam : public node
+class CVCam : public Node
 {
 public:
   MsgImage image_msg;
@@ -44,7 +44,7 @@ public:
   double last_print_time;
   int show_image, fps_count, delay_us;
 
-  CVCam() : node("cv_cam"), cv_bridge(&image_msg),
+  CVCam() : Node("cv_cam"), cv_bridge(&image_msg),
             last_print_time(0), show_image(0), fps_count(0)
   {
     advertise<MsgImage>("image");

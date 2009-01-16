@@ -54,7 +54,7 @@ using namespace std;
 
 #define FOREACH(it, v) for(typeof((v).begin()) it = (v).begin(); it != (v).end(); (it)++)
 
-boost::shared_ptr<ros::node> s_pmasternode;
+boost::shared_ptr<ros::Node> s_pmasternode;
 
 inline string _stdwcstombs(const wchar_t* pname)
 {
@@ -457,7 +457,7 @@ int main(int argc, char ** argv)
     }
 
     ros::init(argc,argv);
-    s_pmasternode.reset(new ros::node("robobtlinks_filter"));
+    s_pmasternode.reset(new ros::Node("robobtlinks_filter"));
 
     if( !s_pmasternode->check_master() )
         return -1;

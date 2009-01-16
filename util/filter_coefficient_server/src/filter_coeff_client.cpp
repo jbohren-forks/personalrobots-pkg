@@ -34,10 +34,10 @@
 #include "ros/node.h"
 #include "filter_coefficient_server/Filter.h"
 
-class GenFilter : public ros::node
+class GenFilter : public ros::Node
 {
 public:
-  GenFilter() : ros::node("filter_coeff_client")
+  GenFilter() : ros::Node("filter_coeff_client")
   {
   }
   bool call_add(std::string name, std::vector<std::string> args, std::vector<double> &b, std::vector<double> &a)

@@ -278,7 +278,7 @@ void ArmDynamicsControllerNode::update()
 bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARM DYNAMICS CONTROLLER NODE"<<std::endl;
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   std::cout<<"the prefix is "<<prefix<<std::endl;
 

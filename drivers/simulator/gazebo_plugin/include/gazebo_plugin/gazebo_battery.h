@@ -115,7 +115,7 @@ private:
   robot_msgs::DiagnosticStatus diagnostic_status_;
 
   /// \brief pointer to ros node
-  private: ros::node *rosnode_;
+  private: ros::Node *rosnode_;
 
   /// \brief battery state topic name
   private: std::string stateTopicName_;

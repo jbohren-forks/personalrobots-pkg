@@ -72,10 +72,10 @@ int getIndexFromFilename(const char *filename);
 
 IplImage *image = NULL; // the input image coming across the wire
 
-class Classify : public ros::node
+class Classify : public ros::Node
 {
   public:
-    Classify() : ros::node("lasiklite_classify_server")
+    Classify() : ros::Node("lasiklite_classify_server")
     {
       advertise_service("lasiklite_classify_service", &Classify::doClassify);
     }

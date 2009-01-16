@@ -907,7 +907,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerPosNode)
   BaseControllerPosNode::BaseControllerPosNode()
 {
   c_ = new BaseControllerPos();
-  node = ros::node::instance();
+  node = ros::Node::instance();
   last_time_message_sent_ = 0.0;
   odom_publish_rate_ = 100.0;
   odom_publish_delta_t_ = 1.0/odom_publish_rate_;

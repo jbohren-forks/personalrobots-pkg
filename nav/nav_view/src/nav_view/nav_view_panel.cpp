@@ -87,14 +87,14 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 , new_occ_diff_( false )
 , current_tool_( NULL )
 {
-  ros_node_ = ros::node::instance();
+  ros_node_ = ros::Node::instance();
 
-  /// @todo This should go away once creation of the ros::node is more well-defined
+  /// @todo This should go away once creation of the ros::Node is more well-defined
   if (!ros_node_)
   {
     int argc = 0;
     ros::init( argc, 0 );
-    ros_node_ = new ros::node( "nav_view_panel", ros::node::DONT_HANDLE_SIGINT );
+    ros_node_ = new ros::Node( "nav_view_panel", ros::Node::DONT_HANDLE_SIGINT );
   }
   ROS_ASSERT( ros_node_ );
 

@@ -37,12 +37,12 @@
 #include "SDL/SDL.h"
 #include "simple_sdl_gui/SDLKeyEvent.h"
 
-class Key_Monitor : public ros::node
+class Key_Monitor : public ros::Node
 {
 public:
   simple_sdl_gui::SDLKeyEvent key;
 
-  Key_Monitor() : ros::node("key_monitor")
+  Key_Monitor() : ros::Node("key_monitor")
   {
     subscribe("key", key, &Key_Monitor::get_key);
   }

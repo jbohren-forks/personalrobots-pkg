@@ -153,7 +153,7 @@ void JointPositionController::update()
 //------ Joint Position controller node --------
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)
 
-JointPositionControllerNode::JointPositionControllerNode(): node_(ros::node::instance())
+JointPositionControllerNode::JointPositionControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointPositionController();
 }

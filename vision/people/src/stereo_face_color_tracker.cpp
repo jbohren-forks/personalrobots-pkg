@@ -67,7 +67,7 @@ using namespace std;
 
 // StereoFaceColorTracker - Color histogram-based tracking from stereo cameras.
 
-class StereoFaceColorTracker: public ros::node {
+class StereoFaceColorTracker: public ros::Node {
 public:
   // Images and conversion
   image_msgs::Image limage_;
@@ -107,7 +107,7 @@ public:
   boost::mutex cv_mutex_;
 
   StereoFaceColorTracker(bool detect_faces, const char *haar_filename, bool use_depth, bool calib_color) : 
-    ros::node("stereo_face_color_tracker",ros::node::ANONYMOUS_NAME),
+    ros::Node("stereo_face_color_tracker",ros::Node::ANONYMOUS_NAME),
     lcolor_cal_(this),
     sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration().fromSec(0.05), &StereoFaceColorTracker::image_cb_timeout),
     last_image_time_(ros::Time().fromSec(0)),

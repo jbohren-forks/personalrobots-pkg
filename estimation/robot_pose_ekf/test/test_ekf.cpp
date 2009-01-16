@@ -62,7 +62,7 @@ public:
   PoseWithRatesStamped odom_msg_;
   double ekf_counter_, odom_counter_;
   Time ekf_time_begin_, odom_time_begin_;
-  node* node_;
+  Node* node_;
 
   void OdomCallback()
   {
@@ -96,7 +96,7 @@ protected:
     odom_counter_ = 0;
 
     init(g_argc, g_argv); 
-    node_ = new node("TestEKF");
+    node_ = new Node("TestEKF");
   }
 
 

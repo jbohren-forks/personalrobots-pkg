@@ -323,7 +323,7 @@ bool LaserScannerVelocityControllerNode::setProfile(
 
 bool LaserScannerVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   if (!c_->initXml(robot, config))

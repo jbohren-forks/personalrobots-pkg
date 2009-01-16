@@ -259,7 +259,7 @@ void ArmTrajectoryController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(ArmTrajectoryControllerNode)
 
 ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
-  : Controller(), node_(ros::node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
+  : Controller(), node_(ros::Node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmTrajectoryController();

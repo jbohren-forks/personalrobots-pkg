@@ -49,11 +49,11 @@ using namespace collision_space;
 const int TEST_TIMES  = 3;
 const int TEST_POINTS = 50000;
 
-class TestVM : public ros::node
+class TestVM : public ros::Node
 {
 public:
     
-    TestVM(void) : ros::node("TVM")
+    TestVM(void) : ros::Node("TVM")
     {
         std_msgs::VisualizationMarker mk;
 	advertise("visualizationMarker", 

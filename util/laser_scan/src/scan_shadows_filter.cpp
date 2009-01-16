@@ -47,7 +47,7 @@ using namespace std_msgs;
 
 /** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
  */
-class ScanShadowsFilter : public ros::node
+class ScanShadowsFilter : public ros::Node
 {
   public:
 
@@ -60,7 +60,7 @@ class ScanShadowsFilter : public ros::node
     int window_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : ros::node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX)
+    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX)
     {
       subscribe("tilt_scan",  tilt_scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
 

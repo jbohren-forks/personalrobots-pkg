@@ -43,7 +43,7 @@
 
 namespace ransac_ground_plane_extraction {
 
-  class RansacGroundPlaneExtractionNode : public ros::node
+  class RansacGroundPlaneExtractionNode : public ros::Node
  {
   /**
    * @brief Ransac ground plane extraction

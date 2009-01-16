@@ -102,7 +102,7 @@ public:
     }
 
     ros::init(argc, localArgv);
-    new ros::node( "nav_view", ros::node::DONT_HANDLE_SIGINT );
+    new ros::Node( "nav_view", ros::Node::DONT_HANDLE_SIGINT );
 
     wxFrame* frame = new MyFrame(NULL);
     SetTopWindow(frame);

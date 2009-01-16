@@ -41,10 +41,10 @@
 
 
 
-class ExampleFilter : public ros::node
+class ExampleFilter : public ros::Node
 {
 public:
-  ExampleFilter() : ros::node("filtering_example")
+  ExampleFilter() : ros::Node("filtering_example")
   {
   }
   bool call_srv(std::string name, std::vector<std::string> args)

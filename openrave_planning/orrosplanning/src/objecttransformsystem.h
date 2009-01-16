@@ -100,7 +100,7 @@ private:
         
         if( _bSubscribed ) {
             boost::mutex::scoped_lock lock(_mutex);
-            ros::node* pnode = check_roscpp_nocreate();
+            ros::Node* pnode = check_roscpp_nocreate();
             if( pnode != NULL ) { 
                 double tf_cache_time_secs;
                 pnode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);

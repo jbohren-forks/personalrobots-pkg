@@ -94,14 +94,14 @@ namespace topological_map
  ************************************************************/
 
 BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : 
-  ros::node("bottleneck_graph_ros"), node_status_(WAITING_FOR_MAP), num_added_roadmap_points_(0), 
+  ros::Node("bottleneck_graph_ros"), node_status_(WAITING_FOR_MAP), num_added_roadmap_points_(0), 
   size_(size), skip_(skip), radius_(radius), distanceMin_(distanceMin), distanceMax_(distanceMax) 
 {
 }
  
 
 BottleneckGraphRos::BottleneckGraphRos(char* filename) :
-  ros::node("bottleneck_graph_ros"), num_added_roadmap_points_(0)
+  ros::Node("bottleneck_graph_ros"), num_added_roadmap_points_(0)
 {
   bottleneck_graph_.readFromFile(filename);
   node_status_ = READY;

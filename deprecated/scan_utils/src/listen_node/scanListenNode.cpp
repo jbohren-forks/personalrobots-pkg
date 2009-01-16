@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <vector>
 
-ScanListenNode::ScanListenNode() : ros::node("ros_graspit")
+ScanListenNode::ScanListenNode() : ros::Node("ros_graspit")
 {
 	subscribe("full_cloud", mNewCloud, &ScanListenNode::fullCloudCallback);
 	subscribe("cloud", mNewLine, &ScanListenNode::cloudCallback);

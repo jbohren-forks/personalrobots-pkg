@@ -7,7 +7,7 @@
 
 using namespace ros;
 
-class TeleopBase : public node
+class TeleopBase : public Node
 {
    public:
       std_msgs::BaseVel cmd, cmd_passthrough;
@@ -17,7 +17,7 @@ class TeleopBase : public node
       int deadman_button, passthrough_button;
        bool deadman_no_publish_;
 
-  TeleopBase(bool deadman_no_publish = false) : node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3), deadman_no_publish_(deadman_no_publish)
+  TeleopBase(bool deadman_no_publish = false) : Node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3), deadman_no_publish_(deadman_no_publish)
       {
          cmd.vx = cmd.vy = cmd.vw = 0;
          if (!has_param("max_vx") || !get_param("max_vx", max_vx))

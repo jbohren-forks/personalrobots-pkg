@@ -11,14 +11,14 @@
 #define IMAGE_WIDTH 160
 #define IMAGE_HEIGHT 120
 
-class ROSImageClassifier : public ros::node
+class ROSImageClassifier : public ros::Node
 {
 public:
   /**
      @param trainingFile Name of the file containing classifier state
    */
   ROSImageClassifier(const char* trainingFile, std::istream& objectsFile) :
-    ros::node("mrf_image_classifier"),
+    ros::Node("mrf_image_classifier"),
     bridgeIn(NULL),
     currFrame(NULL),
     scaledImage(NULL),

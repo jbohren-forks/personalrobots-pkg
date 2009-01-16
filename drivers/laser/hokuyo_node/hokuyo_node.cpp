@@ -114,7 +114,7 @@ Reads the following parameters from the parameter server
 
 using namespace std;
 
-class HokuyoNode: public ros::node
+class HokuyoNode: public ros::Node
 {
 private:
   hokuyo::LaserScan  scan_;
@@ -144,7 +144,7 @@ public:
   string device_status_;
   string connect_fail_;
 
-  HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
+  HokuyoNode() : ros::Node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::LaserScan>("scan", 100);
 

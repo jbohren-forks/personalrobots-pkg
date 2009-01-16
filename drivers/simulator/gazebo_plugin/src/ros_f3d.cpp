@@ -61,7 +61,7 @@ RosF3D::RosF3D(Entity *parent )
   {
     // this only works for a single camera.
     ros::init(argc,argv);
-    rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node in RosF3D \n");
   }
 }

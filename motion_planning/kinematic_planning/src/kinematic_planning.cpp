@@ -139,13 +139,13 @@ Provides (name/type):
 #include <robot_srvs/PlanNames.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
 
-class KinematicPlanning : public ros::node,
+class KinematicPlanning : public ros::Node,
 			  public robot_model::NodeCollisionModel
 {
 public:
 
-    KinematicPlanning(const std::string &robot_model) : ros::node("kinematic_planning"),
-							robot_model::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+    KinematicPlanning(const std::string &robot_model) : ros::Node("kinematic_planning"),
+							robot_model::NodeCollisionModel(dynamic_cast<ros::Node*>(this),
 											       robot_model)
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);

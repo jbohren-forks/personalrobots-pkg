@@ -107,7 +107,7 @@ void JointEffortController::update()
 //------ Joint Effort controller node --------
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
 
-JointEffortControllerNode::JointEffortControllerNode(): node_(ros::node::instance())
+JointEffortControllerNode::JointEffortControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointEffortController();
 }

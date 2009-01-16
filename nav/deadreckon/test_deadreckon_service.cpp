@@ -33,10 +33,10 @@
 using namespace std;
 using namespace ros;
 
-class DeadReckonTest : public ros::node
+class DeadReckonTest : public ros::Node
 {
 public:
-  DeadReckonTest() : node("DeadReckonTest") { }
+  DeadReckonTest() : Node("DeadReckonTest") { }
   void test_dr(float dist, float bearing, float relHeading)
   {
     deadreckon::DriveDeadReckon::request  req;

@@ -163,7 +163,7 @@ CartesianTorqueControllerNode::~CartesianTorqueControllerNode()
 
 bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")

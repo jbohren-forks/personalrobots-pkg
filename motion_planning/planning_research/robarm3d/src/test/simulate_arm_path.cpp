@@ -193,7 +193,7 @@ int main( int argc, char** argv )
 
     /*********** Initialize ROS  ****************/
     ros::init(argc,argv);
-    ros::node *node = new ros::node("test_arm_traj"); 
+    ros::Node *node = new ros::Node("test_arm_traj"); 
 
     set_arm_traj sat;
     node->subscribe("mechanism_state",sat.in, &set_arm_traj::doNothing,10);

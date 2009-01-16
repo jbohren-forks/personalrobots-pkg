@@ -66,7 +66,7 @@
 using namespace std;
 using namespace std_msgs;
 
-class PlanarPatchMap: public ros::node
+class PlanarPatchMap: public ros::Node
 {
   public:
 
@@ -82,7 +82,7 @@ class PlanarPatchMap: public ros::node
     double d_min_, d_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlanarPatchMap () : ros::node ("planar_patch_map")
+    PlanarPatchMap () : ros::Node ("planar_patch_map")
     {
       param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 10);
 

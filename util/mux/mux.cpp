@@ -73,7 +73,7 @@ public:
   }
 };
 
-class Mux : public node
+class Mux : public Node
 {
 public:
   ShapeShifter *inMsgs;
@@ -83,7 +83,7 @@ public:
   uint32_t numInTopics;
 
   Mux(string outTopic, string selTopic, vector<string> inTopics) 
-  : node("mux"), selectedTopic(NULL), outTopicName(outTopic)
+  : Node("mux"), selectedTopic(NULL), outTopicName(outTopic)
   {
     subscribe(selTopic, topicSelMsg, &Mux::sel_cb);
     advertise<ShapeShifter>(outTopic);

@@ -49,7 +49,7 @@ using namespace std;
 
 void sigsegv_handler(int sig);
 
-class DcamNode : public ros::node
+class DcamNode : public ros::Node
 {
   bool do_rectify_;
 
@@ -66,7 +66,7 @@ public:
 
   static dcam::Dcam* cam_;
 
-  DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
+  DcamNode() : ros::Node("dcam"), diagnostic_(this), count_(0)
   {
     signal(SIGSEGV, &sigsegv_handler);
 

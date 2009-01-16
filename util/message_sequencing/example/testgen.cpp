@@ -3,12 +3,12 @@
 #include "ros/time.h"
 
 
-class TestGen : public ros::node
+class TestGen : public ros::Node
 {
 
 public:
 
-  TestGen() : ros::node("test_gen")
+  TestGen() : ros::Node("test_gen")
   {
     advertise<std_msgs::PointStamped>("orig",10);
   }

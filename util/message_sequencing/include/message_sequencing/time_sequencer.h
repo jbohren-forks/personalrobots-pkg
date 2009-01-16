@@ -118,7 +118,7 @@ public:
 
   /**
    * \brief Constructor
-   * \param node The ros::node to subscribe on
+   * \param node The ros::Node to subscribe on
    * \param topic The topic to listen on
    * \param callback The function to call when a message is available
    * \param callback The function to call when a message is out of date
@@ -129,7 +129,7 @@ public:
    * \param ros_queue_size The size of the incoming ros buffer.  This
    *   passes through to subscribe.
    */
-  TimeSequencer(ros::node* node, const std::string& topic, 
+  TimeSequencer(ros::Node* node, const std::string& topic, 
                 Callback callback, Callback old_callback,
                 ros::Duration delay,
                 uint32_t buffer_queue_size,
@@ -383,7 +383,7 @@ private:
     }
   }
 
-  ros::node* node_; ///< The node used to subscribe to the topic
+  ros::Node* node_; ///< The node used to subscribe to the topic
   std::string topic_; ///< The topic to listen on
   Callback callback_; ///< The callback to call when a message is ready
   Callback old_callback_; ///< The callback to call when a message is out of date

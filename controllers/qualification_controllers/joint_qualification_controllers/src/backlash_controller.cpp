@@ -42,7 +42,7 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(BacklashController)
 
 BacklashController::BacklashController():
-joint_state_(NULL), robot_(NULL), node(ros::node::instance())
+joint_state_(NULL), robot_(NULL), node(ros::Node::instance())
 {
   test_data_.test_name ="backlash";
   test_data_.time.resize(80000);
@@ -151,7 +151,7 @@ void BacklashController::analysis()
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
   
-  if ((node = ros::node::instance()) != NULL)
+  if ((node = ros::Node::instance()) != NULL)
   {
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);

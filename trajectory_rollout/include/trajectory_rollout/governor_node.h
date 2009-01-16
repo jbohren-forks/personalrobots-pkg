@@ -122,7 +122,7 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
     double outer_radius_;
 };
 
-class GovernorNode: public ros::node
+class GovernorNode: public ros::Node
 {
   public:
     GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec);

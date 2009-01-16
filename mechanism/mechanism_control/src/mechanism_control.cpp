@@ -195,11 +195,11 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
-  if ((node_ = ros::node::instance()) == NULL) {
+  if ((node_ = ros::Node::instance()) == NULL) {
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv);
-    node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
+    node_ = new ros::Node("mechanism_control", ros::Node::DONT_HANDLE_SIGINT);
   }
 }
 

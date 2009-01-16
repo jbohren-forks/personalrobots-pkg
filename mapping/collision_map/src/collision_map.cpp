@@ -62,7 +62,7 @@ struct Leaf
   int nr_points_;
 };
 
-class CollisionMapper : public ros::node
+class CollisionMapper : public ros::Node
 {
   public:
 
@@ -80,7 +80,7 @@ class CollisionMapper : public ros::node
     int min_nr_points_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CollisionMapper () : ros::node ("collision_map"), tf_(*this)
+    CollisionMapper () : ros::Node ("collision_map"), tf_(*this)
     {
       param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
       param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default

@@ -95,7 +95,7 @@ Publishes to (name / type):
 // libplayerdrivers.
 Driver* Erratic_Init(ConfigFile* cf, int section);
 
-class ErraticNode: public ros::node
+class ErraticNode: public ros::Node
 {
   public:
     QueuePointer q;
@@ -106,7 +106,7 @@ class ErraticNode: public ros::node
 
   tf::TransformBroadcaster tf;
   
-  ErraticNode() : ros::node("erratic_player"),
+  ErraticNode() : ros::Node("erratic_player"),
 		  tf(*this)
     {
       // libplayercore boiler plate

@@ -204,7 +204,7 @@ class HeadPanTiltControllerNode : public Controller
 
     //node stuff
     std::string service_prefix_;                         /**< The service name. */
-    ros::node *node_;                                    /**< The node. */
+    ros::Node *node_;                                    /**< The node. */
     AdvertisedServiceGuard guard_get_command_array_;     /**< Makes sure the advertise goes down neatly. */
     SubscriptionGuard guard_set_command_array_;          /**< Makes sure the subscription goes down neatly. */
     SubscriptionGuard guard_head_track_point_;           /**< Makes sure the subscription goes down neatly. */

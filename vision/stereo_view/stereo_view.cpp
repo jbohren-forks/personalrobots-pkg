@@ -52,7 +52,7 @@
 
 using namespace std;
 
-class StereoView : public ros::node
+class StereoView : public ros::Node
 {
 public:
 
@@ -80,7 +80,7 @@ public:
 
   ros::thread::mutex cv_mutex;
 
-  StereoView() : ros::node("stereo_view"), 
+  StereoView() : ros::Node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
                  calib_color_(false), recompand_(false)

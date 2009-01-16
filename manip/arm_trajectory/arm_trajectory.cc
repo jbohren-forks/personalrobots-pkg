@@ -40,7 +40,7 @@
 using namespace std;
 
 // Our node
-class ArmTrajectoryNode : public ros::node
+class ArmTrajectoryNode : public ros::Node
 {
   private:
     // Messages that we'll send or receive
@@ -82,7 +82,7 @@ class ArmTrajectoryNode : public ros::node
 
 
 ArmTrajectoryNode::ArmTrajectoryNode(int argc, char** argv, const char* fname) :
-        ros::node("arm_trajectory_node")
+        ros::Node("arm_trajectory_node")
 {
   // initialize random seed
   srand(time(NULL));

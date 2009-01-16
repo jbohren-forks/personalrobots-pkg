@@ -88,7 +88,7 @@ public :
 private :
   control_toolbox::BasePositionPid base_position_pid_ ;        // Does the math to compute a command velocity
   controller::BaseControllerNode base_controller_node_ ;       // Converts a commanded velocity into a wheel velocities and turret angles
-  ros::node *node_ ;
+  ros::Node *node_ ;
 
   mechanism::RobotState *robot_state_ ;
   

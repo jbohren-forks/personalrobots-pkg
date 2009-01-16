@@ -8,13 +8,13 @@ const char *win_name = "specview";
 
 using namespace std;
 #if 0
-class CvView : public node
+class CvView : public Node
 {
 public:
   MsgImage image_msg;
   CvBridge<MsgImage> cv_bridge;
 
-  CvView() : node("cv_view"), cv_bridge(&image_msg)
+  CvView() : Node("cv_view"), cv_bridge(&image_msg)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvView::image_cb);

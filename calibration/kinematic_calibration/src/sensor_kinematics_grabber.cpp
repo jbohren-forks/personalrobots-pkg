@@ -69,7 +69,7 @@ namespace kinematic_calibration
  * to a bag file.  We can then move the checkerboard and robot, and capture a new
  * datapoint.
  */
-class SensorKinematicsGrabber : public ros::node
+class SensorKinematicsGrabber : public ros::Node
 {
 
 public:
@@ -105,7 +105,7 @@ public:
   bool subscribe_color_ ;
   string output_topic_ ;                // Topic name for publishing our SensorKinematics metapacket
   
-  SensorKinematicsGrabber() : ros::node("sensor_kinematics_grabber"),
+  SensorKinematicsGrabber() : ros::Node("sensor_kinematics_grabber"),
                               dcam_sync_(this, &SensorKinematicsGrabber::dcamCallback, ros::Duration().fromSec(0.05), &SensorKinematicsGrabber::dcamCallbackTimeout)
   {
     param("~subscribe_color", subscribe_color_, false);

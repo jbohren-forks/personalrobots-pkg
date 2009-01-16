@@ -99,14 +99,14 @@ public:
   /**
    * \brief Constructor
    * \param tf The Transformer to use for checking if the transform data is available
-   * \param node The ros::node to subscribe on
+   * \param node The ros::Node to subscribe on
    * \param callback The function to call when a message is ready to be transformed
    * \param topic The topic to listen on
    * \param target_frame The frame we need to be able to transform to before a message is ready
-   * \param queue_size The number of messages to keep around waiting for transform data.  This is passed directly to ros::node::subscribe.
+   * \param queue_size The number of messages to keep around waiting for transform data.  This is passed directly to ros::Node::subscribe.
    * \note A queue size of 0 means infinite, which is dangerous
    */
-  MessageNotifier(Transformer* tf, ros::node* node, Callback callback,
+  MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
       const std::string& topic, const std::string& target_frame,
       uint32_t queue_size)
   : tf_(tf)
@@ -408,7 +408,7 @@ private:
 
 
   Transformer* tf_; ///< The Transformer used to determine if transformation data is available
-  ros::node* node_; ///< The node used to subscribe to the topic
+  ros::Node* node_; ///< The node used to subscribe to the topic
   Callback callback_; ///< The callback to call when a message is ready
   std::string target_frame_; ///< The frame we need to be able to transform to before a message is ready
   std::string topic_; ///< The topic to listen on

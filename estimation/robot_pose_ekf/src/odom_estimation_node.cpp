@@ -52,7 +52,7 @@ namespace estimation
 {
   // constructor
   OdomEstimationNode::OdomEstimationNode(const string& node_name)
-    : ros::node(node_name),
+    : ros::Node(node_name),
       node_name_(node_name),
       robot_state_(*this, true),
       odom_broadcaster_(*this),

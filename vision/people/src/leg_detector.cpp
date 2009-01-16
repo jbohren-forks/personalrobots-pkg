@@ -180,7 +180,7 @@ char** g_argv;
 static const string fixed_frame = "odom";
 
 
-class LegDetector : public node
+class LegDetector : public Node
 {
 public:
   TransformListener tfl_;
@@ -212,7 +212,7 @@ public:
   MessageNotifier<std_msgs::LaserScan>*  laser_notifier_;
 
   LegDetector() : 
-    node("laser_processor"), 
+    Node("laser_processor"), 
     tfl_(*this), 
     mask_count_(0), 
     connected_thresh_(0.06), 

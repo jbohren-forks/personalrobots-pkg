@@ -32,7 +32,7 @@
 #include "ros/node.h"
 #include "std_msgs/Image.h"
 
-class Flea2_Node : public ros::node
+class Flea2_Node : public ros::Node
 {
 public:
   std_msgs::Image img;
@@ -42,7 +42,7 @@ public:
 
   int count;
 
-  Flea2_Node() : ros::node("flea2")
+  Flea2_Node() : ros::Node("flea2")
   {
     advertise<std_msgs::Image>("image");
 

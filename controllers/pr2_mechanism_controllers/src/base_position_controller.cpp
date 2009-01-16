@@ -39,7 +39,7 @@ using namespace std ;
 
 ROS_REGISTER_CONTROLLER(BasePositionControllerNode)
 
-BasePositionControllerNode::BasePositionControllerNode() : node_(ros::node::instance()), tf_(*node_)
+BasePositionControllerNode::BasePositionControllerNode() : node_(ros::Node::instance()), tf_(*node_)
 {
   xyt_target_.setX(0) ;
   xyt_target_.setY(0) ;

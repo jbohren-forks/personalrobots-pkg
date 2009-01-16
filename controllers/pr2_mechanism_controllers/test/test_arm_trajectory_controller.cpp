@@ -47,7 +47,7 @@ int main( int argc, char** argv )
 
   /*********** Initialize ROS  ****************/
   ros::init(argc,argv);
-  ros::node *node = new ros::node("test_arm_trajectory_controller"); 
+  ros::Node *node = new ros::Node("test_arm_trajectory_controller"); 
 
   signal(SIGINT,  finalize);
   signal(SIGQUIT, finalize);

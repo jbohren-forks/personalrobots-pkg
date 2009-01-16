@@ -55,7 +55,7 @@ static const bool DEBUG_ON = true ;
     assert(result < 0) ; \
   }
 
-PhaseSpaceNode::PhaseSpaceNode() : ros::node("phase_space")
+PhaseSpaceNode::PhaseSpaceNode() : ros::Node("phase_space")
 {
   advertise<PhaseSpaceSnapshot>("phase_space_snapshot", 48) ;
 }

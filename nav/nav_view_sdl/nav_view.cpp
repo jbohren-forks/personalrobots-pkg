@@ -111,7 +111,7 @@ struct ObstaclePoint {
   double y;
 };
 
-class NavView : public ros::node, public ros::SDLGL
+class NavView : public ros::Node, public ros::SDLGL
 {
 public:
   std_msgs::ParticleCloud2D cloud;
@@ -141,7 +141,7 @@ public:
 
   tf::TransformListener tf;
 
-  NavView(int n_val) : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
+  NavView(int n_val) : ros::Node("nav_view",ros::Node::DONT_HANDLE_SIGINT),
                        view_scale(10), view_x(0), view_y(0), n_val_(n_val),
                        tf(*this,false)
   {

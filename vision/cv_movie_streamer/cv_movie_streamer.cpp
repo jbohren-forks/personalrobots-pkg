@@ -10,7 +10,7 @@
 using namespace std;
 using namespace ros;
 
-class CvMovieStreamer : public node
+class CvMovieStreamer : public Node
 {
 public:
   std_msgs::Image image_msg;
@@ -19,7 +19,7 @@ public:
   int delay, loop, qual;
 
   CvMovieStreamer(const string &_movie_fname, int _delay, int _loop, int _qual)
-  : node("cv_movie_streamer"), cv_bridge(&image_msg),
+  : Node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   {
     advertise<std_msgs::Image>("image");

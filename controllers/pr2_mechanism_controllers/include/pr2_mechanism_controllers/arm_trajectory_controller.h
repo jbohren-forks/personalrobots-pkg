@@ -247,7 +247,7 @@ namespace controller
     /*
      * \brief pointer to ros node
      */
-    ros::node * const node_;
+    ros::Node * const node_;
 
 
     /*

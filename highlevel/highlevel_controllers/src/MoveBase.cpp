@@ -152,7 +152,7 @@ namespace ros {
       param("/costmap_2d/filter_robot_points", useFilter, useFilter);
       
       if (useFilter) {
-	filter_ = new robot_filter::RobotFilter((ros::node*)this, robotName, true, bodypartScale);
+	filter_ = new robot_filter::RobotFilter((ros::Node*)this, robotName, true, bodypartScale);
 	filter_->loadRobotDescription();
 	filter_->waitForState();
       } else {

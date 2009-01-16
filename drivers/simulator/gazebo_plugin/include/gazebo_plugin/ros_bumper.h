@@ -95,7 +95,7 @@ namespace gazebo
 
 
     /// \brief pointer to ros node
-    private: ros::node *rosnode;
+    private: ros::Node *rosnode;
 
     /// \brief set topic name of broadcast
     private: ParamT<std::string> *bumperTopicNameP;

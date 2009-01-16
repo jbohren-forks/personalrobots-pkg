@@ -47,7 +47,7 @@ namespace calibration
 {
   // constructor
   odom_calib::odom_calib()
-    : ros::node("odom_calibration"),
+    : ros::Node("odom_calibration"),
       _odom_active(false),
       _imu_active(false),
       _completed(false)

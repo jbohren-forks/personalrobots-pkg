@@ -147,7 +147,7 @@ typedef struct
   ros::Time ts;
 } laser_pts_t;
 
-class WavefrontNode: public ros::node
+class WavefrontNode: public ros::Node
 {
   private:
     // Plan object
@@ -265,7 +265,7 @@ main(int argc, char** argv)
 }
 
 WavefrontNode::WavefrontNode() :
-        ros::node("wavfront_player"),
+        ros::Node("wavfront_player"),
         planner_state(NO_GOAL),
         enable(true),
         rotate_dir(0),
@@ -557,7 +557,7 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
     cmdvel = new std_msgs::BaseVel();
   cmdvel->vx = vx;
   cmdvel->vw = vth;
-  this->ros::node::publish("cmd_vel", *cmdvel);
+  this->ros::Node::publish("cmd_vel", *cmdvel);
   if(vx || vy || vth)
     this->stopped = false;
 }

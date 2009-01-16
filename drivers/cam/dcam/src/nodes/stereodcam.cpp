@@ -147,7 +147,7 @@ using namespace std;
 
 void sigsegv_handler(int sig);
 
-class StereoDcamNode : public ros::node
+class StereoDcamNode : public ros::Node
 {
   image_msgs::RawStereo    raw_stereo_;
   DiagnosticUpdater<StereoDcamNode> diagnostic_;
@@ -167,7 +167,7 @@ public:
 
   dcam::StereoDcam* stcam_;
 
-  StereoDcamNode() : ros::node("stereodcam"), diagnostic_(this), count_(0)
+  StereoDcamNode() : ros::Node("stereodcam"), diagnostic_(this), count_(0)
   {
     // Set up segfault handler
     signal(SIGSEGV, &sigsegv_handler);

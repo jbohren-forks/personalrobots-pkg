@@ -2,14 +2,14 @@
 #include "std_msgs/PointStamped.h"
 #include "message_sequencing/time_sequencer.h"
 
-class TestRecv : public ros::node
+class TestRecv : public ros::Node
 {
 
   message_sequencing::TimeSequencer<std_msgs::PointStamped> ts;
 
 public:
 
-  TestRecv() : ros::node("test_recv")
+  TestRecv() : ros::Node("test_recv")
          , ts(this, "delay", 
               boost::bind(&TestRecv::sequencedCb, this, _1),
               boost::bind(&TestRecv::droppedCb, this, _1),

@@ -12,7 +12,7 @@
 
 using namespace ros;
 
-class Segway : public node
+class Segway : public Node
 {
   public:
     Segway();
@@ -49,7 +49,7 @@ const float MAX_X_VEL = 1.2;
 const float MAX_YAW_RATE = 0.4;
 
 Segway::Segway() :
-	node("segway"),
+	Node("segway"),
 	last_raw_yaw_rate(0),
 	last_raw_x_vel(0),
 	req_x_vel(0),

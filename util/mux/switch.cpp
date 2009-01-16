@@ -32,10 +32,10 @@
 using namespace std;
 using namespace ros;
 
-class MuxSwitcher : public ros::node
+class MuxSwitcher : public ros::Node
 {
 public:
-  MuxSwitcher() : node("MuxSwitcher") { }
+  MuxSwitcher() : Node("MuxSwitcher") { }
   void switchMux(string s)
   {
     std_srvs::StringString::request  req;

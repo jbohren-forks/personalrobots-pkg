@@ -96,7 +96,7 @@ Publishes to (name / type):
 #define USAGE "rosstage <worldfile>"
 
 // Our node
-class StageNode : public ros::node
+class StageNode : public ros::Node
 {
   private:
     // Messages that we'll send or receive
@@ -175,7 +175,7 @@ StageNode::cmdvelReceived()
 }
 
 StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
-  ros::node("rosstage"),
+  ros::Node("rosstage"),
   tf(*this)
 {
   this->lasermodel = NULL;

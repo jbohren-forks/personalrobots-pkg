@@ -153,7 +153,7 @@ void JointPDController::update()
 //------ Joint PD controller node --------
 ROS_REGISTER_CONTROLLER(JointPDControllerNode)
 
-JointPDControllerNode::JointPDControllerNode(): node_(ros::node::instance())
+JointPDControllerNode::JointPDControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointPDController();
 }

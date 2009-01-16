@@ -217,7 +217,7 @@ void spacetime_stereo(std::vector<IplImage*> left_frames, std::vector<IplImage*>
 //void extract_cal_params(String cal_string, calib_params cpar);
 
 // -- ROS Node class for getting Videre images.
-class SpacetimeStereoNode : public ros::node
+class SpacetimeStereoNode : public ros::Node
 {
 	public:
 	//IplImage *frame;
@@ -236,7 +236,7 @@ class SpacetimeStereoNode : public ros::node
 	unsigned int nImages;
 	short int* disp;
 		
-	SpacetimeStereoNode() : ros::node("spacetime_stereo_node"), builtBridge(false), nImages(NIMAGES)
+	SpacetimeStereoNode() : ros::Node("spacetime_stereo_node"), builtBridge(false), nImages(NIMAGES)
 	{
 		IsCal = 0;
 

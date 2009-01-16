@@ -42,7 +42,7 @@ void ctrlc_handler(int)
   got_ctrlc = true;
 }
 
-class SickNode : public ros::node
+class SickNode : public ros::Node
 {
 public:
   std_msgs::LaserScan scan_msg;
@@ -50,7 +50,7 @@ public:
   string port;
   int baud;
   double last_print_time;
-  SickNode() : ros::node("sicklms"), scan_count(0), last_print_time(0)
+  SickNode() : ros::Node("sicklms"), scan_count(0), last_print_time(0)
   {
     scan_msg.header.frame_id = "base_laser";
     advertise<std_msgs::LaserScan>("scan");

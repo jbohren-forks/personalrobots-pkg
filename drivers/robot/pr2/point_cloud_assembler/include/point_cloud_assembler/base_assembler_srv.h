@@ -67,7 +67,7 @@ namespace point_cloud_assembler
  *              end time and returns the aggregated data as a point cloud
  */
 template<class T>
-class BaseAssemblerSrv : public ros::node
+class BaseAssemblerSrv : public ros::Node
 {
 public:
   BaseAssemblerSrv(const std::string& node_name) ;
@@ -121,7 +121,7 @@ private:
 } ;
 
 template <class T>
-BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::node(node_name)
+BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(node_name)
 {
   // **** Initialize TransformListener ****
   double tf_cache_time_secs ;

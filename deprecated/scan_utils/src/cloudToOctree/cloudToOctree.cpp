@@ -50,7 +50,7 @@
 
 namespace scan_utils{
 
-	class CloudToOctree : public ros::node
+	class CloudToOctree : public ros::Node
 	{
 	private:
 		Octree<char> *mOctree;
@@ -63,7 +63,7 @@ namespace scan_utils{
 	};
 
 
-	CloudToOctree::CloudToOctree(float cellSize) : ros::node("cloud_to_octree_node")
+	CloudToOctree::CloudToOctree(float cellSize) : ros::Node("cloud_to_octree_node")
 	{
 		/* initialize Octree to depth 0. This means that the
 		   smallest possible leaf will always have the

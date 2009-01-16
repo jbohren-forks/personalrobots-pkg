@@ -184,7 +184,7 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   //Init the model.
   
   ROS_DEBUG("LOADING LQR CONTROLLER NODE");
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   ROS_DEBUG_STREAM("the prefix is "<<prefix);
 

@@ -336,7 +336,7 @@ void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers
 
 
 ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
-LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::node::instance()), c_()
+LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::Node::instance()), c_()
 {
   need_to_send_msg_ = false ;                                           // Haven't completed a sweep yet, so don't need to send a msg
   publisher_ = NULL ;                                                   // We don't know our topic yet, so we can't build it

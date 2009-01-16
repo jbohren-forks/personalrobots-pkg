@@ -68,7 +68,7 @@ class ParticleSystem;
 
 namespace ros
 {
-class node;
+class Node;
 }
 
 class wxTimerEvent;

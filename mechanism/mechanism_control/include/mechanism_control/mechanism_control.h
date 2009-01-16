@@ -115,7 +115,7 @@ public:
                        robot_srvs::SpawnController::response &resp);
 
 private:
-  ros::node *node_;
+  ros::Node *node_;
 
   bool killController(robot_srvs::KillController::request &req,
                       robot_srvs::KillController::response &resp);

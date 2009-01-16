@@ -91,7 +91,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   wrench_controller_.initXml(robot, config);
 
   // parse robot description from xml file
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   robot_kinematics::RobotKinematics robot_kinematics ;
   string robot_desc;
   node->param("robotdesc/pr2", robot_desc, string("")) ;
@@ -218,7 +218,7 @@ ROS_REGISTER_CONTROLLER(EndeffectorTwistControllerNode)
 
 EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   node->unsubscribe(topic_ + "/command");
   node->unsubscribe("spacenav/joy");
@@ -228,7 +228,7 @@ EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
 bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic_ to listen to
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic_ == "") {
     fprintf(stderr, "No topic given to EndeffectorTwistControllerNode\n");

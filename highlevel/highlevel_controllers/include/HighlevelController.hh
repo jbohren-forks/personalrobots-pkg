@@ -50,7 +50,7 @@
  * goals, and can transition between an active state (when pursuing a goal), and an inactive state when is its effectively
  * idle and should not be imposing any control. A high level control must also handle goal recalls.
  */
-template <class S, class G> class HighlevelController: public ros::node {
+template <class S, class G> class HighlevelController: public ros::Node {
 public:
   enum State {
     INACTIVE = 0,
@@ -69,7 +69,7 @@ public:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    ros::node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), 
+    ros::Node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), 
     goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), timeout(0, 0) {
 
     // Obtain the control frequency for this node
@@ -338,7 +338,7 @@ protected:
   template <class T>
   void local_param(const std::string& localName, T& param, const T& defaultValue){
     std::string globalName = get_name() + "/" + localName;
-    node::param<T>(globalName, param, defaultValue);
+    Node::param<T>(globalName, param, defaultValue);
     std::stringstream ss;
     ss << param;
     ROS_INFO("Setting %s to %s\n", globalName.c_str(), ss.str().c_str());

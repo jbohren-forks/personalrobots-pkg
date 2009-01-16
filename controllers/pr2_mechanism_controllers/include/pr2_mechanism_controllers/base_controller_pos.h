@@ -512,7 +512,7 @@ namespace controller
     /*
      * \brief pointer to ros node
      */
-    ros::node *node;
+    ros::Node *node;
     /*
      * \brief save service name prefix for unadvertise on exit
      */

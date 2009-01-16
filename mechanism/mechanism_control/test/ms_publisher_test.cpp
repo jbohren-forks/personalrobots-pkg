@@ -30,7 +30,7 @@
 #include "robot_msgs/ActuatorState.h"
 #include "robot_msgs/JointState.h"
 
-void publish(ros::node *node)
+void publish(ros::Node *node)
 {
   robot_msgs::MechanismState mechanism_state;
 
@@ -79,7 +79,7 @@ void publish(ros::node *node)
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv);
-  ros::node *node = new ros::node("mechanism_control");
+  ros::Node *node = new ros::Node("mechanism_control");
   
   node->advertise<robot_msgs::MechanismState>("mechanism_state");
   while (1) { 

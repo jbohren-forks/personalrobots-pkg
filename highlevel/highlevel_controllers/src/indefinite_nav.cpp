@@ -42,7 +42,7 @@ using namespace std;
 namespace ros {
   namespace highlevel_controllers {
 
-    IndefiniteNav::IndefiniteNav() : ros::node("indefinite_nav_node")
+    IndefiniteNav::IndefiniteNav() : ros::Node("indefinite_nav_node")
     {
       addGoal (24.6, 30, 0.66);
       addGoal (17.5, 31.3, -1.02);

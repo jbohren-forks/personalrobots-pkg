@@ -39,7 +39,7 @@
 
 #include "self_test/self_test.h"
 
-class Axis_cam_node : public ros::node
+class Axis_cam_node : public ros::Node
 {
 public:
   std_msgs::ImageArray images;
@@ -54,7 +54,7 @@ public:
   ros::Time next_time;
   int count_;
 
-  Axis_cam_node() : ros::node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
+  Axis_cam_node() : ros::Node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
   {
     advertise<std_msgs::Image>("image", 1);
     advertise<std_msgs::ImageArray>("images", 1);

@@ -50,7 +50,7 @@ SlamGMapping::SlamGMapping()
   gsp_ = new GMapping::GridSlamProcessor(std::cerr);
   ROS_ASSERT(gsp_);
 
-  node_ = new ros::node("gmapping");
+  node_ = new ros::Node("gmapping");
   ROS_ASSERT(gsp_);
 
   /// @todo Disable extrapolation, and implement scan-buffering.  This is

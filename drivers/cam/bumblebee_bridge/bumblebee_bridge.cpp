@@ -42,10 +42,10 @@ using namespace XmlRpc;
 const char *BUMBLEBEE_HOST = "stair-vision";
 const int   BUMBLEBEE_PORT = 11411; // a palindromic prime, naturally
 
-class BumblebeeBridge : public ros::node
+class BumblebeeBridge : public ros::Node
 {
 public:
-  BumblebeeBridge() : ros::node("bumblebee_bridge")
+  BumblebeeBridge() : ros::Node("bumblebee_bridge")
   {
     advertise_service("stereo", &BumblebeeBridge::stereo);
   }

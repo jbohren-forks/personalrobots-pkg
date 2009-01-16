@@ -342,7 +342,7 @@ bool JointAutotunerNode::getActual(
 
 bool JointAutotunerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-ros::node *node = ros::node::instance();
+ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";

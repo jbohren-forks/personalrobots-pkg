@@ -230,7 +230,7 @@ private:
 private:
 
   std::string topic_;
-  ros::node *node_;
+  ros::Node *node_;
   bool is_running_;
   bool keep_running_;
 

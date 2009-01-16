@@ -53,7 +53,7 @@ int main( int argc, char** argv )
   //Initialize ROS
   ros::init(argc, argv);
 
-  ros::node test_forward_kin("test_forward_kin");
+  ros::Node test_forward_kin("test_forward_kin");
 
   std::string pr2Content;
   test_forward_kin.get_param("robotdesc/pr2",pr2Content);

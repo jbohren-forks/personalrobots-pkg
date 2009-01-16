@@ -64,7 +64,7 @@ moment invariants, etc.
 using namespace std;
 using namespace std_msgs;
 
-class NormalEstimation : public ros::node
+class NormalEstimation : public ros::Node
 {
   public:
 
@@ -90,7 +90,7 @@ class NormalEstimation : public ros::node
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    NormalEstimation () : ros::node ("normal_estimation_omp"), tf_(*this)
+    NormalEstimation () : ros::Node ("normal_estimation_omp"), tf_(*this)
     {
       param ("~search_radius", radius_, 0.02);      // 2cm radius by default
       param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default

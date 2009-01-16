@@ -165,7 +165,7 @@ void JointPositionSmoothController::update()
 //------ Joint Position controller node --------
 ROS_REGISTER_CONTROLLER(JointPositionSmoothControllerNode)
 
-JointPositionSmoothControllerNode::JointPositionSmoothControllerNode(): node_(ros::node::instance())
+JointPositionSmoothControllerNode::JointPositionSmoothControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointPositionSmoothController();
 }

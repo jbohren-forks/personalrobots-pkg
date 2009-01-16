@@ -100,7 +100,7 @@ int main( int argc, char** argv )
 
   /*********** Initialize ROS  ****************/
   ros::init(argc,argv);
-  ros::node *node = new ros::node("test_run_base_controller"); 
+  ros::Node *node = new ros::Node("test_run_base_controller"); 
 
   test_run_base tb;
 

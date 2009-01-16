@@ -141,7 +141,7 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
  * Best used while playback is stopped because the selected point is only drawn on one frame, 
  * but it works even during live playback.
  */
-class StereoView : public ros::node
+class StereoView : public ros::Node
 {
 public:
 
@@ -172,7 +172,7 @@ public:
 
   ros::thread::mutex cv_mutex; 
 
-  StereoView() : ros::node("stereo_view"), 
+  StereoView() : ros::Node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
                  calib_color_(false), recompand_(false)

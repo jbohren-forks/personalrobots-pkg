@@ -133,7 +133,7 @@ public:
   void setTrackLinkCmd() ;
 
 private:
-  ros::node *node_ ;
+  ros::Node *node_ ;
   LaserScannerTrajController c_ ;
   mechanism::RobotState *robot_ ;
   std::string service_prefix_ ;

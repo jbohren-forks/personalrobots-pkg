@@ -199,7 +199,7 @@ bool CasterCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXm
 {
   assert(robot);
   robot_ = robot;
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")

@@ -44,7 +44,7 @@
 using namespace std;
 using namespace ros;
 
-class CheckerboardDetectorNode : public node
+class CheckerboardDetectorNode : public Node
 {
 public:
     struct CHECKERBOARD
@@ -69,7 +69,7 @@ public:
     boost::mutex _mutexcalib;
     IplImage* frame;
 
-    CheckerboardDetectorNode() : node("checkerboard_detector"), uidnext(1), intrinsic_matrix(NULL), frame(NULL)
+    CheckerboardDetectorNode() : Node("checkerboard_detector"), uidnext(1), intrinsic_matrix(NULL), frame(NULL)
     {
         param("display",display,1);
 

@@ -46,8 +46,8 @@ namespace tf
 
 class TransformBroadcaster{
 public:
-  /** \brief Constructor (needs a ros::node reference) */
-  TransformBroadcaster(ros::node& anode):
+  /** \brief Constructor (needs a ros::Node reference) */
+  TransformBroadcaster(ros::Node& anode):
     node_(anode)
   {
     node_.advertise<tfMessage>("/tf_message", 100);
@@ -77,8 +77,8 @@ public:
   }
   
 private:
-  /// Internal reference to ros::node
-  ros::node & node_;
+  /// Internal reference to ros::Node
+  ros::Node & node_;
 
 };
 

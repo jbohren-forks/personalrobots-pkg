@@ -33,7 +33,7 @@
 
 #include <libKinematics/pr2_ik_node.h>
 
-LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::node(node_name),arm_name_(arm_name)
+LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name)
 {};
 
 LibKinematicsNode::~LibKinematicsNode(){};

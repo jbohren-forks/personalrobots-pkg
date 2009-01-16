@@ -51,14 +51,14 @@ namespace kinematic_calibration
 {
   
 
-class ArmPhaseSpaceGrabber : public ros::node
+class ArmPhaseSpaceGrabber : public ros::Node
 {
 
 public:
   
 
   
-  ArmPhaseSpaceGrabber() : ros::node("arm_phase_space_grabber")
+  ArmPhaseSpaceGrabber() : ros::Node("arm_phase_space_grabber")
   {
     marker_id_ = 1 ;
     

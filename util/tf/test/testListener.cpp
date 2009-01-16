@@ -31,7 +31,7 @@
 
 
 
-class testListener : public ros::node
+class testListener : public ros::Node
 {
 public:
 
@@ -39,7 +39,7 @@ public:
   
   //constructor with name
   testListener() : 
-    ros::node("listener"),  
+    ros::Node("listener"),  
     tf(*this)
   {
   

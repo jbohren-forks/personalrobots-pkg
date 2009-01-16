@@ -8,12 +8,12 @@ using std::string;
 /**
  * This is a hack to get the position of the robot. TfPy is not here yet, so this is just to get the tests working.
  */
-class GroundTruthTransform : public ros::node {
+class GroundTruthTransform : public ros::Node {
 public:
   std_msgs::Point32 msg;
   tf::TransformListener tf;
 
-  GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
+  GroundTruthTransform() : ros::Node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
     advertise<std_msgs::Point32>("groundtruthposition");
   }
 

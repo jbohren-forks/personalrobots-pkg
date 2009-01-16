@@ -89,12 +89,12 @@ void usage()
 IplImage *image = NULL; // the input image coming across the wire
 ros::thread::mutex image_mutex;
 
-class Classify : public ros::node
+class Classify : public ros::Node
 {
 public:
   std_msgs::Image image_msg;
   CvBridge<std_msgs::Image> cv_bridge;
-  Classify() : ros::node("classify"), cv_bridge(&image_msg)
+  Classify() : ros::Node("classify"), cv_bridge(&image_msg)
   {
     subscribe("image", image_msg, &Classify::image_cb);
   }

@@ -222,7 +222,7 @@ void ArmPositionController::checkForGoalAchieved_(void)
 ROS_REGISTER_CONTROLLER(ArmPositionControllerNode)
 
 ArmPositionControllerNode::ArmPositionControllerNode()
-  : Controller(), node_(ros::node::instance())
+  : Controller(), node_(ros::Node::instance())
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmPositionController();

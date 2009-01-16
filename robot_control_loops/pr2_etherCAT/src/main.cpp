@@ -189,9 +189,9 @@ void controlLoop(void *)
   else
   {
     printf("Xml file not found, reading from parameter server\n");
-    assert(ros::node::instance());
+    assert(ros::Node::instance());
     std::string result;
-    if (ros::node::instance()->get_param(g_options.xml_, result))
+    if (ros::Node::instance()->get_param(g_options.xml_, result))
       xml.Parse(result.c_str());
   }
   urdf::normalizeXml(xml.RootElement());
@@ -466,8 +466,8 @@ int main(int argc, char *argv[])
   if (!g_options.xml_)
     Usage("You must specify a robot description XML file");
 
-  ros::node *node = new ros::node("mechanism_control",
-                                  ros::node::DONT_HANDLE_SIGINT);
+  ros::Node *node = new ros::Node("mechanism_control",
+                                  ros::Node::DONT_HANDLE_SIGINT);
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);

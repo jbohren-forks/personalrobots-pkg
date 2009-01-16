@@ -19,11 +19,11 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-class KatanaServer : public ros::node
+class KatanaServer : public ros::Node
 {
   public:
     Katana *katana;
-    KatanaServer() : ros::node("katana_server")
+    KatanaServer() : ros::Node("katana_server")
     {
       advertise_service("katana_calibrate_service", &KatanaServer::calibrateSrv);
       advertise_service("katana_move_upright_service", &KatanaServer::move_to_upright);

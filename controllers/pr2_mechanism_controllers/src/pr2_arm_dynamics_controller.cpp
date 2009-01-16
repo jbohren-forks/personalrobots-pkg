@@ -312,7 +312,7 @@ void PR2ArmDynamicsControllerNode::update()
 bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   ROS_INFO("LOADING PR2 ARM DYNAMICS CONTROLLER NODE");
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   std::cout<<"the prefix is "<<prefix<<std::endl;
 

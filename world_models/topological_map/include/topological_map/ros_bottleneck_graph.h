@@ -51,7 +51,7 @@ namespace topological_map
 
 enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
 
-class BottleneckGraphRos: public ros::node
+class BottleneckGraphRos: public ros::Node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);

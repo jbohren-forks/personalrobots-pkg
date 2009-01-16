@@ -58,7 +58,7 @@ namespace estimation
 {
   // constructor
   PeopleTrackingNode::PeopleTrackingNode(const string& node_name)
-    : ros::node(node_name),
+    : ros::Node(node_name),
       node_name_(node_name),
       robot_state_(*this, true),
       tracker_counter_(0)

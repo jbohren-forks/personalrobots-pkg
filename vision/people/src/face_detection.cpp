@@ -71,7 +71,7 @@ using namespace std;
  * blue - no stereo information available;
  * green - plausible face size. 
  */
-class FaceDetector: public ros::node {
+class FaceDetector: public ros::Node {
 public:
   // Images and conversion
   image_msgs::Image limage_; /**< Left image msg. */
@@ -114,9 +114,9 @@ public:
 
   boost::mutex cv_mutex_, pos_mutex_;
 
-  // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
+  // ros::Node("face_detector", ros::Node::ANONYMOUS_NAME ),
   FaceDetector(string node_name, int num_filenames, string *names, string *haar_filenames, double *reliabilities, bool use_depth, string do_display, bool external_init) : 
-    ros::node("face_detector", ros::node::ANONYMOUS_NAME),
+    ros::Node("face_detector", ros::Node::ANONYMOUS_NAME),
     sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
     cv_image_left_(0),
     cv_image_disp_(0),

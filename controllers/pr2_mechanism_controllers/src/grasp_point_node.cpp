@@ -36,7 +36,7 @@
 
 using namespace grasp_point_node;
 
-GraspPointNode::GraspPointNode(std::string node_name):ros::node(node_name),tf_(*this, true, 10000000000ULL)
+GraspPointNode::GraspPointNode(std::string node_name):ros::Node(node_name),tf_(*this, true, 10000000000ULL)
 {
   service_prefix_ = node_name;
 }

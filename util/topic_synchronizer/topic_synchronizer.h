@@ -61,7 +61,7 @@ class TopicSynchronizer
   public:
     UnsubscribeList(std::list<std::string>& l) : list_(l) { }
 
-    void doUnsubscribe(ros::node* n, std::string topic)
+    void doUnsubscribe(ros::Node* n, std::string topic)
     {
       list_mutex_.lock();
       std::list<std::string>::iterator i = list_.begin();
@@ -91,7 +91,7 @@ class TopicSynchronizer
 
     UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {} 
 
-    void doUnsubscribe(ros::node* node)
+    void doUnsubscribe(ros::Node* node)
     {
       ul_->doUnsubscribe(node, topic_);
     }

@@ -35,7 +35,7 @@
 using namespace std;
 using namespace ros;
 
-class DeadReckon : public ros::node
+class DeadReckon : public ros::Node
 {
 public:
   std_msgs::BaseVel velMsg;
@@ -49,7 +49,7 @@ public:
     DR_IDLE
   } drState;
 
-  DeadReckon() : node("DeadReckon"), drState(DR_IDLE), tgtX(0), tgtY(0),
+  DeadReckon() : Node("DeadReckon"), drState(DR_IDLE), tgtX(0), tgtY(0),
                  tgtTh(0)
   {
     param("drMaxTV", maxTV, 0.3);

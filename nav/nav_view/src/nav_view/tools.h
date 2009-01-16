@@ -40,7 +40,7 @@ class SceneNode;
 
 namespace ros
 {
-class node;
+class Node;
 }
 
 namespace ogre_tools
@@ -70,7 +70,7 @@ public:
   virtual int processMouseEvent( wxMouseEvent& event, int last_x, int last_y, float& scale ) = 0;
 protected:
   Ogre::SceneManager* scene_manager_;
-  ros::node* ros_node_;
+  ros::Node* ros_node_;
   NavViewPanel* panel_;
 };
 

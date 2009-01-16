@@ -5,7 +5,7 @@
 #include "robot_msgs/Planner2DState.h"
 #include "robot_msgs/Planner2DGoal.h"
 
-class WavefrontCLI : public ros::node
+class WavefrontCLI : public ros::Node
 {
 public:
   robot_msgs::Planner2DState wf_state;
@@ -13,7 +13,7 @@ public:
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
   WavefrontCLI(double x, double y, double th)
-  : ros::node("wavefront_cli"), state(WF_IDLE)
+  : ros::Node("wavefront_cli"), state(WF_IDLE)
   {
     wf_goal.goal.x  = x;
     wf_goal.goal.y  = y;

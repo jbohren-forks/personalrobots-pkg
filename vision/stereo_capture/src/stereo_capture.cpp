@@ -55,7 +55,7 @@
 
 using namespace std;
 
-class StereoView : public ros::node
+class StereoView : public ros::Node
 {
 public:
 
@@ -94,7 +94,7 @@ public:
   string fileName;
   unsigned int fileNum;
 
-  StereoView() : ros::node("stereo_view"), 
+  StereoView() : ros::Node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), lastLeft(NULL), lastRight(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
 		 capture(false), captureNoTex(false)

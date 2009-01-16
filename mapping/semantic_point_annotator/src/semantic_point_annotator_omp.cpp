@@ -73,7 +73,7 @@ struct Region
   vector<int> indices;
 };
 
-class SemanticPointAnnotator : public ros::node
+class SemanticPointAnnotator : public ros::Node
 {
   public:
 
@@ -91,7 +91,7 @@ class SemanticPointAnnotator : public ros::node
     double rule_table_min_, rule_table_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    SemanticPointAnnotator () : ros::node ("semantic_point_annotator_omp"), tf_(*this)
+    SemanticPointAnnotator () : ros::Node ("semantic_point_annotator_omp"), tf_(*this)
     {
       param ("~rule_floor", rule_floor_, 0.15);          // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING

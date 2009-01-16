@@ -160,7 +160,7 @@ void HeadPanTiltController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
-: Controller(), node_(ros::node::instance()), TF(*ros::node::instance(),false, 10000000000ULL)
+: Controller(), node_(ros::Node::instance()), TF(*ros::Node::instance(),false, 10000000000ULL)
 {
   c_ = new HeadPanTiltController();
 }

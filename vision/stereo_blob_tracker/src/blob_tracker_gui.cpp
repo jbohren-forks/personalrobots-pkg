@@ -146,7 +146,7 @@ struct imgData
 /// BlobTrackerGUI subscribes to the tracker images, display them
 /// wait for mouse selection of a retangle area, and publish it (intended for
 /// the tracker).
-class BlobTrackerGUI: public ros::node {
+class BlobTrackerGUI: public ros::Node {
 public:
   bool display_;
   // for subscription
@@ -179,7 +179,7 @@ public:
   int  numFrames_;
 
   BlobTrackerGUI(bool display):
-    node("blob_tracker_gui", ros::node::ANONYMOUS_NAME),
+    node("blob_tracker_gui", ros::Node::ANONYMOUS_NAME),
     display_(display),
     cv_image_cpy_(NULL), 
     cv_dispImg_cpy_(NULL),

@@ -17,7 +17,7 @@ using namespace std;
 using namespace ros;
 using namespace joy;
 
-class JoyNode : public node
+class JoyNode : public Node
 {
    public:
       joy::Joy joy_msg;
@@ -32,7 +32,7 @@ class JoyNode : public node
       std::map<std::string,std::string>cmd_map_;
       std::map<std::string,std::string>::const_iterator find_iter_;
 
-      JoyNode() : node("joy_node")
+      JoyNode() : Node("joy_node")
       {
          advertise<std_msgs::String>("joy_button",1);
          param<int>("joy_node/reset_button",reset_button,6);

@@ -52,12 +52,12 @@ using namespace std_msgs ;
 namespace point_cloud_assembler
 {
 
-class GrabCloudData : public ros::node
+class GrabCloudData : public ros::Node
 {
 
 public:
 
-  GrabCloudData() : ros::node("grab_cloud_data")
+  GrabCloudData() : ros::Node("grab_cloud_data")
   {
     advertise<PointCloud> ("full_cloud", 1) ;
   }

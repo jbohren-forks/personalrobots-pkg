@@ -41,7 +41,7 @@
 namespace robot_filter {
 
 
-  RobotFilter::RobotFilter(ros::node* node, std::string robot_model_name, bool verbose, double bodyPartScale) {
+  RobotFilter::RobotFilter(ros::Node* node, std::string robot_model_name, bool verbose, double bodyPartScale) {
     m_model = new robot_model::NodeRobotModel(node, robot_model_name);
     m_node = node;
     m_verbose = verbose;
