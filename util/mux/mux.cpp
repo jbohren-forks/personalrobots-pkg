@@ -47,11 +47,11 @@ public:
   ShapeShifter() : Message(), msgBuf(NULL), msgBufUsed(0), msgBufAlloc(0) { }
   virtual ~ShapeShifter() { if (msgBuf) delete[] msgBuf;
                             msgBuf = NULL; msgBufAlloc = 0; }
-  virtual const string __get_datatype() const { return string("*"); }
-  virtual const string __get_md5sum()   const { return string("*"); }
-  static const string __s_get_datatype() { return string("*"); }
-  static const string __s_get_md5sum()   { return string("*"); }
-  uint32_t serialization_length() { return msgBufUsed; }
+  virtual const string __getDataType() const { return string("*"); }
+  virtual const string __getMD5Sum()   const { return string("*"); }
+  static const string __s_getDataType() { return string("*"); }
+  static const string __s_getMD5Sum()   { return string("*"); }
+  uint32_t serializationLength() { return msgBufUsed; }
   virtual uint8_t *serialize(uint8_t *writePtr, uint32_t)
   {
     // yack up what we stored

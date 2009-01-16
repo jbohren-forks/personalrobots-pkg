@@ -194,14 +194,14 @@ public:
   // This is what allows us to bypass an unnecessary copy when being
   // deserialized from the wire.
 
-  inline static std::string __s_get_datatype() { return M::__s_get_datatype(); }
-  inline static std::string __s_get_md5sum() { return M::__s_get_md5sum(); }
+  inline static std::string __s_getDataType() { return M::__s_getDataType(); }
+  inline static std::string __s_getMD5Sum() { return M::__s_getMD5Sum(); }
 
-  virtual const std::string __get_datatype() const { return M::__s_get_datatype(); }
-  virtual const std::string __get_md5sum()   const { return M::__s_get_md5sum(); }
+  virtual const std::string __getDataType() const { return M::__s_getDataType(); }
+  virtual const std::string __getMD5Sum()   const { return M::__s_getMD5Sum(); }
 
   // Topic buffer is for subscribing, not publishing
-  virtual uint32_t serialization_length() { return 0; }
+  virtual uint32_t serializationLength() { return 0; }
   virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) { assert(0); return NULL; }
 
   /**
