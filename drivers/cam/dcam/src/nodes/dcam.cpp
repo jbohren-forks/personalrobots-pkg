@@ -160,6 +160,9 @@ public:
         diagnostic_.update();
         
       advertiseCam();
+    } else {
+      ROS_FATAL("Found no cameras on firewire bus\n");
+      shutdown();
     }
   }
 
@@ -170,6 +173,7 @@ public:
     {
       cam_->stop();
       delete cam_;
+      cam_ = NULL;
     }
 
     dcam::fini();  
@@ -341,7 +345,7 @@ public:
   }
 };
 
-dcam::Dcam* DcamNode::cam_ = 0;
+dcam::Dcam* DcamNode::cam_ = NULL;
 
 void sigsegv_handler(int sig)
 {
