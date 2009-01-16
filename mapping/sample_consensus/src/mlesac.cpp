@@ -84,7 +84,7 @@ namespace sample_consensus
 
     // Compute the bounding box diagonal: V = sqrt (sum (max(pointCloud) - min(pointCloud)^2))
     std_msgs::Point32 min_pt, max_pt;
-    cloud_geometry::getMinMax (*sac_model_->getCloud (), *sac_model_->getIndices (), min_pt, max_pt);
+    cloud_geometry::getMinMax (sac_model_->getCloud (), sac_model_->getIndices (), min_pt, max_pt);
 
     double v = sqrt ( (max_pt.x - min_pt.x) * (max_pt.x - min_pt.x) +
                       (max_pt.y - min_pt.y) * (max_pt.y - min_pt.y) +

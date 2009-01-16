@@ -188,7 +188,7 @@ class NormalEstimation : public ros::node
         }
         catch (std::bad_alloc)
         {
-          cloud_geometry::downsamplePointCloudSet (&cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
+//          cloud_geometry::downsamplePointCloudSet (&cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
         }
 
         gettimeofday (&t2, NULL);
