@@ -41,7 +41,8 @@ for topic, msg, timeStamp in rosrecord.logplayer(filename):
     if frame_counter>=start and frame_counter < end:
       if len(msg.bodies)>0:
         # convert the time stamp to seconds in float
-        secs = timeStamp.secs + timeStamp.nsecs*1.e-9
+        secs = msg.header.stamp.secs + msg.header.stamp.nsecs*1.e-9
+        # secs = timeStamp.secs + timeStamp.nsecs*1.e-9
         p = msg.bodies[0].pose.translation
         stamped_points.append((secs, p.x, p.y, p.z))
       else:

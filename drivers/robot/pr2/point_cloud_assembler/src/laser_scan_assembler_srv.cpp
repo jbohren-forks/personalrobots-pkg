@@ -84,7 +84,8 @@ public:
     }
     else                     // Do it the slower (more accurate) way
     {
-      projector_.transformLaserScanToPointCloud(fixed_frame_id, cloud_out, scan_in, *tf_) ;
+      int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
+      projector_.transformLaserScanToPointCloud (fixed_frame_id, cloud_out, scan_in, *tf_, mask);
     }
     return ;
   }

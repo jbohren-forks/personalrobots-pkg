@@ -59,11 +59,15 @@ st_skel_nodes = array(skeleton_nodes)
 
 time_stamp_offset  = st_gt_points[0][0]-st_skel_nodes[0][0]
 time_stamp_offset2 = st_gt_points[gt_numpts-1][0]-st_trj_points[trj_numpts-1][0]
-time_stamp_offset = .000
+
 st_skel_nodes[0][0] = st_gt_points[0][0] # adjust the time stamp of the first noode since it is not moving anyway.
 print 'timestamps', 'phase space:', st_gt_points[0][0], 'vo:', st_trj_points[0][0],
 print 'offset:', time_stamp_offset, 'offset2:', time_stamp_offset2
-
+time_stamp_offset = -.00375  # 0.0316576975223 for bag4
+time_stamp_offset = -.0038   # 0.0316575769793 for bag4
+time_stamp_offset = -.003825 # 0.0316575166683 for bag4
+time_stamp_offset = 0.0
+print 'use offset', time_stamp_offset
 # go thru both trajectories in time, pick matching points from st_gt_points that
 # matches st_trj_points the best in time stamps
 # st_gt_points_matched = match_trajectory_points(st_trj_points, st_gt_points, time_stamp_offset)
@@ -71,6 +75,7 @@ st_gt_points_matched = match_trajectory_points(st_skel_nodes, st_gt_points, time
 print 'len of st_gt_points_matched', len(st_gt_points_matched),
 print 'len of st_trj_points', len(st_trj_points)
 print 'len of st_skel_nodes', len(st_skel_nodes)
+print 'num of skeleton edges', len(skeleton_edges)/2
 
 #fitting for transformation
 shift0 = [0., 0., 0.]
@@ -111,7 +116,7 @@ pose = Pose(transformations.rotation_matrix_from_euler(e[0], e[1], e[2], 'sxyz')
 
 #st_gt_points = transf_curve(st_gt_points, pose)
 #st_gt_points = scale_curve(st_gt_points, s)
-# st_gt_points = st_gt_points_matched
+st_gt_points = st_gt_points_matched
 
 if 1:
   st_gt_points = transf_curve(st_gt_points, pose)

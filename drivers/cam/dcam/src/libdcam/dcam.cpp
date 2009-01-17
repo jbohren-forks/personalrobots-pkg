@@ -475,6 +475,8 @@ dcam::Dcam::setFormat(dc1394video_mode_t video,
 		      dc1394framerate_t fps, 
 		      dc1394speed_t speed)
 {
+  videoMode = video;
+
   dc1394_capture_stop(dcCam);	// tear down any previous capture setup
   
   // check for valid video mode
@@ -607,7 +609,7 @@ dcam::Dcam::getImage(int ms)
       {
 	// clear everything out first
 	camIm->imRaw = NULL;
-	camIm->imRawType = rawType;
+	camIm->imRawType = COLOR_CODING_NONE;
 	camIm->im = NULL;
 	camIm->imType = COLOR_CODING_NONE;
 	camIm->imColor = NULL;
@@ -617,15 +619,23 @@ dcam::Dcam::getImage(int ms)
 	camIm->imRectColor = NULL;
 	camIm->imRectColorType = COLOR_CODING_NONE;
 
-	// check raw modes
-	if (rawType != COLOR_CODING_NONE)
-	  camIm->imRaw = camFrame->image;	    
-	else			// ???
-	  camIm->im = camFrame->image;
 
 	camIm->imWidth = camFrame->size[0];
 	camIm->imHeight = camFrame->size[1];
 	camIm->im_time = camFrame->timestamp;
+
+        switch (rawType)
+        {
+        case COLOR_CODING_MONO8:
+          camIm->im = camFrame->image;
+          camIm->imType = COLOR_CODING_MONO8;
+          break;
+        case COLOR_CODING_RGB8:
+	  camIm->imColor = camFrame->image;
+          camIm->imColorType = COLOR_CODING_RGB8;
+          break;
+        }
+
 //	printf("Time: %llu\n", camFrame->timestamp);
       }
 
@@ -805,7 +815,19 @@ dcam::Dcam::setRawType()
 	rawType = VIDERE_STEREO_MONO;
     }
   else
-    rawType = COLOR_CODING_NONE;
+  {
+    switch (videoMode)
+    {
+      case DC1394_VIDEO_MODE_640x480_RGB8:
+        rawType = COLOR_CODING_RGB8;
+        break;
+      case DC1394_VIDEO_MODE_640x480_MONO8:
+        rawType = COLOR_CODING_MONO8;
+        break;
+      default:
+        rawType = COLOR_CODING_NONE;
+    }
+  }
 }
 
 

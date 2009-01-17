@@ -37,6 +37,7 @@
 #include <robot_model/knode.h>
 #include <std_msgs/PointCloud.h>
 #include <collision_space/environmentODE.h>
+#include <collision_map/CollisionMap.h>
 
 /** Main namespace */
 namespace robot_model
@@ -100,9 +101,7 @@ namespace robot_model
 	    m_collisionSpace->setSelfCollision(true);
 	    m_collisionSpace->addStaticPlane(0.0, 0.0, 1.0, -0.01);
 	    
-	    m_sphereSize = 0.03;
-	    
-	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeCollisionModel::worldMapCallback, this, 1);
+	    m_node->subscribe("collision_map", m_collisionMap, &NodeCollisionModel::collisionMapCallback, this, 1);
 	}
 
 	virtual ~NodeCollisionModel(void)
@@ -139,9 +138,8 @@ namespace robot_model
 	
     protected:
 	
-	std_msgs::PointCloud           m_worldCloud;
+	collision_map::CollisionMap           m_collisionMap;
 	collision_space::EnvironmentModel    *m_collisionSpace;
-	double                                m_sphereSize;
 	
 	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
 	{
@@ -155,26 +153,27 @@ namespace robot_model
 	    m_collisionSpace->unlock();
 	}
 	
-	void worldMapCallback(void)
+	void collisionMapCallback(void)
 	{
-	    unsigned int n = m_worldCloud.get_pts_size();
+	    unsigned int n = m_collisionMap.get_spheres_size();
 	    printf("received %u points (world map)\n", n);
 	    
 	    beforeWorldUpdate();
 	    
 	    ros::Time startTime = ros::Time::now();
-	    double *data = new double[3 * n];	
+	    double *data = new double[4 * n];	
 	    for (unsigned int i = 0 ; i < n ; ++i)
 	    {
-		unsigned int i3 = i * 3;	    
-		data[i3    ] = m_worldCloud.pts[i].x;
-		data[i3 + 1] = m_worldCloud.pts[i].y;
-		data[i3 + 2] = m_worldCloud.pts[i].z;
+		unsigned int i4 = i * 4;	    
+		data[i4    ] = m_collisionMap.spheres[i].center.x;
+		data[i4 + 1] = m_collisionMap.spheres[i].center.y;
+		data[i4 + 2] = m_collisionMap.spheres[i].center.z;
+		data[i4 + 3] = m_collisionMap.spheres[i].radius;
 	    }
 	    
 	    m_collisionSpace->lock();
 	    m_collisionSpace->clearObstacles();
-	    m_collisionSpace->addPointCloud(n, data, m_sphereSize);
+	    m_collisionSpace->addPointCloud(n, data);
 	    m_collisionSpace->unlock();
 	    
 	    delete[] data;

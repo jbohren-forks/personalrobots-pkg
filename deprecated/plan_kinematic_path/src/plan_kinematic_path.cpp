@@ -44,7 +44,8 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include <pr2_mechanism_controllers/SetJointTarget.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
 #include <cassert>
 
@@ -145,10 +146,10 @@ public:
 
 	initialState(req.start_state);
 	
-	req.goal_state.set_vals_size(4);
+	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[0] = -1.5;    
+        req.goal_state.vals[3] = -1.5;    
 
 	req.allowed_time = 30.0;
 	
@@ -337,11 +338,50 @@ public:
     
     void sendCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
+	pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
+	pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+	
+	pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
+	pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+	
+	pr2_mechanism_controllers::JointTraj traj;
+	traj.set_points_size(path.get_states_size());
+		
+	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
+	{
+	    traj.points[i].set_positions_size(path.states[i].get_vals_size());
+	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+		traj.points[i].positions[j] = path.states[i].vals[j];
+	    traj.points[i].time = 0.0;
+	}	
+
+	
+
+	send_traj_start_req.traj = traj;
+	int traj_done = -1;
+	if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+	{
+	    ROS_INFO("Done");
+	}
+	send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
+	while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
+	{
+	    if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))  
+	    {
+		traj_done =  send_traj_query_res.done;
+	    }
+	    else
+	    {
+		ROS_ERROR("Trajectory query failed");
+	    }
+	} 
+
+
 	// create the service request 
 	//	return;
 	
 	//	const double margin_fraction = 0.1;
-	
+	/*
 	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
 	pr2_mechanism_controllers::SetJointTarget::request req;
 	req.set_positions_size(path.get_states_size());
@@ -391,6 +431,7 @@ public:
 	}
 	else
 	    fprintf(stderr, "Service 'left_arm_controller/set_target' failed\n");	 
+	*/
     }
     
 };

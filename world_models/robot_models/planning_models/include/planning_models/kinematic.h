@@ -500,7 +500,7 @@ namespace planning_models
 	void defaultState(void);
 	void computeTransforms(const double *params, int groupID = -1);
 
-	void printModelInfo(std::ostream &out = std::cout) const;
+	void printModelInfo(std::ostream &out = std::cout);
 	void printLinkPoses(std::ostream &out = std::cout) const;
 	
 	/** The name of the model */
@@ -523,6 +523,7 @@ namespace planning_models
 	
 	/** A map defining the parameter names in the complete state */
 	std::map<std::string, unsigned int>      parameterNames;
+	std::map<unsigned int, std::string>      parameterValues;
 	
 	/** Cumulative index list */
 	std::vector< std::vector<unsigned int> > groupStateIndexList;

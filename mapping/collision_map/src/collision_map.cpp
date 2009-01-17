@@ -168,7 +168,10 @@ class CollisionMapper : public ros::Node
     {
       // Copy the header (and implicitly the frame_id)
       c_map_.header = cloud_.header;
-      c_map_.boxes.resize (cloud_.pts.size ());
+      if (object_data_type_ == O_SPHERE)
+        c_map_.spheres.resize (cloud_.pts.size ());
+      else if (object_data_type_ == O_ORIENTEDBOX)
+        c_map_.boxes.resize (cloud_.pts.size ());
 
       updateParametersFromServer ();
       
@@ -327,7 +330,10 @@ class CollisionMapper : public ros::Node
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
+      if (object_data_type_ == O_SPHERE)
+        ROS_INFO ("Collision map computed in %g seconds. Number of spheres: %u.", time_spent, (unsigned int)c_map_.spheres.size ());
+      else if (object_data_type_ == O_ORIENTEDBOX)
+        ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
 
       publish ("collision_map", c_map_);
     }

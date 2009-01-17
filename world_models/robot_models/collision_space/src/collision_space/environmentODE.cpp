@@ -312,6 +312,7 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 		    // up using it.
 		    dGeomID g1 = m_kgeoms[model_id].geom[vec[j]]->geom;
 		    dGeomID g2 = m_kgeoms[model_id].geom[vec[k]]->geom;
+		    
 		    dReal aabb1[6], aabb2[6];		    
 		    dGeomGetAABB(g1, aabb1);
 		    dGeomGetAABB(g2, aabb2);
@@ -321,13 +322,13 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 			  aabb1[4] > aabb2[5] ||
 			  aabb1[5] < aabb2[4])) 
 			dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+
 		    if (cdata.collides)
 			goto OUT1;
 		}
 	}
     }
     
-
     /* check collision with standalone ode bodies */
  OUT1:
 
@@ -369,13 +370,13 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     return cdata.collides;
 }
 
-void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const double *points, double radius)
+void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const double *points)
 {
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	unsigned int i3 = i * 3;
-	dGeomID g = dCreateSphere(m_space, radius);
-	dGeomSetPosition(g, points[i3], points[i3 + 1], points[i3 + 2]);
+	unsigned int i4 = i * 4;
+	dGeomID g = dCreateSphere(m_space, points[i4 + 3]);
+	dGeomSetPosition(g, points[i4], points[i4 + 1], points[i4 + 2]);
 	m_collide2.registerGeom(g);
     }
     m_collide2.setup();
