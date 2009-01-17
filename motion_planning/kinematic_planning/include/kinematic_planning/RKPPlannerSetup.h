@@ -37,9 +37,9 @@
 #ifndef KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
 #define KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
 
-#include "RKPModelBase.h"
-#include "RKPStateValidator.h"
-#include "RKPSpaceInformation.h"
+#include "kinematic_planning/RKPModelBase.h"
+#include "kinematic_planning/RKPStateValidator.h"
+#include "kinematic_planning/RKPSpaceInformation.h"
 
 #include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
@@ -51,47 +51,53 @@
 #include <string>
 #include <map>
 
-class RKPPlannerSetup
+namespace kinematic_planning
 {
- public:
+    
+    class RKPPlannerSetup
+    {
+    public:
+	
+	RKPPlannerSetup(void)
+	{
+	    mp = NULL;
+	    si = NULL;
+	    svc = NULL;
+	    smoother = NULL;
+	}
+	
+	virtual ~RKPPlannerSetup(void)
+	{
+	    if (mp)
+		delete mp;
+	    if (svc)
+		delete svc;
+	    for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t>::iterator j = sde.begin(); j != sde.end() ; ++j)
+		if (j->second)
+		    delete j->second;
+	    if (smoother)
+		delete smoother;
+	    if (si)
+		delete si;
+	}
+	
+	/* for each planner definition, define the set of distance metrics it can use */
+	virtual void setupDistanceEvaluators(void)
+	{
+	    assert(si);
+	    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
+	}
+	
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
+	
+	ompl::Planner_t                                                         mp;
+	ompl::SpaceInformationKinematic_t                                       si;
+	ompl::SpaceInformation::StateValidityChecker_t                          svc;
+	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
+	ompl::PathSmootherKinematic_t                                           smoother;
+    };
 
-    RKPPlannerSetup(void)
-    {
-	mp = NULL;
-	si = NULL;
-	svc = NULL;
-	smoother = NULL;
-    }
-    
-    virtual ~RKPPlannerSetup(void)
-    {
-	if (mp)
-	    delete mp;
-	if (svc)
-	    delete svc;
-	for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t>::iterator j = sde.begin(); j != sde.end() ; ++j)
-	    if (j->second)
-		delete j->second;
-	if (smoother)
-	    delete smoother;
-	if (si)
-	    delete si;
-    }
-    
-    /* for each planner definition, define the set of distance metrics it can use */
-    virtual void setupDistanceEvaluators(void)
-    {
-	assert(si);
-	sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
-    }
-    
-    virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
-    
-    ompl::Planner_t                                                         mp;
-    ompl::SpaceInformationKinematic_t                                       si;
-    ompl::SpaceInformation::StateValidityChecker_t                          svc;
-    std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
-    ompl::PathSmootherKinematic_t                                           smoother;
-};
+} // kinematic_planning
 
 #endif
+    

@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include "KinematicStateMonitor.h"
+#include "kinematic_planning/KinematicStateMonitor.h"
 #include <std_msgs/PointCloud.h>
 #include <collision_space/environmentODE.h>
 #include <collision_map/CollisionMap.h>
@@ -195,4 +195,4 @@ namespace kinematic_planning
 
     };
      
-}
+} // kinematic_planning

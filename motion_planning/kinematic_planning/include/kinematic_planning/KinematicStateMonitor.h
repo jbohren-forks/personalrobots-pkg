@@ -287,4 +287,5 @@ namespace kinematic_planning
 	
     };
     
-}
+} // kinematic_planning
+

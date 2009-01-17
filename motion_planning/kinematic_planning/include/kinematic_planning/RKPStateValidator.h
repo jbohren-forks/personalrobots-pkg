@@ -34,34 +34,55 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
-#define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
+#ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
+#define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 
-#include <collision_space/environment.h>
+#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 #include <planning_models/kinematic.h>
+#include <collision_space/environment.h>
+#include "kinematic_planning/RKPModelBase.h"
+#include "kinematic_planning/RKPConstraintEvaluator.h"
 
-#include <string>
-
-class RKPModelBase
+namespace kinematic_planning
 {
- public:
-    RKPModelBase(void)
-    {
-	groupID          = -1;
-	collisionSpaceID = 0;
-	collisionSpace   = NULL;
-	kmodel           = NULL;
-    }
     
-    virtual ~RKPModelBase(void)
+    class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
     {
-    }
+    public:
+        StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
+	{
+	    m_model = model;
+	}
+	
+	virtual bool operator()(const ompl::SpaceInformation::State_t state)
+	{
+	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+	    
+	    bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
+	    
+	    if (valid)
+		valid = m_kce.decide();
+	    
+	    return valid;
+	}
+	
+	void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
+	{
+	    m_kce.use(m_model->kmodel, kc);
+	}
+	
+	void clearConstraints(void)
+	{
+	    m_kce.clear();
+	}
+	
+    protected:
+	RKPModelBase                    *m_model;
+	KinematicConstraintEvaluatorSet  m_kce;
+    };  
     
-    collision_space::EnvironmentModel *collisionSpace;
-    unsigned int                       collisionSpaceID;
-    planning_models::KinematicModel   *kmodel;
-    std::string                        groupName;
-    int                                groupID;
-};
+} // kinematic_planning
 
 #endif
+    

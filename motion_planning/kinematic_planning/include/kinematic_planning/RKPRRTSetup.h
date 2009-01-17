@@ -34,71 +34,66 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
-#define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
+#ifndef KINEMATIC_PLANNING_RKP_RRT_SETUP_
+#define KINEMATIC_PLANNING_RKP_RRT_SETUP_
 
-#include "RKPModelBase.h"
+#include "kinematic_planning/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
-#include "RKPRRTSetup.h"
-#include "RKPLazyRRTSetup.h"
-#include "RKPSBLSetup.h"
-#include "RKPESTSetup.h"
-
-#include <string>
-#include <map>
-
-class RKPModel : public RKPModelBase
+namespace kinematic_planning
 {
- public:
-    RKPModel(void) : RKPModelBase()
-    {
-    }
     
-    virtual ~RKPModel(void)
+    class RKPRRTSetup : public RKPPlannerSetup
     {
-	for (std::map<std::string, RKPPlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
-	    if (i->second)
-		delete i->second;
-    }
+    public:
+	
+        RKPRRTSetup(void) : RKPPlannerSetup()
+	{
+	}
+	
+	virtual ~RKPRRTSetup(void)
+	{
+	}
+	
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+	{
+	    std::cout << "Adding RRT instance for motion planning: " << model->groupName << std::endl;
+	    
+	    si       = new SpaceInformationRKPModel(model);
+	    svc      = new StateValidityPredicate(model);
+	    si->setStateValidityChecker(svc);
+	    
+	    smoother = new ompl::PathSmootherKinematic(si);
+	    smoother->setMaxSteps(50);
+	    smoother->setMaxEmptySteps(4);
+	    
+	    ompl::RRT_t rrt = new ompl::RRT(si);
+	    mp              = rrt;
+	    
+	    if (options.find("range") != options.end())
+	    {
+		double range = string_utils::fromString<double>(options["range"]);
+		rrt->setRange(range);
+		std::cout << "Range is set to " << range << std::endl;		
+	    }
+	    
+	    if (options.find("goal_bias") != options.end())
+	    {	
+		double bias = string_utils::fromString<double>(options["goal_bias"]);
+		rrt->setGoalBias(bias);
+		std::cout << "Goal bias is set to " << bias << std::endl;
+	    }
+	    
+	    setupDistanceEvaluators();
+	    si->setup();
+	    mp->setup();
+	    
+	    return true;
+	}
+	
+    };
     
-    void addRRT(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *rrt = new RKPRRTSetup();
-	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["RRT"] = rrt;
-	else
-	    delete rrt;
-    }
-    
-    void addLazyRRT(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *rrt = new RKPLazyRRTSetup();
-	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["LazyRRT"] = rrt;
-	else
-	    delete rrt;
-    }
-    
-    void addEST(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *est = new RKPESTSetup();
-	if (est->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["EST"] = est;
-	else
-	    delete est;
-    }
-    void addSBL(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *sbl = new RKPSBLSetup();
-	if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["SBL"] = sbl;
-	else
-	    delete sbl;
-    }
-    
-    std::map<std::string, RKPPlannerSetup*> planners;
-};
-
-typedef std::map<std::string, RKPModel*> ModelMap;
+} // kinematic_planning
 
 #endif
+    

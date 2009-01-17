@@ -34,49 +34,40 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
-#define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
+#ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
+#define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
 
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
-#include <planning_models/kinematic.h>
 #include <collision_space/environment.h>
-#include "RKPModelBase.h"
-#include "RKPConstraintEvaluator.h"
+#include <planning_models/kinematic.h>
 
-class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
+#include <string>
+
+namespace kinematic_planning
 {
- public:
-    StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
-    {
-	m_model = model;
-    }
     
-    virtual bool operator()(const ompl::SpaceInformation::State_t state)
+    class RKPModelBase
     {
-	m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
-	m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+    public:
+	RKPModelBase(void)
+	{
+	    groupID          = -1;
+	    collisionSpaceID = 0;
+	    collisionSpace   = NULL;
+	    kmodel           = NULL;
+	}
 	
-	bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
+	virtual ~RKPModelBase(void)
+	{
+	}
 	
-	if (valid)
-	    valid = m_kce.decide();
+	collision_space::EnvironmentModel *collisionSpace;
+	unsigned int                       collisionSpaceID;
+	planning_models::KinematicModel   *kmodel;
+	std::string                        groupName;
+	int                                groupID;
+    };
 
-	return valid;
-    }
-    
-    void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
-    {
-	m_kce.use(m_model->kmodel, kc);
-    }
-    
-    void clearConstraints(void)
-    {
-	m_kce.clear();
-    }
-    
- protected:
-    RKPModelBase                    *m_model;
-    KinematicConstraintEvaluatorSet  m_kce;
-};  
+} // kinematic_planning
 
 #endif
+    

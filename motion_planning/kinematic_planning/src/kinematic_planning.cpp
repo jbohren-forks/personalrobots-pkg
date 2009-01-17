@@ -130,23 +130,24 @@ Provides (name/type):
 
 **/
 
-#include "CollisionSpaceMonitor.h"
+#include "kinematic_planning/CollisionSpaceMonitor.h"
 #include <std_msgs/String.h>
 
-#include "RKPModel.h"
-#include "RKPBasicRequestState.h"
-#include "RKPBasicRequestLinkPosition.h"
+#include "kinematic_planning/RKPModel.h"
+#include "kinematic_planning/RKPBasicRequestState.h"
+#include "kinematic_planning/RKPBasicRequestLinkPosition.h"
 #include <robot_srvs/PlanNames.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
+using namespace kinematic_planning;
 
 class KinematicPlanning : public ros::Node,
-			  public kinematic_planning::CollisionSpaceMonitor
+			  public CollisionSpaceMonitor
 {
 public:
 
     KinematicPlanning(const std::string &robot_model) : ros::Node("kinematic_planning"),
-							kinematic_planning::CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
-												  robot_model)
+							CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
+									      robot_model)
     {
 	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
@@ -344,7 +345,7 @@ public:
 
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	kinematic_planning::CollisionSpaceMonitor::setRobotDescription(file);	
+	CollisionSpaceMonitor::setRobotDescription(file);	
 	defaultPosition();
 	
 	printf("=======================================\n");	
