@@ -168,7 +168,10 @@ namespace planning_models
 	    /** the local transform (computed by forward kinematics) */
 	    btTransform       varTrans;
 
-	    /* compute the parameter names from this joint */
+	    /* Compute the parameter names from this joint; the
+	       purpose is to create a map that relates the name of a
+	       joint in the loaded description to the position in a
+	       vector of parameters */
 	    unsigned int computeParameterNames(unsigned int pos);
 
 	    /** Update varTrans if this joint is part of the group indicated by groupID
@@ -201,7 +204,7 @@ namespace planning_models
 	    
 	    PlanarJoint(void) : Joint()
 	    {
-		usedParams = 3;
+	        usedParams = 3; // (x, y, theta)
 	    }
 	    
 	    /** Update the value of varTrans using the information from params */
@@ -218,7 +221,7 @@ namespace planning_models
 	    
 	    FloatingJoint(void) : Joint()
 	    {
-		usedParams = 7;
+	        usedParams = 7; // vector: (x, y, z)  quaternion: (x, y, z, w)
 	    }
 
 	    /** Update the value of varTrans using the information from params */

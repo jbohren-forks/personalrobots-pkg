@@ -1,0 +1,2 @@
+std_msgs/Point32 center
+float32 radius

@@ -71,6 +71,10 @@ print 'variance delta time', delta_time.var()
 large_time_gaps = [d for d in delta_time if d > 2*delta_time_mean]
 print 'num of large time gaps: ', len(large_time_gaps)
 
+for n in [1, 1.5, 2, 3,4,5,6,7]:
+  large_gaps = [d for d in delta_time if d > n*delta_time_mean]
+  print 'num of large time gaps larger than ',n,' times of mean: ', len(large_gaps)
+
 # Now view the data.
 try:
   from enthought.tvtk.api import tvtk
