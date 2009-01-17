@@ -230,6 +230,7 @@ namespace dcam
     virtual void setRawType();
     videre_proc_mode_t procMode; // STOC mode, if applicable
     dc1394color_filter_t bayerMode; // bayer color encoding 
+    dc1394video_mode_t videoMode;
     color_coding_t rawType;	// what type of raw image we receive
     virtual bool store_eeprom_bytes(int addr, uint8_t *buf, int count);
   };

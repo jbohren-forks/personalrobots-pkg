@@ -223,7 +223,7 @@ public:
     {
       fillImage(img_,  "image_color",
                 img_data->imHeight, img_data->imWidth, 3,
-                "rgba", "uint8",
+                "rgb", "uint8",
                 img_data->imColor );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
