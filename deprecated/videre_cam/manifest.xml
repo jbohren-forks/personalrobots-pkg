@@ -2,6 +2,7 @@
   <description>A library for connecting to videre cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="deprecated" notes="use dcam"/>
   <depend package="dc1394_cam"/>
   <depend package="newmat10"/>
   <export>
