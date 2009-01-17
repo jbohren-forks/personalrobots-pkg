@@ -117,8 +117,8 @@ namespace collision_space
 
     protected:
         
-	boost::mutex m_lock;
-	bool               m_selfCollision;
+	boost::mutex                                  m_lock;
+	bool                                          m_selfCollision;
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;

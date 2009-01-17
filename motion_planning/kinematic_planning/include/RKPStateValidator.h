@@ -60,7 +60,7 @@ class StateValidityPredicate : public ompl::SpaceInformation::StateValidityCheck
 	
 	if (valid)
 	    valid = m_kce.decide();
-	
+
 	return valid;
     }
     
