@@ -1,1 +1,0 @@
-Blacklisting until we migrate it to CMake. make does not handle the removing of header file dependencies well.
