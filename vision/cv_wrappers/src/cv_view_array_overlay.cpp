@@ -7,7 +7,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "std_msgs/ImageArray.h"
-#include "cv_view/Lines.h"
+#include "cv_wrappers/Lines.h"
 #include "image_utils/cv_bridge.h"
 
 #include <sys/stat.h>
@@ -25,7 +25,7 @@ class CvView : public ros::node
 {
 public:
   std_msgs::ImageArray image_msg;
-  cv_view::Lines lines_msg;
+  cv_wrappers::Lines lines_msg;
 
   boost::mutex cv_mutex;
 
@@ -69,7 +69,7 @@ public:
         cvCvtColor(j->second.cv_image, rgbi, CV_GRAY2RGB);
 
         for (size_t i = 0; i < lines_msg.lines.size(); i++) {
-          cv_view::Line l = lines_msg.lines[i];
+          cv_wrappers::Line l = lines_msg.lines[i];
           if (l.label == j->second.label) {
             CvPoint p0, p1;
             p0.x = l.x0;
