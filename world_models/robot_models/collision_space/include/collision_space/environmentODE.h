@@ -81,7 +81,7 @@ namespace collision_space
 	virtual void clearObstacles(void);
 
 	/** Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
+	virtual void addPointCloud(unsigned int n, const double *points); 
 
 	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addStaticPlane(double a, double b, double c, double d);

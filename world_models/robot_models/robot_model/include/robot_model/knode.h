@@ -96,7 +96,7 @@ namespace robot_model
 	
         NodeRobotModel(ros::node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
 	{
-          m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
+	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
 	    m_kmodelSimple = NULL;
@@ -304,7 +304,7 @@ namespace robot_model
 	std_msgs::RobotBase2DOdom                     m_localizedPose;
 	bool                                          m_haveBasePos;	
 	
-	robot_msgs::MechanismState             m_mechanismState; // this message should be moved to robot_msgs
+	robot_msgs::MechanismState                    m_mechanismState;
 	bool                                          m_haveMechanismState;
 	
 	robot_desc::URDF                             *m_urdf;

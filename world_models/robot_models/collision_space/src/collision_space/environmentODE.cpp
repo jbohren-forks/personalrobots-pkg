@@ -370,13 +370,13 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     return cdata.collides;
 }
 
-void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const double *points, double radius)
+void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const double *points)
 {
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	unsigned int i3 = i * 3;
-	dGeomID g = dCreateSphere(m_space, radius);
-	dGeomSetPosition(g, points[i3], points[i3 + 1], points[i3 + 2]);
+	unsigned int i4 = i * 4;
+	dGeomID g = dCreateSphere(m_space, points[i4 + 3]);
+	dGeomSetPosition(g, points[i4], points[i4 + 1], points[i4 + 2]);
 	m_collide2.registerGeom(g);
     }
     m_collide2.setup();
