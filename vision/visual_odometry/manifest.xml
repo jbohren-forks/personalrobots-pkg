@@ -20,7 +20,6 @@
   <depend package="vop"/>
   <depend package="rosrecord"/>
   <depend package="calonder_descriptor"/>
-  <depend package="cv_view"/>
   <depend package="transformations"/>
   <depend package="toro"/>
   <export>
