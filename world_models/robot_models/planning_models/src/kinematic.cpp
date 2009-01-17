@@ -541,31 +541,53 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJ
     return newJoint;
 }
 
-void planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)
+bool planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)
 {
+    bool result = false;
     Joint *joint = m_owner->getJoint(name);
     if (joint)
     {
 	unsigned int pos = m_pos[name];
 	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-	    m_params[pos + i] = params[i];
+	{
+	    unsigned int pos_i = pos + i;
+	    if (m_params[pos_i] != params[i])
+	    {
+		m_params[pos_i] = params[i];
+		result = true;
+	    }
+	}
     }
     else
 	std::cerr << "Unknown joint: '" << name << "'" << std::endl;
+    return result;
 }
  
-void planning_models::KinematicModel::StateParams::setParams(const double *params, int groupID)
+bool planning_models::KinematicModel::StateParams::setParams(const double *params, int groupID)
 {
+    bool result = false;
     if (groupID < 0)
     {  
 	for (unsigned int i = 0 ; i < m_dim ; ++i)
-	    m_params[i] = params[i];
+	    if (m_params[i] != params[i])
+	    {
+		m_params[i] = params[i];
+		result = true;
+	    }
     }
     else
     {
 	for (unsigned int i = 0 ; i < m_owner->groupStateIndexList[groupID].size() ; ++i)
-	    m_params[m_owner->groupStateIndexList[groupID][i]] = params[i];
+	{
+	    unsigned int j = m_owner->groupStateIndexList[groupID][i];
+	    if (m_params[j] != params[i])
+	    {
+		m_params[j] = params[i];
+		result = true;
+	    }
+	}
     }
+    return result;
 }
 
 void planning_models::KinematicModel::StateParams::setAll(const double value)

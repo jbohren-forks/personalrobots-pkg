@@ -424,14 +424,19 @@ namespace planning_models
 		    delete[] m_params;
 	    }
 	    
-	    /** Given the name of a joint, set the values of the parameters describing the joint */
-	    void setParams(const double *params, const std::string &name);
-	    
+	    	    
 	    /** Set all the parameters to a given value */
 	    void setAll(const double value);
+
+	    /** Set the parameters for a given group. Return true if
+		any change was observed in either of the set
+		values. */
+	    bool setParams(const double *params, int groupID = -1);
 	    
-	    /** Set the parameters for a given group */
-	    void setParams(const double *params, int groupID = -1);
+	    /** Given the name of a joint, set the values of the
+		parameters describing the joint. Return true if any
+		change was observed in the set value */
+	    bool setParams(const double *params, const std::string &name);
 	    
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;
