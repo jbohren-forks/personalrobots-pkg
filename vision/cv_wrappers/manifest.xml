@@ -1,0 +1,30 @@
+<package>
+  <description brief="OpenCV wrappers">
+  Various wrappers around OpenCV capabilities including:
+
+  cv_view*: wrappers around the OpenCV HighGUI image viewer. It just
+  shows images flying across the ROS botnet.
+
+  cv_movie_streamer: A wrapper around the stellar OpenCV + ffmpeg
+  movie-reading capabilities.  Just give it a movie file on the
+  command line and it will blast out images.
+
+  cv_cam_calib: A wrapper for the OpenCV image calibration code. Just
+  give a bunch of image files as arguments to this executable, and it
+  will try to use the OpenCV automatic calibration routines to
+  estimate the camera intrinsics.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com/wiki/cv_wrappers</url>  
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="image_msgs"/>
+  <depend package="image_utils"/>
+  <depend package="roscpp"/>
+  <depend package="boost"/>
+  <depend package="color_calib"/>
+</package>
