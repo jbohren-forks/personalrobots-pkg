@@ -233,7 +233,7 @@ class NavStackTest(unittest.TestCase):
             h = Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
-            pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1))
+            pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
             time.sleep(2.0)
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
@@ -282,15 +282,20 @@ class NavStackTest(unittest.TestCase):
             # check to see if collision happened
             if self.bumped == True:
                 self.success = False
+                print "Hit the wall."
             # check to see if nav tolerance is ok
             if self.nav_t_tol > 0 and nav_t_err > self.nav_t_tol:
                 self.success = False
+                print "Nav theta out of tol."
             if self.nav_xy_tol > 0 and nav_xy_err > self.nav_xy_tol:
                 self.success = False
+                print "Nav xy out of tol."
             # check to see if odom drift from ground truth tolerance is ok
             if self.odom_t_tol > 0 and odom_t_err > self.odom_t_tol:
                 self.success = False
+                print "Odom theata out of tol."
             if self.odom_xy_tol > 0 and odom_xy_err > self.odom_xy_tol:
+                print "Odom xy out of tol."
                 self.success = False
 
         self.assert_(self.success)
