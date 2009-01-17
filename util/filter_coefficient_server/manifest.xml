@@ -8,7 +8,6 @@
   <license>BSD</license>
   <review status="API cleared" notes=""/>
   <url>http://pr.willowgarage.com</url>
-  <depend package="misc_utils" />
   <depend package="rospy"/>
   <depend package="rosoct" />
   <depend package="octave_forge" />
