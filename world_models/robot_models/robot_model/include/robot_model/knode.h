@@ -174,7 +174,7 @@ namespace robot_model
 	    if (!m_robotModelName.empty() && m_robotModelName != "-")
 	    {
 		std::string content;
-		if (m_node->get_param(m_robotModelName, content))
+		if (m_node->getParam(m_robotModelName, content))
 		    setRobotDescriptionFromData(content.c_str());
 		else
 		    fprintf(stderr, "Robot model '%s' not found!\n", m_robotModelName.c_str());

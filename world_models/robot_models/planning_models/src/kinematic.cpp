@@ -666,7 +666,12 @@ void planning_models::KinematicModel::printModelInfo(std::ostream &out)
     for (unsigned int i = 0 ; i < l.size() ; ++i)
     {
 	int gid = getGroupID(l[i]);
-	out << "Group " << l[i] << " has " << groupChainStart[gid].size() << " roots" << std::endl;
+	out << "Group " << l[i] << " has " << groupChainStart[gid].size() << " roots: ";
+	for (unsigned int j = 0 ; j < groupChainStart[gid].size() ; ++j)
+       	    out << parameterNames[groupChainStart[gid][j]->name] << " ";
+	for (unsigned int j = 0 ; j < groupChainStart[gid].size() ; ++j)
+	    out << groupChainStart[gid][j]->name << " ";
+	out << std::endl;
 	out << "The state components for this group are: ";
 	for (unsigned int j = 0 ; j < groupStateIndexList[gid].size() ; ++j)
 	    out << groupStateIndexList[gid][j] << " ";
