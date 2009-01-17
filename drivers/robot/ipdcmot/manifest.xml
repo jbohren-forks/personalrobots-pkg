@@ -9,7 +9,7 @@ This is an IP-based motor controller.
 <depend package="roscpp"/>
 <depend package="boost"/>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lipdcmot"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lipdcmot"/>
 </export>
 </package>
 
