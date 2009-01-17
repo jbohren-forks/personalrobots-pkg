@@ -910,6 +910,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 			pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 			pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 			pose.theta = angle;
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 			RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -943,6 +944,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -972,6 +974,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -2254,7 +2257,7 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 		double sourcex, sourcey;
 		sourcex = DISCXY2CONT(sourcex_c, EnvNAVXYTHETALATCfg.cellsize_m);
 		sourcey = DISCXY2CONT(sourcey_c, EnvNAVXYTHETALATCfg.cellsize_m);
-		for(int ipind = 0; ipind < actionV[bestsind]->intermptV.size()-1; ipind++)
+		for(int ipind = 0; ipind < ((int)actionV[bestsind]->intermptV.size())-1; ipind++)
 		{
 			//translate appropriately
 			EnvNAVXYTHETALAT3Dpt_t intermpt = actionV[bestsind]->intermptV[ipind];

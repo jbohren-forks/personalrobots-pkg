@@ -222,6 +222,7 @@ void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 
 
 
+	printf("start has cost=%d goal has cost=%d\n", EnvNAV2DCfg.Grid2D[EnvNAV2DCfg.StartX_c][EnvNAV2DCfg.StartY_c], EnvNAV2DCfg.Grid2D[EnvNAV2DCfg.EndX_c][EnvNAV2DCfg.EndY_c]);
 }
 
 

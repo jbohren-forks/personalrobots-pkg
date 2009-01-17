@@ -44,6 +44,7 @@ int plan2d(int argc, char *argv[])
 	int bRet = 0;
 	double allocated_time_secs = 100.0; //in seconds
 	MDPConfig MDPCfg;
+	bool bsearchuntilfirstsolution = true;
 	
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAV2D environment_nav2D;
@@ -66,6 +67,10 @@ int plan2d(int argc, char *argv[])
 	bool bforwardsearch = false;
 	ARAPlanner planner(&environment_nav2D, bforwardsearch);
 
+	//set search mode
+	planner.set_search_mode(bsearchuntilfirstsolution);
+
+
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
             printf("ERROR: failed to set start state\n");
@@ -87,6 +92,7 @@ int plan2d(int argc, char *argv[])
 
     environment_nav2D.PrintTimeStat(stdout);
 
+	/*
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
@@ -119,10 +125,11 @@ int plan2d(int argc, char *argv[])
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+	*/
 
     FILE* fSol = fopen("sol.txt", "w");
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, fSol);
+	  environment_nav2D.PrintState(solution_stateIDs_V[i], false, fSol);
 	}
     fclose(fSol);
 
@@ -1016,7 +1023,7 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    //planandnavigate2d(argc, argv);
+    planandnavigate2d(argc, argv);
 
     //3D planning
     //plan3dkin(argc, argv);
@@ -1025,7 +1032,7 @@ int main(int argc, char *argv[])
     //planandnavigate3dkin(argc, argv);
 
     //xytheta planning
-	planxythetalat(argc, argv);
+	//planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);
