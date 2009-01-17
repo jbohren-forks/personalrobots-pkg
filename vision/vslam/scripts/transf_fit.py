@@ -23,23 +23,38 @@ def match_trajectory_points(trj0, trj1, time_stamp_offset):
   trj1_len = len(trj1)
   trj2 = zeros((trj0_len, 4))
   j = 0
+  num_matches=0
   for i in range(0, trj0_len):
     matched = False
     time_stamp0 = trj0[i][0]
     while j<trj1_len-1 and matched==False:
       before = trj1[j  ][0]-time_stamp_offset
       after  = trj1[j+1][0]-time_stamp_offset
-      if before<=time_stamp0 and after>=time_stamp0:
+      if before > time_stamp0:
+        # must be at starting point
+        matched = True
+        t, x, y, z = trj1[j]
+        trj2[i] = array([time_stamp0, x, y, z])
+        num_matches+=1
+      elif before<=time_stamp0 and after>=time_stamp0:
         matched = True
         interval = after-before
         w0 = (after - time_stamp0)/interval
         w1 = (time_stamp0 - before)/interval
         t, x,y,z = trj1[j]*w0 + trj1[j+1]*w1
         trj2[i] = array([time_stamp0, x, y, z])
+        num_matches+=1
       else:
         # move on to next point on trj1
         j+=1
-        
+    
+    if matched == False:
+      # must be a last one
+      t, x, y, z = trj1[trj1_len-1]
+      trj2[i] = array([time_stamp0, x, y, z])
+      num_matches+=1
+
+  print 'matching up ',num_matches,' of ',trj0_len
   return trj2
 
 
