@@ -7,7 +7,7 @@ rospack_add_library(robot_mechanism_controllers
  src/endeffector_constraint_controller.cpp
  src/endeffector_pose_controller.cpp
  src/endeffector_twist_controller.cpp
- src/endeffector_twist_constraint_controller.cpp
+
  src/endeffector_wrench_controller.cpp
  src/joint_effort_controller.cpp
  src/joint_position_controller.cpp

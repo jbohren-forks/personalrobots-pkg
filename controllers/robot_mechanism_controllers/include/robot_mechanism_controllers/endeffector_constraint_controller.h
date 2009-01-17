@@ -73,7 +73,7 @@ private:
   KDL::ChainFkSolverPos* jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
-  std::vector<mechanism::JointState*> joints_; 
+  std::vector<mechanism::JointState*> joints_;
   Eigen::Matrix<float,6,2> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
   Eigen::Matrix<float,2,1> constraint_force_;
@@ -100,14 +100,14 @@ class EndeffectorConstraintControllerNode : public Controller
  public:
   EndeffectorConstraintControllerNode();
   ~EndeffectorConstraintControllerNode();
-  
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
 
  private:
   std::string topic_;
-  ros::node *node_;     
+  ros::Node *node_;
   EndeffectorConstraintController controller_;
   SubscriptionGuard guard_command_;
 
