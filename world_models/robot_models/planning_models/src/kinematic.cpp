@@ -295,7 +295,11 @@ void planning_models::KinematicModel::constructGroupList(const robot_desc::URDF 
 unsigned int planning_models::KinematicModel::Joint::computeParameterNames(unsigned int pos)
 {
     if (usedParams > 0)
-	owner->parameterNames[name] = pos;
+    {
+        owner->parameterNames[name] = pos;
+	for (unsigned int i = 0 ; i < usedParams ; ++i)
+	    owner->parameterValues[pos + i] = name;
+    }
     return after->computeParameterNames(pos + usedParams);
 }
 
@@ -628,7 +632,7 @@ void planning_models::KinematicModel::StateParams::copyParams(double *params, in
     }
 }
 
-void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
+void planning_models::KinematicModel::printModelInfo(std::ostream &out) 
 {   
     out << "Number of robots = " << getRobotCount() << std::endl;
     out << "Complete model state dimension = " << stateDimension << std::endl;
@@ -641,11 +645,15 @@ void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
     out << "Floating joints at: ";
     for (unsigned int i = 0 ; i < floatingJoints.size() ; ++i)
 	out << floatingJoints[i] << " ";
+    for (unsigned int i = 0 ; i < floatingJoints.size() ; ++i)
+	out << parameterValues[floatingJoints[i]] << " ";
     out << std::endl;
     
     out << "Planar joints at: ";
     for (unsigned int i = 0 ; i < planarJoints.size() ; ++i)
 	out << planarJoints[i] << " ";
+    for (unsigned int i = 0 ; i < planarJoints.size() ; ++i)
+	out << parameterValues[planarJoints[i]] << " ";
     out << std::endl;
     
     out << "Available groups: ";
@@ -662,6 +670,8 @@ void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
 	out << "The state components for this group are: ";
 	for (unsigned int j = 0 ; j < groupStateIndexList[gid].size() ; ++j)
 	    out << groupStateIndexList[gid][j] << " ";
+	for (unsigned int j = 0 ; j < groupStateIndexList[gid].size() ; ++j)
+	    out << parameterValues[groupStateIndexList[gid][j]] << " ";
 	out << std::endl;
     }
 }
@@ -671,10 +681,7 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
     std::vector<Link*> links;
     getLinks(links);
     for (unsigned int i = 0 ; i < links.size() ; ++i)
-    {
 	out << links[i]->name << std::endl;
-	//	out << links[i]->globalTrans << std::endl;
-    }
 }
 
 void planning_models::KinematicModel::StateParams::print(std::ostream &out)
