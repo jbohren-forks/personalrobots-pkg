@@ -108,7 +108,7 @@ Additional subscriptions due to inheritance from NodeCollisionModel:
 - @b world_3d_map/PointCloud : point cloud with data describing the 3D environment
 
 Publishes to (name/type):
-- @b planning_statistics/String : a messsage with statistics about computed motion plans
+- None
 
 <hr>
 
@@ -130,7 +130,7 @@ Provides (name/type):
 
 **/
 
-#include <robot_model/cnode.h>
+#include "CollisionSpaceMonitor.h"
 #include <std_msgs/String.h>
 
 #include "RKPModel.h"
@@ -140,19 +140,18 @@ Provides (name/type):
 #include <robot_srvs/NamedKinematicPlanState.h>
 
 class KinematicPlanning : public ros::Node,
-			  public robot_model::NodeCollisionModel
+			  public kinematic_planning::CollisionSpaceMonitor
 {
 public:
 
     KinematicPlanning(const std::string &robot_model) : ros::Node("kinematic_planning"),
-							robot_model::NodeCollisionModel(dynamic_cast<ros::Node*>(this),
-											       robot_model)
+							kinematic_planning::CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
+												  robot_model)
     {
 	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
 	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
-	advertise<std_msgs::String>("planning_statistics", 10);
     }
     
     /** Free the memory */
@@ -345,7 +344,7 @@ public:
 
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	robot_model::NodeCollisionModel::setRobotDescription(file);	
+	kinematic_planning::CollisionSpaceMonitor::setRobotDescription(file);	
 	defaultPosition();
 	
 	printf("=======================================\n");	

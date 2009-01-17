@@ -5,10 +5,16 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="rosrecord" />
-  <depend package="wg_robot_description" />
+
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
-  <depend package="robot_model" />
-  <depend package="ompl" />
+
+  <depend package="wg_robot_description" />
+  <depend package="wg_robot_description_parser"/>
+  <depend package="planning_models"/>
+  <depend package="collision_space"/>
+  <depend package="collision_map"/>
   <depend package="string_utils" />
+
+  <depend package="ompl" />
 </package>

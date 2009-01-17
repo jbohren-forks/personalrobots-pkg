@@ -46,7 +46,7 @@
 class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
 {
  public:
- StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
+    StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
     {
 	m_model = model;
     }
