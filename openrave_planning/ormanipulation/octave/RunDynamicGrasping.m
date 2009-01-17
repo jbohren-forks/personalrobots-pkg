@@ -90,5 +90,7 @@ while(1)
         openraveros_destroysession(sessionclone);
     end
 
-    input('press any key to get next measurement: ');
+    if( ~simulation )
+        input('press any key to get next measurement: ');
+    end
 end
