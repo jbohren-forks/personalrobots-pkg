@@ -49,7 +49,7 @@ GraspPointNode::~GraspPointNode()
 void GraspPointNode::init()
 {
   this->param<std::string>(service_prefix_ + "/robot_description",robot_description_model_,"robotdesc/pr2");
-  this->param<double>(service_prefix_ + "/grasp_standoff_distance",grasp_standoff_distance_,0.05);
+  this->param<double>(service_prefix_ + "/grasp_standoff_distance",grasp_standoff_distance_,0.1);
   this->param<std::string>(service_prefix_ + "/arm_name",arm_name_,"right_arm");
   this->param<double>(service_prefix_ + "/increment",increment_,0.01);
   initializeKinematicModel();
