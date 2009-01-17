@@ -43,7 +43,7 @@ from math import *
 import numpy
 import numpy.linalg
 
-import pylab
+#import pylab
 
 scratch = " " * (640 * 480)
 
@@ -378,8 +378,10 @@ class VisualOdometer:
     self.scavenge = kwargs.get('scavenge', False)
     self.sba = kwargs.get('sba', None)
     self.targetkp = kwargs.get('targetkp', 300)
+    self.num_ransac_iters = kwargs.get('ransac_iters', 100)
 
     self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
+    self.pe.setNumRansacIterations(self.num_ransac_iters)
 
   def name(self):
     return "VisualOdometer (%s %s iet=%.1f sba=%s)" % (self.feature_detector.name(), self.descriptor_scheme.name(), self.inlier_error_threshold, str(self.sba))
@@ -488,6 +490,7 @@ class VisualOdometer:
         pairs.append((i, best[0], best[1]))
     self.pairs = [(i0,i1) for (i0,i1,d) in pairs]
     if False:
+      import pylab
       f0,f1 = af0,af1
       for (a,b) in self.pairs:
         pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
