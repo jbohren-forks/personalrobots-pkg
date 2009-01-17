@@ -36,13 +36,14 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 0
+#define JDC_DEBUG 1
 
 /************************************************************************/
 
 PyObject *do_ost_do_prefilter_norm(PyObject *self, PyObject *args)
 {
   const uint8_t *im = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
+
   uint8_t *ftim = (uint8_t *)PyString_AsString(PyTuple_GetItem(args, 1));
   int xim = PyInt_AsLong(PyTuple_GetItem(args, 2));
   int yim = PyInt_AsLong(PyTuple_GetItem(args, 3));
@@ -571,6 +572,17 @@ PyObject *setInlierErrorThreshold(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *setNumRansacIterations(PyObject *self, PyObject *args)
+{
+  PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
+  int numIterations;
+  if (!PyArg_ParseTuple(args, "i", &numIterations))
+    return NULL;
+
+  pe->setNumRansacIterations(numIterations);
+  Py_RETURN_NONE;
+}
+
 static vector<FramePose*> fpl_p2c(PyObject *o)
 {
   vector<FramePose*> r;
@@ -696,6 +708,7 @@ static PyMethodDef pose_estimator_methods[] = {
   {"inliers", inliers, METH_VARARGS},
   {"sba", sba, METH_VARARGS},
   {"setInlierErrorThreshold", setInlierErrorThreshold, METH_VARARGS},
+  {"setNumRansacIterations",  setNumRansacIterations,  METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -753,9 +766,12 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   CvMat cartToDisp;
   CvMat dispToCart;
   object->pe->getProjectionMatrices(&cartToDisp, &dispToCart);
+
+  object->pe->setNumRansacIterations(100);
+
   // set the window size large enough to accommodate. Although not efficient.
-  int full_free_window_size  = 100;
-  int full_fixed_window_size = 100;
+  int full_free_window_size  = 300;
+  int full_fixed_window_size = 300;
   int max_num_iters = 50;
 
   double epsilon = DBL_EPSILON;
@@ -767,7 +783,7 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
     new boost::unordered_map<int, FramePose*>();
   // note that SBAVisualizer by design does not own map_index_to_FramePose
   object->vis_->map_index_to_FramePose_ = object->map_index_to_FramePose_;
-  object->vis_->outputDirname = string("Output/james4/");
+  object->vis_->outputDirname = string("/tmp/deleteme");
 #endif
 
   return (PyObject*)object;
