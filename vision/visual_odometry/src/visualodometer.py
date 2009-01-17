@@ -43,8 +43,6 @@ from math import *
 import numpy
 import numpy.linalg
 
-#import pylab
-
 scratch = " " * (640 * 480)
 
 import transformations
@@ -306,7 +304,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)
-    frame.matcher = calonder.BruteForceMatcher(176)
+    frame.matcher = calonder.BruteForceMatcher(self.cl.dimension())
     if 0:
       frame.descriptors = []
       for (x,y,d) in frame.kp:
