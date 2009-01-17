@@ -20,7 +20,7 @@
   <include filename="../pr2_robot_defs/gripper_defs.xml" />
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
 
-  <pr2_gripper side="l" parent="base" />
+  <pr2_gripper side="l" parent="base_link" />
 
   <!-- Solid Base -->
   <joint name="base_joint" type="planar"> 
