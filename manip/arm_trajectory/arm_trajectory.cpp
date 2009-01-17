@@ -126,11 +126,11 @@ void ArmTrajectoryNode::SendOneVelocity(){
     boost::mutex::scoped_lock sc_lock(lock);
 
     cout<<"X dot?:";
-    gets(xdot);
+    fgets(xdot,sizeof(xdot),stdin);
 	cout<<"Y dot?:";
-    gets(ydot);
+    fgets(ydot,sizeof(ydot),stdin);
 	cout<<"Z dot?:";
-    gets(zdot);
+    fgets(zdot,sizeof(zdot),stdin);
 
 
 
