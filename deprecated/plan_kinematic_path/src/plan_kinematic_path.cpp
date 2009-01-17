@@ -363,6 +363,7 @@ public:
 	{
 	    ROS_INFO("Done");
 	}
+	/*
 	send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
 	while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
 	{
@@ -375,8 +376,8 @@ public:
 		ROS_ERROR("Trajectory query failed");
 	    }
 	} 
-
-
+	
+	*/
 	// create the service request 
 	//	return;
 	
@@ -488,11 +489,14 @@ int main(int argc, char **argv)
 	    sleep(1);	
 	}
 	
-	plan->shutdown();
-	delete plan;
+	//	plan->shutdown();
+	//	delete plan;
     }
     else
 	usage(argv[0]);
+    sleep(100);
+    
+    ros::fini();
     
     return 0;    
 }
