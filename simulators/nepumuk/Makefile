@@ -90,8 +90,8 @@ $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 
 clean:
 	- rm $(SIMULINKS)
-	$(MAKE) -C $(BUILD_DIR) clean
-	rm -f installed
+	-$(MAKE) -C $(BUILD_DIR) clean
+	rm -f installed patched
 
 distclean:
 	- rm $(SIMULINKS)
