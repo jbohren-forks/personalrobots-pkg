@@ -175,7 +175,7 @@ void PR2ArmDynamicsController::update(void)
 //  cout << "Updating dynamics controller " << std::endl;
   double time = robot_->hw_->current_time_;
 
-  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.try_lock())
   {
     for(unsigned int i=0; i < num_joints_; ++i)
     {
@@ -217,8 +217,8 @@ void PR2ArmDynamicsController::computeControlTorque(const double &time)
     kdl_q(i) = joint_effort_controllers_[i]->joint_state_->position_;
     kdl_q_uncompensated(i) = kdl_q(i);
   }
-  kdl_q_uncompensated(4) = 0.0;  
-  kdl_q_uncompensated(5) = 0.0;  
+  kdl_q_uncompensated(4) = 0.0;
+  kdl_q_uncompensated(5) = 0.0;
   kdl_q_uncompensated(6) = 0.0;
 
   arm_chain_->computeGravityTerms(kdl_q,gravity_torque_);
@@ -257,7 +257,7 @@ void PR2ArmDynamicsController::computeControlTorque(const double &time)
 
     static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
     if (p.trylock()) {
-      char buf[1000];       
+      char buf[1000];
       sprintf(buf, "Joint torques %d:: %s, %15.6lf %15.61f %15.61f %15.61f\n", i, joint_effort_controllers_[i]->joint_state_->joint_->name_.c_str(),control_torque_[i],gravity_torque_[i][2],gravity_torque_uncompensated_[i][2],pid_torque);
       p.msg_.data = std::string(buf);
       p.unlockAndPublish();
@@ -312,7 +312,7 @@ void PR2ArmDynamicsControllerNode::update()
 bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   ROS_INFO("LOADING PR2 ARM DYNAMICS CONTROLLER NODE");
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   std::cout<<"the prefix is "<<prefix<<std::endl;
 
@@ -336,15 +336,15 @@ bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlE
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command_array", &PR2ArmDynamicsControllerNode::setJointSrv, this);
-    node->advertise_service(prefix + "/get_command", &PR2ArmDynamicsControllerNode::getJointCmd, this);
+    node->advertiseService(prefix + "/set_command_array", &PR2ArmDynamicsControllerNode::setJointSrv, this);
+    node->advertiseService(prefix + "/get_command", &PR2ArmDynamicsControllerNode::getJointCmd, this);
 
 // Parses kinematics description
     std::string pr2Contents;
     std::string pr2_uncompensated;
 
-    node->get_param("robotdesc/pr2_uncompensated", pr2_uncompensated);
-    node->get_param("robotdesc/pr2", pr2Contents);
+    node->getParam("robotdesc/pr2_uncompensated", pr2_uncompensated);
+    node->getParam("robotdesc/pr2", pr2Contents);
 
     c_->pr2_kin_.loadString(pr2Contents.c_str());
     c_->pr2_kin_uncompensated_.loadString(pr2_uncompensated.c_str());

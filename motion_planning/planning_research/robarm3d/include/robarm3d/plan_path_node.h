@@ -42,7 +42,7 @@ namespace plan_path_node
 #define VERBOSE 1
 #define MAX_RUNTIME 60.0
 
-  class PlanPathNode : public ros::node
+  class PlanPathNode : public ros::Node
   {
     
     public:

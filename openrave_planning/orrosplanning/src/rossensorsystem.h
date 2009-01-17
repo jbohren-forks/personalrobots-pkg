@@ -74,7 +74,7 @@ protected:
     {
         // check if thread launched
         _bSubscribed = false;
-        ros::node* pnode = check_roscpp();
+        ros::Node* pnode = check_roscpp();
         if( pnode != NULL ) {
             _bSubscribed = pnode->subscribe(_topic, _topicmsg, &ROSSensorSystem::newdatacb, this, 10);
             if( _bSubscribed )
@@ -87,7 +87,7 @@ protected:
     virtual void stopsubscriptions()
     {
         if( _bSubscribed ) {
-            ros::node* pnode = check_roscpp_nocreate();
+            ros::Node* pnode = check_roscpp_nocreate();
             if( pnode != NULL ) {
                 pnode->unsubscribe(_topic.c_str());
                 RAVELOG_DEBUGA("unsubscribe from %s\n", _topic.c_str());

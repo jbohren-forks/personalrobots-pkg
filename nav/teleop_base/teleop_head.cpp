@@ -9,7 +9,7 @@
 
 using namespace ros;
 
-class TeleopHead : public node
+class TeleopHead : public Node
 {
    public:
   //      std_msgs::HeadVel cmd, cmd_passthrough;
@@ -21,12 +21,12 @@ class TeleopHead : public node
       bool deadman_no_publish_;
 
 
-  TeleopHead(bool deadman_no_publish = false) : node("teleop_head"), max_pan(0.6), max_tilt(0.4), pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
+  TeleopHead(bool deadman_no_publish = false) : Node("teleop_head"), max_pan(0.6), max_tilt(0.4), pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
       {
         //     cmd.vx = cmd.vy = cmd.vw = 0;
-         if (!has_param("max_pan") || !get_param("max_pan", max_pan))
+         if (!hasParam("max_pan") || !getParam("max_pan", max_pan))
             ROS_WARN("maximum pan not set. Assuming 0.6");
-         if (!has_param("max_tilt") || !get_param("max_tilt", max_tilt))
+         if (!hasParam("max_tilt") || !getParam("max_tilt", max_tilt))
             ROS_WARN("maximum tilt not set. Assuming 0.4");
 
          param<int>("axis_pan", axis_pan, 4);

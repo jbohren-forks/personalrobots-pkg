@@ -64,18 +64,18 @@ namespace pr2_phase_space
  * - @b "~publish_transform"      : @b [bool] true: Publish the map-base transform. false: Don't publish this
  * - @b "~publish_localized_pose" : @b [bool] true: Publish the localized_pose.     false: Don't publish this
  **/
-class PhaseSpaceLocalization : public ros::node
+class PhaseSpaceLocalization : public ros::Node
 {
 public :
 
-  PhaseSpaceLocalization() : ros::node("phase_space_fake_localization")
+  PhaseSpaceLocalization() : ros::Node("phase_space_fake_localization")
   {
     param("~publish_localized_pose", publish_localized_pose_, true) ;
     param("~publish_transform", publish_transform_, true) ;
     param("~base_id", base_id_, 1) ;
 
-    advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-    advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth") ;
+    advertise<std_msgs::RobotBase2DOdom>("localizedpose", 1);
+    advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster(*this);
 

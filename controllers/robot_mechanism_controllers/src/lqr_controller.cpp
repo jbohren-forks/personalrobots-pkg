@@ -37,7 +37,7 @@
 #include <mechanism_model/joint.h>
 #include <control_toolbox/LQRDP.h>
 #include <Eigen/Array>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 #include <robot_mechanism_controllers/ros_serialchain_model.h>
 
@@ -184,7 +184,7 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   //Init the model.
   
   ROS_DEBUG("LOADING LQR CONTROLLER NODE");
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   ROS_DEBUG_STREAM("the prefix is "<<prefix);
 
@@ -192,8 +192,8 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_target", &LQRControllerNode::setTargetSrv, this);
-    node->advertise_service(prefix + "/set_command", &LQRControllerNode::setLQRParamsSrv, this);
+    node->advertiseService(prefix + "/set_target", &LQRControllerNode::setTargetSrv, this);
+    node->advertiseService(prefix + "/set_command", &LQRControllerNode::setLQRParamsSrv, this);
 
     TiXmlElement *model_xml = config->FirstChildElement("model");
     if(!model_xml)

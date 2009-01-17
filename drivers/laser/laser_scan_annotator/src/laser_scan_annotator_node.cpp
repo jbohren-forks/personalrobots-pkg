@@ -40,11 +40,11 @@ using namespace std_msgs ;
 namespace laser_scan_annotator
 {
 
-class LaserScanAnnotatorNode : public ros::node
+class LaserScanAnnotatorNode : public ros::Node
 {
 public:
 
-  LaserScanAnnotatorNode() : ros::node("laser_scan_annotator_node"), tf_(*this)
+  LaserScanAnnotatorNode() : ros::Node("laser_scan_annotator_node"), tf_(*this)
   {
     advertise<LaserScanAnnotated>("scan_annotated", 100) ;
 

@@ -31,10 +31,10 @@
 #include "image_utils/cv_bridge.h"
 #include "opencv/highgui.h"
 
-class BumblebeeGrabSample : public ros::node
+class BumblebeeGrabSample : public ros::Node
 {
 public:
-  BumblebeeGrabSample() : ros::node("bumblebee_grab_sample")
+  BumblebeeGrabSample() : ros::Node("bumblebee_grab_sample")
   {
   }
   bool grab_image()

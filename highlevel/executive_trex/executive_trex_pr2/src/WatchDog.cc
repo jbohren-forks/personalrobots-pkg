@@ -4,9 +4,9 @@
 
 namespace TREX{
 
-  class Watchdog: public ros::node {
+  class Watchdog: public ros::Node {
   public:
-    Watchdog(): ros::node("trex_watch_dog"), watchdogOK_(true), watchdogTimeLimit_(1.0){
+    Watchdog(): ros::Node("trex_watch_dog"), watchdogOK_(true), watchdogTimeLimit_(1.0){
       param("trex/ping_frequency", watchdogTimeLimit_, watchdogTimeLimit_);
       subscribe<highlevel_controllers::Ping>("trex/ping", pingMsg_, &Watchdog::pingCallback, 1);
       advertise<highlevel_controllers::Ping>("highlevel_controllers/shutdown", 1);

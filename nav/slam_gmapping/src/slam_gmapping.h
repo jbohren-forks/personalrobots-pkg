@@ -50,7 +50,7 @@ class SlamGMapping
                 std_srvs::StaticMap::response &res);
 
   private:
-    ros::node* node_;
+    ros::Node* node_;
     tf::TransformListener* tf_;
 
     GMapping::GridSlamProcessor* gsp_;

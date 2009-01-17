@@ -117,7 +117,7 @@ class RosCamera : public Controller
   private: MonoCameraSensor *myParent;
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::node *rosnode;
+  private: ros::Node *rosnode;
 
   /// \brief ROS image message
   private: std_msgs::Image imageMsg;

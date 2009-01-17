@@ -13,7 +13,7 @@ namespace TREX {
   class EndEffectorStateAdapter: public ROSStateAdapter<MechanismState> {
   public:
     EndEffectorStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<MechanismState> (agentName, configData), tfClient(*(ros::node *) m_node)
+      : ROSStateAdapter<MechanismState> (agentName, configData), tfClient(*(ros::Node *) m_node)
     {
       count = 42;
     }

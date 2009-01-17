@@ -67,7 +67,7 @@ namespace point_cloud_assembler
  *              end time and returns the aggregated data as a point cloud
  */
 template<class T>
-class BaseAssemblerSrv : public ros::node
+class BaseAssemblerSrv : public ros::Node
 {
 public:
   BaseAssemblerSrv(const std::string& node_name) ;
@@ -121,7 +121,7 @@ private:
 } ;
 
 template <class T>
-BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::node(node_name)
+BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(node_name)
 {
   // **** Initialize TransformListener ****
   double tf_cache_time_secs ;
@@ -163,7 +163,7 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::node(
   ROS_INFO("Downsample Factor: %u", downsample_factor_) ;
 
   // ***** Start Services *****
-  advertiseService (getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
+  advertiseService(getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
 
   // ***** Start Listening to Data *****
   scan_notifier_ = new tf::MessageNotifier<T>(tf_, this, boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
@@ -173,7 +173,7 @@ template <class T>
 BaseAssemblerSrv<T>::~BaseAssemblerSrv()
 {
   delete scan_notifier_ ;
-  unadvertiseService (getName()+"/build_cloud") ;
+  unadvertiseService(getName()+"/build_cloud") ;
   delete tf_ ;
 }
 

@@ -40,7 +40,7 @@
 #include <robot_msgs/DiagnosticStatus.h>
 #include <gazebo_plugin/PlugCommand.h>
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 namespace gazebo
 {
@@ -115,7 +115,7 @@ private:
   robot_msgs::DiagnosticStatus diagnostic_status_;
 
   /// \brief pointer to ros node
-  private: ros::node *rosnode_;
+  private: ros::Node *rosnode_;
 
   /// \brief battery state topic name
   private: std::string stateTopicName_;
@@ -124,7 +124,7 @@ private:
   private: std::string diagnosticMessageTopicName_;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
-  private: ros::thread::mutex lock_;
+  private: boost::mutex lock_;
 
   /// \brief stores current simulator time
   private: double current_time_;

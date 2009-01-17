@@ -430,7 +430,7 @@ LaserScannerController::ProfileExecutionState LaserScannerController::getProfile
 }
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
-LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::node::instance())
+LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::Node::instance())
 {
   c_ = new LaserScannerController();
   prev_profile_exec_state_ = LaserScannerController::NOT_APPLICABLE ;
@@ -441,9 +441,9 @@ LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::node::insta
 
 LaserScannerControllerNode::~LaserScannerControllerNode()
 {
-  node_->unadvertise_service(service_prefix_ + "/set_command");
-  node_->unadvertise_service(service_prefix_ + "/get_command");
-  node_->unadvertise_service(service_prefix_ + "/set_profile");
+  node_->unadvertiseService(service_prefix_ + "/set_command");
+  node_->unadvertiseService(service_prefix_ + "/get_command");
+  node_->unadvertiseService(service_prefix_ + "/set_profile");
   //node_->unadvertise(service_prefix_ + "/laser_scanner_signal") ;
 
   publisher_->stop() ;
@@ -553,8 +553,8 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
 
   if (!c_->initXml(robot, config))
     return false;
-  node_->advertise_service(service_prefix_ + "/set_command", &LaserScannerControllerNode::setCommand, this);
-  node_->advertise_service(service_prefix_ + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
+  node_->advertiseService(service_prefix_ + "/set_command", &LaserScannerControllerNode::setCommand, this);
+  node_->advertiseService(service_prefix_ + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
 
 
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice

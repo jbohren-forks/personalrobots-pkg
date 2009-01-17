@@ -2,13 +2,13 @@
 #include "ros/node.h"
 #include "std_msgs/RobotBase2DOdom.h"
 
-class AmclCLI: public ros::node
+class AmclCLI: public ros::Node
 {
 public:
   std_msgs::RobotBase2DOdom pose_msg;
   bool done;
 
-  AmclCLI(): ros::node("amcl_cli"), done(false)
+  AmclCLI(): ros::Node("amcl_cli"), done(false)
   {
     subscribe("localizedpose", pose_msg, &AmclCLI::pose_cb, 1);
   }

@@ -32,7 +32,7 @@
 #include "axis_cam/PTZActuatorState.h"
 #include "axis_cam/axis_cam.h"
 
-class Axis_PTZ_node : public ros::node
+class Axis_PTZ_node : public ros::Node
 {
 public:
   axis_cam::PTZActuatorCmd   ptz_cmd;
@@ -47,7 +47,7 @@ public:
 
   boost::mutex control_mutex;
 
-  Axis_PTZ_node() : node("axis_ptz"), cam(NULL), cmd_updated(false)
+  Axis_PTZ_node() : Node("axis_ptz"), cam(NULL), cmd_updated(false)
   {
     advertise<axis_cam::PTZActuatorState>("ptz_state",1);
 

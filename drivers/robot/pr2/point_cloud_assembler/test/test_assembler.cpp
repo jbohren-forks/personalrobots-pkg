@@ -54,7 +54,7 @@ class TestAssembler : public testing::Test
 {
 public:
 
-  node* node_;
+  Node* node_;
 
   PointCloud cloud_msg_ ;
   boost::mutex cloud_mutex_ ;
@@ -92,7 +92,7 @@ protected:
     scan_counter_ = 0 ;
 
     init(g_argc, g_argv);
-    node_ = new node("TestAssembler");
+    node_ = new Node("TestAssembler");
   }
 
   /// Destructor

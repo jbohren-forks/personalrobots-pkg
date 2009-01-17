@@ -100,10 +100,10 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   else
   {
     trajectory_type_ = std::string(elt->Attribute("interpolation"));
-    ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",trajectory_type_.c_str());    
+    ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",trajectory_type_.c_str());
   }
-  joint_cmd_rt_.resize(joint_pd_controllers_.size()); 
-  joint_cmd_dot_rt_.resize(joint_pd_controllers_.size()); 
+  joint_cmd_rt_.resize(joint_pd_controllers_.size());
+  joint_cmd_dot_rt_.resize(joint_pd_controllers_.size());
 
   joint_trajectory_ = new trajectory::Trajectory((int) joint_pd_controllers_.size());
 
@@ -195,12 +195,12 @@ void ArmTrajectoryController::update(void)
     refresh_rt_vals_ = false;
     trajectory_done_ = false;
   }
-  if(arm_controller_lock_.trylock())
+  if(arm_controller_lock_.try_lock())
   {
     sample_time = robot_->hw_->current_time_ - trajectory_start_time_;
     joint_trajectory_->sample(trajectory_point_,sample_time);
 
-//    ROS_INFO("sample_time: %f", sample_time); 
+//    ROS_INFO("sample_time: %f", sample_time);
     for(unsigned int i=0; i < joint_cmd_rt_.size(); ++i)
     {
       joint_cmd_rt_[i] = trajectory_point_.q_[i];
@@ -230,7 +230,7 @@ void ArmTrajectoryController::update(void)
 
   static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
   if (p.trylock()) {
-    char buf[1000];       
+    char buf[1000];
     sprintf(buf, "Time = %15.6lf\n", end_time - start_time);
     p.msg_.data = std::string(buf);
     p.unlockAndPublish();
@@ -259,7 +259,7 @@ void ArmTrajectoryController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(ArmTrajectoryControllerNode)
 
 ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
-  : Controller(), node_(ros::node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
+  : Controller(), node_(ros::Node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmTrajectoryController();
@@ -267,13 +267,13 @@ ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
 
 ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
 {
-  /* node_->unadvertise_service(service_prefix_ + "/set_command");
-  node_->unadvertise_service(service_prefix_ + "/set_command_array");
-  node_->unadvertise_service(service_prefix_ + "/get_command");
-  node_->unadvertise_service(service_prefix_ + "/set_target");
+  /* node_->unadvertiseService(service_prefix_ + "/set_command");
+  node_->unadvertiseService(service_prefix_ + "/set_command_array");
+  node_->unadvertiseService(service_prefix_ + "/get_command");
+  node_->unadvertiseService(service_prefix_ + "/set_target");
   */
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryStart");
-  node_->unadvertise_service(service_prefix_ + "/TrajectoryQuery");
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryStart");
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryQuery");
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -291,7 +291,7 @@ void ArmTrajectoryControllerNode::update()
   }
   if(c_->trajectory_wait_time_ >= trajectory_wait_timeout_)
   {
-    updateTrajectoryQueue( ArmTrajectoryControllerNode::FAILED);    
+    updateTrajectoryQueue( ArmTrajectoryControllerNode::FAILED);
   }
   c_->update();
 }
@@ -309,7 +309,7 @@ void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_fini
     }
     if(joint_trajectory_vector_.size() > 0)
     {
-      setTrajectoryCmdFromMsg(joint_trajectory_vector_.front()); 
+      setTrajectoryCmdFromMsg(joint_trajectory_vector_.front());
       current_trajectory_id_ = joint_trajectory_id_.front();
       joint_trajectory_status_[current_trajectory_id_] = ArmTrajectoryControllerNode::ACTIVE;
     }
@@ -335,15 +335,15 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   if(c_->initXml(robot, config))  // Parses subcontroller configuration
   {
-/*    node_->advertise_service(service_prefix_ + "/set_command", &ArmTrajectoryControllerNode::setJointPosHeadless, this);
-    node_->advertise_service(service_prefix_ + "/set_command_array", &ArmTrajectoryControllerNode::setJointPosSrv, this);
-    node_->advertise_service(service_prefix_ + "/get_command", &ArmTrajectoryControllerNode::getJointPosCmd, this);
-    node_->advertise_service(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
+/*    node_->advertiseService(service_prefix_ + "/set_command", &ArmTrajectoryControllerNode::setJointPosHeadless, this);
+    node_->advertiseService(service_prefix_ + "/set_command_array", &ArmTrajectoryControllerNode::setJointPosSrv, this);
+    node_->advertiseService(service_prefix_ + "/get_command", &ArmTrajectoryControllerNode::getJointPosCmd, this);
+    node_->advertiseService(service_prefix_ + "/set_target", &ArmTrajectoryControllerNode::setJointPosTarget, this);
 */
 
-   node_->advertise_service(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
-   node_->advertise_service(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
-   
+   node_->advertiseService(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
+   node_->advertiseService(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
+
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
     {
@@ -486,7 +486,7 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
     return false;
   else
     resp.done = it->second;
-  
+
 
   if(current_trajectory_id_ == (int)req.trajectoryid)
   {
@@ -524,7 +524,7 @@ bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::
     deleteTrajectoryFromQueue(req.trajectoryid);
   }
   else if(resp.done == ArmTrajectoryControllerNode::ACTIVE)
-  {    
+  {
     updateTrajectoryQueue(CANCELED);
     // Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
     for(int j=0; j < c_->dimension_; j++)

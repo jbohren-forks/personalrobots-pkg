@@ -103,7 +103,7 @@
 /// @todo Remove this giant enum, which was stoled from pr2Core/pr2Core.h.
 /// It can be replaced by some simpler indexing scheme.
 
-class TeleopArmKeyboardNode : public ros::node
+class TeleopArmKeyboardNode : public ros::Node
 {
   private:
     pr2_mechanism_controllers::JointPosCmd lArmCmd;
@@ -115,7 +115,7 @@ class TeleopArmKeyboardNode : public ros::node
     double jointCmdStep;
     double gripperStep;
     // constructor
-    TeleopArmKeyboardNode() : ros::node("teleop_arm_keyboard_node")
+    TeleopArmKeyboardNode() : ros::Node("teleop_arm_keyboard_node")
     {
 
       // initialize step size

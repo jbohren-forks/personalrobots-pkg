@@ -36,14 +36,14 @@
 
 using namespace grasp_point_node;
 
-GraspPointNode::GraspPointNode(std::string node_name):ros::node(node_name),tf_(*this, true, 10000000000ULL)
+GraspPointNode::GraspPointNode(std::string node_name):ros::Node(node_name),tf_(*this, true, 10000000000ULL)
 {
   service_prefix_ = node_name;
 }
 
 GraspPointNode::~GraspPointNode()
 {
-  this->unadvertise_service(service_prefix_ + "/SetGraspPoint");
+  this->unadvertiseService(service_prefix_ + "/SetGraspPoint");
 }
 
 void GraspPointNode::init()
@@ -54,7 +54,7 @@ void GraspPointNode::init()
   this->param<double>(service_prefix_ + "/increment",increment_,0.01);
   initializeKinematicModel();
 
-  this->advertise_service(service_prefix_ + "/SetGraspPoint", &GraspPointNode::processGraspPointService, this);
+  this->advertiseService(service_prefix_ + "/SetGraspPoint", &GraspPointNode::processGraspPointService, this);
 }
 
 robot_desc::URDF::Link* GraspPointNode::findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group)
@@ -92,13 +92,13 @@ int GraspPointNode::initializeKinematicModel()
   std::vector<robot_desc::URDF::Group*> groups;
 
 
-  (ros::g_node)->get_param(robot_description_model_,xml_content);
+  (ros::g_node)->getParam(robot_description_model_,xml_content);
 
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
   {
     ROS_INFO("WARNING: grasp point node is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
-    (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+    (ros::g_node)->getParam("robotdesc/pr2",xml_content);
     usleep(100000);
   }
 

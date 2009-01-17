@@ -36,7 +36,7 @@
 
 // ros stuff
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 #include <tf/tf.h>
 #include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
 
@@ -50,7 +50,7 @@
 namespace calibration
 {
 
-class odom_calib: public ros::node
+class odom_calib: public ros::Node
 {
 public:
   /// constructor
@@ -101,7 +101,7 @@ private:
   std::vector<double> _mech_begin, _mech_end;
 
   // mutex
-  ros::thread::mutex _odom_mutex, _imu_mutex, _mech_mutex;  
+  boost::mutex _odom_mutex, _imu_mutex, _mech_mutex;  
 
 }; // class
 

@@ -35,7 +35,7 @@
 #ifndef GOVERNOR_NODE_H_
 #define GOVERNOR_NODE_H_
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 #include <vector>
 
@@ -122,7 +122,7 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
     double outer_radius_;
 };
 
-class GovernorNode: public ros::node
+class GovernorNode: public ros::Node
 {
   public:
     GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec);
@@ -160,10 +160,10 @@ class GovernorNode: public ros::node
     std_msgs::BaseVel cmd_vel_msg_;
 
     //since both odomReceived and processPlan access robot_vel we need to lock
-    ros::thread::mutex vel_lock;
+    boost::mutex vel_lock;
 
     //since both planReceived and processPlan access map_ we need to lock
-    ros::thread::mutex map_lock;
+    boost::mutex map_lock;
 
     //keep track of the robot's velocity
     tf::Stamped<tf::Pose> robot_vel_;

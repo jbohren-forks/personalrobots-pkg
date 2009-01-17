@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  ros::node node("spacenav");
+  ros::Node node("spacenav");
   node.advertise<std_msgs::Vector3>("/spacenav/offset", 2);
   node.advertise<std_msgs::Vector3>("/spacenav/rot_offset", 2);
   node.advertise<joy::Joy>("/spacenav/joy", 2);

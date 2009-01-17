@@ -91,7 +91,7 @@ namespace robot_model
 
     public:
 	
-        NodeCollisionModel(ros::node *node, const std::string &robot_model,
+        NodeCollisionModel(ros::Node *node, const std::string &robot_model,
 			   collision_space::EnvironmentModel *collisionSpace = NULL) : NodeRobotModel(node, robot_model)
 	{
 	    if (collisionSpace)

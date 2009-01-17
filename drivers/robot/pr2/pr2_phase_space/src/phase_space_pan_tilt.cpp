@@ -53,11 +53,11 @@ using namespace std ;
 
 namespace pr2_phase_space
 {
-class PhaseSpacePanTilt : public ros::node
+class PhaseSpacePanTilt : public ros::Node
 {
 public :
   
-  PhaseSpacePanTilt() : ros::node("phase_space_pan_tilt"), topic("head_controller/track_point")
+  PhaseSpacePanTilt() : ros::Node("phase_space_pan_tilt"), topic("head_controller/track_point")
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePanTilt::snapshotCallback, 10) ;
     advertise<std_msgs::PointStamped>(topic, 10) ;

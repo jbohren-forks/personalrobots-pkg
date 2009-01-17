@@ -58,7 +58,7 @@
 namespace estimation
 {
 
-class OdomEstimationNode: public ros::node
+class OdomEstimationNode: public ros::Node
 {
 public:
   /// constructor

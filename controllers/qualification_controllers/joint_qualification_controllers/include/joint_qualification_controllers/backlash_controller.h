@@ -93,7 +93,7 @@ private:
   double last_time_;
   double amplitude_;
   double freq_;
-  ros::node* node;
+  ros::Node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   robot_msgs::TestData test_data_;
 };

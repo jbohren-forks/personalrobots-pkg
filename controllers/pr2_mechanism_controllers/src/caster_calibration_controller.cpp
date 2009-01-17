@@ -199,7 +199,7 @@ bool CasterCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXm
 {
   assert(robot);
   robot_ = robot;
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")
@@ -210,7 +210,7 @@ bool CasterCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXm
 
   if (!c_.initXml(robot, config))
     return false;
-  node->advertise_service(topic + "/calibrate", &CasterCalibrationControllerNode::calibrateCommand, this);
+  node->advertiseService(topic + "/calibrate", &CasterCalibrationControllerNode::calibrateCommand, this);
   guard_calibrate_.set(topic + "/calibrate");
 
   pub_calibrated_ = new misc_utils::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);

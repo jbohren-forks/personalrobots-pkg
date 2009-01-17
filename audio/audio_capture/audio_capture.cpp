@@ -33,7 +33,7 @@
 #include "robot_msgs/AudioRawStream.h"
 
 const static int SAMPLE_RATE = 44100; // todo: make this a parameter.
-ros::node *g_audio_node = NULL;
+ros::Node *g_audio_node = NULL;
 bool g_caught_sigint = false;
 
 #define SHOW_MAX_SAMPLE
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   }
   ROS_DEBUG("opening default audio stream");
   ros::init(argc, argv);
-  ros::node n("audio_capture", ros::node::DONT_HANDLE_SIGINT);
+  ros::Node n("audio_capture", ros::Node::DONT_HANDLE_SIGINT);
   g_audio_node = &n;
   n.advertise<robot_msgs::AudioRawStream>("audio", 5);
   err = Pa_OpenDefaultStream(&stream, 1, 0, paFloat32, SAMPLE_RATE, 4096,

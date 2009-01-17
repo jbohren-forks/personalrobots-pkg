@@ -39,7 +39,7 @@
 
 using namespace tf;
 
-ros::node* g_node = NULL;
+ros::Node* g_node = NULL;
 TransformListener* g_tf = NULL;
 TransformBroadcaster* g_broadcaster = NULL;
 
@@ -366,7 +366,7 @@ int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
 	ros::init(argc, argv);
-	g_node = new ros::node("test_notifier");
+	g_node = new ros::Node("test_notifier");
 	g_node->advertise<std_msgs::PointStamped>("test_message", 0);
 	g_node->advertise<std_msgs::PointStamped>("test_message2", 0);
 

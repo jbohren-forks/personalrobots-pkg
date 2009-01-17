@@ -63,7 +63,7 @@ namespace gazebo {
     {
       // this only works for a single camera.
       ros::init(argc,argv);
-      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+      rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
       printf("-------------------- starting node in P3D \n");
     }
   }

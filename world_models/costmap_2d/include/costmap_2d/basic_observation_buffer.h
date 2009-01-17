@@ -33,7 +33,7 @@
 #define COSTMAP_2D_BASIC_OBSERVATION_BUFFER_H
 
 #include <costmap_2d/observation_buffer.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 namespace robot_filter {
   class RobotFilter;
@@ -67,7 +67,7 @@ namespace costmap_2d {
     std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
     tf::TransformListener& tf_;
     std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
-    ros::thread::mutex buffer_mutex_;
+    boost::mutex buffer_mutex_;
     const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
     robot_filter::RobotFilter* filter_;
   };

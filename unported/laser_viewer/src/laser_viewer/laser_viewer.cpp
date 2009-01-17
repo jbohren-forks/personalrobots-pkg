@@ -87,7 +87,7 @@ Publishes to (name / type):
 
 using namespace std;
 
-class Laser_Viewer : public ros::node
+class Laser_Viewer : public ros::Node
 {
 public:
   std_msgs::LaserScan laser;
@@ -102,7 +102,7 @@ public:
 
   bool save_next;
 
-  Laser_Viewer() : ros::node("laser_viewer"), count(0), scan_cnt(0), save_next(false)
+  Laser_Viewer() : ros::Node("laser_viewer"), count(0), scan_cnt(0), save_next(false)
   {
     subscribe("scan", laser, &Laser_Viewer::scans_callback);
 
@@ -300,7 +300,7 @@ void
 quit(int sig) 
 {
   SDL_Quit();
-  ros::basic_sigint_handler(sig);
+  ros::basicSigintHandler(sig);
 }
 
 int main(int argc, char **argv)

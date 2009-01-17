@@ -29,11 +29,11 @@
 
 #include "tf/transform_broadcaster.h"
 
-class testBroadcaster : public ros::node
+class testBroadcaster : public ros::Node
 {
 public:
   //constructor
-  testBroadcaster() : ros::node("broadcaster"),broadcaster(*this),count(2){};
+  testBroadcaster() : ros::Node("broadcaster"),broadcaster(*this),count(2){};
   //Clean up ros connections
   ~testBroadcaster() { }
 

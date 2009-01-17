@@ -132,7 +132,7 @@ public:
 private:
  //node stuff
   std::string service_prefix_;                 /**< The name of the controller. */
-  ros::node *node_;
+  ros::Node *node_;
   AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
   SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 

@@ -100,7 +100,7 @@ Provides (name/type):
 #include <string>
 #include <map>
 
-class MotionValidator : public ros::node,
+class MotionValidator : public ros::Node,
 			public robot_model::NodeCollisionModel
 {
 public:
@@ -126,8 +126,8 @@ public:
 	ompl::SpaceInformation::StateValidityChecker_t svc;
     };    
     
-    MotionValidator(const std::string &robot_model) : ros::node("motion_validator"),
-						      robot_model::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+    MotionValidator(const std::string &robot_model) : ros::Node("motion_validator"),
+						      robot_model::NodeCollisionModel(dynamic_cast<ros::Node*>(this),
 											     robot_model)
     {
 	advertiseService("validate_path", &MotionValidator::validatePath);

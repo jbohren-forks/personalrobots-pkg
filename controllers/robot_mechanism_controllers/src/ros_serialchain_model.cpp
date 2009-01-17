@@ -33,7 +33,7 @@
  *********************************************************************/
  
  #include <ros/node.h>
- #include <rosconsole/rosconsole.h>
+ #include <ros/console.h>
  #include <mechanism_model/robot.h>
  #include <mechanism_model/joint.h>
  #include <robot_msgs/JointCmd.h>
@@ -142,10 +142,10 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
   const std::string desc_name=desc_node->GetText();
   ROS_DEBUG_STREAM("robot description is "<<desc_name);
   
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   ROS_ASSERT(node);
   std::string desc_content;
-  node->get_param("robotdesc/"+desc_name, desc_content);
+  node->getParam("robotdesc/"+desc_name, desc_content);
   if(!init(desc_content, chain_name))
   {
     ROS_ERROR("Failed to initialize model kinematics");

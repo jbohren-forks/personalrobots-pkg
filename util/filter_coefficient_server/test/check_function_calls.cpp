@@ -41,7 +41,7 @@
 #include "ros/node.h"
 #include "filter_coefficient_server/Filter.h"
 
-ros::node* n;
+ros::Node* n;
 
 TEST(CheckFunctionCalls, checkButterLow)
 {
@@ -830,7 +830,7 @@ main(int argc, char** argv)
   testing::InitGoogleTest(&argc, argv);
 
   ros::init(argc, argv);
-  n = new ros::node("check_fucntion_calls");
+  n = new ros::Node("check_fucntion_calls");
 
   int ret = RUN_ALL_TESTS();
   ros::fini();

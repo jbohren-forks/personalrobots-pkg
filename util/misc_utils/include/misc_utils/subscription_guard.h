@@ -50,7 +50,7 @@ public:
   ~SubscriptionGuard()
   {
     if (valid_)
-      ros::node::instance()->unsubscribe(topic_);
+      ros::Node::instance()->unsubscribe(topic_);
   }
 
   void set(const std::string &topic)

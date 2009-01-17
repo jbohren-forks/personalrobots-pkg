@@ -50,7 +50,7 @@
 using namespace std;
 using namespace color_calib;
 
-class ColorCalib : public ros::node
+class ColorCalib : public ros::Node
 {
 public:
   std_msgs::ImageArray image_msg;
@@ -61,7 +61,7 @@ public:
 
   Calibration color_cal;
 
-  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), first(true), color_cal(this)
+  ColorCalib() : Node("color_calib", ros::Node::ANONYMOUS_NAME), first(true), color_cal(this)
   { 
     subscribe("images", image_msg, &ColorCalib::image_cb, 1);
   }
@@ -96,7 +96,7 @@ public:
 
           cvTransform(img2, corrected_img, color_cal.getCal(COLOR_CAL_BGR));
 
-          color_cal.setParam(map_name("images") + std::string("/") + l);
+          color_cal.setParam(mapName("images") + std::string("/") + l);
 
           cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
           cvShowImage("color_rect", corrected_img);
@@ -114,7 +114,7 @@ public:
   {
     boost::mutex::scoped_lock lock(cv_mutex);
     if (cvWaitKey(3) == 10)
-      self_destruct();
+      shutdown();
   }
 
 };

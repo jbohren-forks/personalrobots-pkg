@@ -46,9 +46,9 @@
 
 using namespace std;
 
-class ControlCLI : public ros::node {
+class ControlCLI : public ros::Node {
 public:
-  ControlCLI() : ros::node("CommandLineInterface") {
+  ControlCLI() : ros::Node("CommandLineInterface") {
     dead = false;
     advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);

@@ -41,7 +41,7 @@
 #include "opencv/highgui.h"
 
 
-class AxisDemo : public ros::node
+class AxisDemo : public ros::Node
 {
 public:
   std_msgs::Image image_;
@@ -52,7 +52,7 @@ public:
 
   IplImage *cv_image_;
 
-  AxisDemo() : ros::node("axis_demo"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL)
+  AxisDemo() : ros::Node("axis_demo"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL)
   {
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
 

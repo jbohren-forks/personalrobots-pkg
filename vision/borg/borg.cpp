@@ -37,7 +37,7 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
 {
   if (opts & INIT_SILENT)
     g_silent = true; // don't print diagnostic / progress information 
-  string cfg_path = ros::get_package_path("borg");
+  string cfg_path = ros::getPackagePath("borg");
   cfg_path += "/borg-config";
   FILE *f = fopen(cfg_path.c_str(), "r");
   if (!f)

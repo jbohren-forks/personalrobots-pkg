@@ -37,10 +37,10 @@
 
 #include <string>
 
-class CheckParams : public ros::node
+class CheckParams : public ros::Node
 {
 public:
-  CheckParams() : ros::node("param_checker")
+  CheckParams() : ros::Node("param_checker")
   {
     advertise<std_msgs::Empty>("stereo/check_params",1);
     

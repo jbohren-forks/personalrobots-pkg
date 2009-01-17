@@ -107,7 +107,7 @@ void JointEffortController::update()
 //------ Joint Effort controller node --------
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
 
-JointEffortControllerNode::JointEffortControllerNode(): node_(ros::node::instance())
+JointEffortControllerNode::JointEffortControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointEffortController();
 }
@@ -134,7 +134,7 @@ bool JointEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlEleme
   node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointEffortControllerNode::setCommand, this, 1);
   guard_set_command_.set(service_prefix_ + "/set_command");
   //services
-  node_->advertise_service(service_prefix_ + "/get_command", &JointEffortControllerNode::getCommand, this);
+  node_->advertiseService(service_prefix_ + "/get_command", &JointEffortControllerNode::getCommand, this);
   guard_get_command_.set(service_prefix_ + "/get_command");
 
   return true;

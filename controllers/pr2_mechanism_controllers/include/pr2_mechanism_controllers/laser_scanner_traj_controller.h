@@ -54,7 +54,7 @@
 #include <robot_mechanism_controllers/GetCommand.h>
 #include <pr2_mechanism_controllers/SetProfile.h>
 
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "trajectory/trajectory.h"
 
 namespace controller
@@ -89,10 +89,10 @@ private:
   mechanism::RobotState *robot_ ;
   mechanism::JointState *joint_state_ ;                                 // Need this to check the calibrated flag on the joint
 
-  ros::thread::mutex traj_lock_ ;                                       // Mutex for traj_
+  boost::mutex traj_lock_ ;                                       // Mutex for traj_
   trajectory::Trajectory traj_ ;                                        // Stores the current trajectory being executed
 
-  ros::thread::mutex track_link_lock_ ;
+  boost::mutex track_link_lock_ ;
   bool track_link_enabled_ ;
   mechanism::LinkState* target_link_ ;
   mechanism::LinkState* mount_link_ ;
@@ -133,7 +133,7 @@ public:
   void setTrackLinkCmd() ;
 
 private:
-  ros::node *node_ ;
+  ros::Node *node_ ;
   LaserScannerTrajController c_ ;
   mechanism::RobotState *robot_ ;
   std::string service_prefix_ ;

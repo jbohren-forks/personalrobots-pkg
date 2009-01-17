@@ -45,7 +45,7 @@ static const float MIN_CLIP_LENGTH = 2.0; // seconds
 class AudioWriter
 {
 public:
-  AudioWriter(ros::node *n)
+  AudioWriter(ros::Node *n)
   : clip_num(0), clip_start(0), clip_end(0), audio_clock(0),
     clip_state(IDLE), window_power(0)
   {
@@ -164,7 +164,7 @@ private:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-  ros::node n("audio_clip_writer");
+  ros::Node n("audio_clip_writer");
   AudioWriter *aw = new AudioWriter(&n);
   while (n.ok())
     ros::Duration(0, 500000000).sleep();

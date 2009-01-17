@@ -197,7 +197,7 @@ struct imgData
 };
 
 // this class is originally copied from CvView in cv_view_array.cpp in vision/cv_view package.
-class VidereBlobTracker: public ros::node {
+class VidereBlobTracker: public ros::Node {
 public:
   // configuration consts
   /// true if need to display debugging windows
@@ -266,7 +266,7 @@ public:
 		    /// if true, remote gui is used to selection windows and
 		    /// display tracking results
 		    bool remote_gui) :
-    node("videre_blob_tracker", ros::node::ANONYMOUS_NAME),
+    node("videre_blob_tracker", ros::Node::ANONYMOUS_NAME),
     display_(display),
     remote_gui_(remote_gui),
     imagesTopic_("images"),

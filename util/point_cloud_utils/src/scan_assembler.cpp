@@ -32,7 +32,7 @@
 using namespace point_cloud_utils ;
 using namespace std_msgs ;
 
-ScanAssembler::ScanAssembler(ros::node& cur_node) : tf_(cur_node)
+ScanAssembler::ScanAssembler(ros::Node& cur_node) : tf_(cur_node)
 {
   startNewCloud("invalid_frame", 0) ;
 }

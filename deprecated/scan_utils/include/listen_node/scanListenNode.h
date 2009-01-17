@@ -52,7 +52,7 @@ class SmartScan;
   This class listens for point clouds coming out of ROS and processes them into a
   scan_utils::SmartScan. It is a thin ROS wrapper for the Scan Utils library.
 */
-class ScanListenNode : public ros::node
+class ScanListenNode : public ros::Node
 {
  private:
 	std_msgs::PointCloud mNewCloud,mLastCloud;

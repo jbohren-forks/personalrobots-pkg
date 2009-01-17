@@ -40,8 +40,8 @@
 
 #include <string>
 #include <ros/node.h>
-#include <rosthread/mutex.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <realtime_thread/realtime_thread.h>
 
 namespace misc_utils {
@@ -53,11 +53,11 @@ public:
   RealtimePublisher(const std::string &topic, int queue_size)
     : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
-    if ((node_ = ros::node::instance()) == NULL)
+    if ((node_ = ros::Node::instance()) == NULL)
     {
       int argc = 0;  char **argv = NULL;
       ros::init(argc, argv);
-      node_ = new ros::node("realtime_publisher", ros::node::DONT_HANDLE_SIGINT);
+      node_ = new ros::Node("realtime_publisher", ros::Node::DONT_HANDLE_SIGINT);
     }
 
     node_->advertise<Msg>(topic_, queue_size);
@@ -73,7 +73,7 @@ public:
       abort();
     }
     keep_running_ = true;
-    thread_ = ros::thread::member_thread::startMemberFunctionThread<RealtimePublisher<Msg> > (this, &RealtimePublisher::publishingLoop);
+    thread_ = boost::thread(&RealtimePublisher::publishingLoop, this);
   }
 
   ~RealtimePublisher()
@@ -83,7 +83,7 @@ public:
       usleep(100);
 
     // TODO: fix when multiple nodes per process are supported
-    
+
     // Don't unadvertise topic because other threads within the
     // process may still be publishing on the topic
     //node_->unadvertise(topic_);
@@ -141,7 +141,7 @@ public:
   void publishingLoop()
   {
     RealtimeTask task;
-    
+
     int err = realtime_shadow_task(&task);
     if (err)
       ROS_WARN("Unable to shadow task: %d\n", err);
@@ -174,11 +174,11 @@ public:
 
 private:
 
-  ros::node *node_;
+  ros::Node *node_;
   bool is_running_;
   bool keep_running_;
 
-  pthread_t *thread_;
+  boost::thread thread_;
 
   RealtimeMutex msg_lock_;  // Protects msg_
   RealtimeCond updated_cond_;

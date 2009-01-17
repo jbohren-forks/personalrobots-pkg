@@ -17,7 +17,7 @@ Katana::Katana()
 {
   // this constructor will throw exceptions if it doesn't work
   // snarf in the text file containing the serial port string
-  string katana_pkg_path = ros::get_package_path("katana");
+  string katana_pkg_path = ros::getPackagePath("katana");
   if (!katana_pkg_path.length())
     throw std::runtime_error("couldn't see package 'katana' using rospack");
   string serial_port_file = katana_pkg_path + "/cfg/serial_port";
@@ -44,7 +44,7 @@ Katana::Katana()
   protocol->init(device);
   printf("initialized KNI protocol successfully\n");
   kni_lm = new CLMBase();
-  kni_lm->create((ros::get_package_path("katana") +
+  kni_lm->create((ros::getPackagePath("katana") +
                   "/cfg/stair1_katana.cfg").c_str(), protocol);
   printf("KNI lm base library is up\n");
 }
@@ -444,7 +444,7 @@ bool Katana::move_along_trajectory(vector<vector<double> > &jointAngles, double 
 	int numberOfMotors = kni_lm->getNumberOfMotors();
 	// Get motor parameters (angleOffset, encoderOffset, etc).
   KNI::kmlFactory *infos = new KNI::kmlFactory();
-  string configurationFile = ros::get_package_path("katana") +
+  string configurationFile = ros::getPackagePath("katana") +
                             "/cfg/stair1_katana.cfg";
 	if(!infos->openFile(configurationFile.c_str())) {
 		throw ConfigFileOpenException(configurationFile.c_str());

@@ -95,7 +95,7 @@ void on_mouse(int event, int x, int y, int flags, void *params){
  * This node provides a GUI for starting tracker tracks. Press P to pause the playback and click on a point in the image. 
  * The 3D coords of the point will be published. 
  */
-class TrackStarterGUI: public ros::node
+class TrackStarterGUI: public ros::Node
 {
 public:
   image_msgs::Image limage_;
@@ -119,7 +119,7 @@ public:
   
 
   TrackStarterGUI():
-    ros::node("track_starter_gui"),
+    ros::Node("track_starter_gui"),
     lcolor_cal_(this),
     quit_(false),
     calib_color_(false),

@@ -147,7 +147,7 @@ CasterControllerNode::~CasterControllerNode()
 
 bool CasterControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   assert(node);
 
   std::string name = config->Attribute("name") ? config->Attribute("name") : "";

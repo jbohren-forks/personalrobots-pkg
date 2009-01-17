@@ -35,7 +35,7 @@ class Device
 };
 
 
-class PowerBoard : public ros::node
+class PowerBoard : public ros::Node
 {
   public:
     PowerBoard();

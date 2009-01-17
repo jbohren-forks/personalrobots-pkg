@@ -33,13 +33,13 @@
 #include "stereo_blob_tracker/Rect2DStamped.h"
 using namespace stereo_blob_tracker;
 
-class Listener : public ros::node
+class Listener : public ros::Node
 {
 public:
   std_msgs::PointStamped msg;
   Rect2DStamped sbox_msg;
   Rect2DStamped tbox_msg;
-  Listener() : ros::node("listener")
+  Listener() : ros::Node("listener")
   { 
     subscribe("points",       msg,      &Listener::point_cb,        1000); 
     subscribe("selectionbox", sbox_msg, &Listener::selectionbox_cb, 1000);

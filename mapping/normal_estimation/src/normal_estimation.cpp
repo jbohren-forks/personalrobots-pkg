@@ -64,7 +64,7 @@ moment invariants, etc.
 using namespace std;
 using namespace std_msgs;
 
-class NormalEstimation : public ros::node
+class NormalEstimation : public ros::Node
 {
   public:
 
@@ -84,7 +84,7 @@ class NormalEstimation : public ros::node
     int k_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    NormalEstimation () : ros::node ("normal_estimation"), tf_(*this)
+    NormalEstimation () : ros::Node ("normal_estimation"), tf_(*this)
     {
       param ("~search_radius", radius_, 0.02);      // 2cm radius by default
       param ("~search_k_closest", k_, 30);          // 30 k-neighbors by default
@@ -93,7 +93,7 @@ class NormalEstimation : public ros::node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      get_published_topics (&t_list);
+      getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)

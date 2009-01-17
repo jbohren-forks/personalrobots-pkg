@@ -23,7 +23,7 @@ struct imgData
   color_calib::Calibration* color_cal;
 };
 
-class CvView : public ros::node
+class CvView : public ros::Node
 {
 public:
   std_msgs::ImageArray image_msg;
@@ -39,7 +39,7 @@ public:
 
   map<string, imgData> images;
 
-  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME),
+  CvView() : Node("cv_view", ros::Node::ANONYMOUS_NAME),
              img_cnt(0), made_dir(false), fix_color(false), recompand(false)
   {
     subscribe("images", image_msg, &CvView::image_cb, 1);
@@ -80,7 +80,7 @@ public:
         images[l].cv_image = 0;
         images[l].color_cal = new color_calib::Calibration(this);
 
-        std::string color_cal_str = map_name("images") + std::string("/") + images[l].label;
+        std::string color_cal_str = mapName("images") + std::string("/") + images[l].label;
         images[l].color_cal->getFromParam(color_cal_str);
       } else {
 

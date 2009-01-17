@@ -72,11 +72,11 @@ std_msgs::UInt8 status_out;
 
 using namespace std;
 
-class LightProjector : public ros::node
+class LightProjector : public ros::Node
 {
 public:
 
-    LightProjector() : ros::node("light_projector") 
+    LightProjector() : ros::Node("light_projector") 
     {
       param("~frequency", frequency, 0.5);
       advertise<std_msgs::UInt8>("projector_status", 10);

@@ -41,13 +41,13 @@
 
 using namespace ros;
 
-class LaserView : public node, public SDLGL
+class LaserView : public Node, public SDLGL
 {
 public:
   std_msgs::LaserScan laser;
   float view_scale, view_x, view_y;
 
-  LaserView() : node("laser_view"),
+  LaserView() : Node("laser_view"),
     view_scale(50), view_x(0), view_y(0)
   {
     subscribe("scan", laser, &LaserView::laser_cb, 1);

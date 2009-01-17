@@ -2,7 +2,7 @@
 #include <math.h>
 #include <unistd.h>
 #include "ros/node.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"
@@ -12,7 +12,7 @@
 
 using namespace ros;
 
-class Segway : public node
+class Segway : public Node
 {
   public:
     Segway();
@@ -27,7 +27,7 @@ class Segway : public node
 
 		float req_x_vel, req_yaw_rate;
     double req_time;
-    thread::mutex req_mutex;
+    boost::mutex req_mutex;
 
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
@@ -49,7 +49,7 @@ const float MAX_X_VEL = 1.2;
 const float MAX_YAW_RATE = 0.4;
 
 Segway::Segway() :
-	node("segway"),
+	Node("segway"),
 	last_raw_yaw_rate(0),
 	last_raw_x_vel(0),
 	req_x_vel(0),
@@ -309,13 +309,13 @@ void Segway::main_loop()
                                           tf.sendTransform(tf::Transform(tf::Quaternion(
                                                                                         odom.pos.th,
                                                                                         0,
-                                                                                        0), 
+                                                                                        0),
                                                                          tf::Point(
                                                                                    odom.pos.x,
                                                                                    odom.pos.y,
                                                                                    0.0)
                                                                          ).inverse(),
-                                                           odom.header.stamp, 
+                                                           odom.header.stamp,
                                                            "odom",
                                                            "base");
                                         }

@@ -118,9 +118,9 @@ std::string CartesianOrientationController::rootFrame()
 ROS_REGISTER_CONTROLLER(CartesianOrientationControllerNode)
 
 CartesianOrientationControllerNode::CartesianOrientationControllerNode()
-: robot_(NULL), pos_publisher_(NULL), TF(*ros::node::instance(), false) , loop_count_(0)
+: robot_(NULL), pos_publisher_(NULL), TF(*ros::Node::instance(), false) , loop_count_(0)
 {
-  assert(ros::node::instance());
+  assert(ros::Node::instance());
   TF.setExtrapolationLimit(ros::Duration().fromSec(10.0e-3));
 }
 
@@ -133,7 +133,7 @@ CartesianOrientationControllerNode::~CartesianOrientationControllerNode()
 bool CartesianOrientationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot;
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")
@@ -146,10 +146,10 @@ bool CartesianOrientationControllerNode::initXml(mechanism::RobotState *robot, T
     return false;
 
   /*
-  node->advertise_service(topic + "/set_command",
+  node->advertiseService(topic + "/set_command",
                           &CartesianOrientationControllerNode::setCommand, this);
   guard_set_command_.set(topic + "/set_command");
-  node->advertise_service(topic + "/get_actual",
+  node->advertiseService(topic + "/get_actual",
                           &CartesianOrientationControllerNode::getActual, this);
   guard_get_actual_.set(topic + "/get_actual");
 

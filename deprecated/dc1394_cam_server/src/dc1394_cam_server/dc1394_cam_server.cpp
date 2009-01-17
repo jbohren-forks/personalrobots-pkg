@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -73,7 +73,7 @@ public:
   CamTypes  cam_type;
 };
 
-class Dc1394CamServer : public ros::node
+class Dc1394CamServer : public ros::Node
 {
 public:
 
@@ -83,7 +83,7 @@ public:
   ros::Time next_time_;
 
   list<CamData> cams_;
-  
+
   unsigned int count_;
 
   void checkAndPushRanges(CamData& cd, string param_name, dc1394feature_t feature)
@@ -91,25 +91,25 @@ public:
     uint32_t min;
     uint32_t max;
     cd.cam->getFeatureBoundaries(feature, min, max);
-    set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
-    set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
+    setParam(cd.name + string("/") + param_name + string("_min"), (int)(min));
+    setParam(cd.name + string("/") + param_name + string("_max"), (int)(max));
   }
 
   void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
   {
     string p = cd.name + string("/") + param_name;
-    if (has_param(p))
+    if (hasParam(p))
     {
       XmlRpc::XmlRpcValue val;
-      get_param(p, val);
-      
+      getParam(p, val);
+
       if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
         if (val == string("auto"))
           cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
-        else 
+        else
           cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
-          
-      
+
+
       if (val.getType() == XmlRpc::XmlRpcValue::TypeInt)
       {
         cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
@@ -130,16 +130,16 @@ public:
     string p_b = cd.name + string("/") + param_name + string("_b");
     string p_r = cd.name + string("/") + param_name + string("_r");
 
-    if (has_param(p_b) && has_param(p_r))
+    if (hasParam(p_b) && hasParam(p_r))
     {
       XmlRpc::XmlRpcValue val;
       XmlRpc::XmlRpcValue val_b;
       XmlRpc::XmlRpcValue val_r;
 
-      get_param(p, val);
-      get_param(p_b, val_b);
-      get_param(p_r, val_r);
-      
+      getParam(p, val);
+      getParam(p_b, val_b);
+      getParam(p_r, val_r);
+
       if (val.getType() == XmlRpc::XmlRpcValue::TypeString && val == string("auto"))
         cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
       else if (val_b.getType() == XmlRpc::XmlRpcValue::TypeInt && val_r.getType() == XmlRpc::XmlRpcValue::TypeInt)
@@ -153,7 +153,7 @@ public:
 
   void checkAllFeatures(CamData& cd)
   {
-    
+
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
       checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
       checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
@@ -187,9 +187,9 @@ public:
   }
 
 
-  Dc1394CamServer() : ros::node("dc1394_cam_server")
+  Dc1394CamServer() : ros::Node("dc1394_cam_server")
   {
-    advertise_service("~check_params", &Dc1394CamServer::checkFeatureService);
+    advertiseService("~check_params", &Dc1394CamServer::checkFeatureService);
 
     dc1394_cam::init();
 
@@ -210,11 +210,11 @@ public:
       param(cd.name + string("/frameid"), cd.frameid, oss.str());
 
       uint64_t guid;
-      if (has_param(cd.name + string("/guid")))
+      if (hasParam(cd.name + string("/guid")))
       {
         string guid_str;
-        get_param(cd.name + string("/guid"), guid_str);
-        
+        getParam(cd.name + string("/guid"), guid_str);
+
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {
         guid = dc1394_cam::getGuid(i);
@@ -306,9 +306,9 @@ public:
           colorize = false;
       }
 
-      if (has_param(cd.name + string("/colorize")))
+      if (hasParam(cd.name + string("/colorize")))
         param(cd.name + string("/colorize"), colorize, false);
-          
+
 
       bool rectify = false;
       param(cd.name + string("/rectify"), rectify, false);
@@ -334,7 +334,7 @@ public:
       }
 
       printf("Opening camera with guid: %llx\n", guid);
-      
+
       try
       {
         if (cd.cam_type == VIDERE)
@@ -405,7 +405,7 @@ public:
     for (list<CamData>::iterator c = cams_.begin(); c != cams_.end(); c++)
       c->cleanup();
 
-    dc1394_cam::fini();  
+    dc1394_cam::fini();
   }
 
   void serviceCam(CamData& cd)
@@ -428,12 +428,12 @@ public:
         uint32_t width    = (*fs_iter).getFrame()->size[0];
         uint32_t height   = (*fs_iter).getFrame()->size[1];
         uint32_t buf_size = width * height;
-        
+
         img_.images[i].width  = width;
         img_.images[i].height = height;
         img_.images[i].compression = "raw";
         img_.images[i].label = (*fs_iter).getName();
-        
+
         if ((*fs_iter).getFrame()->color_coding == DC1394_COLOR_CODING_RGB8)
         {
           img_.images[i].colorspace = "rgb24";
@@ -441,11 +441,11 @@ public:
         } else {
           img_.images[i].colorspace = "mono8";
         }
-        
+
         img_.images[i].set_data_size(buf_size);
-        
+
         memcpy(&(img_.images[i].data[0]), buf, buf_size);
-    
+
         fs_iter->releaseFrame();
         count_++;
         i++;
@@ -517,7 +517,7 @@ public:
 
             publish(cd.name + "/cloud", cloud_);
 
- 
+
         }
 
       } else {
@@ -525,7 +525,7 @@ public:
         publish(cd.name + "/image", img_.images[0]);
         publish(cd.name + "/images", img_);
       }
-    }    
+    }
   }
 
   bool getAndSend()
@@ -565,10 +565,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   //Keep things from dying poorly
-  signal(SIGHUP, ros::basic_sigint_handler);
-  signal(SIGPIPE, ros::basic_sigint_handler);
+  signal(SIGHUP, ros::basicSigintHandler);
+  signal(SIGPIPE, ros::basicSigintHandler);
 
-  
+
   Dc1394CamServer dc;
 
   while (dc.ok() && dc.cams_.size() > 0) {

@@ -81,7 +81,7 @@ Publishes to (name/type):
 // For integration of testing. Ros console needs to be defined early to avoid conflict in warning
 // declaration somewhere in the include tree.
 #include <gtest/gtest.h>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 #include "TestMonitor.hh"
 #include "Nddl.hh"
@@ -155,7 +155,7 @@ namespace TREX {
    * @brief Executive constructor sets up the trex agent instance
    */
   Executive::Executive()
-    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(g_playback)
+    : ros::Node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(g_playback)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -215,7 +215,7 @@ namespace TREX {
     TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
 
     // Set up  watchdog thread message generation
-    ros::node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
+    ros::Node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
     new boost::thread(boost::bind(&Executive::watchDogLoop, this));
 
     ROS_INFO("Executive created.\n");
@@ -289,7 +289,7 @@ namespace TREX {
 void cleanup(){
   if(node.isId()){
     node->shutdown();
-    delete (ros::node*) node;
+    delete (ros::Node*) node;
   }
   exit(0);
 }
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   }
 
   node->shutdown();
-  delete (ros::node*) node;
+  delete (ros::Node*) node;
   node = TREX::ExecutiveId::noId();
 
 

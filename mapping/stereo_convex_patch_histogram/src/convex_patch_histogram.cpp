@@ -67,7 +67,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 using namespace std;
 using namespace std_msgs;
 
-class ConvexPatchHistogram : public ros::node
+class ConvexPatchHistogram : public ros::Node
 {
   public:
 
@@ -80,7 +80,7 @@ class ConvexPatchHistogram : public ros::node
     double sac_distance_threshold_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ConvexPatchHistogram () : ros::node ("convex_patch_histogram")
+    ConvexPatchHistogram () : ros::Node ("convex_patch_histogram")
     {
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.025);     // 3 cm
 

@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 #include "gmapping/sensor/sensor_range/rangesensor.h"
 #include "gmapping/sensor/sensor_odometry/odometrysensor.h"
@@ -50,7 +50,7 @@ SlamGMapping::SlamGMapping()
   gsp_ = new GMapping::GridSlamProcessor(std::cerr);
   ROS_ASSERT(gsp_);
 
-  node_ = new ros::node("gmapping");
+  node_ = new ros::Node("gmapping");
   ROS_ASSERT(gsp_);
 
   /// @todo Disable extrapolation, and implement scan-buffering.  This is
@@ -66,7 +66,7 @@ SlamGMapping::SlamGMapping()
   got_first_scan_ = false;
 
   node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
-  node_->advertise_service("dynamic_map", &SlamGMapping::map_cb, this);
+  node_->advertiseService("dynamic_map", &SlamGMapping::map_cb, this);
   
   // Parameters used by our GMapping wrapper
   double tmp;

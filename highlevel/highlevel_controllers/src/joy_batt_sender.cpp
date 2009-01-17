@@ -37,10 +37,10 @@
 #include "robot_msgs/BatteryState.h"
 #include "joy/Joy.h"
 
-class JoyBattSender : public ros::node
+class JoyBattSender : public ros::Node
 {
   public:
-    JoyBattSender() : ros::node("joy_batt_msg")
+    JoyBattSender() : ros::Node("joy_batt_msg")
     {
       param<int>("~stop_button", stop_button_, 7);
       param<int>("~go_button", go_button_, 5);

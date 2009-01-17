@@ -33,7 +33,7 @@
  *********************************************************************/
  
  #include <control_toolbox/serialchain_model.h>
- #include <rosconsole/rosconsole.h>
+ #include <ros/console.h>
  #include <Eigen/LU>
  
 bool SerialChainModel::init(const std::string & robot_description, const std::string & chain_name)

@@ -122,7 +122,7 @@ class RosTime : public Controller
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
   /// \brief pointer to ros node
-  ros::node *rosnode_;
+  ros::Node *rosnode_;
   rostools::Time timeMsg;
 
 };

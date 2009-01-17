@@ -37,10 +37,10 @@
 
 #include <string>
 
-class CheckParams : public ros::node
+class CheckParams : public ros::Node
 {
 public:
-  CheckParams() : ros::node("param_checker")
+  CheckParams() : ros::Node("param_checker")
   {
     std_srvs::Empty::request  req;
     std_srvs::Empty::response res;

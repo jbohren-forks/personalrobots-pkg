@@ -2,7 +2,7 @@
   <description>A node and utilities for connecting to firewire cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
-  <review status="deprecated" notes="use dcam"/>
+  <review status="unreviewed" notes=""/>
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
   <export>

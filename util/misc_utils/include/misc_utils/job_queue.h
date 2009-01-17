@@ -33,19 +33,18 @@
 #ifndef REALTIME_JOB_QUEUE_H
 #define REALTIME_JOB_QUEUE_H
 
-#include <rosthread/mutex.h>
-#include <rosthread/member_thread.h>
+#include <boost/thread/mutex.hpp>
 #include <queue>
 #include <cassert>
 
-namespace misc_utils 
+namespace misc_utils
 {
 
 class JobQueueItem
 {
 public:
   JobQueueItem(){}
-  
+
   virtual void process() = 0;
 };
 
@@ -59,12 +58,12 @@ class JobQueue
 public:
   // The maximum size of the queue
   static const unsigned int MAX_QUEUE_SIZE = 100;
-  
+
   JobQueue(){}
-  
+
   //TODO: discuss policy when jobs are still in the queue
   ~JobQueue(){}
-  
+
   /** @brief adds a job to the queue (blocking call)
     * @note the job will be managed (and deleted) by the queue once it is executed, hence one should not rely on this pointer once it is passed to the queue.
     */
@@ -76,7 +75,7 @@ public:
     queue_lock_.unlock();
   }
 
-  
+
   /** @brief assigns the pointer job to the first element of the queue and removes it of the queue (blocking call)
     * @return a pointer to the first element, or NULL if the queue is empty
     */
@@ -92,13 +91,13 @@ public:
     }
     queue_lock_.unlock();
   }
-  
+
   /** @brief assigns the pointer job to the first element of the queue and removes it of the queue (non blocking call)
     * @return true if a job could be popped out of the queue and the passed pointer could be assigned, false in any other case.
     */
   bool tryGet(JobQueueItem *job)
   {
-    if(queue_lock_.trylock())
+    if(queue_lock_.try_lock())
     {
       if(!queue_.empty())
       {
@@ -111,7 +110,7 @@ public:
     }
     return false;
   }
-  
+
   /** @brief empties the queues by processing all the remaining jobs
     */
   void processAll()
@@ -126,7 +125,7 @@ public:
     }
     queue_lock_.unlock();
   }
-  
+
   /** @brief empties the queues without processing all the remaining jobs
     */
   void clear()
@@ -140,11 +139,11 @@ public:
     }
     queue_lock_.unlock();
   }
- 
+
 private:
   std::queue<JobQueueItem *> queue_;
-  ros::thread::mutex queue_lock_;  // Protects queue_
-  
+  boost::mutex queue_lock_;  // Protects queue_
+
 };
 /*
     pthread_cond_init(&updated_cond_, NULL);
@@ -230,7 +229,7 @@ private:
 private:
 
   std::string topic_;
-  ros::node *node_;
+  ros::Node *node_;
   bool is_running_;
   bool keep_running_;
 

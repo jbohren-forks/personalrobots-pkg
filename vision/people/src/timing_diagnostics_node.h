@@ -53,7 +53,7 @@
 namespace estimation
 {
 
-class TimingDiagnosticsNode: public ros::node
+class TimingDiagnosticsNode: public ros::Node
 {
 public:
   /// constructor

@@ -103,13 +103,13 @@ double max_turn = 60.0*M_PI/180.0; // rad/second
 bool always_command = false;
 
 
-class TBK_Node : public ros::node
+class TBK_Node : public ros::Node
 {
   private:
     std_msgs::BaseVel cmdvel;
 
   public:
-    TBK_Node() : ros::node("tbk")
+    TBK_Node() : ros::Node("tbk")
     {
       advertise<std_msgs::BaseVel>("cmd_vel",1);
     }

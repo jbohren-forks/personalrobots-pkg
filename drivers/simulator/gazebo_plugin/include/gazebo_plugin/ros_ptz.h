@@ -146,7 +146,7 @@ namespace gazebo
     private: ParamT<std::string> *stateTopicNameP;
 
     /// \brief pointer to ros node
-    private: ros::node *rosnode;
+    private: ros::Node *rosnode;
     /// \brief ros message
     private: axis_cam::PTZActuatorState PTZStateMessage;
     private: axis_cam::PTZActuatorCmd   PTZControlMessage;

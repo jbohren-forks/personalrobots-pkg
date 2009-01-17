@@ -3,27 +3,27 @@
 //
 // Copyright (C) 2008, Morgan Quigley
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//   * Redistributions of source code must retain the above copyright notice, 
+//   * Redistributions of source code must retain the above copyright notice,
 //     this list of conditions and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above copyright 
-//     notice, this list of conditions and the following disclaimer in the 
+//   * Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
+//   * Neither the name of Stanford University nor the names of its
+//     contributors may be used to endorse or promote products derived from
 //     this software without specific prior written permission.
-//   
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 /////////////////////////////////////////////////////////////////////////////
 
@@ -34,24 +34,24 @@ using namespace std;
 using namespace ros;
 
 // the type-safety of ROS is defeated by this message, since it uses
-// the wildcard... TODO: figure out an elegant way to snarf the incoming 
+// the wildcard... TODO: figure out an elegant way to snarf the incoming
 // messages's md5sum so we can relay it to downstream connections.
 // as on star trek, you've always got to be on the lookout for shape shifters
 
-class ShapeShifter : public msg
+class ShapeShifter : public Message
 {
 public:
   uint8_t *msgBuf;
-  uint32_t msgBufUsed, msgBufAlloc; 
+  uint32_t msgBufUsed, msgBufAlloc;
   string topicName;
-  ShapeShifter() : msg(), msgBuf(NULL), msgBufUsed(0), msgBufAlloc(0) { }
-  virtual ~ShapeShifter() { if (msgBuf) delete[] msgBuf; 
+  ShapeShifter() : Message(), msgBuf(NULL), msgBufUsed(0), msgBufAlloc(0) { }
+  virtual ~ShapeShifter() { if (msgBuf) delete[] msgBuf;
                             msgBuf = NULL; msgBufAlloc = 0; }
-  virtual const string __get_datatype() const { return string("*"); }
-  virtual const string __get_md5sum()   const { return string("*"); }
-  static const string __s_get_datatype() { return string("*"); }
-  static const string __s_get_md5sum()   { return string("*"); }
-  uint32_t serialization_length() { return msgBufUsed; }
+  virtual const string __getDataType() const { return string("*"); }
+  virtual const string __getMD5Sum()   const { return string("*"); }
+  static const string __s_getDataType() { return string("*"); }
+  static const string __s_getMD5Sum()   { return string("*"); }
+  uint32_t serializationLength() { return msgBufUsed; }
   virtual uint8_t *serialize(uint8_t *writePtr, uint32_t)
   {
     // yack up what we stored
@@ -73,7 +73,7 @@ public:
   }
 };
 
-class Mux : public node
+class Mux : public Node
 {
 public:
   ShapeShifter *inMsgs;
@@ -82,18 +82,18 @@ public:
   string outTopicName;
   uint32_t numInTopics;
 
-  Mux(string outTopic, string selTopic, vector<string> inTopics) 
-  : node("mux"), selectedTopic(NULL), outTopicName(outTopic)
+  Mux(string outTopic, string selTopic, vector<string> inTopics)
+  : Node("mux"), selectedTopic(NULL), outTopicName(outTopic)
   {
-    subscribe(selTopic, topicSelMsg, &Mux::sel_cb);
-    advertise<ShapeShifter>(outTopic);
-    advertise_service(selTopic + string("Srv"), &Mux::selSrvCB);
+    subscribe(selTopic, topicSelMsg, &Mux::sel_cb, 1);
+    advertise<ShapeShifter>(outTopic, 1);
+    advertiseService(selTopic + string("Srv"), &Mux::selSrvCB, 1);
     numInTopics = inTopics.size();
     inMsgs = new ShapeShifter[numInTopics];
     for (size_t i = 0; i < numInTopics; i++)
     {
       inMsgs[i].topicName = inTopics[i];
-      subscribe(inTopics[i], inMsgs[i], &Mux::in_cb, &inMsgs[i]);
+      subscribe(inTopics[i], inMsgs[i], &Mux::in_cb, &inMsgs[i], 1);
     }
     // by default, select the first topic
     if (numInTopics > 0)

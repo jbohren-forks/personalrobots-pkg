@@ -163,7 +163,7 @@ void LaserScannerTrajController::update()
 
   // ***** Compute the offset from tracking a link *****
   //! \todo replace this link tracker with a KDL inverse kinematics solver
-  if(track_link_lock_.trylock())
+  if(track_link_lock_.try_lock())
   {
     if (track_link_enabled_  && target_link_ && mount_link_)
     {
@@ -185,7 +185,7 @@ void LaserScannerTrajController::update()
   }
 
   // ***** Compute the current command from the trajectory profile *****
-  if (traj_lock_.trylock())
+  if (traj_lock_.try_lock())
   {
     if (traj_duration_ > 1e-6)                                   // Short trajectories could make the mod_time calculation unstable
     {
@@ -244,7 +244,7 @@ double LaserScannerTrajController::getProfileDuration()
 
 void LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points, double max_rate, double max_acc, std::string interp)
 {
-  while (!traj_lock_.trylock())
+  while (!traj_lock_.try_lock())
     usleep(100) ;
 
   vector<double> max_rates ;
@@ -302,7 +302,7 @@ void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers:
 
 void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
 {
-  while (!track_link_lock_.trylock())
+  while (!track_link_lock_.try_lock())
     usleep(100) ;
 
   if (track_link_cmd.enable)
@@ -336,7 +336,7 @@ void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers
 
 
 ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
-LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::node::instance()), c_()
+LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::Node::instance()), c_()
 {
   need_to_send_msg_ = false ;                                           // Haven't completed a sweep yet, so don't need to send a msg
   publisher_ = NULL ;                                                   // We don't know our topic yet, so we can't build it

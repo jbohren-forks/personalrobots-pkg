@@ -17,7 +17,7 @@
 using namespace std;
 using namespace ros;
 
-class CvMTurk : public node
+class CvMTurk : public Node
 {
 public:
   std_msgs::Image image_msg;
@@ -28,7 +28,7 @@ public:
   int object_count; 		//Version of image being stored
  
 
-  CvMTurk() : node("cv_mturk"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR), object_count(0)
+  CvMTurk() : Node("cv_mturk"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR), object_count(0)
   { 
     cvNamedWindow("cv_mturk", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvMTurk::image_cb, 0);
@@ -118,7 +118,7 @@ std::string cvGetString(std::string prompt, std::string init)
         case 'Q':    
 		printf("Bye bye\n");
 		cvReleaseImage(&cv_img_to_label);
-		self_destruct();
+		shutdown();
 		break;
 	case 'h': //Help
 	case 'H':
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   CvMTurk view;
-  view.spin();  //infinite loop in node which calls back to image_cb() "image call back".  exit by calling self_destruct()
+  view.spin();  //infinite loop in node which calls back to image_cb() "image call back".  exit by calling shutdown()
   ros::fini();
   return 0;
 }

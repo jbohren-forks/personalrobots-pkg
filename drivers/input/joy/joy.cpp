@@ -15,7 +15,7 @@ using namespace std;
 void *s_joy_func(void *);
 using namespace ros;
 
-class Joy : public node
+class Joy : public Node
 {
 public:
   joy::Joy joy_msg;
@@ -25,7 +25,7 @@ public:
   int deadzone;
   pthread_t joy_thread;
 
-  Joy() : node("joy")
+  Joy() : Node("joy")
   {
     param<string>("joy/dev", joy_dev, "/dev/input/js0");
     param<int>("joy/deadzone", deadzone, 2000);

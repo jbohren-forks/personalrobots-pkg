@@ -29,9 +29,8 @@
  */
 
 #include "mechanism_control/mechanism_control.h"
-#include "rosthread/member_thread.h"
-#include "misc_utils/mutex_guard.h"
-#include "rosconsole/rosconsole.h"
+#include <boost/thread/thread.hpp>
+#include "ros/console.h"
 
 using namespace mechanism;
 
@@ -114,7 +113,7 @@ void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
 
 bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
-  misc_utils::MutexGuard guard(&controllers_lock_);
+  boost::mutex::scoped_lock lock(controllers_lock_);
 
   if (getControllerByName(name))
     return false;
@@ -195,11 +194,11 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
-  if ((node_ = ros::node::instance()) == NULL) {
+  if ((node_ = ros::Node::instance()) == NULL) {
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv);
-    node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
+    node_ = new ros::Node("mechanism_control", ros::Node::DONT_HANDLE_SIGINT);
   }
 }
 
@@ -225,13 +224,13 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 
 
   // Advertise services
-  node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
+  node_->advertiseService("list_controllers", &MechanismControlNode::listControllers, this);
   list_controllers_guard_.set("list_controllers");
-  node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
+  node_->advertiseService("list_controller_types", &MechanismControlNode::listControllerTypes, this);
   list_controller_types_guard_.set("list_controller_types");
-  node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
+  node_->advertiseService("spawn_controller", &MechanismControlNode::spawnController, this);
   spawn_controller_guard_.set("spawn_controller");
-  node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
+  node_->advertiseService("kill_controller", &MechanismControlNode::killController, this);
   kill_controller_guard_.set("kill_controller");
 
   return true;

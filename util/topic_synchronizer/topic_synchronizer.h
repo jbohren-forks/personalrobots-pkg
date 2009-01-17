@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -49,7 +49,7 @@
 #include "ros/time.h"
 
   //! A templated class for synchronizing incoming topics
-  /*! 
+  /*!
    * The Topic Synchronizer should be templated by your node, and is
    * passed a function pointer at construction to be called every time
    * all of your topics have arrived.
@@ -63,17 +63,17 @@ class TopicSynchronizer
     std::list<std::string> list_;
     boost::mutex list_mutex_;
     //    ros::thread::mutex list_mutex_;
-    
+
   public:
     UnsubscribeList(std::list<std::string>& l) : list_(l) { }
 
-    void doUnsubscribe(ros::node* n, std::string topic)
+    void doUnsubscribe(ros::Node* n, std::string topic)
     {
       list_mutex_.lock();
       std::list<std::string>::iterator i = list_.begin();
       while (i != list_.end() && *i != topic)
         i++;
-      
+
       if (i != list_.end())
       {
         i++;
@@ -95,9 +95,9 @@ class TopicSynchronizer
 
   public:
 
-    UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {} 
+    UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {}
 
-    void doUnsubscribe(ros::node* node)
+    void doUnsubscribe(ros::Node* node)
     {
       ul_->doUnsubscribe(node, topic_);
     }
@@ -117,7 +117,7 @@ class TopicSynchronizer
 
   //! The callback to be called if timed out
   void (N::*timeout_callback_)(ros::Time);
-  
+
   //! The condition variable and mutex used for synchronization
   boost::condition_variable cond_all_;
   boost::mutex              cond_all_mutex_;
@@ -182,7 +182,7 @@ class TopicSynchronizer
 
       while (!done_ && *time == waiting_time_)
         cond_all_.wait(lock);
-      
+
       //      cond_all_mutex_.unlock();
       return;
     }
@@ -242,12 +242,12 @@ class TopicSynchronizer
   public:
 
   //! Constructor
-  /*! 
+  /*!
    * The constructor for the TopicSynchronizer
    *
    * \param node             A pointer to your node.
    * \param callback         A pointer to the callback to invoke when all messages have arrived
-   * \param timeout          The duration 
+   * \param timeout          The duration
    * \param timeout_callback A callback which is triggered when the timeout expires
    */
   TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
@@ -274,7 +274,7 @@ class TopicSynchronizer
   }
 
   //! Subscribe
-  /*! 
+  /*!
    * The synchronized subscribe call.  Call this to subscribe for topics you want
    * to be synchronized.
    *

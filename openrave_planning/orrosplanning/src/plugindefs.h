@@ -174,10 +174,10 @@ using namespace OpenRAVE;
 
 using namespace ros;
 
-inline ros::node* check_roscpp()
+inline ros::Node* check_roscpp()
 {
     // start roscpp
-    ros::node* pnode = ros::node::instance();
+    ros::Node* pnode = ros::Node::instance();
 
     if( pnode && !pnode->checkMaster() ) {
         ros::fini();
@@ -193,7 +193,7 @@ inline ros::node* check_roscpp()
 
         ros::init(argc,NULL);
             
-        pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME|ros::node::DONT_ADD_ROSOUT_APPENDER);
+        pnode = new ros::Node(strname, ros::Node::DONT_HANDLE_SIGINT|ros::Node::ANONYMOUS_NAME|ros::Node::DONT_ADD_ROSOUT_APPENDER);
             
         bool bCheckMaster = pnode->checkMaster();
         ros::fini();
@@ -205,16 +205,16 @@ inline ros::node* check_roscpp()
         }
         
         ros::init(argc,NULL);
-        pnode = new ros::node(strname, ros::node::DONT_HANDLE_SIGINT|ros::node::ANONYMOUS_NAME);
+        pnode = new ros::Node(strname, ros::Node::DONT_HANDLE_SIGINT|ros::Node::ANONYMOUS_NAME);
         RAVELOG_DEBUGA("new roscpp node started");
     }
 
     return pnode;
 }
 
-inline ros::node* check_roscpp_nocreate()
+inline ros::Node* check_roscpp_nocreate()
 {
-    ros::node* pnode = ros::node::instance();
+    ros::Node* pnode = ros::Node::instance();
     return (pnode && pnode->checkMaster()) ? pnode : NULL;
 }
     

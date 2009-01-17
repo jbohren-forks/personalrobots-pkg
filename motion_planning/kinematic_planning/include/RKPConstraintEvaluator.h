@@ -56,7 +56,7 @@ class KinematicConstraintEvaluator
     }
     
     virtual void clear(void) = 0;
-    virtual bool use(planning_models::KinematicModel *kmodel, const ros::msg *kc) = 0;
+    virtual bool use(planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
     virtual bool decide(void) = 0;
     virtual void print(std::ostream &out = std::cout) const
     {
@@ -73,7 +73,7 @@ class PoseConstraintEvaluator : public KinematicConstraintEvaluator
 	m_link = NULL;
     }
     
-    virtual bool use(planning_models::KinematicModel *kmodel, const ros::msg *kc)
+    virtual bool use(planning_models::KinematicModel *kmodel, const ros::Message *kc)
     {
 	const robot_msgs::PoseConstraint *pc = dynamic_cast<const robot_msgs::PoseConstraint*>(kc);
 	if (pc)

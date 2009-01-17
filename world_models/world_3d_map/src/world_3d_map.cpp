@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of the Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -75,7 +75,7 @@
 
    Subscribes to (name/type):
    - @b scan/LaserScan : scan data received from a laser
-   - @b cloud/PointCloud : cloud data 
+   - @b cloud/PointCloud : cloud data
 
    Additional subscriptions due to inheritance from NodeRobotModel:
    - @b localizedpose/RobotBase2DOdom : localized position of the robot base
@@ -104,8 +104,8 @@
 
 #include <ros/node.h>
 #include <tf/transform_listener.h>
-#include <rosthread/member_thread.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
@@ -120,12 +120,12 @@
 #include <deque>
 #include <cmath>
 
-class World3DMap : public ros::node
+class World3DMap : public ros::Node
 {
 public:
-    
+
   World3DMap(const std::string &robot_model_name) :
-    ros::node("world_3d_map"), m_tf(*this, true, 1000000000ULL)
+    ros::Node("world_3d_map"), m_tf(*this, true, 1000000000ULL)
   {
     m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 
@@ -145,22 +145,22 @@ public:
     m_acceptScans = false;
     random_utils::init(&m_rng);
 
-    /* create a thread that handles the publishing of the data */	
-    m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
+    /* create a thread that handles the publishing of the data */
+    m_publishingThread = boost::thread(&World3DMap::publishDataThread, this);
 
-    m_scanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
+    m_scanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this,
 				 boost::bind(&World3DMap::scanCallback, this, _1),
 				 "scan", "map", 50);
-    m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this, 
+    m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this,
 				 boost::bind(&World3DMap::baseScanCallback, this, _1),
 				 "cloud", "map", 50);
-    m_cloudNotifier = new tf::MessageNotifier<std_msgs::PointCloud>(&m_tf, this, 
+    m_cloudNotifier = new tf::MessageNotifier<std_msgs::PointCloud>(&m_tf, this,
 				 boost::bind(&World3DMap::pointCloudCallback, this, _1),
 				 "base_scan", "map", 50);
 
     m_robotFilter = new robot_filter::RobotFilter(this, robot_model_name, m_verbose, bodyPartScale);
   }
-    
+
   ~World3DMap(void)
   {
     delete m_robotFilter;
@@ -170,8 +170,8 @@ public:
 
     /* terminate spawned threads */
     m_active = false;
-	
-    pthread_join(*m_publishingThread, NULL);
+
+    m_publishingThread.join();
     for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
       delete m_currentWorld[i];
 
@@ -189,15 +189,15 @@ public:
   void waitForState() {
     m_robotFilter->waitForState();
   }
-    
-    
+
+
 private:
-  
+
   void pointCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
   {
     processData(*message);
   }
-    
+
   void scanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
   {
     // Project laser into point cloud
@@ -205,7 +205,7 @@ private:
     m_projector.projectLaser(*message, local_cloud, m_tiltLaserMaxRange);
     processData(local_cloud);
   }
-    
+
   void baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
   {
     // Project laser into point cloud
@@ -219,26 +219,26 @@ private:
   {
     ros::Duration *d = new ros::Duration();
     d->fromSec(1.0/m_maxPublishFrequency);
-    
+
     /* while everything else is running (map building) check if
        there are any updates to send, but do so at most at the
        maximally allowed frequency of sending data */
     while (m_active)
     {
       d->sleep();
-	
+
       m_worldDataMutex.lock();
       if (m_active && m_currentWorld.size() > 0)
       {
 	std_msgs::PointCloud toPublish;
 	toPublish.header = m_currentWorld.back()->header;
-	
+
 	unsigned int      npts  = 0;
 	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
 	  npts += m_currentWorld[i]->get_pts_size();
-	
+
 	toPublish.set_pts_size(npts);
-	
+
 	unsigned int j = 0;
 	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
 	{
@@ -246,7 +246,7 @@ private:
 	  for (unsigned int k = 0 ; k < n ; ++k)
 	    toPublish.pts[j++] =  m_currentWorld[i]->pts[k];
 	}
-	
+
 	toPublish.set_pts_size(j);
 	if (ok())
 	{
@@ -259,7 +259,7 @@ private:
     }
     delete d;
   }
-    
+
   void processData(const std_msgs::PointCloud& local_cloud)
   {
     if (!m_acceptScans){
@@ -277,7 +277,7 @@ private:
 
 
       std_msgs::PointCloud map_cloud;
-	
+
       /* Transform to the map frame */
       try
 	{
@@ -308,7 +308,7 @@ private:
 
       /* add new data */
 
-      ROS_DEBUG( "Received laser scan with %d points in frame %s\n", 
+      ROS_DEBUG( "Received laser scan with %d points in frame %s\n",
 		local_cloud.get_pts_size(), local_cloud.header.frame_id.c_str());
 
       std_msgs::PointCloud *newData = runFilters(map_cloud);
@@ -324,11 +324,11 @@ private:
 
     m_worldDataMutex.unlock();
   }
-    
+
   std_msgs::PointCloud* runFilters(const std_msgs::PointCloud &cloud)
   {
     std_msgs::PointCloud *cloudF = filter0(cloud, m_retainPointcloudFraction);
-    
+
     if (cloudF)
       {
 	std_msgs::PointCloud *temp = filter1(*cloudF);
@@ -342,7 +342,7 @@ private:
 	delete cloudF;
 	cloudF = temp;
       }
-    
+
     return cloudF;
   }
 
@@ -356,17 +356,17 @@ private:
 
     unsigned int n = cloud.get_pts_size();
     unsigned int j = 0;
-    copy->set_pts_size(n);	
+    copy->set_pts_size(n);
     for (unsigned int k = 0 ; k < n ; ++k)
       if (random_utils::uniform(&m_rng, 0.0, 1.0) < frac)
 	if (std::isfinite(cloud.pts[k].x) && std::isfinite(cloud.pts[k].y) && std::isfinite(cloud.pts[k].z))
 	  copy->pts[j++] = cloud.pts[k];
     copy->set_pts_size(j);
-	
+
     ROS_INFO("Filter 0 discarded %d points (%d left) \n", n - j, j);
 
-    return copy;	
-  } 
+    return copy;
+  }
 
 
 
@@ -377,7 +377,7 @@ private:
   {
 
     if (cloud.header.frame_id != "map") {
-      ROS_ERROR("Cloud not in the robot frame in filter1. It is in the %s frame.", 
+      ROS_ERROR("Cloud not in the robot frame in filter1. It is in the %s frame.",
 		cloud.header.frame_id.c_str());
     }
 
@@ -386,34 +386,34 @@ private:
 
     unsigned int n = cloud.get_pts_size();
     unsigned int j = 0;
-    copy->set_pts_size(n);	
+    copy->set_pts_size(n);
     for (unsigned int k = 0 ; k < n ; ++k)
       if (cloud.pts[k].z > m_retainAboveGroundThreshold)
 	copy->pts[j++] = cloud.pts[k];
     copy->set_pts_size(j);
-	
+
     ROS_INFO("Filter 1 discarded %d points (%d left) \n", n - j, j);
 
-    return copy;	
-  }       
+    return copy;
+  }
 
-    
+
   std::vector<std_msgs::PointCloud*> m_currentWorld;// Pointers to saved clouds
 
   double                           m_maxPublishFrequency;
   double                           m_baseLaserMaxRange;
   double                           m_tiltLaserMaxRange;
-  double                           m_retainPointcloudFraction;    
+  double                           m_retainPointcloudFraction;
   double                           m_retainAboveGroundThreshold;
   int                              m_verbose;
-    
+
   robot_filter::RobotFilter       *m_robotFilter;
-  tf::TransformListener            m_tf; 
+  tf::TransformListener            m_tf;
   std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
   std_msgs::PointCloud             m_inputCloud; //Buffer for recieving cloud
-  std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan    
-  pthread_t                       *m_publishingThread;
-  ros::thread::mutex               m_worldDataMutex;
+  std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan
+  boost::thread                    m_publishingThread;
+  boost::mutex               m_worldDataMutex;
   bool                             m_active, m_acceptScans;
   random_utils::rngState           m_rng;
 
@@ -434,9 +434,9 @@ void usage(const char *progname)
 }
 
 int main(int argc, char **argv)
-{  
+{
   ros::init(argc, argv);
-    
+
   if (argc == 2)
     {
       World3DMap *map = new World3DMap(argv[1]);
@@ -451,6 +451,6 @@ int main(int argc, char **argv)
     }
   else
     usage(argv[0]);
-    
-  return 0;    
+
+  return 0;
 }

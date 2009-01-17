@@ -24,7 +24,7 @@ map<string, string> parse_simple_options(int argc, char **argv, int start)
   return opts;
 }
 
-class CvMovieStreamer : public node
+class CvMovieStreamer : public Node
 {
 public:
   std_msgs::Image image_msg;
@@ -33,10 +33,10 @@ public:
   int delay, loop, qual;
 
   CvMovieStreamer(const string &_movie_fname, int _delay, int _loop, int _qual)
-  : node("cv_movie_streamer"), cv_bridge(&image_msg),
+  : Node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   {
-    advertise<std_msgs::Image>("image");
+    advertise<std_msgs::Image>("image", 1);
   }
   void stream_movie()
   {

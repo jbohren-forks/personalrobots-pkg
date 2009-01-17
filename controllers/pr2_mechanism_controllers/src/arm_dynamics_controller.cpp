@@ -171,7 +171,7 @@ void ArmDynamicsController::update(void)
 //  cout << "Updating dynamics controller " << std::endl;
   double time = robot_->hw_->current_time_;
 
-  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.try_lock())
   {
     for(unsigned int i=0; i < num_joints_; ++i)
     {
@@ -278,7 +278,7 @@ void ArmDynamicsControllerNode::update()
 bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARM DYNAMICS CONTROLLER NODE"<<std::endl;
-  ros::node * const node = ros::node::instance();
+  ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   std::cout<<"the prefix is "<<prefix<<std::endl;
 
@@ -302,13 +302,13 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command_array", &ArmDynamicsControllerNode::setJointSrv, this);
-    node->advertise_service(prefix + "/get_command", &ArmDynamicsControllerNode::getJointCmd, this);
+    node->advertiseService(prefix + "/set_command_array", &ArmDynamicsControllerNode::setJointSrv, this);
+    node->advertiseService(prefix + "/get_command", &ArmDynamicsControllerNode::getJointCmd, this);
 
 
 // Parses kinematics description
   std::string pr2Contents;
-  node->get_param("robotdesc/pr2", pr2Contents);
+  node->getParam("robotdesc/pr2", pr2Contents);
   c_->pr2_kin_.loadString(pr2Contents.c_str());
   c_->arm_chain_ = c_->pr2_kin_.getSerialChain(kdl_chain_name.c_str());
   fprintf(stderr,"Got arm chain %s\n",kdl_chain_name.c_str());

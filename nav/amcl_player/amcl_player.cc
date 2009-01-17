@@ -86,7 +86,7 @@ Publishes to (name / type):
 
 #include <deque>
 
-#include "rosconsole/rosassert.h"
+#include "ros/assert.h"
 
 // For core Player stuff (message queues, config file objects, etc.)
 #include "libplayercore/playercore.h"
@@ -118,7 +118,7 @@ const int PLAYER_QUEUE_LEN = 32;
 // libplayerdrivers.
 Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
 
-class AmclNode: public ros::node, public Driver
+class AmclNode: public ros::Node, public Driver
 {
   public:
     AmclNode();
@@ -226,7 +226,7 @@ main(int argc, char** argv)
 }
 
 AmclNode::AmclNode() :
-        ros::node("amcl_player"), 
+        ros::Node("amcl_player"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN),
         have_laser_pose(false)
         //tfClient(*this)

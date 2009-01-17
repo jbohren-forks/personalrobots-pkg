@@ -108,7 +108,7 @@ Publishes to (name / type):
 
 namespace ros
 {
-class node;
+class Node;
 }
 
 namespace ogre_tools
@@ -152,7 +152,7 @@ public:
   Ogre::Camera* getCamera() { return camera_; }
   Ogre::SceneNode* getRootNode() { return root_node_; }
   ogre_tools::wxOgreRenderWindow* getRenderPanel() { return render_panel_; }
-  ros::node* getROSNode() { return ros_node_; }
+  ros::Node* getROSNode() { return ros_node_; }
   float getMapResolution() { return map_resolution_; }
   int getMapWidth() { return map_width_; }
   int getMapHeight() { return map_height_; }
@@ -197,7 +197,7 @@ protected:
   Ogre::Camera* camera_;
   ogre_tools::wxOgreRenderWindow* render_panel_;
 
-  ros::node* ros_node_;
+  ros::Node* ros_node_;
   tf::TransformListener* tf_client_;
 
   float map_resolution_;

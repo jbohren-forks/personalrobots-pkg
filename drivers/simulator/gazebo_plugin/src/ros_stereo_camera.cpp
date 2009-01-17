@@ -64,7 +64,7 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
   {
     // this only works for a single camera.
     ros::init(argc,argv);
-    rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node in stereo camera \n");
   }
 }
@@ -111,10 +111,10 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->rightFrameName = node->GetString("rightFrameName","default_ros_stereocamera_right_frame",0); //read from xml file
 
   std::cout << "================= " << this->leftCloudTopicName << std::endl;
-  rosnode->advertise<std_msgs::PointCloud>(this->leftCloudTopicName);
-  rosnode->advertise<std_msgs::PointCloud>(this->rightCloudTopicName);
-  rosnode->advertise<std_msgs::Image>(this->leftTopicName);
-  rosnode->advertise<std_msgs::Image>(this->rightTopicName);
+  rosnode->advertise<std_msgs::PointCloud>(this->leftCloudTopicName, 1);
+  rosnode->advertise<std_msgs::PointCloud>(this->rightCloudTopicName, 1);
+  rosnode->advertise<std_msgs::Image>(this->leftTopicName, 1);
+  rosnode->advertise<std_msgs::Image>(this->rightTopicName, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

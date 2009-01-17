@@ -486,7 +486,7 @@ namespace controller
     /*!
      * \brief mutex lock for setting and getting ros messages
      */
-    ros::thread::mutex ros_lock_;
+    boost::mutex ros_lock_;
 
     /*!
      * \brief std_msgs representation of an odometry message
@@ -512,7 +512,7 @@ namespace controller
     /*
      * \brief pointer to ros node
      */
-    ros::node *node;
+    ros::Node *node;
     /*
      * \brief save service name prefix for unadvertise on exit
      */

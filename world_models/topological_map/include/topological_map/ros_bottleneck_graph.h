@@ -38,7 +38,7 @@
 #include <sysexits.h>
 #include <boost/thread.hpp>
 #include <ros/node.h>
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include "topological_map/roadmap_bottleneck_graph.h"
@@ -51,7 +51,7 @@ namespace topological_map
 
 enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
 
-class BottleneckGraphRos: public ros::node
+class BottleneckGraphRos: public ros::Node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);

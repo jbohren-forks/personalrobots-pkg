@@ -3,18 +3,18 @@
 using namespace std;
 using namespace plan_path_node;
 
-PlanPathNode::PlanPathNode(std::string node_name):ros::node(node_name)
+PlanPathNode::PlanPathNode(std::string node_name):ros::Node(node_name)
 {
 };
 
 void PlanPathNode::init()
 {
-  this->advertise_service("plan_path_node/GetPlan", &PlanPathNode::planPath, this);
+  this->advertiseService("plan_path_node/GetPlan", &PlanPathNode::planPath, this);
 }
 
 PlanPathNode::~PlanPathNode()
 {
-  this->unadvertise_service("plan_path_node/GetPlan");
+  this->unadvertiseService("plan_path_node/GetPlan");
 };
 
 void PrintUsage(char *argv[])

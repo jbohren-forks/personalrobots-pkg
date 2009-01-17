@@ -53,7 +53,7 @@
 
 using namespace std_msgs;
 
-class BagToPcd: public ros::node
+class BagToPcd: public ros::Node
 {
   public:
 
@@ -68,7 +68,7 @@ class BagToPcd: public ros::node
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    BagToPcd () : ros::node ("bag_pcd"), dump_to_disk_(false), tf_(*this)
+    BagToPcd () : ros::Node ("bag_pcd"), dump_to_disk_(false), tf_(*this)
     {
       subscribe ("tilt_laser_cloud", cloud_, &BagToPcd::cloud_cb, 1);
     }

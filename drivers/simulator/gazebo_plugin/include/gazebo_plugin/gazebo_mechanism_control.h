@@ -157,7 +157,7 @@ private:
   /*
    *  \brief pointer to ros node
    */
-  ros::node *rosnode_;
+  ros::Node *rosnode_;
 
   /*
    *  \brief tmp vars for performance checking

@@ -33,7 +33,7 @@
 #include <gazebo/Body.hh>
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 #include <std_msgs/Vector3Stamped.h>
 
 namespace gazebo
@@ -95,7 +95,7 @@ class RosF3D : public Controller
 
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::node *rosnode;
+  private: ros::Node *rosnode;
 
   /// \brief ROS Vector3Stamped message
   private: std_msgs::Vector3Stamped vector3Msg;
@@ -108,7 +108,7 @@ class RosF3D : public Controller
   private: std::string frameName;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
-  private: ros::thread::mutex lock;
+  private: boost::mutex lock;
 
 };
 

@@ -31,13 +31,13 @@
 #include "std_msgs/LaserScan.h"
 #include "laser_scan/median_filter.h"
 
-class MedianFilterNode : public ros::node
+class MedianFilterNode : public ros::Node
 {
 public:
   std_msgs::LaserScan msg;
 
 
-  MedianFilterNode() : ros::node("median_filter_node"), filter(5)
+  MedianFilterNode() : ros::Node("median_filter_node"), filter(5)
   {
     advertise<std_msgs::LaserScan>("~output", 1000);
     subscribe("scan_in", msg, &MedianFilterNode::callback, 3);

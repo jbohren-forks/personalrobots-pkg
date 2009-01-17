@@ -181,7 +181,7 @@ JointCalibrationControllerNode::~JointCalibrationControllerNode()
 
     // I think we're all tired of having the "cal" topics cluttering
     // up rostopic and rosgraphviz.
-    ros::node::instance()->unadvertise(topic);
+    ros::Node::instance()->unadvertise(topic);
   }
 }
 

@@ -252,7 +252,7 @@ private:
   /*!
    * \brief A pointer to ros node
    */
-  ros::node *node_;
+  ros::Node *node_;
   
   LaserScannerController::ProfileExecutionState prev_profile_exec_state_ ;       //!< Store the previous profileExecutionState. Need this to compare to the current state to detect transitions
   pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep

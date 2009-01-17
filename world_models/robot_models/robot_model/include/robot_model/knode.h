@@ -94,7 +94,7 @@ namespace robot_model
         planning_models::KinematicModel::StateParams* getRobotStateSimple() { return m_robotStateSimple; }
       
 	
-        NodeRobotModel(ros::node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
+        NodeRobotModel(ros::Node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    m_urdf = NULL;
@@ -300,7 +300,7 @@ namespace robot_model
 	
 	
 	tf::TransformListener                         m_tf; 
-	ros::node                                    *m_node;
+	ros::Node                                    *m_node;
 	std_msgs::RobotBase2DOdom                     m_localizedPose;
 	bool                                          m_haveBasePos;	
 	

@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="rosthread" />
+  <depend package="boost" />
   <export>
     <cpp cflags="-I${prefix} -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG"/>
   </export>

@@ -49,11 +49,11 @@
 
 namespace pr2_phase_space
 {
-class PhaseSpaceOdometry : public ros::node
+class PhaseSpaceOdometry : public ros::Node
 {
 public :
   
-  PhaseSpaceOdometry() : ros::node("phase_space_odometry")
+  PhaseSpaceOdometry() : ros::Node("phase_space_odometry")
   {
     advertise<std_msgs::TransformWithRateStamped>("phase_space_odom", 10) ;
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceOdometry::snapshotCallback, 10) ;

@@ -39,7 +39,7 @@
 #include "image_utils/image_codec.h"
 #include "simple_sdl_gui/SDLKeyEvent.h"
 
-class Simple_SDL_GUI : public ros::node
+class Simple_SDL_GUI : public ros::Node
 {
 public:
   std_msgs::Image image;
@@ -52,7 +52,7 @@ public:
 
   bool new_image;
 
-  Simple_SDL_GUI() : ros::node("simple_sdl_gui"), codec(&image), blit_prep(NULL)
+  Simple_SDL_GUI() : ros::Node("simple_sdl_gui"), codec(&image), blit_prep(NULL)
   {
     subscribe("image", image, &Simple_SDL_GUI::image_received);
     advertise<simple_sdl_gui::SDLKeyEvent>("key");

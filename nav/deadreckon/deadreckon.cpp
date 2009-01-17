@@ -35,7 +35,7 @@
 using namespace std;
 using namespace ros;
 
-class DeadReckon : public ros::node
+class DeadReckon : public ros::Node
 {
 public:
   std_msgs::BaseVel velMsg;
@@ -49,7 +49,7 @@ public:
     DR_IDLE
   } drState;
 
-  DeadReckon() : node("DeadReckon"), drState(DR_IDLE), tgtX(0), tgtY(0),
+  DeadReckon() : Node("DeadReckon"), drState(DR_IDLE), tgtX(0), tgtY(0),
                  tgtTh(0)
   {
     param("drMaxTV", maxTV, 0.3);
@@ -57,9 +57,9 @@ public:
     param("drDistEps", distEps, 0.05);
     param("drHeadEps", headEps, 0.1);
     param("drFinalEps", finalEps, 0.05);
-    advertise_service("DriveDeadReckon", &DeadReckon::dr_cb);
-    subscribe("odom", odomMsg, &DeadReckon::odom_cb);
-    advertise<std_msgs::BaseVel>("cmd_vel");
+    advertiseService("DriveDeadReckon", &DeadReckon::dr_cb);
+    subscribe("odom", odomMsg, &DeadReckon::odom_cb, 1);
+    advertise<std_msgs::BaseVel>("cmd_vel", 1);
   }
   bool dr_cb(deadreckon::DriveDeadReckon::request  &req,
              deadreckon::DriveDeadReckon::response &res)

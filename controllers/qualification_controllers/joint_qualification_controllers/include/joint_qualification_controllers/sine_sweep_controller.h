@@ -91,7 +91,7 @@ private:
   double initial_time_;                     /**< Start time of the sweep. */
   int count_;
   bool done_;
-  ros::node* node;
+  ros::Node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   robot_msgs::TestData test_data_;
 };

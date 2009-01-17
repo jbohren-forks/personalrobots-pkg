@@ -306,13 +306,13 @@ bool LaserScannerQualificationNode::getCommand(
 
 bool LaserScannerQualificationNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(prefix + "/set_command", &LaserScannerQualificationNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &LaserScannerQualificationNode::getCommand, this);
+  node->advertiseService(prefix + "/set_command", &LaserScannerQualificationNode::setCommand, this);
+  node->advertiseService(prefix + "/get_command", &LaserScannerQualificationNode::getCommand, this);
   return true;
 }
 bool LaserScannerQualificationNode::getActual(

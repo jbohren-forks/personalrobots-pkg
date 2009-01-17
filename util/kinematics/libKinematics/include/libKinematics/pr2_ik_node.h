@@ -43,7 +43,7 @@ namespace kinematics
 
   #define NUM_JOINTS 7
 
-  class LibKinematicsNode : public ros::node
+  class LibKinematicsNode : public ros::Node
   {
     /**
      * @brief Initialize the kinematics library 

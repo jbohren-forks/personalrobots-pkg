@@ -65,7 +65,7 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
     {
       // this only works for a single camera.
       ros::init(argc,argv);
-      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+      rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
       printf("-------------------- starting node in Gazebo Mechanism Control \n");
     }
 
@@ -232,14 +232,14 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 {
 
   std::string tmp_param_string;
-  this->rosnode_->get_param("robotdesc/pr2",tmp_param_string);
+  this->rosnode_->getParam("robotdesc/pr2",tmp_param_string);
 
 
   // wait for robotdesc/pr2 on param server
   while(tmp_param_string.empty())
   {
     std::cout << "WARNING: gazebo mechanism control plugin is waiting for robotdesc/pr2 in param server.  run merge/roslaunch send.xml or similar." << std::endl;
-    this->rosnode_->get_param("robotdesc/pr2",tmp_param_string);
+    this->rosnode_->getParam("robotdesc/pr2",tmp_param_string);
     usleep(100000);
   }
 

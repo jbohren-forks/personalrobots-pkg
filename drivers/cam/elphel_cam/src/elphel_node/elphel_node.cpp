@@ -51,7 +51,7 @@
 using namespace std;
 
 
-class Elphel_Node : public ros::node
+class Elphel_Node : public ros::Node
 {
 public:
   std_msgs::Image image_msg;
@@ -65,7 +65,7 @@ public:
   Elphel_Cam *e; //("10.12.0.103");
   IplImage* img;
 
-  Elphel_Node() : ros::node("elphel"), cv_bridge(&image_msg), codec(&image_msg)
+  Elphel_Node() : ros::Node("elphel"), cv_bridge(&image_msg), codec(&image_msg)
   {
       advertise<std_msgs::Image>("elphel_bus");
       e = new Elphel_Cam("10.12.0.103");

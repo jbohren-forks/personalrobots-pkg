@@ -39,7 +39,7 @@ using namespace trajectory_rollout;
 
 
 GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
-  ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
+  ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, (uint64_t)10000000000ULL), 
   ma_(map_, OUTER_RADIUS),
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, 
@@ -56,7 +56,7 @@ GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec)
   //so we can draw the robot footprint to help with debugging
   advertise<std_msgs::Polyline2D>("robot_footprint", 10);
 
-  advertise<std_msgs::BaseVel>("cmd_vel");
+  advertise<std_msgs::BaseVel>("cmd_vel", 1);
   subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
   subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
 }

@@ -50,7 +50,7 @@
 using namespace std;
 using namespace color_calib;
 
-class ColorCalib : public ros::node
+class ColorCalib : public ros::Node
 {
 public:
   image_msgs::Image image;
@@ -62,7 +62,7 @@ public:
 
   bool first;
 
-  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), color_cal(this), first(true)
+  ColorCalib() : Node("color_calib", ros::Node::ANONYMOUS_NAME), color_cal(this), first(true)
   { 
     subscribe("image", image, &ColorCalib::image_cb, 1);
   }
@@ -110,7 +110,7 @@ public:
     cv_mutex.lock();
 
     if (cvWaitKey(3) == 10)
-      self_destruct();
+      shutdown();
 
     cv_mutex.unlock();
   }

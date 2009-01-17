@@ -80,15 +80,15 @@ Publishes to (name / type):
 
 #include <angles/angles.h>
 
-#include "rosconsole/rosconsole.h"
+#include "ros/console.h"
 
 #include "tf/transform_broadcaster.h"
 
 
-class FakeOdomNode: public ros::node
+class FakeOdomNode: public ros::Node
 {
 public:
-    FakeOdomNode(void) : ros::node("fake_localization")
+    FakeOdomNode(void) : ros::Node("fake_localization")
     {
       advertise<std_msgs::RobotBase2DOdom>("localizedpose",1);
       advertise<std_msgs::ParticleCloud2D>("particlecloud",1);

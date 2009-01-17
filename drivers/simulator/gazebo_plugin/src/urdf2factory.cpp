@@ -470,10 +470,10 @@ int main(int argc, char **argv)
 
     // Load parameter server string for pr2 robot description
     ros::init(argc,argv);
-    ros::node* rosnode = new ros::node("pr2_factory",ros::node::DONT_HANDLE_SIGINT);
+    ros::Node* rosnode = new ros::Node("pr2_factory",ros::Node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
-    rosnode->get_param(argv[1],xml_content);
+    rosnode->getParam(argv[1],xml_content);
 
     // Parse URDF to get gazebo model.
     bool enforce_limits = true;

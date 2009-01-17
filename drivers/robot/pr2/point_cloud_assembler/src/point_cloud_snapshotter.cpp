@@ -53,7 +53,7 @@ using namespace std_msgs ;
 namespace point_cloud_assembler
 {
 
-class PointCloudSnapshotter : public ros::node
+class PointCloudSnapshotter : public ros::Node
 {
 
 public:
@@ -65,7 +65,7 @@ public:
 
   std::string fixed_frame_ ;
 
-  PointCloudSnapshotter() : ros::node("point_cloud_snapshotter")
+  PointCloudSnapshotter() : ros::Node("point_cloud_snapshotter")
   {
     prev_signal_.header.stamp.fromNSec(0) ;
 

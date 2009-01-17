@@ -208,13 +208,13 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   std::string joint_name;
 
   std::string xml_content;
-  (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+  (ros::g_node)->getParam("robotdesc/pr2",xml_content);
 
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
   {
     ROS_INFO("WARNING: base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
-    (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+    (ros::g_node)->getParam("robotdesc/pr2",xml_content);
     usleep(100000);
   }
 
@@ -780,7 +780,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
   BaseControllerNode::BaseControllerNode()
 {
   c_ = new BaseController();
-  node = ros::node::instance();
+  node = ros::Node::instance();
   last_time_message_sent_ = 0.0;
   odom_publish_rate_ = 100.0;
   odom_publish_delta_t_ = 1.0/odom_publish_rate_;
@@ -792,10 +792,10 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
 
 BaseControllerNode::~BaseControllerNode()
 {
-  node->unadvertise_service(service_prefix + "/set_command");
-  node->unadvertise_service(service_prefix + "/get_actual");
-  node->unadvertise_service(service_prefix + "/set_wheel_radius_multiplier");
-  node->unadvertise_service(service_prefix + "/get_wheel_radius_multiplier");
+  node->unadvertiseService(service_prefix + "/set_command");
+  node->unadvertiseService(service_prefix + "/get_actual");
+  node->unadvertiseService(service_prefix + "/set_wheel_radius_multiplier");
+  node->unadvertiseService(service_prefix + "/get_wheel_radius_multiplier");
 
   node->unsubscribe("cmd_vel");
 
@@ -974,7 +974,7 @@ bool BaseControllerNode::setWheelRadiusMultiplier(
   double param_multiplier;
   node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
 
-  node->set_param("base_controller/wheel_radius_multiplier",param_multiplier*calibration_multiplier);
+  node->setParam("base_controller/wheel_radius_multiplier",param_multiplier*calibration_multiplier);
 
   return true;
 }
@@ -989,14 +989,14 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   if(!c_->initXml(robot_state, config))
     return false;
 
-  node->advertise_service(service_prefix + "/set_wheel_radius_multiplier", &BaseControllerNode::setWheelRadiusMultiplier,this);
-  node->advertise_service(service_prefix + "/get_wheel_radius_multiplier", &BaseControllerNode::getWheelRadiusMultiplier,this);
+  node->advertiseService(service_prefix + "/set_wheel_radius_multiplier", &BaseControllerNode::setWheelRadiusMultiplier,this);
+  node->advertiseService(service_prefix + "/get_wheel_radius_multiplier", &BaseControllerNode::getWheelRadiusMultiplier,this);
 
 
-  node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
-  node->advertise_service(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+  node->advertiseService(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
+  node->advertiseService(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
-  node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
+  node->advertiseService(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
 

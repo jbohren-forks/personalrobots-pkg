@@ -44,7 +44,7 @@
 #include <sysexits.h>
 #include <boost/graph/breadth_first_search.hpp>     
 #include <boost/graph/connected_components.hpp>     
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 #include <set>
 
 using boost::get;

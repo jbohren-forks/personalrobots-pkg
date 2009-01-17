@@ -342,7 +342,7 @@ bool JointAutotunerNode::getActual(
 
 bool JointAutotunerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-ros::node *node = ros::node::instance();
+ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
@@ -354,8 +354,8 @@ ros::node *node = ros::node::instance();
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(prefix + "/set_command", &JointAutotunerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointAutotunerNode::getActual, this);
+  node->advertiseService(prefix + "/set_command", &JointAutotunerNode::setCommand, this);
+  node->advertiseService(prefix + "/get_actual", &JointAutotunerNode::getActual, this);
   return true;
 
 

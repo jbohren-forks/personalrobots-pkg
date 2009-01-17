@@ -48,7 +48,7 @@ namespace estimation
 {
   // constructor
   TimingDiagnosticsNode::TimingDiagnosticsNode()
-    : ros::node(node_name)
+    : ros::Node(node_name)
   {
     // subscribe to messages
     subscribe("people_tracker_measurements", measurement_, &TimingDiagnosticsNode::callbackMeasurement, 10);

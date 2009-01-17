@@ -43,11 +43,11 @@
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 
-class AvoidMonster : public ros::node
+class AvoidMonster : public ros::Node
 {
 public:
     
-    AvoidMonster(void) : ros::node("avoid_monster")
+    AvoidMonster(void) : ros::Node("avoid_monster")
     {
     }
   

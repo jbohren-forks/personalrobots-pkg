@@ -21,7 +21,7 @@ struct imgData
   CvBridge<std_msgs::Image> *bridge;
 };
 
-class CvView : public ros::node
+class CvView : public ros::Node
 {
 public:
   std_msgs::ImageArray image_msg;
@@ -35,7 +35,7 @@ public:
 
   map<string, imgData> images;
 
-  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME),
+  CvView() : Node("cv_view", ros::Node::ANONYMOUS_NAME),
              img_cnt(0), made_dir(false)
   {
     subscribe("images", image_msg, &CvView::image_cb, 1);

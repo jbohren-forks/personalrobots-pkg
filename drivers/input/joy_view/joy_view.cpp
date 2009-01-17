@@ -7,14 +7,14 @@
 
 using namespace ros;
 
-class JoyView : public node, public SDLGL
+class JoyView : public Node, public SDLGL
 {
 public:
   joy::Joy joy;
 
-  JoyView() : node("joy_view")
+  JoyView() : Node("joy_view")
   {
-    subscribe("joy", joy, &JoyView::joy_cb);
+    subscribe("joy", joy, &JoyView::joy_cb, 1);
     init_gui(640, 480, "nav view");
   }
   void joy_cb()

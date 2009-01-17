@@ -32,7 +32,7 @@
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
 
-class CarmenLogger : public ros::node
+class CarmenLogger : public ros::Node
 {
 public:
   std_msgs::LaserScan laserMsg;
@@ -40,8 +40,8 @@ public:
   double robot_x, robot_y, robot_th, robot_tv, robot_rv;
   double start_time;
   FILE *f;
-  ros::thread::mutex log_mutex;
-  CarmenLogger() : ros::node("carmenLogger"), 
+  boost::mutex log_mutex;
+  CarmenLogger() : ros::Node("carmenLogger"), 
                    robot_x(0), robot_y(0), robot_th(0), start_time(0)
   {
     f = fopen("carmen.log", "w");

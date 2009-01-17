@@ -323,16 +323,16 @@ bool LaserScannerVelocityControllerNode::setProfile(
 
 bool LaserScannerVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(prefix + "/set_command", &LaserScannerVelocityControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &LaserScannerVelocityControllerNode::getCommand, this);
-  node->advertise_service(prefix + "/set_profile", &LaserScannerVelocityControllerNode::setProfile, this);
-  node->advertise_service(prefix + "/set_position", &LaserScannerVelocityControllerNode::setPosition, this);
-  node->advertise_service(prefix + "/get_position", &LaserScannerVelocityControllerNode::getPosition, this);
+  node->advertiseService(prefix + "/set_command", &LaserScannerVelocityControllerNode::setCommand, this);
+  node->advertiseService(prefix + "/get_command", &LaserScannerVelocityControllerNode::getCommand, this);
+  node->advertiseService(prefix + "/set_profile", &LaserScannerVelocityControllerNode::setProfile, this);
+  node->advertiseService(prefix + "/set_position", &LaserScannerVelocityControllerNode::setPosition, this);
+  node->advertiseService(prefix + "/get_position", &LaserScannerVelocityControllerNode::getPosition, this);
   return true;
 }
 

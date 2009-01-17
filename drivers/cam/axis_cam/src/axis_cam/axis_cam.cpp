@@ -39,7 +39,7 @@
 
 #include "self_test/self_test.h"
 
-class Axis_cam_node : public ros::node
+class Axis_cam_node : public ros::Node
 {
 public:
   std_msgs::ImageArray images;
@@ -54,11 +54,11 @@ public:
   ros::Time next_time;
   int count_;
 
-  Axis_cam_node() : ros::node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
+  Axis_cam_node() : ros::Node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
   {
     advertise<std_msgs::Image>("image", 1);
     advertise<std_msgs::ImageArray>("images", 1);
-    advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
+    advertiseService("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
     printf("axis_ptz host set to [%s]\n", axis_host.c_str());

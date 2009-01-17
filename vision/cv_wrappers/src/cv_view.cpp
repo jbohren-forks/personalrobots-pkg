@@ -12,7 +12,7 @@
 
 using namespace std;
 
-class CvView : public ros::node
+class CvView : public ros::Node
 {
 public:
   std_msgs::Image image_msg;
@@ -26,7 +26,7 @@ public:
   int img_cnt;
   bool made_dir;
 
-  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U),
+  CvView() : Node("cv_view", ros::Node::ANONYMOUS_NAME), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U),
              cv_image(0), img_cnt(0), made_dir(false)
   {
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);

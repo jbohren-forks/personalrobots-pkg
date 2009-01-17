@@ -87,7 +87,7 @@ public:
 
     bool Init()
     {
-        node* pnode = node::instance();
+        Node* pnode = Node::instance();
         if( pnode == NULL )
             return false;
         
@@ -177,7 +177,7 @@ public:
     {
         shutdown();
 
-        node* pnode = node::instance();
+        Node* pnode = Node::instance();
         if( pnode == NULL )
             return;
 

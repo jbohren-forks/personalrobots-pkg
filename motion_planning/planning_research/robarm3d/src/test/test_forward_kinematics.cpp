@@ -53,10 +53,10 @@ int main( int argc, char** argv )
   //Initialize ROS
   ros::init(argc, argv);
 
-  ros::node test_forward_kin("test_forward_kin");
+  ros::Node test_forward_kin("test_forward_kin");
 
   std::string pr2Content;
-  test_forward_kin.get_param("robotdesc/pr2",pr2Content);
+  test_forward_kin.getParam("robotdesc/pr2",pr2Content);
 
   RobotKinematics pr2_kin;
   pr2_kin.loadString(pr2Content.c_str());  // parse the big pr2.xml string from ros

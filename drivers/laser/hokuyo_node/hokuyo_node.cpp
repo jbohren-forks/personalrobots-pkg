@@ -114,7 +114,7 @@ Reads the following parameters from the parameter server
 
 using namespace std;
 
-class HokuyoNode: public ros::node
+class HokuyoNode: public ros::Node
 {
 private:
   hokuyo::LaserScan  scan_;
@@ -144,44 +144,44 @@ public:
   string device_status_;
   string connect_fail_;
 
-  HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
+  HokuyoNode() : ros::Node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::LaserScan>("scan", 100);
 
-    if (has_param("~min_ang_degrees") && has_param("~min_ang"))
+    if (hasParam("~min_ang_degrees") && hasParam("~min_ang"))
     {
       ROS_FATAL("Minimum angle is specified in both radians and degrees");
-      self_destruct();
+      shutdown();
     }
 
-    if (has_param("~max_ang_degrees") && has_param("~max_ang"))
+    if (hasParam("~max_ang_degrees") && hasParam("~max_ang"))
     {
       ROS_FATAL("Maximum angle is specified in both radians and degrees");
-      self_destruct();
+      shutdown();
     }
 
-    if (has_param("~min_ang_degrees"))
+    if (hasParam("~min_ang_degrees"))
     {
-      get_param("~min_ang_degrees", min_ang_);
+      getParam("~min_ang_degrees", min_ang_);
       min_ang_ *= M_PI/180;
     }
-    else if (has_param("~min_ang"))
+    else if (hasParam("~min_ang"))
     {
-      get_param("~min_ang", min_ang_);
+      getParam("~min_ang", min_ang_);
     }
     else
     {
       min_ang_ = -M_PI/2.0;
     }
 
-    if (has_param("~max_ang_degrees"))
+    if (hasParam("~max_ang_degrees"))
     {
-      get_param("~max_ang_degrees", max_ang_);
+      getParam("~max_ang_degrees", max_ang_);
       max_ang_ *= M_PI/180;
     }
-    else if (has_param("~max_ang"))
+    else if (hasParam("~max_ang"))
     {
-      get_param("~max_ang", max_ang_);
+      getParam("~max_ang", max_ang_);
     }
     else
     {
@@ -244,10 +244,10 @@ public:
      
       laser_.getConfig(config);
 
-      set_param("~min_ang_limit", (double)(config.min_angle));
-      set_param("~max_ang_limit", (double)(config.max_angle));
-      set_param("~min_range", (double)(config.min_range));
-      set_param("~max_range", (double)(config.max_range));
+      setParam("~min_ang_limit", (double)(config.min_angle));
+      setParam("~max_ang_limit", (double)(config.max_angle));
+      setParam("~min_range", (double)(config.min_range));
+      setParam("~max_range", (double)(config.max_range));
 
       int status = laser_.requestScans(intensity_, min_ang_, max_ang_, cluster_, skip_);
 
@@ -420,7 +420,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (num_subscribers("scan") == 0)
+    if (numSubscribers("scan") == 0)
     {
       status.level = 0;
       status.message = "No operation interrupted.";

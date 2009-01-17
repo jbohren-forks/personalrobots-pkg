@@ -35,7 +35,7 @@
 #include <ethercat_hardware/ek1122.h>
 #include <iomanip>
 
-#include <rosconsole/rosconsole.h>
+#include <ros/console.h>
 
 static bool reg = DeviceFactory::Instance().Register(EK1122::PRODUCT_CODE, deviceCreator<EK1122>);
 

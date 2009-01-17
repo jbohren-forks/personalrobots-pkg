@@ -77,13 +77,13 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   }
 
   // parse robot description from xml file
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
   robot_kinematics::RobotKinematics robot_kinematics ;
   string robot_desc;
   node->param("robotdesc/pr2", robot_desc, string("")) ;
   robot_kinematics.loadString(robot_desc.c_str()) ;
   robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm");
-  if (serial_chain == NULL)  
+  if (serial_chain == NULL)
     fprintf(stderr, "Got NULL Chain\n") ;
 
   // some parameters
@@ -137,15 +137,15 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   }
 
   // Works up the chain, from the tip to the root, and get joints
-  while (current->link_->name_ != std::string(root_name)) 
+  while (current->link_->name_ != std::string(root_name))
     {
       // get joint from current link
       joints_.push_back(robot->getJointState(current->link_->joint_name_));
       assert(joints_[joints_.size()-1]);
-      
+
       // get parent link
       current = robot->getLinkState(current->link_->parent_name_);
-      
+
       if (!current) {
 	fprintf(stderr, "Error: for EndeffectorConstraintController, tip is not connected to root\n");
 	return false;
@@ -171,19 +171,19 @@ void EndeffectorConstraintController::update()
     if (!joints_[i]->calibrated_)
       return;
   }
-  
+
   // get the joint positions
   JntArray jnt_pos(num_joints_);
   for (unsigned int i=0; i<num_joints_; i++)
     jnt_pos(i) = joints_[i]->position_;
-  
+
   // get the chain jacobian
   Jacobian jacobian(num_joints_, num_segments_);
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
-  
+
   // get endeffector pose
   jnt_to_pose_solver_->JntToCart(jnt_pos, endeffector_frame_);
-  
+
   computeConstraintJacobian();
 
   constraint_wrench_ = constraint_jac_ * constraint_force_;
@@ -207,14 +207,14 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   //clear force vector
   double f_x = 0;
   double f_r = 0;
-  
+
   double ee_theta = atan2((endeffector_frame_.p(2)-1),endeffector_frame_.p(1) );
-  
+
   //Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 1; // this is the end of the cylinder
   constraint_jac_(1,1) = cos(ee_theta);
   constraint_jac_(2,1) = sin(ee_theta)+1;
- 
+
   //Constraint Force Vector
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
   ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
@@ -242,13 +242,13 @@ void EndeffectorConstraintController::computeConstraintJacobian()
     if(r_dist_to_wall > threshold_r)
     {
       //ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
-    } 
+    }
   }
   else
   {
     f_r = 0;
   }
-  
+
   constraint_force_(0) = f_x;
   constraint_force_(1) = f_r;
 
@@ -261,7 +261,7 @@ ROS_REGISTER_CONTROLLER(EndeffectorConstraintControllerNode)
 
 
 EndeffectorConstraintControllerNode::EndeffectorConstraintControllerNode()
-: node_(ros::node::instance())
+: node_(ros::Node::instance())
 {
 }
 
@@ -280,10 +280,10 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
     return false;
   }
 
-  // initialize controller  
+  // initialize controller
   if (!controller_.initXml(robot, config))
     return false;
-  
+
   assert(node_);
   // subscribe to wrench commands
   node_->subscribe(topic_ + "/command", wrench_msg_,
@@ -303,7 +303,7 @@ void EndeffectorConstraintControllerNode::update()
   count++;
   if (count%100==0)
   {
-    
+
     std_msgs::VisualizationMarker marker;
     marker.header.frame_id = "base_link";
     marker.id = 0;
@@ -324,7 +324,7 @@ void EndeffectorConstraintControllerNode::update()
     marker.b = 0;
     node_->publish("visualizationMarker", marker );
   }
-  
+
   if (count%100==0)
   {
 
@@ -348,15 +348,15 @@ void EndeffectorConstraintControllerNode::update()
     marker.b = 0;
     node_->publish("visualizationMarker", marker );
   }
-  
-  
-  
+
+
+
 }
 
 
 void EndeffectorConstraintControllerNode::command()
 {
-  
+
   // convert to wrench command
   controller_.wrench_desi_.force(0) = wrench_msg_.force.x;
   controller_.wrench_desi_.force(1) = wrench_msg_.force.y;
@@ -364,7 +364,7 @@ void EndeffectorConstraintControllerNode::command()
   controller_.wrench_desi_.torque(0) = wrench_msg_.torque.x;
   controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
   controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
-  
+
   ROS_WARN("force magnitude (%f, %f, %f)\n",controller_.wrench_desi_.force(0),controller_.wrench_desi_.force(1),controller_.wrench_desi_.force(1));
 }
 

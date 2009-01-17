@@ -35,7 +35,7 @@
 #pragma once
 
 #include <ros/node.h>
-#include <rosthread/mutex.h>
+#include <boost/thread/mutex.hpp>
 
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
@@ -109,7 +109,7 @@ namespace controller
      */
     virtual void update(void); // Real time safe.
 
-    ros::thread::mutex arm_controller_lock_;
+    boost::mutex arm_controller_lock_;
 
     controller::JointPDController* getJointControllerByName(std::string name);
 
@@ -222,7 +222,7 @@ namespace controller
     /*!
      * \brief mutex lock for setting and getting ros messages
      */
-    ros::thread::mutex ros_lock_;
+    boost::mutex ros_lock_;
 
     pr2_mechanism_controllers::JointTraj traj_msg_;
 
@@ -247,7 +247,7 @@ namespace controller
     /*
      * \brief pointer to ros node
      */
-    ros::node * const node_;
+    ros::Node * const node_;
 
 
     /*

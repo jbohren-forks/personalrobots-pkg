@@ -49,13 +49,13 @@
 
 #include <cassert>
 
-class PlanKinematicPath : public ros::node,
+class PlanKinematicPath : public ros::Node,
 			  public robot_model::NodeRobotModel
 {
 public:
     
-    PlanKinematicPath(const std::string& robot_model) : ros::node("plan_kinematic_path"),
-							robot_model::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
+    PlanKinematicPath(const std::string& robot_model) : ros::Node("plan_kinematic_path"),
+							robot_model::NodeRobotModel(dynamic_cast<ros::Node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
     }

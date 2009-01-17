@@ -33,14 +33,14 @@
 
 using namespace ros;
 
-class JoyShark : public node
+class JoyShark : public Node
 {
 public:
   MsgJoy joy;
   int prev_buttons;
   Sharks *sharks;
 
-  JoyShark() : node("joyshark"), prev_buttons(0)
+  JoyShark() : Node("joyshark"), prev_buttons(0)
   {
     sharks = new Sharks("192.168.1.90", "192.168.1.38", true);
     subscribe("joy", joy, &JoyShark::joy_cb);

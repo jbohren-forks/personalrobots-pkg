@@ -51,7 +51,7 @@ in order to invalidate them.
 
 using namespace std_msgs;
 
-class ScanIntensityFilter : public ros::node
+class ScanIntensityFilter : public ros::Node
 {
 public:
 
@@ -60,7 +60,7 @@ public:
   double upper_threshold_ ;
   int disp_hist_ ;
 
-  ScanIntensityFilter() : ros::node("scan_intensity_filter")
+  ScanIntensityFilter() : ros::Node("scan_intensity_filter")
   {
     advertise<LaserScan>("filtered_scan", 1) ;
     subscribe("input_scan", cur_scan_, &ScanIntensityFilter::scans_callback, 40) ;

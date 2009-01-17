@@ -75,7 +75,7 @@ namespace message_sequencing
  *
  * \section callbacks THE CALLBACKS
  * The callbacks takes one argument, which is a boost shared_ptr to the message.
- *  \verbatim 
+ *  \verbatim
  *  void funcName(const boost:shared_ptr<MessageType>& message);
  *  \endverbatim
  *
@@ -94,11 +94,11 @@ namespace message_sequencing
  * blocking the rest of the application.
  *
  */
-template<class Message>
-class TimeSequencer : public ros::msg
+template<class M>
+class TimeSequencer : public ros::Message
 {
 public:
-  typedef boost::shared_ptr<Message> MessagePtr;
+  typedef boost::shared_ptr<M> MessagePtr;
   typedef boost::function<void(const MessagePtr&)> Callback;
 
   /**
@@ -109,27 +109,27 @@ public:
   class MessageDeleter
   {
   public:
-    void operator()(Message* m)
+    void operator()(M* m)
     {
-      m->~Message();
+      m->~M();
       memDeallocate(m);
     }
   };
 
   /**
    * \brief Constructor
-   * \param node The ros::node to subscribe on
+   * \param node The ros::Node to subscribe on
    * \param topic The topic to listen on
    * \param callback The function to call when a message is available
    * \param callback The function to call when a message is out of date
-   * \param delay The maximum amount of time to wait 
+   * \param delay The maximum amount of time to wait
    * \param buffer_queue_size The maximum number of messages to keep
    *   around while waiting for delay to pass.  When this number is
    *   exceeded, older messages are thrown out.
    * \param ros_queue_size The size of the incoming ros buffer.  This
    *   passes through to subscribe.
    */
-  TimeSequencer(ros::node* node, const std::string& topic, 
+  TimeSequencer(ros::Node* node, const std::string& topic,
                 Callback callback, Callback old_callback,
                 ros::Duration delay,
                 uint32_t buffer_queue_size,
@@ -175,7 +175,7 @@ public:
    */
   void dummyCb()
   {
-    
+
   }
 
   /**
@@ -194,14 +194,14 @@ public:
   // This is what allows us to bypass an unnecessary copy when being
   // deserialized from the wire.
 
-  inline static std::string __s_get_datatype() { return Message::__s_get_datatype(); }
-  inline static std::string __s_get_md5sum() { return Message::__s_get_md5sum(); }
+  inline static std::string __s_getDataType() { return M::__s_getDataType(); }
+  inline static std::string __s_getMD5Sum() { return M::__s_getMD5Sum(); }
 
-  virtual const std::string __get_datatype() const { return Message::__s_get_datatype(); }
-  virtual const std::string __get_md5sum()   const { return Message::__s_get_md5sum(); }
+  virtual const std::string __getDataType() const { return M::__s_getDataType(); }
+  virtual const std::string __getMD5Sum()   const { return M::__s_getMD5Sum(); }
 
   // Topic buffer is for subscribing, not publishing
-  virtual uint32_t serialization_length() { return 0; }
+  virtual uint32_t serializationLength() { return 0; }
   virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) { assert(0); return NULL; }
 
   /**
@@ -211,8 +211,8 @@ public:
   {
     // Performance could likely be improved using a managed pool of messages
     // instead of constantly reallocating
-    Message* mem = (Message*) memAllocate(sizeof(Message));
-    new (mem) Message();
+    M* mem = (M*) memAllocate(sizeof(M));
+    new (mem) M();
 
     // Create a boost::shared_ptr from the message, with our custom deleter
     MessagePtr message(mem, MessageDeleter());
@@ -220,7 +220,7 @@ public:
     // Deserialize into our newly created message:
     message->__serialized_length = __serialized_length;
     uint8_t* ret = message->deserialize(read_ptr);
-    
+
     {
       boost::mutex::scoped_lock lock(queue_mutex_);
 
@@ -313,7 +313,7 @@ private:
       } else {
 
         // As long as the message is more recent than the oldest message
-        
+
         typename S_Message::iterator oldest = messages_.begin();
         if (oldest != messages_.end() && message->header.stamp > (*oldest)->header.stamp)
         {
@@ -354,7 +354,7 @@ private:
             timeout = boost::posix_time::milliseconds(100);
 
           new_data_.timed_wait(lock, timeout);
-          
+
           time_to_go = next_time - (ros::Time::now() + neg_delay_);
         }
 
@@ -383,7 +383,7 @@ private:
     }
   }
 
-  ros::node* node_; ///< The node used to subscribe to the topic
+  ros::Node* node_; ///< The node used to subscribe to the topic
   std::string topic_; ///< The topic to listen on
   Callback callback_; ///< The callback to call when a message is ready
   Callback old_callback_; ///< The callback to call when a message is out of date

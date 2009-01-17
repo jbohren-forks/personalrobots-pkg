@@ -6,7 +6,7 @@
 int g_argc;
 char** g_argv;
 
-class TestDelay : public ros::node
+class TestDelay : public ros::Node
 {
 
 public:
@@ -15,7 +15,7 @@ public:
   int num;
   std_msgs::PointStamped point;
 
-  TestDelay() : ros::node("test_delay", ros::node::ANONYMOUS_NAME)
+  TestDelay() : ros::Node("test_delay", ros::Node::ANONYMOUS_NAME)
   {
     delay.fromSec(atof(g_argv[1]));
     num = atoi(g_argv[2]);

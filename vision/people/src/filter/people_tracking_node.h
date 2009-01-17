@@ -62,7 +62,7 @@
 namespace estimation
 {
 
-class PeopleTrackingNode: public ros::node
+class PeopleTrackingNode: public ros::Node
 {
 public:
   /// constructor

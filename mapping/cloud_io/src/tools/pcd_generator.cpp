@@ -52,7 +52,7 @@
 
 using namespace std;
 
-class PCDGenerator: public ros::node
+class PCDGenerator: public ros::Node
 {
   public:
 
@@ -61,7 +61,7 @@ class PCDGenerator: public ros::node
 
     std::string file_name_;
 
-    PCDGenerator () : ros::node ("pcd_generator")
+    PCDGenerator () : ros::Node ("pcd_generator")
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
       string cloud_topic ("cloud_pcd");

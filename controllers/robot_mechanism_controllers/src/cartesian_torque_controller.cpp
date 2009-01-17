@@ -163,7 +163,7 @@ CartesianTorqueControllerNode::~CartesianTorqueControllerNode()
 
 bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  ros::Node *node = ros::Node::instance();
 
   std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")
@@ -175,7 +175,7 @@ bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   if (!c_.initXml(robot, config))
     return false;
 
-//  node->advertise_service(topic + "/set_command",
+//  node->advertiseService(topic + "/set_command",
 //                          &CartesianTorqueControllerNode::setCommand, this);
 //  guard_set_command_.set(topic + "/set_command");
 

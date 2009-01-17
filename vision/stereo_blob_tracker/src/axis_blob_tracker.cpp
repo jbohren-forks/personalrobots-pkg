@@ -148,7 +148,7 @@ void on_mouse(int event, int x, int y, int flags, void *params)
  * Axis cam blob tracker class
  *****************************************************/
 
-class AxisBlobTracker : public ros::node
+class AxisBlobTracker : public ros::Node
 {
 public:
   std_msgs::Image image_;
@@ -171,7 +171,7 @@ public:
 
 
   // Constructor
-  AxisBlobTracker(bool d) : ros::node("axis_blob_tracker"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL), cv_image_cpy_(NULL), cv_feat_image_cpy_(NULL), cv_backproject_image_cpy_(NULL), cv_mask_image_cpy_(NULL), quit(false)
+  AxisBlobTracker(bool d) : ros::Node("axis_blob_tracker"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL), cv_image_cpy_(NULL), cv_feat_image_cpy_(NULL), cv_backproject_image_cpy_(NULL), cv_mask_image_cpy_(NULL), quit(false)
   {
     btracker_ = new BTracker();    
 
