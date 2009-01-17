@@ -63,7 +63,7 @@ class TopicSynchronizer
     std::list<std::string> list_;
     boost::mutex list_mutex_;
     //    ros::thread::mutex list_mutex_;
-    
+
   public:
     UnsubscribeList(std::list<std::string>& l) : list_(l) { }
 
@@ -171,15 +171,18 @@ class TopicSynchronizer
       return;
     }
 
-      // If behind, skip
-      if (*time < waiting_time_)
+    // If at time, increment count, possibly signal, and wait
+    if (*time == waiting_time_)
+    {
+      count_++;
+      if (count_ == expected_count_)
       {
         cond_all_.notify_all();
       }
 
       while (!done_ && *time == waiting_time_)
         cond_all_.wait(lock);
-      
+
       //      cond_all_mutex_.unlock();
       return;
     }
@@ -206,7 +209,6 @@ class TopicSynchronizer
 
   //! The function called in a message cb to wait for other messages
   /*!
-   * \param lock The lock currently held
    * \param time  The time that is being waited for
    */
   void wait_for_others(ros::Time* time, boost::unique_lock<boost::mutex>& lock)
@@ -222,16 +224,11 @@ class TopicSynchronizer
       {
         timed_out = true;
         if (timeout_callback_)
-        {
           (*node_.*timeout_callback_)(*time);
-        }
       }
-    }
 
     if (*time == waiting_time_ && !timed_out)
-    {
       (*node_.*callback_)(*time);
-    }
 
     if (*time == waiting_time_)
     {
