@@ -36,31 +36,31 @@ typedef unsigned long xnhandle_t;
 typedef unsigned long long xnticks_t;
 typedef xnticks_t RTIME;
 
-typedef struct rt_mutex_placeholder {
+typedef struct {
 	xnhandle_t opaque;
-} RT_MUTEX;
+} XN_RT_MUTEX;
 
-typedef struct rt_cond_placeholder {
+typedef struct {
     xnhandle_t opaque;
-} RT_COND;
+} XN_RT_COND;
 
-typedef struct rt_task_placeholder {
+typedef struct {
     xnhandle_t opaque;
     unsigned long opaque2;
-} RT_TASK;
+} XN_RT_TASK;
 
 typedef union {
-  RT_MUTEX rt;
+  XN_RT_MUTEX rt;
   pthread_mutex_t pt;
 } RealtimeMutex;
 
 typedef union {
-  RT_COND rt;
+  XN_RT_COND rt;
   pthread_cond_t pt;
 } RealtimeCond;
 
 typedef union {
-  RT_TASK rt;
+  XN_RT_TASK rt;
 } RealtimeTask;
 
 int realtime_mutex_create(RealtimeMutex *mutex);

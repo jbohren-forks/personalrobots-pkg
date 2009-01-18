@@ -36,27 +36,27 @@
 #define TM_NONBLOCK   ((xnticks_t)-1)
 
 /* Mutex Interface */
-int rt_mutex_create(RT_MUTEX *mutex, const char *name) __attribute__((weak));
+int rt_mutex_create(XN_RT_MUTEX *mutex, const char *name) __attribute__((weak));
 
-int rt_mutex_delete(RT_MUTEX *mutex) __attribute__((weak));
+int rt_mutex_delete(XN_RT_MUTEX *mutex) __attribute__((weak));
 
-int rt_mutex_acquire(RT_MUTEX *mutex, RTIME timeout) __attribute__((weak));
+int rt_mutex_acquire(XN_RT_MUTEX *mutex, RTIME timeout) __attribute__((weak));
 
-int rt_mutex_release(RT_MUTEX *mutex) __attribute__((weak));
+int rt_mutex_release(XN_RT_MUTEX *mutex) __attribute__((weak));
 
 /* Condition Variable Interface */
-int rt_cond_create(RT_COND *cond, const char *name) __attribute__((weak));
+int rt_cond_create(XN_RT_COND *cond, const char *name) __attribute__((weak));
 
-int rt_cond_delete(RT_COND *cond) __attribute__((weak));
+int rt_cond_delete(XN_RT_COND *cond) __attribute__((weak));
 
-int rt_cond_signal(RT_COND *cond) __attribute__((weak));
+int rt_cond_signal(XN_RT_COND *cond) __attribute__((weak));
 
-int rt_cond_wait(RT_COND *cond,
-		             RT_MUTEX *mutex,
+int rt_cond_wait(XN_RT_COND *cond,
+		             XN_RT_MUTEX *mutex,
 		             RTIME timeout) __attribute__((weak));
 
 /* Task Interface */
-int rt_task_shadow(RT_TASK *task,
+int rt_task_shadow(XN_RT_TASK *task,
 		               const char *name,
 		               int prio,
 		               int mode) __attribute__((weak));
