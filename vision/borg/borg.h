@@ -83,6 +83,7 @@ public:
   void calibrate(const double size, const uint32_t x, const uint32_t y, 
                  const std::list<std::string> &filename_prefixes);
   const double &get_tilt() { return tilt; }
+  double tx, ty, tz, enc_offset, laser_roll;
 private:
   class CheckerCorner
   {
@@ -114,7 +115,6 @@ private:
   CvMat *intrinsics, *distortion, *map_x, *map_y;
   uint32_t image_queue_size;
   int laser_thresh;
-  double tx, ty, tz, enc_offset, laser_roll;
   double max_stripe_width;
   double tilt; // tilt of the entire assembly (it's usually aimed down a bit)
 };

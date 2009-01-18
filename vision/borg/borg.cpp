@@ -282,7 +282,7 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
   for (int row = 0; row < 480; row++)
     hits[row].resize(640); // prepare histogram
   // split the images list into multiple chunks
-  const int NUM_WORKERS = 4;
+  const int NUM_WORKERS = 2;
   list<Image *> work[NUM_WORKERS];
   int work_idx = 0;
   for (list<Image *>::iterator image = images.begin();
