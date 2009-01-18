@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,53 +27,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef REALTIME_THREAD_H
-#define REALTIME_THREAD_H
+#ifndef XENOMAI_PROTOTYPES_H
+#define XENOMAI_PROTOTYPES_H
 
-#include <pthread.h>
+#include "realtime_thread/realtime_thread.h"
 
-typedef unsigned long xnhandle_t;
-typedef unsigned long long xnticks_t;
-typedef xnticks_t RTIME;
+#define TM_INFINITE   (0)
+#define TM_NONBLOCK   ((xnticks_t)-1)
 
-typedef struct rt_mutex_placeholder {
-	xnhandle_t opaque;
-} RT_MUTEX;
+/* Mutex Interface */
+int rt_mutex_create(RT_MUTEX *mutex, const char *name) __attribute__((weak));
 
-typedef struct rt_cond_placeholder {
-    xnhandle_t opaque;
-} RT_COND;
+int rt_mutex_delete(RT_MUTEX *mutex) __attribute__((weak));
 
-typedef struct rt_task_placeholder {
-    xnhandle_t opaque;
-    unsigned long opaque2;
-} RT_TASK;
+int rt_mutex_acquire(RT_MUTEX *mutex, RTIME timeout) __attribute__((weak));
 
-typedef union {
-  RT_MUTEX rt;
-  pthread_mutex_t pt;
-} RealtimeMutex;
+int rt_mutex_release(RT_MUTEX *mutex) __attribute__((weak));
 
-typedef union {
-  RT_COND rt;
-  pthread_cond_t pt;
-} RealtimeCond;
+/* Condition Variable Interface */
+int rt_cond_create(RT_COND *cond, const char *name) __attribute__((weak));
 
-typedef union {
-  RT_TASK rt;
-} RealtimeTask;
+int rt_cond_delete(RT_COND *cond) __attribute__((weak));
 
-int realtime_mutex_create(RealtimeMutex *mutex);
-int realtime_mutex_delete(RealtimeMutex *mutex);
-int realtime_mutex_lock(RealtimeMutex *mutex);
-int realtime_mutex_trylock(RealtimeMutex *mutex);
-int realtime_mutex_unlock(RealtimeMutex *mutex);
+int rt_cond_signal(RT_COND *cond) __attribute__((weak));
 
-int realtime_cond_create(RealtimeCond *cond);
-int realtime_cond_delete(RealtimeCond *cond);
-int realtime_cond_signal(RealtimeCond *cond);
-int realtime_cond_wait(RealtimeCond *cond, RealtimeMutex *mutex);
+int rt_cond_wait(RT_COND *cond,
+		             RT_MUTEX *mutex,
+		             RTIME timeout) __attribute__((weak));
 
-int realtime_shadow_task(RealtimeTask *task);
+/* Task Interface */
+int rt_task_shadow(RT_TASK *task,
+		               const char *name,
+		               int prio,
+		               int mode) __attribute__((weak));
 
 #endif
+
+

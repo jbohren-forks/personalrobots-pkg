@@ -28,6 +28,7 @@
  */
 
 #include "realtime_thread/realtime_thread.h"
+#include "realtime_thread/xenomai_prototypes.h"
 
 int realtime_mutex_create(RealtimeMutex *mutex)
 {
