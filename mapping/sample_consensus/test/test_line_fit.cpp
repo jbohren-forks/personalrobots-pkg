@@ -101,6 +101,9 @@ TEST (LMedS, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+  
+  delete sac;
+  delete model;
 }
 
 TEST (RANSAC, SACModelLine)
@@ -158,6 +161,9 @@ TEST (RANSAC, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+
+  delete sac;
+  delete model;
 }
 
 TEST (MSAC, SACModelLine)
@@ -215,6 +221,9 @@ TEST (MSAC, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+
+  delete sac;
+  delete model;
 }
 
 TEST (MLESAC, SACModelLine)
@@ -272,6 +281,9 @@ TEST (MLESAC, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RRANSAC, SACModelLine)
@@ -330,6 +342,9 @@ TEST (RRANSAC, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RMSAC, SACModelLine)
@@ -388,6 +403,9 @@ TEST (RMSAC, SACModelLine)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 2);
+
+  delete sac;
+  delete model;
 }
 
 /* ---[ */

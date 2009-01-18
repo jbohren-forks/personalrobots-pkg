@@ -120,6 +120,9 @@ TEST (LMedS, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+  
+  delete model;
+  delete sac;
 }
 
 TEST (RANSAC, SACModelCylinder)
@@ -197,6 +200,9 @@ TEST (RANSAC, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+
+  delete model;
+  delete sac;
 }
 
 TEST (MSAC, SACModelCylinder)
@@ -274,6 +280,9 @@ TEST (MSAC, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+
+  delete model;
+  delete sac;
 }
 
 TEST (MLESAC, SACModelCylinder)
@@ -351,6 +360,9 @@ TEST (MLESAC, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+
+  delete model;
+  delete sac;
 }
 
 TEST (RRANSAC, SACModelCylinder)
@@ -429,6 +441,9 @@ TEST (RRANSAC, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+
+  delete model;
+  delete sac;
 }
 
 TEST (RMSAC, SACModelCylinder)
@@ -507,6 +522,9 @@ TEST (RMSAC, SACModelCylinder)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
+
+  delete model;
+  delete sac;
 }
 
 /* ---[ */

@@ -82,6 +82,9 @@ TEST (LMedS, SACModelSphere)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RANSAC, SACModelSphere)
@@ -121,6 +124,9 @@ TEST (RANSAC, SACModelSphere)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (MSAC, SACModelSphere)
@@ -160,6 +166,9 @@ TEST (MSAC, SACModelSphere)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RRANSAC, SACModelSphere)
@@ -201,6 +210,9 @@ TEST (RRANSAC, SACModelSphere)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RMSAC, SACModelSphere)
@@ -242,6 +254,9 @@ TEST (RMSAC, SACModelSphere)
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 /* ---[ */

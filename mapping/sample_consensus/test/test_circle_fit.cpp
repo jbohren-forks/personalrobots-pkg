@@ -93,6 +93,9 @@ TEST (LMedS, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RANSAC, SACModelCircle2D)
@@ -143,6 +146,9 @@ TEST (RANSAC, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (MSAC, SACModelCircle2D)
@@ -193,6 +199,9 @@ TEST (MSAC, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (MLESAC, SACModelCircle2D)
@@ -243,6 +252,9 @@ TEST (MLESAC, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RRANSAC, SACModelCircle2D)
@@ -293,6 +305,9 @@ TEST (RRANSAC, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 TEST (RMSAC, SACModelCircle2D)
@@ -343,6 +358,9 @@ TEST (RMSAC, SACModelCircle2D)
 */
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
+
+  delete sac;
+  delete model;
 }
 
 /* ---[ */
