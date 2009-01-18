@@ -448,9 +448,11 @@ public:
 	CollisionSpaceMonitor::setRobotDescription(file);	
 	defaultPosition();
 	
-	printf("=======================================\n");	
-	m_kmodel->printModelInfo();
-	printf("=======================================\n");
+	ROS_INFO("=======================================");	
+	std::stringstream ss;
+	m_kmodel->printModelInfo(ss);
+	ROS_INFO(ss.str().c_str());	
+	ROS_INFO("=======================================");
 
 	/* set the data for the model */
 	RKPModel *model = new RKPModel();
@@ -565,13 +567,13 @@ int main(int argc, char **argv)
 	
 	std::vector<std::string> mlist;    
 	planner->knownModels(mlist);
-	printf("Known models:\n");    
+	ROS_INFO("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    printf("  * %s\n", mlist[i].c_str());    
+	    ROS_INFO("  * %s\n", mlist[i].c_str());    
 	if (mlist.size() > 0)
 	    planner->spin();
 	else
-	    printf("No models defined. Kinematic planning node cannot start.\n");
+	    ROS_ERROR("No models defined. Kinematic planning node cannot start.");
 	
 	planner->shutdown();
 

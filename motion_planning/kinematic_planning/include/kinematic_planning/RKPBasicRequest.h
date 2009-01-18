@@ -46,6 +46,7 @@
 #include <ros/console.h>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
+#include <sstream>
 
 /** Main namespace */
 namespace kinematic_planning
