@@ -60,7 +60,7 @@ namespace kinematic_planning
        @section topic ROS topics
        
        Subscribes to (name/type):
-       - @b localizedpose/RobotBase2DOdom : localized position of the robot base
+       - @b robot_srvs/MechanismModel : position for each of the robot's joints
        
        Publishes to (name/type):
        - None

@@ -43,6 +43,7 @@
 #include <robot_msgs/KinematicSpaceParameters.h>
 #include <robot_msgs/PoseConstraint.h>
 
+#include <boost/thread/mutex.hpp>
 #include <iostream>
 
 namespace kinematic_planning
@@ -245,6 +246,9 @@ namespace kinematic_planning
 	
 	bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance)
 	{
+	    // make sure the same motion planner instance is not used by other calls
+	    boost::mutex::scoped_lock(m_lock);
+	    
 	    if (!isRequestValid(models, req))
 		return false;
 	    
@@ -283,7 +287,9 @@ namespace kinematic_planning
 	    
 	    return true;
 	}
+    protected:
 	
+	boost::mutex m_lock;
     };
     
 } // kinematic_planning

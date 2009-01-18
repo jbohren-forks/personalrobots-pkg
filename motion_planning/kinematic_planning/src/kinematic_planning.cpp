@@ -131,20 +131,25 @@ Provides (name/type):
 **/
 
 #include "kinematic_planning/CollisionSpaceMonitor.h"
-#include <std_msgs/String.h>
-
 #include "kinematic_planning/RKPModel.h"
 #include "kinematic_planning/RKPBasicRequestState.h"
 #include "kinematic_planning/RKPBasicRequestLinkPosition.h"
+
+#include <boost/bind.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+
+#include <std_msgs/String.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
+
 using namespace kinematic_planning;
 
 class KinematicPlanning : public ros::Node,
 			  public CollisionSpaceMonitor
 {
 public:
-
+    
     KinematicPlanning(const std::string &robot_model) : ros::Node("kinematic_planning"),
 							CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
 									      robot_model)
@@ -153,15 +158,110 @@ public:
 	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
 	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
+	
+	m_replanning = false;
+	m_replanningThread = NULL;
+	
+	advertise<robot_msgs::KinematicPath>("path_to_goal", 1);
+	subscribe("plan_kinematic_path_state_request",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,    this, 1);
+	subscribe("plan_kinematic_path_position_request", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest, this, 1);
     }
     
     /** Free the memory */
     virtual ~KinematicPlanning(void)
     {
+	stopReplanning();
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
     }
+    
+    void stopReplanning(void)
+    {
+	m_replanningLock.lock();
+	if (m_replanning)
+	{
+	    m_replanning = false;
+	    m_replanningThread->join();
+	    delete m_replanningThread;
+	    m_replanningThread = false;
+	}
+	m_replanningLock.unlock();	
+    }
+    
+    void planToStateRequest(void)
+    {
+	stopReplanning();
+	
+	if (m_robotState)
+	{
+	    // back up the request
+	    m_currentPlanToStateRequest = m_planToStateRequest;
 
+	    // allocate memory for starting state, if needed
+	    m_currentPlanToStateRequest.start_state.set_vals_size(m_kmodel->stateDimension);
+	    
+	    // start planning thread
+	    m_replanningLock.lock();
+	    m_replanning = true;
+	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToState, this));
+	    m_replanningLock.unlock();
+	}
+	else
+	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+    }
+    
+    void planToPositionRequest(void)
+    {
+	stopReplanning();
+	
+	if (m_robotState)
+	{
+	    // back up the request
+	    m_currentPlanToPositionRequest = m_planToPositionRequest;
+	    
+	    // allocate memory for starting state, if needed
+	    m_currentPlanToPositionRequest.start_state.set_vals_size(m_kmodel->stateDimension);
+	    
+	    // start planning thread
+	    m_replanningLock.lock();
+	    m_replanning = true;
+	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPosition, this));
+	    m_replanningLock.unlock();	    
+	}
+	else
+	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+    }
+    
+    void replanToState(void)
+    {
+	robot_msgs::KinematicPath solution;
+	
+	while (m_replanning)
+	{
+	    double distance = 0.0;
+	    const double *start_state = m_robotState->getParams();
+	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
+		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
+	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance);
+	    publish("path_to_goal", solution);
+	}
+    }
+
+    void replanToPosition(void)
+    {		
+	robot_msgs::KinematicPath solution;
+
+	while (m_replanning)
+	{
+	    double distance = 0.0;
+	    const double *start_state = m_robotState->getParams();
+	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
+		m_currentPlanToPositionRequest.start_state.vals[i] = start_state[i];
+	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance);
+	    publish("path_to_goal", solution);
+	}
+    }
+    
     bool planToStateNamed(robot_srvs::NamedKinematicPlanState::request &reqn, robot_srvs::NamedKinematicPlanState::response &resn)
     {
         robot_srvs::KinematicPlanState::request req;
@@ -419,7 +519,7 @@ private:
 	    const robot_desc::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "SBL");
 	}
-	model->addSBL(options);
+	model->addSBL(options); 
 
 	options.clear();
 	if (group)
@@ -433,6 +533,19 @@ private:
     ModelMap                                                        m_models;
     RKPBasicRequest<robot_srvs::KinematicPlanState::request>        m_requestState;
     RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request> m_requestLinkPosition;
+    
+    // received request for replanning
+    robot_srvs::KinematicPlanState::request                         m_planToStateRequest;    
+    robot_srvs::KinematicPlanLinkPosition::request                  m_planToPositionRequest; 
+    
+    // currently considered request
+    robot_srvs::KinematicPlanState::request                         m_currentPlanToStateRequest;    
+    robot_srvs::KinematicPlanLinkPosition::request                  m_currentPlanToPositionRequest; 
+    
+    // flag indicating whether a replanning thread is active
+    bool                                                            m_replanning;
+    boost::thread                                                  *m_replanningThread;
+    boost::mutex                                                    m_replanningLock;
 };
 
 void usage(const char *progname)
