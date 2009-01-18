@@ -217,7 +217,7 @@ bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXml
   if (!c_.initXml(robot, config))
     return false;
 
-  pub_calibrated_ = new misc_utils::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
+  pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
 
   return true;
 }

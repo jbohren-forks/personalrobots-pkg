@@ -9,7 +9,6 @@
   <review status="unreviewed" notes="API review in progress (Stu)"/>
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp" />
-  <depend package="realtime_tools" />
   <depend package="boost" />
   <export>
     <cpp cflags="-I${prefix}/include" />

@@ -53,7 +53,7 @@
 #include "mechanism_model/controller.h"
 #include "tf/tf.h"
 #include "tf/transform_listener.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
 
@@ -103,7 +103,7 @@ private:
   SubscriptionGuard guard_set_command_;
   std_msgs::PointStamped command_msg_;
 
-  misc_utils::RealtimePublisher<std_msgs::PointStamped> *pos_publisher_;
+  realtime_tools::RealtimePublisher<std_msgs::PointStamped> *pos_publisher_;
   tf::TransformListener TF;
   int loop_count_;
 };

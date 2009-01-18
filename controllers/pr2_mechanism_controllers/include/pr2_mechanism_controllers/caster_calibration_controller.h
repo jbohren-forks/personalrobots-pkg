@@ -35,7 +35,7 @@
 #define CASTER_CALIBRATION_CONTROLLER_H
 
 #include "pr2_mechanism_controllers/caster_controller.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
 #include <robot_mechanism_controllers/CalibrateJoint.h>
 
@@ -97,7 +97,7 @@ private:
   AdvertisedServiceGuard guard_calibrate_;
 
   double last_publish_time_;
-  misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
+  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 
 }

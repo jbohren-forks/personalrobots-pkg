@@ -44,7 +44,7 @@
 #define WRIST_CALIBRATION_CONTROLLER_H
 
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "mechanism_model/wrist_transmission.h"
 #include "std_msgs/Empty.h"
 
@@ -108,7 +108,7 @@ private:
   WristCalibrationController c_;
 
   double last_publish_time_;
-  misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
+  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 
 }

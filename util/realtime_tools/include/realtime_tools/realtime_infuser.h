@@ -38,7 +38,7 @@
 #ifndef REALTIME_INFUSER_H
 #define REALTIME_INFUSER_H
 
-namespace misc_utils {
+namespace realtime_tools {
 
 template <class T>
 class RealtimeInfuser

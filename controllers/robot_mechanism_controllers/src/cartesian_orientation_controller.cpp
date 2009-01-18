@@ -166,7 +166,7 @@ bool CartesianOrientationControllerNode::initXml(mechanism::RobotState *robot, T
                   &CartesianOrientationControllerNode::setCommand, this, 1);
   guard_set_command_.set(topic + "/set_command");
 
-  pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::QuaternionStamped>(topic + "/position", 1);
+  pos_publisher_ = new realtime_tools::RealtimePublisher<std_msgs::QuaternionStamped>(topic + "/position", 1);
 
   return true;
 }

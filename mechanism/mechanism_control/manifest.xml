@@ -11,6 +11,7 @@
 <depend package="tinyxml"/>
 <depend package="mechanism_model"/>
 <depend package="misc_utils" />
+<depend package="realtime_tools" />
 <depend package="rospy" />
 <depend package="tf" />
 <depend package="robot_msgs" />

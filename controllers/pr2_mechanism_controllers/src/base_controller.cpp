@@ -1002,19 +1002,19 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
-  publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
+  publisher_ = new realtime_tools::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
 
   if (odometer_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometer_publisher_ ;
-  odometer_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
+  odometer_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
+  transform_publisher_ = new realtime_tools::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
 
   if (covariance_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete covariance_publisher_ ;
-  covariance_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
+  covariance_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
 
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);

@@ -43,7 +43,7 @@
 #include <mechanism_model/robot.h>
 #include <boost/thread/mutex.hpp>
 #include <mechanism_model/controller.h>
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <misc_utils/advertised_service_guard.h>
 
 #include <robot_srvs/ListControllerTypes.h>
@@ -127,9 +127,9 @@ private:
   int cycles_since_publish_;
 
   const char* const mechanism_state_topic_;
-  misc_utils::RealtimePublisher<robot_msgs::MechanismState> publisher_;
+  realtime_tools::RealtimePublisher<robot_msgs::MechanismState> publisher_;
 
-  misc_utils::RealtimePublisher<tf::tfMessage> transform_publisher_;
+  realtime_tools::RealtimePublisher<tf::tfMessage> transform_publisher_;
 
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
     spawn_controller_guard_, kill_controller_guard_;

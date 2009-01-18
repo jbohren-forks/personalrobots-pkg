@@ -165,8 +165,8 @@ bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXm
                   &CartesianPositionControllerNode::setCommand, this, 1);
   guard_set_command_.set(topic + "/set_command");
 
-  //pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::Vector3>(topic + "/position", 0);
-  pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::PointStamped>(topic + "/position", 1);
+  //pos_publisher_ = new realtime_tools::RealtimePublisher<std_msgs::Vector3>(topic + "/position", 0);
+  pos_publisher_ = new realtime_tools::RealtimePublisher<std_msgs::PointStamped>(topic + "/position", 1);
 
   return true;
 }

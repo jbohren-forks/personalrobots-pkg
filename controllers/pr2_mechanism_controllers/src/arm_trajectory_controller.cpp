@@ -35,7 +35,7 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
 #include "pr2_mechanism_controllers/arm_trajectory_controller.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/String.h"
 
 using namespace controller;
@@ -228,7 +228,7 @@ void ArmTrajectoryController::update(void)
 
   double end_time = now();
 
-  static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
+  static realtime_tools::RealtimePublisher<std_msgs::String> p("/s", 1);
   if (p.trylock()) {
     char buf[1000];
     sprintf(buf, "Time = %15.6lf\n", end_time - start_time);

@@ -45,7 +45,7 @@
 
 #include "ethercat_hardware/ethercat_device.h"
 
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 
 class EthercatHardware
 {
@@ -101,7 +101,7 @@ private:
   bool halt_motors_;
   unsigned int reset_state_;
 
-  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   struct {
     struct {
       double roundtrip_;

@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <pr2_mechanism_controllers/base_controller_pos.h>
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <control_toolbox/filters.h>
 #include <angles/angles.h>
 #include <std_msgs/String.h>
@@ -532,7 +532,7 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
 
    cmd_vel_trajectory_->setTrajectory(cmd_vel_points_);
 
-/*  static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
+/*  static realtime_tools::RealtimePublisher<std_msgs::String> p("/s", 1);
   if (p.trylock()) {
     char buf[1000];       
     sprintf(buf, "Time = %15.6lf dirn: %1.6f %1.6f %1.6f mag: %1.6f\n Angles: %f %f \n Current dirn: %1.6f %1.6f %1.6f mag: %1.6f\n New cmd: %1.6f %1.6f %1.6f\n Old cmd: %1.6f %1.6f %1.6f\n ",dt,new_vel_direction.x,new_vel_direction.y,new_vel_direction.z,new_cmd_mag,delta_direction,delta_direction_m_pi,cmd_vel_direction_.x,cmd_vel_direction_.y,cmd_vel_direction_.z,cmd_vel_magnitude_,new_cmd.x, new_cmd.y,new_cmd.z,cmd_vel_.x,cmd_vel_.y,cmd_vel_.z);
@@ -1138,23 +1138,23 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
 
   if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
-  publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
+  publisher_ = new realtime_tools::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
 
   if (odometer_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometer_publisher_ ;
-  odometer_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
+  odometer_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
+  transform_publisher_ = new realtime_tools::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
 
   if (covariance_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete covariance_publisher_ ;
-  covariance_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
+  covariance_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
 
   if (residuals_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete residuals_publisher_ ;
-  residuals_publisher_ = new misc_utils::RealtimePublisher <pr2_mechanism_controllers::OdometryResiduals> (service_prefix + "/odometry_residuals", 1) ;
+  residuals_publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::OdometryResiduals> (service_prefix + "/odometry_residuals", 1) ;
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 

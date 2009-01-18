@@ -44,7 +44,7 @@
 #include <boost/thread/thread.hpp>
 #include <realtime_tools/realtime_tools.h>
 
-namespace misc_utils {
+namespace realtime_tools {
 
 template <class Msg>
 class RealtimePublisher
