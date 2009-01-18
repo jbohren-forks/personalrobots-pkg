@@ -56,7 +56,7 @@ namespace cloud_geometry
 
     dsyev_ (&jobz, &uplo, &n, eigen_vectors.data (), &lda, eigen_values.data (), work, &lwork, &info);
 
-    delete work;
+    delete [] work;
 
     return (info == 0);
   }
