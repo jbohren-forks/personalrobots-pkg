@@ -302,7 +302,7 @@ namespace cloud_geometry
 
     for (unsigned int i = 0; i < points->pts.size (); i++)
     {
-      if (points->chan[c_idx].vals[i] > cut_distance)
+      if (c_idx != -1 && points->chan[c_idx].vals[i] > cut_distance)
         continue;
       min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
       min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
