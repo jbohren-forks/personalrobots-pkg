@@ -603,6 +603,40 @@ private:
     boost::mutex                                                    m_continueReplanningLock;    
 };
 
+class OutputHandlerROScon : public ompl::msg::OutputHandler
+{
+public:
+    
+    OutputHandlerROScon(void) : OutputHandler()
+    {
+    }
+    
+    /** Issue a ROS error */
+    virtual void error(const std::string &text)
+    {
+	ROS_ERROR(text.c_str());
+    }	    
+    
+    /** Issue a ROS warning */
+    virtual void warn(const std::string &text)
+    {
+	ROS_WARN(text.c_str());
+    }
+    
+    /** Issue ROS info */
+    virtual void inform(const std::string &text)
+    {
+	ROS_INFO(text.c_str());
+    }	    
+    
+    /** Issue ROS info */
+    virtual void message(const std::string &text)
+    {
+	ROS_INFO(text.c_str());
+    }
+    
+};
+
 void usage(const char *progname)
 {
     printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
@@ -614,6 +648,8 @@ int main(int argc, char **argv)
     if (argc == 2)
     { 
 	ros::init(argc, argv);
+	OutputHandlerROScon rosconOutputHandler;	
+	ompl::msg::useOutputHandler(&rosconOutputHandler);
 	
 	KinematicPlanning *planner = new KinematicPlanning(argv[1]);
 	planner->loadRobotDescription();
