@@ -49,14 +49,12 @@ namespace cloud_geometry
     int n = 3, lda = 3, info = -1;
     int lwork = 3 * 3 - 1;
 
-    double *work = new double[lwork];
+    double work[lwork];
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
         eigen_vectors (i, j) = covariance_matrix (i, j);
 
     dsyev_ (&jobz, &uplo, &n, eigen_vectors.data (), &lda, eigen_values.data (), work, &lwork, &info);
-
-    delete [] work;
 
     return (info == 0);
   }
@@ -77,7 +75,7 @@ namespace cloud_geometry
     int m = 3, n = 3, lda = 3, ldu = 3, ldvt = 3, info = -1;
     int lwork = 5 * 3;
 
-    double *work = new double[lwork];
+    double work[lwork];
     Eigen::Matrix3d B;
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
@@ -85,7 +83,6 @@ namespace cloud_geometry
 
     dgesvd_ (&jobu, &jobvt, &m, &n, B.data (), &lda, s.data (), u.data (), &ldu, v.data (), &ldvt, work, &lwork, &info);
 
-    delete work;
 //    U = transpose (U, m, m);
     return (info == 0);
   }
