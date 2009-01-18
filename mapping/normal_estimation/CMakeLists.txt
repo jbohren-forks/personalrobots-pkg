@@ -7,10 +7,6 @@ add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -mss
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-#Deprecated for now, use the omp (OpenMP version)
-#rospack_add_executable(normal_estimation_node src/normal_estimation.cpp)
-#target_link_libraries(normal_estimation_node)
-
 rospack_add_executable(normal_estimation_node src/normal_estimation_omp.cpp)
 target_link_libraries(normal_estimation_node)
 
