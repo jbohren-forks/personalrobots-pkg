@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse-pydev version="1.0"?>
+
+<pydev_project>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.5</pydev_property>
+<pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
+<path>/home/jdchen/ros/ros-pkg/3rdparty/transformations/src</path>
+<path>/home/jdchen/ros/ros-pkg/vision/visual_odometry/src</path>
+<path>/home/jdchen/ros/ros-pkg/3rdparty/vop/src</path>
+<path>/home/jdchen/ros/ros-pkg/vision/visual_odometry/lib</path>
+<path>/home/jdchen/ros/ros-pkg/3rdparty/fast_detector/lib</path>
+<path>/home/jdchen/ros/ros-pkg/vision/star_detector/lib</path>
+<path>/home/jdchen/ros/ros-pkg/vision/calonder_descriptor/lib</path>
+</pydev_pathproperty>
+</pydev_project>
