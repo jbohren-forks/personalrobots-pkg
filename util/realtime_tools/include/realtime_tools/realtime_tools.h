@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef REALTIME_THREAD_H
-#define REALTIME_THREAD_H
+#ifndef REALTIME_TOOLS_H
+#define REALTIME_TOOLS_H
 
 #include <pthread.h>
 

@@ -42,7 +42,7 @@
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include <realtime_thread/realtime_thread.h>
+#include <realtime_tools/realtime_tools.h>
 
 namespace misc_utils {
 

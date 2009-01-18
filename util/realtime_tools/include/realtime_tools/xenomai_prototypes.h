@@ -30,7 +30,7 @@
 #ifndef XENOMAI_PROTOTYPES_H
 #define XENOMAI_PROTOTYPES_H
 
-#include "realtime_thread/realtime_thread.h"
+#include "realtime_tools/realtime_tools.h"
 
 #define TM_INFINITE   (0)
 #define TM_NONBLOCK   ((xnticks_t)-1)

@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "realtime_thread/realtime_thread.h"
-#include "realtime_thread/xenomai_prototypes.h"
+#include "realtime_tools/realtime_tools.h"
+#include "realtime_tools/xenomai_prototypes.h"
 
 int realtime_mutex_create(RealtimeMutex *mutex)
 {
