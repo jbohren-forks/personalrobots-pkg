@@ -82,7 +82,7 @@ class GroundRemoval : public ros::Node
     vector<cloud_geometry::Leaf> leaves_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    GroundRemoval () : ros::Node ("sac_ground_removal"), tf_(*this)
+    GroundRemoval () : ros::Node ("sac_ground_removal")
     {
       param ("~downsample", downsample_, true);    // Downsample cloud before ground estimation
       param ("~downsample_leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
