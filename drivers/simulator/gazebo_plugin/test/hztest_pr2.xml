@@ -51,7 +51,7 @@
     <param name="topic" value="base_pose_ground_truth" />
     <param name="hz" value="807.682" />
     <param name="hzerror" value="400.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="8.0" />
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'mechanism_state' topic. -->
