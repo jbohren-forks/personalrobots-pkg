@@ -138,6 +138,7 @@ Provides (name/type):
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 
 #include <std_msgs/String.h>
 #include <robot_srvs/PlanNames.h>
@@ -161,6 +162,7 @@ public:
 	
 	m_replanning = false;
 	m_replanningThread = NULL;
+	m_collisionMonitorChange = false;
 	
 	advertise<robot_msgs::KinematicPath>("path_to_goal", 1);
 	subscribe("plan_kinematic_path_state_request",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,    this, 1);
@@ -180,7 +182,14 @@ public:
 	m_replanningLock.lock();
 	if (m_replanning)
 	{
-	    m_replanning = false;
+	    /* make sure the working thread knows it is time to stop */
+	    m_replanning = false;	 
+	    m_continueReplanningLock.lock();
+	    m_collisionMonitorChange = false;	    
+	    m_collisionMonitorCondition.notify_all();
+	    m_continueReplanningLock.unlock();
+	    
+	    /* wait for the thread to stop & clean up*/
 	    m_replanningThread->join();
 	    delete m_replanningThread;
 	    m_replanningThread = false;
@@ -190,6 +199,8 @@ public:
     
     void planToStateRequest(void)
     {
+	ROS_INFO("Request for replanning to a state");
+	
 	stopReplanning();
 	
 	if (m_robotState)
@@ -212,6 +223,8 @@ public:
     
     void planToPositionRequest(void)
     {
+	ROS_INFO("Request for replanning to a position");
+
 	stopReplanning();
 	
 	if (m_robotState)
@@ -232,34 +245,63 @@ public:
 	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
     }
     
+    /** Wait for a change in the environment and recompute the motion plan */
     void replanToState(void)
     {
 	robot_msgs::KinematicPath solution;
-	
+	unsigned int step = 0;
 	while (m_replanning)
-	{
+	{    
+	    step++;
+	    ROS_INFO("Replanning step %d", step);
+	    m_continueReplanningLock.lock();
+	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    const double *start_state = m_robotState->getParams();
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
 	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance);
 	    publish("path_to_goal", solution);
+	    while (!m_collisionMonitorChange)
+		m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    m_continueReplanningLock.unlock();
 	}
     }
 
+    /** Wait for a change in the environment and recompute the motion plan */
     void replanToPosition(void)
     {		
 	robot_msgs::KinematicPath solution;
-
+	unsigned int step = 0;
+	
 	while (m_replanning)
 	{
+	    step++;
+	    ROS_INFO("Replanning step %d", step);
+	    m_continueReplanningLock.lock();
+	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    const double *start_state = m_robotState->getParams();
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToPositionRequest.start_state.vals[i] = start_state[i];
 	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance);
-	    publish("path_to_goal", solution);
+	    publish("path_to_goal", solution);	    
+	    while (!m_collisionMonitorChange)
+		m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    m_continueReplanningLock.unlock();
 	}
+    }
+    
+    /** Event executed after a change in the perceived world is observed */
+    virtual void afterWorldUpdate(void)
+    {
+	CollisionSpaceMonitor::afterWorldUpdate();
+	
+	// notify the replanning thread of the change
+	m_continueReplanningLock.lock();
+	m_collisionMonitorChange = true;
+	m_continueReplanningLock.unlock();
+	m_collisionMonitorCondition.notify_all();
     }
     
     bool planToStateNamed(robot_srvs::NamedKinematicPlanState::request &reqn, robot_srvs::NamedKinematicPlanState::response &resn)
@@ -435,11 +477,13 @@ public:
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
+	ROS_INFO("Request for planning to a state");
 	return m_requestState.execute(m_models, req, res.path, res.distance);
     }
 
     bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
     {	
+	ROS_INFO("Request for planning to a position");
 	return m_requestLinkPosition.execute(m_models, req, res.path, res.distance);
     }
 
@@ -546,8 +590,17 @@ private:
     
     // flag indicating whether a replanning thread is active
     bool                                                            m_replanning;
+    // pointer to the replanning thread (not NULL only when replanning flag is true)
     boost::thread                                                  *m_replanningThread;
+    // lock used to synchronize access to the replanning flag and the replanning thread
     boost::mutex                                                    m_replanningLock;
+
+    // flag set when the map was updated
+    bool                                                            m_collisionMonitorChange;
+    // condition being broadcasted when the map is updated
+    boost::condition                                                m_collisionMonitorCondition;
+    // lock used in conjuction with the condition
+    boost::mutex                                                    m_continueReplanningLock;    
 };
 
 void usage(const char *progname)
