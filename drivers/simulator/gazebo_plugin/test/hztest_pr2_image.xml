@@ -4,7 +4,7 @@
 
   <!-- Run hztest -->
   <!-- Test for publication of 'left axis camera image publish rate' topic -->
-  <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" name="axis_left_image_test">
+  <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" time-limit="50" name="axis_left_image_test">
     <!-- The topic to listen for -->
     <param name="topic" value="axis_l/image" />
     <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
@@ -14,7 +14,7 @@
     to 0.0. -->
     <param name="hzerror" value="20.0" />
     <!-- Time to listen for [seconds] -->
-    <param name="test_duration" value="50.0" />    
+    <param name="test_duration" value="5.0" />    
     <!-- Whether each inter-message time interval should be checked against
     the expected publication rate and error bound [boolean].  If true, then
     the test will fail if the time elapsed between *any* two consecutive
@@ -24,20 +24,20 @@
   </test>
 
   <!-- Test for publication of 'right axis camera image publish rate' topic -->
-  <test test-name="hztest_test_axis_right_image" pkg="rostest" type="hztest" name="axis_right_image_test">
+  <test test-name="hztest_test_axis_right_image" pkg="rostest" type="hztest" time-limit="50" name="axis_right_image_test">
     <param name="topic" value="axis_r/image" />
     <param name="hz" value="1.0" />
     <param name="hzerror" value="20.0" />
-    <param name="test_duration" value="50.0" />    
+    <param name="test_duration" value="5.0" />    
     <param name="check_intervals" value="false" />    
   </test>
 
   <!-- Test for publication of 'left stereo camera image publish rate' topic -->
-  <test test-name="hztest_test_stereo_left_image" pkg="rostest" type="hztest" name="stereo_left_image_test">
+  <test test-name="hztest_test_stereo_left_image" pkg="rostest" type="hztest" time-limit="50" name="stereo_left_image_test">
     <param name="topic" value="stereo_l/image" />
     <param name="hz" value="1.0" />
     <param name="hzerror" value="20.0" />
-    <param name="test_duration" value="50.0" />    
+    <param name="test_duration" value="5.0" />    
     <param name="check_intervals" value="false" />    
   </test>
 
