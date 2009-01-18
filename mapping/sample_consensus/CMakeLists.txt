@@ -11,8 +11,8 @@ rospack_add_library(sample_consensus src/sac.cpp src/sac_model.cpp
                     src/sac_model_circle.cpp src/sac_model_sphere.cpp
                     src/sac_model_cylinder.cpp)
 
-#rospack_add_executable(sac_ground_removal_node src/tools/sac_ground_removal.cpp)
-#target_link_libraries(sac_ground_removal_node lapack)
+rospack_add_executable(bin/sac_ground_removal_node src/tools/sac_ground_removal.cpp)
+target_link_libraries(bin/sac_ground_removal_node sample_consensus lapack)
 
 rospack_add_gtest(bin/test_line_fit test/test_line_fit.cpp)
 rospack_add_gtest(bin/test_plane_fit test/test_plane_fit.cpp)
