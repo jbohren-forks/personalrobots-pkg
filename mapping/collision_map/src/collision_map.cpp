@@ -119,7 +119,7 @@ class CollisionMapper : public ros::Node
 
       param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
       
-      param ("~only_updates", only_updates_, true);        // Send the entire map or just incremental updates from the past state
+      param ("~only_updates", only_updates_, false);       // Send the entire map or just incremental updates from the past state
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
@@ -409,7 +409,7 @@ class CollisionMapper : public ros::Node
       
       gettimeofday (&t1, NULL);
       // If we're only interested in doing map updates
-      if (only_updates_)
+      if (only_updates_ && leaves_.size () > 0)
       {
         CollisionMap new_c_map;
         vector<Leaf> new_leaves;
