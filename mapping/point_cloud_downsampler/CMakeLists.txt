@@ -8,4 +8,4 @@ add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -mss
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(cloud_downsampler_node src/cloud_downsampler.cpp)
-target_link_libraries(cloud_downsampler_node lapack)
+target_link_libraries(cloud_downsampler_node)
