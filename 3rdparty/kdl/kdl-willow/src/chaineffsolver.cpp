@@ -38,34 +38,7 @@ namespace KDL {
 
   int ChainFEffSolver::JntToCart(const JntArray& q, const JntArray& eff, Wrench& wrench_out)
   {
-    assert(q.rows() == num_joints_);
-    assert(eff.rows() == num_joints_);
-    wrench_out = Wrench::Zero();
-
-    Frame F_seg_seg;
-    Frame F_seg_ee = Frame::Identity();
-    Vector v_seg_ee = Vector::Zero();
-    Wrench w_sum = Wrench::Zero();
-
-    int j=0;
-
-    for (unsigned int i=num_segments_-1;i<=0;i--) {
-      // frame from this segment to next segment
-      F_seg_seg = chain_.getSegment(i).pose(q(j));
-      
-      // vector from this segment to ee
-      v_seg_ee = F_seg_ee.M  * v_seg_ee;
-
-      // convert w_sum to reference frame in current segment
-      w_sum = F_seg_seg.M * w_sum;
-      
-      // add wrench from current joint with refpoint ee
-      if (chain_.getSegment(i).getJoint().getType()!=Joint::None){
-	w_sum += chain_.getSegment(i).getJoint().wrench(eff(j)).RefPoint(v_seg_ee);
-	j++;
-      }
-    }      
-
+    assert(0);
     return 0;
   }
 
