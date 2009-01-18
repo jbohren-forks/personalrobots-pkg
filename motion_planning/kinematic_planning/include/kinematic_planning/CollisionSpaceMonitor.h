@@ -56,7 +56,7 @@ namespace kinematic_planning
        - @b collision_map/CollisionMap : data describing the 3D environment
        
        Additional subscriptions due to inheritance from KinematicStateMonitor:
-       - @b localizedpose/RobotBase2DOdom : localized position of the robot base
+       - @b robot_srvs/MechanismModel : position for each of the robot's joints
        
        Publishes to (name/type):
        - None

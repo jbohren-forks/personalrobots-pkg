@@ -63,7 +63,7 @@ namespace kinematic_planning
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
-	    std::cout << "Adding SBL instance for motion planning: " << model->groupName << std::endl;
+	    ROS_INFO("Adding SBL instance for motion planning: %s", model->groupName.c_str());
 	    
 	    si       = new SpaceInformationRKPModel(model);
 	    svc      = new StateValidityPredicate(model);
@@ -83,7 +83,7 @@ namespace kinematic_planning
 	    {
 		double range = string_utils::fromString<double>(options["range"]);
 		sbl->setRange(range);
-		std::cout << "Range is set to " << range << std::endl;		
+		ROS_INFO("Range is set to %g", range);
 	    }
 	    
 	    if (options.find("projection") != options.end())
@@ -100,7 +100,7 @@ namespace kinematic_planning
 		
 		sbl->setProjectionEvaluator(new ompl::OrthogonalProjectionEvaluator(projection));
 		
-		std::cout << "Projection is set to " << proj << std::endl;
+		ROS_INFO("Projection is set to %s", proj.c_str());
 		setProj = true;	    
 	    }
 	    
@@ -118,12 +118,12 @@ namespace kinematic_planning
 		
 		sbl->setCellDimensions(cdim);
 		setDim = true;
-		std::cout << "Cell dimensions set to " << celldim << std::endl;
+		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
 	    }
 	    
 	    if (!setDim || !setProj)
 	    {
-		std::cout << "Adding SBL failed: need to set both 'projection' and 'cellldim' for " << model->groupName << std::endl;
+		ROS_ERROR("Adding SBL failed: need to set both 'projection' and 'cellldim' for %s", model->groupName.c_str());
 		return false;
 	    }
 	    else

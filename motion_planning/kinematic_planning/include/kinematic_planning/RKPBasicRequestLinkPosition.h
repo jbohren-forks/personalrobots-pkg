@@ -132,7 +132,7 @@ namespace kinematic_planning
 	
 	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
 	{
-	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
+	    ROS_ERROR("Dimension of start state expected to be %d but was received as %d", m->kmodel->stateDimension, req.start_state.get_vals_size());
 	    return false;
 	}
 	

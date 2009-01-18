@@ -57,7 +57,7 @@ namespace kinematic_planning
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
-	    std::cout << "Adding RRT instance for motion planning: " << model->groupName << std::endl;
+	    ROS_INFO("Adding RRT instance for motion planning: %s", model->groupName.c_str());
 	    
 	    si       = new SpaceInformationRKPModel(model);
 	    svc      = new StateValidityPredicate(model);
@@ -74,14 +74,14 @@ namespace kinematic_planning
 	    {
 		double range = string_utils::fromString<double>(options["range"]);
 		rrt->setRange(range);
-		std::cout << "Range is set to " << range << std::endl;		
+		ROS_INFO("Range is set to %g", range);
 	    }
 	    
 	    if (options.find("goal_bias") != options.end())
 	    {	
 		double bias = string_utils::fromString<double>(options["goal_bias"]);
 		rrt->setGoalBias(bias);
-		std::cout << "Goal bias is set to " << bias << std::endl;
+		ROS_INFO("Goal bias is set to %g", bias);
 	    }
 	    
 	    setupDistanceEvaluators();

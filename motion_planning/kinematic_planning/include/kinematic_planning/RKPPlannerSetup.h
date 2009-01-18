@@ -44,6 +44,7 @@
 #include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 
+#include <ros/console.h>
 #include <string_utils/string_utils.h>
 #include <cassert>
 

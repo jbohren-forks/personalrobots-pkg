@@ -43,12 +43,18 @@
 #include <robot_msgs/KinematicSpaceParameters.h>
 #include <robot_msgs/PoseConstraint.h>
 
+#include <ros/console.h>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
 
+/** Main namespace */
 namespace kinematic_planning
 {
     
+    /** This class represents a basic request to a kinematic motion
+	planner. The code a request executes is almost the same
+	regardless of its type. What differes is the starting state
+	specification and the goal specification. */
     template<typename _R>
     class RKPBasicRequest
     {
@@ -62,11 +68,13 @@ namespace kinematic_planning
 	{
 	}
 	
+	/** Specializations of this class should implement this function */
 	bool isRequestValid(ModelMap &models, _R &req)
 	{
 	    return areSpaceParamsValid(models, req.params);
 	}
 	
+	/** Specializations of this class should implement this function */
 	void setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, _R &req)
 	{
 	}
@@ -78,8 +86,8 @@ namespace kinematic_planning
 	    
 	    if (pos == modelsRef.end())
 	    {
-		std::cerr << "Cannot plan for '" << params.model_id << "'. Model does not exist" << std::endl;
-		return false;	    
+		ROS_ERROR("Cannot plan for '%s'. Model does not exist", params.model_id.c_str());
+		return false;
 	    }
 	    
 	    /* find the model */
@@ -96,18 +104,18 @@ namespace kinematic_planning
 	    std::map<std::string, RKPPlannerSetup*>::iterator plannerIt = m->planners.find(params.planner_id);
 	    if (plannerIt == m->planners.end())
 	    {
-		std::cerr << "Motion planner not found: '" << params.planner_id << "'" << std::endl;
+		ROS_ERROR("Motion planner not found: '%s'", params.planner_id.c_str());
 		return false;
 	    }
 	    
-	    std::cout << "Selected motion planner: '" << params.planner_id << "'" << std::endl;
+	    ROS_INFO("Selected motion planner: '%s'", params.planner_id.c_str());
 	    
 	    RKPPlannerSetup *psetup = plannerIt->second;
 	    
 	    /* check if the desired distance metric is defined */
 	    if (psetup->sde.find(params.distance_metric) == psetup->sde.end())
 	    {
-		std::cerr << "Distance evaluator not found: '" << params.distance_metric << "'" << std::endl;
+		ROS_ERROR("Distance evaluator not found: '%s'", params.distance_metric.c_str());
 		return false;
 	    }
 	    
@@ -121,7 +129,7 @@ namespace kinematic_planning
 	{
 	    /* set the workspace volume for planning */
 	    // only area or volume should go through... not sure what happens on really complicated models where 
-	    // we have both multiple planar and multiple floating joints...
+	    // we have both multiple planar and multiple floating joints... it might work :)
 	    static_cast<SpaceInformationRKPModel*>(psetup->si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
 										params.volumeMax.x, params.volumeMax.y);
 	    static_cast<SpaceInformationRKPModel*>(psetup->si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
@@ -166,7 +174,7 @@ namespace kinematic_planning
 	    
 	    if (times <= 0)
 	    {
-		std::cerr << "Request specifies motion plan cannot be computed " << times << " times" << std::endl;
+		ROS_ERROR("Request specifies motion plan cannot be computed %d times", times);
 		return;
 	    }
 	    
@@ -181,7 +189,7 @@ namespace kinematic_planning
 		ros::Time startTime = ros::Time::now();
 		bool ok = psetup->mp->solve(allowed_time); 
 		double tsolve = (ros::Time::now() - startTime).to_double();	
-		std::cout << (ok ? "[Success]" : "[Failure]") << " Motion planner spent " << tsolve << " seconds" << std::endl;
+		ROS_INFO("%s Motion planner spend %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
 		totalTime += tsolve;
 		
 		/* do path smoothing */
@@ -191,7 +199,7 @@ namespace kinematic_planning
 		    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 		    psetup->smoother->smoothMax(path);
 		    double tsmooth = (ros::Time::now() - startTime).to_double();
-		    std::cout << "          Smoother spent " << tsmooth << " seconds (" << (tsmooth + tsolve) << " seconds in total)" << std::endl;
+		    ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
 		    if (interpolate)
 			psetup->si->interpolatePath(path);
 		    if (bestPath == NULL || bestDifference > goal->getDifference() || 
@@ -202,14 +210,13 @@ namespace kinematic_planning
 			bestPath = path;
 			bestDifference = goal->getDifference();
 			goal->forgetSolutionPath();
-			std::cout << "          Obtained better solution" << std::endl;
+			ROS_INFO("          Obtained better solution");
 		    }
 		}
 		psetup->mp->clear();	    
 	    }
 	    
-	    
-	    std::cout << std::endl << "Total planning time: " << totalTime << "; Average planning time: " << (totalTime / (double)times) << " (seconds)" << std::endl;
+	    ROS_INFO("\nTotal planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
 	}
 	
 	void fillSolution(RKPPlannerSetup *psetup, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
@@ -267,9 +274,11 @@ namespace kinematic_planning
 	    setupGoalState(m, psetup, req);
 	    
 	    /* print some information */
-	    printf("=======================================\n");
-	    psetup->si->printSettings();
-	    printf("=======================================\n");	
+	    ROS_INFO("=======================================");
+	    std::stringstream ss;
+	    psetup->si->printSettings(ss);
+	    ROS_INFO(ss.str().c_str());
+	    ROS_INFO("=======================================");	
 	    
 	    /* compute actual motion plan */
 	    ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;

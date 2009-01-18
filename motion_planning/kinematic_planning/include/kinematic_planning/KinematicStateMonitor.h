@@ -41,6 +41,8 @@
 
 #include <ros/node.h>
 #include <ros/time.h>
+#include <ros/console.h>
+
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
 #include <tf/transform_listener.h>
@@ -159,7 +161,7 @@ namespace kinematic_planning
 		if (m_node->getParam(m_robotModelName, content))
 		    setRobotDescriptionFromData(content.c_str());
 		else
-		    fprintf(stderr, "Robot model '%s' not found!\n", m_robotModelName.c_str());
+		    ROS_ERROR("Robot model '%s' not found!", m_robotModelName.c_str());
 	    }
 	}
 	
