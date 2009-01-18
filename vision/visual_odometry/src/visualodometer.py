@@ -38,6 +38,8 @@ import vop
 import votools as VO
 from timer import Timer
 
+import os
+
 import Image
 from math import *
 import numpy
@@ -300,7 +302,9 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    self.cl.read('/u/prdata/calonder_trees/current.rtc')
+    filename = '/u/prdata/calonder_trees/current.rtc'
+    assert os.access(filename, os.R_OK)
+    self.cl.read(filename)
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)
