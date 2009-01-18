@@ -4,7 +4,7 @@
 # Parameters for the state space 
 robot_msgs/KinematicSpaceParameters params
 
-# The starting state for the robot. This is eth complete state of the
+# The starting state for the robot. This is the complete state of the
 # robot, all joint values, everything that needs to be specified to
 # completely define where each part of the robot is in space. The
 # meaning for each element in the state vector can be extracted from
