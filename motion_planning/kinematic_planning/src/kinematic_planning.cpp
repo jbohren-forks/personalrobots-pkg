@@ -199,7 +199,7 @@ public:
     
     void planToStateRequest(void)
     {
-	ROS_INFO("Request for replanning to a state");
+	ROS_INFO("\nRequest for replanning to a state");
 	
 	stopReplanning();
 	
@@ -223,7 +223,7 @@ public:
     
     void planToPositionRequest(void)
     {
-	ROS_INFO("Request for replanning to a position");
+	ROS_INFO("\nRequest for replanning to a position");
 
 	stopReplanning();
 	
@@ -477,13 +477,13 @@ public:
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
-	ROS_INFO("Request for planning to a state");
+	ROS_INFO("\nRequest for planning to a state");
 	return m_requestState.execute(m_models, req, res.path, res.distance);
     }
 
     bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
     {	
-	ROS_INFO("Request for planning to a position");
+	ROS_INFO("\nRequest for planning to a position");
 	return m_requestLinkPosition.execute(m_models, req, res.path, res.distance);
     }
 
@@ -622,7 +622,7 @@ int main(int argc, char **argv)
 	planner->knownModels(mlist);
 	ROS_INFO("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    ROS_INFO("  * %s\n", mlist[i].c_str());    
+	    ROS_INFO("  * %s", mlist[i].c_str());    
 	if (mlist.size() > 0)
 	    planner->spin();
 	else

@@ -59,6 +59,40 @@ namespace kinematic_planning
     {
     public:
 	
+	class OutputHandlerROScon : public ompl::msg::OutputHandler
+	{
+	public:
+	    
+	    OutputHandlerROScon(void) : OutputHandler()
+	    {
+	    }
+	    
+	    /** Issue a ROS error */
+	    virtual void error(const std::string &text)
+	    {
+		ROS_ERROR(text.c_str());
+	    }	    
+	    
+	    /** Issue a ROS warning */
+	    virtual void warn(const std::string &text)
+	    {
+		ROS_WARN(text.c_str());
+	    }
+	    
+	    /** Issue ROS info */
+	    virtual void inform(const std::string &text)
+	    {
+		ROS_INFO(text.c_str());
+	    }	    
+	    
+	    /** Issue ROS info */
+	    virtual void message(const std::string &text)
+	    {
+		ROS_INFO(text.c_str());
+	    }
+	    
+	};
+
 	RKPPlannerSetup(void)
 	{
 	    mp = NULL;
@@ -82,11 +116,17 @@ namespace kinematic_planning
 		delete si;
 	}
 	
-	/* for each planner definition, define the set of distance metrics it can use */
+	/** For each planner definition, define the set of distance metrics it can use */
 	virtual void setupDistanceEvaluators(void)
 	{
 	    assert(si);
 	    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
+	}
+	
+	/** Define what the OMPL library should do with the output it produces */
+	virtual void setupOutputHandler(void)
+	{
+	    ompl::msg::useOutputHandler(&m_oh);
 	}
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
@@ -96,6 +136,11 @@ namespace kinematic_planning
 	ompl::SpaceInformation::StateValidityChecker_t                          svc;
 	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
 	ompl::PathSmootherKinematic_t                                           smoother;
+
+    protected:
+	
+	OutputHandlerROScon m_oh;
+	
     };
 
 } // kinematic_planning
