@@ -10,7 +10,6 @@
   <review status="na" notes=""/>
   <license>BSD</license>
   
-  <depend package="wg_robot_description" />
   <depend package="pr2_defs" />
   <depend package="pr2_default_controllers" />
   <depend package="pr2_etherCAT"/>
