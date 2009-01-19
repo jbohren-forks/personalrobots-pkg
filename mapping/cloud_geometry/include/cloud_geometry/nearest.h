@@ -193,6 +193,8 @@ namespace cloud_geometry
 
     void computeMomentInvariants (std_msgs::PointCloud *points, double &j1, double &j2, double &j3);
     void computeMomentInvariants (std_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3);
+    
+    bool isBoundaryPoint (std_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors, Eigen::Vector3d u, Eigen::Vector3d v, double angle_threshold = M_PI / 2.0);
   }
 }
 
