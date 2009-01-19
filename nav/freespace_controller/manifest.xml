@@ -1,0 +1,21 @@
+<package>
+  <description>
+    A freespace controller that drives a mobile base in the plane. Given a path
+    from the path planner, the controller determines the dx, dy, dtheta
+    velocities to send to the robot.
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="std_msgs" />
+  <depend package="rosconsole" />
+  <depend package="tf" />
+  <depend package="rostime" />
+  <depend package="rospy" />
+  <depend package="costmap_2d" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+  </export>
+</package>
