@@ -2,7 +2,7 @@
     <!-- use mech.py to spawn all controllers listed in controllers.xml -->
     <param name="base_controller/odom_publish_rate" value="10" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find pr2_default_controllers)/controllers_head_torso_gazebo.xml" output="screen"/>
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
 
     <!-- start tilting Hokuyo laser by sending it a preset code of 46, this means sawtooth profile sweep.
          for details of the profile, rates, see controller::LaserScannerControllerNode. -->

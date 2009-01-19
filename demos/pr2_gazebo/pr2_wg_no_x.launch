@@ -15,7 +15,6 @@
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -5 -15 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
-    <!--include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_controllers.launch" /-->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
   </group>
 </launch>
