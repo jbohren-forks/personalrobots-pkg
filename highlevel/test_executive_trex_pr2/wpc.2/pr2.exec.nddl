@@ -15,10 +15,10 @@ assertCompleted(g0.state);
 
 // Also a goal that occurs at the end of the move base node which
 // expects to be within a certain distance. This should fail because if the interruption worked correctly, then
-// the node will not be at the goal, nor will it even be close
+// the node will not be at the goal, nor will it even be close. Require it to be a min distance away
 rejectable(baseState.Holds g1);
 concurrent(g1.start, g0.end);
 float distance;
 calcDistance(distance, g0.x, g0.y, g1.x, g1.y);
-leq(distance, 0.5); 
-assertRejected(g1.state);
+leq(1.0, distance); 
+assertCompleted(g1.state);

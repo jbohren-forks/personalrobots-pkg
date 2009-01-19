@@ -25,7 +25,7 @@ assertCompleted(g2.state);
 
 
 //Check goal 0.
-/*rejectable(baseState.Holds checkgoal0);
+rejectable(baseState.Holds checkgoal0);
 concurrent(checkgoal0.start, g0.end);
 float distance0;
 calcDistance(distance0, g0.x, g0.y, checkgoal0.x, checkgoal0.y);
@@ -46,6 +46,6 @@ concurrent(checkgoal2.start, g2.end);
 float distance2;
 calcDistance(distance2, g2.x, g2.y, checkgoal2.x, checkgoal2.y);
 leq(distance2, 0.5); 
-assertCompleted(checkgoal2.state);*/
+assertCompleted(checkgoal2.state);
 
 
