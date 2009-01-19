@@ -163,7 +163,7 @@ public:
 
 	EnvironmentNAVXYTHETALAT();
 
-	bool InitializeEnv(const char* sEnvFile, const char* sMotPrimFile);	
+	bool InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile);	
 	bool InitializeEnv(const char* sEnvFile);
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);
 	int  GetFromToHeuristic(int FromStateID, int ToStateID);

@@ -874,6 +874,10 @@ int ADPlanner::SetSearchGoalState(int SearchGoalStateID, ADSearchStateSpace_t* p
 	{
 		pSearchStateSpace->searchgoalstate = GetState(SearchGoalStateID, pSearchStateSpace);
 
+		//current solution may be invalid
+		pSearchStateSpace->eps_satisfied = INFINITECOST;
+		pSearchStateSpace_->eps = this->finitial_eps;		
+
 		//recompute heuristic for the heap if heuristics is used
 #if USE_HEUR
 		int i;

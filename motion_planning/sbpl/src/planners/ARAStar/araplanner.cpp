@@ -677,6 +677,12 @@ int ARAPlanner::SetSearchGoalState(int SearchGoalStateID, ARASearchStateSpace_t*
 	{
 		pSearchStateSpace->searchgoalstate = GetState(SearchGoalStateID, pSearchStateSpace);
 
+		//should be new search iteration
+		pSearchStateSpace->eps_satisfied = INFINITECOST;
+		pSearchStateSpace->bNewSearchIteration = true;
+		pSearchStateSpace_->eps = this->finitial_eps;
+
+
 		//recompute heuristic for the heap if heuristics is used
 #if USE_HEUR
 		for(int i = 0; i < (int)pSearchStateSpace->searchMDP.StateArray.size(); i++)

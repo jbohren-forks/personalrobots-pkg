@@ -531,3 +531,284 @@ double computeMinUnsignedAngleDiff(double angle1, double angle2)
 
     return anglediff;
 }
+
+
+//computes 8-connected distances to obstacles and non-free areas in two linear passes and returns them in disttoObs_incells 
+//and disttoNonfree_incells arrays. The distances are in terms of the number of cells but are floats. These distances
+//can then be converted into the actual distances using the actual discretization values
+//areas outside of the map are considered to be obstacles
+void computeDistancestoNonfreeAreas(unsigned char** Grid2D, int width_x, int height_y, unsigned char obsthresh, float** disttoObs_incells, 
+									float** disttoNonfree_incells)
+{
+	int x,y,nbrx,nbry;
+	float mindisttoObs, mindisttoNonfree;
+	float maxDist = (float)(__min(width_x, height_y));
+	float disttoObs, disttoNonfree;
+	int dir;
+	const int NUMOF2DQUASIDIRS = 4;
+
+    // for quasi-Euclidean distance transform
+    // going left-to-right, top-to-bottom
+    int dxdownlefttoright_[NUMOF2DQUASIDIRS];
+    int dydownlefttoright_[NUMOF2DQUASIDIRS];
+    int dxdownrighttoleft_[NUMOF2DQUASIDIRS];
+    int dydownrighttoleft_[NUMOF2DQUASIDIRS];
+
+    // going right-to-left, bottom-to-top
+    int dxuprighttoleft_[NUMOF2DQUASIDIRS];
+    int dyuprighttoleft_[NUMOF2DQUASIDIRS];
+    int dxuplefttoright_[NUMOF2DQUASIDIRS];
+    int dyuplefttoright_[NUMOF2DQUASIDIRS];
+
+    // distances to the above nbrs
+    float distdownlefttoright_[NUMOF2DQUASIDIRS];
+    float distdownrighttoleft_[NUMOF2DQUASIDIRS];
+    float distuprighttoleft_[NUMOF2DQUASIDIRS];
+    float distuplefttoright_[NUMOF2DQUASIDIRS];
+
+	// and for distance transform:
+    // increasing x (outer)
+    // increasing y (inner)
+    //  [2]
+    //  [1][s]
+    //  [0][3]
+    dxdownlefttoright_[0] = -1; dydownlefttoright_[0] = -1;	
+	dxdownlefttoright_[1] = -1; dydownlefttoright_[1] = 0;	
+	dxdownlefttoright_[2] = -1; dydownlefttoright_[2] = 1;	
+	dxdownlefttoright_[3] = 0; dydownlefttoright_[3] = -1;	
+
+    // increasing x (outer)
+    // decreasing y (inner)
+    //  [2][3]
+    //  [1][s]
+    //  [0] 
+    dxdownrighttoleft_[0] = -1; dydownrighttoleft_[0] = -1;	
+	dxdownrighttoleft_[1] = -1; dydownrighttoleft_[1] = 0;	
+	dxdownrighttoleft_[2] = -1; dydownrighttoleft_[2] = 1;	
+	dxdownrighttoleft_[3] = 0; dydownrighttoleft_[3] = 1;	
+    
+    // decreasing x (outer)
+    // decreasing y (inner)
+    //  [3][2]
+    //  [s][1]
+    //     [0] 
+    dxuprighttoleft_[0] = 1; dyuprighttoleft_[0] = -1;	
+	dxuprighttoleft_[1] = 1; dyuprighttoleft_[1] = 0;	
+	dxuprighttoleft_[2] = 1; dyuprighttoleft_[2] = 1;	
+	dxuprighttoleft_[3] = 0; dyuprighttoleft_[3] = 1;	
+
+    // decreasing x (outer)
+    // increasing y (inner)
+    //     [2]
+    //  [s][1]
+    //  [3][0] 
+    dxuplefttoright_[0] = 1; dyuplefttoright_[0] = -1;	
+	dxuplefttoright_[1] = 1; dyuplefttoright_[1] = 0;	
+	dxuplefttoright_[2] = 1; dyuplefttoright_[2] = 1;	
+	dxuplefttoright_[3] = 0; dyuplefttoright_[3] = -1;	
+
+    // insert the corresponding distances
+    distdownlefttoright_[0] = (float)1.414;
+    distdownlefttoright_[1] = (float)1.0;
+    distdownlefttoright_[2] = (float)1.414;
+    distdownlefttoright_[3] = (float)1.0;
+
+    distdownrighttoleft_[0] = (float)1.414;
+    distdownrighttoleft_[1] = (float)1.0;
+    distdownrighttoleft_[2] = (float)1.414;
+    distdownrighttoleft_[3] = (float)1.0;
+
+    distuprighttoleft_[0] = (float)1.414;
+    distuprighttoleft_[1] = (float)1.0;
+    distuprighttoleft_[2] = (float)1.414;
+    distuprighttoleft_[3] = (float)1.0;
+
+    distuplefttoright_[0] = (float)1.414;
+    distuplefttoright_[1] = (float)1.0;
+    distuplefttoright_[2] = (float)1.414;
+    distuplefttoright_[3] = (float)1.0;
+
+
+	// step through the map from top to bottom,
+	// alternating left-to-right then right-to-left
+	// This order maintains the invariant that the min distance for each
+	// cell to all previously-visited obstacles is accurate
+	for(x = 0; x < width_x; x++)
+	{
+		// move from left to right
+		if (x%2 == 0) {
+        
+			for(y = 0; y < height_y; y++)
+				{
+                
+					mindisttoObs = maxDist; // initialize to max distance
+					mindisttoNonfree = maxDist;
+
+					// if cell is an obstacle, set disttoObs to 0 and continue
+					if (Grid2D[x][y] >= obsthresh){
+						disttoObs_incells[x][y] = 0;
+						disttoNonfree_incells[x][y] = 0;
+						continue;
+					}
+					
+					if(Grid2D[x][y] > 0){
+						mindisttoNonfree = 0;
+					}
+					
+					//iterate over predecessors
+					for(dir = 0; dir < NUMOF2DQUASIDIRS; dir++){
+						nbrx = x + dxdownlefttoright_[dir];
+						nbry = y + dydownlefttoright_[dir];		
+                    
+						//make sure it is inside the map and has no obstacle
+						// compute min cost to an obstacle for each cell, using 
+						// *just* the cells already computed this pass for checking distance
+						if(nbrx < 0 || nbrx >= width_x || nbry < 0 || nbry >= height_y){
+							disttoObs = distdownlefttoright_[dir];
+							disttoNonfree = disttoObs;
+						} 
+						else 
+						{
+							disttoObs = distdownlefttoright_[dir] + disttoObs_incells[nbrx][nbry];
+							disttoNonfree = distdownlefttoright_[dir] + disttoNonfree_incells[nbrx][nbry];
+						}
+                    
+						if (disttoObs < mindisttoObs)
+							mindisttoObs = disttoObs;
+						if (disttoNonfree < mindisttoNonfree)
+							mindisttoNonfree = disttoNonfree;
+					}//over preds
+            
+					disttoObs_incells[x][y] = mindisttoObs;
+					disttoNonfree_incells[x][y] = mindisttoNonfree;
+				}
+        
+		} else {
+						
+			// move from right to left
+			for(y = height_y-1; y >= 0; y--)
+				{
+
+					mindisttoObs = maxDist; // initialize to max distance
+					mindisttoNonfree = maxDist;
+
+					// if cell is an obstacle, set disttoObs to 0 and continue
+					if (Grid2D[x][y] >= obsthresh){
+						disttoObs_incells[x][y] = 0;
+						disttoNonfree_incells[x][y] = 0;
+						continue;
+					}
+					
+					if(Grid2D[x][y] > 0){
+						mindisttoNonfree = 0;
+					}
+
+
+					//iterate over predecessors
+					for(dir = 0; dir < NUMOF2DQUASIDIRS; dir++)
+						{
+							nbrx = x + dxdownrighttoleft_[dir];
+							nbry = y + dydownrighttoleft_[dir];		
+                        
+							//make sure it is inside the map and has no obstacle
+							// compute min cost to an obstacle for each cell, using 
+							// *just* the cells already computed this pass for checking distance
+							if(nbrx < 0 || nbrx >= width_x || nbry < 0 || nbry >= height_y){
+								disttoObs = distdownrighttoleft_[dir];
+								disttoNonfree = disttoObs;
+							} else {
+								disttoObs = distdownrighttoleft_[dir] + disttoObs_incells[nbrx][nbry];
+								disttoNonfree = distdownrighttoleft_[dir] + disttoNonfree_incells[nbrx][nbry];
+							}
+                        
+							if (disttoObs < mindisttoObs)
+								mindisttoObs = disttoObs;
+							if (disttoNonfree < mindisttoNonfree)
+								mindisttoNonfree = disttoNonfree;
+						}
+                
+					disttoObs_incells[x][y] = mindisttoObs;
+					disttoNonfree_incells[x][y] = mindisttoNonfree;
+				}   
+			//printf("x=%d\n", x);
+		}
+	}
+
+	// step through the map from bottom to top
+	for(x = width_x-1; x >= 0; x--)
+	{
+    
+		// move from right to left
+		if (x%2 == 0) {
+        
+			for(y = height_y-1; y >= 0; y--)
+				{
+                
+					// initialize to current distance
+					mindisttoObs = disttoObs_incells[x][y];
+					mindisttoNonfree = disttoNonfree_incells[x][y];
+
+					//iterate over predecessors
+					for(dir = 0; dir < NUMOF2DQUASIDIRS; dir++)
+						{
+							nbrx = x + dxuprighttoleft_[dir];
+							nbry = y + dyuprighttoleft_[dir];		
+                        
+							//make sure it is inside the map and has no obstacle
+							// compute min cost to an obstacle for each cell, using 
+							// *just* the cells already computed this pass for checking distance
+							if(nbrx < 0 || nbrx >= width_x || nbry < 0 || nbry >= height_y){
+								disttoObs = distuprighttoleft_[dir];
+								disttoNonfree = disttoObs;
+							} else {
+								disttoObs = distuprighttoleft_[dir] + disttoObs_incells[nbrx][nbry];
+								disttoNonfree = distuprighttoleft_[dir] + disttoNonfree_incells[nbrx][nbry];
+							}
+                        
+							if (disttoObs < mindisttoObs)
+								mindisttoObs = disttoObs;
+							if (disttoNonfree < mindisttoNonfree)
+								mindisttoNonfree = disttoNonfree;
+						}//over preds
+                
+					disttoObs_incells[x][y] = mindisttoObs;
+					disttoNonfree_incells[x][y] = mindisttoNonfree;
+				}//for y        
+		} else {
+        
+			// move from left to right
+			for(y = 0; y< height_y; y++)
+				{
+					// initialize to current distance
+					mindisttoObs = disttoObs_incells[x][y]; 
+					mindisttoNonfree = disttoNonfree_incells[x][y];
+
+					//iterate over predecessors
+					for(dir = 0; dir < NUMOF2DQUASIDIRS; dir++)
+						{
+							nbrx = x + dxuplefttoright_[dir];
+							nbry = y + dyuplefttoright_[dir];		
+                        
+							//make sure it is inside the map and has no obstacle
+							// compute min cost to an obstacle for each cell, using 
+							// *just* the cells already computed this pass for checking distance
+							if(nbrx < 0 || nbrx >= width_x || nbry < 0 || nbry >= height_y){
+								disttoObs = distuplefttoright_[dir];
+								disttoNonfree = disttoObs;
+							} else {
+								disttoObs = distuplefttoright_[dir] + disttoObs_incells[nbrx][nbry];
+								disttoNonfree = distuplefttoright_[dir] + disttoNonfree_incells[nbrx][nbry];
+							}
+                        
+							if (disttoObs < mindisttoObs)
+								mindisttoObs = disttoObs;
+							if (disttoNonfree < mindisttoNonfree)
+								mindisttoNonfree = disttoNonfree;
+						}
+                
+					disttoObs_incells[x][y] = mindisttoObs;
+					disttoNonfree_incells[x][y] = mindisttoNonfree;
+			}//over y                
+		}//direction
+	}//over x
+}

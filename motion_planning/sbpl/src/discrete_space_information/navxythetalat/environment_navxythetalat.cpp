@@ -885,6 +885,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 	//iterate over source angles
 	for(int tind = 0; tind < NAVXYTHETALAT_THETADIRS; tind++)
 	{
+		printf("processing angle %d\n", tind);
 		EnvNAVXYTHETALATCfg.ActionsV[tind] = new EnvNAVXYTHETALATAction_t[EnvNAVXYTHETALATCfg.actionwidth];
 
 		//compute sourcepose
@@ -1450,8 +1451,9 @@ bool EnvironmentNAVXYTHETALAT::CheckQuant(FILE* fOut)
 //-----------------------------------------------------------------------------
 
 //-----------interface with outside functions-----------------------------------
-bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const char* sMotPrimFile)
+bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile)
 {
+	EnvNAVXYTHETALATCfg.FootprintPolygon = perimeterptsV;
 
 	FILE* fCfg = fopen(sEnvFile, "r");
 	if(fCfg == NULL)
@@ -1461,19 +1463,24 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const char* s
 	}
 	ReadConfiguration(fCfg);
 
-	FILE* fMotPrim = fopen(sMotPrimFile, "r");
-	if(fMotPrim == NULL)
+	if(sMotPrimFile != NULL)
 	{
-		printf("ERROR: unable to open %s\n", sMotPrimFile);
-		exit(1);
+		FILE* fMotPrim = fopen(sMotPrimFile, "r");
+		if(fMotPrim == NULL)
+		{
+			printf("ERROR: unable to open %s\n", sMotPrimFile);
+			exit(1);
+		}
+		if(ReadMotionPrimitives(fMotPrim) == false)
+		{
+			printf("ERROR: failed to read in motion primitive file\n");
+			exit(1);
+		}
+		InitGeneral(&EnvNAVXYTHETALATCfg.mprimV);
 	}
-	if(ReadMotionPrimitives(fMotPrim) == false)
-	{
-		printf("ERROR: failed to read in motion primitive file\n");
-		exit(1);
-	}
+	else
+		InitGeneral(NULL);
 
-	InitGeneral(&EnvNAVXYTHETALATCfg.mprimV);
 
 	return true;
 }
