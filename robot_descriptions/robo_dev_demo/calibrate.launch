@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="mechanism_bringup" type="calibrate.py"
+        args="$(find pr2_default_controllers)/calibration_controllers/robo_dev_head_calibration_controller.xml"
+        output="screen" />
+</launch>
