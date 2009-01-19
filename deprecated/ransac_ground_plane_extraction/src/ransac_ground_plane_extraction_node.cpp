@@ -110,7 +110,7 @@ void RansacGroundPlaneExtractionNode::cloudCallback()
     return;
   }
   catch(tf::ExtrapolationException& ex) {
-    ROS_INFO("Extrapolation Error\n");
+    ROS_INFO("Extrapolation Error %s\n", ex.what());
     return;
   }
   catch(tf::TransformException e) {
