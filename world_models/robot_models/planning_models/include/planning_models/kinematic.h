@@ -416,6 +416,7 @@ namespace planning_models
 		m_dim = m_owner->stateDimension > 0 ? m_owner->stateDimension : 0;
 		m_params = m_dim > 0 ? new double[m_dim] : NULL;
 		m_pos = m_owner->parameterNames;
+		setAll(0.0);
 	    }
 	    
 	    virtual ~StateParams(void)
