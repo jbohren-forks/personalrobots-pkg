@@ -12,7 +12,6 @@
 <depend package="robot_msgs"/>
 <depend package="std_srvs"/>
 <depend package="boost"/>
-<depend package="string_utils"/>
 <depend package="opencv_latest"/>
 <depend package="stereo_utils"/>
 <!--<depend package="visual_odometry"/>-->
