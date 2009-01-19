@@ -1,6 +1,6 @@
 <launch>
 <param name="base_controller/odom_publish_rate" value="30.0"/>
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base.xml" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
 
   <group name="wg">
 <param name="axis_vx" value="3" type="int"/>
