@@ -230,6 +230,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
+  ROS_DEBUG("segway apox main_loop\n");
 	can = dgc_usbcan_initialize("/dev/ttyUSB1"); // pull from a param someday...
 
 	if (!can)
@@ -283,16 +284,9 @@ void Segway::main_loop()
     }
 
 		if (dgc_usbcan_read_message(can, &can_id, message, &message_length))
-    //if (0)
 		{
-//			rmp.AddPacket(can_id, message);
 			if (can_id == RMP_CAN_ID_MSG5)
 			{
-        /*
-				static int c = 0;
-  			if (c++ % 100 == 0)
-					printf("%d %d\n", rmp.foreaft, rmp.yaw);
-        */
 				if (!odom_init)
 					odom_init = true;
 				else
@@ -345,33 +339,7 @@ void Segway::main_loop()
       }
     }
 		else
-		{
 			usleep(5000);
-		}
-
-                                /*            tf.sendInverseEuler("odom",
-                                              "base",
-                                              odom.pos.x,
-                                odom.pos.y,
-                                0.0,
-                                odom.pos.th,
-                                0,
-                                0,
-                                odom.header.stamp);
-					}
-				}
-				last_foreaft = rmp.foreaft;
-				last_yaw = rmp.yaw;
-            */
-/*
-				req_mutex.lock();
-				build_vel_pkt(req_x_vel, req_yaw_rate);
-				req_mutex.unlock();
-				dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
-*/
-//			}
-//		}
-//		char c = get_key_nonblocking();
   }
 }
 
