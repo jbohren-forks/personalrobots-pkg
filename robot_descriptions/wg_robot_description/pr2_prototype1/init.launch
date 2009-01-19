@@ -1,9 +1,0 @@
-<launch>
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2_prototype1/pr2_prototype1.xacro.xml'" />
-  <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
-  <group name="wg">
-    <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"
-          output="screen"/>
-  </group>
-</launch>
-
