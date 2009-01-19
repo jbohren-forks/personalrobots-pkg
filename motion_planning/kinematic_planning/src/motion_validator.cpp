@@ -97,6 +97,7 @@ Provides (name/type):
 #include "kinematic_planning/RKPSpaceInformation.h"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <map>
 using namespace kinematic_planning;
@@ -148,17 +149,17 @@ public:
 	{
 	    if (model->kmodel->stateDimension != req.start_state.get_vals_size())
 	    {
-		std::cerr << "Dimension of start state expected to be " << model->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
+		ROS_ERROR("Dimension of start state expected to be %d but was received as %d", model->kmodel->stateDimension, req.start_state.get_vals_size());
 		return false;
 	    }
 	    
 	    if (model->si->getStateDimension() != req.goal_state.get_vals_size())
 	    {
-		std::cerr << "Dimension of start goal expected to be " << model->si->getStateDimension() << " but was received as " <<  req.goal_state.get_vals_size() << std::endl;
+		ROS_ERROR("Dimension of start goal expected to be %d but was received as %d", model->si->getStateDimension(), req.goal_state.get_vals_size());
 		return false;
 	    }
 	    
-	    std::cout << "Validating path for '" << req.model_id << "'..." << std::endl;
+	    ROS_INFO("Validating path for '%s'...", req.model_id.c_str());
 	    
 	    const unsigned int dim = model->si->getStateDimension();
 	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
@@ -190,7 +191,7 @@ public:
 
 	    res.valid = model->si->checkMotionIncremental(start, goal);
 	    
-	    std::cout << "Result: " << (int)res.valid << std::endl;
+	    ROS_INFO("Result: %d", (int)res.valid);
 	    
 	    delete start;
 	    delete goal;
@@ -199,7 +200,7 @@ public:
 	}
 	else
 	{
-	    std::cerr << "Model '" << req.model_id << "' not known" << std::endl;	    
+	    ROS_ERROR("Model '%s' not known", req.model_id.c_str());
 	    return false;
 	}
     }
@@ -208,9 +209,11 @@ public:
     {
 	CollisionSpaceMonitor::setRobotDescription(file);	
 	
-	printf("=======================================\n");	
-	m_kmodel->printModelInfo();
-	printf("=======================================\n");
+	ROS_INFO("=======================================");	
+	std::stringstream ss;
+	m_kmodel->printModelInfo(ss);
+	ROS_INFO(ss.str().c_str());
+	ROS_INFO("=======================================");
 
 	/* set the data for the model */
 	myModel *model = new myModel();
@@ -277,16 +280,16 @@ int main(int argc, char **argv)
 	
 	std::vector<std::string> mlist;    
 	validator->knownModels(mlist);
-	printf("Known models:\n");    
+	ROS_INFO("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    printf("  * %s\n", mlist[i].c_str());    
+	    ROS_INFO("  * %s", mlist[i].c_str());
 	if (mlist.size() > 0)
 	    validator->spin();
 	else
-	    printf("No models defined. Path validation node cannot start.\n");
+	    ROS_ERROR("No models defined. Path validation node cannot start.");
 	
 	validator->shutdown();
-
+	
 	delete validator;	
     }
     else
