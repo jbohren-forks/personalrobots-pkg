@@ -1,0 +1,16 @@
+<package>
+
+  <description brief="PR2 Controller XML's">
+    
+    This package contains XML descriptions of robot mechanism controllers as defined at Willow Garage.
+    
+  </description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  
+  <depend package="wg_robot_description" />
+  <depend package="teleop_base"/>
+  <depend package="pr2_mechanism_controllers"/>
+  <depend package="robot_mechanism_controllers"/>
+</package>

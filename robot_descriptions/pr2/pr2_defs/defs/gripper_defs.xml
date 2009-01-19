@@ -1,0 +1,469 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <property name="gripper_max_angle" value="0.548" />
+  <property name="gripper_min_angle" value="0.05" />
+
+  <macro name="pr2_finger" params="prefix parent">
+
+    <!-- Finger proximal digit -->
+
+    <joint name="${prefix}_l_finger_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
+             k_position="1.0" k_velocity="0.1" velocity="0.5"
+             safety_length_min="0.05" safety_length_max="0.1" />
+      <joint_properties damping="0.2" />
+    </joint>
+
+    <link name="${prefix}_l_finger_link">
+      <parent name="${parent}" />
+      <origin xyz="0.07751 ${1*0.01} 0" rpy="0 0 ${gripper_min_angle}" />
+
+      <joint name="${prefix}_l_finger_joint" />
+      <inertial>
+        <mass value="0.13894" />
+        <com xyz="0.03688 0.01629 -0.0011" /> <!-- sign / coordinates could be wrong -->
+        <inertia  ixx="0.00005738962"     ixy="0.00000441910"      ixz="-0.00000613376"
+                  iyy="0.00015025775"     iyz="-0.00000155674"
+                  izz="0.00014577390" />  <!-- coordinates could be wrong -->
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Shell</elem>
+        </map>
+        <geometry name="${prefix}_l_finger_visual">
+          <mesh filename="upper_finger_l" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${prefix}_l_finger_collision">
+          <box size="0.131 0.056 0.049" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${prefix}_l_finger_sensor" flag="gazebo">
+        <verbatim key="${prefix}_l_finger_bumper_sensor">
+          <sensor:contact name="${prefix}_l_finger_contact_sensor">
+            <geom>${prefix}_l_finger_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${prefix}_l_finger_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${prefix}_l_finger_bumper</bumperTopicName>
+              <interface:bumper name="${prefix}_l_finger_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
+      <map name="${prefix}_l_finger_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
+      </map>
+    </link>
+
+    <!-- Finger proximal digit -->
+
+    <joint name="${prefix}_r_finger_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
+             k_position="0" k_velocity="0" velocity="0.5"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.2" />
+      <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
+      <map name="${prefix}_r_finger_mimic" flag="gazebo">
+        <elem key="mimicKp">1.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">50.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
+      </map>
+    </joint>
+
+    <link name="${prefix}_r_finger_link">
+      <parent name="${parent}" />
+      <origin xyz="0.07751 ${-1*0.01} 0" rpy="0 0 ${-gripper_min_angle}" />
+
+      <joint name="${prefix}_r_finger_joint" />
+      <inertial>
+        <mass value="0.13777" />
+        <com xyz="-0.01596 0.03558 0.0006" />
+        <inertia  ixx="0.00014805694" ixy="-0.00000426051" ixz="-0.00000157771"
+                  iyy="0.00005880239" iyz="0.00000539169"
+                  izz="0.00014333130" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Shell</elem>
+        </map>
+        <geometry name="${prefix}_r_finger_visual">
+          <mesh filename="upper_finger_r" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${prefix}_r_finger_collision">
+          <box size="0.131 0.056 0.049" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${prefix}_r_finger_sensor" flag="gazebo">
+        <verbatim key="${prefix}_r_finger_bumper_sensor">
+          <sensor:contact name="${prefix}_r_finger_contact_sensor">
+            <geom>${prefix}_r_finger_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${prefix}_r_finger_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${prefix}_r_finger_bumper</bumperTopicName>
+              <interface:bumper name="${prefix}_r_finger_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
+      <map name="${prefix}_r_finger_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
+      </map>
+    </link>
+
+    <!-- Finger tip -->
+
+    <joint name="${prefix}_l_finger_tip_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
+             k_position="0" k_velocity="0" velocity="0.5"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.002" />
+      <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
+      <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
+        <elem key="mimicKp">2.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">10.0</elem>
+      </map>
+    </joint>
+
+    <link name="${prefix}_l_finger_tip_link">
+      <parent name="${prefix}_l_finger_link" />
+      <origin xyz="0.0915 0 0" rpy="0 0 ${-gripper_min_angle}" />
+
+      <joint name="${prefix}_l_finger_tip_joint" />
+      <inertial>
+        <mass value="0.03826" />
+        <com xyz="0.00019 0.0051 0.0001" />
+        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
+                  iyy="0.00000576234" iyz="-0.00000007672"
+                  izz="0.00001066429" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0 " rpy="0 0 0 " />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="${prefix}_l_finger_tip_visual">
+          <mesh filename="finger_tip_l" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="${prefix}_l_finger_tip_collision">
+          <box size="0.053 0.04 0.023" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${prefix}_l_finger_tip_sensor" flag="gazebo">
+        <verbatim key="${prefix}_l_finger_tip_bumper_sensor">
+          <sensor:contact name="${prefix}_l_finger_tip_contact_sensor">
+            <geom>${prefix}_l_finger_tip_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${prefix}_l_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${prefix}_l_finger_tip_bumper</bumperTopicName>
+              <interface:bumper name="${prefix}_l_finger_tip_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
+      <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
+      </map>
+    </link>
+
+    <!-- Finger tip -->
+
+    <joint name="${prefix}_r_finger_tip_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <calibration reference_position="0" values="1.5 -1.0" />
+      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
+             k_position="0" k_velocity="0" velocity="0.5"
+             safety_length_min="0.0" safety_length_max="0.0" />
+      <joint_properties damping="0.002" />
+      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
+      <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
+        <elem key="mimicKp">2.0</elem>
+        <elem key="mimicKd">1.0</elem>
+        <elem key="mimicFMax">10.0</elem>
+      </map>
+    </joint>
+
+    <link name="${prefix}_r_finger_tip_link">
+      <parent name="${prefix}_r_finger_link" />
+      <origin xyz="0.0915 0 0" rpy="0 0 ${gripper_min_angle}" />
+
+      <joint name="${prefix}_r_finger_tip_joint" />
+      <inertial>
+        <mass value="0.03826" />
+        <com xyz="0.00019 -0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
+        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
+                  iyy="0.00000576234" iyz="-0.00000007672"
+                  izz="0.00001066429" />  <!-- nothing was flipped, not sure what to do here -->
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0 " rpy="0 0 0 " />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="${prefix}_r_finger_tip_visual">
+          <mesh filename="finger_tip_r" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="${prefix}_r_finger_tip_collision">
+          <box size="0.053 0.04 0.023" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${prefix}_r_finger_tip_sensor" flag="gazebo">
+        <verbatim key="${prefix}_r_finger_tip_bumper_sensor">
+          <sensor:contact name="${prefix}_r_finger_tip_contact_sensor">
+            <geom>${prefix}_r_finger_tip_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${prefix}_r_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${prefix}_r_finger_tip_bumper</bumperTopicName>
+              <interface:bumper name="${prefix}_r_finger_tip_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
+      <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+        <elem key="kp">1000000.0</elem>
+        <elem key="kd">1.0</elem>
+      </map>
+    </link>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_l_finger">
+        <controller:ros_p3d name="p3d_${prefix}_l_finger_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_l_finger_link</bodyName>
+          <topicName>${prefix}_l_finger_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_l_finger_position_iface" />
+        </controller:ros_p3d>
+      </verbatim>
+    </map>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_l_finger_tip">
+        <!--
+        <controller:ros_p3d name="p3d_${prefix}_l_finger_tip_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_l_finger_tip_link</bodyName>
+          <topicName>${prefix}_l_finger_tip_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_l_finger_tip_position_iface" />
+        </controller:ros_p3d>
+        <controller:ros_p3d name="f3d_${prefix}_l_finger_tip_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_l_finger_tip_link</bodyName>
+          <topicName>${prefix}_l_finger_tip_force_ground_truth</topicName>
+          <frameName>map</frameName>
+          <interface:position name="f3d_${prefix}_l_finger_tip_position_iface" />
+        </controller:ros_p3d>
+        -->
+      </verbatim>
+    </map>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_r_finger">
+        <!--
+        <controller:ros_p3d name="p3d_${prefix}_r_finger_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger_link</bodyName>
+          <topicName>${prefix}_r_finger_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_r_finger_position_iface" />
+        </controller:ros_p3d>
+        -->
+      </verbatim>
+    </map>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_r_finger_tip">
+        <!--
+        <controller:ros_p3d name="p3d_${prefix}_r_finger_tip_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger_tip_link</bodyName>
+          <topicName>${prefix}_r_finger_tip_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_r_finger_tip_position_iface" />
+        </controller:ros_p3d>
+        <controller:ros_p3d name="f3d_${prefix}_r_finger_tip_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger_tip_link</bodyName>
+          <topicName>${prefix}_r_finger_tip_force_ground_truth</topicName>
+          <frameName>map</frameName>
+          <interface:position name="f3d_${prefix}_r_finger_tip_position_iface" />
+        </controller:ros_p3d>
+        -->
+      </verbatim>
+    </map>
+
+  </macro>
+
+
+
+  <macro name="pr2_gripper" params="side parent">
+    <joint name="${side}_gripper_palm_joint" type="fixed" />
+    <link name="${side}_gripper_palm_link">
+      <parent name="${parent}" />
+      <joint name="${side}_gripper_palm_joint" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <inertial>
+        <mass value="0.51645" />
+        <com xyz="0.067340 0.002406 -0.000599" /> <!-- x might be a good guess, but not sure at all about y/z -->
+        <inertia  ixx="0.00317040150" ixy="0.00001165963" ixz="0.00002108306"
+                  iyy="0.00291703860" iyz="-0.00008069583"
+                  izz="0.00036788506" />  <!-- did not switch from function provided at all, definitely wrong -->
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="${side}_gripper_palm_visual">
+          <mesh filename="wrist_roll" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0.05 0 0" rpy="0 0 0" />
+        <geometry name="${side}_gripper_palm_collision">
+          <box size="0.11 0.10 0.05" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${side}_gripper_palm_sensor" flag="gazebo">
+        <verbatim key="${side}_gripper_palm_bumper_sensor">
+          <sensor:contact name="${side}_gripper_palm_contact_sensor">
+            <geom>${side}_gripper_palm_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${side}_gripper_palm_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${side}_gripper_palm_bumper</bumperTopicName>
+              <interface:bumper name="${side}_gripper_palm_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
+      <map name="${side}_gripper_palm_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${side}_gripper_palm">
+        <controller:ros_p3d name="p3d_${side}_gripper_palm_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${side}_gripper_palm_link</bodyName>
+          <topicName>${side}_gripper_palm_pose_ground_truth</topicName>
+          <xyzOffsets>0 0 0</xyzOffsets>
+          <rpyOffsets>0 0 0</rpyOffsets>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${side}_gripper_palm_position_iface" />
+        </controller:ros_p3d>
+      </verbatim>
+    </map>
+
+
+    <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
+
+    <!-- sin(angle*reduction) = motor_encoder * A + B -->
+    <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0002193927" B="0.530981135">
+      <actuator name="${side}_gripper_motor" />
+      <joint name="${side}_gripper_r_finger_joint" preduction="-1.0" ereduction="-6.0" />
+      <joint name="${side}_gripper_r_finger_tip_joint" preduction="1.0" ereduction="6.0" />
+      <joint name="${side}_gripper_l_finger_joint" preduction="1.0" ereduction="6.0"/>
+      <joint name="${side}_gripper_l_finger_tip_joint" preduction="-1.0" ereduction="-6.0" />
+      <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
+    </transmission>
+    <!--
+    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
+      <actuator name="${side}_gripper_motor" />
+      <joint name="${side}_gripper_l_finger_joint" />
+      <mechanicalReduction>6.0</mechanicalReduction>
+    </transmission>
+     -->
+  </macro>
+
+  <!--                    Calibration                            -->
+  <macro name="gripper_calibrator" params="side">
+    <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
+      <calibrate joint="${side}_gripper_r_finger_joint"
+                 actuator="${side}_gripper_motor"
+                 velocity="10" />
+      <pid p="15" i="0" d="0" iClamp="0" />
+    </controller>
+  </macro>
+
+</robot>

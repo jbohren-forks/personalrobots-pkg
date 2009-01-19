@@ -1,0 +1,2356 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="ros-pkg://wg_robot_description/models/pr2"/>
+
+  <!-- Begin template definitions for ease of reuse -->
+  
+  <const name="M_PI" value="3.14159" />   <!-- FIXME @todo needed to make M_PI interpreted correctly. -->
+  <const name="robot_inital_position_x" value="0.0" />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+  <const name="robot_inital_position_y" value="0.0" />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+  <const name="robot_inital_position_z" value="0.0*(wheel_radius-base_caster_offset_z/2)/2" />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+  <const name="wheel_clearance_offset" value="0.02" />  <!-- placement robot model origin so wheel are not under ground -->
+  
+  <const name="base_size_x" value="0.65" />   <!-- for defining collision geometry -->
+  <const name="base_size_y" value="0.65" />   <!-- for defining collision geometry -->
+  <const name="base_size_z" value="0.26" />   <!-- for defining collision geometry -->
+  
+  <const name="wheel_length" value="0.03" />  <!-- FIXME -->
+  <const name="wheel_radius" value="0.079" />   <!-- mp 20080801 -->
+  
+  <const name="base_caster_offset_x" value="0.2225" />   <!-- mp 20080801 -->
+  <const name="base_caster_offset_y" value="0.2225" />   <!-- mp 20080801 -->
+  <const name="base_caster_offset_z" value="0.0282" />   <!-- mp 20080801 -->
+  
+  <const name="caster_wheel_offset_y" value="0.049" />  <!-- from function spreadsheet -->
+  
+  <const name="caster_size_x" value="0.192" />  <!-- for collision geometry -->
+  <const name="caster_size_y" value="0.164" />  <!-- for collision geometry -->
+  <const name="caster_size_z" value="0.013" />  <!-- for collision geometry -->
+  <const name="caster_collision_center_box_center_offset_z" value="0.07" /> 
+  
+  <const name="torso_size_x" value=".432" />   <!-- for defining collision geometry -->
+  <const name="torso_size_y" value=".620" />  <!-- for defining collision geometry -->
+  <const name="torso_size_z" value=".823" />   <!-- for defining collision geometry -->
+  
+  <const name="base_torso_offset_x" value="-0.05" />  <!-- mp 20080801 -->
+  <const name="base_torso_offset_z" value="0.739675" />  <!-- mp 20080801 this is the offset for home position: lowest spine setting -->
+  
+  <const name="torso_center_box_center_offset_x" value="-.10" />  <!-- FIXME -->
+  <const name="torso_center_box_center_offset_z" value="-.50" />  <!-- FIXME -->
+  
+  <const name="torso_max_travel_range" value="0.396" />  <!-- FIXME -->
+  
+  <const name="shoulder_pan_size_x" value="0.347" />   <!-- for defining collision geometry -->
+  <const name="shoulder_pan_size_y" value="0.254" />   <!-- for defining collision geometry -->
+  <const name="shoulder_pan_size_z" value="0.646" />   <!-- for defining collision geometry -->
+  <const name="shoulder_pan_center_box_center_offset_x" value=".05" /> 
+  <const name="shoulder_pan_center_box_center_offset_z" value="-.20" /> 
+  
+  <const name="shoulder_pan_min_limit" value="-M_PI/2" />   <!-- FIXME -->
+  <const name="shoulder_pan_max_limit" value="M_PI/2" />   <!-- FIXME -->
+  
+  <const name="torso_shoulder_pan_offset_y" value="0.188" />  <!-- mp 20080801 -->
+  
+  <const name="shoulder_pitch_min_limit" value="-0.6109" /> 
+  <const name="shoulder_pitch_max_limit" value="1.3090" /> 
+  
+  <const name="shoulder_pitch_length" value="0.10" />  <!-- for defining collision geometry -->
+  <const name="shoulder_pitch_radius" value="0.12" />  <!-- for defining collision geometry -->
+  
+  <const name="shoulder_pan_shoulder_pitch_offset_x" value="0.1" />  <!-- mp 20080801 -->
+  
+  <const name="upperarm_roll_size_x" value="0.362" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_size_y" value="0.144" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_size_z" value="0.157" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_center_box_center_offset_x" value=".30" />  <!-- from origin of mesh to center of box-geom -->
+  
+  
+  <const name="elbow_flex_min_limit" value="-M_PI/2" /> 
+  <const name="elbow_flex_max_limit" value="0.8727" /> 
+  
+  <const name="elbow_flex_length" value="0.08" />  <!-- for defining collision geometry -->
+  <const name="elbow_flex_radius" value="0.1" />  <!-- for defining collision geometry -->
+  
+  <const name="upperarm_roll_elbow_flex_offset_x" value="0.4" />  <!-- mp 20080801 -->
+  <const name="upperarm_roll_min_limit" value="-2.3562" />
+  <const name="upperarm_roll_max_limit" value="2.3562" />
+  
+  <const name="forearm_roll_size_x" value="0.27" />  <!-- for defining collision geometry -->
+  <const name="forearm_roll_size_y" value="0.12" />  <!-- for defining collision geometry -->
+  <const name="forearm_roll_size_z" value="0.08" />  <!-- for defining collision geometry -->
+  <const name="forearm_roll_center_box_center_offset_x" value="0.22" />  <!-- FIXME -->
+  
+  <const name="elbow_roll_wrist_flex_offset_x" value="0.32025" />  <!-- mp 20080801 -->
+  
+  <const name="wrist_flex_radius" value="0.033" />    <!-- for defining collision geometry -->
+  <const name="wrist_flex_length" value="0.103" />  <!-- for defining collision geometry -->
+  
+  <const name="wrist_flex_min_limit" value="-1" />  
+  <const name="wrist_flex_max_limit" value="1" /> 
+  
+  <const name="gripper_roll_size_x" value="0.11" />  <!-- for defining collision geometry -->
+  <const name="gripper_roll_size_y" value="0.10" />  <!-- for defining collision geometry -->
+  <const name="gripper_roll_size_z" value="0.05" />  <!-- for defining collision geometry -->
+  <const name="gripper_roll_center_box_center_offset_x" value="0.05" />  <!-- FIXME -->
+  
+  
+  
+  <const name="head_pan_min_limit" value="-2.9322" /> <!-- FIXME -->
+  <const name="head_pan_max_limit" value="2.9322" /> <!-- FIXME -->
+  
+  <const name="torso_head_pan_offset_x" value="0.0" /> <!-- mp 20080801 -->
+  <const name="torso_head_pan_offset_z" value="0.3815" /> <!-- mp 20080801 -->
+  
+  <const name="head_pan_size_x" value="0.188" />  <!-- for defining collision geometry -->
+  <const name="head_pan_size_y" value="0.219" />  <!-- for defining collision geometry -->
+  <const name="head_pan_size_z" value="0.137" />  <!-- for defining collision geometry -->
+  
+  
+  <const name="head_tilt_min_limit" value="-M_PI/6" /> <!-- FIXME -->
+  <const name="head_tilt_max_limit" value="M_PI/3" /> <!-- FIXME -->
+  
+  <const name="head_pan_head_tilt_offset_x" value="0.058" />  <!-- mp 20080801 -->
+  
+  <const name="head_tilt_size_x" value="0.164" />  <!-- for defining collision geometry -->
+  <const name="head_tilt_size_y" value="0.253" />  <!-- for defining collision geometry -->
+  <const name="head_tilt_size_z" value="0.181" />  <!-- for defining collision geometry -->
+  
+  <!-- stereo camera -->
+  <const name="head_tilt_stereo_offset_x" value="0.0232" />  <!-- mp 20080801 -->
+  <const name="head_tilt_stereo_offset_z" value="0.0645" />  <!-- mp 20080801 -->
+  <const name="stereo_size_x" value="0.005" /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_size_y" value="0.010" /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_size_z" value="0.005" /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_center_box_center_offset_x" value="0.00" /> <!-- from center of stereo to stereo mount point, which is provided above -->
+  <const name="stereo_center_box_center_offset_z" value="0.05" /> <!-- from center of stereo to stereo mount point, which is provided above -->
+  
+  <!-- ptz cameras -->
+  <const name="torso_ptz_pan_left_offset_x" value="0.0000" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_left_offset_y" value="0.1975" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_left_offset_z" value="0.2265" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_x" value="0.0000" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_y" value="-0.1975" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_z" value="0.2265" />  <!-- mp 20080801 -->
+  
+  <const name="ptz_pan_ptz_tilt_left_offset_x" value="0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_left_offset_y" value="0.0300" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_left_offset_z" value="0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_x" value="0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_y" value="-0.0300" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_z" value="0.0000" />  <!-- FIXME -->
+  
+  <const name="ptz_pan_min_limit" value="-M_PI/2" /> <!-- FIXME -->
+  <const name="ptz_pan_max_limit" value="M_PI/2" /> <!-- FIXME -->
+  <const name="ptz_tilt_min_limit" value="-M_PI/2" /> <!-- FIXME -->
+  <const name="ptz_tilt_max_limit" value="M_PI/2" /> <!-- FIXME -->
+  
+  <const name="ptz_pan_radius" value="0.05" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_length" value="0.05" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_size_x" value="0.05" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_size_y" value="0.05" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_size_z" value="0.05" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_left_center_box_center_offset_x" value="0.00" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_left_center_box_center_offset_y" value="0.025" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_left_center_box_center_offset_z" value="0.00" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_right_center_box_center_offset_x" value="0.00" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_right_center_box_center_offset_y" value="-0.025" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_right_center_box_center_offset_z" value="0.00" /> <!-- for definint visual and collision geometry -->
+  
+  <const name="ptz_tilt_radius" value="0.03" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_length" value="0.03" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_size_x" value="0.03" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_size_y" value="0.03" /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_size_z" value="0.03" /> <!-- for definint visual and collision geometry -->
+  
+  <!-- =========================== l finger proximal digit =========================== -->
+  <const name="gripper_roll_finger_l_offset_x" value="0.07751" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_l_offset_y" value="0.0100" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_l_offset_z" value="0.0000" />  <!-- mp 20080801 -->
+  
+  <const name="finger_l_size_x" value="0.131" />  <!-- for defining collision geometry -->
+  <const name="finger_l_size_y" value="0.056" />  <!-- for defining collision geometry -->
+  <const name="finger_l_size_z" value="0.049" />  <!-- for defining collision geometry -->
+  <const name="finger_l_center_box_center_offset_x" value="0.00" />  <!-- FIXME -->
+  <const name="finger_l_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
+  
+  
+  <!-- =========================== l finger tip (distal digit) =========================== -->
+  <const name="finger_l_finger_tip_l_offset_x" value="0.0915" />  <!-- mp 20080801 -->
+  <const name="finger_l_finger_tip_l_offset_y" value="0.0000" />  <!-- mp 20080801 -->
+  <const name="finger_l_finger_tip_l_offset_z" value="0.0000" />  <!-- mp 20080801 -->
+  
+  <const name="finger_tip_l_size_x" value="0.053" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_l_size_y" value="0.040" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_l_size_z" value="0.023" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_l_center_box_center_offset_x" value="0.00" />  <!-- FIXME -->
+  <const name="finger_tip_l_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
+  
+  <!-- =========================== r finger proximal digit =========================== -->
+  <const name="gripper_roll_finger_r_offset_x" value="0.07751" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_r_offset_y" value="-0.0100" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_r_offset_z" value="0.0000" />  <!-- mp 20080801 -->
+  
+  <const name="finger_r_size_x" value="0.131" />  <!-- for defining collision geometry -->
+  <const name="finger_r_size_y" value="0.056" />  <!-- for defining collision geometry -->
+  <const name="finger_r_size_z" value="0.049" />  <!-- for defining collision geometry -->
+  <const name="finger_r_center_box_center_offset_x" value="0.00" />  <!-- FIXME -->
+  <const name="finger_r_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
+  
+  <!-- =========================== r finger tip (distal digit) =========================== -->
+  <const name="finger_r_finger_tip_r_offset_x" value="0.0915" />  <!-- mp 20080801 -->
+  <const name="finger_r_finger_tip_r_offset_y" value="0.0000" />  <!-- mp 20080801 -->
+  <const name="finger_r_finger_tip_r_offset_z" value="0.0000" />  <!-- mp 20080801 -->
+  
+  <const name="finger_tip_r_size_x" value="0.053" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_r_size_y" value="0.040" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_r_size_z" value="0.023" />  <!-- for defining collision geometry -->
+  <const name="finger_tip_r_center_box_center_offset_x" value="0.00" />  <!-- FIXME -->
+  <const name="finger_tip_r_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
+  
+  
+  
+  <!-- to be used by sensors -->
+  <const name="torso_tilt_laser_mount_offset_x" value="0.10000" />  <!-- mp 20080801 -->
+  <const name="torso_tilt_laser_mount_offset_z" value="0.19525" />  <!-- mp 20080801 -->
+  <const name="tilt_laser_mount_center_box_center_offset_z" value="0.0" />  <!-- FIXME -->
+
+  <!-- from sensor frame to mount bracket frame for tilt laser -->
+  <const name="tilt_laser_mount_tilt_laser_offset_x" value="0.00" /> <!-- FIXME -->
+  <const name="tilt_laser_mount_tilt_laser_offset_z" value="0.03" /> <!-- FIXME -->
+
+
+  <const name="base_base_laser_offset_x" value="0.275" />  <!-- mp 20080801 -->
+  <const name="base_base_laser_offset_z" value="0.182" />  <!-- mp 20080801 -->
+  <const name="base_laser_center_box_center_offset_z" value="0.12" />  <!-- FIXME -->
+  
+  <const name="gripper_roll_camera_offset_x" value="0.05" />  <!-- this is a guess, please change me -->
+  <const name="gripper_roll_camera_offset_y" value="0" />  <!-- this is a guess, please change me -->
+  <const name="gripper_roll_camera_offset_z" value="0.03" />  <!-- this is a guess, please change me -->
+  
+  <const name="forearm_roll_camera_offset_x" value="0.10" />  <!-- this is a guess, please change me -->
+  <const name="forearm_roll_camera_offset_y" value="0" />  <!-- this is a guess, please change me -->
+  <const name="forearm_roll_camera_offset_z" value="0.05" />  <!-- this is a guess, please change me -->
+  
+  
+  <!-- End constant dimensions -->
+  
+  <const_block name="pr2_caster_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Green</elem>
+    </map>
+    <geometry name="pr2_caster_mesh_file">
+      <mesh filename="caster" scale="1 1 1"/><!-- mesh specified using an obj file --> 
+    </geometry>
+  </const_block> 
+  <const_block name="pr2_caster_collision">
+    <origin xyz="0 0 caster_collision_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="caster_collision_geom"><!-- geometry specified using a simple geometric object -->
+      <box size="caster_size_x caster_size_y caster_size_z" /> 
+    </geometry>
+  </const_block> 
+  <const_block name="pr2_caster_inertial">
+    <mass value="3.473082" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+  </const_block> 
+  
+  
+  <const_block name="pr2_caster_joint"> 
+    <axis xyz="0 0 1" /> <!-- direction of the joint in the local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <limit  effort="100" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_wheel_left_visual">
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">PR2/wheel_left</elem>
+    </map>
+    <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
+      <mesh filename="wheel" scale="1 1 1"/>
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_wheel_right_visual">
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">PR2/wheel_right</elem>
+    </map>
+    <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
+      <mesh filename="wheel" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_wheel_collision">
+    <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_wheel_collision_geom"><!-- geometry specified using a simple geometric object -->
+      <cylinder  radius="wheel_radius" length="wheel_length" /> 
+    </geometry>
+    
+    <map name="friction_coefficients" flag="gazebo">
+      <elem key="mu1" value="50.0" /> <!-- john needed so wheel can slip and steer -->
+      <elem key="mu2" value="50.0" /> <!-- john needed so wheel can slip and steer -->
+    </map>
+    
+  </const_block> 
+  
+  <const_block name="pr2_wheel_inertial">
+    <mass value="0.44036" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+  </const_block> 
+  
+  <const_block name="pr2_wheel_joint"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in the local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
+    <limit effort="100" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="0.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_shoulder_pan_joint">
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="100" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_shoulder_pan_inertial">
+    <mass value="16.29553" />
+    <com xyz="-0.005215 -0.030552 0.0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"  iyy="0.818419457224"  iyz="-0.033999499551"  izz="0.13915007406" />
+  </const_block> 
+  
+  <const_block name="pr2_shoulder_pan_collision">
+    <origin xyz="shoulder_pan_center_box_center_offset_x 0 shoulder_pan_center_box_center_offset_z" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_shoulder_pan_collision_box_geom">
+      <box size="shoulder_pan_size_x shoulder_pan_size_y shoulder_pan_size_z" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_shoulder_pan_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Blue</elem>
+    </map>
+    <geometry name="pr2_sholder_pan_mesh_file">
+      <mesh filename="shoulder_yaw" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_shoulder_pitch_joint">
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="shoulder_pitch_min_limit" max="shoulder_pitch_max_limit" effort="1000" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="100.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_shoulder_pitch_inertial">
+    <mass value="2.41223" />
+    <com xyz="-0.035895  0.014422 -0.0028263" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia  ixx="0.016640333585" ixy="0.002696462583"  ixz="0.001337742275"  iyy="0.017232603914"  iyz="-0.003605106514"  izz="0.018723553425" />
+  </const_block> 
+  
+  <const_block name="pr2_shoulder_pitch_collision">
+    <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_shoulder_pitch_collision_geom">
+      <cylinder radius="shoulder_pitch_radius" length="shoulder_pitch_length" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_shoulder_pitch_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Grey</elem>
+    </map>
+    <geometry name="pr2_sholder_pitch_mesh_file">
+      <mesh filename="shoulder_pitch" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_upperarm_roll_joint">
+    <axis xyz="1 0 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_upperarm_roll_inertial">
+    <mass value="4.9481" />
+    <com xyz="0.21227 0.001205 -0.016293" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
+    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_upperarm_roll_collision">
+    <origin xyz="upperarm_roll_center_box_center_offset_x 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_upperarm_roll_collision_geom">
+      <box size="upperarm_roll_size_x upperarm_roll_size_y upperarm_roll_size_z" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_upperarm_roll_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Green</elem>
+    </map>
+    <geometry name="pr2_sholder_roll_mesh_file">
+      <mesh filename="upperarm_roll" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_elbow_flex_joint">
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="elbow_flex_min_limit" max="elbow_flex_max_limit"  effort="1000" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_elbow_flex_inertial">
+    <mass value="1.689246" />
+    <com xyz="-0.011638  0.013173 0.001228" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia  ixx="10.0" ixy="0.000292046674"  ixz="-0.000077359282"  iyy="1.0"  iyz="-0.000001162155"  izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_elbow_flex_collision">
+    <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="elbow_flex_collision_geom">
+      <cylinder radius="elbow_flex_radius" length="elbow_flex_length" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_elbow_flex_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Grey</elem>
+    </map>
+    <geometry name="pr2_elbow_flex_mesh_file">
+      <mesh filename="elbow_pitch" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_forearm_roll_joint">
+    <axis xyz="1 0 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit  effort="100" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_forearm_roll_inertial">
+    <mass value="1.804155" />
+    <com xyz="0.179474 -0.000058  0.013779" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now-->
+    <inertia  ixx="10.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_forearm_roll_collision">
+    <origin xyz="forearm_roll_center_box_center_offset_x 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_forearm_roll_collision_geom">
+      <box size="forearm_roll_size_x forearm_roll_size_y forearm_roll_size_z" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_forearm_roll_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Blue</elem>
+    </map>
+    <geometry name="pr2_forearm_roll_mesh_file">
+      <mesh filename="forearm_roll" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_wrist_flex_joint">
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="wrist_flex_min_limit" max="wrist_flex_max_limit" effort="200" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_wrist_flex_inertial">
+    <mass value="0.1" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_wrist_flex_collision">
+    <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_wrist_flex_collision_geom">
+      <cylinder radius="wrist_flex_radius" length="wrist_flex_length" />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_wrist_flex_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Grey</elem>
+    </map>
+    <geometry name="pr2_wrist_flex_mesh_file">
+      <mesh filename="wrist_pitch" />
+    </geometry>
+  </const_block> 
+  
+  
+  <const_block name="pr2_gripper_roll_joint">
+    <axis xyz="1 0 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit effort="10" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0.0" />
+   </const_block>
+  
+  <const_block name="pr2_gripper_roll_inertial">
+    <mass value="1.0" />
+    <com xyz="0.179474 -0.000058  0.013779" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+    <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_gripper_roll_collision">
+    <origin xyz="gripper_roll_center_box_center_offset_x 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_gripper_roll_collision_geom">
+      <box size="gripper_roll_size_x gripper_roll_size_y gripper_roll_size_z" />
+    </geometry>
+    <verbose value="Yes" />
+  </const_block> 
+  
+  <const_block name="pr2_gripper_roll_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Red</elem>
+    </map>
+    <geometry name="pr2_gripper_roll_mesh_file">
+      <mesh filename="wr_roll" />
+    </geometry>
+  </const_block> 
+  
+  
+  <!-- ====================   l finger proximal digit ====================   -->
+  <const_block name="pr2_finger_l_joint">
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit effort="10" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="0.1" friction="0.0" />
+   </const_block>
+  
+  <const_block name="pr2_finger_l_inertial">
+    <mass value="0.1" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_l_collision">
+    <origin xyz="finger_l_center_box_center_offset_x finger_l_center_box_center_offset_y 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_finger_l_collision_geom">
+      <box size="finger_l_size_x finger_l_size_y finger_l_size_z" />
+    </geometry>
+    <verbose value="Yes" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_l_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Grey</elem>
+    </map>
+    <geometry name="pr2_finger_l_mesh_file">
+      <mesh filename="upper_finger_l" />
+    </geometry>
+  </const_block> 
+  
+  
+  <!-- ====================   l finger tip (distal digit) ====================   -->
+  <const_block name="pr2_finger_tip_l_joint">
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit effort="10" velocity="5" />
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="0.01" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_finger_tip_l_inertial">
+    <mass value="0.1" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_tip_l_collision">
+    <origin xyz="finger_tip_l_center_box_center_offset_x finger_tip_l_center_box_center_offset_y 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_finger_tip_l_collision_geom">
+      <box size="finger_tip_l_size_x finger_tip_l_size_y finger_tip_l_size_z" />
+    </geometry>
+    <verbose value="Yes" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_tip_l_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Green</elem>
+    </map>
+    <geometry name="pr2_finger_tip_l_mesh_file">
+      <mesh filename="finger_tip_l" />
+    </geometry>
+  </const_block> 
+  
+  <!-- ====================   r finger proximal digit ====================   -->
+  <const_block name="pr2_finger_r_joint">
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <joint_properties damping="0.1" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_finger_r_inertial">
+    <mass value="0.1" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_r_collision">
+    <origin xyz="finger_r_center_box_center_offset_x finger_r_center_box_center_offset_y 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_finger_r_collision_geom">
+      <box size="finger_r_size_x finger_r_size_y finger_r_size_z" />
+    </geometry>
+    <verbose value="Yes" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_r_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Blue</elem>
+    </map>
+    <geometry name="pr2_finger_r_mesh_file">
+      <mesh filename="upper_finger_r" />
+    </geometry>
+  </const_block> 
+  
+  <!-- ====================   r finger tip (distal digit) ====================   -->
+  <const_block name="pr2_finger_tip_r_joint">
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration values="1.5 -1" /> <!-- Calibration stop/flag indicating location and then direction -->
+    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <joint_properties damping="0.01" friction="0.0" />
+  </const_block>
+  
+  <const_block name="pr2_finger_tip_r_inertial">
+    <mass value="0.1" />
+    <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_tip_r_collision">
+    <origin xyz="finger_tip_r_center_box_center_offset_x finger_tip_r_center_box_center_offset_y 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_finger_tip_r_collision_geom">
+      <box size="finger_tip_r_size_x finger_tip_r_size_y finger_tip_r_size_z" />
+    </geometry>
+    <verbose value="Yes" />
+  </const_block> 
+  
+  <const_block name="pr2_finger_tip_r_visual">
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Green</elem>
+    </map>
+    <geometry name="pr2_finger_tip_r_mesh_file">
+      <mesh filename="finger_tip_r" />
+    </geometry>
+  </const_block> 
+  
+  
+  
+  <!-- End template definitions for ease of reuse -->
+  
+  
+ 
+  <!-- joint blocks -->
+  <joint name="base_joint" type="planar" /> 
+
+  <joint name="head_tilt_joint" type="revolute"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="head_tilt_min_limit" max="head_tilt_max_limit" effort="100" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  
+  <joint name="head_pan_joint" type="revolute"> 
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="head_pan_min_limit" max="head_pan_max_limit" effort="100" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  
+  <joint name="finger_tip_r_right_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_right_joint" mult="1" offset="0"/>
+  </joint>
+  <joint name="finger_r_right_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
+  </joint>
+  <joint name="finger_tip_l_right_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
+  </joint>
+  <joint name="finger_l_right_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_l_joint"/>
+  </joint>
+  <joint name="finger_tip_r_left_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_left_joint" mult="1" offset="0"/>
+  </joint>
+  <joint name="finger_r_left_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
+  </joint>
+  <joint name="finger_tip_l_left_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
+  </joint>
+  <joint name="finger_l_left_joint" type="revolute" >
+    <insert_const_block name="pr2_finger_l_joint"/>
+  </joint>
+  <joint name="gripper_roll_right_joint" type="revolute" >
+    <insert_const_block name="pr2_gripper_roll_joint"/>
+  </joint>
+  <joint name="gripper_roll_left_joint" type="revolute" >
+    <insert_const_block name="pr2_gripper_roll_joint"/>
+  </joint>
+  <joint name="wrist_flex_right_joint" type="revolute" >
+    <insert_const_block name="pr2_wrist_flex_joint"/>
+  </joint>
+  <joint name="wrist_flex_left_joint" type="revolute" >
+    <insert_const_block name="pr2_wrist_flex_joint"/>
+  </joint>
+  <joint name="forearm_roll_right_joint" type="revolute" >
+    <insert_const_block name="pr2_forearm_roll_joint"/>
+  </joint>
+  <joint name="forearm_roll_left_joint" type="revolute" >
+    <insert_const_block name="pr2_forearm_roll_joint"/>
+  </joint>
+  <joint name="elbow_flex_right_joint" type="revolute" >
+    <insert_const_block name="pr2_elbow_flex_joint"/>
+  </joint>
+  <joint name="elbow_flex_left_joint" type="revolute" >
+    <insert_const_block name="pr2_elbow_flex_joint"/>
+  </joint>
+  <joint name="upperarm_roll_right_joint" type="revolute" >
+    <insert_const_block name="pr2_upperarm_roll_joint"/>
+  </joint>
+  <joint name="upperarm_roll_left_joint" type="revolute" >
+    <insert_const_block name="pr2_upperarm_roll_joint"/>
+  </joint>
+  <joint name="shoulder_pitch_right_joint" type="revolute" >
+    <insert_const_block name="pr2_shoulder_pitch_joint"/>
+  </joint>
+  <joint name="shoulder_pitch_left_joint" type="revolute" >
+    <insert_const_block name="pr2_shoulder_pitch_joint"/>
+  </joint>
+  <joint name="shoulder_pan_right_joint" type="revolute" >
+    <insert_const_block name="pr2_shoulder_pan_joint"/>
+  </joint>
+  <joint name="shoulder_pan_left_joint" type="revolute" >
+    <insert_const_block name="pr2_shoulder_pan_joint"/>
+  </joint>
+  <joint name="torso_joint" type="prismatic"> 
+    <limit min="0.0" max="torso_max_travel_range" effort="1000" velocity="5" />
+    <axis xyz="0 0 1" />
+    <joint_properties damping="10.0" friction="0.0" />
+  </joint>
+  
+  <joint name="wheel_rear_right_r_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_right_l_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_left_r_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_left_l_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_right_r_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_right_l_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_left_r_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_left_l_joint" type="revolute" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="caster_rear_right_joint" type="revolute" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+  <joint name="caster_rear_left_joint" type="revolute" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+  <joint name="caster_front_left_joint" type="revolute" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+  <joint name="caster_front_right_joint" type="revolute" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+  <joint name="tilt_laser_mount_joint" type="revolute"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
+    <joint_properties damping="0.1" friction="0.0" />
+  </joint>
+  <joint name="tilt_laser_joint" type="fixed"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+  </joint>
+  <joint name="base_laser_joint" type="fixed"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+  </joint>
+  <joint name="forearm_camera_left_joint" type="fixed"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+  </joint>
+  <joint name="forearm_camera_right_joint" type="fixed"> 
+    <axis xyz="0 1 0" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+  </joint>
+  <joint name="ptz_pan_left_joint" type="revolute"> 
+    <axis xyz="0 0 -1" /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  <joint name="ptz_tilt_left_joint" type="revolute"> 
+    <axis xyz="0 -1 0" /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  <joint name="ptz_pan_right_joint" type="revolute"> 
+    <axis xyz="0 0 -1" /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  <joint name="ptz_tilt_right_joint" type="revolute"> 
+    <axis xyz="0 -1 0" /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
+    <joint_properties damping="1.0" friction="0.0" />
+  </joint>
+  <joint name="stereo_joint" type="fixed"> 
+    <axis xyz="0 0 1" /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+  </joint>
+  
+  
+  <!-- link blocks -->
+  <!-- Begin base definition -->
+  
+  <link name="base"><!-- link specifying the base of the robot -->
+    
+    <parent name="world" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
+    <origin xyz="robot_inital_position_x robot_inital_position_y robot_inital_position_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    
+    <joint name="base_joint" />
+    
+    <inertial>
+      <mass value="70.750964" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="5.652232699207"  ixy="-0.009719934438"  ixz="1.293988226423" iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
+      <geometry name="pr2_base_mesh_file">
+        <mesh filename="base" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0 0 base_size_z/2" rpy="0.0 0.0 0.0" /> <!-- default box is centered at the origin -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
+        <box size="base_size_x base_size_y base_size_z" />
+      </geometry>
+    </collision>
+    
+  </link>
+   <link name="caster_front_left">
+    <parent name="base" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="base_caster_offset_x base_caster_offset_y base_caster_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <joint name="caster_front_left_joint" />
+    
+    <inertial >
+      <insert_const_block name="pr2_caster_inertial"/>
+    </inertial>
+    
+    <visual name="caster_front_left_visual">
+      <insert_const_block name="pr2_caster_visual" />
+    </visual>
+    
+    <collision >
+      <insert_const_block name="pr2_caster_collision"/>
+    </collision>
+  </link>
+  
+  
+  <link name="caster_front_right">
+    <parent name="base" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="base_caster_offset_x -base_caster_offset_y base_caster_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="caster_front_right_joint" />
+    
+    <inertial >
+      <insert_const_block name="pr2_caster_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_caster_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_caster_collision"/>
+    </collision>
+  </link>
+  
+  <link name="caster_rear_left">
+    <parent name="base" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="-base_caster_offset_x base_caster_offset_y base_caster_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="caster_rear_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_caster_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_caster_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_caster_collision"/>
+    </collision>
+  </link>
+  
+  <link name="caster_rear_right">
+    <parent name="base" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="-base_caster_offset_x -base_caster_offset_y base_caster_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="caster_rear_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_caster_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_caster_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_caster_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_front_left_l">
+    <parent name="caster_front_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_front_left_l_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_left_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_front_left_r">
+    <parent name="caster_front_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 -caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_front_left_r_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_right_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_front_right_l">
+    <parent name="caster_front_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_front_right_l_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_left_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  
+  <link name="wheel_front_right_r">
+    <parent name="caster_front_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 -caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_front_right_r_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_right_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_rear_left_l">
+    <parent name="caster_rear_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_rear_left_l_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_left_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_rear_left_r">
+    <parent name="caster_rear_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 -caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_rear_left_r_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_right_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_rear_right_l">
+    <parent name="caster_rear_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_rear_right_l_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_left_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <link name="wheel_rear_right_r">
+    <parent name="caster_rear_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 -caster_wheel_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wheel_rear_right_r_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wheel_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wheel_right_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wheel_collision"/>
+    </collision>
+  </link>
+  
+  <!-- End base definition -->
+  
+  <!-- Begin torso definition -->
+  
+  <!-- move outside of link -->
+  
+  <link name="torso">
+    <parent name="base" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="base_torso_offset_x 0 base_torso_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="torso_joint" />
+    
+    <inertial>
+      <mass value="36.248046" />
+      <com xyz="0 0 0" />
+      <inertia ixx="2.771653750257" ixy="0.004284522609" ixz="-0.160418504506" iyy="2.510019507959" iyz="0.029664468704" izz="0.526432355569" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="foo" flag="gazebo">
+	<elem key="material">Gazebo/Red</elem>
+      </map>
+      <geometry name="pr2_torso_mesh_file">
+        <mesh filename="torso" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="torso_center_box_center_offset_x 0 torso_size_z/2+torso_center_box_center_offset_z" rpy="0 0 0" />
+      <geometry name="torso_collision_geom">
+        <box size="torso_size_x torso_size_y torso_size_z" />
+      </geometry>
+    </collision> 
+  </link>
+  
+  <!-- End torso definition -->
+  
+  <!-- Begin arm definitions -->
+  
+  
+  <link name="shoulder_pan_left">
+    <parent name="torso" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 torso_shoulder_pan_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="shoulder_pan_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_shoulder_pan_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_shoulder_pan_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_shoulder_pan_collision"/>
+    </collision>
+    <map name="pr2_shoulder_pan_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="shoulder_pan_right">
+    <parent name="torso" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 -torso_shoulder_pan_offset_y 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="shoulder_pan_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_shoulder_pan_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_shoulder_pan_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_shoulder_pan_collision"/>
+    </collision>
+    <map name="pr2_shoulder_pan_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  
+  
+  <link name="shoulder_pitch_left">
+    <parent name="shoulder_pan_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="shoulder_pan_shoulder_pitch_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="shoulder_pitch_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_shoulder_pitch_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_shoulder_pitch_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_shoulder_pitch_collision"/>
+    </collision>
+    <map name="pr2_shoulder_pitch_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="shoulder_pitch_right">
+    <parent name="shoulder_pan_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="shoulder_pan_shoulder_pitch_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="shoulder_pitch_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_shoulder_pitch_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_shoulder_pitch_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_shoulder_pitch_collision"/>
+    </collision>
+    <map name="pr2_shoulder_pitch_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  
+  <link name="upperarm_roll_left">
+    <parent name="shoulder_pitch_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="upperarm_roll_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_upperarm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_upperarm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_upperarm_roll_collision"/>
+    </collision>
+    <map name="pr2_upperarm_roll_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="upperarm_roll_right">
+    <parent name="shoulder_pitch_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="upperarm_roll_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_upperarm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_upperarm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_upperarm_roll_collision"/>
+    </collision>
+    <map name="pr2_upperarm_roll_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  
+  
+  <link name="elbow_flex_left">
+    <parent name="upperarm_roll_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="upperarm_roll_elbow_flex_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="elbow_flex_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_elbow_flex_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_elbow_flex_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_elbow_flex_collision"/>
+    </collision>
+    <map name="pr2_elbow_flex_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="elbow_flex_right">
+    <parent name="upperarm_roll_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="upperarm_roll_elbow_flex_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="elbow_flex_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_elbow_flex_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_elbow_flex_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_elbow_flex_collision"/>
+    </collision>
+    <map name="pr2_elbow_flex_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="forearm_roll_left">
+    <parent name="elbow_flex_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="forearm_roll_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_forearm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_forearm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_forearm_roll_collision"/>
+    </collision>
+    <map name="pr2_forearm_roll_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="forearm_roll_right">
+    <parent name="elbow_flex_right" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="forearm_roll_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_forearm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_forearm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_forearm_roll_collision"/>
+    </collision>
+    <map name="pr2_forearm_roll_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="wrist_flex_left">
+    <parent name="forearm_roll_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="elbow_roll_wrist_flex_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wrist_flex_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wrist_flex_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wrist_flex_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wrist_flex_collision"/>
+    </collision>
+    <map name="pr2_wrist_flex_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="wrist_flex_right">
+    <parent name="forearm_roll_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="elbow_roll_wrist_flex_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="wrist_flex_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_wrist_flex_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_wrist_flex_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_wrist_flex_collision"/>
+    </collision>
+    <map name="pr2_wrist_flex_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="gripper_roll_left">
+    <parent name="wrist_flex_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="gripper_roll_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_gripper_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_gripper_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_gripper_roll_collision"/>
+    </collision>
+    <map name="pr2_gripper_roll_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <link name="gripper_roll_right">
+    <parent name="wrist_flex_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="0 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="gripper_roll_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_gripper_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_gripper_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_gripper_roll_collision"/>
+    </collision>
+    <map name="pr2_gripper_roll_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <!-- End arm definitions -->
+  
+  
+  <!-- Begin left hand  -->
+  <!-- Begin left hand l finger proximal digit definition -->
+  <link name="finger_l_left">
+    <parent name="gripper_roll_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_l_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_l_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_l_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_l_collision"/>
+    </collision>
+    <map name="finger_l_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   left hand l finger proximal digit definition -->
+  <!-- Begin left hand l finger tip (distal digit) definition -->
+  <link name="finger_tip_l_left">
+    <parent name="finger_l_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_tip_l_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_tip_l_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_tip_l_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_tip_l_collision"/>
+    </collision>
+    <map name="finger_tip_l_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+    <!--
+        <map name="sensor" flag="gazebo">
+          <verbatim key="contact_sensor">
+            <sensor:contact name="finger_tip_l_left_contact_sensor">
+              <updateRate>15.0</updateRate>
+              <geom>pr2_finger_tip_l_collision_geom</geom>
+              <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>15.0</updateRate>
+                <topicName>finger_tip_l_contact</topicName>
+                <frameName>finger_tip_l_contact</frameName>
+                <interface:bumper name="dummy_bumper_iface" />
+              </controller:ros_bumper>
+            </sensor:contact>
+          </verbatim>
+        </map>
+        -->
+  </link>
+  <!-- End   left hand l finger tip (distal digit) definition -->
+  <!-- Begin left hand r finger proximal digit definition -->
+  <link name="finger_r_left">
+    <parent name="gripper_roll_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_r_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_r_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_r_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_r_collision"/>
+    </collision>
+    <map name="finger_r_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   left hand r finger proximal digit definition -->
+  <!-- Begin left hand r finger tip (distal digit) definition -->
+  <link name="finger_tip_r_left">
+    <parent name="finger_r_left" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_tip_r_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_tip_r_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_tip_r_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_tip_r_collision"/>
+    </collision>
+    <map name="finger_tip_r_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   left hand r finger tip (distal digit) definition -->
+  <!-- End   left hand  -->
+  
+  
+  <!-- Begin right hand  -->
+  <!-- Begin right hand l finger proximal digit definition -->
+  <link name="finger_l_right">
+    <parent name="gripper_roll_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_l_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_l_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_l_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_l_collision"/>
+    </collision>
+    <map name="finger_l_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   right hand l finger proximal digit definition -->
+  <!-- Begin right hand l finger tip (distal digit) definition -->
+  <link name="finger_tip_l_right">
+    <parent name="finger_l_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_tip_l_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_tip_l_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_tip_l_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_tip_l_collision"/>
+    </collision>
+    <map name="finger_tip_l_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   right hand l finger tip (distal digit) definition -->
+  <!-- Begin right hand r finger proximal digit definition -->
+  <link name="finger_r_right">
+    <parent name="gripper_roll_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_r_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_r_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_r_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_r_collision"/>
+    </collision>
+    <map name="finger_r_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   right hand r finger proximal digit definition -->
+  <!-- Begin right hand r finger tip (distal digit) definition -->
+  <link name="finger_tip_r_right">
+    <parent name="finger_r_right" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="finger_tip_r_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_finger_tip_r_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_finger_tip_r_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_finger_tip_r_collision"/>
+    </collision>
+    <map name="finger_tip_r_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  <!-- End   right hand r finger tip (distal digit) definition -->
+  <!-- End   right hand  -->
+  
+  
+  
+  <!-- Begin head definition -->
+  
+  
+  <link name="head_pan">
+    <parent name="torso" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="torso_head_pan_offset_x 0 torso_head_pan_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="head_pan_joint" />
+    <inertial>
+      <mass value="1.611118" />
+      <com xyz="-0.005717  0.010312 -0.029649" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="0 0 0.0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+      <geometry name="pr2_head_pan_mesh_file">
+        <mesh filename="head_pan" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="head_pan_collision_geom">
+        <box size="head_pan_size_x head_pan_size_y head_pan_size_z" />
+      </geometry>
+    </collision> 
+    
+  </link>
+  
+  <link name="head_tilt">
+    <parent name="head_pan" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="head_pan_head_tilt_offset_x 0 0" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="head_tilt_joint" />
+    <inertial>
+      <mass value="1.749727" />
+      <com xyz="0.041935 0.003569 0.028143" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Green</elem> 
+      </map>
+      <geometry name="pr2_head_tilt_mesh_file">
+        <mesh filename="head_tilt" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="head_tilt_collision_geom">
+        <box size="head_tilt_size_x head_tilt_size_y head_tilt_size_z" />
+      </geometry>
+    </collision> 
+  </link>
+  
+  <!-- End head definition -->
+  
+  
+  <link name="tilt_laser_mount"> 
+    
+    <parent name="torso" />
+    <origin xyz="torso_tilt_laser_mount_offset_x 0 torso_tilt_laser_mount_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="tilt_laser_mount_joint" /> 
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   tilt_laser_mount_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
+      <geometry name="pr2_tilt_laser_mount_mesh_file">
+        <mesh filename="hok_tilt" /> <!-- mesh specified using an obj file --> 
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="0   0   tilt_laser_mount_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="tilt_laser_mount_collision_geom" ><!-- geometry specified using a simple geometric object -->
+        <box size=".001 .001 .001" /> 
+      </geometry>
+    </collision>
+    
+  </link>
+
+  <!-- Begin sensor definitions -->
+  <sensor name="tilt_laser" type="laser"> 
+   
+    <calibration filename="calib_filename" />
+    <parent name="tilt_laser_mount" />
+    <origin xyz="tilt_laser_mount_tilt_laser_offset_x 0 tilt_laser_mount_tilt_laser_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="tilt_laser_joint" /> 
+    <inertial>
+      <mass value="0.01" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="pr2_tilt_laser_visual_geom">
+        <mesh scale="0.001 0.001 0.001" /> <!-- mesh specified using an obj file --> 
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="tilt_laser_collision_geom" ><!-- geometry specified using a simple geometric object -->
+        <box size=".001 .001 .001" /> 
+      </geometry>
+    </collision>
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_ray">
+        <sensor:ray name="tilt_laser">
+          <rayCount>683</rayCount>
+          <rangeCount>683</rangeCount>
+          <laserCount>1</laserCount>
+	  
+          <origin>0.0 0.0 0.0</origin>
+          <displayRays>false</displayRays>
+	  
+          <minAngle>-45</minAngle>
+          <maxAngle> 45</maxAngle>
+	  
+          <minRange>0.05</minRange>
+          <maxRange>10.0</maxRange>
+          <updateRate>20.0</updateRate>
+          <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>20.0</updateRate>
+            <topicName>tilt_scan</topicName>
+            <frameName>tilt_laser</frameName>
+            <interface:laser name="ros_tilt_laser_iface" />
+          </controller:ros_laser>
+        </sensor:ray>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  <sensor name="base_laser" type="laser"> 
+    
+    <calibration filename="calib_filename" />
+    <parent name="base" />
+    <origin xyz="base_base_laser_offset_x 0 base_base_laser_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="base_laser_joint" /> 
+    <inertial>
+      <mass value="1.0" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   base_laser_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
+      <geometry name="pr2_base_laser_geom">
+        <mesh scale="0.001 0.001 0.001"/> <!-- mesh specified using an obj file --> 
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="0   0   base_laser_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="base_laser_collision_geom"><!-- geometry specified using a simple geometric object -->
+        <box size=".001 .001 .001" /> 
+      </geometry>
+    </collision>
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_ray">
+        <sensor:ray name="base_laser">
+          <rayCount>683</rayCount>
+          <rangeCount>683</rangeCount>
+          <laserCount>1</laserCount>
+          <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
+          <displayRays>false</displayRays>
+	  
+          <minAngle>-90</minAngle>
+          <maxAngle>90</maxAngle>
+	  
+          <minRange>0.05</minRange>
+          <maxRange>10.0</maxRange>
+          <updateRate>20.0</updateRate>
+          <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>20.0</updateRate>
+	    <topicName>base_scan</topicName>
+	    <frameName>base_laser</frameName>
+	    <interface:laser name="ros_base_laser_iface" />
+          </controller:ros_laser>
+        </sensor:ray>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  
+  <sensor name="forearm_camera_left" type="camera"> 
+    
+    <calibration filename="calib_filename" />
+    <parent name="forearm_roll_left" />
+    <origin xyz="forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="forearm_camera_left_joint" /> 
+    <map name="forearm_camera_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+    <inertial>
+      <mass value="0.5" />
+      <com xyz="0.0 0.0 0.0" /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
+      <geometry name="forearm_camera_left_visual_geom">
+        <mesh scale="0.02 0.02 0.02" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="gripper_camera_left_collision_geom"><!-- geometry specified using a simple geometric object -->
+        <box size="0.02 0.02 0.02" /> 
+      </geometry>
+    </collision>
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="forearm_cam_left_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>forearm_left/image</topicName>
+            <frameName>forearm_roll_left</frameName>
+            <interface:camera name="forearm_cam_left_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  
+  <sensor name="forearm_camera_right" type="camera"> 
+    
+    <calibration filename="calib_filename" />
+    <parent name="forearm_roll_right" />
+    <origin xyz="forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="forearm_camera_right_joint" />
+    <map name="forearm_camera_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+    <inertial>
+      <mass value="0.5" />
+      <com xyz="0.0 0.0 0.0" /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
+      <geometry name="forearm_camera_right_visual_geom">
+        <mesh scale="0.02 0.02 0.02" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="gripper_camera_right_collision_geom"><!-- geometry specified using a simple geometric object -->
+        <box size="0.02 0.02 0.02" /> 
+      </geometry>
+    </collision>
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="forearm_cam_right_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>forearm_right/image</topicName>
+            <frameName>forearm_roll_right</frameName>
+            <interface:camera name="forearm_cam_right_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  
+  <link name="ptz_pan_left">
+    <parent name="torso" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="torso_ptz_pan_left_offset_x torso_ptz_pan_left_offset_y torso_ptz_pan_left_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="ptz_pan_left_joint" />
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="ptz_pan_left_center_box_center_offset_x   ptz_pan_left_center_box_center_offset_y   ptz_pan_left_center_box_center_offset_z" rpy="M_PI/2 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+      <geometry name="pr2_ptz_pan_left_visual_geom">
+        <mesh scale="ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="ptz_pan_left_center_box_center_offset_x   ptz_pan_left_center_box_center_offset_y   ptz_pan_left_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="pta_pan_left_collision_geom">
+        <cylinder radius="ptz_pan_radius" length="ptz_pan_length" />
+      </geometry>
+    </collision> 
+    
+  </link>
+  
+  <sensor name="ptz_tilt_left" type="camera">
+    <parent name="ptz_pan_left" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="ptz_pan_ptz_tilt_left_offset_x ptz_pan_ptz_tilt_left_offset_y ptz_pan_ptz_tilt_left_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="ptz_tilt_left_joint" />
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="0 0 0.0" rpy="0 M_PI/2 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+      <geometry name="pr2_ptz_tilt_left_visual_geom">
+        <mesh scale="ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="ptz_tilt_left_collision_geom">
+        <cylinder radius="ptz_tilt_radius" length="ptz_tilt_length" />
+      </geometry>
+    </collision> 
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="ptz_cam_left_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>axis_left/image</topicName>
+            <frameName>ptz_left</frameName>
+            <interface:camera name="ptz_cam_left_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  <link name="ptz_pan_right">
+    <parent name="torso" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="torso_ptz_pan_right_offset_x torso_ptz_pan_right_offset_y torso_ptz_pan_right_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="ptz_pan_right_joint" />
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="ptz_pan_right_center_box_center_offset_x   ptz_pan_right_center_box_center_offset_y   ptz_pan_right_center_box_center_offset_z" rpy="M_PI/2 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+
+      <geometry name="pr2_ptz_pan_right_visual_geom">
+        <mesh scale="ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="ptz_pan_right_center_box_center_offset_x   ptz_pan_right_center_box_center_offset_y   ptz_pan_right_center_box_center_offset_z" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="pr2_ptz_pan_right_collision_geom">
+        <cylinder radius="ptz_pan_radius" length="ptz_pan_length" />
+      </geometry>
+    </collision> 
+    
+  </link>
+  
+  <sensor name="ptz_tilt_right" type="camera">
+    <parent name="ptz_pan_right" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="ptz_pan_ptz_tilt_right_offset_x ptz_pan_ptz_tilt_right_offset_y ptz_pan_ptz_tilt_right_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="ptz_tilt_right_joint" />
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="0 0 0.0" rpy="0 M_PI/2 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+
+      <geometry name="pr2_ptz_tilt_right_visual_geom">
+        <mesh scale="ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="pr2_ptz_tilt_right_collision_geom">
+        <cylinder radius="ptz_tilt_radius" length="ptz_tilt_length" />
+      </geometry>
+    </collision> 
+    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="ptz_cam_right_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>axis_right/image</topicName>
+            <frameName>ptz_right</frameName>
+            <interface:camera name="ptz_cam_right_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+    
+  </sensor>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <!-- stereo camera -->
+  <sensor name="stereo" type="camera">
+    <parent name="head_tilt" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz="head_tilt_stereo_offset_x 0 head_tilt_stereo_offset_z" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    
+    <joint name="stereo_joint" />
+    <inertial>
+      <mass value="0.1" />
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="stereo_center_box_center_offset_x 0 stereo_center_box_center_offset_z" rpy="0 0 0" />
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+      <geometry name="pr2_stereo_visual_geom">
+        <mesh scale="stereo_size_x stereo_size_y stereo_size_z" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="stereo_center_box_center_offset_x 0 stereo_center_box_center_offset_z" rpy="0.0 0.0 0.0" />
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="stereo_collision_geom">
+        <box size="stereo_size_x stereo_size_y stereo_size_z" />
+      </geometry>
+    </collision> 
+    
+    <!--
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:stereocamera name="stereo_camera_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <saveFrames>false</saveFrames>
+          <saveFramePath>frames</saveFramePath>
+          <baseline>0.2</baseline>
+          <updateRate>15.0</updateRate>
+          <controller:ros_stereocamera name="stereo_camera_controller" plugin="libRos_Stereo_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <interface:stereocamera name="stereo_iface_0" />
+            <interface:camera name="camera_iface_0" />
+            <interface:camera name="camera_iface_1" />
+            <leftcamera>camera_iface_0</leftcamera>
+            <rightcamera>camera_iface_1</rightcamera>
+            <leftCloudTopicName>stereo_left_cloud</leftCloudTopicName>
+            <rightCloudTopicName>stereo_right_cloud</rightCloudTopicName>
+            <leftTopicName>stereo_left_image</leftTopicName>
+            <rightTopicName>stereo_right_image</rightTopicName>
+            <leftFrameName>stereo_left</leftFrameName>
+            <rightFrameName>stereo_right</rightFrameName>
+          </controller:ros_stereocamera>
+        </sensor:stereocamera>
+      </verbatim>
+    </map>
+    -->
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="stereo_left_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="stereo_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+	    <updateRate>15.0</updateRate>
+	    <topicName>stereo_left/image</topicName>
+	    <frameName>stereo</frameName>
+	    <interface:camera name="stereo_left_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+     <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_ray">
+        <sensor:ray name="stereo_laser">
+          <rayCount>30</rayCount>
+          <rangeCount>30</rangeCount>
+          <laserCount>1</laserCount>
+	  
+          <origin>0.0 0.0 0.05</origin>
+          <displayRays>false</displayRays>
+	  
+          <minAngle>-15</minAngle>
+          <maxAngle> 15</maxAngle>
+	  
+          <minRange>0.05</minRange>
+          <maxRange>100.0</maxRange>
+          <updateRate>10.0</updateRate>
+
+          <verticalRayCount>30</verticalRayCount>
+          <verticalRangeCount>30</verticalRangeCount>
+          <verticalMinAngle>-20</verticalMinAngle>
+          <verticalMaxAngle>  0</verticalMaxAngle>
+
+          <controller:ros_block_laser name="stereo_laser_controller" plugin="libRos_Block_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <topicName>full_cloud</topicName>
+            <frameName>stereo</frameName>
+            <interface:laser name="stereo_laser_iface" />
+          </controller:ros_block_laser>
+        </sensor:ray>
+      </verbatim>
+    </map>
+  
+  </sensor>
+  
+  <!-- End sensor definitions -->
+  
+  <!--
+      <frame name="test">
+	<parent name="finger_l_left" />
+	<origin xyz="0   0   0" rpy="0.0 0.0 0.0" /> // location defined with respect to the link origin in the sensor's local coordinate frame 
+	// All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis 
+      </frame>
+      -->
+
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include>groups.xml</include>
+   <!-- new definitions for mechanism controls - JMH -->
+  <include>transmissions.xml</include> 
+
+  <!-- Kinematic chains -->
+  <chain root="torso" tip="gripper_roll_left" />
+  <chain root="torso" tip="gripper_roll_right" />
+
+</robot>

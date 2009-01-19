@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <macro name="pr2_ptz" params="side parent reflect *origin">
+
+    <joint name="${side}_ptz_pan_joint" type="revolute">
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
+      <axis xyz="0 0 -1" />
+      <joint_properties damping="0.01" friction="0.0" />
+    </joint>
+
+    <link name="${side}_ptz_pan_link">
+      <parent name="${parent}" />
+      <insert_block name="origin" />
+      <joint name="${side}_ptz_pan_joint" />
+
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
+        <map name="foo" flag="gazebo">
+	  <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="${side}_ptz_pan_visual">
+          <mesh filename="ptz_base_${side}" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
+        <geometry name="${side}_ptz_pan_collision">
+          <cylinder radius="0.05" length="0.05" />
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${side}_ptz_tilt_joint" type="revolute">
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
+      <axis xyz="0 -1 0" />
+      <anchor xyz="0 0 0" />
+      <joint_properties damping="0.01" friction="0.0" />
+    </joint>
+
+    <sensor name="${side}_ptz_tilt_link" type="camera">
+      <parent name="${side}_ptz_pan_link" />
+      <origin xyz="0.0 ${reflect*0.0} 0.0" rpy="0 0 0"/>
+      <joint name="${side}_ptz_tilt_joint" />
+
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="foo" flag="gazebo">
+	  <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="${side}_ptz_tilt_visual">
+          <mesh filename="ptz_${side}" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
+        <geometry name="${side}_ptz_tilt_collision">
+          <cylinder radius="0.03" length="0.03" />
+        </geometry>
+      </collision>
+
+      <map name="sensor" flag="gazebo">
+        <verbatim key="sensor_${side}_ptz_camera">
+          <sensor:camera name="${side}_ptz_cam_sensor">
+            <imageWidth>640</imageWidth>
+            <imageHeight>480</imageHeight>
+            <hfov>60</hfov>
+            <nearClip>0.1</nearClip>
+            <farClip>100</farClip>
+            <updateRate>15.0</updateRate>
+            <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libros_camera.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>15.0</updateRate>
+              <topicName>axis_${side}/image</topicName>
+              <frameName>ptz_${side}</frameName>
+              <interface:camera name="${side}_ptz_cam_iface" />
+            </controller:ros_camera>
+          </sensor:camera>
+        </verbatim>
+      </map>
+    </sensor>
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_${side}_ptz_actuators">
+        <!-- controllers for ptz -->
+        <controller:ros_ptz name="${side}_ptz_actuators_controller" plugin="libros_ptz.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>15.0</updateRate>
+          <panJoint>${side}_ptz_pan_joint</panJoint>
+          <tiltJoint>${side}_ptz_tilt_joint</tiltJoint>
+          <commandTopicName>axis_${side}/ptz_cmd</commandTopicName>
+          <stateTopicName>axis_${side}/ptz_state</stateTopicName>
+          <interface:ptz name="${side}_ptz_actuators_iface" />
+        </controller:ros_ptz>
+      </verbatim>
+    </map>
+
+
+  </macro>
+
+
+  <!--                    Calibration                            -->
+
+</robot>
