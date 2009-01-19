@@ -80,6 +80,7 @@ class SemanticPointAnnotator : public ros::Node
     // ROS messages
     PointCloud cloud_, cloud_annotated_;
     Point32 z_axis_;
+    PolygonalMap pmap_;
 
     tf::TransformListener tf_;
 
@@ -91,11 +92,13 @@ class SemanticPointAnnotator : public ros::Node
     double rule_table_min_, rule_table_max_;
 
     double region_growing_tolerance_;
+    
+    bool polygonal_map_, concave_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     SemanticPointAnnotator () : ros::Node ("semantic_point_annotator_omp"), tf_(*this)
     {
-      param ("~rule_floor", rule_floor_, 0.2);          // Rule for FLOOR
+      param ("~rule_floor", rule_floor_, 0.3);           // Rule for FLOOR
       param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
       param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
@@ -110,9 +113,15 @@ class SemanticPointAnnotator : public ros::Node
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);   // 50 points at high resolution
 
       // This should be set to whatever the leaf_width factor is in the downsampler
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.06);     // 6 cm
+      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
       
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
+
+      param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
+      param ("~concave", concave_, true);                               // Create concave hulls by default
+      
+      if (polygonal_map_)
+        advertise<PolygonalMap> ("semantic_polygonal_map", 1);
 
       eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
 
@@ -138,11 +147,8 @@ class SemanticPointAnnotator : public ros::Node
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-      cloud_annotated_.chan.resize (3);
-      //cloud_annotated_.chan[0].name = "intensities";
-      cloud_annotated_.chan[0].name = "r";
-      cloud_annotated_.chan[1].name = "g";
-      cloud_annotated_.chan[2].name = "b";
+      cloud_annotated_.chan.resize (1);
+      cloud_annotated_.chan[0].name = "rgb";
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,11 +238,16 @@ class SemanticPointAnnotator : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
+    int
       fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
     {
+      vector<int> empty;
       if ((int)indices->size () < sac_min_points_per_model_)
-        return;
+      {
+        ROS_ERROR ("fitSACPlane: Indices.size (%d) < sac_min_points_per_model (%d)!", indices->size (), sac_min_points_per_model_);
+        inliers.push_back (empty);
+        return (-1);
+      }
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -247,6 +258,7 @@ class SemanticPointAnnotator : public ros::Node
 
       PointCloud pts (*points);
       int nr_points_left = indices->size ();
+      int nr_models = 0;
       while (nr_points_left > sac_min_points_left_)
       {
         // Search for the best plane
@@ -254,7 +266,12 @@ class SemanticPointAnnotator : public ros::Node
         {
           // Obtain the inliers and the planar model coefficients
           if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
+          {
+            ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+            inliers.push_back (empty);
+//            return (-1);
             break;
+          }
           inliers.push_back (sac->getInliers ());
           coeff.push_back (sac->computeCoefficients ());
 
@@ -266,46 +283,65 @@ class SemanticPointAnnotator : public ros::Node
 
           // Remove the current inliers in the model
           nr_points_left = sac->removeInliers ();
+          nr_models++;
         }
       }
+      if (nr_models > 1)
+        ROS_INFO ("Number of models found: %d.", nr_models);
+      return (0);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      getObjectClassForParallel (vector<double> *coeff, PointStamped map_origin,
-                                 double &r, double &g, double &b)
+      getObjectClassForParallel (PointCloud *points, vector<int> *indices, vector<double> *coeff, 
+                                 PointStamped map_origin, double &rgb)
     {
+      double r = 0, g = 0, b = 0;
       // Get all planes parallel to the floor (perpendicular to Z)
       Point32 robot_origin;
       robot_origin.x = map_origin.point.x;
       robot_origin.y = map_origin.point.y;
       robot_origin.z = map_origin.point.z;
 
+      // Assuming that the robot always has its base at Z = 0 in the base_link frame,
+      // compute the X,Y centroid coordinates of the planar patch
+      robot_origin.x = robot_origin.y = 0;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        robot_origin.x += points->pts.at (indices->at (i)).x;
+        robot_origin.y += points->pts.at (indices->at (i)).y;
+      }
+      robot_origin.x /= indices->size ();
+      robot_origin.y /= indices->size ();
+      
       // Compute a distance from 0,0,0 to the plane
       double distance = cloud_geometry::distances::pointToPlaneDistance (robot_origin, *coeff);
 
       // Test for floor
       if (distance < rule_floor_)
       {
-        r = 0.6; g = 0.67; b = 0.01;
+        r = 81; g = 239; b = 168;
       }
       // Test for ceiling
-      if (distance > rule_ceiling_)
+      else if (distance > rule_ceiling_)
       {
-        r = 0.8; g = 0.63; b = 0.33;
+        r = 196; g = 197; b = 102;
       }
       // Test for tables
-      if (distance > rule_table_min_ && distance < rule_table_max_)
+      else if (distance >= rule_table_min_ && distance <= rule_table_max_)
       {
-        r = 0.0; g = 1.0; b = 0.0;
+        r = 229; g = 86; b = 35;
       }
+      int res = (int(r) << 16) | (int(g) << 8) | int(b);
+      rgb = *(float*)(&res);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       getObjectClassForPerpendicular (PointCloud *points, vector<int> *indices,
-                                      double &r, double &g, double &b)
+                                      double &rgb)
     {
+      double r, g, b;
       // Get the minimum and maximum bounds of the plane
       Point32 minP, maxP;
       cloud_geometry::getMinMax (points, indices, minP, maxP);
@@ -318,9 +354,48 @@ class SemanticPointAnnotator : public ros::Node
         r = r * .3;
         b = b * .3 + .7;
         g = g * .3;
+        
+        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+        rgb = *(float*)(&res);
       }
     }
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      computeConcaveHull (PointCloud *points, vector<int> *indices, vector<double> *coeff, 
+                          vector<vector<int> > *neighbors, Polygon3D &poly)
+    {
+      Eigen::Vector3d u, v;
+      cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);
+      
+      vector<int> inliers (indices->size ());
+      int nr_p = 0;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+//        std::cerr << "Point " << i << " has " << neighbors->at (i).size () << " neighbors." << std::endl;
+//        if (cloud_geometry::nearest::isBoundaryPoint (points, indices->at (i), &neighbors, u, v))
+        if (cloud_geometry::nearest::isBoundaryPoint (points, i, &neighbors->at (i), u, v, M_PI * 3/4))
+        {
+          inliers[nr_p] = indices->at (i);
+          nr_p++;
+        }
+      }
+      inliers.resize (nr_p);
+      
+      cloud_geometry::areas::sortHull2D (points, &inliers, *coeff, poly);
+      
+/*      poly.points.resize (nr_p);
+      for (int i = 0; i < nr_p; i++)
+      {
+        poly.points[i].x = points->pts.at (inliers[i]).x;
+        poly.points[i].y = points->pts.at (inliers[i]).y;
+        poly.points[i].z = points->pts.at (inliers[i]).z;
+      }
+      std::sort (poly.points.begin (), poly.points.end (), cloud_geometry::areas::comparePoint3D);*/
+      
+    }
+    
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
@@ -387,23 +462,92 @@ class SemanticPointAnnotator : public ros::Node
       // Reserve enough space
       cloud_annotated_.pts.resize (total_p);
       cloud_annotated_.chan[0].vals.resize (total_p);
-      cloud_annotated_.chan[1].vals.resize (total_p);
-      cloud_annotated_.chan[2].vals.resize (total_p);
 
       int nr_p = 0;
 
+      if (polygonal_map_)
+      {
+        pmap_.header = cloud_.header;
+        pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
+      }
+      
       // Process all clusters in parallel
       #pragma omp parallel for schedule(dynamic)
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         // Find all planes in this cluster
         fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
+        if (cc == 3)
+        {
+          std::cerr << "Indices: ";
+          for (unsigned int i = 0; i < clusters[cc].indices.size (); i++)
+            std::cerr << clusters[cc].indices.at (i) << " ";
+          std::cerr << std::endl;
+          std::cerr << "Inliers: ";
+          for (unsigned int i = 0; i < all_cluster_inliers[cc][0].size (); i++)
+            std::cerr << all_cluster_inliers[cc][0].at (i) << " ";
+          std::cerr << std::endl;
+        }
+      }
+      
+      // Bummer - no omp here
+      // cloud_kdtree is not thread safe because we rely on ANN/FL-ANN, so get the neighbors here
+      vector<vector<vector<int> > > neighbors (clusters.size ());
+      if (concave_)
+      {
+        for (int cc = 0; cc < (int)clusters.size (); cc++)
+        {
+          if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
+            continue;
+            
+          vector<vector<int> > *cluster_neighbors = &neighbors[cc];
+          vector<int> *indices = &all_cluster_inliers[cc][0];
+          
+          cluster_neighbors->resize (indices->size ());
+
+          // Create a tree for these points
+          cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&cloud_, indices);
+          for (unsigned int i = 0; i < indices->size (); i++)
+          {
+            tree->radiusSearch (i, 0.5);                      // 30cm radius search
+//            tree->nearestKSearch (i, 30);                      // 30cm radius search
+            tree->getNeighborsIndices (cluster_neighbors->at (i));
+//            vector<int> n;
+//            tree->getNeighborsIndices (n);
+//            std::cerr << n.size () << std::endl;
+          }
+          // Destroy the tree
+          delete tree;
+        }
+        gettimeofday (&t2, NULL);
+        time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+        ROS_INFO ("Nearest neighbors (concave hull) estimated in %g seconds.", time_spent);
+        gettimeofday (&t1, NULL);
+      }
+      
+      // Process all clusters in parallel
+//      #pragma omp parallel for schedule(dynamic)
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
+      {      
+        // Fit convex hulls to the inliers (points should be projected!)
+        if (polygonal_map_)
+        {
+          if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
+            continue;
+
+          if (concave_)
+            computeConcaveHull (&cloud_, &all_cluster_inliers[cc][0], &all_cluster_coeff[cc][0], &neighbors[cc], pmap_.polygons[cc]);
+          else
+            cloud_geometry::areas::convexHull2D (&cloud_, all_cluster_inliers[cc][0], all_cluster_coeff[cc][0], pmap_.polygons[cc]);
+        }
       }
 
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
-        double r, g, b;
+        double r, g, b, rgb;
         r = g = b = 1.0;
+        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+        rgb = *(float*)(&res);
 
         // Get the planes in this cluster
         vector<vector<int> > *planes_inliers  = &all_cluster_inliers[cc];
@@ -412,10 +556,6 @@ class SemanticPointAnnotator : public ros::Node
         // For every plane in this cluster
         for (unsigned int j = 0; j < planes_inliers->size (); j++)
         {
-//           r = rand () / (RAND_MAX + 1.0);
-//           g = rand () / (RAND_MAX + 1.0);
-//           b = rand () / (RAND_MAX + 1.0);
-
           vector<int> *plane_inliers   = &planes_inliers->at (j);
           vector<double> *plane_coeffs = &planes_coeff->at (j);
           // Mark all the points inside
@@ -423,12 +563,12 @@ class SemanticPointAnnotator : public ros::Node
           {
             case 0:     // Z-parallel
             {
-              getObjectClassForParallel (plane_coeffs, map_origin, r, g, b);
+              getObjectClassForParallel (&cloud_, plane_inliers, plane_coeffs, map_origin, rgb);
               break;
             }
             case 1:     // Z-perpendicular
             {
-              getObjectClassForPerpendicular (&cloud_, plane_inliers, r, g, b);
+              getObjectClassForPerpendicular (&cloud_, plane_inliers, rgb);
               break;
             }
           }
@@ -437,9 +577,7 @@ class SemanticPointAnnotator : public ros::Node
             cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
             cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
             cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
-            cloud_annotated_.chan[0].vals[nr_p] = r;
-            cloud_annotated_.chan[1].vals[nr_p] = g;
-            cloud_annotated_.chan[2].vals[nr_p] = b;
+            cloud_annotated_.chan[0].vals[nr_p] = rgb;
             nr_p++;
           }
         }
@@ -451,9 +589,7 @@ class SemanticPointAnnotator : public ros::Node
           cloud_annotated_.pts[nr_p].x = cloud_.pts.at (clusters[cc].indices.at (j)).x;
           cloud_annotated_.pts[nr_p].y = cloud_.pts.at (clusters[cc].indices.at (j)).y;
           cloud_annotated_.pts[nr_p].z = cloud_.pts.at (clusters[cc].indices.at (j)).z;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
+          cloud_annotated_.chan[0].vals[nr_p] = rgb;
           nr_p++;
         }*/
       }
@@ -464,11 +600,11 @@ class SemanticPointAnnotator : public ros::Node
       gettimeofday (&t1, NULL); 
       cloud_annotated_.pts.resize (nr_p);
       cloud_annotated_.chan[0].vals.resize (nr_p);
-      cloud_annotated_.chan[1].vals.resize (nr_p);
-      cloud_annotated_.chan[2].vals.resize (nr_p);
 
       publish ("cloud_annotated", cloud_annotated_);
 
+      if (polygonal_map_)
+        publish ("semantic_polygonal_map", pmap_);
       return;
 
 
@@ -488,9 +624,7 @@ class SemanticPointAnnotator : public ros::Node
           cloud_annotated_.pts[nr_p].y = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].y;
           cloud_annotated_.pts[nr_p].z = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].z;
           //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
+          cloud_annotated_.chan[0].vals[nr_p] = rgb;
           nr_p++;
         }
       }*/
