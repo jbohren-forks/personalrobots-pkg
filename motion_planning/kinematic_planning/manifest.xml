@@ -10,7 +10,8 @@
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
 
-  <depend package="wg_robot_description" />
+  <depend package="pr2_defs" />
+  <depend package="pr2_default_controllers" />
   <depend package="wg_robot_description_parser"/>
   <depend package="planning_models"/>
   <depend package="collision_space"/>
