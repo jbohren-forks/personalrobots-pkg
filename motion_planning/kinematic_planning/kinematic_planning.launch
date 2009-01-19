@@ -1,3 +1,4 @@
 <launch>
-	<node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true" />
+	<node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true" output="screen" />
+	<node pkg="kinematic_planning" type="motion_validator" args="robotdesc/pr2" respawn="true" />
 </launch>
