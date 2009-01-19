@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <!-- send pr2.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="-r -n $(find gazebo_robot_description)/gazebo_worlds/wg.world" respawn="false" output="screen">
