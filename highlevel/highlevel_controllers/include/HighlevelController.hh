@@ -158,11 +158,11 @@ public:
 	  if(!isValid()){
 	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
 	    lock();	 
-	    if ((ros::Time::now() - lastPlan) < timeout && timeout.toSec() != 0.0) {
+	    if ((ros::Time::now() - lastPlan) > timeout && timeout.toSec() != 0.0) {
 	      this->stateMsg.aborted = 1;
-	      ROS_ERROR("Controller timed out.");
+	      ROS_INFO("Controller timed out.");
 	      deactivate();
-	    }	   
+	    }
 	    handlePlanningFailure();
 	    unlock();	    
 	  } else {
@@ -214,7 +214,7 @@ protected:
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
   void activate(){
-    ROS_INFO("Activating controller\n");
+    ROS_INFO("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
 
     this->state = ACTIVE;
     this->stateMsg.active = 1;
@@ -231,11 +231,6 @@ protected:
    */
   void deactivate(){
     ROS_INFO("Deactivating controller\n");
-
-    if (this->state == ACTIVE && !this->stateMsg.done) {
-      ROS_INFO("Controller preempted.");
-      this->stateMsg.preempted = 1;
-    }
 
     this->state = INACTIVE;
     this->stateMsg.active = 0;
@@ -367,6 +362,8 @@ private:
       activate();
     }
     else if(state == ACTIVE){
+      ROS_INFO("Controller preempted.");
+      this->stateMsg.preempted = 1;
       deactivate();
 
       // If we are active, and this is a goal, publish the state message and activate. This allows us
