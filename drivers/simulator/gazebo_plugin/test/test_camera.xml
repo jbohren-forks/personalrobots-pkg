@@ -9,7 +9,7 @@
     </node>
 
     <!-- send single_link.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -3 0 0" respawn="false" output="screen" /> <!-- load default arm controller -->
