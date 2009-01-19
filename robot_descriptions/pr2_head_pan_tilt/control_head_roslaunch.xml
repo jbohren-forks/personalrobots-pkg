@@ -1,0 +1,3 @@
+<launch> 
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
+</launch>

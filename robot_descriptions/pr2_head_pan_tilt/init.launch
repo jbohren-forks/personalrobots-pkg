@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find pr2_head_pan_tilt)/send_description.launch" />
+  <include file="$(find pr2_head_pan_tilt)/calibrate.launch" />
+  <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2" />
+</launch>
