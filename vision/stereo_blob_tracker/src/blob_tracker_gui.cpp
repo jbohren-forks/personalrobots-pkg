@@ -179,7 +179,7 @@ public:
   int  numFrames_;
 
   BlobTrackerGUI(bool display):
-    node("blob_tracker_gui", ros::Node::ANONYMOUS_NAME),
+    Node("blob_tracker_gui", ros::Node::ANONYMOUS_NAME),
     display_(display),
     cv_image_cpy_(NULL), 
     cv_dispImg_cpy_(NULL),

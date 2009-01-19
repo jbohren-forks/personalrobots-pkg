@@ -15,7 +15,6 @@ Stereo Blob tracking by camshift/meanshift.
 <depend package="std_srvs"/>
 <depend package="boost"/>
 <depend package="axis_cam"/>
-<depend package="string_utils"/>
 <depend package="image_utils"/>
 <depend package="pr2_mechanism_controllers"/>
 <depend package="stereo_utils"/>

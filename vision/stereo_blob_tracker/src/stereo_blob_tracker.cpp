@@ -266,7 +266,7 @@ public:
 		    /// if true, remote gui is used to selection windows and
 		    /// display tracking results
 		    bool remote_gui) :
-    node("videre_blob_tracker", ros::Node::ANONYMOUS_NAME),
+    Node("videre_blob_tracker", ros::Node::ANONYMOUS_NAME),
     display_(display),
     remote_gui_(remote_gui),
     imagesTopic_("images"),
