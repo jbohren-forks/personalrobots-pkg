@@ -10,7 +10,10 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   
-  <depend package="wg_robot_description" />
+  <depend package="pr2_defs" />
+  <depend package="pr2_default_controllers" />
+  <depend package="pr2_prototype1" />
+  <depend package="pr2_full" />
   <depend package="teleop_base"/>
   <depend package="pr2_etherCAT"/>
   <depend package="pr2_power_board"/>
