@@ -14,7 +14,7 @@
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
   <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
 
-  <node pkg="mechanism_control" type="mech.py" args="sp $(find examples_gazebo)/single_link_defs/controllers_single_link.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/single_link_defs/controllers_single_link.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
   <node pkg="robot_mechanism_controllers" type="control.py" args="set test_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 </launch>
 
