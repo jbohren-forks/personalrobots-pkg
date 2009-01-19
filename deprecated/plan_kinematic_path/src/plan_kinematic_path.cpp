@@ -37,7 +37,7 @@
 
 /** This is a simple program for requesting a motion plan */
 
-#include <robot_model/knode.h>
+#include <kinematic_planning/KinematicStateMonitor.h>
 
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
@@ -50,16 +50,24 @@
 #include <cassert>
 
 class PlanKinematicPath : public ros::Node,
-			  public robot_model::NodeRobotModel
+			  public kinematic_planning::KinematicStateMonitor
 {
 public:
     
     PlanKinematicPath(const std::string& robot_model) : ros::Node("plan_kinematic_path"),
-							robot_model::NodeRobotModel(dynamic_cast<ros::Node*>(this), robot_model)
+							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
     }
-  
+    
+    void currentState(robot_msgs::KinematicState &state)
+    {
+	state.set_vals_size(m_kmodel->stateDimension);
+	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
+	    state.vals[i] = m_robotState->getParams()[i];
+    }
+    
+    /*
     void initialState(robot_msgs::KinematicState &state)
     {
 	state.set_vals_size(m_kmodel->stateDimension);
@@ -87,11 +95,11 @@ public:
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = m_basePos[i];
-	/*
-	req.goal_state.vals[0] += 7.5;
-	req.goal_state.vals[1] += 0.5;
-	req.goal_state.vals[2] = -M_PI/2.0;
-	*/
+	
+//	req.goal_state.vals[0] += 7.5;
+//	req.goal_state.vals[1] += 0.5;
+//	req.goal_state.vals[2] = -M_PI/2.0;
+	
 
 	req.goal_state.vals[0] += 5.5;
 	req.goal_state.vals[1] += 0.5;
@@ -132,7 +140,7 @@ public:
 	performCall(req);
     }
 
-    
+    */
     void runTestRightArm(void)
     {
 	robot_srvs::KinematicPlanState::request  req;
@@ -144,7 +152,7 @@ public:
 	req.interpolate = 1;
 	req.times = 1;
 
-	initialState(req.start_state);
+	currentState(req.start_state);
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
@@ -158,8 +166,34 @@ public:
 	
 	performCall(req);
     }
+
+
+    void runRightArmTo0(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
+	req.threshold = 0.01;
+	req.interpolate = 0;
+	req.times = 1;
+
+	currentState(req.start_state);
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
+	    req.goal_state.vals[i] = 0.0;
+	
+	req.allowed_time = 30.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req);
+    }
     
-    
+    /*
     void runTestRightArmReverse(void)
     {
 	robot_srvs::KinematicPlanState::request  req;
@@ -245,15 +279,15 @@ public:
 	req.goal_constraints[0].position_distance = 0.01;
 	
 	// an example of constraints: do not move the elbow too much
-	/*
-	req.constraints.set_pose_size(1);
-	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
-	req.constraints.pose[0].robot_link = "elbow_flex_left";
-	req.constraints.pose[0].pose.position.x = 0.45;
-	req.constraints.pose[0].pose.position.y = 0.188;
-	req.constraints.pose[0].pose.position.z = 0.74;
-	req.constraints.pose[0].position_distance = 0.01;
-	*/
+	
+//	req.constraints.set_pose_size(1);
+//	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
+//	req.constraints.pose[0].robot_link = "elbow_flex_left";
+//	req.constraints.pose[0].pose.position.x = 0.45;
+//	req.constraints.pose[0].pose.position.y = 0.188;
+//	req.constraints.pose[0].pose.position.z = 0.74;
+//	req.constraints.pose[0].position_distance = 0.01;
+	
 	req.allowed_time = 0.3;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
@@ -261,7 +295,7 @@ public:
 	
 	performCall(req);
     }
-
+    */
     void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
@@ -378,61 +412,6 @@ public:
 	} 
 	
 	*/
-	// create the service request 
-	//	return;
-	
-	//	const double margin_fraction = 0.1;
-	/*
-	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
-	pr2_mechanism_controllers::SetJointTarget::request req;
-	req.set_positions_size(path.get_states_size());
-	
-	
-	int groupID = m_kmodel->getGroupID(model);
-	std::vector<std::string> joints;
-	m_kmodel->getJointsInGroup(joints, groupID);
-	
-	
-	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
-	{
-	    if (path.states[i].get_vals_size() != joints.size())
-	    {
-		delete state;
-		return;
-	    }
-	    
-	    state->setParams(&(path.states[i].vals[0]), groupID);
-	    
-	    req.positions[i].set_names_size(joints.size());
-	    req.positions[i].set_positions_size(joints.size());
-	    req.positions[i].set_margins_size(joints.size());
-	    req.positions[i].timeout = 10.0;
-	    
-	    for (unsigned int j = 0 ; j < joints.size() ; ++j)
-	    {
-		req.positions[i].names[j] = joints[j];
-		
-		state->copyParams(&(req.positions[i].positions[j]), joints[j]);
-		
-		int pos = state->getPos(joints[j]);
-		assert(pos >= 0);
-		req.positions[i].margins[j] = 0.25; // margin_fraction * (m_kmodel->stateBounds[2 * pos + 1] - m_kmodel->stateBounds[2 * pos]);
-	    }	    
-	}
-	
-	delete state;
-	
-	// perform the service call 
-	
-	pr2_mechanism_controllers::SetJointTarget::response res;
-	
-	if (ros::service::call("/left_arm_controller/set_target", req, res))
-	{
-	    
-	}
-	else
-	    fprintf(stderr, "Service 'left_arm_controller/set_target' failed\n");	 
-	*/
     }
     
 };
@@ -463,16 +442,16 @@ int main(int argc, char **argv)
 	    
 	    switch (test)
 	    {
-	    case 'l':
+		/*	    case 'l':
 		plan->runTestLeftArm();    
 		break;
 	    case 'b':    
 		plan->runTestBase();
-		break;
+		break; */
 	    case 'r':
 		plan->runTestRightArm();    
 		break;
-	    case 's':
+		/*	    case 's':
 	        plan->runTestRightArmReverse();    
 		break;
 	    case 'e':
@@ -481,6 +460,7 @@ int main(int argc, char **argv)
 	    case 'x':
 		plan->runTestBaseRightArm();
 		break;
+		*/
 	    default:
 		printf("Unknown test\n");
 		break;
@@ -489,14 +469,12 @@ int main(int argc, char **argv)
 	    sleep(1);	
 	}
 	
-	//	plan->shutdown();
-	//	delete plan;
+	plan->shutdown();
+	delete plan;
     }
     else
 	usage(argv[0]);
     sleep(100);
-    
-    ros::fini();
     
     return 0;    
 }
