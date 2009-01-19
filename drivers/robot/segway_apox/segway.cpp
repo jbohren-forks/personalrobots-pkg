@@ -7,7 +7,9 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
+extern "C" {
 #include "usbcan.h"
+}
 #include "tf/transform_broadcaster.h"
 
 using namespace ros;
@@ -228,7 +230,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
-	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a param someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB1"); // pull from a param someday...
 
 	if (!can)
 	{
@@ -241,8 +243,16 @@ void Segway::main_loop()
 	unsigned can_id;
   double last_send_time = ros::Time::now().to_double();
 
-	while(ok())
-	{
+/*
+  tf.sendTransform(
+      tf::Transform(
+        tf::Quaternion(0, 0, 0), 
+        tf::Point(0.25, 0.0, 0.0)).inverse(), 
+        ros::Time::now(), "base_laser", "base");
+  */
+
+  while(ok())
+  {
     if (ros::Time::now().to_double() - last_send_time > 0.01)
     {
       double time_since_last_cmd = ros::Time::now().to_double() - req_time;
@@ -262,7 +272,7 @@ void Segway::main_loop()
         }
         else if (pkt_mode == SHUTDOWN_REQ)
         {
-          printf("sending shutdown package\n");
+          printf("sending shutdown packet\n");
           pkt_mode = SHUTDOWN;
           for (int i = 0; i < 8; i++)
             send_data[i] = 0;
@@ -273,8 +283,9 @@ void Segway::main_loop()
     }
 
 		if (dgc_usbcan_read_message(can, &can_id, message, &message_length))
+    //if (0)
 		{
-			rmp.AddPacket(can_id, message);
+//			rmp.AddPacket(can_id, message);
 			if (can_id == RMP_CAN_ID_MSG5)
 			{
         /*
@@ -282,7 +293,6 @@ void Segway::main_loop()
   			if (c++ % 100 == 0)
 					printf("%d %d\n", rmp.foreaft, rmp.yaw);
         */
-
 				if (!odom_init)
 					odom_init = true;
 				else
@@ -297,31 +307,47 @@ void Segway::main_loop()
 					//odom_yaw = normalize_angle(odom_yaw + delta_ang);
 					odom_yaw = odom_yaw + delta_ang;
 
-					static int odom_count = 0;
-					if (odom_count++ % 3 == 0) // send it at 5 hz or so
-					{
-                                          //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
-                                          odom.pos.x  = odom_x;
-                                          odom.pos.y  = odom_y;
-                                          odom.pos.th = odom_yaw;
-                                          publish("odom", odom);
+          static int odom_count = 0;
+          if (odom_count++ % 3 == 0) // send it at 5 hz or so
+          {
+            //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
+            odom.pos.x  = odom_x;
+            odom.pos.y  = odom_y;
+            odom.pos.th = odom_yaw;
+            publish("odom", odom);
+            tf.sendTransform(
+              tf::Transform(
+                tf::Quaternion(0, 0, 0), 
+                tf::Point(0.25, 0.0, 0.0)).inverse(), 
+              ros::Time::now(), "base_laser", "base");
+            tf.sendTransform(
+              tf::Transform(
+                tf::Quaternion(odom.pos.th, 0, 0), 
+                  tf::Point(odom.pos.x, odom.pos.y, 0.0)).inverse(),
+              odom.header.stamp, "odom", "base");
+          }
+        }
+        last_foreaft = rmp.foreaft;
+        last_yaw = rmp.yaw;
 
-                                          tf.sendTransform(tf::Transform(tf::Quaternion(
-                                                                                        odom.pos.th,
-                                                                                        0,
-                                                                                        0),
-                                                                         tf::Point(
-                                                                                   odom.pos.x,
-                                                                                   odom.pos.y,
-                                                                                   0.0)
-                                                                         ).inverse(),
-                                                           odom.header.stamp,
-                                                           "odom",
-                                                           "base");
-                                        }
-                                }
-                                last_foreaft = rmp.foreaft;
-				last_yaw = rmp.yaw;
+        tf.sendTransform(tf::Transform(tf::Quaternion(
+                odom.pos.th,
+                0,
+                0),
+              tf::Point(
+                odom.pos.x,
+                odom.pos.y,
+                0.0)
+              ).inverse(),
+            odom.header.stamp,
+            "odom",
+            "base");
+      }
+    }
+		else
+		{
+			usleep(5000);
+		}
 
                                 /*            tf.sendInverseEuler("odom",
                                               "base",
@@ -343,14 +369,10 @@ void Segway::main_loop()
 				req_mutex.unlock();
 				dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
 */
-			}
-		}
-		else
-		{
-			usleep(5000);
-		}
+//			}
+//		}
 //		char c = get_key_nonblocking();
-	}
+  }
 }
 
 int main(int argc, char **argv)

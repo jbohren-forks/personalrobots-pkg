@@ -1,3 +1,4 @@
+#include <stdio.h>
 //#include <roadrunner.h>
 #include <stdlib.h>
 #include "serial.h"
@@ -7,31 +8,30 @@
 #define NULL 0
 #endif
 
-
 dgc_usbcan_p dgc_usbcan_initialize(const char *device)
 {
   dgc_usbcan_p usbcan;
 
-  usbcan = new dgc_usbcan_t;//(dgc_usbcan_p)calloc(1, sizeof(dgc_usbcan_t));
-//  usbcan = (dgc_usbcan_p)calloc(1, sizeof(dgc_usbcan_t));
+  //usbcan = new dgc_usbcan_t;//(dgc_usbcan_p)calloc(1, sizeof(dgc_usbcan_t));
+  usbcan = (dgc_usbcan_p)calloc(1, sizeof(dgc_usbcan_t));
   //dgc_test_alloc(usbcan);
 
   /* connect to segway USB-CAN device */
   if(dgc_serial_connect(&usbcan->fd, device, 500000) < 0) {
-    //free(usbcan);
-		delete usbcan;
+    free(usbcan);
+    //delete usbcan;
     return NULL;
   }
 
-//	dgc_usbcan_config_command(usbcan, 1); // reset CPU
+  //	dgc_usbcan_config_command(usbcan, 1); // reset CPU
   /* set USB-CAN to 500K bitrate */
   dgc_usbcan_config_command(usbcan, SET_BAUD_500K);
   /* send USB-CAN device into run mode */
   dgc_usbcan_config_command(usbcan, 'R');
 
-	
+
   dgc_usbcan_config_command(usbcan, SET_NORMAL_MODE);
-  
+
 
   usbcan->buf_size = 0;
 
@@ -42,13 +42,13 @@ void dgc_usbcan_close(dgc_usbcan_p *usbcan)
 {
   dgc_usbcan_config_command(*usbcan, 0x23);
   dgc_serial_close((*usbcan)->fd);
- // free(*usbcan);
-	delete *usbcan;
+  free(*usbcan);
+  //delete *usbcan;
   *usbcan = NULL;
 }
 
 int dgc_usbcan_package_and_send(dgc_usbcan_p usbcan, unsigned char *data, 
-				int dataSize)
+    int dataSize)
 {
   unsigned char buffer[300], chksum = 0;
   int i, n, size = 0;
@@ -56,7 +56,7 @@ int dgc_usbcan_package_and_send(dgc_usbcan_p usbcan, unsigned char *data,
   // start the transmission
   buffer[size++] = USB_DLE;
   buffer[size++] = USB_STX;
-  
+
   // BYTE Stuff the data and calc checksum
   for(i = 0; i < dataSize; i++) {
     chksum ^= data[i];
@@ -64,13 +64,13 @@ int dgc_usbcan_package_and_send(dgc_usbcan_p usbcan, unsigned char *data,
       buffer[size++] = USB_DLE;
     buffer[size++] = data[i];
   }
-  
+
   // BYTE STUFF checksum if necessary
   if(chksum == USB_DLE)
     buffer[size++] = USB_DLE;
   // Send the check sum
   buffer[size++] = chksum;
-  
+
   // terminate the transmission
   buffer[size++] = USB_DLE;
   buffer[size++] = USB_ETX;
@@ -83,7 +83,7 @@ int dgc_usbcan_package_and_send(dgc_usbcan_p usbcan, unsigned char *data,
 }
 
 int dgc_usbcan_send_can_message(dgc_usbcan_p usbcan, unsigned int can_id, 
-				unsigned char *candata, int can_length)
+    unsigned char *candata, int can_length)
 {
   unsigned char buffer[100];
   int i, buffer_len = 0;
@@ -111,7 +111,7 @@ int dgc_usbcan_config_command(dgc_usbcan_p usbcan, unsigned char code)
   unsigned char txBuf[5];   
   int size = 0;
   int status;
-  
+
   txBuf[size++] = 0x00;
   txBuf[size++] = code | 0x80;
   status = dgc_usbcan_package_and_send(usbcan, txBuf, size);
@@ -119,7 +119,7 @@ int dgc_usbcan_config_command(dgc_usbcan_p usbcan, unsigned char code)
 }
 
 int dgc_usbcan_valid_message(unsigned char *buffer, int buf_size, 
-			     unsigned char *decoded, int *decoded_length)
+    unsigned char *decoded, int *decoded_length)
 {
   unsigned char computed_checksum;
   int i;
@@ -157,7 +157,7 @@ int dgc_usbcan_valid_message(unsigned char *buffer, int buf_size,
 }
 
 int dgc_usbcan_read_message(dgc_usbcan_p usbcan, unsigned int *can_id, 
-			    unsigned char *candata, int *can_length)
+    unsigned char *candata, int *can_length)
 {
   int decoded_length, i, found_start, found_end, found_message = 0;
   int bytes_read, bytes_available;
@@ -168,10 +168,12 @@ int dgc_usbcan_read_message(dgc_usbcan_p usbcan, unsigned int *can_id,
   if(bytes_available > USBCAN_BUFFER_SIZE - usbcan->buf_size)
     bytes_available = USBCAN_BUFFER_SIZE - usbcan->buf_size;
   bytes_read = dgc_serial_readn(usbcan->fd, usbcan->buffer +
-				usbcan->buf_size, bytes_available,
-				USBCAN_READ_TIMEOUT);
+      usbcan->buf_size, bytes_available,
+      USBCAN_READ_TIMEOUT);
   if(bytes_read > 0)
     usbcan->buf_size += bytes_read;
+  else
+    return 0;
 
   /* look for message preamble */
   found_start = -1;
@@ -180,48 +182,53 @@ int dgc_usbcan_read_message(dgc_usbcan_p usbcan, unsigned int *can_id,
       found_start = i;
       break;
     }
-  
+
   if(found_start == -1) 
     usbcan->buf_size = 0;
   else {
     /* move the message so preamble appears at start of buffer */
     if(found_start > 0) {
       memmove(usbcan->buffer, usbcan->buffer + found_start, 
-	      usbcan->buf_size - found_start);
+          usbcan->buf_size - found_start);
       usbcan->buf_size -= found_start;
     }
-  
+
     /* look for message end */
     found_end = -1;
     for(i = 0; i < usbcan->buf_size - 1; i++)
       if(usbcan->buffer[i] == USB_DLE && usbcan->buffer[i + 1] == USB_ETX) {
-	found_end = i;
-	break;
+        found_end = i;
+        break;
       }
-    
+
     /* try and decode the message, see if it is valid */
     if(found_end != -1) {
       if(dgc_usbcan_valid_message(usbcan->buffer, found_end + 2,
-				  decoded, &decoded_length)) {
-	*can_id = (decoded[4] << 24) | (decoded[3] << 16) | 
-	  (decoded[2] << 8) | decoded[1];
-	*can_length = decoded[6];
-	for(i = 0; i < *can_length; i++)
-	  candata[i] = decoded[7 + i];
-	found_message = 1;
+            decoded, &decoded_length)) {
+        *can_id = (decoded[4] << 24) | (decoded[3] << 16) | 
+          (decoded[2] << 8) | decoded[1];
+        *can_length = decoded[6];
+        if (*can_length > 8) // don't let big packets get built up
+        {
+          usbcan->buf_size = 0;
+          return 0;
+        }
+        for(i = 0; i < *can_length; i++)
+          candata[i] = decoded[7 + i];
+        found_message = 1;
       }
-      
+
       /* delete the message from the buffer */
       if(usbcan->buf_size == found_end + 2) 
-	usbcan->buf_size = 0;
+        usbcan->buf_size = 0;
       else {
-	memmove(usbcan->buffer, usbcan->buffer + found_end + 2, 
-		usbcan->buf_size - (found_end + 2));
-	usbcan->buf_size -= (found_end + 2);
+        memmove(usbcan->buffer, usbcan->buffer + found_end + 2, 
+            usbcan->buf_size - (found_end + 2));
+        usbcan->buf_size -= (found_end + 2);
       }
     }
   }
-  
+
   return found_message;
 }
 
