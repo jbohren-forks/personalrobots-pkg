@@ -51,8 +51,7 @@ int runExternalProcess(const std::string &executable, const std::string &args)
 
 TEST(URDF, CorrectFormat)
 {
-    int result0 = runExternalProcess("`rospack find xacro`/xacro.py", "`rospack find pr2_defs`/robots/pr2.xacro.xml > `rospack find pr2_defs`/robots/pr2.xml");
-    int result = runExternalProcess("`rospack find wg_robot_description_parser`/parse", "`rospack find pr2_defs`/robots/pr2.xml");
+    int result = runExternalProcess("`rospack find wg_robot_description_parser`/parse", "`rospack find pr2_defs`/robots/pr2.expanded.xml");
 
     EXPECT_TRUE(result == 0);
 }
