@@ -352,49 +352,6 @@ namespace costmap_2d {
 
 
 
-  void CostMap2D::saveText(std::string file) { 
-    std::ofstream of_text(file.c_str()); 
-
-
-    if (of_text.fail() || !of_text) {
-      ROS_INFO("Failed to open file %s.\n", file.c_str());
-      return;
-    }
-
-    for (unsigned int i = 0; i < getWidth(); i++) {
-      for (unsigned int j = 0; j < getHeight(); j++) {
-	of_text.width(4);
-	of_text << (int)(getMap()[i + j * getWidth()]) << ",";
-      }
-      of_text << std::endl;
-    }
-  }
-
-  void CostMap2D::saveBinary(std::string file) { 
-    std::ofstream of(file.c_str(), std::ios::out|std::ios::binary);
-    if (of.fail() || !of) {
-      ROS_INFO("Failed to open file %s.\n", file.c_str());
-      return;
-    }
-
-    of.write((const char*)(getMap()), getWidth() * getHeight() * sizeof(unsigned char));
-    of.close(); 
-  }
-
-  void CostMap2D::savePgm(std::string file) { 
-    std::ofstream of(file.c_str(), std::ios::out|std::ios::binary);
-    if (of.fail() || !of) {
-      ROS_INFO("Failed to open file %s.\n", file.c_str());
-      return;
-    }
-    of << "P5\n# CREATOR: ROS CostMap2d\n";
-    of << getWidth() << " " << getHeight() << "\n";
-    of << "255\n";
-
-    of.write((const char*)(getMap()), getWidth() * getHeight() * sizeof(unsigned char));
-    of.close(); 
-  }
-
   /**
    * @brief It is arguable if this is the correct update rule. We are trying to avoid
    * tracing holes through walls by propagating adjacent cells that are in sensor range through

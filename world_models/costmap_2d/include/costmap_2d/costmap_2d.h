@@ -187,23 +187,7 @@ namespace costmap_2d {
      */
     void revertToStaticMap(double wx = 0.0, double wy = 0.0);
 
-    /**
-     * @brief Saves a text file of the map.
-     * @param name The filename to save.
-     */
-    void saveText(std::string name);
    
-    /**
-     * @brief Saves a binary file of the map.
-     * @param name The filename to save.
-     */
-    void saveBinary(std::string name);
-
-    /**
-     * @brief Saves a pgm image of the costmap.
-     * @param name The filename to save.
-     */
-    void savePgm(std::string file);
   private:
 
     /**
