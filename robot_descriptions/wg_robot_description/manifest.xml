@@ -12,8 +12,6 @@
   
   <depend package="wg_robot_description_parser" />
   <depend package="xacro"/>
-  <depend package="convex_decomposition"/>
-  <depend package="ivcon"/>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
 </package>
