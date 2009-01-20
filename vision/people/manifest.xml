@@ -16,7 +16,6 @@
 <depend package="stereo_utils"/>
 <!--<depend package="visual_odometry"/>-->
 <!--depend package="pyrob"/-->
-<depend package="rosrecord"/>
 <depend package="rospy"/>
 <depend package="image_msgs"/>
 <depend package="topic_synchronizer"/>
