@@ -8,7 +8,9 @@
     <param name="cut_distance" type="double" value="10.0" />
     <param name="z_threshold" type="double" value="0.2" />
 
-    <param name="p_sac_min_points_per_model" type="double" value="5" />
-    <param name="p_sac_distance_threshold" type="double" value="0.04" />
+    <param name="sac_min_points_per_model" type="double" value="5" />
+    <param name="sac_distance_threshold" type="double" value="0.04" />
+    <param name="sac_max_iterations" type="int" value="500" />
+    <param name="sac_probability" type="double" value="0.99" />
   </node>
 </launch>

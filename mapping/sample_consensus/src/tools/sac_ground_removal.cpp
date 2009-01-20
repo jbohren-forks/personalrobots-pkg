@@ -71,8 +71,8 @@ class GroundRemoval : public ros::Node
 
     // Parameters
     double z_threshold_;
-    int sac_min_points_per_model_;
-    double sac_distance_threshold_;
+    int sac_min_points_per_model_, sac_max_iterations_;
+    double sac_distance_threshold_, sac_probability_;
 
     // additional downsampling parameters
     bool downsample_;
@@ -92,8 +92,10 @@ class GroundRemoval : public ros::Node
 
       param ("~z_threshold", z_threshold_, 0.2);         // 20cm threshold for ground removal
 
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.04);   // 4 cm 
+      param ("~sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.04);   // 4 cm threshold
+      param ("~sac_max_iterations", sac_max_iterations_, 500);            // maximum 500 iterations
+      param ("~sac_probability", sac_probability_, 0.99);                 // 0.99 probability
 
       string cloud_topic ("full_cloud");
 
@@ -127,8 +129,10 @@ class GroundRemoval : public ros::Node
       if (hasParam ("~downsample_leaf_width_z")) getParam ("~downsample_leaf_width_z", leaf_width_.z);
 
       if (hasParam ("~z_threshold")) getParam ("~z_threshold", z_threshold_);
-      if (hasParam ("~p_sac_min_points_per_model")) getParam ("~p_sac_min_points_per_model", sac_min_points_per_model_);
-      if (hasParam ("~p_sac_distance_threshold"))  getParam ("~p_sac_distance_threshold", sac_distance_threshold_);
+      if (hasParam ("~sac_min_points_per_model")) getParam ("~sac_min_points_per_model", sac_min_points_per_model_);
+      if (hasParam ("~sac_distance_threshold"))  getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      if (hasParam ("~sac_max_iterations")) getParam ("~sac_max_iterations", sac_max_iterations_);
+      if (hasParam ("~sac_probability"))  getParam ("~sac_probability", sac_probability_);
 
       if (hasParam ("~cut_distance"))
       {
@@ -149,8 +153,8 @@ class GroundRemoval : public ros::Node
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
       sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (500);
-      sac->setProbability (0.99);
+      sac->setMaxIterations (sac_max_iterations_);
+      sac->setProbability (sac_probability_);
       model->setDataSet (points, *indices);
 
       // Search for the best plane
