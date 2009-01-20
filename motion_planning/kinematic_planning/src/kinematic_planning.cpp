@@ -165,8 +165,8 @@ public:
 	m_collisionMonitorChange = false;
 	
 	advertise<robot_msgs::KinematicPath>("path_to_goal", 1);
-	subscribe("plan_kinematic_path_state_request",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,    this, 1);
-	subscribe("plan_kinematic_path_position_request", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest, this, 1);
+	subscribe("replan_kinematic_path_state",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,    this, 1);
+	subscribe("replan_kinematic_path_position", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest, this, 1);
     }
     
     /** Free the memory */
@@ -199,7 +199,7 @@ public:
     
     void planToStateRequest(void)
     {
-	ROS_INFO("\nRequest for replanning to a state");
+	ROS_INFO("Request for replanning to a state");
 	
 	stopReplanning();
 	
@@ -223,7 +223,7 @@ public:
     
     void planToPositionRequest(void)
     {
-	ROS_INFO("\nRequest for replanning to a position");
+	ROS_INFO("Request for replanning to a position");
 
 	stopReplanning();
 	
