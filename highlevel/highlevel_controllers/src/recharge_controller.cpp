@@ -64,7 +64,7 @@
  * - None
  **/
 
-#include <HighlevelController.hh>
+#include <highlevel_controllers/highlevel_controller.hh>
 #include <highlevel_controllers/RechargeGoal.h>
 #include <highlevel_controllers/RechargeState.h>
 #include <robot_msgs/BatteryState.h>

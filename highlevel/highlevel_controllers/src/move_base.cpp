@@ -33,7 +33,7 @@
  *********************************************************************/
 
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <costmap_2d/basic_observation_buffer.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>

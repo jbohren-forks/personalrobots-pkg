@@ -63,7 +63,7 @@
  * - None
  **/
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <sbpl_util.hh>
 #include <environment_wrap.h>
 #include <plan_wrap.h>

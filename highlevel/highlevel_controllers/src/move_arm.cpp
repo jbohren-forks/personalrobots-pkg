@@ -72,7 +72,7 @@
  * - None
  **/
 
-#include <HighlevelController.hh>
+#include <highlevel_controllers/highlevel_controller.hh>
 #include <pr2_mechanism_controllers/JointPosCmd.h>
 #include <robot_msgs/MechanismState.h>
 #include <pr2_msgs/MoveArmState.h>

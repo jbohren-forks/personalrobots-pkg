@@ -63,7 +63,7 @@
  * - None
  **/
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <navfn.h>
 
 namespace ros {

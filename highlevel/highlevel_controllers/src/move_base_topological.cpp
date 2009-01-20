@@ -63,7 +63,7 @@
  * - None
  **/
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
 using topological_map::GridCell;
