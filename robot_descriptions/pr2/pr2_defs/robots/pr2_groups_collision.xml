@@ -54,12 +54,12 @@
   </group>
   
   <!-- Define groups to check for self collision -->
-
+<!--
   <group name="collisions1" flags="self_collision">
     r_upper_arm_roll_link
     torso_lift_link
   </group>
-
+-->
   <group name="collisions2" flags="self_collision">
     r_elbow_flex_link
     base_link
@@ -80,10 +80,12 @@
     base_link
   </group>
 
+<!--
   <group name="collisions6" flags="self_collision">
     l_upper_arm_roll_link
     torso_lift_link
   </group>
+-->
 
   <group name="collisions7" flags="self_collision">
     l_elbow_flex_link
