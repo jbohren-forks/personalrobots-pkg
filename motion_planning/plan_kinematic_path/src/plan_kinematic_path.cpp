@@ -65,6 +65,11 @@ public:
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
+	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_state", 1);
+	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_position", 1);
+
+	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
+	m_controller = C_NONE;
 	m_gripPos = 0.0;	
     }
     
@@ -74,8 +79,27 @@ public:
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
 	    state.vals[i] = m_robotState->getParams()[i];
     }
-
-    void runTestRightArm(void)
+    
+    void currentPathToGoal(void)
+    {
+	printPath(m_pathToGoal, -1.0);
+	if (m_statePlanning)
+	{
+	    sendDisplay(m_activeRequestState.start_state, m_pathToGoal, m_activeRequestState.params.model_id);
+	    verifyPath(m_activeRequestState.start_state, m_activeRequestState.constraints, m_pathToGoal, m_activeRequestState.params.model_id);
+	    if (m_controller == C_ARM)
+		sendArmCommand(m_pathToGoal, m_activeRequestState.params.model_id);	    
+	}
+	else
+	{
+	    sendDisplay(m_activeRequestPosition.start_state, m_pathToGoal, m_activeRequestPosition.params.model_id);
+	    verifyPath(m_activeRequestPosition.start_state, m_activeRequestPosition.constraints, m_pathToGoal, m_activeRequestPosition.params.model_id);
+	    if (m_controller == C_ARM)
+		sendArmCommand(m_pathToGoal, m_activeRequestPosition.params.model_id);	    
+	}	
+    }
+    
+    void runTestRightArm(bool replan = false)
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
@@ -91,18 +115,26 @@ public:
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[3] = -1.5;    
+        req.goal_state.vals[1] = -0.9;    
+	req.goal_state.vals[0] = -0.2;    
+	req.goal_state.vals[2] = -0.3;    
+	req.goal_state.vals[6] = -0.3;    
 
 	req.allowed_time = 30.0;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	performCall(req, C_ARM);
+	m_controller = C_ARM;
+	m_statePlanning = true;
+
+	if (replan)
+	    sendGoal(req);
+	else
+	    performCall(req);
     }
-
-
-    void runRightArmTo0(void)
+    
+    void runRightArmTo0(bool replan = false)
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
@@ -110,7 +142,7 @@ public:
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
-	req.interpolate = 0;
+	req.interpolate = 1;
 	req.times = 1;
 
 	currentState(req.start_state);
@@ -124,7 +156,13 @@ public:
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	performCall(req, C_ARM);
+	m_controller = C_ARM;
+	m_statePlanning = true;
+	
+	if (replan)
+	    sendGoal(req);
+	else
+	    performCall(req);
     }
     
     
@@ -296,7 +334,19 @@ public:
     }
     */
     
-    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req, int controller = C_NONE)
+    void sendGoal(robot_srvs::KinematicPlanLinkPosition::request &req)
+    {
+	m_activeRequestPosition = req;
+	publish("replan_kinematic_path_position", req);
+    }
+
+    void sendGoal(robot_srvs::KinematicPlanState::request &req)
+    {
+	m_activeRequestState = req;
+	publish("replan_kinematic_path_state", req);
+    }
+    
+    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
 	
@@ -304,15 +354,16 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(req.start_state, res.path, req.params.model_id);
+	    /*
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
-	    if (controller == C_ARM)
-		sendArmCommand(res.path, req.params.model_id);	    
+	    if (m_controller == C_ARM)
+	    sendArmCommand(res.path, req.params.model_id);	     */
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_position' failed");
     }
 
-    void performCall(robot_srvs::KinematicPlanState::request &req, int controller = C_NONE)
+    void performCall(robot_srvs::KinematicPlanState::request &req)
     {	
 	robot_srvs::KinematicPlanState::response res;
 	
@@ -321,7 +372,7 @@ public:
 	    printPath(res.path, res.distance);
 	    sendDisplay(req.start_state, res.path, req.params.model_id);
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
-	    if (controller == C_ARM)
+	    if (m_controller == C_ARM)
 		sendArmCommand(res.path, req.params.model_id);
 	}
 	else
@@ -420,7 +471,13 @@ public:
 
 protected:
 
-    double m_gripPos;
+    robot_msgs::KinematicPath                      m_pathToGoal;
+    robot_srvs::KinematicPlanState::request        m_activeRequestState;
+    robot_srvs::KinematicPlanLinkPosition::request m_activeRequestPosition;
+    double                                         m_gripPos;
+    
+    bool                                           m_statePlanning;
+    int                                            m_controller;
     
 };
 
