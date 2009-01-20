@@ -123,22 +123,22 @@ namespace cloud_geometry
       * \param hull the resultant convex hull model as a \a Polygon3D
       */
     void
-      convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull)
+      convexHull2D (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, std_msgs::Polygon3D &hull)
     {
       // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending std_msgs::Point32
       // to allow []/() accessors.
-      std::vector<Eigen::Vector3f> epoints (indices.size ());
-      for (unsigned int cp = 0; cp < indices.size (); cp++)
+      std::vector<Eigen::Vector3f> epoints (indices->size ());
+      for (unsigned int cp = 0; cp < indices->size (); cp++)
       {
-        epoints[cp](0) = points->pts[indices.at (cp)].x;
-        epoints[cp](1) = points->pts[indices.at (cp)].y;
-        epoints[cp](2) = points->pts[indices.at (cp)].z;
+        epoints[cp](0) = points->pts[indices->at (cp)].x;
+        epoints[cp](1) = points->pts[indices->at (cp)].y;
+        epoints[cp](2) = points->pts[indices->at (cp)].z;
       }
 
       // Determine the best plane to project points onto
       int k0, k1, k2;
-      k0 = (fabs (coeff.at (0) ) > fabs (coeff.at (1))) ? 0  : 1;
-      k0 = (fabs (coeff.at (k0)) > fabs (coeff.at (2))) ? k0 : 2;
+      k0 = (fabs (coeff->at (0) ) > fabs (coeff->at (1))) ? 0  : 1;
+      k0 = (fabs (coeff->at (k0)) > fabs (coeff->at (2))) ? k0 : 2;
       k1 = (k0 + 1) % 3;
       k2 = (k0 + 2) % 3;
 
@@ -154,7 +154,7 @@ namespace cloud_geometry
 
       // Push projected centered 2d points
       std::vector<std_msgs::Point2DFloat32> epoints_demean (epoints.size ());
-      for (unsigned int cp = 0; cp < indices.size (); cp++)
+      for (unsigned int cp = 0; cp < indices->size (); cp++)
       {
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
         epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
@@ -180,7 +180,7 @@ namespace cloud_geometry
 
         p3 = p1.cross (p2);
 
-        bool direction = (p3 (k0) * coeff[k0] > 0);
+        bool direction = (p3 (k0) * coeff->at (k0) > 0);
 
         // Create the Polygon3D object
         hull.points.resize (nr_points_hull);
@@ -192,7 +192,7 @@ namespace cloud_geometry
           Eigen::Vector3f pt;
           pt (k1) = hull_2d.points[cp].x + centroid (0);
           pt (k2) = hull_2d.points[cp].y + centroid (1);
-          pt (k0) = -(coeff[3] + pt (k1) * coeff[k1] + pt (k2) * coeff[k2]) / coeff[k0];
+          pt (k0) = -(coeff->at (3) + pt (k1) * coeff->at (k1) + pt (k2) * coeff->at (k2)) / coeff->at (k0);
 
           // Copy the point data to Polygon3D format
           hull.points[d].x = pt (0);

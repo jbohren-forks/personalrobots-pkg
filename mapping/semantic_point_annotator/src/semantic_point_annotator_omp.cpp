@@ -118,14 +118,14 @@ class SemanticPointAnnotator : public ros::Node
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
       param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
-      param ("~concave", concave_, true);                               // Create concave hulls by default
+      param ("~concave", concave_, false);                               // Create concave hulls by default
       
       if (polygonal_map_)
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
 
       eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
 
-      string cloud_topic ("cloud_normals");
+      string cloud_topic ("cloud_2_normals");
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
@@ -476,7 +476,9 @@ class SemanticPointAnnotator : public ros::Node
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         // Find all planes in this cluster
-        fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
+        int ret = fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
+        if (ret != 0 || all_cluster_inliers[cc].size () == 0)
+          continue;
         if (cc == 3)
         {
           std::cerr << "Indices: ";
@@ -503,6 +505,8 @@ class SemanticPointAnnotator : public ros::Node
           vector<vector<int> > *cluster_neighbors = &neighbors[cc];
           vector<int> *indices = &all_cluster_inliers[cc][0];
           
+          if (indices->size () == 0)
+            continue;
           cluster_neighbors->resize (indices->size ());
 
           // Create a tree for these points
@@ -527,20 +531,27 @@ class SemanticPointAnnotator : public ros::Node
       
       // Process all clusters in parallel
 //      #pragma omp parallel for schedule(dynamic)
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {      
+      if (polygonal_map_)
+      {
         // Fit convex hulls to the inliers (points should be projected!)
-        if (polygonal_map_)
-        {
+        for (int cc = 0; cc < (int)clusters.size (); cc++)
+        {      
           if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
             continue;
 
+          vector<int> *indices  = &all_cluster_inliers[cc][0];
+          vector<double> *coeff = &all_cluster_coeff[cc][0];
+          if (indices->size () == 0 || coeff->size () == 0)
+            continue;
+
           if (concave_)
-            computeConcaveHull (&cloud_, &all_cluster_inliers[cc][0], &all_cluster_coeff[cc][0], &neighbors[cc], pmap_.polygons[cc]);
+            computeConcaveHull (&cloud_, indices, coeff, &neighbors[cc], pmap_.polygons[cc]);
           else
-            cloud_geometry::areas::convexHull2D (&cloud_, all_cluster_inliers[cc][0], all_cluster_coeff[cc][0], pmap_.polygons[cc]);
+            cloud_geometry::areas::convexHull2D (&cloud_, indices, coeff, pmap_.polygons[cc]);
         }
       }
+      
+      return;
 
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {

@@ -269,7 +269,7 @@ class ConvexPatchHistogram : public ros::Node
       Polygon3D poly;
       for (unsigned int cc = 0; cc < clusters.size (); cc++)
       {
-        cloud_geometry::areas::convexHull2D (&cloud_, clusters[cc], coeff, poly);
+        cloud_geometry::areas::convexHull2D (&cloud_, &clusters[cc], &coeff, poly);
         double area = cloud_geometry::areas::compute2DPolygonalArea (poly, coeff);
         ROS_INFO ("Cluster %d has an estimated area of %g.", cc, area);
 
