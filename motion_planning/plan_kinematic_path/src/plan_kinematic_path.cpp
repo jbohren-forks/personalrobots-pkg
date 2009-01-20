@@ -47,7 +47,9 @@
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
+#include <sstream>
 #include <cassert>
+
 
 class PlanKinematicPath : public ros::Node,
 			  public kinematic_planning::KinematicStateMonitor
@@ -68,15 +70,6 @@ public:
     }
     
     /*
-    void initialState(robot_msgs::KinematicState &state)
-    {
-	state.set_vals_size(m_kmodel->stateDimension);
-	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
-	    state.vals[i] = 0.0;
-	for (unsigned int i = 0 ; i < 3 ; ++i)
-	    state.vals[i] = m_basePos[i];
-    }    
-    
     void runTestBase(void)
     {
 	robot_srvs::KinematicPlanState::request  req;
@@ -296,6 +289,7 @@ public:
 	performCall(req);
     }
     */
+    
     void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
@@ -308,7 +302,7 @@ public:
 	    sendCommand(res.path, req.params.model_id);	    
 	}
 	else
-	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
+	    ROS_ERROR("Service 'plan_kinematic_path_position' failed");
     }
 
     void performCall(robot_srvs::KinematicPlanState::request &req)
@@ -323,13 +317,13 @@ public:
 	    sendCommand(res.path, req.params.model_id);
 	}
 	else
-	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
+	    ROS_ERROR("Service 'plan_kinematic_path_state' failed\n");
     }
     
     void printPath(robot_msgs::KinematicPath &path, const double distance)
     {	
 	unsigned int nstates = path.get_states_size();
-	printf("Obtained solution path with %u states, distance to goal = %f\n", nstates, distance);
+	ROS_INFO("Obtained solution path with %u states, distance to goal = %f", nstates, distance);
 	
 	for (unsigned int i = 0 ; i < nstates ; ++i)
 	{
@@ -353,10 +347,13 @@ public:
 	    req.goal_state = path.states[path.get_states_size() - 1];
 	    if (ros::service::call("validate_path", req, res))
 	    {
-		printf("Direct path is %svalid\n", res.valid ? "" : "not ");
+		if (res.valid)
+		    ROS_INFO("Direct path is valid");
+		else
+		    ROS_WARN("Direct path is not valid");
 	    }
 	    else
-		fprintf(stderr, "Service 'validate_path' failed\n");
+		ROS_INFO("Service 'validate_path' not available (or failed)");
 	}
     }
     
@@ -368,6 +365,7 @@ public:
 	dpath.start_state = start;
 	dpath.path = path;
 	publish("display_kinematic_path", dpath);
+	ROS_INFO("Sent planned path to display");
     }
     
     void sendCommand(robot_msgs::KinematicPath &path, const std::string &model)
@@ -389,29 +387,26 @@ public:
 	    traj.points[i].time = 0.0;
 	}	
 
-	
-
 	send_traj_start_req.traj = traj;
 	int traj_done = -1;
 	if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
 	{
-	    ROS_INFO("Done");
+	    ROS_INFO("Sent trajectory to controller");
+	    
+	    send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
+	    while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
+	    {
+		if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))  
+		{
+		    traj_done = send_traj_query_res.done;
+		}
+		else
+		{
+		    ROS_ERROR("Trajectory query failed");
+		}
+	    }
+	    ROS_INFO("Trajectory execution is complete");	    
 	}
-	/*
-	send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
-	while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
-	{
-	    if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))  
-	    {
-		traj_done =  send_traj_query_res.done;
-	    }
-	    else
-	    {
-		ROS_ERROR("Trajectory query failed");
-	    }
-	} 
-	
-	*/
     }
     
 };
@@ -462,11 +457,9 @@ int main(int argc, char **argv)
 		break;
 		*/
 	    default:
-		printf("Unknown test\n");
+		ROS_ERROR("Unknown test");
 		break;
 	    } 
-	    
-	    sleep(1);	
 	}
 	
 	plan->shutdown();
@@ -474,7 +467,6 @@ int main(int argc, char **argv)
     }
     else
 	usage(argv[0]);
-    sleep(100);
     
     return 0;    
 }
