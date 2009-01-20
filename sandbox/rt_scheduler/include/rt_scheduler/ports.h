@@ -50,6 +50,7 @@ namespace rt_scheduler
 
 template<class T> class Link ;
 
+// Data generated in a RtNode that needs to be sent somewhere should go in an output port.
 template<class T>
 class OutputPort
 {
@@ -78,7 +79,7 @@ public:
   bool removeLink(Link<T>* link)
   {
     //std::vector<Link<T>*>::iterator it ;
-    std::vector<void*>::iterator it ;
+    typename std::vector<Link<T>*>::iterator it ;
     for (it=links_.begin(); it<links_.end(); ++it)
     {
       if (*it == link)
@@ -94,6 +95,7 @@ public:
 //private
 } ;
 
+// RtNodes should instantiate InputPorts when they need to get data from an output port.
 template<class T>
 class InputPort
 {
@@ -119,8 +121,18 @@ public:
   RtNode* owner_ ;
 } ;
 
+
+class LinkHandle
+{
+public:
+  LinkHandle() { } ;
+  ~LinkHandle() { } ;
+  virtual bool breakLink() = 0 ;
+} ;
+
+// Links connect output ports to input ports.
 template<class T>
-class Link
+class Link : public LinkHandle
 {
 public:
   OutputPort<T>* out_ ;         // The output port associated with the link
@@ -145,16 +157,19 @@ public:
     // Make sure the link hasn't been created already
     if (out_ || in_)
     {
+      printf("A\n") ;
       return false ;
     }
     // Make sure that the input port isn't already linked to something
     if (input_port->link_)
     {
+      printf("B\n") ;
       return false ;
     }
     // Make the link
     if(!output_port->addLink(this))
     {
+      printf("C\n") ;
       return false ;
     }
 
@@ -179,8 +194,8 @@ public:
     out_node->getAncestry( *((std::vector<RtNode*>*) &out_ancestry)) ;
     in_node->getAncestry(*((std::vector<RtNode*>*) &in_ancestry)) ;
 
-    printf("out_ancestry: size=%u\n", out_ancestry.size()) ;
-    printf("in_ancestry: size=%u\n", in_ancestry.size()) ;
+    //printf("out_ancestry: size=%u\n", out_ancestry.size()) ;
+    //printf("in_ancestry: size=%u\n", in_ancestry.size()) ;
 
     // Both ancestries must be nonzero
     if (out_ancestry.size() == 0 || in_ancestry.size() == 0)
@@ -242,13 +257,23 @@ public:
 
   bool breakLink()
   {
-    bool success = true ;
+    bool result ;
+    if (in_ && out_)
+      result = removeDependency() ;
+
+    if (!result)
+      return false ;
+
     // Make sure that we have a valid link
     if (in_)
+    {
       in_->link_ = NULL ;
+      in_ = NULL ;
+    }
     if (out_)
     {
       out_->removeLink(this) ;
+      out_ = NULL ;
     }
     return true ;
   }

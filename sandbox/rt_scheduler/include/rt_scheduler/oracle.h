@@ -51,20 +51,36 @@ namespace rt_scheduler
   void registerPort(OutputPort<T>* port, const std::string& name) \
   { \
     std::pair< std::string, OutputPort<T>* > entry(name, port) ; \
-    ports_##T.push_back(entry) ; \
+    ports_out_##T.push_back(entry) ; \
   } \
   \
   void find(OutputPort<T>* &port, const std::string& name) \
   { \
     port = NULL ; \
-    for (unsigned int i=0; i < ports_##T.size(); i++) \
+    for (unsigned int i=0; i < ports_out_##T.size(); i++) \
     { \
-      if (ports_##T[i].first == name) \
-        port = ports_##T[i].second ; \
+      if (ports_out_##T[i].first == name) \
+        port = ports_out_##T[i].second ; \
+    } \
+  } \
+  void registerPort(InputPort<T>* port, const std::string& name) \
+  { \
+    std::pair< std::string, InputPort<T>* > entry(name, port) ; \
+    ports_in_##T.push_back(entry) ; \
+  } \
+  \
+  void find(InputPort<T>* &port, const std::string& name) \
+  { \
+    port = NULL ; \
+    for (unsigned int i=0; i < ports_in_##T.size(); i++) \
+    { \
+      if (ports_in_##T[i].first == name) \
+        port = ports_in_##T[i].second ; \
     } \
   } \
   \
-  std::vector< std::pair<std::string, OutputPort<T>* > > ports_##T
+  std::vector< std::pair<std::string, OutputPort<T>* > > ports_out_##T ; \
+  std::vector< std::pair<std::string, InputPort<T>* > > ports_in_##T
 
 class Oracle
 {
@@ -74,6 +90,40 @@ public:
 
   ~Oracle()
   {  }
+
+
+  LinkHandle* newLink(std::string output_name, std::string input_name, std::string type)
+  {
+    if(false) ;
+    else if (type == "int")
+    {
+      OutputPort<int>* out ;
+      InputPort<int>* in ;
+      find(out, output_name) ;
+      find(in, input_name) ;
+      if (out==NULL || in==NULL)
+        return NULL ;
+      Link<int>* link = new Link<int> ;
+      bool success = link->makeLink(out, in) ;
+      if (!success)
+      {
+        delete link ;
+        return NULL ;
+      }
+      return link ;
+    }
+
+  }
+
+  bool deleteLink(LinkHandle* &handle)
+  {
+    if (handle == NULL)
+      return false ;
+    delete handle ;
+    handle = NULL ;
+    return true ;
+  }
+
 
   REGISTER_RT_TYPE(int) ;
 

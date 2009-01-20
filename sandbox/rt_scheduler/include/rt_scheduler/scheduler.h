@@ -49,6 +49,10 @@
 namespace rt_scheduler
 {
 
+/**
+ * RtNodes register with schedulers. A scheduler determines the execution order for a set of nodes. if a scheduler is inactive,
+ * then it defers scheduling calculation to it's parent scheduler, and simply functions as a namespace.
+ */
 class Scheduler : public rt_scheduler::RtNode
 {
 public:
@@ -76,12 +80,14 @@ public:
 
   bool update()
   {
+    printf("Updating %s\n", name_.c_str()) ;
     if (active_)
     {
       bool success = true ;
       for (unsigned int i=0; i < exec_order_.size(); i++)
       {
-        printf("Updating Node #%u: %s\n", exec_order_[i], node_list_[exec_order_[i]].node_->name_.c_str()) ;
+        //printf("Updating Node #%u: %s\n", exec_order_[i], node_list_[exec_order_[i]].node_->name_.c_str()) ;
+        printf("Updating Node #%u: %s\n", exec_order_[i], node_list_[exec_order_[i]].node_->getFullName().c_str()) ;
         success = success && node_list_[exec_order_[i]].node_->update() ;
       }
       return success ;
@@ -102,6 +108,12 @@ public:
     exec_order_.resize(node_list_.size()) ;
     for (unsigned int i=0; i<exec_order_.size(); i++)
       exec_order_[i] = i ;
+
+    printf("%s: Execution Order:\n", name_.c_str()) ;
+    for (unsigned int i=0; i<exec_order_.size(); i++)
+    {
+      printf("  %02u) %s\n", i, node_list_[exec_order_[i]].node_->name_.c_str()) ;
+    }
   }
 
   /*static Scheduler* findNextActive(std::list<Scheduler*>::iterator it, const std::list<Scheduler*>::iterator& end)
