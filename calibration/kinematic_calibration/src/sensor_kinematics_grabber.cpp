@@ -39,14 +39,11 @@
 #include "robot_msgs/MechanismState.h"
 #include "robot_msgs/MocapSnapshot.h"
 
+#include "std_msgs/Empty.h"
 #include "std_msgs/PointCloud.h"
 
-#include "image_msgs/Image.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "kinematic_calibration/SensorKinematics.h"
-
-#include "topic_synchronizer.h"         // From package topic_synchronizer
+#include "image_msgs/RawStereo.h"
+#include "kinematic_calibration/CalibrationData.h"
 
 #include <unistd.h>
 #include <termios.h>
@@ -74,68 +71,68 @@ class SensorKinematicsGrabber : public ros::Node
 
 public:
 
-  TopicSynchronizer<SensorKinematicsGrabber> dcam_sync_ ;
-
+  // Mechanism State Messages
   robot_msgs::MechanismState mech_state_ ;
   robot_msgs::MechanismState safe_mech_state_ ;
   boost::mutex mech_state_lock_ ;
 
-  // dcam subscription callback messages
-  image_msgs::Image left_image_ ;
-  image_msgs::Image right_image_ ;
-  image_msgs::Image disparity_image_ ;
-  image_msgs::StereoInfo stereo_info_ ;
-  image_msgs::CamInfo left_info_ ;
-  image_msgs::CamInfo right_info_ ;
+  // Empty message used for callbacks
+  std_msgs::Empty capture_msg_ ;
 
-  // Mutexed dcam messages
-  image_msgs::Image safe_left_image_ ;
-  image_msgs::Image safe_right_image_ ;
-  image_msgs::Image safe_disparity_image_ ;
-  image_msgs::StereoInfo safe_stereo_info_ ;
-  image_msgs::CamInfo safe_left_info_ ;
-  image_msgs::CamInfo safe_right_info_ ;
-  boost::mutex dcam_lock_ ;
+  // Dcam messages
+  image_msgs::RawStereo raw_stereo_ ;
+  image_msgs::RawStereo safe_raw_stereo_ ;
+  boost::mutex raw_stereo_lock_ ;
 
+  // Point Cloud Messages
   std_msgs::PointCloud laser_cloud_ ;
   std_msgs::PointCloud safe_laser_cloud_ ;
   boost::mutex laser_cloud_lock_ ;
 
-  // Parameters
-  bool subscribe_color_ ;
-  string output_topic_ ;                // Topic name for publishing our SensorKinematics metapacket
+  unsigned int capture_count_ ;
 
-  SensorKinematicsGrabber() : ros::Node("sensor_kinematics_grabber"),
-                              dcam_sync_(this, &SensorKinematicsGrabber::dcamCallback, ros::Duration().fromSec(0.05), &SensorKinematicsGrabber::dcamCallbackTimeout)
+  SensorKinematicsGrabber() : ros::Node("grabber")
   {
-    param("~subscribe_color", subscribe_color_, false);
-    param("~output_topic", output_topic_, string("sensor_kinematics"));
+    capture_count_ = 0 ;
 
-    // Stereo Cam Synchronized Subscriptions
-    if (subscribe_color_)
-    {
-      dcam_sync_.subscribe("dcam/left/image_rect_color", left_image_, 1) ;
-      dcam_sync_.subscribe("dcam/right/image_rect_color", right_image_, 1) ;
-    }
-    else
-    {
-      dcam_sync_.subscribe("dcam/left/image_rect", left_image_, 1) ;
-      dcam_sync_.subscribe("dcam/right/image_rect", right_image_, 1) ;
-    }
-    dcam_sync_.subscribe("dcam/disparity", disparity_image_, 1) ;
-    dcam_sync_.subscribe("dcam/stereo_info", stereo_info_, 1) ;
-    dcam_sync_.subscribe("dcam/right/cam_info", right_info_, 1) ;
-    dcam_sync_.subscribe("dcam/left/cam_info", left_info_, 1) ;
-
-    subscribe("mechanism_state", mech_state_, &SensorKinematicsGrabber::mechStateCallback, 2) ;
+    subscribe("stereo/raw_stereo", raw_stereo_, &SensorKinematicsGrabber::rawStereoCallback, 1) ;
+    subscribe("mechanism_state", mech_state_, &SensorKinematicsGrabber::mechStateCallback, 1) ;
     subscribe("tilt_laser_cloud", laser_cloud_, &SensorKinematicsGrabber::laserCloudCallback, 1) ;
 
-    advertise<SensorKinematics>(output_topic_, 1) ;
+    advertise<CalibrationData>("~calibration_data", 1) ;
+    subscribe("~capture", capture_msg_, &SensorKinematicsGrabber::captureCallback, 1) ;
   }
 
   ~SensorKinematicsGrabber()
   {
+    unsubscribe("~capture") ;
+    unadvertise("~calibration_data") ;
+    unsubscribe("tilt_laser_cloud") ;
+    unsubscribe("mechanism_state") ;
+    unsubscribe("stereo/raw_stereo") ;
+  }
 
+  void captureCallback()
+  {
+    CalibrationData all_data ;
+    printf("\n") ;
+    capture_count_++ ;
+    printf("Capturing Data #%u...\n", capture_count_) ;
+    raw_stereo_lock_.lock() ;
+    all_data.raw_stereo = safe_raw_stereo_ ;
+    raw_stereo_lock_.unlock() ;
+
+    laser_cloud_lock_.lock() ;
+    all_data.laser_cloud = safe_laser_cloud_ ;
+    laser_cloud_lock_.unlock() ;
+
+    mech_state_lock_.lock() ;
+    all_data.mechanism_state = safe_mech_state_ ;
+    mech_state_lock_.unlock() ;
+
+    displayAllInfo(all_data) ;
+
+    publish("~calibration_data", all_data) ;
   }
 
   bool spin()
@@ -152,7 +149,6 @@ public:
     tcsetattr(fd,TCSANOW,&flags);
 
     bool need_to_quit = false ;
-    unsigned int capture_count = 0 ;
 
     while (ok() && !need_to_quit)
     {
@@ -162,32 +158,7 @@ public:
       {
         case ' ':
         {
-          SensorKinematics all_data ;
-          printf("\n") ;
-          capture_count++ ;
-          printf("Capturing Data #%u...\n", capture_count) ;
-          dcam_lock_.lock() ;
-          all_data.left_image = safe_left_image_ ;
-          all_data.right_image = safe_right_image_ ;
-          all_data.disparity_image = safe_disparity_image_ ;
-          all_data.stereo_info = safe_stereo_info_ ;
-          all_data.left_info = safe_left_info_ ;
-          all_data.right_info = safe_right_info_ ;
-          all_data.left_info = safe_left_info_ ;
-          dcam_lock_.unlock() ;
-
-          laser_cloud_lock_.lock() ;
-          all_data.laser_cloud = safe_laser_cloud_ ;
-          laser_cloud_lock_.unlock() ;
-
-          mech_state_lock_.lock() ;
-          all_data.mechanism_state = safe_mech_state_ ;
-          mech_state_lock_.unlock() ;
-
-          displayAllInfo(all_data) ;
-
-          publish(output_topic_, all_data) ;
-
+          captureCallback() ;
           break ;
         }
         case EOF:               // Means that we didn't catch any keyboard hits
@@ -221,25 +192,12 @@ public:
     laser_cloud_lock_.unlock() ;
   }
 
-  void dcamCallback(ros::Time t)
+  void rawStereoCallback()
   {
-    dcam_lock_.lock() ;
-
-    safe_left_image_ = left_image_ ;
-    safe_right_image_ = right_image_ ;
-    safe_disparity_image_ = disparity_image_ ;
-    safe_stereo_info_ = stereo_info_ ;
-    safe_left_info_ = left_info_ ;
-    safe_right_info_ = right_info_ ;
-
-    dcam_lock_.unlock() ;
+    raw_stereo_lock_.lock() ;
+    safe_raw_stereo_ = raw_stereo_ ;
+    raw_stereo_lock_.unlock() ;
   }
-
-  void dcamCallbackTimeout(ros::Time t)
-  {
-    ROS_WARN("SensorKinematicsGrabber::DCam Synchronizer Timeout") ;
-  }
-
 
   /**
    * Display some basic information about all the different data types that we
@@ -247,41 +205,28 @@ public:
    *  timing issues and if we're actually receiving reasonable data from all of
    *  out sensors.
    */
-  void displayAllInfo(const SensorKinematics& data)
+  void displayAllInfo(const CalibrationData& data)
   {
     ros::Time cur_time = ros::Time::now() ;
 
     ros::Duration lag ;
 
-    lag = data.left_image.header.stamp-cur_time ;
-    if (data.left_image.uint8_data.layout.get_dim_size() < 2)
+    lag = data.raw_stereo.header.stamp-cur_time ;
+    if (data.raw_stereo.left_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Left Image:       %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Left Image:       %lf (%u, %u)\n", lag.to_double(), data.left_image.uint8_data.layout.dim[0].size,
-                                                                  data.left_image.uint8_data.layout.dim[1].size) ;
-
-    lag = data.right_image.header.stamp-cur_time ;
-    if (data.right_image.uint8_data.layout.get_dim_size() < 2)
+      printf("     Left Image:       %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.left_image.uint8_data.layout.dim[0].size,
+                                                                       data.raw_stereo.left_image.uint8_data.layout.dim[1].size) ;
+    if (data.raw_stereo.right_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Right Image:      %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Right Image:      %lf (%u, %u)\n", lag.to_double(), data.right_image.uint8_data.layout.dim[0].size,
-                                                                  data.right_image.uint8_data.layout.dim[1].size) ;
-
-    lag = data.disparity_image.header.stamp-cur_time ;
-    if (data.disparity_image.uint8_data.layout.get_dim_size() < 2)
+      printf("     Right Image:      %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.right_image.uint8_data.layout.dim[0].size,
+                                                                       data.raw_stereo.right_image.uint8_data.layout.dim[1].size) ;
+    if (data.raw_stereo.disparity_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Disparity Image:  %lf [NO DATA]\n", lag.to_double()) ;
     else
-      printf("     Disparity Image:  %lf (%u, %u)\n", lag.to_double(), data.disparity_image.uint8_data.layout.dim[0].size,
-                                                                  data.disparity_image.uint8_data.layout.dim[1].size) ;
-
-    lag = data.stereo_info.header.stamp-cur_time ;
-    printf("     Stereo Info:      %lf\n", lag.to_double()) ;
-
-    lag = data.left_info.header.stamp-cur_time ;
-    printf("     Left Info:        %lf\n", lag.to_double()) ;
-
-    lag = data.right_info.header.stamp-cur_time ;
-    printf("     Right Info:       %lf\n", lag.to_double()) ;
+      printf("     Disparity Image:  %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.disparity_image.uint8_data.layout.dim[0].size,
+                                                                       data.raw_stereo.disparity_image.uint8_data.layout.dim[1].size) ;
 
     lag = data.mechanism_state.header.stamp-cur_time ;
     printf("     Mechanism State:  %lf   %u Joints\n", lag.to_double(), data.mechanism_state.get_joint_states_size()) ;
@@ -289,9 +234,9 @@ public:
     lag = data.laser_cloud.header.stamp-cur_time ;
     printf("     Laser Cloud:      %lf   %u points\n", lag.to_double(), data.laser_cloud.get_pts_size() ) ;
 
-    lag = data.phase_space_snapshot.header.stamp-cur_time ;
-    printf("     PhaseSpace:       %lf   %u Markers | %u Bodies\n", lag.to_double(), data.phase_space_snapshot.get_markers_size(),
-                                                                                     data.phase_space_snapshot.get_bodies_size()) ;
+    lag = data.mocap_snapshot.header.stamp-cur_time ;
+    printf("     MoCap:       %lf   %u Markers | %u Bodies\n", lag.to_double(), data.mocap_snapshot.get_markers_size(),
+                                                                                data.mocap_snapshot.get_bodies_size()) ;
   }
 
 } ;
