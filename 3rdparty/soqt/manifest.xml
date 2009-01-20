@@ -8,7 +8,7 @@
   <url>http://www.coin3d.org/</url>
   <!-- use soqt-config instead of exporting the flags! -->
 <!--   <export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config --ldflags` `${prefix}/bin/soqt-config --libs`" cflags="`${prefix}/bin/soqt-config --cppflags`"/>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config -\-ldflags` `${prefix}/bin/soqt-config -\-libs`" cflags="`${prefix}/bin/soqt-config -\-cppflags`"/>
     <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
   </export> -->
   <sysdepend os="ubuntu" version="7.04-feisty" package="libqt4-core"/>
