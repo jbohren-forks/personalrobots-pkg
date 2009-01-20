@@ -35,8 +35,6 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
 #include "pr2_mechanism_controllers/arm_trajectory_controller.h"
-#include "realtime_tools/realtime_publisher.h"
-#include "std_msgs/String.h"
 
 using namespace controller;
 using namespace std;
@@ -51,8 +49,9 @@ static inline double now()
 }
 
 ArmTrajectoryController::ArmTrajectoryController() :
-  refresh_rt_vals_(false),trajectory_type_("linear"),trajectory_wait_time_(0.0)
+  refresh_rt_vals_(false),trajectory_type_("linear"),trajectory_wait_time_(0.0), max_update_time_(0.0)
 {
+  controller_state_publisher_ = NULL;
 }
 
 ArmTrajectoryController::~ArmTrajectoryController()
@@ -145,7 +144,7 @@ void ArmTrajectoryController::setTrajectoryCmd(const std::vector<trajectory::Tra
   }
 
   joint_trajectory_->setTrajectory(joint_trajectory);
-  joint_trajectory_->write("foo.txt",0.01);
+//  joint_trajectory_->write("foo.txt",0.01);
   arm_controller_lock_.lock();
   refresh_rt_vals_ = true;
   arm_controller_lock_.unlock();
@@ -227,7 +226,16 @@ void ArmTrajectoryController::update(void)
   updateJointControllers();
 
   double end_time = now();
+  max_update_time_ = std::max(max_update_time_,end_time-start_time);
 
+  if (controller_state_publisher_->trylock())
+  {
+    controller_state_publisher_->msg_.update_time = end_time - start_time; 
+    controller_state_publisher_->msg_.max_update_time = max_update_time_; 
+    controller_state_publisher_->unlockAndPublish();      
+  }
+
+/*
   static realtime_tools::RealtimePublisher<std_msgs::String> p("/s", 1);
   if (p.trylock()) {
     char buf[1000];
@@ -235,6 +243,7 @@ void ArmTrajectoryController::update(void)
     p.msg_.data = std::string(buf);
     p.unlockAndPublish();
   }
+*/
 }
 
 bool ArmTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)
@@ -275,6 +284,9 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   node_->unadvertiseService(service_prefix_ + "/TrajectoryStart");
   node_->unadvertiseService(service_prefix_ + "/TrajectoryQuery");
 
+  c_->controller_state_publisher_->stop();
+  delete c_->controller_state_publisher_;
+
    if(topic_name_ptr_ && topic_name_.c_str())
   {
     std::cout << "unsub arm controller" << topic_name_ << std::endl;
@@ -293,6 +305,8 @@ void ArmTrajectoryControllerNode::update()
   {
     updateTrajectoryQueue( ArmTrajectoryControllerNode::FAILED);
   }
+
+
   c_->update();
 }
 
@@ -358,6 +372,15 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     }
 
     getJointTrajectoryThresholds();
+
+
+  if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete c_->controller_state_publisher_ ;
+  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> (service_prefix_+"/controller_state", 1) ;
+
+  ROS_INFO("Initialize publisher");
+
+  c_->controller_state_publisher_->msg_.name = std::string(service_prefix_); 
 
     ROS_INFO("Initialized controller");
     return true;
@@ -604,4 +627,3 @@ void ArmTrajectoryControllerNode::deleteTrajectoryFromQueue(int id)
     }
   }
 }
-
