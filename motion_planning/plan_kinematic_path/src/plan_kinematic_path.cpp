@@ -65,6 +65,7 @@ public:
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
+	m_gripPos = 0.0;	
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -73,6 +74,59 @@ public:
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
 	    state.vals[i] = m_robotState->getParams()[i];
     }
+
+    void runTestRightArm(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
+	req.threshold = 0.01;
+	req.interpolate = 1;
+	req.times = 1;
+
+	currentState(req.start_state);
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
+	    req.goal_state.vals[i] = 0.0;
+        req.goal_state.vals[3] = -1.5;    
+
+	req.allowed_time = 30.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req, C_ARM);
+    }
+
+
+    void runRightArmTo0(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
+	req.threshold = 0.01;
+	req.interpolate = 0;
+	req.times = 1;
+
+	currentState(req.start_state);
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
+	    req.goal_state.vals[i] = 0.0;
+	
+	req.allowed_time = 30.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req, C_ARM);
+    }
+    
     
     /*
     void runTestBase(void)
@@ -138,60 +192,7 @@ public:
 	performCall(req);
     }
 
-    */
-    void runTestRightArm(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 1;
-	req.times = 1;
-
-	currentState(req.start_state);
-	
-	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[3] = -1.5;    
-
-	req.allowed_time = 30.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req, C_ARM);
-    }
-
-
-    void runRightArmTo0(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 0;
-	req.times = 1;
-
-	currentState(req.start_state);
-	
-	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-	
-	req.allowed_time = 30.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req, C_ARM);
-    }
     
-    /*
     void runTestRightArmReverse(void)
     {
 	robot_srvs::KinematicPlanState::request  req;
@@ -388,9 +389,10 @@ public:
 	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
 	{
-	    traj.points[i].set_positions_size(path.states[i].get_vals_size());
+	    traj.points[i].set_positions_size(path.states[i].get_vals_size() + 1);
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
 		traj.points[i].positions[j] = path.states[i].vals[j];
+	    traj.points[i].positions[path.states[i].get_vals_size()] = m_gripPos;
 	    traj.points[i].time = 0.0;
 	}	
 
@@ -415,6 +417,10 @@ public:
 	    ROS_INFO("Trajectory execution is complete");	    
 	}
     }
+
+protected:
+
+    double m_gripPos;
     
 };
 
