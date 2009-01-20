@@ -11,6 +11,7 @@ from timer import Timer
 import pylab, numpy
 import random
 import pickle
+import math
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors, matcher):
@@ -19,6 +20,12 @@ class minimum_frame:
     self.descriptors = descriptors
     self.matcher = matcher
     assert len(kp) == len(descriptors)
+
+def mk_covar(xyz, rp, yaw):
+  return (1.0 / math.sqrt(xyz),1.0 / math.sqrt(xyz), 1.0 / math.sqrt(xyz), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(yaw))
+#weak = mk_covar(0.01, 0.0002, 0.002)
+weak = mk_covar(5,3,3)
+strong = mk_covar(0.0001, 0.000002, 0.00002)
 
 class Skeleton:
   def __init__(self, cam):
@@ -44,7 +51,8 @@ class Skeleton:
     for t in ['toro add', 'toro opt', 'place recognition', 'gcc', 'descriptors']:
       self.timer[t] = Timer()
 
-  def add(self, this):
+  def add(self, this, inl = 999):
+    print "skel add with inliers", inl
     if len(self.nodes) == 0:
       self.nodes.add(this)
     elif not(this in self.nodes):
@@ -55,12 +63,18 @@ class Skeleton:
       if (this.id - prev.id) < self.node_vdist:
         return
 
-      relpose = ~prev.pose * this.pose
+      if inl > 0:
+        relpose = ~prev.pose * this.pose
+        inf = strong
+      else:
+        relpose = Pose(numpy.identity(3), [ 5, 0, 0 ])
+        inf = weak
 
       self.nodes.add(this)
       self.edges.add( (prev, this) )
       self.timer['toro add'].start()
-      self.pg.addIncrementalEdge(prev.id, this.id, relpose.xform(0,0,0), relpose.euler())
+      self.pg.addIncrementalEdge(prev.id, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
+      print "ADDED VO CONSTRAINT", prev.id, this.id, inf
       self.timer['toro add'].stop()
       #print "added node at", this.pose.xform(0,0,0), "in graph as", self.newpose(this.id).xform(0,0,0)
 
@@ -75,16 +89,17 @@ class Skeleton:
   def addConstraint(self, prev, this, relpose):
     self.edges.add((prev, this))
     self.timer['toro add'].start()
-    self.pg.addIncrementalEdge(prev.id, this.id, relpose.xform(0,0,0), relpose.euler())
+    self.pg.addIncrementalEdge(prev.id, this.id, relpose.xform(0,0,0), relpose.euler(), strong)
     self.timer['toro add'].stop()
 
   def optimize(self):
     self.pg.initializeOnlineIterations()
     print "pg.error", self.pg.error()
-    for i in range(1000):
-      #print "iter", i, "pg.error", self.pg.error()
-      self.pg.iterate()
-    print "pg.error", self.pg.error()
+    for j in range(5):
+      for i in range(1000):
+        #print "iter", i, "pg.error", self.pg.error()
+        self.pg.iterate()
+      print "pg.error", self.pg.error()
     #self.pg.recomputeAllTransformations()
     #self.pg.save("render5.graph")
 
@@ -113,6 +128,7 @@ class Skeleton:
         self.addConstraint(id0, id1, obs)
         print "ADDED CONSTRAINT", id0.id, id1.id, "error changed from", old_error, "to", self.pg.error()
           
+    return
     t0 = self.timer['toro opt'].sum
     self.timer['toro opt'].start()
     self.pg.initializeOnlineIterations()
@@ -185,12 +201,13 @@ class Skeleton:
       edges.append((p0, p1))
     return (nodepts, edges)
 
-  def plot(self, color):
+  def plot(self, color, annotate = False):
     pts = dict([ (f,self.newpose(f.id).xform(0,0,0)) for f in self.nodes ])
     nodepts = pts.values()
     pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = color, label = 'after SGD')
-    #for (f,(x,y,z)) in pts.items():
-    #  pylab.annotate('%d' % f.id, (float(x), float(z)))
+    if annotate:
+      for (f,(x,y,z)) in pts.items():
+        pylab.annotate('%d' % f.id, (float(x), float(z)))
 
     for (f0,f1) in self.edges:
       p0 = pts[f0]
