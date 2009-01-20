@@ -113,6 +113,7 @@ public:
       return link ;
     }
 
+    return NULL ;
   }
 
   bool deleteLink(LinkHandle* &handle)

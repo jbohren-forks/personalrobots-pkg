@@ -51,6 +51,7 @@ public:
   {
     state_ = start ;
     inc_ = inc ;
+    oracle->registerPort(&out_, getFullName()+"/out") ;
   }
 
   ~Talker()
@@ -76,7 +77,8 @@ public:
   Adder(Scheduler* parent, std::string name, Oracle* oracle) : RtNode(parent, name), in_A_(this),
                                                                 in_B_(this), out_(this)
   {
-    //oracle.registerPort(&out_, name+"/out") ;
+    oracle->registerPort(&in_A_, getFullName()+"/in_A") ;
+    oracle->registerPort(&in_B_, getFullName()+"/in_B") ;
   }
 
   ~Adder()
@@ -177,7 +179,14 @@ int main(int argc, char** argv)
   Link<int> link_4, link_5 ;
 
   printf("Atempting link1...\n") ;
-  if(!link_1.makeLink(&talker_A.out_, &adder_A.in_A_))
+//  if(!link_1.makeLink(&talker_A.out_, &adder_A.in_A_))
+//    printf("Error making link 1\n") ;
+//  else
+//    printf("Success\n") ;
+
+  // Making a link using the oracle
+  LinkHandle* handle_1 = oracle.newLink("controllers/Group_A/talkerA/out", "controllers/Group_A/AdderA/in_A", "int") ;
+  if (handle_1 == NULL)
     printf("Error making link 1\n") ;
   else
     printf("Success\n") ;
@@ -234,11 +243,13 @@ int main(int argc, char** argv)
   group_A.updateExecutionOrder() ;
 
   // Run the update loop a couple times again. Note that the execution order is wrong, since the scheduler is very dumb right now.
-  while(true)
+  for(int i=0; i<3; i++)
   {
     controllers.update() ;
     getchar() ;
   }
+
+  oracle.deleteLink(handle_1) ;
 
   return 0 ;
 }
