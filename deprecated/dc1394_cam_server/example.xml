@@ -1,9 +1,0 @@
-<launch>
-  <param name="cam0"             type="str"    value="myCam"/>
-  <param name="myCam/speed"      type="str"    value="S400"/>
-  <param name="myCam/videoMode"  type="str"    value="640x480mono8"/>
-  <param name="myCam/bayer"      type="str"    value="gbrg"/>
-  <param name="myCam/fps"        type="double" value="15.0"/>
-
-  <node pkg="dc1394_cam" type="dc1394_node" respawn="false"/>
-</launch>
