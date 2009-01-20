@@ -168,56 +168,81 @@ namespace kinematic_planning
 	    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setPoseConstraints(cstrs);
 	}    
 	
-	/** Compute the actual motion plan */
-	void computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
+	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
+	bool computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
 			 ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference)
 	{
 	    
 	    if (times <= 0)
 	    {
 		ROS_ERROR("Request specifies motion plan cannot be computed %d times", times);
-		return;
+		return false;
 	    }
 	    
-	    /* do the planning */
-	    bestPath = NULL;
-	    bestDifference = 0.0;
-	    double totalTime = 0.0;
-	    ompl::SpaceInformation::Goal_t goal = psetup->si->getGoal();
+	    unsigned int t_index = 0;
+	    double t_distance = 0.0;
+	    bool result = psetup->mp->isTrivial(&t_index, &t_distance);
 	    
-	    for (int i = 0 ; i < times ; ++i)
+	    if (result)
 	    {
-		ros::Time startTime = ros::Time::now();
-		bool ok = psetup->mp->solve(allowed_time); 
-		double tsolve = (ros::Time::now() - startTime).to_double();	
-		ROS_INFO("%s Motion planner spend %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
-		totalTime += tsolve;
+		ROS_INFO("Solution already achieved");
+		bestDifference = t_distance;
+
+		/* we want to maintain the invariant that a path will
+		   at least consist of start & goal states, so we copy
+		   the start state twice */
+		bestPath = new ompl::SpaceInformationKinematic::PathKinematic(psetup->si);
 		
-		/* do path smoothing */
-		if (ok)
+		ompl::SpaceInformationKinematic::StateKinematic_t s0 = new ompl::SpaceInformationKinematic::StateKinematic(psetup->si->getStateDimension());
+		ompl::SpaceInformationKinematic::StateKinematic_t s1 = new ompl::SpaceInformationKinematic::StateKinematic(psetup->si->getStateDimension());
+		psetup->si->copyState(s0, static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(psetup->si->getStartState(t_index)));
+		psetup->si->copyState(s1, static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(psetup->si->getStartState(t_index)));
+		bestPath->states.push_back(s0);
+		bestPath->states.push_back(s1);
+	    }
+	    else
+	    {		
+		/* do the planning */
+		bestPath = NULL;
+		bestDifference = 0.0;
+		double totalTime = 0.0;
+		ompl::SpaceInformation::Goal_t goal = psetup->si->getGoal();
+		
+		for (int i = 0 ; i < times ; ++i)
 		{
 		    ros::Time startTime = ros::Time::now();
-		    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-		    psetup->smoother->smoothMax(path);
-		    double tsmooth = (ros::Time::now() - startTime).to_double();
-		    ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
-		    if (interpolate)
-			psetup->si->interpolatePath(path);
-		    if (bestPath == NULL || bestDifference > goal->getDifference() || 
-			(bestPath && bestDifference == goal->getDifference() && bestPath->states.size() > path->states.size()))
+		    bool ok = psetup->mp->solve(allowed_time); 
+		    double tsolve = (ros::Time::now() - startTime).to_double();	
+		    ROS_INFO("%s Motion planner spend %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
+		    totalTime += tsolve;
+		    
+		    /* do path smoothing */
+		    if (ok)
 		    {
-			if (bestPath)
-			    delete bestPath;
-			bestPath = path;
-			bestDifference = goal->getDifference();
-			goal->forgetSolutionPath();
-			ROS_INFO("          Obtained better solution");
+			ros::Time startTime = ros::Time::now();
+			ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
+			psetup->smoother->smoothMax(path);
+			double tsmooth = (ros::Time::now() - startTime).to_double();
+			ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
+			if (interpolate)
+			    psetup->si->interpolatePath(path);
+			if (bestPath == NULL || bestDifference > goal->getDifference() || 
+			    (bestPath && bestDifference == goal->getDifference() && bestPath->states.size() > path->states.size()))
+			{
+			    if (bestPath)
+				delete bestPath;
+			    bestPath = path;
+			    bestDifference = goal->getDifference();
+			    goal->forgetSolutionPath();
+			    ROS_INFO("          Obtained better solution");
+			}
 		    }
+		    psetup->mp->clear();	    
 		}
-		psetup->mp->clear();	    
+		
+		ROS_INFO("Total planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
 	    }
-	    
-	    ROS_INFO("\nTotal planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
+	    return result;
 	}
 	
 	void fillSolution(RKPPlannerSetup *psetup, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
@@ -252,7 +277,7 @@ namespace kinematic_planning
 	    psetup->si->clearStartStates();	
 	}
 	
-	bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance)
+	bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance, bool &trivial)
 	{
 	    // make sure the same motion planner instance is not used by other calls
 	    boost::mutex::scoped_lock(m_lock);
@@ -286,7 +311,7 @@ namespace kinematic_planning
 	    double                                           bestDifference = 0.0;	
 	    
 	    m->collisionSpace->lock();
-	    computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+	    trivial = computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
 	    m->collisionSpace->unlock();
 	    
 	    /* fill in the results */

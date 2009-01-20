@@ -256,21 +256,24 @@ public:
     {
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
-	while (m_replanning)
+	bool trivial = false;
+
+	while (m_replanning && !trivial)
 	{    
 	    step++;
 	    ROS_INFO("Replanning step %d", step);
-	    m_continueReplanningLock.lock();
+	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    const double *start_state = m_robotState->getParams();
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
-	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance);
+	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    publish("path_to_goal", solution);
+	    if (trivial)
+		break;
 	    while (!m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
-	    m_continueReplanningLock.unlock();
 	}
     }
 
@@ -279,22 +282,24 @@ public:
     {		
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
-	
+	bool trivial = false;
+
 	while (m_replanning)
 	{
 	    step++;
 	    ROS_INFO("Replanning step %d", step);
-	    m_continueReplanningLock.lock();
+	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    const double *start_state = m_robotState->getParams();
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToPositionRequest.start_state.vals[i] = start_state[i];
-	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance);
+	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
 	    publish("path_to_goal", solution);	    
+	    if (trivial)
+		break;
 	    while (!m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
-	    m_continueReplanningLock.unlock();
 	}
     }
     
@@ -441,7 +446,8 @@ public:
 
 
         //Acutally run the service.
-	bool r = m_requestState.execute(m_models, req, res.path, res.distance);
+	bool trivial = false;
+	bool r = m_requestState.execute(m_models, req, res.path, res.distance, trivial);
 
 
         //Copy the path.
@@ -483,14 +489,20 @@ public:
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
-	ROS_INFO("\nRequest for planning to a state");
-	return m_requestState.execute(m_models, req, res.path, res.distance);
+	ROS_INFO("Request for planning to a state");
+	bool trivial = false;
+	bool result = m_requestState.execute(m_models, req, res.path, res.distance, trivial);
+	res.trivial = trivial ? 1 : 0;
+	return result;
     }
 
     bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
     {	
-	ROS_INFO("\nRequest for planning to a position");
-	return m_requestLinkPosition.execute(m_models, req, res.path, res.distance);
+	ROS_INFO("Request for planning to a position");
+	bool trivial = false;
+	bool result = m_requestLinkPosition.execute(m_models, req, res.path, res.distance, trivial);
+	res.trivial = trivial ? 1 : 0;
+	return result;
     }
 
     virtual void setRobotDescription(robot_desc::URDF *file)

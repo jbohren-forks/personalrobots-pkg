@@ -50,3 +50,7 @@ robot_msgs/KinematicPath path
 # it may return a distance larger than the desired threshold. The user may choose to 
 # discard the path
 float64 distance
+
+# If the starting state was already in the goal region,
+# this is set to 1. Otherwise, it will be set to 0
+byte trivial
