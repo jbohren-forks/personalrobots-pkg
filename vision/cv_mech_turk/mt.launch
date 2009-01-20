@@ -1,0 +1,7 @@
+<launch>
+  <group name="wg">
+    <node pkg="dcam" type="dcam" args="" respawn="false" output="screen" />
+    <node pkg="cv_mech_turk" type="cv_mturk" args="image:=dcam/image" respawn="false" output="screen" />
+  </group>
+</launch>
+

@@ -10,8 +10,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "std_msgs/Image.h"
-#include "image_utils/cv_bridge.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/CvBridge.h"
 #include <stdlib.h>
 
 using namespace std;
@@ -20,15 +20,15 @@ using namespace ros;
 class CvMTurk : public Node
 {
 public:
-  std_msgs::Image image_msg;
-  CvBridge<std_msgs::Image> cv_bridge;
+  image_msgs::Image image_msg;
+  image_msgs::CvBridge cv_bridge;
   //Parameters
   char cmd[1024];   		//Will hold commands to run submit_img.py
   char object_name[256]; 	//Will hold the object's base name (do not append endings) DEFAULT: Default0000
   int object_count; 		//Version of image being stored
  
 
-  CvMTurk() : Node("cv_mturk"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR), object_count(0)
+  CvMTurk() : Node("cv_mturk"), object_count(0)
   { 
     cvNamedWindow("cv_mturk", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvMTurk::image_cb, 0);
@@ -38,7 +38,7 @@ public:
 
   void help()
   {
-	printf("\nUsage:\n  ./cv_mturk  image:=cam0/image [or whatever your camera name is]\n\n"
+	printf("\nUsage:\n  ./cv_mturk  image:=dcam/image [or whatever your camera name is]\n\n"
 	"   Takes keyboard input:\n"
 	"\tESQ,q,Q:   Quit\n"
 	"\th,H:       Print this help\n"
@@ -104,7 +104,10 @@ std::string cvGetString(std::string prompt, std::string init)
   {
     IplImage *cv_img_to_label;
 
-    if (cv_bridge.to_cv(&cv_img_to_label))
+    cv_bridge.fromImage(image_msg);
+    cv_img_to_label = cv_bridge.toIpl();
+
+    if (cv_img_to_label)
     {
       //VIEW THE IMAGE
       cvShowImage("cv_mturk", cv_img_to_label);
@@ -139,9 +142,6 @@ std::string cvGetString(std::string prompt, std::string init)
 		break;
       }
 
-
-     //RELEASE THIS IMAGE FOR NEXT LOOP
-      cvReleaseImage(&cv_img_to_label);
     }
   }
 };

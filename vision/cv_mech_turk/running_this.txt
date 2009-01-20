@@ -4,7 +4,7 @@
 
 //TO GET THE NODE RUNNING:
   //  -- Do everything all at once:
-roslaunch mt.launch   [this will run roscore, start the camera with dc1394 and then run ./cv_mturk image:=cam0/image
+roslaunch mt.launch   [this will run roscore, start the camera with dc1394 and then run ./cv_mturk image:=dcam/image
 
   //  -- Do it piece by piece:
 1 RUNNING THE MASTER NDOE: 
@@ -12,19 +12,19 @@ roslaunch mt.launch   [this will run roscore, start the camera with dc1394 and t
 2 RUNNING A 1394 CAMERA: 
 	Open another window.
 
-   2.1. Type "roscd dc1394_cam_server".
+   2.1. Type "roscd dcam".
      2.1a. If not made, then make it by typing: rosmake. 
-   2.2. Then run camera capture by: ./bin/dc1394_cam_server [This reads from the camera and publishes images]
+   2.2. Then run camera capture by: ./bin/dcam [This reads from the camera and publishes images]
    2.3 IF THE CAMERA BOMBS OUT WITH ERRORS, TRY SETTING PERMISSIONS
 	  [ You might have to: sudo chmod 666 /dev  and /dev/video1394 ]
 
 
 3 RUNNING THE MTURK NODE: 
-	roscd mech_turk   [If you svn up in ros-pkg, you will get this new package]
+	roscd cv_mech_turk   [If you svn up in ros-pkg, you will get this new package]
 
    3.1. IF YOU NEED TO MAKE THE NODE: rosmake
      3.1a. If things don't work, you might have to try "rosapt-get cv_view" and or struggle with loading any number of dependencies and lots of make cleans in the appropriate packages.  Once it builds:
-   3.2 RUN THE NODE: ./cv_mturk image:=cam0/image     [This will run the camera viewer]
+   3.2 RUN THE NODE: ./cv_mturk image:=dcam/image     [This will run the camera viewer]
 
 4 OTHER NEEDED FILES
     When you type "m", cv_mturk will invoke: submit_img.py which in turn depends on:
