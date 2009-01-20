@@ -1,7 +1,9 @@
 #include "nav.init.nddl"
 
 /**
- * Tests if the aborted flag is set when the goal is in an obstacle.
+ * Tests if the aborted flag is set when the goal is in an obstacle. There are 2 cases. The first gives the goal in an obstacle that is visible at the
+ * time of initial planning. This produces a timeout with no path or motion ever produced. The second will be in an obstacle that is only detected when
+ * robot approaches the goal position and perceives the dynamic obstacle. Initial plan and motion will occur. Both cases force an abort.
  */
 rejectable(moveBase.Active g0);
 g0.x = 13.0;

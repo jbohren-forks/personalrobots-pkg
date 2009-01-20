@@ -147,8 +147,16 @@ public:
    */
   void plannerLoop(){
     ros::Time lastPlan = ros::Time::now();
+
     while(ok() && !isTerminated()){
       ros::Time curr = ros::Time::now();
+
+      // Check for bogus time value and update to correct. This can happen for example where the node starts up
+      // and uses system time but then switches to listen to a time message based on simulated time. Just makes the code robust
+      // to such startup errors. If we do find some other timing anomaly it will correct by recomputing the last planning time.
+      // This has the effect of resetting the timeout monotor but that should only introduce a minor delay
+      if(curr < lastPlan)
+	lastPlan = curr;
 
       if(isInitialized() && isActive()){
 
@@ -158,7 +166,12 @@ public:
 	  if(!isValid()){
 	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
 	    lock();	 
-	    if ((ros::Time::now() - lastPlan) > timeout && timeout.toSec() != 0.0) {
+  
+	    ros::Duration elapsed_time = ros::Time::now() - lastPlan;
+	    ROS_DEBUG("Last current value at %f seconds:", curr.toSec());
+	    ROS_DEBUG("Last plan at %f seconds:", lastPlan.toSec());
+	    ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
+	    if ((elapsed_time > timeout) && timeout.toSec() != 0.0) {
 	      this->stateMsg.aborted = 1;
 	      ROS_INFO("Controller timed out.");
 	      deactivate();
