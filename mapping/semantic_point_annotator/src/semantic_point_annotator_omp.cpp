@@ -118,7 +118,7 @@ class SemanticPointAnnotator : public ros::Node
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
       param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
-      param ("~concave", concave_, false);                               // Create concave hulls by default
+      param ("~concave", concave_, true);                               // Create concave hulls by default
       
       if (polygonal_map_)
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
@@ -241,11 +241,13 @@ class SemanticPointAnnotator : public ros::Node
     int
       fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
     {
-      vector<int> empty;
+      vector<int> empty_inliers;
+      vector<double> empty_coeffs;
       if ((int)indices->size () < sac_min_points_per_model_)
       {
-        ROS_ERROR ("fitSACPlane: Indices.size (%d) < sac_min_points_per_model (%d)!", indices->size (), sac_min_points_per_model_);
-        inliers.push_back (empty);
+        //ROS_ERROR ("fitSACPlane: Indices.size (%d) < sac_min_points_per_model (%d)!", indices->size (), sac_min_points_per_model_);
+        inliers.push_back (empty_inliers);
+        coeff.push_back (empty_coeffs);
         return (-1);
       }
 
@@ -267,9 +269,10 @@ class SemanticPointAnnotator : public ros::Node
           // Obtain the inliers and the planar model coefficients
           if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
           {
-            ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-            inliers.push_back (empty);
-//            return (-1);
+            //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+            inliers.push_back (empty_inliers);
+            coeff.push_back (empty_coeffs);
+            //return (-1);
             break;
           }
           inliers.push_back (sac->getInliers ());
@@ -286,8 +289,6 @@ class SemanticPointAnnotator : public ros::Node
           nr_models++;
         }
       }
-      if (nr_models > 1)
-        ROS_INFO ("Number of models found: %d.", nr_models);
       return (0);
     }
 
@@ -479,17 +480,6 @@ class SemanticPointAnnotator : public ros::Node
         int ret = fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
         if (ret != 0 || all_cluster_inliers[cc].size () == 0)
           continue;
-        if (cc == 3)
-        {
-          std::cerr << "Indices: ";
-          for (unsigned int i = 0; i < clusters[cc].indices.size (); i++)
-            std::cerr << clusters[cc].indices.at (i) << " ";
-          std::cerr << std::endl;
-          std::cerr << "Inliers: ";
-          for (unsigned int i = 0; i < all_cluster_inliers[cc][0].size (); i++)
-            std::cerr << all_cluster_inliers[cc][0].at (i) << " ";
-          std::cerr << std::endl;
-        }
       }
       
       // Bummer - no omp here
@@ -513,12 +503,9 @@ class SemanticPointAnnotator : public ros::Node
           cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&cloud_, indices);
           for (unsigned int i = 0; i < indices->size (); i++)
           {
-            tree->radiusSearch (i, 0.5);                      // 30cm radius search
+            tree->radiusSearch (i, 0.3);                      // 30cm radius search
 //            tree->nearestKSearch (i, 30);                      // 30cm radius search
             tree->getNeighborsIndices (cluster_neighbors->at (i));
-//            vector<int> n;
-//            tree->getNeighborsIndices (n);
-//            std::cerr << n.size () << std::endl;
           }
           // Destroy the tree
           delete tree;
@@ -529,10 +516,10 @@ class SemanticPointAnnotator : public ros::Node
         gettimeofday (&t1, NULL);
       }
       
-      // Process all clusters in parallel
-//      #pragma omp parallel for schedule(dynamic)
       if (polygonal_map_)
       {
+        // Process all clusters in parallel
+        #pragma omp parallel for schedule(dynamic)
         // Fit convex hulls to the inliers (points should be projected!)
         for (int cc = 0; cc < (int)clusters.size (); cc++)
         {      
@@ -551,8 +538,6 @@ class SemanticPointAnnotator : public ros::Node
         }
       }
       
-      return;
-
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         double r, g, b, rgb;
@@ -561,14 +546,21 @@ class SemanticPointAnnotator : public ros::Node
         rgb = *(float*)(&res);
 
         // Get the planes in this cluster
-        vector<vector<int> > *planes_inliers  = &all_cluster_inliers[cc];
-        vector<vector<double> > *planes_coeff = &all_cluster_coeff[cc];
-
+        vector<vector<int> > *planes_inliers   = &all_cluster_inliers[cc];
+        vector<vector<double> > *planes_coeffs = &all_cluster_coeff[cc];
+        
+        if (planes_inliers->size () == 0 || planes_coeffs->size () == 0 || planes_inliers->size () != planes_coeffs->size ())
+          continue;
+          
         // For every plane in this cluster
         for (unsigned int j = 0; j < planes_inliers->size (); j++)
         {
           vector<int> *plane_inliers   = &planes_inliers->at (j);
-          vector<double> *plane_coeffs = &planes_coeff->at (j);
+          vector<double> *plane_coeffs = &planes_coeffs->at (j);
+          
+          if (plane_inliers->size () == 0 || plane_coeffs->size () == 0)
+            continue;
+            
           // Mark all the points inside
           switch (clusters[cc].region_type)
           {
