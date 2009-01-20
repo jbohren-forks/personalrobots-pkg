@@ -84,7 +84,7 @@ class GroundRemoval : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     GroundRemoval () : ros::Node ("sac_ground_removal")
     {
-      param ("~downsample", downsample_, true);    // Downsample cloud before ground estimation
+      param ("~downsample", downsample_, false);    // Downsample cloud before ground estimation
       param ("~downsample_leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
       param ("~downsample_leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
       param ("~downsample_leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
@@ -93,7 +93,7 @@ class GroundRemoval : public ros::Node
       param ("~z_threshold", z_threshold_, 0.2);         // 20cm threshold for ground removal
 
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);   // 5 cm 
+      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.04);   // 4 cm 
 
       string cloud_topic ("full_cloud");
 
@@ -127,8 +127,8 @@ class GroundRemoval : public ros::Node
       if (hasParam ("~downsample_leaf_width_z")) getParam ("~downsample_leaf_width_z", leaf_width_.z);
 
       if (hasParam ("~z_threshold")) getParam ("~z_threshold", z_threshold_);
-      if (hasParam ("~p_sac_min_points_per_model")) getParam ("~sac_min_points_per_model", sac_min_points_per_model_);
-      if (hasParam ("~p_sac_distance_threshold"))  getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      if (hasParam ("~p_sac_min_points_per_model")) getParam ("~p_sac_min_points_per_model", sac_min_points_per_model_);
+      if (hasParam ("~p_sac_distance_threshold"))  getParam ("~p_sac_distance_threshold", sac_distance_threshold_);
 
       if (hasParam ("~cut_distance"))
       {

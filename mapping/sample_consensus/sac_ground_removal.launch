@@ -1,0 +1,14 @@
+<launch>
+  <node pkg="sample_consensus" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true">
+    <remap from="full_cloud" to="cloud_1_raw" />
+    <param name="downsample" type="bool" value="false" />
+    <param name="downsample_leaf_width_x" type="double" value="0.025" />
+    <param name="downsample_leaf_width_y" type="double" value="0.025" />
+    <param name="downsample_leaf_width_z" type="double" value="0.025" />
+    <param name="cut_distance" type="double" value="10.0" />
+    <param name="z_threshold" type="double" value="0.2" />
+
+    <param name="p_sac_min_points_per_model" type="double" value="5" />
+    <param name="p_sac_distance_threshold" type="double" value="0.04" />
+  </node>
+</launch>
