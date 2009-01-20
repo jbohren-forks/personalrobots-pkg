@@ -35,6 +35,10 @@
 #define TM_INFINITE   (0)
 #define TM_NONBLOCK   ((xnticks_t)-1)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Mutex Interface */
 int rt_mutex_create(XN_RT_MUTEX *mutex, const char *name) __attribute__((weak));
 
@@ -60,6 +64,10 @@ int rt_task_shadow(XN_RT_TASK *task,
 		               const char *name,
 		               int prio,
 		               int mode) __attribute__((weak));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
