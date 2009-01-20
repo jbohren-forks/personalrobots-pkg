@@ -79,7 +79,7 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
   }
   sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
-  node->advertise<robot_msgs::TestData>( "/test_data", 0 );
+  
   test_data_.arg_value[0]=first_mode;
   test_data_.arg_value[1]=second_mode;
   test_data_.arg_value[2]=error_tolerance;
@@ -160,7 +160,7 @@ void SineSweepController::analysis()
   
   if ((node = ros::Node::instance()) != NULL)
   {
-    node->publish("/test_data", test_data_);
+    ros::service::call("/test_data", test_data_, res_);
     node->publish("/diagnostics", diagnostic_message_);
   }
   return;

@@ -84,8 +84,7 @@ void HysteresisController::init( double velocity, double max_effort, double max_
   test_data_.arg_value[1]=max_expected_effort;
   test_data_.arg_value[2]=min_pos;
   test_data_.arg_value[3]=max_pos;
-  
-  node->advertise<robot_msgs::TestData>( "/test_data", 0);
+
   
   velocity_=velocity;
   max_effort_=max_effort;
@@ -214,7 +213,6 @@ void HysteresisController::analysis()
 {
   diagnostic_message_.set_status_size(1);
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
-
   status->name = "HysteresisTest";
   count_=count_-1;
   //test done
@@ -229,7 +227,7 @@ void HysteresisController::analysis()
   
   if ((node = ros::Node::instance()) != NULL)
   { 
-    node->publish("/test_data", test_data_);
+    ros::service::call("/test_data", test_data_, res_);
     node->publish("/diagnostics", diagnostic_message_);
   }
   return; 

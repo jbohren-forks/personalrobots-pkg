@@ -44,10 +44,11 @@
 */
 /***************************************************/
 
-#include <robot_msgs/TestData.h>
+
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
+#include <robot_srvs/TestData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
@@ -101,8 +102,8 @@ private:
   
   ros::Node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_msgs::TestData test_data_;
- 
+  robot_srvs::TestData::request test_data_;
+  robot_srvs::TestData::response res_;
 
   int state;
   int starting_count;
