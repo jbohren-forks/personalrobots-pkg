@@ -50,7 +50,12 @@
 #include <sstream>
 #include <cassert>
 
-
+enum 
+    {
+	C_NONE,
+	C_ARM
+    };
+    
 class PlanKinematicPath : public ros::Node,
 			  public kinematic_planning::KinematicStateMonitor
 {
@@ -157,7 +162,7 @@ public:
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	performCall(req);
+	performCall(req, C_ARM);
     }
 
 
@@ -183,7 +188,7 @@ public:
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	performCall(req);
+	performCall(req, C_ARM);
     }
     
     /*
@@ -290,7 +295,7 @@ public:
     }
     */
     
-    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
+    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req, int controller = C_NONE)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
 	
@@ -299,13 +304,14 @@ public:
 	    printPath(res.path, res.distance);
 	    sendDisplay(req.start_state, res.path, req.params.model_id);
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
-	    sendCommand(res.path, req.params.model_id);	    
+	    if (controller == C_ARM)
+		sendArmCommand(res.path, req.params.model_id);	    
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_position' failed");
     }
 
-    void performCall(robot_srvs::KinematicPlanState::request &req)
+    void performCall(robot_srvs::KinematicPlanState::request &req, int controller = C_NONE)
     {	
 	robot_srvs::KinematicPlanState::response res;
 	
@@ -314,7 +320,8 @@ public:
 	    printPath(res.path, res.distance);
 	    sendDisplay(req.start_state, res.path, req.params.model_id);
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
-	    sendCommand(res.path, req.params.model_id);
+	    if (controller == C_ARM)
+		sendArmCommand(res.path, req.params.model_id);
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed\n");
@@ -324,13 +331,13 @@ public:
     {	
 	unsigned int nstates = path.get_states_size();
 	ROS_INFO("Obtained solution path with %u states, distance to goal = %f", nstates, distance);
-	
+	std::stringstream ss;
 	for (unsigned int i = 0 ; i < nstates ; ++i)
 	{
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
-		printf("%f ", path.states[i].vals[j]);
-	    printf("\n");
+		ss <<  path.states[i].vals[j] << " ";
 	}
+	ROS_INFO(ss.str().c_str());
     }
     
     void verifyPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
@@ -368,7 +375,7 @@ public:
 	ROS_INFO("Sent planned path to display");
     }
     
-    void sendCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
 	pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
 	pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
@@ -378,7 +385,7 @@ public:
 	
 	pr2_mechanism_controllers::JointTraj traj;
 	traj.set_points_size(path.get_states_size());
-		
+	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
 	{
 	    traj.points[i].set_positions_size(path.states[i].get_vals_size());
@@ -437,6 +444,9 @@ int main(int argc, char **argv)
 	    
 	    switch (test)
 	    {
+	    case '0':
+		plan->runRightArmTo0();
+		break;
 		/*	    case 'l':
 		plan->runTestLeftArm();    
 		break;
@@ -461,6 +471,7 @@ int main(int argc, char **argv)
 		break;
 	    } 
 	}
+	sleep(1);
 	
 	plan->shutdown();
 	delete plan;
