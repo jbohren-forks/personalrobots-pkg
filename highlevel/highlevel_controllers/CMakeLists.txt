@@ -36,7 +36,6 @@ rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
 rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
 
 # PlugIn and Unplug
-rospack_add_executable(plug_in src/PlugInController.cpp)
 rospack_add_executable(recharge_controller src/RechargeController.cpp)
 
 #CLI
