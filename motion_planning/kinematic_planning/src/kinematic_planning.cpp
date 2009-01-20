@@ -140,6 +140,7 @@ Provides (name/type):
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
+#include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
@@ -156,17 +157,21 @@ public:
 									      robot_model)
     {
 	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
-	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
-	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
 	
+	// to be removed
+	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
+	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
+
+
 	m_replanning = false;
 	m_replanningThread = NULL;
 	m_collisionMonitorChange = false;
 	
 	advertise<robot_msgs::KinematicPath>("path_to_goal", 1);
-	subscribe("replan_kinematic_path_state",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,    this, 1);
-	subscribe("replan_kinematic_path_position", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest, this, 1);
+	subscribe("replan_kinematic_path_state",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,     this, 1);
+	subscribe("replan_kinematic_path_position", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest,  this, 1);
+	subscribe("replan_stop",                    m_replanStop,            &KinematicPlanning::stopReplanning,         this, 1);
     }
     
     /** Free the memory */
@@ -194,7 +199,8 @@ public:
 	    delete m_replanningThread;
 	    m_replanningThread = false;
 	}
-	m_replanningLock.unlock();	
+	m_replanningLock.unlock();
+	ROS_INFO("Replanning stopped");	
     }
     
     void planToStateRequest(void)
@@ -583,6 +589,8 @@ private:
     // received request for replanning
     robot_srvs::KinematicPlanState::request                         m_planToStateRequest;    
     robot_srvs::KinematicPlanLinkPosition::request                  m_planToPositionRequest; 
+    // flag received for stopping replanning
+    std_msgs::Empty                                                 m_replanStop;    
     
     // currently considered request
     robot_srvs::KinematicPlanState::request                         m_currentPlanToStateRequest;    
