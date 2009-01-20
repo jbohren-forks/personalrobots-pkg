@@ -44,6 +44,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
+#include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
@@ -67,10 +68,11 @@ public:
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_state", 1);
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_position", 1);
-
+	advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command", 1);
+	
 	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
 	m_controller = C_NONE;
-	m_gripPos = 0.0;	
+	m_gripPos = 0.5;	
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -80,6 +82,7 @@ public:
 	    state.vals[i] = m_robotState->getParams()[i];
     }
     
+    // execute this when a new path is received
     void currentPathToGoal(void)
     {
 	printPath(m_pathToGoal, -1.0);
@@ -96,7 +99,7 @@ public:
 	    verifyPath(m_activeRequestPosition.start_state, m_activeRequestPosition.constraints, m_pathToGoal, m_activeRequestPosition.params.model_id);
 	    if (m_controller == C_ARM)
 		sendArmCommand(m_pathToGoal, m_activeRequestPosition.params.model_id);	    
-	}	
+	}
     }
     
     void runTestRightArm(bool replan = false)
@@ -167,175 +170,6 @@ public:
 	    performCall(req);
     }
     
-    
-    /*
-    void runTestBase(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::base";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 1;
-	req.times = 1;
-	
-	initialState(req.start_state);
-	req.start_state.vals[0] -= 1.5;
-
-
-	req.goal_state.set_vals_size(3);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = m_basePos[i];
-	
-//	req.goal_state.vals[0] += 7.5;
-//	req.goal_state.vals[1] += 0.5;
-//	req.goal_state.vals[2] = -M_PI/2.0;
-	
-
-	req.goal_state.vals[0] += 5.5;
-	req.goal_state.vals[1] += 0.5;
-	req.goal_state.vals[2] = -M_PI/2.0;
-
-
-	req.allowed_time = 15.0;
-	
-	req.params.volumeMin.x = -10.0 + m_basePos[0];	req.params.volumeMin.y = -10.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 10.0 + m_basePos[0];	req.params.volumeMax.y = 10.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req);
-    }
-    
-    void runTestLeftArm(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::left_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 1;
-	req.times = 1;
-
-	initialState(req.start_state);
-	
-	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-	req.goal_state.vals[0] = 1.0;    
-
-	req.allowed_time = 3.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req);
-    }
-
-    
-    void runTestRightArmReverse(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 1;
-	req.times = 1;
-
-	initialState(req.start_state);
-	
-	req.goal_state.set_vals_size(4);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-	req.start_state.vals[3] = -1.5;    
-
-	req.allowed_time = 30.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req);
-    }
-    
-    
-    void runTestBaseRightArm(void)
-    {
-	robot_srvs::KinematicPlanState::request  req;
-	
-	req.params.model_id = "pr2::base_right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.01;
-	req.interpolate = 1;
-	req.times = 1;
-
-	initialState(req.start_state);
-	req.start_state.vals[0] -= 1.0;
-
-	req.goal_state.set_vals_size(11);
-
-	for (unsigned int i = 0 ; i < 3 ; ++i)
-	    req.goal_state.vals[i] = m_basePos[i];
-	req.goal_state.vals[0] += 2.0;
-	req.goal_state.vals[2] = M_PI + M_PI/4.0;
-
-	for (unsigned int i = 3 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-	
-	req.allowed_time = 30.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req);
-    }
-    
-    void runTestLeftEEf(void)
-    {
-	robot_srvs::KinematicPlanLinkPosition::request req;
-	
-	req.params.model_id = "pr2::right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "RRT";
-	req.interpolate = 1;
-	req.times = 3;
-
-	initialState(req.start_state);
-
-	req.start_state.vals[0] += 2.0;
-	req.start_state.vals[2] = M_PI + M_PI/4.0;
-
-
-	// the goal region is basically the position of a set of bodies
-	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
-	req.goal_constraints[0].robot_link = "wrist_flex_right";
-	req.goal_constraints[0].pose.position.x = 0.0;
-	req.goal_constraints[0].pose.position.y = 0.0;
-	req.goal_constraints[0].pose.position.z = -100.0;
-	req.goal_constraints[0].position_distance = 0.01;
-	
-	// an example of constraints: do not move the elbow too much
-	
-//	req.constraints.set_pose_size(1);
-//	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
-//	req.constraints.pose[0].robot_link = "elbow_flex_left";
-//	req.constraints.pose[0].pose.position.x = 0.45;
-//	req.constraints.pose[0].pose.position.y = 0.188;
-//	req.constraints.pose[0].pose.position.z = 0.74;
-//	req.constraints.pose[0].position_distance = 0.01;
-	
-	req.allowed_time = 0.3;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	performCall(req);
-    }
-    */
-    
     void sendGoal(robot_srvs::KinematicPlanLinkPosition::request &req)
     {
 	m_activeRequestPosition = req;
@@ -356,10 +190,9 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(req.start_state, res.path, req.params.model_id);
-	    /*
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
 	    if (m_controller == C_ARM)
-	    sendArmCommand(res.path, req.params.model_id);	     */
+		sendArmCommand(res.path, req.params.model_id);	   
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_position' failed");
@@ -429,15 +262,8 @@ public:
 	ROS_INFO("Sent planned path to display");
     }
     
-    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void getTrajectoryMsg(robot_msgs::KinematicPath &path, pr2_mechanism_controllers::JointTraj &traj)
     {
-	pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
-	pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
-	
-	pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
-	pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
-	
-	pr2_mechanism_controllers::JointTraj traj;
 	traj.set_points_size(path.get_states_size());
 	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -448,7 +274,27 @@ public:
 	    traj.points[i].positions[path.states[i].get_vals_size()] = m_gripPos;
 	    traj.points[i].time = 0.0;
 	}	
+    }
+    
+    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	pr2_mechanism_controllers::JointTraj traj;
+	getTrajectoryMsg(path, traj);
+	publish("arm_trajectory_command", traj);
+	ROS_INFO("Sent trajectory to controller");
+    }
 
+    void sendArmCommandAndWait(robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
+	pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+	
+	pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
+	pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+	
+	pr2_mechanism_controllers::JointTraj traj;
+	getTrajectoryMsg(path, traj);
+	
 	send_traj_start_req.traj = traj;
 	int traj_done = -1;
 	if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
@@ -473,12 +319,22 @@ public:
 
 protected:
 
+    // in replanning mode, current path to goal
     robot_msgs::KinematicPath                      m_pathToGoal;
+
+    // request if planning towards a state
     robot_srvs::KinematicPlanState::request        m_activeRequestState;
+
+    // request if planning towards a link position
     robot_srvs::KinematicPlanLinkPosition::request m_activeRequestPosition;
+
+    // the desired gripper position during planning
     double                                         m_gripPos;
     
+    // flag is true if we are planning towards a state 
     bool                                           m_statePlanning;
+
+    // id of the controller to be used when executing the planned paths
     int                                            m_controller;
     
 };
@@ -502,7 +358,7 @@ int main(int argc, char **argv)
 	{
 	    //	plan->waitForState();
 
-	    sleep(1);
+	    sleep(2);
 	    
 	    
 	    char test = (argc < 3) ? 'b' : argv[2][0];
@@ -512,25 +368,9 @@ int main(int argc, char **argv)
 	    case '0':
 		plan->runRightArmTo0();
 		break;
-		/*	    case 'l':
-		plan->runTestLeftArm();    
-		break;
-	    case 'b':    
-		plan->runTestBase();
-		break; */
 	    case 'r':
 		plan->runTestRightArm(true);    
 		break;
-		/*	    case 's':
-	        plan->runTestRightArmReverse();    
-		break;
-	    case 'e':
-		plan->runTestLeftEEf();    
-		break;
-	    case 'x':
-		plan->runTestBaseRightArm();
-		break;
-		*/
 	    default:
 		ROS_ERROR("Unknown test");
 		break;
