@@ -7,6 +7,7 @@
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
     <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/map_update_frequency" value="2.0"/>
     <param name="move_base/planner_frequency" value="1.0"/>
     <param name="move_base/plannerTimeLimit" value="0.5"/>
     <param name="/costmap_2d/base_laser_max_range" value="10.0"/>
@@ -25,11 +26,21 @@
 	 way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
     <param name="/costmap_2d/base_laser_update_rate" value="2.0"/>
 
+    <param name="/trajectory_rollout/sim_time" value="1.0" />
+    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/samples_per_dim" value="20" />
+    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
+    <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
+    <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
+
     <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
 	 are not getting any data -->
     <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/>
     <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false"/>
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
   </group>
 </launch>
