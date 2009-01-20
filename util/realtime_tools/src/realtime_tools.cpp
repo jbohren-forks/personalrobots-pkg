@@ -27,16 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(__APPLE__)
+#define HAS_XENOMAI 0
+#else
+#define HAS_XENOMAI 1
+#endif
+
 #include "realtime_tools/realtime_tools.h"
+#if HAS_XENOMAI
 #include "realtime_tools/xenomai_prototypes.h"
+#endif
 
 int realtime_mutex_create(RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_mutex_create)
     err = rt_mutex_create(&mutex->rt, NULL);
   else
+#endif
     err = pthread_mutex_init(&mutex->pt, NULL);
 
   return err;
@@ -46,9 +56,11 @@ int realtime_mutex_delete(RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_mutex_delete)
     err = rt_mutex_delete(&mutex->rt);
   else
+#endif
     err = pthread_mutex_destroy(&mutex->pt);
 
   return err;
@@ -58,9 +70,11 @@ int realtime_mutex_lock(RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_mutex_acquire)
     err = rt_mutex_acquire(&mutex->rt, TM_INFINITE);
   else
+#endif
     err = pthread_mutex_lock(&mutex->pt);
 
   return err;
@@ -70,9 +84,11 @@ int realtime_mutex_trylock(RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_mutex_acquire)
     err = rt_mutex_acquire(&mutex->rt, TM_NONBLOCK);
   else
+#endif
     err = pthread_mutex_trylock(&mutex->pt);
 
   return err;
@@ -82,9 +98,11 @@ int realtime_mutex_unlock(RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_mutex_release)
     err = rt_mutex_release(&mutex->rt);
   else
+#endif
     err = pthread_mutex_unlock(&mutex->pt);
 
   return err;
@@ -95,9 +113,11 @@ int realtime_cond_create(RealtimeCond *cond)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_cond_create)
     err = rt_cond_create(&cond->rt, NULL);
   else
+#endif
     err = pthread_cond_init(&cond->pt, NULL);
 
   return err;
@@ -107,9 +127,11 @@ int realtime_cond_delete(RealtimeCond *cond)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_cond_delete)
     err = rt_cond_delete(&cond->rt);
   else
+#endif
     err = pthread_cond_destroy(&cond->pt);
 
   return err;
@@ -119,9 +141,11 @@ int realtime_cond_signal(RealtimeCond *cond)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_cond_signal)
     err = rt_cond_signal(&cond->rt);
   else
+#endif
     err = pthread_cond_signal(&cond->pt);
 
   return err;
@@ -131,9 +155,11 @@ int realtime_cond_wait(RealtimeCond *cond, RealtimeMutex *mutex)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_cond_wait)
     err = rt_cond_wait(&cond->rt, &mutex->rt, TM_INFINITE);
   else
+#endif
     err = pthread_cond_wait(&cond->pt, &mutex->pt);
 
   return err;
@@ -143,8 +169,10 @@ int realtime_shadow_task(RealtimeTask *task)
 {
   int err = 0;
 
+#if HAS_XENOMAI
   if (rt_task_shadow)
     err = rt_task_shadow(&task->rt, NULL, 0, 0);
+#endif
 
   // No pthread equivalent
 
