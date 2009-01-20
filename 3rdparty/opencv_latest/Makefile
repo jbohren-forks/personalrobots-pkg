@@ -1,4 +1,5 @@
 INSTALL_DIR = opencv
+
 all: installed
 
 SVN_DIR = build/opencv-svn
