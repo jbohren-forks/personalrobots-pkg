@@ -117,6 +117,8 @@ public:
 	    req.goal_state.vals[i] = 0.0;
         req.goal_state.vals[1] = -0.9;    
 	req.goal_state.vals[0] = -0.2;    
+	req.goal_state.vals[3] = 0.7;    
+	req.goal_state.vals[4] = 0.4;    
 	req.goal_state.vals[2] = -0.3;    
 	req.goal_state.vals[6] = -0.3;    
 
@@ -517,7 +519,7 @@ int main(int argc, char **argv)
 		plan->runTestBase();
 		break; */
 	    case 'r':
-		plan->runTestRightArm();    
+		plan->runTestRightArm(true);    
 		break;
 		/*	    case 's':
 	        plan->runTestRightArmReverse();    
