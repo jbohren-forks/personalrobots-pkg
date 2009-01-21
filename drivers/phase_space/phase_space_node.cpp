@@ -239,7 +239,7 @@ void PhaseSpaceNode::owlPrintError(const char *s, int n)
 void PhaseSpaceNode::dispSnapshot(const robot_msgs::MocapSnapshot& s)
 {
   printf("rosTF_frame: %s   Frame #%u\n", s.header.frame_id.c_str(), s.frameNum) ;
-  printf("  Time: %lf\n", s.header.stamp.to_double()) ;
+  printf("  Time: %lf\n", s.header.stamp.toSec()) ;
   printf("  Markers: %u\n", s.get_markers_size()) ;
   
   unsigned int i = 0 ;
