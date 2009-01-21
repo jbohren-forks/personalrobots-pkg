@@ -61,7 +61,7 @@ public:
   {
     scan_count++;
     ros::Time t = ros::Time::now();
-    double t_d = t.to_double();
+    double t_d = t.toSec();
     if (t_d > last_print_time + 1)
     {
       last_print_time = t_d;
