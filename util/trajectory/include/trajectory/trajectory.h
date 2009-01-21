@@ -215,6 +215,14 @@ namespace trajectory
 
     private:
 
+    bool max_acc_set_;
+
+    bool max_rate_set_;
+
+    const TPoint& lastPoint();
+
+    void init(int num_points, int dimension);
+
     int num_points_; /** number of points in the trajectory */
  
     int dimension_; /** dimension of the trajectory */

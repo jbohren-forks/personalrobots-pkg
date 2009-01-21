@@ -35,12 +35,37 @@
 #define MAX_ALLOWABLE_TIME 1.0e8
 #define EPS_TRAJECTORY 1.0e-8
 
+#define MAX_NUM_POINTS 200
+#define MAX_COEFF_SIZE 5
+
 using namespace trajectory;
 
 Trajectory::Trajectory(int dimension): dimension_(dimension)
 {
   interp_method_ = "linear";
   autocalc_timing_ = false;
+  init(MAX_NUM_POINTS,dimension);
+}
+
+void Trajectory::init(int num_points, int dimension)
+{
+  tp_.resize(num_points,dimension);
+  tc_.resize(num_points-1);
+  min_limit_.resize(dimension);
+  max_limit_.resize(dimension);
+  max_rate_.resize(dimension);
+  max_acc_.resize(dimension);
+  for(int i=0; i<num_points; i++)
+  {
+    tp_[i].setDimension(dimension);
+  }
+
+  for(int i=0; i<num_points-1; i++)
+  {
+    tc_[i].coeff_.resize(dimension);
+    for(int j=0; j < dimension; j++)
+      tc_[i].coeff_[j].resize(MAX_COEFF_SIZE);
+  }
 }
 
 void Trajectory::clear()
@@ -70,11 +95,11 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
 
   num_points_ = tp.size();
 
-  tp_.resize(num_points_);
+//  tp_.resize(num_points_);
 
   for(int i=0; i<num_points_; i++)
   {
-    tp_[i].setDimension(dimension_);
+//    tp_[i].setDimension(dimension_);
     tp_[i] = tp[i];
 //    ROS_INFO("Input point: %d is ",i);
 //    for(int j=0; j < dimension_; j++)
@@ -97,11 +122,11 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
     return -1;
   }   
   autocalc_timing_ = true;//Enable autocalc timing by default since no time information given in trajectory
-  tp_.resize(num_points_);
+//tp_.resize(num_points_);
 
   for(int i=0; i<num_points_;i++)
   {
-    tp_[i].setDimension(dimension_);
+//    tp_[i].setDimension(dimension_);
     tp_[i].time_ = 0.0;
     for(int j=0; j<dimension_; j++)
     {
@@ -124,7 +149,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
 {
   num_points_ = numPoints;
 
-  tp_.resize(num_points_);
+//  tp_.resize(num_points_);
 
   if((int) time.size() != num_points_)
   {
@@ -139,7 +164,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
 
   for(int i=0; i<num_points_;i++)
   {
-    tp_[i].setDimension(dimension_);
+//    tp_[i].setDimension(dimension_);
     tp_[i].time_ = time[i];
     for(int j=0; j<dimension_; j++)
     {
@@ -156,7 +181,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
 {
   num_points_ = numPoints;
 
-  tp_.resize(num_points_);
+//  tp_.resize(num_points_);
 
   if((int) time.size() != num_points_)
   {
@@ -171,7 +196,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
 
   for(int i=0; i<num_points_;i++)
   {
-    tp_[i].setDimension(dimension_);
+//    tp_[i].setDimension(dimension_);
     tp_[i].time_ = time[i];
     for(int j=0; j<dimension_; j++)
     {
@@ -207,20 +232,27 @@ inline int Trajectory::findTrajectorySegment(double time)
 //inline double Trajectory::getTotalTime()
 double Trajectory::getTotalTime()
 {
-  if(tp_.size() == 0)
+  if(num_points_ == 0)
     return 0.0;
 
-  return (tp_.back().time_ - tp_.front().time_);
+//  return (tp_.back().time_ - tp_.front().time_);
+  return (lastPoint().time_ - tp_.front().time_);
+}
+
+
+const Trajectory::TPoint& Trajectory::lastPoint()
+{
+  return *(tp_.begin()+num_points_-1);
 }
 
 int Trajectory::sample(TPoint &tp, double time)
 {
-//  ROS_INFO("Trajectory has %d points",tp_.size());
-//  ROS_INFO("Time: %f, %f, %f",time,tp_.front().time_,tp_.back().time_);
-  if(time > tp_.back().time_)
+//  ROS_INFO("Trajectory has %d points",num_points_);
+//  ROS_INFO("Time: %f, %f, %f",time,tp_.front().time_,lastPoint().time_);
+  if(time > lastPoint().time_)
   {
 //    ROS_WARN("Invalid input sample time.");
-    time = tp_.back().time_;
+    time = lastPoint().time_;
   }
   else if( time < tp_.front().time_)
   {
@@ -250,7 +282,7 @@ int Trajectory::sample(TPoint &tp, double time)
 /*
 int Trajectory::sample(std::vector<TPoint> &tp, double start_time, double end_time)
 {
-  if(time > tp_.back().time_ || time < tp_.front().time_)
+  if(time > lastPoint().time_ || time < tp_.front().time_)
   {
     ROS_WARN("Invalid input sample time.");
     return -1;
@@ -282,8 +314,12 @@ int Trajectory::setMaxRates(std::vector<double> max_rate)
     ROS_WARN("Input size: %d does not match dimension of trajectory = %d",max_rate.size(),dimension_);
     return -1;
   }
-  max_rate.resize(dimension_);
-  max_rate_ = max_rate; 
+//  max_rate.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+    max_rate_[i] = max_rate[i]; 
+
+  max_rate_set_ = true;
+
   return 1;
 }
 
@@ -294,8 +330,12 @@ int Trajectory::setMaxAcc(std::vector<double> max_acc)
     ROS_WARN("Input size: %d does not match dimension of trajectory = %d",max_acc.size(),dimension_);
     return -1;
   }
-  max_acc.resize(dimension_);
-  max_acc_ = max_acc; 
+//  max_acc.resize(dimension_);
+  for(int k=0; k < dimension_; k++)
+    max_acc_[k] = max_acc[k]; 
+
+  max_acc_set_ = true;
+
   return 1;
 }
 
@@ -317,38 +357,46 @@ int Trajectory::minimizeSegmentTimes()
 int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
 {
   double dT(0);
-  TCoeff tc;
-  std::vector<std::vector<double> > coeff;
 
+/*  TCoeff tc;
+  std::vector<std::vector<double> > coeff;
   std::vector<double> temp;
   temp.resize(2);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
-
   tc_.clear();
+*/
 
-  if(max_rate_.empty() || (int) max_rate_.size() < 0)
+  double temp[2];
+
+  if(!max_rate_set_ || (int) max_rate_.size() < 0)
   {
     ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
     return -1;
   }
 
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = calculateMinimumTimeLinear(tp_[i-1],tp_[i]);
     tp_[i].time_ = tp_[i-1].time_ + dT;
 
-    tc.duration_ = dT;
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
 
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
-      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
-      tc.coeff_.push_back(temp);
+      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc_[i-1].duration_;  
+
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
+
+//      tc.coeff_.push_back(temp);
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
   return 1;
 }
@@ -356,40 +404,48 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
 int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 {
   double dT(0);
-  TCoeff tc;
 
+/*  TCoeff tc;
   std::vector<double> temp;
-
   temp.resize(4);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
-
   tc_.clear();
+*/
 
-    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+  double temp[4];
+
+    if(!max_rate_set_ || (int) max_rate_.size() < 1)
     {
       ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
       return -1;
     }
 
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = calculateMinimumTimeCubic(tp_[i-1],tp_[i]);
     tp_[i].time_ = tp_[i-1].time_ + dT;
-    tc.duration_ = dT;
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
 
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = tp_[i-1].qdot_[j];
-      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
-      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
+      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
 
-      tc.coeff_.push_back(temp);
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].coeff_[j][2] = temp[2];
+      tc_[i-1].coeff_[j][3] = temp[3];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
+
+//      tc.coeff_.push_back(temp);
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
   return 1;
 }
@@ -398,47 +454,54 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 {
    double dT(0),acc(0.0),tb(0.0);
-  TCoeff tc;
 
+/*  TCoeff tc;
   std::vector<double> temp;
-
   temp.resize(5);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
-
   tc_.clear();
+*/
 
-    if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
+  double temp[5];
+
+    if(!max_rate_set_ || (int) max_rate_.size() != dimension_ || !max_acc_set_ || (int) max_acc_.size() != dimension_)
     {
       ROS_WARN("Trying to apply rate and acc limits without setting them. Use setMaxRate and setMaxAcc first");
       return -1;
     }
 
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = calculateMinimumTimeLSPB(tp_[i-1],tp_[i]);
     tp_[i].time_ = tp_[i-1].time_ + dT;
-    tc.duration_ = dT;
-
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
     for(int j=0; j < dimension_; j++)
     {
        if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
           acc = max_acc_[j];
        else
           acc = -max_acc_[j];
-      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+      tb =  blendTime(acc,-acc*tc_[i-1].duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
 
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
       temp[2] = 0.5*acc;
       temp[3] = tb;
-      temp[4] = std::max(tc.duration_-2*tb,0.0);
-     
-      tc.coeff_.push_back(temp);
+      temp[4] = std::max(tc_[i-1].duration_-2*tb,0.0);
+
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].coeff_[j][2] = temp[2];
+      tc_[i-1].coeff_[j][3] = temp[3];
+      tc_[i-1].coeff_[j][4] = temp[4];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
+//      tc.coeff_.push_back(temp);
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
   return 1;
 }
@@ -707,27 +770,27 @@ int Trajectory::parameterize()
 int Trajectory::parameterizeLinear()
 {
   double dT(0);
-  TCoeff tc;
 
+/*  TCoeff tc;
   std::vector<double> temp;
-
   temp.resize(2);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
   tc_.clear();
+*/
+  double temp[2];
 
   if(autocalc_timing_)
   {
-    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+    if(!max_rate_set_ || (int) max_rate_.size() < 0)
     {
       ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first.");
       return -1;
     }
   }
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = tp_[i].time_ - tp_[i-1].time_;
     if(autocalc_timing_) 
     {
@@ -736,20 +799,25 @@ int Trajectory::parameterizeLinear()
         dT = dTMin;
     }
 
-    tc.duration_ = dT;
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
 
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
-      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
+      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc_[i-1].duration_;  
       if(std::isnan(temp[1]))
         {
          temp[1] = 0.0;
 //         ROS_WARN("Zero duration between two trajectory points");
         }
-      tc.coeff_.push_back(temp);
+//      tc.coeff_.push_back(temp);
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
 
 /*  for(int i=0; i<tc_.size(); i++)
@@ -759,7 +827,7 @@ int Trajectory::parameterizeLinear()
   }
 */
   // Now modify all the times to bring them up to date
-  for(int i=1; i < (int) tp_.size(); i++)
+  for(int i=1; i < (int) num_points_; i++)
   {
     tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
 //    ROS_INFO("Times: %d %f",i,tp_[i].time_);
@@ -771,28 +839,29 @@ int Trajectory::parameterizeLinear()
 int Trajectory::parameterizeCubic()
 {
   double dT(0);
-  TCoeff tc;
 
+/*  TCoeff tc;
   std::vector<double> temp;
-
   temp.resize(4);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
   tc_.clear();
+*/
+
+  double temp[4];
 
   if(autocalc_timing_)
   {
-    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+    if(!max_rate_set_ || (int) max_rate_.size() < 0)
     {
       ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first.");
       return -1;
     }
   }
 
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = tp_[i].time_ - tp_[i-1].time_;
     if(autocalc_timing_) 
     {
@@ -801,26 +870,34 @@ int Trajectory::parameterizeCubic()
         dT = dTMin;
     }
 
-    tc.duration_ = dT;
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
 
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = tp_[i-1].qdot_[j];
-      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
-      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
+      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
       if(std::isnan(temp[2]))
         temp[2] = 0.0;
       if(std::isnan(temp[3]))
         temp[3] = 0.0;
 
-      tc.coeff_.push_back(temp);
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].coeff_[j][2] = temp[2];
+      tc_[i-1].coeff_[j][3] = temp[3];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
+
+//      tc.coeff_.push_back(temp);
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
 
   // Now modify all the times to bring them up to date
-  for(int i=1; i < (int) tp_.size(); i++)
+  for(int i=1; i < (int) num_points_; i++)
     tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
 
   return 1;
@@ -830,28 +907,28 @@ int Trajectory::parameterizeCubic()
 int Trajectory::parameterizeBlendedLinear()
 {
    double dT(0.0),acc(0.0),tb(0.0);
+/*
   TCoeff tc;
-
   std::vector<double> temp;
-
   temp.resize(5);
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
   tc_.clear();
+*/
+   double temp[5];
 
   if(autocalc_timing_)
   {
-    if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
+    if(!max_rate_set_ || (int) max_rate_.size() != dimension_ || !max_acc_set_ || (int) max_acc_.size() != dimension_)
     {
       ROS_WARN("Trying to apply rate and acc limits without setting max rate or acc information. Use setMaxRate and setMaxAcc first.");
       return -1;
     }
   }
 
-  for(int i=1; i < (int) tp_.size() ; i++)
+  for(int i=1; i < (int) num_points_ ; i++)
   {
-    tc.coeff_.clear();
+//    tc.coeff_.clear();
     dT = tp_[i].time_ - tp_[i-1].time_;
     if(autocalc_timing_) 
     {
@@ -860,7 +937,8 @@ int Trajectory::parameterizeBlendedLinear()
         dT = dTMin;
     }
 
-    tc.duration_ = dT;
+//    tc.duration_ = dT;
+    tc_[i-1].duration_ = dT;
 
     for(int j=0; j < dimension_; j++)
     {
@@ -869,22 +947,31 @@ int Trajectory::parameterizeBlendedLinear()
        else
           acc = -max_acc_[j];
 
-      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+      tb =  blendTime(acc,-acc*tc_[i-1].duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
 
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
       temp[2] = 0.5*acc;
       temp[3] = tb;
-      temp[4] = std::max(tc.duration_-2*tb,0.0);
+      temp[4] = std::max(tc_[i-1].duration_-2*tb,0.0);
+
+      tc_[i-1].coeff_[j][0] = temp[0];
+      tc_[i-1].coeff_[j][1] = temp[1];
+      tc_[i-1].coeff_[j][2] = temp[2];
+      tc_[i-1].coeff_[j][3] = temp[3];
+      tc_[i-1].coeff_[j][4] = temp[4];
+      tc_[i-1].degree_ = 1;
+      tc_[i-1].dimension_ = dimension_;
+
 
       //ROS_DEBUG("coeff: %d %d %f %f %f %f %f %f\n", i,j,tc.duration_,temp[0],temp[1],temp[2],temp[3],temp[4]);
-      tc.coeff_.push_back(temp);
+      //    tc.coeff_.push_back(temp);
     }
-    tc_.push_back(tc);
+//    tc_.push_back(tc);
   }
 
   // Now modify all the times to bring them up to date
-  for(int i=1; i < (int) tp_.size(); i++)
+  for(int i=1; i < (int) num_points_; i++)
     tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
 
   return 1;
@@ -897,7 +984,7 @@ int Trajectory::write(std::string filename, double dT)
   TPoint tp;
   tp.setDimension(dimension_);
 
-  while(time < tp_.back().time_)
+  while(time < lastPoint().time_)
   {
     sample(tp,time);
     fprintf(f,"%f ",time);
