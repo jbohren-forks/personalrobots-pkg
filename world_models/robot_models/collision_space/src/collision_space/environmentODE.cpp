@@ -136,6 +136,29 @@ void collision_space::EnvironmentModelODE::updateGeom(dGeomID geom, btTransform 
     dGeomSetQuaternion(geom, q);
 }
 
+void collision_space::EnvironmentModelODE::updateAttachedBodies(unsigned int model_id)
+{
+    const unsigned int n = m_modelsGeom[model_id].linkGeom.size();    
+    for (unsigned int i = 0 ; i < n ; ++i)
+    {
+	kGeom *kg = m_modelsGeom[model_id].linkGeom[i];
+	
+	/* clear previosly attached bodies */
+	for (unsigned int k = 1 ; k < kg->geom.size() ; ++k)
+	    dGeomDestroy(kg->geom[k]);
+	kg->geom.resize(1);
+	
+	/* create new set of attached bodies */	
+	const unsigned int nab = kg->link->attachedBodies.size();
+	for (unsigned int k = 0 ; k < nab ; ++k)
+	{
+	    dGeomID ga = createODEGeom(m_modelsGeom[model_id].space, kg->link->attachedBodies[k]->shape);
+	    assert(ga);
+	    kg->geom.push_back(ga);
+	}
+    }
+}
+
 void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_id)
 { 
     const unsigned int n = m_modelsGeom[model_id].linkGeom.size();
