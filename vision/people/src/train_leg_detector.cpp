@@ -113,7 +113,7 @@ public:
     }
   }
 
-  void loadCb(string name, std_msgs::LaserScan* scan, ros::Time t, void* n)
+  void loadCb(string name, std_msgs::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
   {
     vector< vector<float> >* data = (vector< vector<float> >*)(n);
 
