@@ -101,7 +101,7 @@ namespace collision_space
 	virtual void updateRobotModel(unsigned int model_id);
 
 	/** Update the set of bodies that are attached to the robot (re-creates them) */
-	virtual void updateAttachedBodies(unsigned int model_id) = 0;
+	virtual void updateAttachedBodies(unsigned int model_id);
 
 	/** Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
