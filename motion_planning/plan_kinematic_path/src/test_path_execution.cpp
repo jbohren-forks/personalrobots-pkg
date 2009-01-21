@@ -51,7 +51,7 @@ public:
     TestExecutionPath(const std::string& robot_model) : ros::Node("plan_kinematic_path"),
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
-	advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command", 1);	
+	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);	
 	sleep_duration_ = 4;
     }
     
@@ -91,7 +91,7 @@ public:
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     traj.points[0].positions[i] = to_send[i];
 		
-                publish("arm_trajectory_command", traj);
+                publish("right_arm_trajectory_command", traj);
 	        sleep(sleep_duration_);
 
 		printf("Sending: ");

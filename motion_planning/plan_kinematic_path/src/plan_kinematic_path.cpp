@@ -69,7 +69,7 @@ public:
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_state", 1);
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_position", 1);
-	advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command", 1);
+	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);
 	advertise<std_msgs::Empty>("replan_stop", 1);
 	
 	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
@@ -295,7 +295,7 @@ public:
     {
 	pr2_mechanism_controllers::JointTraj traj;
 	getTrajectoryMsg(path, traj);
-	publish("arm_trajectory_command", traj);
+	publish("right_arm_trajectory_command", traj);
 	ROS_INFO("Sent trajectory to controller");
     }
 
@@ -392,7 +392,8 @@ int main(int argc, char **argv)
 
 	}
 	plan->spin();
-		
+	plan->requestStopReplanning();
+	
 	plan->shutdown();
 	delete plan;
     }
