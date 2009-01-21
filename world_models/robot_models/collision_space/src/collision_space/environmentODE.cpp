@@ -323,6 +323,7 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 		    const unsigned int njg = m_modelsGeom[model_id].linkGeom[vec[j]]->geom.size();
 		    const unsigned int nkg = m_modelsGeom[model_id].linkGeom[vec[k]]->geom.size();
 		    
+		    /* this will account for attached bodies as well */
 		    for (unsigned int jg = 0 ; jg < njg ; ++jg)
 			for (unsigned int kg = 0 ; kg < nkg ; ++kg)
 			{
