@@ -148,6 +148,11 @@ namespace mpglue {
 	to do the right thing. */
     virtual boost::shared_ptr<CostmapPlannerStats> copyStats() const;
     
+    /** Read-only access to the stats entity owned by the planner.  If
+	you want to accumulate statistics, you should use copyStats()
+	instead, as this stats instance keeps being updated. */
+    CostmapPlannerStats const & getStats() const { return stats__; }
+    
   protected:
     /** Subclasses have to provide a stats field, which can be (and
 	typically is) a subclass of CostmapPlannerStats. This allows
