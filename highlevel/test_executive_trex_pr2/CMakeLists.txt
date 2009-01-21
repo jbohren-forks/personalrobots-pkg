@@ -9,6 +9,6 @@ execute_process(
 
 # Integrated test cases for the nav stack running with the pr2 executive and model.
 rospack_add_rostest_graphical(wpc.0/test.xml)
-#rospack_add_rostest_graphical(wpc.1/test.xml) #Disabled due to infinite rotation.
+rospack_add_rostest_graphical(wpc.1/test.xml)
 rospack_add_rostest_graphical(wpc.2/test.xml)
 rospack_add_rostest_graphical(wpc.3/test.xml)
