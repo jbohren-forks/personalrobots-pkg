@@ -179,7 +179,7 @@ namespace kinematic_planning
 	    
 	    delete[] data;
 	    
-	    double tupd = (ros::Time::now() - startTime).to_double();
+	    double tupd = (ros::Time::now() - startTime).toSec();
 	    ROS_INFO("Updated world model in %f seconds", tupd);
 	    
 	    afterWorldUpdate();

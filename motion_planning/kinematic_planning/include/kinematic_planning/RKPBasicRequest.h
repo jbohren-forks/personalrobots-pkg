@@ -212,7 +212,7 @@ namespace kinematic_planning
 		{
 		    ros::Time startTime = ros::Time::now();
 		    bool ok = psetup->mp->solve(allowed_time); 
-		    double tsolve = (ros::Time::now() - startTime).to_double();	
+		    double tsolve = (ros::Time::now() - startTime).toSec();	
 		    ROS_INFO("%s Motion planner spend %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
 		    totalTime += tsolve;
 		    
@@ -222,7 +222,7 @@ namespace kinematic_planning
 			ros::Time startTime = ros::Time::now();
 			ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 			psetup->smoother->smoothMax(path);
-			double tsmooth = (ros::Time::now() - startTime).to_double();
+			double tsmooth = (ros::Time::now() - startTime).toSec();
 			ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
 			if (interpolate)
 			    psetup->si->interpolatePath(path);
