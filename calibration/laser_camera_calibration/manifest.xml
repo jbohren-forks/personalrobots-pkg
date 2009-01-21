@@ -15,4 +15,5 @@
   <depend package="rosoct"/>
   <depend package="openraveros"/>
   <depend package="checkerboard_detector"/>
+  <depend package="pr2_default_controllers"/>
 </package>
