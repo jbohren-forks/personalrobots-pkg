@@ -331,7 +331,7 @@ public:
 	    ROS_INFO("Trajectory execution is complete");	    
 	}
     }
-
+    
 protected:
 
     // in replanning mode, current path to goal
@@ -374,9 +374,8 @@ int main(int argc, char **argv)
 	    //	plan->waitForState();
 
 	    sleep(2);
-	    
-	    
-	    char test = (argc < 3) ? 'b' : argv[2][0];
+
+	    char test = (argc < 3) ? '0' : argv[2][0];
 	    
 	    switch (test)
 	    {
@@ -390,6 +389,7 @@ int main(int argc, char **argv)
 		ROS_ERROR("Unknown test");
 		break;
 	    } 
+
 	}
 	plan->spin();
 		
