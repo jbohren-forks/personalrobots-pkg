@@ -78,12 +78,12 @@ public:
       usleep(100) ;
       if (ros::Time::now() >= next_time)
       {
-        next_time.from_double(next_time.to_double() + period.to_double()) ;
+        next_time = (next_time + period) ;
 
         BuildCloud::request req ;
         BuildCloud::response resp ;
 
-        req.begin.from_double(next_time.to_double() - period.to_double() ) ;
+        req.begin = (next_time - period ) ;
         req.end   = next_time ;
 
         printf("Making Service Call...\n") ;
