@@ -125,6 +125,9 @@ const double* planning_models::KinematicModel::Link::computeTransform(const doub
     
     globalTrans.mult(globalTransFwd, constGeomTrans);
     
+    for (unsigned int i = 0 ; i < attachedBodies.size() ; ++i)
+	attachedBodies[i]->computeTransform(globalTrans);
+    
     return params;
 }
 
@@ -539,6 +542,11 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJ
 	break;
     }  
     return newJoint;
+}
+
+void planning_models::KinematicModel::AttachedBody::computeTransform(btTransform &parentTrans)
+{
+    globalTrans = attachTrans * parentTrans;
 }
 
 bool planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)
