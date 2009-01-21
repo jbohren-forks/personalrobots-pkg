@@ -50,6 +50,7 @@
 #include <robot_msgs/DiagnosticMessage.h>
 #include <robot_srvs/TestData.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 
@@ -85,6 +86,12 @@ public:
    */
 
   virtual void update();
+  
+  bool done() { return state_ == DONE; }
+  
+  ros::Node* node;
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+  robot_srvs::TestData::request test_data_;
 
 private:
 
@@ -100,12 +107,7 @@ private:
   bool complete;
   bool start;
   
-  ros::Node* node;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_srvs::TestData::request test_data_;
-  robot_srvs::TestData::response res_;
-
-  int state;
+  int state_;
   int starting_count;
 
 };
@@ -132,6 +134,13 @@ public:
 
 private:
   HysteresisController *c_;
+  mechanism::RobotState *robot_;
+  
+  bool data_sent_;
+  
+  double last_publish_time_;
+  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::request, robot_srvs::TestData::response> call_service_;
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }
 
