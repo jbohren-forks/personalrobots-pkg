@@ -86,7 +86,7 @@ class SemanticPointAnnotator : public ros::Node
 
     // Parameters
     int sac_min_points_per_model_, sac_min_points_left_;
-    double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
+    double sac_distance_threshold_, eps_angle_, region_angle_threshold_, boundary_angle_threshold_;
 
     double rule_floor_, rule_ceiling_, rule_wall_;
     double rule_table_min_, rule_table_max_;
@@ -119,11 +119,17 @@ class SemanticPointAnnotator : public ros::Node
 
       param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
       param ("~concave", concave_, true);                               // Create concave hulls by default
+      param ("~boundary_angle_threshold", boundary_angle_threshold_, 120.0); // Boundary angle threshold
       
       if (polygonal_map_)
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
 
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);           // convert to radians
+      eps_angle_ = (eps_angle_ * M_PI / 180.0);                                 // convert to radians
+      
+      if (concave_)
+        ROS_INFO ("Concave hulls enabled. Angle threshold set to %g.", boundary_angle_threshold_);
+
+      boundary_angle_threshold_ = (boundary_angle_threshold_ * M_PI / 180.0);   // convert to radians
 
       string cloud_topic ("cloud_2_normals");
 
@@ -237,6 +243,52 @@ class SemanticPointAnnotator : public ros::Node
       delete tree;
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      sortConcaveHull2D (PointCloud *points, vector<int> *indices, Polygon3D &poly)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      
+      vector<int> seed_queue;
+      seed_queue.push_back (0);
+
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (indices->size (), false);
+      vector<int> nn_indices;
+      
+      // Process all points in the indices vector
+      int i = 0;
+      processed[i] = true;                            // Mark the current point as "processed"
+      while (seed_queue.size () < indices->size ())
+      {
+        tree->nearestKSearch (seed_queue[i], indices->size ());
+        tree->getNeighborsIndices (nn_indices);
+
+        for (unsigned int j = 0;  j < nn_indices.size (); j++)
+        {
+          if (!processed.at (nn_indices[j]))             // Check the closest neighbor
+          {
+            processed[nn_indices[j]] = true;
+            seed_queue.push_back (nn_indices[j]);
+            i++;
+            break;
+          }
+        }
+      }
+      
+      poly.points.resize (seed_queue.size ());
+      for (unsigned int i = 0; i < seed_queue.size (); i++)
+      {
+        poly.points[i].x = points->pts.at (indices->at (seed_queue[i])).x;
+        poly.points[i].y = points->pts.at (indices->at (seed_queue[i])).y;
+        poly.points[i].z = points->pts.at (indices->at (seed_queue[i])).z;
+      }
+      // Destroy the tree
+      delete tree;
+    }
+      
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int
       fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
@@ -374,9 +426,8 @@ class SemanticPointAnnotator : public ros::Node
       int nr_p = 0;
       for (unsigned int i = 0; i < indices->size (); i++)
       {
-//        std::cerr << "Point " << i << " has " << neighbors->at (i).size () << " neighbors." << std::endl;
-//        if (cloud_geometry::nearest::isBoundaryPoint (points, indices->at (i), &neighbors, u, v))
-        if (cloud_geometry::nearest::isBoundaryPoint (points, i, &neighbors->at (i), u, v, M_PI * 3/4))
+        vector<int> *point_neighbors = &neighbors->at (i);
+        if (cloud_geometry::nearest::isBoundaryPoint (points, indices->at (i), point_neighbors, u, v, boundary_angle_threshold_))
         {
           inliers[nr_p] = indices->at (i);
           nr_p++;
@@ -384,17 +435,7 @@ class SemanticPointAnnotator : public ros::Node
       }
       inliers.resize (nr_p);
       
-      cloud_geometry::areas::sortHull2D (points, &inliers, *coeff, poly);
-      
-/*      poly.points.resize (nr_p);
-      for (int i = 0; i < nr_p; i++)
-      {
-        poly.points[i].x = points->pts.at (inliers[i]).x;
-        poly.points[i].y = points->pts.at (inliers[i]).y;
-        poly.points[i].z = points->pts.at (inliers[i]).z;
-      }
-      std::sort (poly.points.begin (), poly.points.end (), cloud_geometry::areas::comparePoint3D);*/
-      
+      sortConcaveHull2D (points, &inliers, poly);
     }
     
 
@@ -505,7 +546,11 @@ class SemanticPointAnnotator : public ros::Node
           {
             tree->radiusSearch (i, 0.3);                      // 30cm radius search
 //            tree->nearestKSearch (i, 30);                      // 30cm radius search
+            // Note: the neighbors below are in the 0->indices.size () spectrum and need to be
+            // transformed into global point indices (!)
             tree->getNeighborsIndices (cluster_neighbors->at (i));
+            for (unsigned int j = 0; j < cluster_neighbors->at (i).size (); j++)
+              cluster_neighbors->at(i).at(j) = indices->at (cluster_neighbors->at(i).at(j));
           }
           // Destroy the tree
           delete tree;
@@ -519,7 +564,7 @@ class SemanticPointAnnotator : public ros::Node
       if (polygonal_map_)
       {
         // Process all clusters in parallel
-        #pragma omp parallel for schedule(dynamic)
+        //#pragma omp parallel for schedule(dynamic)
         // Fit convex hulls to the inliers (points should be projected!)
         for (int cc = 0; cc < (int)clusters.size (); cc++)
         {      
