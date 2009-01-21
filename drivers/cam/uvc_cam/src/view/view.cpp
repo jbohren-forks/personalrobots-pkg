@@ -6,6 +6,13 @@
 
 int main(int argc, char **argv)
 {
+  if (argc != 2)
+  {
+    fprintf(stderr, "usage: view DEVICE\n");
+    return 1;
+  }
+
+  uvc_cam::Cam cam(argv[1]);
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
     fprintf(stderr, "sdl init error: %s\n", SDL_GetError());
@@ -17,6 +24,13 @@ int main(int argc, char **argv)
   SDL_WM_SetCaption("hello world", "hello world");
   for (bool done = false; !done;)
   {
+    unsigned char *frame = NULL;
+    int buf_idx = cam.grab(&frame);
+    if (frame)
+    {
+      memcpy(surf->pixels, frame, 640*480*3);
+      cam.release(buf_idx);
+    }
     usleep(1000);
     SDL_UpdateRect(surf, 0, 0, 640, 480);
     SDL_Event event;
