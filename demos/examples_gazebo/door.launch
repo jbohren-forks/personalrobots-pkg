@@ -16,5 +16,6 @@
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/door_defs/controllers_door.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
   <node pkg="robot_mechanism_controllers" type="control.py" args="set door_controller 1.0" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
+  <node pkg="robot_mechanism_controllers" type="control.py" args="set handle_controller 1.0" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 </launch>
 
