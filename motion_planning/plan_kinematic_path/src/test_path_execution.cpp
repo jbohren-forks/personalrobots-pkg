@@ -75,6 +75,7 @@ public:
             if (!joint) continue;
             
 	    printf("Testing '%s': [%f, %f]\n", joint->name.c_str(), joint->limit[0], joint->limit[1]);
+	    fprintf(stderr, "%s:\n", joint->name.c_str());
 	    
 	    // check the value of the joint at small increments
             planning_models::KinematicModel::StateParams *sp = m_kmodel->newStateParams();
