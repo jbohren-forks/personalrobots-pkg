@@ -26,3 +26,6 @@ target_link_libraries(view ${SDL_LIBRARIES})
 
 rospack_add_executable(enumerate src/enumerate/enumerate.cpp)
 target_link_libraries(enumerate uvc_cam)
+
+rospack_add_executable(dump src/dump/dump.cpp src/dump/avilib.c)
+target_link_libraries(dump uvc_cam)

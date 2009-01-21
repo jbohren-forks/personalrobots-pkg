@@ -4,6 +4,7 @@
   <license>GPL, since some of its code is adapted from GPL programs such as guvcview</license>
   <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
+  <depend package="roscpp"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -luvc_cam"/>
   </export>
