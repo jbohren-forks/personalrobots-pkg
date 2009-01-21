@@ -41,8 +41,8 @@ void imu_callback(std::string name, std_msgs::PoseWithRatesStamped* imu, ros::Ti
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
-          t.to_double(),
-          imu->header.stamp.to_double(),
+          t.toSec(),
+          imu->header.stamp.toSec(),
           imu->acc.acc.ax, imu->acc.acc.ay, imu->acc.acc.az,
           imu->vel.ang_vel.vx, imu->vel.ang_vel.vy, imu->vel.ang_vel.vz);
 }
