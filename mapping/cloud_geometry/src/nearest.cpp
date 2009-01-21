@@ -131,9 +131,10 @@ namespace cloud_geometry
       computeCovarianceMatrix (points, covariance_matrix, centroid);
 
       // Extract the eigenvalues and eigenvectors
-      Eigen::Vector3d eigen_values;
-      Eigen::Matrix3d eigen_vectors;
-      eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+      Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
+      //eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
 
       // Normalize the surface normal (eigenvector corresponding to the smallest eigenvalue)
       double norm = sqrt ( eigen_vectors (0, 0) * eigen_vectors (0, 0) +
@@ -170,12 +171,12 @@ namespace cloud_geometry
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
 
       // Extract the eigenvalues and eigenvectors
-      Eigen::Vector3d eigen_values;
-      Eigen::Matrix3d eigen_vectors;
-      eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+      Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
 
       // Normalize the surface normal (eigenvector corresponding to the smallest eigenvalue)
-      // Note: Remember to take care of the eigen_vectors ordering ! Check lapack.cpp
+      // Note: Remember to take care of the eigen_vectors ordering
       double norm = sqrt ( eigen_vectors (0, 0) * eigen_vectors (0, 0) +
                            eigen_vectors (1, 0) * eigen_vectors (1, 0) +
                            eigen_vectors (2, 0) * eigen_vectors (2, 0));

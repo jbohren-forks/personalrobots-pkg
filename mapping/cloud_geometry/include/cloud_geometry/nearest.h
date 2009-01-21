@@ -38,8 +38,8 @@
 #include <std_msgs/Point32.h>
 #include <std_msgs/Point2DFloat32.h>
 
-#include "Eigen/Core"
-#include <cloud_geometry/lapack.h>
+#include <Eigen/Core>
+#include <Eigen/QR>
 
 namespace cloud_geometry
 {

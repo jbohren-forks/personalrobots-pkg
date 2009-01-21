@@ -54,7 +54,6 @@ moment invariants, etc.
 // Cloud geometry
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/areas.h>
-#include <cloud_geometry/lapack.h>
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/intersections.h>
 
@@ -273,6 +272,7 @@ class NormalEstimation : public ros::Node
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
         cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_normals_, &points_indices_[i], plane_parameters, curvature);
+        
         if (compute_moments_)
           cloud_geometry::nearest::computeMomentInvariants (&cloud_normals_, &points_indices_[i], j1, j2, j3);
 

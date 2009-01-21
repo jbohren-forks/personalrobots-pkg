@@ -5,5 +5,4 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(cloud_geometry)
 add_definitions(-Wall)
 
-rospack_add_library (cloud_geometry src/lapack.cpp src/nearest.cpp src/point.cpp src/distances.cpp src/intersections.cpp src/areas.cpp
-                     src/transforms.cpp)
+rospack_add_library (cloud_geometry src/nearest.cpp src/point.cpp src/distances.cpp src/intersections.cpp src/areas.cpp src/transforms.cpp)

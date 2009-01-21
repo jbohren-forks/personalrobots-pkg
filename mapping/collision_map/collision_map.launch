@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="collision_map" type="collision_map_node" name="collision_map" respawn="true">
+    <remap from="tilt_laser_cloud" to="cloud_1_raw" />
+    <param name="object_type" type="int" value="0" />
+    <param name="sphere_radius" type="double" value="0.015" />
+
+    <param name="robot_max_x" type="double" value="1.5" />
+    <param name="robot_max_y" type="double" value="1.5" />
+    <param name="robot_max_z" type="double" value="1.5" />
+  </node>
+</launch>

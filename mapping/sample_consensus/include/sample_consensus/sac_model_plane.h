@@ -39,9 +39,6 @@
 /** \brief Define the maximum number of iterations for collinearity checks */
 #define MAX_ITERATIONS_COLLINEAR 1000
 
-#include "cloud_geometry/lapack.h"
-
-
 namespace sample_consensus
 {
   /** \brief A Sample Consensus Model class for 3D plane segmentation.

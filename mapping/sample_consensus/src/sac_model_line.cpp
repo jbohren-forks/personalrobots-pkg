@@ -254,9 +254,10 @@ namespace sample_consensus
     refit_coefficients[2] = centroid.z;
 
     // Extract the eigenvalues and eigenvectors
-    Eigen::Vector3d eigen_values;
-    Eigen::Matrix3d eigen_vectors;
-    cloud_geometry::eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+    //cloud_geometry::eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+    Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+    Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
 
     refit_coefficients[3] = eigen_vectors (0, 2) + refit_coefficients[0];
     refit_coefficients[4] = eigen_vectors (1, 2) + refit_coefficients[1];
