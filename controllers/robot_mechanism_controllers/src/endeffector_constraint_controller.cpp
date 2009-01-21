@@ -217,13 +217,14 @@ void EndeffectorConstraintController::computeConstraintJacobian()
 
   //Constraint Force Vector
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
-  ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
+  //ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
   if (x_dist_to_wall > 0)
   {
-    f_x = pow(x_dist_to_wall,3) * f_x_max; /// @todo: FIXME, replace with some exponential function
-    if(x_dist_to_wall > threshold_x)
+    f_x = (exp(x_dist_to_wall)-1) * f_x_max; /// @todo: FIXME, replace with some exponential function
+    //ROS_ERROR("x_dist_to_wall: %f m f_x: %f N\n", x_dist_to_wall, f_x);
+    if((x_dist_to_wall-threshold_x) > 0)
     {
-      ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
+      //ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
     }
   }
   else
@@ -299,13 +300,13 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
 void EndeffectorConstraintControllerNode::update()
 {
   controller_.update();
-  static int count=0;\
+  static int count=0;
   count++;
   if (count%100==0)
   {
 
     std_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "base_link";
+    marker.header.frame_id = "torso_lift_link";
     marker.id = 0;
     marker.type = 1;
     marker.action = 0;
@@ -329,7 +330,7 @@ void EndeffectorConstraintControllerNode::update()
   {
 
     std_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "base_link";
+    marker.header.frame_id = "torso_lift_link";
     marker.id = 1;
     marker.type = 2;
     marker.action = 0;
