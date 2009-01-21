@@ -206,7 +206,7 @@ public:
     if (it == pos_list_.end()) {
       pos_list_.insert(pair<string, RestampedPositionMeasurement>(pos_.object_id, rpm));
     }
-    else if (pos_.header.stamp - (*it).second.pos.header.stamp > -1.0 ){
+    else if (pos_.header.stamp - (*it).second.pos.header.stamp > ros::Duration(-1.0) ){
       (*it).second = rpm;
     }
     lock.unlock();
