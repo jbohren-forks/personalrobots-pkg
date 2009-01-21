@@ -343,11 +343,11 @@ main(int argc, char** argv)
     }
     else
     {
-      printf("Unhandled Player message %d:%d:%d:%d\n",
-             hdr->type,
-             hdr->subtype,
-             hdr->addr.interf,
-             hdr->addr.index);
+      ROS_WARN("Unhandled Player message %d:%d:%d:%d",
+	       hdr->type,
+	       hdr->subtype,
+	       hdr->addr.interf,
+	       hdr->addr.index);
 
     }
 
