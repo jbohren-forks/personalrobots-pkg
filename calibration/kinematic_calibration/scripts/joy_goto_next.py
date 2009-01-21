@@ -18,7 +18,7 @@ def joy_callback(data, pub):
 if __name__ == '__main__':
 	topic = 'cmd'
 	command_publisher = rospy.Publisher(topic, Empty)
-    	rospy.init_node('goto_next', anonymous=True)
+    	rospy.init_node('goto_next', anonymous=False)
 	sub = rospy.Subscriber("/joy", Joy, joy_callback,
 			       command_publisher)
 
