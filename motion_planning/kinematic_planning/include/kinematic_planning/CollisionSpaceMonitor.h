@@ -156,7 +156,7 @@ namespace kinematic_planning
 	
 	void collisionMapCallback(void)
 	{
-	    unsigned int n = m_collisionMap.get_spheres_size();
+	    unsigned int n = m_collisionMap.get_boxes_size();
 	    ROS_INFO("Received %u points (collision map)", n);
 	    
 	    beforeWorldUpdate();
@@ -166,10 +166,15 @@ namespace kinematic_planning
 	    for (unsigned int i = 0 ; i < n ; ++i)
 	    {
 		unsigned int i4 = i * 4;	    
-		data[i4    ] = m_collisionMap.spheres[i].center.x;
-		data[i4 + 1] = m_collisionMap.spheres[i].center.y;
-		data[i4 + 2] = m_collisionMap.spheres[i].center.z;
-		data[i4 + 3] = m_collisionMap.spheres[i].radius;
+		data[i4    ] = m_collisionMap.boxes[i].center.x;
+		data[i4 + 1] = m_collisionMap.boxes[i].center.y;
+		data[i4 + 2] = m_collisionMap.boxes[i].center.z;
+		
+		// radius (we multiply by sqrt(3) to get the diagonal of the cube containing
+		// the given box
+		data[i4 + 3] = std::max(std::max(m_collisionMap.boxes[i].extents.x,
+						 m_collisionMap.boxes[i].extents.y),
+					m_collisionMap.boxes[i].extents.z) * 1.732050808;
 	    }
 	    
 	    m_collisionSpace->lock();
