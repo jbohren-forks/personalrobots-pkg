@@ -64,9 +64,10 @@
  **/
 
 #include <highlevel_controllers/move_base.hh>
-#include <sbpl_util.hh>
-#include <environment_wrap.h>
-#include <plan_wrap.h>
+#include <mpglue/sbpl_planner.h>
+#include <mpglue/sbpl_environment.h>
+#include <mpglue/plan.h>
+#include <sfl/util/strutil.hpp>
 
 #include <sbpl/headers.h>
 #include <err.h>
@@ -115,25 +116,21 @@ namespace ros {
       virtual void updateGoalMsg();
       
     private:
-      typedef list<ompl::SBPLPlannerStatsEntry> plannerStats_t;
-
       bool isMapDataOK();
 
-      MDPConfig mdpCfg_;
-      ompl::EnvironmentWrapper * env_;
-      ompl::SBPLPlannerManager * pMgr_;
-      plannerStats_t pStat_;
+      boost::shared_ptr<mpglue::SBPLEnvironment> env_;
+      boost::shared_ptr<mpglue::SBPLPlannerWrap> pWrap_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
       std::string planStatsFile_;
       size_t goalCount_;
+      size_t prevGoalCount_;
     };
     
     
     MoveBaseSBPL::MoveBaseSBPL()
       : MoveBase(),
-	env_(0),
-	pMgr_(0),
-	goalCount_(0)
+	goalCount_(0),
+	prevGoalCount_(0xdeadbeef)
     {
       try {
 	// We're throwing int exit values if something goes wrong, and
@@ -158,21 +155,18 @@ namespace ros {
 	string environmentType;
 	local_param("environmentType", environmentType, string("2D"));
 	
+	boost::shared_ptr<mpglue::Costmap> mcm(mpglue::createCostmap(&getCostMap()));
+	boost::shared_ptr<mpglue::IndexTransform> mit(mpglue::createIndexTransform(&getCostMap()));
+	
 	if ("2D" == environmentType) {
-	  // Initial Configuration is set with the threshold for
-	  // obstacles set to the inscribed obstacle threshold. These,
-	  // lethal obstacles, and cells with no information will thus
-	  // be regarded as obstacles
-	  env_ = new ompl::EnvironmentWrapper2D(ompl::createCostmapWrap(&getCostMap()), true,
-						ompl::createIndexTransformWrap(&getCostMap()), true,
-						0, 0, 0, 0,
-						CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-	  }
+	  static int const obst_cost_thresh(CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+	  env_.reset(mpglue::create2DEnvironment(mcm, mit, obst_cost_thresh));
+	}
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
 	  string obst_cost_thresh_str;
 	  local_param(prefix + "obst_cost_thresh", obst_cost_thresh_str, string("lethal"));
-	  unsigned char obst_cost_thresh(0);
+	  int obst_cost_thresh(0);
 	  if ("lethal" == obst_cost_thresh_str)
 	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
 	  else if ("inscribed" == obst_cost_thresh_str)
@@ -183,22 +177,18 @@ namespace ros {
 		      obst_cost_thresh_str.c_str());
 	    throw int(6);
 	  }
-	  double goaltol_x, goaltol_y, goaltol_theta,
-	    nominalvel_mpersecs, timetoturn45degsinplace_secs;
-	  local_param(prefix + "goaltol_x", goaltol_x, 0.3);
-	  local_param(prefix + "goaltol_y", goaltol_y, 0.3);
-	  local_param(prefix + "goaltol_theta", goaltol_theta, 30.0);
+	  //// ignored by SBPL (at least in r9900).
+	  // double goaltol_x, goaltol_y, goaltol_theta;
+	  // local_param(prefix + "goaltol_x", goaltol_x, 0.3);
+	  // local_param(prefix + "goaltol_y", goaltol_y, 0.3);
+	  // local_param(prefix + "goaltol_theta", goaltol_theta, 30.0);
+	  double nominalvel_mpersecs, timetoturn45degsinplace_secs;
 	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
-	  env_ = new ompl::EnvironmentWrapper3DKIN(ompl::createCostmapWrap(&getCostMap()), true,
-						   ompl::createIndexTransformWrap(&getCostMap()), true,
-						   obst_cost_thresh,
-						   0, 0, 0, // start (x, y, th)
-						   0, 0, 0, // goal (x, y, th)
-						   goaltol_x, goaltol_y, goaltol_theta,
-						   getFootprint(), nominalvel_mpersecs,
-						   timetoturn45degsinplace_secs);
+	  env_.reset(mpglue::create3DKINEnvironment(mcm, mit, obst_cost_thresh,
+						    getFootprint(), nominalvel_mpersecs,
+						    timetoturn45degsinplace_secs));
 	}
 	else {
 	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
@@ -206,35 +196,23 @@ namespace ros {
 	  throw int(2);
 	}
 	
-	// This (weird?) order of inits is historical, could maybe be
-	// cleaned up...
-	bool const success(env_->InitializeMDPCfg(&mdpCfg_));
-// 	try {
-// 	  // This one throws a string if something goes awry... and
-// 	  // always returns true. So no use cecking its
-// 	  // retval. Another candidate for cleanup.
-// 	  isMapDataOK();
-// 	}
-// 	catch (char const * ee) {
-// 	  ROS_ERROR("in MoveBaseSBPL ctor: isMapDataOK() said %s", ee);
-// 	  throw int(3);
-// 	}
-	if ( ! success) {
-	  ROS_ERROR("in MoveBaseSBPL ctor: env_->InitializeMDPCfg() failed");
-	  throw int(4);
-	}
-	
+	static bool const forward_search(false); // could make this configurable...
 	string plannerType;
 	local_param("plannerType", plannerType, string("ARAPlanner"));
-	pMgr_ = new ompl::SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
-	if ( ! pMgr_->select(plannerType, false, 0)) {
-	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
+	boost::shared_ptr<SBPLPlanner> sbplPlanner;
+	if ("ARAPlanner" == plannerType)
+	  sbplPlanner.reset(new ARAPlanner(env_->getDSI(), forward_search));
+	else if ("ADPlanner" == plannerType)
+	  sbplPlanner.reset(new ADPlanner(env_->getDSI(), forward_search));
+	else {
+	  ROS_ERROR("in MoveBaseSBPL ctor: invalid plannerType \"%s\","
+		    " use ARAPlanner or ADPlanner",
+		    plannerType.c_str());
 	  throw int(5);
 	}
+	pWrap_.reset(new mpglue::SBPLPlannerWrap(env_, sbplPlanner));
       }
       catch (int ii) {
-	delete env_;
-	delete pMgr_;
 	exit(ii);
       }
       
@@ -243,8 +221,6 @@ namespace ros {
     }
     
     MoveBaseSBPL::~MoveBaseSBPL(){
-      delete env_;
-      delete pMgr_;
     }
 
     bool MoveBaseSBPL::isMapDataOK() {
@@ -269,7 +245,6 @@ namespace ros {
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
       
-      ompl::SBPLPlannerStatsEntry statsEntry(pMgr_->getName(), env_->getName());      
       try {
 	// Update costs
 	lock();
@@ -282,7 +257,10 @@ namespace ros {
 	    y--;
 	    // Note that ompl::EnvironmentWrapper::UpdateCost() will
 	    // check if the cost has actually changed, and do nothing
-	    // if it hasn't.
+	    // if it hasn't.  It internally maintains a list of the
+	    // cells that have actually changed, and this list is what
+	    // gets "flushed" to the planner (a couple of lines
+	    // further down).
 	    env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
 	  }
 	}
@@ -291,110 +269,64 @@ namespace ros {
 	// Tell the planner about the changed costs. Again, the called
 	// code checks whether anything has really changed before
 	// embarking on expensive computations.
-	pMgr_->flush_cost_changes(*env_);
-
+	pWrap_->flushCostChanges(true);
+	
 	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
 	// planner and controller were running on the same thread and the only contention was for cost map updates on call
 	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
 	// to lock protect those.
 	stateMsg.lock();
-	statsEntry.start = stateMsg.pos;
-	statsEntry.goal = stateMsg.goal;
+	std_msgs::Pose2DFloat32 const start(stateMsg.pos);
+	std_msgs::Pose2DFloat32 const goal(stateMsg.goal);
 	stateMsg.unlock();
-
-	// Set start state based on global pose, updating statistics in the process.
-	cm.WC_MC(statsEntry.start.x, statsEntry.start.y, statsEntry.startIx, statsEntry.startIy);
- 	env_->SetStart(statsEntry.start);
- 	statsEntry.startState = env_->GetStateFromPose(statsEntry.start);
-	if (0 > statsEntry.startState) {
-	  ROS_ERROR("invalid start state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
-		    statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
-	  return false;
-	}
-	int status(pMgr_->set_start(statsEntry.startState));
-	if (1 != status) {
-	  ROS_ERROR("failed to set start state ID %d from (%ud, %ud): pMgr_->set_start() returned %d\n",
-		    statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
-	  return false;
-	}
 	
-	// Set goal state, updating statistics in the process.
-	cm.WC_MC(statsEntry.goal.x, statsEntry.goal.y, statsEntry.goalIx, statsEntry.goalIy);
- 	env_->SetGoal(statsEntry.goal);
- 	statsEntry.goalState = env_->GetStateFromPose(statsEntry.goal);
-	if (0 > statsEntry.goalState) {
-	  ROS_ERROR("invalid goal state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
-		    statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
-	  return false;
-	}
-	status = pMgr_->set_goal(statsEntry.goalState);
-	if (1 != status) {
-	  ROS_ERROR("failed to set goal state ID %d from (%ud, %ud): pMgr_->set_goal() returned %d\n",
-		    statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
-	  return false;
-	}
+	// Assume the robot is constantly moving, so always set start.
+	// Maybe a bit inefficient, but not as bad as "changing" the
+	// goal when it hasn't actually changed.
+	pWrap_->setStart(start.x, start.y, start.th);
+	
+	// Usually, when interweaving planning and control, the goal
+	// will not have changed.  So avoid wasting computations,
+	// based on the idea that we will only get a goal message if
+	// the goal has actually changed.  If users send us twice to
+	// the same location, well maybe they have a good reason.
+	if (prevGoalCount_ != goalCount_)
+	  pWrap_->setGoal(goal.x, goal.y, goal.th);
+	
+	// BTW if desired, we could call pWrap_->forcePlanningFromScratch(true)...
 	
 	// Invoke the planner, updating the statistics in the process.
-	std::vector<int> solutionStateIDs;
-	statsEntry.allocated_time_sec = plannerTimeLimit_;
-	statsEntry.stop_at_first_solution = false;
-	statsEntry.plan_from_scratch = false;
-	statsEntry.status = pMgr_->replan(statsEntry.stop_at_first_solution,
-					  statsEntry.plan_from_scratch,
-					  statsEntry.allocated_time_sec,
-					  &statsEntry.actual_time_wall_sec,
-					  &statsEntry.actual_time_user_sec,
-					  &statsEntry.actual_time_system_sec,
-					  &statsEntry.number_of_expands,
-					  &statsEntry.solution_cost,
-					  &statsEntry.solution_epsilon,
-					  &solutionStateIDs);
-
-	// Extract the solution, if available, and update statistics (as usual).
-	statsEntry.plan_length_m = 0;
-	statsEntry.plan_angle_change_rad = 0;
-	if (1 == statsEntry.status) {
-	  ompl::waypoint_plan_t plan;
-	  ompl::convertPlan(*env_,
-			    solutionStateIDs,
-			    &plan,
-			    &statsEntry.plan_length_m,
-			    &statsEntry.plan_angle_change_rad,
-			    0	// should be non-null for 3DKIN planning...
-			    );
-	  {
-	    ostringstream prefix_os;
-	    prefix_os << "[" << goalCount_ << "] ";
-	    static size_t lastPlannedGoal(171717);
-	    char const * title("\nREPLAN SUCCESS");
-	    if (lastPlannedGoal != goalCount_) {
-	      lastPlannedGoal = goalCount_;
-	      title = "\nPLAN SUCCESS";
-	    }
-	    statsEntry.logFile(planStatsFile_.c_str(), title, prefix_os.str().c_str());
-	  }
-	  ////	  statsEntry.logInfo("move_base_sbpl: ");
-	  pStat_.push_back(statsEntry);
-	  
-	  updatePlan(plan);
-	  return true;
+	// The returned plan might be empty, but it will not contain a
+	// null pointer.  On planner errors, the createPlan() method
+	// throws a std::exception.
+	boost::shared_ptr<mpglue::waypoint_plan_t> plan(pWrap_->createPlan());
+	
+	// Log to file: failure, replan, or plan
+	string const prefix("[" + sfl::to_string(goalCount_) + "] ");
+	string title("\n");
+	if (prevGoalCount_ == goalCount_)
+	  title += "replan ";
+	else
+	  title += "PLAN ";
+	if ( plan->empty())
+	  title += "FAILURE";
+	else
+	  title += "success";
+	pWrap_->getStats().logFile(planStatsFile_.c_str(), title, prefix);
+	
+	prevGoalCount_ = goalCount_;
+	
+	if (plan->empty()) {
+	  ROS_ERROR("No plan found\n");
+	  return false;
 	}
+	updatePlan(*plan);
+	return true;
       }
       catch (std::runtime_error const & ee) {
 	ROS_ERROR("runtime_error in makePlan(): %s\n", ee.what());
-	return false;
       }
-
-      ROS_ERROR("No plan found\n");
-      {
-	static size_t lastFailedGoal(424242);
-	if (lastFailedGoal != goalCount_) {
-	  lastFailedGoal = goalCount_;
-	  ostringstream prefix_os;
-	  prefix_os << "[" << goalCount_ << "] ";
-	  statsEntry.logFile(planStatsFile_.c_str(), "\nPLAN FAILURE", prefix_os.str().c_str());
-	}
-      }
+      
       return false;
     }
     

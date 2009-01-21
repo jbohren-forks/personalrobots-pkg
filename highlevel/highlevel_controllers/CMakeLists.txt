@@ -19,7 +19,7 @@ rospack_add_executable(move_arm src/move_arm.cpp)
 
 # move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
-target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
+target_link_libraries(move_base_sbpl highlevel_controllers mpglue)
 
 # move_base_navfn
 rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)

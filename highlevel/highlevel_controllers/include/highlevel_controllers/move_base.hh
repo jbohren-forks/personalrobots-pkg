@@ -48,8 +48,8 @@
 #include <std_msgs/Point.h>
 #include <std_msgs/Vector3.h>
 
-// Generic OMPL plan representation (will move into <sbpl_util/...> or <ompl_tools/...> later)
-#include <plan_wrap.h>
+// Generic OMPL plan representation
+#include <mpglue/plan.h>
 
 // Message structures used
 #include <robot_msgs/Planner2DState.h>
@@ -126,7 +126,7 @@ namespace ros {
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
        * @see publishPlan
        */
-      void updatePlan(ompl::waypoint_plan_t const & newPlan);
+      void updatePlan(mpglue::waypoint_plan_t const & newPlan);
 
       void updateCostMap();
       

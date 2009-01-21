@@ -536,7 +536,7 @@ namespace ros {
     }
 
     /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>&). */
-    void MoveBase::updatePlan(ompl::waypoint_plan_t const & newPlan) {
+    void MoveBase::updatePlan(mpglue::waypoint_plan_t const & newPlan) {
       sentry<MoveBase> guard(this);
       if (!isValid() || plan_.size() > newPlan.size()){
         plan_.clear();

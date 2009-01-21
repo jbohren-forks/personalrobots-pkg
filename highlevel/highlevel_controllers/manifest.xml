@@ -24,12 +24,13 @@
  <depend package="costmap_2d"/>
  <depend package="tf"/>
  <depend package="sbpl"/>
- <depend package="sbpl_util"/>
+ <depend package="mpglue"/>
  <depend package="rostime"/>
  <depend package="navfn"/>
  <depend package="topological_map"/>
  <depend package="angles"/>
  <depend package="robot_filter"/>
+ <depend package="libsunflower"/> <!-- mpglue also already depends on it though -->
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
