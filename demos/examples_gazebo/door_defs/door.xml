@@ -1,0 +1,183 @@
+<?xml version="1.0"?>
+<robot name="pr2"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+
+  <!-- joint blocks -->
+  <joint name="door_hinge_joint" type="revolute" >
+    <axis xyz="0 0 1" />
+    <anchor xyz="0 0 0" />
+    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" k_position="1.0" k_velocity="1.0" />
+    <calibration values="1.5 -1 " />
+    <joint_properties damping="100" friction="0.0" />
+  </joint>
+  
+  <joint name="base_joint" type="planar" /> 
+
+  <joint name="wall1_joint" type="fixed" />
+  <joint name="wall2_joint" type="fixed" />
+
+  <!-- link blocks -->
+  <link name="base_link">
+    <parent name="world" />
+    <origin xyz="5 0 0.01" rpy="0 0 0" />
+    <joint name="base_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="15 15 0.001" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
+      <geometry name="basel_visual_geom">
+        <mesh scale="30 30 0.002" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 0 0.001" rpy="0.0 0.0 0.0" />
+      <geometry name="basel_collision_geom">
+        <box size="30 30 0.002" />
+      </geometry>
+      <map name="friction_coefficients" flag="gazebo">
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
+    </collision>
+  </link>
+
+  <link name="wall1_link">
+    <parent name="base_link" />
+    <origin xyz="0 0 0.0" rpy="0 0 0" />
+    <joint name="wall1_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="0 5 1" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 5 1" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/GrassFloor</elem>
+      </map>
+      <geometry name="wall1_visual_geom">
+        <mesh scale="0.2 10 2" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 5 1" rpy="0.0 0.0 0.0" />
+      <geometry name="wall1_collision_geom">
+        <box size="0.2 10 2" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="wall2_link">
+    <parent name="base_link" />
+    <origin xyz="0 -1.0 0.0" rpy="0 0 ${M_PI}" />
+    <joint name="wall2_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="0 -5 1" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 -5 1" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/GrassFloor</elem>
+      </map>
+      <geometry name="wall2_visual_geom">
+        <mesh scale="0.2 10 2" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 -5 1" rpy="0.0 0.0 0.0" />
+      <geometry name="wall2_collision_geom">
+        <box size="0.2 10 2" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <link name="door">
+    <parent name="wall1_link" />
+    <origin xyz="0 0 0.1" rpy="0 0 ${M_PI}" />
+    <joint name="door_hinge_joint" />
+    <inertial >
+      <mass value="10" />
+      <com xyz="0.0 -0.5 1.0" /> 
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"
+                iyy="1.0" iyz="0.0"
+                izz="1.0" />
+    </inertial>
+    <visual >
+      <origin xyz="0.0 -0.5 1.0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
+      <geometry name="sholder_roll_mesh_file">
+        <mesh scale="0.2 1.0 2.0" />
+      </geometry>
+    </visual>
+    <collision >
+      <origin xyz="0.0 -0.5 1.0" rpy="0.0 0.0 0.0 " />
+      <geometry name="door_collision_geom">
+        <box size="0.2 1.0 2.0" />
+      </geometry>
+    </collision>
+    <map name="door_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+
+  <map name="sensor" flag="gazebo">
+    <verbatim key="mechanism_control_simulation">
+      <controller:ros_time name="ros_time" plugin="libros_time.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+      </controller:ros_time>
+
+      <!-- PR2_ACTARRAY -->
+      <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+      </controller:gazebo_mechanism_control>
+
+      <!-- ros_p3d for position groundtruth -->
+      <controller:ros_p3d name="p3d_door_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bodyName>door</bodyName>
+          <topicName>door_pose</topicName>
+          <frameName>map</frameName>
+          <interface:position name="p3d_door_position"/>
+      </controller:ros_p3d>
+    </verbatim>
+  </map>
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include filename="./groups_door.xml" />
+  <!-- mechanism controls -->
+  <include filename="./transmissions_door.xml" />
+
+</robot>

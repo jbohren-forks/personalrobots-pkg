@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<controllers>
+  <controller name="door_controller" topic="door_controller" type="JointPositionControllerNode">
+    <joint name="door_hinge_joint" >
+      <pid p="2000" d="200" i="0.1" iClamp="1" />
+    </joint>
+  </controller>
+</controllers>
+
