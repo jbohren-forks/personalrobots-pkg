@@ -1,9 +1,9 @@
 <launch>
   <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base.xml" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 2 .75 .30" />
     <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" />
     <node pkg="2dnav_pr2" type="spine_levitation.py" />-->
@@ -60,6 +60,7 @@
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     </node>
 
+<!--
     <param name="ransac_ground_plane_extraction/listen_topic" value="full_cloud"/>
     <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
     <param name="ransac_ground_plane_extraction/publish_obstacle_topic" value="obstacle_cloud"/>
@@ -74,8 +75,9 @@
     <param name="ransac_ground_plane_extraction/max_ransac_iterations" value="250"/>
     <param name="ransac_ground_plane_extraction/publish_obstacle_cloud" type="string" value="yes"/>
     <node pkg="ransac_ground_plane_extraction" type="ransacnode" respawn="true" machine="three" />
+-->
 
-    <node pkg="sample_consensus" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true">
+    <node pkg="sample_consensus" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" machine="three" output="screen">
       <remap from="full_cloud" to="full_cloud" />
       <param name="downsample" type="bool" value="false" />
       <param name="downsample_leaf_width_x" type="double" value="0.025" />
@@ -85,7 +87,7 @@
       <param name="z_threshold" type="double" value="0.2" />
 
       <param name="sac_min_points_per_model" type="double" value="5" />
-      <param name="sac_distance_threshold" type="double" value="0.04" />
+      <param name="sac_distance_threshold" type="double" value="0.02" />
       <param name="sac_max_iterations" type="int" value="500" />
       <param name="sac_probability" type="double" value="0.99" />
     </node>
