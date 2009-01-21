@@ -178,16 +178,16 @@
                   izz="0.01" />
       </inertial>
       <visual> <!-- TODO: This component doesn't actually have a mesh -->
-        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="wheel" scale="1 1 1" />
+          <mesh filename="upper_arm_roll" scale="1 1 1" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
-        <origin xyz="0.0 0 0" rpy="0 0 ${M_PI/2}" />
+        <origin xyz="0.0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_roll_collision">
           <box size="0.1 0.1 0.1" />
         </geometry>
@@ -397,16 +397,16 @@
                   izz="0.01" />
       </inertial>
       <visual><!-- TODO: need a mesh for this -->
-        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="wheel" scale="1 1 1" />
+          <mesh filename="forearm_roll" scale="1 1 1" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
-        <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_roll_collision">
           <box size="0.1 0.1 0.1" />
         </geometry>
