@@ -2,7 +2,7 @@
 
 <robot name="pr2"><!-- name of the robot-->
   
-  <include filename="./pr2_groups_collision.xml" />
+  <include filename="$(find pr2_defs)/robots/pr2_groups_collision.xml" />
 
   <!-- Groups needed for motion planning (flag contains "planning") 
        and for kinematics (flag contains "kinematic") -->

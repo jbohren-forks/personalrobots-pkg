@@ -49,7 +49,7 @@
   </pr2_ptz>
 
   <!-- Define groups of links; a link may be part of multiple groups -->
-  <include filename="./pr2_groups.xml" />
+  <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />
 
   <!-- Kinematic chains -->
   <chain root="torso_lift_link" tip="l_wrist_roll_link" />
