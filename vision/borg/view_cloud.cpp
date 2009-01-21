@@ -171,7 +171,7 @@ int main(int argc, char **argv)
   {
     usleep(1000);
     ros::Time t(ros::Time::now());
-    if ((t - last_render).to_double() > 0.0333)
+    if ((t - last_render).toSec() > 0.0333)
     {
       last_render = t;
       cloud_viewer.render();

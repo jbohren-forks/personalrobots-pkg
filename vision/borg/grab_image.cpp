@@ -12,7 +12,7 @@ int main(int, char **)
   borg.cam->startImageStream();
   borg.cam->prepareStill();
   Borg::Image *image = new Borg::Image(new uint8_t[640*480],
-                                       ros::Time::now().to_double(), 0);
+                                       ros::Time::now().toSec(), 0);
   for (int flush = 0; flush < 5; flush++)
     if (!borg.cam->savePhoto(image->raster))
       break;
