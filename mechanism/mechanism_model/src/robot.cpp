@@ -47,7 +47,13 @@ bool Robot::initXml(TiXmlElement *root)
   {
     Joint *j = new Joint;
     if (j->initXml(xit))
+    {
       joints_.push_back(j);
+
+      // Only because I'm feeling really nice today.
+      if (j->type_ == JOINT_FIXED)
+        j->calibrated_ = true;
+    }
     else
       delete j;
   }
