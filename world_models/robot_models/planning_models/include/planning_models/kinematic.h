@@ -293,7 +293,7 @@ namespace planning_models
 		    delete shape;
 	    }
 	    
-	    /** The constant transform applied to the link (local) */
+	    /** The constant transform applied to the link (needs to be specified by user) */
 	    btTransform         attachTrans;
 
 	    /** The geometry of the attached body */
