@@ -115,7 +115,7 @@ void Segway::op_mode_cb()
 void Segway::cmd_vel_cb()
 {
   req_mutex.lock();
-  req_time = ros::Time::now().to_double();
+  req_time = ros::Time::now().toSec();
   req_x_vel = cmd_vel.vx;
 	req_yaw_rate = cmd_vel.vw;
 	req_mutex.unlock();
@@ -242,7 +242,7 @@ void Segway::main_loop()
 	unsigned char message[100];
 	int message_length;
 	unsigned can_id;
-  double last_send_time = ros::Time::now().to_double();
+  double last_send_time = ros::Time::now().toSec();
 
 /*
   tf.sendTransform(
@@ -254,9 +254,9 @@ void Segway::main_loop()
 
   while(ok())
   {
-    if (ros::Time::now().to_double() - last_send_time > 0.01)
+    if (ros::Time::now().toSec() - last_send_time > 0.01)
     {
-      double time_since_last_cmd = ros::Time::now().to_double() - req_time;
+      double time_since_last_cmd = ros::Time::now().toSec() - req_time;
       if (time_since_last_cmd > 0.15)
         req_timeout = true;
       else
@@ -280,7 +280,7 @@ void Segway::main_loop()
           dgc_usbcan_send_can_message(can, RMP_CAN_ID_SHUTDOWN, send_data, 8);
         }
       }
-      last_send_time = ros::Time::now().to_double();
+      last_send_time = ros::Time::now().toSec();
     }
 
 		if (dgc_usbcan_read_message(can, &can_id, message, &message_length))
