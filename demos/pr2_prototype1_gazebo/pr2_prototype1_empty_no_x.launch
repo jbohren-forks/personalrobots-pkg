@@ -18,7 +18,7 @@
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 0 0 0 0 0" respawn="false" output="screen" /> <!-- load default arm controller -->
 
-    <!-- use mech.py to spawn all controllers listed in controllers.xml -->
+    <!-- use spawner.py to spawn all controllers listed in controllers.xml -->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_default_controllers.launch" />
   </group>
 </launch>
