@@ -184,8 +184,6 @@ public:
     
     void stopReplanning(void)
     {
-	printf("we got called...\n");
-
 	m_replanningLock.lock();
 	bool stop = false;
 	m_continueReplanningLock.lock();
