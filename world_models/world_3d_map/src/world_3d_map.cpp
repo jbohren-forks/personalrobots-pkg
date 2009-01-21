@@ -151,11 +151,11 @@ public:
     m_scanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this,
 				 boost::bind(&World3DMap::scanCallback, this, _1),
 				 "scan", "map", 50);
-    m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this,
-				 boost::bind(&World3DMap::baseScanCallback, this, _1),
-				 "cloud", "map", 50);
     m_cloudNotifier = new tf::MessageNotifier<std_msgs::PointCloud>(&m_tf, this,
 				 boost::bind(&World3DMap::pointCloudCallback, this, _1),
+				 "cloud", "map", 50);
+    m_baseScanNotifier = new tf::MessageNotifier<std_msgs::LaserScan>(&m_tf, this,
+				 boost::bind(&World3DMap::baseScanCallback, this, _1),
 				 "base_scan", "map", 50);
 
     m_robotFilter = new robot_filter::RobotFilter(this, robot_model_name, m_verbose, bodyPartScale);
