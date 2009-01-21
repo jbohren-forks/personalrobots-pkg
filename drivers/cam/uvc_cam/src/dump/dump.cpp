@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   avi_t avi;
   ros::Time t_prev(ros::Time::now());
   char fname[200];
-  sprintf(fname, "%.3f.avi", t_prev.to_double());
+  sprintf(fname, "%.3f.avi", t_prev.toSec());
   if (AVI_open_output_file(&avi, fname) < 0)
     throw std::runtime_error("couldn't open AVI file");
   AVI_set_video(&avi, WIDTH, HEIGHT, FPS, "MJPG");
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     {
       ros::Time t(ros::Time::now());
       ros::Duration d(t - t_prev);
-      printf("%.1f fps\n", 30.0 / d.to_double());
+      printf("%.1f fps\n", 30.0 / d.toSec());
       t_prev = t;
     }
     if (frame)

@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     {
       ros::Time t(ros::Time::now());
       ros::Duration d(t - t_prev);
-      printf("%.1f fps\n", 30.0 / d.to_double());
+      printf("%.1f fps\n", 30.0 / d.toSec());
       t_prev = t;
     }
     if (frame)
