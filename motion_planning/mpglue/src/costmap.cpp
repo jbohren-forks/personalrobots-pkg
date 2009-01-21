@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include "costmap.h"
-#include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/obstacle_map_accessor.h>
 #include <sfl/gplan/RWTravmap.hpp>
 #include <sfl/gplan/GridFrame.hpp>
 #include <math.h>
@@ -43,14 +43,14 @@ namespace {
   
   class cm2dCostmap: public mpglue::Costmap {
   public:
-    cm2dCostmap(costmap_2d::CostMap2D const * cm): cm_(cm) {}
+    cm2dCostmap(costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
     
     // interestingly, LETHAL_OBSTACLE = 254 which is *higher* than
     // INSCRIBED_INFLATED_OBSTACLE = 253, whereas by W-space obstacle
     // here we mean a value higher than one that is C-space obstacle
     
-    virtual int getWSpaceObstacleCost() const { return costmap_2d::CostMap2D::LETHAL_OBSTACLE; }
-    virtual int getCSpaceObstacleCost() const { return costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE; }
+    virtual int getWSpaceObstacleCost() const { return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE; }
+    virtual int getCSpaceObstacleCost() const { return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
     virtual int getFreespaceCost() const { return 0; }
     
     virtual ssize_t getXBegin() const { return 0; }
@@ -64,13 +64,13 @@ namespace {
     
     virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y, bool out_of_bounds_is_obstacle) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::LETHAL_OBSTACLE;
+	return cm_->getCost(index_x, index_y) >= costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
       return out_of_bounds_is_obstacle;
     }
     
     virtual bool isCSpaceObstacle(ssize_t index_x, ssize_t index_y, bool out_of_bounds_is_obstacle) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
+	return cm_->getCost(index_x, index_y) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE;
       return out_of_bounds_is_obstacle;
     }
     
@@ -87,13 +87,13 @@ namespace {
       return true;
     }
     
-    costmap_2d::CostMap2D const * cm_;
+    costmap_2d::ObstacleMapAccessor const * cm_;
   };
   
   
   class cm2dTransform: public mpglue::IndexTransform {
   public:
-    cm2dTransform(costmap_2d::CostMap2D const * cm): cm_(cm) {}
+    cm2dTransform(costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
     
     virtual void globalToIndex(double global_x, double global_y, ssize_t * index_x, ssize_t * index_y) const {
       unsigned int ix, iy;
@@ -107,7 +107,7 @@ namespace {
     
     virtual double getResolution() const { return cm_->getResolution(); }
     
-    costmap_2d::CostMap2D const * cm_;
+    costmap_2d::ObstacleMapAccessor const * cm_;
   };
   
   
@@ -178,14 +178,14 @@ namespace {
 
 namespace mpglue {
   
-  Costmap * createCostmap(costmap_2d::CostMap2D const * cm)
+  Costmap * createCostmap(costmap_2d::ObstacleMapAccessor const * cm)
   { return new cm2dCostmap(cm); }
   
   // XXXX to do: Using RDTravmap instead of a raw TraversabilityMap is a performance hit
   Costmap * createCostmap(sfl::RDTravmap const * rdt)
   { return new sflCostmap(rdt); }
   
-  IndexTransform * createIndexTransform(costmap_2d::CostMap2D const * cm)
+  IndexTransform * createIndexTransform(costmap_2d::ObstacleMapAccessor const * cm)
   { return new cm2dTransform(cm); }
   
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf)
