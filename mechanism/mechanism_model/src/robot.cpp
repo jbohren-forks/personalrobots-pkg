@@ -49,10 +49,6 @@ bool Robot::initXml(TiXmlElement *root)
     if (j->initXml(xit))
     {
       joints_.push_back(j);
-
-      // Only because I'm feeling really nice today.
-      if (j->type_ == JOINT_FIXED)
-        j->calibrated_ = true;
     }
     else
       delete j;
@@ -171,7 +167,13 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
 
   // Points each state object at the corresponding model object
   for (unsigned int i = 0; i < joint_states_.size(); ++i)
+  {
     joint_states_[i].joint_ = model->joints_[i];
+
+      // Only because I'm feeling really nice today.
+      if (model->joints_[i]->type_ == JOINT_FIXED)
+        joint_states_[i].calibrated_ = true;
+  }
   for (unsigned int i = 0; i < link_states_.size(); ++i)
     link_states_[i].link_ = model->links_[i];
 
