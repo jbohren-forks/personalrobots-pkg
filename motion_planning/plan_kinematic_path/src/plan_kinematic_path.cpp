@@ -44,6 +44,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
+#include <std_msgs/Empty.h>
 #include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -69,10 +70,18 @@ public:
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_state", 1);
 	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_position", 1);
 	advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command", 1);
+	advertise<std_msgs::Empty>("replan_stop", 1);
 	
 	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
 	m_controller = C_NONE;
 	m_gripPos = 0.5;	
+    }
+    
+    virtual ~PlanKinematicPath(void)
+    {
+	std_msgs::Empty dummy;
+	publish("replan_stop", dummy);
+	sleep(2);
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -118,9 +127,9 @@ public:
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[1] = -0.9;    
 	req.goal_state.vals[0] = -0.2;    
-	req.goal_state.vals[3] = 0.7;    
+        req.goal_state.vals[1] = -0.1;    
+	req.goal_state.vals[3] = 0.5;    
 	req.goal_state.vals[4] = 0.4;    
 	req.goal_state.vals[2] = -0.3;    
 	req.goal_state.vals[6] = -0.3;    
@@ -376,8 +385,8 @@ int main(int argc, char **argv)
 		break;
 	    } 
 	}
-	sleep(1);
-	
+	plan->spin();
+		
 	plan->shutdown();
 	delete plan;
     }
