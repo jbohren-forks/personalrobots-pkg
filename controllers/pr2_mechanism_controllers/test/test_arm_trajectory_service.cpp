@@ -123,4 +123,5 @@ int main( int argc, char** argv )
           ROS_INFO("service call failed");
       }
 
+  ros::fini();
 }
