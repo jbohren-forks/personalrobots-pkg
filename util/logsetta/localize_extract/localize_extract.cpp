@@ -36,7 +36,7 @@
 #include <string>
 #include "rosrecord/Player.h"
 
-void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, void* f)
+void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 

@@ -36,7 +36,7 @@
 #include <string>
 #include "rosrecord/Player.h"
 
-void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, void* f)
+void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 

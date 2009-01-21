@@ -36,7 +36,7 @@
 #include <string>
 #include "rosrecord/Player.h"
 
-void imu_callback(std::string name, std_msgs::PoseWithRatesStamped* imu, ros::Time t, void* f)
+void imu_callback(std::string name, std_msgs::PoseWithRatesStamped* imu, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
