@@ -4,7 +4,7 @@
   <!-- ========================================= -->
   <!-- right arm array -->
   <controller name="right_arm_trajectory_controller" type="ArmTrajectoryControllerNode">
-    <listen_topic name="arm_trajectory_command" />
+    <listen_topic name="right_arm_trajectory_command" />
     <kinematics>
       <elem key="kdl_chain_name">right_arm</elem>
     </kinematics>
