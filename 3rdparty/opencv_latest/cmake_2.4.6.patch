@@ -1,6 +1,6 @@
 Index: CMakeLists.txt
 ===================================================================
---- CMakeLists.txt	(revision 1489)
+--- CMakeLists.txt	(revision 1524)
 +++ CMakeLists.txt	(working copy)
 @@ -132,7 +132,7 @@
  set(BUILD_TESTS ON CACHE BOOL "Build tests")
@@ -11,18 +11,21 @@ Index: CMakeLists.txt
      include(CheckFunctionExists)
      include(CheckIncludeFile)
  endif()
-@@ -170,7 +170,9 @@
+@@ -166,11 +166,11 @@
+         if (${ALIAS_FOUND})
+             set(${define} 1)
+             foreach(P "${ALIAS_INCLUDE_DIRS}")
+-                list(APPEND HIGHGUI_INCLUDE_DIRS ${${P}})
++                list(APPEND HIGHGUI_INCLUDE_DIRS "${${P}}")
              endforeach()
  
              foreach(P "${ALIAS_LIBRARY_DIRS}")
 -                list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
-+	    	if (${${P}})
-+                    list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
-+                endif(${${P}})
++                list(APPEND HIGHGUI_LIBRARY_DIRS "${${P}}")
              endforeach()
  
              list(APPEND HIGHGUI_LIBRARIES ${${ALIAS_LIBRARIES}})
-@@ -471,7 +473,8 @@
+@@ -471,7 +471,8 @@
  set(CMAKE_INCLUDE_DIRS_CONFIGCMAKE "${CMAKE_INSTALL_PREFIX}/include/opencv")
  set(CMAKE_LIB_DIRS_CONFIGCMAKE "${CMAKE_INSTALL_PREFIX}/lib")
  
