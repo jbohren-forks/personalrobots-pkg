@@ -118,7 +118,7 @@ class SemanticPointAnnotator : public ros::Node
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
       param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
-      param ("~concave", concave_, true);                               // Create concave hulls by default
+      param ("~concave", concave_, false);                              // Create concave hulls by default
       param ("~boundary_angle_threshold", boundary_angle_threshold_, 120.0); // Boundary angle threshold
       
       if (polygonal_map_)
