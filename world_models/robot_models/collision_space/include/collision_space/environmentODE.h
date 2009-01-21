@@ -209,22 +209,23 @@ namespace collision_space
 
 	struct kGeom
 	{
-	    dGeomID                                geom;
+	    std::vector<dGeomID>                   geom;
 	    bool                                   enabled;
 	    planning_models::KinematicModel::Link *link;
 	};
 	
 	struct ModelInfo
 	{
-	    std::vector< kGeom* >                    geom;
+	    std::vector< kGeom* >                    linkGeom;
 	    dSpaceID                                 space;
-	    std::vector< std::vector<unsigned int> > selfCollision;	    
+	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
 	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const;
+	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
-	std::vector<ModelInfo> m_kgeoms;
+	std::vector<ModelInfo> m_modelsGeom;
 	dSpaceID               m_space;
 	dSpaceID               m_spaceBasicGeoms;
 	
