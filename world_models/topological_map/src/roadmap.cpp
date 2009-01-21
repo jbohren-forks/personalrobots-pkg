@@ -41,6 +41,9 @@ namespace topological_map
 const int g_dx[] = {1, -1, 0, 0};
 const int g_dy[] = {0, 0, -1, 1};
 
+enum CellType { BOTTLENECKCELL, OBSTACLE, FREECELL, ROADMAPCELL };
+
+
 
 
 RoadmapBottleneckGraph::RoadmapBottleneckGraph() : 
@@ -181,15 +184,25 @@ void RoadmapBottleneckGraph::switchToRegion (int region_id)
   if (region_id != current_region_) {
     current_region_ = region_id;
     removeLastAddedRegionCells();
-    addRegionGridCells (region_id);
+
+    BottleneckVertex v=id_vertex_map_[region_id];
+    addRegionGridCells(region_id);
+
+    BottleneckAdjacencyIterator adj_iter, adj_end;
+    for (tie(adj_iter, adj_end) = adjacent_vertices(v, graph_); adj_iter!=adj_end; adj_iter++) {
+      addRegionGridCells(vertexDescription(*adj_iter).id);
+    }
   }
 }
+
+
 
 void RoadmapBottleneckGraph::addRegionGridCells (int region_id)
 {
   BottleneckVertex v = id_vertex_map_[region_id];
   VertexDescription desc = vertexDescription (v);
-    
+
+  ROS_DEBUG ("Adding grid cells from region %d", desc.id);    
   for (Region::iterator grid_cell_iter = desc.region.begin(); grid_cell_iter != desc.region.end(); ++grid_cell_iter) {
     if (!(roadmap_->hasPoint(*grid_cell_iter))) {
       roadmap_->addPoint (*grid_cell_iter);
@@ -205,8 +218,10 @@ void RoadmapBottleneckGraph::addRegionGridCells (int region_id)
 }
 
 
+
 void RoadmapBottleneckGraph::removeLastAddedRegionCells (void)
 {
+  ROS_DEBUG ("Removing last %d points added to roadmap", num_temporary_added_cells_);
   roadmap_->removeLastPoints (num_temporary_added_cells_);
   num_temporary_added_cells_=0;
 }
@@ -218,7 +233,10 @@ int RoadmapBottleneckGraph::ensureCellExists (const GridCell& cell)
   int r=cell.first;
   int c=cell.second;
   BottleneckVertex v;
-  lookupVertex(r, c, &v);
+  if (!lookupVertex(r, c, &v)) {
+    ROS_FATAL ("Tried to look up cell %d, %d which is an obstacle", r, c);
+    throw;
+  }
   VertexDescription& desc = vertexDescription(v);
 
   if (roadmap_->hasPoint(cell)) {
@@ -240,5 +258,64 @@ int RoadmapBottleneckGraph::ensureCellExists (const GridCell& cell)
 
 }
     
+
+void RoadmapBottleneckGraph::outputPpm (ostream& stream, int roadmap_vertex_radius)
+{
+  boost::multi_array<CellType, 2> cells(boost::extents[num_rows_][num_cols_]);
+  char* buffer = new char[num_cols_*num_rows_*3];
+  int pos=0;
+  stream << "P6" << endl << num_cols_ << " " << num_rows_ << endl << "255" << endl;
+  for (int r=0; r<num_rows_; r++) {
+    for (int c=0; c<num_cols_; c++) {
+      GridCell cell(r,c);
+      if (is_free_[r][c]) {
+        if (roadmap_->hasPoint(cell)) {
+          for (int i=r-roadmap_vertex_radius; i<=r+roadmap_vertex_radius; i++) {
+            for (int j=c-roadmap_vertex_radius; j<=c+roadmap_vertex_radius; j++) {
+              if ((i>=0) && (i<num_rows_) && (j>=0) && (j<num_cols_)) {
+                cells[i][j] = ROADMAPCELL;
+              }
+            }
+          }
+        }
+        else if (cells[r][c] != ROADMAPCELL) {
+          BottleneckVertex v = grid_cell_vertex_[r][c];
+          VertexDescription& d = vertexDescription (v);
+          if (d.type == BOTTLENECK) {
+            cells[r][c] = BOTTLENECKCELL;
+          }
+          else {
+            cells[r][c] = FREECELL;
+          }
+        }
+      }
+      else {
+        cells[r][c] = OBSTACLE;
+      }
+    }
+  }
+  
+
+  for (int r=0; r<num_rows_; r++) {
+    for (int c=0; c<num_cols_; c++) {
+
+      switch (cells[r][c]) {
+      case ROADMAPCELL: buffer[pos++]=0; buffer[pos++]=0; buffer[pos++]=255; break;
+      case BOTTLENECKCELL: buffer[pos++]=255; buffer[pos++]=0; buffer[pos++]=0; break;
+      case FREECELL: buffer[pos++]=255; buffer[pos++]=255; buffer[pos++]=255; break;
+      case OBSTACLE: buffer[pos++]=0; buffer[pos++]=0; buffer[pos++]=0; break;
+      }
+
+    }
+
+  }
+  stream.write(buffer, pos);
+  delete[] buffer;
+}
+        
+
+
+
+
 
 } // namespace topological_map

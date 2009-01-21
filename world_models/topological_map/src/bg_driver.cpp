@@ -29,6 +29,7 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <getopt.h>
 #include <sysexits.h>
 #include "topological_map/roadmap_bottleneck_graph.h"
@@ -43,6 +44,7 @@ int main (int argc, char* argv[])
   int bottleneckSkip=-1;
   int inflationRadius=0;
   int domain=0;
+  int vertex_radius=1;
   char* outputFilename=0;
   char* inputFilename=0;
   
@@ -54,10 +56,11 @@ int main (int argc, char* argv[])
        {"domain", required_argument, 0, 'd'},
        {"outfile", required_argument, 0, 'o'},
        {"infile", required_argument, 0, 'i'},
+       {"vertex_radius", required_argument, 0, 'v'},
        {0, 0, 0, 0}};
 
     int option_index=0;
-    int c = getopt_long (argc, argv, "b:k:r:d:o:i:", options, &option_index);
+    int c = getopt_long (argc, argv, "b:k:r:d:o:i:v:", options, &option_index);
     if (c==-1) {
       break;
     }
@@ -71,6 +74,9 @@ int main (int argc, char* argv[])
         break;
       case 'k':
         bottleneckSkip=atoi(optarg);
+        break;
+      case 'v':
+        vertex_radius=atoi(optarg);
         break;
       case 'r':
         inflationRadius=atoi(optarg);
@@ -126,17 +132,21 @@ int main (int argc, char* argv[])
       }
     }
     g.initializeFromGrid(grid, bottleneckSize, bottleneckSkip, inflationRadius, 1, 2);
+
   }
 
-
-  g.printBottlenecks();
   g.initializeRoadmap();
-  g.printRoadmap();
+  ofstream stream;
+  stream.open("test-bg");
+  g.outputPpm(stream, vertex_radius);
+  stream.close();
+
 
   // Temp
   if (domain == 2) {
     g.switchToRegion (1);
     g.printRoadmap();
+  
 
     GridCell start(0,0), goal(8,8);
     vector<GridCell> solution=g.findOptimalPath(start, goal);
@@ -151,15 +161,6 @@ int main (int argc, char* argv[])
 
     start.second = 5;
     goal.second = 6;
-    solution=g.findOptimalPath(start, goal);
-    cout << "Solution is ";
-    for (unsigned int i=0; i<solution.size(); i++) {
-      cout << solution[i] << " ";
-    }
-    cout << endl;
-
-    start.second = 0;
-
     solution=g.findOptimalPath(start, goal);
     cout << "Solution is ";
     for (unsigned int i=0; i<solution.size(); i++) {
