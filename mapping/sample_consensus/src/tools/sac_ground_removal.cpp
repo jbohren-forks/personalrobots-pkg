@@ -181,13 +181,6 @@ class GroundRemoval : public ros::Node
       if (cloud_.pts.size () == 0)
         return;
         
-      // Assuming the cloud_ should be in base_link
-      if (cloud_.header.frame_id != "base_link")
-      {
-        ROS_ERROR ("Cloud frame_id is not base_link!");
-        return;
-      }
-      
       // Copy the header
       cloud_noground_.header = cloud_.header;
       
