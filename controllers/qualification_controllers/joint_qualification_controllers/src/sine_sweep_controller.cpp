@@ -177,7 +177,9 @@ void SineSweepControllerNode::update()
   c_->update();
   if (c_->done())
   {
-    if (call_service_.trylock() && !data_sent_)
+    if(!data_sent_)
+    {
+      if (call_service_.trylock())
       {
         robot_srvs::TestData::request *out = &call_service_.srv_req_;
         out->test_name = c_->test_data_.test_name;
@@ -190,7 +192,8 @@ void SineSweepControllerNode::update()
         out->arg_value = c_->test_data_.arg_value;
         call_service_.unlockAndCall();
         data_sent_ = true;
-      }
+       }
+    }
     if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
     {
       if (pub_diagnostics_.trylock())
