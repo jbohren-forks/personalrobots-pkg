@@ -218,7 +218,7 @@ class CollisionMapper : public ros::Node
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
-      base_origin.header.stamp = 0;
+      base_origin.header.stamp = ros::Time(0.0);
 
       try
       {
