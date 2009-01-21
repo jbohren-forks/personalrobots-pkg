@@ -76,12 +76,9 @@ public:
 	m_controller = C_NONE;
 	m_gripPos = 0.5;	
     }
-    
+
     virtual ~PlanKinematicPath(void)
     {
-	std_msgs::Empty dummy;
-	publish("replan_stop", dummy);
-	sleep(2);
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -91,9 +88,18 @@ public:
 	    state.vals[i] = m_robotState->getParams()[i];
     }
     
+    void requestStopReplanning(void)
+    {
+	std_msgs::Empty dummy;
+	publish("replan_stop", dummy);
+    }
+    
     // execute this when a new path is received
     void currentPathToGoal(void)
     {
+	std_msgs::Empty dummy;
+	publish("replan_stop", dummy);
+
 	printPath(m_pathToGoal, -1.0);
 	if (m_statePlanning)
 	{

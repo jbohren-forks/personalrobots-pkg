@@ -184,21 +184,29 @@ public:
     
     void stopReplanning(void)
     {
+	printf("we got called...\n");
+
 	m_replanningLock.lock();
+	bool stop = false;
+	m_continueReplanningLock.lock();
 	if (m_replanning)
 	{
 	    /* make sure the working thread knows it is time to stop */
 	    m_replanning = false;	 
-	    m_continueReplanningLock.lock();
-	    m_collisionMonitorChange = false;	    
+	    m_collisionMonitorChange = true;
 	    m_collisionMonitorCondition.notify_all();
-	    m_continueReplanningLock.unlock();
-	    
+	    stop = true;
+	}
+	m_continueReplanningLock.unlock();
+	
+	if (stop)
+	{
 	    /* wait for the thread to stop & clean up*/
 	    m_replanningThread->join();
 	    delete m_replanningThread;
 	    m_replanningThread = false;
 	}
+	
 	m_replanningLock.unlock();
 	ROS_INFO("Replanning stopped");	
     }
@@ -284,7 +292,7 @@ public:
 	unsigned int step = 0;
 	bool trivial = false;
 
-	while (m_replanning)
+	while (m_replanning && !trivial)
 	{
 	    step++;
 	    ROS_INFO("Replanning step %d", step);
@@ -312,6 +320,7 @@ public:
 	m_continueReplanningLock.lock();
 	m_collisionMonitorChange = true;
 	m_continueReplanningLock.unlock();
+	ROS_INFO("Notifying replanning threads");	
 	m_collisionMonitorCondition.notify_all();
     }
     
