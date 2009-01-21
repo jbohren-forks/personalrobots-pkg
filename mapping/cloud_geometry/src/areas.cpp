@@ -159,6 +159,7 @@ namespace cloud_geometry
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
         epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
       }
+      
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
 
       std_msgs::Polyline2D hull_2d;
@@ -330,87 +331,6 @@ namespace cloud_geometry
       hull.points.resize (top + 1);
       return;
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Sort points on a 2D planar patch and create a 3D Polygon
-      * \param points the point cloud
-      * \param indices the point indices to use from the cloud (they must form a planar model)
-      * \param coeff the *normalized* planar model coefficients
-      * \param poly the resultant polygonal model as a \a Polygon3D
-      */
-    void
-      sortHull2D (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> coeff, std_msgs::Polygon3D &poly)
-    {
-      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending std_msgs::Point32
-      // to allow []/() accessors.
-      std::vector<Eigen::Vector3f> epoints (indices->size ());
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
-      {
-        epoints[cp](0) = points->pts[indices->at (cp)].x;
-        epoints[cp](1) = points->pts[indices->at (cp)].y;
-        epoints[cp](2) = points->pts[indices->at (cp)].z;
-      }
-
-      // Determine the best plane to project points onto
-      int k0, k1, k2;
-      k0 = (fabs (coeff.at (0) ) > fabs (coeff.at (1))) ? 0  : 1;
-      k0 = (fabs (coeff.at (k0)) > fabs (coeff.at (2))) ? k0 : 2;
-      k1 = (k0 + 1) % 3;
-      k2 = (k0 + 2) % 3;
-
-      // Compute a 2D centroid for two dimensions
-      Eigen::Vector2d centroid (0, 0);
-      for (unsigned int cp = 0; cp < epoints.size (); cp++)
-      {
-        centroid (0) += epoints[cp](k1);
-        centroid (1) += epoints[cp](k2);
-      }
-      centroid (0) /= epoints.size ();
-      centroid (1) /= epoints.size ();
-
-      // Push projected centered 2d points
-      std::vector<std_msgs::Point2DFloat32> epoints_demean (epoints.size ());
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
-      {
-        epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
-        epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
-      }
-      std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
-
-      // Determine the hull direction
-      Eigen::Vector3d p1, p2, p3;
-
-      p1 (k0) = 0;
-      p1 (k1) = -epoints_demean[0].x + epoints_demean[1].x;
-      p1 (k2) = -epoints_demean[0].y + epoints_demean[1].y;
-
-      p2 (k0) = 0;
-      p2 (k1) = -epoints_demean[0].x + epoints_demean[2].x;
-      p2 (k2) = -epoints_demean[0].y + epoints_demean[2].y;
-
-      p3 = p1.cross (p2);
-
-      bool direction = (p3 (k0) * coeff[k0] > 0);
-
-      // Create the Polygon3D object
-      poly.points.resize (indices->size ());
-
-      // Copy hull points in clockwise or anti-clockwise format
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
-      {
-        int d = direction ? cp : (indices->size () - cp - 1);
-        Eigen::Vector3f pt;
-        pt (k1) = epoints_demean[cp].x + centroid (0);
-        pt (k2) = epoints_demean[cp].y + centroid (1);
-        pt (k0) = -(coeff[3] + pt (k1) * coeff[k1] + pt (k2) * coeff[k2]) / coeff[k0];
-
-        // Copy the point data to Polygon3D format
-        poly.points[d].x = pt (0);
-        poly.points[d].y = pt (1);
-        poly.points[d].z = pt (2);
-      }
-    }
-
 
   }
 }

@@ -293,8 +293,6 @@ namespace cloud_geometry
         angles[i] = getAngle2D (uvn_nn);
       }
       sort (angles.begin (), angles.end ());
-//      for (int d = 0; d < angles.size (); d++)
-//        std::cerr << "An : " << angles.at (d) << std::endl;
       
       // Compute the maximal angle difference between two consecutive angles
       double max_dif = DBL_MIN, dif;

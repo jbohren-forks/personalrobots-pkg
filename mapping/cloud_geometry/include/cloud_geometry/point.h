@@ -321,7 +321,7 @@ namespace cloud_geometry
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point with a reference point in 2D.
+  /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
     * \param point a 2D point
     */
   inline double 
@@ -329,7 +329,7 @@ namespace cloud_geometry
   {
     double rad;
     if (point[0] == 0)
-      rad = (point[1] < 0) ? -M_PI/2 : M_PI/2;
+      rad = (point[1] < 0) ? -M_PI / 2.0 : M_PI / 2.0;
     else
     {
       rad = atan (point[1] / point[0]);
@@ -337,7 +337,7 @@ namespace cloud_geometry
         rad += M_PI;
     }
     if (rad < 0)
-      rad += 2*M_PI;
+      rad += 2 * M_PI;
 
     return (rad);
   }
