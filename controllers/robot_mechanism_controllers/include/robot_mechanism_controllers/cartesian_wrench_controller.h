@@ -31,8 +31,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef ENDEFFECTOR_WRENCH_CONTEROLLER_H
-#define ENDEFFECTOR_WRENCH_CONTEROLLER_H
+#ifndef CARTESIAN_WRENCH_CONTEROLLER_H
+#define CARTESIAN_WRENCH_CONTEROLLER_H
 
 #include <vector>
 #include <kdl/chain.hpp>
@@ -46,11 +46,11 @@
 
 namespace controller {
 
-class EndeffectorWrenchController : public Controller
+class CartesianWrenchController : public Controller
 {
 public:
-  EndeffectorWrenchController();
-  ~EndeffectorWrenchController();
+  CartesianWrenchController();
+  ~CartesianWrenchController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -75,11 +75,11 @@ private:
 
 
 
-class EndeffectorWrenchControllerNode : public Controller
+class CartesianWrenchControllerNode : public Controller
 {
  public:
-  EndeffectorWrenchControllerNode() {};
-  ~EndeffectorWrenchControllerNode();
+  CartesianWrenchControllerNode() {};
+  ~CartesianWrenchControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -88,7 +88,7 @@ class EndeffectorWrenchControllerNode : public Controller
  private:
   std::string topic_;
 
-  EndeffectorWrenchController controller_;
+  CartesianWrenchController controller_;
 
   robot_msgs::Wrench wrench_msg_;
 };

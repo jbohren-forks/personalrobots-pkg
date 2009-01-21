@@ -31,62 +31,51 @@
  * Author: Wim Meeussen
  */
 
-
-
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/endeffector_pose_controller.h"
+#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
+
+
+static const double JOYSTICK_MAX_FORCE  = 20.0;
+static const double JOYSTICK_MAX_TORQUE = 0.75;
 
 
 using namespace KDL;
+
 namespace controller {
 
+ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 
-
-ROS_REGISTER_CONTROLLER(EndeffectorPoseController)
-
-
-EndeffectorPoseController::EndeffectorPoseController()
-: jnt_to_pose_solver_(NULL),
+CartesianWrenchController::CartesianWrenchController()
+: jnt_to_jac_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
-{}
-
-EndeffectorPoseController::~EndeffectorPoseController()
 {
-  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
+  printf("CartesianWrenchController constructor\n");
 }
 
 
 
-bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+CartesianWrenchController::~CartesianWrenchController()
 {
-  fprintf(stderr, "initializing pose controller\n");
+  if (jnt_to_jac_solver_) delete jnt_to_jac_solver_;
+}
 
-  // test if we got robot pointer
-  assert(robot);
-  robot_ = robot;
 
-  // get pid controller
-  TiXmlElement *p_pose = config->FirstChildElement("pid_pose");
-  control_toolbox::Pid pid_pose;
-  pid_pose.initXml(p_pose);
-  for (unsigned int i=0; i<6; i++)
-    pid_controller_.push_back(pid_pose);
-  fprintf(stderr, "pid controllers created\n");
 
-  // time
-  last_time_ = robot->hw_->current_time_;
-
-  // create twist controller
-  twist_controller_.initXml(robot, config);
+bool CartesianWrenchController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+{
+  // set disired wrench to 0
+  for (unsigned int i=0; i<3; i++){
+    wrench_desi_.force(i) = 0;
+    wrench_desi_.torque(i) = 0;
+  }
 
   // parse robot description from xml file
   ros::Node *node = ros::Node::instance();
   robot_kinematics::RobotKinematics robot_kinematics ;
   string robot_desc;
   node->param("robotdesc/pr2", robot_desc, string("")) ;
-  printf("RobotDesc.length() = %u\n", robot_desc.length());
   robot_kinematics.loadString(robot_desc.c_str()) ;
   robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm");
   if (serial_chain == NULL)  
@@ -97,12 +86,12 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
-  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
+  jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
-    fprintf(stderr, "Error: EndeffectorPoseController was not given a chain\n");
+    fprintf(stderr, "Error: CartesianWrenchController was not given a chain\n");
     return false;
   }
 
@@ -110,26 +99,26 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
   const char *root_name = chain->Attribute("root");
   const char *tip_name = chain->Attribute("tip");
   if (!root_name) {
-    fprintf(stderr, "Error: Chain element for EndeffectorPoseController must specify the root\n");
+    fprintf(stderr, "Error: Chain element for CartesianWrenchController must specify the root\n");
     return false;
   }
   if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for EndeffectorPoseController must specify the tip\n");
+    fprintf(stderr, "Error: Chain element for CartesianWrenchController must specify the tip\n");
     return false;
   }
 
   // test if we can get root from robot
+  assert(robot);
   if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorPoseController)\n", root_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianWrenchController)\n", root_name);
     return false;
   }
 
   // get tip from robot
   mechanism::LinkState *current = robot->getLinkState(tip_name);
   if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorPoseController)\n", tip_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianWrenchController)\n", tip_name);
     return false;
-
   }
 
   // Works up the chain, from the tip to the root, and get joints
@@ -143,15 +132,16 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
       current = robot->getLinkState(current->link_->parent_name_);
       
       if (!current) {
-	  fprintf(stderr, "Error: for EndeffectorPoseController, tip is not connected to root\n");
-	  return false;
-	}
+	fprintf(stderr, "Error: for CartesianWrenchController, tip is not connected to root\n");
+	return false;
+      }
     }
   // reverse order of joint vector
   std::reverse(joints_.begin(), joints_.end());
 
-  // set desired pose to current pose
-  pose_desi_ = getPose();
+  // get control parameters
+
+
 
   return true;
 }
@@ -159,126 +149,86 @@ bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 
 
-
-
-void EndeffectorPoseController::update()
-{
-  // get current time
-  double time = robot_->hw_->current_time_;
-  double dt = time - last_time_;
-
-  // get current pose
-  pose_meas_ = getPose();
-
-  // pose feedback into twist
-  Twist twist_error = diff(pose_desi_, pose_meas_);
-  for (unsigned int i=0; i<6; i++)
-    twist_out_(i) = pid_controller_[i].updatePid(twist_error(i), dt);
-
-  // send twist to twist controller
-  twist_controller_.twist_desi_ = twist_out_;
-  twist_controller_.update();
-
-  // remember time
-  last_time_ = time;
-}
-
-
-
-Frame EndeffectorPoseController::getPose()
+void CartesianWrenchController::update()
 {
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
     if (!joints_[i]->calibrated_)
-      fprintf(stderr,"Joint not calibrated\n");
+      return;
   }
 
-  // get the joint positions 
+  // get the joint positions
   JntArray jnt_pos(num_joints_);
   for (unsigned int i=0; i<num_joints_; i++)
     jnt_pos(i) = joints_[i]->position_;
 
-  // get endeffector pose
-  Frame result;
-  jnt_to_pose_solver_->JntToCart(jnt_pos, result);
+  // get the chain jacobian
+  Jacobian jacobian(num_joints_, num_segments_);
+  jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
-  return result;
+  // convert the wrench into joint torques
+  JntArray jnt_torq(num_joints_);
+  for (unsigned int i=0; i<num_joints_; i++){
+    jnt_torq(i) = 0;
+    for (unsigned int j=0; j<6; j++)
+      jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
+    joints_[i]->commanded_effort_ = jnt_torq(i);
+  }
 }
 
 
 
 
-ROS_REGISTER_CONTROLLER(EndeffectorPoseControllerNode)
 
-EndeffectorPoseControllerNode::~EndeffectorPoseControllerNode()
+
+
+
+
+ROS_REGISTER_CONTROLLER(CartesianWrenchControllerNode)
+
+CartesianWrenchControllerNode::~CartesianWrenchControllerNode()
 {
   ros::Node *node = ros::Node::instance();
-
   node->unsubscribe(topic_ + "/command");
-  node->unsubscribe("spacenav/joy");
 }
 
-
-bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get name of topic to listen to
+  // get name of topic to listen to from xml file
   ros::Node *node = ros::Node::instance();
   topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic_ == "") {
-    fprintf(stderr, "No topic given to EndeffectorPoseControllerNode\n");
+    fprintf(stderr, "No topic given to CartesianWrenchControllerNode\n");
     return false;
   }
-
-  // get parameters
-  node->param("arm_pose/joystick_max_trans", joystick_max_trans_, 0.0);
-  node->param("arm_pose/joystick_max_rot", joystick_max_rot_, 0.0);
 
   // initialize controller  
   if (!controller_.initXml(robot, config))
     return false;
   
-  // subscribe to pose commands
-  node->subscribe(topic_ + "/command", pose_msg_,
-                  &EndeffectorPoseControllerNode::command, this, 1);
+  // subscribe to wrench commands
+  node->subscribe(topic_ + "/command", wrench_msg_,
+                  &CartesianWrenchControllerNode::command, this, 1);
 
-  // subscribe to joystick commands
-  node->subscribe("spacenav/joy", joystick_msg_,
-                  &EndeffectorPoseControllerNode::joystick, this, 1);
-
-  joystick_twist_ = Twist::Zero();
   return true;
 }
 
 
-void EndeffectorPoseControllerNode::update()
+void CartesianWrenchControllerNode::update()
 {
   controller_.update();
 }
 
 
-void EndeffectorPoseControllerNode::command()
+void CartesianWrenchControllerNode::command()
 {
-  // convert to pose command
-  controller_.pose_desi_.p(0) = pose_msg_.pose.position.x;
-  controller_.pose_desi_.p(1) = pose_msg_.pose.position.y;
-  controller_.pose_desi_.p(2) = pose_msg_.pose.position.z;
-  controller_.pose_desi_.M = Rotation::Quaternion(pose_msg_.pose.orientation.x, pose_msg_.pose.orientation.y,
-						  pose_msg_.pose.orientation.z, pose_msg_.pose.orientation.w);
+  // convert to wrench command
+  controller_.wrench_desi_.force(0) = wrench_msg_.force.x;
+  controller_.wrench_desi_.force(1) = wrench_msg_.force.y;
+  controller_.wrench_desi_.force(2) = wrench_msg_.force.z;
+  controller_.wrench_desi_.torque(0) = wrench_msg_.torque.x;
+  controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
+  controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
 }
-
-
-
-void EndeffectorPoseControllerNode::joystick()
-{
-  // convert to pose command
-  for (unsigned int i=0; i<3; i++){
-    joystick_twist_.vel(i) = joystick_msg_.axes[i]   * joystick_max_trans_;
-    joystick_twist_.rot(i) = joystick_msg_.axes[i+3] * joystick_max_rot_;
-  }
-
-  controller_.pose_desi_  = addDelta(controller_.pose_desi_, joystick_twist_);
-}
-
 
 }; // namespace
-

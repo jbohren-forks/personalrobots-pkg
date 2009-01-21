@@ -31,8 +31,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef ENDEFFECTOR_POSE_CONTEROLLER_H
-#define ENDEFFECTOR_POSE_CONTEROLLER_H
+#ifndef CARTESIAN_POSE_CONTEROLLER_H
+#define CARTESIAN_POSE_CONTEROLLER_H
 
 #include <vector>
 #include "kdl/chain.hpp"
@@ -40,24 +40,22 @@
 #include "ros/node.h"
 #include "std_msgs/PoseStamped.h"
 #include "mechanism_model/controller.h"
-#include "robot_mechanism_controllers/endeffector_twist_controller.h"
+#include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
 namespace controller {
 
-class EndeffectorPoseController : public Controller
+class CartesianPoseController : public Controller
 {
 public:
-  EndeffectorPoseController();
-  ~EndeffectorPoseController();
+  CartesianPoseController();
+  ~CartesianPoseController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
-
-  // output of the controller
-  KDL::Twist twist_out_;
+  KDL::Twist twist_ff_;
 
 
 private:
@@ -80,34 +78,28 @@ private:
   std::vector<mechanism::JointState*> joints_; 
 
   // internal twist controller
-  EndeffectorTwistController twist_controller_;
+  CartesianTwistController twist_controller_;
 };
 
 
 
 
-class EndeffectorPoseControllerNode : public Controller
+class CartesianPoseControllerNode : public Controller
 {
  public:
-  EndeffectorPoseControllerNode() {};
-  ~EndeffectorPoseControllerNode();
+  CartesianPoseControllerNode() {};
+  ~CartesianPoseControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
 
-  // callback functions for joystick
-  void joystick();
-  
  private:
-  double joystick_max_trans_, joystick_max_rot_;
   std::string topic_;
 
-  EndeffectorPoseController controller_;
+  CartesianPoseController controller_;
 
   std_msgs::PoseStamped pose_msg_;
-  joy::Joy joystick_msg_;
-  KDL::Twist joystick_twist_;
 };
 
 } // namespace

@@ -34,31 +34,31 @@
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/endeffector_twist_controller.h"
+#include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
 
 using namespace KDL;
 namespace controller {
 
 
-ROS_REGISTER_CONTROLLER(EndeffectorTwistController)
+ROS_REGISTER_CONTROLLER(CartesianTwistController)
 
 
-EndeffectorTwistController::EndeffectorTwistController()
+CartesianTwistController::CartesianTwistController()
 : jnt_to_twist_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
 {}
 
 
 
-EndeffectorTwistController::~EndeffectorTwistController()
+CartesianTwistController::~CartesianTwistController()
 {
   if (jnt_to_twist_solver_) delete jnt_to_twist_solver_;
 }
 
 
 
-bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   fprintf(stderr, "initializing twist controller\n");
 
@@ -111,7 +111,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
-    fprintf(stderr, "Error: EndeffectorTwistController was not given a chain\n");
+    fprintf(stderr, "Error: CartesianTwistController was not given a chain\n");
     return false;
   }
 
@@ -119,24 +119,24 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   const char *root_name = chain->Attribute("root");
   const char *tip_name = chain->Attribute("tip");
   if (!root_name) {
-    fprintf(stderr, "Error: Chain element for EndeffectorTwistController must specify the root\n");
+    fprintf(stderr, "Error: Chain element for CartesianTwistController must specify the root\n");
     return false;
   }
   if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for EndeffectorTwistController must specify the tip\n");
+    fprintf(stderr, "Error: Chain element for CartesianTwistController must specify the tip\n");
     return false;
   }
 
   // test if we can get root from robot
   if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorTwistController)\n", root_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianTwistController)\n", root_name);
     return false;
   }
 
   // get tip from robot
   mechanism::LinkState *current = robot->getLinkState(tip_name);
   if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorTwistController)\n", tip_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianTwistController)\n", tip_name);
     return false;
 
   }
@@ -152,7 +152,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
       current = robot->getLinkState(current->link_->parent_name_);
       
       if (!current) {
-	  fprintf(stderr, "Error: for EndeffectorTwistController, tip is not connected to root\n");
+	  fprintf(stderr, "Error: for CartesianTwistController, tip is not connected to root\n");
 	  return false;
 	}
     }
@@ -170,7 +170,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
 
 
 
-void EndeffectorTwistController::update()
+void CartesianTwistController::update()
 {
   // get current time
   double time = robot_->hw_->current_time_;
@@ -188,7 +188,7 @@ void EndeffectorTwistController::update()
     jnt_posvel.qdot(i) = joints_[i]->velocity_;
   }
 
-  // get endeffector twist error
+  // get cartesian twist error
   FrameVel twist; 
   jnt_to_twist_solver_->JntToCart(jnt_posvel, twist);
   twist_meas_ = twist.deriv();
@@ -214,9 +214,9 @@ void EndeffectorTwistController::update()
 
 
 
-ROS_REGISTER_CONTROLLER(EndeffectorTwistControllerNode)
+ROS_REGISTER_CONTROLLER(CartesianTwistControllerNode)
 
-EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
+CartesianTwistControllerNode::~CartesianTwistControllerNode()
 {
   ros::Node *node = ros::Node::instance();
 
@@ -225,13 +225,13 @@ EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
 }
 
 
-bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic_ to listen to
   ros::Node *node = ros::Node::instance();
   topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic_ == "") {
-    fprintf(stderr, "No topic given to EndeffectorTwistControllerNode\n");
+    fprintf(stderr, "No topic given to CartesianTwistControllerNode\n");
     return false;
   }
 
@@ -245,23 +245,23 @@ bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXml
   
   // subscribe to twist commands
   node->subscribe(topic_ + "/command", twist_msg_,
-                  &EndeffectorTwistControllerNode::command, this, 1);
+                  &CartesianTwistControllerNode::command, this, 1);
 
   // subscribe to joystick commands
   node->subscribe("spacenav/joy", joystick_msg_,
-                  &EndeffectorTwistControllerNode::joystick, this, 1);
+                  &CartesianTwistControllerNode::joystick, this, 1);
 
   return true;
 }
 
 
-void EndeffectorTwistControllerNode::update()
+void CartesianTwistControllerNode::update()
 {
   controller_.update();
 }
 
 
-void EndeffectorTwistControllerNode::command()
+void CartesianTwistControllerNode::command()
 {
   // convert to twist command
   controller_.twist_desi_.vel(0) = twist_msg_.vel.x;
@@ -273,7 +273,7 @@ void EndeffectorTwistControllerNode::command()
 }
 
 
-void EndeffectorTwistControllerNode::joystick()
+void CartesianTwistControllerNode::joystick()
 {
   // convert to twist command
   for (unsigned int i=0; i<3; i++){

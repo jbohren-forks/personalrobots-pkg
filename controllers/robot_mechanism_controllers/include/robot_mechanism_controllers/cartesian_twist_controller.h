@@ -31,8 +31,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef ENDEFFECTOR_TWIST_CONTEROLLER_H
-#define ENDEFFECTOR_TWIST_CONTEROLLER_H
+#ifndef CARTESIAN_TWIST_CONTEROLLER_H
+#define CARTESIAN_TWIST_CONTEROLLER_H
 
 #include <vector>
 #include "kdl/chain.hpp"
@@ -41,17 +41,17 @@
 #include "robot_msgs/Twist.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
-#include "robot_mechanism_controllers/endeffector_wrench_controller.h"
+#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
 #include "joy/Joy.h"
 #include <control_toolbox/pid.h>
 
 namespace controller {
 
-class EndeffectorTwistController : public Controller
+class CartesianTwistController : public Controller
 {
 public:
-  EndeffectorTwistController();
-  ~EndeffectorTwistController();
+  CartesianTwistController();
+  ~CartesianTwistController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -81,7 +81,7 @@ private:
   std::vector<mechanism::JointState*> joints_; 
 
   // internal wrench controller
-  EndeffectorWrenchController wrench_controller_;
+  CartesianWrenchController wrench_controller_;
 };
 
 
@@ -89,11 +89,11 @@ private:
 
 
 
-class EndeffectorTwistControllerNode : public Controller
+class CartesianTwistControllerNode : public Controller
 {
  public:
-  EndeffectorTwistControllerNode() {};
-  ~EndeffectorTwistControllerNode();
+  CartesianTwistControllerNode() {};
+  ~CartesianTwistControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -106,7 +106,7 @@ class EndeffectorTwistControllerNode : public Controller
   double joystick_max_trans_, joystick_max_rot_;
   std::string topic_;
 
-  EndeffectorTwistController controller_;
+  CartesianTwistController controller_;
 
   robot_msgs::Twist twist_msg_;
   joy::Joy joystick_msg_;
