@@ -213,29 +213,29 @@ public:
 
     lag = data.raw_stereo.header.stamp-cur_time ;
     if (data.raw_stereo.left_image.uint8_data.layout.get_dim_size() < 2)
-      printf("     Left Image:       %lf [NO DATA]\n", lag.to_double()) ;
+      printf("     Left Image:       %lf [NO DATA]\n", lag.toSec()) ;
     else
-      printf("     Left Image:       %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.left_image.uint8_data.layout.dim[0].size,
+      printf("     Left Image:       %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.left_image.uint8_data.layout.dim[0].size,
                                                                        data.raw_stereo.left_image.uint8_data.layout.dim[1].size) ;
     if (data.raw_stereo.right_image.uint8_data.layout.get_dim_size() < 2)
-      printf("     Right Image:      %lf [NO DATA]\n", lag.to_double()) ;
+      printf("     Right Image:      %lf [NO DATA]\n", lag.toSec()) ;
     else
-      printf("     Right Image:      %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.right_image.uint8_data.layout.dim[0].size,
+      printf("     Right Image:      %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.right_image.uint8_data.layout.dim[0].size,
                                                                        data.raw_stereo.right_image.uint8_data.layout.dim[1].size) ;
     if (data.raw_stereo.disparity_image.uint8_data.layout.get_dim_size() < 2)
-      printf("     Disparity Image:  %lf [NO DATA]\n", lag.to_double()) ;
+      printf("     Disparity Image:  %lf [NO DATA]\n", lag.toSec()) ;
     else
-      printf("     Disparity Image:  %lf (%u, %u)\n", lag.to_double(), data.raw_stereo.disparity_image.uint8_data.layout.dim[0].size,
+      printf("     Disparity Image:  %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.disparity_image.uint8_data.layout.dim[0].size,
                                                                        data.raw_stereo.disparity_image.uint8_data.layout.dim[1].size) ;
 
     lag = data.mechanism_state.header.stamp-cur_time ;
-    printf("     Mechanism State:  %lf   %u Joints\n", lag.to_double(), data.mechanism_state.get_joint_states_size()) ;
+    printf("     Mechanism State:  %lf   %u Joints\n", lag.toSec(), data.mechanism_state.get_joint_states_size()) ;
 
     lag = data.laser_cloud.header.stamp-cur_time ;
-    printf("     Laser Cloud:      %lf   %u points\n", lag.to_double(), data.laser_cloud.get_pts_size() ) ;
+    printf("     Laser Cloud:      %lf   %u points\n", lag.toSec(), data.laser_cloud.get_pts_size() ) ;
 
     lag = data.mocap_snapshot.header.stamp-cur_time ;
-    printf("     MoCap:       %lf   %u Markers | %u Bodies\n", lag.to_double(), data.mocap_snapshot.get_markers_size(),
+    printf("     MoCap:       %lf   %u Markers | %u Bodies\n", lag.toSec(), data.mocap_snapshot.get_markers_size(),
                                                                                 data.mocap_snapshot.get_bodies_size()) ;
   }
 
