@@ -81,6 +81,7 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	    
 	    kGeom *kg = new kGeom();
 	    kg->link = robot->links[i];
+	    kg->enabled = true;
 	    dGeomID g = createODEGeom(m_kgeoms[id].space, robot->links[i]->shape);
 	    if (g)
 	    {
@@ -336,6 +337,9 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     {
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 ; --i)
 	{
+	    /* skip disabled bodies */
+	    if (!m_kgeoms[model_id].geom[i]->enabled)
+		continue;
 	    dGeomID g1 = m_kgeoms[model_id].geom[i]->geom;
 	    dReal aabb1[6];
 	    dGeomGetAABB(g1, aabb1);
@@ -364,9 +368,10 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     {
 	m_collide2.setup();
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 && !cdata.collides ; --i)
-	    m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+	    if (m_kgeoms[model_id].geom[i]->enabled)
+		m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
     }
-
+    
     return cdata.collides;
 }
 
@@ -408,6 +413,21 @@ void collision_space::EnvironmentModelODE::addSelfCollisionGroup(unsigned int mo
 	    for (unsigned int j = 0 ; j < m_kgeoms[model_id].geom.size() ; ++j)
 		if (m_kgeoms[model_id].geom[j]->link->name == links[i])
 		    m_kgeoms[model_id].selfCollision[pos].push_back(j);
+	}
+    }
+}
+
+void collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, std::string &link, bool state)
+{ 
+    if (model_id < m_kgeoms.size())
+    {
+	for (unsigned int j = 0 ; j < m_kgeoms[model_id].geom.size() ; ++j)
+	{
+	    if (m_kgeoms[model_id].geom[j]->link->name == link)
+	    {
+		m_kgeoms[model_id].geom[j]->enabled = state;
+		break;
+	    }
 	}
     }
 }

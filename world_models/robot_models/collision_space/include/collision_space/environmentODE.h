@@ -70,8 +70,16 @@ namespace collision_space
 	    freeMemory();
 	}
 	
+	/** The space ID for the objects that can be changed in the
+	    map. clearObstacles will invalidate this ID. Collision
+	    checking on this space is optimized for many small
+	    objects. */
 	dSpaceID getODESpace(void) const;
+
+	/** Return the space ID for the space in which static objects are added */
 	dSpaceID getODEBasicGeomSpace(void) const;
+
+	/** Return the space ID for the space in which the particular model is instanciated */
 	dSpaceID getModelODESpace(unsigned int model_id) const;
 	
 	/** Check if a model is in collision */
@@ -95,6 +103,9 @@ namespace collision_space
 	/** Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
 
+	/** Enable/Disable collision checking for specific links */
+	virtual void setCollisionCheck(unsigned int model_id, std::string &link, bool state);
+	
     protected:
 		
 	class ODECollide2
@@ -199,6 +210,7 @@ namespace collision_space
 	struct kGeom
 	{
 	    dGeomID                                geom;
+	    bool                                   enabled;
 	    planning_models::KinematicModel::Link *link;
 	};
 	
