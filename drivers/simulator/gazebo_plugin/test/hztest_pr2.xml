@@ -14,7 +14,7 @@
     to 0.0. -->
     <param name="hzerror" value="10.0" />
     <!-- Time to listen for [seconds] -->
-    <param name="test_duration" value="5.0" />    
+    <param name="test_duration" value="3.0" />    
     <!-- Whether each inter-message time interval should be checked against
     the expected publication rate and error bound [boolean].  If true, then
     the test will fail if the time elapsed between *any* two consecutive
@@ -30,7 +30,7 @@
     <param name="topic" value="tilt_scan" />
     <param name="hz" value="16.907" />
     <param name="hzerror" value="10.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
 
@@ -41,7 +41,7 @@
     <param name="topic" value="full_cloud" />
     <param name="hz" value="8.661" />
     <param name="hzerror" value="5.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'base_pose_ground_truth' topic. -->
@@ -51,7 +51,7 @@
     <param name="topic" value="base_pose_ground_truth" />
     <param name="hz" value="807.682" />
     <param name="hzerror" value="400.0" />
-    <param name="test_duration" value="8.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'mechanism_state' topic. -->
@@ -61,7 +61,7 @@
     <param name="topic" value="mechanism_state" />
     <param name="hz" value="79.763" />
     <param name="hzerror" value="100.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'tf_message' topic. -->
@@ -71,7 +71,7 @@
     <param name="topic" value="tf_message" />
     <param name="hz" value="157.240" />
     <param name="hzerror" value="150.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'time' topic. -->
@@ -81,7 +81,7 @@
     <param name="topic" value="time" />
     <param name="hz" value="796.054" />
     <param name="hzerror" value="400.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
 
@@ -92,7 +92,7 @@
     <param name="topic" value="axis_l/ptz_state" />
     <param name="hz" value="12.282" />
     <param name="hzerror" value="10.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
 

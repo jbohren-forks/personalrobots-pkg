@@ -9,7 +9,7 @@
     <param name="topic" value="odom" />
     <param name="hz" value="84.128" />
     <param name="hzerror" value="50.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />
   </test>
 </launch>
