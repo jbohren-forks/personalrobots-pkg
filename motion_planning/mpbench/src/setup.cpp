@@ -662,11 +662,11 @@ namespace mpbench {
 	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
       for (vector<task::startspec>::const_iterator is((*it)->start.begin());
 	   is != (*it)->start.end(); ++is)
-	os << prefix << "    start " << to_string(is->FOOfrom_scratch)
+	os << prefix << "    start " << to_string(is->from_scratch)
 	   << " " << to_string(is->use_initial_solution)
 	   << " " << to_string(is->allow_iteration)
 	   << " " << is->alloc_time
-	   << " " << is->FOOpx << "  " << is->FOOpy << "  " << is->FOOpth << "\n";
+	   << " " << is->px << "  " << is->py << "  " << is->pth << "\n";
     }
   }
   
@@ -689,13 +689,13 @@ namespace mpbench {
 	      double start_x,
 	      double start_y,
 	      double start_th)
-      : FOOfrom_scratch(_from_scratch),
+      : from_scratch(_from_scratch),
 	use_initial_solution(_use_initial_solution),
 	allow_iteration(_allow_iteration),
 	alloc_time(_alloc_time),
-	FOOpx(start_x),
-	FOOpy(start_y),
-	FOOpth(start_th)
+	px(start_x),
+	py(start_y),
+	pth(start_th)
     {
     }
     

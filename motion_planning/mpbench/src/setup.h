@@ -67,13 +67,13 @@ namespace mpbench {
 		double start_y,
 		double start_th);
       
-      bool FOOfrom_scratch;
+      bool from_scratch;
       bool use_initial_solution;
       bool allow_iteration;
       double alloc_time;
-      double FOOpx;
-      double FOOpy;
-      double FOOpth;
+      double px;
+      double py;
+      double pth;
     };
     
     struct goalspec {

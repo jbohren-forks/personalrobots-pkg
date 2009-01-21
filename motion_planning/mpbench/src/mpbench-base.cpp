@@ -638,8 +638,8 @@ void run_tasks()
 	  task::startspec const & start(task.start[episode_id]);
 	  CostmapPlanner * costmap_planner(planner[planner_id].get());
 	  
-	  costmap_planner->setStart(start.FOOpx, start.FOOpy, start.FOOpth);
-	  costmap_planner->forcePlanningFromScratch(start.FOOfrom_scratch);
+	  costmap_planner->setStart(start.px, start.py, start.pth);
+	  costmap_planner->forcePlanningFromScratch(start.from_scratch);
 	  
 	  // not all planners can be run iteratively...
 	  SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(costmap_planner));
