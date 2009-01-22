@@ -78,10 +78,12 @@ public:
 	unsigned int nstates = path.get_states_size();
 	ROS_INFO("Obtained solution path with %u states, distance to goal = %f", nstates, distance);
 	std::stringstream ss;
+	ss << std::endl;
 	for (unsigned int i = 0 ; i < nstates ; ++i)
 	{
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
 		ss <<  path.states[i].vals[j] << " ";
+	    ss << std::endl;
 	}
 	ROS_INFO(ss.str().c_str());
     }
@@ -320,7 +322,7 @@ public:
     void currentPathToGoal(void)
     {
 	m_pr.useReplannedPath(m_pathToGoal);
-	m_pr.requestStopReplanning();
+	//	m_pr.requestStopReplanning();
     }
     
     void requestStopReplanning(void)
