@@ -27,11 +27,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ijg_libjpeg/ros_jpeg_mutex.h"
-#include "rosthread/mutex.h"
+#include "boost/thread/mutex.hpp"
 
 // this is probably the dumbest library I've ever written.
 
-static ros::thread::mutex jpeg_mutex;
+static boost::mutex jpeg_mutex;
 
 void ros_jpeg_mutex_lock()
 {
