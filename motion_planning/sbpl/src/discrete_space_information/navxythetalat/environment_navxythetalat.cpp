@@ -885,6 +885,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 	//iterate over source angles
 	for(int tind = 0; tind < NAVXYTHETALAT_THETADIRS; tind++)
 	{
+		printf("processing angle %d\n", tind);
 		EnvNAVXYTHETALATCfg.ActionsV[tind] = new EnvNAVXYTHETALATAction_t[EnvNAVXYTHETALATCfg.actionwidth];
 
 		//compute sourcepose
@@ -910,6 +911,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 			pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 			pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 			pose.theta = angle;
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 			RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -943,6 +945,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -972,6 +975,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 		pose.x = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.y = DISCXY2CONT(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY, EnvNAVXYTHETALATCfg.cellsize_m);
 		pose.theta = DiscTheta2Cont(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].endtheta, NAVXYTHETALAT_THETADIRS);
+		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 		EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
 		RemoveSourceFootprint(sourcepose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
@@ -1447,8 +1451,9 @@ bool EnvironmentNAVXYTHETALAT::CheckQuant(FILE* fOut)
 //-----------------------------------------------------------------------------
 
 //-----------interface with outside functions-----------------------------------
-bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const char* sMotPrimFile)
+bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile)
 {
+	EnvNAVXYTHETALATCfg.FootprintPolygon = perimeterptsV;
 
 	FILE* fCfg = fopen(sEnvFile, "r");
 	if(fCfg == NULL)
@@ -1458,19 +1463,24 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const char* s
 	}
 	ReadConfiguration(fCfg);
 
-	FILE* fMotPrim = fopen(sMotPrimFile, "r");
-	if(fMotPrim == NULL)
+	if(sMotPrimFile != NULL)
 	{
-		printf("ERROR: unable to open %s\n", sMotPrimFile);
-		exit(1);
+		FILE* fMotPrim = fopen(sMotPrimFile, "r");
+		if(fMotPrim == NULL)
+		{
+			printf("ERROR: unable to open %s\n", sMotPrimFile);
+			exit(1);
+		}
+		if(ReadMotionPrimitives(fMotPrim) == false)
+		{
+			printf("ERROR: failed to read in motion primitive file\n");
+			exit(1);
+		}
+		InitGeneral(&EnvNAVXYTHETALATCfg.mprimV);
 	}
-	if(ReadMotionPrimitives(fMotPrim) == false)
-	{
-		printf("ERROR: failed to read in motion primitive file\n");
-		exit(1);
-	}
+	else
+		InitGeneral(NULL);
 
-	InitGeneral(&EnvNAVXYTHETALATCfg.mprimV);
 
 	return true;
 }
@@ -2254,7 +2264,7 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 		double sourcex, sourcey;
 		sourcex = DISCXY2CONT(sourcex_c, EnvNAVXYTHETALATCfg.cellsize_m);
 		sourcey = DISCXY2CONT(sourcey_c, EnvNAVXYTHETALATCfg.cellsize_m);
-		for(int ipind = 0; ipind < actionV[bestsind]->intermptV.size()-1; ipind++)
+		for(int ipind = 0; ipind < ((int)actionV[bestsind]->intermptV.size())-1; ipind++)
 		{
 			//translate appropriately
 			EnvNAVXYTHETALAT3Dpt_t intermpt = actionV[bestsind]->intermptV[ipind];

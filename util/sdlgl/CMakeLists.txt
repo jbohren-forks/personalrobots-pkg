@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+find_package(SDL REQUIRED)
+rospack(sdlgl)
+include_directories(${SDL_INCLUDE_DIR})
+rospack_add_library(sdlgl src/sdlgl.cpp)
+target_link_libraries(sdlgl ${SDL_LIBRARY})

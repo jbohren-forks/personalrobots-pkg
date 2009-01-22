@@ -54,7 +54,6 @@ moment invariants, etc.
 // Cloud geometry
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/areas.h>
-#include <cloud_geometry/lapack.h>
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/intersections.h>
 
@@ -266,13 +265,14 @@ class NormalEstimation : public ros::Node
       ROS_INFO ("Nearest neighbors found in %g seconds.", time_spent);
 
       gettimeofday (&t1, NULL);
-//      #pragma omp parallel for schedule(dynamic)
+      #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
         cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_normals_, &points_indices_[i], plane_parameters, curvature);
+        
         if (compute_moments_)
           cloud_geometry::nearest::computeMomentInvariants (&cloud_normals_, &points_indices_[i], j1, j2, j3);
 

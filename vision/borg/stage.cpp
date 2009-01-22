@@ -58,8 +58,8 @@ bool Stage::gotoPosition(double deg, bool blocking, double max_wait)
     long enc_target = (long)(deg * STAGE_DEG_TO_ENC);
     setPosEnc(enc_target);
     ros::Time t_start(ros::Time::now());
-    while ((ros::Time::now() - t_start).to_double() < 
-           t_start.to_double() + max_wait)
+    while ((ros::Time::now() - t_start).toSec() < 
+           t_start.toSec() + max_wait)
     {
       if (!getState(5))
         throw std::runtime_error("couldn't get state\n");
@@ -72,7 +72,7 @@ bool Stage::gotoPosition(double deg, bool blocking, double max_wait)
       }
       usleep(100);
     }
-    return ((ros::Time::now().to_double() < t_start.to_double() + max_wait) &&
+    return ((ros::Time::now().toSec() < t_start.toSec() + max_wait) &&
             (stage_state != STAGE_ERROR));
   }
 }
@@ -82,10 +82,10 @@ bool Stage::getState(double max_wait)
   awaiting_state = true;
   requestState();
   ros::Time t_start(ros::Time::now()), t_sent(ros::Time::now());
-  while ((ros::Time::now() - t_start).to_double() < 
-         t_start.to_double() + max_wait && awaiting_state)
+  while ((ros::Time::now() - t_start).toSec() < 
+         t_start.toSec() + max_wait && awaiting_state)
   {
-    if ((ros::Time::now() - t_sent).to_double() > 0.1)
+    if ((ros::Time::now() - t_sent).toSec() > 0.1)
     {
       requestState();
       t_sent = ros::Time::now();
@@ -121,10 +121,10 @@ double Stage::getPosition(double max_wait)
   awaiting_position = true;
   requestPosition();
   ros::Time t_start(ros::Time::now()), t_sent(ros::Time::now());
-  while ((ros::Time::now() - t_start).to_double() < 
-         t_start.to_double() + max_wait && awaiting_position)
+  while ((ros::Time::now() - t_start).toSec() < 
+         t_start.toSec() + max_wait && awaiting_position)
   {
-    if ((ros::Time::now() - t_sent).to_double() > 0.1)
+    if ((ros::Time::now() - t_sent).toSec() > 0.1)
     {
       requestPosition();
       t_sent = ros::Time::now();

@@ -10,6 +10,7 @@
   <depend package="wg_robot_description_parser" />
   <depend package="stl_utils" />
   <depend package="misc_utils" />
+  <depend package="realtime_tools" />
   <depend package="robot_mechanism_controllers" />
   <depend package="rospy" />
   <depend package="libTF" />

@@ -8,7 +8,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
 
-  <depend package="wg_robot_description"/>
+  <depend package="pr2_defs"/>
   <depend package="wg_robot_description_parser"/>
   <depend package="openrave"/>
   <depend package="boost"/>

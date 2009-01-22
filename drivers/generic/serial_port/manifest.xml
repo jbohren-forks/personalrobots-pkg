@@ -7,7 +7,7 @@ These are used all over the place for talking to hardware. These implementations
 <review status="unreviewed" notes=""/>
 <url>http://stair.stanford.edu</url>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lserial_port"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lserial_port"/>
 </export>
 </package>
 

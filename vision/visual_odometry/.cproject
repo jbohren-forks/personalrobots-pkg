@@ -28,7 +28,10 @@
 <tool id="org.eclipse.cdt.build.core.settings.holder.351989335" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
 <option id="org.eclipse.cdt.build.core.settings.holder.incpaths.269404776" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${ROS_PACKAGE_PATH}/vision/visual_odometry/include&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${ROS_PACKAGE_PATH}/3rdparty/boost/boost_1_36_0/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${ROS_PACKAGE_PATH}/3rdparty/opencv_latest/opencv/include&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${ROS_ROOT}/3rdparty/boost/boost/include&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${ROS_PACKAGE_PATH}/vision/stereo_utils/include&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${ROS_PACKAGE_PATH}/3rdparty/eigen/build/eigen2&quot;"/>
 </option>
 <inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1803365423" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 </tool>

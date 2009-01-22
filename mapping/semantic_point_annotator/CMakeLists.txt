@@ -8,11 +8,8 @@ add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -mss
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-#rospack_add_executable(semantic_point_annotator_node src/semantic_point_annotator.cpp)
-#target_link_libraries(semantic_point_annotator_node lapack)
-
-rospack_add_executable(semantic_point_annotator_omp_node src/semantic_point_annotator_omp.cpp)
-target_link_libraries(semantic_point_annotator_omp_node lapack)
+rospack_add_executable(semantic_point_annotator_node src/semantic_point_annotator_omp.cpp)
+target_link_libraries(semantic_point_annotator_node)
 
 # check for OpenMP
 include(CheckIncludeFile)
@@ -36,7 +33,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   if( HAVE_OPENMP AND HAS_GOMP_LIB )
     add_definitions("-fopenmp")
-    target_link_libraries(semantic_point_annotator_omp_node gomp)
+    target_link_libraries(semantic_point_annotator_node gomp)
     set(OPENMP_LFLAGS "-lgomp")
   endif( HAVE_OPENMP AND HAS_GOMP_LIB )
 endif( WIN32 )

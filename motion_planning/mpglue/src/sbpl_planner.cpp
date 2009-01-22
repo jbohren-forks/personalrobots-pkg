@@ -147,8 +147,12 @@ namespace mpglue {
     if (stats_.plan_from_scratch)
       planner_->force_planning_from_scratch();
     
-    if (stats_.flush_cost_changes)
-      environment_->FlushCostUpdates(planner_.get());
+    if (stats_.flush_cost_changes) {
+      if (environment_->HavePendingCostUpdates())
+	environment_->FlushCostUpdates(planner_.get());
+      else
+	stats_.flush_cost_changes = false;
+    }
     
     if (stats_.stop_at_first_solution)
       planner_->set_search_mode(true);

@@ -4,12 +4,12 @@ rospack(gazebo_robot_description)
 rospack_add_executable(urdf2gazebo src/urdf2gazebo.cpp)
 
 # find needed paths
-find_ros_package(wg_robot_description)
+find_ros_package(pr2_defs)
 find_ros_package(gazebo_robot_description)
 get_target_property(urdf2gazebo_exe urdf2gazebo LOCATION)
 
 # build the ogre mesh files from *.stl (and *.stlb from convex decomposition)
-file(GLOB pr2_stl_files ${wg_robot_description_PACKAGE_PATH}/models/pr2/*.stl ${wg_robot_description_PACKAGE_PATH}/models/pr2/convex/*.stlb)
+file(GLOB pr2_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/*.stl ${pr2_defs_PACKAGE_PATH}/meshes/convex/*.stlb)
 set(pr2_gen_files "")
 
 set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/world/Media/models/pr2)

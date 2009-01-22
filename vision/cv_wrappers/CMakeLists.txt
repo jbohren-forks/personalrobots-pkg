@@ -12,7 +12,6 @@ rospack_add_executable(cv_view src/cv_view.cpp)
 rospack_add_executable(cv_view_minimal minimal/cv_view.cpp)
 rospack_add_executable(cv_view_array src/cv_view_array.cpp)
 rospack_add_executable(cv_view_dcam dcam/cv_view.cpp)
-rospack_add_executable(cv_view_array_overlay src/cv_view_array_overlay.cpp)
 
 # cv_movie_streamer
 rospack_add_executable(cv_movie_streamer src/cv_movie_streamer.cpp)

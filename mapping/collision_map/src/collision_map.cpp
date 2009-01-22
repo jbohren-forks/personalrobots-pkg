@@ -36,7 +36,11 @@
 \author Radu Bogdan Rusu
 
 @b collision_map is a node providing a map of the occupied space around the robot as discretized boxes (center,
-dimension), useful for collision detection.
+dimension) or spheres (center, radius), useful for collision detection.
+
+The node can either send all requested map data or incremental updates/changes (additions) to the client/subscriber.
+
+Additionally, the node can subtract all boxes/spheres which intersect with a given Oriented Bounding Box.
 
   \note This version assumes that all boxes have the same dimensions, but the message type allows for different box
 sizes.
@@ -49,12 +53,19 @@ sizes.
 #include <std_msgs/Point.h>
 #include <std_msgs/PointCloud.h>
 
+#include <Eigen/Core>
+#include <cloud_geometry/transforms.h>
+
+#include <boost/thread/mutex.hpp>
+
+#include "collision_map/OrientedBoundingBox.h"
 #include "collision_map/CollisionMap.h"
 #include <tf/transform_listener.h>
 #include <sys/time.h>
 
 using namespace std;
 using namespace std_msgs;
+using namespace collision_map;
 
 struct Leaf
 {
@@ -62,13 +73,32 @@ struct Leaf
   int nr_points_;
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool
+  compareLeaf (const Leaf &l1, const Leaf &l2)
+{
+  if (l1.i_ < l2.i_)
+    return (true);
+  else if (l1.i_ > l2.i_)
+    return (false);
+  else if (l1.j_ < l2.j_)
+    return (true);
+  else if (l1.j_ > l2.j_)
+    return (false);
+  else if (l1.k_ < l2.k_)
+    return (true);
+  else
+    return (false);
+}
+
 class CollisionMapper : public ros::Node
 {
   public:
 
     // ROS messages
     PointCloud cloud_;
-    collision_map::CollisionMap c_map_;
+    CollisionMap c_map_;
+    OrientedBoundingBox box_sub_obj_;
 
     tf::TransformListener tf_;
 
@@ -76,6 +106,7 @@ class CollisionMapper : public ros::Node
 
     // Parameters
     Point leaf_width_, robot_max_;
+    bool only_updates_, subtract_object_;
 
     int min_nr_points_;
     
@@ -83,6 +114,8 @@ class CollisionMapper : public ros::Node
     double sphere_radius_;
     
     enum ObjectTypes { O_SPHERE, O_ORIENTEDBOX };
+    
+    boost::mutex m_lock_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapper () : ros::Node ("collision_map"), tf_(*this)
@@ -93,12 +126,18 @@ class CollisionMapper : public ros::Node
       param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
       param ("~sphere_radius", sphere_radius_, 0.015);     // 1.5cm radius by default
 
-      param ("~robot_max_x", robot_max_.x, 1.5);          // 1.5m radius by default
-      param ("~robot_max_y", robot_max_.y, 1.5);          // 1.5m radius by default
-      param ("~robot_max_z", robot_max_.z, 1.5);          // 1.5m radius by default
+      param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
+      param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
+      param ("~robot_max_z", robot_max_.z, 1.5);           // 1.5m radius by default
 
-      param ("~min_nr_points", min_nr_points_, 1);        // Need at least 2 points per box to consider it "occupied"
-
+      param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
+      
+      param ("~only_updates", only_updates_, false);       // Send the entire map or just incremental updates from the past state
+      param ("~subtract_object", subtract_object_, false); // Subtract an OBB received via the collision_subtract_object topic
+      
+      if (subtract_object_)
+        subscribe ("collision_subtract_object", box_sub_obj_, &CollisionMapper::subtract_cb, 1);
+        
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
 
@@ -160,43 +199,37 @@ class CollisionMapper : public ros::Node
 
       if (hasParam ("~min_nr_points")) getParam ("~min_nr_points", min_nr_points_);
       if (hasParam ("~object_type")) getParam ("~object_type", object_data_type_);
+      if (hasParam ("~only_updates")) getParam ("~only_updates", only_updates_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Callback
-    void cloud_cb ()
+    void 
+      computeCollisionMap (PointCloud *points, vector<Leaf> &leaves, CollisionMap &cmap)
     {
       // Copy the header (and implicitly the frame_id)
-      c_map_.header = cloud_.header;
+      cmap.header = cloud_.header;
       if (object_data_type_ == O_SPHERE)
-        c_map_.spheres.resize (cloud_.pts.size ());
+        cmap.spheres.resize (cloud_.pts.size ());
       else if (object_data_type_ == O_ORIENTEDBOX)
-        c_map_.boxes.resize (cloud_.pts.size ());
+        cmap.boxes.resize (cloud_.pts.size ());
 
-      updateParametersFromServer ();
-      
       double sphere_diameter = 2 * sphere_radius_;
 
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
-      base_origin.header.stamp = 0;
+      base_origin.header.stamp = ros::Time(0.0);
 
       try
       {
         tf_.transformPoint ("base_link", base_origin, torso_lift_origin);
-        ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.point.x, torso_lift_origin.point.y, torso_lift_origin.point.z);
+        //ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.point.x, torso_lift_origin.point.y, torso_lift_origin.point.z);
       }
       catch (tf::ConnectivityException)
       {
         ROS_ERROR ("TF not running or wrong TF frame specified! Defaulting to 0,0,0.");
         torso_lift_origin = base_origin;
       }
-      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.pts.size ());
-
-      timeval t1, t2;
-      gettimeofday (&t1, NULL);
-
       // Get a set of point indices that respect our bounding limits around the robot
       vector<int> indices (cloud_.pts.size ());
       int nr_p = 0;
@@ -261,15 +294,15 @@ class CollisionMapper : public ros::Node
       divB.z = maxB.z - minB.z + 1;
 
       // Allocate the space needed (+ extra)
-      if (leaves_.capacity () < divB.x * divB.y * divB.z)
-        leaves_.reserve (divB.x * divB.y * divB.z);
+      if (leaves.capacity () < divB.x * divB.y * divB.z)
+        leaves.reserve (divB.x * divB.y * divB.z);
 
-      leaves_.resize (divB.x * divB.y * divB.z);
+      leaves.resize (divB.x * divB.y * divB.z);
 
-      for (unsigned int cl = 0; cl < leaves_.size (); cl++)
+      for (unsigned int cl = 0; cl < leaves.size (); cl++)
       {
-        if (leaves_[cl].nr_points_ > 0)
-          leaves_[cl].i_ = leaves_[cl].j_ = leaves_[cl].k_ = leaves_[cl].nr_points_ = 0;
+        if (leaves[cl].nr_points_ > 0)
+          leaves[cl].i_ = leaves[cl].j_ = leaves[cl].k_ = leaves[cl].nr_points_ = 0;
       }
 
       // First pass: go over all points and count them into the right leaf
@@ -290,52 +323,259 @@ class CollisionMapper : public ros::Node
         }
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
-        leaves_[idx].i_ = i;
-        leaves_[idx].j_ = j;
-        leaves_[idx].k_ = k;
-        leaves_[idx].nr_points_++;
+        leaves[idx].i_ = i;
+        leaves[idx].j_ = j;
+        leaves[idx].k_ = k;
+        leaves[idx].nr_points_++;
       }
 
       // Second pass: go over all leaves and add them to the map
       int nr_c = 0;
-      for (unsigned int cl = 0; cl < leaves_.size (); cl++)
+      for (unsigned int cl = 0; cl < leaves.size (); cl++)
       {
-        if (leaves_[cl].nr_points_ >= min_nr_points_)
+        if (leaves[cl].nr_points_ >= min_nr_points_)
         {
           if (object_data_type_ == O_SPHERE)
           {
-            c_map_.spheres[nr_c].radius = sphere_radius_;
-            c_map_.spheres[nr_c].center.x = (leaves_[cl].i_ + 1) * sphere_diameter - sphere_radius_;
-            c_map_.spheres[nr_c].center.y = (leaves_[cl].j_ + 1) * sphere_diameter - sphere_radius_;
-            c_map_.spheres[nr_c].center.z = (leaves_[cl].k_ + 1) * sphere_diameter - sphere_radius_;
+            cmap.spheres[nr_c].radius = sphere_radius_;
+            cmap.spheres[nr_c].center.x = (leaves[cl].i_ + 1) * sphere_diameter - sphere_radius_;
+            cmap.spheres[nr_c].center.y = (leaves[cl].j_ + 1) * sphere_diameter - sphere_radius_;
+            cmap.spheres[nr_c].center.z = (leaves[cl].k_ + 1) * sphere_diameter - sphere_radius_;
           }
           else if (object_data_type_ == O_ORIENTEDBOX)
           {
-            c_map_.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
-            c_map_.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
-            c_map_.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
-            c_map_.boxes[nr_c].center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - c_map_.boxes[nr_c].extents.x; // + minB.x;
-            c_map_.boxes[nr_c].center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - c_map_.boxes[nr_c].extents.y; // + minB.y;
-            c_map_.boxes[nr_c].center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - c_map_.boxes[nr_c].extents.z; // + minB.z;
-            c_map_.boxes[nr_c].axis.x = c_map_.boxes[nr_c].axis.y = c_map_.boxes[nr_c].axis.z = 0.0;
-            c_map_.boxes[nr_c].angle = 0.0;
+            cmap.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
+            cmap.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
+            cmap.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
+            cmap.boxes[nr_c].center.x = (leaves[cl].i_ + 1) * leaf_width_.x - cmap.boxes[nr_c].extents.x; // + minB.x;
+            cmap.boxes[nr_c].center.y = (leaves[cl].j_ + 1) * leaf_width_.y - cmap.boxes[nr_c].extents.y; // + minB.y;
+            cmap.boxes[nr_c].center.z = (leaves[cl].k_ + 1) * leaf_width_.z - cmap.boxes[nr_c].extents.z; // + minB.z;
+            cmap.boxes[nr_c].axis.x = cmap.boxes[nr_c].axis.y = cmap.boxes[nr_c].axis.z = 0.0;
+            cmap.boxes[nr_c].angle = 0.0;
           }
           nr_c++;
         }
       }
       if (object_data_type_ == O_SPHERE)
-        c_map_.spheres.resize (nr_c);
+        cmap.spheres.resize (nr_c);
       if (object_data_type_ == O_ORIENTEDBOX)
-        c_map_.boxes.resize (nr_c);
+        cmap.boxes.resize (nr_c);
+        
+      sort (leaves.begin (), leaves.end (), compareLeaf);
+    }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      subtractCollisionMap (vector<Leaf> *prev_model, vector<Leaf> *cur_model, CollisionMap &map)
+    {
+      vector<Leaf> model_difference;
+
+      double sphere_diameter = 2 * sphere_radius_;
+
+      // Assume the models are sorted
+      set_difference (prev_model->begin (), prev_model->end (), cur_model->begin (), cur_model->end (),
+                      inserter (model_difference, model_difference.begin ()), compareLeaf);
+
+      // Create the map
+      int nr_c = 0;
+      for (unsigned int cl = 0; cl < model_difference.size (); cl++)
+      {
+        if (model_difference[cl].nr_points_ >= min_nr_points_)
+        {
+          if (object_data_type_ == O_SPHERE)
+          {
+            map.spheres[nr_c].radius = sphere_radius_;
+            map.spheres[nr_c].center.x = (model_difference[cl].i_ + 1) * sphere_diameter - sphere_radius_;
+            map.spheres[nr_c].center.y = (model_difference[cl].j_ + 1) * sphere_diameter - sphere_radius_;
+            map.spheres[nr_c].center.z = (model_difference[cl].k_ + 1) * sphere_diameter - sphere_radius_;
+          }
+          else if (object_data_type_ == O_ORIENTEDBOX)
+          {
+            map.boxes[nr_c].extents.x = leaf_width_.x / 2.0;
+            map.boxes[nr_c].extents.y = leaf_width_.y / 2.0;
+            map.boxes[nr_c].extents.z = leaf_width_.z / 2.0;
+            map.boxes[nr_c].center.x = (model_difference[cl].i_ + 1) * leaf_width_.x - map.boxes[nr_c].extents.x; // + minB.x;
+            map.boxes[nr_c].center.y = (model_difference[cl].j_ + 1) * leaf_width_.y - map.boxes[nr_c].extents.y; // + minB.y;
+            map.boxes[nr_c].center.z = (model_difference[cl].k_ + 1) * leaf_width_.z - map.boxes[nr_c].extents.z; // + minB.z;
+            map.boxes[nr_c].axis.x = map.boxes[nr_c].axis.y = map.boxes[nr_c].axis.z = 0.0;
+            map.boxes[nr_c].angle = 0.0;
+          }
+          nr_c++;
+        }
+      }
+      if (object_data_type_ == O_SPHERE)
+        map.spheres.resize (nr_c);
+      if (object_data_type_ == O_ORIENTEDBOX)
+        map.boxes.resize (nr_c);
+    }
+      
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback
+    void
+      cloud_cb ()
+    {
+      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.pts.size ());
+
+      m_lock_.lock ();
+      updateParametersFromServer ();
+      m_lock_.unlock ();
+
+      timeval t1, t2;
+      double time_spent;
+      
+      // @bogus message for Tully - Radu discussion next week
+      ROS_WARN ("Did you transform your points into the map frame today?");
+            
+      gettimeofday (&t1, NULL);
+      // If we're only interested in doing map updates
+      if (only_updates_ && leaves_.size () > 0)
+      {
+        CollisionMap new_c_map;
+        vector<Leaf> new_leaves;
+
+        computeCollisionMap (&cloud_, new_leaves, new_c_map);
+        
+        c_map_.header = cloud_.header;
+        if (object_data_type_ == O_SPHERE)
+          c_map_.spheres.resize (max (new_leaves.size (), leaves_.size ()));
+        else if (object_data_type_ == O_ORIENTEDBOX)
+          c_map_.boxes.resize (max (new_leaves.size (), leaves_.size ()));
+
+        m_lock_.lock ();
+        subtractCollisionMap (&leaves_, &new_leaves, c_map_);
+        m_lock_.unlock ();
+      }
+      else
+      {
+        m_lock_.lock ();
+        computeCollisionMap (&cloud_, leaves_, c_map_);
+        m_lock_.unlock ();
+      }
+      
       gettimeofday (&t2, NULL);
-      double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       if (object_data_type_ == O_SPHERE)
         ROS_INFO ("Collision map computed in %g seconds. Number of spheres: %u.", time_spent, (unsigned int)c_map_.spheres.size ());
       else if (object_data_type_ == O_ORIENTEDBOX)
         ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
 
       publish ("collision_map", c_map_);
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    inline void
+      getRotatedBoxBounds (OrientedBoundingBox *box, Eigen::Matrix3d rotation, Eigen::Vector3d &minB, Eigen::Vector3d &maxB)
+    {
+      // Rotate the 2 bounding points using the given transform
+      minB (0) = box->center.x - box->extents.x;
+      minB (1) = box->center.y - box->extents.y;
+      minB (2) = box->center.z - box->extents.z;
+
+      maxB (0) = box->center.x + box->extents.x;
+      maxB (1) = box->center.y + box->extents.y;
+      maxB (2) = box->center.z + box->extents.z;
+      
+      minB = rotation * minB;
+      maxB = rotation * maxB;
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool
+      isBoxInsideBounds (Point32 *center, Point32 *extents, Eigen::Vector3d minB, Eigen::Vector3d maxB)
+    {
+      // Check all 8 points
+      float ce_x = center->x - extents->x, ce_y = center->y - extents->y, ce_z = center->z - extents->z;
+      float cex  = center->x + extents->x, cey  = center->y + extents->y, cez  = center->z + extents->z;
+
+      // (ce_x, ce_y, ce_z);
+      if ( (ce_x >= minB (0) && ce_x <= maxB (0)) && (ce_y >= minB (1) && ce_y <= maxB (1)) && (ce_z >= minB (2) && ce_z <= maxB (2)) )
+        return (true);
+      // (ce_x, cey, ce_z);
+      if ( (ce_x >= minB (0) && ce_x <= maxB (0)) && (cey >= minB (1) && cey <= maxB (1)) && (ce_z >= minB (2) && ce_z <= maxB (2)) )
+        return (true);
+      // (cex, cey, ce_z);
+      if ( (cex >= minB (0) && cex <= maxB (0)) && (cey >= minB (1) && cey <= maxB (1)) && (ce_z >= minB (2) && ce_z <= maxB (2)) )
+        return (true);
+      // (cex, ce_y, ce_z);
+      if ( (cex >= minB (0) && cex <= maxB (0)) && (ce_y >= minB (1) && ce_y <= maxB (1)) && (ce_z >= minB (2) && ce_z <= maxB (2)) )
+        return (true);
+      // (cex, ce_y, cez);
+      if ( (cex >= minB (0) && cex <= maxB (0)) && (ce_y >= minB (1) && ce_y <= maxB (1)) && (cez >= minB (2) && cez <= maxB (2)) )
+        return (true);
+      // (cex, cey, cez);
+      if ( (cex >= minB (0) && cex <= maxB (0)) && (cey >= minB (1) && cey <= maxB (1)) && (cez >= minB (2) && cez <= maxB (2)) )
+        return (true);
+      // (ce_x, cey, cez);
+      if ( (ce_x >= minB (0) && ce_x <= maxB (0)) && (cey >= minB (1) && cey <= maxB (1)) && (cez >= minB (2) && cez <= maxB (2)) )
+        return (true);
+      // (ce_x, ce_y, cez);
+      if ( (ce_x >= minB (0) && ce_x <= maxB (0)) && (ce_y >= minB (1) && ce_y <= maxB (1)) && (cez >= minB (2) && cez <= maxB (2)) )
+        return (true);
+        
+      return (false);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback
+    void
+      subtract_cb ()
+    {
+      ROS_INFO ("Received OBB with the following coordinates: center [%f, %f, %f], extents [%f, %f, %f], axis [%f, %f, %f], angle [%f]",
+                box_sub_obj_.center.x, box_sub_obj_.center.y, box_sub_obj_.center.z,
+                box_sub_obj_.extents.x, box_sub_obj_.extents.y, box_sub_obj_.extents.z,
+                box_sub_obj_.axis.x, box_sub_obj_.axis.y, box_sub_obj_.axis.z,
+                box_sub_obj_.angle);
+
+      // Get the inverse rotation matrix from the axis-angle
+      Eigen::Matrix3d rot_mat;
+      cloud_geometry::transforms::convertAxisAngleToRotationMatrix (box_sub_obj_.axis, -box_sub_obj_.angle, rot_mat);
+      
+      Eigen::Vector3d minB, maxB;
+      getRotatedBoxBounds (&box_sub_obj_, rot_mat, minB, maxB);
+      
+      m_lock_.lock ();
+      updateParametersFromServer ();
+      m_lock_.unlock ();
+
+      timeval t1, t2;
+      double time_spent;
+      
+      gettimeofday (&t1, NULL);
+      
+      // Subtract the received oriented bounding box
+      m_lock_.lock ();
+      Point32 center, extents;
+      if (leaves_.size () > 0)
+      {
+        // Check all leaves against the given OBB
+        for (unsigned int cl = 0; cl < leaves_.size (); cl++)
+        {
+          if (leaves_[cl].nr_points_ >= min_nr_points_) // Only check valid leaves
+          {
+            // Test if any of the points of the current leaf/box are inside the OBB
+            extents.x = leaf_width_.x / 2.0;
+            extents.y = leaf_width_.y / 2.0;
+            extents.z = leaf_width_.z / 2.0;
+            center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - extents.x;
+            center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - extents.y;
+            center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - extents.z;
+            
+            bool inside = isBoxInsideBounds (&center, &extents, minB, maxB);
+            
+            if (inside)
+            {
+              // Invalidate this leaf
+              leaves_[cl].nr_points_ = 0;
+            }
+          }
+          
+        }
+      }
+      m_lock_.unlock ();
+      
+      gettimeofday (&t2, NULL);
+      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      ROS_INFO ("OBB subtracted from the map in %g seconds.", time_spent);
     }
 };
 

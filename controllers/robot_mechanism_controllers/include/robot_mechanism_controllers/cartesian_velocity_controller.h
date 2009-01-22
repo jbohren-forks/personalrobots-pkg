@@ -54,8 +54,8 @@
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
-#include "misc_utils/realtime_publisher.h"
-#include "misc_utils/realtime_infuser.h"
+#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_infuser.h"
 
 namespace controller {
 
@@ -69,7 +69,7 @@ public:
   void update();
 
   //tf::Vector3 command_;
-  misc_utils::RealtimeInfuser<tf::Vector3> command_;
+  realtime_tools::RealtimeInfuser<tf::Vector3> command_;
   void getTipVelocity(tf::Vector3 *v);
 
 private:
@@ -102,7 +102,7 @@ private:
 
   std_msgs::Vector3 command_msg_;
 
-  misc_utils::RealtimePublisher<std_msgs::Vector3> *vel_publisher_;
+  realtime_tools::RealtimePublisher<std_msgs::Vector3> *vel_publisher_;
   int loop_count_;
 };
 

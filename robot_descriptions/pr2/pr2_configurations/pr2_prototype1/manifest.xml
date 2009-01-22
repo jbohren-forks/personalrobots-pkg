@@ -1,0 +1,25 @@
+<package>
+
+  <description brief="The scripts to run the PR2 Prototype1 base">
+    
+    This package contains XML descriptions of robots in the format
+    defined at Willow Garage.
+    
+  </description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  
+  <depend package="pr2_defs" />
+  <depend package="pr2_default_controllers" />
+  <depend package="teleop_base"/>
+  <depend package="pr2_etherCAT"/>
+  <depend package="pr2_power_board"/>
+  <depend package="ocean_battery_driver"/>
+  <depend package="joy"/>
+  <depend package="rosrecord"/>
+  <depend package="hokuyo_node"/>
+  <depend package="imu_node"/>
+  <depend package="dcam"/>
+  <depend package="robot_pose_ekf"/>
+</package>

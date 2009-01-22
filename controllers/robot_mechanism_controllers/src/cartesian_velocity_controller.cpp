@@ -143,7 +143,7 @@ bool CartesianVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXm
                   &CartesianVelocityControllerNode::command, this, 1);
   guard_command_.set(topic + "/command");
 
-  vel_publisher_ = new misc_utils::RealtimePublisher<std_msgs::Vector3>(topic + "/velocity", 0);
+  vel_publisher_ = new realtime_tools::RealtimePublisher<std_msgs::Vector3>(topic + "/velocity", 0);
 
   return true;
 }

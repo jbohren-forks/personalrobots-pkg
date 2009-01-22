@@ -11,11 +11,9 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="tf" />
+  <depend package="cloud_geometry" />
+  <depend package="eigen" />
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
   </export>
-
-  <sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="liblapack-dev"/>
-
 </package>

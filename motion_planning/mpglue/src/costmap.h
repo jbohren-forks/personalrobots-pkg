@@ -40,7 +40,9 @@
 #include <unistd.h>
 
 namespace costmap_2d {
-  class CostMap2D;
+  // CostMap2D is actually a subclass of ObstacleMapAccessor, so it
+  // suffices to forward-declare that.
+  class ObstacleMapAccessor;
 }
 
 namespace sfl {
@@ -119,10 +121,10 @@ namespace mpglue {
   { return dis_glob + res * (idx - dis_idx); }
   
   
-  Costmap * createCostmap(costmap_2d::CostMap2D const * cm);
+  Costmap * createCostmap(costmap_2d::ObstacleMapAccessor const * cm);
   Costmap * createCostmap(sfl::RDTravmap const * rdt);
   
-  IndexTransform * createIndexTransform(costmap_2d::CostMap2D const * cm);
+  IndexTransform * createIndexTransform(costmap_2d::ObstacleMapAccessor const * cm);
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);
   
 }

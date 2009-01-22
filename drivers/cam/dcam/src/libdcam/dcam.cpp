@@ -634,6 +634,9 @@ dcam::Dcam::getImage(int ms)
 	  camIm->imColor = camFrame->image;
           camIm->imColorType = COLOR_CODING_RGB8;
           break;
+        default:
+          camIm->imRaw = camFrame->image;
+          camIm->imRawType = rawType;
         }
 
 //	printf("Time: %llu\n", camFrame->timestamp);

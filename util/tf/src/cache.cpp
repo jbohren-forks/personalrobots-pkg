@@ -110,9 +110,9 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros
     /*    if (time_diff > max_extrapolation_time_) //Guarenteed in the future therefore positive
     {
       std::stringstream ss;
-      ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).to_double() <<", closest data at "
-         << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
-         << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively.";
+      ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).toSec() <<", closest data at "
+         << (one.stamp_).toSec() << " and " << (two.stamp_).toSec() <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time_).toSec() <<" at "<< (target_time - one.stamp_).toSec()<< " and " << (target_time - two.stamp_).toSec() <<" respectively.";
       throw ExtrapolationException(ss.str());
     }
     */
@@ -130,9 +130,9 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros
     if (time_diff < ros::Duration()-max_extrapolation_time_) //Guarenteed in the past ///\todo check negative sign
     {
       std::stringstream ss;
-      ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).to_double() <<", closest data at "
-         << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
-         << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively."; //sign flip since in the past
+      ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).toSec() <<", closest data at "
+         << (one.stamp_).toSec() << " and " << (two.stamp_).toSec() <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time_).toSec() <<" at "<< (target_time - one.stamp_).toSec()<< " and " << (target_time - two.stamp_).toSec() <<" respectively."; //sign flip since in the past
       throw ExtrapolationException(ss.str());
     }
     */
@@ -158,7 +158,7 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
     return;    
   }
   //Calculate the ratio
-  btScalar ratio = ((time - one.stamp_).to_double()) / ((two.stamp_ - one.stamp_).to_double());
+  btScalar ratio = ((time - one.stamp_).toSec()) / ((two.stamp_ - one.stamp_).toSec());
   
   //Interpolate translation
   btVector3 v;

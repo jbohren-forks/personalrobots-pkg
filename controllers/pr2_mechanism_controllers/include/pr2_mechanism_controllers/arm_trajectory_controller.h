@@ -66,6 +66,10 @@
 #include <robot_kinematics/robot_kinematics.h>
 #include <trajectory/trajectory.h>
 
+#include <robot_msgs/ControllerState.h>
+#include "realtime_tools/realtime_publisher.h"
+#include "std_msgs/String.h"
+
 // #include <libTF/Pose3D.h>
 // #include <urdf/URDF.h>
 
@@ -157,6 +161,10 @@ namespace controller
     double trajectory_wait_time_;
 
     std::vector<double> goal_reached_threshold_;
+
+    realtime_tools::RealtimePublisher <robot_msgs::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
+
+    double max_update_time_;
   };
 
 /** @class ArmTrajectoryControllerNode

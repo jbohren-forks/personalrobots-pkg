@@ -58,6 +58,16 @@ public:
 
   tf::Vector3 origin_xyz_;
   tf::Vector3 origin_rpy_;
+
+  tf::Transform getOffset()
+  {
+    return tf::Transform(tf::Quaternion(0,0,0), origin_xyz_);
+  }
+
+  tf::Transform getRotation()
+  {
+    return tf::Transform(tf::Quaternion(origin_rpy_[2], origin_rpy_[1], origin_rpy_[0]));
+  }
 };
 
 class LinkState

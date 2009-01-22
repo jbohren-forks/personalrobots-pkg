@@ -35,7 +35,7 @@ void SplitFilename (const string& str, string *dir, string *file)
 }
 
 template <class T>
-void copyMsg(string name, ros::Message* m, ros::Time t, void* n)
+void copyMsg(string name, ros::Message* m, ros::Time t, ros::Time t_no_use, void* n)
 {
   if (m != 0) {
     g_names.insert(name);

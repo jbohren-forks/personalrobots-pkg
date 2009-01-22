@@ -97,6 +97,10 @@ namespace mpglue {
 	does not put the cell onto the changedcellsV_. */
     bool UpdateCost(int ix, int iy, unsigned char newcost);
     
+    /** \return true if there are pending cost changes (stored in the
+	changedcellsV_ field, which gets updated in UpdateCost()). */
+    bool HavePendingCostUpdates() const;
+    
     /** If there are any pending cost updates, it calls
 	SBPLPlanner::costs_changed() and then clears that buffer. */
     void FlushCostUpdates(SBPLPlanner * planner);

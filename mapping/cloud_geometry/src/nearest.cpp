@@ -131,9 +131,10 @@ namespace cloud_geometry
       computeCovarianceMatrix (points, covariance_matrix, centroid);
 
       // Extract the eigenvalues and eigenvectors
-      Eigen::Vector3d eigen_values;
-      Eigen::Matrix3d eigen_vectors;
-      eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+      Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
+      //eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
 
       // Normalize the surface normal (eigenvector corresponding to the smallest eigenvalue)
       double norm = sqrt ( eigen_vectors (0, 0) * eigen_vectors (0, 0) +
@@ -170,12 +171,12 @@ namespace cloud_geometry
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
 
       // Extract the eigenvalues and eigenvectors
-      Eigen::Vector3d eigen_values;
-      Eigen::Matrix3d eigen_vectors;
-      eigen_cov (covariance_matrix, eigen_values, eigen_vectors);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+      Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
 
       // Normalize the surface normal (eigenvector corresponding to the smallest eigenvalue)
-      // Note: Remember to take care of the eigen_vectors ordering ! Check lapack.cpp
+      // Note: Remember to take care of the eigen_vectors ordering
       double norm = sqrt ( eigen_vectors (0, 0) * eigen_vectors (0, 0) +
                            eigen_vectors (1, 0) * eigen_vectors (1, 0) +
                            eigen_vectors (2, 0) * eigen_vectors (2, 0));
@@ -262,5 +263,57 @@ namespace cloud_geometry
       j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
       j3 = mu200*mu020*mu002 + 2*mu110*mu101*mu011 - mu002*mu110*mu110 - mu020*mu101*mu101 - mu200*mu011*mu011;
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Check whether a point is a boundary point in a planar patch of projected points given by indices.
+      * \note A coordinate system u-v-n must be computed a-priori using \a getCoordinateSystemOnPlane
+      * \param points a pointer to the input point cloud
+      * \param q_idx the index of the query point in \a points
+      * \param neighbors the estimated point neighbors of the query point
+      * \param u the u direction
+      * \param v the v direction
+      * \param angle_threshold the threshold angle (default $\pi / 2.0$)
+      */
+    bool
+      isBoundaryPoint (std_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors,
+                       Eigen::Vector3d u, Eigen::Vector3d v, double angle_threshold)
+    {
+      if (neighbors->size () < 3)
+        return (false);
+      double uvn_nn[2];
+      // Compute the angles between each neighbouring point and the query point itself
+      std::vector<double> angles (neighbors->size () - 1);
+      for (unsigned int i = 0; i < neighbors->size () - 1; i++)
+      {
+        uvn_nn[0] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * u (0) + 
+                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * u (1) + 
+                    (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * u (2);
+        uvn_nn[1] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * v (0) + 
+                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * v (1) + 
+                    (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * v (2);
+        angles[i] = getAngle2D (uvn_nn);
+      }
+      sort (angles.begin (), angles.end ());
+      
+      // Compute the maximal angle difference between two consecutive angles
+      double max_dif = DBL_MIN, dif;
+      for (unsigned int i = 0; i < neighbors->size () - 2; i++)
+      {
+        dif = angles[i + 1] - angles[i];
+        if (max_dif < dif)
+          max_dif = dif;
+      }
+      // Get the angle difference between the last and the first
+      dif = 2 * M_PI - angles[neighbors->size () - 2] + angles[0];
+      if (max_dif < dif)
+        max_dif = dif;
+        
+      // Check results
+      if (max_dif > angle_threshold)
+        return (true);
+      else
+        return (false);
+    }
+
   }
 }

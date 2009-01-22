@@ -46,7 +46,7 @@
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <mechanism_model/controller.h>
 #include <control_toolbox/sine_sweep.h>
 

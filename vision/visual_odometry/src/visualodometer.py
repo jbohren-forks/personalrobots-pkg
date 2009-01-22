@@ -38,12 +38,12 @@ import vop
 import votools as VO
 from timer import Timer
 
+import os
+
 import Image
 from math import *
 import numpy
 import numpy.linalg
-
-#import pylab
 
 scratch = " " * (640 * 480)
 
@@ -302,11 +302,13 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    self.cl.read('/u/prdata/calonder_trees/current.rtc')
+    filename = '/u/prdata/calonder_trees/current.rtc'
+    assert os.access(filename, os.R_OK)
+    self.cl.read(filename)
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)
-    frame.matcher = calonder.BruteForceMatcher(176)
+    frame.matcher = calonder.BruteForceMatcher(self.cl.dimension())
     if 0:
       frame.descriptors = []
       for (x,y,d) in frame.kp:

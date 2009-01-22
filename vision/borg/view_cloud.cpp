@@ -52,8 +52,10 @@ int main(int argc, char **argv)
     printf("please give the cloudfile as the first parameter\n");
     return 0;
   }
+  /*
   if (argc >= 3)
     frac_to_show = atof(argv[2]);
+    */
 
   printf("opening [%s]\n", argv[1]);
   FILE *f = fopen(argv[1], "r");
@@ -63,6 +65,13 @@ int main(int argc, char **argv)
     return -1;
   }
   Borg borg(0);
+  vector<Borg::SensedPoint> extraction;
+  vector<Borg::ProjectedPoint> projection;
+  if (argc >= 3)
+  {
+    borg.loadExtractionFile(argv[2], extraction);
+    borg.project(extraction, projection);
+  }
   CloudViewer cloud_viewer;
   int line_num = 1;
   double tilt = borg.get_tilt() * D2R;
@@ -77,6 +86,8 @@ int main(int argc, char **argv)
       printf("bad syntax on line %d\n", line_num);
       break;
     }
+    const double blend_factor = 0.3;
+    g = (int)(g * (1.0 - blend_factor) + 255 * blend_factor); 
     // rotate about x so that the floor is level in the rendering
     double ry =  y * cos(tilt) + z * sin(tilt);
     double rz = -y * sin(tilt) + z * cos(tilt);
@@ -142,25 +153,25 @@ int main(int argc, char **argv)
       c = j;
     }
   }
-  cloud_viewer.set_look_tgt((*pts)[c].x, (*pts)[c].y, (*pts)[c].z);
+  cloud_viewer.set_look_tgt((*pts)[c].x, (*pts)[c].y, (*pts)[c].z-.2);
   cloud_viewer.render();
   SDL_GL_SwapBuffers();
   ros::Time last_render(ros::Time::now());
-  double rho_min =  0.5, rho_max = 1.5, rho_step = 0.001;
-  double azi_min = -1.57, azi_max = -1.4, azi_step = 0.003;
-  double ele_min = 0.5, ele_max = 1, ele_step = 0.002;
+  double rho_min =  0.5, rho_max = 2.0, rho_step = 0.01;
+  double azi_min = -2.4, azi_max = -0.7, azi_step = 0.003;
+  double ele_min = -1.0, ele_max = -0.1, ele_step = 0.005;
   cloud_viewer.cam_rho = 0.5 * (rho_min + rho_max);
   cloud_viewer.cam_azi = 0.5 * (azi_min + azi_max);
   cloud_viewer.cam_ele = 0.5 * (ele_min + ele_max);
-  bool auto_move = false;
+  bool auto_move = true;//false;
   double rho_dir = -1, azi_dir = 1, ele_dir = 1;
 
-  bool done = false;
+  bool done = false, reproject = false;
   while(!done)
   {
     usleep(1000);
     ros::Time t(ros::Time::now());
-    if ((t - last_render).to_double() > 0.0333)
+    if ((t - last_render).toSec() > 0.0333)
     {
       last_render = t;
       cloud_viewer.render();
@@ -210,6 +221,26 @@ int main(int argc, char **argv)
             done = true;
           else if (event.key.keysym.sym == SDLK_m)
             auto_move = !auto_move;
+          else if (event.key.keysym.sym == SDLK_1)
+          {
+            reproject = true;
+            borg.tx += 0.001 * (event.key.keysym.mod & SDLK_RSHIFT ? 1 : -1);
+          }
+          else if (event.key.keysym.sym == SDLK_2)
+          {
+            reproject = true;
+            borg.tz += 0.001 * (event.key.keysym.mod & SDLK_RSHIFT ? 1 : -1);
+          }
+          else if (event.key.keysym.sym == SDLK_3)
+          {
+            reproject = true;
+            borg.enc_offset += 0.01 * (event.key.keysym.mod & SDLK_RSHIFT ? 1 : -1);
+          }
+          else if (event.key.keysym.sym == SDLK_4)
+          {
+            reproject = true;
+            borg.laser_roll += 0.1 * (event.key.keysym.mod & SDLK_RSHIFT ? 1 : -1);
+          }
           else
             cloud_viewer.keypress(event.key.keysym.sym);
           //cloud_viewer.render();
@@ -219,6 +250,20 @@ int main(int argc, char **argv)
           done = true;
           break;
       }
+    }
+    if (reproject)
+    {
+      printf("tx = %f\ntz = %f\nenc offset = %f\nlaser_roll = %f\n",
+             borg.tx, borg.tz, borg.enc_offset, borg.laser_roll);
+      borg.project(extraction, projection);
+      cloud_viewer.points.clear();
+      for (vector<Borg::ProjectedPoint>::iterator p = projection.begin();
+           p != projection.end(); ++p)
+        cloud_viewer.add_point(p->x, p->y, p->z, p->r, p->g, p->b);
+      reproject = false;
+        //printf("%.3f %.3f %.3f %d %d %d\n", 
+        //       p->x, p->y, p->z, p->r, p->g, p->b);
+
     }
   }
   SDL_Quit();

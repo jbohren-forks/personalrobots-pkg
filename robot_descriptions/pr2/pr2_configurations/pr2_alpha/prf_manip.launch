@@ -1,0 +1,85 @@
+<launch>
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+
+  <machine name="xenomai_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
+
+  <include file="prf.machine" />
+
+<!-- pr2_etherCAT -->
+<!--   <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/> -->
+
+<!-- PR2 Calibration -->
+  <include file="$(find pr2_full)/calibrate.launch" />
+
+<!-- Joystick -->
+  <param name="joy/deadzone" value="5000"/>
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+
+<!-- Power Board Control Node -->
+  <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+
+<!-- Battery Monitor -->
+  <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
+
+<!-- Base Laser -->
+  <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="base_laser" />
+    <param name="min_ang_degrees" type="double" value="-100.0" />
+    <param name="max_ang_degrees" type="double" value="100.0" />
+  </node>
+
+<!-- Tilt Laser -->
+  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="laser_tilt_link" />
+    <param name="min_ang_degrees" type="double" value="-80.0" />
+    <param name="max_ang_degrees" type="double" value="80.0" />
+    <!-- skip value of 1 runs it at 20Hz, anything higher and the data gets corrupted -->
+    <param name="skip" type="int" value="1" />
+  </node>
+
+<!-- imu -->
+  <param name="imu/time_offset" value="-0.040" />
+  <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
+  <param name="imu/autostart" type="bool" value="true" />
+  <param name="imu/frameid"  type="string" value="imu" />
+  <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
+
+<!-- odom estimation -->
+  <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
+
+<!-- DCAM-->
+  <group ns="stereo">
+      <!-- video_mode should be one of the following:
+         640x480_videre_rectified:     Provides rectified images from the hw
+         Provides: left mono image
+         640x480_videre_disparity:     Disparity and rectification done on chip.
+         Provides: Disparity and left mono image
+         640x480_videre_disparity_raw: Disparity done on chip (debayer and rectification in software).
+         Provides: disparity and left color image.
+         640x480_videre_none:          No stereo on chip (all processing done in software).
+         Provides: all 3 images available
+  -->
+    <param name="exposure" type="int" value="300"/>
+    <param name="videre_mode" type="str" value="rectified"/>
+    <param name="do_colorize" type="bool" value="False"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+  </group>
+
+  <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
+  <node machine="three" pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+
+
+<!-- Runtime Diagnostics Logging -->
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
+
+<!-- NTP monitoring script Warns to console if sync error -->
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="xenomai"/>
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="three"/>
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="four"/>
+
+</launch>
+

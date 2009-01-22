@@ -70,8 +70,16 @@ namespace collision_space
 	    freeMemory();
 	}
 	
+	/** The space ID for the objects that can be changed in the
+	    map. clearObstacles will invalidate this ID. Collision
+	    checking on this space is optimized for many small
+	    objects. */
 	dSpaceID getODESpace(void) const;
+
+	/** Return the space ID for the space in which static objects are added */
 	dSpaceID getODEBasicGeomSpace(void) const;
+
+	/** Return the space ID for the space in which the particular model is instanciated */
 	dSpaceID getModelODESpace(unsigned int model_id) const;
 	
 	/** Check if a model is in collision */
@@ -92,9 +100,15 @@ namespace collision_space
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);
 
+	/** Update the set of bodies that are attached to the robot (re-creates them) */
+	virtual void updateAttachedBodies(unsigned int model_id);
+
 	/** Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
 
+	/** Enable/Disable collision checking for specific links */
+	virtual void setCollisionCheck(unsigned int model_id, std::string &link, bool state);
+	
     protected:
 		
 	class ODECollide2
@@ -198,21 +212,23 @@ namespace collision_space
 
 	struct kGeom
 	{
-	    dGeomID                                geom;
+	    std::vector<dGeomID>                   geom;
+	    bool                                   enabled;
 	    planning_models::KinematicModel::Link *link;
 	};
 	
 	struct ModelInfo
 	{
-	    std::vector< kGeom* >                    geom;
+	    std::vector< kGeom* >                    linkGeom;
 	    dSpaceID                                 space;
-	    std::vector< std::vector<unsigned int> > selfCollision;	    
+	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
 	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const;
+	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
-	std::vector<ModelInfo> m_kgeoms;
+	std::vector<ModelInfo> m_modelsGeom;
 	dSpaceID               m_space;
 	dSpaceID               m_spaceBasicGeoms;
 	

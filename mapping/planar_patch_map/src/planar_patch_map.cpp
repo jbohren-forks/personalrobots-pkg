@@ -134,7 +134,7 @@ class PlanarPatchMap: public ros::Node
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);
 
-        cloud_geometry::areas::convexHull2D (model->getCloud (), inliers, coeff, poly);
+        cloud_geometry::areas::convexHull2D (model->getCloud (), &inliers, &coeff, poly);
       }
     }
 

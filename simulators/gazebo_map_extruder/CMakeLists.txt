@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(gazebo_map_extruder)
-rospack_add_executable(gazebo_map_extruder gazebo_map_extruder.cc)
-target_link_libraries(gazebo_map_extruder SDL_image)

@@ -1217,13 +1217,18 @@ namespace robot_desc {
             MARK_SET(node, joint, effortLimit);
             if (loadDoubleValues(node, 1, &joint->velocityLimit, "velocity"))
             MARK_SET(node, joint, velocityLimit);
+
+	    if (loadDoubleValues(node, 1, joint->safetyLength + 0, "safety_length_min", true))
+		MARK_SET(node, joint, safetyLengthMin);
+	    if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length_max", true))
+		MARK_SET(node, joint, safetyLengthMax);
         }
-        else if (node->ValueStr() == "safety_limit_min" && !free)
+        else if (node->ValueStr() == "safety_length_min" && !free)
         {
             if (loadDoubleValues(node, 1, joint->safetyLength + 0, "safety_length", true))
             MARK_SET(node, joint, safetyLengthMin);
         }
-        else if (node->ValueStr() == "safety_limit_max" && !free)
+        else if (node->ValueStr() == "safety_length_max" && !free)
         {
             if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length", true))
             MARK_SET(node, joint, safetyLengthMax);

@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<robot name="pr2"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <!-- joint blocks -->
+  <joint name="door_joint" type="revolute" >
+    <axis xyz="0 0 1" />
+    <anchor xyz="0 0 0" />
+    <limit min="${-M_PI}" max="${M_PI}"
+           effort="1000" velocity="10"
+           safety_length_min="0.1" safety_length_max="0.1"
+           k_position="100.0" k_velocity="10.0" />
+    <joint_properties damping="100" friction="0.0" />
+  </joint>
+  <joint name="handle_joint" type="revolute" >
+    <axis xyz="1 0 0" />
+    <anchor xyz="0 0 0" />
+    <limit min="${-M_PI}" max="${M_PI}"
+           effort="1000" velocity="10"
+           safety_length_min="0.01" safety_length_max="0.1"
+           k_position="100.0" k_velocity="10.0" />
+    <joint_properties damping="10" friction="0.0" />
+  </joint>
+  
+  <joint name="floor_joint" type="planar" /> 
+  <joint name="wall1_joint" type="fixed" />
+  <joint name="wall2_joint" type="fixed" />
+
+  <!-- link blocks -->
+  <link name="floor_link">
+    <parent name="world" />
+    <origin xyz="5 0 0.01" rpy="0 0 0" />
+    <joint name="floor_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="2 2 0.001" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
+      <geometry name="floor_visual_geom">
+        <mesh scale="4 4 0.002" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 0 0.001" rpy="0.0 0.0 0.0" />
+      <geometry name="floor_collision_geom">
+        <box size="4 4 0.002" />
+      </geometry>
+      <map name="friction_coefficients" flag="gazebo">
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
+    </collision>
+  </link>
+
+  <link name="wall1_link">
+    <parent name="floor_link" />
+    <origin xyz="0 0 0.0" rpy="0 0 0" />
+    <joint name="wall1_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="0 5 1" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 5 1" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/GrassFloor</elem>
+      </map>
+      <geometry name="wall1_visual_geom">
+        <mesh scale="0.2 10 2" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 5 1" rpy="0.0 0.0 0.0" />
+      <geometry name="wall1_collision_geom">
+        <box size="0.2 10 2" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="wall2_link">
+    <parent name="floor_link" />
+    <origin xyz="0 -1.0 0.0" rpy="0 0 0" />
+    <joint name="wall2_joint" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz="0 -5 1" />
+      <inertia ixx="100" ixy="0"  ixz="0"
+               iyy="100" iyz="0"
+               izz="100" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 -5 1" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/GrassFloor</elem>
+      </map>
+      <geometry name="wall2_visual_geom">
+        <mesh scale="0.2 10 2" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 -5 1" rpy="0 0 0" />
+      <geometry name="wall2_collision_geom">
+        <box size="0.2 10 2" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <link name="door_link">
+    <parent name="wall1_link" />
+    <origin xyz="0 0 0.1" rpy="0 0 0" />
+    <joint name="door_joint" />
+    <inertial >
+      <mass value="10" />
+      <com xyz="0.0 -0.5 1.0" /> 
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"
+                iyy="1.0" iyz="0.0"
+                izz="1.0" />
+    </inertial>
+    <visual >
+      <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/White</elem>
+      </map>
+      <geometry name="sholder_roll_mesh_file">
+        <mesh scale="0.2 1.0 2.0" />
+      </geometry>
+    </visual>
+    <collision >
+      <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
+      <geometry name="door_collision_geom">
+        <box size="0.2 1.0 2.0" />
+      </geometry>
+    </collision>
+    <map name="door_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+
+  <link name="handle_link">
+    <parent name="door_link" />
+    <origin xyz="-0.20 -0.8 1.0" rpy="0 0 0" />
+    <joint name="handle_joint" />
+    <inertial >
+      <mass value="0.1" />
+      <com xyz="0.0 0.1 0.0" /> 
+      <inertia  ixx="0.01"  ixy="0.0"  ixz="0.0"
+                iyy="0.001" iyz="0.0"
+                izz="0.01" />
+    </inertial>
+    <visual >
+      <origin xyz="0.0 0.1 0.0" rpy="${M_PI/2.0} 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Black</elem>
+      </map>
+      <geometry name="sholder_roll_mesh_file">
+        <mesh scale="0.04 0.04 0.2" />
+      </geometry>
+    </visual>
+    <collision >
+      <origin xyz="0.0 0.1 0.0" rpy="${M_PI/2.0} 0 0" />
+      <geometry name="handle_collision_geom">
+        <cylinder radius="0.02" length="0.2" />
+      </geometry>
+    </collision>
+    <map name="handle_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+
+  <map name="sensor" flag="gazebo">
+    <verbatim key="door_p3d_block">
+      <!-- ros_p3d for position groundtruth -->
+      <controller:ros_p3d name="p3d_door_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bodyName>door_link</bodyName>
+          <topicName>door_pose</topicName>
+          <frameName>map</frameName>
+          <interface:position name="p3d_door_position"/>
+      </controller:ros_p3d>
+    </verbatim>
+  </map>
+
+  <!-- transmission mechanism controls -->
+  <transmission type="SimpleTransmission" name="door_trans">
+    <actuator name="door_motor" />
+    <joint name="door_joint" />
+    <mechanicalReduction>100</mechanicalReduction>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="handle_trans">
+    <actuator name="handle_motor" />
+    <joint name="handle_joint" />
+    <mechanicalReduction>100</mechanicalReduction>
+  </transmission>
+
+</robot>

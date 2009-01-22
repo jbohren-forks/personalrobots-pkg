@@ -173,21 +173,30 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
   this->chains_[chain_counter_].link_kdl_frame_ = new KDL::Frame[(int) group->links.size()];
   this->chains_[chain_counter_].name = group->name;
   this->serial_chain_map_[this->chains_[chain_counter_].name] = &(this->chains_[chain_counter_]);
-
-  while(link_count < (int) group->links.size())
+  bool not_done = true;
+  while(link_count < (int) group->links.size() && not_done)
   {
     if (link_count < (int) (group->links.size()-1))
     {
       link_next = findNextLinkInGroup(link_current,group);
+      if(!link_next)
+      {
+        frame1 = ident;
+        frame2 = ident;
+        not_done = false;
+      }
+      else
+      {
 #ifdef DEBUG
-      cout << link_next->name << endl;
+        cout << link_next->name << endl;
 #endif
-      getKDLJointInXMLFrame(link_current,frame1);
-      frame2 = getKDLNextJointFrame(link_current,link_next);
+        getKDLJointInXMLFrame(link_current,frame1);
+        frame2 = getKDLNextJointFrame(link_current,link_next);
 #ifdef DEBUG
-      printf("\nComputing and adding frame::%d\n",link_count);
-      cout << frame2 << endl << endl << endl;
+        printf("\nComputing and adding frame::%d\n",link_count);
+        cout << frame2 << endl << endl << endl;
 #endif
+      }
     }
     else
     {
@@ -206,13 +215,18 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
     myfile << "Inertia" << endl << inertia.I << endl;
     myfile << "COM " << com << endl << endl;
 
-
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
+
+//    if(link_current->joint->type == robot_desc::URDF::Link::Joint::FIXED)
+//      this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::None),frame2,inertia,com));
+//    else        
     this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2,inertia,com));
+
     this->chains_[chain_counter_].joint_id_map_[link_current->name] = link_count + 1;
     link_current = link_next;
     link_count++;
   }
+  cout << "Added chain with " << link_count << " joints" << endl;
   this->chains_[chain_counter_].finalize();
   chain_counter_++;
   myfile.close();
@@ -221,17 +235,31 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
 robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group)
 {
   std::vector<robot_desc::URDF::Link*>::iterator link_iter;
+  std::vector<robot_desc::URDF::Link*>::iterator link_iter_child;
 
 #ifdef DEBUG
   cout << "Current link:: " << link_current->name << endl; 
 #endif
+
   for(link_iter = link_current->children.begin(); link_iter != link_current->children.end(); link_iter++)
   {
-#ifdef DEBUG
-    cout << (*link_iter)->name;
-#endif
     if((*link_iter)->insideGroup(group))
-      return *link_iter;
+      if((*link_iter)->joint->type != robot_desc::URDF::Link::Joint::FIXED)
+      {
+        cout << "Next link " << (*link_iter)->name;
+       return *link_iter;
+      }
+    for(link_iter_child = (*link_iter)->children.begin(); link_iter_child != (*link_iter)->children.end(); link_iter_child++)
+    {
+    if((*link_iter_child)->insideGroup(group))
+      if((*link_iter_child)->joint->type != robot_desc::URDF::Link::Joint::FIXED)
+      {
+        cout << "Skipping fixed link " << (*link_iter_child)->name;
+       return *link_iter_child;
+      }
+#ifdef DEBUG
+#endif
+    }
   }
   return NULL;
 }

@@ -11,15 +11,15 @@ rospack(highlevel_controllers)
 genmsg()
 
 # Library
-rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cpp)
+rospack_add_library(highlevel_controllers src/move_base.cpp src/velocity_controllers.cpp)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm
-rospack_add_executable(move_arm src/MoveArm.cpp)
+rospack_add_executable(move_arm src/move_arm.cpp)
 
 # move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
-target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
+target_link_libraries(move_base_sbpl highlevel_controllers mpglue)
 
 # move_base_navfn
 rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)
@@ -30,14 +30,13 @@ rospack_add_executable(move_base_topological src/move_base_topological.cpp)
 target_link_libraries(move_base_topological highlevel_controllers topological_map)
 
 # MoveArmEndEffector
-rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
+rospack_add_executable(move_end_effector src/move_end_effector.cpp)
 
 #Joystick Sleep Button
 rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
 
 # PlugIn and Unplug
-rospack_add_executable(plug_in src/PlugInController.cpp)
-rospack_add_executable(recharge_controller src/RechargeController.cpp)
+rospack_add_executable(recharge_controller src/recharge_controller.cpp)
 
 #CLI
-rospack_add_executable(cli src/ControlCli.cpp)
+rospack_add_executable(cli src/control_cli.cpp)

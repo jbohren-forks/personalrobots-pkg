@@ -6,7 +6,7 @@
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
     <param name="robot_pose_ekf/odom_used" value="true"/>
     <param name="robot_pose_ekf/imu_used" value="true"/>
-    <param name="robot_pose_ekf/vo_used" value="true"/>
+    <param name="robot_pose_ekf/vo_used" value="false"/>
     <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
 
 
@@ -92,10 +92,10 @@
     <param name="/trajectory_rollout/xy_goal_tolerance" type="double" value="0.35"/>
 
     <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_steps" value="20" />
+    <param name="/trajectory_rollout/sim_steps" value="10" />
     <param name="/trajectory_rollout/samples_per_dim" value="10" />
-    <param name="/trajectory_rollout/path_distance_bias" value="0.0" />
-    <param name="/trajectory_rollout/goal_distance_bias" value="1.0" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
     <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />

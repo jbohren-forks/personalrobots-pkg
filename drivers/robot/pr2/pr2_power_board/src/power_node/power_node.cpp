@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -68,7 +68,7 @@ static Interface* ReceiveInterface;
 
 Interface::Interface(const char* ifname) :
   recv_sock(-1),
-  send_sock(-1) {		
+  send_sock(-1) {
   memset(&interface, 0, sizeof(interface));
   assert(strlen(ifname) <= sizeof(interface.ifr_name));
   strncpy(interface.ifr_name, ifname, IFNAMSIZ);
@@ -86,16 +86,16 @@ void Interface::Close() {
   }
 }
 
-	
-int Interface::InitReceive() 
+
+int Interface::InitReceive()
 {
 
   recv_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (recv_sock == -1) {
-    perror("Couldn't create recv socket");		
+    perror("Couldn't create recv socket");
     return -1;
   }
-		
+
  // Allow reuse of recieve port
   int opt = 1;
   if (setsockopt(recv_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
@@ -103,7 +103,7 @@ int Interface::InitReceive()
     Close();
     return -1;
   }
-		
+
   // Allow broadcast on send socket
   opt = 1;
   if (setsockopt(recv_sock, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
@@ -122,30 +122,30 @@ int Interface::InitReceive()
     perror("Couldn't Bind socket to port");
     Close();
     return -1;
-  }	
-	
-  return 0;		
+  }
+
+  return 0;
 }
-	
-int Interface::Init(sockaddr_in *port_address, sockaddr_in *broadcast_address) 
+
+int Interface::Init(sockaddr_in *port_address, sockaddr_in *broadcast_address)
 {
 
   memcpy( &ifc_address, broadcast_address, sizeof(sockaddr_in));
 #if 0
   recv_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (recv_sock == -1) {
-    perror("Couldn't create recv socket");		
+    perror("Couldn't create recv socket");
     return -1;
   }
 #endif
   send_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (send_sock == -1) {
     Close();
-    perror("Couldn't create send socket");		
+    perror("Couldn't create send socket");
     return -1;
   }
 
-		
+
  // Allow reuse of recieve port
   int opt;
 #if 0
@@ -155,7 +155,7 @@ int Interface::Init(sockaddr_in *port_address, sockaddr_in *broadcast_address)
     Close();
     return -1;
   }
-		
+
   // Allow broadcast on send socket
   opt = 1;
   if (setsockopt(recv_sock, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
@@ -184,10 +184,10 @@ int Interface::Init(sockaddr_in *port_address, sockaddr_in *broadcast_address)
     perror("Couldn't Bind socket to port");
     Close();
     return -1;
-  }	
+  }
 #endif
-	
-  // Connect send socket to use broadcast address and same port as recieve sock		
+
+  // Connect send socket to use broadcast address and same port as recieve sock
   sin.sin_port = htons(POWER_PORT);
   //sin.sin_addr.s_addr = INADDR_BROADCAST; //inet_addr("192.168.10.255");
   sin.sin_addr= broadcast_address->sin_addr;
@@ -197,26 +197,26 @@ int Interface::Init(sockaddr_in *port_address, sockaddr_in *broadcast_address)
     return -1;
   }
 
-  return 0;		
+  return 0;
 }
 
 void Interface::AddToReadSet(fd_set &set, int &max_sock) const {
-  FD_SET(recv_sock,&set);	
+  FD_SET(recv_sock,&set);
   if (recv_sock > max_sock)
     max_sock = recv_sock;
 }
 
 bool Interface::IsReadSet(fd_set set) const {
-  return FD_ISSET(recv_sock,&set);	
+  return FD_ISSET(recv_sock,&set);
 }
 
-int PowerBoard::send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags) 
-{	
+int PowerBoard::send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags)
+{
   if (Devices.size() == 0) {
     fprintf(stderr,"No devices to send command to\n");
     return -1;
   }
-	
+
   if ((selected_device < 0) || (selected_device >= (int)Devices.size())) {
     fprintf(stderr, "Device number must be between 0 and %u\n", Devices.size()-1);
     return -1;
@@ -225,14 +225,14 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
   Device* device = Devices[selected_device];
   assert(device != NULL);
 
-	
+
   if ((circuit_breaker < 0) || (circuit_breaker > 2)) {
     fprintf(stderr, "Circuit breaker number must be between 0 and 2\n");
     return -1;
-  }	
+  }
 
   ROS_DEBUG("circuit=%d command=%s flags=%x\n", circuit_breaker, command.c_str(), flags);
-	
+
   // Determine what command to send
   char command_enum = NONE;
   if (command == "start") {
@@ -242,7 +242,7 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
     command_enum = COMMAND_STOP;
   }
   else if (command == "reset") {
-    command_enum = COMMAND_RESET;		
+    command_enum = COMMAND_RESET;
   }
   else if (command == "disable") {
     command_enum = COMMAND_DISABLE;
@@ -250,13 +250,16 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
   else if (command == "none") {
     command_enum = NONE;
   }
+  else if (command == "terrible_hack_shutdown") {
+    exit(0);
+  }
   else {
     ROS_ERROR("invalid command '%s'", command.c_str());
     return -1;
   }
-  //" -c : command to send to device : 'start', 'stop', 'reset', 'disable'\n"	
+  //" -c : command to send to device : 'start', 'stop', 'reset', 'disable'\n"
 
-	
+
   // Build command message
   CommandMessage cmdmsg;
   memset(&cmdmsg, 0, sizeof(cmdmsg));
@@ -284,7 +287,7 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
   }
 
   cmdmsg.command.flags = flags;
-   	
+
   errno = 0;
   for (unsigned xx = 0; xx < SendInterfaces.size(); ++xx)
   {
@@ -298,11 +301,11 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
               result, sizeof(cmdmsg));
     }
   }
-				
+
   ROS_DEBUG("Send to Serial=%u, revision=%u", cmdmsg.header.serial_num, cmdmsg.header.message_revision);
   ROS_DEBUG("Sent command %s(%d) to device %d, circuit %d",
          command.c_str(), command_enum, selected_device, circuit_breaker);
-	
+
   return 0;
 }
 
@@ -322,7 +325,7 @@ const char* PowerBoard::cb_state_to_str(char state)
   case STATE_DISABLED:
     return "Disabled";
   }
-  return "???";			
+  return "???";
 }
 
 const char* PowerBoard::master_state_to_str(char state)
@@ -338,26 +341,26 @@ const char* PowerBoard::master_state_to_str(char state)
   case MASTER_OFF:
     return "off";
   }
-  return "???";			
+  return "???";
 }
 
 
 // Determine if a record of the device already exists...
 // If it does use newest message a fill in pointer to old one .
-// If it does not.. use 
+// If it does not.. use
 int PowerBoard::process_message(const PowerMessage *msg)
 {
   if (msg->header.message_revision != CURRENT_MESSAGE_REVISION) {
     ROS_WARN("Got message with incorrect message revision %u\n", msg->header.message_revision);
     return -1;
   }
-	
+
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
       boost::mutex::scoped_lock(library_lock_);
       Devices[i]->message_time = time(0);
-      memcpy(&(Devices[i]->pmsg), msg, sizeof(PowerMessage)); 
+      memcpy(&(Devices[i]->pmsg), msg, sizeof(PowerMessage));
       return 0;
     }
   }
@@ -366,7 +369,7 @@ int PowerBoard::process_message(const PowerMessage *msg)
   Device *newDevice = new Device();
   Devices.push_back(newDevice);
   newDevice->message_time = time(0);
-  memcpy(&(newDevice->pmsg), msg, sizeof(PowerMessage)); 
+  memcpy(&(newDevice->pmsg), msg, sizeof(PowerMessage));
   return 0;
 }
 
@@ -376,12 +379,12 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
     ROS_WARN("Got message with incorrect message revision %u\n", msg->header.message_revision);
     return -1;
   }
-	
+
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
       boost::mutex::scoped_lock(library_lock_);
-      memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage)); 
+      memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage));
       return 0;
     }
   }
@@ -389,13 +392,13 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   // Add new device to list
   Device *newDevice = new Device();
   Devices.push_back(newDevice);
-  memcpy(&(newDevice->tmsg), msg, sizeof(TransitionMessage)); 
+  memcpy(&(newDevice->tmsg), msg, sizeof(TransitionMessage));
   return 0;
 }
 
 // collect status packets for 0.5 seconds.  Keep the last packet sent
 // from each seperate power device.
-int PowerBoard::collect_messages() 
+int PowerBoard::collect_messages()
 {
   PowerMessage *power_msg;
   TransitionMessage *transition_msg;
@@ -406,22 +409,22 @@ int PowerBoard::collect_messages()
   //ROS_DEBUG("TransitionMessage size=%u", sizeof(TransitionMessage));
 
   timeval timeout;  //timeout once a second to check if we should die or not.
-  timeout.tv_sec = 1; 
+  timeout.tv_sec = 1;
   timeout.tv_usec = 0;
-	
-  while (1) 
+
+  while (1)
   {
-    // Wait for packets to arrive on socket. 
+    // Wait for packets to arrive on socket.
     fd_set read_set;
     int max_sock = -1;
     FD_ZERO(&read_set);
     //for (unsigned i = 0; i<SendInterfaces.size(); ++i)
       ReceiveInterface->AddToReadSet(read_set,max_sock);
-		
+
     int result = select(max_sock+1, &read_set, NULL, NULL, &timeout);
 
     //fprintf(stderr,"*");
-		
+
     if (result == -1) {
       perror("Select");
       return -1;
@@ -441,7 +444,7 @@ int PowerBoard::collect_messages()
         }
       }
 #endif
-			
+
       //ROS_INFO("Receive on %s", inet_ntoa(((struct sockaddr_in *)(&recvInterface->interface.ifr_dstaddr))->sin_addr));
       int len = recv(recvInterface->recv_sock, tmp_buf, sizeof(tmp_buf), 0);
       if (len == -1) {
@@ -454,7 +457,7 @@ int PowerBoard::collect_messages()
 
       header = (MessageHeader*)tmp_buf;
       {
-        
+
         //ROS_DEBUG("Header type=%d", header->message_id);
         if(header->message_id == MESSAGE_ID_POWER)
         {
@@ -510,14 +513,14 @@ PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
 
   if( my_logger->getLevel() == 0 )    //has anyone set our level??
   {
-    // Set the ROS logger 
+    // Set the ROS logger
     my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
   }
 
   advertiseService("power_board_control", &PowerBoard::commandCallback);
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
-  
+
 bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
                      pr2_power_board::PowerBoardCommand::response &res_)
 {
@@ -534,28 +537,28 @@ void PowerBoard::collectMessages()
     //ROS_DEBUG("*");
   }
 }
-  
+
 void PowerBoard::sendDiagnostic()
 {
   robot_msgs::DiagnosticMessage msg_out;
   robot_msgs::DiagnosticStatus stat;
   robot_msgs::DiagnosticValue val;
   robot_msgs::DiagnosticString strval;
-  
+
   while(ok())
   {
     sleep(1);
     //ROS_DEBUG("-");
     boost::mutex::scoped_lock(library_lock_);
 
-    for (unsigned i = 0; i<Devices.size(); ++i) 
+    for (unsigned i = 0; i<Devices.size(); ++i)
     {
       msg_out.status.clear();
       stat.values.clear();
       stat.strings.clear();
 
       Device *device = Devices[i];
-      PowerMessage *pmsg = &device->pmsg;		
+      PowerMessage *pmsg = &device->pmsg;
 
       ostringstream ss;
       ss << "Power board " << i;
@@ -563,7 +566,7 @@ void PowerBoard::sendDiagnostic()
       stat.level = 0;///@todo fixem
       stat.message = "Power Node";
       StatusStruct *status = &Devices[i]->pmsg.status;
-      
+
       ROS_DEBUG("Device %u", i);
       ROS_DEBUG(" Serial       = %u", pmsg->header.serial_num);
 
@@ -607,7 +610,7 @@ void PowerBoard::sendDiagnostic()
       val.value = status->CB2_voltage;
       val.label = "Breaker 2 Voltage";
       stat.values.push_back(val);
-      
+
       ROS_DEBUG(" Board Temp   = %f", status->ambient_temp);
       val.value = status->ambient_temp;
       val.label = "Board Temperature";
@@ -629,8 +632,8 @@ void PowerBoard::sendDiagnostic()
       val.value = status->fan3_speed;
       val.label = "Fan 3 Speed";
       stat.values.push_back(val);
-      
-      ROS_DEBUG(" State:");		
+
+      ROS_DEBUG(" State:");
       ROS_DEBUG("  CB0 (Base)  = %s", cb_state_to_str(status->CB0_state));
       strval.value = cb_state_to_str(status->CB0_state);
       strval.label = "Breaker 0 State";
@@ -647,12 +650,12 @@ void PowerBoard::sendDiagnostic()
       strval.value = master_state_to_str(status->DCDC_state);
       strval.label = "DCDC state";
       stat.strings.push_back(strval);
-      
-      ROS_DEBUG(" Status:");		
+
+      ROS_DEBUG(" Status:");
       ROS_DEBUG("  CB0 (Base)  = %s", (status->CB0_status) ? "On" : "Off");
       strval.value = (status->CB0_status) ? "On" : "Off";
       strval.label = "Breaker 0 Status";
-      stat.strings.push_back(strval);      
+      stat.strings.push_back(strval);
       ROS_DEBUG("  CB1 (R-arm) = %s", (status->CB1_status) ? "On" : "Off");
       strval.value = (status->CB1_status) ? "On" : "Off";
       strval.label = "Breaker 1 Status";
@@ -669,7 +672,7 @@ void PowerBoard::sendDiagnostic()
       val.value = status->estop_status;
       val.label = "RunStop Status";
       stat.values.push_back(val);
-      
+
       ROS_DEBUG(" Revisions:");
       ROS_DEBUG("         PCA = %c", status->pca_rev);
       ss.str("");
@@ -704,7 +707,7 @@ void PowerBoard::sendDiagnostic()
       stat.values.push_back(val);
 
 
-      TransitionMessage *tmsg = &device->tmsg;		
+      TransitionMessage *tmsg = &device->tmsg;
       for(int cb_index=0; cb_index < 3; ++cb_index)
       {
         TransitionCount *trans = &tmsg->cb[cb_index];
@@ -752,15 +755,15 @@ void PowerBoard::sendDiagnostic()
       }
 
 
-      msg_out.status.push_back(stat);      
+      msg_out.status.push_back(stat);
       robot_msgs::DiagnosticStatus stat;
       stat.name = "pr2_power_board";
       stat.level = 0;
       stat.message = "Running";
-      msg_out.status.push_back(stat);      
+      msg_out.status.push_back(stat);
 
-      //ROS_DEBUG("Publishing ");        
-      publish("/diagnostics", msg_out);    
+      //ROS_DEBUG("Publishing ");
+      publish("/diagnostics", msg_out);
     }
 
   }
@@ -803,12 +806,12 @@ void setupReceive()
 
 
 // Build list of interfaces
-int CreateAllInterfaces(void) 
+int CreateAllInterfaces(void)
 {
   //
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock == -1) {
-    ROS_ERROR("Couldn't create socket for ioctl requests");		
+    ROS_ERROR("Couldn't create socket for ioctl requests");
     return -1;
   }
 
@@ -829,19 +832,19 @@ int CreateAllInterfaces(void)
         sockaddr_in *addr = (sockaddr_in*)&get_io.ifc_req[yy].ifr_addr;
         ROS_DEBUG("address=%s", inet_ntoa(addr->sin_addr) );
 
-        if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
+        if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) ||
             (strncmp("tun", get_io.ifc_req[yy].ifr_name, 3) == 0) ||
             (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
         {
           ROS_INFO("Ignoring interface %*s",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
           continue;
-        } 
-        else 
+        }
+        else
         {
           ROS_INFO("Found interface    %*s",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
           Interface *newInterface = new Interface(get_io.ifc_req[yy].ifr_name);
           assert(newInterface != NULL);
-          if (newInterface == NULL) 
+          if (newInterface == NULL)
           {
             continue;
           }
@@ -850,26 +853,26 @@ int CreateAllInterfaces(void)
           struct ifreq *ifr = &get_io.ifc_req[yy];
           if(ioctl(sock, SIOCGIFBRDADDR, ifr) == 0)
           {
-            if (ifr->ifr_broadaddr.sa_family == AF_INET) 
+            if (ifr->ifr_broadaddr.sa_family == AF_INET)
             {
               struct sockaddr_in *br_addr = (struct sockaddr_in *) &ifr->ifr_dstaddr;
-              
+
               ROS_DEBUG ("Broadcast addess %s", inet_ntoa(br_addr->sin_addr));
 
-              if (newInterface->Init(addr, br_addr)) 
+              if (newInterface->Init(addr, br_addr))
               {
                 ROS_ERROR("Error initializing interface %*s", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
                 delete newInterface;
                 newInterface = NULL;
                 continue;
-              } 
-              else 
+              }
+              else
               {
                 // Interface is good add it to interface list
                 SendInterfaces.push_back(newInterface);
 
               }
-           
+
             }
 
           }
@@ -887,12 +890,12 @@ int CreateAllInterfaces(void)
   delete[] get_io.ifc_req;
 
   setupReceive();
-  //ROS_INFO("Found %d usable interfaces", Interfaces.size());	
-	
+  //ROS_INFO("Found %d usable interfaces", Interfaces.size());
+
   return 0;
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
@@ -909,9 +912,9 @@ int main(int argc, char** argv)
 
   CloseAllDevices();
   CloseAllInterfaces();
-		
+
   ros::fini();
   delete myBoard;
   return 0;
-	
+
 }

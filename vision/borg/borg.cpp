@@ -162,7 +162,7 @@ void Borg::scan(list<Image *> &images)
   stage->setDuty(return_duty);
   stage->gotoPosition(left, true);
   Image *still_image = new Image(new uint8_t[640*480],
-                                 ros::Time::now().to_double(), 0);
+                                 ros::Time::now().toSec(), 0);
   if (!cam->savePhoto(still_image->raster))
     printf("woah! couldn't grab still photo\n");
   cam->prepareScan();
@@ -175,12 +175,12 @@ void Borg::scan(list<Image *> &images)
   images.push_back(still_image);
   double pos = 0;
   for (ros::Time t_now(ros::Time::now()); 
-       (t_now - t_start).to_double() < 15 && fabs(pos - right) > 0.5;
+       (t_now - t_start).toSec() < 15 && fabs(pos - right) > 0.5;
        t_now = ros::Time::now())
   {
     pos = stage->getPosition(1.0);
     Image *image = new Image(new uint8_t[640*480], 
-                             ros::Time::now().to_double(), pos);
+                             ros::Time::now().toSec(), pos);
     if (!cam->savePhoto(image->raster))
     {
       cam->stopImageStream();
@@ -189,7 +189,7 @@ void Borg::scan(list<Image *> &images)
     images.push_back(image);
   }
   stage->laser(false);
-  double dt = (ros::Time::now() - t_start).to_double();
+  double dt = (ros::Time::now() - t_start).toSec();
   if (!g_silent)
     printf("captured %d images in %.3f seconds (%.3f fps)\n", 
            images.size(), dt, images.size() / dt);
@@ -282,7 +282,7 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
   for (int row = 0; row < 480; row++)
     hits[row].resize(640); // prepare histogram
   // split the images list into multiple chunks
-  const int NUM_WORKERS = 4;
+  const int NUM_WORKERS = 2;
   list<Image *> work[NUM_WORKERS];
   int work_idx = 0;
   for (list<Image *>::iterator image = images.begin();
@@ -444,7 +444,7 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
   }
   if (!g_silent)
     printf("processed %d images in %.3f seconds\n", images.size(), 
-           (ros::Time::now() - t_start).to_double());
+           (ros::Time::now() - t_start).toSec());
   // purge the queue
   while (!image_deque.empty())
   {

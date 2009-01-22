@@ -44,6 +44,7 @@ int plan2d(int argc, char *argv[])
 	int bRet = 0;
 	double allocated_time_secs = 100.0; //in seconds
 	MDPConfig MDPCfg;
+	bool bsearchuntilfirstsolution = true;
 	
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAV2D environment_nav2D;
@@ -66,6 +67,10 @@ int plan2d(int argc, char *argv[])
 	bool bforwardsearch = false;
 	ARAPlanner planner(&environment_nav2D, bforwardsearch);
 
+	//set search mode
+	planner.set_search_mode(bsearchuntilfirstsolution);
+
+
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
             printf("ERROR: failed to set start state\n");
@@ -87,6 +92,7 @@ int plan2d(int argc, char *argv[])
 
     environment_nav2D.PrintTimeStat(stdout);
 
+	/*
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
@@ -119,10 +125,11 @@ int plan2d(int argc, char *argv[])
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+	*/
 
     FILE* fSol = fopen("sol.txt", "w");
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, fSol);
+	  environment_nav2D.PrintState(solution_stateIDs_V[i], false, fSol);
 	}
     fclose(fSol);
 
@@ -271,26 +278,41 @@ int planxythetalat(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 1.0; //in seconds
+	double allocated_time_secs = 60; //in seconds
 	MDPConfig MDPCfg;
-	bool bsearchuntilfirstsolution = true;
+	bool bsearchuntilfirstsolution = false;
+
+	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
+	vector<sbpl_2Dpt_t> perimeterptsV;
+	sbpl_2Dpt_t pt_m;
+	double halfwidth = 0.08; //0.3;
+	double halflength = 0.1; //0.45;
+	pt_m.x = -halflength;
+	pt_m.y = -halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = halflength;
+	pt_m.y = -halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = halflength;
+	pt_m.y = halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = -halflength;
+	pt_m.y = halfwidth;
+	perimeterptsV.push_back(pt_m);
 	
 
-	//read in motion primitives
-	FILE* fmprimitives = fopen("xytheta_mprimitives_2.cfg", "r");
-	if(fmprimitives == NULL)
-	{
-		printf("ERROR: motion primitives file can not be opened\n");
-		exit(1);
-	}
-	vector<SBPL_xytheta_mprimitive> mprimV;
+	//clear perimeter
+	perimeterptsV.clear();
+	pt_m.x = 0.0;
+	pt_m.y = 0.0;
+	perimeterptsV.push_back(pt_m);
 
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAVXYTHETALAT environment_navxythetalat;
 	
 	if(argc == 3)
 	{
-		if(!environment_navxythetalat.InitializeEnv(argv[1], argv[2]))
+		if(!environment_navxythetalat.InitializeEnv(argv[1], perimeterptsV, argv[2]))
 		{
 			printf("ERROR: InitializeEnv failed\n");
 			exit(1);
@@ -298,7 +320,7 @@ int planxythetalat(int argc, char *argv[])
 	}
 	else
 	{
-		if(!environment_navxythetalat.InitializeEnv(argv[1]))
+		if(!environment_navxythetalat.InitializeEnv(argv[1], perimeterptsV, NULL))
 		{
 			printf("ERROR: InitializeEnv failed\n");
 			exit(1);
@@ -316,7 +338,7 @@ int planxythetalat(int argc, char *argv[])
 	//plan a path
 	vector<int> solution_stateIDs_V;
 	bool bforwardsearch = false;
-	ADPlanner planner(&environment_navxythetalat, bforwardsearch);
+	ARAPlanner planner(&environment_navxythetalat, bforwardsearch);
 
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
@@ -329,7 +351,7 @@ int planxythetalat(int argc, char *argv[])
             printf("ERROR: failed to set goal state\n");
             exit(1);
         }
-	planner.set_initialsolution_eps(4.0);
+	planner.set_initialsolution_eps(3.0);
 
 	//set search mode
 	planner.set_search_mode(bsearchuntilfirstsolution);
@@ -341,7 +363,13 @@ int planxythetalat(int argc, char *argv[])
 
     environment_navxythetalat.PrintTimeStat(stdout);
 
-	/*
+    if(planner.set_start(environment_navxythetalat.SetStart(1.6,0.5,0)) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+
+
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
@@ -349,6 +377,8 @@ int planxythetalat(int argc, char *argv[])
 
     environment_navxythetalat.PrintTimeStat(stdout);
 
+
+	/*
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");

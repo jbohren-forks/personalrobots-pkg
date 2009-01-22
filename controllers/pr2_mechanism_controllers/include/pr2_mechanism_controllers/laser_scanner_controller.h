@@ -39,7 +39,7 @@
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 
 // Messages
 #include <pr2_mechanism_controllers/LaserScannerSignal.h>
@@ -257,7 +257,7 @@ private:
   LaserScannerController::ProfileExecutionState prev_profile_exec_state_ ;       //!< Store the previous profileExecutionState. Need this to compare to the current state to detect transitions
   pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
   bool need_to_send_msg_ ;                                                       //!< Tracks whether we still need to send out the m_scanner_signal_ message.
-  misc_utils::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
+  realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
 };
 }
 

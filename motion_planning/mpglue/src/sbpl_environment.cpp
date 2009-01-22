@@ -199,6 +199,13 @@ namespace mpglue {
   }
   
   
+  bool SBPLEnvironment::
+  HavePendingCostUpdates() const
+  {
+    return ! changedcellsV_.empty();
+  }
+  
+  
   void SBPLEnvironment::
   FlushCostUpdates(SBPLPlanner * planner)
   {

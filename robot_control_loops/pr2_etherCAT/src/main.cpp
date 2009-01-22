@@ -51,7 +51,7 @@
 #include <ros/node.h>
 #include <std_srvs/Empty.h>
 
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 
 static struct
 {
@@ -94,7 +94,7 @@ static struct
   int secondary;
 } diagnostics;
 
-static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
+static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
 {
   if (publisher.trylock())
   {
@@ -166,7 +166,7 @@ static RT_TASK clockTask, controlTask;
 
 void controlLoop(void *)
 {
-  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);

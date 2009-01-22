@@ -4,7 +4,7 @@ rospack(openrave_robot_description)
 rospack_add_executable(urdf2openrave src/urdf2openrave.cpp)
 
 # find needed paths
-find_ros_package(wg_robot_description)
+find_ros_package(pr2_defs)
 find_ros_package(openrave_robot_description)
 find_ros_package(openrave)
 get_target_property(urdf2openrave_exe urdf2openrave LOCATION)
@@ -13,9 +13,9 @@ set(robot_files )
 
 # process all urdf files
 set(PR2_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2.robot.xml)
-set(PR2_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2/pr2.xml)
+set(PR2_INPUT ${pr2_defs_PACKAGE_PATH}/robots/pr2.expanded.xml)
 set(PR2_GRIPPER_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2_gripper.robot.xml)
-set(PR2_GRIPPER_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2_gripper/pr2_gripper.xml)
+set(PR2_GRIPPER_INPUT ${pr2_defs_PACKAGE_PATH}/robots/gripper.expanded.xml)
 set(MODELS ${openrave_robot_description_PACKAGE_PATH}/models)
 
 ## create the models directory

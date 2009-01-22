@@ -14,7 +14,7 @@ import camera
 import random
 import math
 import sys
-import visualize
+#import visualize
 
 def rotation(angle, x, y, z):
   return numpy.array([
@@ -77,9 +77,9 @@ class PhonyFrame:
 
 vos = [
   #VisualOdometer(stereo_cam, sba=(1,1,1)),
-  VisualOdometer(stereo_cam, scavenge = True, sba=None, inlier_error_threshold = 1.0),
-  VisualOdometer(stereo_cam, scavenge = True, sba=(3,10,10), inlier_error_threshold = 1.0),
-  VisualOdometer(stereo_cam, scavenge = True, sba=(3,10,10), inlier_error_threshold = 3.0),
+  VisualOdometer(stereo_cam, sba=None, inlier_error_threshold = 3.0),
+#  VisualOdometer(stereo_cam, sba=(3,10,10), inlier_error_threshold = 1.0),
+  VisualOdometer(stereo_cam, sba=(3,10,10), inlier_error_threshold = 3.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),

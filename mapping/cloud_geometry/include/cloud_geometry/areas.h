@@ -56,15 +56,31 @@ namespace cloud_geometry
     inline bool
       comparePoint2DFloat32 (const std_msgs::Point2DFloat32& p1, const std_msgs::Point2DFloat32& p2)
     {
-      if (p1.x < p2.x)      return true;
-      else if (p1.x > p2.x) return false;
-      else if (p1.y < p2.y) return true;
-      else                  return false;
+      if (p1.x < p2.x)      return (true);
+      else if (p1.x > p2.x) return (false);
+      else if (p1.y < p2.y) return (true);
+      else                  return (false);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Sort 3d points in vector structures according to their .x/.y/.z values
+      * \param p1 the first 3d point
+      * \param p2 the second 3d point
+      */
+    inline bool
+      comparePoint3D (const std_msgs::Point32& p1, const std_msgs::Point32& p2)
+    {
+      if (p1.x < p2.x)      return (true);
+      else if (p1.x > p2.x) return (false);
+      else if (p1.y < p2.y) return (true);
+      else if (p1.y > p2.y) return (false);
+      else if (p1.z < p2.z) return (true);
+      else                  return (false);
     }
 
     double compute2DPolygonalArea (std_msgs::PointCloud points, std::vector<double> normal);
     double compute2DPolygonalArea (std_msgs::Polygon3D polygon, std::vector<double> normal);
-    void convexHull2D (std_msgs::PointCloud *points, std::vector<int> indices, std::vector<double> coeff, std_msgs::Polygon3D &hull);
+    void convexHull2D (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, std_msgs::Polygon3D &hull);
     void convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull);
 
   }

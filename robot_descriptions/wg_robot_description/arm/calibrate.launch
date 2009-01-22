@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="mechanism_bringup" type="calibrate.py"
-        args="$(find wg_robot_description)/arm/cal.xml"
-        output="screen" />
-</launch>

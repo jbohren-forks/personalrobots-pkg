@@ -63,7 +63,7 @@
  * - None
  **/
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
 using topological_map::GridCell;
@@ -102,32 +102,33 @@ MoveBaseTopological::MoveBaseTopological(char *input_file_name) :
 
 
 bool MoveBaseTopological::makePlan(){
-  ROS_DEBUG("Planning for new goal...\n");
    
   try {
 	
     // Lock the state message and obtain current position and goal
     GridCell start, goal;
-    stateMsg.lock();
-    unsigned int mx, my;
-    getCostMap().WC_MC(stateMsg.pos.x, stateMsg.pos.y, mx, my);
-    start.first=mx;
-    start.second=my;
 
-    getCostMap().WC_MC(stateMsg.goal.x, stateMsg.goal.y, mx, my);
-    goal.first=mx;
-    goal.second=my;
+    // TODO get these constants from somewhere
+    const float resolution=.05; 
+    // const int maxY=945;
+    
+    stateMsg.lock();
+    start.first=(int)floor(stateMsg.pos.y/resolution);
+    start.second=(int)floor(stateMsg.pos.x/resolution);
+
+    goal.second=(int)floor(stateMsg.goal.x/resolution);
+    goal.first=(int)floor(stateMsg.goal.y/resolution);
     stateMsg.unlock();
+
+    std::cout << "planning from " << start.first << ", " << start.second << " to " << goal.first << ", " << goal.second << endl;
 
     // Invoke the planner
     vector<GridCell> solution=graph_.findOptimalPath(start, goal);
 
     std::list<std_msgs::Pose2DFloat32> newPlan;
     for (unsigned int i=0; i<solution.size(); i++) {
-      double wx, wy;
-      unsigned int mx = (unsigned int) solution[i].first;
-      unsigned int my = (unsigned int) solution[i].second;
-      getCostMap().MC_WC(mx, my, wx, wy);
+      double wx=solution[i].second*resolution;
+      double wy=(solution[i].first)*resolution;
       std_msgs::Pose2DFloat32 step;
       step.x = wx;
       step.y = wy;

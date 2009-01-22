@@ -247,7 +247,6 @@ class SemanticPointAnnotator : public ros::Node
       // Get all planes perpendicular to the floor (parallel to XY)
       for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
       {
-//        float intensity_value = rand () / (RAND_MAX + 1.0);    // Get a random value for the intensity
         // Get the minimum and maximum bounds of the plane
         Point32 minP, maxP;
         cloud_geometry::getMinMax (cloud_, inliers_perpendicular[i], minP, maxP);

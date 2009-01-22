@@ -274,6 +274,38 @@ namespace planning_models
 	    double    limit[2];
 	};
 	
+	/** Class defining bodies that can be attached to robot
+	    links. This is useful when handling objects picked up by
+	    the robot. */
+	class AttachedBody
+	{
+	public:
+	    
+	    AttachedBody(void)
+	    {
+		attachTrans.setIdentity();
+		shape = NULL;
+	    }
+	    
+	    ~AttachedBody(void)
+	    {
+		if (shape)
+		    delete shape;
+	    }
+	    
+	    /** The constant transform applied to the link (needs to be specified by user) */
+	    btTransform         attachTrans;
+
+	    /** The geometry of the attached body */
+	    Shape*              shape;
+
+	    /** The global transform for this link (computed by forward kinematics) */
+	    btTransform         globalTrans;
+	    
+	    /** recompute globalTrans */
+	    void computeTransform(btTransform &parentTrans);
+	};
+	
 	
 	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
 	class Link
@@ -298,36 +330,41 @@ namespace planning_models
 		    delete shape;
 		for (unsigned int i = 0 ; i < after.size() ; ++i)
 		    delete after[i];
+		for (unsigned int i = 0 ; i < attachedBodies.size() ; ++i)
+		    delete attachedBodies[i];
 	    }
 
 	    /** Name of the link */
-	    std::string         name;
+	    std::string                name;
 
 	    /** The model that owns this link */
-	    KinematicModel     *owner;
+	    KinematicModel            *owner;
 
 	    /** Joint that connects this link to the parent link */
-	    Joint              *before;
+	    Joint                     *before;
 	    
 	    /** List of descending joints (each connects to a child link) */
-	    std::vector<Joint*> after;
+	    std::vector<Joint*>        after;
 	    
 	    /** The constant transform applied to the link (local) */
-	    btTransform         constTrans;
+	    btTransform                constTrans;
 	    
 	    /** The constant transform applied to the collision geometry of the link (local) */
-	    btTransform         constGeomTrans;
+	    btTransform                constGeomTrans;
 	    
 	    /** The geometry of the link */
-	    Shape              *shape;
+	    Shape                     *shape;
+	    
+	    /** Attached bodies */
+	    std::vector<AttachedBody*> attachedBodies;	    
 	    
 	    /* ----------------- Computed data -------------------*/
 	    
 	    /** The global transform this link forwards (computed by forward kinematics) */
-	    btTransform         globalTransFwd;
+	    btTransform                globalTransFwd;
 
 	    /** The global transform for this link (computed by forward kinematics) */
-	    btTransform         globalTrans;
+	    btTransform                globalTrans;
 
 	    /* compute the parameter names from this link */
 	    unsigned int computeParameterNames(unsigned int pos);
@@ -416,6 +453,7 @@ namespace planning_models
 		m_dim = m_owner->stateDimension > 0 ? m_owner->stateDimension : 0;
 		m_params = m_dim > 0 ? new double[m_dim] : NULL;
 		m_pos = m_owner->parameterNames;
+		setAll(0.0);
 	    }
 	    
 	    virtual ~StateParams(void)
@@ -424,14 +462,19 @@ namespace planning_models
 		    delete[] m_params;
 	    }
 	    
-	    /** Given the name of a joint, set the values of the parameters describing the joint */
-	    void setParams(const double *params, const std::string &name);
-	    
+	    	    
 	    /** Set all the parameters to a given value */
 	    void setAll(const double value);
+
+	    /** Set the parameters for a given group. Return true if
+		any change was observed in either of the set
+		values. */
+	    bool setParams(const double *params, int groupID = -1);
 	    
-	    /** Set the parameters for a given group */
-	    void setParams(const double *params, int groupID = -1);
+	    /** Given the name of a joint, set the values of the
+		parameters describing the joint. Return true if any
+		change was observed in the set value */
+	    bool setParams(const double *params, const std::string &name);
 	    
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;

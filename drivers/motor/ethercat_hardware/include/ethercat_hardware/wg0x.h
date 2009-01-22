@@ -37,7 +37,7 @@
 
 #include <ethercat_hardware/ethercat_device.h>
 
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <ethercat_hardware/PressureState.h>
 
 struct WG0XMbxHdr
@@ -324,7 +324,7 @@ public:
   };
 private:
   uint32_t last_pressure_time_;
-  misc_utils::RealtimePublisher<ethercat_hardware::PressureState> publisher_;
+  realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> publisher_;
 };
 
 #endif /* WG0X_H */

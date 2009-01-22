@@ -107,7 +107,7 @@ std::string RtNode::getRelativeName(RtNode* parent)
 bool RtNode::addDependency(void* link, RtNode* dep_node)
 {
   // Make sure we're not double adding a dependency. This could cause data inconsistency
-  printf("RtNode::addDependency::Looking for repeat in deps_ (size=%u)\n", deps_.size()) ;
+  //printf("RtNode::addDependency::Looking for repeat in deps_ (size=%u)\n", deps_.size()) ;
   for (unsigned int i=0; i<deps_.size(); i++)
   {
     if (deps_[i].link_ == link)

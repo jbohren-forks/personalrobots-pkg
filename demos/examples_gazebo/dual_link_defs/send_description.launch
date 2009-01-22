@@ -1,5 +1,5 @@
 <launch>
 
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/dual_link_test/dual_link.xml'" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find examples_gazebo)/dual_link_defs/dual_link.xml'" />
 
 </launch>

@@ -27,12 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Author: Stuart Glaser
+
 #include "mechanism_model/chain.h"
 
 namespace mechanism {
 
+void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
+{
+  for (unsigned int i = 0; i < 3; ++i)
+    k.p.data[i] = t.getOrigin()[i];
+  for (unsigned int i = 0; i < 9; ++i)
+    k.M.data[i] = t.getBasis()[i/3][i%3];
+}
+
+void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
+{
+  t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
+  t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
+                         k.M.data[3], k.M.data[4], k.M.data[5],
+                         k.M.data[6], k.M.data[7], k.M.data[8]));
+}
+
 bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
 {
+  robot_ = robot;
+
   // Here we find the chain of links that connects the root to the
   // tip.  We find the common ancestor of the two, and then we link
   // together the chain that connects the root to the ancestor and the
@@ -72,7 +92,7 @@ bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
   for (size_t i = ancestor_index + 1; i < tip_links.size(); ++i)
   {
     link_indices_.push_back(tip_links[i]);
-    joint_indices_.push_back(tip_joints[i]);
+    joint_indices_.push_back(tip_joints[i-1]);
   }
   assert(joint_indices_.size() == link_indices_.size() - 1);
 
@@ -97,24 +117,106 @@ void Chain::getVelocities(std::vector<JointState> &states, std::vector<double> &
   }
 }
 
-void Chain::toKdl(KDL::Chain &chain)
+void Chain::toKDL(KDL::Chain &chain)
 {
+  assert(robot_);
+  KDL::Frame frame;
+  kdl_transforms_.resize(link_indices_.size());
+
+  tf::Transform continuation;
+  continuation.setIdentity();
+
+  size_t i;
+  for (i = 0; i < link_indices_.size() - 1; ++i)
+  {
+    KDL::Joint kdl_joint;
+    if (i == 0 || robot_->joints_[joint_indices_[i-1]]->type_ == JOINT_FIXED)
+      kdl_joint = KDL::Joint::None;
+    else
+      kdl_joint = KDL::Joint::RotZ;
+
+    tf::Transform align_next_joint = getKdlJointTransform(robot_->joints_[joint_indices_[i]]);
+
+    tf::Transform kdl_segment =
+      continuation *
+      robot_->links_[i+1]->getOffset() *
+      align_next_joint;
+    kdl_transforms_[i] =
+      (robot_->links_[i+1]->getOffset() *
+       align_next_joint).inverse();
+
+    TransformTFToKDL(kdl_segment, frame);
+    chain.addSegment(KDL::Segment(kdl_joint, frame /*, inertia, com*/));
+
+
+    continuation = align_next_joint.inverse() * robot_->links_[i+1]->getRotation();
+  }
+
+  // Adds the end-effector segment
+  KDL::Joint kdl_joint = robot_->joints_[joint_indices_[i]]->type_ == JOINT_FIXED ?
+    KDL::Joint::None : KDL::Joint::RotZ;
+  kdl_transforms_[i].setIdentity();
+  TransformTFToKDL(continuation, frame);
+  chain.addSegment(KDL::Segment(kdl_joint, frame));
+
+  kdl_cached_ = true;
 }
 
-void Chain::positionsToKDL(std::vector<JointState>&, KDL::JntArray&)
+tf::Transform Chain::getKdlJointTransform(mechanism::Joint *j)
 {
+  if (j->type_ == JOINT_FIXED)
+    return tf::Transform::getIdentity();
+  if (j->axis_[2] > 0.99999)
+    return tf::Transform::getIdentity();
+
+  tf::Vector3 z(0, 0, 1);
+  return tf::Transform(
+    tf::Quaternion(cross(j->axis_, z), -angle(j->axis_, z)));
 }
 
-void Chain::setEffortsFromKDL(KDL::JntArray&, std::vector<JointState>&)
+void Chain::positionsToKDL(std::vector<JointState>& s, KDL::JntArray& a)
 {
+  assert(a.rows() == joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+    a(i) = s[joint_indices_[i]].position_;
 }
 
-void Chain::addEffortsFromKDL(KDL::JntArray&, std::vector<JointState>&)
+void Chain::setEffortsFromKDL(KDL::JntArray& a, std::vector<JointState>& s)
 {
+  assert(a.rows() == joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+    s[joint_indices_[i]].commanded_effort_ = a(i);
 }
+
+void Chain::addEffortsFromKDL(KDL::JntArray& a, std::vector<JointState>& s)
+{
+  assert(a.rows() == joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+    s[joint_indices_[i]].commanded_effort_ += a(i);
+}
+
+tf::Transform Chain::getTransformToKDL(int frame_index)
+{
+  assert(frame_index < (int)kdl_transforms_.size());
+  if (!kdl_cached_)
+    updateCachedKDL();
+
+  return kdl_transforms_[frame_index].inverse();
+}
+
+
+tf::Transform Chain::getTransformFromKDL(int frame_index)
+{
+  assert(frame_index < (int)kdl_transforms_.size());
+  if (!kdl_cached_)
+    updateCachedKDL();
+
+  return kdl_transforms_[frame_index];
+}
+
 
 bool Chain::getAncestors(mechanism::Robot* robot, const std::string &link_name,
-                         std::vector<int> links, std::vector<int> joints)
+                         std::vector<int> &links, std::vector<int> &joints)
 {
   int current_link = -1;
   int current_joint = -1;

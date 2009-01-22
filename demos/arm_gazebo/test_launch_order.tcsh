@@ -13,7 +13,7 @@ sleep 5
 
 
 echo "----------------roslaunch xml"
-`rospack find xacro`/xacro.py `rospack find wg_robot_description`/pr2_arm_test/pr2_r_arm.xacro.xml > pr2_arm.xml
+`rospack find xacro`/xacro.py `rospack find pr2_defs`/robots/r_arm.xacro.xml > pr2_arm.xml
 #$ROS_ROOT/bin/rosparam set robotdesc/pr2
 python ./setparam.py
 

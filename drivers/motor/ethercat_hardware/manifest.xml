@@ -11,7 +11,7 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='tinyxml'/>
 <depend package='roscpp' />
 <depend package='loki' />
-<depend package='misc_utils' />
+<depend package='realtime_tools' />
 <depend package='robot_msgs' />
 <depend package='xenomai' />
 <depend package='boost' />

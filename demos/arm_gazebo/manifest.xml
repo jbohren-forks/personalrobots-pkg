@@ -8,6 +8,8 @@
   <depend package="teleop_arm_keyboard"/>
   <depend package="pr2_gui"/>
   <depend package="gazebo_robot_description"/>
-  <depend package="wg_robot_description"/>
+  <depend package="pr2_defs"/>
+  <depend package="pr2_default_controllers"/>
   <depend package="robot_mechanism_controllers"/>
+  <depend package="pr2_mechanism_controllers"/>
 </package>

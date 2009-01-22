@@ -42,11 +42,13 @@
 */
 /***************************************************/
 
-#include <robot_msgs/TestData.h>
+
 #include <ros/node.h>
 #include <math.h>
+#include <robot_srvs/TestData.h>
 #include <robot_msgs/DiagnosticMessage.h>
-#include <misc_utils/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
 #include <control_toolbox/sine_sweep.h>
 
@@ -82,6 +84,10 @@ public:
 
   void analysis();
   virtual void update();
+  
+  bool done() { return done_ == 1; }
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+  robot_srvs::TestData::request test_data_;
 
 private:
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
@@ -91,9 +97,7 @@ private:
   double initial_time_;                     /**< Start time of the sweep. */
   int count_;
   bool done_;
-  ros::Node* node;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_msgs::TestData test_data_;
+ 
 };
 
 /***************************************************/
@@ -115,6 +119,13 @@ public:
 
 private:
   SineSweepController *c_;
+  mechanism::RobotState *robot_;
+  
+  bool data_sent_;
+  
+  double last_publish_time_;
+  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::request, robot_srvs::TestData::response> call_service_;
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }
 

@@ -93,6 +93,7 @@ namespace cloud_geometry
       transformation_inverse (3, 3) = 1;
     }
 
+    void convertAxisAngleToRotationMatrix (std_msgs::Point32 axis, double angle, Eigen::Matrix3d &rotation);
   }
 }
 

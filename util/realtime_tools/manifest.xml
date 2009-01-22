@@ -1,0 +1,16 @@
+<package>
+  <description brief="Realtime tools">
+
+    Functions for use in realtime threads
+
+  </description>
+  <author>Rob Wheeler &lt;wheeler@willowgarage.com&gt;</author>
+  <license>BSD</license>
+  <review status="unreviewed"/>
+  <url>http://pr.willowgarage.com</url>
+  <depend package="boost" />
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrealtime_tools" />
+  </export>
+</package>
+

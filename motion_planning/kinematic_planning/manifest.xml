@@ -4,11 +4,24 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="rosrecord" />
-  <depend package="wg_robot_description" />
+  <depend package="rosconsole" />
+  <depend package="boost" />
+
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
-  <depend package="robot_model" />
-  <depend package="ompl" />
+
+  <depend package="pr2_defs" />
+  <depend package="pr2_default_controllers" />
+  <depend package="wg_robot_description_parser"/>
+  <depend package="planning_models"/>
+  <depend package="collision_space"/>
+  <depend package="collision_map"/>
   <depend package="string_utils" />
+
+  <depend package="ompl" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=""/>
+  </export>
+
 </package>

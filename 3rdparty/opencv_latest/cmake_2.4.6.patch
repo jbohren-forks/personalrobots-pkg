@@ -1,13 +1,37 @@
---- CMakeLists.txt	(revision 1484)
+Index: CMakeLists.txt
+===================================================================
+--- CMakeLists.txt	(revision 1524)
 +++ CMakeLists.txt	(working copy)
-@@ -170,7 +170,9 @@
+@@ -132,7 +132,7 @@
+ set(BUILD_TESTS ON CACHE BOOL "Build tests")
+ 
+ if(UNIX)
+-    include(FindPkgConfig OPTIONAL)
++    include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake OPTIONAL)
+     include(CheckFunctionExists)
+     include(CheckIncludeFile)
+ endif()
+@@ -166,11 +166,11 @@
+         if (${ALIAS_FOUND})
+             set(${define} 1)
+             foreach(P "${ALIAS_INCLUDE_DIRS}")
+-                list(APPEND HIGHGUI_INCLUDE_DIRS ${${P}})
++                list(APPEND HIGHGUI_INCLUDE_DIRS "${${P}}")
              endforeach()
  
              foreach(P "${ALIAS_LIBRARY_DIRS}")
 -                list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
-+	    	if (${${P}})
-+                    list(APPEND HIGHGUI_LIBRARY_DIRS ${${P}})
-+                endif(${${P}})
++                list(APPEND HIGHGUI_LIBRARY_DIRS "${${P}}")
              endforeach()
  
              list(APPEND HIGHGUI_LIBRARIES ${${ALIAS_LIBRARIES}})
+@@ -471,7 +471,8 @@
+ set(CMAKE_INCLUDE_DIRS_CONFIGCMAKE "${CMAKE_INSTALL_PREFIX}/include/opencv")
+ set(CMAKE_LIB_DIRS_CONFIGCMAKE "${CMAKE_INSTALL_PREFIX}/lib")
+ 
+-exec_program(${CMAKE_COMMAND} ARGS "-E make_directory \"${CMAKE_BINARY_DIR}/unix-install/\"")
++#exec_program(${CMAKE_COMMAND} ARGS "-E make_directory \"${CMAKE_BINARY_DIR}/unix-install/\"")
++exec_program(mkdir ARGS "-p \"${CMAKE_BINARY_DIR}/unix-install/\"")
+ configure_file("${CMAKE_SOURCE_DIR}/OpenCVConfig.cmake.in" "${CMAKE_BINARY_DIR}/unix-install/OpenCVConfig.cmake" IMMEDIATE)
+ 
+ if(UNIX)

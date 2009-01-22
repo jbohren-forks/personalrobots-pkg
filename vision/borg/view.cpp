@@ -28,7 +28,7 @@ int main(int, char **)
   {
     borg.cam->savePhoto(raster);
     ros::Time t2(ros::Time::now());
-    double dt = (t2 - t).to_double();
+    double dt = (t2 - t).toSec();
     t = t2;
     static int print_count = 0;
     if (print_count++ % 10 == 0)

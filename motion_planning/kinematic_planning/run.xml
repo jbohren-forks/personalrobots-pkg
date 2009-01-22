@@ -1,6 +1,0 @@
-<launch>
-  <group name="wg">
-    <include file="$(find wg_robot_description)/send.xml"/>
-    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true" />
-  </group>
-</launch>

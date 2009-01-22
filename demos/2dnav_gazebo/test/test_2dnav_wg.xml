@@ -6,6 +6,9 @@
 
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap25mm.png 0.025" respawn="false" output="screen" />
+    <!--
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
+    -->
 
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>

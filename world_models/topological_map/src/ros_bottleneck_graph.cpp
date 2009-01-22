@@ -187,13 +187,17 @@ void BottleneckGraphRos::loadMap (void)
   
   int i = 0;
   bool expected[255];
+  for (int j=0; j<255; j++) expected[j]=false;
   for (int r=0; r<sy_; r++) {
     for (int c=0; c<sx_; c++) {
       int val = resp.map.data[i++];
-      grid_[r][c] = (val == 100);
-      if ((val != 0) && (val != 100) && (val != 255) && !expected[val]) {
-        expected[val] = true;
-        ROS_WARN ("Treating unexpected val %d in returned static map as occupied\n", val);
+      grid_[r][c] = (val != 0);
+      if (!expected[val]) {
+        ROS_DEBUG ("Saw map cell value %d", val);
+        expected[val]=true;
+        if ((val != 0) && (val != 100) && (val != -1)) {
+          ROS_INFO ("Treating unexpected val %d in returned static map as occupied\n", val);
+        }
       }
     }
   }

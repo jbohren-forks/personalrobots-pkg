@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<controllers>
+  <controller name="door_controller" topic="door_controller" type="JointPositionControllerNode">
+    <joint name="door_joint" >
+      <pid p="2000" d="1" i="100.0" iClamp="1000" />
+    </joint>
+  </controller>
+  <controller name="handle_controller" topic="handle_controller" type="JointPositionControllerNode">
+    <joint name="handle_joint" >
+      <pid p="20" d="0.01" i="1.0" iClamp="10" />
+    </joint>
+  </controller>
+</controllers>
+

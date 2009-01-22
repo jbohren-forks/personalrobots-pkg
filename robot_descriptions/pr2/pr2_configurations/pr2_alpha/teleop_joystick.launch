@@ -1,0 +1,27 @@
+<launch>
+<param name="base_controller/odom_publish_rate" value="30.0"/>
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+
+  <group name="wg">
+<param name="axis_vx" value="3" type="int"/>
+<param name="axis_vy" value="2" type="int"/>
+<param name="axis_vw" value="0" type="int"/>
+<param name="pan" value="4" type="int"/>
+<param name="tilt" value="5" type="int"/>
+<param name="max_vw" value="1.0" />
+<param name="max_vx" value="0.6" />
+<param name="max_vy" value="0.6" />
+<param name="deadman_button" value="4" type="int"/>
+<node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+  </group>
+
+<param name="robot_pose_ekf/freq" value="30.0"/>
+<param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+<param name="robot_pose_ekf/odom_used" value="true"/>
+<param name="robot_pose_ekf/imu_used" value="true"/>
+<param name="robot_pose_ekf/vo_used" value="false"/>
+    
+<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"/>
+
+</launch>
+

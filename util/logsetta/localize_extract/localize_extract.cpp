@@ -36,11 +36,11 @@
 #include <string>
 #include "rosrecord/Player.h"
 
-void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, void* f)
+void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
-  fprintf(file, "%.5f ",t.to_double());
+  fprintf(file, "%.5f ",t.toSec());
 
   fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pos.x, bL->pos.y, bL->pos.th, bL->vel.x, bL->vel.y, bL->vel.th, bL->stall);
 

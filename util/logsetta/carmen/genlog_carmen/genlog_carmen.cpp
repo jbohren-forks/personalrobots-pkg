@@ -42,9 +42,9 @@ FILE *clog = NULL;
 FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-void odom_callback(string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, void* n)
+void odom_callback(string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* n)
 {
-  double rel_time = t.to_double();
+  double rel_time = t.toSec();
 
   static bool vel_init = false;
   static double yaw_offset = 0;
@@ -84,10 +84,10 @@ void odom_callback(string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, vo
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
-void scan_callback(string name, std_msgs::LaserScan* scan, ros::Time t, void* n)
+void scan_callback(string name, std_msgs::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
 {
 
-  double rel_time = t.to_double();
+  double rel_time = t.toSec();
 
   const double fov = fabs(scan->angle_max - scan->angle_min);
   // only make an exception for the SICK LMS2xx running in centimeter mode

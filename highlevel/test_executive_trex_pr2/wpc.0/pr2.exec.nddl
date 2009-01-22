@@ -3,16 +3,15 @@
 rejectable(moveBase.Active g0);
 g0.x = 19.5;
 g0.y = 29.0;
-
 assertCompleted(g0.state);
 
 
-//Check goal 0.
-/*rejectable(baseState.Holds checkgoal0);
+// Check goal 0.
+rejectable(baseState.Holds checkgoal0);
 concurrent(checkgoal0.start, g0.end);
 float distance;
 calcDistance(distance, g0.x, g0.y, checkgoal0.x, checkgoal0.y);
 leq(distance, 1.5); 
-assertCompleted(checkgoal0.state);*/
+assertCompleted(checkgoal0.state);
 
 

@@ -106,6 +106,11 @@ double computeMinUnsignedAngleDiff(double angle1, double angle2);
 //returns true if 2D point is within the specified polygon given by ordered sequence of 2D points (last point is automatically connected to the first)
 bool IsInsideFootprint(sbpl_2Dpt_t pt, vector<sbpl_2Dpt_t>* bounding_polygon);
 
+//computes 8-connected distances
+void computeDistancestoNonfreeAreas(unsigned char** Grid2D, int width_x, int height_y, unsigned char obsthresh, float** disttoObs_incells, 
+									float** disttoNonfree_incells);
+
+
 #if 0
 void CheckSearchMDP(CMDP* mdp, int ExcludeSuccStateID = -1);
 void CheckSearchPredSucc(CMDPSTATE* state, int ExcludeSuccStateID = -1);

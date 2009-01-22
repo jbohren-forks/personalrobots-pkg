@@ -35,7 +35,7 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
 #include "pr2_mechanism_controllers/pr2_arm_dynamics_controller.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/String.h"
 
 // Math utils
@@ -255,7 +255,7 @@ void PR2ArmDynamicsController::computeControlTorque(const double &time)
       control_torque_[i] = gravity_torque_[i][2] + pid_torque;
 //    fprintf(stderr,"%d:: %f, %f, %f, %f, %f, %f, %f\n",i,actual,command,error,pid_torque,gravity_torque_[i][2],control_torque_[i],time-last_time_);
 
-    static misc_utils::RealtimePublisher<std_msgs::String> p("/s", 1);
+    static realtime_tools::RealtimePublisher<std_msgs::String> p("/s", 1);
     if (p.trylock()) {
       char buf[1000];
       sprintf(buf, "Joint torques %d:: %s, %15.6lf %15.61f %15.61f %15.61f\n", i, joint_effort_controllers_[i]->joint_state_->joint_->name_.c_str(),control_torque_[i],gravity_torque_[i][2],gravity_torque_uncompensated_[i][2],pid_torque);

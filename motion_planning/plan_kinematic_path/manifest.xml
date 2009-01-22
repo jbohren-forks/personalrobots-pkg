@@ -1,0 +1,16 @@
+<package>
+  <description>Test package that can plan a kinematic path</description>
+  <author>Ioan A. Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="rosconsole" />
+
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  
+  <depend package="kinematic_planning" />
+  <depend package="planning_models" />
+  
+  <depend package="pr2_mechanism_controllers" />
+</package>

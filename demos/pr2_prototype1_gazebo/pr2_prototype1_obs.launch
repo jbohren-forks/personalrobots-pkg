@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <!-- send pr2.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2_prototype1/pr2_prototype1.xacro.xml'" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
 
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/obstacle.world" respawn="false" output="screen">
@@ -15,7 +15,7 @@
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
-    <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_default_controllers.launch" />
   </group>
 </launch>
 

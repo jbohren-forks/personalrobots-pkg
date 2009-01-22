@@ -36,13 +36,13 @@
 #include <string>
 #include "rosrecord/Player.h"
 
-void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, void* f)
+void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %d\n",
-          t.to_double(),
-          odom->header.stamp.to_double(),
+          t.toSec(),
+          odom->header.stamp.toSec(),
           odom->pos.x,
           odom->pos.y,
           odom->pos.th,

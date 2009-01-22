@@ -687,6 +687,13 @@ void IndexedBottleneckGraph::indexRegions ()
 {
   ROS_DEBUG_NAMED ("bottleneck_finder", "Setting up index from cells to topological nodes");
   BottleneckVertexIterator i, end;
+  
+  for (int r=0; r<num_rows_; r++) {
+    for (int c=0; c<num_cols_; c++) {
+      is_free_[r][c]=false;
+    }
+  }
+
   for (tie(i, end) = boost::vertices(graph_); i!=end; ++i) {
     BottleneckVertex v=*i;
     VertexDescription d = get(desc_t(), graph_, v);

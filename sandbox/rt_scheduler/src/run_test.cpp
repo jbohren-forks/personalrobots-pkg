@@ -42,6 +42,8 @@
 #include "rt_scheduler/oracle.h"
 using namespace rt_scheduler ;
 
+
+// A super simple node that simply outputs integers that output at a certain rate
 class Talker : public rt_scheduler::RtNode
 {
 public:
@@ -49,6 +51,7 @@ public:
   {
     state_ = start ;
     inc_ = inc ;
+    oracle->registerPort(&out_, getFullName()+"/out") ;
   }
 
   ~Talker()
@@ -67,13 +70,15 @@ public:
   int inc_ ;
 } ;
 
+// A super simple node that adds two numbers and outputs the result
 class Adder : public rt_scheduler::RtNode
 {
 public:
   Adder(Scheduler* parent, std::string name, Oracle* oracle) : RtNode(parent, name), in_A_(this),
                                                                 in_B_(this), out_(this)
   {
-    //oracle.registerPort(&out_, name+"/out") ;
+    oracle->registerPort(&in_A_, getFullName()+"/in_A") ;
+    oracle->registerPort(&in_B_, getFullName()+"/in_B") ;
   }
 
   ~Adder()
@@ -111,10 +116,11 @@ public:
   OutputPort<int> out_ ;
 } ;
 
+// A super simple node that doubles its input and outputs the result
 class Doubler : public RtNode
 {
 public:
-  Doubler(Scheduler* parent, std::string name) : RtNode(parent, name), in_(this)
+  Doubler(Scheduler* parent, std::string name) : RtNode(parent, name), in_(this), out_(this)
   {
 
   }
@@ -135,6 +141,7 @@ public:
 
     int result = 2*a ;
 
+    out_.data_ = result ;
 
     printf("  Result: %i\n", result) ;
 
@@ -142,31 +149,44 @@ public:
   }
 
   InputPort<int> in_ ;
+  OutputPort<int> out_ ;
 } ;
 
 
 int main(int argc, char** argv)
 {
   // Initialize
+  printf("****** Initializing Schedulers/Groups ******\n") ;
   Oracle oracle ;
   Scheduler controllers(NULL, "controllers") ;
   Scheduler group_A(&controllers, "Group_A") ;
-  group_A.active_ = false ;
+  group_A.active_ = true ;                      // True => group_A will perform subscheduling
 
+  // Add a bunch of nodes to the scheduler group_A
+  printf("****** Initializing RtNodes ******\n") ;
   Talker talker_A(&group_A, string("talkerA"), &oracle, 5,2) ;
   Talker talker_B(&group_A, string("talkerB"), &oracle, 10,-1) ;
   Adder adder_A(&group_A, string("AdderA"), &oracle) ;
 
+  // Add a bunch of nodes to the global scheduler
   Talker talker_C(&controllers, string("talkerC"), &oracle, 0,100) ;
   Adder adder_B(&controllers, string("AdderB"), &oracle) ;
   Doubler doubler(&controllers, string("Doubler")) ;
 
   // Connect ports together
+  printf("****** Making Links ******\n") ;
   Link<int> link_1, link_2, link_3 ;
   Link<int> link_4, link_5 ;
 
   printf("Atempting link1...\n") ;
-  if(!link_1.makeLink(&talker_A.out_, &adder_A.in_A_))
+//  if(!link_1.makeLink(&talker_A.out_, &adder_A.in_A_))
+//    printf("Error making link 1\n") ;
+//  else
+//    printf("Success\n") ;
+
+  // Making a link using the oracle
+  LinkHandle* handle_1 = oracle.newLink("controllers/Group_A/talkerA/out", "controllers/Group_A/AdderA/in_A", "int") ;
+  if (handle_1 == NULL)
     printf("Error making link 1\n") ;
   else
     printf("Success\n") ;
@@ -188,14 +208,48 @@ int main(int argc, char** argv)
   if(!link_5.makeLink(&adder_B.out_, &doubler.in_))
     printf("Error making link 5\n") ;
 
+  // Update the scheduler's executions orders. This has to be done since the links were changed
+  printf("****** Updating Execution Order ******\n") ;
   controllers.updateExecutionOrder() ;
   group_A.updateExecutionOrder() ;
 
-  while(true)
+  printf("****** Running Simulation ******\n") ;
+  // Run the update loop a couple times
+  for(int i=0; i<3; i++)
   {
     controllers.update() ;
     getchar() ;
   }
+
+  printf("****** About to change heirarchy ******\n") ;
+  getchar() ;
+
+  // Now, change the configuration of the system
+  if(!link_4.breakLink())
+    printf("Error breaking link 4\n") ;
+  else
+    printf("Successfully broke link 4\n") ;
+  if(!link_5.breakLink())
+    printf("Error breaking link 5\n") ;
+  else
+    printf("Successfully broke link 5\n") ;
+
+  if(!link_4.makeLink(&talker_C.out_, &doubler.in_))
+    printf("Error making link 4\n") ;
+  if(!link_5.makeLink(&doubler.out_, &adder_B.in_B_))
+    printf("Error making link 5\n") ;
+
+  controllers.updateExecutionOrder() ;
+  group_A.updateExecutionOrder() ;
+
+  // Run the update loop a couple times again. Note that the execution order is wrong, since the scheduler is very dumb right now.
+  for(int i=0; i<3; i++)
+  {
+    controllers.update() ;
+    getchar() ;
+  }
+
+  oracle.deleteLink(handle_1) ;
 
   return 0 ;
 }

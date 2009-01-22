@@ -10,13 +10,13 @@
 using namespace std;
 using namespace ros;
 
-class CvView : public node
+class CvView : public Node
 {
 public:
   image_msgs::Image img;
   image_msgs::CvBridge bridge;
 
-  CvView() : node("cv_view")
+  CvView() : Node("cv_view")
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
     subscribe("image", img, &CvView::image_cb, 1);

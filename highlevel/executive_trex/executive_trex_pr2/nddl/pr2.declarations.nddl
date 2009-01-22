@@ -120,20 +120,34 @@ class ArmState extends AgentTimeline {
  * Encapsulate Behaviors that have a state of active or inactive
  */
 class Behavior extends AgentTimeline {
-	predicate Inactive{
-	  bool aborted;
-	  bool preempted;
-	}
+  int max_duration; // The maximum duration allowed in the active state. Bounds behavior times
 
-	predicate Active{
-	  int dispatch_time; // The time at which the goal was dispatched
-	  int timeout; // The timelimit for the sum of all planner runs
-	  precedes(dispatch_time, start); // This is a <= constraint
-	}
+  predicate Inactive{
+    bool aborted;
+    bool preempted;
+  }
 
-	Behavior(Mode _mode){
-		super(_mode, "Inactive");
-	}
+  predicate Active{
+    int dispatch_time; // The time at which the goal was dispatched
+    int max_duration; // A duration bound
+    int timeout; // Max time for behavior to be stuck internally
+    bool timed_out; // True if max_duration == duration
+
+    // Parameter Constraints
+    leq(duration, max_duration);
+    testEQ(timed_out, duration, max_duration);
+    precedes(dispatch_time, start); // This is a <= constraint	
+  }
+
+  Behavior(Mode _mode){
+    super(_mode, "Inactive");
+    max_duration = +inf;
+  }
+
+  Behavior(Mode _mode, int max_duration_){
+    super(_mode);
+    max_duration = max_duration_;
+  }
 };
 
 
@@ -142,7 +156,6 @@ class Behavior extends AgentTimeline {
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
 class MoveBase extends Behavior {
-  int max_duration; // The maximum duration allowed for executing a single move
 
   predicate Inactive{
     float x;
@@ -158,12 +171,6 @@ class MoveBase extends Behavior {
     float x;
     float y;
     float th;
-    // Should be in the base class
-    int max_duration;
-    bool timed_out;
-    leq(duration, max_duration);
-    testEQ(timed_out, duration, max_duration);
-    precedes(dispatch_time, start); // This is a <= constraint
 
     // This part is particular to the MoveBase node. It is probably fair that it would apply to all behaviors
     // in the ROS set up, but not all behaviors more generally. This pattern allows us to impose a bounded
@@ -173,12 +180,10 @@ class MoveBase extends Behavior {
 
   MoveBase(Mode _mode){
     super(_mode);
-    max_duration = +inf;
   }
 
   MoveBase(Mode _mode, int max_duration_){
-    super(_mode);
-    max_duration = max_duration_;
+    super(_mode, max_duration_);
   }
 };
 

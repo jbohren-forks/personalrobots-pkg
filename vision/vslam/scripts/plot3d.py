@@ -63,10 +63,9 @@ time_stamp_offset2 = st_gt_points[gt_numpts-1][0]-st_trj_points[trj_numpts-1][0]
 st_skel_nodes[0][0] = st_gt_points[0][0] # adjust the time stamp of the first noode since it is not moving anyway.
 print 'timestamps', 'phase space:', st_gt_points[0][0], 'vo:', st_trj_points[0][0],
 print 'offset:', time_stamp_offset, 'offset2:', time_stamp_offset2
-time_stamp_offset = -.00375  # 0.0316576975223 for bag4
-time_stamp_offset = -.0038   # 0.0316575769793 for bag4
-time_stamp_offset = -.003825 # 0.0316575166683 for bag4
-time_stamp_offset = 0.0
+#time_stamp_offset = -.00375  # 0.0316576975223 for bag4
+#time_stamp_offset = -.0038   # 0.0316575769793 for bag4
+#time_stamp_offset = -.003825 # 0.0316575166683 for bag4
 print 'use offset', time_stamp_offset
 # go thru both trajectories in time, pick matching points from st_gt_points that
 # matches st_trj_points the best in time stamps

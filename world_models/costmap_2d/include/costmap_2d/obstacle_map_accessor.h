@@ -248,6 +248,22 @@ namespace costmap_2d {
     static double computeWX(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy);
     static double computeWY(const ObstacleMapAccessor& costMap, double maxSize, double wx, double wy);
 
+    /**
+     * @brief Saves a text file of the map.
+     * @param name The filename to save.
+     */
+    void saveText(std::string name);
+    /**
+     * @brief Saves a binary file of the map.
+     * @param name The filename to save.
+     */
+    void saveBinary(std::string name);
+
+    /**
+     * @brief Saves a pgm image of the costmap.
+     * @param name The filename to save.
+     */
+    void savePgm(std::string file);
   protected:
 
     /**

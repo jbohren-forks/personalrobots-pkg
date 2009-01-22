@@ -63,7 +63,7 @@
  * - None
  **/
 
-#include <MoveBase.hh>
+#include <highlevel_controllers/move_base.hh>
 #include <navfn.h>
 
 namespace ros {
@@ -111,6 +111,7 @@ namespace ros {
 	pos[0] = mx;
 	pos[1] = my;
 
+	double goalX = stateMsg.goal.x, goalY = stateMsg.goal.y;
 	getCostMap().WC_MC(stateMsg.goal.x, stateMsg.goal.y, mx, my);
 	goal[0] = mx;
 	goal[1] = my;
@@ -138,7 +139,13 @@ namespace ros {
 	    step.y = wy;
 	    newPlan.push_back(step);
 	  }
-
+	  
+	  //This is a hack for now to add the goal.
+	  std_msgs::Pose2DFloat32 goalstep;
+	  goalstep.x = goalX;
+	  goalstep.y = goalY;
+	  newPlan.push_back(goalstep);
+	  
 	  updatePlan(newPlan);
 	}
 

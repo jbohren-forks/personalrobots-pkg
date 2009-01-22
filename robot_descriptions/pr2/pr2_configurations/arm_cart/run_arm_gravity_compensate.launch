@@ -1,0 +1,9 @@
+<launch>
+
+  <include file="$(find wg_robot_description)/pr2/send_description_uncompensated.launch" />
+
+<!-- Arm trajectory controller -->
+
+  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/controllers_arm_gravity_compensate.xml" />
+
+</launch>

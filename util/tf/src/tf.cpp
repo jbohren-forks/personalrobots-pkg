@@ -519,7 +519,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).to_double() <<", data at "
+            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).toSec() <<", data at "
                << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
           }
@@ -531,7 +531,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).to_double() <<", closest data at "
+            ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).toSec() <<", closest data at "
                << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
           }
@@ -558,7 +558,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).to_double() <<", data at "
+            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).toSec() <<", data at "
                << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
           }

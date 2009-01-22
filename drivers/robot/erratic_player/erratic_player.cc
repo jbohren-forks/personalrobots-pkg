@@ -283,7 +283,8 @@ main(int argc, char** argv)
     // Is the message one we care about?
     player_msghdr_t* hdr = msg->GetHeader();
     if((hdr->type == PLAYER_MSGTYPE_DATA) && 
-       (hdr->subtype == PLAYER_POSITION2D_DATA_STATE))
+       (hdr->subtype == PLAYER_POSITION2D_DATA_STATE) &&
+       (hdr->addr.interf == PLAYER_POSITION2D_CODE))
     {
       // Cast the message payload appropriately 
       player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload();
@@ -334,7 +335,7 @@ main(int argc, char** argv)
                              ros::Time((long long unsigned int)floor(hdr->timestamp),
                                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
       */
-      std::cout <<"Sent 32" <<std::endl;
+      //std::cout <<"Sent 32" <<std::endl;
 
 
       //printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
@@ -342,11 +343,11 @@ main(int argc, char** argv)
     }
     else
     {
-      printf("Unhandled Player message %d:%d:%d:%d\n",
-             hdr->type,
-             hdr->subtype,
-             hdr->addr.interf,
-             hdr->addr.index);
+      ROS_WARN("Unhandled Player message %d:%d:%d:%d",
+	       hdr->type,
+	       hdr->subtype,
+	       hdr->addr.interf,
+	       hdr->addr.index);
 
     }
 

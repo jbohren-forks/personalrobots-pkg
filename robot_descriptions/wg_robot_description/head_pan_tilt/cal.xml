@@ -1,4 +1,0 @@
-<controllers>
-  <include filename="../pr2_robot_defs/head_defs.xml" />
-  <head_calibrator />
-</controllers>

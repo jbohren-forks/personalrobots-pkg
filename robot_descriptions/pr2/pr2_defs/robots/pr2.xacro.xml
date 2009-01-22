@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<robot name="pr2">
+
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="$(find pr2_defs)/meshes"/>
+
+  <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/body_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/base_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
+
+
+  <pr2_base name="base" >
+    <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
+  </pr2_base>
+
+
+  <pr2_torso name="torso_lift" parent="base_link">
+    <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
+  </pr2_torso>
+
+  <pr2_head name="head" parent="torso_lift_link">
+    <origin xyz="0 0 0.3815" rpy="0 0 0" />
+  </pr2_head>
+
+  <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
+    <origin xyz="0.1 0 0.19525" rpy="0 0 0" />
+  </pr2_tilting_laser>
+
+  <pr2_arm side="r" reflect="-1" parent="torso_lift_link">
+    <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="r" parent="r_wrist_roll_link" />
+
+  <pr2_arm side="l" reflect="1" parent="torso_lift_link">
+    <origin xyz="0.0 0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="l" parent="l_wrist_roll_link" />
+
+  <pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
+    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
+    <origin xyz="0.0  0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />
+
+  <!-- Kinematic chains -->
+  <chain root="torso_lift_link" tip="l_wrist_roll_link" />
+  <chain root="torso_lift_link" tip="r_wrist_roll_link" />
+
+
+</robot>

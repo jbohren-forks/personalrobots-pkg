@@ -39,6 +39,8 @@
 #include <std_msgs/Point.h>
 #include <math.h>
 
+#include <Eigen/Core>
+
 #include <cfloat>
 
 namespace cloud_geometry
@@ -302,7 +304,7 @@ namespace cloud_geometry
 
     for (unsigned int i = 0; i < points->pts.size (); i++)
     {
-      if (points->chan[c_idx].vals[i] > cut_distance)
+      if (c_idx != -1 && points->chan[c_idx].vals[i] > cut_distance)
         continue;
       min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
       min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
@@ -317,6 +319,71 @@ namespace cloud_geometry
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
+    * \param point a 2D point
+    */
+  inline double 
+    getAngle2D (double point[2])
+  {
+    double rad;
+    if (point[0] == 0)
+      rad = (point[1] < 0) ? -M_PI / 2.0 : M_PI / 2.0;
+    else
+    {
+      rad = atan (point[1] / point[0]);
+      if (point[0] < 0)
+        rad += M_PI;
+    }
+    if (rad < 0)
+      rad += 2 * M_PI;
+
+    return (rad);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal
+    * \param plane_coeff the plane coefficients (containing n, the plane normal)
+    * \param u the resultant u direction
+    * \param v the resultant v direction
+    */
+  inline void
+    getCoordinateSystemOnPlane (std::vector<double> *plane_coeff, Eigen::Vector3d &u, Eigen::Vector3d &v)
+  {
+    // Initialize normalized u vector with "random" values not parallel with normal
+    u (1) = 0;
+    if (fabs (plane_coeff->at (0)) != 1)
+    {
+      u (0) = 1;
+      u (2) = 0;
+    }
+    else
+    {
+      u (0) = 0;
+      u (2) = 1;
+    }
+    
+    // Compute the v vector and normalize it
+    v (0) = plane_coeff->at (1) * u (2) - plane_coeff->at (2) * u (1);
+    v (1) = plane_coeff->at (2) * u (0) - plane_coeff->at (0) * u (2);
+    v (2) = plane_coeff->at (0) * u (1) - plane_coeff->at (1) * u (0);
+    double v_length = sqrt (v (0) * v (0) + v (1) * v (1) + v (2) * v (2));
+    v (0) /= v_length;
+    v (1) /= v_length;
+    v (2) /= v_length;
+    
+    // Recompute u and normalize it
+    u (0) = v (1) * plane_coeff->at (2) - v (2) * plane_coeff->at (1);
+    u (1) = v (2) * plane_coeff->at (0) - v (0) * plane_coeff->at (2);
+    u (2) = v (0) * plane_coeff->at (1) - v (1) * plane_coeff->at (0);
+    double u_length = sqrt (u (0) * u (0) + u (1) * u (1) + u (2) * u (2));
+    u (0) /= u_length;
+    u (1) /= u_length;
+    u (2) /= u_length;
+  }
+  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
     * \param p the point

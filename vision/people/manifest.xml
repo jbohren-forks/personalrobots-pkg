@@ -12,12 +12,10 @@
 <depend package="robot_msgs"/>
 <depend package="std_srvs"/>
 <depend package="boost"/>
-<depend package="string_utils"/>
 <depend package="opencv_latest"/>
 <depend package="stereo_utils"/>
 <!--<depend package="visual_odometry"/>-->
 <!--depend package="pyrob"/-->
-<depend package="rosrecord"/>
 <depend package="rospy"/>
 <depend package="image_msgs"/>
 <depend package="topic_synchronizer"/>
@@ -26,6 +24,7 @@
 <depend package="color_calib"/>
 <depend package="boost"/>
 <depend package="bfl"/>
+<depend package="rosrecord"/>
 <depend package="message_sequencing" />
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>

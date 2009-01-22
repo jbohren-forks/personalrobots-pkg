@@ -71,9 +71,8 @@ public:
   /// Make it so that roadmap is low-level in given region and high-level elsewhere
   void switchToRegion (int region_id);
 
-
-
-  
+  /// Output the roadmap and region graph as a plain ppm file
+  void outputPpm (std::ostream& = std::cout, int bottleneck_vertex_radius = 1);
   
 private:
   /// \post A cell equal to c exists in the roadmap, and is connected to other cells currently in the same region

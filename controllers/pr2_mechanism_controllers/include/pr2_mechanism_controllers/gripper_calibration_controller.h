@@ -49,7 +49,7 @@
 
 #include "mechanism_model/robot.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
-#include "misc_utils/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
 
 namespace controller
@@ -120,7 +120,7 @@ private:
   GripperCalibrationController c_;
 
   double last_publish_time_;
-  misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
+  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 
 }

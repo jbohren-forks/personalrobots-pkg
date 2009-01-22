@@ -1,0 +1,26 @@
+<controllers>
+  <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/base_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/body_defs.xml" />
+
+  <upper_arm_calibrator side="r" />
+  <forearm_calibrator side="r" />
+  <gripper_calibrator side="r" />
+
+  <!--
+  <upper_arm_calibrator side="l" />
+  <forearm_calibrator side="l" />
+  <gripper_calibrator side="l" />
+  -->
+
+  <base_calibrator />
+
+  <head_calibrator />
+
+  <torso_calibrator />
+
+  <tilting_laser_calibrator name="laser_tilt" />
+
+</controllers>
