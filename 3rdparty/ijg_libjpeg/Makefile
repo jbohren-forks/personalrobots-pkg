@@ -1,12 +1,12 @@
 all: lib/libjpeg.a
-	cd src && make
+	cd src && make $(PARALLEL_JOBS)
 
 jpeg-6b:
 	tar xzf jpeg-6b.tar.gz
 
 lib/libjpeg.a: jpeg-6b
 	cd jpeg-6b && ./configure
-	cd jpeg-6b && make
+	cd jpeg-6b && make $(PARALLEL_JOBS)
 	# don't do a make install. instead, the following lines take exactly what we need
 	cp jpeg-6b/libjpeg.a lib/libjpeg.a
 	cp jpeg-6b/jpeglib.h include/ijg_libjpeg/jpeglib.h
