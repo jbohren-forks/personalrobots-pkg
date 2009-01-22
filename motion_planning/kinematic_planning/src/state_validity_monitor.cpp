@@ -103,7 +103,8 @@ public:
     
     StateValidityMonitor(const std::string &robot_model) : ros::Node("state_validity_monitor"),
 							   CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
-										 robot_model)
+										 robot_model),
+							   last_(-1)
     {
 	advertise<std_msgs::Byte>("state_validity", 1);	
     }
@@ -126,13 +127,21 @@ public:
 	    m_collisionSpace->unlock();
 	    std_msgs::Byte msg;
 	    msg.data = invalid ? 0 : 1;
-	    publish("state_validity", msg);
-	    if (invalid)
-		ROS_WARN("State is in collision");
-	    else
-		ROS_INFO("State is valid");
+	    if (last_ != msg.data)
+	    {
+		last_ = msg.data;
+		publish("state_validity", msg);		
+		if (invalid)
+		    ROS_WARN("State is in collision");
+		else
+		    ROS_INFO("State is valid");
+	    }	    
 	}
     }
+
+private:
+    
+    int last_;
     
 };
 
