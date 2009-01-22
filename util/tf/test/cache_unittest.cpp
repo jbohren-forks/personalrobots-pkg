@@ -64,16 +64,16 @@ TEST(TimeCache, Repeatability)
     ss << values[i];
     stor.frame_id_ = ss.str();
     stor.parent_frame_id = i;
-    stor.stamp_ = i;
+    stor.stamp_ = ros::Time().fromNSec(i);
     
     cache.insertData(stor);
   }
   for ( uint64_t i = 1; i < runs ; i++ )
 
   {
-    cache.getData(i, stor);
+    cache.getData(ros::Time().fromNSec(i), stor);
     EXPECT_EQ(stor.parent_frame_id, i);
-    EXPECT_EQ(stor.stamp_, i);
+    EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(i));
     std::stringstream ss;
     ss << values[i];
     EXPECT_EQ(stor.frame_id_, ss.str());
@@ -101,16 +101,16 @@ TEST(TimeCache, RepeatabilityReverseInsertOrder)
     ss << values[i];
     stor.frame_id_ = ss.str();
     stor.parent_frame_id = i;
-    stor.stamp_ = (uint64_t)i;
+    stor.stamp_ = ros::Time().fromNSec(i);
     
     cache.insertData(stor);
   }
   for ( uint64_t i = 1; i < runs ; i++ )
 
   {
-    cache.getData(i, stor);
+    cache.getData(ros::Time().fromNSec(i), stor);
     EXPECT_EQ(stor.parent_frame_id, i);
-    EXPECT_EQ(stor.stamp_, i);
+    EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(i));
     std::stringstream ss;
     ss << values[i];
     EXPECT_EQ(stor.frame_id_, ss.str());
@@ -137,16 +137,16 @@ TEST(TimeCache, RepeatabilityRandomInsertOrder)
     ss << values[i];
     stor.frame_id_ = ss.str();
     stor.parent_frame_id = i;
-    stor.stamp_ = i;
+    stor.stamp_ = ros::Time().fromNSec(i);
     
     cache.insertData(stor);
   }
   for ( uint64_t i = 1; i < runs ; i++ )
 
   {
-    cache.getData(i, stor);
+    cache.getData(ros::Time().fromNSec(i), stor);
     EXPECT_EQ(stor.parent_frame_id, i);
-    EXPECT_EQ(stor.stamp_, i);
+    EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(i));
     std::stringstream ss;
     ss << values[i];
     EXPECT_EQ(stor.frame_id_, ss.str());
@@ -173,14 +173,14 @@ TEST(TimeCache, ZeroAtFront)
     ss << values[i];
     stor.frame_id_ = ss.str();
     stor.parent_frame_id = i;
-    stor.stamp_ = i;
+    stor.stamp_ = ros::Time().fromNSec(i);
     
     cache.insertData(stor);
   }
 
   stor.frame_id_ = "HEAD";
   stor.parent_frame_id = runs;
-  stor.stamp_ = runs;
+  stor.stamp_ = ros::Time().fromNSec(runs);
   cache.insertData(stor);
   
 
@@ -188,29 +188,29 @@ TEST(TimeCache, ZeroAtFront)
   for ( uint64_t i = 1; i < runs ; i++ )
 
   {
-    cache.getData(i, stor);
+    cache.getData(ros::Time().fromNSec(i), stor);
     EXPECT_EQ(stor.parent_frame_id, i);
-    EXPECT_EQ(stor.stamp_, i);
+    EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(i));
     std::stringstream ss;
     ss << values[i];
     EXPECT_EQ(stor.frame_id_, ss.str());
   }
 
-  cache.getData(0ULL, stor);
+  cache.getData(ros::Time(), stor);
   EXPECT_EQ(stor.parent_frame_id, runs);
-  EXPECT_EQ(stor.stamp_, runs);
+  EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(runs));
   EXPECT_EQ(stor.frame_id_, std::string("HEAD"));
 
   stor.frame_id_ = "NEW_HEAD";
   stor.parent_frame_id = runs;
-  stor.stamp_ = runs+1;
+  stor.stamp_ = ros::Time().fromNSec(runs+1);
   cache.insertData(stor);
 
 
   //Make sure we get a different value now that a new values is added at the front
-  cache.getData(0ULL, stor);
+  cache.getData(ros::Time(), stor);
   EXPECT_EQ(stor.parent_frame_id, runs);
-  EXPECT_EQ(stor.stamp_, runs+1);
+  EXPECT_EQ(stor.stamp_, ros::Time().fromNSec(runs+1));
   EXPECT_NE(stor.frame_id_, std::string("HEAD"));
   
 }
@@ -243,13 +243,13 @@ TEST(TimeCache, CartesianInterpolation)
       stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 2;
-      stor.stamp_ = step * 100 + offset;
+      stor.stamp_ = ros::Time().fromNSec(step * 100 + offset);
       cache.insertData(stor);
     }
     
     for (int pos = 0; pos < 100 ; pos ++)
     {
-      cache.getData(offset + pos, stor);
+      cache.getData(ros::Time().fromNSec(offset + pos), stor);
       double x_out = stor.getOrigin().x();
       double y_out = stor.getOrigin().y();
       double z_out = stor.getOrigin().z();
@@ -288,13 +288,13 @@ TEST(TimeCache, ReparentingInterpolationProtection)
     stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
     stor.frame_id_ = "NO_NEED";
     stor.parent_frame_id = step + 4;
-    stor.stamp_ = step * 100 + offset;
+    stor.stamp_ = ros::Time().fromNSec(step * 100 + offset);
     cache.insertData(stor);
   }
   
   for (int pos = 0; pos < 100 ; pos ++)
   {
-    cache.getData(offset + pos, stor);
+    cache.getData(ros::Time().fromNSec(offset + pos), stor);
     double x_out = stor.getOrigin().x();
     double y_out = stor.getOrigin().y();
     double z_out = stor.getOrigin().z();
@@ -305,7 +305,7 @@ TEST(TimeCache, ReparentingInterpolationProtection)
   
   for (int pos = 100; pos < 120 ; pos ++)
   {
-    cache.getData(offset + pos, stor);
+    cache.getData(ros::Time().fromNSec(offset + pos), stor);
     double x_out = stor.getOrigin().x();
     double y_out = stor.getOrigin().y();
     double z_out = stor.getOrigin().z();
@@ -345,13 +345,13 @@ TEST(TimeCache, CartesianExtrapolation)
       stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 2;
-      stor.stamp_ = step * 100 + offset;
+      stor.stamp_ = ros::Time().fromNSec(step * 100 + offset);
       cache.insertData(stor);
     }
     
     for (int pos = -200; pos < 300 ; pos ++)
     {
-      cache.getData(offset + pos, stor);
+      cache.getData(ros::Time().fromNSec(offset + pos), stor);
       double x_out = stor.getOrigin().x();
       double y_out = stor.getOrigin().y();
       double z_out = stor.getOrigin().z();
@@ -420,13 +420,13 @@ TEST(TimeCache, AngularInterpolation)
       stor.setRotation(quats[step]);
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 3;
-      stor.stamp_ = offset + (step * 100); //step = 0 or 1
+      stor.stamp_ = ros::Time().fromNSec(offset + (step * 100)); //step = 0 or 1
       cache.insertData(stor);
     }
     
     for (int pos = -100; pos < 200 ; pos ++)
     {
-      cache.getData(offset + pos, stor); //get the transform for the position
+      cache.getData(ros::Time().fromNSec(offset + pos), stor); //get the transform for the position
       btQuaternion quat = stor.getRotation(); //get the quaternion out of the transform
 
       //Generate a ground truth quaternion directly calling slerp
@@ -455,14 +455,14 @@ TEST(TimeCache, DuplicateEntries)
   stor.setIdentity();
   stor.frame_id_ = "a";
   stor.parent_frame_id = 3;
-  stor.stamp_ = ros::Time().fromSec(1);
+  stor.stamp_ = ros::Time().fromNSec(1);
 
   cache.insertData(stor);
 
   cache.insertData(stor);
 
 
-  cache.getData(ros::Time().fromSec(1), stor);
+  cache.getData(ros::Time().fromNSec(1), stor);
   
   printf(" stor is %f\n", stor.getOrigin().x());
   EXPECT_TRUE(!isnan(stor.getOrigin().x()));
