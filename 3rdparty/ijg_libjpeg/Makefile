@@ -1,10 +1,10 @@
-all: libjpeg
+all: lib/libjpeg.a
 	cd src && make
 
 jpeg-6b:
 	tar xzf jpeg-6b.tar.gz
 
-libjpeg: jpeg-6b
+lib/libjpeg.a: jpeg-6b
 	cd jpeg-6b && ./configure
 	cd jpeg-6b && make
 	# don't do a make install. instead, the following lines take exactly what we need
@@ -24,4 +24,4 @@ clean:
 	-rm include/ijg_libjpeg/jpegint.h
 	-rm include/ijg_libjpeg/jconfig.h
 
-.PHONY : clean libjpeg
+.PHONY : clean
