@@ -1199,13 +1199,13 @@ TEST(tf, RepeatedTimes)
   tf::Stamped<tf::Transform>  output;
   try{
     mTR.lookupTransform("parent", "b" , ros::Time().fromNSec(4000), output);
-    EXPECT_TRUE(!isnan(output.getOrigin().x()));
-    EXPECT_TRUE(!isnan(output.getOrigin().y()));
-    EXPECT_TRUE(!isnan(output.getOrigin().z()));
-    EXPECT_TRUE(!isnan(output.getRotation().x()));
-    EXPECT_TRUE(!isnan(output.getRotation().y()));
-    EXPECT_TRUE(!isnan(output.getRotation().z()));
-    EXPECT_TRUE(!isnan(output.getRotation().w()));
+    EXPECT_TRUE(!std::isnan(output.getOrigin().x()));
+    EXPECT_TRUE(!std::isnan(output.getOrigin().y()));
+    EXPECT_TRUE(!std::isnan(output.getOrigin().z()));
+    EXPECT_TRUE(!std::isnan(output.getRotation().x()));
+    EXPECT_TRUE(!std::isnan(output.getRotation().y()));
+    EXPECT_TRUE(!std::isnan(output.getRotation().z()));
+    EXPECT_TRUE(!std::isnan(output.getRotation().w()));
   }
   catch (...)
   {

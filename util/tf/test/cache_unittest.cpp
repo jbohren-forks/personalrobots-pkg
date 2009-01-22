@@ -465,13 +465,13 @@ TEST(TimeCache, DuplicateEntries)
   cache.getData(ros::Time().fromNSec(1), stor);
   
   printf(" stor is %f\n", stor.getOrigin().x());
-  EXPECT_TRUE(!isnan(stor.getOrigin().x()));
-  EXPECT_TRUE(!isnan(stor.getOrigin().y()));
-  EXPECT_TRUE(!isnan(stor.getOrigin().z()));
-  EXPECT_TRUE(!isnan(stor.getRotation().x()));
-  EXPECT_TRUE(!isnan(stor.getRotation().y()));
-  EXPECT_TRUE(!isnan(stor.getRotation().z()));
-  EXPECT_TRUE(!isnan(stor.getRotation().w()));
+  EXPECT_TRUE(!std::isnan(stor.getOrigin().x()));
+  EXPECT_TRUE(!std::isnan(stor.getOrigin().y()));
+  EXPECT_TRUE(!std::isnan(stor.getOrigin().z()));
+  EXPECT_TRUE(!std::isnan(stor.getRotation().x()));
+  EXPECT_TRUE(!std::isnan(stor.getRotation().y()));
+  EXPECT_TRUE(!std::isnan(stor.getRotation().z()));
+  EXPECT_TRUE(!std::isnan(stor.getRotation().w()));
 }
 
 int main(int argc, char **argv){
