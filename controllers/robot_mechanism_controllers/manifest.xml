@@ -8,7 +8,6 @@
   <depend package="mechanism_model" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />
-  <depend package="stl_utils" />
   <depend package="misc_utils" />
   <depend package="realtime_tools" />
   <depend package="roscpp" />
