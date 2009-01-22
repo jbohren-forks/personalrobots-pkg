@@ -33,9 +33,6 @@
 #include <pthread.h>
 
 typedef unsigned long xnhandle_t;
-typedef unsigned long long xnticks_t;
-typedef xnticks_t RTIME;
-
 typedef struct {
 	xnhandle_t opaque;
 } XN_RT_MUTEX;
@@ -75,5 +72,7 @@ int realtime_cond_signal(RealtimeCond *cond);
 int realtime_cond_wait(RealtimeCond *cond, RealtimeMutex *mutex);
 
 int realtime_shadow_task(RealtimeTask *task);
+
+double realtime_gettime(void);
 
 #endif

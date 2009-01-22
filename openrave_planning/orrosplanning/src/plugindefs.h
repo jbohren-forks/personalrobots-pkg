@@ -52,8 +52,13 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef _MSC_VER
+#define PRIdS "Id"
+#else
+#define PRIdS "zd"
+#endif
+
 using namespace std;
-typedef unsigned int u32;
 
 #include <sys/timeb.h>    // ftime(), struct timeb
 

@@ -17,7 +17,7 @@ seq = 0
 for topic,msg in f:
   if rospy.is_shutdown():
     break
-  if topic == "/videre/images":
+  if topic.endswith("videre/images"):
     for im in msg.images:
       assert im.compression == "raw"
       pim = Image.fromstring({'mono8' : 'L', 'rgb24' : 'RGB'}[im.colorspace], (im.width, im.height), im.data)

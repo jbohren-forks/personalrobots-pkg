@@ -41,12 +41,6 @@ using namespace std;
 
 ROS_REGISTER_CONTROLLER(ArmTrajectoryController);
 
-static inline double now()
-{
-  struct timespec n;
-  clock_gettime(CLOCK_MONOTONIC, &n);
-  return double(n.tv_nsec) / 1.0e9 + n.tv_sec;
-}
 
 ArmTrajectoryController::ArmTrajectoryController() :
   refresh_rt_vals_(false),trajectory_type_("linear"),trajectory_wait_time_(0.0), max_update_time_(0.0)
@@ -180,7 +174,10 @@ int ArmTrajectoryController::getJointControllerPosByName(std::string name)
 
 void ArmTrajectoryController::update(void)
 {
-  double start_time = now();
+
+#ifdef PUBLISH_MAX_TIME
+  double start_time = realtime_gettime();
+#endif
 
   double sample_time(0.0);
 
@@ -224,8 +221,9 @@ void ArmTrajectoryController::update(void)
     joint_pd_controllers_[i]->setCommand(joint_cmd_rt_[i],joint_cmd_dot_rt_[i]);
 
   updateJointControllers();
-
-  double end_time = now();
+  
+#ifdef PUBLISH_MAX_TIME
+  double end_time = realtime_gettime();
   max_update_time_ = std::max(max_update_time_,end_time-start_time);
 
   if (controller_state_publisher_->trylock())
@@ -234,16 +232,8 @@ void ArmTrajectoryController::update(void)
     controller_state_publisher_->msg_.max_update_time = max_update_time_; 
     controller_state_publisher_->unlockAndPublish();      
   }
+#endif
 
-/*
-  static realtime_tools::RealtimePublisher<std_msgs::String> p("/s", 1);
-  if (p.trylock()) {
-    char buf[1000];
-    sprintf(buf, "Time = %15.6lf\n", end_time - start_time);
-    p.msg_.data = std::string(buf);
-    p.unlockAndPublish();
-  }
-*/
 }
 
 bool ArmTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)

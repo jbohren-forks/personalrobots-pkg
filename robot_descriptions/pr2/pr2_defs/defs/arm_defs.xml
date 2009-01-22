@@ -96,7 +96,7 @@
 
       <limit min="-0.4" max="1.5" effort="30" velocity="${VELOCITY_LIMIT_SCALE*3.47}"
              k_position="100" k_velocity="10"
-             safety_length_min="0.1" safety_length_max="0.1" />
+             safety_length_min="0.05" safety_length_max="0.05" />
       <calibration reference_position="shoulder_lift_cal" values="1.5 -1 " />
 
       <joint_properties damping="100.0" />
@@ -272,7 +272,7 @@
 
       <limit min="-2.3" max="0.1" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.5}"
              k_position="100" k_velocity="3"
-             safety_length_min="0.4" safety_length_max="0.1" />
+             safety_length_min="0.25" safety_length_max="0.1" />
       <calibration reference_position="${-1.1+elbow_flex_cal}" values="1.5 -1" />
 
       <joint_properties damping="10.0" />

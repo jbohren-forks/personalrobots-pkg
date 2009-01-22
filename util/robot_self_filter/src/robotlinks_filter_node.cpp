@@ -54,6 +54,12 @@ using namespace std;
 
 #define FOREACH(it, v) for(typeof((v).begin()) it = (v).begin(); it != (v).end(); (it)++)
 
+#ifdef _MSC_VER
+#define PRIdS "Id"
+#else
+#define PRIdS "zd"
+#endif
+
 boost::shared_ptr<ros::Node> s_pmasternode;
 
 inline string _stdwcstombs(const wchar_t* pname)
@@ -151,7 +157,7 @@ public:
         }
         
         RobotBase* probot = penv->GetRobots().front();    
-        ROS_INFO("generating convex hulls for robot %S, num links: %lu", probot->GetName(), probot->GetLinks().size());
+        ROS_INFO("generating convex hulls for robot %S, num links: %"PRIdS, probot->GetName(), probot->GetLinks().size());
 
         ros::Time starthull = ros::Time::now();
         _vLinkHulls.resize(probot->GetLinks().size());
@@ -161,7 +167,7 @@ public:
             // compute convex hull
             if( compute_convex_hull((*itlink)->GetCollisionData().vertices, ithull->vconvexhull) ) {
                 totalplanes += ithull->vconvexhull.size();
-                ROS_DEBUG("link %S convex hull has %lu planes", (*itlink)->GetName(), ithull->vconvexhull.size());
+                ROS_DEBUG("link %S convex hull has %"PRIdS" planes", (*itlink)->GetName(), ithull->vconvexhull.size());
             }
             else
                 ROS_ERROR("failed to compute convex hull for link %S", (*itlink)->GetName());
@@ -170,7 +176,7 @@ public:
             ++ithull;
         }
 
-        ROS_INFO("total convex planes: %lu, time: %fs", totalplanes, (ros::Time::now()-starthull).toSec());
+        ROS_INFO("total convex planes: %"PRIdS", time: %fs", totalplanes, (ros::Time::now()-starthull).toSec());
 
         return true;
     }

@@ -260,7 +260,7 @@ public:
             }
         }
         else
-            RAVELOG_WARNA("number of current values (%d) != desird values (%d)\n", _vcurvalues.size(), vnewvalues.size());
+            RAVELOG_WARNA("number of current values (%"PRIdS") != desird values (%"PRIdS")\n", _vcurvalues.size(), vnewvalues.size());
 
         FOREACH(ittrajcontroller, _listControllers) {
             if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
@@ -552,7 +552,7 @@ private:
                 if( bPopTrajectory ) {
                     FOREACH(ittraj, _listControllers)
                         (*ittraj)->_listTrajectories.pop_front();
-                    RAVELOG_DEBUGA("robot trajectory finished, left: %d\n", _listControllers.front()->_listTrajectories.size());
+                    RAVELOG_DEBUGA("robot trajectory finished, left: %"PRIdS"\n", _listControllers.front()->_listTrajectories.size());
                 }
 
                 if( _bIsDone != _listControllers.front()->_listTrajectories.size()==0 ) {

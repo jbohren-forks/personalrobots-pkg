@@ -9,7 +9,7 @@
   <macro name="pr2_ptz" params="side parent reflect *origin">
 
     <joint name="${side}_ptz_pan_joint" type="revolute">
-      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" safety_length_min="0" safety_length_max="0" />
       <axis xyz="0 0 -1" />
       <joint_properties damping="0.01" friction="0.0" />
     </joint>
@@ -46,7 +46,7 @@
     </link>
 
     <joint name="${side}_ptz_tilt_joint" type="revolute">
-      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" safety_length_min="0" safety_length_max="0" />
       <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <joint_properties damping="0.01" friction="0.0" />
