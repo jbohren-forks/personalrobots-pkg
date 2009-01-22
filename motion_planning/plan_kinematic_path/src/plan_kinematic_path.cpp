@@ -311,6 +311,14 @@ public:
     {
     }
     
+    void stateUpdate(void)
+    {
+	robot_msgs::KinematicPath empty_path;
+	robot_msgs::KinematicState state;
+	currentState(state);
+	m_pr.sendDisplay(state, empty_path, "pr2");
+    }
+    
     void currentState(robot_msgs::KinematicState &state)
     {
 	state.set_vals_size(m_kmodel->stateDimension);
