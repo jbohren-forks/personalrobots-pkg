@@ -32,6 +32,9 @@
 
 #include "realtime_tools/realtime_tools.h"
 
+typedef unsigned long long xnticks_t;
+typedef xnticks_t RTIME;
+
 #define TM_INFINITE   (0)
 #define TM_NONBLOCK   ((xnticks_t)-1)
 
@@ -64,6 +67,9 @@ int rt_task_shadow(XN_RT_TASK *task,
 		               const char *name,
 		               int prio,
 		               int mode) __attribute__((weak));
+
+/* Timer Interface */
+RTIME rt_timer_read(void) __attribute__((weak));
 
 #ifdef __cplusplus
 }

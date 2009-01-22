@@ -178,3 +178,24 @@ int realtime_shadow_task(RealtimeTask *task)
 
   return err;
 }
+
+double realtime_gettime(void)
+{
+  double now = 0;
+
+#if HAS_XENOMAI
+  if (rt_timer_read)
+  {
+    RTIME n = rt_timer_read();
+    now = double(n) / 1e9;
+  }
+  else
+#endif
+  {
+    struct timespec n;
+    clock_gettime(CLOCK_REALTIME, &n);
+    now = double(n.tv_nsec) / 1e9 + n.tv_sec;
+  }
+
+  return now;
+}
