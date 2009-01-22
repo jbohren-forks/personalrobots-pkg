@@ -1,3 +1,99 @@
+Index: include/native/syscall.h
+===================================================================
+--- include/native/syscall.h	(revision 4220)
++++ include/native/syscall.h	(working copy)
+@@ -119,6 +119,7 @@
+ #define __native_timer_tsc2ns       93
+ #define __native_queue_write        94
+ #define __native_queue_read         95
++#define __native_timer_set          96
+ 
+ struct rt_arg_bulk {
+ 
+Index: include/native/timer.h
+===================================================================
+--- include/native/timer.h	(revision 4220)
++++ include/native/timer.h	(working copy)
+@@ -67,6 +67,15 @@
+ 	return xntbase_get_time(__native_tbase);
+ }
+ 
++static inline int rt_timer_set(RTIME val)
++{
++  spl_t s;
++  xnlock_get_irqsave(&nklock, s);
++  xntbase_adjust_time(__native_tbase, val - xntbase_get_time(__native_tbase));
++  xnlock_put_irqrestore(&nklock, s);
++  return 0;
++}
++
+ static inline SRTIME rt_timer_ns2ticks(SRTIME ns)
+ {
+ 	return xntbase_ns2ticks(__native_tbase, ns);
+@@ -178,6 +187,8 @@
+ 
+ RTIME rt_timer_read(void);
+ 
++int rt_timer_set(RTIME);
++
+ /**
+  * @fn SRTIME rt_timer_ns2ticks(SRTIME ns)
+  * @brief Convert nanoseconds to internal clock ticks.
+@@ -234,6 +245,8 @@
+ 
+ RTIME rt_timer_read(void);
+ 
++int rt_timer_set(RTIME val);
++
+ void rt_timer_spin(RTIME ns);
+ 
+ int rt_timer_set_mode(RTIME nstick);
+Index: src/skins/native/timer.c
+===================================================================
+--- src/skins/native/timer.c	(revision 4220)
++++ src/skins/native/timer.c	(working copy)
+@@ -52,6 +52,11 @@
+ 	return now;
+ }
+ 
++int rt_timer_set(RTIME val)
++{
++  return XENOMAI_SKINCALL1(__native_muxid, __native_timer_set, &val);
++}
++
+ RTIME rt_timer_tsc(void)
+ {
+ 	RTIME tsc;
+Index: ksrc/skins/native/syscall.c
+===================================================================
+--- ksrc/skins/native/syscall.c	(revision 4220)
++++ ksrc/skins/native/syscall.c	(working copy)
+@@ -948,6 +948,17 @@
+ }
+ 
+ /*
++ * int __rt_timer_set(RTIME *val)
++ */
++
++static int __rt_timer_set(struct task_struct *curr, struct pt_regs *regs)
++{
++	RTIME val;
++	__xn_copy_from_user(curr, &val, (void __user *)__xn_reg_arg1(regs), sizeof(val));
++	return rt_timer_set(val);
++}
++
++/*
+  * int __rt_timer_tsc(RTIME *tscp)
+  */
+ 
+@@ -3924,6 +3935,7 @@
+ 	    {&__rt_timer_set_mode, __xn_exec_lostage | __xn_exec_switchback},
+ 	[__native_unimp_22] = {&__rt_call_not_available, __xn_exec_any},
+ 	[__native_timer_read] = {&__rt_timer_read, __xn_exec_any},
++	[__native_timer_set] = {&__rt_timer_set, __xn_exec_any},
+ 	[__native_timer_tsc] = {&__rt_timer_tsc, __xn_exec_any},
+ 	[__native_timer_ns2ticks] = {&__rt_timer_ns2ticks, __xn_exec_any},
+ 	[__native_timer_ticks2ns] = {&__rt_timer_ticks2ns, __xn_exec_any},
 Index: ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch
 ===================================================================
 --- ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch	(revision 4220)
