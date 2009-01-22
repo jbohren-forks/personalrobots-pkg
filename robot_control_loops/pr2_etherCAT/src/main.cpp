@@ -421,7 +421,6 @@ int main(int argc, char *argv[])
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  *(int *)0 = 10;
   // Setup single instance
   if (setupPidFile() < 0) return -1;
 
