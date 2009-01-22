@@ -13,6 +13,7 @@ http://www.ijg.org/files/README
 </description>
 <author>The Independent JPEG Group</author>
 <license>BSD-style</license>
+<review status="unreviewed" notes=""/>
 <url>http://www.ijg.org</url>
 <depend package="rosthread"/>
 <export>
