@@ -70,7 +70,7 @@ create_nav_plan_astar(COSTTYPE *costmap, int nx, int ny,
 
   // calculate the nav fn and path
   nav->priInc = 2*COST_NEUTRAL;
-  nav->propNavFnAstar(nx*ny/20);
+  nav->propNavFnAstar(std::max(nx*ny/20,nx+ny));
   
   // path
   int len = nav->calcPath(nplan);
@@ -275,7 +275,7 @@ NavFn::calcNavFnAstar()
   setupNavFn(true);
 
   // calculate the nav fn and path
-  propNavFnAstar(nx*ny/20);
+  propNavFnAstar(std::max(nx*ny/20,nx+ny));
   
   // path
   int len = calcPath(nx*4);
@@ -515,9 +515,9 @@ NavFn::updateCellAstar(int n)
   r = potarr[n+1];		
   u = potarr[n-nx];
   d = potarr[n+nx];
-  //  ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
+  //ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
   //	 potarr[n], l, r, u, d);
-  //  ROS_INFO("[Update] cost: %d\n", costarr[n]);
+  // ROS_INFO("[Update] cost of %d: %d\n", n, costarr[n]);
 
   // find lowest, and its lowest neighbor
   float ta, tc;
@@ -549,7 +549,7 @@ NavFn::updateCellAstar(int n)
 	  pot = ta + hf*v;
 	}
 
-      //      ROS_INFO("[Update] new pot: %d\n", costarr[n]);
+      //ROS_INFO("[Update] new pot: %d\n", costarr[n]);
 
       // now add affected neighbors to priority blocks
       if (pot < potarr[n])
@@ -743,6 +743,7 @@ NavFn::propNavFnAstar(int cycles)
   ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
+
   if (potarr[startCell] < POT_HIGH) return true; // finished up here
   else return false;
 }
@@ -781,11 +782,12 @@ NavFn::calcPath(int n, int *st)
   for (int i=0; i<n; i++)
     {
       // check if near goal
-      if (potarr[stc] < COST_OBS)
+      int nearest_point=std::max(0,std::min(nx*ny-1,stc+(int)round(dx)+(int)(nx*round(dy))));
+      if (potarr[nearest_point] < COST_NEUTRAL)
 	{
 	  pathx[npath] = (float)goal[0];
 	  pathy[npath] = (float)goal[1];
-	  return npath+1;	// done!
+	  return ++npath;	// done!
 	}
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
@@ -805,6 +807,7 @@ NavFn::calcPath(int n, int *st)
       gradCell(stc+1);
       gradCell(stcnx);
       gradCell(stcnx+1);
+
       
       // show gradients
       //      ROS_INFO("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f\n",
