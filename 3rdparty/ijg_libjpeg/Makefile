@@ -6,6 +6,7 @@ build/jpeg-6b:
 	cd build; tar xzf ../jpeg-6b.tar.gz
 
 lib/libjpeg.a: build/jpeg-6b
+	-mkdir lib
 	cd build/jpeg-6b && CFLAGS=-fPIC ./configure
 	cd build/jpeg-6b && make $(PARALLEL_JOBS)
 	# don't do a make install. instead, the following lines take exactly what we need
@@ -24,5 +25,7 @@ clean:
 	-rm include/ijg_libjpeg/jerror.h
 	-rm include/ijg_libjpeg/jpegint.h
 	-rm include/ijg_libjpeg/jconfig.h
+
+wipe: clean
 
 .PHONY : clean
