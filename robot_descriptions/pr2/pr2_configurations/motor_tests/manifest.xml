@@ -1,0 +1,13 @@
+<package>
+
+  <description brief="The scripts to run simple motor tests">
+    
+    This package contains XML descriptions for simple motor tests, using robot description format
+    defined at Willow Garage.
+    
+  </description>
+  <author>Rob Wheeler, John Hsu</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  
+</package>
