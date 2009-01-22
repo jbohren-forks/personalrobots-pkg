@@ -42,7 +42,7 @@
   <!-- link blocks -->
   <link name="floor_link">
     <parent name="world" />
-    <origin xyz="5 0 0.01" rpy="0 0 0" />
+    <origin xyz="1.5 0.65 0.01" rpy="0 0 0" />
     <joint name="floor_joint" />
     <inertial>
       <mass value="1000" />
@@ -132,7 +132,7 @@
   
   <link name="door_link">
     <parent name="wall1_link" />
-    <origin xyz="0 0 0.1" rpy="0 0 0" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
     <joint name="door_joint" />
     <inertial >
       <mass value="10" />
@@ -147,13 +147,13 @@
         <elem key="material">Gazebo/White</elem>
       </map>
       <geometry name="sholder_roll_mesh_file">
-        <mesh scale="0.2 1.0 2.0" />
+        <mesh scale="0.1 1.0 2.0" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
       <geometry name="door_collision_geom">
-        <box size="0.2 1.0 2.0" />
+        <box size="0.1 1.0 2.0" />
       </geometry>
     </collision>
     <map name="door_gravity" flag="gazebo">
@@ -163,7 +163,7 @@
 
   <link name="handle_link">
     <parent name="door_link" />
-    <origin xyz="-0.20 -0.8 1.0" rpy="0 0 0" />
+    <origin xyz="-0.10 -0.8 1.0" rpy="0 0 0" />
     <joint name="handle_joint" />
     <inertial >
       <mass value="0.1" />

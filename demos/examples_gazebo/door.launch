@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <!-- send door.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find examples_gazebo)/door_defs/door.xml'" />
+    <param name="robotdesc/door" command="$(find xacro)/xacro.py '$(find examples_gazebo)/door_defs/door.xml'" />
 
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
@@ -11,8 +11,8 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
   </group>
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <!-- push robotdesc/door to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/door" respawn="false" output="screen" /> <!-- load default arm controller -->
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/door_defs/controllers_door.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
   <node pkg="robot_mechanism_controllers" type="control.py" args="set door_controller 1.0" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
