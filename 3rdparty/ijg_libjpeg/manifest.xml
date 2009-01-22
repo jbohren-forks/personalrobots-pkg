@@ -9,9 +9,10 @@ package also includes a trivial library which provides a mutex for wrapping
 calls to libjpeg, as libjpeg is not thread-safe due to its use of jumps for
 error handling.
 
+http://www.ijg.org/files/README
 </description>
 <author>The Independent JPEG Group</author>
-<license>I believe the IJG JPEG software license is BSD-compatible. See the README file in the jpeg-6b directory in this package for all the details.</license>
+<license>BSD-style</license>
 <url>http://www.ijg.org</url>
 <depend package="rosthread"/>
 <export>
