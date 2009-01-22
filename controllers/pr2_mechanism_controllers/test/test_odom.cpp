@@ -146,7 +146,7 @@ int main( int argc, char** argv )
 
   libTF::Vector ang_rates;
   ros::Time start_time = ros::Time::now();
-  ros::Duration sleep_time(0.01);
+  ros::Duration sleep_time = ros::Duration().fromSec(0.01);
 
   std::ofstream odom_log_file;
   odom_log_file.open("odom_log.txt");

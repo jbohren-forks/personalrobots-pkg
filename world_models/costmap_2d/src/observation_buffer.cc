@@ -85,7 +85,7 @@ namespace costmap_2d {
   void ObservationBuffer::get_observations(std::vector<Observation>& observations){
     // If the duration is 0, then we just keep the latest one, so we must have a limit of one.
     // If the duration is non-zero, we want to delete all the observations.
-    unsigned int min_observations = (keep_alive_ == ros::Duration(0)) ? 1 : 0;
+    unsigned int min_observations = (keep_alive_ == ros::Duration()) ? 1 : 0;
 
     while(buffer_.size() > min_observations){
       std::list<Observation>::iterator it = buffer_.begin();

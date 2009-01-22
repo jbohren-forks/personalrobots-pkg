@@ -212,7 +212,7 @@ void GovernorNode::sleep(ros::Time start){
 
   ros::Duration sleepTime = ros::Time::now() - end;
 
-  if (sleepTime <= ros::Duration(0))
+  if (sleepTime <= ros::Duration())
     printf("Governor Node missed deadline and is not sleeping\n");
   else
     sleepTime.sleep();
