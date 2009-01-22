@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 
 <robot name="pr2"><!-- name of the robot-->
-  
+
   <group name="right_arm" flags="planning kinematic">
+    torso_lift_link
     r_shoulder_pan_link
     r_shoulder_lift_link
     r_upper_arm_roll_link
@@ -14,10 +15,10 @@
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
-    
+
     <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
   </group>
-  
+
 </robot>

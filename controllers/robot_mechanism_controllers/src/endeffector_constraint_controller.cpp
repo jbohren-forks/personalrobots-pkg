@@ -88,10 +88,10 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
 
   // some parameters
   node->param("constraint/wall_x"       , wall_x      , 0.6) ; /// location of the wall
-  node->param("constraint/threshold_x"  , threshold_x , 0.2 ) ; /// distance within the wall to apply constraint force
+  node->param("constraint/threshold_x"  , threshold_x , 0.05 ) ; /// distance within the wall to apply constraint force
   node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
   node->param("constraint/threshold_r"  , threshold_r , 0.05) ; /// radius over with constraint is applied
-  node->param("constraint/f_x_max"      , f_x_max     , -20.0) ; /// max x force
+  node->param("constraint/f_x_max"      , f_x_max     , -10000.0) ; /// max x force
   node->param("constraint/f_y_max"      , f_r_max     , -20.0) ; /// max r force
 
 
@@ -174,8 +174,13 @@ void EndeffectorConstraintController::update()
 
   // get the joint positions
   JntArray jnt_pos(num_joints_);
+  unsigned int j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
-    jnt_pos(i) = joints_[i]->position_;
+  {
+    while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
+      ++j;
+    jnt_pos(i) = joints_[j++]->position_;
+  }
 
   // get the chain jacobian
   Jacobian jacobian(num_joints_, num_segments_);
@@ -189,6 +194,7 @@ void EndeffectorConstraintController::update()
   constraint_wrench_ = constraint_jac_ * constraint_force_;
 
   // convert the wrench into joint torques
+  j = 0;
   JntArray constraint_torq(num_joints_);
   for (unsigned int i=0; i<num_joints_; i++)
   {
@@ -197,7 +203,10 @@ void EndeffectorConstraintController::update()
     {
       constraint_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
     }
-    joints_[i]->commanded_effort_ = constraint_torq(i);
+
+    while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
+      ++j;
+    joints_[j++]->commanded_effort_ = constraint_torq(i);
   }
 }
 
@@ -220,7 +229,8 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   //ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
   if (x_dist_to_wall > 0)
   {
-    f_x = (exp(x_dist_to_wall)-1) * f_x_max; /// @todo: FIXME, replace with some exponential function
+    //f_x = (exp(x_dist_to_wall)-1) * f_x_max; /// @todo: FIXME, replace with some exponential function
+    f_x = x_dist_to_wall * f_x_max;
     //ROS_ERROR("x_dist_to_wall: %f m f_x: %f N\n", x_dist_to_wall, f_x);
     if((x_dist_to_wall-threshold_x) > 0)
     {

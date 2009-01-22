@@ -8,6 +8,7 @@
     -->
     
     <!-- send pr2_r_arm.xml to param server -->
+<!--
     <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
 
     <!-- -g flag runs gazebo in gui-less mode -->
@@ -22,8 +23,9 @@
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
 
 
+-->
     <!-- start arm controller -->
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/r_arm_constraint_controller.xml" respawn="false"  />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_constraint_controller.xml" respawn="false"  />
    
     
   </group>
