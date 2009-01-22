@@ -17,4 +17,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <versioncontrol type="svn" url="https://opende.svn.sourceforge.net/svnroot/opende/trunk"/>
 <versioncontrol type="svn" url="https://oderutils.svn.sourceforge.net"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libtool"/> 
+<sysdepend os="ubuntu" version="8.10-intrepid" package="automake"/>
+<sysdepend os="ubuntu" version="8.10-intrepid" package="libtool"/> 
 </package>
