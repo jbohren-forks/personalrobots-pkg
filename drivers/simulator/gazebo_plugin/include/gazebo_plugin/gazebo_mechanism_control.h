@@ -39,7 +39,7 @@
 #include "mechanism_control/mechanism_control.h"
 #include "mechanism_model/robot.h"
 #include "tinyxml/tinyxml.h"
-
+#include <gazebo/Param.hh>
 
 namespace gazebo
 {
@@ -163,6 +163,10 @@ private:
    *  \brief tmp vars for performance checking
    */
   double wall_start, sim_start;
+
+  /// \brief set topic name of robotdesc parameter
+  private: ParamT<std::string> *robotParamP;
+  private: std::string robotParam;
 
 };
 
