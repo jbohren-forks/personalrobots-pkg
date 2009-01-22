@@ -105,10 +105,6 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::Dia
     robot_msgs::DiagnosticValue v;
     robot_msgs::DiagnosticString s;
 
-    status.level = 0;
-    status.name = "Realtime Control Loop";
-    status.message = "OK";
-
     static double max_ec = 0, max_mc = 0;
     double total_ec = 0, total_mc = 0;
 
@@ -130,6 +126,18 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::Dia
     ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
     ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
     ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_mc*1e+6/1000);
+
+    status.name = "Realtime Control Loop";
+    status.level = 0;
+    status.message = "OK";
+    if (diagnostics.secondary > 100) {
+      status.level = 1;
+      status.message = "Too many secondary mode switches";
+    }
+    if (diagnostics.secondary > 1000) {
+      status.level = 2;
+      status.message = "Too many secondary mode switches";
+    }
 
     status.set_values_vec(values);
     status.set_strings_vec(strings);
