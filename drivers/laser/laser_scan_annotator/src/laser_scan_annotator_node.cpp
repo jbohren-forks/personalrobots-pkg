@@ -75,7 +75,7 @@ public:
     scan_annotated.set_poses_size(N) ;
     for (unsigned int i=0; i<N; i++)
     {
-      ros::Time ray_time = scan_in.header.stamp + ros::Duration(i*scan_in.time_increment) ;
+      ros::Time ray_time = scan_in.header.stamp + ros::Duration().fromSec(i*scan_in.time_increment) ;
 
       tf::Stamped<tf::Transform> transform ;
 
