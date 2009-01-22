@@ -36,12 +36,12 @@
 #include <cmath>
 #include <sstream>
 #include "tinyxml/tinyxml.h"
-#include "stl_utils/stl_utils.h"
 #include "string_utils/string_utils.h"
 #include "math_expr/MathExpression.h"
 
 
 namespace urdf {
+
 
 bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double> *value)
 {
@@ -56,6 +56,20 @@ bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double
     value->push_back(atof(pieces[i].c_str()));
 
   return true;
+}
+
+template <class C>
+void deleteValues(C *c)
+{
+  typename C::iterator it;
+  for (it = c->begin(); it != c->end(); ++it)
+  {
+    if (it->second != NULL)
+    {
+      delete it->second;
+      it->second = NULL;
+    }
+  }
 }
 
 // Pulls the const and const_block elements out of the XML file.

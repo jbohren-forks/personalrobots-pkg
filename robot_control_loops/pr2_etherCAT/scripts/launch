@@ -1,0 +1,4 @@
+#!/bin/bash
+
+ulimit -c unlimited
+rosrun pr2_etherCAT pr2_etherCAT $*

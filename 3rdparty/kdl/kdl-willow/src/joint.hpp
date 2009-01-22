@@ -42,7 +42,7 @@ namespace KDL {
      */
     class Joint {
     public:
-        typedef enum { RotX,RotY,RotZ,TransX,TransY,TransZ,None} JointType;
+        typedef enum { RotAxes,RotX,RotY,RotZ,TransAxes,TransX,TransY,TransZ,None} JointType;
         /**
          * Constructor of a joint.
          *
@@ -58,9 +58,22 @@ namespace KDL {
          */
         Joint(const JointType& type=None,const double& scale=1,const double& offset=0,
               const double& inertia=0,const double& damping=0,const double& stiffness=0);
-        Joint(const Joint& in);
-
-        Joint& operator=(const Joint& arg);
+        /**
+         * Constructor of a joint.
+         *
+         * @param origin the origin of the joint
+         * @param axes the axes of the joint
+         * @param scale scale between joint input and actual geometric
+         * movement, default: 1
+         * @param offset offset between joint input and actual
+         * geometric input, default: 0
+         * @param inertia 1D inertia along the joint axis, default: 0
+         * @param damping 1D damping along the joint axis, default: 0
+         * @param stiffness 1D stiffness along the joint axis,
+         * default: 0
+         */
+        Joint(const Vector& _origin, const Vector& _axes, const JointType& type, const double& _scale=1, const double& _offset=0,
+	      const double& _inertia=0, const double& _damping=0, const double& _stiffness=0);
 
         /**
          * Request the 6D-pose between the beginning and the end of
@@ -98,29 +111,29 @@ namespace KDL {
         {
             return type;
         };
-        
-				/**
-				 * Request the Vector corresponding to the axis of a revolute joint.
-				 *
-				 * @return Vector. e.g (1,0,0) for RotX etc.
-				 */
-				Vector JointAxis() const
-				{
-					switch(type)
-					{
-						case RotX:
-							return Vector(1.,0.,0.);
-						case RotY:
-							return Vector(0.,1.,0.);
-						case RotZ:
-							return Vector(0.,0.,1.);
-						default:
-							printf("This joint type does not have an axis. Type:%d\n",type);
-							printf("Exiting...\n");
-							exit(0);
-					}
-				}
-
+      
+        /**
+	 * Request the Vector corresponding to the axis of a revolute joint.
+	 *
+	 * @return Vector. e.g (1,0,0) for RotX etc.
+	 */
+        Vector JointAxis() const
+        {
+	  switch(type)
+	    {
+	    case RotX:
+	      return Vector(1.,0.,0.);
+	    case RotY:
+	      return Vector(0.,1.,0.);
+	    case RotZ:
+	      return Vector(0.,0.,1.);
+	    default:
+	      printf("This joint type does not have an axis. Type:%d\n",type);
+	      printf("Exiting...\n");
+	      exit(0);
+	    }
+	}
+      
         /** 
          * Request the stringified type of the joint.
          *
@@ -129,7 +142,11 @@ namespace KDL {
         const std::string getTypeName() const
         {
             switch (type) {
-            case RotX:
+	    case RotAxes:
+	        return "RotAxes";
+            case TransAxes:
+	        return "TransAxes";
+	    case RotX:
                 return "RotX";
             case RotY:
                 return "RotY";
@@ -157,6 +174,13 @@ namespace KDL {
         double inertia;
         double damping;
         double stiffness;
+
+        // varibles for RotAxes joint
+        Vector axes, origin;
+        double axes_sqr_0, axes_sqr_1, axes_sqr_2;
+        mutable Frame  joint_pose;
+        mutable double q_previous;
+
     };
 
 } // end of namespace KDL

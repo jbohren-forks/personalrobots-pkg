@@ -33,7 +33,6 @@
 #include <math.h>
 #include <unistd.h>
 #include <set>
-#include <stl_utils/stl_utils.h>
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Model.hh>

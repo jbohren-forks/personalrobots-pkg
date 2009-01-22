@@ -58,16 +58,20 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
   if (!this->parent_model_)
     gzthrow("GazeboMechanismControl controller requires a Model as its parent");
 
-    rosnode_ = ros::g_node; // comes from where?
-    int argc = 0;
-    char** argv = NULL;
-    if (rosnode_ == NULL)
-    {
-      // this only works for a single camera.
-      ros::init(argc,argv);
-      rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in Gazebo Mechanism Control \n");
-    }
+  Param::Begin(&this->parameters);
+  this->robotParamP = new ParamT<std::string>("robotParam", "robotdesc/pr2", 0);
+  Param::End();
+
+  rosnode_ = ros::g_node; // comes from where?
+  int argc = 0;
+  char** argv = NULL;
+  if (rosnode_ == NULL)
+  {
+    // this only works for a single camera.
+    ros::init(argc,argv);
+    rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
+    printf("-------------------- starting node in Gazebo Mechanism Control \n");
+  }
 
   if (getenv("CHECK_SPEEDUP"))
   {
@@ -79,10 +83,15 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
 
 GazeboMechanismControl::~GazeboMechanismControl()
 {
+  delete this->robotParamP;
 }
 
 void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
 {
+  // get parameter name
+  this->robotParamP->Load(node);
+  this->robotParam = this->robotParamP->GetValue();
+
   // read pr2.xml (pr2_gazebo_mechanism_control.xml)
   // setup actuators, then setup mechanism control node
   ReadPr2Xml(node);
@@ -232,14 +241,14 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 {
 
   std::string tmp_param_string;
-  this->rosnode_->getParam("robotdesc/pr2",tmp_param_string);
+  this->rosnode_->getParam(this->robotParam,tmp_param_string);
 
 
   // wait for robotdesc/pr2 on param server
   while(tmp_param_string.empty())
   {
-    std::cout << "WARNING: gazebo mechanism control plugin is waiting for robotdesc/pr2 in param server.  run merge/roslaunch send.xml or similar." << std::endl;
-    this->rosnode_->getParam("robotdesc/pr2",tmp_param_string);
+    std::cout << "WARNING: gazebo mechanism control plugin is waiting for " << this->robotParam << " in param server.  run merge/roslaunch send.xml or similar." << std::endl;
+    this->rosnode_->getParam(this->robotParam,tmp_param_string);
     usleep(100000);
   }
 

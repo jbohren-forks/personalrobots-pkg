@@ -18,16 +18,13 @@
 
   <map name="sensor" flag="gazebo">
     <verbatim key="mechanism_control_simulation">
+
       <controller:ros_time name="ros_time" plugin="libros_time.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
         <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
       </controller:ros_time>
-      <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>1000.0</updateRate>
-        <interface:audio name="gazebo_mechanism_control_dummy_iface" />
-      </controller:gazebo_mechanism_control>
+
     </verbatim>
   </map>
 

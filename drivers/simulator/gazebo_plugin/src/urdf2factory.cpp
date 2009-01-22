@@ -470,7 +470,7 @@ int main(int argc, char **argv)
 
     // Load parameter server string for pr2 robot description
     ros::init(argc,argv);
-    ros::Node* rosnode = new ros::Node("pr2_factory",ros::Node::DONT_HANDLE_SIGINT);
+    ros::Node* rosnode = new ros::Node(argv[1],ros::Node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
     rosnode->getParam(argv[1],xml_content);
