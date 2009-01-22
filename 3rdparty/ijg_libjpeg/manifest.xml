@@ -16,6 +16,7 @@ error handling.
 <depend package="rosthread"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ljpeg -lros_jpeg_mutex"/>
+        <doxymaker external="http://www.ijg.org"/>
 </export>
 </package>
 
