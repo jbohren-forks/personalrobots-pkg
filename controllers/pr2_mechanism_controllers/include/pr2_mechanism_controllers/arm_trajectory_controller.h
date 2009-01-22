@@ -67,17 +67,20 @@
 #include <trajectory/trajectory.h>
 
 #include <robot_msgs/ControllerState.h>
-#include "realtime_tools/realtime_publisher.h"
-#include "std_msgs/String.h"
-
-// #include <libTF/Pose3D.h>
-// #include <urdf/URDF.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_tools.h>
+#include <std_msgs/String.h>
 
 namespace controller
 {
 
   #define GOAL_REACHED_THRESHOLD 0.01
 
+
+    // comment this out if the controller is not supposed to publish its own max execution time
+  #define PUBLISH_MAX_TIME
+
+ 
 // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
 
