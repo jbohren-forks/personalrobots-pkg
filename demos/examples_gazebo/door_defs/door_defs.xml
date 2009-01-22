@@ -203,6 +203,14 @@
           <frameName>map</frameName>
           <interface:position name="p3d_door_position"/>
       </controller:ros_p3d>
+
+      <controller:gazebo_mechanism_control name="gazebo_mechanism_control_door" plugin="libgazebo_mechanism_control.so">
+        <robotParam>robotdesc/door</robotParam>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <interface:audio name="door_gazebo_mechanism_control_dummy_iface" />
+      </controller:gazebo_mechanism_control>
+
     </verbatim>
   </map>
 
