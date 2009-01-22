@@ -446,7 +446,7 @@ class SemanticPointAnnotator : public ros::Node
       PointStamped base_link_origin, map_origin;
       base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
       base_link_origin.header.frame_id = "base_link";
-      base_link_origin.header.stamp = ros::Time(0);
+      base_link_origin.header.stamp = ros::Time();
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 

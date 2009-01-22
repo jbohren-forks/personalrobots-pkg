@@ -77,7 +77,7 @@ TEST_F(MapClientTest, retrieve_valid_bmp)
         break;
       else
       {
-        ros::Duration d(0.25);
+        ros::Duration d = ros::Duration().fromSec(0.25);
         d.sleep();
       }
     }

@@ -899,34 +899,6 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,23 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+    private: double current_time, last_time;
-+    private: double current_error, last_error;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -1187,6 +1159,34 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,23 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++    private: double current_time, last_time;
++    private: double current_error, last_error;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 7168)
@@ -2873,6 +2873,123 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7168)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -127,7 +132,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -255,10 +263,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -305,7 +314,7 @@
+ 
+   return this->InitChild();
+ }
+-
++  
+ ////////////////////////////////////////////////////////////////////////////////
+ // Update the model
+ int Model::Update()
+@@ -316,6 +325,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +337,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +350,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,6 +373,11 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
+   return this->UpdateChild();
+ }
+ 
+@@ -730,10 +758,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
 Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7168)
@@ -3050,123 +3167,6 @@ Index: server/gui/GLWindow.cc
          case XK_Up:
          case XK_w:
            this->directionVec.x += this->moveAmount;
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7168)
-+++ server/Model.cc	(working copy)
-@@ -46,7 +46,12 @@
- #include "ControllerFactory.hh"
- #include "IfaceFactory.hh"
- #include "Model.hh"
-+#include "Simulator.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -127,7 +132,10 @@
-   if (this->type == "physical")
-     this->LoadPhysical(node);
-   else if (this->type == "renderable")
--    this->LoadRenderable(node);
-+  {
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      this->LoadRenderable(node);
-+  }
-   else if (this->type != "empty")
-   {
-     gzthrow("Invalid model type[" + this->type + "]\n");
-@@ -255,10 +263,11 @@
-   }
-   else
-   {
--    if (!this->lightName.empty())
--    {
--      OgreCreator::SaveLight(p, this->lightName, stream);
--    }
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      if (!this->lightName.empty())
-+      {
-+        OgreCreator::SaveLight(p, this->lightName, stream);
-+      }
-   }
- 
-   if (this->parentBodyNameP && this->myBodyNameP)
-@@ -305,7 +314,7 @@
- 
-   return this->InitChild();
- }
--
-+  
- ////////////////////////////////////////////////////////////////////////////////
- // Update the model
- int Model::Update()
-@@ -316,6 +325,10 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +337,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +350,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,6 +373,11 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
-+#endif
-+
-   return this->UpdateChild();
- }
- 
-@@ -730,10 +758,11 @@
-   body->SetPose(Pose3d());
-   this->bodies[body->GetName()] = body;
- 
--  if ((childNode = node->GetChild("light")))
--  {
--    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
--  }
-+  if (Simulator::Instance()->GetRenderEngineEnabled())
-+    if ((childNode = node->GetChild("light")))
-+    {
-+      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
-+    }
- 
- }
- 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7168)
@@ -3252,38 +3252,6 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7168)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -76,6 +76,8 @@
- // Initialize the controller
- void Factory::InitChild()
- {
-+  // initialize newModel to blank
-+  strcpy((char*)this->factoryIface->data->newModel,"");
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -83,8 +85,10 @@
- void Factory::UpdateChild()
- {
-   // If there is a string, then add the contents to the world
-+  this->factoryIface->Lock(1);
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
-@@ -121,6 +125,7 @@
- 
-     strcpy((char*)this->factoryIface->data->deleteModel,"");
-   }
-+  this->factoryIface->Unlock();
- 
- }
- 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7168)
@@ -3344,6 +3312,38 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7168)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -76,6 +76,8 @@
+ // Initialize the controller
+ void Factory::InitChild()
+ {
++  // initialize newModel to blank
++  strcpy((char*)this->factoryIface->data->newModel,"");
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -83,8 +85,10 @@
+ void Factory::UpdateChild()
+ {
+   // If there is a string, then add the contents to the world
++  this->factoryIface->Lock(1);
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
+@@ -121,6 +125,7 @@
+ 
+     strcpy((char*)this->factoryIface->data->deleteModel,"");
+   }
++  this->factoryIface->Unlock();
+ 
+ }
+ 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
@@ -3591,17 +3591,33 @@ Index: SConstruct
  env = Environment (
    CC = 'g++',
  
-@@ -70,6 +76,9 @@
+@@ -61,7 +67,7 @@
+   LIBPATH=Split('#libgazebo'),
+     
+   #LIBS=Split('gazebo boost_python')
+-  LIBS=Split('gazebo boost_signals'),
++  LIBS=Split('gazebo'),
+   LINKFLAGS=Split('-export-dynamic'),
+ 
+   TARFLAGS = '-c -z',
+@@ -70,6 +76,16 @@
    options=opts
  )
  
 +env['CCFLAGS']   +=   Split(env['boost_cflags'])
 +env['LINKFLAGS'] +=   Split(env['boost_lflags'])
 +
++# Do not use boost_signals if boost_lflags are specified
++if not env['boost_lflags']:
++  print "Using boost_signals"
++  env['LIBS'] += ['boost_signals']
++else:
++  print "Using boost_lflags:",env['boost_lflags']
++
  Help(opts.GenerateHelpText(env))
  
  if env['destdir'] != '/':
-@@ -86,7 +95,7 @@
+@@ -86,7 +102,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
@@ -3610,7 +3626,7 @@ Index: SConstruct
  
  # Set the compile mode
  if env['mode'] == 'debug':
-@@ -154,9 +163,10 @@
+@@ -154,9 +170,10 @@
          Exit(1)
  
  # Check for trimesh support in ODE

@@ -209,6 +209,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
 int
 StageNode::SubscribeModels()
 {
+  setParam("/use_sim_time", true);
   if(this->lasermodel)
     this->lasermodel->Subscribe();
   else

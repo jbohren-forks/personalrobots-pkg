@@ -24,7 +24,8 @@
     <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 
     <!-- for visualization -->
-    <!-- node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" / -->
+    <!--node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" /-->
+
   </group>
 </launch>
 

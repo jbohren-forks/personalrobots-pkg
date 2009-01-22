@@ -14,7 +14,7 @@
     <!--
       Acceptable error in the publication rate [Hz].  Ignored if hz is set
       to 0.0. -->
-    <param name="hzerror" value="20.0" />
+    <param name="hzerror" value="2.0" />
     <!-- Time to listen for [seconds] -->
     <param name="test_duration" value="2.0" />
     
@@ -25,7 +25,7 @@
       *any* two consecutive messages exceeded the specified limits.
       If false, then we only check the average publication rate over
       the entire test.  Default: false. -->
-    <param name="check_intervals" value="true" />    
+    <param name="check_intervals" value="false" />    
   </test>
 
   <!-- Test for publication of 'odom' topic. -->
@@ -35,9 +35,9 @@
   <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test">
     <param name="topic" value="odom" />  
     <param name="hz" value="10.0" />
-    <param name="hzerror" value="20.0" />
+    <param name="hzerror" value="2.0" />
     <param name="test_duration" value="2.0" />    
-    <param name="check_intervals" value="true" />    
+    <param name="check_intervals" value="false" />    
   </test>
   
 </launch>

@@ -86,7 +86,7 @@ public:
       }
 
       ros::record::Player p;
-      if (p.open(file, ros::Time(0ull)))
+      if (p.open(file, ros::Time()))
       {
         mask_.clear();
         mask_count_ = 0;    

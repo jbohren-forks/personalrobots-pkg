@@ -413,7 +413,7 @@ private:
 
     ros::Duration diff = desiredCycleEnd - curr;
     
-    if(diff <= ros::Duration(0)){
+    if(diff <= ros::Duration()){
       ROS_DEBUG("Missed deadline and not sleeping; check machine load. Started %f, ended %f, wanted end %f. Wanted delta %f, got %f. Tryed to correct %f sec.\n", 
 		loopstart.toSec(), curr.toSec(), desiredCycleEnd.toSec(), cycleTime.toSec(), (curr - loopstart).toSec(), diff.toSec());
     } else {
