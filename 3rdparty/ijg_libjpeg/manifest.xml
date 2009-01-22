@@ -1,0 +1,21 @@
+<package>
+<description brief="The Independent JPEG Group's JPEG software">
+
+This package is a just a wrapper around the standard distribution of the IJG
+JPEG software, version 6b. This library is mature, widely used, and is present
+in many Linux distributions as "libjpeg." I have wrapped it as a ROS package
+just to simplify installation and dependency generation within ROS. This ROS
+package also includes a trivial library which provides a mutex for wrapping
+calls to libjpeg, as libjpeg is not thread-safe due to its use of jumps for
+error handling.
+
+</description>
+<author>The Independent JPEG Group</author>
+<license>I believe the IJG JPEG software license is BSD-compatible. See the README file in the jpeg-6b directory in this package for all the details.</license>
+<url>http://www.ijg.org</url>
+<depend package="rosthread"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ljpeg -lros_jpeg_mutex"/>
+</export>
+</package>
+
