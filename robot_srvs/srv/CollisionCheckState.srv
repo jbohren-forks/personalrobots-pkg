@@ -1,0 +1,18 @@
+# This service is used to enable / disable the collision checking for
+# various links. The returned value is the old state of the collision
+# checking 
+
+# The robot which contains the link
+string robot_name
+
+# The link name
+string link_name
+
+# The new state for collision checking on this link
+byte   value
+
+---
+
+# If succesful, the old state of collision checking (0 or 1)
+# If not succesful, -1
+byte value

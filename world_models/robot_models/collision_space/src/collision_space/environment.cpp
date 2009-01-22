@@ -69,6 +69,14 @@ unsigned int collision_space::EnvironmentModel::getModelCount(void) const
     return m_models.size();    
 }
 
+int collision_space::EnvironmentModel::getModelID(const std::string& robot_name) const
+{
+    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
+	if (m_models[i]->name == robot_name)
+	    return i;
+    return -1;
+}
+
 planning_models::KinematicModel* collision_space::EnvironmentModel::getRobotModel(unsigned int model_id) const
 {
     return m_models[model_id];
