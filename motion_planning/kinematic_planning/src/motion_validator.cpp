@@ -64,8 +64,6 @@ Subscribes to (name/type):
 - None
 
 Additional subscriptions due to inheritance from NodeCollisionModel:
-- @b localizedpose/RobotBase2DOdom : localized position of the robot base
-- @b world_3d_map/PointCloud : point cloud with data describing the 3D environment
 
 Publishes to (name/type):
 - None

@@ -101,14 +101,17 @@ $ kinematic_planning robotdesc/pr2
 @section topic ROS topics
 
 Subscribes to (name/type):
-- None
+- @b "replan_kinematic_path_state"/KinematicPlanState::request : given a robot model, starting and goal states, this service computes and recomputes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.
 
-Additional subscriptions due to inheritance from NodeCollisionModel:
-- @b localizedpose/RobotBase2DOdom : localized position of the robot base
-- @b world_3d_map/PointCloud : point cloud with data describing the 3D environment
+
+- @b "replan_kinematic_path_position"/KinematicPlanState::request : given a robot model, starting state and goal poses of certain links, this service computes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.  
+  
+- @b "replan_stop"/Empty : signal the planner to stop replanning
+
+Additional subscriptions due to inheritance from CollisionSpaceMonitor:
 
 Publishes to (name/type):
-- None
+- @b "path_to_goal"/KinematicPath : the current path to goal (published when replanning)
 
 <hr>
 
@@ -119,9 +122,8 @@ Uses (name/type):
 
 Provides (name/type):
 - @b "plan_kinematic_path_state"/KinematicPlanState : given a robot model, starting and goal states, this service computes a collision free path
-- @b "plan_kinematic_path_named"/NamedKinematicPlanState : given a robot model, starting and goal states, this service computes a collision free path
 - @b "plan_kinematic_path_position"/KinematicPlanLinkPosition : given a robot model, starting state and goal poses of certain links, this service computes a collision free path
-- @b "plan_joint_state_names/PlanNames : returns a list of all the names of joints in the system.
+
 
 <hr>
 
