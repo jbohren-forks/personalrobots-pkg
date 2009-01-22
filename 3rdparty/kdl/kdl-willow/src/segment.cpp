@@ -24,16 +24,14 @@ namespace KDL {
 
     Segment::Segment(const Joint& _joint, const Frame& _f_tip, const Inertia& _M, const Vector& _r_cm):
         joint(_joint),M(_M),
-        f_tip(_f_tip),r_cm(_r_cm)
+        f_tip(_joint.pose(0).Inverse() * _f_tip),r_cm(_r_cm)
     {
-//			r_cm = _r_cm;
     }
 
     Segment::Segment(const Segment& in):
         joint(in.joint),M(in.M),
         f_tip(in.f_tip),r_cm(in.r_cm)
     {
-//			r_cm=in.r_cm;
     }
 
     Segment& Segment::operator=(const Segment& arg)
@@ -56,7 +54,7 @@ namespace KDL {
 
     Twist Segment::twist(const double& q, const double& qdot)const
     {
-        return joint.twist(qdot).RefPoint(pose(q).p);
+      return joint.twist(qdot).RefPoint(joint.pose(q).M * f_tip.p);
     }
 
     Wrench Segment::wrench(const double& q, const double& eff)const

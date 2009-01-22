@@ -42,6 +42,19 @@ void SolverTest::setUp()
                               Frame(Vector(0.0,0.0,0.1))));
 
 
+    chain2a.addSegment(Segment(Joint(Vector(10,0,0), Vector(1,0,1),Joint::RotAxes),
+			       Frame(Vector(0.0,0.0,0.5))));
+    chain2a.addSegment(Segment(Joint(Vector(0,5,0), Vector(1,0,0),Joint::RotAxes),
+			       Frame(Vector(0.0,0.0,0.4))));
+    chain2a.addSegment(Segment(Joint(Vector(0,0,5), Vector(1,0,4),Joint::RotAxes),
+                              Frame(Vector(0.0,0.0,0.3))));
+    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(1,0,0),Joint::RotAxes),
+                              Frame(Vector(0.0,0.0,0.2))));
+    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(0,0,1),Joint::RotAxes),
+                              Frame(Vector(0.0,0.0,0.1))));
+
+
+
     chain3.addSegment(Segment(Joint(Joint::RotZ),
                              Frame(Vector(0.0,0.0,0.0))));
     chain3.addSegment(Segment(Joint(Joint::RotX),
@@ -80,6 +93,9 @@ void SolverTest::FkPosAndJacTest()
     ChainFkSolverPos_recursive fksolver2(chain2);
     ChainJntToJacSolver jacsolver2(chain2);
     FkPosAndJacLocal(chain2,fksolver2,jacsolver2);
+    ChainFkSolverPos_recursive fksolver2a(chain2a);
+    ChainJntToJacSolver jacsolver2a(chain2a);
+    FkPosAndJacLocal(chain2a,fksolver2a,jacsolver2a);
     ChainFkSolverPos_recursive fksolver3(chain3);
     ChainJntToJacSolver jacsolver3(chain3);
     FkPosAndJacLocal(chain3,fksolver3,jacsolver3);
@@ -180,7 +196,6 @@ void SolverTest::FkPosAndJacLocal(Chain& chain,ChainFkSolverPos& fksolverpos,Cha
     }
 
     jacsolver.JntToJac(q,jac);
-
     for (int i=0; i< q.rows() ;i++) {
         // test the derivative of J towards qi
         double oldqi = q(i);
