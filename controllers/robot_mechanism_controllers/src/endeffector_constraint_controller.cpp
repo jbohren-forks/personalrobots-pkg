@@ -87,12 +87,12 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
     fprintf(stderr, "Got NULL Chain\n") ;
 
   // some parameters
-  node->param("constraint/wall_x"       , wall_x      , 0.6) ; /// location of the wall
-  node->param("constraint/threshold_x"  , threshold_x , 0.05 ) ; /// distance within the wall to apply constraint force
+  node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
+  node->param("constraint/threshold_x"  , threshold_x , 0.1 ) ; /// distance within the wall to apply constraint force
   node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
-  node->param("constraint/threshold_r"  , threshold_r , 0.05) ; /// radius over with constraint is applied
-  node->param("constraint/f_x_max"      , f_x_max     , -10000.0) ; /// max x force
-  node->param("constraint/f_y_max"      , f_r_max     , -20.0) ; /// max r force
+  node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
+  node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
+  node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
 
 
   // convert description to KDL chain
@@ -217,12 +217,12 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   double f_x = 0;
   double f_r = 0;
 
-  double ee_theta = atan2((endeffector_frame_.p(2)-1),endeffector_frame_.p(1) );
+  double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
 
   //Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 1; // this is the end of the cylinder
   constraint_jac_(1,1) = cos(ee_theta);
-  constraint_jac_(2,1) = sin(ee_theta)+1;
+  constraint_jac_(2,1) = sin(ee_theta);
 
   //Constraint Force Vector
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
@@ -249,7 +249,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_dist_to_wall > 0)
   {
-    f_r =0;// pow(r_dist_to_wall,3) * f_r_max;
+    f_r = r_dist_to_wall * f_r_max; // pow(r_dist_to_wall,3) * f_r_max;
     if(r_dist_to_wall > threshold_r)
     {
       //ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
@@ -318,7 +318,7 @@ void EndeffectorConstraintControllerNode::update()
     std_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
     marker.id = 0;
-    marker.type = 1;
+    marker.type = std_msgs::VisualizationMarker::CUBE;
     marker.action = 0;
     marker.x = 0.6;
     marker.y = 0;
@@ -342,7 +342,7 @@ void EndeffectorConstraintControllerNode::update()
     std_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
     marker.id = 1;
-    marker.type = 2;
+    marker.type = std_msgs::VisualizationMarker::SPHERE;
     marker.action = 0;
     marker.x = 0.6;
     marker.y = 0;
@@ -351,8 +351,8 @@ void EndeffectorConstraintControllerNode::update()
     marker.pitch = 0;
     marker.roll = 0.0;
     marker.xScale = 0.01;
-    marker.yScale = 0.2;
-    marker.zScale = 0.2;
+    marker.yScale = 0.5;
+    marker.zScale = 0.5;
     marker.alpha = 200;
     marker.r = 255;
     marker.g = 0;
