@@ -44,9 +44,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0.045 0.015 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
-          <box size="0.131 0.056 0.049" />
+          <box size="0.09 0.030 0.049" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -114,9 +114,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0.045 -0.015 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
-          <box size="0.131 0.056 0.049" />
+          <box size="0.09 0.030 0.049" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -169,7 +169,7 @@
       <joint name="${prefix}_l_finger_tip_joint" />
       <inertial>
         <mass value="0.03826" />
-        <com xyz="0.00019 0.0051 0.0001" />
+        <com xyz="0.01019 0.0051 0.0001" />
         <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
                   iyy="0.00000576234" iyz="-0.00000007672"
                   izz="0.00001066429" />
@@ -184,9 +184,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <origin xyz="0.0120 0.005 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
-          <box size="0.053 0.04 0.023" />
+          <box size="0.038 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -239,13 +239,13 @@
       <joint name="${prefix}_r_finger_tip_joint" />
       <inertial>
         <mass value="0.03826" />
-        <com xyz="0.00019 -0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
+        <com xyz="0.01019 -0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
         <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
                   iyy="0.00000576234" iyz="-0.00000007672"
                   izz="0.00001066429" />  <!-- nothing was flipped, not sure what to do here -->
       </inertial>
       <visual>
-        <origin xyz="0 0 0 " rpy="0 0 0 " />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
@@ -254,9 +254,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <origin xyz="0.0120 -0.005 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
-          <box size="0.053 0.04 0.023" />
+          <box size="0.038 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -391,9 +391,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0.05 0 0" rpy="0 0 0" />
+        <origin xyz="0.08 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <box size="0.11 0.10 0.05" />
+          <box size="0.08 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
