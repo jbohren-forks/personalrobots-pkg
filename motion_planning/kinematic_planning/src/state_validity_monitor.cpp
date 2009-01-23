@@ -114,6 +114,12 @@ public:
     {
     }
     
+    void afterWorldUpdate(void)
+    {
+	CollisionSpaceMonitor::afterWorldUpdate();
+	last_ = -1;
+    }
+    
     void stateUpdate(void)
     {
 	CollisionSpaceMonitor::stateUpdate();
