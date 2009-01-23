@@ -48,6 +48,7 @@
 #include <tf/transform_listener.h>
 #include <cmath>
 
+#include <std_msgs/Pose.h>
 #include <robot_msgs/MechanismState.h>
 
 /** Main namespace */
@@ -96,12 +97,11 @@ namespace kinematic_planning
 	    m_robotState = NULL;
 	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
-
-	    m_haveState = false;
+	    
+	    m_includeBaseInState = false;	    
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	    
-	    //	    m_node->subscribe("localizedpose",   m_localizedPose,  &KinematicStateMonitor::localizedPoseCallback,  this, 1);
 	    m_node->subscribe("mechanism_state", m_mechanismState, &KinematicStateMonitor::mechanismStateCallback, this, 1);
 	}
 	
@@ -113,6 +113,11 @@ namespace kinematic_planning
 		delete m_robotState;
 	    if (m_kmodel)
 		delete m_kmodel;
+	}
+	
+	void setIncludeBaseInState(bool value)
+	{
+	    m_includeBaseInState = value;
 	}
 	
 	void setRobotDescriptionFromData(const char *data)
@@ -148,7 +153,6 @@ namespace kinematic_planning
 	    m_robotState = m_kmodel->newStateParams();
 	    m_robotState->setAll(0.0);
 	    
-	    m_haveState = false;
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	}
@@ -178,14 +182,20 @@ namespace kinematic_planning
 	
 	void waitForState(void)
 	{
-	    while (m_node->ok() && (m_haveState ^ loadedRobot()))
+	    while (m_node->ok() && (m_haveMechanismState ^ loadedRobot()))
+		ros::Duration().fromSec(0.05).sleep();
+	}
+	
+	void waitForPose(void)
+	{
+	    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
 		ros::Duration().fromSec(0.05).sleep();
 	}
 	
 	virtual void stateUpdate(void)
 	{
-	    m_haveState = m_haveBasePos && m_haveMechanismState;
 	}
+	
     protected:
 	/*
 	void localizedPoseCallback(void)
@@ -256,7 +266,7 @@ namespace kinematic_planning
 	virtual void baseUpdate(void)
 	{
 	    bool change = false;
-	    if (m_robotState)
+	    if (m_robotState && m_includeBaseInState)
 		for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
 		{
 		    planning_models::KinematicModel::PlanarJoint* pj = 
@@ -274,18 +284,21 @@ namespace kinematic_planning
 	std::string                                   m_robotModelName;
 	planning_models::KinematicModel              *m_kmodel;
 
-
-	//	std_msgs::RobotBase2DOdom                     m_localizedPose;
-	// some pose message for the base; the transform from map to base
+	// info about the pose; this is not placed in the robot's kinematic state 
 	bool                                          m_haveBasePos;	
 	double                                        m_basePos[3];
+	std_msgs::Pose                                m_robotPose;
 	
+	// info about the robot's joints
 	robot_msgs::MechanismState                    m_mechanismState;
 	bool                                          m_haveMechanismState;
 	
-	/** The complete robot state (MAP frame) */
+	// the complete robot state
 	planning_models::KinematicModel::StateParams *m_robotState;
-	bool                                          m_haveState;
+	
+	// if this flag is true, the base position is included in the state as well
+	bool                                          m_includeBaseInState;
+	
 	
     };
     

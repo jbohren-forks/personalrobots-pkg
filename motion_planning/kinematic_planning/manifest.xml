@@ -17,7 +17,6 @@
   <depend package="planning_models"/>
   <depend package="collision_space"/>
   <depend package="collision_map"/>
-  <depend package="string_utils" />
 
   <depend package="ompl" />
 
