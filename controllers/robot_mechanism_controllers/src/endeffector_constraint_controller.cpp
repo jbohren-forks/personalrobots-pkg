@@ -29,13 +29,14 @@
  */
 
 /*
- * Author: John Hsu and Melonee Wise
+ * Author: Melonee Wise 
  */
 
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_mechanism_controllers/endeffector_constraint_controller.h"
 
+#define DEBUG 0 // easy debugging
 
 static const double JOYSTICK_MAX_FORCE  = 20.0;
 static const double JOYSTICK_MAX_TORQUE = 0.75;
@@ -153,11 +154,6 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
     }
   // reverse order of joint vector
   std::reverse(joints_.begin(), joints_.end());
-
-  // get control parameters
-
-
-
   return true;
 }
 
@@ -184,26 +180,36 @@ void EndeffectorConstraintController::update()
 
   // get the chain jacobian
   Jacobian jacobian(num_joints_, num_segments_);
+  Eigen::MatrixXf task_jac(6, num_joints_);
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
+
+  //convert to eigen for easier math
+  for (unsigned int i=0; i<num_joints_; i++)
+  {
+    for (unsigned int j=0; j<6; j++)
+    {
+      task_jac(i,j) = jacobian(i,j);
+    }
+  }
 
   // get endeffector pose
   jnt_to_pose_solver_->JntToCart(jnt_pos, endeffector_frame_);
 
+  // compute the constraint jacobian and the constraint force 
   computeConstraintJacobian();
-
+  
+  // compute the constraint wrench to apply
   constraint_wrench_ = constraint_jac_ * constraint_force_;
 
+  // compute the constraint null space to project 
+  //computeConstraintNullSpace();
+  
   // convert the wrench into joint torques
-  j = 0;
-  JntArray constraint_torq(num_joints_);
+  Eigen::MatrixXf constraint_torq(num_joints_, 1);
+  constraint_torq = task_jac.transpose()*constraint_wrench_;
+  
   for (unsigned int i=0; i<num_joints_; i++)
   {
-    constraint_torq(i) = 0;
-    for (unsigned int j=0; j<6; j++)
-    {
-      constraint_torq(i) += (jacobian(j,i) * constraint_wrench_(j));
-    }
-
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
     joints_[j++]->commanded_effort_ = constraint_torq(i);
@@ -213,28 +219,25 @@ void EndeffectorConstraintController::update()
 
 void EndeffectorConstraintController::computeConstraintJacobian()
 {
-  //clear force vector
+  // Clear force vector
   double f_x = 0;
   double f_r = 0;
-
+  // Compute the end effector angle from the origin of the circle
   double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
 
-  //Constarint for a cylinder centered around the x axis
+  // Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 1; // this is the end of the cylinder
   constraint_jac_(1,1) = cos(ee_theta);
   constraint_jac_(2,1) = sin(ee_theta);
 
-  //Constraint Force Vector
+  // X-wall at the end of the cylinder
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
-  //ROS_ERROR("x_dist_to_wall: %f m\n", (x_dist_to_wall));
   if (x_dist_to_wall > 0)
   {
-    //f_x = (exp(x_dist_to_wall)-1) * f_x_max; /// @todo: FIXME, replace with some exponential function
-    f_x = x_dist_to_wall * f_x_max;
-    //ROS_ERROR("x_dist_to_wall: %f m f_x: %f N\n", x_dist_to_wall, f_x);
-    if((x_dist_to_wall-threshold_x) > 0)
+    f_x = x_dist_to_wall * f_x_max; /// @todo: FIXME, replace with some exponential function
+    if((x_dist_to_wall-threshold_x) > 0 && DEBUG)
     {
-      //ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
+      ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
     }
   }
   else
@@ -249,10 +252,10 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_dist_to_wall > 0)
   {
-    f_r = r_dist_to_wall * f_r_max; // pow(r_dist_to_wall,3) * f_r_max;
-    if(r_dist_to_wall > threshold_r)
+    f_r = r_dist_to_wall * f_r_max; /// @todo: FIXME, replace with some exponential function
+    if(r_dist_to_wall > threshold_r && DEBUG)
     {
-      //ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
+      ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
     }
   }
   else
@@ -262,9 +265,15 @@ void EndeffectorConstraintController::computeConstraintJacobian()
 
   constraint_force_(0) = f_x;
   constraint_force_(1) = f_r;
-
 }
 
+void EndeffectorConstraintController::computeConstraintNullSpace()
+{
+  // Compute generalized inverse, this is the transpose as long as the constraints are 
+  // orthonormal to eachother. Will replace with QR method later.
+  
+  
+}
 
 
 
