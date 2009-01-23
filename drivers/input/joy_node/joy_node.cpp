@@ -32,11 +32,17 @@ class JoyNode : public Node
       std::map<std::string,std::string>cmd_map_;
       std::map<std::string,std::string>::const_iterator find_iter_;
 
-      JoyNode() : Node("joy_node")
+      std::string publish_topic_name_; 
+
+      JoyNode() : Node("joy_annotator")
       {
-         advertise<std_msgs::String>("joy_button",1);
-         param<int>("joy_node/reset_button",reset_button,6);
-         param<int>("joy_node/send_button",send_button,8);
+         param<int>("joy_annotator/reset_button",reset_button,6);
+         param<int>("joy_annotator/send_button",send_button,8);
+
+         param<string>("joy_annotator/publish_topic",publish_topic_name_,"~annotation_msg");
+
+         advertise<std_msgs::String>(publish_topic_name_,1);
+
          subscribe("joy",joy_msg,&JoyNode::joyMsgReceived,this,1);
          reset_button -= 1;
          send_button -= 1;
@@ -47,7 +53,7 @@ class JoyNode : public Node
       }
       void stop()
       {
-         unadvertise("joy_button");
+         unadvertise(publish_topic_name_);
          unsubscribe("joy");
       }
       void readMap(char *filename)
@@ -87,7 +93,7 @@ class JoyNode : public Node
                }
             }
             cout << "Message sent: " << joy_string.data << endl;
-            publish("joy_button",joy_string);
+            publish(publish_topic_name_,joy_string);
             cur_string.str("");
          }
          else if(joy_msg.buttons[reset_button])
