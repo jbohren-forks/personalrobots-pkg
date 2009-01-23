@@ -123,6 +123,7 @@ namespace kinematic_planning
 
 	void attachObject(void)
 	{
+	    bool success = false;
 	    m_collisionSpace->lock();
 	    int model_id = m_collisionSpace->getModelID(m_attachedObject.robot_name);
 	    planning_models::KinematicModel::Link *link = model_id >= 0 ? m_kmodel->getLink(m_attachedObject.link_name) : NULL;
@@ -149,11 +150,14 @@ namespace kinematic_planning
 		
 		// update the collision model
 		m_collisionSpace->updateAttachedBodies(model_id);
+		success = true;
 		ROS_INFO("Link '%s' on '%s' has %d objects attached", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str(), n);
 	    }
 	    else
 		ROS_WARN("Unable to attach object to link '%s' on '%s'", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str());
 	    m_collisionSpace->unlock();
+	    if (success)
+		afterAttachObject();
 	}
 	
 	bool setCollisionState(robot_srvs::CollisionCheckState::request &req, robot_srvs::CollisionCheckState::response &res)
@@ -256,7 +260,11 @@ namespace kinematic_planning
 	virtual void afterWorldUpdate(void)
 	{
 	}
-
+	
+	virtual void afterAttachObject(void)
+	{
+	}
+	
     private:
 	
 	double radiusOfBox(std_msgs::Point32 &point)
