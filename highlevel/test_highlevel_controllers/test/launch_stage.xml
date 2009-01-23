@@ -1,10 +1,10 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" name="rosstage" args="$(find 2dnav_stage)/willow-pr2.world" respawn="false" >
+    <node pkg="rosstage" type="rosstage" name="rosstage" args="$(find 2dnav_stage)/worlds/willow-pr2.world" respawn="false" >
       <param name="base_watchdog_timeout" value="0.2"/>
     </node>
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full.pgm 0.1" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false" />
 
     <!-- TODO: remove this remap after fake_localization is fixed to listen
     to base_pose_ground_truth, and gazebo is fixed to publish on that topic -->

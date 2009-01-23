@@ -33,10 +33,10 @@
     <param name="move_base/plannerTimeLimit"                   value="@PLANNER_TIME@"/>
     
     <node pkg="rosstage" type="rosstage" respawn="false"
-	  args="$(find 2dnav_stage)/@STAGE_WORLD_FILE@" />
+	  args="$(find 2dnav_stage)/worlds/@STAGE_WORLD_FILE@" />
     
     <node pkg="map_server" type="map_server" respawn="false"
-	  args="$(find 2dnav_stage)/@MAP_WORLD_FILE@ @MAP_RESOLUTION@" />
+	  args="$(find 2dnav_stage)/maps/@MAP_WORLD_FILE@ @MAP_RESOLUTION@" />
     
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     
