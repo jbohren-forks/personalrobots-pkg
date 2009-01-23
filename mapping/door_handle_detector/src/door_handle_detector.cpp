@@ -51,6 +51,7 @@
 // Sample Consensus
 #include <sample_consensus/sac.h>
 #include <sample_consensus/msac.h>
+#include <sample_consensus/ransac.h>
 #include <sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
@@ -91,14 +92,12 @@ class DoorHandleDetector : public ros::Node
     double clusters_growing_tolerance_;
     int clusters_min_pts_;
 
-    bool need_cloud_data_;
+    bool need_cloud_data_, publish_debug_;
 
-    int sac_min_points_per_model_, sac_min_points_left_;
-    double sac_distance_threshold_, eps_angle_, region_angle_threshold_, boundary_angle_threshold_;
+    double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
-    double rule_wall_;
-
-    bool polygonal_map_, concave_;
+    double door_min_height_, door_min_width_, door_max_height_, door_max_width_;
+    double handle_distance_door_min_threshold_, handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     DoorHandleDetector () : ros::Node ("door_handle_detector"), tf_(*this)
@@ -111,7 +110,7 @@ class DoorHandleDetector : public ros::Node
       param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
       param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
       param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
-      param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
+      param ("~search_k_closest", k_, 6);                               // 6 k-neighbors by default
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
       param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees
@@ -120,30 +119,39 @@ class DoorHandleDetector : public ros::Node
       param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
       region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
 
-      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.25);  // 25 cm
+      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.05);  // 5 cm
       param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
+
+      param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
+      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+      param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
+      param ("~door_max_width", door_max_width_, 1.2);                    // maximumwidth of a door: 1.2m
+      ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
+                 door_min_height_, door_max_height_, door_min_width_, door_max_width_);
+
+      param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
+      param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
+      param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
+      param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.05); // minimum distance between the handle and the door
+
+      ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
+
+      param ("~publish_debug", publish_debug_, true);
 
       param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
       advertiseService("door_handle_detector", &DoorHandleDetector::detectDoor, this);
 
-      param ("~p_sac_min_points_left", sac_min_points_left_, 10);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);   // 50 points at high resolution
-
       // This should be set to whatever the leaf_width factor is in the downsampler
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
 
-      param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
-
-      param ("~boundary_angle_threshold", boundary_angle_threshold_, 120.0); // Boundary angle threshold
-      boundary_angle_threshold_ = (boundary_angle_threshold_ * M_PI / 180.0);   // convert to radians
-
-      if (polygonal_map_)
+      if (publish_debug_)
+      {
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
+        advertise<PointCloud> ("cloud_annotated", 1);
 
-      advertise<PointCloud> ("cloud_annotated", 1);
-
-      cloud_annotated_.chan.resize (1);
-      cloud_annotated_.chan[0].name = "rgb";
+        cloud_annotated_.chan.resize (1);
+        cloud_annotated_.chan[0].name = "rgb";
+      }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +244,7 @@ class DoorHandleDetector : public ros::Node
       }
       indices_in_bounds.resize (nr_p);
 
-      ROS_INFO ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z, indices_in_bounds.size ());
+      ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z, indices_in_bounds.size ());
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
@@ -252,7 +260,7 @@ class DoorHandleDetector : public ros::Node
       }
       leaves.resize (0);
 
-      ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
+      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
 
       // Reserve space for 4 channels: nx, ny, nz, curvature
       cloud_down_.chan.resize (4);     // Allocate 7 more channels
@@ -289,180 +297,149 @@ class DoorHandleDetector : public ros::Node
       for (int cc = 0; cc < (int)clusters.size (); cc++)
         total_p += clusters[cc].size ();
 
-      ROS_INFO ("Number of clusters found: %d, total points: %d.", clusters.size (), total_p);
+      ROS_DEBUG ("Number of clusters found: %d, total points: %d.", clusters.size (), total_p);
 
       // Reserve enough space
       cloud_annotated_.header = cloud_down_.header;
-      cloud_annotated_.pts.resize (total_p);
-      cloud_annotated_.chan[0].vals.resize (total_p);
+      cloud_annotated_.pts.resize (cloud_in_.pts.size ());//total_p);
+      cloud_annotated_.chan[0].vals.resize (cloud_in_.pts.size ());//total_p);
+
+      pmap_.header = cloud_down_.header;
+      pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
       nr_p = 0;
+      vector<int> inliers;
+      vector<int> handle_indices;
+      vector<double> coeff;
+      std_msgs::Point32 minP, maxP, handle_center;
+      // Process all clusters
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         double r, g, b, rgb;
         r = g = b = 1.0;
-        //int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
         int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
         rgb = *(float*)(&res);
 
-        // Mark all the points inside
-        for (unsigned int k = 0; k < clusters[cc].size (); k++)
+        // Find the best plane in this cluster
+        fitSACPlane (&cloud_down_, &clusters[cc], inliers, coeff);
+        // Compute the convex hull
+        cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff, pmap_.polygons[cc]);
+
+        // Filter the region based on its height and width
+        cloud_geometry::getMinMax (&pmap_.polygons[cc], minP, maxP);
+
+        // Get the door_frame distance in the X-Y plane
+        double door_frame = sqrt ( (minP.x - maxP.x) * (minP.x - maxP.x) + (minP.y - maxP.y) * (minP.y - maxP.y) );
+        double door_height = fabs (maxP.z - minP.z);
+        if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
-          cloud_annotated_.pts[nr_p].x = cloud_down_.pts.at (clusters[cc][k]).x;
-          cloud_annotated_.pts[nr_p].y = cloud_down_.pts.at (clusters[cc][k]).y;
-          cloud_annotated_.pts[nr_p].z = cloud_down_.pts.at (clusters[cc][k]).z;
-          cloud_annotated_.chan[0].vals[nr_p] = rgb;
-          nr_p++;
+          pmap_.polygons[cc].points.resize (0);      // Don't send this polygon if it doesn't match our door rules
+          continue;
         }
+
+        ROS_DEBUG ("Door candidate accepted with width %f and height %f.", door_frame, door_height);
+
+        // Find the handle by performing a segmentation in intensity space in the original cloud
+        findHandle (&cloud_in_, &indices_in_bounds, &coeff, &pmap_.polygons[cc], handle_indices, handle_center);
+
+        ROS_DEBUG ("Number of points selected: %d.", handle_indices.size ());
+
+        if (publish_debug_)
+        {
+          // Mark all the points inside
+          for (unsigned int k = 0; k < handle_indices.size (); k++)
+          {
+            cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
+            cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
+            cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
+            cloud_annotated_.chan[0].vals[nr_p] = rgb;
+            nr_p++;
+          }
+          // Mark all the points inside
+  /*        for (unsigned int k = 0; k < inliers.size (); k++)
+          {
+            cloud_annotated_.pts[nr_p].x = cloud_down_.pts.at (inliers[k]).x;
+            cloud_annotated_.pts[nr_p].y = cloud_down_.pts.at (inliers[k]).y;
+            cloud_annotated_.pts[nr_p].z = cloud_down_.pts.at (inliers[k]).z;
+            cloud_annotated_.chan[0].vals[nr_p] = rgb;
+            nr_p++;
+          }*/
+        }
+
+        break;      // assume one door for now for testing
       }
 
-      cloud_annotated_.pts.resize (nr_p);
-      cloud_annotated_.chan[0].vals.resize (nr_p);
-
-      publish ("cloud_annotated", cloud_annotated_);
+      resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
+      resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
+      resp.height = fabs (maxP.z - minP.z);
+      resp.handle = handle_center;
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Door found. Total time: %f.", time_spent);
+      ROS_INFO ("Door found. P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. Height = %f. Handle = [%f, %f, %f]. Total time: %f.",
+                resp.door_p1.x, resp.door_p1.y, resp.door_p1.z, resp.door_p2.x, resp.door_p2.y, resp.door_p2.z,
+                resp.height, resp.handle.x, resp.handle.y, resp.handle.z,
+                time_spent);
+
+      if (publish_debug_)
+      {
+        cloud_annotated_.pts.resize (nr_p);
+        cloud_annotated_.chan[0].vals.resize (nr_p);
+
+        publish ("cloud_annotated", cloud_annotated_);
+        publish ("semantic_polygonal_map", pmap_);
+      }
+
+
       return (true);
-   }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      findHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
+                  vector<int> &handle_indices, Point32 &handle_center)
+    {
+      handle_indices.resize (indices->size ());
+      int nr_p = 0;
+      Point32 pt;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        // Select all the points in the given bounds which are between the given handle min->max height
+        if (points->pts.at (indices->at (i)).z > handle_min_height_ && points->pts.at (indices->at (i)).z < handle_max_height_)
+        {
+
+          // Calculate the distance from the point to the plane
+          double distance_to_plane = coeff->at (0) * points->pts.at (indices->at (i)).x +
+                                     coeff->at (1) * points->pts.at (indices->at (i)).y +
+                                     coeff->at (2) * points->pts.at (indices->at (i)).z +
+                                     coeff->at (3) * 1;
+          // Calculate the projection of the point on the plane
+          pt.x = points->pts.at (indices->at (i)).x - distance_to_plane * coeff->at (0);
+          pt.y = points->pts.at (indices->at (i)).y - distance_to_plane * coeff->at (1);
+          pt.z = points->pts.at (indices->at (i)).z - distance_to_plane * coeff->at (2);
+
+          if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly) && fabs (distance_to_plane) < handle_distance_door_max_threshold_)
+          {
+            if (fabs (distance_to_plane) > handle_distance_door_min_threshold_)
+            {
+              handle_indices[nr_p] = indices->at (i);
+              nr_p++;
+            }
+          }
+        }
+      }
+
+      cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
+
+      // We have all the correct indices -> perform a segmentation in intensity space
+      //findClustersInIntensity (points, &handle_indices, 10, clusters, 1);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
       need_cloud_data_ = false;
-
-/*
-      vector<vector<vector<int> > > all_cluster_inliers (clusters.size ());
-      vector<vector<vector<double> > > all_cluster_coeff (clusters.size ());
-
-      // Reserve enough space
-      cloud_annotated_.pts.resize (total_p);
-      cloud_annotated_.chan[0].vals.resize (total_p);
-
-      int nr_p = 0;
-
-      if (polygonal_map_)
-      {
-        pmap_.header = cloud_.header;
-        pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
-      }
-      
-      // Process all clusters in parallel
-      #pragma omp parallel for schedule(dynamic)
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        // Find all planes in this cluster
-        int ret = fitSACPlane (&cloud_, &clusters[cc].indices, all_cluster_inliers[cc], all_cluster_coeff[cc]);
-        if (ret != 0 || all_cluster_inliers[cc].size () == 0)
-          continue;
-      }
-      
-      // Bummer - no omp here
-      // cloud_kdtree is not thread safe because we rely on ANN/FL-ANN, so get the neighbors here
-      vector<vector<vector<int> > > neighbors (clusters.size ());
-      if (concave_)
-      {
-        for (int cc = 0; cc < (int)clusters.size (); cc++)
-        {
-          if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
-            continue;
-            
-          vector<vector<int> > *cluster_neighbors = &neighbors[cc];
-          vector<int> *indices = &all_cluster_inliers[cc][0];
-          
-          if (indices->size () == 0)
-            continue;
-          cluster_neighbors->resize (indices->size ());
-
-          // Create a tree for these points
-          cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&cloud_, indices);
-          for (unsigned int i = 0; i < indices->size (); i++)
-          {
-            tree->radiusSearch (i, 0.3);                      // 30cm radius search
-//            tree->nearestKSearch (i, 30);                      // 30cm radius search
-            // Note: the neighbors below are in the 0->indices.size () spectrum and need to be
-            // transformed into global point indices (!)
-            tree->getNeighborsIndices (cluster_neighbors->at (i));
-            for (unsigned int j = 0; j < cluster_neighbors->at (i).size (); j++)
-              cluster_neighbors->at(i).at(j) = indices->at (cluster_neighbors->at(i).at(j));
-          }
-          // Destroy the tree
-          delete tree;
-        }
-        gettimeofday (&t2, NULL);
-        time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-        ROS_INFO ("Nearest neighbors (concave hull) estimated in %g seconds.", time_spent);
-        gettimeofday (&t1, NULL);
-      }
-      
-      if (polygonal_map_)
-      {
-        // Process all clusters in parallel
-        //#pragma omp parallel for schedule(dynamic)
-        // Fit convex hulls to the inliers (points should be projected!)
-        for (int cc = 0; cc < (int)clusters.size (); cc++)
-        {      
-          if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
-            continue;
-
-          vector<int> *indices  = &all_cluster_inliers[cc][0];
-          vector<double> *coeff = &all_cluster_coeff[cc][0];
-          if (indices->size () == 0 || coeff->size () == 0)
-            continue;
-
-          if (concave_)
-            computeConcaveHull (&cloud_, indices, coeff, &neighbors[cc], pmap_.polygons[cc]);
-          else
-            cloud_geometry::areas::convexHull2D (&cloud_, indices, coeff, pmap_.polygons[cc]);
-        }
-      }
-      
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        double r, g, b, rgb;
-        r = g = b = 1.0;
-        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-        rgb = *(float*)(&res);
-
-        // Get the planes in this cluster
-        vector<vector<int> > *planes_inliers   = &all_cluster_inliers[cc];
-        vector<vector<double> > *planes_coeffs = &all_cluster_coeff[cc];
-        
-        if (planes_inliers->size () == 0 || planes_coeffs->size () == 0 || planes_inliers->size () != planes_coeffs->size ())
-          continue;
-          
-        // For every plane in this cluster
-        for (unsigned int j = 0; j < planes_inliers->size (); j++)
-        {
-          vector<int> *plane_inliers   = &planes_inliers->at (j);
-          vector<double> *plane_coeffs = &planes_coeffs->at (j);
-          
-          if (plane_inliers->size () == 0 || plane_coeffs->size () == 0)
-            continue;
-            
-          // Mark all the points inside
-          getObjectClassForPerpendicular (&cloud_, plane_inliers, rgb);
-          for (unsigned int k = 0; k < plane_inliers->size (); k++)
-          {
-            cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
-            cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
-            cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
-            nr_p++;
-          }
-        }
-      }
-
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Cloud annotated in: %g seconds.", time_spent);
-      gettimeofday (&t1, NULL); 
-
-      if (polygonal_map_)
-        publish ("semantic_polygonal_map", pmap_);
-      return;*/
     }
 
 
@@ -548,55 +525,41 @@ class DoorHandleDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int
-      fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
+      fitSACPlane (PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
     {
-      vector<int> empty_inliers;
-      vector<double> empty_coeffs;
-      if ((int)indices->size () < sac_min_points_per_model_)
+      if ((int)indices->size () < clusters_min_pts_)
       {
-        //ROS_ERROR ("fitSACPlane: Indices.size (%d) < sac_min_points_per_model (%d)!", indices->size (), sac_min_points_per_model_);
-        inliers.push_back (empty_inliers);
-        coeff.push_back (empty_coeffs);
+        inliers.resize (0);
+        coeff.resize (0);
         return (-1);
       }
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (120);
+      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, sac_distance_threshold_);
+      sac->setMaxIterations (500);
       sac->setProbability (0.99);
       model->setDataSet (points, *indices);
 
-      PointCloud pts (*points);
-      int nr_points_left = indices->size ();
-      int nr_models = 0;
-      while (nr_points_left > sac_min_points_left_)
+      // Search for the best plane
+      if (sac->computeModel ())
       {
-        // Search for the best plane
-        if (sac->computeModel ())
+        // Obtain the inliers and the planar model coefficients
+        if ((int)sac->getInliers ().size () < clusters_min_pts_)
         {
-          // Obtain the inliers and the planar model coefficients
-          if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
-          {
-            //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-            inliers.push_back (empty_inliers);
-            coeff.push_back (empty_coeffs);
-            //return (-1);
-            break;
-          }
-          inliers.push_back (sac->getInliers ());
-          coeff.push_back (sac->computeCoefficients ());
-
-          //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-          //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
-
-          // Project the inliers onto the model
-          model->projectPointsInPlace (sac->getInliers (), coeff[coeff.size () - 1]);
-
-          // Remove the current inliers in the model
-          nr_points_left = sac->removeInliers ();
-          nr_models++;
+          //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+          inliers.resize (0);
+          coeff.resize (0);
+          return (0);
         }
+        inliers = sac->getInliers ();
+        coeff   = sac->computeCoefficients ();
+
+        //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+        //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+
+        // Project the inliers onto the model
+        model->projectPointsInPlace (inliers, coeff);
       }
       return (0);
     }
@@ -665,28 +628,6 @@ class DoorHandleDetector : public ros::Node
       delete kdtree;
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      computeConcaveHull (PointCloud *points, vector<int> *indices, vector<double> *coeff, 
-                          vector<vector<int> > *neighbors, Polygon3D &poly)
-    {
-      Eigen::Vector3d u, v;
-      cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);
-      
-      vector<int> inliers (indices->size ());
-      int nr_p = 0;
-      for (unsigned int i = 0; i < indices->size (); i++)
-      {
-        vector<int> *point_neighbors = &neighbors->at (i);
-        if (cloud_geometry::nearest::isBoundaryPoint (points, indices->at (i), point_neighbors, u, v, boundary_angle_threshold_))
-        {
-          inliers[nr_p] = indices->at (i);
-          nr_p++;
-        }
-      }
-      inliers.resize (nr_p);
-    }
-    
 
 };
 
