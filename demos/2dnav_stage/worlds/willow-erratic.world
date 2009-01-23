@@ -60,7 +60,7 @@ window
 floorplan
 ( 
   name "willow"
-  bitmap "willow-full.pgm"
+  bitmap "../maps/willow-full.pgm"
   size3 [54.0 58.7 0.5]
   pose [-29.350 27.000 90.000]
 )
