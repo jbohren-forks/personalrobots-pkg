@@ -45,10 +45,12 @@
 
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
+#include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <cmath>
 
 #include <robot_msgs/MechanismState.h>
+#include <robot_msgs/PoseWithCovariance.h>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -96,13 +98,13 @@ namespace kinematic_planning
 	    m_robotState = NULL;
 	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
-
-	    m_haveState = false;
+	    
+	    m_includeBaseInState = false;	    
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	    
-	    //	    m_node->subscribe("localizedpose",   m_localizedPose,  &KinematicStateMonitor::localizedPoseCallback,  this, 1);
 	    m_node->subscribe("mechanism_state", m_mechanismState, &KinematicStateMonitor::mechanismStateCallback, this, 1);
+	    m_node->subscribe("odom_combined", m_localizedPose, &KinematicStateMonitor::localizedPoseCallback, this, 1);
 	}
 	
 	virtual ~KinematicStateMonitor(void)
@@ -113,6 +115,11 @@ namespace kinematic_planning
 		delete m_robotState;
 	    if (m_kmodel)
 		delete m_kmodel;
+	}
+	
+	void setIncludeBaseInState(bool value)
+	{
+	    m_includeBaseInState = value;
 	}
 	
 	void setRobotDescriptionFromData(const char *data)
@@ -148,7 +155,6 @@ namespace kinematic_planning
 	    m_robotState = m_kmodel->newStateParams();
 	    m_robotState->setAll(0.0);
 	    
-	    m_haveState = false;
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	}
@@ -178,64 +184,52 @@ namespace kinematic_planning
 	
 	void waitForState(void)
 	{
-	    while (m_node->ok() && (m_haveState ^ loadedRobot()))
+	    while (m_node->ok() && (m_haveMechanismState ^ loadedRobot()))
 		ros::Duration().fromSec(0.05).sleep();
 	}
 	
+	void waitForPose(void)
+	{
+	    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
+		ros::Duration().fromSec(0.05).sleep();
+	}
+	
+    protected:
+	
 	virtual void stateUpdate(void)
 	{
-	    m_haveState = m_haveBasePos && m_haveMechanismState;
 	}
-    protected:
-	/*
+	
+	virtual void baseUpdate(void)
+	{
+	    bool change = false;
+	    if (m_robotState && m_includeBaseInState)
+		for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
+		{
+		    planning_models::KinematicModel::PlanarJoint* pj = 
+			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
+		    if (pj)
+		        change = change || m_robotState->setParams(m_basePos, pj->name);
+		}
+	    if (change)
+		stateUpdate();
+	}
+	
 	void localizedPoseCallback(void)
 	{
-	    bool success = true;
-	    tf::Stamped<tf::Pose> pose (tf::Transform(tf::Quaternion(m_localizedPose.pos.th, 0, 0),
-                                                      tf::Point(m_localizedPose.pos.x,
-                                                                m_localizedPose.pos.y, 0)),
-                                        m_localizedPose.header.stamp,
-                                        m_localizedPose.header.frame_id);
-	    try
-	    {
-		m_tf.transformPose("map", pose, pose);
-	    }
-	    catch(tf::LookupException& ex)
-	    {
-	        fprintf(stderr, "Discarding pose: from %s, Transform reference lookup exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::ExtrapolationException& ex)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Extrapolation exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::ConnectivityException& ex)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Connectivity exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::TransformException)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Exception in pose computation\n", pose.frame_id_.c_str());
-		success = false;
-	    }
-	    
-	    if (success)
-	    {
-		if (std::isfinite(pose.getOrigin().x()))
-		    m_basePos[0] = pose.getOrigin().x();
-		if (std::isfinite(pose.getOrigin().y()))
-		    m_basePos[1] = pose.getOrigin().y();
-                double yaw, pitch, roll;
-                pose.getBasis().getEulerZYX(yaw, pitch, roll);
-		if (std::isfinite(yaw))
-		    m_basePos[2] = yaw;
-		m_haveBasePos = true;
-		baseUpdate();
-	    }
+	    tf::PoseMsgToTF(m_localizedPose.pose, m_pose);
+	    if (std::isfinite(m_pose.getOrigin().x()))
+		m_basePos[0] = m_pose.getOrigin().x();
+	    if (std::isfinite(m_pose.getOrigin().y()))
+		m_basePos[1] = m_pose.getOrigin().y();
+	    double yaw, pitch, roll;
+	    m_pose.getBasis().getEulerZYX(yaw, pitch, roll);
+	    if (std::isfinite(yaw))
+		m_basePos[2] = yaw;
+	    m_haveBasePos = true;
+	    baseUpdate();
 	}
-	*/
+	
 	void mechanismStateCallback(void)
 	{
 	    bool change = false;
@@ -252,40 +246,29 @@ namespace kinematic_planning
 	    if (change)
 		stateUpdate();
 	}
-	
-	virtual void baseUpdate(void)
-	{
-	    bool change = false;
-	    if (m_robotState)
-		for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
-		{
-		    planning_models::KinematicModel::PlanarJoint* pj = 
-			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
-		    if (pj)
-		        change = change || m_robotState->setParams(m_basePos, pj->name);
-		}
-	    if (change)
-		stateUpdate();
-	}
-	
+
 	ros::Node                                    *m_node;
 	tf::TransformListener                         m_tf; 
 	robot_desc::URDF                             *m_urdf;
 	std::string                                   m_robotModelName;
 	planning_models::KinematicModel              *m_kmodel;
 
-
-	//	std_msgs::RobotBase2DOdom                     m_localizedPose;
-	// some pose message for the base; the transform from map to base
+	// info about the pose; this is not placed in the robot's kinematic state 
 	bool                                          m_haveBasePos;	
 	double                                        m_basePos[3];
+	tf::Pose                                      m_pose;
+	robot_msgs::PoseWithCovariance                m_localizedPose;
 	
+	// info about the robot's joints
 	robot_msgs::MechanismState                    m_mechanismState;
 	bool                                          m_haveMechanismState;
 	
-	/** The complete robot state (MAP frame) */
+	// the complete robot state
 	planning_models::KinematicModel::StateParams *m_robotState;
-	bool                                          m_haveState;
+	
+	// if this flag is true, the base position is included in the state as well
+	bool                                          m_includeBaseInState;
+	
 	
     };
     

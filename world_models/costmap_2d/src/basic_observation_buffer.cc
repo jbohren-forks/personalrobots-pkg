@@ -3,9 +3,9 @@
 
 namespace costmap_2d {
 
-  BasicObservationBuffer::BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval, 
+  BasicObservationBuffer::BasicObservationBuffer(const std::string& frame_id, const std::string& global_frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval, 
 						 double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter)
-    : ObservationBuffer(frame_id, keepAlive, refresh_interval), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ), filter_(filter) {}
+    : ObservationBuffer(frame_id, global_frame_id, keepAlive, refresh_interval), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ), filter_(filter) {}
 
   void BasicObservationBuffer::buffer_cloud(const std_msgs::PointCloud& local_cloud)
   {
@@ -35,12 +35,12 @@ namespace costmap_2d {
         {
 	  // First we want the origin for the sensor
 	  tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), point_cloud.header.stamp, frame_id_);
-	  tf_.transformPoint("map", local_origin, map_origin);
+	  tf_.transformPoint(global_frame_id_, local_origin, map_origin);
 
           tf_.transformPointCloud("base_footprint", point_cloud, base_cloud);
           newData = extractFootprintAndGround(base_cloud);
           map_cloud = new std_msgs::PointCloud();
-          tf_.transformPointCloud("map", *newData, *map_cloud);
+          tf_.transformPointCloud(global_frame_id_, *newData, *map_cloud);
 
 	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.getX(), map_origin.getY(), map_origin.getZ());
         }

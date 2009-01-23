@@ -247,6 +247,13 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       steer_angle_stored_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
+
+      caster_speed_.push_back(0.0);
+      caster_speed_filtered_.push_back(0.0);
+      caster_speed_error_.push_back(0.0);
+      caster_position_error_.push_back(0.0);
+      caster_stuck_.push_back(0);
+
 //      cout << "base_casters" << "::  " << base_object;
     }
 
@@ -262,6 +269,11 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
       wheel_speed_cmd_.push_back(0);
+
+      wheel_speed_filtered_.push_back(0.0);
+      wheel_speed_error_.push_back(0.0);
+      wheel_stuck_.push_back(0);
+
       num_wheels_++;
     }
   }
@@ -455,6 +467,8 @@ void BaseController::update()
 
   updateJointControllers();
 
+  computeStall();
+
   last_time_ = current_time;
 }
 
@@ -506,7 +520,7 @@ void BaseController::computeDesiredCasterSteer()
       steer_angle_desired = steer_angle_desired_m_pi;
     }
     steer_velocity_desired_[i] =  -kp_speed_*error_steer;
-
+    caster_position_error_[i] = error_steer;
   }
 }
 
@@ -612,7 +626,6 @@ void BaseController::computeOdometry(double time)
 }
 
 
-
 void BaseController::computeBaseVelocity()
 {
   Matrix A(2*num_wheels_,1);
@@ -679,11 +692,13 @@ Matrix BaseController::pseudoInverse(const Matrix M)
   return result;
 }
 
+
 std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
 {
   mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_state_->joint_->name_ << endl << endl;
   return mystream;
 };
+
 
 NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter)
 {
@@ -722,6 +737,7 @@ NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::M
   }
   return x_fit;
 };
+
 
 NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::string weight_type)
 {
@@ -772,6 +788,37 @@ NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::st
 };
 
 
+void BaseController::computeStall()
+{
+
+  for(int i=0; i < num_casters_; i++)
+  {     
+    caster_speed_error_[i] = fabs(base_casters_[i].joint_state_->velocity_ - steer_velocity_desired_[i]);
+    caster_speed_filtered_[i] = alpha_stall_*caster_speed_filtered_[i] + (1-alpha_stall_)*base_casters_[i].joint_state_->velocity_;
+
+    if(fabs(caster_speed_[i]) < caster_speed_threshold_ &&  fabs(caster_position_error_[i]) > caster_position_error_threshold_ && fabs(base_casters_[i].joint_state_->applied_effort_) > caster_effort_threshold_)
+    {
+        caster_stuck_[i] = 1;
+    }
+    else
+    {
+      caster_stuck_[i] = 0;
+    }
+  }
+  for(int j =0; j < num_wheels_; j++)
+  {
+    wheel_speed_error_[j] = fabs(base_wheels_[j].joint_state_->velocity_ - wheel_speed_cmd_[j]);
+    wheel_speed_filtered_[j] = alpha_stall_*wheel_speed_filtered_[j] + (1-alpha_stall_)*wheel_speed_actual_[j];
+    if(fabs(wheel_speed_filtered_[j]) < wheel_speed_threshold_ && fabs(base_wheels_[j].joint_state_->applied_effort_) > wheel_effort_threshold_)
+    {
+      wheel_stuck_[j] = 1;
+    }
+    else
+    {
+      wheel_stuck_[j] = 0;
+    }
+  }
+}
 
 
 
@@ -788,6 +835,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
   transform_publisher_ = NULL;
   odometer_publisher_ = NULL;
   covariance_publisher_ = NULL;
+  state_publisher_ = NULL;
 }
 
 BaseControllerNode::~BaseControllerNode()
@@ -803,11 +851,15 @@ BaseControllerNode::~BaseControllerNode()
   transform_publisher_->stop();
   odometer_publisher_->stop();
   covariance_publisher_->stop();
+  state_publisher_->stop();
 
   delete publisher_;
   delete transform_publisher_;
   delete odometer_publisher_;
   delete covariance_publisher_;
+
+  delete state_publisher_;
+
   delete c_;
 }
 
@@ -833,6 +885,33 @@ void BaseControllerNode::update()
       c_->setOdomMessage(publisher_->msg_);
       publisher_->unlockAndPublish() ;
       last_time_message_sent_ = time;
+    }
+
+    if(state_publisher_->trylock())
+    {
+      state_publisher_->msg_.command_vx = c_->cmd_vel_.x;
+      state_publisher_->msg_.command_vy = c_->cmd_vel_.y;
+      state_publisher_->msg_.command_vw = c_->cmd_vel_.z;
+      for(int i=0; i<c_->num_casters_; i++)
+      {
+        state_publisher_->msg_.joint_speed[i] = c_->caster_speed_[i];
+        state_publisher_->msg_.joint_speed_filtered[i] = c_->caster_speed_filtered_[i];
+        state_publisher_->msg_.joint_speed_error[i] = c_->caster_speed_error_[i];
+        state_publisher_->msg_.joint_stall[i] = c_->caster_stuck_[i];
+        state_publisher_->msg_.joint_commanded_effort[i] = c_->base_casters_[i].joint_state_->commanded_effort_;
+        state_publisher_->msg_.joint_applied_effort[i] = c_->base_casters_[i].joint_state_->applied_effort_;
+      }
+      for(int i=0; i<c_->num_wheels_; i++)
+      {
+        state_publisher_->msg_.joint_speed[i+c_->num_casters_] = c_->wheel_speed_actual_[i];
+        state_publisher_->msg_.joint_speed_filtered[i+c_->num_casters_] = c_->wheel_speed_filtered_[i];
+        state_publisher_->msg_.joint_speed_error[i+c_->num_casters_] = c_->wheel_speed_error_[i];
+        state_publisher_->msg_.joint_stall[i+c_->num_casters_] = c_->wheel_stuck_[i];
+        state_publisher_->msg_.joint_commanded_effort[i+c_->num_casters_] = c_->base_wheels_[i].joint_state_->commanded_effort_;
+        state_publisher_->msg_.joint_applied_effort[i+c_->num_casters_] = c_->base_wheels_[i].joint_state_->applied_effort_;
+      }
+
+      state_publisher_->unlockAndPublish() ;
     }
 
     if (covariance_publisher_->trylock())
@@ -1008,6 +1087,10 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     delete odometer_publisher_ ;
   odometer_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
 
+  if (state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete state_publisher_;
+  state_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::BaseControllerState> (service_prefix + "/state", 1) ;
+
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
   transform_publisher_ = new realtime_tools::RealtimePublisher <tf::tfMessage> ("tf_message", 5) ;
@@ -1019,11 +1102,39 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 
+  node->param<double>("base_controller/caster_speed_threshold",c_->caster_speed_threshold_,0.2);
+  node->param<double>("base_controller/caster_position_error_threshold",c_->caster_position_error_threshold_,0.05);
+  node->param<double>("base_controller/wheel_speed_threshold",c_->wheel_speed_threshold_,0.2);
+
+  node->param<double>("base_controller/caster_effort_threshold",c_->caster_effort_threshold_,3.45);
+  node->param<double>("base_controller/wheel_effort_threshold",c_->wheel_effort_threshold_,3.45);
+
+  node->param<double>("base_controller/alpha_stall",c_->alpha_stall_,0.5);
+
   double multiplier;
   node->param<double>("base_controller/wheel_radius_multiplier",multiplier,1.0);
   c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
   transform_publisher_->msg_.set_transforms_size(NUM_TRANSFORMS);
+
+  state_publisher_->msg_.set_joint_name_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_stall_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_speed_error_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_speed_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_speed_filtered_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_commanded_effort_size(c_->num_wheels_+c_->num_casters_);
+  state_publisher_->msg_.set_joint_applied_effort_size(c_->num_wheels_+c_->num_casters_);
+
+  for(int i=0; i < c_->num_casters_; i++)
+  {
+    state_publisher_->msg_.joint_name[i] = c_->base_casters_[i].name_;
+  }
+
+  for(int j=c_->num_casters_; j < c_->num_casters_+c_->num_wheels_; j++)
+  {
+    state_publisher_->msg_.joint_name[j] = c_->base_wheels_[j-c_->num_casters_].name_;
+  }
+
 
   if(odom_publish_rate_ > 1e-5)
     odom_publish_delta_t_ = 1.0/odom_publish_rate_;

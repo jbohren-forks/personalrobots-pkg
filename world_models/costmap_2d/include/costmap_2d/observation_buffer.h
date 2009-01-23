@@ -47,7 +47,7 @@ namespace costmap_2d {
    */
   class ObservationBuffer {
   public:
-    ObservationBuffer(const std::string& frame_id, ros::Duration keep_alive, ros::Duration refresh_interval);
+    ObservationBuffer(const std::string& frame_id, const std::string& global_frame_id, ros::Duration keep_alive, ros::Duration refresh_interval);
 
     virtual ~ObservationBuffer();
 
@@ -79,6 +79,8 @@ namespace costmap_2d {
 
   protected:
     const std::string frame_id_;
+    /**< Which frame is global; usually "map" */
+    const std::string global_frame_id_; 
 
   private:
     std::list<Observation> buffer_;

@@ -35,10 +35,12 @@
 /** \author Ioan Sucan */
 
 #include "kinematic_planning/KinematicStateMonitor.h"
+#include <collision_space/environmentODE.h>
+
 #include <std_msgs/PointCloud.h>
 #include <robot_srvs/CollisionCheckState.h>
-#include <collision_space/environmentODE.h>
 #include <collision_map/CollisionMap.h>
+#include <kinematic_planning/AttachedObject.h>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -55,6 +57,7 @@ namespace kinematic_planning
        
        Subscribes to (name/type):
        - @b collision_map/CollisionMap : data describing the 3D environment
+       - @b attach_object/AttachedObject : data describing an object to be attached to a link
        
        Additional subscriptions due to inheritance from KinematicStateMonitor:
        - @b robot_srvs/MechanismModel : position for each of the robot's joints
@@ -70,7 +73,7 @@ namespace kinematic_planning
        - None
        
        Provides (name/type):
-       - None
+       - @b set_collision_state/CollisionCheckState : service to allow enabling and disabling collision checking for links
        
        <hr>
        
@@ -105,7 +108,8 @@ namespace kinematic_planning
 	    
 	    m_node->subscribe("collision_map", m_collisionMap, &CollisionSpaceMonitor::collisionMapCallback, this, 1);
 	    m_node->advertiseService("set_collision_state", &CollisionSpaceMonitor::setCollisionState, this);
-	    
+	    	
+	    m_node->subscribe("attach_object", m_attachedObject, &CollisionSpaceMonitor::attachObject, this, 1);
 	}
 
 	virtual ~CollisionSpaceMonitor(void)
@@ -115,6 +119,41 @@ namespace kinematic_planning
 		delete m_collisionSpace;
 		m_kmodel = NULL;
 	    }
+	}
+
+	void attachObject(void)
+	{
+	    m_collisionSpace->lock();
+	    int model_id = m_collisionSpace->getModelID(m_attachedObject.robot_name);
+	    planning_models::KinematicModel::Link *link = model_id >= 0 ? m_kmodel->getLink(m_attachedObject.link_name) : NULL;
+	    
+	    if (link)
+	    {	
+		// clear the previously attached bodies 
+		for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
+		    delete link->attachedBodies[i];
+		unsigned int n = m_attachedObject.objects.get_boxes_size();
+		link->attachedBodies.resize(n);
+
+		// create the new ones
+		for (unsigned int i = 0 ; i < n ; ++i)
+		{
+		    link->attachedBodies[i] = new planning_models::KinematicModel::AttachedBody();
+		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(m_attachedObject.objects.boxes[i].center.x,
+									     m_attachedObject.objects.boxes[i].center.y,
+									     m_attachedObject.objects.boxes[i].center.z));
+		    planning_models::KinematicModel::Sphere *sphere = new planning_models::KinematicModel::Sphere();
+		    sphere->radius = radiusOfBox(m_attachedObject.objects.boxes[i].extents);
+		    link->attachedBodies[i]->shape = sphere;
+		}
+		
+		// update the collision model
+		m_collisionSpace->updateAttachedBodies(model_id);
+		ROS_INFO("Link '%s' on '%s' has %d objects attached", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str(), n);
+	    }
+	    else
+		ROS_WARN("Unable to attach object to link '%s' on '%s'", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str());
+	    m_collisionSpace->unlock();
 	}
 	
 	bool setCollisionState(robot_srvs::CollisionCheckState::request &req, robot_srvs::CollisionCheckState::response &res)
@@ -160,7 +199,10 @@ namespace kinematic_planning
 	
 	collision_map::CollisionMap           m_collisionMap;
 	collision_space::EnvironmentModel    *m_collisionSpace;
-	
+
+	// add or remove objects to be attached to a link
+	kinematic_planning::AttachedObject    m_attachedObject;
+
 	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
 	{
 	    std::vector<robot_desc::URDF::Group*> groups;
@@ -191,9 +233,7 @@ namespace kinematic_planning
 		
 		// radius (we multiply by sqrt(3) to get the diagonal of the cube containing
 		// the given box
-		data[i4 + 3] = std::max(std::max(m_collisionMap.boxes[i].extents.x,
-						 m_collisionMap.boxes[i].extents.y),
-					m_collisionMap.boxes[i].extents.z) * 1.732050808;
+		data[i4 + 3] = radiusOfBox(m_collisionMap.boxes[i].extents);
 	    }
 	    
 	    m_collisionSpace->lock();
@@ -217,6 +257,13 @@ namespace kinematic_planning
 	{
 	}
 
+    private:
+	
+	double radiusOfBox(std_msgs::Point32 &point)
+	{
+	    return std::max(std::max(point.x, point.y), point.z) * 1.732050808;
+	}
+	
     };
      
 } // kinematic_planning

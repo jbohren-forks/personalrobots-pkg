@@ -5,6 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="rospy" />
   <depend package="highlevel_controllers" />
+  <depend package="executive_trex_pr2" />
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
 </package>

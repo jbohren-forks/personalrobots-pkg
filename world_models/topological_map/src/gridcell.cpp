@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <topological_map/gridcell.h>
+#include <iostream>
 
 using namespace std;
 
@@ -42,24 +43,27 @@ int operator< (const GridCell& c, const GridCell& c2)
   return (c.first < c2.first) || ((c.first == c2.first) && (c.second < c2.second));
 }
 
-  ostream& operator<< (ostream& str, const GridCell& c)
-  {
-    str << "(" << c.first << ", " << c.second << ")";
-    return str;
-  }
+ostream& operator<< (ostream& str, const GridCell& c)
+{
+  str << "(" << c.first << ", " << c.second << ")";
+  return str;
+}
 
-// bool operator== (const GridCell& c, const GridCell& c2)
-// {
-//   return (c.first == c2.first) && (c.second == c2.second);
-// }
+bool operator== (const GridCell& c, const GridCell& c2)
+{
+  cout << "In operator== for gridcells" << endl;
+  return (c.first == c2.first) && (c.second == c2.second);
+}
 
-  int GridCell::heuristicDistanceTo (const GridCell& c) const
-  { 
-    int dx=c.first-first; 
-    int dy=c.second-second; 
-    int dist=(sqrt(dx*dx+dy*dy));  
-    return dist; 
-  }
+
+
+int GridCell::heuristicDistanceTo (const GridCell& c) const
+{ 
+  int dx=c.first-first; 
+  int dy=c.second-second; 
+  int dist=(sqrt(dx*dx+dy*dy));  
+  return dist; 
+}
 
 
 } // Namespace topological_map

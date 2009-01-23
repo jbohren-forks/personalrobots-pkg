@@ -8,7 +8,7 @@
 
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="deprecated" notes=""/>
 
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

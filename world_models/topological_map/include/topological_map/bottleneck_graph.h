@@ -36,6 +36,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/multi_array.hpp>
+#include "ros_exception/exception.h"
 #include "gridcell.h"
 
 namespace topological_map
@@ -79,7 +80,7 @@ typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 class IndexedBottleneckGraph
 {
 public:
-  IndexedBottleneckGraph () : num_rows_(-1), num_cols_(-1), ready_(false) {}
+  IndexedBottleneckGraph (int num_rows=-1, int num_cols=-1) : num_rows_(num_rows), num_cols_(num_cols), ready_(false) {}
 
   void initializeFromGrid (const GridArray& g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
   void readFromFile (const char* filename);
@@ -113,6 +114,22 @@ private:
 
   
 };
+
+
+class TopologicalMapException: public ros::Exception
+{ 
+public:
+  TopologicalMapException(const std::string errorDescription) : ros::Exception(errorDescription) {};
+};
+
+class InvalidGridCellException: public TopologicalMapException
+{
+public:
+  InvalidGridCellException() : TopologicalMapException("Invalid grid cell") {};
+};
+
+
+
 
 
    

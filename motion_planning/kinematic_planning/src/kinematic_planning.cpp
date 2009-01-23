@@ -160,7 +160,7 @@ public:
     {
 	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
-	
+
 	// to be removed
 	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
 	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
@@ -183,7 +183,7 @@ public:
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
     }
-    
+        
     void stopReplanning(void)
     {
 	m_replanningLock.lock();

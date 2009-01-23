@@ -32,6 +32,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <sysexits.h>
+#include <algorithm>
 #include "topological_map/roadmap_bottleneck_graph.h"
 
 using std::cout;
@@ -136,6 +137,7 @@ int main (int argc, char* argv[])
   }
 
   g.initializeRoadmap();
+
   ofstream stream;
   stream.open("test-bg");
   g.outputPpm(stream, vertex_radius);
@@ -144,20 +146,18 @@ int main (int argc, char* argv[])
 
   // Temp
   if (domain == 2) {
-    g.switchToRegion (1);
-    g.printRoadmap();
-  
+    unsigned char costmap[225];
+    fill(costmap, costmap+225, 1);
 
-    GridCell start(0,0), goal(8,8);
+    g.setCostmap(costmap);
+  
+    GridCell start(3,3), goal(10,10);
     vector<GridCell> solution=g.findOptimalPath(start, goal);
     cout << "Solution is ";
     for (unsigned int i=0; i<solution.size(); i++) {
       cout << solution[i] << " ";
     }
     cout << endl;
-
-    g.switchToRegion (2);
-    g.printRoadmap();
 
     start.second = 5;
     goal.second = 6;

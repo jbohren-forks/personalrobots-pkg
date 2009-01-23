@@ -57,6 +57,7 @@
 #include <std_msgs/BaseVel.h>
 #include <pr2_msgs/Odometer.h>
 #include <pr2_msgs/Covariance2D.h>
+#include <pr2_msgs/BaseControllerState.h>
 
 #include <realtime_tools/realtime_publisher.h>
 
@@ -265,6 +266,36 @@ namespace controller
     double odometry_residual_max_;
 
     private:
+
+    void computeStall();
+
+    std::vector<double> caster_speed_;
+
+    std::vector<double> caster_position_error_;
+
+    std::vector<double> caster_speed_filtered_;
+
+    std::vector<double> caster_speed_error_;
+
+    std::vector<int> caster_stuck_;
+
+    double caster_speed_threshold_;
+
+    double caster_effort_threshold_;
+
+    std::vector<double> wheel_speed_error_;
+
+    std::vector<double> wheel_speed_filtered_;
+
+    std::vector<int> wheel_stuck_;
+
+    double wheel_speed_threshold_;
+
+    double wheel_effort_threshold_;
+
+    double caster_position_error_threshold_;
+
+    double alpha_stall_;
 
     bool new_cmd_available_; /** true when new command received by node */
 
@@ -488,6 +519,8 @@ namespace controller
     realtime_tools::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     realtime_tools::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+
+    realtime_tools::RealtimePublisher <pr2_msgs::BaseControllerState>* state_publisher_ ;  
 
     /*
      * \brief pointer to ros node

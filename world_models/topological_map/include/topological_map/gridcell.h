@@ -47,13 +47,15 @@ struct GridCell
   GridCell(int f=0, int s=0) : first(f), second(s) {}
   int heuristicDistanceTo (const GridCell& p) const;
 
+  // The default copy and assignment constructors are fine
 };
- 
- std::ostream& operator<< (std::ostream& str, const GridCell& g);
+
+std::ostream& operator<< (std::ostream& str, const GridCell& g);
 int operator< (const GridCell& c, const GridCell& c2);
+bool operator== (const GridCell& c, const GridCell& c2);
 
 
- typedef std::set<GridCell> Region;
+typedef std::set<GridCell> Region;
 
 } // Namespace topological_map
 

@@ -114,6 +114,8 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   render_panel_->getViewport()->setCamera( camera_ );
 
+  ros_node_->param("/global_frame_id", global_frame_id_, std::string("map"));
+
   ros_node_->advertise<robot_msgs::Planner2DGoal>("goal", 1);
   ros_node_->advertise<std_msgs::Pose2DFloat32>("initialpose", 1);
   ros_node_->subscribe("particlecloud", cloud_, &NavViewPanel::incomingParticleCloud, this, 1);
@@ -434,7 +436,7 @@ void NavViewPanel::updateRadiusPosition()
     tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(), "base_link");
     tf::Stamped<tf::Pose> map_pose;
 
-    tf_client_->transformPose("map", robot_pose, map_pose);
+    tf_client_->transformPose("odom", robot_pose, map_pose);
     double yaw, pitch, roll;
     map_pose.getBasis().getEulerZYX(yaw, pitch, roll);
 

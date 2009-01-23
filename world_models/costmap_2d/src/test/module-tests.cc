@@ -187,7 +187,7 @@ TEST(costmap, test15){
 
   ros::Duration keep_alive(10, 0);
   ros::Duration refresh_interval(0, 200000000); // 200 ms
-  ObservationBuffer buffer("Foo", keep_alive, refresh_interval);
+  ObservationBuffer buffer("Foo", "map", keep_alive, refresh_interval);
 
   // Initially it should be false
   ASSERT_EQ(buffer.isCurrent(), false);

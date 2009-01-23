@@ -5,7 +5,9 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="rosconsole" />
+  <depend package="tf" />
 
+  <depend package="std_msgs" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
 
@@ -15,12 +17,11 @@
   <depend package="planning_models"/>
   <depend package="collision_space"/>
   <depend package="collision_map"/>
-  <depend package="string_utils" />
 
   <depend package="ompl" />
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags=""/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags=""/>
   </export>
 
 </package>
