@@ -347,10 +347,12 @@ namespace cloud_geometry
     }
   }
 
+  void downsamplePointCloud (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
+                             std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
+
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
-  void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
-                             std::vector<Leaf> &leaves, int d_idx, double cut_distance);
+
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
