@@ -58,7 +58,7 @@ public:
 	use_topic_ = true;
     }
     
-    void testJointLimitsRightArm(std::string& jname = "")
+    void testJointLimitsRightArm(const std::string& jname = "")
     {
 	// we send a trajectory with one state
 	pr2_mechanism_controllers::JointTraj traj;
