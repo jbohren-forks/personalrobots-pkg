@@ -65,6 +65,9 @@ int main(int argc, char** argv)
       case 'q':
         printf("Exiting...\n");
         goto exit_main;
+      case 's':
+        cvSaveImage("orange.png", display.Ipl());
+        printf("Saved orange.png\n");
     }
   }
 
