@@ -1,0 +1,17 @@
+<package>
+  <description>
+    A node which detects doors and handles from 3D point cloud data.
+  </description>
+
+  <author>Radu Bogdan Rusu</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="cloud_io" />
+  <depend package="sample_consensus" />
+  <depend package="cloud_kdtree" />
+  <depend package="cloud_geometry" />
+</package>
