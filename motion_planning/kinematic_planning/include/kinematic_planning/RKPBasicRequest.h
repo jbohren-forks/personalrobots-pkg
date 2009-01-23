@@ -234,7 +234,7 @@ namespace kinematic_planning
 			    bestPath = path;
 			    bestDifference = goal->getDifference();
 			    goal->forgetSolutionPath();
-			    ROS_INFO("          Obtained better solution");
+			    ROS_INFO("          Obtained better solution: distance is %f", bestDifference);
 			}
 		    }
 		    psetup->mp->clear();	    

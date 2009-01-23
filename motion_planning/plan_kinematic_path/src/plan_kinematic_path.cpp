@@ -121,7 +121,7 @@ public:
 	dpath.start_state = start;
 	dpath.path = path;
 	m_node->publish("display_kinematic_path", dpath);
-	ROS_INFO("Sent planned path to display");
+	//	ROS_INFO("Sent planned path to display");
     }
     
     void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
@@ -398,8 +398,68 @@ public:
 	
 	m_pr.performCall(req, PlanningRequest::C_ARM, replan);
     }
+	    
+    void printLinkPoses(void)
+    {
+	m_kmodel->computeTransforms(m_robotState->getParams());
+	m_kmodel->printLinkPoses();
+    }    
+    
+    void runTestRightEEf(bool replan = false)
+    {
+	robot_srvs::KinematicPlanLinkPosition::request req;
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "RRT";
+	req.interpolate = 1;
+	req.times = 3;
+	
+	currentState(req.start_state);
+	printLinkPoses();
+
+	req.set_goal_constraints_size(1);
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;
+	req.goal_constraints[0].robot_link = "r_wrist_flex_link";
+	req.goal_constraints[0].pose.position.x = .7;	
+	req.goal_constraints[0].pose.position.y = 0;	
+	req.goal_constraints[0].pose.position.z = 1;	
+
+	req.goal_constraints[0].pose.orientation.x = 0;
+	req.goal_constraints[0].pose.orientation.y = 0;
+	req.goal_constraints[0].pose.orientation.z = sqrt(2)/2;		
+	req.goal_constraints[0].pose.orientation.w = sqrt(2)/2;	
+
+	req.goal_constraints[0].position_distance = 0.01;
+	req.goal_constraints[0].orientation_distance = 0.01;
+	req.goal_constraints[0].orientation_importance = 0.3;
+	
+	// an example of constraints: do not move the elbow too much
+	/*
+	  req.constraints.set_pose_size(1);
+	  req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
+	  req.constraints.pose[0].robot_link = "elbow_flex_left";
+	  req.constraints.pose[0].pose.position.x = 0.45;
+	  req.constraints.pose[0].pose.position.y = 0.188;
+	  req.constraints.pose[0].pose.position.z = 0.74;
+	  req.constraints.pose[0].position_distance = 0.01;
+	*/
+	
+	req.allowed_time = 0.3;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];
+	req.params.volumeMin.y = -5.0 + m_basePos[1];
+	req.params.volumeMin.z = 0.0;
+	
+	req.params.volumeMax.x = 5.0 + m_basePos[0];
+	req.params.volumeMax.y = 5.0 + m_basePos[1];
+	req.params.volumeMax.z = 0.0;
 	
 	
+	m_pr.performCall(req, PlanningRequest::C_ARM, replan);
+    }
+    
+
+
 protected:
 
     void sendPoint(double x, double y, double z, double radius, const std::string &frame_id)
@@ -482,6 +542,9 @@ int main(int argc, char **argv)
 		break;
 	    case 'r':
 		plan->runTestRightArm(true);    
+		break;
+	    case 'e':
+		plan->runTestRightEEf(true);    
 		break;
 	    default:
 		ROS_WARN("No test");
