@@ -30,8 +30,8 @@
     
     <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four"/>
 
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="true" machine="four" />
-    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="true" machine="four" />
+    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" />-->
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>

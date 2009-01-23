@@ -1,6 +1,6 @@
 <launch>
   <group name="wg">
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full-0.05.pgm 0.05" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" />
     <!-- SET AMCL PARAMETERS -->
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
