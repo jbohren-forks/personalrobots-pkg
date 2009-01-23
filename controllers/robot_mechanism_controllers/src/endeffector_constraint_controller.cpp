@@ -272,7 +272,6 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
   // Compute generalized inverse, this is the transpose as long as the constraints are 
   // orthonormal to eachother. Will replace with QR method later.
   
-  
 }
 
 
