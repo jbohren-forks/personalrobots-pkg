@@ -58,7 +58,7 @@ public:
 	use_topic_ = true;
     }
     
-    void testJointLimitsRightArm(void)
+    void testJointLimitsRightArm(const std::string& jname = "")
     {
 	// we send a trajectory with one state
 	pr2_mechanism_controllers::JointTraj traj;
@@ -67,10 +67,18 @@ public:
 	traj.set_points_size(1);
         traj.points[0].set_positions_size(controllerDim);
 
-	// get the joints in the group
-        std::vector<std::string> joints;
-        m_kmodel->getJointsInGroup(joints, m_kmodel->getGroupID(groupName));
 
+	std::vector<std::string> joints;
+	if (jname.empty())
+	{
+	    // get the joints in the group
+	    m_kmodel->getJointsInGroup(joints, m_kmodel->getGroupID(groupName));
+	}
+	else
+	{
+	    joints.push_back(jname);
+	}
+	
         for (unsigned int j = 0 ;  j < joints.size() ; ++j)
         {
 	    // we only test revolute joints
@@ -142,7 +150,8 @@ public:
             }
 
             delete sp;
-        }
+	}
+	
     }
     
 protected:
@@ -170,7 +179,7 @@ int main(int argc, char **argv)
 	if (plan->loadedRobot())
 	{
 	    sleep(2);
-	    plan->testJointLimitsRightArm();
+	    plan->testJointLimitsRightArm("r_shoulder_pan_joint");
 	}
 	sleep(1);
 	

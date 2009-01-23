@@ -28,7 +28,7 @@
  */
 
 /*
- * Author: John Hsu and Melonee Wise
+ * Author: Melonee Wise
  */
 
 #ifndef ENDEFFECTOR_CONSTRAINT_CONTEROLLER_H
@@ -61,6 +61,7 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
+  void computeConstraintNullSpace();
   // input of the controller
   KDL::Wrench wrench_desi_;
 
@@ -89,10 +90,6 @@ private:
 
 
 };
-
-
-
-
 
 
 class EndeffectorConstraintControllerNode : public Controller

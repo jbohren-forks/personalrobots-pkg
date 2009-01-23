@@ -463,7 +463,13 @@ void LaserScannerControllerNode::update()
     case LaserScannerController::FIRST_HALF :
       if (cur_profile_exec_state == LaserScannerController::SECOND_HALF)   // We just transitioned from 1st->2nd, so send msg saying half-scan is done
       {
-        m_scanner_signal_.signal = 0 ;                                     // 0 -> Half profile complete
+        if (first_time_)
+        {
+          m_scanner_signal_.signal = 128 ;
+          first_time_ = false ;
+        }
+        else
+          m_scanner_signal_.signal = 0 ;                                     // 0 -> Half profile complete
 
         //if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
         //  printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
@@ -474,7 +480,13 @@ void LaserScannerControllerNode::update()
     case LaserScannerController::SECOND_HALF :                            // Send msg saying full scan is done
       if (cur_profile_exec_state == LaserScannerController::FIRST_HALF)   // We just transitioned from 2nd->1st, so send msg saying full-scan is done
       {
-        m_scanner_signal_.signal = 1 ;                                    // 1 -> Full profile complete
+        if(first_time_)
+        {
+          m_scanner_signal_.signal = 129 ;
+          first_time_ = false ;
+        }
+        else
+          m_scanner_signal_.signal = 1 ;                                     // 1 -> Full profile complete
 
         //if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
         //  printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
@@ -540,6 +552,8 @@ bool LaserScannerControllerNode::setProfileCall(
   pr2_mechanism_controllers::SetProfile::response &resp)
 {
   const double num_elem = -1.0 ;     // We should only be using the dynamicProfiles, so we don't need num_elem
+
+  first_time_ = true ;
 
   setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,num_elem,req.offset);
   resp.time = c_->getTime();

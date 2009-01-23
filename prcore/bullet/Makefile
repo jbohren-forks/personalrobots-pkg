@@ -9,15 +9,15 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 .PHONY: build
 
+BULLET_TARGETS = LinearMath BulletCollision BulletDynamics BulletSoftBody
 
 # Poor man's installation procedure setup
 BULLET_LIBS = $(SVN_DIR)/src/BulletCollision/libBulletCollision.a \
               $(SVN_DIR)/src/BulletDynamics/libBulletDynamics.a \
-              $(SVN_DIR)/src/BulletSoftBody/libBulletSoftBody.a \
-              $(SVN_DIR)/src/LinearMath/libLinearMath.a
+              $(SVN_DIR)/src/LinearMath/libLinearMath.a \
+              $(SVN_DIR)/src/BulletSoftBody/libBulletSoftBody.a 
 
-BULLET_INC_DIRS = BulletSoftBody \
-                  BulletCollision/CollisionShapes \
+BULLET_INC_DIRS = BulletCollision/CollisionShapes \
                   BulletCollision/BroadphaseCollision \
                   BulletCollision/NarrowPhaseCollision \
                   BulletCollision/CollisionDispatch \
@@ -27,12 +27,13 @@ BULLET_INC_DIRS = BulletSoftBody \
                   BulletDynamics/Dynamics \
                   BulletDynamics/Character \
                   LinearMath \
+		  BulletSoftBody 
 
 installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) .
 	# Bullet appears not be parallel-make safe
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) 
-	cd $(SVN_DIR) && make
+	cd $(SVN_DIR) && make $(BULLET_TARGETS)
 	# The 'install' target only works with cmake 2.6 for some reason
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) install
 	mkdir -p lib

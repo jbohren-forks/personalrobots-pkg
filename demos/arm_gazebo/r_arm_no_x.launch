@@ -16,9 +16,9 @@
 
     <!-- start arm controller -->
     <!--
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
     -->
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/r_arm_trajectory_controller.xml" respawn="false"  />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" respawn="false"  />
 
     <!-- send arm a command -->
     <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->

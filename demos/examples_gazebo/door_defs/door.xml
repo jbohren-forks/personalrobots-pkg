@@ -25,6 +25,13 @@
         <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
       </controller:ros_time>
 
+      <controller:gazebo_mechanism_control name="gazebo_mechanism_control_door" plugin="libgazebo_mechanism_control.so">
+        <robotParam>robotdesc/pr2</robotParam>
+        <mechanismTopic>mechanism_state/pr2</mechanismTopic>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <interface:audio name="door_gazebo_mechanism_control_dummy_iface" />
+      </controller:gazebo_mechanism_control>
     </verbatim>
   </map>
 

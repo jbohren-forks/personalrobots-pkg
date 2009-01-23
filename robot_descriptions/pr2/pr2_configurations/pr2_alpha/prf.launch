@@ -12,8 +12,10 @@
   <include file="$(find pr2_full)/calibrate.launch" />
 
 <!-- Joystick -->
+<!--
   <param name="joy/deadzone" value="5000"/>
   <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+-->
 
 <!-- spacenav -->
   <node machine="four" pkg="spacenav_node" type="spacenav_node" />

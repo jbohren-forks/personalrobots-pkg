@@ -35,7 +35,7 @@
 ## Gazebo test 2dnav stack
 
 PKG = '2dnav_gazebo'
-NAME = 'test_2dnav_translations'
+NAME = 'test_set_goal'
 
 import math
 import rostools
@@ -162,7 +162,7 @@ class NavStackTest(unittest.TestCase):
         print "robot touched something! ", bumpString.data
         self.bumped = True
     
-    def test_2dnav_translations(self):
+    def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("goal", Planner2DGoal) #received by wavefront_player or equivalent

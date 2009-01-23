@@ -83,6 +83,10 @@ public:
 
   void scannerSignalCallback()
   {
+    if (cur_signal_.signal == 128 || cur_signal_.signal == 129)       // These codes imply that this is the first signal during a given profile type
+      first_time_ = true ;
+
+
     if (first_time_)
     {
       prev_signal_ = cur_signal_ ;

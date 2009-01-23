@@ -1,8 +1,5 @@
 <launch>
-  <group name="wg">
-    <!-- send pr2.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_gazebo)/pr2_door.xacro.xml'" />
-
+  <group name="gazebo">
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib" />
@@ -11,15 +8,28 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
 
+    <!-- send pr2.xml to param server -->
     <!-- push robotdesc/door to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+    <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_gazebo)/pr2_door.xacro.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
 
-    <!-- load controllers -->
+    <!-- spawn pr2 in gazebo -->
+    <!--
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+    -->
+    <!-- spawn door in gazebo -->
+    <!--
+    <param name="robotdesc/door" command="$(find xacro)/xacro.py '$(find examples_gazebo)/door_defs/door_defs.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/door" respawn="false" output="screen" />
+    -->
+
+    <!-- load pr2 controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
 
     <!-- load door controllers -->
     <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/door_defs/controllers_door.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set door_controller 1.0" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
+    <node pkg="robot_mechanism_controllers" type="control.py" args="set door_controller 0.2" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 
   </group>
 </launch>

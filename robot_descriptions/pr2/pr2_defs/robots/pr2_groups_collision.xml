@@ -28,31 +28,32 @@
   </group>
   
   <!-- Define the parts of the robot that the collision checker should care about -->
+
+<!-- COMPLETE ROBOT -->
+
   <group name="collision_check" flags="collision">
     base_link
     torso_lift_link
-    r_shoulder_pan_link
-    r_shoulder_lift_link
-    l_shoulder_pan_link
-    l_shoulder_lift_link
-    l_upper_arm_roll_link
-    r_upper_arm_roll_link
-    l_elbow_flex_link
-    r_elbow_flex_link
-    l_forearm_roll_link
-    r_forearm_roll_link
-    l_wrist_flex_link
-    r_wrist_flex_link
-    l_wrist_roll_link
-    r_wrist_roll_link
-    l_gripper_l_finger_link
-    l_gripper_r_finger_link
-    r_gripper_l_finger_link
-    r_gripper_r_finger_link
     head_pan_link
     head_tilt_link
+    r_shoulder_pan_link
+    r_shoulder_lift_link
+    r_upper_arm_roll_link
+    r_upper_arm_link
+    r_elbow_flex_link
+    r_forearm_roll_link
+    r_forearm_link
+    r_wrist_flex_link
+    r_wrist_roll_link
+    r_gripper_palm_link
+    r_gripper_l_finger_link
+    r_gripper_r_finger_link
+    r_gripper_l_finger_tip_link
+    r_gripper_r_finger_tip_link
   </group>
-  
+ 
+
+
   <!-- Define groups to check for self collision -->
 <!--
   <group name="collisions1" flags="self_collision">

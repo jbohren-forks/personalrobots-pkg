@@ -45,6 +45,7 @@
 #include <robot_srvs/ValidateKinematicPath.h>
 
 #include <std_msgs/Empty.h>
+#include <std_msgs/VisualizationMarker.h>
 #include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -305,6 +306,9 @@ public:
 	advertise<std_msgs::Empty>("replan_stop", 1);
 	
 	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
+
+	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);
+	m_id = 0;
     }
 
     virtual ~PlanKinematicPath(void)
@@ -398,9 +402,53 @@ public:
 	
 protected:
 
+    void sendPoint(double x, double y, double z, double radius, const std::string &frame_id)
+    {
+	std_msgs::VisualizationMarker mk;
+	mk.header.stamp = ros::Time::now();
+	
+	mk.header.frame_id = frame_id;
+
+	mk.id = m_id++;
+	mk.type = std_msgs::VisualizationMarker::SPHERE;
+	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.x = x;
+	mk.y = y;
+	mk.z = z;
+
+	mk.roll = 0;
+	mk.pitch = 0;
+	mk.yaw = 0;
+	
+	mk.xScale = radius;
+	mk.yScale = radius;
+	mk.zScale = radius;
+		
+	mk.alpha = 255;
+	mk.r = 255;
+	mk.g = 10;
+	mk.b = 10;
+	
+	publish("visualizationMarker", mk);
+    }
+
+    void afterAttachBody(planning_models::KinematicModel::Link *link)
+    {
+	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
+	{
+	    planning_models::KinematicModel::Sphere *sphere = dynamic_cast<planning_models::KinematicModel::Sphere*>(link->attachedBodies[i]->shape);
+	    if (sphere)
+	    {
+		btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();
+		sendPoint(v.x(), v.y(), v.z(), sphere->radius, link->name);
+	    }
+        }
+    }
+    
     // in replanning mode, current path to goal
     robot_msgs::KinematicPath m_pathToGoal;
     PlanningRequest           m_pr;
+    unsigned int              m_id;
     
 };
 
@@ -421,9 +469,9 @@ int main(int argc, char **argv)
 	plan->loadRobotDescription();
 	if (plan->loadedRobot())
 	{
-	    //	plan->waitForState();
-
-	    sleep(2);
+	    sleep(1);
+	    plan->waitForState();
+	    ROS_INFO("Received robot state");
 	    
 	    char test = (argc < 3) ? ' ' : argv[2][0];
 	    

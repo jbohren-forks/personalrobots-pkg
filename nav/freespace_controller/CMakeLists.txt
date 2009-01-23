@@ -10,14 +10,11 @@ genmsg()
 #set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
-#rospack_add_library(trajectory_rollout src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
-#    src/trajectory.cpp src/governor_node.cpp)
-#target_link_libraries(trajectory_rollout costmap_2d)
+rospack_add_library(freespace_controller src/point_grid.cpp)
+target_link_libraries(freespace_controller costmap_2d)
 
-#rospack_add_executable(governor_node src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
-#    src/trajectory.cpp src/governor_node.cpp)
-
-#target_link_libraries(governor_node costmap_2d)
+rospack_add_executable(point_grid src/point_grid.cpp)
+target_link_libraries(point_grid costmap_2d)
 
 #rospack_add_gtest(utest test/utest.cpp src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp src/trajectory.cpp)
 #set_target_properties(utest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)

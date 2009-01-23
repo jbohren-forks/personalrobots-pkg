@@ -154,6 +154,8 @@ namespace kinematic_planning
 	    else
 		ROS_WARN("Unable to attach object to link '%s' on '%s'", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str());
 	    m_collisionSpace->unlock();
+	    if (link)
+		afterAttachBody(link);
 	}
 	
 	bool setCollisionState(robot_srvs::CollisionCheckState::request &req, robot_srvs::CollisionCheckState::response &res)
@@ -256,7 +258,11 @@ namespace kinematic_planning
 	virtual void afterWorldUpdate(void)
 	{
 	}
-
+	
+	virtual void afterAttachBody(planning_models::KinematicModel::Link *link)
+	{
+	}
+	
     private:
 	
 	double radiusOfBox(std_msgs::Point32 &point)

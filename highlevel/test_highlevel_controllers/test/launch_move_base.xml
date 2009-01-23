@@ -41,6 +41,6 @@
     <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/>
     <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>
     <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" output="screen" />
   </group>
 </launch>

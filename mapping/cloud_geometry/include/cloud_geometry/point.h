@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <std_msgs/PointCloud.h>
+#include <std_msgs/Polygon3D.h>
 #include <std_msgs/Point32.h>
 #include <std_msgs/Point.h>
 #include <math.h>
@@ -258,6 +259,30 @@ namespace cloud_geometry
       maxP.x = (points->pts[i].x > maxP.x) ? points->pts[i].x : maxP.x;
       maxP.y = (points->pts[i].y > maxP.y) ? points->pts[i].y : maxP.y;
       maxP.z = (points->pts[i].z > maxP.z) ? points->pts[i].z : maxP.z;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud
+    * \param points the point cloud message
+    * \param minP the resultant minimum bounding box coordinates
+    * \param maxP the resultant maximum bounding box coordinates
+    */
+  inline void
+    getMinMax (std_msgs::Polygon3D *poly, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
+  {
+    minP.x = minP.y = minP.z = FLT_MAX;
+    maxP.x = maxP.y = maxP.z = FLT_MIN;
+
+    for (unsigned int i = 0; i < poly->points.size (); i++)
+    {
+      minP.x = (poly->points[i].x < minP.x) ? poly->points[i].x : minP.x;
+      minP.y = (poly->points[i].y < minP.y) ? poly->points[i].y : minP.y;
+      minP.z = (poly->points[i].z < minP.z) ? poly->points[i].z : minP.z;
+
+      maxP.x = (poly->points[i].x > maxP.x) ? poly->points[i].x : maxP.x;
+      maxP.y = (poly->points[i].y > maxP.y) ? poly->points[i].y : maxP.y;
+      maxP.z = (poly->points[i].z > maxP.z) ? poly->points[i].z : maxP.z;
     }
   }
 
