@@ -316,8 +316,41 @@ namespace cloud_geometry
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
+    * in a given pointcloud, without considering points outside of a distance threshold from the laser origin
+    * \param points the point cloud data message
+    * \param indices the point cloud indices to use
+    * \param min_pt the resultant minimum bounds
+    * \param max_pt the resultant maximum bounds
+    * \param c_idx the index of the channel holding distance information
+    * \param cut_distance a maximum admissible distance threshold for points from the laser origin
+    */
+  inline void
+    getMinMax (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt,
+               int c_idx, double cut_distance)
+  {
+    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
+    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
+
+    for (unsigned int i = 0; i < indices->size (); i++)
+    {
+      if (c_idx != -1 && points->chan[c_idx].vals[indices->at (i)] > cut_distance)
+        continue;
+      min_pt.x = (points->pts[indices->at (i)].x < min_pt.x) ? points->pts[indices->at (i)].x : min_pt.x;
+      min_pt.y = (points->pts[indices->at (i)].y < min_pt.y) ? points->pts[indices->at (i)].y : min_pt.y;
+      min_pt.z = (points->pts[indices->at (i)].z < min_pt.z) ? points->pts[indices->at (i)].z : min_pt.z;
+
+      max_pt.x = (points->pts[indices->at (i)].x > max_pt.x) ? points->pts[indices->at (i)].x : max_pt.x;
+      max_pt.y = (points->pts[indices->at (i)].y > max_pt.y) ? points->pts[indices->at (i)].y : max_pt.y;
+      max_pt.z = (points->pts[indices->at (i)].z > max_pt.z) ? points->pts[indices->at (i)].z : max_pt.z;
+    }
+  }
+
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
+  void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
+                             std::vector<Leaf> &leaves, int d_idx, double cut_distance);
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
