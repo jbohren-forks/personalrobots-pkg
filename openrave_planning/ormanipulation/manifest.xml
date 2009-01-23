@@ -4,7 +4,6 @@
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
-  <depend package="boost"/>
   <depend package="openraveros"/>
   <depend package="orplugins"/>
   <depend package="laser_scan"/>

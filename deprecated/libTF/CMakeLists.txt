@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(libTF)
 
+rospack_add_boost_directories()
+
 rospack_add_library(oldTF src/libTF.cpp src/Pose3DCache.cpp src/Pose3D.cpp)
+rospack_link_boost(oldTF thread)
 rospack_add_executable(simpletest src/test/main.cpp)
 target_link_libraries(simpletest oldTF)
 rospack_add_executable(testtf src/test/testtf.cc)

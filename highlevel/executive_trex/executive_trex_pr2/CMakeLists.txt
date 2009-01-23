@@ -3,6 +3,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE Release)
 rospack(executive_trex_pr2)
 
+rospack_add_boost_directories()
 
 execute_process(
     COMMAND rospack find trex
@@ -41,6 +42,7 @@ set(TREX_FILES src/Executive.cc
 # but gives good feedback in discovering problems.
 rospack_add_executable(bin/trexdebug ${TREX_FILES})
 target_link_libraries(bin/trexdebug Utils_g TREX_g)
+rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not
@@ -51,6 +53,7 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_executable(bin/trexfast ${TREX_FILES})
 target_link_libraries(bin/trexfast Utils_o TREX_o)
+rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not

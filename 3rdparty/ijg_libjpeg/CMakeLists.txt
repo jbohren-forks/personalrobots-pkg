@@ -21,6 +21,9 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/lib/libjpeg.a
 	           COMMAND sed -e '/HAVE_STDLIB_H/d' -e '/HAVE_STDDEF_H/d' <${PROJECT_SOURCE_DIR}/build/jpeg-6b/jconfig.h >${PROJECT_SOURCE_DIR}/include/ijg_libjpeg/jconfig.h
                    )
 
+rospack_add_boost_directories()
+
 rospack_add_library(ros_jpeg_mutex src/ros_jpeg_mutex.cpp)
+rospack_link_boost(ros_jpeg_mutex thread)
 add_file_dependencies(src/ros_jpeg_mutex.cpp ${PROJECT_SOURCE_DIR}/lib/libjpeg.a)
 

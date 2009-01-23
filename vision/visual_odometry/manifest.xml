@@ -11,7 +11,6 @@
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
   <depend package="image_msgs"/>
-  <depend package="boost"/>
   <depend package="eigen"/>
   <depend package="fast_detector"/>
   <depend package="star_detector"/>

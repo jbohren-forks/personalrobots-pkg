@@ -6,7 +6,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
-  <depend package="boost"/>
   <depend package="opencv_latest"/>
   <depend package="rospy"/>
   <depend package="rostest"/>

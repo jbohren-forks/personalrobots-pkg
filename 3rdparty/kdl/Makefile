@@ -2,12 +2,13 @@ all: installed
 
 SOURCE_DIR = kdl-willow
 CMAKE = cmake 
-BOOST_ROOT =$(shell rospack find boost)/boost
+BOOST_INCLUDE_DIR = $(shell rosboost-cfg --include_dirs)
+BOOST_LIBRARY_DIR = $(shell rosboost-cfg --library_dirs)
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DPYTHON_BINDINGS=OFF \
 		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/ \
-		-DBOOST_INCLUDEDIR:STRING=$(BOOST_ROOT)/include \
-		-DBOOST_LIBRARYDIR:STRING=$(BOOST_ROOT)/lib
+		-DBOOST_INCLUDEDIR:STRING=$(BOOST_INCLUDE_DIR) \
+		-DBOOST_LIBRARYDIR:STRING=$(BOOST_LIBRARY_DIR)
 
 installed: wiped 
 	-mkdir -p $(SOURCE_DIR)/build

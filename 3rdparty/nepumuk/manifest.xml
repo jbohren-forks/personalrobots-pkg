@@ -11,7 +11,6 @@
   <url>http://libsunflower.sourceforge.net/</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="boost"/>
   <depend package="libsunflower"/>
   <sysdepend os="debian" version="4.0-etch" package="libpng12-dev"/>
   <sysdepend os="debian" version="4.0-etch" package="autoconf"/>

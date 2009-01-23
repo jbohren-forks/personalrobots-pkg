@@ -5,7 +5,7 @@ TARBALL = build/$(OGRE_VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
-TARBALL_PATCH = warnings.patch
+TARBALL_PATCH = warnings.patch boost.patch
 INITIAL_DIR = build/ogre
 include $(shell rospack find mk)/download_unpack_build.mk
 
@@ -16,12 +16,12 @@ CFLAGS = -g -O3 \
 	 $(shell rospack --lang=cpp --attrib=cflags export freeimage) \
          $(shell rospack --lang=cpp --attrib=cflags export opende) \
          $(shell rospack --lang=cpp --attrib=cflags export Cg) \
-         $(shell rospack --lang=cpp --attrib=cflags export boost)
+         $(shell rosboost-cfg --cflags)
 
 LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
          $(shell rospack --lang=cpp --attrib=lflags export opende) \
          $(shell rospack --lang=cpp --attrib=lflags export Cg) \
-         $(shell rospack --lang=cpp --attrib=lflags export boost) \
+         $(shell rosboost-cfg --lflags thread) \
          -lpthread
 
 CONFIGURE_FLAGS = --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release

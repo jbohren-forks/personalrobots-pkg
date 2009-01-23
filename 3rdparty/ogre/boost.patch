@@ -1,0 +1,14 @@
+--- configure	2009-01-22 16:02:27.000000000 -0800
++++ configure-noboosterror	2009-01-22 16:02:22.000000000 -0800
+@@ -25777,11 +25777,6 @@
+ echo "${ECHO_T}$ac_cv_lib_boost_thread_mt_main" >&6
+ if test $ac_cv_lib_boost_thread_mt_main = yes; then
+   OGRE_THREAD_LIBS="-lboost_thread-mt"
+-else
+-
+-                    { { echo "$as_me:$LINENO: error: You need the C++ boost libraries." >&5
+-echo "$as_me: error: You need the C++ boost libraries." >&2;}
+-   { (exit 1); exit 1; }; }
+ fi
+ 
+ fi

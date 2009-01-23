@@ -8,9 +8,8 @@
   <license>BSD</license>
   <review status="unreviewed"/>
   <url>http://pr.willowgarage.com</url>
-  <depend package="boost" />
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrealtime_tools" />
+    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrealtime_tools `rosboost-cfg --lflags thread`" />
   </export>
 </package>
 

@@ -16,7 +16,6 @@
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
   <depend package="robot_msgs" />
-  <depend package="boost"/>
   <depend package="stl_utils" />
   <depend package="angles" />
   <depend package="gazebo_robot_description"/>
@@ -26,7 +25,6 @@
   <depend package="tinyxml" />
   <depend package="axis_cam" />
   <depend package="bullet" />
-  <depend package="boost" />
   <depend package="wg_robot_description_parser" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />

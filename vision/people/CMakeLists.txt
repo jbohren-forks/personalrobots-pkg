@@ -4,10 +4,13 @@ rospack(people)
 #genmsg()
 #find_library(curl REQUIRED)
 
+rospack_add_boost_directories()
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(timing_diagnostics_node
                        src/timing_diagnostics_node.cpp )
+rospack_link_boost(timing_diagnostics_node thread)
 
 rospack_add_executable(people_tracker
                        src/filter/uniform_vector.cpp 
@@ -23,20 +26,24 @@ rospack_add_executable(people_tracker
 		       src/filter/tracker_kalman.cpp 
 #		       src/filter/detector_particle.cpp 
 		       src/filter/people_tracking_node.cpp )
+rospack_link_boost(people_tracker thread)
 
 rospack_add_executable(face_detector
                        src/face_detection.cpp 
                        src/people.cpp 
                        src/utils.cpp)
+rospack_link_boost(face_detector thread)
 
 rospack_add_executable(stereo_face_color_tracker
                        src/stereo_face_color_tracker.cpp 
                        src/people.cpp 
                        src/utils.cpp)
+rospack_link_boost(stereo_face_color_tracker thread)
 
 rospack_add_executable(track_starter_gui
                        src/track_starter_gui.cpp 
                        src/utils.cpp)
+rospack_link_boost(track_starter_gui thread)
 
 
 find_package(PythonLibs)
