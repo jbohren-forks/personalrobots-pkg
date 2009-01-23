@@ -68,7 +68,7 @@ public:
     FIRST_HALF  = 1,     //!< Specifies that we're in the first half of our current profile
     SECOND_HALF = 2      //!< Specifies that we're in the second half of our current profile
   } ;
-  
+
   /*!
    * \brief Default Constructor of the JointController class.
    *
@@ -170,7 +170,7 @@ public:
    *         Will return NotApplicable if we're not currently following a profile
    */
   ProfileExecutionState getProfileExecutionState() ;
-  
+
   double getTime();
 private:
   /*!
@@ -221,7 +221,7 @@ public:
    *
    */
   LaserScannerControllerNode();
-  
+
   /*!
    * \brief Destructor
    */
@@ -253,7 +253,10 @@ private:
    * \brief A pointer to ros node
    */
   ros::Node *node_;
-  
+
+  //! True if a profile was just initiated, and it has not yet hit either end of it's traj
+  bool first_time_ ;
+
   LaserScannerController::ProfileExecutionState prev_profile_exec_state_ ;       //!< Store the previous profileExecutionState. Need this to compare to the current state to detect transitions
   pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
   bool need_to_send_msg_ ;                                                       //!< Tracks whether we still need to send out the m_scanner_signal_ message.

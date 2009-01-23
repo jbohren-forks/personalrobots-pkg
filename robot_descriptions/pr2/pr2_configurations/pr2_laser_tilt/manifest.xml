@@ -15,8 +15,7 @@
   <depend package="pr2_etherCAT"/>
   <depend package="pr2_power_board"/>
   <depend package="ocean_battery_driver"/>
-  <depend package="joy"/>
   <depend package="rosrecord"/>
   <depend package="hokuyo_node"/>
-  <depend package="imu_node"/>
+  <depend package="point_cloud_assembler" />
 </package>
