@@ -4,11 +4,13 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
+<depend package="ros_exception" />
 <depend package="std_msgs" />
 <depend package="std_srvs" />
 <depend package="rosconsole" />
 <depend package="boost" />
 <depend package="sbpl" />
+<depend package="navfn" />
 <export>
 <cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>

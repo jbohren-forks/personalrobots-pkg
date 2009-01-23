@@ -32,7 +32,7 @@
 
 #include "bottleneck_graph.h"
 #include <discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h>
-
+#include <navfn.h>
 
 namespace topological_map
 {
@@ -48,51 +48,50 @@ typedef map<BottleneckVertex,VertexCellMap> VertexPairCellMap;
 class RoadmapBottleneckGraph : public IndexedBottleneckGraph
 {
 public:
-  RoadmapBottleneckGraph();
+  RoadmapBottleneckGraph(int num_rows=-1, int num_cols=-1, double costmap_multiplier=1.0);
   ~RoadmapBottleneckGraph();
 
   /// Initialize the roadmap associated to this topological map
   void initializeRoadmap ();
 
-  void printRoadmap ();
+  /// Set costmap
+  /// The roadmap is not the owner of this memory.  So it expects that costmap won't be deallocated
+  /// while roadmap holds a reference to it, and after setCostmap is called again in future, caller is
+  /// expected to deallocate old one.
+  void setCostmap (const unsigned char* costmap);
 
-  /// Set start state to this grid cell.  Also, call switchToRegion on the containing region
-  void setStartState (const GridCell& start);
-
-  /// Set end state to this grid cell.
-  void setGoalState (const GridCell& goal);
-
-  /// Find optimal path between start and goal
-  vector<GridCell> findOptimalPath (void);
-
-  /// Set start and goal, then find the optimal path
+  /// Return vector of grid cells going from start to goal.
+  /// Grid cells will be contiguous early on but eventually become noncontiguous.
   vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal);
-
-  /// Make it so that roadmap is low-level in given region and high-level elsewhere
-  void switchToRegion (int region_id);
 
   /// Output the roadmap and region graph as a plain ppm file
   void outputPpm (std::ostream& = std::cout, int bottleneck_vertex_radius = 1);
+
+  /// Print the roadmap in human readable form
+  void printRoadmap ();
+  
   
 private:
+
   /// \post A cell equal to c exists in the roadmap, and is connected to other cells currently in the same region
   /// \return Number of cells added (either 0 or 1)
   int ensureCellExists (const GridCell& cell);
 
-  /// Add to the roadmap the grid cells in the given region (except the ones that are already in the roadmap).
-  void addRegionGridCells (int region_id);
-
-  /// Remove from the roadmap the grid cells from the last added region
-  void removeLastAddedRegionCells ();
-
   GridCell pointOnBorder (const Region& r1, const Region& r2);
 
+  /// Use NavFn planner to plan from start to goal, and store the resulting path and cost
+  /// solution is overwritten if it already holds something.  Return true iff path was found.
+  bool planUsingNavFn (const GridCell& start, const GridCell& goal, vector<GridCell>* solution, float* cost);
+
+  const unsigned char* costmap_;
   Roadmap* roadmap_;
+  NavFn nav_fn_planner_;
   GridCell start_;
   GridCell goal_;
-  int num_temporary_added_cells_;
   int current_region_;
+  double costmap_multiplier_;
   VertexPairCellMap roadmap_points_;
+
 };
 
 

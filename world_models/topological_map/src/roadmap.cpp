@@ -32,6 +32,7 @@
 #include <ros/console.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
+
 using namespace std; 
 using boost::adjacent_vertices;
 
@@ -46,8 +47,8 @@ enum CellType { BOTTLENECKCELL, OBSTACLE, FREECELL, ROADMAPCELL };
 
 
 
-RoadmapBottleneckGraph::RoadmapBottleneckGraph() : 
-  roadmap_(0), num_temporary_added_cells_(0), current_region_(-1) 
+RoadmapBottleneckGraph::RoadmapBottleneckGraph(int num_rows, int num_cols, double costmap_multiplier) : 
+  IndexedBottleneckGraph(num_rows, num_cols), nav_fn_planner_(0, 0), costmap_multiplier_(costmap_multiplier)
 {}
 
 RoadmapBottleneckGraph::~RoadmapBottleneckGraph()
@@ -75,6 +76,7 @@ GridCell RoadmapBottleneckGraph::pointOnBorder (const Region& r1, const Region& 
 
 
 
+
 void RoadmapBottleneckGraph::initializeRoadmap ()
 {
   roadmap_ = new AdjacencyListSBPLEnv<GridCell>();
@@ -86,16 +88,22 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
    * defined.  That is currently true because they come from a boost graph with vertex set of type vecS. */
     
   BottleneckVertexIterator vertex_iter, end;
+
+  // Loop over open regions of the graph
   for (tie(vertex_iter,end) = vertices(graph_); vertex_iter!=end; ++vertex_iter) {
     VertexDescription desc = vertexDescription (*vertex_iter);
     if (desc.type == OPEN) {
       BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
       map<BottleneckVertex,GridCell> new_map;
       roadmap_points_[*vertex_iter] = new_map;
+
+      // Add a roadmap point corresponding to each neighboring region
       for (tie(adjacency_iter, adjacency_end) = adjacent_vertices(*vertex_iter, graph_); adjacency_iter!=adjacency_end; adjacency_iter++) {
         VertexDescription neighborDesc = vertexDescription (*adjacency_iter);
         GridCell borderPoint = pointOnBorder (desc.region, neighborDesc.region);
-        roadmap_->addPoint (borderPoint);
+        if (!roadmap_->hasPoint(borderPoint)) {
+          roadmap_->addPoint (borderPoint);
+        }
         roadmap_points_[*vertex_iter][*adjacency_iter] = borderPoint;
       }
     }
@@ -104,10 +112,9 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
     
   VertexPairCellMap::iterator vertex_pair_iter;
 
-  // Loop open regions
+  // Loop over open regions
   for (vertex_pair_iter=roadmap_points_.begin(); vertex_pair_iter!=roadmap_points_.end(); vertex_pair_iter++) {
     ROS_DEBUG ("Generating roadmap points in region %d", vertexDescription(vertex_pair_iter->first).id);
-
 
     // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
     for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
@@ -132,99 +139,121 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
         }
       }
     }
-
   }
-}    
+}
+    
 
 
-void RoadmapBottleneckGraph::setGoalState (const GridCell& goal)
-{
-  goal_ = goal;
+
+void RoadmapBottleneckGraph::setCostmap (const unsigned char* costmap) {
+  costmap_=costmap;
+  nav_fn_planner_.setNavArr(num_cols_, num_rows_);
+  nav_fn_planner_.setCostMap(costmap,true);
 }
 
-void RoadmapBottleneckGraph::setStartState (const GridCell& start)
+
+
+bool RoadmapBottleneckGraph::planUsingNavFn (const GridCell& start, const GridCell& goal, vector<GridCell>* solution, float* cost)
 {
-  start_ = start;
-  switchToRegion (regionId(start.first, start.second));
+  int pos[2];
+  int goal_pos[2];
+
+  solution->clear();
+
+  pos[0]=start.second;
+  pos[1]=start.first;
+  goal_pos[0]=goal.second;
+  goal_pos[1]=goal.first;
+  nav_fn_planner_.setStart(pos);
+  nav_fn_planner_.setGoal(goal_pos);
+
+  bool success = nav_fn_planner_.calcNavFnAstar();
+  
+  if (success) {
+    float *x = nav_fn_planner_.getPathX();
+    float *y = nav_fn_planner_.getPathY();
+    int len = nav_fn_planner_.getPathLen();
+    solution->reserve(len);
+
+    for (int i=0; i<len; i++) {
+        GridCell c;
+        c.first=y[i];
+        c.second=x[i];
+        solution->push_back(c);
+    }
+    
+    *cost = nav_fn_planner_.getLastPathCost();
+    return true;
+  }
+  else {
+    return false;
+  }
 }
+    
+
+  
 
 
 
 vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (const GridCell& start, const GridCell& goal)
 {
-  setStartState(start);
-  setGoalState(goal);
-  return findOptimalPath ();
-}
+
+  // Get vertex info
+  ensureCellExists(goal);
+  BottleneckVertex start_vertex, goal_vertex;
+  if(!lookupVertex(start.first, start.second, &start_vertex)) {
+    ROS_FATAL_STREAM ("Invalid grid cell " << start);
+    throw InvalidGridCellException();
+  }
+  if(!lookupVertex(goal.first, goal.second, &goal_vertex)) {
+    ROS_FATAL_STREAM ("Invalid grid cell " << goal);
+    throw InvalidGridCellException();
+  }
+  VertexDescription& start_desc = vertexDescription (start_vertex);
+  VertexDescription& goal_desc = vertexDescription (goal_vertex);
+  ROS_DEBUG ("Start and goal are in regions %d and %d", start_desc.id, goal_desc.id);
+  vector<GridCell> solution;
 
 
-vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (void)
-{
-  int num_added=0;
-  num_added += ensureCellExists(start_);
-  num_added += ensureCellExists(goal_);
-  
-  roadmap_->setStartState(start_);
-  roadmap_->setGoalState(goal_);
-
-  vector<GridCell> solution = roadmap_->findOptimalPath();
-  roadmap_->removeLastPoints(num_added);
-  return solution;
-}
+  // See if start and goal are in same or adjacent regions
+  BottleneckAdjacencyIterator adjacency_iter, adjacency_end;
+  tie(adjacency_iter, adjacency_end) = adjacent_vertices(start_vertex, graph_);
+  bool useNavFn = ( (start_vertex == goal_vertex) || (find(adjacency_iter, adjacency_end, goal_vertex) != adjacency_end) );
 
 
 
-void RoadmapBottleneckGraph::printRoadmap (void)
-{
-  roadmap_->writeToStream();
-}
-
-void RoadmapBottleneckGraph::switchToRegion (int region_id)
-{
-  if (region_id != current_region_) {
-    current_region_ = region_id;
-    removeLastAddedRegionCells();
-
-    BottleneckVertex v=id_vertex_map_[region_id];
-    addRegionGridCells(region_id);
-
-    BottleneckAdjacencyIterator adj_iter, adj_end;
-    for (tie(adj_iter, adj_end) = adjacent_vertices(v, graph_); adj_iter!=adj_end; adj_iter++) {
-      addRegionGridCells(vertexDescription(*adj_iter).id);
+  if (useNavFn) {
+    ROS_DEBUG ("Using navfn");
+    float cost;
+    if (planUsingNavFn (start, goal, &solution, &cost)) {
+      return solution;
+    }
+    else {
+      throw TopologicalMapException("Navfn failed to find solution");
     }
   }
-}
-
-
-
-void RoadmapBottleneckGraph::addRegionGridCells (int region_id)
-{
-  BottleneckVertex v = id_vertex_map_[region_id];
-  VertexDescription desc = vertexDescription (v);
-
-  ROS_DEBUG ("Adding grid cells from region %d", desc.id);    
-  for (Region::iterator grid_cell_iter = desc.region.begin(); grid_cell_iter != desc.region.end(); ++grid_cell_iter) {
-    if (!(roadmap_->hasPoint(*grid_cell_iter))) {
-      roadmap_->addPoint (*grid_cell_iter);
-      ++num_temporary_added_cells_;
-      for (int i=0; i<4; i++) {
-        GridCell neighbor(grid_cell_iter->first+g_dx[i], grid_cell_iter->second+g_dy[i]);
-        if (roadmap_->hasPoint(neighbor)) {
-          roadmap_->setCost (*grid_cell_iter, neighbor);
-        }
+  else {
+    ROS_DEBUG ("Using top planner.");
+    vector<GridCell> connectors;
+    
+    if (start_desc.type == OPEN) {
+      ROS_DEBUG ("Start is an open region.  Looking for connectors within it.");
+      for (VertexCellMap::iterator adjacent_pair_iter=roadmap_points_[start_vertex].begin(); adjacent_pair_iter!=roadmap_points_[start_vertex].end(); adjacent_pair_iter++) {
+        float candidate_cost;
+        vector<GridCell> candidate_path;
+        connectors.push_back(adjacent_pair_iter->second);
+        planUsingNavFn (adjacent_pair_iter->second, goal, &candidate_path, &candidate_cost);
+        ROS_DEBUG_STREAM ("Adding connector " << adjacent_pair_iter->second << " with cost-to-goal " << candidate_cost);
       }
     }
+
+    
+    
+    return solution;
   }
 }
 
 
-
-void RoadmapBottleneckGraph::removeLastAddedRegionCells (void)
-{
-  ROS_DEBUG ("Removing last %d points added to roadmap", num_temporary_added_cells_);
-  roadmap_->removeLastPoints (num_temporary_added_cells_);
-  num_temporary_added_cells_=0;
-}
 
 
 
@@ -252,12 +281,26 @@ int RoadmapBottleneckGraph::ensureCellExists (const GridCell& cell)
         }
       }
     }
- 
+    else {
+      BottleneckAdjacencyIterator adj_iter, adj_end;
+      for (tie(adj_iter,adj_end) = adjacent_vertices(v, graph_); adj_iter!=adj_end; adj_iter++) {
+        roadmap_->setCost(cell, roadmap_points_[*adj_iter][v]);
+      }
+    }
     return 1;
   }
 
 }
     
+
+
+
+void RoadmapBottleneckGraph::printRoadmap (void)
+{
+  roadmap_->writeToStream();
+}
+
+
 
 void RoadmapBottleneckGraph::outputPpm (ostream& stream, int roadmap_vertex_radius)
 {
