@@ -313,6 +313,7 @@ public:
     
     void stateUpdate(void)
     {
+	KinematicStateMonitor::stateUpdate();
 	robot_msgs::KinematicPath empty_path;
 	robot_msgs::KinematicState state;
 	currentState(state);
@@ -423,8 +424,8 @@ int main(int argc, char **argv)
 	    //	plan->waitForState();
 
 	    sleep(2);
-
-	    char test = (argc < 3) ? '0' : argv[2][0];
+	    
+	    char test = (argc < 3) ? ' ' : argv[2][0];
 	    
 	    switch (test)
 	    {
@@ -435,7 +436,7 @@ int main(int argc, char **argv)
 		plan->runTestRightArm(true);    
 		break;
 	    default:
-		ROS_ERROR("Unknown test");
+		ROS_WARN("No test");
 		break;
 	    } 
 
