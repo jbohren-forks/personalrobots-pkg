@@ -7,6 +7,7 @@
   <depend package="rosconsole" />
   <depend package="boost" />
 
+  <depend package="std_msgs" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
 
@@ -21,7 +22,7 @@
   <depend package="ompl" />
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags=""/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags=""/>
   </export>
 
 </package>
