@@ -108,9 +108,12 @@ bool MoveBaseTopological::makePlan(){
     // Lock the state message and obtain current position and goal
     GridCell start, goal;
 
-    // TODO get these constants from somewhere
+    // TODO get this constant from somewhere
     const float resolution=.05; 
-    // const int maxY=945;
+
+    lock();
+    graph_.setCostmap(getCostMap().getMap());
+    unlock();
     
     stateMsg.lock();
     start.first=(int)floor(stateMsg.pos.y/resolution);
@@ -120,12 +123,12 @@ bool MoveBaseTopological::makePlan(){
     goal.first=(int)floor(stateMsg.goal.y/resolution);
     stateMsg.unlock();
 
-    std::cout << "planning from " << start.first << ", " << start.second << " to " << goal.first << ", " << goal.second << endl;
 
     // Invoke the planner
     vector<GridCell> solution=graph_.findOptimalPath(start, goal);
 
     std::list<std_msgs::Pose2DFloat32> newPlan;
+    ROS_DEBUG ("Topological planner found plan with waypoints: ");
     for (unsigned int i=0; i<solution.size(); i++) {
       double wx=solution[i].second*resolution;
       double wy=(solution[i].first)*resolution;
@@ -133,6 +136,7 @@ bool MoveBaseTopological::makePlan(){
       step.x = wx;
       step.y = wy;
       newPlan.push_back(step);
+      ROS_DEBUG_STREAM (solution[i] << " ");
     }
 
     updatePlan(newPlan);
