@@ -128,6 +128,7 @@ class DoorHandleDetector : public ros::Node
       param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.25);  // 25 cm
       param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
 
+      param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
       advertiseService("door_handle_detector", &DoorHandleDetector::detectDoor, this);
 
       param ("~p_sac_min_points_left", sac_min_points_left_, 10);
@@ -173,91 +174,27 @@ class DoorHandleDetector : public ros::Node
       door_frame[1] = fabs (p1->y - p2->y);
 
       // Obtain the bounds (doesn't matter which is min and which is max at this point)
-      minB.x = (p1->x + p2->x + 3 * door_frame[0] + 2 * frame_distance_eps_) / 2.0;
-      minB.x = (p1->y + p2->y + 3 * door_frame[1] + 2 * frame_distance_eps_) / 2.0;
+      minB.x = (p1->x + p2->x + (3 * door_frame[0] + 2 * frame_distance_eps_)) / 2.0;
+      minB.y = (p1->y + p2->y + (3 * door_frame[1] + 2 * frame_distance_eps_)) / 2.0;
       minB.z = min_z_bounds_;
 
-      maxB.x = (p1->x + p2->x - 3 * door_frame[0] + 2 * frame_distance_eps_) / 2.0;
-      maxB.y = (p1->y + p2->y - 3 * door_frame[1] + 2 * frame_distance_eps_) / 2.0;
+      maxB.x = (p1->x + p2->x - (3 * door_frame[0] + 2 * frame_distance_eps_)) / 2.0;
+      maxB.y = (p1->y + p2->y - (3 * door_frame[1] + 2 * frame_distance_eps_)) / 2.0;
       maxB.z = max_z_bounds_;
 
       // Order min/max
-      if (minB.x < maxB.x)
+      if (minB.x > maxB.x)
       {
         float tmp = minB.x;
         minB.x = maxB.x;
         maxB.x = tmp;
       }
-      if (minB.y < maxB.y)
+      if (minB.y > maxB.y)
       {
         float tmp = minB.y;
         minB.y = maxB.y;
         maxB.y = tmp;
       }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      estimatePointNormals (PointCloud *cloud)
-    {
-      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (cloud);
-      vector<vector<int> > points_k_indices;
-      // Allocate enough space for point indices
-      points_k_indices.resize (cloud->pts.size ());
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
-        points_k_indices[i].resize (k_);
-      // Get the nerest neighbors for all the point indices in the bounds
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
-      {
-        vector<double> distances (k_);
-        kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
-      }
-
-      // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser, viewpoint_cloud;
-      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
-      // Set the viewpoint in the laser coordinate system to 0,0,0
-      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
-
-      try
-      {
-        tf_.transformPoint (cloud->header.frame_id, viewpoint_laser, viewpoint_cloud);
-      }
-      catch (tf::ConnectivityException)
-      {
-        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
-      }
-
-      #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
-      {
-        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
-        Eigen::Vector4d plane_parameters;
-        double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, &points_k_indices[i], plane_parameters, curvature);
-
-        // See if we need to flip any plane normals
-        Point32 vp_m;
-        vp_m.x = viewpoint_cloud.point.x - cloud_down_.pts[i].x;
-        vp_m.y = viewpoint_cloud.point.y - cloud_down_.pts[i].y;
-        vp_m.z = viewpoint_cloud.point.z - cloud_down_.pts[i].z;
-
-        // Dot product between the (viewpoint - point) and the plane normal
-        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));// / norm;
-
-        // Flip the plane normal
-        if (cos_theta < 0)
-        {
-          for (int d = 0; d < 3; d++)
-            plane_parameters (d) *= -1;
-        }
-        cloud->chan[0].vals[i] = plane_parameters (0);
-        cloud->chan[1].vals[i] = plane_parameters (1);
-        cloud->chan[2].vals[i] = plane_parameters (2);
-        cloud->chan[3].vals[i] = fabs (plane_parameters (3));
-      }
-      // Delete the kd-tree
-      delete kdtree;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,9 +209,7 @@ class DoorHandleDetector : public ros::Node
       ROS_INFO ("Bounding box search restricted to [%f,%f,%f] -> [%f,%f,%f].", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z);
 
       // Subscribe to a point cloud topic
-      cloud_lock_.lock ();      // for extra safety - can be removed later
       need_cloud_data_ = true;
-      cloud_lock_.unlock ();    // for extra safety - can be removed later
       subscribe (input_cloud_topic_.c_str (), cloud_, &DoorHandleDetector::cloud_cb, 1);
 
       // Wait until the scan is ready, sleep for 10ms
@@ -300,6 +235,8 @@ class DoorHandleDetector : public ros::Node
         }
       }
       indices.resize (nr_p);
+
+      ROS_INFO ("Number of points in the bounds: %d.", indices.size ());
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
@@ -380,91 +317,12 @@ class DoorHandleDetector : public ros::Node
    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
-      * \param points pointer to the point cloud message
-      * \param indices pointer to a list of point indices
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
-      * \param clusters the resultant clusters
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
-      */
-    void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
-                    int nx_idx, int ny_idx, int nz_idx, 
-                    unsigned int min_pts_per_cluster = 1)
-    {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
-
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (indices->size (), false);
-
-      vector<int> nn_indices;
-      // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
-      {
-        if (processed[i])
-          continue;
-
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
-        {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)
-          {
-            if (!processed.at (nn_indices[j]))
-            {
-              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
-              // [-1;1]
-              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
-              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
-              {
-                processed[nn_indices[j]] = true;
-                seed_queue.push_back (nn_indices[j]);
-              }
-            }
-          }
-
-          sq_idx++;
-        }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
-        {
-          vector<int> r;
-          //r.indices = seed_queue;
-          r.resize (seed_queue.size ());
-          for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
-          clusters.push_back (r);
-        }
-      }
-
-      // Destroy the tree
-      delete tree;
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
-      if (!need_cloud_data_)
-        return;
+      cloud_lock_.lock ();      // for extra safety - can be removed later
+      need_cloud_data_ = false;
+      cloud_lock_.unlock ();    // for extra safety - can be removed later
 
 /*
       vector<vector<vector<int> > > all_cluster_inliers (clusters.size ());
@@ -598,6 +456,87 @@ class DoorHandleDetector : public ros::Node
       return;*/
     }
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+      * \param points pointer to the point cloud message
+      * \param indices pointer to a list of point indices
+      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+                    int nx_idx, int ny_idx, int nz_idx,
+                    unsigned int min_pts_per_cluster = 1)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (indices->size (), false);
+
+      vector<int> nn_indices;
+      // Process all points in the indices vector
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
+          tree->getNeighborsIndices (nn_indices);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)
+          {
+            if (!processed.at (nn_indices[j]))
+            {
+              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+              // [-1;1]
+              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
+              {
+                processed[nn_indices[j]] = true;
+                seed_queue.push_back (nn_indices[j]);
+              }
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          vector<int> r;
+          //r.indices = seed_queue;
+          r.resize (seed_queue.size ());
+          for (unsigned int j = 0; j < r.size (); j++)
+            r[j] = indices->at (seed_queue[j]);
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int
       fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
@@ -655,6 +594,70 @@ class DoorHandleDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
+      estimatePointNormals (PointCloud *cloud)
+    {
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (cloud);
+      vector<vector<int> > points_k_indices;
+      // Allocate enough space for point indices
+      points_k_indices.resize (cloud->pts.size ());
+      for (int i = 0; i < (int)cloud->pts.size (); i++)
+        points_k_indices[i].resize (k_);
+      // Get the nerest neighbors for all the point indices in the bounds
+      for (int i = 0; i < (int)cloud->pts.size (); i++)
+      {
+        vector<double> distances (k_);
+        kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
+      }
+
+      // Figure out the viewpoint value in the point cloud frame
+      PointStamped viewpoint_laser, viewpoint_cloud;
+      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
+      // Set the viewpoint in the laser coordinate system to 0,0,0
+      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+
+      try
+      {
+        tf_.transformPoint (cloud->header.frame_id, viewpoint_laser, viewpoint_cloud);
+      }
+      catch (tf::ConnectivityException)
+      {
+        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
+      }
+
+      #pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)cloud->pts.size (); i++)
+      {
+        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        Eigen::Vector4d plane_parameters;
+        double curvature;
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, &points_k_indices[i], plane_parameters, curvature);
+
+        // See if we need to flip any plane normals
+        Point32 vp_m;
+        vp_m.x = viewpoint_cloud.point.x - cloud_down_.pts[i].x;
+        vp_m.y = viewpoint_cloud.point.y - cloud_down_.pts[i].y;
+        vp_m.z = viewpoint_cloud.point.z - cloud_down_.pts[i].z;
+
+        // Dot product between the (viewpoint - point) and the plane normal
+        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));// / norm;
+
+        // Flip the plane normal
+        if (cos_theta < 0)
+        {
+          for (int d = 0; d < 3; d++)
+            plane_parameters (d) *= -1;
+        }
+        cloud->chan[0].vals[i] = plane_parameters (0);
+        cloud->chan[1].vals[i] = plane_parameters (1);
+        cloud->chan[2].vals[i] = plane_parameters (2);
+        cloud->chan[3].vals[i] = fabs (plane_parameters (3));
+      }
+      // Delete the kd-tree
+      delete kdtree;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
       computeConcaveHull (PointCloud *points, vector<int> *indices, vector<double> *coeff, 
                           vector<vector<int> > *neighbors, Polygon3D &poly)
     {
@@ -685,9 +688,13 @@ int
   ros::init (argc, argv);
 
   DoorHandleDetector p;
+
   door_handle_detector::Door::request req;
+  req.frame_p1.x = 1.20; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
+  req.frame_p2.x = 1.3; req.frame_p2.y = -0.5; req.frame_p2.z = 0;
   door_handle_detector::Door::response resp;
   ros::service::call ("door_handle_detector", req, resp);
+
   p.spin ();
 
   ros::fini ();
