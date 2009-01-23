@@ -1,8 +1,8 @@
 <launch>
 
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/willow-pr2.world" respawn="false" />
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full.pgm 0.1" respawn="false" />
+    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/worlds/willow-pr2.world" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" respawn="false" >
       <remap from="scan" to="base_scan" />
     </node>

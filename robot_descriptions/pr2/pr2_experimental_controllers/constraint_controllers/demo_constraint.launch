@@ -1,0 +1,9 @@
+<launch>
+  <group name="wg">
+
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_constraint_controller.xml" respawn="false"  />
+   
+    
+  </group>
+</launch>
+

@@ -96,9 +96,9 @@ class NormalEstimation : public ros::Node
       param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
       param ("~downsample", downsample_, true);    // Downsample cloud before normal estimation
-      param ("~downsample_leaf_width_x", leaf_width_.x, 0.02);      // 2cm radius by default
-      param ("~downsample_leaf_width_y", leaf_width_.y, 0.02);      // 2cm radius by default
-      param ("~downsample_leaf_width_z", leaf_width_.z, 0.02);      // 2cm radius by default
+      param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 2cm radius by default
+      param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 2cm radius by default
+      param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 2cm radius by default
       param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
       if (downsample_)

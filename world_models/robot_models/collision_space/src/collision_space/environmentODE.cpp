@@ -465,17 +465,20 @@ void collision_space::EnvironmentModelODE::addSelfCollisionGroup(unsigned int mo
     }
 }
 
-void collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, std::string &link, bool state)
+int collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, std::string &link, bool state)
 { 
+    int result = -1;
     if (model_id < m_modelsGeom.size())
     {
 	for (unsigned int j = 0 ; j < m_modelsGeom[model_id].linkGeom.size() ; ++j)
 	{
 	    if (m_modelsGeom[model_id].linkGeom[j]->link->name == link)
 	    {
+		result = m_modelsGeom[model_id].linkGeom[j]->enabled ? 1 : 0;
 		m_modelsGeom[model_id].linkGeom[j]->enabled = state;
 		break;
 	    }
 	}
     }
+    return result;    
 }

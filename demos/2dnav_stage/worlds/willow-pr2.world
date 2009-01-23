@@ -1,6 +1,6 @@
 define block model
 (
-  size3 [0.5 0.5 0.75]
+  size3 [0.5 0.5 0.5]
   gui_nose 0
 )
 
@@ -20,7 +20,7 @@ define pr2 position
   size3 [0.65 0.65 0.25]
   origin3 [-0.05 0 0 0]
   gui_nose 1
-  drive "omni"
+  drive "diff"
   topurg(pose [0.275 0.000 0.000])
 )
 
@@ -50,20 +50,20 @@ interval_real 100  # real-time interval between simulation updates in millisecon
 window
 ( 
   size [ 745.000 448.000 ] 
-  center [275.990 494.960] 
-  rotate [ 0.000 -1.560 ]
-  scale 18.806 
+  center [-684.010 1350.960] 
+  rotate [ 0.000 0.000 ]
+  scale 28.806 
 )
 
 # load an environment bitmap
 floorplan
 ( 
   name "willow"
-  bitmap "willow-full-0.05.pgm"
-  size3 [58.25 47.25 1.0]
-  pose [-23.625 29.125 90.000]
+  bitmap "../maps/willow-full.pgm"
+  size3 [58.4 52.6 0.5]
+  pose [-26.300 29.200 90.000]
 )
 
 # throw in a robot
-pr2( pose [-28.610 13.562 99.786] name "pr2" color "blue")
-block( pose [-25.062 12.909 180.000] color "red")
+pr2( pose [-21.670 47.120 28.166] name "pr2" color "blue")
+block( pose [-24.269 48.001 180.000] color "red")

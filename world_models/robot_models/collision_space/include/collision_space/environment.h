@@ -99,12 +99,18 @@ namespace collision_space
 
 	/** Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links) = 0;
-	
+
+	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
+	virtual int setCollisionCheck(unsigned int model_id, std::string &link, bool state) = 0;
+
 	/** Get the number of loaded models */
 	unsigned int getModelCount(void) const;
 
 	/** Get a specific model */
 	planning_models::KinematicModel* getRobotModel(unsigned int model_id) const;
+	
+	/** Get the model ID based on the model (robot) name; returns -1 if model not found. */
+	int getModelID(const std::string& robot_name) const;
 	
 	/** Provide interface to a lock. Use carefully! */
 	void lock(void);

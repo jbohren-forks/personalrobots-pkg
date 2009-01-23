@@ -1,8 +1,8 @@
 <launch>
 
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/willow-pr2-2.5cm.world" respawn="false" output="screen"/>
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" output="screen"/>
+    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" output="screen"/>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" output="screen"/>
     <param name="pf_laser_max_beams" value="6"/>
     <param name="pf_min_samples" value="100"/>
     <param name="pf_max_samples" value="1000"/>

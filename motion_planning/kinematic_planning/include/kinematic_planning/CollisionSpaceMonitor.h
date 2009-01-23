@@ -36,6 +36,7 @@
 
 #include "kinematic_planning/KinematicStateMonitor.h"
 #include <std_msgs/PointCloud.h>
+#include <robot_srvs/CollisionCheckState.h>
 #include <collision_space/environmentODE.h>
 #include <collision_map/CollisionMap.h>
 
@@ -103,6 +104,8 @@ namespace kinematic_planning
 	    m_collisionSpace->addStaticPlane(0.0, 0.0, 1.0, -0.01);
 	    
 	    m_node->subscribe("collision_map", m_collisionMap, &CollisionSpaceMonitor::collisionMapCallback, this, 1);
+	    m_node->advertiseService("set_collision_state", &CollisionSpaceMonitor::setCollisionState, this);
+	    
 	}
 
 	virtual ~CollisionSpaceMonitor(void)
@@ -112,6 +115,22 @@ namespace kinematic_planning
 		delete m_collisionSpace;
 		m_kmodel = NULL;
 	    }
+	}
+	
+	bool setCollisionState(robot_srvs::CollisionCheckState::request &req, robot_srvs::CollisionCheckState::response &res)
+	{
+	    m_collisionSpace->lock();
+	    int model_id = m_collisionSpace->getModelID(req.robot_name);
+	    if (model_id >= 0)
+		res.value = m_collisionSpace->setCollisionCheck(model_id, req.link_name, req.value ? true : false);
+	    else
+		res.value = -1;
+	    m_collisionSpace->unlock();
+	    if (res.value == -1)
+		ROS_WARN("Unable to change collision checking state for link '%s' on '%s'", req.link_name.c_str(), req.robot_name.c_str());
+	    else
+		ROS_INFO("Collision checking for link '%s' on '%s' is now %s", req.link_name.c_str(), req.robot_name.c_str(), res.value ? "enabled" : "disabled");
+	    return true;	    
 	}
 	
 	virtual void setRobotDescription(robot_desc::URDF *file)

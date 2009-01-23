@@ -131,7 +131,7 @@ class SemanticPointAnnotator : public ros::Node
 
       boundary_angle_threshold_ = (boundary_angle_threshold_ * M_PI / 180.0);   // convert to radians
 
-      string cloud_topic ("cloud_2_normals");
+      string cloud_topic ("cloud_normals");
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);

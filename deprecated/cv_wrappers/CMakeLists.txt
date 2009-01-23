@@ -3,18 +3,14 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(cv_wrappers)
 
-rospack_add_boost_directories()
-
 genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # cv_view* (note: does not include cv_view in service/)
 rospack_add_executable(cv_view src/cv_view.cpp)
-rospack_link_boost(cv_view thread)
 rospack_add_executable(cv_view_minimal minimal/cv_view.cpp)
 rospack_add_executable(cv_view_array src/cv_view_array.cpp)
-rospack_link_boost(cv_view_array thread)
 rospack_add_executable(cv_view_dcam dcam/cv_view.cpp)
 
 # cv_movie_streamer

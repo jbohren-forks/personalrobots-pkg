@@ -15,13 +15,14 @@ define topurg laser
   size [ 0.05 0.05 0.1 ]
 )
 
-define pr2 position
+define erratic position
 (
-  size3 [0.65 0.65 0.25]
+  #size3 [0.415 0.392 0.25]
+  size3 [0.35 0.35 0.25]
   origin3 [-0.05 0 0 0]
   gui_nose 1
   drive "diff"
-  topurg(pose [0.275 0.000 0.000])
+  topurg(pose [0.050 0.000 0.000])
 )
 
 define floorplan model
@@ -50,20 +51,20 @@ interval_real 100  # real-time interval between simulation updates in millisecon
 window
 ( 
   size [ 745.000 448.000 ] 
-  center [-684.010 1350.960] 
-  rotate [ 0.000 0.000 ]
-  scale 28.806 
+  center [621.990 394.960] 
+  rotate [ 0.000 -1.560 ]
+  scale 18.806 
 )
 
 # load an environment bitmap
 floorplan
 ( 
   name "willow"
-  bitmap "willow-full.pgm"
-  size3 [58.4 52.6 0.5]
-  pose [-26.300 29.200 90.000]
+  bitmap "../maps/willow-full-0.05.pgm"
+  size3 [48.1 54.4 0.5]
+  pose [-27.200 24.050 90.000]
 )
 
 # throw in a robot
-pr2( pose [-21.670 47.120 28.166] name "pr2" color "blue")
-block( pose [-24.269 48.001 180.000] color "red")
+erratic( pose [-10.773 20.602 180.000] name "era" color "blue")
+block( pose [-10.965 23.233 180.000] color "red")
