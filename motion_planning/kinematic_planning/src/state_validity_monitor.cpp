@@ -114,6 +114,8 @@ public:
     {
     }
     
+protected:
+    
     void afterWorldUpdate(void)
     {
 	CollisionSpaceMonitor::afterWorldUpdate();

@@ -45,11 +45,12 @@
 
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
+#include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <cmath>
 
-#include <std_msgs/Pose.h>
 #include <robot_msgs/MechanismState.h>
+#include <robot_msgs/PoseWithCovariance.h>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -103,6 +104,7 @@ namespace kinematic_planning
 	    m_haveBasePos = false;
 	    
 	    m_node->subscribe("mechanism_state", m_mechanismState, &KinematicStateMonitor::mechanismStateCallback, this, 1);
+	    m_node->subscribe("odom_combined", m_localizedPose, &KinematicStateMonitor::localizedPoseCallback, this, 1);
 	}
 	
 	virtual ~KinematicStateMonitor(void)
@@ -192,75 +194,10 @@ namespace kinematic_planning
 		ros::Duration().fromSec(0.05).sleep();
 	}
 	
+    protected:
+	
 	virtual void stateUpdate(void)
 	{
-	}
-	
-    protected:
-	/*
-	void localizedPoseCallback(void)
-	{
-	    bool success = true;
-	    tf::Stamped<tf::Pose> pose (tf::Transform(tf::Quaternion(m_localizedPose.pos.th, 0, 0),
-                                                      tf::Point(m_localizedPose.pos.x,
-                                                                m_localizedPose.pos.y, 0)),
-                                        m_localizedPose.header.stamp,
-                                        m_localizedPose.header.frame_id);
-	    try
-	    {
-		m_tf.transformPose("map", pose, pose);
-	    }
-	    catch(tf::LookupException& ex)
-	    {
-	        fprintf(stderr, "Discarding pose: from %s, Transform reference lookup exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::ExtrapolationException& ex)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Extrapolation exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::ConnectivityException& ex)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Connectivity exception: %s\n", pose.frame_id_.c_str(), ex.what());
-		success = false;
-	    }
-	    catch(tf::TransformException)
-	    {
-		fprintf(stderr, "Discarding pose: from %s, Exception in pose computation\n", pose.frame_id_.c_str());
-		success = false;
-	    }
-	    
-	    if (success)
-	    {
-		if (std::isfinite(pose.getOrigin().x()))
-		    m_basePos[0] = pose.getOrigin().x();
-		if (std::isfinite(pose.getOrigin().y()))
-		    m_basePos[1] = pose.getOrigin().y();
-                double yaw, pitch, roll;
-                pose.getBasis().getEulerZYX(yaw, pitch, roll);
-		if (std::isfinite(yaw))
-		    m_basePos[2] = yaw;
-		m_haveBasePos = true;
-		baseUpdate();
-	    }
-	}
-	*/
-	void mechanismStateCallback(void)
-	{
-	    bool change = false;
-	    m_haveMechanismState = true;
-	    if (m_robotState)
-	    {
-		unsigned int n = m_mechanismState.get_joint_states_size();
-		for (unsigned int i = 0 ; i < n ; ++i)
-		{
-		    double pos = m_mechanismState.joint_states[i].position;
-		    change = change || m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
-		}
-	    }
-	    if (change)
-		stateUpdate();
 	}
 	
 	virtual void baseUpdate(void)
@@ -278,6 +215,38 @@ namespace kinematic_planning
 		stateUpdate();
 	}
 	
+	void localizedPoseCallback(void)
+	{
+	    tf::PoseMsgToTF(m_localizedPose.pose, m_pose);
+	    if (std::isfinite(m_pose.getOrigin().x()))
+		m_basePos[0] = m_pose.getOrigin().x();
+	    if (std::isfinite(m_pose.getOrigin().y()))
+		m_basePos[1] = m_pose.getOrigin().y();
+	    double yaw, pitch, roll;
+	    m_pose.getBasis().getEulerZYX(yaw, pitch, roll);
+	    if (std::isfinite(yaw))
+		m_basePos[2] = yaw;
+	    m_haveBasePos = true;
+	    baseUpdate();
+	}
+	
+	void mechanismStateCallback(void)
+	{
+	    bool change = false;
+	    m_haveMechanismState = true;
+	    if (m_robotState)
+	    {
+		unsigned int n = m_mechanismState.get_joint_states_size();
+		for (unsigned int i = 0 ; i < n ; ++i)
+		{
+		    double pos = m_mechanismState.joint_states[i].position;
+		    change = change || m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+		}
+	    }
+	    if (change)
+		stateUpdate();
+	}
+
 	ros::Node                                    *m_node;
 	tf::TransformListener                         m_tf; 
 	robot_desc::URDF                             *m_urdf;
@@ -287,7 +256,8 @@ namespace kinematic_planning
 	// info about the pose; this is not placed in the robot's kinematic state 
 	bool                                          m_haveBasePos;	
 	double                                        m_basePos[3];
-	std_msgs::Pose                                m_robotPose;
+	tf::Pose                                      m_pose;
+	robot_msgs::PoseWithCovariance                m_localizedPose;
 	
 	// info about the robot's joints
 	robot_msgs::MechanismState                    m_mechanismState;

@@ -5,6 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="rosconsole" />
+  <depend package="tf" />
   <depend package="boost" />
 
   <depend package="std_msgs" />
