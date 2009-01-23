@@ -1,6 +1,6 @@
 <package>
   <license>BSD</license>
-  <review status="unreviewed" notes="API review in progress (Brian)"/>
+  <review status="deprecated" notes=""/>
   <author>Morgan Quigley, Ioan Sucan</author>
   <depend package="boost" />
   <export>
