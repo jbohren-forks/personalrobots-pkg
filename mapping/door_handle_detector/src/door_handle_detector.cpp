@@ -428,6 +428,7 @@ class DoorHandleDetector : public ros::Node
           }
         }
       }
+      handle_indices.resize (nr_p);
 
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
