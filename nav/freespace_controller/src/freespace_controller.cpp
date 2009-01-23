@@ -35,39 +35,18 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 
-//check the orientation of a pt c with respect to the vector a->b
-// orient(a, b, c) < 0 -----> Left
-// orient(a, b, c) > 0 -----> Right
-double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const std_msgs::Point2DFloat32& c){
-  double acx = a.x - c.x;
-  double bcx = b.x - c.x;
-  double acy = a.y - c.y;
-  double bcy = b.y - c.y;
-  return acx * bcy - acy * bcx;
-}
-
-//check if a point is in a polygon
-//a point is in a polygon iff the orientation of the point
-//with respect to sides of the polygon is the same for every
-//side of the polygon
-bool ptInPolygon(const std_msgs::Point2DFloat32& pt, const vector<std_msgs::Point2DFloat32>& poly){
-  bool all_left = false;
-  bool all_right = false
-  for(unsigned int i = 0; i < poly.size() - 1; ++i){
-    Point a = poly[i];
-    Point b = poly[i + 1];
-    //if pt left of a->b
-    if(orient(a, c, pt) < 0){
-      if(all_right)
-        return false;
-      all_left = true;
-    }
-    //if pt right of a->b
-    else{
-      if(all_left)
-        return false;
-      all_right = true;
-    }
+//check the robot footprint given the current position and orientation of the robot
+bool legalFootprint(double x, double y, double theta){
+  //build the oriented footprint
+  double cos_th = cos(theta);
+  double sin_th = sin(theta);
+  vector<std_msgs::Point2DFloat32> oriented_footprint;
+  for(unsigned int i = 0; i < footprint_.size(); ++i){
+    Point2DFloat32 new_pt;
+    new_pt.x = x + (footprint_[i].x * cos_th - footprint_[i].y * sin_th);
+    new_pt.y = y + (footprint_[i].x * sin_th + footprint_[i].y * cos_th);
+    oriented_footprint.push_back(new_pt);
   }
+
   return true;
 }
