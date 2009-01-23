@@ -165,6 +165,11 @@ namespace kinematic_planning
 	    return result;
 	}
 	
+	const robot_msgs::PoseConstraint& getConstraintMessage(void) const
+	{
+	    return m_pc;
+	}
+	
 	virtual void print(std::ostream &out = std::cout) const
 	{
 	    if (m_link)
