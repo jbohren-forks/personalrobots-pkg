@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="joy_node" type="joy_annotator" respawn="false"/> 
+
+</launch>
+
