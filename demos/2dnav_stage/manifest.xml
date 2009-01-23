@@ -11,4 +11,5 @@
   <depend package="rosstage"/>
   <depend package="map_server"/>
   <depend package="wavefront_player"/>
+  <depend package="highlevel_controllers"/>
 </package>
