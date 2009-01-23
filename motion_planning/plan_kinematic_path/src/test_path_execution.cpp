@@ -41,6 +41,8 @@
 
 #include <kinematic_planning/KinematicStateMonitor.h>
 #include <pr2_mechanism_controllers/JointTraj.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <cassert>
     
 class TestExecutionPath : public ros::Node,
@@ -53,6 +55,7 @@ public:
     {
 	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);	
 	sleep_duration_ = 4;
+	use_topic_ = true;
     }
     
     void testJointLimitsRightArm(void)
@@ -79,7 +82,7 @@ public:
 	    
 	    // check the value of the joint at small increments
             planning_models::KinematicModel::StateParams *sp = m_kmodel->newStateParams();
-            for (double val = joint->limit[0] ; val <= joint->limit[1] ; val += 0.05)
+            for (double val = joint->limit[0] ; val <= joint->limit[1] ; val += 0.1)
             {
              	double to_send[controllerDim];
                 for (int i = 0 ;  i < controllerDim ; ++i)
@@ -91,10 +94,40 @@ public:
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     traj.points[0].positions[i] = to_send[i];
 		
-                publish("right_arm_trajectory_command", traj);
-	        sleep(sleep_duration_);
-
-		printf("Sending: ");
+		if (use_topic_)
+		{
+		    publish("right_arm_trajectory_command", traj);
+		    sleep(sleep_duration_);
+		}		
+		else
+		{
+		    pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
+		    pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+		    
+		    pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
+		    pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+		    
+		    send_traj_start_req.traj = traj;
+		    int traj_done = -1;
+		    if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+		    {
+			ROS_INFO("Sent trajectory to controller");
+			
+			send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
+			while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
+			{
+			    if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))  
+				traj_done = send_traj_query_res.done;
+			    else
+			    {
+				ROS_ERROR("Trajectory query failed");
+			    }
+			}
+			ROS_INFO("Trajectory execution is complete");	    
+		    }
+		}
+		
+		printf("Sent: ");
 		for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
 		    printf("%f ", traj.points[0].positions[i]);
 		printf("\n");
@@ -114,7 +147,8 @@ public:
     
 protected:
     
-    int sleep_duration_;
+    int  sleep_duration_;
+    bool use_topic_;
     
 };
 
