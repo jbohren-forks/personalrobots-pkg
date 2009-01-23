@@ -685,6 +685,9 @@ int
   ros::init (argc, argv);
 
   DoorHandleDetector p;
+  door_handle_detector::Door::request req;
+  door_handle_detector::Door::response resp;
+  ros::service::call ("door_handle_detector", req, resp);
   p.spin ();
 
   ros::fini ();
