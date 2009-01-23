@@ -225,6 +225,8 @@ namespace ros {
 
       tf::TransformListener tf_; /**< Used to do transforms */
 
+      std::string global_frame_; /**< Which is our global frame? Usually "map" */
+
       // Observation Buffers are dynamically allocated since their constructors take
       // arguments bound by lookup to the param server. This could be chnaged with some reworking of how paramaters
       // are looked up. If we wanted to generalize this node further, we could use a factory pattern to dynamically

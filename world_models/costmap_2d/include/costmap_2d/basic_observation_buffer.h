@@ -47,7 +47,7 @@ namespace costmap_2d {
    */
   class BasicObservationBuffer : public ObservationBuffer {
   public:
-    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter = NULL);
+    BasicObservationBuffer(const std::string& frame_id, const std::string& global_frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter = NULL);
 
     virtual void buffer_cloud(const std_msgs::PointCloud& local_cloud);
 

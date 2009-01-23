@@ -163,7 +163,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
         goal.goal.y = pos_.y;
         goal.goal.th = angle;
         goal.enable = 1;
-	goal.header.frame_id = "map";
+	goal.header.frame_id = panel_->getGlobalFrame();
         printf("setting goal: %.3f %.3f %.3f\n", goal.goal.x, goal.goal.y, goal.goal.th);
         ros_node_->publish( "goal", goal );
       }

@@ -156,6 +156,7 @@ public:
   float getMapResolution() { return map_resolution_; }
   int getMapWidth() { return map_width_; }
   int getMapHeight() { return map_height_; }
+  const std::string& getGlobalFrame() { return global_frame_id_; }
 
 protected:
 
@@ -233,6 +234,9 @@ protected:
   int mouse_y_;                                           ///< Y position of the last mouse event
 
   float scale_;
+
+  // Global frame (usually "map")
+  std::string global_frame_id_;
 
   bool new_cloud_;
   bool new_gui_path_;

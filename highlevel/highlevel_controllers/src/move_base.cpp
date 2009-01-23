@@ -89,6 +89,8 @@ namespace ros {
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
       double weight(0.1); // Scale costs down by a factor of 10
+      // Which frame is "global"
+      param("/global_frame_id", global_frame_, std::string("map"));
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
        
@@ -160,19 +162,19 @@ namespace ros {
       }
 
       // Then allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, 
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_, 
 							       ros::Duration().fromSec(base_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, 
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), global_frame_, tf_, 
 							       ros::Duration().fromSec(tilt_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
-      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), tf_, 
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), global_frame_, tf_, 
 								  ros::Duration().fromSec(low_obstacle_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
 								  inscribedRadius, -10.0, maxZ_, filter_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), tf_, 
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), global_frame_, tf_, 
 								  ros::Duration().fromSec(stereo_keepalive), 
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_, filter_);
@@ -305,7 +307,7 @@ namespace ros {
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
       tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
-				 "tilt_laser_cloud_filtered", "map", 50);
+				 "tilt_laser_cloud_filtered", global_frame_, 50);
       subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
       subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
       subscribe("obstacle_cloud",  groundPlaneCloudMsg_,  &MoveBase::groundPlaneCloudCallback, 1);
@@ -353,7 +355,7 @@ namespace ros {
       robotPose.stamp_ = ros::Time();
 
       try{
-        tf_.transformPose("map", robotPose, global_pose_);
+        tf_.transformPose(global_frame_, robotPose, global_pose_);
       }
       catch(tf::LookupException& ex) {
         ROS_INFO("No Transform available Error\n");
@@ -391,7 +393,7 @@ namespace ros {
       goalPose.stamp_ = ros::Time();
 
       try{
-        tf_.transformPose("map", goalPose, transformedGoalPose);
+        tf_.transformPose(global_frame_, goalPose, transformedGoalPose);
       }
       catch(tf::LookupException& ex){
         ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
@@ -743,7 +745,7 @@ namespace ros {
       target_point.point.y = pty;
       target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
-      target_point.header.frame_id = "map";
+      target_point.header.frame_id = global_frame_;
       publish("head_controller/head_track_point", target_point);
       return planOk;
     }
