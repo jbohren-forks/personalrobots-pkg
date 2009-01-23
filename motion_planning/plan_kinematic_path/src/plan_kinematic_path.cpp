@@ -421,9 +421,9 @@ int main(int argc, char **argv)
 	plan->loadRobotDescription();
 	if (plan->loadedRobot())
 	{
-	    //	plan->waitForState();
-
-	    sleep(2);
+	    sleep(1);
+	    plan->waitForState();
+	    ROS_INFO("Received robot state");
 	    
 	    char test = (argc < 3) ? ' ' : argv[2][0];
 	    
