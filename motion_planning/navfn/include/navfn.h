@@ -109,6 +109,7 @@ class NavFn
   float *getPathX();		/**< x-coordinates of path */
   float *getPathY();		/**< x-coordinates of path */
   int   getPathLen();		/**< length of path, 0 if not found */
+  float getLastPathCost();      /**< Return cost of path found the last time A* was called */
 
   /** cell arrays */
   COSTTYPE *obsarr;		/**< obstacle array, to be expanded to cost array */
@@ -152,6 +153,10 @@ class NavFn
   float *pathx, *pathy;		/**< path points, as subpixel cell coordinates */
   int npath;			/**< number of path points */
   int npathbuf;			/**< size of pathx, pathy buffers */
+
+  float last_path_cost_; /**< Holds the cost of the path found the last time A* was called */
+
+
   int calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns path length, 0 if none */
   float gradCell(int n);	/**< calculates gradient at cell <n>, returns norm */
   float pathStep;		/**< step size for following gradient */

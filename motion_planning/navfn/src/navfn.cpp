@@ -740,12 +740,20 @@ NavFn::propNavFnAstar(int cycles)
 
     }
 
+  last_path_cost_ = potarr[startCell];
+
   ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
 
   if (potarr[startCell] < POT_HIGH) return true; // finished up here
   else return false;
+}
+
+
+float NavFn::getLastPathCost()
+{
+  return last_path_cost_;
 }
 
 
