@@ -180,7 +180,7 @@ bool CartesianVelocityControllerNode::getActual(
   robot_srvs::GetVector::request &req,
   robot_srvs::GetVector::response &resp)
 {
-  btVector3 v;
+  tf::Vector3 v;
   c_.getTipVelocity(&v);
   tf::Vector3TFToMsg(v, resp.v);
   return true;
