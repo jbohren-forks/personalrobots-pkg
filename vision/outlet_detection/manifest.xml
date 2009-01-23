@@ -1,6 +1,6 @@
 <package>
   <description>
-    Calonder feature descriptors.
+    Outlet detection and localization
   </description>
   <author>Patrick Mihelich</author>
   <license>BSD</license>
@@ -10,7 +10,6 @@
   <depend package="opencv_latest"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
-  <depend package="fast_detector"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lcalonder"/>
   </export>
