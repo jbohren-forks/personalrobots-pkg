@@ -667,7 +667,7 @@ int
   door_handle_detector::Door::response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
-//  p.spin ();
+  p.spin ();
 
   ros::fini ();
 
