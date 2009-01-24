@@ -32,6 +32,14 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+
+
+static const double no_observation_timeout_s = 0.5;
+static const double max_track_jump_m         = 1.0; 
+static const double max_meas_jump_m          = 1.0;
+
+
+
 #include "laser_processor.h"
 #include "calc_leg_features.h"
 
@@ -71,7 +79,7 @@ public:
   string object_id;
   ros::Time time_;
   ros::Time meas_time_;
-  vector<char>     color_;
+  vector<unsigned char>     color_;
 
   TransformListener& tfl_;
 
@@ -80,6 +88,7 @@ public:
 
   Stamped<Point> prop_loc_;
 
+  // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
     : tfl_(tfl),
       sys_sigma_(Vector3(0.05, 0.05, 0.05), Vector3(1.0, 1.0, 1.0)),
@@ -99,9 +108,10 @@ public:
     StatePosVel prior_sigma(Vector3(0.1,0.1,0.1), Vector3(0.0000001, 0.0000001, 0.0000001));
     filter_.initialize(loc, prior_sigma, time_.toSec());    
 
-    color_.push_back(rand()%255);
-    color_.push_back(rand()%255);
-    color_.push_back(rand()%255);
+    color_.push_back((unsigned char)(rand()%255));
+    color_.push_back((unsigned char)(rand()%255));
+    color_.push_back((unsigned char)(rand()%255));
+    cout << "Color " << color_[0] << " or " << rand()%255 << " or " << (int)(color_[0]) << endl;
   }
 
   void propagate(ros::Time time)
@@ -180,6 +190,8 @@ char** g_argv;
 static const string fixed_frame = "odom";
 
 
+
+// actual legdetector node
 class LegDetector : public Node
 {
 public:
@@ -204,10 +216,6 @@ public:
 
   int feature_id_;
 
-  float max_track_jump_;
-
-  float max_meas_jump_;
-
   MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
   MessageNotifier<std_msgs::LaserScan>*  laser_notifier_;
 
@@ -216,9 +224,7 @@ public:
     tfl_(*this), 
     mask_count_(0), 
     connected_thresh_(0.06), 
-    feat_count_(0), 
-    max_track_jump_(1.0), 
-    max_meas_jump_(1.0)
+    feat_count_(0)
   {
     if (g_argc > 1) {
       forest.load(g_argv[1]);
@@ -254,31 +260,29 @@ public:
 
 
 
-
+  // Find the tracker that is closest to this person message
+  // If a tracker was already assigned to a person, keep this assignement when the distance between them is not too large.
   void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
     Point pt;
-
     PointMsgToTF(people_meas->pos, pt);
-
     boost::mutex::scoped_lock lock(saved_mutex_);
 
     list<SavedFeature*>::iterator closest = saved_features_.end();
-    float closest_dist = max_meas_jump_;
+    float closest_dist = max_meas_jump_m;
       
+    // loop over trackers
     list<SavedFeature*>::iterator it  = saved_features_.begin();
     list<SavedFeature*>::iterator end = saved_features_.end();
-
     for (; it != end; ++it )
     {
+      // transform people position into local frame with the origin at the tracker position 
       Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
-
-
       tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
                             loc, fixed_frame, loc);
       loc[2] = 0.0;
-      
       float dist = loc.length();
+      // distance between tracker and people position
       if ( dist < closest_dist )
       {
         closest = it;
@@ -288,18 +292,19 @@ public:
       // If we're already tracking the object
       if ((*it)->object_id == people_meas->object_id)
       {
-        if (dist < max_meas_jump_)
-          return; // This should instead check that it's still close
+        if (dist < max_meas_jump_m)
+          return; 
+	// remove link between tracker and person
         else
-        {
           (*it)->object_id = "";
-        }
       }
     }
 
-    if (closest_dist < max_meas_jump_)
+    if (closest_dist < max_meas_jump_m)
       (*closest)->object_id = people_meas->object_id;
   }
+
+
 
 
 
@@ -317,8 +322,8 @@ public:
 
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
 
-    ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-5.0);
-
+    // if no measurement matches to a tracker in the last <no_observation_timeout>  seconds: erase tracker
+    ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-no_observation_timeout_s);
     list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
     while (sf_iter != saved_features_.end())
     {
@@ -330,9 +335,21 @@ public:
       else
         ++sf_iter;
     }
-    // Build up the set of "candidate" clusters
-    list<SampleSet*> candidates;
 
+
+    // System update of trackers, an copy updated ones in propagates list
+    list<SavedFeature*> propagated;
+    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
+         sf_iter != saved_features_.end();
+         sf_iter++)
+    {
+      (*sf_iter)->propagate(scan->header.stamp);
+      propagated.push_back(*sf_iter);
+    }
+
+
+    // Detection step: build up the set of "candidate" clusters
+    list<SampleSet*> candidates;
     for (list<SampleSet*>::iterator i = processor.getClusters().begin();
          i != processor.getClusters().end();
          i++)
@@ -348,33 +365,23 @@ public:
       }
     }
 
-    list<SavedFeature*> propagated;
-    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
-         sf_iter != saved_features_.end();
-         sf_iter++)
-    {
-      (*sf_iter)->propagate(scan->header.stamp);
-      propagated.push_back(*sf_iter);
-    }
 
+    // For each candidate, find the closest tracker (within threshold) and add to the match list
+    // If no tracker is found, start a new one
     multiset<MatchedFeature> matches;
-
-    //Find point which is closest to a saved feature, within threshold
     for (list<SampleSet*>::iterator cf_iter = candidates.begin();
-         cf_iter != candidates.end();
-         cf_iter++)
-    {
+         cf_iter != candidates.end(); cf_iter++){
       Stamped<Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
       tfl_.transformPoint("odom", loc, loc);
 
       list<SavedFeature*>::iterator closest = propagated.end();
-      float closest_dist = max_track_jump_;
+      float closest_dist = max_track_jump_m;
       
       for (list<SavedFeature*>::iterator pf_iter = propagated.begin();
            pf_iter != propagated.end();
            pf_iter++)
       {
-        // If it is close to a saved feature
+        // find the closest distance between candidate and trackers
         float dist = loc.distance((*pf_iter)->prop_loc_);
         if ( dist < closest_dist )
         {
@@ -382,19 +389,22 @@ public:
           closest_dist = dist;
         }
       }
-      
-      if (closest == propagated.end()) // Nothing close to it, start a new track
+      // Nothing close to it, start a new track
+      if (closest == propagated.end()) 
       {
         list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
-
         (*cf_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
       }
+      // Add the candidate, the tracker and the distance to a match list
       else
-      {
         matches.insert(MatchedFeature(*cf_iter,*closest,closest_dist));
-      }
     }
 
+
+
+
+    // loop through _sorted_ matches list
+    // find the match with the shortest distance for each tracker
     while (matches.size() > 0)
     {
       multiset<MatchedFeature>::iterator matched_iter = matches.begin();
@@ -402,40 +412,46 @@ public:
       list<SavedFeature*>::iterator pf_iter = propagated.begin();
       while (pf_iter != propagated.end())
       {
+	// update the tracker with this candidate
         if (matched_iter->closest_ == *pf_iter)
         {
-          // It was actually the closest... do our thing
+	  // Transform candidate to odom frame
           Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
           tfl_.transformPoint("odom", loc, loc);          
 
+	  // Update the tracker with the candidate location
           matched_iter->closest_->update(loc);
           
-          matched_iter->candidate_->appendToCloud(filt_cloud_, matched_iter->closest_->color_[0], matched_iter->closest_->color_[1], matched_iter->closest_->color_[2]);
-
+	  // visualize
+          matched_iter->candidate_->appendToCloud(filt_cloud_, matched_iter->closest_->color_[0], 
+						  matched_iter->closest_->color_[1], matched_iter->closest_->color_[2]);
+	  // remove this match and 
           matches.erase(matched_iter);
           propagated.erase(pf_iter++);
           found = true;
           break;
         }
+	// still looking for the tracker to update
         else
         {
           pf_iter++;
         }
       }
+
+      // didn't find tracker to update, because it was deleted above
+      // try to assign the candidate to another tracker
       if (!found)
       {
-        // Search for new closest:
         Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
         tfl_.transformPoint("odom", loc, loc);
 
         list<SavedFeature*>::iterator closest = propagated.end();
-        float closest_dist = max_track_jump_;
+        float closest_dist = max_track_jump_m;
       
         for (list<SavedFeature*>::iterator remain_iter = propagated.begin();
              remain_iter != propagated.end();
              remain_iter++)
         {
-          // If it is close to a saved feature
           float dist = loc.distance((*remain_iter)->prop_loc_);
           if ( dist < closest_dist )
           {
@@ -444,6 +460,8 @@ public:
           }
         }
 
+	// no tracker is within a threshold of this candidate
+	// so create a new tracker for this candidate
         if (closest == propagated.end())
         {
           list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
@@ -459,6 +477,7 @@ public:
       }
     }
 
+    // visualization
     filt_cloud_.header.stamp = scan->header.stamp;
     filt_cloud_.header.frame_id = scan->header.frame_id;
     publish("filt_cloud", filt_cloud_);
@@ -476,13 +495,14 @@ public:
       // publish filter result
       StatePosVel est;
       (*sf_iter)->filter_.getEstimate(est);
-      
       filter_visualize[i].x = est.pos_[0];
       filter_visualize[i].y = est.pos_[1];
       filter_visualize[i].z = est.pos_[2];
-
-      int rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | (*sf_iter)->color_[2];
-
+      int rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | ((*sf_iter)->color_[2]);
+      //cout << "color 0 " << (int)((*sf_iter)->color_[0]) << endl;
+      //cout << "color 1 " << (int)((*sf_iter)->color_[1]) << endl;
+      //cout << "color 2 " << (int)((*sf_iter)->color_[2]) << endl;
+      //cout << "rgb" << rgb << endl;
       weights[i] = *(float*)&(rgb);
 
       if ((*sf_iter)->meas_time_ == scan->header.stamp)
