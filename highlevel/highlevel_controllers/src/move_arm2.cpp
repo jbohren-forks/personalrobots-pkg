@@ -81,8 +81,8 @@
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
 
-#include <robot_srvs/KinematicPlanState.h>
-#include <robot_srvs/KinematicPlanLinkPosition.h>
+#include <robot_srvs/KinematicReplanState.h>
+#include <robot_srvs/KinematicReplanLinkPosition.h>
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 #include <robot_msgs/KinematicPlanStatus.h>
@@ -117,8 +117,9 @@ private:
   const std::string kinematic_model_;
   bool have_new_traj_;
   bool replanning_;
-  robot_srvs::KinematicPlanState::request active_request_state_;
-  robot_srvs::KinematicPlanLinkPosition::request active_request_link_position_;
+  int plan_id_;
+  robot_srvs::KinematicReplanState::request active_request_state_;
+  robot_srvs::KinematicReplanLinkPosition::request active_request_link_position_;
   robot_msgs::KinematicPlanStatus kps_msg_;
 
   // HighlevelController interface that we must implement
@@ -142,7 +143,9 @@ MoveArm::MoveArm(const std::string& node_name,
                  const std::string& kinematic_model)
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(node_name, state_topic, goal_topic),
     kinematic_model_(kinematic_model),
-    have_new_traj_(false)
+    have_new_traj_(false),
+    replanning_(false),
+    plan_id_(-1)
 {
   // TODO: subscribe to relevant topics
   ros::Node::subscribe("kinematic_planning_status",
@@ -166,7 +169,8 @@ bool MoveArm::makePlan()
 
   if(!goalMsg.implicit_goal)
   {
-    robot_srvs::KinematicPlanState::request  req;
+    robot_srvs::KinematicReplanState::request  req;
+    robot_srvs::KinematicReplanState::response  res;
 
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
@@ -189,12 +193,22 @@ bool MoveArm::makePlan()
       requestStopReplanning();
     replanning_ = true;
     active_request_state_ = req;
-    ros::Node::publish("replan_kinematic_path_state", req);
-    ROS_INFO("Issued a replanning request");	    
+    if(!ros::service::call("replan_kinematic_path_state", req, res))
+    {
+      ROS_WARN("Service call on replan_kinematic_path_state failed");
+      return false;
+    }
+    else
+    {
+      plan_id_ = res.id;
+      ROS_INFO("Issued a replanning request");	    
+      return true;
+    }
   }
   else
   {
-    robot_srvs::KinematicPlanLinkPosition::request req;
+    robot_srvs::KinematicReplanLinkPosition::request req;
+    robot_srvs::KinematicReplanLinkPosition::response res;
 
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
@@ -216,18 +230,26 @@ bool MoveArm::makePlan()
       requestStopReplanning();
     replanning_ = true;
     active_request_link_position_ = req;
-    ros::Node::publish("replan_kinematic_path_state", req);
-    ROS_INFO("Issued a replanning request");	    
+    if(!ros::service::call("replan_kinematic_path_position", req, res))
+    {
+      ROS_WARN("Service call on replan_kinematic_path_position failed");
+      return false;
+    }
+    else
+    {
+      plan_id_ = res.id;
+      ROS_INFO("Issued a replanning request");	    
+      return true;
+    }
   }
-
-  // TODO: Can we compute a reasonable return value here?
-  return true;
 }
 
 bool MoveArm::goalReached()
 {
-  // TODO
-  return false;
+  kps_msg_.lock();
+  bool ret = kps_msg_.done;
+  kps_msg_.unlock();
+  return ret;
 }
 
 bool MoveArm::dispatchCommands()
@@ -276,7 +298,8 @@ void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path,
 
 void MoveArm::kpsCallback()
 {
-  have_new_traj_ = true;
+  if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
+    have_new_traj_ = true;
 }
 
 class MoveRightArm: public MoveArm 
