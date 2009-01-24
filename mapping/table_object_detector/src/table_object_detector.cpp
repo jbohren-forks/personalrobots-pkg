@@ -35,9 +35,7 @@
 
 \author Radu Bogdan Rusu
 
-@b table_object_detector detects doors and handles.
-
-\note Assumes the door frame points are given in the same coordinate system as the incoming point cloud message!
+@b table_object_detector detects tables and objects.
 
  **/
 
@@ -171,41 +169,6 @@ class TableObjectDetector : public ros::Node
         getParam ("~frame_distance_eps", frame_distance_eps_);
       if (hasParam ("~input_cloud_topic"))
         getParam ("~input_cloud_topic", input_cloud_topic_);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      get3DBounds (Point32 *p1, Point32 *p2, Point32 &minB, Point32 &maxB)
-    {
-      // Get the door_frame distance in the X-Y plane
-      float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
-
-      float center[2];
-      center[0] = (p1->x + p2->x) / 2.0;
-      center[1] = (p1->y + p2->y) / 2.0;
-
-      // Obtain the bounds (doesn't matter which is min and which is max at this point)
-      minB.x = center[0] + (3 * door_frame) / 2.0 + frame_distance_eps_;
-      minB.y = center[1] + (3 * door_frame) / 2.0 + frame_distance_eps_;
-      minB.z = min_z_bounds_;
-
-      maxB.x = center[0] - (3 * door_frame) / 2.0 + frame_distance_eps_;
-      maxB.y = center[1] - (3 * door_frame) / 2.0 + frame_distance_eps_;
-      maxB.z = max_z_bounds_;
-
-      // Order min/max
-      if (minB.x > maxB.x)
-      {
-        float tmp = minB.x;
-        minB.x = maxB.x;
-        maxB.x = tmp;
-      }
-      if (minB.y > maxB.y)
-      {
-        float tmp = minB.y;
-        minB.y = maxB.y;
-        maxB.y = tmp;
-      }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
