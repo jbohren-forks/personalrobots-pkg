@@ -10,11 +10,10 @@ Library for doing transformations.
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="ros_exception"/>
-<depend package="boost"/>
 <depend package="angles"/>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -loldTF"/>
+<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -loldTF `rosboost-cfg --lflags thread`"/>
 </export>
 </package>

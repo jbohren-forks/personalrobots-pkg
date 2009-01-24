@@ -4,8 +4,12 @@ add_definitions(-Wall)
 rospack(openraveros)
 genmsg()
 gensrv()
+
+rospack_add_boost_directories()
+
 rospack_add_executable(openraveros src/openraveros.cpp)
-target_link_libraries (openraveros openrave-core boost_thread)
+target_link_libraries (openraveros openrave-core)
+rospack_link_boost(openraveros thread)
 
 # add sessions dependency
 find_ros_package(roscpp_sessions)

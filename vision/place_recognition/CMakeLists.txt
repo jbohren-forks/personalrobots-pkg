@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(place_recognition)
+
+rospack_add_boost_directories()
+
 # set(ROS_BUILD_TYPE Release)
 rospack_add_library(place_recognition src/kmeans.cpp src/vocabulary_tree.cpp)
 rospack_add_compile_flags(place_recognition -g -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)

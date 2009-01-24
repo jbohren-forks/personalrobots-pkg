@@ -7,7 +7,6 @@
 <depend package="std_msgs" />
 <depend package="robot_msgs" />
 <depend package="tf" />
-<depend package="boost"/>
 <depend package="gtest"/>
 <depend package="rosrecord"/>
 </package>

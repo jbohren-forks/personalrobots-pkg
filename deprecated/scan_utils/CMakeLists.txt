@@ -4,6 +4,8 @@ rospack(scan_utils)
 add_definitions(-Wall)
 genmsg()
 
+rospack_add_boost_directories()
+
 # Where's a better place to get this list of libraries?
 set(vtk_libs vtkRendering vtkGraphics vtkImaging vtkIO vtkFiltering vtkCommon vtksys pthread dl m vtkDICOMParser vtkftgl vtkHybrid vtkFiltering vtkGraphics)
 
@@ -11,6 +13,7 @@ rospack_add_library(scanutils src/smartScan.cpp src/dataTypes.cpp src/intersecti
 target_link_libraries(scanutils ${vtk_libs})
 rospack_add_library(listennode src/listen_node/scanListenNode.cpp src/listen_node/rosSystemCalls.cpp)
 target_link_libraries(listennode ${vtk_libs} scanutils)
+rospack_link_boost(listennode thread)
 
 rospack_add_executable(cloudToOctree src/cloudToOctree/cloudToOctree.cpp)
 target_link_libraries(cloudToOctree scanutils ${vtk_libs})

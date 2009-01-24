@@ -3,6 +3,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(visual_odometry)
 genmsg()
 
+rospack_add_boost_directories()
+
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
 

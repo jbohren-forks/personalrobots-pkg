@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
-  <depend package="boost"/>
   <depend package="eigen"/>
   <depend package="star_detector"/>
   <depend package="calonder_descriptor"/>

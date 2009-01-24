@@ -16,7 +16,6 @@
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
   <depend package="roscpp"/>
-  <depend package="boost"/>
   <depend package="std_msgs"/>
   <depend package="opencv_latest"/>
   <depend package="image_msgs"/>

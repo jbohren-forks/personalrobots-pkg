@@ -8,9 +8,8 @@
 <depend package="std_msgs" />
 <depend package="pr2_msgs" />
 <depend package="tf" />
-<depend package="boost"/>
 <depend package="robot_filter" />
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread`"/>
 </export>
 </package>

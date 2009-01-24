@@ -19,9 +19,8 @@ FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
-BOOST_ROOT = $(shell rospack find boost)/boost
-
-CCFLAGS=-I${BOOST_ROOT}/include 
+BOOST_CFLAGS = $(shell rosboost-cfg --cflags)
+BOOST_LFLAGS = $(shell rosboost-cfg --lflags signals,thread)
 
 build: SVN_UP_REVERT_PATCH gazebo
 
@@ -29,9 +28,9 @@ build: SVN_UP_REVERT_PATCH gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/worlds; mkdir -p gazebo/share/gazebo/Media; fi
 	cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_system-mt -lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib'
+	scons mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)"
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_system-mt -lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib' install
+	scons mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)" install
 	touch gazebo
 
 ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original

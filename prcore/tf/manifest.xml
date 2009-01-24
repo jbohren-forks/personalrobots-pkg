@@ -14,9 +14,8 @@ Library for doing transformations.
 <depend package="roscpp"/>
 <depend package="rosconsole"/>
 <depend package="bullet"/>
-<depend package="boost"/>
 <depend package="rospy"/>
 <export>
-<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf"/>
+<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf `rosboost-cfg --lflags thread`"/>
 </export>
 </package>

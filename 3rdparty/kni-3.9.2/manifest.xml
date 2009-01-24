@@ -3,7 +3,6 @@
   <description>Control library and demos for the Katana arm</description>
   <license>GPL</license>
   <review status="3rdparty" notes=""/>
-  <depend package="boost"/>
   <url>http://www.neuronics.ch</url>
   <export>
     <cpp cflags="-I${prefix}/KNI_3.9.2/include" lflags="-L${prefix}/KNI_3.9.2/lib/linux -lKNI_LM -lKNI_InvKin -lKNIBase"/>

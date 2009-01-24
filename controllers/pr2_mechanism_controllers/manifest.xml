@@ -18,7 +18,6 @@
   <depend package="robot_kinematics" />
   <depend package="rosconsole" />
   <depend package="trajectory" />
-  <depend package="boost" />
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />

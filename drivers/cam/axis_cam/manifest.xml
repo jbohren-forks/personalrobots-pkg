@@ -15,7 +15,6 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
 <depend package="std_srvs"/>
-<depend package="boost"/>
 <depend package="string_utils"/>
 <depend package="image_utils"/>
 <depend package="self_test"/>

@@ -8,7 +8,6 @@
   <url>http://pr.willowgarage.com/wiki/robot_self_filter</url>
   <depend package="laser_scan"/>
   <depend package="tf"/>
-  <depend package="boost"/>
 
   <!-- openrave is necessary for getting the geometry of the links of the robot.
        Cannot use URDF because openrave2urdf does not exist and some robots only have openrave descriptions. -->

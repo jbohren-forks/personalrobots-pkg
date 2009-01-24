@@ -10,7 +10,6 @@
   <review status="deprecated" notes="replaced by mechanism_model + xacro"/>
 
   <depend package="rosconsole" />
-  <depend package="boost"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lresource_locator"/>

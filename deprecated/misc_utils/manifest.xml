@@ -9,9 +9,8 @@
   <review status="unreviewed" notes="API review in progress (Stu)"/>
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp" />
-  <depend package="boost" />
   <export>
-    <cpp cflags="-I${prefix}/include" />
+    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="`rosboost-cfg --lflags thread`" />
   </export>
 </package>
 

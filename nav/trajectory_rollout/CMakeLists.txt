@@ -4,6 +4,8 @@ set(ROS_BUILD_TYPE Release)
 rospack(trajectory_rollout)
 genmsg()
 
+rospack_add_boost_directories()
+
 #uncomment for profiling
 #set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
@@ -16,7 +18,7 @@ target_link_libraries(trajectory_rollout costmap_2d)
 
 rospack_add_executable(governor_node src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp)
-
+rospack_link_boost(governor_node thread)
 target_link_libraries(governor_node costmap_2d)
 
 rospack_add_gtest(utest test/utest.cpp src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp src/trajectory.cpp)

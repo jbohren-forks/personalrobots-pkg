@@ -5,7 +5,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="trex" />
   <depend package="roscpp"/>
-  <depend package="boost"/>
   <depend package="rosconsole"/>
   <depend package="rospy" />
   <depend package="highlevel_controllers" />

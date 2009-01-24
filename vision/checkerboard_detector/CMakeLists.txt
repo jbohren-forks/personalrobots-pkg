@@ -3,6 +3,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(checkerboard_detector)
 rospack_add_executable(checkerboard_detector checkerboard_detector.cpp)
 
+rospack_add_boost_directories()
+rospack_link_boost(checkerboard_detector thread)
+
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)
 include(CheckLibraryExists)

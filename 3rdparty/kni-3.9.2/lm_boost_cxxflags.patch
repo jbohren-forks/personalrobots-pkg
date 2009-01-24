@@ -5,7 +5,7 @@
  
  CXX		=	g++
 -CXXFLAGS	+=	-fPIC -g -O2 -Wall
-+CXXFLAGS	+=	-fPIC -g -O2 -Wall `rospack export/cpp/cflags boost`
++CXXFLAGS	+=	-fPIC -g -O2 -Wall `rosboost-cfg --cflags`
  
  MAJOR_VERSION	=	3.9
  MINOR_VERSION	=	0
