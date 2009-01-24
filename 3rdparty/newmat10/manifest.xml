@@ -9,7 +9,7 @@ This ROS package also supplies a small patch which enables namespaces and stream
 
 </description>
 <author>Robert Davies</author>
-<license url="http://www.robertnz.net/nm10.htm#use">ZLIB</license>
+<license url="http://www.robertnz.net/nm10.htm#use">ZLib</license>
 <review status="3rdparty" notes=""/>
 <url>http://www.robertnz.net/nm_intro.htm</url>
 <export>
