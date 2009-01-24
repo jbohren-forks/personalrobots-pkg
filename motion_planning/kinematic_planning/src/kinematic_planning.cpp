@@ -167,6 +167,9 @@ public:
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.valid = 1;
+	m_publishStatus = true;
+	
+	m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this)); 
 
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
 	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
@@ -178,9 +181,12 @@ public:
     /** Free the memory */
     virtual ~KinematicPlanning(void)
     {
+	m_publishStatus = false;
 	stopReplanning();
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
+	m_statusThread->join();
+	delete m_statusThread;
     }
         
     void stopReplanning(void)
@@ -218,6 +224,18 @@ public:
 	return true;
     }
     
+    void publishStatus(void)
+    {
+	ros::Duration duration(0.5);	
+	while (m_publishStatus)
+	{
+	    duration.sleep();
+	    m_statusLock.lock();	    
+	    publish("kinematic_planning_status", m_currentPlanStatus);
+	    m_statusLock.unlock();	    
+	}
+    }
+    
     bool replanToState(robot_srvs::KinematicReplanState::request &req, robot_srvs::KinematicReplanState::response &res)
     {
 	ROS_INFO("Request for replanning to a state");
@@ -238,13 +256,15 @@ public:
 	    m_replanningLock.lock();
 	    m_replanning = true;
 	    
+	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
 	    m_currentPlanStatus.valid = 1;
 	    m_currentPlanStatus.path.set_states_size(0);
 	    m_currentPlanStatus.done = 0;
 	    m_currentPlanStatus.distance = -1.0;
 	    res.id = m_currentPlanStatus.id;
-	    
+	    m_statusLock.unlock();	    
+
 	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToStateThread, this));
 	    m_replanningLock.unlock();
 	    st = true;
@@ -275,13 +295,15 @@ public:
 	    m_replanningLock.lock();
 	    m_replanning = true;
 
+	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
 	    m_currentPlanStatus.valid = 1;
 	    m_currentPlanStatus.path.set_states_size(0);
 	    m_currentPlanStatus.done = 0;
 	    m_currentPlanStatus.distance = -1.0;
 	    res.id = m_currentPlanStatus.id;
-	    
+	    m_statusLock.unlock();	    
+
 	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
 	    m_replanningLock.unlock();	
 	    st = true;
@@ -322,11 +344,13 @@ public:
 		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
 	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    
+	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
 	    m_currentPlanStatus.distance = distance;
 	    m_currentPlanStatus.done = trivial ? 1 : 0;
 	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
-	    
+	    m_statusLock.unlock();	    
+
 	    if (trivial)
 		break;
 	    while (!m_collisionMonitorChange)
@@ -363,7 +387,14 @@ public:
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToPositionRequest.start_state.vals[i] = start_state[i];
 	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
-	    publish("path_to_goal", solution);	    
+
+	    m_statusLock.lock();	    
+	    m_currentPlanStatus.path = solution;
+	    m_currentPlanStatus.distance = distance;
+	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    m_statusLock.unlock();
+	    
 	    if (trivial)
 		break;
 	    while (!m_collisionMonitorChange)
@@ -482,6 +513,13 @@ private:
 
     // current status of the motion planner
     robot_msgs::KinematicPlanStatus                                 m_currentPlanStatus; 
+    // lock used for changing the motion planner status
+    boost::mutex                                                    m_statusLock;
+    // status publishing thread
+    boost::thread                                                  *m_statusThread;
+    // flag used to request stopping the publishing thread
+    bool                                                            m_publishStatus;
+
 
     // the ID of the current replanning task
     int                                                             m_replanID;
@@ -498,7 +536,7 @@ private:
     // condition being broadcasted when the map is updated
     boost::condition                                                m_collisionMonitorCondition;
     // lock used in conjuction with the condition
-    boost::mutex                                                    m_continueReplanningLock;    
+    boost::mutex                                                    m_continueReplanningLock;
 };
 
 class OutputHandlerROScon : public ompl::msg::OutputHandler
