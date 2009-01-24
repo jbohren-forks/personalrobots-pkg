@@ -12,10 +12,15 @@ byte type
 string robot_link
 
 # The desired pose of the robot link
-std_msgs/Pose3D pose
+std_msgs/Pose pose
 
 # the allowed difference (square of euclidian distance) for position
 float64 position_distance
 
 # the allowed difference (shortest angular distance) for orientation
 float64 orientation_distance
+
+# a factor that gets multiplied to the orientation when computing the
+# distance to the goal.
+# Distance_to_goal = position_distance + orientation_importance * orientation_distance
+float64 orientation_importance

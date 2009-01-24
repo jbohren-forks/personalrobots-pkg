@@ -104,7 +104,7 @@ namespace kinematic_planning
 		m_pce[i]->evaluate(&dPos, &dAng);
 		if (decision)
 		    (*decision)[i] = m_pce[i]->decide(dPos, dAng);
-		distance += dPos + dAng;
+		distance += dPos + m_pce[i]->getConstraintMessage().orientation_importance * dAng;
 	    }
 	    
 	    return distance;

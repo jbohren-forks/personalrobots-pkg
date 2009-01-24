@@ -98,6 +98,10 @@ public:
 
 
 protected:
+
+  // Return true if r,c is in [0,num_rows)x[0,num_cols)
+  bool withinBounds(int r, int c) { return (r>=0)&&(r<num_rows_)&&(c>=0)&&(c<num_cols_); }
+
   BottleneckGraph graph_;
   std::map<int,BottleneckVertex> id_vertex_map_;
   RegionArray grid_cell_vertex_;

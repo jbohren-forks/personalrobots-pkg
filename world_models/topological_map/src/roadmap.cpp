@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <set>
+#include <queue>
 #include <ros/console.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
@@ -48,37 +49,111 @@ enum CellType { BOTTLENECKCELL, OBSTACLE, FREECELL, ROADMAPCELL };
 
 
 RoadmapBottleneckGraph::RoadmapBottleneckGraph(int num_rows, int num_cols, double costmap_multiplier) : 
-  IndexedBottleneckGraph(num_rows, num_cols), nav_fn_planner_(0, 0), costmap_multiplier_(costmap_multiplier)
+  IndexedBottleneckGraph(num_rows, num_cols), nav_fn_planner_(0, 0), costmap_multiplier_(costmap_multiplier), distance_map_initialized_(false)
 {}
-
-RoadmapBottleneckGraph::~RoadmapBottleneckGraph()
-{
-  delete roadmap_;
-}
 
 
 GridCell RoadmapBottleneckGraph::pointOnBorder (const Region& r1, const Region& r2)
 {
   GridCell neighbor;
-
   Region::iterator end = r2.end();
-  for (Region::iterator i=r1.begin(); i!=r1.end(); i++) {
-    for (unsigned int j=0; j<4; j++) {
-      neighbor.first = i->first+g_dx[j];
-      neighbor.second = i->second+g_dy[j];
-      if (r2.find (neighbor)!=end) {
-	return *i;
+
+  if (distance_map_initialized_) {
+    GridCell best_cell;
+    int best_distance = -1;
+
+    for (Region::iterator i=r1.begin(); i!=r1.end(); i++) {
+      for (unsigned int j=0; j<4; j++)  {
+        neighbor.first = i->first+g_dy[j];
+        neighbor.second = i->second+g_dx[j];
+        if (r2.find(neighbor)!=end) {
+          if (distance_map_[i->first][i->second]>best_distance) {
+            best_distance = distance_map_[i->first][i->second];
+            best_cell = *i; // Copy
+            break; // Out of inner loop, since we're not going to learn anything new
+          }
+        }
+      }
+    }
+
+    if (best_distance > -1) {
+      return best_cell;
+    }
+  }
+
+  else {
+    for (Region::iterator i=r1.begin(); i!=r1.end(); i++) {
+      for (unsigned int j=0; j<4; j++) {
+        neighbor.first = i->first+g_dy[j];
+        neighbor.second = i->second+g_dx[j];
+        if (r2.find (neighbor)!=end) {
+          return *i;
+        }
       }
     }
   }
-  return 0;
+  throw TopologicalMapException("Couldn't find point on border between regions");
 }
+
+
+
+
+
+
+
+void RoadmapBottleneckGraph::initializeDistanceMap ()
+{
+  distance_map_.resize(boost::extents[num_rows_][num_cols_]);
+  queue<GridCell> propagation_queue;
+
+  // Initialize with a guaranteed upper bound on distance
+  for (int r=0; r<num_rows_; r++) {
+    for (int c=0; c<num_cols_; c++) {
+      if (is_free_[r][c]) {
+        distance_map_[r][c]=num_rows_+num_cols_;
+      }
+      else {
+        distance_map_[r][c]=0;
+        GridCell cell(r,c);
+        propagation_queue.push(cell);
+      }
+    }
+  }
+  ROS_DEBUG ("Initializing %dx%d distance map", num_cols_, num_rows_);
+
+
+  // Loop over queue of propagations to do
+  int num_propagations=0;
+  while (!propagation_queue.empty()) {
+    GridCell cell=propagation_queue.front();
+    propagation_queue.pop();
+    int r=cell.first;
+    int c=cell.second;
+    int new_distance_bound=distance_map_[r][c]+1;
+
+    ROS_DEBUG_COND (!(++num_propagations%100000), "Propagation %d of %d, %d with bound %d",
+                    num_propagations, r, c, new_distance_bound);
+    
+    for (int i=0; i<4; i++) {
+      int r2=r+g_dy[i];
+      int c2=c+g_dx[i];
+      if (withinBounds(r2,c2) && distance_map_[r2][c2]>new_distance_bound) {
+        distance_map_[r2][c2]=new_distance_bound;
+        propagation_queue.push(GridCell(r2,c2));
+      }
+    }
+  }
+  ROS_INFO ("Distance map computed");
+  distance_map_initialized_=true;
+}
+  
 
 
 
 
 void RoadmapBottleneckGraph::initializeRoadmap ()
 {
+  initializeDistanceMap();
   roadmap_ = new AdjacencyListSBPLEnv<GridCell>();
 
 
@@ -113,8 +188,9 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
   VertexPairCellMap::iterator vertex_pair_iter;
 
   // Loop over open regions
+  int region=0;
   for (vertex_pair_iter=roadmap_points_.begin(); vertex_pair_iter!=roadmap_points_.end(); vertex_pair_iter++) {
-    ROS_DEBUG ("Generating roadmap points in region %d", vertexDescription(vertex_pair_iter->first).id);
+    ROS_DEBUG_COND (!(++region%100), "Generating roadmap points in region %d", vertexDescription(vertex_pair_iter->first).id);
 
     // Loop over pairs consisting of a neighboring bottleneck region and the corresponding roadmap point
     for (VertexCellMap::iterator target_vertex_iter = vertex_pair_iter->second.begin(); target_vertex_iter != vertex_pair_iter->second.end(); target_vertex_iter++) {
@@ -140,6 +216,7 @@ void RoadmapBottleneckGraph::initializeRoadmap ()
       }
     }
   }
+  ROS_INFO ("Roadmap generated");
 }
     
 
@@ -176,10 +253,10 @@ bool RoadmapBottleneckGraph::planUsingNavFn (const GridCell& start, const GridCe
     solution->reserve(len);
 
     for (int i=0; i<len; i++) {
-        GridCell c;
-        c.first=y[i];
-        c.second=x[i];
-        solution->push_back(c);
+      GridCell c;
+      c.first=y[i];
+      c.second=x[i];
+      solution->push_back(c);
     }
     
     *cost = nav_fn_planner_.getLastPathCost();
@@ -238,13 +315,36 @@ vector<GridCell> RoadmapBottleneckGraph::findOptimalPath (const GridCell& start,
     
     if (start_desc.type == OPEN) {
       ROS_DEBUG ("Start is an open region.  Looking for connectors within it.");
+      float best_cost = 1.0e10;
+
       for (VertexCellMap::iterator adjacent_pair_iter=roadmap_points_[start_vertex].begin(); adjacent_pair_iter!=roadmap_points_[start_vertex].end(); adjacent_pair_iter++) {
         float candidate_cost;
-        vector<GridCell> candidate_path;
-        connectors.push_back(adjacent_pair_iter->second);
-        planUsingNavFn (adjacent_pair_iter->second, goal, &candidate_path, &candidate_cost);
-        ROS_DEBUG_STREAM ("Adding connector " << adjacent_pair_iter->second << " with cost-to-goal " << candidate_cost);
+        int topological_cost;
+        GridCell connector = adjacent_pair_iter->second;
+        vector<GridCell> candidate_path_to_connector;
+
+        connectors.push_back(connector);
+        planUsingNavFn (start, connector, &candidate_path_to_connector, &candidate_cost);
+        candidate_cost /= 50;  // MAGIC CONSTANT - and also, figure out what the right way is to combine the navfn and sbpl costs
+        
+        roadmap_->setStartState(connector);
+        roadmap_->setGoalState(goal);
+        roadmap_->findOptimalPath(&topological_cost);
+        candidate_cost += topological_cost;
+        ROS_DEBUG ("Connector had cost-to-goal %d and total cost %f", topological_cost, candidate_cost);
+        
+        if (best_cost>candidate_cost) {
+          best_cost=candidate_cost;
+          solution=candidate_path_to_connector;
+          ROS_DEBUG ("This is the new best connector");
+        }
       }
+
+      if (best_cost == 1.0e10) {
+        ROS_WARN ("Could not find a path!");
+      }
+        
+
     }
 
     

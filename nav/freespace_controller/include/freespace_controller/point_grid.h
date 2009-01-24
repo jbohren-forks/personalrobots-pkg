@@ -40,6 +40,7 @@
 #include <list>
 #include <std_msgs/Point2DFloat32.h>
 #include <std_msgs/Point32.h>
+#include <costmap_2d/observation.h>
 
 class PointGrid{
   public:
@@ -49,8 +50,10 @@ class PointGrid{
      * @param  height The height in meters of the gird
      * @param  resolution The resolution of the grid in meters/cell
      * @param  origin The origin of the bottom left corner of the grid
+     * @param  max_z The maximum height for an obstacle to be added to the grid
+     * @param  obstacle_range The maximum distance for obstacles to be added to the grid
      */
-    PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin);
+    PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, double max_z, double obstacle_range);
 
     /**
      * @brief  Returns the points that lie within the cells contained in the specified range. Some of these points may be outside the range itself.
@@ -70,6 +73,13 @@ class PointGrid{
      */
     bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
         double inner_square_radius, double outer_square_radius);
+
+    /**
+     * @brief  Inserts observations from sensors into the point grid
+     * @param observations The observations from various sensors 
+     * @param laser_outline The polygon of the active sensor region
+     */
+    void updateGrid(const std::vector<costmap_2d::Observation> observations, const std::vector<std_msgs::Point2DFloat32> laser_outline);
 
     /**
      * @brief  Convert from world coordinates to grid coordinates
@@ -181,6 +191,8 @@ class PointGrid{
     unsigned int width_; ///< @brief The width of the grid in cells
     unsigned int height_; ///< @brief The height of the grid in cells
     std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
+    double max_z_;  ///< @brief The height cutoff for adding points as obstacles
+    double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
 
 };
 #endif

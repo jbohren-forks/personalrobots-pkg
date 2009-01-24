@@ -31,8 +31,9 @@ int operator< (const Point2D& p1, const Point2D& p2)
 
 void testPlanner (AdjacencyListSBPLEnv<Point2D>& e)
 {
+  int sol_cost;
   e.writeToStream();
-  vector<Point2D> solution = e.findOptimalPath ();
+  vector<Point2D> solution = e.findOptimalPath (&sol_cost);
   cout << "Returned plan is ";
   for (unsigned int i=0; i<solution.size(); i++) {
     cout << solution[i] << " ";

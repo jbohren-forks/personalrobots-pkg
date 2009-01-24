@@ -1,36 +1,44 @@
 #include <opencv/cv.h>
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
+#include "BlobResult.h"
 #include <cstdio>
 
 using namespace cv;
 
 char wndname[] = "Image";
 WImageBuffer3_b image, image_hsv, display;
+WImageBuffer1_b mask;
 int W, H;
-int hue_min = 11, hue_max = 18;
+int hue_min = 11, hue_max = 19;
 int sat_min = 180, sat_max = 255;
 int val_min = 0, val_max = 255;
 
 void on_trackbar(int)
 {
+  static const CvScalar colors[] = {{{255, 255, 0, 0}},
+                                    {{255, 0, 255, 0}},
+                                    {{0, 255, 255, 0}},
+                                    {{255, 0, 0, 0}},
+                                    {{0, 255, 0, 0}}};
+  static const int num_colors = sizeof(colors) / sizeof(CvScalar);
+  
   display.CopyFrom(image);
 
   if (hue_min <= hue_max && sat_min <= sat_max && val_min <= val_max) {
-    for (int i = 0; i < H; ++i) {
-      for (int j = 0; j < W; ++j) {
-        uchar hue = image_hsv(j, i)[0];
-        uchar sat = image_hsv(j, i)[1];
-        uchar val = image_hsv(j, i)[2];
-        if (hue >= hue_min && hue <= hue_max &&
-            sat >= sat_min && sat <= sat_max &&
-            val >= val_min && val <= val_max) {
-          display(j, i)[0] = 255;
-          display(j, i)[1] = 255;
-          display(j, i)[2] = 0;
-        }
-      }
+    // Calculate mask of "orange" pixels
+    cvInRangeS(image_hsv.Ipl(), cvScalar(hue_min, sat_min, val_min),
+               cvScalar(hue_max, sat_max, val_max), mask.Ipl());
+    
+    // Find outlet-sized blobs
+    CBlobResult blobs(mask.Ipl(), NULL, 100, true);
+    blobs.Filter(blobs, B_INCLUDE, CBlobGetArea(), B_GREATER, 200);
+    
+    // Draw blobs on display image, excepting first (background) blob
+    for (int i = 1; i < blobs.GetNumBlobs(); ++i) {
+      blobs.GetBlob(i)->FillBlob(display.Ipl(), colors[(i-1) % num_colors]);
     }
+    //cvSet(display.Ipl(), CV_RGB(0, 255, 255), mask.Ipl());
   }
   
   cvShowImage(wndname, display.Ipl());
@@ -38,14 +46,17 @@ void on_trackbar(int)
 
 int main(int argc, char** argv)
 {
-  if (argc < 2)
+  if (argc < 2) {
     printf("Usage: %s image\n", argv[0]);
+    return 0;
+  }
 
   image.SetIpl( cvLoadImage(argv[1], CV_LOAD_IMAGE_COLOR) );
   W = image.Width();
   H = image.Height();
   image_hsv.Allocate(W, H);
   display.Allocate(W, H);
+  mask.Allocate(W, H);
   cvCvtColor(image.Ipl(), image_hsv.Ipl(), CV_BGR2HSV);
 
   cvNamedWindow(wndname);

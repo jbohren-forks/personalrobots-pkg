@@ -332,5 +332,50 @@ namespace cloud_geometry
       return;
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Check if a 2d point (X and Y coordinates considered only!) is inside or outisde a given polygon
+      * \note (This is highly optimized code taken from http://www.visibone.com/inpoly/)
+      *       Copyright (c) 1995-1996 Galacticomm, Inc.  Freeware source code.
+      * \param point a 3D point projected onto the same plane as the polygon
+      * \param polygon a polygon
+      */
+    bool
+      isPointIn2DPolygon (std_msgs::Point32 point, std_msgs::Polygon3D polygon)
+    {
+      bool in_poly = false;
+      double x1, x2, y1, y2;
+
+      int nr_poly_points = polygon.points.size ();
+      double xold = polygon.points[nr_poly_points - 1].x;
+      double yold = polygon.points[nr_poly_points - 1].y;
+      for (int i = 0; i < nr_poly_points; i++)
+      {
+        double xnew = polygon.points[i].x;
+        double ynew = polygon.points[i].y;
+        if (xnew > xold)
+        {
+          x1 = xold;
+          x2 = xnew;
+          y1 = yold;
+          y2 = ynew;
+        }
+        else
+        {
+          x1 = xnew;
+          x2 = xold;
+          y1 = ynew;
+          y2 = yold;
+        }
+
+        if ( (xnew < point.x) == (point.x <= xold) && (point.y - y1) * (x2 - x1) < (y2 - y1) * (point.x - x1) )
+        {
+          in_poly = !in_poly;
+        }
+        xold = xnew;
+        yold = ynew;
+      }
+      return (in_poly);
+    }
+
   }
 }

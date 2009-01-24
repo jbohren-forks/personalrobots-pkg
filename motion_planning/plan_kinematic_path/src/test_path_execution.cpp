@@ -50,7 +50,7 @@ class TestExecutionPath : public ros::Node,
 {
 public:
     
-    TestExecutionPath(const std::string& robot_model) : ros::Node("plan_kinematic_path"),
+    TestExecutionPath(const std::string& robot_model) : ros::Node("test_kinematic_path"),
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
 	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);	
@@ -147,6 +147,8 @@ public:
 		printf("\n\n");
 
 		fprintf(stderr, "%f %f\n", traj.points[0].positions[index], to_send[index]);
+		break;
+		
             }
 
             delete sp;
@@ -179,7 +181,7 @@ int main(int argc, char **argv)
 	if (plan->loadedRobot())
 	{
 	    sleep(2);
-	    plan->testJointLimitsRightArm("r_shoulder_pan_joint");
+	    plan->testJointLimitsRightArm("r_elbow_flex_joint");
 	}
 	sleep(1);
 	

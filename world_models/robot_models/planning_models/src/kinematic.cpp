@@ -716,7 +716,14 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
     std::vector<Link*> links;
     getLinks(links);
     for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
 	out << links[i]->name << std::endl;
+	const btVector3 &v = links[i]->globalTrans.getOrigin();
+	out << "  origin: " << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
+	const btQuaternion &q = links[i]->globalTrans.getRotation();
+	out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
+	out << std::endl;
+    }    
 }
 
 void planning_models::KinematicModel::StateParams::print(std::ostream &out)

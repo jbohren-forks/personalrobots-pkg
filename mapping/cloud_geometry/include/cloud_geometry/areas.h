@@ -83,6 +83,7 @@ namespace cloud_geometry
     void convexHull2D (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, std_msgs::Polygon3D &hull);
     void convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull);
 
+    bool isPointIn2DPolygon (std_msgs::Point32 point, std_msgs::Polygon3D polygon);
   }
 }
 

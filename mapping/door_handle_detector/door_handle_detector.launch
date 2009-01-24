@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" respawn="true">
+    <remap from="full_cloud" to="full_cloud" />
+  </node>
+</launch>

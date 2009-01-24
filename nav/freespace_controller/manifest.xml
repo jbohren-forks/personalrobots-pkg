@@ -13,6 +13,7 @@
   <depend package="rostime" />
   <depend package="rospy" />
   <depend package="costmap_2d" />
+  <depend package="trajectory_rollout" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
