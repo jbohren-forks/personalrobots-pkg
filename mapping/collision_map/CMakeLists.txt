@@ -77,7 +77,7 @@ elseif(MSVC)
   endif()
 endif()
 
-
+gensrv()
 genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
