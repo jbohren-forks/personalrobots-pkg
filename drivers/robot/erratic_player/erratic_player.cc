@@ -101,7 +101,6 @@ class ErraticNode: public ros::Node
     QueuePointer q;
 
     std_msgs::RobotBase2DOdom odom;
-    //RobotBase2DCmdVel cmdvel;
     std_msgs::BaseVel cmdvel;
 
   tf::TransformBroadcaster tf;
@@ -317,7 +316,7 @@ main(int argc, char** argv)
                        ros::Time((long long unsigned int)floor(hdr->timestamp),
                                  (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)),
                        "odom",
-                       "base");
+                       "base_link");
                        
         
                        
