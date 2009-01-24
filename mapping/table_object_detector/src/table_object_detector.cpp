@@ -68,10 +68,12 @@
 #include <sys/time.h>
 
 #include "table_object_detector/TableService.h"
+#include "table_object_detector/Table.h"
+#include "table_object_detector/ObjectOnTable.h"
 
 using namespace std;
 using namespace std_msgs;
-
+using namespace table_object_detector;
 
 // Comparison operator for a vector of vectors
 bool
@@ -99,6 +101,9 @@ class TableObjectDetector : public ros::Node
     int k_;
     double clusters_growing_tolerance_;
     int clusters_min_pts_;
+
+    int min_points_per_object_;
+    double object_cluster_tolerance_;
 
     bool need_cloud_data_, publish_debug_;
 
@@ -128,6 +133,9 @@ class TableObjectDetector : public ros::Node
 
       param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.5);   // 0.5 m
       param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
+
+      param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.05);   // 5cm between two objects
+      param ("~min_points_per_object", min_points_per_object_, 30);           // 30 points per object cluster
 
       param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
       param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
@@ -295,7 +303,7 @@ class TableObjectDetector : public ros::Node
 
       // Find the object clusters supported by the table
       inliers.clear ();
-      findObjectClusters (&cloud_in_, &coeff, &pmap_.polygons[0], &minP, &maxP, inliers);
+      findObjectClusters (&cloud_in_, &coeff, &pmap_.polygons[0], &minP, &maxP, inliers, resp.table);
 
       // Reserve enough space
       if (publish_debug_)
@@ -324,7 +332,7 @@ class TableObjectDetector : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       findObjectClusters (PointCloud *points, vector<double> *coeff, Polygon3D *poly, Point32 *minP, Point32 *maxP,
-                          vector<int> &object_indices)
+                          vector<int> &object_indices, Table &table)
     {
       int nr_p = 0;
       Point32 pt;
@@ -351,13 +359,30 @@ class TableObjectDetector : public ros::Node
 
           if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly))
           {
-//             if (fabs (distance_to_plane) > handle_distance_door_min_threshold_)
-            {
-              object_indices[nr_p] = i;
-              nr_p++;
-            }
+            object_indices[nr_p] = i;
+            nr_p++;
           }
         }
+      }
+      object_indices.resize (nr_p);
+
+      // Find the clusters
+      nr_p = 0;
+      vector<vector<int> > object_clusters;
+      findClusters (points, &object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
+
+      table.objects.resize (object_clusters.size ());
+      for (unsigned int i = 0; i < object_clusters.size (); i++)
+      {
+        // Process this cluster and extract the centroid and the bounds
+        vector<int> object_idx = object_clusters.at (i);
+        for (unsigned int j = 0; j < object_idx.size (); j++)
+        {
+          object_indices[nr_p] = object_idx.at (j);
+          nr_p++;
+        }
+        cloud_geometry::getMinMax (points, &object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
+        cloud_geometry::nearest::computeCentroid (points, &object_idx, table.objects[i].center);
       }
       object_indices.resize (nr_p);
     }
@@ -427,6 +452,71 @@ class TableObjectDetector : public ros::Node
                 processed[nn_indices[j]] = true;
                 seed_queue.push_back (nn_indices[j]);
               }
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          vector<int> r;
+          //r.indices = seed_queue;
+          r.resize (seed_queue.size ());
+          for (unsigned int j = 0; j < r.size (); j++)
+            r[j] = indices->at (seed_queue[j]);
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+      * \param points pointer to the point cloud message
+      * \param indices pointer to a list of point indices
+      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+                    unsigned int min_pts_per_cluster = 1)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (indices->size (), false);
+
+      vector<int> nn_indices;
+      // Process all points in the indices vector
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
+          tree->getNeighborsIndices (nn_indices);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)
+          {
+            if (!processed.at (nn_indices[j]))
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
             }
           }
 
@@ -554,7 +644,22 @@ class TableObjectDetector : public ros::Node
       delete kdtree;
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool
+      spin ()
+    {
+      ros::Duration tictoc (0, 10000000);
+      while (ok ())
+      {
+        tictoc.sleep ();
 
+        table_object_detector::TableService::request req;
+        table_object_detector::TableService::response resp;
+        ros::service::call ("table_object_detector", req, resp);
+      }
+
+      return (true);
+    }
 };
 
 /* ---[ */
@@ -564,12 +669,7 @@ int
   ros::init (argc, argv);
 
   TableObjectDetector p;
-
-  table_object_detector::TableService::request req;
-  table_object_detector::TableService::response resp;
-  ros::service::call ("table_object_detector", req, resp);
-
-//  p.spin ();
+  p.spin ();
 
   ros::fini ();
 
