@@ -436,7 +436,7 @@ void NavViewPanel::updateRadiusPosition()
     tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(), "base_link");
     tf::Stamped<tf::Pose> map_pose;
 
-    tf_client_->transformPose("odom", robot_pose, map_pose);
+    tf_client_->transformPose(getGlobalFrame(), robot_pose, map_pose);
     double yaw, pitch, roll;
     map_pose.getBasis().getEulerZYX(yaw, pitch, roll);
 
