@@ -60,7 +60,7 @@ public:
     
     void runTestBase(void)
     {
-	robot_srvs::KinematicPlanState::request  req;
+	robot_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
@@ -81,8 +81,11 @@ public:
 	
 	req.params.volumeMin.x = -10.0;	req.params.volumeMin.y = -10.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 10.0;	req.params.volumeMax.y = 10.0;	req.params.volumeMax.z = 0.0;
+
+	robot_srvs::KinematicPlanState::request r;
+	r.value = req;
 	
-	performCall(req);
+	performCall(r);
     }
     
     
@@ -92,8 +95,8 @@ public:
 	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
-	    EXPECT_TRUE(res.path.get_states_size() > 2);
-	    EXPECT_TRUE(res.distance == 0.0);
+	    EXPECT_TRUE(res.value.path.get_states_size() > 2);
+	    EXPECT_TRUE(res.value.distance == 0.0);
 	}
 	else
 	{
@@ -104,7 +107,7 @@ public:
     
     void runTestLeftEEf(void)
     {
-	robot_srvs::KinematicPlanLinkPosition::request req;
+	robot_msgs::KinematicPlanLinkPositionRequest req;
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
@@ -133,7 +136,10 @@ public:
 	req.params.volumeMin.x = -5.0;	req.params.volumeMin.y = -5.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0;	req.params.volumeMax.y = 5.0;	req.params.volumeMax.z = 0.0;
 	
-	performCall(req);
+	robot_srvs::KinematicPlanLinkPosition::request r;
+	r.value = req;
+	
+	performCall(r);
     }
 
     void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
@@ -141,8 +147,8 @@ public:
 	robot_srvs::KinematicPlanLinkPosition::response res;	
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
-	    EXPECT_TRUE(res.path.get_states_size() > 0);
-	    EXPECT_TRUE(res.distance >= 0.0);
+	    EXPECT_TRUE(res.value.path.get_states_size() > 0);
+	    EXPECT_TRUE(res.value.distance >= 0.0);
 	}
 	else
 	{

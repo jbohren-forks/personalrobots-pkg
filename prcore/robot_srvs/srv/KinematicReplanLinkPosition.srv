@@ -2,4 +2,4 @@ robot_msgs/KinematicPlanLinkPositionRequest value
 
 ---
 
-robot_msgs/KinematicPlanStatus value
+int32 id

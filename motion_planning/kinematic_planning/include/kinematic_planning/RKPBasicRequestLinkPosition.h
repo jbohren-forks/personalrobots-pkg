@@ -39,6 +39,7 @@
 
 #include "kinematic_planning/RKPBasicRequest.h"
 #include <robot_srvs/KinematicPlanLinkPosition.h>
+#include <robot_srvs/KinematicReplanLinkPosition.h>
 
 namespace kinematic_planning
 {
@@ -123,7 +124,7 @@ namespace kinematic_planning
     
     /** Validate request for planning towards a link position */
     template<>
-    bool RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request>::isRequestValid(ModelMap &models, robot_srvs::KinematicPlanLinkPosition::request &req)
+    bool RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::isRequestValid(ModelMap &models, robot_msgs::KinematicPlanLinkPositionRequest &req)
     {
 	if (!areSpaceParamsValid(models, req.params))
 	    return false;
@@ -141,7 +142,7 @@ namespace kinematic_planning
     
     /** Set the goal using a destination link position */
     template<>
-    void RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_srvs::KinematicPlanLinkPosition::request &req)
+    void RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_msgs::KinematicPlanLinkPositionRequest &req)
     {
 	/* set the goal */
 	std::vector<robot_msgs::PoseConstraint> pc;

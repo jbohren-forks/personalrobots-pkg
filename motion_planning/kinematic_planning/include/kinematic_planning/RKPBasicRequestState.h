@@ -39,13 +39,14 @@
 
 #include "kinematic_planning/RKPBasicRequest.h"
 #include <robot_srvs/KinematicPlanState.h>
+#include <robot_srvs/KinematicReplanState.h>
 
 namespace kinematic_planning
 {
     
     /** Validate request for planning towards a state */
     template<>
-    bool RKPBasicRequest<robot_srvs::KinematicPlanState::request>::isRequestValid(ModelMap &models, robot_srvs::KinematicPlanState::request &req)
+    bool RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::isRequestValid(ModelMap &models, robot_msgs::KinematicPlanStateRequest &req)
     {
 	if (!areSpaceParamsValid(models, req.params))
 	    return false;
@@ -70,7 +71,7 @@ namespace kinematic_planning
     
     /** Set the goal using a destination state */
     template<>
-    void RKPBasicRequest<robot_srvs::KinematicPlanState::request>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_srvs::KinematicPlanState::request &req)
+    void RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_msgs::KinematicPlanStateRequest &req)
     {
 	/* set the goal */
 	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(psetup->si);

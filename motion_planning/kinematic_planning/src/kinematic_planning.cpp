@@ -101,10 +101,10 @@ $ kinematic_planning robotdesc/pr2
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "replan_kinematic_path_state"/KinematicPlanState::request : given a robot model, starting and goal states, this service computes and recomputes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.
+- @b "replan_kinematic_path_state"/KinematicPlanStateRequest : given a robot model, starting and goal states, this service computes and recomputes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.
 
 
-- @b "replan_kinematic_path_position"/KinematicPlanState::request : given a robot model, starting state and goal poses of certain links, this service computes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.  
+- @b "replan_kinematic_path_position"/KinematicPlanStateRequest : given a robot model, starting state and goal poses of certain links, this service computes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.  
   
 - @b "replan_stop"/Empty : signal the planner to stop replanning
 
@@ -142,10 +142,7 @@ Provides (name/type):
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
-#include <std_msgs/Empty.h>
-#include <std_msgs/String.h>
-#include <robot_srvs/PlanNames.h>
-#include <robot_srvs/NamedKinematicPlanState.h>
+#include <std_srvs/Empty.h>
 
 using namespace kinematic_planning;
 
@@ -158,22 +155,24 @@ public:
 							CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
 									      robot_model)
     {
-	advertiseService("plan_kinematic_path_state", &KinematicPlanning::planToState);
+	advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
 
-	// to be removed
-	advertiseService("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
-	advertiseService("plan_joint_state_names", &KinematicPlanning::planJointNames);
-
-
+	m_replanID = 0;
 	m_replanning = false;
 	m_replanningThread = NULL;
 	m_collisionMonitorChange = false;
-	
-	advertise<robot_msgs::KinematicPath>("path_to_goal", 1);
-	subscribe("replan_kinematic_path_state",    m_planToStateRequest,    &KinematicPlanning::planToStateRequest,     this, 1);
-	subscribe("replan_kinematic_path_position", m_planToPositionRequest, &KinematicPlanning::planToPositionRequest,  this, 1);
-	subscribe("replan_stop",                    m_replanStop,            &KinematicPlanning::stopReplanning,         this, 1);
+
+	m_currentPlanStatus.id = -1;
+	m_currentPlanStatus.distance = -1.0;
+	m_currentPlanStatus.done = 1;
+	m_currentPlanStatus.valid = 1;
+
+	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
+	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
+	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
+
+	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
     }
     
     /** Free the memory */
@@ -185,6 +184,13 @@ public:
     }
         
     void stopReplanning(void)
+    {
+	std_srvs::Empty::request  dummy1;
+	std_srvs::Empty::response dummy2;
+	stopReplanning(dummy1, dummy2);
+    }
+    
+    bool stopReplanning(std_srvs::Empty::request &req, std_srvs::Empty::response &res)
     {
 	m_replanningLock.lock();
 	bool stop = false;
@@ -209,18 +215,21 @@ public:
 	
 	m_replanningLock.unlock();
 	ROS_INFO("Replanning stopped");	
+	return true;
     }
     
-    void planToStateRequest(void)
+    bool replanToState(robot_srvs::KinematicReplanState::request &req, robot_srvs::KinematicReplanState::response &res)
     {
 	ROS_INFO("Request for replanning to a state");
+	bool st = false;
+	res.id = -1;
 	
 	stopReplanning();
 	
 	if (m_robotState)
 	{
 	    // back up the request
-	    m_currentPlanToStateRequest = m_planToStateRequest;
+	    m_currentPlanToStateRequest = req.value;
 
 	    // allocate memory for starting state, if needed
 	    m_currentPlanToStateRequest.start_state.set_vals_size(m_kmodel->stateDimension);
@@ -228,23 +237,36 @@ public:
 	    // start planning thread
 	    m_replanningLock.lock();
 	    m_replanning = true;
-	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToState, this));
+	    
+	    m_currentPlanStatus.id = ++m_replanID;
+	    m_currentPlanStatus.valid = 1;
+	    m_currentPlanStatus.path.set_states_size(0);
+	    m_currentPlanStatus.done = 0;
+	    m_currentPlanStatus.distance = -1.0;
+	    res.id = m_currentPlanStatus.id;
+	    
+	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToStateThread, this));
 	    m_replanningLock.unlock();
+	    st = true;
 	}
 	else
 	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+	
+	return st;	
     }
     
-    void planToPositionRequest(void)
+    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::request &req, robot_srvs::KinematicReplanLinkPosition::response &res)
     {
 	ROS_INFO("Request for replanning to a position");
-
+	bool st = false;
+	res.id = -1;
+	
 	stopReplanning();
 	
 	if (m_robotState)
 	{
 	    // back up the request
-	    m_currentPlanToPositionRequest = m_planToPositionRequest;
+	    m_currentPlanToPositionRequest = req.value;
 	    
 	    // allocate memory for starting state, if needed
 	    m_currentPlanToPositionRequest.start_state.set_vals_size(m_kmodel->stateDimension);
@@ -252,15 +274,37 @@ public:
 	    // start planning thread
 	    m_replanningLock.lock();
 	    m_replanning = true;
-	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPosition, this));
-	    m_replanningLock.unlock();	    
+
+	    m_currentPlanStatus.id = ++m_replanID;
+	    m_currentPlanStatus.valid = 1;
+	    m_currentPlanStatus.path.set_states_size(0);
+	    m_currentPlanStatus.done = 0;
+	    m_currentPlanStatus.distance = -1.0;
+	    res.id = m_currentPlanStatus.id;
+	    
+	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
+	    m_replanningLock.unlock();	
+	    st = true;
 	}
 	else
 	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+	
+	return st;
     }
     
+    bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
+    {
+	ROS_INFO("Request for planning to a state");
+	bool trivial = false;
+	bool result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
+	return result;
+    }
+
     /** Wait for a change in the environment and recompute the motion plan */
-    void replanToState(void)
+    void replanToStateThread(void)
     {
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
@@ -277,7 +321,12 @@ public:
 	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
 		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
 	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
-	    publish("path_to_goal", solution);
+	    
+	    m_currentPlanStatus.path = solution;
+	    m_currentPlanStatus.distance = distance;
+	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    
 	    if (trivial)
 		break;
 	    while (!m_collisionMonitorChange)
@@ -285,8 +334,19 @@ public:
 	}
     }
 
+    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
+    {	
+	ROS_INFO("Request for planning to a position");
+	bool trivial = false;
+	bool result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
+	return result;
+    }
+
     /** Wait for a change in the environment and recompute the motion plan */
-    void replanToPosition(void)
+    void replanToPositionThread(void)
     {		
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
@@ -320,200 +380,9 @@ public:
 	m_continueReplanningLock.lock();
 	m_collisionMonitorChange = true;
 	m_continueReplanningLock.unlock();
-	ROS_INFO("Notifying replanning threads");	
 	m_collisionMonitorCondition.notify_all();
     }
     
-    bool planToStateNamed(robot_srvs::NamedKinematicPlanState::request &reqn, robot_srvs::NamedKinematicPlanState::response &resn)
-    {
-        robot_srvs::KinematicPlanState::request req;
-        robot_srvs::KinematicPlanState::response res;
-
-
-
-
-        //Use name lookups to create the state vector.
-        //Find the number of parameters needed and print errors.
-        unsigned int nparam = 0;
-        for (unsigned int i = 0; i < reqn.start_state.get_joints_size(); i++) {
-            if (!m_kmodel->getJoint(reqn.start_state.names[i])) {
-                std::cerr << "Non-existant joint ignored: " << reqn.start_state.names[i] << std::endl;
-                continue;
-            }
-            nparam += m_kmodel->getJoint(reqn.start_state.names[i])->usedParams;
-            if (reqn.start_state.joints[i].get_vals_size() != m_kmodel->getJoint(reqn.start_state.names[i])->usedParams) {
-                std::cerr << "You do not have the right number of axes for a the joint: "
-                          << reqn.start_state.names[i] << " (" << reqn.start_state.joints[i].get_vals_size()
-                          << " != " << m_kmodel->getJoint(reqn.start_state.names[i])->usedParams << "). "
-                          << "Extra axes will be ignored, non-specified ones will be set to zero.\n";
-                  
-            }
-        }
-        //std::cout << "Name set up\nNeed " << nparam << " parameters.\n";
-        //Create the state vector and set it to zero.
-        req.start_state.set_vals_size(nparam);
-        for (unsigned int i = 0; i < req.start_state.get_vals_size(); i++) {
-            req.start_state.vals[i] = 0;
-        }
-        //Iterate over all the joints and populate the state vector.
-        for (unsigned int i = 0; i < reqn.start_state.get_joints_size(); i++) {
-            if (m_kmodel->parameterNames.find(reqn.start_state.names[i]) == m_kmodel->parameterNames.end()) {
-                continue;
-            }
-            unsigned int p = m_kmodel->parameterNames.find(reqn.start_state.names[i])->second;
-            
-            for (unsigned int k = 0; k < m_kmodel->getJoint(reqn.start_state.names[i])->usedParams; k++) {
-                req.start_state.vals[p + k] = reqn.start_state.joints[i].vals[k];
-            }
-
-            //std::cout << reqn.start_state.names[i] << " [" << p << "-" 
-            //          << p + m_kmodel->getJoint(reqn.start_state.names[i])->usedParams - 1 << "]\n";
-        }
-        
-
-        
-        //Use name lookups to populate the joint group.
-
-        unsigned int group = m_kmodel->getGroupID(reqn.params.model_id);
-
-        
-        //std::cout << "Joints:\n";
-        
-        //Create a vector with the joint map for the planning subspace.
-        std::vector<planning_models::KinematicModel::Joint*> subspaceJointMapSparse;
-        std::vector<planning_models::KinematicModel::Joint*> subspaceJointMap;
-
-        //Fill it with nulls.
-        for (unsigned int i = 0; i < req.start_state.get_vals_size(); i++) {
-            subspaceJointMapSparse.push_back(NULL);
-        }
-
-        //Iterate over the joint parameter names table, and fill up the subspace joint
-        //map with the joints in the target group.
-        for (std::map<std::string, unsigned int>::iterator it = m_kmodel->parameterNames.begin();
-               it != m_kmodel->parameterNames.end(); it++) {
-          if (m_kmodel->getJoint(it->first)->inGroup[group]) {
-            subspaceJointMapSparse[it->second] = m_kmodel->getJoint(it->first);
-          }
-        }
-
-        //Create a non-sparse subspace joint map, and get nparam.
-        nparam = 0;
-        for (unsigned int i = 0; i < subspaceJointMapSparse.size(); i++) {
-          if (subspaceJointMapSparse[i]) {
-            subspaceJointMap.push_back(subspaceJointMapSparse[i]);
-            nparam += subspaceJointMapSparse[i]->usedParams;
-            std::cout << subspaceJointMapSparse[i]->name << std::endl;
-          }
-        }
-
-
-
-        //Copy the goal state.
-
-        //Zero the output messages.
-        req.goal_state.set_vals_size(nparam);
-        for (unsigned int i = 0; i < nparam; i++) {
-            req.goal_state.vals[i] = 0.0;
-        }
-
-        //Copy the input into the message using the jointmap.
-        nparam = 0;
-        for (unsigned int i = 0; i < subspaceJointMap.size(); i++) {
-            bool found = false;
-            for (unsigned int j = 0; j < reqn.goal_state.get_names_size() && j < reqn.goal_state.get_joints_size(); j++) {
-                if (reqn.goal_state.names[j] == subspaceJointMap[i]->name) {
-                    if (subspaceJointMap[i]->usedParams != reqn.goal_state.joints[j].get_vals_size()) {
-                        std::cerr << "You do not have the right number of axes for a the joint: "
-                                  << subspaceJointMap[i]->name << " (" << subspaceJointMap[i]->usedParams
-                                  << " != " << reqn.goal_state.joints[j].get_vals_size() << "). "
-                                  << "Extra axes will be ignored, non-specified ones will be set to zero.\n";
-                    }
-                    for (unsigned int k = 0; k < subspaceJointMap[i]->usedParams && k < reqn.goal_state.joints[j].get_vals_size(); k++) {
-                        std::cout << "Writing " << nparam << " for " << subspaceJointMap[i]->name << std::endl;
-                        req.goal_state.vals[nparam] = reqn.goal_state.joints[j].vals[k];
-                        nparam++;
-                    }
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                std::cerr << "You did not specify a goal value for the joint:" << subspaceJointMap[i]->name << std::endl;
-            }
-        }
-        
-
-        //Blind copy for the rest.
-        req.params = reqn.params;
-        req.constraints = reqn.constraints;
-        req.times = reqn.times;
-        req.interpolate = reqn.interpolate;
-        req.allowed_time = reqn.allowed_time;
-        req.threshold = reqn.threshold;
-
-
-
-        //Acutally run the service.
-	bool trivial = false;
-	bool r = m_requestState.execute(m_models, req, res.path, res.distance, trivial);
-
-
-        //Copy the path.
-        resn.path.set_states_size(res.path.get_states_size());
-        
-        for (unsigned int j = 0; j < resn.path.get_states_size(); j++) {
-            nparam = 0;
-            resn.path.states[j].set_names_size(subspaceJointMap.size());
-            resn.path.states[j].set_joints_size(subspaceJointMap.size());
-            for (unsigned int i = 0; i < subspaceJointMap.size(); i++) {
-                resn.path.states[j].names[i] = subspaceJointMap[i]->name;
-                resn.path.states[j].joints[i].set_vals_size(subspaceJointMap[i]->usedParams);
-                for (unsigned int k = 0; k < subspaceJointMap[i]->usedParams; k++) {
-                    resn.path.states[j].joints[i].vals[k] = res.path.states[j].vals[nparam];
-                    nparam++;
-                }
-            }
-        }
-
-        
-
-        //Simply copy the other results.
-        resn.distance = res.distance;
-        return r;
-    }
-
-    bool planJointNames(robot_srvs::PlanNames::request &req, robot_srvs::PlanNames::response &res) {
-        std::vector<planning_models::KinematicModel::Joint*> joints;
-        m_kmodel->getJoints(joints);
-        res.set_names_size(joints.size());
-        res.set_num_values_size(joints.size());
-        for (unsigned int i = 0; i < joints.size(); i++) {
-            res.names[i] = joints[i]->name;
-            res.num_values[i] = joints[i]->usedParams;
-        }
-        return true;
-    }
-
-    
-    bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
-    {
-	ROS_INFO("Request for planning to a state");
-	bool trivial = false;
-	bool result = m_requestState.execute(m_models, req, res.path, res.distance, trivial);
-	res.trivial = trivial ? 1 : 0;
-	return result;
-    }
-
-    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
-    {	
-	ROS_INFO("Request for planning to a position");
-	bool trivial = false;
-	bool result = m_requestLinkPosition.execute(m_models, req, res.path, res.distance, trivial);
-	res.trivial = trivial ? 1 : 0;
-	return result;
-    }
-
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
 	CollisionSpaceMonitor::setRobotDescription(file);	
@@ -604,18 +473,18 @@ private:
     }
     
     ModelMap                                                        m_models;
-    RKPBasicRequest<robot_srvs::KinematicPlanState::request>        m_requestState;
-    RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request> m_requestLinkPosition;
-    
-    // received request for replanning
-    robot_srvs::KinematicPlanState::request                         m_planToStateRequest;    
-    robot_srvs::KinematicPlanLinkPosition::request                  m_planToPositionRequest; 
-    // flag received for stopping replanning
-    std_msgs::Empty                                                 m_replanStop;    
+    RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestState;
+    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPosition;
     
     // currently considered request
-    robot_srvs::KinematicPlanState::request                         m_currentPlanToStateRequest;    
-    robot_srvs::KinematicPlanLinkPosition::request                  m_currentPlanToPositionRequest; 
+    robot_msgs::KinematicPlanStateRequest                           m_currentPlanToStateRequest;    
+    robot_msgs::KinematicPlanLinkPositionRequest                    m_currentPlanToPositionRequest; 
+
+    // current status of the motion planner
+    robot_msgs::KinematicPlanStatus                                 m_currentPlanStatus; 
+
+    // the ID of the current replanning task
+    int                                                             m_replanID;
     
     // flag indicating whether a replanning thread is active
     bool                                                            m_replanning;

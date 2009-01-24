@@ -9,6 +9,7 @@
   <depend package="boost" />
 
   <depend package="std_msgs" />
+  <depend package="std_srvs" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
 
