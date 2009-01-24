@@ -17,7 +17,7 @@
   <author>Morgan Quigley</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/cv_wrappers</url>  
-  <review status="unreviewed" notes=""/>
+  <review status="deprecated" notes=""/>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
