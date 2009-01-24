@@ -41,10 +41,12 @@
 
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
+#include <robot_srvs/KinematicReplanState.h>
+#include <robot_srvs/KinematicReplanLinkPosition.h>
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include <std_msgs/Empty.h>
+#include <std_srvs/Empty.h>
 #include <std_msgs/VisualizationMarker.h>
 #include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -167,58 +169,58 @@ public:
 	}
     }
     
-    void performCall(robot_srvs::KinematicPlanState::request &req, int controller = C_NONE, bool replan = false)
+    void performCall(robot_srvs::KinematicReplanState::request &req, int controller = C_NONE)
     {
-	if (replan)
-	{
-	    if (m_replanning)
-		requestStopReplanning();
-	    m_replanning = true;
-	    m_activeRequestState = req;
-	    m_replanningController = controller;
-	    m_statePlanning = true;
-	    m_node->publish("replan_kinematic_path_state", req);
-	    ROS_INFO("Issued a replanning request");	    
-	}
-	else
-	{
-	    robot_srvs::KinematicPlanState::response res;
-	    if (ros::service::call("plan_kinematic_path_state", req, res))
-		executePath(req, res.path, res.distance, controller);
-	    else
-		ROS_ERROR("Service 'plan_kinematic_path_state' failed");
-	}	    
+	if (m_replanning)
+	    requestStopReplanning();
+	m_replanning = true;
+	m_activeRequestState = req.value;
+	m_replanningController = controller;
+	m_statePlanning = true;
+	m_node->publish("replan_kinematic_path_state", req);
+	ROS_INFO("Issued a replanning request");	    
     }
     
-    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req, int controller = C_NONE, bool replan = false)
+    void performCall(robot_srvs::KinematicPlanState::request &req, int controller = C_NONE)
     {
-	if (replan)
-	{		
-	    if (m_replanning)
-		requestStopReplanning();
-	    m_replanning = true;
-	    m_activeRequestLinkPosition = req;
-	    m_replanningController = controller;
-	    m_statePlanning = false;		
-	    m_node->publish("replan_kinematic_path_position", req);
-	    ROS_INFO("Issued a replanning request");	    
-	}
+	robot_srvs::KinematicPlanState::response res;
+	if (ros::service::call("plan_kinematic_path_state", req, res))
+	    executePath(req.value, res.value.path, res.value.distance, controller);
 	else
-	{
-	    robot_srvs::KinematicPlanLinkPosition::response res;	    
-	    if (ros::service::call("plan_kinematic_path_position", req, res))
-		executePath(req, res.path, res.distance, controller);
-	    else
-		ROS_ERROR("Service 'plan_kinematic_path_position' failed");
-	}	    
+	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
+    }
+    
+    void performCall(robot_srvs::KinematicReplanLinkPosition::request &req, int controller = C_NONE)
+    {
+	if (m_replanning)
+	    requestStopReplanning();
+	m_replanning = true;
+	m_activeRequestLinkPosition = req.value;
+	m_replanningController = controller;
+	m_statePlanning = false;		
+	m_node->publish("replan_kinematic_path_position", req);
+	ROS_INFO("Issued a replanning request");	    
+    }
+    
+    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req, int controller = C_NONE)
+    {
+	robot_srvs::KinematicPlanLinkPosition::response res;	    
+	if (ros::service::call("plan_kinematic_path_position", req, res))
+	    executePath(req.value, res.value.path, res.value.distance, controller);
+	else
+	    ROS_ERROR("Service 'plan_kinematic_path_position' failed");
     }	
     
     void requestStopReplanning(void)
     {
-	std_msgs::Empty dummy;
-	m_node->publish("replan_stop", dummy);
+	std_srvs::Empty::request req;
+	std_srvs::Empty::response res;
+	
+	if (ros::service::call("replan_stop", req, res))
+	    ROS_INFO("Issued a request to stop replanning");	
+	else
+	    ROS_WARN("Could not stop stop replanning");	
 	m_replanning = false;
-	ROS_INFO("Issued a request to stop replanning");	
     }
     
     void useReplannedPath(robot_msgs::KinematicPath &path)
@@ -234,7 +236,7 @@ public:
 	    ROS_WARN("Received new path for replanning, but we are not in replanning mode");
     }
     
-    void executePath(robot_srvs::KinematicPlanLinkPosition::request &req,
+    void executePath(robot_msgs::KinematicPlanLinkPositionRequest &req,
 		     robot_msgs::KinematicPath &path, const double distance,
 		     int controller = C_NONE)
     {
@@ -245,7 +247,7 @@ public:
 		sendArmCommand(path, req.params.model_id);
     }
     
-    void executePath(robot_srvs::KinematicPlanState::request &req,
+    void executePath(robot_msgs::KinematicPlanStateRequest &req,
 		     robot_msgs::KinematicPath &path, const double distance,
 		     int controller = C_NONE)
     {
@@ -287,8 +289,8 @@ protected:
     // in replanning mode, the controller to be used
     int                                            m_replanningController;	
     // in replanning mode, current starting state
-    robot_srvs::KinematicPlanState::request        m_activeRequestState;	
-    robot_srvs::KinematicPlanLinkPosition::request m_activeRequestLinkPosition;
+    robot_msgs::KinematicPlanStateRequest          m_activeRequestState;	
+    robot_msgs::KinematicPlanLinkPositionRequest   m_activeRequestLinkPosition;
     
 };
 
@@ -347,7 +349,7 @@ public:
     
     void runTestRightArm(bool replan = false)
     {
-	robot_srvs::KinematicPlanState::request  req;
+	robot_msgs::KinematicPlanStateRequest  req;
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
@@ -369,13 +371,15 @@ public:
 
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-
-	m_pr.performCall(req, PlanningRequest::C_ARM, replan);
+	
+	robot_srvs::KinematicPlanState::request r;
+	r.value = req;
+	m_pr.performCall(r, PlanningRequest::C_ARM);
     }
     
     void runRightArmTo0(bool replan = false)
     {
-	robot_srvs::KinematicPlanState::request  req;
+	robot_msgs::KinematicPlanStateRequest  req;
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
@@ -397,7 +401,9 @@ public:
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	m_pr.performCall(req, PlanningRequest::C_ARM, replan);
+	robot_srvs::KinematicPlanState::request r;
+	r.value = req;
+	m_pr.performCall(r, PlanningRequest::C_ARM);
     }
 	    
     void printLinkPoses(void)
@@ -408,7 +414,7 @@ public:
     
     void runTestRightEEf(bool replan = false)
     {
-	robot_srvs::KinematicPlanLinkPosition::request req;
+	robot_msgs::KinematicPlanLinkPositionRequest req;
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
@@ -455,8 +461,9 @@ public:
 	req.params.volumeMax.y = 5.0 + m_basePos[1];
 	req.params.volumeMax.z = 0.0;
 	
-	
-	m_pr.performCall(req, PlanningRequest::C_ARM, replan);
+	robot_srvs::KinematicPlanLinkPosition::request r;
+	r.value = req;
+	m_pr.performCall(r, PlanningRequest::C_ARM);
     }
     
 
