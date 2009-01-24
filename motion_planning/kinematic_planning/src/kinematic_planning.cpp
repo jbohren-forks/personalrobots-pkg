@@ -581,7 +581,7 @@ void usage(const char *progname)
 
 int main(int argc, char **argv)
 { 
-    if (argc == 2)
+    if (argc >= 2)
     { 
 	ros::init(argc, argv);
 	OutputHandlerROScon rosconOutputHandler;	
