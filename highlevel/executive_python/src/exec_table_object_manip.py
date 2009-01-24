@@ -128,6 +128,9 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from highlevel_controllers.msg import *
 from navigation_adapter import *
+#from movearm_adapter import *
+#from tiltlaser_adapter import *
+#from gripper_adapter import *
 
 class Executive:
   def __init__(self, goals, navigator, cycle_time):
@@ -147,10 +150,10 @@ class Executive:
       if self.state == "idle":
         if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(self.current_goal)
+          self.navigator.sendGoal(self.current_goal, "odom")
           print "nav --> nav"
         elif not self.navigator.active() and self.current_goal != None:
-          self.navigator.sendGoal(self.current_goal)
+          self.navigator.sendGoal(self.current_goal, "odom")
           print "nav --> nav"
     else:
       if not self.navigator.legalState():

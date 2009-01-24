@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.4.6)
 ### If you're trying to debug include directives or so, this here
 ### might help:
 #SET (CMAKE_VERBOSE_MAKEFILE ON)
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
@@ -15,7 +15,9 @@ rospack_add_library(highlevel_controllers src/move_base.cpp src/velocity_control
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm
-rospack_add_executable(move_arm src/move_arm.cpp)
+# Eventually move_arm2 will replace move_arm
+#rospack_add_executable(move_arm src/move_arm.cpp)
+rospack_add_executable(move_arm2 src/move_arm2.cpp)
 
 # move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
@@ -39,4 +41,5 @@ rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
 rospack_add_executable(recharge_controller src/recharge_controller.cpp)
 
 #CLI
-rospack_add_executable(cli src/control_cli.cpp)
+# Disabled, pending update to new message formats
+#rospack_add_executable(cli src/control_cli.cpp)

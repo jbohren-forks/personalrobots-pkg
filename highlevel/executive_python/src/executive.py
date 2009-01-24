@@ -77,15 +77,15 @@ class Executive:
           print "nav --> recharge"
         elif self.batt_monitor.chargeNeeded():
           chrg_pts = self.chrg_stations[random.randint(0, len(self.chrg_stations) - 1)]
-          self.navigator.sendGoal(chrg_pts)
+          self.navigator.sendGoal(chrg_pts, "map")
           self.state = "nav_charge"
           print "nav --> nav_charge"
         elif self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(self.current_goal)
+          self.navigator.sendGoal(self.current_goal, "map")
           print "nav --> nav"
         elif not self.navigator.active() and self.current_goal != None:
-          self.navigator.sendGoal(self.current_goal)
+          self.navigator.sendGoal(self.current_goal, "map")
           print "nav --> nav"
       elif self.state == "recharge":
         """
@@ -94,7 +94,7 @@ class Executive:
         """
         if self.recharger.doneCharging():
           #resume the current goal
-          self.navigator.sendGoal(self.current_goal)
+          self.navigator.sendGoal(self.current_goal, "map")
           self.state = "nav"
           print "recharge --> nav"
       elif self.state == "nav_charge":
@@ -109,7 +109,7 @@ class Executive:
           print "nav_charge --> recharge"
         elif not self.navigator.active() or self.navigator.timeUp():
           chrg_pts = self.chrg_stations[random.randint(0, len(self.chrg_stations) - 1)]
-          self.navigator.sendGoal(chrg_pts)
+          self.navigator.sendGoal(chrg_pts, "map")
           print "nav_charge --> nav_charge"
     else:
       if not self.navigator.legalState():

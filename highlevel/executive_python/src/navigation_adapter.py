@@ -76,10 +76,10 @@ class NavigationAdapter:
     return [self.state.goal.x, self.state.goal.y, self.state.goal.th]
 
   #Send a new goal to the move base node
-  def sendGoal(self, goal_pts):
+  def sendGoal(self, goal_pts, frame):
     self.start_time = rospy.get_time()
     goal = Planner2DGoal()
-    goal.header.frame_id = "map"
+    goal.header.frame_id = frame
     goal.goal.x = goal_pts[0]
     goal.goal.y = goal_pts[1]
     goal.goal.th = goal_pts[2]
