@@ -41,7 +41,7 @@ namespace topological_map
 typedef AdjacencyListSBPLEnv<GridCell> Roadmap;
 typedef map<BottleneckVertex,GridCell> VertexCellMap;
 typedef map<BottleneckVertex,VertexCellMap> VertexPairCellMap;
-
+typedef boost::multi_array<int, 2> DistanceMap;
 
 
 /// \brief A bottleneck graph together with a roadmap that can be passed to SBPL planners
@@ -49,9 +49,10 @@ class RoadmapBottleneckGraph : public IndexedBottleneckGraph
 {
 public:
   RoadmapBottleneckGraph(int num_rows=-1, int num_cols=-1, double costmap_multiplier=1.0);
-  ~RoadmapBottleneckGraph();
+  ~RoadmapBottleneckGraph() { delete roadmap_; }
 
   /// Initialize the roadmap associated to this topological map
+  /// 
   void initializeRoadmap ();
 
   /// Set costmap
@@ -83,6 +84,9 @@ private:
   /// solution is overwritten if it already holds something.  Return true iff path was found.
   bool planUsingNavFn (const GridCell& start, const GridCell& goal, vector<GridCell>* solution, float* cost);
 
+  /// Initialize the distance-from-obstacles map
+  void initializeDistanceMap ();
+
   const unsigned char* costmap_;
   Roadmap* roadmap_;
   NavFn nav_fn_planner_;
@@ -91,7 +95,8 @@ private:
   int current_region_;
   double costmap_multiplier_;
   VertexPairCellMap roadmap_points_;
-
+  DistanceMap distance_map_;
+  bool distance_map_initialized_;
 };
 
 
