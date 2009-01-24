@@ -430,10 +430,31 @@ class DoorHandleDetector : public ros::Node
       }
       handle_indices.resize (nr_p);
 
+      // Project the handle on the door plane (just for kicks)
+      for (int i = 0; i < nr_p; i++)
+      {
+        // Calculate the distance from the point to the plane
+        double distance_to_plane = coeff->at (0) * points->pts.at (handle_indices[i]).x +
+                                   coeff->at (1) * points->pts.at (handle_indices[i]).y +
+                                   coeff->at (2) * points->pts.at (handle_indices[i]).z +
+                                   coeff->at (3) * 1;
+        // Calculate the projection of the point on the plane
+        points->pts.at (handle_indices[i]).x -= distance_to_plane * coeff->at (0);
+        points->pts.at (handle_indices[i]).y -= distance_to_plane * coeff->at (1);
+        points->pts.at (handle_indices[i]).z -= distance_to_plane * coeff->at (2);
+      }
+
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
-      // We have all the correct indices -> perform a segmentation in intensity space
-      //findClustersInIntensity (points, &handle_indices, 10, clusters, 1);
+      // Calculate the distance from the point to the plane
+      double distance_to_plane = coeff->at (0) * handle_center.x +
+                                 coeff->at (1) * handle_center.y +
+                                 coeff->at (2) * handle_center.z +
+                                 coeff->at (3) * 1;
+      // Calculate the projection of the point on the plane
+      handle_center.x -= distance_to_plane * coeff->at (0);
+      handle_center.y -= distance_to_plane * coeff->at (1);
+      handle_center.z -= distance_to_plane * coeff->at (2);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
