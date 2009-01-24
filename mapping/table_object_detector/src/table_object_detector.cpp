@@ -72,6 +72,14 @@
 using namespace std;
 using namespace std_msgs;
 
+
+// Comparison operator for a vector of vectors
+bool
+  compareRegions (const std::vector<int> &a, const std::vector<int> &b)
+{
+  return (a.size () < b.size ());
+}
+
 class TableObjectDetector : public ros::Node
 {
   public:
@@ -96,8 +104,7 @@ class TableObjectDetector : public ros::Node
 
     double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
-    double door_min_height_, door_min_width_, door_max_height_, door_max_width_;
-    double handle_distance_door_min_threshold_, handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
+    double table_min_height_, table_max_height_, delta_z_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     TableObjectDetector () : ros::Node ("table_object_detector"), tf_(*this)
@@ -119,22 +126,13 @@ class TableObjectDetector : public ros::Node
       param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
       region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
 
-      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.05);  // 5 cm
+      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.5);   // 0.5 m
       param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
 
-      param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
-      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-      param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-      param ("~door_max_width", door_max_width_, 1.2);                    // maximumwidth of a door: 1.2m
-      ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
-                 door_min_height_, door_max_height_, door_min_width_, door_max_width_);
-
-      param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
-      param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
-      param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
-      param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.05); // minimum distance between the handle and the door
-
-      ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
+      param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
+      param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
+      param ("~table_delta_z", delta_z_, 0.03);                         // consider objects starting at 3cm from the table
+      ROS_DEBUG ("Using the following thresholds for table detection [min / max height]: %f / %f.", table_min_height_, table_max_height_);
 
       param ("~publish_debug", publish_debug_, true);
 
@@ -225,20 +223,31 @@ class TableObjectDetector : public ros::Node
       unsubscribe (input_cloud_topic_.c_str ()) ;
 
       gettimeofday (&t1, NULL);
+      // We have a pointcloud, estimate the true point bounds
+      vector<int> indices_in_bounds (cloud_in_.pts.size ());
+      int nr_p = 0;
+      for (unsigned int i = 0; i < cloud_in_.pts.size (); i++)
+      {
+        if (cloud_in_.pts[i].z >= table_min_height_ && cloud_in_.pts[i].z <= table_max_height_)
+        {
+          indices_in_bounds[nr_p] = i;
+          nr_p++;
+        }
+      }
+      indices_in_bounds.resize (nr_p);
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
       vector<cloud_geometry::Leaf> leaves;
       try
       {
-        cloud_geometry::downsamplePointCloud (&cloud_in_, cloud_down_, leaf_width_, leaves, -1);
+        cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
       }
       catch (std::bad_alloc)
       {
         // downsamplePointCloud should issue a ROS_ERROR on screen, so we simply exit here
         return (false);
       }
-      leaves.resize (0);
 
       ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
 
@@ -257,100 +266,100 @@ class TableObjectDetector : public ros::Node
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
       cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
+
+      ROS_DEBUG ("Number of points with normals parallel to Z: %d.", indices_z.size ());
+
       vector<vector<int> > clusters;
-      // Split the Z-perpendicular points into clusters
+      // Split the Z-parallel points into clusters
       findClusters (&cloud_down_, &indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, clusters_min_pts_);
 
-      // Compute the total number of points in all clusters
-      int total_p = 0;
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-        total_p += clusters[cc].size ();
+      sort (clusters.begin (), clusters.end (), compareRegions);
+      int c_good = clusters.size () - 1;
+      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
 
-      ROS_DEBUG ("Number of clusters found: %d, total points: %d.", clusters.size (), total_p);
+      // Find the best plane in this cluster
+      vector<int> inliers;
+      vector<double> coeff;
+      fitSACPlane (&cloud_down_, &clusters[c_good], inliers, coeff);
+
+      // Get the table bounds
+      std_msgs::Point32 minP, maxP;
+      cloud_geometry::getMinMax (&cloud_down_, &inliers, minP, maxP);
+      resp.table.min_x = minP.x; resp.table.min_y = minP.y;
+      resp.table.max_x = maxP.x; resp.table.max_y = maxP.y;
+
+      // Compute the convex hull
+      pmap_.header = cloud_down_.header;
+      pmap_.polygons.resize (1);
+      cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff, pmap_.polygons[0]);
+
+      // Find the object clusters supported by the table
+      inliers.clear ();
+      findObjectClusters (&cloud_in_, &coeff, &pmap_.polygons[0], &minP, &maxP, inliers);
 
       // Reserve enough space
-      cloud_annotated_.header = cloud_down_.header;
-      cloud_annotated_.pts.resize (cloud_in_.pts.size ());//total_p);
-      cloud_annotated_.chan[0].vals.resize (cloud_in_.pts.size ());//total_p);
-
-      pmap_.header = cloud_down_.header;
-      pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
-
-      int nr_p = 0;
-      vector<int> inliers;
-      vector<int> handle_indices;
-      vector<double> coeff;
-      std_msgs::Point32 minP, maxP, handle_center;
-      // Process all clusters
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        double r, g, b, rgb;
-        r = g = b = 1.0;
-        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-        rgb = *(float*)(&res);
-
-        // Find the best plane in this cluster
-        fitSACPlane (&cloud_down_, &clusters[cc], inliers, coeff);
-        // Compute the convex hull
-        cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff, pmap_.polygons[cc]);
-
-        // Filter the region based on its height and width
-        cloud_geometry::getMinMax (&pmap_.polygons[cc], minP, maxP);
-
-        // Get the door_frame distance in the X-Y plane
-        double door_frame = sqrt ( (minP.x - maxP.x) * (minP.x - maxP.x) + (minP.y - maxP.y) * (minP.y - maxP.y) );
-        double door_height = fabs (maxP.z - minP.z);
-        if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
-        {
-          pmap_.polygons[cc].points.resize (0);      // Don't send this polygon if it doesn't match our door rules
-          continue;
-        }
-
-        ROS_DEBUG ("Door candidate accepted with width %f and height %f.", door_frame, door_height);
-
-        if (publish_debug_)
-        {
-          // Mark all the points inside
-          for (unsigned int k = 0; k < handle_indices.size (); k++)
-          {
-            cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-            cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-            cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
-            nr_p++;
-          }
-          // Mark all the points inside
-  /*        for (unsigned int k = 0; k < inliers.size (); k++)
-          {
-            cloud_annotated_.pts[nr_p].x = cloud_down_.pts.at (inliers[k]).x;
-            cloud_annotated_.pts[nr_p].y = cloud_down_.pts.at (inliers[k]).y;
-            cloud_annotated_.pts[nr_p].z = cloud_down_.pts.at (inliers[k]).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
-            nr_p++;
-          }*/
-        }
-
-        //break;      // assume one door for now for testing
-      }
-
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-//       ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-//                 resp.door_p1.x, resp.door_p1.y, resp.door_p1.z, resp.door_p2.x, resp.door_p2.y, resp.door_p2.z,
-//                 resp.height, resp.handle.x, resp.handle.y, resp.handle.z,
-//                 time_spent);
-
       if (publish_debug_)
       {
-        cloud_annotated_.pts.resize (nr_p);
-        cloud_annotated_.chan[0].vals.resize (nr_p);
-
+        cloud_annotated_.header = cloud_down_.header;
+        cloud_annotated_.pts.resize (inliers.size ());
+        cloud_annotated_.chan[0].vals.resize (inliers.size ());
+        for (unsigned int i = 0; i < inliers.size (); i++)
+        {
+          cloud_annotated_.pts[i] = cloud_in_.pts.at (inliers[i]);
+          cloud_annotated_.chan[0].vals[i] = cloud_in_.chan[0].vals.at (inliers[i]);
+/*          cloud_annotated_.pts[i] = cloud_down_.pts.at (inliers[i]);
+          cloud_annotated_.chan[0].vals[i] = cloud_down_.chan[0].vals.at (inliers[i]);*/
+        }
         publish ("cloud_annotated", cloud_annotated_);
         publish ("semantic_polygonal_map", pmap_);
       }
 
-
+      gettimeofday (&t2, NULL);
+      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
+                resp.table.min_x, resp.table.min_y, resp.table.max_x, resp.table.max_y, resp.table.objects.size (), time_spent);
       return (true);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      findObjectClusters (PointCloud *points, vector<double> *coeff, Polygon3D *poly, Point32 *minP, Point32 *maxP,
+                          vector<int> &object_indices)
+    {
+      int nr_p = 0;
+      Point32 pt;
+      object_indices.resize (points->pts.size ());
+      for (unsigned int i = 0; i < points->pts.size (); i++)
+      {
+        // Select all the points in the given bounds
+        if ( points->pts.at (i).x > minP->x &&
+             points->pts.at (i).x < maxP->x &&
+             points->pts.at (i).y > minP->y &&
+             points->pts.at (i).y < maxP->y &&
+             points->pts.at (i).z > (maxP->z + delta_z_)
+           )
+        {
+          // Calculate the distance from the point to the plane
+          double distance_to_plane = coeff->at (0) * points->pts.at (i).x +
+                                     coeff->at (1) * points->pts.at (i).y +
+                                     coeff->at (2) * points->pts.at (i).z +
+                                     coeff->at (3) * 1;
+          // Calculate the projection of the point on the plane
+          pt.x = points->pts.at (i).x - distance_to_plane * coeff->at (0);
+          pt.y = points->pts.at (i).y - distance_to_plane * coeff->at (1);
+          pt.z = points->pts.at (i).z - distance_to_plane * coeff->at (2);
+
+          if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly))
+          {
+//             if (fabs (distance_to_plane) > handle_distance_door_min_threshold_)
+            {
+              object_indices[nr_p] = i;
+              nr_p++;
+            }
+          }
+        }
+      }
+      object_indices.resize (nr_p);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -359,7 +368,6 @@ class TableObjectDetector : public ros::Node
     {
       need_cloud_data_ = false;
     }
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Decompose a region of space into clusters based on the euclidean distance between points
