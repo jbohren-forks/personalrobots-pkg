@@ -68,8 +68,8 @@ PAN_RAD        =  0.2
 p3d_received   = False
 
 def p3dReceived(stuff):
+    global p3d_received
     if not p3d_received:
-        global p3d_received
         p3d_received = True
 
 if __name__ == '__main__':
