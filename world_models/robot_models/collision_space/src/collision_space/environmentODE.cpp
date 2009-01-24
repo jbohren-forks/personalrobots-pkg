@@ -36,6 +36,7 @@
 
 #include <collision_space/environmentODE.h>
 #include <cassert>
+#include <cstdio>
 #include <algorithm>
 #include <map>
 
@@ -364,7 +365,12 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 				dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
 			    
 			    if (cdata.collides)
+			    {
+				if (m_verbose)
+				    printf("Self-collision between '%s' and '%s'\n",
+					   m_modelsGeom[model_id].linkGeom[vec[j]]->link->name.c_str(), m_modelsGeom[model_id].linkGeom[vec[k]]->link->name.c_str());
 				goto OUT1;
+			    }
 			}
 		}
 	}
@@ -399,7 +405,13 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 			dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
 		    
 		    if (cdata.collides)
+		    {
+			if (m_verbose)
+			    printf("Collision between static body and link '%s'\n",
+				   m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
 			goto OUT2;
+		    }
+		    
 		}
 	    }
 	}	
@@ -415,8 +427,17 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 	    if (m_modelsGeom[model_id].linkGeom[i]->enabled)
 	    {
 		const unsigned int ng = m_modelsGeom[model_id].linkGeom[i]->geom.size();
-		for (unsigned int ig = 0 ; ig < ng && !cdata.collides ; ++ig)
+		for (unsigned int ig = 0 ; ig < ng ; ++ig)
+		{
 		    m_collide2.collide(m_modelsGeom[model_id].linkGeom[i]->geom[ig], reinterpret_cast<void*>(&cdata), nearCallbackFn);
+		    if (cdata.collides)
+		    {
+			if (m_verbose)
+			    printf("Collision between dynamic body and link '%s'\n",
+				   m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
+			break;
+		    }
+		}
 	    }
     }
     

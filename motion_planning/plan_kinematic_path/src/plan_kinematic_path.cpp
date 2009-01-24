@@ -242,9 +242,9 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	if (verifyPath(req.start_state, req.constraints, path, req.params.model_id))
-	    if (controller == C_ARM)
-		sendArmCommand(path, req.params.model_id);
+	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
+	if (controller == C_ARM)
+	    sendArmCommand(path, req.params.model_id);
     }
     
     void executePath(robot_msgs::KinematicPlanStateRequest &req,
@@ -253,9 +253,9 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	if (verifyPath(req.start_state, req.constraints, path, req.params.model_id))
-	    if (controller == C_ARM)
-		sendArmCommand(path, req.params.model_id);
+	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
+	if (controller == C_ARM)
+	    sendArmCommand(path, req.params.model_id);
     }
     
 protected:
@@ -266,10 +266,9 @@ protected:
 	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
 	{
-	    traj.points[i].set_positions_size(path.states[i].get_vals_size() + 1);
+	    traj.points[i].set_positions_size(path.states[i].get_vals_size());
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
 		traj.points[i].positions[j] = path.states[i].vals[j];
-	    traj.points[i].positions[path.states[i].get_vals_size()] = m_gripPos;
 	    traj.points[i].time = 0.0;
 	}	
     }
@@ -372,9 +371,18 @@ public:
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
-	robot_srvs::KinematicPlanState::request r;
-	r.value = req;
-	m_pr.performCall(r, PlanningRequest::C_ARM);
+	if (replan)
+	{
+	    robot_srvs::KinematicReplanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}
+	else
+	{
+	    robot_srvs::KinematicPlanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}	
     }
     
     void runRightArmTo0(bool replan = false)
@@ -400,10 +408,19 @@ public:
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	robot_srvs::KinematicPlanState::request r;
-	r.value = req;
-	m_pr.performCall(r, PlanningRequest::C_ARM);
+
+	if (replan)
+	{
+	    robot_srvs::KinematicReplanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}
+	else
+	{
+	    robot_srvs::KinematicPlanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}	
     }
 	    
     void printLinkPoses(void)
@@ -461,9 +478,18 @@ public:
 	req.params.volumeMax.y = 5.0 + m_basePos[1];
 	req.params.volumeMax.z = 0.0;
 	
-	robot_srvs::KinematicPlanLinkPosition::request r;
-	r.value = req;
-	m_pr.performCall(r, PlanningRequest::C_ARM);
+	if (replan)
+	{
+	    robot_srvs::KinematicReplanLinkPosition::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}
+	else
+	{
+	    robot_srvs::KinematicPlanLinkPosition::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}	
     }
     
 
@@ -488,9 +514,9 @@ protected:
 	mk.pitch = 0;
 	mk.yaw = 0;
 	
-	mk.xScale = radius;
-	mk.yScale = radius;
-	mk.zScale = radius;
+	mk.xScale = radius * 2.0;
+	mk.yScale = radius * 2.0;
+	mk.zScale = radius * 2.0;
 		
 	mk.alpha = 255;
 	mk.r = 255;

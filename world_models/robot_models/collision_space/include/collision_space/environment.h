@@ -38,7 +38,7 @@
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
-#include "boost/thread/mutex.hpp"
+#include <boost/thread/mutex.hpp>
 #include <vector>
 #include <string>
 
@@ -68,6 +68,7 @@ namespace collision_space
 	EnvironmentModel(void)
 	{
 	    m_selfCollision = true;
+	    m_verbose = false;
 	}
 	
 	virtual ~EnvironmentModel(void)
@@ -76,6 +77,9 @@ namespace collision_space
 		delete m_models[i];
 	}
 	
+	/** Enable/disable verbosity */
+	void setVerbose(bool verbose);
+		
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id) = 0;
 	
@@ -128,6 +132,7 @@ namespace collision_space
         
 	boost::mutex                                  m_lock;
 	bool                                          m_selfCollision;
+	bool                                          m_verbose;
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;

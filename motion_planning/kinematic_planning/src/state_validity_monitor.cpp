@@ -89,6 +89,7 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 
 #include <std_msgs/Byte.h>
+#include <std_msgs/VisualizationMarker.h>
 
 #include <iostream>
 #include <sstream>
@@ -104,12 +105,13 @@ public:
     StateValidityMonitor(const std::string &robot_model) : ros::Node("state_validity_monitor"),
 							   CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
 										 robot_model),
-							   last_(-1)
+							   last_(-1),
+							   id_(0)
     {
 	advertise<std_msgs::Byte>("state_validity", 1);	
+	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);
     }
     
-    /** Free the memory */
     virtual ~StateValidityMonitor(void)
     {
     }
@@ -119,6 +121,17 @@ protected:
     void afterWorldUpdate(void)
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
+	
+	unsigned int n = m_collisionMap.get_boxes_size();	
+	for (unsigned int i = 0 ; i < n ; ++i)
+	{
+	    sendPoint(m_collisionMap.boxes[i].center.x,
+		      m_collisionMap.boxes[i].center.y,
+		      m_collisionMap.boxes[i].center.z,
+		      radiusOfBox(m_collisionMap.boxes[i].extents),
+		      m_collisionMap.header);
+	}
+	
 	last_ = -1;
     }
     
@@ -149,7 +162,36 @@ protected:
 
 private:
     
+    void sendPoint(double x, double y, double z, double radius, const rostools::Header &header)
+    {
+	std_msgs::VisualizationMarker mk;
+	mk.header = header;
+	
+	mk.id = id_++;
+	mk.type = std_msgs::VisualizationMarker::SPHERE;
+	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.x = x;
+	mk.y = y;
+	mk.z = z;
+
+	mk.roll = 0;
+	mk.pitch = 0;
+	mk.yaw = 0;
+	
+	mk.xScale = radius * 2.0;
+	mk.yScale = radius * 2.0;
+	mk.zScale = radius * 2.0;
+		
+	mk.alpha = 255;
+	mk.r = 255;
+	mk.g = 10;
+	mk.b = 10;
+	
+	publish("visualizationMarker", mk);
+    }
+
     int last_;
+    int id_;
     
 };
 
@@ -161,7 +203,7 @@ void usage(const char *progname)
 
 int main(int argc, char **argv)
 { 
-    if (argc == 2)
+    if (argc >= 2)
     { 
 	ros::init(argc, argv);
 	

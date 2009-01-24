@@ -36,6 +36,11 @@
 
 #include <collision_space/environment.h>
 
+void collision_space::EnvironmentModel::setVerbose(bool verbose)
+{
+    m_verbose = verbose;
+}
+
 unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
 {
     unsigned int pos = m_models.size();

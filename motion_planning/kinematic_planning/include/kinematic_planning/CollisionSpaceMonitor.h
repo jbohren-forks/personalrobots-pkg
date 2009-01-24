@@ -263,8 +263,6 @@ namespace kinematic_planning
 	{
 	}
 	
-    private:
-	
 	double radiusOfBox(std_msgs::Point32 &point)
 	{
 	    return std::max(std::max(point.x, point.y), point.z) * 1.732050808;

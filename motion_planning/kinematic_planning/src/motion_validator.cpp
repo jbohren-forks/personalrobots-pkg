@@ -41,7 +41,8 @@
 @htmlinclude ../manifest.html
 
 @b MotionValidator is a node capable of verifying if a path is valid
-or not (collides or does not collide).
+or not (collides or does not collide). The path is consider to be a
+straight line between two states.
 
 <hr>
 
@@ -269,7 +270,7 @@ void usage(const char *progname)
 
 int main(int argc, char **argv)
 { 
-    if (argc == 2)
+    if (argc >= 2)
     { 
 	ros::init(argc, argv);
 	
