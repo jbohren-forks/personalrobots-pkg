@@ -89,7 +89,7 @@ public:
 	ROS_INFO(ss.str().c_str());
     }
     
-    void verifyPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
+    bool verifyPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
 		    robot_msgs::KinematicPath &path, const std::string &model)
     {
 	if (path.get_states_size() > 0)
@@ -110,7 +110,9 @@ public:
 	    }
 	    else
 		ROS_INFO("Service 'validate_path' not available (or failed)");
+	    return res.valid;
 	}
+	return false;
     }
     
     void sendDisplay(robot_msgs::KinematicState &start, robot_msgs::KinematicPath &path, const std::string &model)
@@ -238,9 +240,9 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
-	if (controller == C_ARM)
-	    sendArmCommand(path, req.params.model_id);
+	if (verifyPath(req.start_state, req.constraints, path, req.params.model_id))
+	    if (controller == C_ARM)
+		sendArmCommand(path, req.params.model_id);
     }
     
     void executePath(robot_srvs::KinematicPlanState::request &req,
@@ -249,9 +251,9 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
-	if (controller == C_ARM)
-	    sendArmCommand(path, req.params.model_id);
+	if (verifyPath(req.start_state, req.constraints, path, req.params.model_id))
+	    if (controller == C_ARM)
+		sendArmCommand(path, req.params.model_id);
     }
     
 protected:
@@ -349,7 +351,7 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
+	req.params.planner_id = "RRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 1;
@@ -359,15 +361,12 @@ public:
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
-	req.goal_state.vals[0] = -0.2;    
-        req.goal_state.vals[1] = -0.1;    
-	req.goal_state.vals[3] = 0.5;    
-	req.goal_state.vals[4] = 0.4;    
-	req.goal_state.vals[2] = -0.3;    
-	req.goal_state.vals[6] = -0.3;    
 
-	req.allowed_time = 30.0;
+	req.goal_state.vals[1] = -0.2;
+	req.goal_state.vals[0] = 0.5;
 	
+	req.allowed_time = 30.0;
+
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 
@@ -380,7 +379,7 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
+	req.params.planner_id = "RRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 1;
@@ -389,8 +388,10 @@ public:
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-	
+	    req.goal_state.vals[i] = 0.0;	
+	req.goal_state.vals[1] = -0.2;
+	req.goal_state.vals[0] = -0.2;
+
 	req.allowed_time = 30.0;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
@@ -412,26 +413,26 @@ public:
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
 	req.interpolate = 1;
-	req.times = 3;
+	req.times = 1;
 	
 	currentState(req.start_state);
 	printLinkPoses();
 
 	req.set_goal_constraints_size(1);
 	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;
-	req.goal_constraints[0].robot_link = "r_wrist_flex_link";
+	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
 	req.goal_constraints[0].pose.position.x = .7;	
 	req.goal_constraints[0].pose.position.y = 0;	
 	req.goal_constraints[0].pose.position.z = 1;	
 
 	req.goal_constraints[0].pose.orientation.x = 0;
 	req.goal_constraints[0].pose.orientation.y = 0;
-	req.goal_constraints[0].pose.orientation.z = sqrt(2)/2;		
+	req.goal_constraints[0].pose.orientation.z = sqrt(2)/2;
 	req.goal_constraints[0].pose.orientation.w = sqrt(2)/2;	
 
-	req.goal_constraints[0].position_distance = 0.01;
-	req.goal_constraints[0].orientation_distance = 0.01;
-	req.goal_constraints[0].orientation_importance = 0.3;
+	req.goal_constraints[0].position_distance = 0.02;
+	req.goal_constraints[0].orientation_distance = 0.02;
+	req.goal_constraints[0].orientation_importance = 0.5;
 	
 	// an example of constraints: do not move the elbow too much
 	/*
@@ -444,7 +445,7 @@ public:
 	  req.constraints.pose[0].position_distance = 0.01;
 	*/
 	
-	req.allowed_time = 0.3;
+	req.allowed_time = 0.5;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];
 	req.params.volumeMin.y = -5.0 + m_basePos[1];
@@ -538,13 +539,13 @@ int main(int argc, char **argv)
 	    switch (test)
 	    {
 	    case '0':
-		plan->runRightArmTo0();
+		plan->runRightArmTo0(false);
 		break;
 	    case 'r':
-		plan->runTestRightArm(true);    
+		plan->runTestRightArm(false);    
 		break;
 	    case 'e':
-		plan->runTestRightEEf(true);    
+		plan->runTestRightEEf(false);    
 		break;
 	    default:
 		ROS_WARN("No test");
