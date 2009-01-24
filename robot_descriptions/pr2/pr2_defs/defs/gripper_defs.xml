@@ -37,7 +37,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Shell</elem>
+          <elem key="material" value="Gazebo/Shell" />
         </map>
         <geometry name="${prefix}_l_finger_visual">
           <mesh filename="upper_finger_l" />
@@ -69,8 +69,8 @@
       </map>
       <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="kp">1000000.0</elem>
-        <elem key="kd">1.0</elem>
+        <elem key="kp" value="1000000.0" />
+        <elem key="kd" value="1.0" />
       </map>
     </link>
 
@@ -107,7 +107,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Shell</elem>
+          <elem key="material" value="Gazebo/Shell" />
         </map>
         <geometry name="${prefix}_r_finger_visual">
           <mesh filename="upper_finger_r" />
@@ -139,8 +139,8 @@
       </map>
       <map name="${prefix}_r_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="kp">1000000.0</elem>
-        <elem key="kd">1.0</elem>
+        <elem key="kp" value="1000000.0" />
+        <elem key="kd" value="1.0" />
       </map>
     </link>
 
@@ -177,7 +177,7 @@
       <visual>
         <origin xyz="0 0 0 " rpy="0 0 0 " />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material" value="Gazebo/Green" />
         </map>
         <geometry name="${prefix}_l_finger_tip_visual">
           <mesh filename="finger_tip_l" />
@@ -209,8 +209,10 @@
       </map>
       <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="kp">1000000.0</elem>
-        <elem key="kd">1.0</elem>
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
       </map>
     </link>
 
@@ -226,9 +228,9 @@
       <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">2.0</elem>
-        <elem key="mimicKd">1.0</elem>
-        <elem key="mimicFMax">10.0</elem>
+        <elem key="mimicKp" value="2.0" />
+        <elem key="mimicKd" value="1.0" />
+        <elem key="mimicFMax" value="10.0" />
       </map>
     </joint>
 
@@ -239,7 +241,7 @@
       <joint name="${prefix}_r_finger_tip_joint" />
       <inertial>
         <mass value="0.03826" />
-        <com xyz="0.01019 -0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
+        <com xyz="0.01019 0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
         <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
                   iyy="0.00000576234" iyz="-0.00000007672"
                   izz="0.00001066429" />  <!-- nothing was flipped, not sure what to do here -->
@@ -247,7 +249,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material" value="Gazebo/Green" />
         </map>
         <geometry name="${prefix}_r_finger_tip_visual">
           <mesh filename="finger_tip_r" />
@@ -279,8 +281,10 @@
       </map>
       <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="kp">1000000.0</elem>
-        <elem key="kd">1.0</elem>
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
       </map>
     </link>
 
@@ -383,7 +387,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Red</elem>
+          <elem key="material" value="Gazebo/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
           <mesh filename="wrist_roll" />

@@ -31,7 +31,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/PioneerBody</elem>
+          <elem key="material" value="Gazebo/PioneerBody" />
         </map>
         <geometry name="${name}_mount_visual">
           <mesh filename="hok_tilt" />
@@ -138,7 +138,7 @@
       <visual>
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material" value="Gazebo/Blue" />
         </map>
         <geometry name="${name}_visual">
           <mesh scale="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
@@ -242,7 +242,7 @@
       <visual>
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material" value="Gazebo/Blue" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="head_pan" />
@@ -291,7 +291,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material" value="Gazebo/Green" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="head_tilt" />

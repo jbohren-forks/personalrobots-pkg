@@ -36,7 +36,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="foo" flag="gazebo">
-	  <elem key="material">Gazebo/Red</elem>
+	  <elem key="material" value="Gazebo/Red" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="torso" />

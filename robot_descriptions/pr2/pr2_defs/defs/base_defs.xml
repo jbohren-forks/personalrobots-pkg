@@ -33,7 +33,7 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <!-- TODO should be different for left and right wheel-->
-          <elem key="material">PR2/${parent}_${suffix}_wheel_link</elem>
+          <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
           <mesh filename="wheel" />
@@ -85,7 +85,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0 " />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material" value="Gazebo/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -141,7 +141,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material" value="Gazebo/Green" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="base" />
@@ -190,7 +190,7 @@
       <visual>
         <origin xyz="0 0 0.12" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/PioneerBody</elem>
+          <elem key="material" value="Gazebo/PioneerBody" />
         </map>
         <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>
