@@ -167,9 +167,6 @@ public:
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.valid = 1;
-	m_publishStatus = true;
-	
-	m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this)); 
 
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
 	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
@@ -181,12 +178,10 @@ public:
     /** Free the memory */
     virtual ~KinematicPlanning(void)
     {
-	m_publishStatus = false;
 	stopReplanning();
+	stopPublishingStatus();
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
-	m_statusThread->join();
-	delete m_statusThread;
     }
         
     void stopReplanning(void)
@@ -222,6 +217,22 @@ public:
 	m_replanningLock.unlock();
 	ROS_INFO("Replanning stopped");	
 	return true;
+    }
+    
+    void startPublishingStatus(void)
+    {
+	m_publishStatus = true;	
+	m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this));
+    }
+    
+    void stopPublishingStatus(void)
+    {
+	if (m_publishStatus)
+	{
+	    m_publishStatus = false;
+	    m_statusThread->join();
+	    delete m_statusThread;
+	}	
     }
     
     void publishStatus(void)
@@ -595,6 +606,10 @@ int main(int argc, char **argv)
 	ROS_INFO("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	    ROS_INFO("  * %s", mlist[i].c_str());    
+	
+	planner->waitForState();
+	planner->startPublishingStatus();
+	
 	if (mlist.size() > 0)
 	    planner->spin();
 	else
