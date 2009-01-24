@@ -36,7 +36,10 @@ public:
   AdjacencyListSBPLEnv ();
   void writeToStream (ostream& str = cout);
 
+  /// Add point to roadmap.  Does not check for duplicates.
   void addPoint (const Coords& c);
+
+  /// Does the roadmap contain this point?
   bool hasPoint (const Coords& c);
 
   /// Remove the last N points added using addPoint (and all their incident edges) in O(N) time
@@ -52,7 +55,9 @@ public:
 
   /// Use ARA* to find an optimal path between the currently set start and goal states
   /// \return Vector of states on the path
-  vector<Coords> findOptimalPath (void);
+  /// \post solution_cost will hold the cost of the returned solution
+
+  vector<Coords> findOptimalPath (int* solution_cost);
 
   // Inherited DiscreteSpaceInformation ops
   bool InitializeEnv (const char* sEnvFile);
@@ -336,14 +341,15 @@ void AdjacencyListSBPLEnv<Coords>::GetPreds(int TargetStateID, vector<int>* Pred
 }
 
 template <class Coords>
-vector<Coords> AdjacencyListSBPLEnv<Coords>::findOptimalPath ()
+vector<Coords> AdjacencyListSBPLEnv<Coords>::findOptimalPath (int* solution_cost)
 {
   // Initialize ARA planner
   ARAPlanner p(this, true);
   p.set_start(startStateId_);
   p.set_goal(goalStateId_);
+  p.set_initialsolution_eps(1.0);
   vector<int> solution;
-  p.replan(1.0, &solution);
+  p.replan(1.0, &solution, solution_cost);
 
   vector<Coords> solutionPoints;
   for (unsigned int i=0; i<solution.size(); i++) {
