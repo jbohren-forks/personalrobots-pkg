@@ -116,9 +116,9 @@ class CollisionMapperBuffer : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapperBuffer () : ros::Node ("collision_map_buffer"), tf_(*this)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
-      param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default
-      param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
+      param ("~leaf_width_x", leaf_width_.x, 0.02);       // 2cm diameter by default
+      param ("~leaf_width_y", leaf_width_.y, 0.02);       // 2cm diameter by default
+      param ("~leaf_width_z", leaf_width_.z, 0.02);       // 2cm diameter by default
 
       param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
       param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
@@ -136,7 +136,7 @@ class CollisionMapperBuffer : public ros::Node
       robot_max_.y = robot_max_.y * robot_max_.y;
       robot_max_.z = robot_max_.z * robot_max_.z;
 
-      string cloud_topic ("cloud_1_raw");
+      string cloud_topic ("full_cloud");
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
@@ -234,7 +234,7 @@ class CollisionMapperBuffer : public ros::Node
     {
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
-      base_origin.header.frame_id = "tilt_link_frame";
+      base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = ros::Time();
 
       try
@@ -394,7 +394,11 @@ class CollisionMapperBuffer : public ros::Node
         else
           final_leaves_ = cur_leaves_;
 
-        computeCollisionMapFromLeaves (&final_leaves_, final_collision_map_);
+        // Include the static map in the reunion
+        set_union (final_leaves_.begin (), final_leaves_.end (), static_leaves_.begin (), static_leaves_.end (),
+                    inserter (model_reunion, model_reunion.begin ()), compareLeaf);
+
+        computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
 
         gettimeofday (&t2, NULL);
         time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -424,7 +428,7 @@ class CollisionMapperBuffer : public ros::Node
         tictoc.sleep ();
       }
 
-      resp.status = 0;      // success (!!
+      resp.status = 0;      // success (!)
 
       return (true);
     }
