@@ -32,58 +32,81 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_LAZY_RRT_SETUP_
-#define KINEMATIC_PLANNING_RKP_LAZY_RRT_SETUP_
+#ifndef OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_EXTENSION_LRSBL_
+#define OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_EXTENSION_LRSBL_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
+#include "ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h"
+#include "ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h"
 
-namespace kinematic_planning
+/** Main namespace */
+namespace ompl
 {
+
+    /** Forward class declaration */
+    ForwardClassDeclaration(LRSBL);
     
-    class RKPLazyRRTSetup : public RKPPlannerSetup
+    /**
+       @subsubsection LRSBL Lazy RRT Single-query Bi-directional Lazy collision checking planner (LRSBL)
+       
+       @par Short description     
+
+       LRSBL is actually SBL that uses LazyRRT internally to compute
+       possible goal states (only if the goal is not specified as a
+       state). This avoids the need for inverse kinematics. In
+       essence, LazyRRT does inverse kinematics.
+
+       @par External documentation
+
+    */
+    class LRSBL : public SBL
     {
     public:
-	
-        RKPLazyRRTSetup(void) : RKPPlannerSetup()
+
+        LRSBL(SpaceInformation_t si) : SBL(si),
+ 	                               m_lazyRRT(si, true)
 	{
-	    name = "LazyRRT";
+	    m_type = PLAN_TO_GOAL_STATE | PLAN_TO_GOAL_REGION;
+	}
+
+	virtual ~LRSBL(void)
+	{
 	}
 	
-	virtual ~RKPLazyRRTSetup(void)
+	virtual void setup(void)
 	{
+	    m_lazyRRT.setRange(m_rho);
+	    m_lazyRRT.setup();
+	    SBL::setup();
 	}
-		
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+
+	/** Same as for LazyRRT. */
+	void setGoalBias(double goalBias)
 	{
-	    preSetup(model, options);
-	    
-	    ompl::LazyRRT_t rrt = new ompl::LazyRRT(si);
-	    mp                  = rrt;
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = string_utils::fromString<double>(options["range"]);
-		rrt->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    if (options.find("goal_bias") != options.end())
-	    {	
-		double bias = string_utils::fromString<double>(options["goal_bias"]);
-		rrt->setGoalBias(bias);
-		ROS_INFO("Goal bias is set to %g", bias);
-	    }
-	    
-	    postSetup(model, options);
-	    
-	    return true;
+	    m_lazyRRT.setGoalBias(goalBias);
 	}
+	
+	/** Same as for LazyRRT */
+	double getGoalBias(void) const
+	{
+	    return m_lazyRRT.getGoalBias();
+	}
+
+	virtual bool solve(double solveTime);
+
+	virtual void clear(void)
+	{
+	    m_lazyRRT.clear();
+	    SBL::clear();	    
+	}
+	
+    protected:
+	
+	LazyRRT m_lazyRRT;
 	
     };
+
 }
 
 #endif
-    

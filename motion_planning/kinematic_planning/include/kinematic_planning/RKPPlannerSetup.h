@@ -89,8 +89,30 @@ namespace kinematic_planning
 	    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
 	}
 	
+	virtual void preSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
+	{
+	    ROS_INFO("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
+	    
+	    si       = new SpaceInformationRKPModel(model);
+	    svc      = new StateValidityPredicate(model);
+	    si->setStateValidityChecker(svc);
+	    
+	    smoother = new ompl::PathSmootherKinematic(si);
+	    smoother->setMaxSteps(50);
+	    smoother->setMaxEmptySteps(4);
+	    
+	}
+	
+	virtual void postSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
+	{
+	    setupDistanceEvaluators();
+	    si->setup();
+	    mp->setup();	    
+	}
+	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
 	
+	std::string                                                             name;	
 	ompl::Planner_t                                                         mp;
 	ompl::SpaceInformationKinematic_t                                       si;
 	ompl::SpaceInformation::StateValidityChecker_t                          svc;

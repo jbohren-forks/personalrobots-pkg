@@ -497,6 +497,13 @@ private:
 	}
 	model->addLazyRRT(options);
 	
+	options.clear();
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    options = data.getMapTagValues("planning", "EST");
+	}
+	model->addEST(options);
 
 	options.clear();
 	if (group)
@@ -510,9 +517,9 @@ private:
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    options = data.getMapTagValues("planning", "EST");
+	    options = data.getMapTagValues("planning", "LRSBL");
 	}
-	model->addEST(options);
+	model->addLRSBL(options); 
     }
     
     ModelMap                                                        m_models;

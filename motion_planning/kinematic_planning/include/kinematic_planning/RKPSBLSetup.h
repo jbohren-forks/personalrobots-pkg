@@ -49,6 +49,7 @@ namespace kinematic_planning
 	
         RKPSBLSetup(void) : RKPPlannerSetup()
 	{
+	    name = "SBL";	    
 	}
 	
 	virtual ~RKPSBLSetup(void)
@@ -63,15 +64,7 @@ namespace kinematic_planning
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
-	    ROS_INFO("Adding SBL instance for motion planning: %s", model->groupName.c_str());
-	    
-	    si       = new SpaceInformationRKPModel(model);
-	    svc      = new StateValidityPredicate(model);
-	    si->setStateValidityChecker(svc);
-	    
-	    smoother = new ompl::PathSmootherKinematic(si);
-	    smoother->setMaxSteps(50);
-	    smoother->setMaxEmptySteps(4);
+	    preSetup(model, options);
 	    
 	    ompl::SBL_t sbl = new ompl::SBL(si);
 	    mp              = sbl;	
@@ -123,14 +116,12 @@ namespace kinematic_planning
 	    
 	    if (!setDim || !setProj)
 	    {
-		ROS_ERROR("Adding SBL failed: need to set both 'projection' and 'cellldim' for %s", model->groupName.c_str());
+		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 		return false;
 	    }
 	    else
 	    {
-		setupDistanceEvaluators();
-		si->setup();
-		mp->setup();
+		postSetup(model, options);
 		return true;
 	    }
 	}

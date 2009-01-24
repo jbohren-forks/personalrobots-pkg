@@ -43,6 +43,7 @@
 #include "kinematic_planning/RKPLazyRRTSetup.h"
 #include "kinematic_planning/RKPSBLSetup.h"
 #include "kinematic_planning/RKPESTSetup.h"
+#include "kinematic_planning/RKPLRSBLSetup.h"
 
 #include <string>
 #include <map>
@@ -68,7 +69,7 @@ namespace kinematic_planning
 	{
 	    RKPPlannerSetup *rrt = new RKPRRTSetup();
 	    if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-		planners["RRT"] = rrt;
+		planners[rrt->name] = rrt;
 	    else
 		delete rrt;
 	}
@@ -77,7 +78,7 @@ namespace kinematic_planning
 	{
 	    RKPPlannerSetup *rrt = new RKPLazyRRTSetup();
 	    if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-		planners["LazyRRT"] = rrt;
+		planners[rrt->name] = rrt;
 	    else
 		delete rrt;
 	}
@@ -86,15 +87,25 @@ namespace kinematic_planning
 	{
 	    RKPPlannerSetup *est = new RKPESTSetup();
 	    if (est->setup(dynamic_cast<RKPModelBase*>(this), options))
-		planners["EST"] = est;
+		planners[est->name] = est;
 	    else
 		delete est;
 	}
+
 	void addSBL(std::map<std::string, std::string> &options)
 	{
 	    RKPPlannerSetup *sbl = new RKPSBLSetup();
 	    if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
-		planners["SBL"] = sbl;
+		planners[sbl->name] = sbl;
+	    else
+		delete sbl;
+	}
+
+	void addLRSBL(std::map<std::string, std::string> &options)
+	{
+	    RKPPlannerSetup *sbl = new RKPLRSBLSetup();
+	    if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
+		planners[sbl->name] = sbl;
 	    else
 		delete sbl;
 	}

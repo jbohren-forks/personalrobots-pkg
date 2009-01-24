@@ -49,6 +49,7 @@ namespace kinematic_planning
 	
         RKPRRTSetup(void) : RKPPlannerSetup()
 	{
+	    name = "RRT";
 	}
 	
 	virtual ~RKPRRTSetup(void)
@@ -57,15 +58,7 @@ namespace kinematic_planning
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
-	    ROS_INFO("Adding RRT instance for motion planning: %s", model->groupName.c_str());
-	    
-	    si       = new SpaceInformationRKPModel(model);
-	    svc      = new StateValidityPredicate(model);
-	    si->setStateValidityChecker(svc);
-	    
-	    smoother = new ompl::PathSmootherKinematic(si);
-	    smoother->setMaxSteps(50);
-	    smoother->setMaxEmptySteps(4);
+	    preSetup(model, options);
 	    
 	    ompl::RRT_t rrt = new ompl::RRT(si);
 	    mp              = rrt;
@@ -84,9 +77,7 @@ namespace kinematic_planning
 		ROS_INFO("Goal bias is set to %g", bias);
 	    }
 	    
-	    setupDistanceEvaluators();
-	    si->setup();
-	    mp->setup();
+	    postSetup(model, options);
 	    
 	    return true;
 	}
