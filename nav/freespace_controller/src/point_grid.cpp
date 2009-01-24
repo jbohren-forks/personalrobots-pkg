@@ -40,9 +40,10 @@
 
 using namespace std;
 using namespace std_msgs;
+using namespace costmap_2d;
 
-PointGrid::PointGrid(double size_x, double size_y, double resolution, Point2DFloat32 origin) :
-  resolution_(resolution), origin_(origin)
+PointGrid::PointGrid(double size_x, double size_y, double resolution, Point2DFloat32 origin, double max_z, double obstacle_range) :
+  resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range)
 {
   width_ = (int) ((size_x - origin_.x)/resolution_);
   height_ = (int) ((size_y - origin_.y)/resolution_);
@@ -208,6 +209,33 @@ void PointGrid::insert(Point32 pt){
   //printf("Index: %d, size: %d\n", pt_index, cells_[pt_index].size());
 }
 
+void PointGrid::updateGrid(const vector<Observation> observations, const vector<Point2DFloat32> laser_outline){
+  ///@TODO Remove outdated points in the grid within the polygon of the laser sweep
+  removePointsInPolygon(laser_outline);
+
+  //iterate through all observations and update the grid
+  for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
+    const Observation& obs = *it;
+    const PointCloud& cloud = *(obs.cloud_);
+    for(unsigned int i = 0; i < cloud.get_pts_size(); ++i){
+      //filter out points that are too high
+      if(cloud.pts[i].z > max_z_)
+        continue;
+
+      //compute the squared distance from the hitpoint to the pointcloud's origin
+      double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
+        + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y) 
+        + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+
+      if(sq_dist >= sq_obstacle_range_)
+        continue;
+
+      //insert the point
+      insert(cloud.pts[i]);
+    }
+  }
+}
+
 void PointGrid::removePointsInPolygon(const vector<Point2DFloat32> poly){
   if(poly.size() == 0)
     return;
@@ -260,7 +288,7 @@ int main(int argc, char** argv){
   Point2DFloat32 origin;
   origin.x = 0.0;
   origin.y = 0.0;
-  PointGrid pg(50.0, 50.0, 0.2, origin);
+  PointGrid pg(50.0, 50.0, 0.2, origin, 2.0, 3.0);
   /*
   double x = 10.0;
   double y = 10.0;
@@ -308,14 +336,20 @@ int main(int argc, char** argv){
   point.y = 1.01;
   point.z = 1.0;
 
-  for(unsigned int i = 0; i < 10000000; ++i){
-    pg.insert(point);
-  }
-  //pg.removePointsInPolygon(footprint);
-  
   struct timeval start, end;
   double start_t, end_t, t_diff;
-  printf("Starting\n");
+
+  gettimeofday(&start, NULL);
+  for(unsigned int i = 0; i < 2000; ++i){
+    pg.insert(point);
+  }
+  gettimeofday(&end, NULL);
+  start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  t_diff = end_t - start_t;
+  printf("Insertion Time: %.9f \n", t_diff);
+  //pg.removePointsInPolygon(footprint);
+  
   gettimeofday(&start, NULL);
   bool legal = pg.legalFootprint(pt, footprint, 0.0, .95);
   gettimeofday(&end, NULL);
