@@ -415,7 +415,7 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 	    if (m_modelsGeom[model_id].linkGeom[i]->enabled)
 	    {
 		const unsigned int ng = m_modelsGeom[model_id].linkGeom[i]->geom.size();
-		for (unsigned int ig = 0 ; ig < ng ; ++ig)
+		for (unsigned int ig = 0 ; ig < ng && !cdata.collides ; ++ig)
 		    m_collide2.collide(m_modelsGeom[model_id].linkGeom[i]->geom[ig], reinterpret_cast<void*>(&cdata), nearCallbackFn);
 	    }
     }
