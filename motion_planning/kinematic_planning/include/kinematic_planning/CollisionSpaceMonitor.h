@@ -233,8 +233,6 @@ namespace kinematic_planning
 		data[i4 + 1] = m_collisionMap.boxes[i].center.y;
 		data[i4 + 2] = m_collisionMap.boxes[i].center.z;
 		
-		// radius (we multiply by sqrt(3) to get the diagonal of the cube containing
-		// the given box
 		data[i4 + 3] = radiusOfBox(m_collisionMap.boxes[i].extents);
 	    }
 	    
@@ -265,7 +263,7 @@ namespace kinematic_planning
 	
 	double radiusOfBox(std_msgs::Point32 &point)
 	{
-	    return std::max(std::max(point.x, point.y), point.z) * 1.732050808;
+	    return std::max(std::max(point.x, point.y), point.z) * 2.0;
 	}
 	
     };

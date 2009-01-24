@@ -177,8 +177,12 @@ public:
 	m_activeRequestState = req.value;
 	m_replanningController = controller;
 	m_statePlanning = true;
-	m_node->publish("replan_kinematic_path_state", req);
-	ROS_INFO("Issued a replanning request");	    
+
+	robot_srvs::KinematicReplanState::response res;
+	if (ros::service::call("replan_kinematic_path_state", req, res))
+	    ROS_INFO("Succesfully issued a replanning request");  
+	else
+	    ROS_ERROR("Unable to issue replanning request");	
     }
     
     void performCall(robot_srvs::KinematicPlanState::request &req, int controller = C_NONE)
@@ -198,7 +202,13 @@ public:
 	m_activeRequestLinkPosition = req.value;
 	m_replanningController = controller;
 	m_statePlanning = false;		
-	m_node->publish("replan_kinematic_path_position", req);
+
+	robot_srvs::KinematicReplanLinkPosition::response res;
+	if (ros::service::call("replan_kinematic_path_position", req, res))
+	    ROS_INFO("Succesfully issued a replanning request");  
+	else
+	    ROS_ERROR("Unable to issue replanning request");	
+
 	ROS_INFO("Issued a replanning request");	    
     }
     
@@ -227,6 +237,9 @@ public:
     {
 	if (m_replanning)
 	{
+	    if (path.get_states_size() == 0)
+		return;
+	    
 	    if (m_statePlanning)
 		executePath(m_activeRequestState, path, -1.0, m_replanningController);
 	    else
@@ -243,8 +256,8 @@ public:
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
 	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
-	if (controller == C_ARM)
-	    sendArmCommand(path, req.params.model_id);
+	//	if (controller == C_ARM)
+	sendArmCommand(path, req.params.model_id);
     }
     
     void executePath(robot_msgs::KinematicPlanStateRequest &req,
@@ -253,9 +266,9 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
-	if (controller == C_ARM)
-	    sendArmCommand(path, req.params.model_id);
+	//	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
+	//	if (controller == C_ARM)
+	sendArmCommand(path, req.params.model_id);
     }
     
 protected:
@@ -302,13 +315,10 @@ public:
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model),
 							m_pr(dynamic_cast<ros::Node*>(this))
     {
-	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
-	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_state", 1);
-	advertise<robot_srvs::KinematicPlanState::request>("replan_kinematic_path_position", 1);
+	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);
-	advertise<std_msgs::Empty>("replan_stop", 1);
 	
-	subscribe("path_to_goal", m_pathToGoal, &PlanKinematicPath::currentPathToGoal, this, 1);
+	subscribe("kinematic_planning_status", m_planStatus, &PlanKinematicPath::currentPathToGoal, this, 1);
 
 	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);
 	m_id = 0;
@@ -324,7 +334,8 @@ public:
 	robot_msgs::KinematicPath empty_path;
 	robot_msgs::KinematicState state;
 	currentState(state);
-	m_pr.sendDisplay(state, empty_path, "pr2");
+	//	m_pr.sendDisplay(state, empty_path, "pr2");
+	//	printCurrentState();
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -337,7 +348,7 @@ public:
     // execute this when a new path is received
     void currentPathToGoal(void)
     {
-	m_pr.useReplannedPath(m_pathToGoal);
+	m_pr.useReplannedPath(m_planStatus.path);
 	//	m_pr.requestStopReplanning();
     }
     
@@ -352,8 +363,8 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "RRT";
-	req.threshold = 0.01;
+	req.params.planner_id = "SBL";
+	req.threshold = 0.1;
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -391,8 +402,8 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "RRT";
-	req.threshold = 0.01;
+	req.params.planner_id = "SBL";
+	req.threshold = 0.1;
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -402,7 +413,7 @@ public:
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;	
 	req.goal_state.vals[1] = -0.2;
-	req.goal_state.vals[0] = -0.2;
+	req.goal_state.vals[0] = -0.8;
 
 	req.allowed_time = 30.0;
 	
@@ -540,7 +551,7 @@ protected:
     }
     
     // in replanning mode, current path to goal
-    robot_msgs::KinematicPath m_pathToGoal;
+    robot_msgs::KinematicPlanStatus m_planStatus;
     PlanningRequest           m_pr;
     unsigned int              m_id;
     
@@ -563,19 +574,23 @@ int main(int argc, char **argv)
 	plan->loadRobotDescription();
 	if (plan->loadedRobot())
 	{
-	    sleep(1);
-	    plan->waitForState();
+	    sleep(5);
+	    //	    plan->waitForState();
 	    ROS_INFO("Received robot state");
+	    plan->printCurrentState();
+
+	    
+	    sleep(3);		
 	    
 	    char test = (argc < 3) ? ' ' : argv[2][0];
 	    
 	    switch (test)
 	    {
 	    case '0':
-		plan->runRightArmTo0(false);
+		plan->runRightArmTo0(true);
 		break;
 	    case 'r':
-		plan->runTestRightArm(false);    
+		plan->runTestRightArm(true);    
 		break;
 	    case 'e':
 		plan->runTestRightEEf(false);    

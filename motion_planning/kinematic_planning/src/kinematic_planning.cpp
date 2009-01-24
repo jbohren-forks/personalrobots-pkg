@@ -157,7 +157,7 @@ public:
     {
 	advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
-
+	
 	m_replanID = 0;
 	m_replanning = false;
 	m_replanningThread = NULL;
@@ -243,6 +243,7 @@ public:
 	    duration.sleep();
 	    m_statusLock.lock();	    
 	    publish("kinematic_planning_status", m_currentPlanStatus);
+	    m_currentPlanStatus.path.set_states_size(0);
 	    m_statusLock.unlock();	    
 	}
     }

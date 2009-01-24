@@ -47,6 +47,7 @@
 #include <planning_models/kinematic.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <sstream>
 #include <cmath>
 
 #include <robot_msgs/MechanismState.h>
@@ -193,6 +194,13 @@ namespace kinematic_planning
 	    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
 		ros::Duration().fromSec(0.05).sleep();
 	}
+
+	void printCurrentState(void)
+	{
+	    std::stringstream ss;
+	    m_robotState->print(ss);
+	    ROS_INFO(ss.str().c_str());
+	}
 	
     protected:
 	
@@ -233,7 +241,6 @@ namespace kinematic_planning
 	void mechanismStateCallback(void)
 	{
 	    bool change = false;
-	    m_haveMechanismState = true;
 	    if (m_robotState)
 	    {
 		unsigned int n = m_mechanismState.get_joint_states_size();
@@ -242,6 +249,7 @@ namespace kinematic_planning
 		    double pos = m_mechanismState.joint_states[i].position;
 		    change = change || m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
 		}
+		m_haveMechanismState = true;
 	    }
 	    if (change)
 		stateUpdate();

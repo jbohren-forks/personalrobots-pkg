@@ -175,7 +175,7 @@ namespace kinematic_planning
 	    
 	    if (times <= 0)
 	    {
-		ROS_ERROR("Request specifies motion plan cannot be computed %d times", times);
+		ROS_ERROR("Motion plan cannot be computed %d times", times);
 		return false;
 	    }
 	    
@@ -213,7 +213,7 @@ namespace kinematic_planning
 		    ros::Time startTime = ros::Time::now();
 		    bool ok = psetup->mp->solve(allowed_time); 
 		    double tsolve = (ros::Time::now() - startTime).toSec();	
-		    ROS_INFO("%s Motion planner spend %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
+		    ROS_INFO("%s Motion planner spent %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
 		    totalTime += tsolve;
 		    
 		    /* do path smoothing */
