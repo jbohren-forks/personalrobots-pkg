@@ -96,24 +96,29 @@ class CollisionMapperBuffer : public ros::Node
     PointCloud cloud_;
     CollisionMap final_collision_map_;
 
-    vector<Leaf> static_leaves_, cur_leaves_, final_leaves_;
+    // Internal map representations
+    vector<Leaf> static_leaves_, cur_leaves_, final_leaves_, object_subtract_leaves_;
     list<vector<Leaf> > decaying_maps_;
 
-    OrientedBoundingBox box_sub_obj_;
-
+    // TF
     tf::TransformListener tf_;
 
     // Parameters
     Point leaf_width_, robot_max_;
-
+    double delta_bounds_;
     int min_nr_points_;
+    string end_effector_frame_;
 
-    boost::mutex static_map_lock_, m_lock_;
+    // Mutices
+    boost::mutex static_map_lock_, object_subtract_lock_, cloud_frame_lock_, m_lock_;
 
     // The size of the buffer window
     int window_size_;
     bool acquire_static_map_;
     ros::Time acquire_static_map_time_;
+
+    // Internal parameters
+    string cloud_frame_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CollisionMapperBuffer () : ros::Node ("collision_map_buffer"), tf_(*this)
@@ -128,10 +133,14 @@ class CollisionMapperBuffer : public ros::Node
 
       param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
 
+      param ("~delta_bounds", delta_bounds_, 2 * leaf_width_.x);    // Pad the object cluster with 2 times the resolution
+
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
 
       param ("~window_size", window_size_, 5);             // Use the latest 5 collision maps + static by default
+
+      param ("~end_effector_frame", end_effector_frame_, string ("r_gripper_palm_link"));     // The frame of the end effector (used for object subtraction)
 
       // Square the limits (simplified point distances below)
       robot_max_.x = robot_max_.x * robot_max_.x;
@@ -174,6 +183,8 @@ class CollisionMapperBuffer : public ros::Node
       if (hasParam ("~leaf_width_z")) getParam ("~leaf_width_z", leaf_width_.z);
 
       if (hasParam ("~window_size")) getParam ("~window_size", window_size_);
+
+      if (hasParam ("~delta_bounds")) getParam ("~delta_bounds", delta_bounds_);
 
       if (hasParam ("~robot_max_x"))
       {
@@ -238,7 +249,7 @@ class CollisionMapperBuffer : public ros::Node
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
-      base_origin.header.stamp = ros::Time();
+      base_origin.header.stamp = ros::Time ();
 
       try
       {
@@ -333,9 +344,15 @@ class CollisionMapperBuffer : public ros::Node
     void
       cloud_cb ()
     {
+      // Get the new parameters from the server
       m_lock_.lock ();
       updateParametersFromServer ();
       m_lock_.unlock ();
+
+      // Copy the cloud frame id
+      cloud_frame_lock_.lock ();
+      cloud_frame_ = cloud_.header.frame_id;
+      cloud_frame_lock_.unlock ();
 
       timeval t1, t2;
       double time_spent;
@@ -401,7 +418,16 @@ class CollisionMapperBuffer : public ros::Node
         set_union (final_leaves_.begin (), final_leaves_.end (), static_leaves_.begin (), static_leaves_.end (),
                     inserter (model_reunion, model_reunion.begin ()), compareLeaf);
 
-        computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
+        // Do we need to subtract any object from this map ?
+        if (object_subtract_leaves_.size () > 0)
+        {
+          set_difference (model_reunion.begin (), model_reunion.end (), object_subtract_leaves_.begin (), object_subtract_leaves_.end (),
+                          inserter (final_leaves_, final_leaves_.begin ()), compareLeaf);
+          computeCollisionMapFromLeaves (&final_leaves_, final_collision_map_);
+        }
+        else
+          computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
+
 
         gettimeofday (&t2, NULL);
         time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -413,7 +439,7 @@ class CollisionMapperBuffer : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief CollisionMapBuffer service callback */
+    /** \brief CollisionMapBuffer "record_static_map" service callback */
     bool
       getStaticMap (RecordStaticMapTrigger::request &req, RecordStaticMapTrigger::response &resp)
     {
@@ -437,10 +463,88 @@ class CollisionMapperBuffer : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief CollisionMapBuffer service callback */
+    /** \brief CollisionMapBuffer "subtract_object" service callback */
     bool
       subtractObject (SubtractObjectFromCollisionMap::request &req, SubtractObjectFromCollisionMap::response &resp)
     {
+      // Get the position of the end effector
+      PointStamped gripper_origin, cloud_origin;
+      gripper_origin.point.x = gripper_origin.point.y = gripper_origin.point.z = 0.0;
+      gripper_origin.header.frame_id = end_effector_frame_.c_str ();
+      gripper_origin.header.stamp = ros::Time ();
+
+      cloud_frame_lock_.lock ();
+      string cloud_frame = cloud_frame_;
+      cloud_frame_lock_.unlock ();
+
+      try
+      {
+        tf_.transformPoint (cloud_frame, gripper_origin, cloud_origin);
+        ROS_INFO ("End Effector 'origin' is : %g,%g,%g", cloud_origin.point.x, cloud_origin.point.y, cloud_origin.point.z);
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR ("TF not running or wrong TF frame specified! Defaulting to 0,0,0.");
+        cloud_origin = gripper_origin;
+      }
+
+      // Compute the minimum and maximum bounding box values
+      Point32 minB, maxB, centerB, divB;
+      minB.x = req.object.min_bound.x - delta_bounds_;
+      minB.y = req.object.min_bound.y - delta_bounds_;
+      minB.z = req.object.min_bound.z - delta_bounds_;
+
+      maxB.x = req.object.min_bound.x + delta_bounds_;
+      maxB.y = req.object.min_bound.y + delta_bounds_;
+      maxB.z = req.object.min_bound.z + delta_bounds_;
+
+      centerB.x = (maxB.x + minB.x) / 2.0 ;
+      centerB.y = (maxB.y + minB.y) / 2.0;
+      centerB.z = (maxB.z + minB.z) / 2.0;
+
+      // Center the bounds around the end effector position in the cloud frame
+      minB.x = minB.x - centerB.x + cloud_origin.point.x;
+      minB.y = minB.y - centerB.y + cloud_origin.point.y;
+      minB.z = minB.z - centerB.z + cloud_origin.point.z;
+
+      maxB.x = minB.x - centerB.x + cloud_origin.point.x;
+      maxB.y = maxB.y - centerB.y + cloud_origin.point.y;
+      maxB.z = maxB.z - centerB.z + cloud_origin.point.z;
+
+      // Compute the number of divisions needed along all axis
+      divB.x = maxB.x - minB.x + 1;
+      divB.y = maxB.y - minB.y + 1;
+      divB.z = maxB.z - minB.z + 1;
+
+      // Create a Collision Map object
+      object_subtract_lock_.lock ();
+
+      // Allocate the space needed (+ extra)
+      object_subtract_leaves_.clear ();
+      object_subtract_leaves_.resize (divB.x * divB.y * divB.z);
+
+      // Create the leaves
+      for (int i = 0; i < divB.x; i++)
+      {
+        for (int j = 0; j < divB.y; j++)
+        {
+          for (int k = 0; k < divB.z; k++)
+          {
+            int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
+            object_subtract_leaves_[idx].i_ = i;
+            object_subtract_leaves_[idx].j_ = j;
+            object_subtract_leaves_[idx].k_ = k;
+            object_subtract_leaves_[idx].nr_points_ = 1;
+          }
+        }
+      }
+
+      sort (object_subtract_leaves_.begin (), object_subtract_leaves_.end (), compareLeaf);
+
+      object_subtract_lock_.unlock ();
+
+      resp.status = 0;      // success (!)
+
       return (true);
     }
 };
@@ -453,10 +557,10 @@ int
 
   CollisionMapperBuffer p;
 
-//   collision_map::RememberMap::request req;
-//   collision_map::RememberMap::response resp;
+//   RecordStaticMapTrigger::request req;
+//   RecordStaticMapTrigger::response resp;
 //   req.map_time = ros::Time::now ();
-//   ros::service::call ("collision_map_buffer", req, resp);
+//   ros::service::call ("record_static_map", req, resp);
 
   p.spin ();
 
