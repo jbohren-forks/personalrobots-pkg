@@ -34,29 +34,29 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_LRSBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_LRSBL_SETUP_
+#ifndef KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
+#define KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
 
 #include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/LRSBL.h>
+#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
 
 namespace kinematic_planning
 {
     
-    class RKPLRSBLSetup : public RKPPlannerSetup
+    class RKPIKSBLSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPLRSBLSetup(void) : RKPPlannerSetup()
+        RKPIKSBLSetup(void) : RKPPlannerSetup()
 	{
-	    name = "LRSBL";	    
+	    name = "IKSBL";	    
 	}
 	
-	virtual ~RKPLRSBLSetup(void)
+	virtual ~RKPIKSBLSetup(void)
 	{
-	    if (dynamic_cast<ompl::LRSBL_t>(mp))
+	    if (dynamic_cast<ompl::IKSBL_t>(mp))
 	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::LRSBL_t>(mp)->getProjectionEvaluator();
+		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL_t>(mp)->getProjectionEvaluator();
 		if (pe)
 		    delete pe;
 	    }
@@ -66,7 +66,7 @@ namespace kinematic_planning
 	{
 	    preSetup(model, options);
 	    
-	    ompl::LRSBL_t sbl = new ompl::LRSBL(si);
+	    ompl::IKSBL_t sbl = new ompl::IKSBL(si);
 	    mp                = sbl;	
 	    
 	    bool setDim  = false;
@@ -77,13 +77,6 @@ namespace kinematic_planning
 		double range = string_utils::fromString<double>(options["range"]);
 		sbl->setRange(range);
 		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    if (options.find("goal_bias") != options.end())
-	    {	
-		double bias = string_utils::fromString<double>(options["goal_bias"]);
-		sbl->setGoalBias(bias);
-		ROS_INFO("Goal bias is set to %g", bias);
 	    }
 	    
 	    if (options.find("projection") != options.end())

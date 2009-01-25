@@ -209,6 +209,7 @@ int main(int argc, char **argv)
 	
 	StateValidityMonitor *validator = new StateValidityMonitor(argv[1]);
 	validator->loadRobotDescription();
+	validator->waitForState();
 	validator->spin();
 	validator->shutdown();
 	

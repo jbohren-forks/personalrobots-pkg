@@ -43,7 +43,7 @@
 #include "kinematic_planning/RKPLazyRRTSetup.h"
 #include "kinematic_planning/RKPSBLSetup.h"
 #include "kinematic_planning/RKPESTSetup.h"
-#include "kinematic_planning/RKPLRSBLSetup.h"
+#include "kinematic_planning/RKPIKSBLSetup.h"
 
 #include <string>
 #include <map>
@@ -101,9 +101,9 @@ namespace kinematic_planning
 		delete sbl;
 	}
 
-	void addLRSBL(std::map<std::string, std::string> &options)
+	void addIKSBL(std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *sbl = new RKPLRSBLSetup();
+	    RKPPlannerSetup *sbl = new RKPIKSBLSetup();
 	    if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
 		planners[sbl->name] = sbl;
 	    else

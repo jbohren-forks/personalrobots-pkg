@@ -530,9 +530,9 @@ private:
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    options = data.getMapTagValues("planning", "LRSBL");
+	    options = data.getMapTagValues("planning", "IKSBL");
 	}
-	model->addLRSBL(options); 
+	model->addIKSBL(options); 
     }
     
     ModelMap                                                        m_models;

@@ -186,14 +186,18 @@ namespace kinematic_planning
 	
 	void waitForState(void)
 	{
+	    ROS_INFO("Waiting for mechanism state ...");	    
 	    while (m_node->ok() && (m_haveMechanismState ^ loadedRobot()))
 		ros::Duration().fromSec(0.05).sleep();
+	    ROS_INFO("Mechanism state received!");
 	}
 	
 	void waitForPose(void)
 	{
+	    ROS_INFO("Waiting for robot pose ...");	    
 	    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
 		ros::Duration().fromSec(0.05).sleep();
+	    ROS_INFO("Robot pose received!");
 	}
 
 	void printCurrentState(void)
