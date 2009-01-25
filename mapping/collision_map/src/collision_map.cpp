@@ -58,14 +58,15 @@ sizes.
 
 #include <boost/thread/mutex.hpp>
 
-#include "collision_map/OrientedBoundingBox.h"
-#include "collision_map/CollisionMap.h"
+#include <robot_msgs/OrientedBoundingBox.h>
+#include <robot_msgs/CollisionMap.h>
+
 #include <tf/transform_listener.h>
 #include <sys/time.h>
 
 using namespace std;
 using namespace std_msgs;
-using namespace collision_map;
+using namespace robot_msgs;
 
 struct Leaf
 {
@@ -156,7 +157,7 @@ class CollisionMapper : public ros::Node
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       subscribe (cloud_topic.c_str (), cloud_, &CollisionMapper::cloud_cb, 1);
-      advertise<collision_map::CollisionMap> ("collision_map", 1);
+      advertise<CollisionMap> ("collision_map", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

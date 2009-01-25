@@ -51,16 +51,17 @@ dimension, orientation) useful for collision detection.
 
 #include <boost/thread/mutex.hpp>
 
-#include "collision_map/OrientedBoundingBox.h"
-#include "collision_map/CollisionMap.h"
-#include "collision_map/RememberMap.h"
+#include <robot_msgs/OrientedBoundingBox.h>
+#include <robot_msgs/CollisionMap.h>
+#include <robot_srvs/RecordStaticMapTrigger.h>
 
 #include <tf/transform_listener.h>
 #include <sys/time.h>
 
 using namespace std;
 using namespace std_msgs;
-using namespace collision_map;
+using namespace robot_msgs;
+using namespace robot_srvs;
 
 struct Leaf
 {
@@ -153,9 +154,10 @@ class CollisionMapperBuffer : public ros::Node
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       subscribe (cloud_topic.c_str (), cloud_, &CollisionMapperBuffer::cloud_cb, 1);
-      advertise<collision_map::CollisionMap> ("collision_map_buffer", 1);
+      advertise<CollisionMap> ("collision_map_buffer", 1);
 
-      advertiseService("collision_map_buffer", &CollisionMapperBuffer::getStaticMap, this);
+      advertiseService ("~record_static_map", &CollisionMapperBuffer::getStaticMap, this);
+      advertiseService ("~subtract_object", &CollisionMapperBuffer::subtractObject, this);
 
     }
 
@@ -412,7 +414,31 @@ class CollisionMapperBuffer : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief CollisionMapBuffer service callback */
     bool
-      getStaticMap (collision_map::RememberMap::request &req, collision_map::RememberMap::response &resp)
+      getStaticMap (RecordStaticMapTrigger::request &req, RecordStaticMapTrigger::response &resp)
+    {
+      static_map_lock_.lock ();
+      acquire_static_map_      = true;
+      acquire_static_map_time_ = req.map_time;
+      static_map_lock_.unlock ();
+
+      ROS_INFO ("Got a request to compute a new static map at %f.", acquire_static_map_time_.toSec ());
+
+      // Wait until the scan is ready, sleep for 10ms
+      ros::Duration tictoc (0, 10000000);
+      while (acquire_static_map_)
+      {
+        tictoc.sleep ();
+      }
+
+      resp.status = 0;      // success (!)
+
+      return (true);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief CollisionMapBuffer service callback */
+    bool
+      subtractObject (SubtractObjectFromCollisionMap::request &req, SubtractObjectFromCollisionMap::response &resp)
     {
       static_map_lock_.lock ();
       acquire_static_map_      = true;
