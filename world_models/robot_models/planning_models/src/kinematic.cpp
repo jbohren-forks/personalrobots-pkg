@@ -549,6 +549,21 @@ void planning_models::KinematicModel::AttachedBody::computeTransform(btTransform
     globalTrans = attachTrans * parentTrans;
 }
 
+void planning_models::KinematicModel::StateParams::clear(void)
+{
+    setAll(0);
+    for (unsigned int i = 0 ; i < m_dim ; ++i)
+	m_seen[i] = false;
+}
+
+bool planning_models::KinematicModel::StateParams::seenAll(void)
+{
+    for (unsigned int i = 0 ; i < m_dim ; ++i)
+	if (!m_seen[i])
+	    return false;
+    return true;
+}
+
 bool planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)
 {
     bool result = false;
@@ -734,8 +749,12 @@ void planning_models::KinematicModel::StateParams::print(std::ostream &out)
 	Joint* joint = m_owner->getJoint(it->first);
 	if (joint)
 	{
+	    out << it->first;	    
+	    if (!m_seen[m_pos[it->first]])
+		out << "[ *** UNSEEN *** ]";
+	    out << ": ";
 	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-		out << it->first << ": " << m_params[it->second + i] << std::endl;
+		out << m_params[it->second + i] << std::endl;
 	}
     }
     out << std::endl;
