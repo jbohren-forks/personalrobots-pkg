@@ -183,7 +183,15 @@ public:
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
     }
-        
+    
+    void currentState(robot_msgs::KinematicState &state)
+    {
+	state.set_vals_size(m_kmodel->stateDimension);
+	const double *params = m_robotState->getParams();
+	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
+            state.vals[i] = params[i];
+    }
+    
     void stopReplanning(void)
     {
 	std_srvs::Empty::request  dummy1;
@@ -261,9 +269,6 @@ public:
 	    // back up the request
 	    m_currentPlanToStateRequest = req.value;
 
-	    // allocate memory for starting state, if needed
-	    m_currentPlanToStateRequest.start_state.set_vals_size(m_kmodel->stateDimension);
-	    
 	    // start planning thread
 	    m_replanningLock.lock();
 	    m_replanning = true;
@@ -300,9 +305,6 @@ public:
 	    // back up the request
 	    m_currentPlanToPositionRequest = req.value;
 	    
-	    // allocate memory for starting state, if needed
-	    m_currentPlanToPositionRequest.start_state.set_vals_size(m_kmodel->stateDimension);
-	    
 	    // start planning thread
 	    m_replanningLock.lock();
 	    m_replanning = true;
@@ -330,7 +332,14 @@ public:
     {
 	ROS_INFO("Request for planning to a state");
 	bool trivial = false;
+	if (req.value.start_state.get_vals_size() == 0)
+	{
+	    currentState(req.value.start_state);
+	    ROS_INFO("Using current state as starting point");
+	}
+	
 	bool result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+
 	res.value.id = -1;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
@@ -351,9 +360,8 @@ public:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
-	    const double *start_state = m_robotState->getParams();
-	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
-		m_currentPlanToStateRequest.start_state.vals[i] = start_state[i];
+	    
+	    currentState(m_currentPlanToStateRequest.start_state);
 	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    
 	    m_statusLock.lock();	    
@@ -374,7 +382,13 @@ public:
     {	
 	ROS_INFO("Request for planning to a position");
 	bool trivial = false;
+	if (req.value.start_state.get_vals_size() == 0)
+	{
+	    currentState(req.value.start_state);
+	    ROS_INFO("Using current state as starting point");
+	}
 	bool result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+
 	res.value.id = -1;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
@@ -395,9 +409,8 @@ public:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
-	    const double *start_state = m_robotState->getParams();
-	    for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
-		m_currentPlanToPositionRequest.start_state.vals[i] = start_state[i];
+	    
+	    currentState(m_currentPlanToPositionRequest.start_state);
 	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
 
 	    m_statusLock.lock();	    

@@ -56,6 +56,7 @@ namespace kinematic_planning
 		PoseConstraintEvaluator *pce = new PoseConstraintEvaluator();
 		pce->use(m_model->kmodel, pc[i]);
 		m_pce.push_back(pce);
+		threshold += pc[i].position_distance + pc[i].orientation_distance * pc[i].orientation_importance;
 	    }
 	}
 	
