@@ -38,9 +38,9 @@
 #include <collision_space/environmentODE.h>
 
 #include <std_msgs/PointCloud.h>
+#include <robot_msgs/CollisionMap.h>
+#include <robot_msgs/AttachedObject.h>
 #include <robot_srvs/CollisionCheckState.h>
-#include <collision_map/CollisionMap.h>
-#include <kinematic_planning/AttachedObject.h>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -199,11 +199,11 @@ namespace kinematic_planning
 	
     protected:
 	
-	collision_map::CollisionMap           m_collisionMap;
+	robot_msgs::CollisionMap              m_collisionMap;
 	collision_space::EnvironmentModel    *m_collisionSpace;
 
 	// add or remove objects to be attached to a link
-	kinematic_planning::AttachedObject    m_attachedObject;
+	robot_msgs::AttachedObject            m_attachedObject;
 
 	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
 	{

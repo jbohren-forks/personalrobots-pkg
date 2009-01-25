@@ -4,4 +4,4 @@
 
 string robot_name
 string link_name
-collision_map/CollisionMap objects
+CollisionMap objects
