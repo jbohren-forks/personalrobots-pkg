@@ -14,4 +14,7 @@
   <depend package="sample_consensus" />
   <depend package="cloud_kdtree" />
   <depend package="cloud_geometry" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  
 </package>
