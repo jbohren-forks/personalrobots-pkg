@@ -2,7 +2,7 @@
 export GAZ_TOP=`rospack find gazebo`/gazebo
 export OGRE_TOP=`rospack find ogre`/ogre
 export CG_TOP=`rospack find Cg`/Cg
-export BOOST_TOP=`rospack find boost`/boost
+export BOOST_TOP=`rosboost-cfg --root`
 export SIM_PLUGIN=`rospack find gazebo_plugin`
 export PR2MEDIA=`rospack find gazebo_robot_description`/world
 
