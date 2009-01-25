@@ -62,6 +62,7 @@
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/distances.h>
 #include <cloud_geometry/nearest.h>
+#include <cloud_geometry/transforms.h>
 
 #include <sys/time.h>
 
@@ -107,7 +108,7 @@ class TableObjectDetector : public ros::Node
 
     double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
-    double table_min_height_, table_max_height_, delta_z_;
+    double table_min_height_, table_max_height_, delta_z_, object_min_distance_from_table_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     TableObjectDetector () : ros::Node ("table_object_detector"), tf_(*this)
@@ -120,7 +121,7 @@ class TableObjectDetector : public ros::Node
       param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
       param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
       param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
-      param ("~search_k_closest", k_, 6);                               // 6 k-neighbors by default
+      param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
       param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees
@@ -138,6 +139,7 @@ class TableObjectDetector : public ros::Node
       param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
       param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
       param ("~table_delta_z", delta_z_, 0.03);                         // consider objects starting at 3cm from the table
+      param ("~object_min_distance_from_table", object_min_distance_from_table_, 0.10); // objects which have their support more 10cm from the table will not be considered
       ROS_DEBUG ("Using the following thresholds for table detection [min / max height]: %f / %f.", table_min_height_, table_max_height_);
 
       param ("~publish_debug", publish_debug_, true);
@@ -238,6 +240,23 @@ class TableObjectDetector : public ros::Node
       vector<int> indices_z;
       cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
 
+/*      indices_z.resize (cloud_down_.pts.size ());
+      for (unsigned int i = 0; i < cloud_down_.pts.size (); i++)
+      {
+        indices_z[i] = i;
+      }
+      
+        cloud_annotated_.header = cloud_down_.header;
+        cloud_annotated_.pts.resize (indices_z.size ());
+        cloud_annotated_.chan[0].vals.resize (indices_z.size ());
+        for (unsigned int i = 0; i < indices_z.size (); i++)
+        {
+          cloud_annotated_.pts[i] = cloud_down_.pts.at (indices_z[i]);
+          cloud_annotated_.chan[0].vals[i] = cloud_down_.chan[0].vals.at (indices_z[i]);
+        }
+        publish ("cloud_annotated", cloud_annotated_);
+
+        return (true);*/
       ROS_DEBUG ("Number of points with normals parallel to Z: %d.", indices_z.size ());
 
       vector<vector<int> > clusters;
@@ -245,13 +264,29 @@ class TableObjectDetector : public ros::Node
       findClusters (&cloud_down_, &indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, clusters_min_pts_);
 
       sort (clusters.begin (), clusters.end (), compareRegions);
-      int c_good = clusters.size () - 1;
-      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
 
-      // Find the best plane in this cluster
       vector<int> inliers;
-      vector<double> coeff;
-      fitSACPlane (&cloud_down_, &clusters[c_good], inliers, coeff);
+      vector<double> coeff, z_coeff (3);
+      z_coeff[0] = z_axis_.x; z_coeff[1] = z_axis_.y; z_coeff[2] = z_axis_.z;
+      int c_good = -1;
+      for (int i = clusters.size () - 1; i >= 0; i--)
+      {
+        // Find the best plane in this cluster
+        fitSACPlane (&cloud_down_, &clusters[i], inliers, coeff);
+        double angle = cloud_geometry::transforms::getAngleBetweenPlanes (coeff, z_coeff) * 180.0 / M_PI;
+        if ( fabs (angle) < (eps_angle_  * 180.0 / M_PI) || fabs (180.0 - angle) < (eps_angle_  * 180.0 / M_PI) )
+        {
+          c_good = i;
+          break;
+        }
+      }
+
+      if (c_good == -1)
+      {
+        ROS_WARN ("No table found");
+        return (false);
+      }
+      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
 
       // Get the table bounds
       std_msgs::Point32 minP, maxP;
@@ -334,11 +369,18 @@ class TableObjectDetector : public ros::Node
       vector<vector<int> > object_clusters;
       findClusters (points, &object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
 
+      std_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
-        // Process this cluster and extract the centroid and the bounds
         vector<int> object_idx = object_clusters.at (i);
+
+        // Check whether this object cluster is supported by the table or just flying through thin air
+        cloud_geometry::getMinMax (points, &object_idx, minPCluster, maxPCluster);
+        if (minPCluster.z > (maxP->z + object_min_distance_from_table_) )
+            continue;
+
+        // Process this cluster and extract the centroid and the bounds
         for (unsigned int j = 0; j < object_idx.size (); j++)
         {
           object_indices[nr_p] = object_idx.at (j);
