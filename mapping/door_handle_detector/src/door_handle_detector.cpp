@@ -35,7 +35,7 @@
 
 \author Radu Bogdan Rusu
 
-@b door_handle_detector_omp annotates 3D point clouds with semantic labels.
+@b door_handle_detector detects doors and handles.
 
 \note Assumes the door frame points are given in the same coordinate system as the incoming point cloud message!
 
