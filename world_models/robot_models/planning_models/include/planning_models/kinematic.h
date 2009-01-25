@@ -491,7 +491,7 @@ namespace planning_models
 	    void copyParams(double *params, const std::string &name) const;
 	    
 	    /** Check if all params were seen */
-	    bool seenAll(void);
+	    bool seenAll(int groupID = -1);
 	    
 	    /** Print the data from the state to screen */
 	    void print(std::ostream &out = std::cout);

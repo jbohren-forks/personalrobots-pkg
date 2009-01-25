@@ -556,11 +556,23 @@ void planning_models::KinematicModel::StateParams::clear(void)
 	m_seen[i] = false;
 }
 
-bool planning_models::KinematicModel::StateParams::seenAll(void)
+bool planning_models::KinematicModel::StateParams::seenAll(int groupID)
 {
-    for (unsigned int i = 0 ; i < m_dim ; ++i)
-	if (!m_seen[i])
-	    return false;
+    if (groupID < 0)
+    {
+	for (unsigned int i = 0 ; i < m_dim ; ++i)
+	    if (!m_seen[i])
+		return false;
+    }
+    else
+    {
+	for (unsigned int i = 0 ; i < m_owner->groupStateIndexList[groupID].size() ; ++i)
+	{
+	    unsigned int j = m_owner->groupStateIndexList[groupID][i];
+	    if (!m_seen[j])
+		return false;
+	}
+    }
     return true;
 }
 
@@ -574,9 +586,10 @@ bool planning_models::KinematicModel::StateParams::setParams(const double *param
 	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
 	{
 	    unsigned int pos_i = pos + i;
-	    if (m_params[pos_i] != params[i])
+	    if (m_params[pos_i] != params[i] || !m_seen[pos_i])
 	    {
 		m_params[pos_i] = params[i];
+		m_seen[pos_i] = true;		
 		result = true;
 	    }
 	}
@@ -592,9 +605,10 @@ bool planning_models::KinematicModel::StateParams::setParams(const double *param
     if (groupID < 0)
     {  
 	for (unsigned int i = 0 ; i < m_dim ; ++i)
-	    if (m_params[i] != params[i])
+	    if (m_params[i] != params[i] || !m_seen[i])
 	    {
 		m_params[i] = params[i];
+		m_seen[i] = true;
 		result = true;
 	    }
     }
@@ -603,9 +617,10 @@ bool planning_models::KinematicModel::StateParams::setParams(const double *param
 	for (unsigned int i = 0 ; i < m_owner->groupStateIndexList[groupID].size() ; ++i)
 	{
 	    unsigned int j = m_owner->groupStateIndexList[groupID][i];
-	    if (m_params[j] != params[i])
+	    if (m_params[j] != params[i] || !m_seen[j])
 	    {
 		m_params[j] = params[i];
+		m_seen[j] = true;
 		result = true;
 	    }
 	}
@@ -616,7 +631,10 @@ bool planning_models::KinematicModel::StateParams::setParams(const double *param
 void planning_models::KinematicModel::StateParams::setAll(const double value)
 {
     for (unsigned int i = 0 ; i < m_dim ; ++i)
+    {
 	m_params[i] = value;
+	m_seen[i] = true;
+    }    
 }
 
 const double* planning_models::KinematicModel::StateParams::getParams(void) const
