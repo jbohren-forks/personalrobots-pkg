@@ -54,6 +54,7 @@ dimension, orientation) useful for collision detection.
 #include <robot_msgs/OrientedBoundingBox.h>
 #include <robot_msgs/CollisionMap.h>
 #include <robot_srvs/RecordStaticMapTrigger.h>
+#include <robot_srvs/SubtractObjectFromCollisionMap.h>
 
 #include <tf/transform_listener.h>
 #include <sys/time.h>
@@ -440,22 +441,6 @@ class CollisionMapperBuffer : public ros::Node
     bool
       subtractObject (SubtractObjectFromCollisionMap::request &req, SubtractObjectFromCollisionMap::response &resp)
     {
-      static_map_lock_.lock ();
-      acquire_static_map_      = true;
-      acquire_static_map_time_ = req.map_time;
-      static_map_lock_.unlock ();
-
-      ROS_INFO ("Got a request to compute a new static map at %f.", acquire_static_map_time_.toSec ());
-
-      // Wait until the scan is ready, sleep for 10ms
-      ros::Duration tictoc (0, 10000000);
-      while (acquire_static_map_)
-      {
-        tictoc.sleep ();
-      }
-
-      resp.status = 0;      // success (!)
-
       return (true);
     }
 };
