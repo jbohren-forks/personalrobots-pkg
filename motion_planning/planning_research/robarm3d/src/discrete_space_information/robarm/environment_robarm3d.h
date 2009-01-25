@@ -96,12 +96,10 @@ typedef struct ENV_ROBARM_CONFIG
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
 
-    //alternate end effector goal - for taking in a goal during runtime
-    int UseAlternateGoal;
-    double altEndEffGoal_m[3];
-    double altLinkGoalAngles_d[NUMOFLINKS];
+    //flag determines if the environment has been initialized or not
+    bool EnvInitialized;
 
-    //goal orientation
+    //end effector goal orientation
     double EndEffGoalOrientation[3][3];
     double GoalOrientationMOE[3][3];
 
@@ -110,12 +108,9 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
 
-    int UseAlternateStart;
-    double altLinkStartAngles_d[NUMOFLINKS];
-
     //3d grid of world space 
     char*** Grid3D;
-    double GridCellWidth;   // cells are square
+    double GridCellWidth;   // cells are square (width=height=depth)
 
     //DH Parameters
     double DH_alpha[NUMOFLINKS_DH];
@@ -165,6 +160,7 @@ typedef struct ENV_ROBARM_CONFIG
     double sin_r[360];
     double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS_DH];
 
+    //cell-to-cell costs
     double CellsPerAction;
     double cost_per_cell;
     double cost_sqrt2_move;
@@ -213,6 +209,7 @@ class EnvironmentROBARM : public DiscreteSpaceInformation
 
 public:
 
+    EnvironmentROBARM();
     bool InitializeEnv(const char* sEnvFile);
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     int  GetFromToHeuristic(int FromStateID, int ToStateID);
@@ -223,7 +220,7 @@ public:
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
     void SetEndEffGoal(double* position, int numofpositions);
-    void SetStartAngles(double angles[NUMOFLINKS], bool bRad);
+    bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
     void StateID2Angles(int stateID, double* angles_r);
 
     int	 SizeofCreatedEnv();
@@ -239,6 +236,7 @@ public:
 
     void InitializeStatistics(FILE* fCfg, int n);
     bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
+    void AddObstaclesToEnv(double**obstacles, int numobstacles);
 
 private:
 
@@ -261,7 +259,7 @@ private:
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
     double IsPathFeasible();
-
+    void AddObstacleToGrid(double* obstacle, int type);
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
