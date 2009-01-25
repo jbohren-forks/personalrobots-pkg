@@ -66,13 +66,14 @@
 
 #include <sys/time.h>
 
-#include "table_object_detector/TableService.h"
-#include "table_object_detector/Table.h"
-#include "table_object_detector/ObjectOnTable.h"
+#include <robot_srvs/FindTable.h>
+#include <robot_msgs/Table.h>
+#include <robot_msgs/ObjectOnTable.h>
 
 using namespace std;
 using namespace std_msgs;
-using namespace table_object_detector;
+using namespace robot_msgs;
+using namespace robot_srvs;
 
 // Comparison operator for a vector of vectors
 bool
@@ -175,7 +176,7 @@ class TableObjectDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectTable (table_object_detector::TableService::request &req, table_object_detector::TableService::response &resp)
+      detectTable (FindTable::request &req, FindTable::response &resp)
     {
       timeval t1, t2;
       double time_spent;
@@ -658,8 +659,8 @@ class TableObjectDetector : public ros::Node
       {
         tictoc.sleep ();
 
-        table_object_detector::TableService::request req;
-        table_object_detector::TableService::response resp;
+        FindTable::request req;
+        FindTable::response resp;
         ros::service::call ("table_object_detector", req, resp);
       }
 
