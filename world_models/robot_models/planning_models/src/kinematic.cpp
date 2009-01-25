@@ -322,6 +322,20 @@ planning_models::KinematicModel::StateParams* planning_models::KinematicModel::n
 {
     return new StateParams(this);
 }
+	
+bool planning_models::KinematicModel::reduceToRobotFrame(void)
+{
+    if (m_robots.size() == 1 && m_robots[0]->floatingJoints.size() + m_robots[0]->planarJoints.size() == 1)
+    {
+	if (m_robots[0]->planarJoints.size())
+	    rootTransform *= m_jointMap[parameterValues[m_robots[0]->planarJoints[0]]]->after->constTrans.inverse();
+	else
+	    rootTransform *= m_jointMap[parameterValues[m_robots[0]->floatingJoints[0]]]->after->constTrans.inverse();
+	return true;
+    }
+    else
+	return false;
+}
 
 void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool ignoreSensors)
 {

@@ -548,7 +548,10 @@ namespace planning_models
 
 	void defaultState(void);
 	void computeTransforms(const double *params, int groupID = -1);
-
+	
+	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */
+	bool reduceToRobotFrame(void);
+	
 	void printModelInfo(std::ostream &out = std::cout);
 	void printLinkPoses(std::ostream &out = std::cout) const;
 	
