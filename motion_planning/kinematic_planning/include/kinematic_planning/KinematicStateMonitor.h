@@ -93,6 +93,7 @@ namespace kinematic_planning
         KinematicStateMonitor(ros::Node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
+	    
 	    m_robotModelName = robot_model_name;
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
@@ -152,9 +153,9 @@ namespace kinematic_planning
 	    m_kmodel = new planning_models::KinematicModel();
 	    m_kmodel->setVerbose(false);
 	    m_kmodel->build(*file);
+	    m_kmodel->reduceToRobotFrame();
 	    
 	    m_robotState = m_kmodel->newStateParams();
-	    m_robotState->setAll(0.0);
 	    
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
@@ -249,7 +250,8 @@ namespace kinematic_planning
 		    double pos = m_mechanismState.joint_states[i].position;
 		    change = change || m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
 		}
-		m_haveMechanismState = true;
+		if (!m_haveMechanismState)
+		    m_haveMechanismState = m_robotState->seenAll();
 	    }
 	    if (change)
 		stateUpdate();

@@ -120,7 +120,7 @@ public:
     void sendDisplay(robot_msgs::KinematicState &start, robot_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::DisplayKinematicPath dpath;
-	dpath.frame_id = "map";
+	dpath.frame_id = "base_link";
 	dpath.model_name = model;
 	dpath.start_state = start;
 	dpath.path = path;
@@ -245,8 +245,8 @@ public:
 	    else
 		executePath(m_activeRequestLinkPosition, path, -1.0, m_replanningController);
 	}
-	else
-	    ROS_WARN("Received new path for replanning, but we are not in replanning mode");
+	//	else
+	//	    ROS_WARN("Received new path for replanning, but we are not in replanning mode");
     }
     
     void executePath(robot_msgs::KinematicPlanLinkPositionRequest &req,
@@ -334,7 +334,16 @@ public:
 	robot_msgs::KinematicPath empty_path;
 	robot_msgs::KinematicState state;
 	currentState(state);
-	//	m_pr.sendDisplay(state, empty_path, "pr2");
+	m_pr.sendDisplay(state, empty_path, "pr2");
+	//	printf("\n\nReceived state: ");
+	//	m_robotState->print();
+	//	printf("\n\nLink poses:\n");
+	//	printLinkPoses();
+	
+	//	if (m_robotState->seenAll())
+	//	    printf("SEEN ALL\n");
+	
+
 	//	printCurrentState();
     }
     
@@ -363,8 +372,8 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.1;
+	req.params.planner_id = "LRSBL";
+	req.threshold = 0.2;
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -402,8 +411,8 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.threshold = 0.1;
+	req.params.planner_id = "LRSBL";
+	req.threshold = 0.2;
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -445,28 +454,30 @@ public:
 	robot_msgs::KinematicPlanLinkPositionRequest req;
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "RRT";
+	req.params.planner_id = "LRSBL";
 	req.interpolate = 1;
 	req.times = 1;
 	
-	currentState(req.start_state);
-	printLinkPoses();
+	//	currentState(req.start_state);
+
+	req.start_state.set_vals_size(0);
+       
 
 	req.set_goal_constraints_size(1);
 	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;
 	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
-	req.goal_constraints[0].pose.position.x = .7;	
-	req.goal_constraints[0].pose.position.y = 0;	
-	req.goal_constraints[0].pose.position.z = 1;	
+	req.goal_constraints[0].pose.position.x = 0.845663;	
+	req.goal_constraints[0].pose.position.y = -0.09723536;	
+	req.goal_constraints[0].pose.position.z = 0.792653;	
 
 	req.goal_constraints[0].pose.orientation.x = 0;
 	req.goal_constraints[0].pose.orientation.y = 0;
-	req.goal_constraints[0].pose.orientation.z = sqrt(2)/2;
-	req.goal_constraints[0].pose.orientation.w = sqrt(2)/2;	
+	req.goal_constraints[0].pose.orientation.z = 0;
+	req.goal_constraints[0].pose.orientation.w = 1;	
 
-	req.goal_constraints[0].position_distance = 0.02;
-	req.goal_constraints[0].orientation_distance = 0.02;
-	req.goal_constraints[0].orientation_importance = 0.5;
+	req.goal_constraints[0].position_distance = 0.01;
+	req.goal_constraints[0].orientation_distance = 0.3;
+	req.goal_constraints[0].orientation_importance = 0.005;
 	
 	// an example of constraints: do not move the elbow too much
 	/*
@@ -479,7 +490,7 @@ public:
 	  req.constraints.pose[0].position_distance = 0.01;
 	*/
 	
-	req.allowed_time = 0.5;
+	req.allowed_time = 50;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];
 	req.params.volumeMin.y = -5.0 + m_basePos[1];
@@ -574,11 +585,11 @@ int main(int argc, char **argv)
 	plan->loadRobotDescription();
 	if (plan->loadedRobot())
 	{
-	    sleep(5);
-	    //	    plan->waitForState();
+	    //	    sleep(5);
+	    plan->waitForState();
 	    ROS_INFO("Received robot state");
 	    plan->printCurrentState();
-
+	    plan->printLinkPoses();
 	    
 	    sleep(3);		
 	    
@@ -587,10 +598,10 @@ int main(int argc, char **argv)
 	    switch (test)
 	    {
 	    case '0':
-		plan->runRightArmTo0(true);
+		plan->runRightArmTo0(false);
 		break;
 	    case 'r':
-		plan->runTestRightArm(true);    
+		plan->runTestRightArm(false);    
 		break;
 	    case 'e':
 		plan->runTestRightEEf(false);    
