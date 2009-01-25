@@ -49,7 +49,7 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
 //     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));
   environment_robarm.SetEndEffGoal(goal_pos, 3);
 
-  environment_robarm.SetStartAngles(start_pos, true);
+  environment_robarm.SetStartJointConfig(start_pos, true);
 
   if(!environment_robarm.InitializeEnv(filename_.c_str()))
   {
