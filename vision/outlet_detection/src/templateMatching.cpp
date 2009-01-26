@@ -1,18 +1,29 @@
 
 #include <opencv/cxcore.h>
-#include <opencv/cvwimage.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
+using namespace std;
+
 
 // The hole centers on the  500x500 template
 // (208, 239)  (226, 239)  (272, 239) (290, 238)
 // (208, 264)  (225, 264)  (271, 264) (288, 263)
 
-const CvPoint Holes[8] = {
-    cvPoint(208-150, 239-150), cvPoint(226-150, 239-150), cvPoint(272-150, 239-150), cvPoint(290-150, 238-150),
-    cvPoint(208-150, 264-150), cvPoint(225-150, 264-150), cvPoint(271-150, 264-150), cvPoint(288-150, 263-150)
+//CvSize center_sz = cvSize(200.,200.);
+//CvSize center_sz = cvSize(150.,150.);
+//CvSize center_sz = cvSize(125.,125.);
+CvSize center_sz = cvSize(150.,125.);
+float Offset=(500-center_sz.width)/2.;
+float OffsetX=(500-center_sz.width)/2.;
+float OffsetY=(500-center_sz.height)/2.;
+
+CvPoint2D32f Holes[8] = {
+    cvPoint2D32f(208-OffsetX, 239-OffsetY), cvPoint2D32f(226-OffsetX, 239-OffsetY), cvPoint2D32f(272-OffsetX, 239-OffsetY), cvPoint2D32f(290-OffsetX, 238-OffsetY),
+    cvPoint2D32f(208-OffsetX, 264-OffsetY), cvPoint2D32f(225-OffsetX, 264-OffsetY), cvPoint2D32f(271-OffsetX, 264-OffsetY), cvPoint2D32f(288-OffsetX, 263-OffsetY)
 };
 
 #define draw_cross( img, center, color, d )                                 \
@@ -28,6 +39,18 @@ public:
   float high_;
   float step_;
 };
+
+void printMat(const CvMat *mat, const char * format=NULL){
+  if (format == NULL) format = "%12.5f";
+  cout << "A Matrix of "<<mat->rows<<" by "<< mat->cols <<endl;
+  for (int i=0; i<mat->rows; i++) {
+    for (int j=0; j<mat->cols; j++) {
+      printf(format, cvmGet(mat, i, j));
+      printf(" ");
+    }
+    cout << endl;
+  }
+}
 
 /// Each of the following parameters is an array of 3. e.g. alphas[0] for low inclusively
 /// alphas[1] for high inclusively and alphas[2] for step.
@@ -61,6 +84,35 @@ public:
   float shear_;
   float transf_[9];
 };
+
+void affineTransf(CvPoint2D32f center, float rot, float scale_x, float scale_y,
+    float shear, CvMat *mat) {
+  float rot_data[9] = {
+      cos(rot),  sin(rot), (1-cos(rot))*center.x - sin(rot)*center.y,
+      -sin(rot),  cos(rot), sin(rot)*center.x + (1-cos(rot))*center.y,
+      0,         0, 1
+  };
+  CvMat rot_mat = cvMat(3, 3, CV_32FC1, rot_data);
+  //          CvMat rot_mat2x3 = cvMat(3, 3, CV_32FC1, rot_data);
+  //          cv2DRotationMatrix(center, (double)rot, 1.0, &rot_mat2x3);
+  float scale_data[9] = {
+      scale_x,       0., -center.x*scale_x + center.x,
+      0.,  scale_y, -center.y*scale_y + center.y,
+      0.,       0., 1.
+  };
+
+  CvMat scale_mat = cvMat(3, 3, CV_32FC1, scale_data);
+  float shear_data[9] = {
+      1.0,    shear,   -center.y*shear,
+      0.0,       1.,   0,
+      0.0,       0.,   1.
+  };
+  CvMat shear_mat = cvMat(3, 3, CV_32FC1, shear_data);
+  cvMatMul(&rot_mat,   mat, mat);
+  cvMatMul(&scale_mat, mat, mat);
+  cvMatMul(&shear_mat, mat, mat);
+}
+
 void genTemplatesAffine(CvPoint2D32f center, ParamRange rots,
     ParamRange scale_xs, ParamRange scale_ys,
     ParamRange shears, AffineTf **affine_tf, int *count)
@@ -84,39 +136,16 @@ void genTemplatesAffine(CvPoint2D32f center, ParamRange rots,
           float scale_x = scale_xs.low_ + scale_xs.step_ * scale_x_i;
           float scale_y = scale_ys.low_ + scale_ys.step_ * scale_y_i;
           float shear   = shears.low_   + shears.step_   * shear_i;
-          float rot_data[9] = {
-               cos(rot),  sin(rot), (1-cos(rot))*center.x - sin(rot)*center.y,
-              -sin(rot),  cos(rot), sin(rot)*center.x + (1-cos(rot))*center.y,
-                     0,         0, 1
-          };
-          CvMat rot_mat = cvMat(3, 3, CV_32FC1, rot_data);
-//          CvMat rot_mat2x3 = cvMat(3, 3, CV_32FC1, rot_data);
-//          cv2DRotationMatrix(center, (double)rot, 1.0, &rot_mat2x3);
-          float scale_data[9] = {
-              scale_x,       0., -center.x*scale_x + center.x,
-                   0.,  scale_y, -center.y*scale_y + center.y,
-                   0.,       0., 1.
-          };
-
-          CvMat scale_mat = cvMat(3, 3, CV_32FC1, scale_data);
-          float shear_data[9] = {
-              1.0,    shear,   -center.y*shear,
-              0.0,       1.,   0,
-              0.0,       0.,   1.
-          };
-          CvMat shear_mat = cvMat(3, 3, CV_32FC1, shear_data);
           //          AffineTf& aft = (*affine_tf)[((rot_i*num_scale_xs+scale_x_i)*num_scale_ys +scale_y_i)*num_shears + shear_i];
           AffineTf& aft = (*affine_tf)[num];
+          CvMat mat = cvMat(3, 3, CV_32FC1, aft.transf_);
+          cvSetIdentity(&mat);
+          affineTransf(center, rot, scale_x, scale_y, shear, &mat);
           num++;
           aft.rot_     = rot;
           aft.scale_x_ = scale_x;
           aft.scale_y_ = scale_y;
           aft.shear_   = shear;
-          CvMat mat = cvMat(3, 3, CV_32FC1, aft.transf_);
-          cvSetIdentity(&mat);
-          cvMatMul(&rot_mat,   &mat, &mat);
-          cvMatMul(&scale_mat, &mat, &mat);
-          cvMatMul(&shear_mat, &mat, &mat);
         }
       }
     }
@@ -129,15 +158,25 @@ void affineWarps(IplImage* image, IplImage** warped_images,
   CvScalar fillval=cvScalarAll(0);
   for (int i=0; i<count; i++) {
     CvMat mat = cvMat(2, 3, CV_32FC1, affineTfs[i].transf_);
+//    printMat(&mat);
+//    cvGetQuadrangleSubPix(image, warped_images[i], &mat);
     cvWarpAffine( image, warped_images[i], &mat, flags, fillval);
   }
 }
 
 int main(int argc, char** argv) {
-  ParamRange alphas = {0, 1, 2}; //{-CV_PI/4, CV_PI/4, CV_PI/4.};
-  ParamRange scale_xs = {1., 1., 0.4}; //{0.8, 1.2, 0.4};
-  ParamRange scale_ys = {1., 1., 0.4}; //{0.8, 1.2, 0.4};
-  ParamRange shears   = {0., 0., 1.0}; //{-0.4, 0.4, 1.0};
+#if 1
+  ParamRange alphas = {-CV_PI/8, CV_PI/8, CV_PI/64};
+//  ParamRange alphas = {0., .05, .01};
+  ParamRange scale_xs = {0.8, 1.2, 0.1};
+  ParamRange scale_ys = {0.8, 1.2, 0.1};
+  ParamRange shears   = {-0.2, 0.2, 0.1};
+#else
+  ParamRange alphas = {-0.1, 0., 1.};
+  ParamRange scale_xs = {0.9, 1.0, 2.};
+  ParamRange scale_ys = {1.1, 1.2, 2};
+  ParamRange shears   = {0.1, 0.2, 0.2};
+#endif
   int count;
   AffineTf *affineTfs;
 
@@ -145,7 +184,6 @@ int main(int argc, char** argv) {
   IplImage* test_image = cvLoadImage(argv[2]);
   CvSize sz = cvGetSize(tmpl_image);
   CvPoint2D32f center = cvPoint2D32f(sz.width/2., sz.height/2.);
-  CvSize center_sz = cvSize(200.,200.);
   genTemplatesAffine(center, alphas, scale_xs, scale_ys, shears, &affineTfs, &count);
   IplImage* warped_images[count];
   IplImage* warped_images_center[count];
@@ -156,19 +194,22 @@ int main(int argc, char** argv) {
 
   }
   affineWarps(tmpl_image, warped_images, affineTfs, count);
-  cvNamedWindow("input");
-  cvShowImage("input", tmpl_image);
+  cvNamedWindow("input for template");
+  cvShowImage("input for template", tmpl_image);
   CvRect center_rect = cvRect(center.x -center_sz.width/2.0, center.y - center_sz.height/2,
         center_sz.width, center_sz.height);
   for (int i=0; i<count; i++) {
+    CvMat submat;
+    cvGetSubRect( warped_images[i], &submat, center_rect );
+    cvGetImage(&submat, warped_images_center[i]);
+#if 0
     char win_label[255];
     sprintf(win_label, "%5.2f, %5.2f, %5.2f, %5.2f", affineTfs[i].rot_, affineTfs[i].scale_x_,
         affineTfs[i].scale_y_, affineTfs[i].shear_);
     cvNamedWindow(win_label);
-    CvMat submat;
-    cvGetSubRect( warped_images[i], &submat, center_rect );
-    cvGetImage(&submat, warped_images_center[i]);
     cvShowImage(win_label, warped_images_center[i]);
+//    cvShowImage(win_label, warped_images[i]);
+#endif
   }
 
   // testing
@@ -180,38 +221,83 @@ int main(int argc, char** argv) {
       CV_32FC1,
       result_data
   );
-  int method = CV_TM_CCORR_NORMED;
+//  int method = CV_TM_SQDIFF;
+//  int method = CV_TM_SQDIFF_NORMED;
+//  int method = CV_TM_CCORR;
+    int method = CV_TM_CCORR_NORMED;
+//  int method = CV_TM_CCOEFF_NORMED;
   double min_val;
   double max_val;
   CvPoint min_loc;
   CvPoint max_loc;
+  double best_val=0;
+  if (method == CV_TM_SQDIFF || method == CV_TM_SQDIFF_NORMED){
+    best_val=9999999999999999999.;
+  }
+  CvPoint best_loc = cvPoint(0,0);
+  int best_templ_index = -1;
   for (int i=0; i<count; i++) {
-    char win_label[255];
-    sprintf(win_label, "test %5.2f, %5.2f, %5.2f, %5.2f",
-        affineTfs[i].rot_, affineTfs[i].scale_x_,
-        affineTfs[i].scale_y_, affineTfs[i].shear_);
-    cvNamedWindow(win_label);
     cvMatchTemplate( test_image, warped_images_center[i],
         &result, method);
     cvMinMaxLoc( &result, &min_val, &max_val, &min_loc, &max_loc);
-    printf("min_loc %d, %d, max_loc %d, %d\n", min_loc.x, min_loc.y, max_loc.x, max_loc.y);
-    cvShowImage(win_label, &result);
+//    printf("min_loc %d, %d, max_loc %d, %d\n", min_loc.x, min_loc.y, max_loc.x, max_loc.y);
+    switch (method) {
+    case CV_TM_SQDIFF:
+    case CV_TM_SQDIFF_NORMED:
+      if (best_val > min_val) {
+        best_val = min_val;
+        best_loc = min_loc;
+        best_templ_index = i;
+      }
+      break;
+    default:
+      if (best_val < max_val) {
+        best_val = max_val;
+        best_loc = max_loc;
+        best_templ_index = i;
+      }
+    }
   }
+
+  char win_label[255];
+  sprintf(win_label, "best templ %5.2f, %5.2f, %5.2f, %5.2f",
+      affineTfs[best_templ_index].rot_, affineTfs[best_templ_index].scale_x_,
+      affineTfs[best_templ_index].scale_y_, affineTfs[best_templ_index].shear_);
+  cvNamedWindow(win_label);
+  cvShowImage(win_label, warped_images_center[best_templ_index]);
+  printf("%s\n", win_label);
 
   // mark the holes
   CvPoint mark;
-  CvPoint best_loc = max_loc;
-  mark.x = best_loc.x + 100;
-  mark.y = best_loc.y + 100;
-  CvScalar color = CV_RGB(0, 255, 0);
+  mark.x = best_loc.x + center_sz.width/2.;
+  mark.y = best_loc.y + center_sz.height/2.;
+  CvScalar green = CV_RGB(0, 255, 0);
   CvScalar red   = CV_RGB(255, 0, 0);
-  draw_cross(test_image, mark, color, 3);
+  CvScalar blue  = CV_RGB(0, 0, 255);
+  draw_cross(test_image, mark, red, 3);
+
+  // transform the coordinates of the holes
+  CvPoint2D32f center0 = cvPoint2D32f(center_sz.width/2., center_sz.height/2.);
+  float transf_data[9];
+  CvMat transf = cvMat(3, 3, CV_32FC1, transf_data);
+  cvSetIdentity(&transf);
+  affineTransf(center0,
+      affineTfs[best_templ_index].rot_,
+      affineTfs[best_templ_index].scale_x_,
+      affineTfs[best_templ_index].scale_y_,
+      affineTfs[best_templ_index].shear_,
+      &transf
+  );
+  CvMat transf2x3 = cvMat(2, 3, CV_32FC1, transf_data);
+  CvMat holes_mat = cvMat(8, 1, CV_32FC2, Holes);
+//  printMat(&transf);
+  cvTransform(&holes_mat, &holes_mat, &transf2x3);
 
   for (int i=0; i<8; i++) {
     mark.x = best_loc.x + Holes[i].x;
     mark.y = best_loc.y + Holes[i].y;
     printf("mark on %d, %d\n", mark.x, mark.y);
-    draw_cross(test_image, mark, color, 3);
+    draw_cross(test_image, mark, blue, 3);
   }
 
   cvNamedWindow("test image");
