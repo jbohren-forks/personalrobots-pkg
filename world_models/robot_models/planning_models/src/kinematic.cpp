@@ -563,9 +563,8 @@ void planning_models::KinematicModel::AttachedBody::computeTransform(btTransform
     globalTrans = attachTrans * parentTrans;
 }
 
-void planning_models::KinematicModel::StateParams::clear(void)
+void planning_models::KinematicModel::StateParams::reset(void)
 {
-    setAll(0);
     for (unsigned int i = 0 ; i < m_dim ; ++i)
 	m_seen[i] = false;
 }
@@ -588,6 +587,25 @@ bool planning_models::KinematicModel::StateParams::seenAll(int groupID)
 	}
     }
     return true;
+}
+
+void planning_models::KinematicModel::StateParams::missing(int groupID, std::ostream &out)
+{
+    if (groupID < 0)
+    {
+	for (unsigned int i = 0 ; i < m_dim ; ++i)
+	    if (!m_seen[i])
+		out << m_name[i] << " ";
+    }
+    else
+    {
+	for (unsigned int i = 0 ; i < m_owner->groupStateIndexList[groupID].size() ; ++i)
+	{
+	    unsigned int j = m_owner->groupStateIndexList[groupID][i];
+	    if (!m_seen[j])
+		out << m_name[j] << " ";
+	}
+    }
 }
 
 bool planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)

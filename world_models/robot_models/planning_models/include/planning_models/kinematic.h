@@ -453,7 +453,9 @@ namespace planning_models
 		m_dim = m_owner->stateDimension > 0 ? m_owner->stateDimension : 0;
 		m_params = m_dim > 0 ? new double[m_dim] : NULL;
 		m_pos = m_owner->parameterNames;
-		clear();
+		m_name = m_owner->parameterValues;
+		setAll(0);
+		reset();
 	    }
 	    
 	    virtual ~StateParams(void)
@@ -462,8 +464,8 @@ namespace planning_models
 		    delete[] m_params;
 	    }
 	    
-	    /** Set all values to 0 and mark them unseen */
-	    void clear(void);
+	    /** Mark all values as unseen */
+	    void reset(void);
 
 	    /** Set all the parameters to a given value */
 	    void setAll(const double value);
@@ -492,6 +494,9 @@ namespace planning_models
 	    
 	    /** Check if all params were seen */
 	    bool seenAll(int groupID = -1);
+
+	    /** Print the missing joint names */
+	    void missing(int groupID = -1, std::ostream &out = std::cout);
 	    
 	    /** Print the data from the state to screen */
 	    void print(std::ostream &out = std::cout);
@@ -502,6 +507,7 @@ namespace planning_models
 	    unsigned int                         m_dim;
 	    double                              *m_params;
 	    std::map<std::string, unsigned int>  m_pos;
+	    std::map<unsigned int, std::string>  m_name;
 	    std::map<unsigned int, bool>         m_seen;
 	};
 	
