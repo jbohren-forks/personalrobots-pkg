@@ -210,6 +210,7 @@ void EndeffectorConstraintController::update()
   
   constraint_torq_ = task_jac_.transpose()*constraint_wrench_;
   
+  j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
   {
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
