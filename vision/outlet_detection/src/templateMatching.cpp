@@ -1,6 +1,6 @@
-
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
+#include <opencv/cxmisc.h>
 #include <opencv/highgui.h>
 
 #include <stdio.h>
@@ -157,6 +157,7 @@ void affineWarps(IplImage* image, IplImage** warped_images,
   int flags=CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS;
   CvScalar fillval=cvScalarAll(0);
   for (int i=0; i<count; i++) {
+    putchar('^'); fflush(stdout);
     CvMat mat = cvMat(2, 3, CV_32FC1, affineTfs[i].transf_);
 //    printMat(&mat);
 //    cvGetQuadrangleSubPix(image, warped_images[i], &mat);
@@ -165,6 +166,7 @@ void affineWarps(IplImage* image, IplImage** warped_images,
 }
 
 int main(int argc, char** argv) {
+  //cvUseOptimized(0);
 #if 1
   ParamRange alphas = {-CV_PI/8, CV_PI/8, CV_PI/64};
 //  ParamRange alphas = {0., .05, .01};
@@ -185,10 +187,13 @@ int main(int argc, char** argv) {
   CvSize sz = cvGetSize(tmpl_image);
   CvPoint2D32f center = cvPoint2D32f(sz.width/2., sz.height/2.);
   genTemplatesAffine(center, alphas, scale_xs, scale_ys, shears, &affineTfs, &count);
-  IplImage* warped_images[count];
-  IplImage* warped_images_center[count];
+  //count = 1000;
+  IplImage** warped_images = (IplImage**)cvStackAlloc(count*sizeof(warped_images[0]));
+  IplImage** warped_images_center = (IplImage**)cvStackAlloc(count*sizeof(warped_images_center[0]));
 
   for (int i=0; i<count; i++) {
+    putchar('*');
+    fflush(stdout);
     warped_images[i] = cvCreateImage(cvGetSize(tmpl_image), tmpl_image->depth, tmpl_image->nChannels);
     warped_images_center[i] = cvCreateImageHeader(center_sz, tmpl_image->depth, tmpl_image->nChannels);
 
@@ -196,6 +201,7 @@ int main(int argc, char** argv) {
   affineWarps(tmpl_image, warped_images, affineTfs, count);
   cvNamedWindow("input for template");
   cvShowImage("input for template", tmpl_image);
+  cvWaitKey(30);
   CvRect center_rect = cvRect(center.x -center_sz.width/2.0, center.y - center_sz.height/2,
         center_sz.width, center_sz.height);
   for (int i=0; i<count; i++) {
@@ -214,7 +220,7 @@ int main(int argc, char** argv) {
 
   // testing
   CvSize test_image_sz = cvGetSize(test_image);
-  float result_data[(test_image_sz.width-center_sz.width+1)*(test_image_sz.height-center_sz.height+1)];
+  float* result_data = (float*)cvStackAlloc((test_image_sz.width-center_sz.width+1)*(test_image_sz.height-center_sz.height+1)*sizeof(result_data[0]));
   CvMat result = cvMat(
       test_image_sz.height - center_sz.height + 1,
       test_image_sz.width  - center_sz.width  + 1,
@@ -237,6 +243,8 @@ int main(int argc, char** argv) {
   CvPoint best_loc = cvPoint(0,0);
   int best_templ_index = -1;
   for (int i=0; i<count; i++) {
+    putchar('.');
+    fflush(stdout);
     cvMatchTemplate( test_image, warped_images_center[i],
         &result, method);
     cvMinMaxLoc( &result, &min_val, &max_val, &min_loc, &max_loc);
