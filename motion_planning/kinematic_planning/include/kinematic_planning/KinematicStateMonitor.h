@@ -261,8 +261,8 @@ namespace kinematic_planning
 			    bool this_changed = m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
 			    change = change || this_changed;
 			}
-			else
-			    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", m_mechanismState.joint_states[i].name.c_str(), joint->usedParams);
+			//			else
+			//			    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", m_mechanismState.joint_states[i].name.c_str(), joint->usedParams);
 		    }
 		    else
 			ROS_ERROR("Unknown joint: %s", m_mechanismState.joint_states[i].name.c_str());

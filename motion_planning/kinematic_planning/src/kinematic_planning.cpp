@@ -196,6 +196,7 @@ public:
     {
 	std_srvs::Empty::request  dummy1;
 	std_srvs::Empty::response dummy2;
+	ROS_INFO("Auto-stopping replanning...");	
 	stopReplanning(dummy1, dummy2);
     }
     
