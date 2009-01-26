@@ -103,6 +103,10 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
+  task_jac_ = Eigen::MatrixXf::Zero(6, num_joints_);
+  identity_ = Eigen::MatrixXf::Identity(num_joints_, num_joints_);
+  constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints_, num_joints_);
+  constraint_torq_ = Eigen::MatrixXf::Zero(num_joints_, 1);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -158,8 +162,6 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
 }
 
 
-
-
 void EndeffectorConstraintController::update()
 {
   // check if joints are calibrated
@@ -180,8 +182,7 @@ void EndeffectorConstraintController::update()
 
   // get the chain jacobian
   Jacobian jacobian(num_joints_, num_segments_);
-  Eigen::MatrixXf task_jac(6, (int) num_joints_);
-  
+
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
   //convert to eigen for easier math
@@ -189,7 +190,7 @@ void EndeffectorConstraintController::update()
   {
     for (unsigned int j=0; j<6; j++)
     {
-      task_jac(i,j) = jacobian(i,j);
+      task_jac_(i,j) = jacobian(i,j);
     }
   }
 
@@ -203,18 +204,17 @@ void EndeffectorConstraintController::update()
   constraint_wrench_ = constraint_jac_ * constraint_force_;
 
   // compute the constraint null space to project 
-  Eigen::MatrixXf constraint_null_space((int) num_joints_, (int) num_joints_);
   //computeConstraintNullSpace(constraint_null_space, task_jac);
   
   // convert the wrench into joint torques
-  Eigen::MatrixXf constraint_torq((int) num_joints_, 1);
-  constraint_torq = task_jac.transpose()*constraint_wrench_;
+  
+  constraint_torq_ = task_jac_.transpose()*constraint_wrench_;
   
   for (unsigned int i=0; i<num_joints_; i++)
   {
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
-    joints_[j++]->commanded_effort_ = constraint_torq(i);
+    joints_[j++]->commanded_effort_ = constraint_torq_(i);
   }
 }
 
@@ -269,13 +269,11 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   constraint_force_(1) = f_r;
 }
 
-void EndeffectorConstraintController::computeConstraintNullSpace(Eigen::MatrixXf &constraint_null_space, Eigen::MatrixXf &task_jacobian)
+void EndeffectorConstraintController::computeConstraintNullSpace()
 {
   // Compute generalized inverse, this is the transpose as long as the constraints are 
   // orthonormal to eachother. Will replace with QR method later.
-  Eigen::MatrixXf identity((int) num_joints_, (int) num_joints_);
-  identity.setIdentity();
-  constraint_null_space = identity - task_jacobian.transpose()*constraint_jac_*constraint_jac_.transpose()*task_jacobian;
+  constraint_null_space_ = identity_ - task_jac_.transpose()*constraint_jac_*constraint_jac_.transpose()*task_jac_;
   
   
 }

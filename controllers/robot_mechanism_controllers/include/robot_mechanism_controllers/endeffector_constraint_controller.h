@@ -61,7 +61,7 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
-  void computeConstraintNullSpace(Eigen::MatrixXf &constraint_null_space, Eigen::MatrixXf &task_jacobian);
+  void computeConstraintNullSpace();
   // input of the controller
   KDL::Wrench wrench_desi_;
 
@@ -78,6 +78,10 @@ private:
   Eigen::Matrix<float,6,2> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
   Eigen::Matrix<float,2,1> constraint_force_;
+  Eigen::MatrixXf task_jac_;
+  Eigen::MatrixXf identity_;
+  Eigen::MatrixXf constraint_null_space_;
+  Eigen::MatrixXf constraint_torq_;
   KDL::Frame endeffector_frame_;
 
   // some parameters to define the constraint
