@@ -252,7 +252,7 @@ bool Borg::calib_set(const char *setting, double value)
 
 void remap_worker(std::list<Borg::Image *> &images, CvMat *map_x, CvMat *map_y)
 {
-  printf("in worker, size = %d\n", images.size());
+//  printf("in worker, size = %d\n", images.size());
   for (std::list<Borg::Image *>::iterator image = images.begin();
        image != images.end(); ++image)
   {
@@ -262,7 +262,7 @@ void remap_worker(std::list<Borg::Image *> &images, CvMat *map_x, CvMat *map_y)
     cvRemap(cv_image, (*image)->remapped, map_x, map_y);
     cvReleaseImageHeader(&cv_image);
   }
-  printf("leaving worker, size = %d\n", images.size());
+//  printf("leaving worker, size = %d\n", images.size());
 }
 
 void Borg::extract(std::list<Image *> &images, bool show_gui)
@@ -497,7 +497,8 @@ Borg::Image::Image(const char *filename)
     throw std::runtime_error((format("%s is not a 640x480 standard PGM") % 
                              filename).str());
   raster = new uint8_t[640*480];
-  if (640*480 != fread(raster, 1, 640*480, f))
+  int nread = fread(raster, 1, 640*480, f);
+  if (640*480 - 1 < nread) //fread(raster, 1, 640*480, f))
     throw std::runtime_error((format("couldn't read a full raster from %s") %
                              filename).str());
   fclose(f);
