@@ -66,11 +66,13 @@ class ScanShadowsFilter : public ros::Node
     std::string target_frame_;                   // Target frame for high fidelity result
     
     // TF
-    tf::TransformListener tf_;
+    tf::TransformListener* tf_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX), tf_(*this)
+    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX)
     {
+      tf_ = new tf::TransformListener(*this, true) ;
+
       subscribe("tilt_scan",  tilt_scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
 
       advertise<PointCloud> ("tilt_laser_cloud_filtered", 10);
@@ -215,7 +217,7 @@ class ScanShadowsFilter : public ros::Node
       int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
       
       if (high_fidelity_)
-        projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, tf_, mask);
+        projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, *tf_, mask);
       else
         projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
       
