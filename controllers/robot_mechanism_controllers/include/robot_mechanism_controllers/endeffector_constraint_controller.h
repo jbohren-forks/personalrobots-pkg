@@ -64,6 +64,7 @@ public:
   void computeConstraintNullSpace();
   // input of the controller
   KDL::Wrench wrench_desi_;
+  Eigen::Matrix<float,6,1> task_wrench_;
 
 private:
   unsigned int  num_joints_, num_segments_;
@@ -82,6 +83,7 @@ private:
   Eigen::MatrixXf identity_;
   Eigen::MatrixXf constraint_null_space_;
   Eigen::MatrixXf constraint_torq_;
+  Eigen::MatrixXf task_torq_;
   KDL::Frame endeffector_frame_;
 
   // some parameters to define the constraint

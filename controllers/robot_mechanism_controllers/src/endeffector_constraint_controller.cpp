@@ -107,6 +107,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   identity_.set(Eigen::MatrixXf::Identity(num_joints_, num_joints_));
   constraint_null_space_.set(Eigen::MatrixXf::Zero(num_joints_, num_joints_));
   constraint_torq_.set(Eigen::MatrixXf::Zero(num_joints_, 1));
+  task_torq_.set(Eigen::MatrixXf::Zero(num_joints_, 1));
+ 
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -204,18 +206,19 @@ void EndeffectorConstraintController::update()
   constraint_wrench_ = constraint_jac_ * constraint_force_;
 
   // compute the constraint null space to project 
-  //computeConstraintNullSpace(constraint_null_space, task_jac);
+  computeConstraintNullSpace();
   
   // convert the wrench into joint torques
   
-  constraint_torq_ = task_jac_.transpose()*constraint_wrench_;
+  constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
+  task_torq_ = constraint_null_space_ * task_jac_.transpose() * task_wrench_;
   
   j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
   {
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
-    joints_[j++]->commanded_effort_ = constraint_torq_(i);
+    joints_[j++]->commanded_effort_ = constraint_torq_(i) + task_torq_(i);
   }
 }
 
@@ -229,14 +232,15 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
 
   // Constarint for a cylinder centered around the x axis
-  constraint_jac_(0,0) = 1; // this is the end of the cylinder
-  constraint_jac_(1,1) = cos(ee_theta);
-  constraint_jac_(2,1) = sin(ee_theta);
+  constraint_jac_(0,0) = 0; // this is the end of the cylinder
+  constraint_jac_(1,1) = 0;
+  constraint_jac_(2,1) = 0;
 
   // X-wall at the end of the cylinder
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
   if (x_dist_to_wall > 0)
   {
+    constraint_jac_(0,0) = 1; // this is the end of the cylinder
     f_x = x_dist_to_wall * f_x_max; /// @todo: FIXME, replace with some exponential function
     if((x_dist_to_wall-threshold_x) > 0 && DEBUG)
     {
@@ -255,6 +259,8 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // assign x-direction constraint force f_x if within range of the wall
   if (r_dist_to_wall > 0)
   {
+    constraint_jac_(1,1) = cos(ee_theta);
+    constraint_jac_(2,1) = sin(ee_theta);
     f_r = r_dist_to_wall * f_r_max; /// @todo: FIXME, replace with some exponential function
     if(r_dist_to_wall > threshold_r && DEBUG)
     {
@@ -382,14 +388,14 @@ void EndeffectorConstraintControllerNode::command()
 {
 
   // convert to wrench command
-  controller_.wrench_desi_.force(0) = wrench_msg_.force.x;
-  controller_.wrench_desi_.force(1) = wrench_msg_.force.y;
-  controller_.wrench_desi_.force(2) = wrench_msg_.force.z;
-  controller_.wrench_desi_.torque(0) = wrench_msg_.torque.x;
-  controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
-  controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
+  controller_.task_wrench_(0) = wrench_msg_.force.x;
+  controller_.task_wrench_(1) = wrench_msg_.force.y;
+  controller_.task_wrench_(2) = wrench_msg_.force.z;
+  controller_.task_wrench_(3) = wrench_msg_.torque.x;
+  controller_.task_wrench_(4) = wrench_msg_.torque.y;
+  controller_.task_wrench_(5) = wrench_msg_.torque.z;
 
-  ROS_WARN("force magnitude (%f, %f, %f)\n",controller_.wrench_desi_.force(0),controller_.wrench_desi_.force(1),controller_.wrench_desi_.force(1));
+  //  ROS_WARN("force magnitude (%f, %f, %f)\n",controller_.wrench_desi_.force(0),controller_.wrench_desi_.force(1),controller_.wrench_desi_.force(1));
 }
 
 }; // namespace
