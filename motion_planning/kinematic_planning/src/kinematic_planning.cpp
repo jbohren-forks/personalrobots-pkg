@@ -169,7 +169,8 @@ public:
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.valid = 1;
-
+	m_currentlyExecutedPath.set_states_size(0);
+	
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
 	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
 	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
@@ -314,7 +315,15 @@ public:
 	    publish("kinematic_planning_status", m_currentPlanStatus);
 	    
 	    if (m_currentPlanStatus.path.get_states_size() > 0)
+	    {
+		m_currentlyExecutedPath = m_currentPlanStatus.path;
 		m_currentPlanStatus.path.set_states_size(0);
+	    }
+	    else
+	    {
+		if (!m_currentPlanStatus.valid || m_currentPlanStatus.done)
+		    m_currentlyExecutedPath.set_states_size(0);
+	    }
 	    
 	    m_statusLock.unlock();
 	    
@@ -447,6 +456,7 @@ public:
 	    if (isSafeToPlan())
 	    {
 		currentState(m_currentPlanToStateRequest.start_state);
+		m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
 		m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    
 		m_statusLock.lock();	    
@@ -519,6 +529,7 @@ public:
 	    if (isSafeToPlan())
 	    {
 		currentState(m_currentPlanToPositionRequest.start_state);
+		m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;
 		m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
 		
 		m_statusLock.lock();	    
@@ -546,12 +557,40 @@ public:
     virtual void afterWorldUpdate(void)
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
+	bool update = false;
 	
 	// notify the replanning thread of the change
 	m_continueReplanningLock.lock();
-	m_collisionMonitorChange = true;
+	m_statusLock.lock();
+	if (m_currentRequestType != R_NONE && m_currentPlanStatus.valid)
+	{
+	    if (m_currentRequestType == R_STATE)
+	    {
+		m_currentPlanToStateRequest.start_state = m_currentlyExecutedPathStart;
+		update = !m_requestState.isStillValid(m_models, m_currentPlanToStateRequest, m_currentlyExecutedPath);
+	    }
+	    else
+		if (m_currentRequestType == R_POSITION)
+		{
+		    m_currentPlanToPositionRequest.start_state = m_currentlyExecutedPathStart;
+		    update = !m_requestLinkPosition.isStillValid(m_models, m_currentPlanToPositionRequest, m_currentlyExecutedPath);
+		} 
+	    
+	    if (update)
+	    {
+		// stop current plan, compute a new plan
+		ROS_INFO("Currently executed path is no longer valid. Recomputing...");
+		m_collisionMonitorChange = true;
+		m_currentPlanStatus.valid = 0;
+	    }
+	    else
+		ROS_INFO("Currently executed path is still valid");
+	}
+	m_statusLock.unlock();
 	m_continueReplanningLock.unlock();
-	m_collisionMonitorCondition.notify_all();
+
+	if (update)
+	    m_collisionMonitorCondition.notify_all();
     }
     
     virtual void setRobotDescription(robot_desc::URDF *file)
@@ -670,6 +709,9 @@ private:
     
     // current status of the motion planner
     robot_msgs::KinematicPlanStatus                                 m_currentPlanStatus; 
+    robot_msgs::KinematicPath                                       m_currentlyExecutedPath;
+    robot_msgs::KinematicState                                      m_currentlyExecutedPathStart;
+    
     // lock used for changing the motion planner status
     boost::mutex                                                    m_statusLock;
     // status publishing thread

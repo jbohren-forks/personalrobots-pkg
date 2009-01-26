@@ -279,6 +279,51 @@ namespace kinematic_planning
 	    psetup->si->clearStartStates();	
 	}
 	
+	bool isStillValid(ModelMap &models, _R &req, robot_msgs::KinematicPath &path)
+	{
+	    // make sure the same motion planner instance is not used by other calls
+	    boost::mutex::scoped_lock(m_lock);
+	    
+	    if (!isRequestValid(models, req))
+		return false;
+	    	    
+	    /* find the data we need */
+	    RKPModel             *m = models[req.params.model_id];
+	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
+	    
+	    /* configure state space and starting state */
+	    setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+
+	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    req.constraints.get_pose_vec(cstrs);
+	    setupPoseConstraints(psetup, cstrs);
+	    
+	    /* add goal state */
+	    setupGoalState(m, psetup, req);
+	    
+	    /* copy the path msg into a kinematic path structure (ompl style) */
+	    ompl::SpaceInformationKinematic::PathKinematic_t kpath = new ompl::SpaceInformationKinematic::PathKinematic(psetup->si);
+	    unsigned int dim = psetup->si->getStateDimension();
+	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
+	    {
+		ompl::SpaceInformationKinematic::StateKinematic_t kstate = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+		kpath->states.push_back(kstate);
+		for (unsigned int j = 0 ; j < dim ; ++j)
+		    kstate->values[j] = path.states[i].vals[j];
+	    }
+	    
+	    m->collisionSpace->lock();
+	    bool valid = psetup->si->checkPath(kpath);
+	    m->collisionSpace->unlock();
+	    
+	    delete kpath;
+	    
+	    /* clear memory */
+	    cleanupPlanningData(psetup);
+	    
+	    return valid;	    
+	}
+	
 	bool isTrivial(ModelMap &models, _R &req, double *distance = NULL)
 	{
 	    // make sure the same motion planner instance is not used by other calls
