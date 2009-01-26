@@ -29,6 +29,9 @@
 
 /** \author Josh Faust */
 
+#ifndef MESSAGE_NOTIFIER_H
+#define MESSAGE_NOTIFIER_H
+
 #include <ros/node.h>
 #include <tf/tf.h>
 #include <tf/tfMessage.h>
@@ -437,3 +440,5 @@ private:
 };
 
 } // namespace tf
+
+#endif
