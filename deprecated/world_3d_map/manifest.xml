@@ -2,7 +2,7 @@
 <description>3D Map Construction</description>
 <author>Ioan Sucan</author>
 <license>BSD</license>
-<review status="deprecated" notes=""/>
+<review status="deprecated" notes="awaiting #900 for removal"/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="tf" />
