@@ -12,6 +12,9 @@
   <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true" output="screen">
 <!--    <remap from="full_cloud" to="cloud_1_raw" />-->
 
+    <param name="end_effector_frame_l" type="string" value="r_gripper_l_finger_tip_link" />
+    <param name="end_effector_frame_r" type="string" value="r_gripper_r_finger_tip_link" />
+
     <param name="robot_max_x" type="double" value="1.5" />
     <param name="robot_max_y" type="double" value="1.5" />
     <param name="robot_max_z" type="double" value="1.5" />
