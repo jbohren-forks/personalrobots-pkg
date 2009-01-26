@@ -256,9 +256,10 @@ class CollisionMapperBuffer : public ros::Node
     /** \brief Compute a Leaf vector from an unorganized PointCloud
       * \param points the PointCloud message
       * \param leaves the resultant Leaf vector
+      * \param centers a resultant PointCloud message containing the centers of the leaves
       */
     void 
-      computeLeaves (PointCloud *points, vector<Leaf> &leaves, /*Point32 *min_bounds, Point32 *max_bounds, */PointCloud &centers)
+      computeLeaves (PointCloud *points, vector<Leaf> &leaves, PointCloud &centers)
     {
       PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
@@ -285,15 +286,6 @@ class CollisionMapperBuffer : public ros::Node
       double distance_sqr_x, distance_sqr_y, distance_sqr_z;
       for (unsigned int i = 0; i < points->pts.size (); i++)
       {
-        // Test against the given min/max bounds
-/*        if (points->pts[i].x > min_bounds->x &&
-            points->pts[i].x < max_bounds->x &&
-            points->pts[i].y > min_bounds->y &&
-            points->pts[i].y < max_bounds->y &&
-            points->pts[i].z > min_bounds->z &&
-            points->pts[i].z < max_bounds->z)
-          continue;*/
-
         // We split the "distance" on all 3 dimensions to allow greater flexibility
         distance_sqr_x = fabs ((points->pts[i].x - torso_lift_origin.point.x) * (points->pts[i].x - torso_lift_origin.point.x));
         distance_sqr_y = fabs ((points->pts[i].y - torso_lift_origin.point.y) * (points->pts[i].y - torso_lift_origin.point.y));
@@ -376,37 +368,6 @@ class CollisionMapperBuffer : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    inline bool
-      transformPoint (PoseStamped source_pose, string target_frame, Point32 source_point, Point32 &target_point, ros::Time cur_time)
-    {
-      PoseStamped target_pose;
-      source_pose.header.stamp = cur_time;
-
-      source_pose.pose.position.x = source_point.x;
-      source_pose.pose.position.y = source_point.y;
-      source_pose.pose.position.z = source_point.z;
-      try
-      {
-        tf_.transformPose (target_frame, source_pose, target_pose);
-/*        ROS_INFO ("Point [%f, %f, %f] from %s is [%f, %f, %f] in %s.",
-                  source_pose.pose.position.x, source_pose.pose.position.y, source_pose.pose.position.z, source_pose.header.frame_id.c_str (),
-                  target_pose.pose.position.x, target_pose.pose.position.y, target_pose.pose.position.z, target_pose.header.frame_id.c_str ());*/
-      }
-      catch (tf::ConnectivityException)
-      {
-        ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
-        target_point.x = target_point.y = target_point.z = 0;
-        return (false);
-      }
-
-      target_point.x = target_pose.pose.position.x;
-      target_point.y = target_pose.pose.position.y;
-      target_point.z = target_pose.pose.position.z;
-
-      return (true);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       sendMarker (Point32 pt, const std::string &frame_id, double radius = 0.02)
     {
@@ -478,143 +439,90 @@ class CollisionMapperBuffer : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Get the sphere radius as 2 times the largest bound (over x, y, z)
-      * \param min_b a point describing the minimum bounds
-      * \param max_b a point describing the maximum bounds
-      */
-    double
-      getSphereRadius (Point32 *min_b, Point32 *max_b)
-    {
-      double radius = FLT_MIN;
-
-      float diff_b[3];
-      diff_b[0] = fabs (max_b->x - min_b->x);
-      diff_b[1] = fabs (max_b->y - min_b->y);
-      diff_b[2] = fabs (max_b->z - min_b->z);
-
-      for (int d = 0; d < 3; d++)
-        if (diff_b[d] > radius)
-          radius = diff_b[d];
-      return (2 * radius);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Get all the point indices in a given sphere
-      * \param points a pointer to the cloud message
-      * \param center the center of the sphere
-      * \param radius the sphere radius
-      * \param indices the resultant point indices
+    /** \brief Prune the leaves inside a given bounding box
+      * \param leaves the set of leaves to prune data from
+      * \param points the point cloud representing the centers of the leaves
+      * \param center a point in the center of the gripper
+      * \param source_frame the TF frame in which the points are represented
+      * \param target_frame the TF frame in which the bounds are represented
+      * \param min_b the minimum bounds of the box
+      * \param max_b the maximum bounds of the box
       */
     void
-      getPointIndicesInSphere (PointCloud *points, Point32 *center, double radius, vector<int> &indices)
+      pruneLeaves (vector<Leaf> &leaves, PointCloud *points, Point32 *center, string source_frame, string target_frame,
+                   Point32 *min_b, Point32 *max_b)
     {
-      radius *= radius;     // square so we eliminate the need of using sqrt's
-
-      indices.resize (points->pts.size ());
-      int nr_p = 0;
-      // Check all points
-      for (unsigned int i = 0; i < points->pts.size (); i++)
-      {
-        double distance =
-              (points->pts[i].x - center->x) * (points->pts[i].x - center->x) +
-              (points->pts[i].y - center->y) * (points->pts[i].y - center->y) +
-              (points->pts[i].z - center->z) * (points->pts[i].z - center->z);
-
-        if (distance < radius)
-        {
-          indices[nr_p] = i;
-          nr_p++;
-        }
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Transform an input cloud using a set of indices into a different target frame
-      * \param points_in a pointer to the input cloud message
-      * \param indices the set of point indices
-      * \param target_frame the desired TF target frame
-      * \param points_out the resultant output cloud message
-      */
-    bool
-      transformCloud (PointCloud *points_in, vector<int> *indices, string target_frame, PointCloud &points_out)
-    {
-      // Copy the indices from points_in into a temporary cloud
-      PointCloud points;
-      points.pts.resize (indices->size ());
-      for (unsigned int i = 0; i < indices->size (); i++)
-      {
-        points.pts[i].x = points_in->pts[indices->at (i)].x;
-        points.pts[i].y = points_in->pts[indices->at (i)].y;
-        points.pts[i].z = points_in->pts[indices->at (i)].z;
-      }
+      PointCloud points_tgt;
 
       // Transform the entire cloud at once
       try
       {
-        tf_.transformPointCloud (target_frame, points, points_out);
-      }
-      catch (tf::ConnectivityException)
-      {
-        ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
-        return (false);
-      }
-      return (true);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      pruneLeaves (vector<Leaf> &object_leaves, PointCloud *points, Point32 *min_b, Point32 *max_b)
-    {
-      object_leaves.clear ();
-//      double sphere_radius = getSphereRadius (min_b, max_b);
-
-      // Obtain all the point indices in the bounds of a sphere centered at the ee_center with 2 * max_bounds (where max_bounds is the maximum bound on X,Y,Z)
-//      vector<int> points_in_ee_sphere;
-//      getPointIndicesInSphere (points, ee_center, sphere_radius, points_in_ee_sphere);
-
-      vector<int> object_indices (points->pts.size ());
-      int nr_p = 0;
-      // Check and mark point indices in the bounds of the objects
-      for (unsigned int i = 0; i < points->pts.size (); i++)
-      {
-        if (points->pts[i].x > min_b->x &&
-            points->pts[i].x < max_b->x &&
-            points->pts[i].y > min_b->y &&
-            points->pts[i].y < max_b->y &&
-            points->pts[i].z > min_b->z &&
-            points->pts[i].z < max_b->z)
-        {
-          object_indices[nr_p] = i;
-          nr_p++;
-        }
-      }
-      object_indices.resize (nr_p);
-      std::cerr << points->pts.size () << " " << object_indices.size () << std::endl;
-
-      // Copy the indices from object_indices into a temporary cloud
-      PointCloud object_points, tmp;
-      object_points.header = points->header;
-      object_points.pts.resize (object_indices.size ());
-      for (unsigned int i = 0; i < object_indices.size (); i++)
-      {
-        object_points.pts[i].x = points->pts[object_indices.at (i)].x;
-        object_points.pts[i].y = points->pts[object_indices.at (i)].y;
-        object_points.pts[i].z = points->pts[object_indices.at (i)].z;
-      }
-
-      try
-      {
-        tf_.transformPointCloud ("base_link", object_points, tmp);
+        tf_.transformPointCloud (target_frame, *points, points_tgt);
       }
       catch (tf::ConnectivityException)
       {
         ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
         return;
       }
-      //vector<Leaf> object_leaves;
-      computeLeaves (&tmp, object_leaves, tmp);
-      std::cerr << object_points.pts.size () << " " << object_leaves.size () << std::endl;
 
+      vector<int> object_indices (points_tgt.pts.size ());
+      int nr_p = 0;
+      // Check and mark point indices in the bounds of the objects
+      for (unsigned int i = 0; i < points_tgt.pts.size (); i++)
+      {
+        if (points_tgt.pts[i].x > min_b->x &&
+            points_tgt.pts[i].x < max_b->x &&
+            points_tgt.pts[i].y > min_b->y &&
+            points_tgt.pts[i].y < max_b->y &&
+            points_tgt.pts[i].z > min_b->z &&
+            points_tgt.pts[i].z < max_b->z)
+        {
+          object_indices[nr_p] = i;
+          nr_p++;
+        }
+      }
+      object_indices.resize (nr_p);
+
+      // Copy the indices from object_indices into a temporary cloud
+      PointCloud object_points;
+      object_points.header = points_tgt.header;
+      object_points.pts.resize (object_indices.size ());
+      for (unsigned int i = 0; i < object_indices.size (); i++)
+      {
+        object_points.pts[i].x = points_tgt.pts[object_indices.at (i)].x;
+        object_points.pts[i].y = points_tgt.pts[object_indices.at (i)].y;
+        object_points.pts[i].z = points_tgt.pts[object_indices.at (i)].z;
+      }
+
+      PointStamped ee_local, ee_global;      // Transform the end effector position in global (source frame)
+      ee_local.point.x = ee_local.point.y = ee_local.point.z = 0.0;
+      ee_local.header.frame_id = target_frame;
+      ee_local.header.stamp = points->header.stamp;
+
+      // Transform the points back into the source frrame
+      PointCloud points_src;
+      try
+      {
+        tf_.transformPointCloud (source_frame, object_points, points_src);
+        tf_.transformPoint (source_frame, ee_local, ee_global);
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
+        return;
+      }
+
+      ROS_INFO ("End effector position is: [%f, %f, %f].", ee_global.point.x, ee_global.point.y, ee_global.point.z);
+
+      // Compute the leaves
+      vector<Leaf> object_leaves;
+      computeLeaves (&points_src, object_leaves, object_points);
+
+      // Go over the leaves and subtract the ones on the object
+      vector<Leaf> model_difference;
+      set_difference (leaves.begin (), leaves.end (), object_leaves.begin (), object_leaves.end (),
+                      inserter (model_difference, model_difference.begin ()), compareLeaf);
+      leaves = model_difference;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -637,71 +545,7 @@ class CollisionMapperBuffer : public ros::Node
       if (!getEndEffectorPosition (cloud_.header.frame_id, cloud_.header.stamp, ee_center))
         return;
 
-      sendMarker (ee_center, cloud_.header.frame_id);
-
-//       gettimeofday (&t1, NULL);
-
-      // Obtain all the point indices in the bounds of a sphere centered at the ee_center with 2 * max_bounds (where max_bounds is the maximum bound on X,Y,Z)
-//       vector<int> points_in_ee_sphere;
-//       double sphere_radius = getSphereRadius (&min_object_b_, &max_object_b_);
-//       getPointIndicesInSphere (&cloud_, &ee_center, sphere_radius, points_in_ee_sphere);
-// 
-//       gettimeofday (&t2, NULL);
-//       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-//       ROS_INFO ("Static collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)static_leaves_.size ());
-// 
-//       return;
-
-      Point32 min_object_b_base, max_object_b_base;
-      min_object_b_base.x = min_object_b_base.y = min_object_b_base.z = FLT_MAX;
-      max_object_b_base.x = max_object_b_base.y = max_object_b_base.z = -FLT_MAX;
-
-      // Is the subtract object flag set ?
-      object_subtract_lock_.lock ();
-      if (subtract_object_)
-      {
-        Point32 min_left_b, max_left_b, min_right_r, max_right_r;
-        gripper_orientation_link_.header.frame_id = end_effector_frame_l_;
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, min_object_b_, min_left_b, cloud_.header.stamp);
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, max_object_b_, max_left_b, cloud_.header.stamp);
-
-        gripper_orientation_link_.header.frame_id = end_effector_frame_r_;
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, min_object_b_, min_right_r, cloud_.header.stamp);
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, max_object_b_, max_right_r, cloud_.header.stamp);
-
-        min_object_b_base.x = (min_left_b.x + min_right_r.x) / 2.0;
-        max_object_b_base.x = (max_left_b.x + max_right_r.x) / 2.0;
-
-        min_object_b_base.y = (min_left_b.y + min_right_r.y) / 2.0;
-        max_object_b_base.y = (max_left_b.y + max_right_r.y) / 2.0;
-
-        min_object_b_base.z = (min_left_b.z + min_right_r.z) / 2.0;
-        max_object_b_base.z = (max_left_b.z + max_right_r.z) / 2.0;
-
-        // Order min/max
-//         if (min_object_b_base.x > max_object_b_base.x) { float tmp = min_object_b_base.x; min_object_b_base.x = max_object_b_base.x; max_object_b_base.x = tmp; }
-//         if (min_object_b_base.y > max_object_b_base.y) { float tmp = min_object_b_base.y; min_object_b_base.y = max_object_b_base.y; max_object_b_base.y = tmp; }
-//         if (min_object_b_base.z > max_object_b_base.z) { float tmp = min_object_b_base.z; min_object_b_base.z = max_object_b_base.z; max_object_b_base.z = tmp; }
-
-        Point32 zer_, zer_l, zer_r, zer;
-        zer_.x = zer_.y = zer_.z = 0.0;
-        gripper_orientation_link_.header.frame_id = end_effector_frame_l_;
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, zer_, zer_l, cloud_.header.stamp);
-        gripper_orientation_link_.header.frame_id = end_effector_frame_r_;
-        transformPoint (gripper_orientation_link_, cloud_.header.frame_id, zer_, zer_r, cloud_.header.stamp);
-        zer.x = (zer_l.x + zer_r.x) / 2.0;
-        zer.y = (zer_l.y + zer_r.y) / 2.0;
-        zer.z = (zer_l.z + zer_r.z) / 2.0;
-        {
-          sendMarker (min_object_b_base, cloud_.header.frame_id);
-          sendMarker (max_object_b_base, cloud_.header.frame_id);
-          sendMarker (zer, cloud_.header.frame_id);
-        }
-        cloud_geometry::cerr_p (min_object_b_base);
-        cloud_geometry::cerr_p (max_object_b_base);
-        cloud_geometry::cerr_p (zer);
-      }
-      object_subtract_lock_.unlock ();
+//       sendMarker (ee_center, cloud_.header.frame_id);
 
       // Copy the header (and implicitly the frame_id)
       final_collision_map_.header = cloud_.header;
@@ -718,7 +562,7 @@ class CollisionMapperBuffer : public ros::Node
 
         // We do not subtract anything when we compute the static map
         PointCloud centers;
-        computeLeaves (&cloud_, static_leaves_, /*&min_object_b_, &min_object_b_,*/ centers);
+        computeLeaves (&cloud_, static_leaves_, centers);
 
         // Clear the static map flag
         static_map_lock_.lock ();
@@ -734,38 +578,18 @@ class CollisionMapperBuffer : public ros::Node
       {
         vector<Leaf> model_reunion;
         // Rotate N maps in the queue
-//        gettimeofday (&t1, NULL);
+        gettimeofday (&t1, NULL);
 
         // Compute the leaves for the current dataset
-        PointCloud centers, centers_in_ee;
+        PointCloud centers;
         m_lock_.lock ();
-        computeLeaves (&cloud_, cur_leaves_, /*&min_object_b_base, &max_object_b_base, */centers);
+        computeLeaves (&cloud_, cur_leaves_, centers);
         m_lock_.unlock ();
 
-      gettimeofday (&t1, NULL);
-
-      // Transform the points in the sphere in the end effector frame
-// //       PointCloud object_sphere;
-// //       transformCloud (&centers, &points_in_ee_sphere, end_effector_frame_l_, object_sphere);
-
-      // Transform the entire cloud at once
-      try
-      {
-        tf_.transformPointCloud (end_effector_frame_l_, centers, centers_in_ee);
-      }
-      catch (tf::ConnectivityException)
-      {
-        ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
-        return;
-      }
-
-      // Check the points against the object bounds
-      pruneLeaves (model_reunion, &centers_in_ee, &min_object_b_, &max_object_b_);
-
-/*      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("POINT INDICES in %g seconds.", time_spent);
-        return;
+        // Check the points against the object bounds
+        object_subtract_lock_.lock ();
+        pruneLeaves (cur_leaves_, &centers, &ee_center, cloud_.header.frame_id, end_effector_frame_l_, &min_object_b_, &max_object_b_);
+        object_subtract_lock_.unlock ();
 
         // Push the current leaves onto the queue
         decaying_maps_.push_back (cur_leaves_);
@@ -790,7 +614,7 @@ class CollisionMapperBuffer : public ros::Node
 
         // Include the static map in the reunion
         set_union (final_leaves_.begin (), final_leaves_.end (), static_leaves_.begin (), static_leaves_.end (),
-                    inserter (model_reunion, model_reunion.begin ()), compareLeaf);*/
+                    inserter (model_reunion, model_reunion.begin ()), compareLeaf);
 
         computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
 
@@ -832,6 +656,7 @@ class CollisionMapperBuffer : public ros::Node
     bool
       subtractObject (SubtractObjectFromCollisionMap::request &req, SubtractObjectFromCollisionMap::response &resp)
     {
+      ROS_INFO ("Got request to subtract object.");
       Point32 center;
       center.x = (req.object.min_bound.x + req.object.max_bound.x) / 2.0;
       center.y = (req.object.min_bound.y + req.object.max_bound.y) / 2.0;
@@ -877,8 +702,8 @@ int
   // Box example: 22.2 cm x 10.5 cm x 5.8 cm
   SubtractObjectFromCollisionMap::request req;
   req.object.min_bound.x = req.object.min_bound.y = req.object.min_bound.z = 0.0;
-  req.object.max_bound.z = 0.222 * 4;
-  req.object.max_bound.x = 0.105 * 4;
+  req.object.max_bound.z = 0.35; //0.222;
+  req.object.max_bound.x = 0.105 * 2;
   req.object.max_bound.y = 0.058 * 4;
   SubtractObjectFromCollisionMap::response resp;
   ros::service::call ("~subtract_object", req, resp);
