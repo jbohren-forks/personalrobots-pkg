@@ -19,13 +19,13 @@ int main(int argc, char **argv)
   borg.stage->setDuty(atoi(argv[3]));
   borg.stage->gotoPosition(right, false);
   ros::Time t_start(ros::Time::now());
-  for (ros::Time t_now(ros::Time::now()); (t_now - t_start).to_double() < 15;
+  for (ros::Time t_now(ros::Time::now()); (t_now - t_start).toSec() < 15;
        t_now = ros::Time::now())
   {
     double pos = borg.stage->getPosition(1.0);
     if (fabs(pos - right) < 0.5)
       break;
-    printf("%.3f %.3f\n", t_now.to_double(), pos);
+    printf("%.3f %.3f\n", t_now.toSec(), pos);
   }
   return 0;
 }
