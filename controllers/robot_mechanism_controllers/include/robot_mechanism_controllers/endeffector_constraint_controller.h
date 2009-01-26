@@ -61,7 +61,7 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
-  void computeConstraintNullSpace();
+  void computeConstraintNullSpace(Eigen::MatrixXf &constraint_null_space, Eigen::MatrixXf &task_jacobian);
   // input of the controller
   KDL::Wrench wrench_desi_;
 
