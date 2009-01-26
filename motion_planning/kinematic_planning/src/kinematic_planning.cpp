@@ -454,6 +454,12 @@ public:
 		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
 		m_statusLock.unlock();	    
 	    }
+	    else
+	    {
+		m_statusLock.lock();	    
+		m_currentPlanStatus.valid = 0;
+		m_statusLock.unlock();	    
+	    }
 	    
 	    if (trivial)
 		break;
@@ -518,6 +524,12 @@ public:
 		m_currentPlanStatus.distance = distance;
 		m_currentPlanStatus.done = trivial ? 1 : 0;
 		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+		m_statusLock.unlock();
+	    }
+	    else
+	    {
+		m_statusLock.lock();	    
+		m_currentPlanStatus.valid = 0;
 		m_statusLock.unlock();
 	    }
 	    
