@@ -43,6 +43,9 @@
 // Laser projection
 #include <laser_scan/laser_scan.h>
 
+// TF
+#include <tf/transform_listener.h>
+
 using namespace std_msgs;
 
 /** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
@@ -58,9 +61,15 @@ class ScanShadowsFilter : public ros::Node
     double tilt_laser_max_range_;           // Used in laser scan projection
     double min_angle_, max_angle_;          // Filter angle threshold
     int window_;
+    
+    bool high_fidelity_;                    // High fidelity (interpolating time across scan)
+    std::string target_frame_;                   // Target frame for high fidelity result
+    
+    // TF
+    tf::TransformListener tf_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX)
+    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX), tf_(*this)
     {
       subscribe("tilt_scan",  tilt_scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
 
@@ -69,6 +78,9 @@ class ScanShadowsFilter : public ros::Node
       param ("~filter_min_angle", min_angle_, 10.0);
       param ("~filter_max_angle", max_angle_, 170.0);
       param ("~filter_window", window_, 2);
+
+      param ("~high_fidelity", high_fidelity_, false);
+      param ("~target_frame", target_frame_, std::string ("base_link"));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -201,7 +213,12 @@ class ScanShadowsFilter : public ros::Node
 
       // Transform into a PointCloud message
       int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
-      projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+      
+      if (high_fidelity_)
+        projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, tf_, mask);
+      else
+        projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+      
 
       /// ---[ Perhaps unnecessary, but find out which channel contains the index
       int c_idx = -1;
