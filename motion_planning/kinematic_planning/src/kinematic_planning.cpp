@@ -271,9 +271,9 @@ public:
     void publishStatus(void)
     {
 	double seconds;
-	param("kinematic_planning_status_interval", seconds, 0.5);
+	param("kinematic_planning_status_interval", seconds, 0.02);
 	ros::Duration duration(seconds);
-	ros::Duration delta(0.05);
+	ros::Duration delta(std::min(0.01, seconds));
 	
 	while (m_publishStatus)
 	{
