@@ -103,10 +103,10 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  task_jac_ = Eigen::MatrixXf::Zero(6, num_joints_);
-  identity_ = Eigen::MatrixXf::Identity(num_joints_, num_joints_);
-  constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints_, num_joints_);
-  constraint_torq_ = Eigen::MatrixXf::Zero(num_joints_, 1);
+  task_jac_.set(Eigen::MatrixXf::Zero(6, num_joints_));
+  identity_.set(Eigen::MatrixXf::Identity(num_joints_, num_joints_));
+  constraint_null_space_.set(Eigen::MatrixXf::Zero(num_joints_, num_joints_));
+  constraint_torq_.set(Eigen::MatrixXf::Zero(num_joints_, 1));
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
