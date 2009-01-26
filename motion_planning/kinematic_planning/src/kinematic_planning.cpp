@@ -247,19 +247,57 @@ public:
 	double seconds;
 	param("kinematic_planning_status_interval", seconds, 0.5);
 	ros::Duration duration(seconds);
-	
+	ros::Duration delta(0.05);
+
 	while (m_publishStatus)
 	{
-	    duration.sleep();
+	    ros::Time nextTime = ros::Time::now() + duration;
+	    bool wait = true;
+	    while (wait && ros::Time::now() < nextTime)
+	    {
+		delta.sleep();
+		if (m_statusLock.try_lock())
+		{
+		    if (m_currentPlanStatus.path.get_states_size() > 0)
+			wait = false;
+		    m_statusLock.unlock();
+		}
+	    }
+	    
+	    bool issueStop = false;	    
+	    bool replan_inactive = m_continueReplanningLock.try_lock();
+	    
 	    m_statusLock.lock();
-	    if (m_currentRequestType == R_STATE)
-		m_currentPlanStatus.done = m_requestState.isTrivial(m_models, m_currentPlanToStateRequest) ? 1  : 0;		
-	    else
-		if (m_currentRequestType == R_POSITION)
-		    m_currentPlanStatus.done = m_requestLinkPosition.isTrivial(m_models, m_currentPlanToPositionRequest) ? 1 : 0;
+	    
+	    if (replan_inactive)
+	    {
+		if (m_currentRequestType == R_STATE)
+		{
+		    currentState(m_currentPlanToStateRequest.start_state);
+		    m_currentPlanStatus.done = m_requestState.isTrivial(m_models, m_currentPlanToStateRequest, &m_currentPlanStatus.distance) ? 1  : 0;
+		    issueStop = m_currentPlanStatus.done;
+		}
+		else
+		    if (m_currentRequestType == R_POSITION)
+		    {
+			currentState(m_currentPlanToPositionRequest.start_state);
+			m_currentPlanStatus.done = m_requestLinkPosition.isTrivial(m_models, m_currentPlanToPositionRequest, &m_currentPlanStatus.distance) ? 1 : 0;
+			issueStop = m_currentPlanStatus.done;
+		    }
+	    }
+	    
 	    publish("kinematic_planning_status", m_currentPlanStatus);
-	    m_currentPlanStatus.path.set_states_size(0);
-	    m_statusLock.unlock();	    
+	    
+	    if (m_currentPlanStatus.path.get_states_size() > 0)
+		m_currentPlanStatus.path.set_states_size(0);
+	    
+	    m_statusLock.unlock();
+	    
+	    if (replan_inactive)
+		m_continueReplanningLock.unlock();
+	    
+	    if (issueStop)
+		stopReplanning();
 	}
     }
     

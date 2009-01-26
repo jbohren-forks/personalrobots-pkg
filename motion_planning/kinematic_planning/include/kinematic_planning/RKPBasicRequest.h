@@ -112,9 +112,7 @@ namespace kinematic_planning
 		ROS_ERROR("Motion planner not found: '%s'", params.planner_id.c_str());
 		return false;
 	    }
-	    
-	    ROS_INFO("Selected motion planner: '%s'", params.planner_id.c_str());
-	    
+	    	    
 	    RKPPlannerSetup *psetup = plannerIt->second;
 	    
 	    /* check if the desired distance metric is defined */
@@ -281,14 +279,14 @@ namespace kinematic_planning
 	    psetup->si->clearStartStates();	
 	}
 	
-	bool isTrivial(ModelMap &models, _R &req)
+	bool isTrivial(ModelMap &models, _R &req, double *distance = NULL)
 	{
 	    // make sure the same motion planner instance is not used by other calls
 	    boost::mutex::scoped_lock(m_lock);
 	    
 	    if (!isRequestValid(models, req))
 		return false;
-	    
+	    	    
 	    /* find the data we need */
 	    RKPModel             *m = models[req.params.model_id];
 	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
@@ -304,9 +302,9 @@ namespace kinematic_planning
 	    setupGoalState(m, psetup, req);
 	    
 	    m->collisionSpace->lock();
-	    bool trivial = psetup->mp->isTrivial();
+	    bool trivial = psetup->mp->isTrivial(NULL, distance);
 	    m->collisionSpace->unlock();
-
+	    
 	    /* clear memory */
 	    cleanupPlanningData(psetup);
 	    
@@ -320,6 +318,8 @@ namespace kinematic_planning
 	    
 	    if (!isRequestValid(models, req))
 		return false;
+	    
+	    ROS_INFO("Selected motion planner: '%s'", req.params.planner_id.c_str());
 	    
 	    /* find the data we need */
 	    RKPModel             *m = models[req.params.model_id];
