@@ -186,9 +186,9 @@ void EndeffectorConstraintController::update()
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
   //convert to eigen for easier math
-  for (unsigned int i=0; i<num_joints_; i++)
+  for (unsigned int i = 0; i < 6; i++)
   {
-    for (unsigned int j=0; j<6; j++)
+    for (unsigned int j = 0; j < num_joints_; j++)
     {
       task_jac_(i,j) = jacobian(i,j);
     }
