@@ -122,6 +122,10 @@ protected:
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
 	
+	for (unsigned int i = 0 ; i < id_ ; ++i)
+	    delPoint(i, m_collisionMap.header);
+	id_ = 0;
+	
 	unsigned int n = m_collisionMap.get_boxes_size();	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
@@ -186,6 +190,18 @@ private:
 	mk.r = 255;
 	mk.g = 10;
 	mk.b = 10;
+	
+	publish("visualizationMarker", mk);
+    }
+
+    void delPoint(int id, const rostools::Header &header)
+    {
+	std_msgs::VisualizationMarker mk;
+	mk.header = header;
+	
+	mk.id = id;
+	mk.type = std_msgs::VisualizationMarker::SPHERE;
+	mk.action = std_msgs::VisualizationMarker::DELETE;
 	
 	publish("visualizationMarker", mk);
     }
