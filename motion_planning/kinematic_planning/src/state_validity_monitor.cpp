@@ -122,7 +122,7 @@ protected:
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
 	
-	for (unsigned int i = 0 ; i < id_ ; ++i)
+	for (int i = 0 ; i < id_ ; ++i)
 	    delPoint(i, m_collisionMap.header);
 	id_ = 0;
 	
