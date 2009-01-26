@@ -196,17 +196,22 @@ void controlLoop(void *)
   }
   else
   {
-    printf("Xml file not found, reading from parameter server\n");
+    ROS_INFO("Xml file not found, reading from parameter server\n");
     assert(ros::Node::instance());
     std::string result;
     if (ros::Node::instance()->getParam(g_options.xml_, result))
       xml.Parse(result.c_str());
+    else
+    {
+      ROS_FATAL("Could not load the xml from parameter server: %s\n", g_options.xml_);
+      exit(1);
+    }
   }
   urdf::normalizeXml(xml.RootElement());
   TiXmlElement *root = xml.FirstChildElement("robot");
   if (!root)
   {
-    fprintf(stderr, "Could not load the xml file: %s\n", g_options.xml_);
+    ROS_FATAL("Could not load the xml file: %s\n", g_options.xml_);
     exit(1);
   }
 
