@@ -387,6 +387,7 @@ class TableObjectDetector : public ros::Node
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
+        table.objects[i].frame_id = table.header.frame_id;
         cloud_geometry::getMinMax (points, &object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
         cloud_geometry::nearest::computeCentroid (points, &object_idx, table.objects[i].center);
       }
