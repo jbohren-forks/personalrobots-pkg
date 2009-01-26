@@ -121,8 +121,10 @@ Uses (name/type):
 - None
 
 Provides (name/type):
-- @b "plan_kinematic_path_state"/KinematicPlanState : given a robot model, starting and goal states, this service computes a collision free path
-- @b "plan_kinematic_path_position"/KinematicPlanLinkPosition : given a robot model, starting state and goal poses of certain links, this service computes a collision free path
+- @b "plan_kinematic_path_state"/KinematicPlanState : given a robot model, starting and goal 
+states, this service computes a collision free path
+- @b "plan_kinematic_path_position"/KinematicPlanLinkPosition : given a robot model, starting
+ state and goal poses of certain links, this service computes a collision free path
 
 
 <hr>

@@ -44,7 +44,7 @@
 namespace kinematic_planning
 {
 
-    static const int R_POSITION = 1; // link position request
+    static const int R_POSITION = 2; // link position request
     
     class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinematic
     {
