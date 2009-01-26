@@ -103,10 +103,10 @@ class ErraticNode: public ros::Node
     std_msgs::RobotBase2DOdom odom;
     std_msgs::BaseVel cmdvel;
 
-  tf::TransformBroadcaster tf;
+    tf::TransformBroadcaster tf;
   
-  ErraticNode() : ros::Node("erratic_player"),
-		  tf(*this)
+    ErraticNode() : ros::Node("erratic_player"),
+		    tf(*this)
     {
       // libplayercore boiler plate
       player_globals_init();
@@ -219,6 +219,25 @@ class ErraticNode: public ros::Node
       }
     }
 
+    void getCenter()
+    {
+      Message* msg = NULL;
+      //Wait until there is a message for geometry
+      while (!(msg = this->pos_device->Request(this->q, PLAYER_MSGTYPE_REQ,
+					       PLAYER_POSITION2D_REQ_GET_GEOM,
+					       NULL, 0, NULL, false))) 
+      {
+	ROS_ERROR("No geom for the robot from player (yet). Waiting one second and trying again.");
+	ros::Duration(1, 0).sleep();
+      }
+      player_position2d_geom_t* geomconfig = (player_position2d_geom_t*)msg->GetPayload(); 
+      center_x_ = geomconfig->pose.px;
+      center_y_ = geomconfig->pose.py;
+      center_yaw_ = geomconfig->pose.pyaw;
+      ROS_INFO("Robot center at (%fm %fm), yaw %f radians. Width %fm, length %fm", center_x_, center_y_, center_yaw_, geomconfig->size.sw, geomconfig->size.sl);
+      delete msg;
+    }
+
     void cmdvelReceived()
     {
       /*
@@ -246,7 +265,86 @@ class ErraticNode: public ros::Node
                                (void*)&cmd,sizeof(cmd),NULL);
     }
 
+
+    void doUpdate() 
+    {
+      Message* msg = NULL;
+      // Block until there's a message on the queue 
+      q->Wait(); 
+      
+      // Pop off one message (we own the resulting memory) 
+      assert((msg = q->Pop())); 
+      
+      // Is the message one we care about? 
+      player_msghdr_t* hdr = msg->GetHeader(); 
+      if((hdr->type == PLAYER_MSGTYPE_DATA) &&  
+	 (hdr->subtype == PLAYER_POSITION2D_DATA_STATE) && 
+	 (hdr->addr.interf == PLAYER_POSITION2D_CODE)) 
+      { 
+	// Cast the message payload appropriately  
+	player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload(); 
+	
+	// Translate from Player data to ROS data 
+	odom.pos.x = pdata->pos.px; 
+	odom.pos.y = pdata->pos.py; 
+	odom.pos.th = pdata->pos.pa; 
+	odom.vel.x = pdata->vel.px; 
+	odom.vel.y = pdata->vel.py; 
+	odom.vel.th = pdata->vel.pa; 
+	odom.stall = pdata->stall; 
+	
+	odom.header.frame_id = "odom"; 
+	
+	odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp); 
+	odom.header.stamp.nsec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL); 
+	
+	
+	// Publish the new data 
+	publish("odom", odom); 
+	
+	tf.sendTransform(tf::Transform(tf::Quaternion(pdata->pos.pa, 
+						      0.0, 
+						      0.0), 
+				       tf::Point(pdata->pos.px, 
+						 pdata->pos.py, 
+						 0.0) 
+				       ).inverse(), 
+			 ros::Time((long long unsigned int)floor(hdr->timestamp), 
+				   (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)), 
+			 "odom", 
+			 "base_link_offset"); 
+	tf.sendTransform(tf::Transform(tf::Quaternion(center_yaw_,  
+						      0,  
+						      0),  
+				       tf::Point(center_x_,  
+						 center_y_,  
+						 0.0)  
+				       ).inverse(),  
+			 ros::Time((long long unsigned int)floor(hdr->timestamp),  
+				   (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)),  
+			 "base_link_offset",  
+			 "base_link");  
+	
+	
+	//printf("Published new odom: (%.3f,%.3f,%.3f)\n",  
+	//odom.pos.x, odom.pos.y, odom.pos.th); 
+      } 
+      else 
+      { 
+	ROS_WARN("Unhandled Player message %d:%d:%d:%d", 
+		 hdr->type, 
+		 hdr->subtype, 
+		 hdr->addr.interf, 
+		 hdr->addr.index); 
+	
+      } 
+      
+      // We're done with the message now 
+      delete msg; 
+    }
+
   private:
+    double center_x_, center_y_, center_yaw_;
     Driver* driver;
     Device* pos_device;
     Device* power_device;
@@ -259,7 +357,7 @@ main(int argc, char** argv)
   ros::init(argc, argv);
 
   ErraticNode en;
-  Message* msg;
+
 
   // Start up the robot
   if(en.start() != 0)
@@ -269,89 +367,13 @@ main(int argc, char** argv)
   if(en.setMotorState(1) < 0)
     puts("failed to enable motors");
 
+  en.getCenter();
+
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
   while(en.ok())
   {
-    // Block until there's a message on the queue
-    en.q->Wait();
-
-    // Pop off one message (we own the resulting memory)
-    assert((msg = en.q->Pop()));
-
-    // Is the message one we care about?
-    player_msghdr_t* hdr = msg->GetHeader();
-    if((hdr->type == PLAYER_MSGTYPE_DATA) && 
-       (hdr->subtype == PLAYER_POSITION2D_DATA_STATE) &&
-       (hdr->addr.interf == PLAYER_POSITION2D_CODE))
-    {
-      // Cast the message payload appropriately 
-      player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload();
-      
-      // Translate from Player data to ROS data
-      en.odom.pos.x = pdata->pos.px;
-      en.odom.pos.y = pdata->pos.py;
-      en.odom.pos.th = pdata->pos.pa;
-      en.odom.vel.x = pdata->vel.px;
-      en.odom.vel.y = pdata->vel.py;
-      en.odom.vel.th = pdata->vel.pa;
-      en.odom.stall = pdata->stall;
-
-      en.odom.header.frame_id = "odom";
-      
-      en.odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp);
-      en.odom.header.stamp.nsec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
-      
-
-      // Publish the new data
-      en.publish("odom", en.odom);
-
-      en.tf.sendTransform(tf::Transform(tf::Quaternion(pdata->pos.pa,
-                                                    0.0,
-                                                    0.0),
-                                     tf::Point(pdata->pos.px,
-                                               pdata->pos.py,
-                                               0.0)
-                                     ).inverse(),
-                       ros::Time((long long unsigned int)floor(hdr->timestamp),
-                                 (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)),
-                       "odom",
-                       "base_link");
-                       
-        
-                       
-
-
-      /*
-      en.tf.sendInverseEuler("odom",
-                             "base",
-                             pdata->pos.px,
-                             pdata->pos.py,
-                             0.0,
-                             pdata->pos.pa,
-                             0.0,
-                             0.0,
-                             ros::Time((long long unsigned int)floor(hdr->timestamp),
-                                       (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
-      */
-      //std::cout <<"Sent 32" <<std::endl;
-
-
-      //printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-             //en.odom.pos.x, en.odom.pos.y, en.odom.pos.th);
-    }
-    else
-    {
-      ROS_WARN("Unhandled Player message %d:%d:%d:%d",
-	       hdr->type,
-	       hdr->subtype,
-	       hdr->addr.interf,
-	       hdr->addr.index);
-
-    }
-
-    // We're done with the message now
-    delete msg;
+    en.doUpdate();
   }
   /////////////////////////////////////////////////////////////////
 
