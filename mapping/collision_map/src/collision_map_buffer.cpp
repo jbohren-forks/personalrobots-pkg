@@ -147,6 +147,8 @@ class CollisionMapperBuffer : public ros::Node
       robot_max_.y = robot_max_.y * robot_max_.y;
       robot_max_.z = robot_max_.z * robot_max_.z;
 
+      acquire_static_map_ = false;                        // Do not acquire a static map
+
       string cloud_topic ("full_cloud");
 
       vector<pair<string, string> > t_list;
@@ -419,11 +421,18 @@ class CollisionMapperBuffer : public ros::Node
                     inserter (model_reunion, model_reunion.begin ()), compareLeaf);
 
         // Do we need to subtract any object from this map ?
-        if (object_subtract_leaves_.size () > 0)
+        object_subtract_lock_.lock ();
+        int object_subtract_leaves_size = object_subtract_leaves_.size ();
+        object_subtract_lock_.unlock ();
+
+        if (object_subtract_leaves_size > 0)
         {
-          set_difference (model_reunion.begin (), model_reunion.end (), object_subtract_leaves_.begin (), object_subtract_leaves_.end (),
-                          inserter (final_leaves_, final_leaves_.begin ()), compareLeaf);
-          computeCollisionMapFromLeaves (&final_leaves_, final_collision_map_);
+          object_subtract_lock_.lock ();
+//           set_difference (model_reunion.begin (), model_reunion.end (), object_subtract_leaves_.begin (), object_subtract_leaves_.end (),
+//                           inserter (final_leaves_, final_leaves_.begin ()), compareLeaf);
+          computeCollisionMapFromLeaves (&object_subtract_leaves_, final_collision_map_);
+          object_subtract_lock_.unlock ();
+//           computeCollisionMapFromLeaves (&final_leaves_, final_collision_map_);
         }
         else
           computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
@@ -477,6 +486,14 @@ class CollisionMapperBuffer : public ros::Node
       string cloud_frame = cloud_frame_;
       cloud_frame_lock_.unlock ();
 
+      if (cloud_frame == "")
+      {
+        ROS_ERROR ("Unable to get the target point cloud frame_id, as no point cloud data received yet.");
+        return (false);
+      }
+
+      ROS_INFO ("Trying to convert from %s to %s.", end_effector_frame_.c_str (), cloud_frame.c_str ());
+
       try
       {
         tf_.transformPoint (cloud_frame, gripper_origin, cloud_origin);
@@ -490,31 +507,87 @@ class CollisionMapperBuffer : public ros::Node
 
       // Compute the minimum and maximum bounding box values
       Point32 minB, maxB, centerB, divB;
+
       minB.x = req.object.min_bound.x - delta_bounds_;
       minB.y = req.object.min_bound.y - delta_bounds_;
       minB.z = req.object.min_bound.z - delta_bounds_;
 
-      maxB.x = req.object.min_bound.x + delta_bounds_;
-      maxB.y = req.object.min_bound.y + delta_bounds_;
-      maxB.z = req.object.min_bound.z + delta_bounds_;
+      maxB.x = req.object.max_bound.x + delta_bounds_;
+      maxB.y = req.object.max_bound.y + delta_bounds_;
+      maxB.z = req.object.max_bound.z + delta_bounds_;
 
-      centerB.x = (maxB.x + minB.x) / 2.0 ;
+      {
+        /// \note For testing purposes: take the largest bound
+        Point32 difB;
+        difB.x = fabs (maxB.x - minB.x);
+        difB.y = fabs (maxB.y - minB.y);
+        difB.z = fabs (maxB.z - minB.z);
+
+        ROS_INFO ("Bounds distances are : %f, %f, %f.", difB.x , difB.y, difB.z);
+        if (difB.x > difB.y)
+        {
+          if (difB.x > difB.z)
+          {
+            minB.y = minB.z = minB.x;   // x > y and x > z
+            maxB.y = maxB.z = maxB.x;
+          }
+          else
+          {
+            minB.x = minB.y = minB.z;   // z > x > y
+            maxB.x = maxB.y = maxB.z;
+          }
+        }
+        else
+        {
+          if (difB.y > difB.z)
+          {
+            minB.x = minB.z = minB.y;   // x < y and  y > z
+            maxB.x = maxB.z = maxB.y;
+          }
+          else
+          {
+            minB.x = minB.y = minB.z;   // x < y < z
+            maxB.x = maxB.y = maxB.z;
+          }
+        }
+
+        ROS_INFO ("Min/Max bounds are: [%f, %f, %f] -> [%f, %f, %f].", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z);
+        difB.x = fabs (maxB.x - minB.x);
+        difB.y = fabs (maxB.y - minB.y);
+        difB.z = fabs (maxB.z - minB.z);
+        ROS_INFO ("Bounds distances after adjustment are: %f, %f, %f.", difB.x , difB.y, difB.z);
+      }
+
+      centerB.x = (maxB.x + minB.x) / 2.0;
       centerB.y = (maxB.y + minB.y) / 2.0;
       centerB.z = (maxB.z + minB.z) / 2.0;
 
       // Center the bounds around the end effector position in the cloud frame
-      minB.x = minB.x - centerB.x + cloud_origin.point.x;
-      minB.y = minB.y - centerB.y + cloud_origin.point.y;
-      minB.z = minB.z - centerB.z + cloud_origin.point.z;
+      minB.x = minB.x - centerB.x;// + cloud_origin.point.x;
+      minB.y = minB.y - centerB.y;// + cloud_origin.point.y;
+      minB.z = minB.z - centerB.z;// + cloud_origin.point.z;
 
-      maxB.x = minB.x - centerB.x + cloud_origin.point.x;
-      maxB.y = maxB.y - centerB.y + cloud_origin.point.y;
-      maxB.z = maxB.z - centerB.z + cloud_origin.point.z;
+      maxB.x = maxB.x - centerB.x;// + cloud_origin.point.x;
+      maxB.y = maxB.y - centerB.y;// + cloud_origin.point.y;
+      maxB.z = maxB.z - centerB.z;// + cloud_origin.point.z;
+
+      m_lock_.lock ();
+      minB.x = (int)(floor (minB.x / leaf_width_.x));
+      maxB.x = (int)(floor (maxB.x / leaf_width_.x));
+
+      minB.y = (int)(floor (minB.y / leaf_width_.y));
+      maxB.y = (int)(floor (maxB.y / leaf_width_.y));
+
+      minB.z = (int)(floor (minB.z / leaf_width_.z));
+      maxB.z = (int)(floor (maxB.z / leaf_width_.z));
+      m_lock_.unlock ();
 
       // Compute the number of divisions needed along all axis
       divB.x = maxB.x - minB.x + 1;
       divB.y = maxB.y - minB.y + 1;
       divB.z = maxB.z - minB.z + 1;
+
+      ROS_INFO ("Min/Max/Div bounds are: [%f, %f, %f] -> [%f, %f, %f], [%f, %f, %f].", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z, divB.x, divB.y, divB.z);
 
       // Create a Collision Map object
       object_subtract_lock_.lock ();
@@ -524,16 +597,21 @@ class CollisionMapperBuffer : public ros::Node
       object_subtract_leaves_.resize (divB.x * divB.y * divB.z);
 
       // Create the leaves
-      for (int i = 0; i < divB.x; i++)
+      for (int k = 0; k < divB.z; k++)
       {
         for (int j = 0; j < divB.y; j++)
         {
-          for (int k = 0; k < divB.z; k++)
+          for (int i = 0; i < divB.x; i++)
           {
-            int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
-            object_subtract_leaves_[idx].i_ = i;
-            object_subtract_leaves_[idx].j_ = j;
-            object_subtract_leaves_[idx].k_ = k;
+/*            i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
+            j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
+            k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
+            int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);*/
+            int idx = ( k * divB.y * divB.x ) + ( j * divB.x ) + i ;
+//             std::cerr << "i: " << i << ", j: " << j << ", k: " << k << " -> " << idx << std::endl;
+            object_subtract_leaves_[idx].i_ = i + minB.x + cloud_origin.point.x;
+            object_subtract_leaves_[idx].j_ = j + minB.y + cloud_origin.point.y;
+            object_subtract_leaves_[idx].k_ = k + minB.z + cloud_origin.point.z;
             object_subtract_leaves_[idx].nr_points_ = 1;
           }
         }
@@ -561,6 +639,17 @@ int
 //   RecordStaticMapTrigger::response resp;
 //   req.map_time = ros::Time::now ();
 //   ros::service::call ("record_static_map", req, resp);
+
+  // Wait until the scan is ready, sleep for 1s
+  ros::Duration tictoc (7.0, 0);
+  tictoc.sleep ();
+
+  // Box example: 22.2 cm x 10.5 cm x 5.8 cm
+  SubtractObjectFromCollisionMap::request req;
+  req.object.min_bound.x =        req.object.min_bound.y =        req.object.min_bound.z = 0.0;
+  req.object.max_bound.x = 0.222; req.object.max_bound.y = 0.105; req.object.max_bound.z = 0.058;
+  SubtractObjectFromCollisionMap::response resp;
+  ros::service::call ("~subtract_object", req, resp);
 
   p.spin ();
 

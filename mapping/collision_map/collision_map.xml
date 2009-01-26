@@ -16,8 +16,8 @@
     <param name="robot_max_y" type="double" value="1.5" />
     <param name="robot_max_z" type="double" value="1.5" />
 
-    <param name="leaf_width_x" type="double" value="0.015" />
-    <param name="leaf_width_y" type="double" value="0.015" />
-    <param name="leaf_width_z" type="double" value="0.015" />
+    <param name="leaf_width_x" type="double" value="0.02" />
+    <param name="leaf_width_y" type="double" value="0.02" />
+    <param name="leaf_width_z" type="double" value="0.02" />
   </node>
 </launch>
