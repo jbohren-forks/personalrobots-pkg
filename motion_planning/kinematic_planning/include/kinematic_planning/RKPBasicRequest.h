@@ -50,7 +50,10 @@
 
 /** Main namespace */
 namespace kinematic_planning
-{
+{    
+   
+    static const int R_NONE = 0; // undefined type of request
+    
     
     /** This class represents a basic request to a kinematic motion
 	planner. The code a request executes is almost the same
@@ -63,6 +66,7 @@ namespace kinematic_planning
 	
 	RKPBasicRequest(void)
 	{
+	    type = R_NONE;
 	}
 	
 	virtual ~RKPBasicRequest(void)
@@ -277,6 +281,38 @@ namespace kinematic_planning
 	    psetup->si->clearStartStates();	
 	}
 	
+	bool isTrivial(ModelMap &models, _R &req)
+	{
+	    // make sure the same motion planner instance is not used by other calls
+	    boost::mutex::scoped_lock(m_lock);
+	    
+	    if (!isRequestValid(models, req))
+		return false;
+	    
+	    /* find the data we need */
+	    RKPModel             *m = models[req.params.model_id];
+	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
+	    
+	    /* configure state space and starting state */
+	    setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+
+	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    req.constraints.get_pose_vec(cstrs);
+	    setupPoseConstraints(psetup, cstrs);
+	    
+	    /* add goal state */
+	    setupGoalState(m, psetup, req);
+	    
+	    m->collisionSpace->lock();
+	    bool trivial = psetup->mp->isTrivial();
+	    m->collisionSpace->unlock();
+
+	    /* clear memory */
+	    cleanupPlanningData(psetup);
+	    
+	    return trivial;	    
+	}
+	
 	bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance, bool &trivial)
 	{
 	    // make sure the same motion planner instance is not used by other calls
@@ -322,6 +358,10 @@ namespace kinematic_planning
 	    
 	    return true;
 	}
+
+	// the type of request (unique ID for each type)
+	int type;
+	
     protected:
 	
 	boost::mutex m_lock;

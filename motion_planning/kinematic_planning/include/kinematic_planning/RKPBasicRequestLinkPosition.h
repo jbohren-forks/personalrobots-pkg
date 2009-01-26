@@ -43,6 +43,8 @@
 
 namespace kinematic_planning
 {
+
+    static const int R_POSITION = 1; // link position request
     
     class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinematic
     {
@@ -122,7 +124,13 @@ namespace kinematic_planning
 	std::vector<PoseConstraintEvaluator*>  m_pce;
 	
     };
-    
+
+    template<>
+    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::RKPBasicRequest(void)
+    {
+	type = R_POSITION;
+    }
+
     /** Validate request for planning towards a link position */
     template<>
     bool RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::isRequestValid(ModelMap &models, robot_msgs::KinematicPlanLinkPositionRequest &req)

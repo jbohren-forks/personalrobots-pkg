@@ -159,10 +159,10 @@ public:
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
 	
 	m_replanID = 0;
-	m_replanning = false;
 	m_replanningThread = NULL;
 	m_collisionMonitorChange = false;
-
+	m_currentRequestType = R_NONE;
+	
 	m_currentPlanStatus.id = -1;
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
@@ -204,11 +204,10 @@ public:
 	m_replanningLock.lock();
 	bool stop = false;
 	m_continueReplanningLock.lock();
-	if (m_replanning)
+	if (m_currentRequestType != R_NONE)
 	{
 	    /* make sure the working thread knows it is time to stop */
-	    m_replanning = false;	 
-	    m_collisionMonitorChange = true;
+	    m_currentRequestType = R_NONE;	 
 	    m_collisionMonitorCondition.notify_all();
 	    stop = true;
 	}
@@ -245,11 +244,19 @@ public:
     
     void publishStatus(void)
     {
-	ros::Duration duration(0.5);	
+	double seconds;
+	param("kinematic_planning_status_interval", seconds, 0.5);
+	ros::Duration duration(seconds);
+	
 	while (m_publishStatus)
 	{
 	    duration.sleep();
-	    m_statusLock.lock();	    
+	    m_statusLock.lock();
+	    if (m_currentRequestType == R_STATE)
+		m_currentPlanStatus.done = m_requestState.isTrivial(m_models, m_currentPlanToStateRequest) ? 1  : 0;		
+	    else
+		if (m_currentRequestType == R_POSITION)
+		    m_currentPlanStatus.done = m_requestLinkPosition.isTrivial(m_models, m_currentPlanToPositionRequest) ? 1 : 0;
 	    publish("kinematic_planning_status", m_currentPlanStatus);
 	    m_currentPlanStatus.path.set_states_size(0);
 	    m_statusLock.unlock();	    
@@ -271,7 +278,7 @@ public:
 
 	    // start planning thread
 	    m_replanningLock.lock();
-	    m_replanning = true;
+	    m_currentRequestType = R_STATE;
 	    
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
@@ -307,7 +314,7 @@ public:
 	    
 	    // start planning thread
 	    m_replanningLock.lock();
-	    m_replanning = true;
+	    m_currentRequestType = R_POSITION;
 
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
@@ -353,7 +360,7 @@ public:
 	unsigned int step = 0;
 	bool trivial = false;
 
-	while (m_replanning && !trivial)
+	while (m_currentRequestType == R_STATE && !trivial)
 	{    
 	    step++;
 	    ROS_INFO("Replanning step %d", step);
@@ -373,7 +380,7 @@ public:
 
 	    if (trivial)
 		break;
-	    while (!m_collisionMonitorChange)
+	    while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
 	}
     }
@@ -402,7 +409,7 @@ public:
 	unsigned int step = 0;
 	bool trivial = false;
 
-	while (m_replanning && !trivial)
+	while (m_currentRequestType == R_POSITION && !trivial)
 	{
 	    step++;
 	    ROS_INFO("Replanning step %d", step);
@@ -422,7 +429,7 @@ public:
 	    
 	    if (trivial)
 		break;
-	    while (!m_collisionMonitorChange)
+	    while (m_currentRequestType == R_POSITION && !m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
 	}
     }
@@ -539,10 +546,16 @@ private:
     RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestState;
     RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPosition;
     
+
+
+
+    /*********** DATA USED FOR REPLANNING ONLY ***********/
+    
     // currently considered request
     robot_msgs::KinematicPlanStateRequest                           m_currentPlanToStateRequest;    
     robot_msgs::KinematicPlanLinkPositionRequest                    m_currentPlanToPositionRequest; 
-
+    int                                                             m_currentRequestType;
+    
     // current status of the motion planner
     robot_msgs::KinematicPlanStatus                                 m_currentPlanStatus; 
     // lock used for changing the motion planner status
@@ -551,14 +564,11 @@ private:
     boost::thread                                                  *m_statusThread;
     // flag used to request stopping the publishing thread
     bool                                                            m_publishStatus;
-
-
+    
     // the ID of the current replanning task
     int                                                             m_replanID;
     
-    // flag indicating whether a replanning thread is active
-    bool                                                            m_replanning;
-    // pointer to the replanning thread (not NULL only when replanning flag is true)
+    // pointer to the replanning thread (not NULL only when current request type is R_NONE)
     boost::thread                                                  *m_replanningThread;
     // lock used to synchronize access to the replanning flag and the replanning thread
     boost::mutex                                                    m_replanningLock;

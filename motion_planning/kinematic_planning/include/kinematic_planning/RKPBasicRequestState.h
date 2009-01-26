@@ -43,7 +43,15 @@
 
 namespace kinematic_planning
 {
-    
+
+    static const int R_STATE = 1; // state request
+
+    template<>
+    RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::RKPBasicRequest(void)
+    {
+	type = R_STATE;
+    }
+
     /** Validate request for planning towards a state */
     template<>
     bool RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::isRequestValid(ModelMap &models, robot_msgs::KinematicPlanStateRequest &req)
