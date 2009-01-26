@@ -660,9 +660,9 @@ class TableObjectDetector : public ros::Node
       {
         tictoc.sleep ();
 
-        FindTable::request req;
+/*        FindTable::request req;
         FindTable::response resp;
-        ros::service::call ("table_object_detector", req, resp);
+        ros::service::call ("table_object_detector", req, resp);*/
       }
 
       return (true);
