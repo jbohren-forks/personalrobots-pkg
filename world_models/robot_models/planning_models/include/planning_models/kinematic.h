@@ -470,6 +470,9 @@ namespace planning_models
 	    /** Set all the parameters to a given value */
 	    void setAll(const double value);
 
+	    /** Set all planar & floating joints to 0, so that the robot is in its own frame */
+	    void setInRobotFrame(void);
+	    
 	    /** Set the parameters for a given group. Return true if
 		any change was observed in either of the set
 		values. */

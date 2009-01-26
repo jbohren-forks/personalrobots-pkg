@@ -669,6 +669,21 @@ void planning_models::KinematicModel::StateParams::setAll(const double value)
     }    
 }
 
+void planning_models::KinematicModel::StateParams::setInRobotFrame(void)
+{
+    for (unsigned int j = 0 ; j < m_owner->floatingJoints.size() ; ++j)
+    {
+	double vals[7] = {0, 0, 0, 0, 0, 0, 1};
+	setParams(vals, m_name[m_owner->floatingJoints[j]]);
+    }
+    
+    for (unsigned int j = 0 ; j < m_owner->planarJoints.size() ; ++j)
+    {
+	double vals[3] = {0, 0, 0};
+	setParams(vals, m_name[m_owner->planarJoints[j]]);
+    }
+}
+
 const double* planning_models::KinematicModel::StateParams::getParams(void) const
 {
     return m_params;

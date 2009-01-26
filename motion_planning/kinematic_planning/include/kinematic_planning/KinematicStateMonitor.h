@@ -156,7 +156,8 @@ namespace kinematic_planning
 	    m_kmodel->reduceToRobotFrame();
 	    
 	    m_robotState = m_kmodel->newStateParams();
-	    
+	    m_robotState->setInRobotFrame();
+
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	}
@@ -251,9 +252,22 @@ namespace kinematic_planning
 		unsigned int n = m_mechanismState.get_joint_states_size();
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
-		    double pos = m_mechanismState.joint_states[i].position;
-		    change = change || m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+		    planning_models::KinematicModel::Joint* joint = m_kmodel->getJoint(m_mechanismState.joint_states[i].name);
+		    if (joint)
+		    {
+			if (joint->usedParams == 1)
+			{
+			    double pos = m_mechanismState.joint_states[i].position;
+			    bool this_changed = m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+			    change = change || this_changed;
+			}
+			else
+			    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", m_mechanismState.joint_states[i].name.c_str(), joint->usedParams);
+		    }
+		    else
+			ROS_ERROR("Unknown joint: %s", m_mechanismState.joint_states[i].name.c_str());
 		}
+		
 		if (!m_haveMechanismState)
 		    m_haveMechanismState = m_robotState->seenAll();
 	    }
