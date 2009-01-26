@@ -173,6 +173,11 @@ public:
 	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
 
 	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
+
+	// determine intervals; a value of 0 means forever
+	param("refresh_interval_collision_map", m_intervalCollisionMap, 5.0);
+	param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.2);
+	param("refresh_interval_base_pose", m_intervalBasePose, 1.0);
     }
     
     /** Free the memory */
@@ -190,6 +195,23 @@ public:
 	const double *params = m_robotState->getParams();
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
             state.vals[i] = params[i];
+    }
+    
+    bool isSafeToPlan(void)
+    {
+	if (!isMapUpdated(m_intervalCollisionMap))
+	{
+	    ROS_WARN("Planning is not safe: map is not up to date");
+	    return false;
+	}
+	
+	if (!isStateUpdated(m_intervalKinematicState))
+	{
+	    ROS_WARN("Planning is not safe: kinematic state is not up to date");
+	    return false;
+	}
+	
+	return true;
     }
     
     void stopReplanning(void)
@@ -249,7 +271,7 @@ public:
 	param("kinematic_planning_status_interval", seconds, 0.5);
 	ros::Duration duration(seconds);
 	ros::Duration delta(0.05);
-
+	
 	while (m_publishStatus)
 	{
 	    ros::Time nextTime = ros::Time::now() + duration;
@@ -384,11 +406,24 @@ public:
 	    ROS_INFO("Using current state as starting point");
 	}
 	
-	bool result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-
-	res.value.id = -1;
-	res.value.done = trivial ? 1 : 0;
-	res.value.valid = res.value.path.get_states_size() > 0;
+	bool result = false;
+	
+	if (isSafeToPlan())
+	{
+	    result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	    
+	    res.value.id = -1;
+	    res.value.done = trivial ? 1 : 0;
+	    res.value.valid = res.value.path.get_states_size() > 0;
+	}
+	else
+	{
+	    res.value.id = -1;
+	    res.value.done = 0;
+	    res.value.valid = 0;
+	    res.value.path.set_states_size(0);
+	}
+	
 	return result;
     }
 
@@ -407,16 +442,19 @@ public:
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    
-	    currentState(m_currentPlanToStateRequest.start_state);
-	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
+	    if (isSafeToPlan())
+	    {
+		currentState(m_currentPlanToStateRequest.start_state);
+		m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    
-	    m_statusLock.lock();	    
-	    m_currentPlanStatus.path = solution;
-	    m_currentPlanStatus.distance = distance;
-	    m_currentPlanStatus.done = trivial ? 1 : 0;
-	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
-	    m_statusLock.unlock();	    
-
+		m_statusLock.lock();	    
+		m_currentPlanStatus.path = solution;
+		m_currentPlanStatus.distance = distance;
+		m_currentPlanStatus.done = trivial ? 1 : 0;
+		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+		m_statusLock.unlock();	    
+	    }
+	    
 	    if (trivial)
 		break;
 	    while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
@@ -433,11 +471,25 @@ public:
 	    currentState(req.value.start_state);
 	    ROS_INFO("Using current state as starting point");
 	}
-	bool result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	
+	bool result = false;
+	
+	if (isSafeToPlan())
+	{
+	    result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
 
-	res.value.id = -1;
-	res.value.done = trivial ? 1 : 0;
-	res.value.valid = res.value.path.get_states_size() > 0;
+	    res.value.id = -1;
+	    res.value.done = trivial ? 1 : 0;
+	    res.value.valid = res.value.path.get_states_size() > 0;
+	}
+	else
+	{
+	    res.value.id = -1;
+	    res.value.done = 0;
+	    res.value.valid = 0;
+	    res.value.path.set_states_size(0);
+	}
+	
 	return result;
     }
 
@@ -456,15 +508,18 @@ public:
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    
-	    currentState(m_currentPlanToPositionRequest.start_state);
-	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
-
-	    m_statusLock.lock();	    
-	    m_currentPlanStatus.path = solution;
-	    m_currentPlanStatus.distance = distance;
-	    m_currentPlanStatus.done = trivial ? 1 : 0;
-	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
-	    m_statusLock.unlock();
+	    if (isSafeToPlan())
+	    {
+		currentState(m_currentPlanToPositionRequest.start_state);
+		m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
+		
+		m_statusLock.lock();	    
+		m_currentPlanStatus.path = solution;
+		m_currentPlanStatus.distance = distance;
+		m_currentPlanStatus.done = trivial ? 1 : 0;
+		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+		m_statusLock.unlock();
+	    }
 	    
 	    if (trivial)
 		break;
@@ -586,6 +641,10 @@ private:
     RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPosition;
     
 
+    // intervals for determining whether the monitored state & map are up to date
+    double                                                          m_intervalCollisionMap;
+    double                                                          m_intervalKinematicState;
+    double                                                          m_intervalBasePose;
 
 
     /*********** DATA USED FOR REPLANNING ONLY ***********/

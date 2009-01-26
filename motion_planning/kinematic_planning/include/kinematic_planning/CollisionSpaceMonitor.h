@@ -89,7 +89,7 @@ namespace kinematic_planning
        each group for collision against every other link in the same group.
        
     **/
-    
+
     class CollisionSpaceMonitor : public KinematicStateMonitor
     {
 
@@ -197,14 +197,16 @@ namespace kinematic_planning
 		m_collisionSpace->updateRobotModel(0);
 	}
 	
+	bool isMapUpdated(double sec)
+	{
+	    if (sec > 0 && m_lastMapUpdate < ros::Time::now() - ros::Duration(sec))
+		return false;
+	    else
+		return true;
+	}
+
     protected:
 	
-	robot_msgs::CollisionMap              m_collisionMap;
-	collision_space::EnvironmentModel    *m_collisionSpace;
-
-	// add or remove objects to be attached to a link
-	robot_msgs::AttachedObject            m_attachedObject;
-
 	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
 	{
 	    std::vector<robot_desc::URDF::Group*> groups;
@@ -245,6 +247,7 @@ namespace kinematic_planning
 	    
 	    double tupd = (ros::Time::now() - startTime).toSec();
 	    ROS_INFO("Updated world model in %f seconds", tupd);
+	    m_lastMapUpdate = ros::Time::now();
 	    
 	    afterWorldUpdate();
 	}
@@ -266,6 +269,13 @@ namespace kinematic_planning
 	    return std::max(std::max(point.x, point.y), point.z) * 2.0;
 	}
 	
+	robot_msgs::CollisionMap              m_collisionMap;
+	collision_space::EnvironmentModel    *m_collisionSpace;
+
+	// add or remove objects to be attached to a link
+	robot_msgs::AttachedObject            m_attachedObject;
+	
+	ros::Time                             m_lastMapUpdate;
     };
      
 } // kinematic_planning

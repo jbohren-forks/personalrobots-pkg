@@ -83,6 +83,7 @@ namespace kinematic_planning
        <hr>
        
     **/
+    
     class KinematicStateMonitor
     {
 	
@@ -208,6 +209,22 @@ namespace kinematic_planning
 	    ROS_INFO(ss.str().c_str());
 	}
 	
+	bool isStateUpdated(double sec)
+	{
+	    if (sec > 0 && m_lastStateUpdate < ros::Time::now() - ros::Duration(sec))
+		return false;
+	    else
+		return true;
+	}
+	
+	bool isBaseUpdated(double sec)
+	{
+	    if (sec > 0 && m_lastBaseUpdate < ros::Time::now() - ros::Duration(sec))
+		return false;
+	    else
+		return true;
+	}
+	
     protected:
 	
 	virtual void stateUpdate(void)
@@ -241,6 +258,7 @@ namespace kinematic_planning
 	    if (std::isfinite(yaw))
 		m_basePos[2] = yaw;
 	    m_haveBasePos = true;
+	    m_lastBaseUpdate = ros::Time::now();
 	    baseUpdate();
 	}
 	
@@ -270,6 +288,7 @@ namespace kinematic_planning
 		
 		if (!m_haveMechanismState)
 		    m_haveMechanismState = m_robotState->seenAll();
+		m_lastStateUpdate = ros::Time::now();
 	    }
 	    if (change)
 		stateUpdate();
@@ -297,7 +316,8 @@ namespace kinematic_planning
 	// if this flag is true, the base position is included in the state as well
 	bool                                          m_includeBaseInState;
 	
-	
+	ros::Time                                     m_lastStateUpdate;
+	ros::Time                                     m_lastBaseUpdate;
     };
     
 } // kinematic_planning
