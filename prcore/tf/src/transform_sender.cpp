@@ -46,6 +46,7 @@ public:
 
   // A function to call to send data periodically
   void send () {
+    transform_.stamp_ = ros::Time::now();
     broadcaster.sendTransform(transform_);
   };
 
