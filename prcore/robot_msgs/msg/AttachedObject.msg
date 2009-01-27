@@ -4,4 +4,4 @@
 
 string robot_name
 string link_name
-CollisionMap objects
+ObjectOnTable[] objects
