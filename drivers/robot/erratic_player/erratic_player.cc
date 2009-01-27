@@ -62,6 +62,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "odom"/RobotBase2DOdom : odometry data from the robot.
+- @b "battery_state"/BatteryState : battery data. Since the robot does not have any charge detector, it uses the empirical result that the robot is charging if V>12.98
 
 <hr>
 
@@ -88,6 +89,7 @@ Publishes to (name / type):
 #include <std_msgs/RobotBase2DOdom.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
 #include <std_msgs/BaseVel.h>
+#include <robot_msgs/BatteryState.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -106,7 +108,7 @@ class ErraticNode: public ros::Node
     tf::TransformBroadcaster tf;
   
     ErraticNode() : ros::Node("erratic_player"),
-		    tf(*this)
+		    tf(*this), watts_charging_(10), watts_unplugged_(-10), charging_threshold_(12.98)
     {
       // libplayercore boiler plate
       player_globals_init();
@@ -117,6 +119,7 @@ class ErraticNode: public ros::Node
       playerxdr_ftable_init();
 
       advertise<std_msgs::RobotBase2DOdom>("odom", 1);
+      advertise<robot_msgs::BatteryState>("battery_state", 1);
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
@@ -329,7 +332,19 @@ class ErraticNode: public ros::Node
 	//printf("Published new odom: (%.3f,%.3f,%.3f)\n",  
 	//odom.pos.x, odom.pos.y, odom.pos.th); 
       } 
-      else 
+      else if((hdr->type == PLAYER_MSGTYPE_DATA) &&   
+	      (hdr->subtype == PLAYER_POWER_DATA_STATE) &&  
+	      (hdr->addr.interf == PLAYER_POWER_CODE))  
+      {
+	player_power_data_t* pdata = (player_power_data_t*)msg->GetPayload();  
+	robot_msgs::BatteryState state;
+	state.header.stamp = ros::Time::now();
+	state.energy_remaining = pdata->volts; //Not Correct, in volts
+	state.energy_capacity = pdata->volts / pdata->percent * 100; //Returns max number of volts.
+	state.power_consumption = (pdata->volts > charging_threshold_) ? watts_charging_ : watts_unplugged_; //Does not work, as they don't publish this.
+	publish("battery_state", state);
+      }
+      else
       { 
 	ROS_WARN("Unhandled Player message %d:%d:%d:%d", 
 		 hdr->type, 
@@ -345,6 +360,7 @@ class ErraticNode: public ros::Node
 
   private:
     double center_x_, center_y_, center_yaw_;
+    double watts_charging_, watts_unplugged_, charging_threshold_;
     Driver* driver;
     Device* pos_device;
     Device* power_device;
