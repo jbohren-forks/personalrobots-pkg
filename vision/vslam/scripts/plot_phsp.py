@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# plot curve from a bag with phase space data
+
 """    Usage: python plot_phsp.py <bag>
 """
 
