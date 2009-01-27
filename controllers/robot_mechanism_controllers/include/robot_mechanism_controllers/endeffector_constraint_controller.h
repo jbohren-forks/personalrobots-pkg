@@ -76,15 +76,16 @@ private:
 
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_;
-  Eigen::Matrix<float,6,2> constraint_jac_;
+  Eigen::Matrix<float,6,5> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
-  Eigen::Matrix<float,2,1> constraint_force_;
+  Eigen::Matrix<float,5,1> constraint_force_;
   Eigen::MatrixXf task_jac_;
   Eigen::MatrixXf identity_;
   Eigen::MatrixXf constraint_null_space_;
   Eigen::MatrixXf constraint_torq_;
   Eigen::MatrixXf task_torq_;
   KDL::Frame endeffector_frame_;
+  KDL::Frame desired_frame_;
 
   // some parameters to define the constraint
   double wall_x;
@@ -93,6 +94,11 @@ private:
   double threshold_r;
   double f_x_max;
   double f_r_max;
+  double f_pose_max;
+  double desired_roll_;
+  double desired_pitch_;
+  double desired_yaw_;
+  bool initialized_;
 
 
 };

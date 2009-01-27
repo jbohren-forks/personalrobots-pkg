@@ -51,7 +51,8 @@ ROS_REGISTER_CONTROLLER(EndeffectorConstraintController)
 EndeffectorConstraintController::EndeffectorConstraintController()
 : jnt_to_jac_solver_(NULL),
   jnt_to_pose_solver_(NULL),
-  joints_(0,(mechanism::JointState*)NULL)
+  joints_(0,(mechanism::JointState*)NULL),
+  initialized_(false)
 {
   constraint_jac_.setZero();
   constraint_wrench_.setZero();
@@ -94,7 +95,7 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
-
+  node->param("constraint/f_r_max"      , f_pose_max  , 1000.0) ; /// max r force
 
   // convert description to KDL chain
   chain_        = serial_chain->chain;
@@ -166,6 +167,9 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
 
 void EndeffectorConstraintController::update()
 {
+  
+  
+
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
     if (!joints_[i]->calibrated_)
@@ -180,6 +184,14 @@ void EndeffectorConstraintController::update()
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
     jnt_pos(i) = joints_[j++]->position_;
+  }
+
+  //grab the inital pose of the robot for testing...
+  if(!initialized_)
+  {
+    jnt_to_pose_solver_->JntToCart(jnt_pos, desired_frame_);
+    desired_frame_.M.GetRPY(desired_roll_, desired_pitch_, desired_yaw_);
+    initialized_ = true; 
   }
 
   // get the chain jacobian
@@ -228,13 +240,21 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   // Clear force vector
   double f_x = 0;
   double f_r = 0;
+  double f_roll = 0;
+  double f_pitch = 0;
+  double f_yaw = 0;
+  double roll, pitch, yaw;
+  
   // Compute the end effector angle from the origin of the circle
   double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
-
+  
   // Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 0; // this is the end of the cylinder
   constraint_jac_(1,1) = 0;
   constraint_jac_(2,1) = 0;
+  constraint_jac_(3,2) = 0;
+  constraint_jac_(4,3) = 0;
+  constraint_jac_(5,4) = 0;
 
   // X-wall at the end of the cylinder
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
@@ -271,9 +291,53 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     f_r = 0;
   }
+  
+  endeffector_frame_.M.GetRPY(roll, pitch, yaw);
+  double roll_error = desired_roll_- roll;
+  double pitch_error = desired_pitch_- pitch;
+  double yaw_error = desired_yaw_- yaw;
+  
+  //roll constraint
+  if (abs(roll_error) > 0.05)
+  {
+    //determine sign
+    constraint_jac_(3,2) = roll_error/abs(roll_error);
+    f_roll = roll_error * f_pose_max; /// @todo: FIXME, replace with some exponential function
+  }
+  else
+  {
+    f_roll = 0;
+  }
+  
+  //pitch constraint
+  if (abs(pitch_error) > 0.05)
+  {
+    //determine sign
+    constraint_jac_(4,3) = pitch_error/abs(pitch_error);
+    f_pitch = pitch_error * f_pose_max; /// @todo: FIXME, replace with some exponential function
+  }
+  else
+  {
+    f_pitch = 0;
+  }
+  
+  //yaw constraint
+  if (abs(yaw_error) > 0.05)
+  {
+    //determine sign
+    constraint_jac_(5,4) = yaw_error/abs(yaw_error);
+    f_yaw = yaw_error * f_pose_max; /// @todo: FIXME, replace with some exponential function
+  }
+  else
+  {
+    f_yaw = 0;
+  }
 
   constraint_force_(0) = f_x;
   constraint_force_(1) = f_r;
+  constraint_force_(2) = f_roll;
+  constraint_force_(3) = f_pitch;
+  constraint_force_(4) = f_yaw;
 }
 
 void EndeffectorConstraintController::computeConstraintNullSpace()
