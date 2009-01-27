@@ -101,10 +101,14 @@ $ kinematic_planning robotdesc/pr2
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "replan_kinematic_path_state"/KinematicPlanStateRequest : given a robot model, starting and goal states, this service computes and recomputes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.
+- @b "replan_kinematic_path_state"/KinematicPlanStateRequest : given a robot model, starting and goal states,
+ this service computes and recomputes a collision free path until the monitored state is actually at the goal or
+ stopping is requested. Changes in the collision model trigger replanning.
 
 
-- @b "replan_kinematic_path_position"/KinematicPlanStateRequest : given a robot model, starting state and goal poses of certain links, this service computes a collision free path until the monitored state is actually at the goal or stopping is requested. Changes in the collision model trigger replanning.  
+- @b "replan_kinematic_path_position"/KinematicPlanStateRequest : given a robot model, starting state and goal
+ poses of certain links, this service computes a collision free path until the monitored state is actually at the 
+goal or stopping is requested. Changes in the collision model trigger replanning.  
   
 - @b "replan_stop"/Empty : signal the planner to stop replanning
 
@@ -174,6 +178,7 @@ public:
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
 	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
 	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
+	advertiseService("replan_force",                   &KinematicPlanning::forceReplanning);
 
 	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
@@ -214,6 +219,16 @@ public:
 	    return false;
 	}
 	
+	return true;
+    }
+    
+    bool forceReplanning(std_srvs::Empty::request &req, std_srvs::Empty::response &res)
+    {
+	ROS_INFO("Received request to force replanning");
+	m_continueReplanningLock.lock();
+	m_collisionMonitorChange = true;
+	m_continueReplanningLock.unlock();
+	m_collisionMonitorCondition.notify_all();
 	return true;
     }
     

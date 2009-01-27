@@ -132,19 +132,22 @@ namespace kinematic_planning
 		// clear the previously attached bodies 
 		for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
 		    delete link->attachedBodies[i];
-		unsigned int n = m_attachedObject.objects.get_boxes_size();
+		unsigned int n = m_attachedObject.get_objects_size();
 		link->attachedBodies.resize(n);
 
 		// create the new ones
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
 		    link->attachedBodies[i] = new planning_models::KinematicModel::AttachedBody();
-		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(m_attachedObject.objects.boxes[i].center.x,
-									     m_attachedObject.objects.boxes[i].center.y,
-									     m_attachedObject.objects.boxes[i].center.z));
-		    planning_models::KinematicModel::Sphere *sphere = new planning_models::KinematicModel::Sphere();
-		    sphere->radius = radiusOfBox(m_attachedObject.objects.boxes[i].extents);
-		    link->attachedBodies[i]->shape = sphere;
+		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(m_attachedObject.objects[i].center.x,
+									     m_attachedObject.objects[i].center.y,
+									     m_attachedObject.objects[i].center.z));
+		    // this is a HACK! 
+		    planning_models::KinematicModel::Box *box = new planning_models::KinematicModel::Box();
+		    box->size[0] = m_attachedObject.objects[i].max_bound.x - m_attachedObject.objects[i].min_bound.x;
+		    box->size[1] = m_attachedObject.objects[i].max_bound.y - m_attachedObject.objects[i].min_bound.y;
+		    box->size[2] = m_attachedObject.objects[i].max_bound.z - m_attachedObject.objects[i].min_bound.z;
+		    link->attachedBodies[i]->shape = box;
 		}
 		
 		// update the collision model
