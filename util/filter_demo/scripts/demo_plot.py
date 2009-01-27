@@ -29,7 +29,7 @@
 # Author: Melonee Wise
 
 PKG = "filter_demo"
-import rostools; rostools.update_path(PKG)
+import rostools; rostools.load_manifest(PKG)
 import numpy
 import matplotlib
 from pylab import *

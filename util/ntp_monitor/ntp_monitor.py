@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import rostools
-rostools.update_path('ntp_monitor')
+rostools.load_manifest('ntp_monitor')
 
 from robot_msgs.msg import *
 import sys

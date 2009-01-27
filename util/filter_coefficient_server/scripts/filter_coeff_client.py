@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import rostools
-rostools.update_path('filter_coefficient_server')
+rostools.load_manifest('filter_coefficient_server')
 
 import rospy, sys
 from filter_coefficient_server.srv import *
