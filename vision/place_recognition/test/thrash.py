@@ -1,5 +1,5 @@
 import rostools
-rostools.update_path('place_recognition')
+rostools.load_manifest('place_recognition')
 import rostest
 import pylab, numpy
 import Image

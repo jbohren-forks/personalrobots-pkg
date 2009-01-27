@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import rostools
-rostools.update_path('visual_odometry')
+rostools.load_manifest('visual_odometry')
 
 from std_msgs.msg import Position
 from robot_msgs.msg import VisualizationMarker

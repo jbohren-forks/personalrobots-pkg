@@ -1,5 +1,5 @@
 import rostools
-rostools.update_path('people')
+rostools.load_manifest('people')
 import rospy
 import rostest
 import face_detection

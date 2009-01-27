@@ -1,5 +1,5 @@
 import rostools
-rostools.update_path('star_detector')
+rostools.load_manifest('star_detector')
 import rostest
 
 import sys

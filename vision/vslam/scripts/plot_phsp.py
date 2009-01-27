@@ -6,7 +6,7 @@
 """
 
 import rostools
-rostools.update_path('vslam')
+rostools.load_manifest('vslam')
 import rospy
 import sys
 import numpy

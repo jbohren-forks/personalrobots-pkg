@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 PKG = 'vision_utils'
-import rostools; rostools.update_path(PKG)
+import rostools; rostools.load_manifest(PKG)
 import rospy
 import rosrecord
 

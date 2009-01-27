@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import rostools
-rostools.update_path('visual_odometry')
+rostools.load_manifest('visual_odometry')
 import rostest
 
 import sys

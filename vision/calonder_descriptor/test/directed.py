@@ -1,5 +1,5 @@
 import rostools
-rostools.update_path('calonder_descriptor')
+rostools.load_manifest('calonder_descriptor')
 import rostest
 
 import sys
