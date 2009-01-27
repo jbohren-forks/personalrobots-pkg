@@ -2,7 +2,7 @@
 
 import math 
 import rostools
-rostools.update_path('2dnav_pr2')
+rostools.load_manifest('2dnav_pr2')
 
 import glob
 import sys, traceback, logging, rospy

@@ -39,22 +39,18 @@ NAME = 'test_set_goal'
 
 import math
 import rostools
-rostools.update_path(PKG)
-rostools.update_path('rostest')
-rostools.update_path('std_msgs')
-rostools.update_path('robot_msgs')
-rostools.update_path('rostools')
-rostools.update_path('rospy')
-rostools.update_path('transformations')
-rostools.update_path('numpy')
+rostools.load_manifest(PKG)
+rostools.load_manifest('rostest')
+rostools.load_manifest('std_msgs')
+rostools.load_manifest('robot_msgs')
+rostools.load_manifest('rospy')
+rostools.load_manifest('numpy')
 
 
 import sys, unittest
 import os, os.path, threading, time
-import rospy, rostest, rostools
+import rospy, rostest
 from std_msgs.msg import *
-from robot_msgs.msg import *
-from rostools.msg import *
 from transformations import *
 from numpy import *
 
@@ -230,7 +226,7 @@ class NavStackTest(unittest.TestCase):
         # wait for result
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             # send goal
-            h = Header();
+            h = rospy.Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
             pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))

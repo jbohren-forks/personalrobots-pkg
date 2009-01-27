@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import rostools
-rostools.update_path('2dnav_pr2')
+import rostools; rostools.load_manifest('2dnav_pr2')
 
 import sys, traceback, logging, rospy
 from std_msgs.msg import RobotBase2DOdom
@@ -14,7 +13,7 @@ def odom_callback(data):
 def localized_callback(data):
     print "localized: %d.%d %.2f, %.2f, %.2f" % (data.header.stamp.secs, data.header.stamp.nsecs, data.pos.x, data.pos.y, data.pos.th)
 
-def listener_with_user_data():
+def pose_listen():
     rospy.TopicSub("/odom", RobotBase2DOdom, odom_callback)
     rospy.TopicSub("/localizedpose", RobotBase2DOdom, localized_callback)
     rospy.ready(NAME, anonymous=True)
@@ -22,7 +21,7 @@ def listener_with_user_data():
 
 if __name__ == '__main__':
     try:
-        listener_with_user_data()
+        pose_listen()
     except KeyboardInterrupt, e:
         pass
     print "exiting"

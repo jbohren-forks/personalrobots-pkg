@@ -39,12 +39,8 @@ NAME = 'tuck_arms'
 
 import math
 import rostools
-rostools.update_path(PKG)
-rostools.update_path('rostest')
-rostools.update_path('std_msgs')
-rostools.update_path('pr2_mechanism_controllers')
-rostools.update_path('robot_msgs')
-rostools.update_path('rospy')
+rostools.load_manifest(PKG)
+rostools.load_manifest('rostest')
 
 
 import sys, unittest
