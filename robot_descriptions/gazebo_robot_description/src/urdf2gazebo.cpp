@@ -120,7 +120,8 @@ void copyGazeboMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const 
 std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *sizeCount, double *sizeVals)
 {
     std::string type;
-    
+
+    std::cout << " geometry type: " << geometry->type << std::endl;
     switch (geometry->type)
     {
     case robot_desc::URDF::Link::Geometry::BOX:
@@ -146,6 +147,16 @@ std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *siz
         type = "sphere";
         *sizeCount = 1;
         sizeVals[0] = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(geometry->shape)->radius;
+        break;
+    case robot_desc::URDF::Link::Geometry::MESH:
+        type = "trimesh";
+        *sizeCount = 3;
+        {
+          robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(geometry->shape);
+          sizeVals[0] = mesh->scale[0];
+          sizeVals[1] = mesh->scale[1];
+          sizeVals[2] = mesh->scale[2];
+        }
         break;
     default:
         *sizeCount = 0;
@@ -204,8 +215,21 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             for (int j = 0 ; j < 3 ; ++j)
                 addKeyValue(geom, tagList2[j], values2str(1, link->inertial->com + j));
             
-            /* set geometry size */
-            addKeyValue(geom, "size", values2str(linkGeomSize, linkSize));
+            if (link->collision->geometry->type == robot_desc::URDF::Link::Geometry::MESH)
+            {  
+                robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->collision->geometry->shape);
+                /* set mesh size or scale */
+                addKeyValue(geom, "scale", values2str(3, mesh->scale));
+
+                /* set mesh file */
+                addKeyValue(geom, "mesh", "models/pr2/" + mesh->filename + ".mesh");
+                
+            }
+            else
+            {
+                /* set geometry size */
+                addKeyValue(geom, "size", values2str(linkGeomSize, linkSize));
+            }
             
             /* set additional data */      
             copyGazeboMap(link->collision->data, geom);
