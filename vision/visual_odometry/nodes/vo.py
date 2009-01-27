@@ -41,7 +41,8 @@ import getopt
 from math import *
 
 import rospy
-from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
+from std_msgs.msg import Image, ImageArray, String
+from robot_msgs.msg import VisualizationMarker
 from robot_msgs.msg import VOPose
 import std_msgs.msg as stdmsg
 from image_msgs.msg import StereoInfo, Image, CamInfo

@@ -34,7 +34,8 @@
 import rostools
 rostools.update_path('visual_odometry')
 
-from std_msgs.msg import VisualizationMarker, Position
+from std_msgs.msg import Position
+from robot_msgs.msg import VisualizationMarker
 import rospy
 from visualodometer import Pose
 
