@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 # Wrappers around the services provided by MechanismControlNode
 
-import rostools
-rostools.update_path('robot_srvs')
-rostools.update_path('std_srvs')
+import rostools; rostools.load_manifest('mechanism_control')
 
-import rospy, sys
+import sys
+
+import rospy
 from robot_srvs.srv import *
 import std_srvs.srv
 

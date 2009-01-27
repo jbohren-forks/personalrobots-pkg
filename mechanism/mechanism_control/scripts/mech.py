@@ -2,7 +2,7 @@
 # Provides quick access to the services exposed by MechanismControlNode
 
 import rostools, time
-rostools.update_path('mechanism_control')
+rostools.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism

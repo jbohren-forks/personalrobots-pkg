@@ -33,7 +33,7 @@
 # Author: Stuart Glaser
 
 import rostools, time
-rostools.update_path('mechanism_control')
+rostools.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism

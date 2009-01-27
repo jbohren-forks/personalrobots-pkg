@@ -40,7 +40,7 @@ NAME = 'listenerpublisher'
 IN  = "chatter"
 OUT = "listenerpublisher" 
 
-import rostools; rostools.update_path(PKG)
+import rostools; rostools.load_manifest(PKG)
 
 import sys, traceback, logging, rospy
 
