@@ -65,7 +65,7 @@ public:
       delete cam;
   }
 
-  void set_actuator_pos(std_msgs::ActuatorState& act, float  pos) {
+  void set_actuator_pos(axis_cam::ActuatorState& act, float  pos) {
     act.pos = pos;
     act.pos_valid = 1;
     act.vel = 0;
