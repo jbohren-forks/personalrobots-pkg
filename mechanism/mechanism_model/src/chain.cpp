@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ g* Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -192,21 +192,31 @@ tf::Transform Chain::getKdlJointTransform(mechanism::Joint *j)
     tf::Quaternion(cross(j->axis_, z), -angle(j->axis_, z)));
 }
 
-void Chain::positionsToKDL(std::vector<JointState>& s, KDL::JntArray& a)
+void Chain::getPositions(std::vector<JointState>& s, KDL::JntArray& a)
 {
   assert(a.rows() == joint_indices_.size());
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
     a(i) = s[joint_indices_[i]].position_;
 }
 
-void Chain::setEffortsFromKDL(KDL::JntArray& a, std::vector<JointState>& s)
+void Chain::getVelocities(std::vector<JointState>& s, KDL::JntArrayVel& a)
+{
+  assert(a.q.rows() == joint_indices_.size());
+  assert(a.qdot.rows() == joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i){
+    a.q(i) = s[joint_indices_[i]].position_;
+    a.qdot(i) = s[joint_indices_[i]].velocity_;
+  }
+}
+
+void Chain::setEfforts(KDL::JntArray& a, std::vector<JointState>& s)
 {
   assert(a.rows() == joint_indices_.size());
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
     s[joint_indices_[i]].commanded_effort_ = a(i);
 }
 
-void Chain::addEffortsFromKDL(KDL::JntArray& a, std::vector<JointState>& s)
+void Chain::addEfforts(KDL::JntArray& a, std::vector<JointState>& s)
 {
   assert(a.rows() == joint_indices_.size());
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
