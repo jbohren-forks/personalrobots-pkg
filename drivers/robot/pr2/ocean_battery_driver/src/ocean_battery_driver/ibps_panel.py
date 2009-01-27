@@ -36,7 +36,7 @@
 PKG = 'ocean_battery_driver'
 
 import rostools
-rostools.update_path(PKG)
+rostools.load_manifest(PKG)
 
 import sys
 import rospy
