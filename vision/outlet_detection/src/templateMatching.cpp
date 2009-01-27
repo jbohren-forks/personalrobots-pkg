@@ -8,6 +8,11 @@
 #include <fstream>
 using namespace std;
 
+// Example of running this program
+// templateMatching <template> <test file>
+// e.g.
+// templateMatching /u/prdata/outlets/Outlets1.21.09/template_500x500.png /u/prdata/outlets/Outlets1.21.09/V001-crop.png
+
 
 // The hole centers on the  500x500 template
 // (208, 239)  (226, 239)  (272, 239) (290, 238)
