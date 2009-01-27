@@ -125,6 +125,16 @@ void Chain::getVelocities(std::vector<JointState> &states, std::vector<double> &
   }
 }
 
+bool Chain::allCalibrated(std::vector<JointState> &js)
+{
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+  {
+    if (!js[joint_indices_[i]].calibrated_)
+      return false;
+  }
+  return true;
+}
+
 void Chain::toKDL(KDL::Chain &chain)
 {
   assert(robot_);
@@ -147,10 +157,10 @@ void Chain::toKDL(KDL::Chain &chain)
 
     tf::Transform kdl_segment =
       continuation *
-      robot_->links_[i+1]->getOffset() *
+      robot_->links_[link_indices_[i+1]]->getOffset() *
       align_next_joint;
     kdl_transforms_[i] =
-      (robot_->links_[i+1]->getOffset() *
+      (robot_->links_[link_indices_[i+1]]->getOffset() *
        align_next_joint).inverse();
 
     TransformTFToKDL(kdl_segment, frame);
@@ -161,7 +171,7 @@ void Chain::toKDL(KDL::Chain &chain)
   }
 
   // Adds the end-effector segment
-  KDL::Joint kdl_joint = robot_->joints_[all_joint_indices_[i]]->type_ == JOINT_FIXED ?
+  KDL::Joint kdl_joint = robot_->joints_[all_joint_indices_[i-1]]->type_ == JOINT_FIXED ?
     KDL::Joint::None : KDL::Joint::RotZ;
   kdl_transforms_[i].setIdentity();
   TransformTFToKDL(continuation, frame);
@@ -242,8 +252,10 @@ bool Chain::getAncestors(mechanism::Robot* robot, const std::string &link_name,
     current_joint = robot->getJointIndex(robot->links_[current_link]->joint_name_);
     if (current_joint < 0)
       break;  // Top of the kinematic tree
-    joints.push_back(current_joint);
     current_link = robot->getLinkIndex(robot->links_[current_link]->parent_name_);
+    if (current_link < 0)
+      break;
+    joints.push_back(current_joint);
     links.push_back(current_link);
   }
 
