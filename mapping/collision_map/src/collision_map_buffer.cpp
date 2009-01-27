@@ -46,7 +46,7 @@ dimension, orientation) useful for collision detection.
 #include <std_msgs/Point.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/PoseStamped.h>
-#include <std_msgs/VisualizationMarker.h>
+#include <robot_msgs/VisualizationMarker.h>
 
 #include <Eigen/Core>
 #include <cloud_geometry/point.h>
@@ -184,7 +184,7 @@ class CollisionMapperBuffer : public ros::Node
       subtract_object_ = false;
 
       m_id_ = 0;
-      advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
+      advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 100);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

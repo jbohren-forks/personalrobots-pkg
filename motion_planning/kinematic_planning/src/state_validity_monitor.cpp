@@ -89,7 +89,7 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 
 #include <std_msgs/Byte.h>
-#include <std_msgs/VisualizationMarker.h>
+#include <robot_msgs/VisualizationMarker.h>
 
 #include <iostream>
 #include <sstream>
@@ -109,7 +109,7 @@ public:
 							   id_(0)
     {
 	advertise<std_msgs::Byte>("state_validity", 1);	
-	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);
+	advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
     }
     
     virtual ~StateValidityMonitor(void)
@@ -168,12 +168,12 @@ private:
     
     void sendPoint(double x, double y, double z, double radius, const rostools::Header &header)
     {
-	std_msgs::VisualizationMarker mk;
+	robot_msgs::VisualizationMarker mk;
 	mk.header = header;
 	
 	mk.id = id_++;
-	mk.type = std_msgs::VisualizationMarker::SPHERE;
-	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.type = robot_msgs::VisualizationMarker::SPHERE;
+	mk.action = robot_msgs::VisualizationMarker::ADD;
 	mk.x = x;
 	mk.y = y;
 	mk.z = z;
@@ -196,12 +196,12 @@ private:
 
     void delPoint(int id, const rostools::Header &header)
     {
-	std_msgs::VisualizationMarker mk;
+	robot_msgs::VisualizationMarker mk;
 	mk.header = header;
 	
 	mk.id = id;
-	mk.type = std_msgs::VisualizationMarker::SPHERE;
-	mk.action = std_msgs::VisualizationMarker::DELETE;
+	mk.type = robot_msgs::VisualizationMarker::SPHERE;
+	mk.action = robot_msgs::VisualizationMarker::DELETE;
 	
 	publish("visualizationMarker", mk);
     }

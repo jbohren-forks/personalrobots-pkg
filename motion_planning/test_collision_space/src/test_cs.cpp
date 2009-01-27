@@ -39,7 +39,7 @@
 #include <ros/time.h>
 #include <collision_space/environmentODE.h>
 #include <algorithm>
-#include <std_msgs/VisualizationMarker.h>
+#include <robot_msgs/VisualizationMarker.h>
 #include <rostools/Time.h>
 #include <tf/transform_broadcaster.h>
 #include <collision_space/util.h>
@@ -55,7 +55,7 @@ public:
     
     TestVM(void) : ros::Node("TVM")
     {
-        std_msgs::VisualizationMarker mk;
+        robot_msgs::VisualizationMarker mk;
 	advertise("visualizationMarker", 
                   mk,
                   &TestVM::subCb,
@@ -86,15 +86,15 @@ public:
     
     void sendPoint(double x, double y, double z)
     {
-	std_msgs::VisualizationMarker mk;
+	robot_msgs::VisualizationMarker mk;
 
 	mk.header.stamp = m_tm;
 	
 	mk.header.frame_id = "map";
 
 	mk.id = m_id++;
-	mk.type = std_msgs::VisualizationMarker::SPHERE;
-	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.type = robot_msgs::VisualizationMarker::SPHERE;
+	mk.action = robot_msgs::VisualizationMarker::ADD;
 	mk.x = x;
 	mk.y = y;
 	mk.z = z;
@@ -129,7 +129,7 @@ public:
     }
     
     void setShapeTransformAndMarker(collision_space::bodies::Shape *s,
-				    std_msgs::VisualizationMarker &mk)
+				    robot_msgs::VisualizationMarker &mk)
     {
 	btTransform t;
 	
@@ -151,7 +151,7 @@ public:
 	mk.header.frame_id = "map";
 	mk.id = m_id++;
 	
-	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.action = robot_msgs::VisualizationMarker::ADD;
 	
 	mk.x = x;
 	mk.y = y;
@@ -175,10 +175,10 @@ public:
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
-	    std_msgs::VisualizationMarker mk;
+	    robot_msgs::VisualizationMarker mk;
 	    setShapeTransformAndMarker(s, mk);	
 	    
-	    mk.type = std_msgs::VisualizationMarker::SPHERE;
+	    mk.type = robot_msgs::VisualizationMarker::SPHERE;
 	    mk.xScale = radius[0]*2.0;
 	    mk.yScale = radius[0]*2.0;
 	    mk.zScale = radius[0]*2.0;
@@ -199,10 +199,10 @@ public:
 	
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
-	    std_msgs::VisualizationMarker mk;
+	    robot_msgs::VisualizationMarker mk;
 	    setShapeTransformAndMarker(s, mk);	
 	    
-	    mk.type = std_msgs::VisualizationMarker::CUBE;
+	    mk.type = robot_msgs::VisualizationMarker::CUBE;
 	    mk.xScale = dims[0]; // length
 	    mk.yScale = dims[1]; // width
 	    mk.zScale = dims[2]; // height
@@ -223,10 +223,10 @@ public:
 	
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
-	    std_msgs::VisualizationMarker mk;
+	    robot_msgs::VisualizationMarker mk;
 	    setShapeTransformAndMarker(s, mk);	
 	    
-	    mk.type = std_msgs::VisualizationMarker::CUBE;
+	    mk.type = robot_msgs::VisualizationMarker::CUBE;
 	    mk.xScale = dims[1] * 2.0; // radius
 	    mk.yScale = dims[1] * 2.0; // radius
 	    mk.zScale = dims[0]; //length

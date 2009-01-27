@@ -319,7 +319,7 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
   node_->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorConstraintControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
-  node_->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+  node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
 
 
   return true;
@@ -334,10 +334,10 @@ void EndeffectorConstraintControllerNode::update()
   if (count%100==0)
   {
 
-    std_msgs::VisualizationMarker marker;
+    robot_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
     marker.id = 0;
-    marker.type = std_msgs::VisualizationMarker::CUBE;
+    marker.type = robot_msgs::VisualizationMarker::CUBE;
     marker.action = 0;
     marker.x = 0.6;
     marker.y = 0;
@@ -358,10 +358,10 @@ void EndeffectorConstraintControllerNode::update()
   if (count%100==0)
   {
 
-    std_msgs::VisualizationMarker marker;
+    robot_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
     marker.id = 1;
-    marker.type = std_msgs::VisualizationMarker::SPHERE;
+    marker.type = robot_msgs::VisualizationMarker::SPHERE;
     marker.action = 0;
     marker.x = 0.6;
     marker.y = 0;
