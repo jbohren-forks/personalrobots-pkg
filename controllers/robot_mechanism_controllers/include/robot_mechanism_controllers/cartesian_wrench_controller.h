@@ -41,6 +41,7 @@
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "mechanism_model/controller.h"
+#include "mechanism_model/chain.h"
 #include "tf/transform_datatypes.h"
 #include "joy/Joy.h"
 
@@ -59,15 +60,11 @@ public:
   KDL::Wrench wrench_desi_;
 
 private:
-  unsigned int  num_joints_, num_segments_;
+  mechanism::RobotState *robot_;
 
-  // kdl stuff for kinematics
-  KDL::Chain                 chain_;
-  KDL::ChainJntToJacSolver*  jnt_to_jac_solver_;
-
-  // to get joint positions, velocities, and to set joint torques
-  std::vector<mechanism::JointState*> joints_; 
-
+  mechanism::Chain chain_;
+  KDL::Chain kdl_chain_;
+  KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
 };
 
 
@@ -80,7 +77,7 @@ class CartesianWrenchControllerNode : public Controller
  public:
   CartesianWrenchControllerNode() {};
   ~CartesianWrenchControllerNode();
-  
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();

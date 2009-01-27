@@ -48,8 +48,8 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 
 CartesianWrenchController::CartesianWrenchController()
-: jnt_to_jac_solver_(NULL),
-  joints_(0,(mechanism::JointState*)NULL)
+: robot_(NULL),
+  jnt_to_jac_solver_(NULL)
 {
   printf("CartesianWrenchController constructor\n");
 }
@@ -65,28 +65,13 @@ CartesianWrenchController::~CartesianWrenchController()
 
 bool CartesianWrenchController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // set disired wrench to 0
+  robot_ = robot;
+
+  // set desired wrench to 0
   for (unsigned int i=0; i<3; i++){
     wrench_desi_.force(i) = 0;
     wrench_desi_.torque(i) = 0;
   }
-
-  // parse robot description from xml file
-  ros::Node *node = ros::Node::instance();
-  robot_kinematics::RobotKinematics robot_kinematics ;
-  string robot_desc;
-  node->param("robotdesc/pr2", robot_desc, string("")) ;
-  robot_kinematics.loadString(robot_desc.c_str()) ;
-  robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm");
-  if (serial_chain == NULL)  
-    fprintf(stderr, "Got NULL Chain\n") ;
-
-  // convert description to KDL chain
-  chain_        = serial_chain->chain;
-  num_joints_   = chain_.getNrOfJoints();
-  num_segments_ = chain_.getNrOfSegments();
-  printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
-  jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -102,46 +87,16 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot, TiXmlEleme
     fprintf(stderr, "Error: Chain element for CartesianWrenchController must specify the root\n");
     return false;
   }
-  if (!tip_name)  {
+  if (!tip_name) {
     fprintf(stderr, "Error: Chain element for CartesianWrenchController must specify the tip\n");
     return false;
   }
 
-  // test if we can get root from robot
-  assert(robot);
-  if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianWrenchController)\n", root_name);
+  if (!chain_.init(robot->model_, root_name, tip_name))
     return false;
-  }
 
-  // get tip from robot
-  mechanism::LinkState *current = robot->getLinkState(tip_name);
-  if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianWrenchController)\n", tip_name);
-    return false;
-  }
-
-  // Works up the chain, from the tip to the root, and get joints
-  while (current->link_->name_ != std::string(root_name)) 
-    {
-      // get joint from current link
-      joints_.push_back(robot->getJointState(current->link_->joint_name_));
-      assert(joints_[joints_.size()-1]);
-      
-      // get parent link
-      current = robot->getLinkState(current->link_->parent_name_);
-      
-      if (!current) {
-	fprintf(stderr, "Error: for CartesianWrenchController, tip is not connected to root\n");
-	return false;
-      }
-    }
-  // reverse order of joint vector
-  std::reverse(joints_.begin(), joints_.end());
-
-  // get control parameters
-
-
+  chain_.toKDL(kdl_chain_);
+  jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
 
   return true;
 }
@@ -151,38 +106,25 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 void CartesianWrenchController::update()
 {
-  // check if joints are calibrated
-  for (unsigned int i = 0; i < joints_.size(); ++i) {
-    if (!joints_[i]->calibrated_)
-      return;
-  }
+  if (!chain_.allCalibrated(robot_->joint_states_))
+    return;
 
-  // get the joint positions
-  JntArray jnt_pos(num_joints_);
-  unsigned int i_corr = 0;
-  for (unsigned int i=0; i<num_joints_; i++){
-    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
-      i_corr++;
-    jnt_pos(i) = joints_[i_corr]->position_;
-    i_corr++;
-  }
+  JntArray jnt_pos(kdl_chain_.getNrOfJoints());
+  chain_.positionsToKDL(robot_->joint_states_, jnt_pos);
 
   // get the chain jacobian
-  Jacobian jacobian(num_joints_, num_segments_);
+  Jacobian jacobian(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfSegments());
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
   // convert the wrench into joint torques
-  JntArray jnt_torq(num_joints_);
-  i_corr = 0;
-  for (unsigned int i=0; i<num_joints_; i++){
+  JntArray jnt_torq(kdl_chain_.getNrOfJoints());
+  for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); i++)
+  {
     jnt_torq(i) = 0;
     for (unsigned int j=0; j<6; j++)
       jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
-    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
-      i_corr++;
-    joints_[i_corr]->commanded_effort_ = jnt_torq(i);
-    i_corr++;
   }
+  chain_.addEffortsFromKDL(jnt_torq, robot_->joint_states_);
 }
 
 
@@ -211,10 +153,10 @@ bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
     return false;
   }
 
-  // initialize controller  
+  // initialize controller
   if (!controller_.initXml(robot, config))
     return false;
-  
+
   // subscribe to wrench commands
   node->subscribe(topic_ + "/command", wrench_msg_,
                   &CartesianWrenchControllerNode::command, this, 1);
