@@ -51,6 +51,7 @@ public:
 
   void getPositions(std::vector<JointState>&, std::vector<double>&);
   void getVelocities(std::vector<JointState>&, std::vector<double>&);
+  bool allCalibrated(std::vector<JointState>&);
 
   // Constructs a KDL chain that corresponds to the mechanism chain.
   //
@@ -71,7 +72,8 @@ public:
   tf::Transform getTransformToKDL(int frame_index);
   tf::Transform getTransformFromKDL(int frame_index);
 
-  std::vector<int> joint_indices_;
+  std::vector<int> joint_indices_;  // ONLY joints that can be actuated (not fixed joints)
+  std::vector<int> all_joint_indices_;  // Includes fixed joints
   std::vector<int> link_indices_;
 
   // Unless the root is a direct ancestor of the tip, the chain likely

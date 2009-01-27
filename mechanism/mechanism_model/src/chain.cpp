@@ -81,20 +81,28 @@ bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
 
   // Constructs the full chain, from root to ancestor to tip.
   joint_indices_.clear();
+  all_joint_indices_.clear();
   link_indices_.clear();
   for (size_t i = root_links.size() - 1; (int)i > ancestor_index; --i)
   {
     link_indices_.push_back(root_links[i]);
-    joint_indices_.push_back(root_joints[i-1]);
+    all_joint_indices_.push_back(root_joints[i-1]);
   }
   reversed_index_ = link_indices_.size();
   link_indices_.push_back(root_links[ancestor_index]);
   for (size_t i = ancestor_index + 1; i < tip_links.size(); ++i)
   {
     link_indices_.push_back(tip_links[i]);
-    joint_indices_.push_back(tip_joints[i-1]);
+    all_joint_indices_.push_back(tip_joints[i-1]);
   }
-  assert(joint_indices_.size() == link_indices_.size() - 1);
+  assert(all_joint_indices_.size() == link_indices_.size() - 1);
+
+  // Pulls out all the joints that are actuable (the non-fixed joints).
+  for (unsigned int i = 0; i < all_joint_indices_.size(); ++i)
+  {
+    if (robot_->joints_[all_joint_indices_[i]]->type_ != JOINT_FIXED)
+      joint_indices_.push_back(all_joint_indices_[i]);
+  }
 
   return true;
 }
@@ -130,12 +138,12 @@ void Chain::toKDL(KDL::Chain &chain)
   for (i = 0; i < link_indices_.size() - 1; ++i)
   {
     KDL::Joint kdl_joint;
-    if (i == 0 || robot_->joints_[joint_indices_[i-1]]->type_ == JOINT_FIXED)
+    if (i == 0 || robot_->joints_[all_joint_indices_[i-1]]->type_ == JOINT_FIXED)
       kdl_joint = KDL::Joint::None;
     else
       kdl_joint = KDL::Joint::RotZ;
 
-    tf::Transform align_next_joint = getKdlJointTransform(robot_->joints_[joint_indices_[i]]);
+    tf::Transform align_next_joint = getKdlJointTransform(robot_->joints_[all_joint_indices_[i]]);
 
     tf::Transform kdl_segment =
       continuation *
@@ -153,7 +161,7 @@ void Chain::toKDL(KDL::Chain &chain)
   }
 
   // Adds the end-effector segment
-  KDL::Joint kdl_joint = robot_->joints_[joint_indices_[i]]->type_ == JOINT_FIXED ?
+  KDL::Joint kdl_joint = robot_->joints_[all_joint_indices_[i]]->type_ == JOINT_FIXED ?
     KDL::Joint::None : KDL::Joint::RotZ;
   kdl_transforms_[i].setIdentity();
   TransformTFToKDL(continuation, frame);
