@@ -217,9 +217,21 @@ class ScanShadowsFilter : public ros::Node
       int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
       
       if (high_fidelity_)
-        projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, *tf_, mask);
+      {
+        try
+        {
+          projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, *tf_, mask);
+        }
+        catch (tf::TransformException &ex)
+        {
+          ROS_WARN ("High fidelity enabled, but TF returned a transform exception to frame %s: %s", target_frame_.c_str (), ex.what ());
+          projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+        }
+      }
       else
+      {
         projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+      }
       
 
       /// ---[ Perhaps unnecessary, but find out which channel contains the index
