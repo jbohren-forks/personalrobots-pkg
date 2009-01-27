@@ -87,7 +87,6 @@ Publishes to (name / type):
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/Pose3D.h>
 #include <std_msgs/BaseVel.h>
 #include <rostools/Time.h>
 
