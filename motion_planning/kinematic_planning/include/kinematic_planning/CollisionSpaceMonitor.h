@@ -139,10 +139,18 @@ namespace kinematic_planning
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
 		    link->attachedBodies[i] = new planning_models::KinematicModel::AttachedBody();
-		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(m_attachedObject.objects[i].center.x,
-									     m_attachedObject.objects[i].center.y,
-									     m_attachedObject.objects[i].center.z));
-		    // this is a HACK! 
+		    
+		    std_msgs::PointStamped center;
+		    std_msgs::PointStamped centerP;
+		    center.point.x = m_attachedObject.objects[i].center.x;
+		    center.point.y = m_attachedObject.objects[i].center.y;
+		    center.point.z = m_attachedObject.objects[i].center.z;
+		    center.header  = m_attachedObject.header;
+		    m_tf.transformPoint(m_attachedObject.link_name, center, centerP);
+		    
+		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
+		    
+		    // this is a HACK! we should have orientation
 		    planning_models::KinematicModel::Box *box = new planning_models::KinematicModel::Box();
 		    box->size[0] = m_attachedObject.objects[i].max_bound.x - m_attachedObject.objects[i].min_bound.x;
 		    box->size[1] = m_attachedObject.objects[i].max_bound.y - m_attachedObject.objects[i].min_bound.y;
