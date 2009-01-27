@@ -1271,6 +1271,21 @@ Index: server/physics/HingeJoint.cc
  
    this->SetAxis(**(this->axisP));
  }
+Index: server/physics/ContactParams.cc
+===================================================================
+--- server/physics/ContactParams.cc	(revision 7168)
++++ server/physics/ContactParams.cc	(working copy)
+@@ -37,8 +37,8 @@
+ {
+   this->kp = 10000.0; //dInfinity;
+   this->kd = 0;
+-  this->bounce = 0.1;
+-  this->bounceVel = 0.1;
++  this->bounce = 0.0;
++  this->bounceVel = 0.0;
+   this->softCfm = 0.01;
+ 
+   this->mu1 = dInfinity;
 Index: server/physics/RayGeom.cc
 ===================================================================
 --- server/physics/RayGeom.cc	(revision 7168)
@@ -1469,11 +1484,17 @@ Index: server/physics/ode/ODEPhysics.cc
    // Very important to clear out the contact group
    dJointGroupEmpty( this->contactGroup );
  
-@@ -266,15 +295,16 @@
-         contact.surface.mode = dContactSlip1 | dContactSlip2 | 
-                                dContactSoftERP | dContactSoftCFM |  
-                                dContactBounce | dContactMu2 | dContactApprox1;
-+        contact.surface.mode = 0;
+@@ -263,18 +292,19 @@
+           continue;
+ 
+         contact.geom = contactGeoms[i];
+-        contact.surface.mode = dContactSlip1 | dContactSlip2 | 
+-                               dContactSoftERP | dContactSoftCFM |  
+-                               dContactBounce | dContactMu2 | dContactApprox1;
++        //contact.surface.mode = dContactSlip1 | dContactSlip2 | 
++        //                       dContactSoftERP | dContactSoftCFM |  
++        //                       dContactBounce | dContactMu2 | dContactApprox1;
++        contact.surface.mode = dContactApprox1 | dContactBounce;
  
  
          // Compute the CFM and ERP by assuming the two bodies form a
@@ -3719,3 +3740,24 @@ Index: SConstruct
  
  env = conf.Finish()
  
+Index: worlds/trimesh.world
+===================================================================
+--- worlds/trimesh.world	(revision 7168)
++++ worlds/trimesh.world	(working copy)
+@@ -58,14 +58,14 @@
+     <static>false</static>
+     <body:trimesh name="pallet_body">
+       <geom:trimesh name="pallet_geom">
+-        <mesh>Mesh.mesh</mesh>
++        <mesh>WoodPallet.mesh</mesh>
+         <scale>.2 .2 .2</scale>
+         <mass>0.1</mass>
+ 
+         <visual>
+           <scale>.2 .2 .2</scale>
+           <rpy>0 0 0</rpy>
+-          <mesh>Mesh.mesh</mesh>
++          <mesh>WoodPallet.mesh</mesh>
+           <material>Gazebo/WoodPallet</material>
+         </visual>
+       </geom:trimesh>
