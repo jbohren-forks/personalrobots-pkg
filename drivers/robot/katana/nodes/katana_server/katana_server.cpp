@@ -6,10 +6,10 @@
 #include "ros/common.h"
 #include "ros/node.h"
 #include "std_srvs/StringString.h"
-#include "std_srvs/StringArmCSpace.h"
-#include "std_srvs/ArmCSpaceSeqString.h"
-#include "std_srvs/ArmCSpaceString.h"
-#include "std_srvs/ArmCSpaceSeqString.h"
+#include "katana/StringArmCSpace.h"
+#include "katana/ArmCSpaceSeqString.h"
+#include "katana/ArmCSpaceString.h"
+#include "katana/ArmCSpaceSeqString.h"
 #include "std_srvs/UInt32String.h"
 #include "std_srvs/Float32String.h"
 #include "katana/KatanaIK.h"
@@ -160,8 +160,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
 
-    bool get_current_joint_angles(std_srvs::StringArmCSpace::request &req,
-                   std_srvs::StringArmCSpace::response &res)
+    bool get_current_joint_angles(katana::StringArmCSpace::request &req,
+                   katana::StringArmCSpace::response &res)
     {
       vector<double> jointPositions = katana->get_joint_positions();
       res.jointAngles.set_angles_size(jointPositions.size());
@@ -171,8 +171,8 @@ class KatanaServer : public ros::Node
       return (jointPositions.size() > 0);
     }
     
-    bool moveJointsSingle(std_srvs::ArmCSpaceString::request &req,
-                   std_srvs::ArmCSpaceString::response &res)
+    bool moveJointsSingle(katana::ArmCSpaceString::request &req,
+                   katana::ArmCSpaceString::response &res)
     {
       katana->allow_crash_limits(false);
       bool success = katana->goto_joint_position_deg(req.jointAngles.angles[0], req.jointAngles.angles[1],
@@ -216,8 +216,8 @@ class KatanaServer : public ros::Node
     }
 
     
-    bool moveJointsSeqDeg(std_srvs::ArmCSpaceSeqString::request &req,
-                   std_srvs::ArmCSpaceSeqString::response &res)
+    bool moveJointsSeqDeg(katana::ArmCSpaceSeqString::request &req,
+                   katana::ArmCSpaceSeqString::response &res)
     {
       katana->allow_crash_limits(false);
       bool success = false;
@@ -237,8 +237,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
     
-    bool moveJointsSeqRad(std_srvs::ArmCSpaceSeqString::request &req,
-                   std_srvs::ArmCSpaceSeqString::response &res)
+    bool moveJointsSeqRad(katana::ArmCSpaceSeqString::request &req,
+                   katana::ArmCSpaceSeqString::response &res)
     {
       katana->allow_crash_limits(false);
       bool success = false;
