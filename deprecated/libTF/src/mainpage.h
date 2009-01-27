@@ -31,6 +31,7 @@
 //POSSIBILITY OF SUCH DAMAGE.
 
 /** \mainpage libTF a transformation library
+ * @htmlinclude manifest.html
  *
  * This is a library for keeping track of transforms for 
  * an entire system.

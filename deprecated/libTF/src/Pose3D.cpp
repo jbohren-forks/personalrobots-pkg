@@ -169,16 +169,6 @@ void Pose3D::setFromDH(double length, double alpha, double offset, double theta)
     setFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta));
 };
 
-void Pose3D::setFromMessage(const std_msgs::Pose3D& message)
-{
-  xt = message.position.x;
-  yt = message.position.y;
-  zt = message.position.z;
-  xr = message.orientation.x;
-  yr = message.orientation.y;
-  zr = message.orientation.z;
-  w = message.orientation.w;
-};
 
 NEWMAT::Matrix Pose3D::matrixFromEuler(double ax,
 				       double ay, double az, double yaw,
@@ -268,11 +258,6 @@ Pose3D& Pose3D::operator=(const Pose3D & input)
     return *this;
 };
 
-Pose3D& Pose3D::operator=(const std_msgs::Pose3D & input)
-{
-  setFromMessage(input);
-  return *this;
-}
 
 
 Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
@@ -454,18 +439,6 @@ void Pose3D::getPosition(Position &pos) const
     pos.z = zt;
 }
 
-std_msgs::Pose3D Pose3D::getMessage(void) const
-{
-  std_msgs::Pose3D pose;
-  pose.position.x = xt;
-  pose.position.y = yt;
-  pose.position.z = zt;
-  pose.orientation.x = xr;
-  pose.orientation.y = yr;
-  pose.orientation.z = zr;
-  pose.orientation.w = w;
-  return pose;
-};
 
 void Pose3D::setPosition(double x, double y, double z)
 {

@@ -42,7 +42,6 @@
 #include <pthread.h>
 #include <cmath>
 
-#include <std_msgs/Pose3D.h>
 
 namespace libTF
 {
@@ -251,8 +250,6 @@ struct Euler
       double getMagnitude(void);
       /** \brief Assignment operator overload*/
       Pose3D & operator=(const Pose3D & input);
-      /** \brief Assignment operator overload from Message*/
-      Pose3D & operator=(const std_msgs::Pose3D & input);
   
     
       /* Accessors */
@@ -275,8 +272,6 @@ struct Euler
       /** \brief Return the rotation as an axis angle pair */
       void getAxisAngle(double axis[3], double *angle) const;
       
-      /** \brief Get in ros message type */
-      std_msgs::Pose3D getMessage(void) const;
     
       /** Mutators **/
       /** \brief Set the values to the identity transform */
@@ -289,8 +284,7 @@ struct Euler
       void setFromEuler(Position &pos, Euler &euler);
       /** \brief Set the values using DH Parameters */
       void setFromDH(double length, double alpha, double offset, double theta);
-      /** \brief Set using ROS Message Type */
-    void setFromMessage(const std_msgs::Pose3D& message);
+
 
 
       /** \brief Set the translational components */

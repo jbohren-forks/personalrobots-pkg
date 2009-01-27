@@ -33,7 +33,7 @@
 #include "libTF/Pose3DCache.h"
 
 #include <cassert>
-
+#include <cstring>
 using namespace libTF;
 
 Pose3DCache::Pose3DCache(bool interpolating,
