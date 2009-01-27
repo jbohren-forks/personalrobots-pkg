@@ -266,7 +266,6 @@ class ScanShadowsFilter : public ros::Node
       filterShadowPoints (tilt_full_cloud, filtered_cloud);
 
       // Set timestamp/frameid and publish
-      filtered_cloud.header = tilt_scan_msg_.header;
       publish ("tilt_laser_cloud_filtered", filtered_cloud);
     }
 
