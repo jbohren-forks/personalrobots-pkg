@@ -42,15 +42,9 @@ NAME = 'test_arm'
 
 import math
 import rostools
-rostools.update_path(PKG)
-rostools.update_path('rostest')
-rostools.update_path('std_msgs')
-rostools.update_path('pr2_mechanism_controllers')
-rostools.update_path('robot_msgs')
-rostools.update_path('rostest')
-rostools.update_path('rospy')
-rostools.update_path('transformations')
-rostools.update_path('numpy')
+rostools.load_manifest(PKG)
+rostools.load_manifest('rostest')
+rostools.load_manifest('numpy')
 
 import sys, unittest
 import os, os.path, threading, time

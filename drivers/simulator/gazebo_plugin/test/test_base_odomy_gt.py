@@ -39,16 +39,11 @@ NAME = 'test_base_odomy_gt'
 
 import math
 import rostools
-rostools.update_path(PKG)
-rostools.update_path('rostest')
-rostools.update_path('std_msgs')
-rostools.update_path('robot_msgs')
-rostools.update_path('rostest')
-rostools.update_path('rospy')
-
+rostools.load_manifest(PKG)
+rostools.load_manifest('rostest')
 
 import sys, unittest
-import os, os.path, threading, time
+import os, time
 import rospy, rostest
 from std_msgs.msg import *
 

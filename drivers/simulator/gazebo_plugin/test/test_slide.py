@@ -37,11 +37,8 @@
 NAME = 'test_slide'
 
 import rostools
-rostools.update_path('gazebo_plugin')
-rostools.update_path('std_msgs')
-rostools.update_path('robot_msgs')
-rostools.update_path('rostest')
-rostools.update_path('rospy')
+rostools.load_manifest('gazebo_plugin')
+rostools.load_manifest('rostest')
 
 import unittest, sys, os, math
 import time
