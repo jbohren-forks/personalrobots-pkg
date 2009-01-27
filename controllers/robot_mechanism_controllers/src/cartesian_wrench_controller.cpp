@@ -196,9 +196,9 @@ bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 {
   // get name of topic to listen to from xml file
   ros::Node *node = ros::Node::instance();
-  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
+  topic_ = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic_ == "") {
-    fprintf(stderr, "No topic given to CartesianWrenchControllerNode\n");
+    ROS_ERROR("No topic given to CartesianWrenchControllerNode");
     return false;
   }
 
