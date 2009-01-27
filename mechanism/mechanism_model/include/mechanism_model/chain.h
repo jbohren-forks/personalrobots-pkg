@@ -35,6 +35,8 @@
 #include "mechanism_model/robot.h"
 #include <kdl/chain.hpp>
 #include <kdl/jntarray.hpp>
+#include <kdl/jntarrayvel.hpp>
+#include <kdl/jntarrayacc.hpp>
 
 namespace mechanism {
 
@@ -58,10 +60,11 @@ public:
   // Be aware that frame i in the mechanism corresponds to frame i+1 in KDL.
   void toKDL(KDL::Chain &chain);
 
-  void positionsToKDL(std::vector<JointState>&, KDL::JntArray&);
+  void getPositions(std::vector<JointState>&, KDL::JntArray&);
+  void getVelocities(std::vector<JointState>&, KDL::JntArrayVel&);
 
-  void setEffortsFromKDL(KDL::JntArray&, std::vector<JointState>&);
-  void addEffortsFromKDL(KDL::JntArray&, std::vector<JointState>&);
+  void setEfforts(KDL::JntArray&, std::vector<JointState>&);
+  void addEfforts(KDL::JntArray&, std::vector<JointState>&);
 
   // The robot model and KDL have different frames for each link.
   // These functions give the transforms between the robot model
