@@ -21,10 +21,12 @@
   <property name="table_y" value="0.0" />
   <property name="table_z" value="0.0" />
 
-  <property name="object_1_height" value="0.12" />
-  <property name="object_1_radius" value="0.02" />
+  <property name="object_1_height"      value="0.12" />
+  <property name="object_1_radius"      value="0.02" />
   <property name="object_1_base_height" value="0.02" />
-  <property name="object_1_base_width" value="0.15" />
+  <property name="object_1_base_width"  value="0.15" />
+  <property name="object_1_mass"        value="0.1" /> 
+  <property name="object_1_mu"          value="50.0" /> 
 
   <property name="M_PI" value="3.1415926535897931" />
 
@@ -201,11 +203,11 @@
     <origin xyz="0 0 ${object_1_base_height}" rpy="0 0 0" />
     <joint name="object_1_joint" />
     <inertial>
-      <mass value="0.01" />
+      <mass value="${object_1_mass/2.0}" />
       <com xyz="0 0 ${object_1_height/2}" />
-      <inertia ixx="0.001" ixy="0"  ixz="0"
-               iyy="0.001" iyz="0"
-               izz="0.0001" />
+      <inertia ixx="${object_1_mass/20.0}" ixy="0"  ixz="0"
+               iyy="${object_1_mass/20.0}" iyz="0"
+               izz="${object_1_mass/200.}" />
     </inertial> 
     <visual>
       <origin xyz="0.0 0.0 ${object_1_height/2}" rpy="0 0 0" />
@@ -223,8 +225,9 @@
       </geometry>
     </collision>
     <map name="object_1_collision" flag="gazebo">
-      <elem key="mu1" value="5000.0" />
-      <elem key="mu2" value="5000.0" />
+      <elem key="selfCollide">true</elem>
+      <elem key="mu1" value="object_1_mu" />
+      <elem key="mu2" value="object_1_mu" />
       <elem key="kp"  value="100000000.0" />
       <elem key="kd"  value="1.0" />
     </map>
@@ -234,11 +237,11 @@
     <origin xyz="${table_x} ${table_y} ${table_z+table_height+0.03}" rpy="0 0 0" />
     <joint name="object_1_base_joint" />
     <inertial>
-      <mass value="0.01" />
+      <mass value="${object_1_mass/2.0}" />
       <com xyz="0 0 ${object_1_base_height/2}" />
-      <inertia ixx="0.001" ixy="0"  ixz="0"
-               iyy="0.001" iyz="0"
-               izz="0.0001" />
+      <inertia ixx="${object_1_mass/20.0}" ixy="0"  ixz="0"
+               iyy="${object_1_mass/20.0}" iyz="0"
+               izz="${object_1_mass/200.}" />
     </inertial> 
     <visual>
       <origin xyz="0.0 0.0 ${object_1_base_height/2}" rpy="0 0 0" />

@@ -8,6 +8,9 @@
   <property name="gripper_max_angle" value="0.548" />
   <property name="gripper_min_angle" value="0.05" />
 
+  <property name="finger_tip_mu"              value="50.0" />
+  <property name="finger_joint_effort_limit"  value="10.0" />
+
   <macro name="pr2_finger" params="prefix parent">
 
     <!-- Finger proximal digit -->
@@ -15,10 +18,10 @@
     <joint name="${prefix}_l_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
-             k_position="1.0" k_velocity="0.1" velocity="0.5"
-             safety_length_min="0.05" safety_length_max="0.1" />
+      <calibration reference_position="0" values="1.0 -1.0" />
+      <limit effort="${finger_joint_effort_limit}" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
+             k_position="1.0" k_velocity="1.0" velocity="0.5"
+             safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
     </joint>
 
@@ -79,16 +82,16 @@
     <joint name="${prefix}_r_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
-             k_position="0" k_velocity="0" velocity="0.5"
+      <calibration reference_position="0" values="1.0 -1.0" />
+      <limit effort="${finger_joint_effort_limit}" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
+             k_position="0" k_velocity="0" velocity="0.0"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp">1.0</elem>
-        <elem key="mimicKd">1.0</elem>
-        <elem key="mimicFMax">50.0</elem> <!-- ode bug: this force is set for _l_finger_joint -->
+        <elem key="mimicKp" value="20.0" />
+        <elem key="mimicKd" value="10.0" />
+        <elem key="mimicFMax" value="10.0" />
       </map>
     </joint>
 
@@ -149,16 +152,16 @@
     <joint name="${prefix}_l_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
-             k_position="0" k_velocity="0" velocity="0.5"
+      <calibration reference_position="0" values="1.0 -1.0" />
+      <limit effort="${finger_joint_effort_limit}" min="${-gripper_max_angle}" max="${-gripper_min_angle*0}"
+             k_position="0" k_velocity="0" velocity="0.0"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp">2.0</elem>
-        <elem key="mimicKd">1.0</elem>
-        <elem key="mimicFMax">10.0</elem>
+        <elem key="mimicKp" value="20.0" />
+        <elem key="mimicKd" value="10.0" />
+        <elem key="mimicFMax" value="10.0" />
       </map>
     </joint>
 
@@ -209,8 +212,8 @@
       </map>
       <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="50.0" />
-        <elem key="mu2" value="50.0" />
+        <elem key="mu1" value="${finger_tip_mu}" />
+        <elem key="mu2" value="${finger_tip_mu}" />
         <elem key="kp"  value="100000000.0" />
         <elem key="kd"  value="1.0" />
       </map>
@@ -221,15 +224,15 @@
     <joint name="${prefix}_r_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.5 -1.0" />
-      <limit effort="10" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
-             k_position="0" k_velocity="0" velocity="0.5"
+      <calibration reference_position="0" values="1.0 -1.0" />
+      <limit effort="${finger_joint_effort_limit}" min="${gripper_min_angle*0}" max="${gripper_max_angle}"
+             k_position="0" k_velocity="0" velocity="0.0"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.002" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp" value="2.0" />
-        <elem key="mimicKd" value="1.0" />
+        <elem key="mimicKp" value="20.0" />
+        <elem key="mimicKd" value="10.0" />
         <elem key="mimicFMax" value="10.0" />
       </map>
     </joint>
@@ -281,8 +284,8 @@
       </map>
       <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="50.0" />
-        <elem key="mu2" value="50.0" />
+        <elem key="mu1" value="${finger_tip_mu}" />
+        <elem key="mu2" value="${finger_tip_mu}" />
         <elem key="kp"  value="100000000.0" />
         <elem key="kd"  value="1.0" />
       </map>
@@ -299,6 +302,14 @@
           <frameName>map</frameName>
           <interface:position name="p3d_${prefix}_l_finger_position_iface" />
         </controller:ros_p3d>
+        <controller:ros_f3d name="f3d_${prefix}_l_finger_controller" plugin="libros_f3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_l_finger_link</bodyName>
+          <topicName>${prefix}_l_finger_force_ground_truth</topicName>
+          <frameName>${prefix}_l_finger_link</frameName>
+          <interface:position name="f3d_${prefix}_l_finger_force_iface" />
+        </controller:ros_f3d>
       </verbatim>
     </map>
 
