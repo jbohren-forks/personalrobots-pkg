@@ -159,8 +159,13 @@ void CartesianWrenchController::update()
 
   // get the joint positions
   JntArray jnt_pos(num_joints_);
-  for (unsigned int i=0; i<num_joints_; i++)
-    jnt_pos(i) = joints_[i]->position_;
+  unsigned int i_corr = 0;
+  for (unsigned int i=0; i<num_joints_; i++){
+    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
+      i_corr++;
+    jnt_pos(i) = joints_[i_corr]->position_;
+    i_corr++;
+  }
 
   // get the chain jacobian
   Jacobian jacobian(num_joints_, num_segments_);
@@ -168,11 +173,15 @@ void CartesianWrenchController::update()
 
   // convert the wrench into joint torques
   JntArray jnt_torq(num_joints_);
+  i_corr = 0;
   for (unsigned int i=0; i<num_joints_; i++){
     jnt_torq(i) = 0;
     for (unsigned int j=0; j<6; j++)
       jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
-    joints_[i]->commanded_effort_ = jnt_torq(i);
+    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
+      i_corr++;
+    joints_[i_corr]->commanded_effort_ = jnt_torq(i);
+    i_corr++;
   }
 }
 

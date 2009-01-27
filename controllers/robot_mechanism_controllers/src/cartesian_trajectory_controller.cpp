@@ -36,33 +36,33 @@
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/cartesian_pose_controller.h"
+#include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
 
 
 using namespace KDL;
 using namespace tf;
 
 
+
 namespace controller {
 
+ROS_REGISTER_CONTROLLER(CartesianTrajectoryController)
 
 
-ROS_REGISTER_CONTROLLER(CartesianPoseController)
-
-
-CartesianPoseController::CartesianPoseController()
+CartesianTrajectoryController::CartesianTrajectoryController()
 : jnt_to_pose_solver_(NULL),
-  joints_(0,(mechanism::JointState*)NULL)
+  joints_(0,(mechanism::JointState*)NULL),
+  motion_profile_(6, VelocityProfile_Trap(0,0))
 {}
 
-CartesianPoseController::~CartesianPoseController()
+CartesianTrajectoryController::~CartesianTrajectoryController()
 {
   if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
 }
 
 
 
-bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   fprintf(stderr, "initializing pose controller\n");
 
@@ -70,19 +70,11 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
   assert(robot);
   robot_ = robot;
 
-  // get pid controller
-  TiXmlElement *p_pose = config->FirstChildElement("pid_pose");
-  control_toolbox::Pid pid_pose;
-  pid_pose.initXml(p_pose);
-  for (unsigned int i=0; i<6; i++)
-    pid_controller_.push_back(pid_pose);
-  fprintf(stderr, "pid controllers created\n");
-
   // time
   last_time_ = robot->hw_->current_time_;
 
   // create twist controller
-  twist_controller_.initXml(robot, config);
+  pose_controller_.initXml(robot, config);
 
   // parse robot description from xml file
   ros::Node *node = ros::Node::instance();
@@ -105,7 +97,7 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
-    fprintf(stderr, "Error: CartesianPoseController was not given a chain\n");
+    fprintf(stderr, "Error: CartesianTrajectoryController was not given a chain\n");
     return false;
   }
 
@@ -114,24 +106,24 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
   root_link_ = root_name;
   const char *tip_name = chain->Attribute("tip");
   if (!root_name) {
-    fprintf(stderr, "Error: Chain element for CartesianPoseController must specify the root\n");
+    fprintf(stderr, "Error: Chain element for CartesianTrajectoryController must specify the root\n");
     return false;
   }
   if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for CartesianPoseController must specify the tip\n");
+    fprintf(stderr, "Error: Chain element for CartesianTrajectoryController must specify the tip\n");
     return false;
   }
 
   // test if we can get root from robot
   if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianPoseController)\n", root_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianTrajectoryController)\n", root_name);
     return false;
   }
 
   // get tip from robot
   mechanism::LinkState *current = robot->getLinkState(tip_name);
   if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianPoseController)\n", tip_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianTrajectoryController)\n", tip_name);
     return false;
 
   }
@@ -147,18 +139,31 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
       current = robot->getLinkState(current->link_->parent_name_);
       
       if (!current) {
-	  fprintf(stderr, "Error: for CartesianPoseController, tip is not connected to root\n");
+	  fprintf(stderr, "Error: for CartesianTrajectoryController, tip is not connected to root\n");
 	  return false;
 	}
     }
   // reverse order of joint vector
   std::reverse(joints_.begin(), joints_.end());
 
-  // set desired pose to current pose
-  pose_desi_ = getPose();
+  // initialize motion profile
+  double max_vel_trans, max_vel_rot, max_acc_trans, max_acc_rot;
+  node->param("arm_trajectory/max_vel_trans", max_vel_trans, 0.0) ;
+  node->param("arm_trajectory/max_vel_rot", max_vel_rot, 0.0) ;
+  node->param("arm_trajectory/max_acc_trans", max_acc_trans, 0.0) ;
+  node->param("arm_trajectory/max_acc_rot", max_acc_rot, 0.0) ;
 
-  // set the twist feedworward to zero
-  twist_ff_ = Twist::Zero();
+  for (unsigned int i=0; i<3; i++){
+    motion_profile_[i  ].SetMax(max_vel_trans, max_acc_trans);
+    motion_profile_[i+3].SetMax(max_vel_rot,   max_acc_rot);
+  }
+
+  // set desired pose to current pose
+  pose_current_ = getPose();
+  twist_current_ = Twist::Zero();
+
+  // start not moving
+  is_moving_ = false;
 
   return true;
 }
@@ -166,34 +171,82 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
 
 
 
-
-
-void CartesianPoseController::update()
+bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double duration)
 {
-  // get current time
-  double time = robot_->hw_->current_time_;
-  double dt = time - last_time_;
+  // don't do anything when still moving
+  if (is_moving_) return false;
 
-  // get current pose
-  pose_meas_ = getPose();
+  // trajectory from pose_begin to pose_end
+  pose_end_ = pose_desi;
+  pose_begin_ = getPose();
 
-  // pose feedback into twist
-  Twist twist_error = diff(pose_desi_, pose_meas_);
-  Twist twist_fb;
+  max_duration_ = 0;
+  Twist twist_move = diff(pose_begin_, pose_end_);
+
+  // Set motion profiles
+  for (unsigned int i=0; i<6; i++){
+    motion_profile_[i].SetProfileDuration( 0, twist_move(i), duration);
+    max_duration_ = max( max_duration_, motion_profile_[i].Duration() );
+  }
+
+  // Rescale trajectories to maximal duration
   for (unsigned int i=0; i<6; i++)
-    twist_fb(i) = pid_controller_[i].updatePid(twist_error(i), dt);
+    motion_profile_[i].SetProfileDuration( 0, twist_move(i), max_duration_ );
 
-  // send feedback twist and feedforward twist to twist controller
-  twist_controller_.twist_desi_ = twist_fb + twist_ff_;
-  twist_controller_.update();
+  cout << "will move to new pose in " << max_duration_ << " seconds" << endl;
 
-  // remember time
-  last_time_ = time;
+  time_passed_ = 0;
+  is_moving_ = true;
+
+  return true;
 }
 
 
 
-Frame CartesianPoseController::getPose()
+
+void CartesianTrajectoryController::update()
+{
+  // get time
+  double time = robot_->hw_->current_time_;
+  double dt = time - last_time_;
+  last_time_ = time;
+
+  if (is_moving_){
+    time_passed_ += dt;
+
+    // ended trajectory
+    if (time_passed_ > max_duration_){
+      twist_current_ = Twist::Zero();
+      pose_current_  = pose_end_;
+      is_moving_ = false;
+    }
+    // still in trajectory
+    else{
+      // pose
+      Twist twist_begin_current = Twist(Vector(motion_profile_[0].Pos(time_passed_),motion_profile_[1].Pos(time_passed_),motion_profile_[2].Pos(time_passed_)),
+					Vector(motion_profile_[3].Pos(time_passed_),motion_profile_[4].Pos(time_passed_),motion_profile_[5].Pos(time_passed_)) );
+      pose_current_ = Frame( pose_begin_.M * Rot( pose_begin_.M.Inverse( twist_begin_current.rot ) ), 
+			     pose_begin_.p + twist_begin_current.vel);
+
+      // twist
+      for(unsigned int i=0; i<6; i++)
+	twist_current_(i) = motion_profile_[i].Vel( time_passed_ );
+    }
+  }
+
+  // send output to pose controller
+  pose_controller_.pose_desi_ = pose_current_;
+  pose_controller_.twist_ff_ = twist_current_;
+
+  // update pose controller
+  pose_controller_.update();
+}
+
+
+
+
+
+Frame CartesianTrajectoryController::getPose()
 {
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
@@ -224,27 +277,26 @@ Frame CartesianPoseController::getPose()
 
 
 
+ROS_REGISTER_CONTROLLER(CartesianTrajectoryControllerNode)
 
-ROS_REGISTER_CONTROLLER(CartesianPoseControllerNode)
-
-CartesianPoseControllerNode::CartesianPoseControllerNode() 
+CartesianTrajectoryControllerNode::CartesianTrajectoryControllerNode()
 : node_(ros::Node::instance()),
   robot_state_(*node_, true),
   command_notifier_(NULL)
 {}
 
-CartesianPoseControllerNode::~CartesianPoseControllerNode()
+CartesianTrajectoryControllerNode::~CartesianTrajectoryControllerNode()
 {
   if (command_notifier_) delete command_notifier_;
 }
 
 
-bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to
   topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic_ == "") {
-    fprintf(stderr, "No topic given to CartesianPoseControllerNode\n");
+    fprintf(stderr, "No topic given to CartesianTrajectoryControllerNode\n");
     return false;
   }
 
@@ -253,19 +305,19 @@ bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
     return false;
   
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  boost::bind(&CartesianPoseControllerNode::command, this, _1), topic_ + "/command", controller_.root_link_, 1);
+  command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  boost::bind(&CartesianTrajectoryControllerNode::command, this, _1), topic_ + "/command", controller_.root_link_, 1);
 
   return true;
 }
 
 
-void CartesianPoseControllerNode::update()
+void CartesianTrajectoryControllerNode::update()
 {
   controller_.update();
 }
 
 
-void CartesianPoseControllerNode::command(const tf::MessageNotifier<std_msgs::PoseStamped>::MessagePtr& pose_msg)
+void CartesianTrajectoryControllerNode::command(const MessageNotifier<std_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;
@@ -273,20 +325,15 @@ void CartesianPoseControllerNode::command(const tf::MessageNotifier<std_msgs::Po
 
   // convert to reference frame of root link of the controller chain  
   robot_state_.transformPose(controller_.root_link_, pose_stamped, pose_stamped);
-  TransformToFrame(pose_stamped, controller_.pose_desi_);
 
-  //controller_.pose_desi_.p(0) = pose_msg_.pose.position.x;
-  //controller_.pose_desi_.p(1) = pose_msg_.pose.position.y;
-  //controller_.pose_desi_.p(2) = pose_msg_.pose.position.z;
-  //controller_.pose_desi_.M = Rotation::Quaternion(pose_msg_.pose.orientation.x, pose_msg_.pose.orientation.y,
-  //					  pose_msg_.pose.orientation.z, pose_msg_.pose.orientation.w);
+  // tell controller where to move to
+  Frame pose_desi;
+  TransformToFrame(pose_stamped, pose_desi);
+  controller_.moveTo(pose_desi);
 }
 
 
-
-
-
-void CartesianPoseControllerNode::TransformToFrame(const Transform& trans, Frame& frame)
+void CartesianTrajectoryControllerNode::TransformToFrame(const Transform& trans, Frame& frame)
 {
   frame.p(0) = trans.getOrigin().x();
   frame.p(1) = trans.getOrigin().y();

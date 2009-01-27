@@ -31,49 +31,46 @@
  * Author: Wim Meeussen
  */
 
-#ifndef CARTESIAN_POSE_CONTEROLLER_H
-#define CARTESIAN_POSE_CONTEROLLER_H
+#ifndef CARTESIAN_TRAJECTORY_CONTEROLLER_H
+#define CARTESIAN_TRAJECTORY_CONTEROLLER_H
 
 #include <vector>
+#include <string>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
+#include <kdl/velocityprofile_trap.hpp>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
-#include <ros/node.h>
-#include <std_msgs/PoseStamped.h>
-#include <mechanism_model/controller.h>
-#include "robot_mechanism_controllers/cartesian_twist_controller.h"
-
+#include "ros/node.h"
+#include "std_msgs/PoseStamped.h"
+#include "mechanism_model/controller.h"
+#include "robot_mechanism_controllers/cartesian_pose_controller.h"
 
 namespace controller {
 
-class CartesianPoseController : public Controller
+class CartesianTrajectoryController : public Controller
 {
 public:
-  CartesianPoseController();
-  ~CartesianPoseController();
+  CartesianTrajectoryController();
+  ~CartesianTrajectoryController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
+  bool moveTo(const KDL::Frame& pose_desi, double duration=0);
 
-  // input of the controller
-  KDL::Frame pose_desi_, pose_meas_;
-  KDL::Twist twist_ff_;
-
-  // root link of the controller
   std::string root_link_;
 
 private:
   KDL::Frame getPose();
 
   unsigned int  num_joints_, num_segments_;
-  double last_time_;
+  double last_time_, time_started_, time_passed_, max_duration_;
+  bool is_moving_;
+  KDL::Frame pose_begin_, pose_end_, pose_current_;
+  KDL::Twist twist_current_;
 
   // robot structure
   mechanism::RobotState *robot_;       
-
-  // pid controllers
-  std::vector<control_toolbox::Pid> pid_controller_;     
 
   // kdl stuff for kinematics
   KDL::Chain             chain_;
@@ -82,34 +79,36 @@ private:
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_; 
 
-  // internal twist controller
-  CartesianTwistController twist_controller_;
+  // motion profiles
+  std::vector<KDL::VelocityProfile_Trap> motion_profile_;
+
+  // internal pose controller
+  CartesianPoseController pose_controller_;
 };
 
 
 
 
-class CartesianPoseControllerNode : public Controller
+class CartesianTrajectoryControllerNode : public Controller
 {
  public:
-  CartesianPoseControllerNode();
-  ~CartesianPoseControllerNode();
+  CartesianTrajectoryControllerNode();
+  ~CartesianTrajectoryControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command(const tf::MessageNotifier<std_msgs::PoseStamped>::MessagePtr& pose_msg);
 
-
  private:
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
+
   ros::Node* node_;
   tf::TransformListener robot_state_;
   tf::MessageNotifier<std_msgs::PoseStamped>* command_notifier_;
 
   std::string topic_;
 
-  CartesianPoseController controller_;
-
+  CartesianTrajectoryController controller_;
 };
 
 } // namespace

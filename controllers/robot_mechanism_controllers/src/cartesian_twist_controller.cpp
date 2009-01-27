@@ -183,9 +183,13 @@ void CartesianTwistController::update()
 
   // get the joint positions and velocities
   JntArrayVel jnt_posvel(num_joints_);
+  unsigned int i_corr = 0;
   for (unsigned int i=0; i<num_joints_; i++){
-    jnt_posvel.q(i)    = joints_[i]->position_;
-    jnt_posvel.qdot(i) = joints_[i]->velocity_;
+    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
+      i_corr++;
+    jnt_posvel.q(i)    = joints_[i_corr]->position_;
+    jnt_posvel.qdot(i) = joints_[i_corr]->velocity_;
+    i_corr++;
   }
 
   // get cartesian twist error
