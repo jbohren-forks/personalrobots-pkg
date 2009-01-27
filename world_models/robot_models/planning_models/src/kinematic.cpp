@@ -608,6 +608,18 @@ void planning_models::KinematicModel::StateParams::missing(int groupID, std::ost
     }
 }
 
+const double* planning_models::KinematicModel::StateParams::getParams(const std::string &name)
+{
+    Joint *joint = m_owner->getJoint(name);
+    if (joint)
+    {
+	unsigned int pos = m_pos[name];
+	return m_params + pos;
+    }
+    else
+	return NULL;    
+}
+
 bool planning_models::KinematicModel::StateParams::setParams(const double *params, const std::string &name)
 {
     bool result = false;

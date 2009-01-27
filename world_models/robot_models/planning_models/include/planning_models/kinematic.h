@@ -482,6 +482,10 @@ namespace planning_models
 		parameters describing the joint. Return true if any
 		change was observed in the set value */
 	    bool setParams(const double *params, const std::string &name);
+
+	    /** Given the name of a joint, get the values of the
+		parameters describing the joint. */
+	    const double* getParams(const std::string &name);
 	    
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;
