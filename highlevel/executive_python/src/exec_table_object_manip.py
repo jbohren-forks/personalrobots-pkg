@@ -124,8 +124,10 @@ import rostools
 rostools.update_path('executive_python')
 import rospy
 import random
-from std_msgs.msg import *
-from robot_msgs.msg import *
+from std_msgs.msg import VisualizationMarker
+from robot_msgs.msg import AttachedObject
+from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
+from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
 from highlevel_controllers.msg import *
 from navigation_adapter import *
 #from movearm_adapter import *
@@ -141,24 +143,242 @@ class Executive:
     self.state = "idle"
     self.current_goal = None
 
+    # Hackety hack hack
+    self.vmk_id = 15000
+
+    self.object_padding = 0.03
+    self.laser_buffer_time = 5.0
+    # Should be smaller, but that throws out some graspable objects
+    self.gripper_max_object_diam = 0.09
+
+    self.first_time = True
+
+    self.laser_tilt_profile_type = 4 # Implies sine sweep
+    self.laser_tilt_profile_controller = "laser_tilt_controller"
+    self.laser_tilt_profile_period_fast = 2.0
+    self.laser_tilt_profile_period_slow = 10.0
+    self.laser_tilt_profile_amplitude = 0.75
+    self.laser_tilt_profile_offset = 0.30
+
+    self.vis_pub = rospy.Publisher("visualizationMarker", VisualizationMarker)
+    self.attached_obj_pub = rospy.Publisher("attach_object", AttachedObject)
+
+    print 'Waiting for service: ' + self.laser_tilt_profile_controller + '/set_profile'
+    rospy.wait_for_service(self.laser_tilt_profile_controller + '/set_profile')
+    print 'Waiting for service: collision_map_buffer/subtract_object'
+    rospy.wait_for_service('collision_map_buffer/subtract_object')
+    print 'Waiting for service: table_object_detector'
+    rospy.wait_for_service('table_object_detector')
+    print 'Waiting for service: collision_map_buffer/record_static_map'
+    rospy.wait_for_service('collision_map_buffer/record_static_map')
+
   def legalStates(self):
+    return True
+    if not self.navigator.legalState():
+      print("Waiting on %s to be published" % (self.navigator.state_topic))
+      rospy.logout("Waiting on %s to be published" % (self.navigator.state_topic))
     return self.navigator.legalState()
 
+  def adaptTiltSpeed(self, period):
+
+    #print 'Sending Command: '
+    #print '  Profile Type: %d' % self.laser_tilt_profile_type
+    #print '  Period:       %f Seconds' % period
+    #print '  Amplitude:    %f Radians' % self.laser_tilt_profile_amplitude
+    #print '  Offset:       %f Radians' % self.laser_tilt_profile_offset
+
+    s = rospy.ServiceProxy(self.laser_tilt_profile_controller + '/set_profile', SetProfile)
+    resp = s.call(SetProfileRequest(0.0, 0.0, 0.0, 0.0, 
+                                    self.laser_tilt_profile_type, 
+                                    period, 
+                                    self.laser_tilt_profile_amplitude, 
+                                    self.laser_tilt_profile_offset))
+        
+    #print 'Command Sent'
+    #print '  Response: %s' % str(resp.time)
+
+    # Set the collision_map_buffer's window size accordingly, to remember a
+    # fixed time window scans.
+    rospy.client.set_param('collision_map_buffer/window_size', 
+                           int(self.laser_buffer_time / (period / 2.0)))
+    self.scan_start_time = rospy.rostime.get_time()
+    return resp
+
+  def getTable(self):
+    print 'Calling FindTable'
+    s = rospy.ServiceProxy('table_object_detector', FindTable)
+    resp = s.call(FindTableRequest())
+    print 'Table: %f %f %f %f' % (resp.table.min_x,
+                                  resp.table.max_x,
+                                  resp.table.min_y,
+                                  resp.table.max_y)
+    print '%d objects' % len(resp.table.objects)
+    for o in resp.table.objects:
+      print '  (%f %f %f): %f %f %f' % \
+         (o.center.x, o.center.y, o.center.z,
+          o.max_bound.x - o.min_bound.x,
+          o.max_bound.y - o.min_bound.y,
+          o.max_bound.z - o.min_bound.z)
+
+    return resp
+
+  def recordStaticMap(self, t):
+    print 'Calling record_static_map'
+    s = rospy.ServiceProxy('collision_map_buffer/record_static_map', RecordStaticMapTrigger)
+    resp = s.call(RecordStaticMapTriggerRequest(t))
+    print 'response: %d' % resp.status
+
+  def drawObjectVisMarker(self, obj):
+    # TODO: use bounds instead of this hardcoded radius
+    radius = 2.0
+
+    mk = VisualizationMarker()
+    mk.header.frame_id = obj.frame_id
+    mk.id = self.vmk_id
+    #self.vmk_id += 1
+    mk.type = VisualizationMarker.SPHERE
+    mk.action = VisualizationMarker.ADD # same as modify
+    mk.x = obj.center.x
+    mk.y = obj.center.y
+    mk.z = obj.center.z
+    mk.roll = mk.pitch = mk.yaw = 0
+    mk.xScale = mk.yScale = mk.zScale = radius * 2.0
+    mk.alpha = 255
+    mk.r = 255
+    mk.g = 10
+    mk.b = 10
+
+    vis_pub.publish(mk)
+
+  def findLargestObject(self, objs):
+    largest_obj = None
+    largest_size = -1.0
+    i = 0
+    for obj in objs:
+      dx = (obj.max_bound.x - obj.min_bound.x)
+      dy = (obj.max_bound.y - obj.min_bound.y)
+      dz = (obj.max_bound.z - obj.min_bound.z)
+      if dx > self.gripper_max_object_diam or \
+         dy > self.gripper_max_object_diam:
+       print 'object too large'
+       continue
+      sz = dx*dx + dy*dy + dz*dz;
+      if sz > largest_size:
+        largest_obj = obj
+        largest_size = sz
+    return largest_obj
+
+  def padObject(self, obj):
+    print 'Old bounds: (%f %f %f) <-> (%f %f %f)' % \
+      (obj.min_bound.x, obj.min_bound.y, obj.min_bound.z,
+       obj.max_bound.x, obj.max_bound.y, obj.max_bound.z)
+
+    #dx = (obj.max_bound.x - obj.min_bound.x)
+    #dy = (obj.max_bound.y - obj.min_bound.y)
+    #dz = (obj.max_bound.z - obj.min_bound.z)
+    #maxd = dx
+    #if dy > maxd:
+    #  maxd = dy
+    #if dz > maxd:
+    #  maxd = dz
+
+    # Account for parts that aren't seen (e.g., bottom of object, which
+    # gets cut off)
+    #maxd += self.object_padding
+    obj.min_bound.z -= self.object_padding
+
+    #obj.min_bound.x = obj.center.x - 1.5 * maxd / 2.0
+    #obj.min_bound.y = obj.center.y - 1.5 * maxd / 2.0
+    #obj.min_bound.z = obj.center.z - 1.5 * maxd / 2.0
+    #obj.max_bound.x = obj.center.x + 1.5 * maxd / 2.0
+    #obj.max_bound.y = obj.center.y + 1.5 * maxd / 2.0
+    #obj.max_bound.z = obj.center.z + 1.5 * maxd / 2.0
+
+    print 'New bounds: (%f %f %f) <-> (%f %f %f)' % \
+      (obj.min_bound.x, obj.min_bound.y, obj.min_bound.z,
+       obj.max_bound.x, obj.max_bound.y, obj.max_bound.z)
+
+    return obj
+
+  def subtractObjectFromCollisionMap(self, header, obj):
+    s = rospy.ServiceProxy('collision_map_buffer/subtract_object',
+SubtractObjectFromCollisionMap)
+    resp = s.call(SubtractObjectFromCollisionMapRequest(header, obj))
+    return resp
+
+  def attachObjectToRobot(self, header, obj):
+    m = AttachedObject()
+    m.header = header
+    m.robot_name = 'pr2'
+    m.link_name = 'r_gripper_palm_link'
+    m.objects = [obj]
+    self.attached_obj_pub.publish(m)
+
   def doCycle(self):
+    curr_time = rospy.rostime.get_time()
     #make sure that all adapters have legal states
     if self.legalStates():
-      if self.state == "idle":
-        if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
-          self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(self.current_goal, "odom")
-          print "nav --> nav"
-        elif not self.navigator.active() and self.current_goal != None:
-          self.navigator.sendGoal(self.current_goal, "odom")
-          print "nav --> nav"
-    else:
-      if not self.navigator.legalState():
-        print("Waiting on %s to be published" % (self.navigator.state_topic))
-        rospy.logout("Waiting on %s to be published" % (self.navigator.state_topic))
+      if self.state == 'idle':
+        #if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
+        #  self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
+        #  self.navigator.sendGoal(self.current_goal, "odom")
+        #  print "nav --> nav"
+        #elif not self.navigator.active() and self.current_goal != None:
+        #  self.navigator.sendGoal(self.current_goal, "odom")
+        #  print "nav --> nav"
+
+        # Request slow scan & trigger static map recording
+        resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
+        if self.first_time:
+          self.recordStaticMap(rostools.rostime.Time(resp.time))
+          self.first_time = False
+        # TRANSITION: idle -> slowscan
+        self.state = 'slowscan'
+
+      elif self.state == 'slowscan':
+        #print 'Waiting for slow scan to complete...'
+        # Hack
+        if (curr_time - self.scan_start_time) >= .75*self.laser_tilt_profile_period_slow:
+          #print '...done'
+          resp = self.getTable()
+          obj = self.findLargestObject(resp.table.objects)
+          #self.drawObjectVisMarker(obj)
+          if obj == None:
+            print 'Error: no object found!'
+          else:
+            print 'Chose object at (%f %f %f)' % (obj.center.x,
+                                                  obj.center.y,
+                                                  obj.center.z)
+            obj = self.padObject(obj)
+
+            # Subtract object from cmap
+            self.subtractObjectFromCollisionMap(resp.table.header, obj)
+
+            # Attach the object to the robot body
+            self.attachObjectToRobot(resp.table.header, obj)
+
+            # Request fast scan
+            self.adaptTiltSpeed(self.laser_tilt_profile_period_fast)
+
+            # TRANSITION: slowscan -> fastscan
+            self.state = 'fastscan'
+
+      elif self.state == 'fastscan':
+        #print 'Waiting for fast scan to complete...'
+        # Hack
+        if (curr_time - self.scan_start_time) >= 2.0*self.laser_tilt_profile_period_fast:
+          #print '...done'
+          # TRANSITION: fastscan -> idle
+          self.state = 'idle'
+
+      elif self.state == 'done':
+        print 'Done'
+        sys.exit(0)
+      
+      else:
+        print 'Invalid state: ' % self.state
+        sys.exit(-1)
+
 
   def run(self):
     while not rospy.is_shutdown():
