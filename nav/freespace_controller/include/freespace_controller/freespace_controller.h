@@ -72,10 +72,18 @@
 #define HEADING_LOOKAHEAD .325
 #define OSCILLATION_RESET_DIST .05
 
-//Based on the plan from the path planner, determine what velocities to send to the robot
+/**
+ * @class FreespaceController
+ * @brief Based on the current costmap and plan, computes control velocities to send to the base.
+ */
 class FreespaceController {
   public:
     //create a controller given a map and a path
+    /**
+     * @brief  Constructs a trajectory controller
+     * @param mg  
+     * @return 
+     */
     FreespaceController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
         double acc_lim_x, double acc_lim_y, double acc_lim_theta, tf::TransformListener* tf,
@@ -92,9 +100,6 @@ class FreespaceController {
 
     void computeGoalDistance(std::queue<MapCell*>& dist_queue);
     
-    //given a trajectory in map space get the drive commands to send to the robot
-    tf::Stamped<tf::Pose> getDriveVelocities(int t_num);
-
     //create the trajectories we wish to score
     Trajectory createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta, 
         double acc_x, double acc_y, double acc_theta);
@@ -122,9 +127,6 @@ class FreespaceController {
     //update what map cells are considered path based on the global_plan
     void setPathCells();
 
-    //possible trajectories for this run
-    std::vector<Trajectory> trajectories_;
-
     //the map passed on from the planner
     MapGrid& map_;
     
@@ -143,7 +145,7 @@ class FreespaceController {
 
     double goal_x_,goal_y_;
 
-    PointGrid* point_grid_;
+    trajectory_rollout::PointGrid* point_grid_;
 
   private:
     //the simulation parameters for generating trajectories

@@ -41,158 +41,175 @@
 #include <std_msgs/Point2DFloat32.h>
 #include <std_msgs/Point32.h>
 #include <costmap_2d/observation.h>
+#include <freespace_controller/world_model.h>
 
-class PointGrid{
-  public:
-    /**
-     * @brief  Constuctor for a grid that stores points in the plane
-     * @param  width The width in meters of the grid
-     * @param  height The height in meters of the gird
-     * @param  resolution The resolution of the grid in meters/cell
-     * @param  origin The origin of the bottom left corner of the grid
-     * @param  max_z The maximum height for an obstacle to be added to the grid
-     * @param  obstacle_range The maximum distance for obstacles to be added to the grid
-     */
-    PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, double max_z, double obstacle_range);
+namespace trajectory_rollout {
+  /**
+   * @class PointGrid
+   * @brief A class that implements the WorldModel interface to provide
+   * free-space collision checks for the trajectory controller. This class
+   * stores points binned into a grid and performs point-in-polygon checks when
+   * necessary to determine the legality of a footprint at a given
+   * position/orientation.
+   */
+  class PointGrid : public WorldModel {
+    public:
+      /**
+       * @brief  Constuctor for a grid that stores points in the plane
+       * @param  width The width in meters of the grid
+       * @param  height The height in meters of the gird
+       * @param  resolution The resolution of the grid in meters/cell
+       * @param  origin The origin of the bottom left corner of the grid
+       * @param  max_z The maximum height for an obstacle to be added to the grid
+       * @param  obstacle_range The maximum distance for obstacles to be added to the grid
+       */
+      PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, double max_z, double obstacle_range);
 
-    /**
-     * @brief  Returns the points that lie within the cells contained in the specified range. Some of these points may be outside the range itself.
-     * @param  lower_left The lower left corner of the range search 
-     * @param  upper_right The upper right corner of the range search
-     * @return A vector of pointers to lists of the relevant points
-     */
-    std::vector< std::list<std_msgs::Point32>* > getPointsInRange(std_msgs::Point2DFloat32 lower_left, std_msgs::Point2DFloat32 upper_right);
+      /**
+       * @brief  Destructor for a point grid
+       */
+      virtual ~PointGrid(){}
 
-    /**
-     * @brief  Checks if any points in the grid lie inside a convex footprint
-     * @param  position The position of the robot in world coordinates
-     * @param  footprint The specification of the footprint of the robot in world coordinates
-     * @param  inner_square_radius The half-width of the inscribed square of the robot
-     * @param  outer_square_radius The half-width of the circumscribed square of the robot
-     * @return True if all points lie outside the footprint, false otherwise
-     */
-    bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
-        double inner_square_radius, double outer_square_radius);
+      /**
+       * @brief  Returns the points that lie within the cells contained in the specified range. Some of these points may be outside the range itself.
+       * @param  lower_left The lower left corner of the range search 
+       * @param  upper_right The upper right corner of the range search
+       * @param points A vector of pointers to lists of the relevant points
+       */
+      void getPointsInRange(std_msgs::Point2DFloat32 lower_left, std_msgs::Point2DFloat32 upper_right, std::vector< std::list<std_msgs::Point32>* > points);
 
-    /**
-     * @brief  Inserts observations from sensors into the point grid
-     * @param observations The observations from various sensors 
-     * @param laser_outline The polygon of the active sensor region
-     */
-    void updateGrid(const std::vector<costmap_2d::Observation> observations, const std::vector<std_msgs::Point2DFloat32> laser_outline);
+      /**
+       * @brief  Checks if any points in the grid lie inside a convex footprint
+       * @param  position The position of the robot in world coordinates
+       * @param  footprint The specification of the footprint of the robot in world coordinates
+       * @param  inscribed_radius The radius of the inscribed circle of the robot
+       * @param  circumscribed_radius The radius of the circumscribed circle of the robot
+       * @return True if all points lie outside the footprint, false otherwise
+       */
+      virtual bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
+          double inscribed_radius, double circumscribed_radius);
 
-    /**
-     * @brief  Convert from world coordinates to grid coordinates
-     * @param  pt A point in world space 
-     * @param  gx The x coordinate of the corresponding grid cell to be set by the function
-     * @param  gy The y coordinate of the corresponding grid cell to be set by the function
-     * @return True if the conversion was successful, false otherwise
-     */
-    inline bool gridCoords(std_msgs::Point2DFloat32 pt, unsigned int& gx, unsigned int& gy) const {
-      if(pt.x < origin_.x || pt.y < origin_.y){
-        gx = 0;
-        gy = 0;
-        return false;
-      }
-      gx = (int) ((pt.x - origin_.x)/resolution_);
-      gy = (int) ((pt.y - origin_.y)/resolution_);
+      /**
+       * @brief  Inserts observations from sensors into the point grid
+       * @param observations The observations from various sensors 
+       * @param laser_outline The polygon of the active sensor region
+       */
+      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<std_msgs::Point2DFloat32>& laser_outline);
 
-      if(gx >= width_ || gy >= height_){
-        gx = 0;
-        gy = 0;
-        return false;
-      }
+      /**
+       * @brief  Convert from world coordinates to grid coordinates
+       * @param  pt A point in world space 
+       * @param  gx The x coordinate of the corresponding grid cell to be set by the function
+       * @param  gy The y coordinate of the corresponding grid cell to be set by the function
+       * @return True if the conversion was successful, false otherwise
+       */
+      inline bool gridCoords(std_msgs::Point2DFloat32 pt, unsigned int& gx, unsigned int& gy) const {
+        if(pt.x < origin_.x || pt.y < origin_.y){
+          gx = 0;
+          gy = 0;
+          return false;
+        }
+        gx = (int) ((pt.x - origin_.x)/resolution_);
+        gy = (int) ((pt.y - origin_.y)/resolution_);
 
-      return true;
-    }
+        if(gx >= width_ || gy >= height_){
+          gx = 0;
+          gy = 0;
+          return false;
+        }
 
-    /**
-     * @brief  Convert from world coordinates to grid coordinates
-     * @param  pt A point in world space 
-     * @param  gx The x coordinate of the corresponding grid cell to be set by the function
-     * @param  gy The y coordinate of the corresponding grid cell to be set by the function
-     * @return True if the conversion was successful, false otherwise
-     */
-    inline bool gridCoords(std_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
-      if(pt.x < origin_.x || pt.y < origin_.y){
-        gx = 0;
-        gy = 0;
-        return false;
-      }
-      gx = (int) ((pt.x - origin_.x)/resolution_);
-      gy = (int) ((pt.y - origin_.y)/resolution_);
-
-      if(gx >= width_ || gy >= height_){
-        gx = 0;
-        gy = 0;
-        return false;
+        return true;
       }
 
-      return true;
-    }
+      /**
+       * @brief  Convert from world coordinates to grid coordinates
+       * @param  pt A point in world space 
+       * @param  gx The x coordinate of the corresponding grid cell to be set by the function
+       * @param  gy The y coordinate of the corresponding grid cell to be set by the function
+       * @return True if the conversion was successful, false otherwise
+       */
+      inline bool gridCoords(std_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
+        if(pt.x < origin_.x || pt.y < origin_.y){
+          gx = 0;
+          gy = 0;
+          return false;
+        }
+        gx = (int) ((pt.x - origin_.x)/resolution_);
+        gy = (int) ((pt.y - origin_.y)/resolution_);
 
-    /**
-     * @brief  Converts cell coordinates to an index value that can be used to look up the correct grid cell
-     * @param gx The x coordinate of the cell 
-     * @param gy The y coordinate of the cell 
-     * @return The index of the cell in the stored cell list
-     */
-    inline unsigned int gridIndex(unsigned int gx, unsigned int gy) const {
-      /*
-       * (0, 0) ---------------------- (width, 0)
-       *  |                               |
-       *  |                               |
-       *  |                               |
-       *  |                               |
-       *  |                               |
-       * (0, height) ----------------- (width, height)
-      */
-      return(gx + gy * width_);
-    }
+        if(gx >= width_ || gy >= height_){
+          gx = 0;
+          gy = 0;
+          return false;
+        }
 
-    /**
-     * @brief  Check the orientation of a pt c with respect to the vector a->b
-     * @param a The start point of the vector 
-     * @param b The end point of the vector 
-     * @param c The point to compute orientation for
-     * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
-     */
-    inline double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const std_msgs::Point32& c){
-      double acx = a.x - c.x;
-      double bcx = b.x - c.x;
-      double acy = a.y - c.y;
-      double bcy = b.y - c.y;
-      return acx * bcy - acy * bcx;
-    }
+        return true;
+      }
 
-    /**
-     * @brief  Check if a point is in a polygon
-     * @param pt The point to be checked 
-     * @param poly The polygon to check against
-     * @return True if the point is in the polygon, false otherwise
-     */
-    bool ptInPolygon(const std_msgs::Point32& pt, const std::vector<std_msgs::Point2DFloat32>& poly);
+      /**
+       * @brief  Converts cell coordinates to an index value that can be used to look up the correct grid cell
+       * @param gx The x coordinate of the cell 
+       * @param gy The y coordinate of the cell 
+       * @return The index of the cell in the stored cell list
+       */
+      inline unsigned int gridIndex(unsigned int gx, unsigned int gy) const {
+        /*
+         * (0, 0) ---------------------- (width, 0)
+         *  |                               |
+         *  |                               |
+         *  |                               |
+         *  |                               |
+         *  |                               |
+         * (0, height) ----------------- (width, height)
+         */
+        return(gx + gy * width_);
+      }
 
-    /**
-     * @brief  Insert a point into the point grid
-     * @param pt The point to be inserted 
-     */
-    void insert(std_msgs::Point32 pt);
+      /**
+       * @brief  Check the orientation of a pt c with respect to the vector a->b
+       * @param a The start point of the vector 
+       * @param b The end point of the vector 
+       * @param c The point to compute orientation for
+       * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
+       */
+      inline double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const std_msgs::Point32& c){
+        double acx = a.x - c.x;
+        double bcx = b.x - c.x;
+        double acy = a.y - c.y;
+        double bcy = b.y - c.y;
+        return acx * bcy - acy * bcx;
+      }
 
-    /**
-     * @brief  Removes points from the grid that lie within the polygon
-     * @param poly A specification of the polygon to clear from the grid 
-     */
-    void removePointsInPolygon(const std::vector<std_msgs::Point2DFloat32> poly);
+      /**
+       * @brief  Check if a point is in a polygon
+       * @param pt The point to be checked 
+       * @param poly The polygon to check against
+       * @return True if the point is in the polygon, false otherwise
+       */
+      bool ptInPolygon(const std_msgs::Point32& pt, const std::vector<std_msgs::Point2DFloat32>& poly);
 
-  private:
-    double resolution_; ///< @brief The resolution of the grid in meters/cell
-    std_msgs::Point2DFloat32 origin_; ///< @brief The origin point of the grid
-    unsigned int width_; ///< @brief The width of the grid in cells
-    unsigned int height_; ///< @brief The height of the grid in cells
-    std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
-    double max_z_;  ///< @brief The height cutoff for adding points as obstacles
-    double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
+      /**
+       * @brief  Insert a point into the point grid
+       * @param pt The point to be inserted 
+       */
+      void insert(std_msgs::Point32 pt);
 
+      /**
+       * @brief  Removes points from the grid that lie within the polygon
+       * @param poly A specification of the polygon to clear from the grid 
+       */
+      void removePointsInPolygon(const std::vector<std_msgs::Point2DFloat32> poly);
+
+    private:
+      double resolution_; ///< @brief The resolution of the grid in meters/cell
+      std_msgs::Point2DFloat32 origin_; ///< @brief The origin point of the grid
+      unsigned int width_; ///< @brief The width of the grid in cells
+      unsigned int height_; ///< @brief The height of the grid in cells
+      std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
+      double max_z_;  ///< @brief The height cutoff for adding points as obstacles
+      double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
+      std::vector< std::list<std_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
+
+  };
 };
 #endif

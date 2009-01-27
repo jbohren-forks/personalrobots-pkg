@@ -39,26 +39,9 @@
 #define INNER_HALF_WIDTH .23
 #define OUTER_HALF_WIDTH .46
 
-/*
-//check the robot footprint given the current position and orientation of the robot
-bool legalFootprint(double x, double y, double theta){
-  //build the oriented footprint
-  double cos_th = cos(theta);
-  double sin_th = sin(theta);
-  vector<std_msgs::Point2DFloat32> oriented_footprint;
-  for(unsigned int i = 0; i < footprint_.size(); ++i){
-    Point2DFloat32 new_pt;
-    new_pt.x = x + (footprint_[i].x * cos_th - footprint_[i].y * sin_th);
-    new_pt.y = y + (footprint_[i].x * sin_th + footprint_[i].y * cos_th);
-    oriented_footprint.push_back(new_pt);
-  }
-
-  return true;
-}
-*/
-
 using namespace std;
 using namespace std_msgs;
+using namespace trajectory_rollout;
 
 FreespaceController::FreespaceController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
     double pdist_scale, double gdist_scale,
@@ -84,7 +67,7 @@ FreespaceController::FreespaceController(MapGrid& mg, double sim_time, int num_s
   Point2DFloat32 origin;
   origin.x = 0.0;
   origin.y = 0.0;
-  point_grid_ = new PointGrid(70.0, 70.0, 0.1, origin, 2.0, 2.0);
+  point_grid_ = new PointGrid(70.0, 70.0, 2.0, origin, 2.0, 2.0);
 
 }
 
@@ -325,9 +308,6 @@ Trajectory FreespaceController::createTrajectories(double x, double y, double th
   double vx_samp = min_vel_x;
   double vtheta_samp = min_vel_theta;
   double vy_samp = 0.0;
-
-  //make sure to reset the list of trajectories
-  trajectories_.clear();
 
   //keep track of the best trajectory seen so far
   Trajectory* best_traj = &traj_one;
@@ -640,7 +620,7 @@ Trajectory FreespaceController::findBestPath(tf::Stamped<tf::Pose> global_pose, 
   clear_box.push_back(pt);
 
   //update the point grid with new observations
-  point_grid_->updateGrid(observations, clear_box);
+  point_grid_->updateWorld(observations, clear_box);
 
   //reset the map for new operations
   map_.resetPathDist();

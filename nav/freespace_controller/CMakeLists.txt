@@ -10,7 +10,7 @@ genmsg()
 #set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
-rospack_add_library(freespace_controller src/point_grid.cpp src/freespace_controller.cpp)
+rospack_add_library(freespace_controller src/point_grid.cpp src/costmap_model.cpp src/freespace_controller.cpp src/trajectory_controller.cpp)
 target_link_libraries(freespace_controller costmap_2d)
 
 rospack_add_executable(point_grid src/point_grid.cpp)
