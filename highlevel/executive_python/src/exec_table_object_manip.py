@@ -125,23 +125,24 @@ rostools.update_path('executive_python')
 import rospy
 import random
 from std_msgs.msg import VisualizationMarker
-from robot_msgs.msg import AttachedObject
+from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
 from highlevel_controllers.msg import *
 from navigation_adapter import *
-#from movearm_adapter import *
+from movearm_adapter import *
 #from tiltlaser_adapter import *
 #from gripper_adapter import *
 
 class Executive:
-  def __init__(self, goals, navigator, cycle_time):
-    rospy.init_node("Executive", anonymous=True)
-    self.goals = goals
+  def __init__(self, navigator, armigator, cycle_time):
+    rospy.init_node('Executive', anonymous=True)
     self.navigator = navigator
+    self.armigator = armigator
     self.cycle_time = cycle_time
-    self.state = "idle"
+    self.state = 'idle'
     self.current_goal = None
+    self.current_object = None
 
     # Hackety hack hack
     self.vmk_id = 15000
@@ -179,7 +180,10 @@ class Executive:
     if not self.navigator.legalState():
       print("Waiting on %s to be published" % (self.navigator.state_topic))
       rospy.logout("Waiting on %s to be published" % (self.navigator.state_topic))
-    return self.navigator.legalState()
+    if not self.armigator.legalState():
+      print("Waiting on %s to be published" % (self.navigator.state_topic))
+      rospy.logout("Waiting on %s to be published" % (self.navigator.state_topic))
+    return self.navigator.legalState() and self.armigator.legalState()
 
   def adaptTiltSpeed(self, period):
 
@@ -315,75 +319,115 @@ SubtractObjectFromCollisionMap)
     m.objects = [obj]
     self.attached_obj_pub.publish(m)
 
+  def handleIdle(self, t):  
+    #if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
+    #  self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
+    #  self.navigator.sendGoal(self.current_goal, "odom")
+    #  print "nav --> nav"
+    #elif not self.navigator.active() and self.current_goal != None:
+    #  self.navigator.sendGoal(self.current_goal, "odom")
+    #  print "nav --> nav"
+    # TRANSITION: idle -> slowscan
+    return 'slowscan'
+
+  def handleSlowScan(self, t):  
+    # Did we start the scan yet?
+    if(self.scan_start_time < 0.0):
+      # Request slow scan & trigger static map recording
+      resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
+      self.scan_start_time = t
+      if self.first_time:
+        self.recordStaticMap(rostools.rostime.Time().from_seconds(resp.time))
+        self.first_time = False
+
+    #print 'Waiting for slow scan to complete...'
+    # Hack
+    if (t - self.scan_start_time) >= .75*self.laser_tilt_profile_period_slow:
+      #print '...done'
+      resp = self.getTable()
+      obj = self.findLargestObject(resp.table.objects)
+      #self.drawObjectVisMarker(obj)
+      if obj == None:
+        print 'Error: no object found!'
+      else:
+        print 'Chose object at (%f %f %f)' % (obj.center.x,
+                                              obj.center.y,
+                                              obj.center.z)
+        self.current_object = self.padObject(obj)
+
+        # Subtract object from cmap
+        self.subtractObjectFromCollisionMap(resp.table.header, self.current_object)
+
+        # Attach the object to the robot body
+        self.attachObjectToRobot(resp.table.header, self.current_object)
+
+        self.scan_start_time = -1.0
+        # TRANSITION: slowscan -> fastscan
+        return 'fastscan'
+    else:
+      return self.state
+
+  def handleFastScan(self, t):  
+    # Did we start the scan yet?
+    if(self.scan_start_time < 0.0):
+      # Request fast scan
+      self.adaptTiltSpeed(self.laser_tilt_profile_period_fast)
+      self.scan_start_time = t
+
+    #print 'Waiting for fast scan to complete...'
+    # Hack
+    if (t - self.scan_start_time) >= 2.0*self.laser_tilt_profile_period_fast:
+      #print '...done'
+      # TRANSITION: fastscan -> idle
+      self.scan_start_time = -1.0
+      return 'idle'
+    else:
+      return self.state
+
+  def handleMoveToGrasp(self, t):
+    if self.current_object == None:
+      print 'No object chosen to grasp!'
+    else:
+      c1 = PoseConstraint()
+      c1.type = PoseConstraint.COMPLETE_POSE
+      c1.robot_link = 'r_gripper_palm_link'
+      c1.pose.position.x = 0.0
+      c1.pose.position.y = 0.0
+      c1.pose.position.z = 0.0
+      c1.pose.orientation.x = 0.0
+      c1.pose.orientation.y = 0.0
+      c1.pose.orientation.z = math.sqrt(2.0)/2.0
+      c1.pose.orientation.w = math.sqrt(2.0)/2.0
+
+      c2 = PoseConstraint()
+      c3 = PoseConstraint()
+      constraints = [c1, c2, c3]
+      armigator.sendGoal(current_object.header.frame_id,
+                         True,
+                         None,
+                         constraints,
+                         1,
+                         30.0)
+
+  def handleDone(self, t):
+    print 'All done.'
+    sys.exit(0)
+
   def doCycle(self):
     curr_time = rospy.rostime.get_time()
     #make sure that all adapters have legal states
     if self.legalStates():
       if self.state == 'idle':
-        #if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
-        #  self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-        #  self.navigator.sendGoal(self.current_goal, "odom")
-        #  print "nav --> nav"
-        #elif not self.navigator.active() and self.current_goal != None:
-        #  self.navigator.sendGoal(self.current_goal, "odom")
-        #  print "nav --> nav"
-
-        # TRANSITION: idle -> slowscan
-        self.state = 'slowscan'
+        self.state = self.handleIdle(curr_time)
 
       elif self.state == 'slowscan':
-        # Did we start the scan yet?
-        if(self.scan_start_time < 0.0):
-          # Request slow scan & trigger static map recording
-          resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
-          self.scan_start_time = curr_time
-          if self.first_time:
-            self.recordStaticMap(rostools.rostime.Time().from_seconds(resp.time))
-            self.first_time = False
-
-        #print 'Waiting for slow scan to complete...'
-        # Hack
-        if (curr_time - self.scan_start_time) >= .75*self.laser_tilt_profile_period_slow:
-          #print '...done'
-          resp = self.getTable()
-          obj = self.findLargestObject(resp.table.objects)
-          #self.drawObjectVisMarker(obj)
-          if obj == None:
-            print 'Error: no object found!'
-          else:
-            print 'Chose object at (%f %f %f)' % (obj.center.x,
-                                                  obj.center.y,
-                                                  obj.center.z)
-            obj = self.padObject(obj)
-
-            # Subtract object from cmap
-            self.subtractObjectFromCollisionMap(resp.table.header, obj)
-
-            # Attach the object to the robot body
-            self.attachObjectToRobot(resp.table.header, obj)
-
-            # TRANSITION: slowscan -> fastscan
-            self.state = 'fastscan'
-            self.scan_start_time = -1.0
+        self.state = self.handleSlowScan(curr_time)
 
       elif self.state == 'fastscan':
-        # Did we start the scan yet?
-        if(self.scan_start_time < 0.0):
-          # Request fast scan
-          self.adaptTiltSpeed(self.laser_tilt_profile_period_fast)
-          self.scan_start_time = curr_time
-
-        #print 'Waiting for fast scan to complete...'
-        # Hack
-        if (curr_time - self.scan_start_time) >= 2.0*self.laser_tilt_profile_period_fast:
-          #print '...done'
-          # TRANSITION: fastscan -> idle
-          self.state = 'idle'
-          self.scan_start_time = -1.0
+        self.state = self.handleFastScan(curr_time)
 
       elif self.state == 'done':
-        print 'Done'
-        sys.exit(0)
+        self.state = self.handleDone(t)
       
       else:
         print 'Invalid state: ' % self.state
@@ -399,27 +443,15 @@ SubtractObjectFromCollisionMap)
       if sleep_time > 0:
         rospy.sleep(sleep_time)
       else:
-        print("Executive missed cycle time of %.2f seconds" % (self.cycle_time))
-        rospy.logwarn("Executive missed cycle time of %.2f seconds" % (self.cycle_time))
+        print("Executive missed cycle time of %.2f seconds by %.3f seconds" % (self.cycle_time, -sleep_time))
+        rospy.logwarn("Executive missed cycle time of %.2f seconds by %.3f seconds" % (self.cycle_time, -sleep_time))
 
 if __name__ == '__main__':
   try:
-    navigator = NavigationAdapter(30, 300, "state", "goal")
+    navigator = NavigationAdapter(30, 300, 'state', 'goal')
+    armigator = MoveArmAdapter(30, 30, 'right_arm_state', 'right_arm_goal')
 
-    goals = [
-     [50.250, 6.863, 3.083], 
-     [18.550, 11.762, 2.554],
-     [53.550, 20.163, 0.00],
-     [18.850, 28.862, 0.00],
-     [47.250, 39.162, 1.571],
-     [11.450, 39.662, 0.00]
-     ]
-
-    chrg_stations = [
-     [33.844, 36.379, -1.571]
-    ]
-
-    executive = Executive(goals, navigator, 1.0)
+    executive = Executive(navigator, armigator, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

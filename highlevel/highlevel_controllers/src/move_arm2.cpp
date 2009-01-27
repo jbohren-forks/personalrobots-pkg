@@ -91,6 +91,7 @@
 #include <pr2_mechanism_controllers/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
 #include <sstream>
 #include <cassert>
@@ -117,6 +118,7 @@ private:
   const std::string kinematic_model_;
   bool have_new_traj_;
   bool replanning_;
+  int traj_id_;
   int plan_id_;
   robot_srvs::KinematicReplanState::request active_request_state_;
   robot_srvs::KinematicReplanLinkPosition::request active_request_link_position_;
@@ -132,6 +134,7 @@ private:
   void requestStopReplanning(void);
   void sendArmCommand(robot_msgs::KinematicPath &path, 
                       const std::string &model);
+  void stopArm(void);
   void getTrajectoryMsg(robot_msgs::KinematicPath &path, 
                         pr2_mechanism_controllers::JointTraj &traj);
   void kpsCallback();
@@ -145,6 +148,7 @@ MoveArm::MoveArm(const std::string& node_name,
     kinematic_model_(kinematic_model),
     have_new_traj_(false),
     replanning_(false),
+    traj_id_(-1),
     plan_id_(-1)
 {
   // TODO: subscribe to relevant topics
@@ -152,6 +156,9 @@ MoveArm::MoveArm(const std::string& node_name,
                        kps_msg_,
                        &MoveArm::kpsCallback,
                        1);
+
+  // Say that we're up and ready
+  initialize();
 }
 
 void MoveArm::updateGoalMsg()
@@ -290,20 +297,46 @@ void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path,
 void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path, 
                              const std::string &model)
 {
+  pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
+  pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
   pr2_mechanism_controllers::JointTraj traj;
   getTrajectoryMsg(path, traj);
-  ros::Node::publish("right_arm_trajectory_command", traj);
-  ROS_INFO("Sent trajectory to controller");
+  send_traj_start_req.traj = traj;
+  if(!ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+    ROS_WARN("Failed to send trajectory to controller");
+  else
+  {
+    traj_id_ = send_traj_start_res.trajectoryid;
+    ROS_INFO("Sent trajectory to controller");
+  }
+}
+
+void MoveArm::stopArm()
+{
+  if(traj_id_ < 0)
+    ROS_INFO("No trajectory to stop");
+  else
+  {
+    pr2_mechanism_controllers::TrajectoryCancel::request  stop_traj_start_req;
+    pr2_mechanism_controllers::TrajectoryCancel::response stop_traj_start_res;
+
+    if(!ros::service::call("right_arm_trajectory_controller/TrajectoryCancel",
+                           stop_traj_start_req, stop_traj_start_res))
+      ROS_WARN("Failed to cancel trajectory");
+    else
+    {
+      ROS_INFO("Cancelled trajectory");
+      traj_id_ = -1;
+    }
+  }
 }
 
 void MoveArm::kpsCallback()
 {
-  if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
+  if(!kps_msg_.valid)
+    stopArm();
+  else if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
   {
-    if(!kps_msg_.valid)
-    {
-      //stopArm
-    }
     if(!kps_msg_.path.states.empty())
       have_new_traj_ = true;
   }
