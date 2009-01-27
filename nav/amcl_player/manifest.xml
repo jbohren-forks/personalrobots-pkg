@@ -7,4 +7,6 @@
   <depend package="player" />
   <depend package="tf" />
   <depend package="std_srvs" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
 </package>

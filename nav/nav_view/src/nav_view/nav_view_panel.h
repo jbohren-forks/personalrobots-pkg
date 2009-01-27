@@ -32,7 +32,7 @@
 
 #include "nav_view_panel_generated.h"
 
-#include "std_msgs/ParticleCloud2D.h"
+#include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
@@ -86,7 +86,7 @@ Mouse controls:
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "particlecloud"/ParticleCloud2D : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
+- @b "particlecloud"robot_msgs/ParticleCloud : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
 - @b "gui_path"/Polyline2D : a path from a planner.  Rendered as a dashed line.
 - @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
 - @b "local_path"/Polyline2D : local path from a planner.  Rendered as a dashed line.
@@ -206,7 +206,7 @@ protected:
   int map_height_;
   Ogre::TexturePtr map_texture_;
 
-  std_msgs::ParticleCloud2D cloud_;
+  robot_msgs::ParticleCloud cloud_;
   robot_msgs::Planner2DGoal goal_;
   std_msgs::Polyline2D path_line_;
   std_msgs::Polyline2D local_path_;

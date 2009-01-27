@@ -67,7 +67,7 @@ Mouse bindings:
 
 Subscribes to (name/type):
 - @b "odom"/RobotBase2DOdom : the robot's 2D pose.  Rendered as a circle with a heading line.
-- @b "particlecloud"/ParticleCloud2D : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
+- @b "particlecloud"robot_msgs/ParticleCloud : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
 - @b "gui_path"/Polyline2D : a path from a planner.  Rendered as a dashed line.
 - @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
 
@@ -97,7 +97,7 @@ Publishes to (name / type):
 #include "tf/transform_listener.h"
 
 // messages and services
-#include "std_msgs/ParticleCloud2D.h"
+#include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
@@ -114,7 +114,7 @@ struct ObstaclePoint {
 class NavView : public ros::Node, public ros::SDLGL
 {
 public:
-  std_msgs::ParticleCloud2D cloud;
+  robot_msgs::ParticleCloud cloud;
   robot_msgs::Planner2DGoal goal;
   std_msgs::Polyline2D pathline;
   std_msgs::Polyline2D local_path;
@@ -388,8 +388,13 @@ NavView::render()
   for(unsigned int i=0;i<cloud.get_particles_size();i++)
   {
     glPushMatrix();
-    glTranslatef(cloud.particles[i].x, cloud.particles[i].y, 0);
-    glRotatef(cloud.particles[i].th * 180 / M_PI, 0, 0, 1);
+    glTranslatef(cloud.particles[i].position.x, cloud.particles[i].position.y, cloud.particles[i].position.z);
+    tf::Quaternion orientation;
+    tf::QuaternionMsgToTF(cloud.particles[i].orientation, orientation);
+    double yaw, pitch, roll;
+    btMatrix3x3(orientation).getEulerZYX(yaw, pitch, roll);
+
+    glRotatef(yaw * 180 / M_PI, 0, 0, 1);
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_LINE_LOOP);
     glVertex2f(0,0);

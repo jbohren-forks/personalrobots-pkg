@@ -59,7 +59,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
-- @b "particlecloud"/ParticleCloud2D : fake set of particles being maintained by the filter (one paricle only).
+- @b "particlecloud"/ParticleCloud : fake set of particles being maintained by the filter (one paricle only).
 
 <hr>
 
@@ -74,7 +74,7 @@ Publishes to (name / type):
 
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/ParticleCloud2D.h>
+#include <robot_msgs/ParticleCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 
 #include <angles/angles.h>
@@ -90,7 +90,7 @@ public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
       advertise<std_msgs::RobotBase2DOdom>("localizedpose",1);
-      advertise<std_msgs::ParticleCloud2D>("particlecloud",1);
+      advertise<robot_msgs::ParticleCloud>("particlecloud",1);
 
       m_tfServer = new tf::TransformBroadcaster(*this);	
 
@@ -129,7 +129,7 @@ private:
     bool                           m_base_pos_received;
     
     std_msgs::PoseWithRatesStamped  m_basePosMsg;
-    std_msgs::ParticleCloud2D      m_particleCloud;
+    robot_msgs::ParticleCloud      m_particleCloud;
     std_msgs::RobotBase2DOdom      m_currentPos;
     std_msgs::Pose2DFloat32        m_iniPos;
     
@@ -180,7 +180,10 @@ private:
     publish("localizedpose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    m_particleCloud.particles[0] = m_currentPos.pos;
+    std_msgs::Pose pos;
+    tf::PoseTFToMsg(tf::Pose(tf::Quaternion(m_currentPos.pos.th, 0, 0), tf::Vector3(m_currentPos.pos.x, m_currentPos.pos.y, 0)),
+                    pos);
+    m_particleCloud.particles[0] = pos;
     publish("particlecloud", m_particleCloud);
   }   
 };

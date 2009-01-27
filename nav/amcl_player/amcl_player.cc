@@ -60,7 +60,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
-- @b "particlecloud"/ParticleCloud2D : the set of particles being maintained by the filter.
+- @b "particlecloud"/ParticleCloud : the set of particles being maintained by the filter.
 
 <hr>
 
@@ -99,7 +99,7 @@ Publishes to (name / type):
 // Messages that I need
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
-#include "std_msgs/ParticleCloud2D.h"
+#include "robot_msgs/ParticleCloud.h"
 #include "std_msgs/Pose2DFloat32.h"
 #include "std_srvs/StaticMap.h"
 
@@ -145,7 +145,7 @@ class AmclNode: public ros::Node, public Driver
 
     // incoming messages
     std_msgs::RobotBase2DOdom localizedOdomMsg;
-    std_msgs::ParticleCloud2D particleCloudMsg;
+    robot_msgs::ParticleCloud particleCloudMsg;
     std_msgs::RobotBase2DOdom odomMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::Pose2DFloat32 initialPoseMsg;
@@ -438,7 +438,7 @@ AmclNode::AmclNode() :
   this->tfL = new tf::TransformListener(*this);
 
   advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
-  advertise<std_msgs::ParticleCloud2D>("particlecloud",2);
+  advertise<robot_msgs::ParticleCloud>("particlecloud",2);
   //subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
   subscribe("scan", laserMsg, &AmclNode::laserReceived,2);
   subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived,2);
@@ -540,9 +540,13 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
         particleCloudMsg.set_particles_size(resp->particles_count);
         for(unsigned int i=0;i<resp->particles_count;i++)
         {
-          particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
+          tf::PoseTFToMsg(tf::Pose(btQuaternion(resp->particles[i].pose.pa, 0, 0), btVector3(resp->particles[i].pose.px, resp->particles[i].pose.py, 0)),
+                          particleCloudMsg.particles[i]);
+          
+          /*          particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
           particleCloudMsg.particles[i].y = resp->particles[i].pose.py;
           particleCloudMsg.particles[i].th = resp->particles[i].pose.pa;
+          */
         }
         publish("particlecloud", particleCloudMsg);
         delete msg;

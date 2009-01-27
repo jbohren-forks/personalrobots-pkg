@@ -474,8 +474,12 @@ void NavViewPanel::processParticleCloud()
   cloud_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST );
   for( int i=0; i < num_particles; ++i)
   {
-    Ogre::Vector3 pos( cloud_.particles[i].x, cloud_.particles[i].y, 0.0f );
-    Ogre::Quaternion orient( Ogre::Quaternion( Ogre::Radian( cloud_.particles[i].th ), Ogre::Vector3::UNIT_Z ) );
+    Ogre::Vector3 pos( cloud_.particles[i].position.x, cloud_.particles[i].position.y, cloud_.particles[i].position.z );
+    tf::Quaternion orientation;
+    tf::QuaternionMsgToTF(cloud_.particles[i].orientation, orientation);
+    double yaw, pitch, roll;
+    btMatrix3x3(orientation).getEulerZYX(yaw, pitch, roll);
+    Ogre::Quaternion orient( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );
 
     Ogre::Vector3 vertices[8];
     vertices[0] = pos;
