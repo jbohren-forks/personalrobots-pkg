@@ -44,7 +44,7 @@ namespace KDL
          * @param size size of the array, this cannot be changed
          * afterwards.
          */
-        JntArray(unsigned int size);
+        JntArray(unsigned int size=0);
         JntArray(const JntArray& arg);
         ~JntArray();
         JntArray& operator = ( const JntArray& arg);

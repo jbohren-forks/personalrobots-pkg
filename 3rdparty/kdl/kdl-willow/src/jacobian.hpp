@@ -37,7 +37,7 @@ namespace KDL
         unsigned int nr_blocks;
     public:
         Twist* twists;
-        Jacobian(unsigned int size,unsigned int nr=1);
+        Jacobian(unsigned int size=0,unsigned int nr=1);
         Jacobian(const Jacobian& arg);
 
         Jacobian& operator=(const Jacobian& arg);

@@ -38,6 +38,14 @@ namespace KDL
     {
     }
 
+    JntArrayVel& JntArrayVel::operator=(const JntArrayVel& arg)
+    {
+      q = arg.q;
+      qdot = arg.qdot;
+
+      return *this;
+    }
+
     JntArray JntArrayVel::value()const
     {
         return q;

@@ -40,8 +40,12 @@ namespace KDL
 
     Jacobian& Jacobian::operator = (const Jacobian& arg)
     {
-        assert(size==arg.size);
-        assert(nr_blocks==arg.nr_blocks);
+        if (size != arg.size || nr_blocks != arg.nr_blocks){
+	  delete [] twists;
+	  twists = new Twist[arg.size*arg.nr_blocks];
+	  size = arg.size;
+	  nr_blocks = arg.nr_blocks;
+	}
         for(unsigned int i=0;i<size;i++)
             twists[i]=arg.twists[i];
         return *this;

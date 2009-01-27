@@ -41,7 +41,11 @@ namespace KDL
 
     JntArray& JntArray::operator = (const JntArray& arg)
     {
-        assert(size==arg.size);
+        if (size != arg.size){
+	  delete [] data;
+	  data = new double[arg.size];
+	  size = arg.size;
+	}
         for(unsigned int i=0;i<size;i++)
             data[i]=arg.data[i];
         return *this;
