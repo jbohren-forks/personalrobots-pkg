@@ -124,7 +124,7 @@ import rostools
 rostools.update_path('executive_python')
 import rospy
 import random
-from std_msgs.msg import VisualizationMarker
+from robot_msgs.msg import VisualizationMarker
 from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
