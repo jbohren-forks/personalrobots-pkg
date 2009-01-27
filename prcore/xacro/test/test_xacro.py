@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import rostools
-rostools.update_path('xacro')
+rostools.load_manifest('xacro')
 
 import sys
 import unittest

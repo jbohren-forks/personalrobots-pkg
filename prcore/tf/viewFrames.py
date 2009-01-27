@@ -40,7 +40,7 @@ from __future__ import with_statement
 
 PKG = 'tf' # this package name
 
-import rostools; rostools.update_path(PKG) 
+import rostools; rostools.load_manifest(PKG) 
 
 import sys
 import os
