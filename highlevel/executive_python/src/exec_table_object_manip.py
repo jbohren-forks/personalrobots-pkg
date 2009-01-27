@@ -145,13 +145,15 @@ class Executive:
 
     # Hackety hack hack
     self.vmk_id = 15000
-
     self.object_padding = 0.03
     self.laser_buffer_time = 5.0
     # Should be smaller, but that throws out some graspable objects
     self.gripper_max_object_diam = 0.09
+    self.robot_name = 'pr2'
+    self.gripper_link_name = 'r_gripper_palm_link'
 
     self.first_time = True
+    self.scan_start_time = -1.0
 
     self.laser_tilt_profile_type = 4 # Implies sine sweep
     self.laser_tilt_profile_controller = "laser_tilt_controller"
@@ -201,7 +203,6 @@ class Executive:
     # fixed time window scans.
     rospy.client.set_param('collision_map_buffer/window_size', 
                            int(self.laser_buffer_time / (period / 2.0)))
-    self.scan_start_time = rospy.rostime.get_time()
     return resp
 
   def getTable(self):
@@ -309,8 +310,8 @@ SubtractObjectFromCollisionMap)
   def attachObjectToRobot(self, header, obj):
     m = AttachedObject()
     m.header = header
-    m.robot_name = 'pr2'
-    m.link_name = 'r_gripper_palm_link'
+    m.robot_name = self.robot_name
+    m.link_name = self.gripper_link_name
     m.objects = [obj]
     self.attached_obj_pub.publish(m)
 
@@ -327,15 +328,19 @@ SubtractObjectFromCollisionMap)
         #  self.navigator.sendGoal(self.current_goal, "odom")
         #  print "nav --> nav"
 
-        # Request slow scan & trigger static map recording
-        resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
-        if self.first_time:
-          self.recordStaticMap(rostools.rostime.Time(resp.time))
-          self.first_time = False
         # TRANSITION: idle -> slowscan
         self.state = 'slowscan'
 
       elif self.state == 'slowscan':
+        # Did we start the scan yet?
+        if(self.scan_start_time < 0.0):
+          # Request slow scan & trigger static map recording
+          resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
+          self.scan_start_time = curr_time
+          if self.first_time:
+            self.recordStaticMap(rostools.rostime.Time().from_seconds(resp.time))
+            self.first_time = False
+
         #print 'Waiting for slow scan to complete...'
         # Hack
         if (curr_time - self.scan_start_time) >= .75*self.laser_tilt_profile_period_slow:
@@ -357,19 +362,24 @@ SubtractObjectFromCollisionMap)
             # Attach the object to the robot body
             self.attachObjectToRobot(resp.table.header, obj)
 
-            # Request fast scan
-            self.adaptTiltSpeed(self.laser_tilt_profile_period_fast)
-
             # TRANSITION: slowscan -> fastscan
             self.state = 'fastscan'
+            self.scan_start_time = -1.0
 
       elif self.state == 'fastscan':
+        # Did we start the scan yet?
+        if(self.scan_start_time < 0.0):
+          # Request fast scan
+          self.adaptTiltSpeed(self.laser_tilt_profile_period_fast)
+          self.scan_start_time = curr_time
+
         #print 'Waiting for fast scan to complete...'
         # Hack
         if (curr_time - self.scan_start_time) >= 2.0*self.laser_tilt_profile_period_fast:
           #print '...done'
           # TRANSITION: fastscan -> idle
           self.state = 'idle'
+          self.scan_start_time = -1.0
 
       elif self.state == 'done':
         print 'Done'
