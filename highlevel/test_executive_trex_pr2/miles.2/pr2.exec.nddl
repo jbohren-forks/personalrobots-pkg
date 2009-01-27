@@ -15,9 +15,11 @@ ChargingStation c2 = new ChargingStation(18.8, 24.8, -0.540); // Green room towa
 
 close();
 
+// Iterate for 20 times
 rejectable(venusDeMiles.Holds g);
 g.iterationCount = 0;
-g.alwaysBusy = true;
+g.iterationLimit = 20;
+assertCompleted(g.state);
 
 
 
