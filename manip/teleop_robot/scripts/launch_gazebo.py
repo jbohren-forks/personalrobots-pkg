@@ -38,22 +38,22 @@ from __future__ import division
 import rostools
 
 # Loads interface with the robot.
-rostools.update_path('teleop_robot')
+rostools.load_manifest('teleop_robot')
 from teleop_robot import *
 
 # Manually loads arm interface
-rostools.update_path('pr2_controllers')
+rostools.load_manifest('pr2_controllers')
 from pr2_controllers import *
 
 # Import plotting/data utils
-rostools.update_path('scipy')
+rostools.load_manifest('scipy')
 from scipy import *
 
-rostools.update_path('matplotlib')
+rostools.load_manifest('matplotlib')
 from pylab import *
 
 # Data collecting utils
-rostools.update_path('wxpy_ros')
+rostools.load_manifest('wxpy_ros')
 import wxpy_ros
 
 def bodeplot(fi,f,tf,clear=True):

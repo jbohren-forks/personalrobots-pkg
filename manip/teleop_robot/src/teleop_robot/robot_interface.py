@@ -39,21 +39,21 @@ from xml.dom.minidom import parseString
 import rostools
 import sys
 import rospy
-rostools.update_path('robot_srvs')
+rostools.load_manifest('robot_srvs')
 from robot_srvs.srv import *
 
 #TODO: add a controller factory mechanism
 
 # Loads specific controller interfaces.
-rostools.update_path('pr2_controllers')
+rostools.load_manifest('pr2_controllers')
 from pr2_controllers import *
 
 # Loads basic controller interfaces.
-rostools.update_path('generic_controllers')
+rostools.load_manifest('generic_controllers')
 from generic_controllers import *
 
 # Loads logging utilities (used for record/replay)
-rostools.update_path('wxpy_ros')
+rostools.load_manifest('wxpy_ros')
 import wxpy_ros
 
 import copy

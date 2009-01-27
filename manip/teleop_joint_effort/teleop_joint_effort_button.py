@@ -37,7 +37,7 @@ CONTROLLER_NAME = "quick_effort_controller_%08d" % random.randint(0,10**8-1)
 import sys
 
 import rostools
-rostools.update_path('teleop_joint_effort')
+rostools.load_manifest('teleop_joint_effort')
 import rospy
 from std_msgs.msg import *
 from joy.msg import Joy
