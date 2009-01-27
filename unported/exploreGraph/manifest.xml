@@ -1,8 +1,0 @@
-<package>
-  <description brief='This is a package to display the ROS Graph'></description>
-  <author>Tully Foote tfoote at willowgarage.com</author>
-  <license>BSD</license>
-  <depend package="rospy" />
-  <depend package="rospy_demo" />
-  <depend package="pyImageViewer" />
-</package>
