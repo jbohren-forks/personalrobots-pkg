@@ -174,7 +174,7 @@ bool MoveArm::makePlan()
 
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
-    req.value.params.planner_id = "SBL";
+    req.value.params.planner_id = "IKSBL";
     req.value.threshold = 0.01;
     req.value.interpolate = 1;
     req.value.times = 1;
@@ -184,7 +184,7 @@ bool MoveArm::makePlan()
 
     req.value.goal_state = goalMsg.goal_state;
 
-    req.value.allowed_time = 30.0;
+    req.value.allowed_time = 0.5;
 
     //req.params.volume* are left empty, because we're not planning for the
     //base
@@ -212,9 +212,9 @@ bool MoveArm::makePlan()
 
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
-    req.value.params.planner_id = "RRT";
+    req.value.params.planner_id = "IKSBL";
     req.value.interpolate = 1;
-    req.value.times = 3;
+    req.value.times = 1;
 
     // req.start_state is left empty, because we only support replanning, in
     // which case the planner monitors the robot's current state.
@@ -299,7 +299,14 @@ void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path,
 void MoveArm::kpsCallback()
 {
   if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
-    have_new_traj_ = true;
+  {
+    if(!kps_msg_.valid)
+    {
+      //stopArm
+    }
+    if(!kps_msg_.path.states.empty())
+      have_new_traj_ = true;
+  }
 }
 
 class MoveRightArm: public MoveArm 
