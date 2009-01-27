@@ -35,7 +35,7 @@
 #***********************************************************
 
 import rostools
-rostools.update_path('executive_python')
+rostools.load_manifest('executive_python')
 import rospy
 from highlevel_controllers.msg import RechargeGoal, RechargeState
 

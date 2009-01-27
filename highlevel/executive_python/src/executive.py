@@ -35,7 +35,7 @@
 #***********************************************************
 
 import rostools
-rostools.update_path('executive_python')
+rostools.load_manifest('executive_python')
 import rospy
 import random
 from std_msgs.msg import *

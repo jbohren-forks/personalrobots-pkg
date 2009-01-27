@@ -121,7 +121,7 @@
 #15. Goto (1)
 
 import rostools
-rostools.update_path('executive_python')
+rostools.load_manifest('executive_python')
 import rospy
 import random
 from robot_msgs.msg import VisualizationMarker

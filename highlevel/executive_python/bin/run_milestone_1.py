@@ -33,7 +33,7 @@
 #*  POSSIBILITY OF SUCH DAMAGE.
 #***********************************************************
 import rostools
-rostools.update_path('executive_python')
+rostools.load_manifest('executive_python')
 import rospy
 from battery_monitor_adapter import *
 from recharge_adapter import *
