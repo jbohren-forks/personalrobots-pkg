@@ -304,7 +304,9 @@ namespace ros {
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
+      baseScanNotifier_ = new tf::MessageNotifier<std_msgs::LaserScan>(&tf_, this,  
+                                 boost::bind(&MoveBase::baseScanCallback, this, _1), 
+                                "base_scan", global_frame_, 50); 
       tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
@@ -345,6 +347,7 @@ namespace ros {
       delete tiltScanBuffer_;
       delete stereoCloudBuffer_;
       delete filter_;
+      delete baseScanNotifier_;
       delete tiltLaserNotifier_;
     }
 
@@ -429,12 +432,12 @@ namespace ros {
       stateMsg.pos.th = (float)yaw;
     }
 
-    void MoveBase::baseScanCallback()
+    void MoveBase::baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
     {
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;
-      local_cloud.header = baseScanMsg_.header;
-      projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
+      local_cloud.header = message->header;
+      projector_.projectLaser(*message, local_cloud, baseLaserMaxRange_);
       lock();
       baseScanBuffer_->buffer_cloud(local_cloud);
       unlock();

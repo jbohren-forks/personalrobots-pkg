@@ -170,7 +170,7 @@ namespace ros {
       /**
        * @brief Callbacks for perceiving obstalces
        */
-      void baseScanCallback();
+      void baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message);
       void tiltScanCallback();
       void tiltCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message);
       void groundPlaneCloudCallback();
@@ -271,6 +271,7 @@ namespace ros {
       
       //Robot filter
       robot_filter::RobotFilter* filter_;
+      tf::MessageNotifier<std_msgs::LaserScan>* baseScanNotifier_; 
       tf::MessageNotifier<std_msgs::PointCloud>* tiltLaserNotifier_;
 
       //flag for reseting the costmap.
