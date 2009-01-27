@@ -49,6 +49,7 @@ public:
   int scan_count;
   string port;
   int baud;
+  bool inverted;
   double last_print_time;
   SickNode() : ros::Node("sicklms"), scan_count(0), last_print_time(0)
   {
@@ -56,6 +57,7 @@ public:
     advertise<std_msgs::LaserScan>("scan", 1);
     param("sicklms/port", port, string("/dev/ttyUSB0"));
     param("sicklms/baud", baud, 500000);
+    param("sicklms/inverted", inverted, true);
   }
   void publish_scan(uint32_t *values, uint32_t num_values, double scale)
   {
@@ -67,12 +69,14 @@ public:
       last_print_time = t_d;
       printf("publishing scan %d\n", scan_count);
     }
-    // todo: parameterize this. my robot has the sick upside down, which
-    // is probably uncommon.
-    scan_msg.angle_min = M_PI/2;
-    scan_msg.angle_max = -M_PI/2;
-    scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / 
-                               (double)(num_values-1);
+    if (inverted) {
+      scan_msg.angle_min = M_PI/2;
+      scan_msg.angle_max = -M_PI/2;
+    } else {
+      scan_msg.angle_min = -M_PI/2; 
+      scan_msg.angle_max = M_PI/2; 
+    }
+    scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / (double)(num_values-1); 
     scan_msg.time_increment = 0; // fix this
     scan_msg.range_min = 0;
     if (scale == 0.01)
