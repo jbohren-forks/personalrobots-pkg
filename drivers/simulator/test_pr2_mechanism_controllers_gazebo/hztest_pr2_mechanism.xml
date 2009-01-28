@@ -1,0 +1,47 @@
+<launch>
+  <!-- Bring up the node we want to test. -->
+  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
+
+  <!-- Run hztest -->
+  <!-- Test for publication of 'base_pose_ground_truth' topic. -->
+  <test test-name="hztest_test_base_pose_ground_truth" pkg="rostest" type="hztest" time-limit="50" name="base_pose_ground_truth_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (base_pose_ground_truth_test vs. scan_test). -->
+    <param name="topic" value="base_pose_ground_truth" />
+    <param name="hz" value="807.682" />
+    <param name="hzerror" value="400.0" />
+    <param name="test_duration" value="2.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'mechanism_state' topic. -->
+  <test test-name="hztest_test_mechanism_state" pkg="rostest" type="hztest" time-limit="50" name="mechanism_state_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (mechanism_state_test vs. scan_test). -->
+    <param name="topic" value="mechanism_state" />
+    <param name="hz" value="79.763" />
+    <param name="hzerror" value="100.0" />
+    <param name="test_duration" value="2.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'tf_message' topic. -->
+  <test test-name="hztest_test_tf_message" pkg="rostest" type="hztest" time-limit="50" name="tf_message_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (tf_message_test vs. scan_test). -->
+    <param name="topic" value="tf_message" />
+    <param name="hz" value="157.240" />
+    <param name="hzerror" value="150.0" />
+    <param name="test_duration" value="2.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+  <!-- Test for publication of 'time' topic. -->
+  <test test-name="hztest_test_time" pkg="rostest" type="hztest" time-limit="50" name="time_test">
+    <!-- Note how we use a different parameter namespace and node name
+    for this test (time_test vs. scan_test). -->
+    <param name="topic" value="time" />
+    <param name="hz" value="796.054" />
+    <param name="hzerror" value="400.0" />
+    <param name="test_duration" value="2.0" />
+    <param name="check_intervals" value="false" />
+  </test>
+
+</launch>

@@ -1,0 +1,8 @@
+<launch>
+  <master auto="start" />
+
+    <!-- send single_link.xml to param server -->
+    <include file="$(find arm_gazebo)/l_arm_no_x.launch" />
+
+    <test test-name="test_pr2_mechanism_gazebo_test_arm"      pkg="test_pr2_mechanism_controllers_gazebo" type="test_arm.py" />
+</launch>
