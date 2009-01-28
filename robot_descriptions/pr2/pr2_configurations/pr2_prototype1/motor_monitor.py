@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rostools
-rostools.update_path('2dnav_pr2')
+rostools.load_manifest('2dnav_pr2')
 
 import sys, traceback, logging, rospy, os
 from robot_msgs.msg import DiagnosticMessage

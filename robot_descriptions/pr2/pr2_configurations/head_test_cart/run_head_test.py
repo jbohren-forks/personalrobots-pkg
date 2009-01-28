@@ -30,8 +30,7 @@
 
 PKG = "head_test_cart"
 
-import rostools; rostools.update_path(PKG)
-#rostools.update_path('std_msgs')
+import rostools; rostools.load_manifest(PKG)
 
 import sys
 import os
