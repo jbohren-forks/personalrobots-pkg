@@ -185,6 +185,7 @@ class FeatureDetector:
             hi = self.thresh
           if len(features) > target_points:
             lo = self.thresh
+        self.thresh = 0.5 * (lo + hi)
 
     # Try to be a bit adaptive for next time
     if len(features) > (target_points * 1.1):
@@ -193,19 +194,47 @@ class FeatureDetector:
         self.thresh *= 0.95
     return features
 
-class FeatureDetectorFast(FeatureDetector):
+# Feature detectors that return features in order (i.e. strongest first)
+# can be simpler.  Just always keep the threshold high enough to give
+# too many responses, and take the top N.
 
-#  default_thresh = 10
-#  threshrange = (5,127)
+class FeatureDetectorOrdered:
+
+  def name(self):
+    return self.__class__.__name__
+
+  def __init__(self):
+    self.thresh = self.default_thresh
+    self.cold = True
+
+  def detect(self, frame, target_points):
+
+    features = self.get_features(frame, target_points)
+    # Too few features, so lower threshold
+    while (len(features) < target_points) and (self.thresh > self.threshrange[0]):
+      self.thresh = float(max(self.threshrange[0], self.thresh / 2))
+      features = self.get_features(frame, target_points)
+
+    # Try to be a bit adaptive for next time
+    if len(features) > (target_points * 2):
+      self.thresh *= 2
+    if len(features) < (target_points * 1.25):
+      self.thresh *= 0.95
+    return features[:target_points]
+
+def FAST(imdata, xsize, ysize, thresh):
+  kp = fast.fast(imdata, xsize, ysize, 9, thresh)
+  return sorted(fast.nonmax(kp), key = lambda x:(x[2],x[0],x[1]), reverse = True)
+
+class FeatureDetectorFast(FeatureDetectorOrdered):
+
   default_thresh = 10
-  threshrange = (5,127)
+  threshrange = (0.5,300)
 
   def get_features(self, frame, target_points):
     assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
-    feat = fast.fast(frame.rawdata, frame.size[0], frame.size[1], int(self.thresh), 40)
-
-    return [ (x,y) for (x,y) in feat if (16 <= x and x <= (640-16) and (16 <= y) and y < (480-16)) ]
-    return feat
+    feat = FAST(frame.rawdata, frame.size[0], frame.size[1], self.thresh)
+    return [ (x,y) for (x,y,r) in feat if (16 <= x and x <= (640-16) and (16 <= y) and y < (480-16)) ]
 
 class FeatureDetector4x4:
 
@@ -419,6 +448,16 @@ class VisualOdometer:
     self.timer['disparity'].start()
     disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
     frame.kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
+    #print "disparities", len(frame.kp2d), len(frame.kp)
+
+    if 0:
+      import pylab
+      pylab.imshow(numpy.fromstring(frame.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
+      pylab.scatter([x for (x,y) in frame.kp2d], [y for (x,y) in frame.kp2d], label = '2d', c = 'red')
+      pylab.scatter([x for (x,y,d) in frame.kp], [y for (x,y,d) in frame.kp], label = 'disparities', c = 'green')
+      pylab.legend()
+      pylab.show()
+
     self.timer['disparity'].stop()
 
   lgrad = " " * (640 * 480)
@@ -455,12 +494,26 @@ class VisualOdometer:
     #ps = Pose(numpy.mat([[1,0,0],[0,1,0],[0,0,1]]), numpy.array(shift))
     #return pr * ps
 
+  def show_pairs(self, pairs, f0, f1):
+    print "*** SHOWING PAIRS FOR FRAMES ", f0.id, f1.id, "***"
+    print f0.id, "has", len(f0.kp), "keypoints"
+    print f1.id, "has", len(f1.kp), "keypoints"
+    print "There are", len(pairs), "pairs"
+    import pylab
+    for (a,b) in pairs:
+      pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
+    pylab.imshow(numpy.fromstring(f0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
+    pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = '%d kp' % f0.id, c = 'red')
+    pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
+    pylab.legend()
+    pylab.show()
+
   def proximity(self, f0, f1, scavenger = False):
     """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame to f0's frame.)"""
     self.num_frames += 1
 
     pairs = self.temporal_match(f0, f1)
-    #print "frames", (f0.id, f1.id), "got", len(pairs), "pairs",
+    #self.show_pairs(pairs, f0, f1)
     if len(pairs) > 10:
       solution = self.solve(f0.kp, f1.kp, pairs, True)
       if scavenger and solution and solution[0] > 10:
@@ -646,19 +699,13 @@ class VisualOdometer:
     self.ext_frames += 1
     frame.externals.append((fext, VO.frame_pose(fext.id, fext.pose.tolist())))
 
-  def handle_frame(self, frame):
-    self.find_keypoints(frame)
-    self.find_disparities(frame)
-    self.collect_descriptors(frame)
-    frame.id = self.num_frames
-    return self.handle_frame_0(frame)
-
   # just set up the frame with descriptors, no VO processing
   def setup_frame(self, frame):
     self.find_keypoints(frame)
     self.find_disparities(frame)
     self.collect_descriptors(frame)
     frame.id = self.num_frames
+    frame.ref_frame_id = None
 
   # return inliers from a match
   def check_inliers(self, frame1, frame2):
@@ -677,6 +724,13 @@ class VisualOdometer:
       self.maintain_tracks(oldkey, newkey)
       self.sba_handle_frame(newkey)
 
+  def handle_frame(self, frame):
+    self.find_keypoints(frame)
+    self.find_disparities(frame)
+    self.collect_descriptors(frame)
+    frame.id = self.num_frames
+    return self.handle_frame_0(frame)
+
   def handle_frame_0(self, frame):
     if self.prev_frame:
       # If the key->current is good, use it
@@ -684,6 +738,7 @@ class VisualOdometer:
 
       ref = self.keyframe
       self.pairs = self.temporal_match(ref, frame)
+      #if frame.id == 202 and ref.id == 199: self.show_pairs(self.pairs, ref, frame)
       solution = self.solve(ref.kp, frame.kp, self.pairs)
       if solution and solution[0] > 5:
         (inl, rot, shift) = solution
@@ -749,3 +804,18 @@ class VisualOdometer:
           Top = Tok * Tkp
           print "** CORRECTED by", f.pose.d(Top), "**", "key", f.ref_frame_id, "of frame", f.id
           f.pose = Top
+
+  def report_frame(self, frame):
+    import md5
+    print "*** FRAME", "id", frame.id, "key", frame.ref_frame_id, "***"
+    print "use_grad_img", frame.use_grad_img
+    print "limage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.lf.tostring()).digest()])
+    print "rimage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.rf.tostring()).digest()])
+    print "lgrad md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.lgrad).digest()])
+    print "rimage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.rgrad).digest()])
+    print "kp2d length", len(frame.kp2d)
+    print "  ", frame.kp2d[:7]
+    print "kp length", len(frame.kp)
+    for k in frame.kp:
+      print "    ", k
+    print

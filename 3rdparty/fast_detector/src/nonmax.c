@@ -179,7 +179,7 @@ xy*  xfast_nonmax(const byte* im, int xsize, int ysize, xy* corners, int numcorn
 }
 
 /*void fast_nonmax(const BasicImage<byte>& im, const vector<ImageRef>& corners, int barrier, vector<ReturnType>& nonmax_corners)*/
-xy*  fast_nonmax(const byte* im, int xsize, int ysize, xy* corners, int numcorners, int barrier, int* numnx)
+xyr*  fast_nonmax(const byte* im, int xsize, int ysize, xyr* corners, int numcorners, int barrier, int* numnx)
 {
   
 	/*Create a list of integer pointer offstes, corresponding to the */
@@ -187,13 +187,12 @@ xy*  fast_nonmax(const byte* im, int xsize, int ysize, xy* corners, int numcorne
 	int	pointer_dir[16];
 	int* row_start = (int*) malloc(ysize * sizeof(int));
 	int* scores    = (int*) malloc(numcorners * sizeof(int));
-	xy*  nonmax_corners=(xy*)malloc(numcorners* sizeof(xy));
+	xyr*  nonmax_corners=(xyr*)malloc(numcorners* sizeof(xyr));
 	int num_nonmax=0;
 	int prev_row = -1;
 	int i, j;
 	int point_above = 0;
 	int point_below = 0;
-
 
 	pointer_dir[0] = 0 + 3 * xsize;		
 	pointer_dir[1] = 1 + 3 * xsize;		
@@ -249,7 +248,7 @@ xy*  fast_nonmax(const byte* im, int xsize, int ysize, xy* corners, int numcorne
 	for(i=0; i < numcorners; i++)
 	{
 		int score = scores[i];
-		xy pos = corners[i];
+		xyr pos = corners[i];
 			
 		//Check left 
 		if(i > 0)
@@ -305,6 +304,7 @@ xy*  fast_nonmax(const byte* im, int xsize, int ysize, xy* corners, int numcorne
 			
 		nonmax_corners[num_nonmax].x = corners[i].x;
 		nonmax_corners[num_nonmax].y = corners[i].y;
+		nonmax_corners[num_nonmax].r = score;
 
 		num_nonmax++;
 

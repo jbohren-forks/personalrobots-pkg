@@ -4,12 +4,13 @@ corner_pointers=2
 */
 #include <stdlib.h>																			
 #include "fast.h"																			
-xy* fast_corner_detect_9(const byte* im, int xsize, int ysize, int barrier, int* num)				
+xyr* fast_corner_detect_9(const byte* im, int xsize, int ysize, int barrier, int* num)				
 {																								
 	int boundary = 3, y, cb, c_b;																
+        int score;
 	const byte  *line_max, *line_min;															
 	int			rsize=512, total=0;																
-	xy	 		*ret = (xy*)malloc(rsize*sizeof(xy));											
+	xyr	 		*ret = (xyr*)malloc(rsize*sizeof(xyr));											
 	const byte* cache_0;
 	const byte* cache_1;
 	const byte* cache_2;
@@ -2639,10 +2640,11 @@ xy* fast_corner_detect_9(const byte* im, int xsize, int ysize, int barrier, int*
 				if(total >= rsize)																
 				{																				
 					rsize *=2;																	
-					ret=(xy*)realloc(ret, rsize*sizeof(xy));									
+					ret=(xyr*)realloc(ret, rsize*sizeof(xyr));									
 				}																				
 				ret[total].x = cache_0-line_min;												
-				ret[total++].y = y;																
+				ret[total].y = y;																
+                                total++;
 		}																						
 	}																							
 	*num = total;																				
