@@ -27,25 +27,13 @@ rospack_add_library(ros_p3d src/ros_p3d.cpp)
 rospack_link_boost(ros_p3d thread)
 rospack_add_library(ros_f3d src/ros_f3d.cpp)
 rospack_link_boost(ros_f3d thread)
+rospack_add_library(ros_joint_force src/ros_joint_force.cpp)
+rospack_link_boost(ros_joint_force thread)
 rospack_add_library(gazebo_mechanism_control src/gazebo_mechanism_control.cpp)
 rospack_link_boost(gazebo_mechanism_control thread)
 rospack_add_library(gazebo_battery src/gazebo_battery.cpp)
 rospack_link_boost(gazebo_battery thread)
 rospack_add_library(ros_bumper src/ros_bumper.cpp)
 rospack_link_boost(ros_bumper thread)
-
-rospack_add_rostest(test/test_slide.xml)
-rospack_add_rostest(test/test_base.xml)
-rospack_add_rostest(test/test_arm.xml)
-rospack_add_rostest(test/test_pendulum.xml)
-rospack_add_rostest(test/test_scan.xml)
-
-rospack_add_rostest(test/hztest_pr2.xml)
-rospack_add_rostest(test/hztest_rostime.xml)
-rospack_add_rostest(test/hztest_pr2_odom.xml)
-
-# below need xvfb-run to test on build machine
-rospack_add_rostest_graphical(test/test_camera.xml)
-rospack_add_rostest_graphical(test/hztest_pr2_image.xml)
 
 rospack_add_executable(urdf2factory src/urdf2factory.cpp)

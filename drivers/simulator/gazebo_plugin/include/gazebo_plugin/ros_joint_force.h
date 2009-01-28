@@ -29,9 +29,9 @@
 /// Maximum number of joints that can be watched by one controller
 #define ROS_JOINT_FORCE_CONTROLLER_MAX_FEEDBACKS 16
 
-#include "Controller.hh"
-#include "Entity.hh"
-#include "Model.hh"
+#include <gazebo/Controller.hh>
+#include <gazebo/Entity.hh>
+#include <gazebo/Model.hh>
 #include <ode/ode.h>
 #include <sys/time.h>
 

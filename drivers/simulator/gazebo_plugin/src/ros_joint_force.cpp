@@ -24,15 +24,18 @@
  * Date: 24 Sept 2008
  */
 
-#include "gazebo_plugin/ros_joint_force.h"
+#include <gazebo_plugin/ros_joint_force.h>
 
-#include "Global.hh"
-#include "XMLConfig.hh"
-#include "World.hh"
-#include "gazebo.h"
-#include "GazeboError.hh"
-#include "ControllerFactory.hh"
-#include "Simulator.hh"
+#include <gazebo/World.hh>
+#include <gazebo/Global.hh>
+#include <gazebo/XMLConfig.hh>
+#include <gazebo/Simulator.hh>
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
+#include <gazebo/ControllerFactory.hh>
+
+#include <gazebo/HingeJoint.hh>
+#include <gazebo/SliderJoint.hh>
 
 using namespace gazebo;
 
@@ -66,7 +69,7 @@ void RosJointForce::LoadChild(XMLConfigNode *node)
     int i =0;
 
     jNode = node->GetChild("joint");
-    while(jNode && i < RosJOINTFORCE_CONTROLLER_MAX_FEEDBACKS)
+    while(jNode && i < ROS_JOINT_FORCE_CONTROLLER_MAX_FEEDBACKS)
     {
         jointName = jNode->GetString("name","",1);
         joint = this->myParent->GetJoint(jointName);
