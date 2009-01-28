@@ -59,10 +59,10 @@ public:
     param("sicklms/baud", baud, 500000);
     param("sicklms/inverted", inverted, true);
   }
-  void publish_scan(uint32_t *values, uint32_t num_values, double scale)
+  void publish_scan(uint32_t *values, uint32_t num_values, double scale, ros::Time start)
   {
     scan_count++;
-    ros::Time t = ros::Time::now();
+    ros::Time t = start;
     double t_d = t.toSec();
     if (t_d > last_print_time + 1)
     {
@@ -80,9 +80,9 @@ public:
     scan_msg.time_increment = 0; // fix this
     scan_msg.range_min = 0;
     if (scale == 0.01)
-      scan_msg.range_max = 81.92;
+      scan_msg.range_max = 81;
     else if (scale == 0.001)
-      scan_msg.range_max = 8.192;
+      scan_msg.range_max = 8.1;
     scan_msg.set_ranges_size(num_values);
     scan_msg.header.stamp = t;
     for (size_t i = 0; i < num_values; i++)
@@ -129,8 +129,9 @@ int main(int argc, char **argv)
   {
     while (!got_ctrlc)
     {
+      ros::Time start = ros::Time::now();
       sick_lms.GetSickScan(values, num_values);
-      lms_node.publish_scan(values, num_values, scale); 
+      lms_node.publish_scan(values, num_values, scale, start); 
     }
   }
   catch (...)
