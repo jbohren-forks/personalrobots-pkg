@@ -34,16 +34,13 @@
 
 ## Gazebo test 2dnav stack
 
-PKG = '2dnav_gazebo'
+PKG = 'test_2dnav_gazebo'
 NAME = 'test_set_goal'
 
 import math
 import rostools
 rostools.load_manifest(PKG)
 rostools.load_manifest('rostest')
-rostools.load_manifest('std_msgs')
-rostools.load_manifest('robot_msgs')
-rostools.load_manifest('rospy')
 rostools.load_manifest('numpy')
 
 
@@ -51,6 +48,7 @@ import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
+from robot_msgs.msg import *
 from transformations import *
 from numpy import *
 
