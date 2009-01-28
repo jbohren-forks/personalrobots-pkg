@@ -1,0 +1,12 @@
+<package>
+  <description brief="Tests for Gazebo Plugins">
+    Tests for Gazebo Plugins
+  </description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/test_gazebo_plugin</url>
+  <depend package="gazebo_plugin"/>
+  <depend package="examples_gazebo" />
+  <depend package="gazebo_robot_description" />
+</package>

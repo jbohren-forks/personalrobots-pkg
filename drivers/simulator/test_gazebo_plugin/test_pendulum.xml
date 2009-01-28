@@ -1,0 +1,9 @@
+
+<launch>
+  <group name="wg">
+    <!-- send single_link.xml to param server -->
+    <include file="$(find examples_gazebo)/dual_link_no_x.launch" />
+
+    <test test-name="test_gazebo_plugin_test_pendulum" pkg="test_gazebo_plugin" type="test_pendulum.py" />
+  </group>
+</launch>
