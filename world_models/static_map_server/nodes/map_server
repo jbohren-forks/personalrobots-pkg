@@ -95,7 +95,7 @@ class map_server:
         self.scale = yaml_defs['resolution']
         self.origin = yaml_defs['origin']
 
-        rospy.ready(NAME)
+        rospy.init_node(NAME)
         s1 = rospy.Service("static_map", std_srvs.srv.StaticMap, self.map_handler)
         rospy.spin()
 

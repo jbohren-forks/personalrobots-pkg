@@ -247,7 +247,7 @@ def main(args):
 
   vod = VODemo(mode, library)
 
-  rospy.ready('camview_py')
+  rospy.init_node('camview_py')
   rospy.spin()
   vod.dump()
 

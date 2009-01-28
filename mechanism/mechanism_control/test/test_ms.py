@@ -141,5 +141,5 @@ class TestMechanismState(unittest.TestCase):
         self.assertEquals(1, self.callback_data.actuator_states[1].num_encoder_errors)        
         
 if __name__ == '__main__':
-    rospy.ready(NAME)
+    rospy.init_node(NAME)
     rostest.run(PKG, NAME, TestMechanismState, sys.argv)

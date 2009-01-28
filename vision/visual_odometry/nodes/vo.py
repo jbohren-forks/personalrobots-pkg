@@ -177,7 +177,7 @@ class VO:
 def main(args):
   vod = VO()
 
-  rospy.ready('vo')
+  rospy.init_node('vo')
   rospy.spin()
   vod.vo.summarize_timers()
   vod.dump()

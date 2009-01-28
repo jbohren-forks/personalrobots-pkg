@@ -63,7 +63,7 @@ def callback(data):
     _pub.publish(data)
     
 def listener_publisher():
-    rospy.ready(NAME)
+    rospy.init_node(NAME)
     rospy.TopicSub(IN, MSG, callback)
     rospy.spin()
         

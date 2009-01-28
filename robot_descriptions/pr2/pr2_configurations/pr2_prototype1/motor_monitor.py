@@ -21,7 +21,7 @@ def callback(data):
 
 def listener_with_user_data():
     rospy.TopicSub("/diagnostics", DiagnosticMessage, callback)
-    rospy.ready(NAME, anonymous=True)
+    rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 
 if __name__ == '__main__':

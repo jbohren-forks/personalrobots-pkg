@@ -177,7 +177,7 @@ def main(args):
 
   corr = Corrector(vo, library)
 
-  rospy.ready('corrector')
+  rospy.init_node('corrector')
   try:
     corr.workloop()
   except KeyboardInterrupt:

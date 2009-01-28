@@ -73,7 +73,7 @@ class CloudTest(unittest.TestCase):
     def test_cloud(self):
         print "LNK\n"
         rospy.TopicSub("world_3d_map", PointCloud, self.pointInput)
-        rospy.ready(NAME, anonymous=True)
+        rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 30.0 #30 seconds
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)

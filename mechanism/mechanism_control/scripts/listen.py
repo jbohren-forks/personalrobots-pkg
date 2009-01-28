@@ -52,7 +52,7 @@ def callback(data):
 
 def listener_with_user_data():
     rospy.TopicSub("/mechanism_state", MechanismState, callback)
-    rospy.ready(NAME, anonymous=True)
+    rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 
 if __name__ == '__main__':

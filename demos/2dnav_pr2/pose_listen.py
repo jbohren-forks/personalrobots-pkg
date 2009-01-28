@@ -16,7 +16,7 @@ def localized_callback(data):
 def pose_listen():
     rospy.TopicSub("/odom", RobotBase2DOdom, odom_callback)
     rospy.TopicSub("/localizedpose", RobotBase2DOdom, localized_callback)
-    rospy.ready(NAME, anonymous=True)
+    rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 
 if __name__ == '__main__':

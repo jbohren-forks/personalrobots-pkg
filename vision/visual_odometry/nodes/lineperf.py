@@ -118,7 +118,7 @@ def main(args):
 
   vod = lineperftest(args[1])
 
-  rospy.ready('lineperf_%s' % args[1])
+  rospy.init_node('lineperf_%s' % args[1])
   rospy.spin()
   if args[1] == 'send':
     vod.report()
