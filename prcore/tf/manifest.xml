@@ -7,7 +7,7 @@ Library for doing transformations.
 <author>Tully Foote</author>
 <license>BSD</license>
 <review status="API cleared" notes=""/>
-<url>http://pr.willowgarage.com</url>
+<url>http://pr.willowgarage.com/wiki/tf</url>
 <depend package="ros_exception"/>
 <depend package="angles"/>
 <depend package="std_msgs"/>
