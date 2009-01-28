@@ -135,6 +135,7 @@ public:
   int n_val_;
   std::list<ObstaclePoint> nav_view_points_;
   bool full_transient_init_;
+  std::string global_frame;
 
   // Lock for access to class members in callbacks
   boost::mutex lock;
@@ -146,6 +147,7 @@ public:
                        tf(*this,false)
   {
     param("max_frame_rate", max_frame_rate, 5.0);
+    param("/global_frame_id", global_frame, std::string("map"));
     advertise<robot_msgs::Planner2DGoal>("goal",1);
     advertise<std_msgs::Pose2DFloat32>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
@@ -296,6 +298,7 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
       else
       {
         // Send out the goal
+        goal.header.frame_id = global_frame;
         goal.goal.x = gx;
         goal.goal.y = gy;
         goal.goal.th = ga;
@@ -359,7 +362,7 @@ NavView::render()
     robotPose.stamp_ = ros::Time();
 
     tf::Stamped<tf::Pose> mapPose ;
-    tf.transformPose("map", robotPose, mapPose );
+    tf.transformPose(global_frame, robotPose, mapPose );
     double yaw, pitch, roll;
     mapPose.getBasis().getEulerZYX(yaw, pitch, roll);
     glPushMatrix();
