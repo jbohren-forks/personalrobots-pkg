@@ -1,1 +1,0 @@
-JointTrajPoint[] points
