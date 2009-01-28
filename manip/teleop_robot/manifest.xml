@@ -1,9 +1,0 @@
-<package>
-<description>A collection of python scripts to control the PR2 robot through rospy</description>
-  <author>Timothy Hunter</author>
-  <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <depend package="robot_mechanism_controllers"/>
-  <depend package="pr2_mechanism_controllers"/>
-  <depend package="robot_srvs"/>
-</package>
