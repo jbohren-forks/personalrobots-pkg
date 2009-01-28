@@ -1,0 +1,15 @@
+<package>
+  <description brief="Tests for Gazebo Plugins">
+    Tests for Gazebo Plugins
+  </description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/test_pr2_sensors_gazebo</url>
+  <depend package="gazebo_plugin"/>
+  <depend package="arm_gazebo" />
+  <depend package="pr2_prototype1_gazebo" />
+  <depend package="pr2_gazebo" />
+  <depend package="gazebo_robot_description" />
+  <sysdepend os="ubuntu" version="7.04-feisty" package="xvfb"/>
+</package>
