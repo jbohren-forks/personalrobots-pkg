@@ -173,7 +173,7 @@ namespace {
   class PlanDrawing: npm::Drawing {
   public:
     PlanDrawing(std::string const & name,
-		ssize_t task_id, ssize_t task_id, ssize_t episode_id,
+		ssize_t _planner_id, ssize_t task_id, ssize_t episode_id,
 		bool detailed);
     virtual void Draw();
     
