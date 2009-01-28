@@ -67,14 +67,14 @@ BacklashController::~BacklashController()
 void BacklashController::init(double freq, double duration, double amplitude, double error_tolerance, double time, std::string name,mechanism::RobotState *robot)
 {
   assert(robot);
-  robot_ = robot;
-  joint_state_ = robot->getJointState(name);
-  freq_=freq;
-  amplitude_=amplitude;
+  robot_                  = robot;
+  joint_state_            = robot->getJointState(name);
+  freq_                   = freq;
+  amplitude_              = amplitude;
   node->advertise<robot_msgs::TestData>( "/test_data", 0 );
-  test_data_.arg_value[0]=error_tolerance;
-  duration_ = duration;     //in seconds
-  initial_time_=time;       //in seconds
+  test_data_.arg_value[0] = error_tolerance;
+  duration_               = duration; //in seconds
+  initial_time_           = time;     //in seconds
 
 }
 
@@ -84,9 +84,9 @@ bool BacklashController::initXml(mechanism::RobotState *robot, TiXmlElement *con
   TiXmlElement *jnt = config->FirstChildElement("joint");
   if (jnt)
   {
-    double freq = atof(jnt->FirstChildElement("controller_defaults")->Attribute("freq"));
-    double amplitude = atof(jnt->FirstChildElement("controller_defaults")->Attribute("amplitude"));
-    double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
+    double freq            = atof(jnt->FirstChildElement("controller_defaults")->Attribute("freq"));
+    double amplitude       = atof(jnt->FirstChildElement("controller_defaults")->Attribute("amplitude"));
+    double duration        = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
     double error_tolerance = atof(jnt->FirstChildElement("controller_defaults")->Attribute("error_tolerance")); 
     init(freq, duration, amplitude, error_tolerance, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
@@ -99,8 +99,8 @@ void BacklashController::update()
   // wait until the joint is calibrated if it has limits
   if(!joint_state_->calibrated_ && joint_state_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
   {
-    initial_time_=time;
-    last_time_=time;
+    initial_time_ = time;
+    last_time_    = time;
     return;
   }
   
@@ -114,12 +114,12 @@ void BacklashController::update()
 
     if (count_<80000 && !done_)
     { 
-    test_data_.time[count_]=time;
-    test_data_.cmd[count_]=joint_state_->commanded_effort_;
-    test_data_.effort[count_]=joint_state_->applied_effort_;
-    test_data_.position[count_]=joint_state_->position_;
-    test_data_.velocity[count_]=joint_state_->velocity_;
-    count_++;
+      test_data_.time[count_]     = time;
+      test_data_.cmd[count_]      = joint_state_->commanded_effort_;
+      test_data_.effort[count_]   = joint_state_->applied_effort_;
+      test_data_.position[count_] = joint_state_->position_;
+      test_data_.velocity[count_] = joint_state_->velocity_;
+      count_++;
     }
   }
   else if(!done_)
@@ -140,9 +140,9 @@ void BacklashController::analysis()
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "BacklashTest";
-  count_=count_-1;
+  count_ = count_ - 1;
   //test done
-  assert(count_>0);
+  assert(count_ > 0);
   status->level = 0;
   status->message = "OK: Done.";
   test_data_.time.resize(count_);
