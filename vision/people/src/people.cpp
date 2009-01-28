@@ -45,13 +45,17 @@
 
 People::People():
   list_(NULL),
-  cv_image_gray_(NULL),
+  cv_image_gray_(0),
+  disparity_image_(0),
+  cam_model_(NULL),
   cft_r_plane_(NULL),
   cft_g_plane_(NULL),
   cft_b_plane_(NULL),
   cft_r_plane_norm_(NULL),
   cft_g_plane_norm_(NULL),
   cft_b_plane_norm_(NULL),
+  rbins_(0),
+  gbins_(0),
   cft_X_(NULL),
   cft_Y_(NULL),
   cft_Z_(NULL), 
@@ -67,19 +71,25 @@ People::People():
 }
 
 People::~People() {
+  // Kill all the threads.
+  threads_.interrupt_all();
+  threads_.join_all();
+  for (uint i=0; i<face_go_mutices_.size(); i++) {
+    delete face_go_mutices_[i];
+    face_go_mutices_[i] = NULL;
+  }
 
   for (uint i=0; i < list_.size(); i++) {
-    //freePerson(i);
-    if (list_[i].face_color_hist) {cvReleaseHist(&list_[i].face_color_hist);  list_[i].face_color_hist = 0;}
-    if (list_[i].shirt_color_hist) {cvReleaseHist(&list_[i].shirt_color_hist); list_[i].shirt_color_hist = 0;}
-    if (list_[i].body_mask_2d) {cvReleaseImage(&list_[i].body_mask_2d);    list_[i].body_mask_2d = 0;}
-    if (list_[i].face_mask_2d) {cvReleaseImage(&list_[i].face_mask_2d);    list_[i].face_mask_2d = 0;}
+    freePerson(i);
   }
   for (int i=list_.size(); i>0; i--) {
     list_.pop_back();
   }
 
   if (cv_image_gray_) {cvReleaseImage(&cv_image_gray_); cv_image_gray_ = 0; }
+  //if (disparity_image_) {cvReleaseImage(&disparity_image_); disparity_image_ = 0;}
+  disparity_image_ = 0;
+  cam_model_ = 0;
   for (uint i=0; i<storages_.size(); i++) {
     if (storages_[i]) {cvReleaseMemStorage(&storages_[i]); storages_[i] = 0; }
     if (cascades_[i]) {cvReleaseHaarClassifierCascade(&cascades_[i]); cascades_[i] = 0; }
@@ -105,7 +115,7 @@ People::~People() {
   //cvDestroyWindow("blue");
 #endif
 
-}
+  }
 
 
 void People::freePerson(int iperson) {
@@ -133,10 +143,9 @@ static void calc_weighted_rg_hist_with_depth_2(IplImage* imager, IplImage* image
   cvSet(hist->bins,cvScalar(0.0000001));//0.0000001)); //band*band*DBL_MIN
   band = band*band;
   bbv1 = bbox.y;
-  bbv2 = (bbox.y+bbox.height);//-1
+  bbv2 = (bbox.y+bbox.height);
   bbu1 =  bbox.x;
-  bbu2 = (bbox.x+bbox.width);//-1
-  //printf("Calculating histogram around point: (%f %f %f) between u:%d-%d and v:%d-%d \n", cx, cy, cz, bbu1, bbu2, bbv1, bbv2 );
+  bbu2 = (bbox.x+bbox.width);
   for (int v = bbv1; v<bbv2; v++) {
     xptr = (float *)(X->imageData + v*X->widthStep) + bbox.x;
     yptr = (float *)(Y->imageData + v*Y->widthStep) + bbox.x;
@@ -341,10 +350,18 @@ void People::clearFaceColorHist(int iperson) {
  * Output:
  * A vector of CvRects containing the bounding boxes around found faces.
  *********/ 
-vector<Box2D3D> People::detectAllFaces(IplImage *image, uint num_cascades, string* haar_classifier_filenames, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model) {
-  vector<Box2D3D> faces;
+
+
+
+void People::initFaceDetection(uint num_cascades, string* haar_classifier_filenames) {
+  images_ready_ = 0;
+
+  face_go_mutices_.resize(num_cascades);
 
   for (uint i=0; i<num_cascades; i++) {
+
+    face_go_mutices_[i] = new boost::mutex();
+
     if (cascades_.size()<num_cascades) { 
       cascades_.push_back((CvHaarClassifierCascade*)cvLoad(haar_classifier_filenames[i].c_str()));
     }
@@ -353,7 +370,7 @@ vector<Box2D3D> People::detectAllFaces(IplImage *image, uint num_cascades, strin
     }
     if (!cascades_[i]) {
       std::cerr << "Cascade file " << haar_classifier_filenames[i] << " doesn't exist.\n" << std::endl;
-      return faces;
+      return;
     }
     if (storages_.size()<num_cascades) {
       storages_.push_back(cvCreateMemStorage(0));
@@ -361,7 +378,16 @@ vector<Box2D3D> People::detectAllFaces(IplImage *image, uint num_cascades, strin
     else if (!storages_[i]) {
       storages_[i] = cvCreateMemStorage(0);
     }
+    threads_.create_thread(boost::bind(&People::faceDetectionThread,this,i));
   }
+}
+
+/////
+
+vector<Box2D3D> People::detectAllFaces(IplImage *image, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model) {
+
+  faces_.clear();
+
   CvSize im_size = cvGetSize(image);
 
   // Convert the image to grayscale, if necessary.
@@ -376,80 +402,112 @@ vector<Box2D3D> People::detectAllFaces(IplImage *image, uint num_cascades, strin
   } 
   else {
     std::cerr << "Unknown image type"<<std::endl;
-    return faces;
+    return faces_;
+  }
+  disparity_image_ = disparity_image;
+  cam_model_ = cam_model;
+
+  // Tell the face detection threads that they can run once.
+  num_threads_to_wait_for_ = threads_.size();
+  for (uint it=0; it<face_go_mutices_.size(); it++) {
+    boost::mutex::scoped_lock fgmlock(*(face_go_mutices_[it]));
+    images_ready_++;
+    fgmlock.unlock();
   }
 
-  // Spawn one thread per cascade to actually find the faces.
-  boost::thread* threads[num_cascades];
-  for (uint i=0; i<num_cascades; i++) {
-    threads[i] = new boost::thread(boost::bind(&People::faceDetectionThread,this,i,disparity_image,cam_model,&faces));
-    threads[i]->join();
-  }
-  for (uint i=0; i< num_cascades; i++) {
-    delete threads[i];
-  }
+  face_detection_ready_cond_.notify_all();
 
-  return faces;
+  printf("notified all\n");
+  boost::mutex::scoped_lock fdmlock(face_done_mutex_);
+  while (num_threads_to_wait_for_ > 0) {
+    face_detection_done_cond_.wait(fdmlock);
+  }  
+
+  return faces_;
 }
 
+/////
 
-void People::faceDetectionThread(uint i, IplImage *disparity_image, CvStereoCamModel *cam_model, vector<Box2D3D> *faces) {
+void People::faceDetectionThread(uint i) {
 
-  // Find the faces using OpenCV's haar cascade object detector.
-  CvSeq *face_seq = cvHaarDetectObjects(cv_image_gray_, cascades_[i], storages_[i], 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
-
-  // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
-  CvScalar color = cvScalar(0,255,0);
-  Box2D3D one_face;
-  double avg_disp = 0.0;
-  CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
-  CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
-  // For each face...
-  for (int iface = 0; iface < face_seq->total; iface++) {
-
-    one_face.status = "good";
-    one_face.box2d = *(CvRect*)cvGetSeqElem(face_seq, iface);
-    one_face.id = i; // The cascade that computed this face.
-
-    if (disparity_image && cam_model) {
-    
-      // Get the median disparity in the middle half of the bounding box.
-      avg_disp = cvMedianNonZeroElIn2DArr(disparity_image,
-					  floor(one_face.box2d.y+0.25*one_face.box2d.height),floor(one_face.box2d.y+0.75*one_face.box2d.height),
-					  floor(one_face.box2d.x+0.25*one_face.box2d.width), floor(one_face.box2d.x+0.75*one_face.box2d.width)); 
-
-      one_face.center2d = cvScalar(one_face.box2d.x+one_face.box2d.width/2.0,
-				   one_face.box2d.y+one_face.box2d.height/2.0,
-				   avg_disp);
-      one_face.radius2d = one_face.box2d.width/2.0;
-
-      if (avg_disp > 0) {
-	one_face.radius3d = cam_model->getDeltaX(one_face.box2d.width,avg_disp)/2.0;
-	cvmSet(uvd,0,0,one_face.center2d.val[0]);
-	cvmSet(uvd,0,1,one_face.center2d.val[1]);
-	cvmSet(uvd,0,2,avg_disp);
-	cam_model->dispToCart(uvd,xyz);      
-	one_face.center3d = cvScalar(cvmGet(xyz,0,0),cvmGet(xyz,0,1),cvmGet(xyz,0,2));
-	if (one_face.center3d.val[3] > MAX_Z_M || 2.0*one_face.radius3d < FACE_SIZE_MIN_M || 2.0*one_face.radius3d > FACE_SIZE_MAX_M) {
-	  one_face.status = "bad";
-	}
+  while (1) {
+    boost::mutex::scoped_lock fgmlock(*(face_go_mutices_[i]));
+    boost::mutex::scoped_lock tlock(t_mutex_, boost::defer_lock);
+    while (1) {
+      tlock.lock();
+      if (images_ready_) {
+	--images_ready_;
+	tlock.unlock();
+	break;
       }
-      else {
-	one_face.radius3d = 0.0;     
-	one_face.center3d = cvScalar(0.0,0.0,0.0);
-	one_face.status = "unknown";
-      }
+      tlock.unlock();
+      face_detection_ready_cond_.wait(fgmlock);
     }
 
-    // Add faces to the output vector.
-    // lock faces
-    boost::mutex::scoped_lock lock(face_mutex_);
-    faces->push_back(one_face);
-    lock.unlock();
-  }
-  cvReleaseMat(&uvd); uvd = 0;
-  cvReleaseMat(&xyz); xyz = 0;
+    // Find the faces using OpenCV's haar cascade object detector.
+    CvSeq *face_seq = cvHaarDetectObjects(cv_image_gray_, cascades_[i], storages_[i], 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
 
+    // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
+    CvScalar color = cvScalar(0,255,0);
+    Box2D3D one_face;
+    double avg_disp = 0.0;
+    CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
+    CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
+    // For each face...
+    for (int iface = 0; iface < face_seq->total; iface++) {
+
+      one_face.status = "good";
+
+      CvRect el;
+      cvSeqPopFront(face_seq, &el);
+      one_face.box2d = el;
+      one_face.id = i; // The cascade that computed this face.
+
+      if (disparity_image_ && cam_model_) {
+    
+	// Get the median disparity in the middle half of the bounding box.
+	avg_disp = cvMedianNonZeroElIn2DArr(disparity_image_,
+					    floor(one_face.box2d.y+0.25*one_face.box2d.height),floor(one_face.box2d.y+0.75*one_face.box2d.height),
+					    floor(one_face.box2d.x+0.25*one_face.box2d.width), floor(one_face.box2d.x+0.75*one_face.box2d.width)); 
+
+	one_face.center2d = cvScalar(one_face.box2d.x+one_face.box2d.width/2.0,
+				     one_face.box2d.y+one_face.box2d.height/2.0,
+				     avg_disp);
+	one_face.radius2d = one_face.box2d.width/2.0;
+
+	if (avg_disp > 0) {
+	  one_face.radius3d = cam_model_->getDeltaX(one_face.box2d.width,avg_disp)/2.0;
+	  cvmSet(uvd,0,0,one_face.center2d.val[0]);
+	  cvmSet(uvd,0,1,one_face.center2d.val[1]);
+	  cvmSet(uvd,0,2,avg_disp);
+	  cam_model_->dispToCart(uvd,xyz);      
+	  one_face.center3d = cvScalar(cvmGet(xyz,0,0),cvmGet(xyz,0,1),cvmGet(xyz,0,2));
+	  if (one_face.center3d.val[3] > MAX_Z_M || 2.0*one_face.radius3d < FACE_SIZE_MIN_M || 2.0*one_face.radius3d > FACE_SIZE_MAX_M) {
+	    one_face.status = "bad";
+	  }
+	}
+	else {
+	  one_face.radius3d = 0.0;     
+	  one_face.center3d = cvScalar(0.0,0.0,0.0);
+	  one_face.status = "unknown";
+	}
+      }
+
+      // Add faces to the output vector.
+      // lock faces
+      boost::mutex::scoped_lock lock(face_mutex_);
+      faces_.push_back(one_face);
+      lock.unlock();
+    }
+
+    cvReleaseMat(&uvd); uvd = 0;
+    cvReleaseMat(&xyz); xyz = 0;
+
+    boost::mutex::scoped_lock fdmlock(face_done_mutex_);
+    num_threads_to_wait_for_--;
+    fdmlock.unlock();
+    face_detection_done_cond_.notify_one();
+  }
 }
 
 
@@ -806,7 +864,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	break;
       }
       d = 0.0;      
-      //printf("0Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
       nptr = (float *)(next_point->data.ptr);
       for (int i=0; i<3; i++) {
 	(*nptr) /= total_weight;
@@ -815,14 +872,9 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	nptr++;
       } 
 
-      //printf("1Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
-
       bhat_coeff_new = 0.0;
       bool ok_adjust = true; 
       while (true) {
-
-	//printf("2Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
-
 	// Compute the histogram and Bhattacharya coeff at the new position.
 	// Convert 3d point-size to 2d rectangle
 	centerSizeToFourCorners(next_point, size_3d, four_corners);
@@ -832,7 +884,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	  //cvmSet(end_points,iperson,0,cvmGet(curr_point,0,0));cvmSet(end_points,iperson,1,cvmGet(curr_point,0,1));cvmSet(end_points,iperson,2,cvmGet(curr_point,0,2));
 	  tracked_each[iperson] = false;
 	  ok_adjust = false;
-	  printf("bbox2 bad\n");
 	  break;
 	}
 
@@ -860,21 +911,16 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	  fptr = (float*)(next_point->data.ptr);
 	  // Set the next point as the avg of the next point and current point.
 	  for (int i=0; i<3; i++) {
-	    //printf("%f ", *fptr);
 	    (*fptr) += cp[i];
 	    (*fptr) /= 2.0;
 	    d += ((*fptr)-cp[i])*((*fptr)-cp[i]);
-	    //printf("%f ", *fptr);
 	    fptr++;
 	  }
-	  //printf("\n");
 	}
 	else {
 	  break;
 	}
       }
-
-      //printf("2Currpoint (%f,%f,%f) nextpoint (%f,%f,%f)\n",cvmGet(curr_point,0,0),cvmGet(curr_point,0,1),cvmGet(curr_point,0,2),cvmGet(next_point,0,0),cvmGet(next_point,0,1),cvmGet(next_point,0,2));
 
       cvCopy(next_point,curr_point);
       cvSetZero(next_point);
