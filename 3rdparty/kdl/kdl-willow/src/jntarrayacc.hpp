@@ -36,10 +36,12 @@ namespace KDL
         JntArray qdot;
         JntArray qdotdot;
     public:
-        JntArrayAcc(unsigned int size);
+        JntArrayAcc(unsigned int size=0);
         JntArrayAcc(const JntArray& q,const JntArray& qdot,const JntArray& qdotdot);
         JntArrayAcc(const JntArray& q,const JntArray& qdot);
         JntArrayAcc(const JntArray& q);
+
+        void resize(unsigned int newSize);
 
         JntArray value()const;
         JntArray deriv()const;
@@ -48,9 +50,9 @@ namespace KDL
         friend void Add(const JntArrayAcc& src1,const JntArrayAcc& src2,JntArrayAcc& dest);
         friend void Add(const JntArrayAcc& src1,const JntArrayVel& src2,JntArrayAcc& dest);
         friend void Add(const JntArrayAcc& src1,const JntArray& src2,JntArrayAcc& dest);
-        friend void Substract(const JntArrayAcc& src1,const JntArrayAcc& src2,JntArrayAcc& dest);
-        friend void Substract(const JntArrayAcc& src1,const JntArrayVel& src2,JntArrayAcc& dest);
-        friend void Substract(const JntArrayAcc& src1,const JntArray& src2,JntArrayAcc& dest);
+        friend void Subtract(const JntArrayAcc& src1,const JntArrayAcc& src2,JntArrayAcc& dest);
+        friend void Subtract(const JntArrayAcc& src1,const JntArrayVel& src2,JntArrayAcc& dest);
+        friend void Subtract(const JntArrayAcc& src1,const JntArray& src2,JntArrayAcc& dest);
         friend void Multiply(const JntArrayAcc& src,const double& factor,JntArrayAcc& dest);
         friend void Multiply(const JntArrayAcc& src,const doubleVel& factor,JntArrayAcc& dest);
         friend void Multiply(const JntArrayAcc& src,const doubleAcc& factor,JntArrayAcc& dest);

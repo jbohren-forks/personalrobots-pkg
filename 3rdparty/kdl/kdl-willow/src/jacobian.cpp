@@ -40,12 +40,8 @@ namespace KDL
 
     Jacobian& Jacobian::operator = (const Jacobian& arg)
     {
-        if (size != arg.size || nr_blocks != arg.nr_blocks){
-	  delete [] twists;
-	  twists = new Twist[arg.size*arg.nr_blocks];
-	  size = arg.size;
-	  nr_blocks = arg.nr_blocks;
-	}
+        assert(size==arg.size);
+        assert(nr_blocks==arg.nr_blocks);
         for(unsigned int i=0;i<size;i++)
             twists[i]=arg.twists[i];
         return *this;
@@ -55,6 +51,14 @@ namespace KDL
     Jacobian::~Jacobian()
     {
         delete [] twists;
+    }
+
+    void Jacobian::resize(unsigned int newSize, unsigned int newNr)
+    {
+      delete [] twists;
+      twists = new Twist[newSize*newNr];
+      size = newSize;
+      nr_blocks = newNr;
     }
 
     double Jacobian::operator()(int i,int j)const
@@ -108,4 +112,26 @@ namespace KDL
         for(unsigned int i=0;i<src1.size*src1.nr_blocks;i++)
             dest.twists[i]=frame*src1.twists[i];
     }
+
+    bool Jacobian::operator ==(const Jacobian& arg)
+    {
+        return Equal((*this),arg);
+    }
+    
+    bool Jacobian::operator!=(const Jacobian& arg)
+    {
+        return !Equal((*this),arg);
+    }
+    
+    bool Equal(const Jacobian& a,const Jacobian& b,double eps)
+    {
+        if(a.rows()==b.rows()&&a.columns()==b.columns()){
+            bool rc=true;
+            for(unsigned int i=0;i<a.columns();i++)
+                rc&=Equal(a.twists[i],b.twists[i],eps);
+            return rc;
+        }else
+            return false;
+    }
+    
 }

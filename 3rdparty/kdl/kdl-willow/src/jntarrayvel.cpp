@@ -38,12 +38,10 @@ namespace KDL
     {
     }
 
-    JntArrayVel& JntArrayVel::operator=(const JntArrayVel& arg)
+    void JntArrayVel::resize(unsigned int newSize)
     {
-      q = arg.q;
-      qdot = arg.qdot;
-
-      return *this;
+      q.resize(newSize);
+      qdot.resize(newSize);
     }
 
     JntArray JntArrayVel::value()const
@@ -67,14 +65,14 @@ namespace KDL
         dest.qdot=src1.qdot;
     }
 
-    void Substract(const JntArrayVel& src1,const JntArrayVel& src2,JntArrayVel& dest)
+    void Subtract(const JntArrayVel& src1,const JntArrayVel& src2,JntArrayVel& dest)
     {
-        Substract(src1.q,src2.q,dest.q);
-        Substract(src1.qdot,src2.qdot,dest.qdot);
+        Subtract(src1.q,src2.q,dest.q);
+        Subtract(src1.qdot,src2.qdot,dest.qdot);
     }
-    void Substract(const JntArrayVel& src1,const JntArray& src2,JntArrayVel& dest)
+    void Subtract(const JntArrayVel& src1,const JntArray& src2,JntArrayVel& dest)
     {
-        Substract(src1.q,src2,dest.q);
+        Subtract(src1.q,src2,dest.q);
         dest.qdot=src1.qdot;
     }
 
@@ -100,7 +98,7 @@ namespace KDL
     {
         Multiply(src.q,(factor.grad/factor.t/factor.t),dest.q);
         Divide(src.qdot,factor.t,dest.qdot);
-        Substract(dest.qdot,dest.q,dest.qdot);
+        Subtract(dest.qdot,dest.q,dest.qdot);
         Divide(src.q,factor.t,dest.q);
     }
 
