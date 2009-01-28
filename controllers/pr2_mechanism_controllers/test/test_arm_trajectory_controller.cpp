@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <ros/node.h>
-#include <pr2_mechanism_controllers/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 
 static int done = 0;
 
@@ -55,7 +55,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  pr2_mechanism_controllers::JointTraj cmd;
+  robot_msgs::JointTraj cmd;
 
   int num_points = 3;
   int num_joints = 7;
@@ -103,7 +103,7 @@ int main( int argc, char** argv )
   cmd.points[2].positions[6] = 0.0;
   cmd.points[2].time = 0.0;
 
-  node->advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command",1);
+  node->advertise<robot_msgs::JointTraj>("arm_trajectory_command",1);
   sleep(1);
   node->publish("arm_trajectory_command",cmd);
   sleep(4);
