@@ -73,6 +73,9 @@ using namespace std;
  */
 class FaceDetector: public ros::Node {
 public:
+  // Constants
+  const double BIGDIST_M;// = 1000000.0;
+
   // Images and conversion
   image_msgs::Image limage_; /**< Left image msg. */
   image_msgs::Image dimage_; /**< Disparity image msg. */
@@ -103,6 +106,7 @@ public:
   struct RestampedPositionMeasurement {
     ros::Time restamp;
     robot_msgs::PositionMeasurement pos;
+    double dist;
   };
   map<string, RestampedPositionMeasurement> pos_list_; /**< Queue of updated people positions from the filter. */
 
@@ -114,10 +118,11 @@ public:
 
   boost::mutex cv_mutex_, pos_mutex_;
 
-  // ros::Node("face_detector", ros::Node::ANONYMOUS_NAME ),
+  // ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
   FaceDetector(string node_name, int num_filenames, string *names, string *haar_filenames, double *reliabilities, bool use_depth, string do_display, bool external_init) : 
     ros::Node("face_detector", ros::Node::ANONYMOUS_NAME),
-    sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
+    BIGDIST_M(1000000.0),
+    sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(1.0), &FaceDetector::image_cb_timeout),
     cv_image_left_(0),
     cv_image_disp_(0),
     do_display_(do_display),
@@ -142,6 +147,7 @@ public:
     }
 
     people_ = new People();
+    people_->initFaceDetection(num_filenames_, haar_filenames_);
 
     // Subscribe to the images and parameters
     std::list<std::string> left_list;
@@ -170,22 +176,16 @@ public:
   ~FaceDetector()
   {
 
-    if (cv_image_disp_out_) {
-      cvReleaseImage(&cv_image_disp_out_); cv_image_disp_out_ = 0;
-    }
+    if (cv_image_disp_out_) {cvReleaseImage(&cv_image_disp_out_); cv_image_disp_out_ = 0;}
 
     if (do_display_ == "local") {
       cvDestroyWindow("Face detector: Face Detection");
       cvDestroyWindow("Face detector: Disparity");
     }
 
-    if (cam_model_) {
-      delete cam_model_; cam_model_ = 0;
-    }
+    if (cam_model_) {delete cam_model_; cam_model_ = 0;}
 
-    if (people_) {
-      delete people_; people_ = 0;
-    }
+    if (people_) {delete people_; people_ = 0;}
   }
 
   /*!
@@ -203,10 +203,11 @@ public:
     RestampedPositionMeasurement rpm;
     rpm.pos = pos_;
     rpm.restamp = pos_.header.stamp;
+    rpm.dist = BIGDIST_M;
     if (it == pos_list_.end()) {
       pos_list_.insert(pair<string, RestampedPositionMeasurement>(pos_.object_id, rpm));
     }
-    else if (pos_.header.stamp - (*it).second.pos.header.stamp > ros::Duration().fromSec(-1.0) ){
+    else if ((pos_.header.stamp - (*it).second.pos.header.stamp) > ros::Duration().fromSec(-1.0) ){
       (*it).second = rpm;
     }
     lock.unlock();
@@ -232,7 +233,9 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
-    ros::Time startt, endt;
+    // cout << "image callback" << endl;
+    //return;
+    ros::Time startt, endt, starttdetect, endtdetect;
     startt = t.now();
 
     if (do_display_ == "local") {
@@ -259,8 +262,13 @@ public:
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
  
     im_size = cvGetSize(cv_image_left_);
-    vector<Box2D3D> faces_vector = people_->detectAllFaces(cv_image_left_, num_filenames_, haar_filenames_, 1.0, cv_image_disp_, cam_model_);
- 
+    printf("detecting faces\n");
+    starttdetect = t.now();
+    vector<Box2D3D> faces_vector = people_->detectAllFaces(cv_image_left_, 1.0, cv_image_disp_, cam_model_);
+    endtdetect = t.now();
+    ros::Duration diffdetect = endtdetect - starttdetect;
+    printf("Detection duration = %fsec\n", diffdetect.toSec());
+
     image_msgs::ColoredLines all_cls;
     vector<image_msgs::ColoredLine> lines;   
 
@@ -275,7 +283,7 @@ public:
 	  pos_list_.erase(it);
 	}
 	else {
-	  // Transform the person to this time. Note that their pos time is updated but not their restamp. 
+	  // Transform the person to this time. Note that the pos time is updated but not the restamp. 
 	  tf::Point pt;
 	  tf::PointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
@@ -315,19 +323,24 @@ public:
 	  pos.covariance[3] = 0.0;  pos.covariance[4] = 0.04; pos.covariance[5] = 0.0;
 	  pos.covariance[6] = 0.0;  pos.covariance[7] = 0.0;  pos.covariance[8] = 0.04;
 
-	  // Check if this person's face is close enough to one of the previously known faces and associate it.
+	  // Check if this person's face is close enough to one of the previously known faces and associate it with the closest one.
 	  // Otherwise publish it with an empty id.
-	  double dist, mindist = 1000000.0;
+	  // Note that multiple face positions can be published with the same id, but ids in the pos_list_ are unique. The position of a face in the list is updated with the closest found face.
+	  double dist, mindist = BIGDIST_M;
 	  map<string, RestampedPositionMeasurement>::iterator close_it = pos_list_.end();
 	  for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
 	    dist = pow((*it).second.pos.pos.x - pos.pos.x, 2.0) + pow((*it).second.pos.pos.y - pos.pos.y, 2.0) + pow((*it).second.pos.pos.z - pos.pos.z, 2.0);
-	    if (dist < FACE_DIST && dist < mindist) {
+	    if (dist <= FACE_DIST && dist < mindist) {
 	      mindist = dist;
 	      close_it = it;
 	    }
 	  }
 	  if (close_it != pos_list_.end()) {
-	    (*close_it).second.restamp = limage_.header.stamp;
+	    if (mindist < (*close_it).second.dist) {
+	      (*close_it).second.restamp = limage_.header.stamp;
+	      (*close_it).second.dist = mindist;
+	      (*close_it).second.pos = pos;
+	    }
 	    pos.object_id = (*close_it).second.pos.object_id;
 	  }
 	  else {
@@ -339,72 +352,73 @@ public:
 
       } // end for iface
       pos_lock.unlock();
+      // Clean out all of the distances in the pos_list_
+      for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
+	(*it).second.dist = BIGDIST_M;
+      }
       // Done associating faces.
 
       // Draw an appropriately colored rectangle on the display image.
       if (do_display_ != "none") {
 	for (uint iface = 0; iface < faces_vector.size(); iface++) {	
-	  if (do_display_ != "none") { 
-	    CvScalar color;
-	    if (one_face->status == "good") {
-	      color = cvScalar(0,255,0);
-	    }
-	    else if (one_face->status == "unknown") {
-	      color = cvScalar(255,0,0);
-	    }
-	    else {
-	      color = cvScalar(0,0,255);
-	    }
+	  CvScalar color;
+	  if (one_face->status == "good") {
+	    color = cvScalar(0,255,0);
+	  }
+	  else if (one_face->status == "unknown") {
+	    color = cvScalar(255,0,0);
+	  }
+	  else {
+	    color = cvScalar(0,0,255);
+	  }
 
-	    if (do_display_ == "local") {
-	      cvRectangle(cv_image_left_, 
-			  cvPoint(one_face->box2d.x,one_face->box2d.y), 
-			  cvPoint(one_face->box2d.x+one_face->box2d.width, one_face->box2d.y+one_face->box2d.height), color, 4);
-	    }
-	    else if (do_display_ == "remote") {
+	  if (do_display_ == "local") {
+	    cvRectangle(cv_image_left_, 
+			cvPoint(one_face->box2d.x,one_face->box2d.y), 
+			cvPoint(one_face->box2d.x+one_face->box2d.width, one_face->box2d.y+one_face->box2d.height), color, 4);
+	  }
+	  else if (do_display_ == "remote") {
 	    
-	      lines[4*iface].r = color.val[2]; lines[4*iface+1].r = lines[4*iface].r; 
-	      lines[4*iface+2].r = lines[4*iface].r; lines[4*iface+3].r = lines[4*iface].r;
-	      lines[4*iface].g = color.val[1]; lines[4*iface+1].g = lines[4*iface].g; 
-	      lines[4*iface+2].g = lines[4*iface].g; lines[4*iface+3].g = lines[4*iface].g;
-	      lines[4*iface].b = color.val[0]; lines[4*iface+1].b = lines[4*iface].b; 
-	      lines[4*iface+2].b = lines[4*iface].b; lines[4*iface+3].b = lines[4*iface].b;
+	    lines[4*iface].r = color.val[2]; lines[4*iface+1].r = lines[4*iface].r; 
+	    lines[4*iface+2].r = lines[4*iface].r; lines[4*iface+3].r = lines[4*iface].r;
+	    lines[4*iface].g = color.val[1]; lines[4*iface+1].g = lines[4*iface].g; 
+	    lines[4*iface+2].g = lines[4*iface].g; lines[4*iface+3].g = lines[4*iface].g;
+	    lines[4*iface].b = color.val[0]; lines[4*iface+1].b = lines[4*iface].b; 
+	    lines[4*iface+2].b = lines[4*iface].b; lines[4*iface+3].b = lines[4*iface].b;
 
-	      lines[4*iface].x0 = one_face->box2d.x; 
-	      lines[4*iface].x1 = one_face->box2d.x + one_face->box2d.width;
-	      lines[4*iface].y0 = one_face->box2d.y; 
-	      lines[4*iface].y1 = one_face->box2d.y;
+	    lines[4*iface].x0 = one_face->box2d.x; 
+	    lines[4*iface].x1 = one_face->box2d.x + one_face->box2d.width;
+	    lines[4*iface].y0 = one_face->box2d.y; 
+	    lines[4*iface].y1 = one_face->box2d.y;
 
-	      lines[4*iface+1].x0 = one_face->box2d.x; 
-	      lines[4*iface+1].x1 = one_face->box2d.x;
-	      lines[4*iface+1].y0 = one_face->box2d.y; 
-	      lines[4*iface+1].y1 = one_face->box2d.y + one_face->box2d.height;
+	    lines[4*iface+1].x0 = one_face->box2d.x; 
+	    lines[4*iface+1].x1 = one_face->box2d.x;
+	    lines[4*iface+1].y0 = one_face->box2d.y; 
+	    lines[4*iface+1].y1 = one_face->box2d.y + one_face->box2d.height;
 
-	      lines[4*iface+2].x0 = one_face->box2d.x; 
-	      lines[4*iface+2].x1 = one_face->box2d.x + one_face->box2d.width;
-	      lines[4*iface+2].y0 = one_face->box2d.y + one_face->box2d.height; 
-	      lines[4*iface+2].y1 = one_face->box2d.y + one_face->box2d.height;
+	    lines[4*iface+2].x0 = one_face->box2d.x; 
+	    lines[4*iface+2].x1 = one_face->box2d.x + one_face->box2d.width;
+	    lines[4*iface+2].y0 = one_face->box2d.y + one_face->box2d.height; 
+	    lines[4*iface+2].y1 = one_face->box2d.y + one_face->box2d.height;
 
-	      lines[4*iface+3].x0 = one_face->box2d.x + one_face->box2d.width; 
-	      lines[4*iface+3].x1 = one_face->box2d.x + one_face->box2d.width;
-	      lines[4*iface+3].y0 = one_face->box2d.y; 
-	      lines[4*iface+3].y1 = one_face->box2d.y + one_face->box2d.height;
+	    lines[4*iface+3].x0 = one_face->box2d.x + one_face->box2d.width; 
+	    lines[4*iface+3].x1 = one_face->box2d.x + one_face->box2d.width;
+	    lines[4*iface+3].y0 = one_face->box2d.y; 
+	    lines[4*iface+3].y1 = one_face->box2d.y + one_face->box2d.height;
 
-	      lines[4*iface].header.stamp = limage_.header.stamp;
-	      lines[4*iface+1].header.stamp = limage_.header.stamp;
-	      lines[4*iface+2].header.stamp = limage_.header.stamp;
-	      lines[4*iface+3].header.stamp = limage_.header.stamp;
-	      lines[4*iface].header.frame_id = limage_.header.frame_id;
-	      lines[4*iface+1].header.frame_id = limage_.header.frame_id;
-	      lines[4*iface+2].header.frame_id = limage_.header.frame_id;
-	      lines[4*iface+3].header.frame_id = limage_.header.frame_id;
+	    lines[4*iface].header.stamp = limage_.header.stamp;
+	    lines[4*iface+1].header.stamp = limage_.header.stamp;
+	    lines[4*iface+2].header.stamp = limage_.header.stamp;
+	    lines[4*iface+3].header.stamp = limage_.header.stamp;
+	    lines[4*iface].header.frame_id = limage_.header.frame_id;
+	    lines[4*iface+1].header.frame_id = limage_.header.frame_id;
+	    lines[4*iface+2].header.frame_id = limage_.header.frame_id;
+	    lines[4*iface+3].header.frame_id = limage_.header.frame_id;
 	  
-	    }
-	  }	
+	  }
 	} // End for iface
-      }
-
-    }
+      } // End if do_display_
+    } // End if faces_vector.size()>0
 
     // Display
     if (do_display_ == "remote") {
