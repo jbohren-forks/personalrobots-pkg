@@ -388,7 +388,7 @@ void ArmTrajectoryControllerNode::getJointTrajectoryThresholds()
   }
 }
 
-void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(pr2_mechanism_controllers::JointTraj traj_msg)
+void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
   tp.resize((int)traj_msg.get_points_size()+1);
@@ -555,7 +555,7 @@ bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::
   return true;
 }
 
-int ArmTrajectoryControllerNode::createTrajectory(const pr2_mechanism_controllers::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
+int ArmTrajectoryControllerNode::createTrajectory(const robot_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
 
@@ -595,7 +595,7 @@ int ArmTrajectoryControllerNode::createTrajectory(const pr2_mechanism_controller
   return 1;
 }
 
-void ArmTrajectoryControllerNode::addTrajectoryToQueue(pr2_mechanism_controllers::JointTraj new_traj, int id)
+void ArmTrajectoryControllerNode::addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id)
 {
   joint_trajectory_vector_.push_back(new_traj);
   joint_trajectory_id_.push_back(id);
