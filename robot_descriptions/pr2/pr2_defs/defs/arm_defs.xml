@@ -180,7 +180,7 @@
       <visual> <!-- TODO: This component doesn't actually have a mesh -->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Red" />
+          <elem key="material" value="Gazebo/Fish" />
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
           <mesh filename="upper_arm_roll" scale="1 1 1" />
@@ -399,7 +399,7 @@
       <visual><!-- TODO: need a mesh for this -->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Red" />
+          <elem key="material" value="Gazebo/Fish" />
         </map>
         <geometry name="${side}_forearm_roll_visual">
           <mesh filename="forearm_roll" scale="1 1 1" />
@@ -559,7 +559,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Red" />
+          <elem key="material" value="Gazebo/Fish" />
         </map>
         <geometry name="${side}_wrist_roll_visual">
           <mesh filename="wrist_roll" />
