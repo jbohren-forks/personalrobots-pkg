@@ -86,6 +86,7 @@ $ people/bin/track_starter_gui
 #include <boost/thread/mutex.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
 
 
 // Thresholds for the face detection algorithm.
@@ -245,7 +246,8 @@ class People
    * Output:
    * A vector of CvRects containing the bounding boxes around found faces.
    */ 
-  vector<Box2D3D> detectAllFaces(IplImage *image, uint num_cascades, string* haar_classifier_filenames, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
+  vector<Box2D3D> detectAllFaces(IplImage *image, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
+  void initFaceDetection(uint num_cascades, string* haar_classifier_filenames);
 
   // Detect only known faces in an image.
   void detectKnownFaces(){}
@@ -267,8 +269,16 @@ class People
 
   /**< Grayscale image (to avoid reallocating an image each time an OpenCV function is run.) */
   IplImage *cv_image_gray_;
+  IplImage *disparity_image_;
+  CvStereoCamModel *cam_model_;
   
-  boost::mutex face_mutex_;
+  boost::mutex face_mutex_,face_go_mutex_, face_done_mutex_, t_mutex_;
+  vector<boost::mutex*> face_go_mutices_;
+  boost::thread_group threads_;
+  vector<Box2D3D> faces_;
+  boost::condition face_detection_ready_cond_, face_detection_done_cond_;
+  int num_threads_to_wait_for_;
+  int images_ready_;
 
   /* Structures for the face detector. */
   /**< Classifier cascade for face detection. */
@@ -295,7 +305,7 @@ class People
   CvHistogram *cft_start_hist_;
   CvHistogram *cft_ratio_hist_;
 
-  void faceDetectionThread(uint i, IplImage *disparity_image, CvStereoCamModel *cam_model, vector<Box2D3D> *faces);
+  void faceDetectionThread(uint i);
 
 };
 
