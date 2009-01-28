@@ -231,7 +231,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 void Segway::main_loop()
 {
   ROS_DEBUG("segway apox main_loop\n");
-	can = dgc_usbcan_initialize("/dev/ttyUSB1"); // pull from a param someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB3"); // pull from a param someday...
 
 	if (!can)
 	{
@@ -285,6 +285,7 @@ void Segway::main_loop()
 
 		if (dgc_usbcan_read_message(can, &can_id, message, &message_length))
 		{
+      rmp.AddPacket(can_id, message);
 			if (can_id == RMP_CAN_ID_MSG5)
 			{
 				if (!odom_init)
@@ -304,38 +305,31 @@ void Segway::main_loop()
           static int odom_count = 0;
           if (odom_count++ % 3 == 0) // send it at 5 hz or so
           {
-            //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
             odom.pos.x  = odom_x;
             odom.pos.y  = odom_y;
             odom.pos.th = odom_yaw;
             publish("odom", odom);
             tf.sendTransform(
-              tf::Transform(
-                tf::Quaternion(0, 0, 0), 
-                tf::Point(0.25, 0.0, 0.0)).inverse(), 
+              tf::Transform(tf::Quaternion(0, 0, 0), 
+                            tf::Point(0.25, 0.0, 0.0)).inverse(), 
               ros::Time::now(), "base_laser", "base");
             tf.sendTransform(
-              tf::Transform(
-                tf::Quaternion(odom.pos.th, 0, 0), 
-                  tf::Point(odom.pos.x, odom.pos.y, 0.0)).inverse(),
+              tf::Transform(tf::Quaternion(odom.pos.th, 0, 0), 
+                            tf::Point(odom.pos.x, odom.pos.y, 0.0)).inverse(),
               odom.header.stamp, "odom", "base");
           }
         }
         last_foreaft = rmp.foreaft;
         last_yaw = rmp.yaw;
-
-        tf.sendTransform(tf::Transform(tf::Quaternion(
-                odom.pos.th,
-                0,
-                0),
-              tf::Point(
-                odom.pos.x,
-                odom.pos.y,
-                0.0)
-              ).inverse(),
-            odom.header.stamp,
-            "odom",
-            "base");
+/*
+        static int update_count = 0;
+        if (update_count++ % 100 == 0)
+          printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
+        tf.sendTransform(
+          tf::Transform(tf::Quaternion(odom.pos.th, 0, 0),
+                        tf::Point(odom.pos.x, odom.pos.y, 0.0)).inverse(),
+            odom.header.stamp, "odom", "base");
+*/
       }
     }
 		else
