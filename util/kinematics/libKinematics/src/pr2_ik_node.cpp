@@ -34,7 +34,9 @@
 #include <libKinematics/pr2_ik_node.h>
 
 LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),root_x_(0.0),root_y_(0.0), root_z_(0.0)
-{};
+{
+    advertiseService("perform_pr2_ik", &LibKinematicsNode::processIKRequest); 
+};
 
 LibKinematicsNode::~LibKinematicsNode(){};
 
