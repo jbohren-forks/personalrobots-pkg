@@ -1,0 +1,17 @@
+<launch>
+   <group name="wg">
+    <param name="pf_laser_max_beams" value="20"/>
+    <param name="pf_min_samples" value="100"/>
+    <param name="pf_max_samples" value="200"/>
+    <param name="pf_odom_drift_xx" value="0.2"/>
+    <param name="pf_odom_drift_yy" value="0.2"/>
+    <param name="pf_odom_drift_aa" value="0.2"/>
+    <param name="pf_odom_drift_xa" value="0.2"/>
+    <param name="pf_min_d" value="0.25"/>
+    <param name="pf_min_a" value="0.524"/>
+    <param name="pf_transform_tolerance" value="0.5" />
+
+     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false"/>
+     <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen"/>
+   </group>
+</launch>

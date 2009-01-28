@@ -1,0 +1,14 @@
+<launch>
+
+  <group name="wg">
+    <param name="sicklms/port" value="/dev/ttyUSB1" />
+    <param name="sicklms/baud" value="38400" /> 
+    <param name="sicklms/inverted" value="false"/> 
+    <node pkg="sicktoolbox_wrapper" type="sicklms" output="screen" />
+
+    <node pkg="erratic_player" type="erratic_player" />
+    <node pkg="tf" type="transform_sender" args="0.03 0 0.27 0 0 0 base_laser base_link_offset 40" />
+    <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint base_link 40" /> 
+  </group>
+</launch>
+

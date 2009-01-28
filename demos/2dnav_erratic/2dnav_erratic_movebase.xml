@@ -1,0 +1,8 @@
+<launch>
+
+  <group name="wg">
+    <include file="$(find 2dnav_erratic)/lowlevel.xml"/>
+    <include file="$(find 2dnav_erratic)/launch_move_base.xml"/>
+  </group>
+</launch>
+

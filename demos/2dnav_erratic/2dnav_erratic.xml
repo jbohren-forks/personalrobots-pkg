@@ -1,10 +1,7 @@
 <launch>
 
   <group name="wg">
-    <node pkg="erratic_player" type="erratic_player" output="screen" />
-    <node pkg="hokuyo_node" type="hokuyo_node" output="screen" />
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.pgm 0.1" respawn="false" output="screen"/>
-    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen"/>
+    <include file="$(find 2dnav_erratic)/lowlevel.xml"/>    
     <node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen" />
   </group>
 </launch>

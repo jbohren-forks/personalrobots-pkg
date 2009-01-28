@@ -1,0 +1,46 @@
+<launch>
+
+  <group name="wg">  
+
+    <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ARAPlanner"/>
+    <param name="move_base/environmentType" value="2D"/>
+    <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/planner_frequency" value="0.5"/>
+    <param name="move_base/plannerTimeLimit" value="1.9"/>
+    <param name="/trajectory_rollout/xy_goal_tolerance" value="0.25"/>
+    <param name="/trajectory_rollout/acc_limit_y" value="0"/>
+    <param name="/trajectory_rollout/occdist_scale" value="0"/>  
+    <param name="/costmap_2d/base_laser_max_range" value="10.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="10.0"/>
+    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+    <param name="/costmap_2d/no_information_value" value="255"/>
+    <param name="/costmap_2d/z_threshold_min" value="-2.0"/>
+    <param name="/costmap_2d/z_threshold_max" value="2.0"/> 
+    <param name="/costmap_2d/zLB" value="-2.0"/> 
+    <param name="/costmap_2d/zUB" value="2.0"/>  
+    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
+    <param name="/costmap_2d/inflation_radius" value="0.25"/>
+    <param name="/costmap_2d/circumscribed_radius" value="0.25"/>
+    <param name="/costmap_2d/inscribed_radius" value="0.20"/>
+    <param name="/costmap_2d/robot_radius" value="0.20"/> 
+    <param name="/costmap_2d/raytrace_window" value="10.0"/>
+    <param name="/costmap_2d/weight" value="0.1"/>
+    <param name="/costmap_2d/base_laser_keepalive" value="0"/>
+
+    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
+	 way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
+    <param name="/costmap_2d/base_laser_update_rate" value="1.0"/>
+
+    <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
+	 are not getting any data -->
+    <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/>
+    <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>
+    <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" output="screen">
+      <remap from="base_scan" to="scan"/>
+    </node>
+  </group>
+</launch>
