@@ -324,5 +324,5 @@ namespace costmap_2d {
     unsigned int mx_0_;
     unsigned int my_0_;
   };
-}
+};
 #endif

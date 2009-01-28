@@ -46,7 +46,8 @@ namespace costmap_2d {
   class Observation {
   public:
     // Structors
-  Observation(std_msgs::Point& p, std_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
+    Observation() : cloud_(NULL){}
+    Observation(std_msgs::Point& p, std_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
     Observation(const Observation& org): origin_(org.origin_), cloud_(org.cloud_){}
 
     std_msgs::Point origin_;
