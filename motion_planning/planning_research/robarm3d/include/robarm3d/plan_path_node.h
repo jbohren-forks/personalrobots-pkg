@@ -31,8 +31,8 @@
 
 #include <iostream>
 #include "../../src/headers.h"
-#include <pr2_mechanism_controllers/JointTraj.h>
-#include <pr2_mechanism_controllers/JointTrajPoint.h>
+#include <robot_msgs/JointTraj.h>
+#include <robot_msgs/JointTrajPoint.h>
 #include <ros/node.h>
 #include <std_msgs/Point.h>
 #include <robarm3d/PlanPathSrv.h>
@@ -51,7 +51,7 @@ namespace plan_path_node
 
     ~PlanPathNode();
     
-    int planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint &start, const std_msgs::Point &goal, pr2_mechanism_controllers::JointTraj &armpath);
+    int planrobarmROS(const robot_msgs::JointTrajPoint &start, const std_msgs::Point &goal, robot_msgs::JointTraj &armpath);
 
     std::string filename_;
 

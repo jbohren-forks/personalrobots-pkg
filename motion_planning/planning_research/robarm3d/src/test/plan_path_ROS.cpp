@@ -1,6 +1,6 @@
 #include <iostream>
 #include "../headers.h"
-#include <pr2_mechanism_controllers/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 
 #define VERBOSE 1
 #define MAX_RUNTIME 60.0
@@ -89,7 +89,7 @@ int planrobarmROS(int argc, char *argv[])
     
     //create a ROS JointTraj message for path that was generated
     double angles_r[NUMOFLINKS];
-    pr2_mechanism_controllers::JointTraj armpath;
+    robot_msgs::JointTraj armpath;
     armpath.set_points_size(solution_stateIDs_V.size());
 
 
