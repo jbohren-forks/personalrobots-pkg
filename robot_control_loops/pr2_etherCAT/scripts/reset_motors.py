@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 
 import rostools
-rostools.update_path('mechanism_control')
-rostools.update_path('std_srvs')
+rostools.load_manifest('mechanism_control')
 import rospy, sys
 import std_srvs.srv
 reset = rospy.ServiceProxy("reset_motors", std_srvs.srv.Empty)
