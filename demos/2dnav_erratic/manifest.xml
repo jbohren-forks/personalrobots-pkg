@@ -6,8 +6,8 @@
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="amcl_player"/>
   <depend package="erratic_player"/>
-  <depend package="hokuyo_node"/>
+  <depend package="sicktoolbox_wrapper"/>
   <depend package="map_server"/>
   <depend package="wavefront_player"/>
-  <depend package="trajectory_rollout"/>
+  <depend package="highlevel_controllers"/>
 </package>
