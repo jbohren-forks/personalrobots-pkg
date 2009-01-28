@@ -75,22 +75,22 @@
 
 #define COMMAND_TIMEOUT_SEC 0.2
 
-#define LINKL0 "l_shoulder_pan_joint"
-#define LINKL1 "l_shoulder_lift_joint"
-#define LINKL2 "l_upper_arm_roll_joint"
-#define LINKL3 "l_elbow_flex_joint"
-#define LINKL4 "l_forearm_roll_joint"
-#define LINKL5 "l_wrist_flex_joint"
-#define LINKL6 "l_wrist_roll_joint"
-#define LINKL7 "l_gripper_joint"
-#define LINKR0 "r_shoulder_pan_joint"
-#define LINKR1 "r_shoulder_lift_joint"
-#define LINKR2 "r_upper_arm_roll_joint"
-#define LINKR3 "r_elbow_flex_joint"
-#define LINKR4 "r_forearm_roll_joint"
-#define LINKR5 "r_wrist_flex_joint"
-#define LINKR6 "r_wrist_roll_joint"
-#define LINKR7 "r_gripper_joint"
+#define L_LINK_NAME_0 "l_shoulder_pan_joint"
+#define L_LINK_NAME_1 "l_shoulder_lift_joint"
+#define L_LINK_NAME_2 "l_upper_arm_roll_joint"
+#define L_LINK_NAME_3 "l_elbow_flex_joint"
+#define L_LINK_NAME_4 "l_forearm_roll_joint"
+#define L_LINK_NAME_5 "l_wrist_flex_joint"
+#define L_LINK_NAME_6 "l_wrist_roll_joint"
+#define L_LINK_NAME_7 "l_gripper_joint"
+#define R_LINK_NAME_0 "r_shoulder_pan_joint"
+#define R_LINK_NAME_1 "r_shoulder_lift_joint"
+#define R_LINK_NAME_2 "r_upper_arm_roll_joint"
+#define R_LINK_NAME_3 "r_elbow_flex_joint"
+#define R_LINK_NAME_4 "r_forearm_roll_joint"
+#define R_LINK_NAME_5 "r_wrist_flex_joint"
+#define R_LINK_NAME_6 "r_wrist_roll_joint"
+#define R_LINK_NAME_7 "r_gripper_joint"
 
 #define LEFT_ARM_COMMAND_TOPIC "left_arm_commands"
 #define RIGHT_ARM_COMMAND_TOPIC "right_arm_commands"
@@ -132,13 +132,13 @@ class TeleopArmKeyboardNode : public ros::Node
       this->lArmCmd.set_margins_size(7);
       this->rArmCmd.set_margins_size(7);
 
-      this->lArmCmd.names[0] = LINKL0;
-      this->lArmCmd.names[1] = LINKL1;
-      this->lArmCmd.names[2] = LINKL2;
-      this->lArmCmd.names[3] = LINKL3;
-      this->lArmCmd.names[4] = LINKL4;
-      this->lArmCmd.names[5] = LINKL5;
-      this->lArmCmd.names[6] = LINKL6;
+      this->lArmCmd.names[0] = L_LINK_NAME_0;
+      this->lArmCmd.names[1] = L_LINK_NAME_1;
+      this->lArmCmd.names[2] = L_LINK_NAME_2;
+      this->lArmCmd.names[3] = L_LINK_NAME_3;
+      this->lArmCmd.names[4] = L_LINK_NAME_4;
+      this->lArmCmd.names[5] = L_LINK_NAME_5;
+      this->lArmCmd.names[6] = L_LINK_NAME_6;
 
       this->lArmCmd.positions[0] = 0;
       this->lArmCmd.positions[1] = 0;
@@ -156,13 +156,13 @@ class TeleopArmKeyboardNode : public ros::Node
       this->lArmCmd.margins[5] = 0;
       this->lArmCmd.margins[6] = 0;
 
-      this->rArmCmd.names[0] = LINKR0;
-      this->rArmCmd.names[1] = LINKR1;
-      this->rArmCmd.names[2] = LINKR2;
-      this->rArmCmd.names[3] = LINKR3;
-      this->rArmCmd.names[4] = LINKR4;
-      this->rArmCmd.names[5] = LINKR5;
-      this->rArmCmd.names[6] = LINKR6;
+      this->rArmCmd.names[0] = R_LINK_NAME_0;
+      this->rArmCmd.names[1] = R_LINK_NAME_1;
+      this->rArmCmd.names[2] = R_LINK_NAME_2;
+      this->rArmCmd.names[3] = R_LINK_NAME_3;
+      this->rArmCmd.names[4] = R_LINK_NAME_4;
+      this->rArmCmd.names[5] = R_LINK_NAME_5;
+      this->rArmCmd.names[6] = R_LINK_NAME_6;
 
       this->rArmCmd.positions[0] = 0;
       this->rArmCmd.positions[1] = 0;
@@ -253,19 +253,19 @@ int main(int argc, char** argv)
 }
 
 void TeleopArmKeyboardNode::openGripper(std::string joint_name) {
-  if(joint_name == LINKR7 ) {
+  if(joint_name == R_LINK_NAME_7 ) {
     this->rGripperCmd.data = .2;
     printf("Opening right gripper\n");
-  } else if(joint_name == LINKL7 ) {
+  } else if(joint_name == L_LINK_NAME_7 ) {
     this->lGripperCmd.data = .2;
     printf("Opening left gripper\n");
   }
 }
 
 void TeleopArmKeyboardNode::closeGripper(std::string joint_name) {
-  if(joint_name == LINKR7 ) {
+  if(joint_name == R_LINK_NAME_7 ) {
     this->rGripperCmd.data = 0;
-  } else if(joint_name == LINKL7 ) {
+  } else if(joint_name == L_LINK_NAME_7 ) {
     this->lGripperCmd.data = 0;
   }
 }
@@ -273,38 +273,38 @@ void TeleopArmKeyboardNode::closeGripper(std::string joint_name) {
 
 void TeleopArmKeyboardNode::changeJointAngle(std::string joint_name, double direction)
 {
-  if (joint_name == LINKL0)
+  if (joint_name == L_LINK_NAME_0)
       this->lArmCmd.positions[0] += direction * this->jointCmdStep;
-  if (joint_name == LINKL1)
+  if (joint_name == L_LINK_NAME_1)
       this->lArmCmd.positions[1] += direction * this->jointCmdStep;
-  if (joint_name == LINKL2)
+  if (joint_name == L_LINK_NAME_2)
       this->lArmCmd.positions[2] += direction * this->jointCmdStep;
-  if (joint_name == LINKL3)
+  if (joint_name == L_LINK_NAME_3)
       this->lArmCmd.positions[3] += direction * this->jointCmdStep;
-  if (joint_name == LINKL4)
+  if (joint_name == L_LINK_NAME_4)
       this->lArmCmd.positions[4] += direction * this->jointCmdStep;
-  if (joint_name == LINKL5)
+  if (joint_name == L_LINK_NAME_5)
       this->lArmCmd.positions[5] += direction * this->jointCmdStep;
-  if (joint_name == LINKL6)
+  if (joint_name == L_LINK_NAME_6)
       this->lArmCmd.positions[6] += direction * this->jointCmdStep;
-  if (joint_name == LINKL7)
+  if (joint_name == L_LINK_NAME_7)
       this->lGripperCmd.data     += direction * this->gripperStep;
 
-  if (joint_name == LINKR0)
+  if (joint_name == R_LINK_NAME_0)
       this->rArmCmd.positions[0] += direction * this->jointCmdStep;
-  if (joint_name == LINKR1)
+  if (joint_name == R_LINK_NAME_1)
       this->rArmCmd.positions[1] += direction * this->jointCmdStep;
-  if (joint_name == LINKR2)
+  if (joint_name == R_LINK_NAME_2)
       this->rArmCmd.positions[2] += direction * this->jointCmdStep;
-  if (joint_name == LINKR3)
+  if (joint_name == R_LINK_NAME_3)
       this->rArmCmd.positions[3] += direction * this->jointCmdStep;
-  if (joint_name == LINKR4)
+  if (joint_name == R_LINK_NAME_4)
       this->rArmCmd.positions[4] += direction * this->jointCmdStep;
-  if (joint_name == LINKR5)
+  if (joint_name == R_LINK_NAME_5)
       this->rArmCmd.positions[5] += direction * this->jointCmdStep;
-  if (joint_name == LINKR6)
+  if (joint_name == R_LINK_NAME_6)
       this->rArmCmd.positions[6] += direction * this->jointCmdStep;
-  if (joint_name == LINKR7)
+  if (joint_name == R_LINK_NAME_7)
       this->rGripperCmd.data     += direction * this->gripperStep;
 }
 
@@ -313,7 +313,7 @@ void TeleopArmKeyboardNode::keyboardLoop()
 {
   char c;
   bool dirty=false;
-  std::string current_joint_name = LINKL0; // joint which will be actuated.
+  std::string current_joint_name = L_LINK_NAME_0; // joint which will be actuated.
   bool right_arm = false;
 
   // get the console in raw mode
@@ -385,35 +385,35 @@ void TeleopArmKeyboardNode::keyboardLoop()
       switch(c)
       {
         case '1':
-          current_joint_name = LINKL0;
+          current_joint_name = L_LINK_NAME_0;
           printf("left turret\n");
           break;
         case '2':
-          current_joint_name = LINKL1;
+          current_joint_name = L_LINK_NAME_1;
           printf("left shoulder pitch\n");
           break;
         case '3':
-          current_joint_name = LINKL2;
+          current_joint_name = L_LINK_NAME_2;
           printf("left shoulder roll\n");
           break;
         case '4':
-          current_joint_name = LINKL3;
+          current_joint_name = L_LINK_NAME_3;
           printf("left elbow pitch\n");
           break;
         case '5':
-          current_joint_name = LINKL4;
+          current_joint_name = L_LINK_NAME_4;
           printf("left elbow roll\n");
           break;
         case '6':
-          current_joint_name = LINKL5;
+          current_joint_name = L_LINK_NAME_5;
           printf("left wrist pitch\n");
           break;
         case '7':
-          current_joint_name = LINKL6;
+          current_joint_name = L_LINK_NAME_6;
           printf("left wrist roll\n");
           break;
         case '8':
-          current_joint_name = LINKL7;
+          current_joint_name = L_LINK_NAME_7;
           printf("left gripper\n");
           break;
         case '9':
@@ -427,35 +427,35 @@ void TeleopArmKeyboardNode::keyboardLoop()
       switch(c)
       {
         case '1':
-          current_joint_name = LINKR0;
+          current_joint_name = R_LINK_NAME_0;
           printf("right turret\n");
           break;
         case '2':
-          current_joint_name = LINKR1;
+          current_joint_name = R_LINK_NAME_1;
           printf("right shoulder pitch\n");
           break;
         case '3':
-          current_joint_name = LINKR2;
+          current_joint_name = R_LINK_NAME_2;
           printf("right shoulder roll\n");
           break;
         case '4':
-          current_joint_name = LINKR3;
+          current_joint_name = R_LINK_NAME_3;
           printf("right elbow pitch\n");
           break;
         case '5':
-          current_joint_name = LINKR4;
+          current_joint_name = R_LINK_NAME_4;
           printf("right elbow roll\n");
           break;
         case '6':
-          current_joint_name = LINKR5;
+          current_joint_name = R_LINK_NAME_5;
           printf("right wrist pitch\n");
           break;
         case '7':
-          current_joint_name = LINKR6;
+          current_joint_name = R_LINK_NAME_6;
           printf("right wrist roll\n");
           break;
         case '8':
-          current_joint_name = LINKR7;
+          current_joint_name = R_LINK_NAME_7;
           printf("right gripper\n");
           break;
         case '9':
