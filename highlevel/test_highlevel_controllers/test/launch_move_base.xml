@@ -26,12 +26,13 @@
 	 way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
     <param name="/costmap_2d/base_laser_update_rate" value="2.0"/>
 
+    <param name="/trajectory_rollout/map_size" value="4.0" />
     <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
     <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_granularity" value="0.025" />
-    <param name="/trajectory_rollout/samples_per_dim" value="20" />
+    <param name="/trajectory_rollout/sim_granularity" value="0.01" />
+    <param name="/trajectory_rollout/samples_per_dim" value="25" />
     <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
     <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
     <param name="/trajectory_rollout/occdist_scale" value="0.2" />
