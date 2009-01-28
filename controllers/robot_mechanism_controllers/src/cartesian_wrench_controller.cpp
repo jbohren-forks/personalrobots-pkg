@@ -76,9 +76,9 @@ bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, c
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
-  jnt_pos_ = JntArray(num_joints_);
-  jnt_eff_ = JntArray(num_joints_);
-  jacobian_ = Jacobian(num_joints_, num_segments_);
+  jnt_pos_.resize(num_joints_);
+  jnt_eff_.resize(num_joints_);
+  jacobian_.resize(num_joints_, num_segments_);
 
   // set desired wrench to 0
   wrench_desi_ = Wrench::Zero();

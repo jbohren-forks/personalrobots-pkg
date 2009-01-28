@@ -79,7 +79,7 @@ bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_stat
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  jnt_pos_ = JntArray(num_joints_);
+  jnt_pos_.resize(num_joints_);
 
   // initialize motion profile
   double max_vel_trans, max_vel_rot, max_acc_trans, max_acc_rot;
