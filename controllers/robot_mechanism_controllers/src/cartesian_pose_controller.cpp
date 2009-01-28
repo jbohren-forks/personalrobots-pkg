@@ -43,16 +43,17 @@ using namespace KDL;
 using namespace tf;
 
 
+static const std::string controller_name = "cartesian_pose";
+
+
 namespace controller {
 
 
 
-ROS_REGISTER_CONTROLLER(CartesianPoseController)
-
-
 CartesianPoseController::CartesianPoseController()
-: jnt_to_pose_solver_(NULL),
-  joints_(0,(mechanism::JointState*)NULL)
+: node_(ros::Node::instance()),
+  robot_state_(NULL),
+  jnt_to_pose_solver_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
@@ -61,104 +62,47 @@ CartesianPoseController::~CartesianPoseController()
 }
 
 
-
-bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name)
 {
-  fprintf(stderr, "initializing pose controller\n");
+  cout << "initializing cartesian pose controller between " << root_name << " and " << tip_name << endl;
 
   // test if we got robot pointer
-  assert(robot);
-  robot_ = robot;
+  assert(robot_state);
+  robot_state_ = robot_state;
 
-  // get pid controller
-  TiXmlElement *p_pose = config->FirstChildElement("pid_pose");
-  control_toolbox::Pid pid_pose;
-  pid_pose.initXml(p_pose);
-  for (unsigned int i=0; i<6; i++)
-    pid_controller_.push_back(pid_pose);
-  fprintf(stderr, "pid controllers created\n");
+  // create robot chain from root to tip
+  if (!robot_.init(robot_state->model_, root_name, tip_name))
+    return false;
+  robot_.toKDL(chain_);
 
-  // time
-  last_time_ = robot->hw_->current_time_;
-
-  // create twist controller
-  twist_controller_.initXml(robot, config);
-
-  // parse robot description from xml file
-  ros::Node *node = ros::Node::instance();
-  robot_kinematics::RobotKinematics robot_kinematics ;
-  string robot_desc;
-  node->param("robotdesc/pr2", robot_desc, string("")) ;
-  printf("RobotDesc.length() = %u\n", robot_desc.length());
-  robot_kinematics.loadString(robot_desc.c_str()) ;
-  robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm");
-  if (serial_chain == NULL)  
-    fprintf(stderr, "Got NULL Chain\n") ;
-
-  // convert description to KDL chain
-  chain_        = serial_chain->chain;
+  // create solver
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
-  printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
+  jnt_pos_ = JntArray(num_joints_);
 
-  // get chain
-  TiXmlElement *chain = config->FirstChildElement("chain");
-  if (!chain) {
-    fprintf(stderr, "Error: CartesianPoseController was not given a chain\n");
-    return false;
-  }
+  // get pid controller
+  double p, i, d, i_clamp;
+  node_->param(controller_name+"/p", p, 0.0) ;
+  node_->param(controller_name+"/i", i, 0.0) ;
+  node_->param(controller_name+"/d", d, 0.0) ;
+  node_->param(controller_name+"/i_clamp", i_clamp, 0.0) ;
+  control_toolbox::Pid pid_pose(p, i, d, i_clamp, -i_clamp);
+  for (unsigned int i=0; i<6; i++)
+    pid_controller_.push_back(pid_pose);
+  fprintf(stderr, "cartesian twist pid controllers created\n");
 
-  // get names for root and tip of robot
-  const char *root_name = chain->Attribute("root");
-  root_link_ = root_name;
-  const char *tip_name = chain->Attribute("tip");
-  if (!root_name) {
-    fprintf(stderr, "Error: Chain element for CartesianPoseController must specify the root\n");
-    return false;
-  }
-  if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for CartesianPoseController must specify the tip\n");
-    return false;
-  }
-
-  // test if we can get root from robot
-  if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianPoseController)\n", root_name);
-    return false;
-  }
-
-  // get tip from robot
-  mechanism::LinkState *current = robot->getLinkState(tip_name);
-  if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (CartesianPoseController)\n", tip_name);
-    return false;
-
-  }
-
-  // Works up the chain, from the tip to the root, and get joints
-  while (current->link_->name_ != std::string(root_name)) 
-    {
-      // get joint from current link
-      joints_.push_back(robot->getJointState(current->link_->joint_name_));
-      assert(joints_[joints_.size()-1]);
-      
-      // get parent link
-      current = robot->getLinkState(current->link_->parent_name_);
-      
-      if (!current) {
-	  fprintf(stderr, "Error: for CartesianPoseController, tip is not connected to root\n");
-	  return false;
-	}
-    }
-  // reverse order of joint vector
-  std::reverse(joints_.begin(), joints_.end());
+  // time
+  last_time_ = robot_state->hw_->current_time_;
 
   // set desired pose to current pose
   pose_desi_ = getPose();
 
   // set the twist feedworward to zero
   twist_ff_ = Twist::Zero();
+
+  // initialize twist controller
+  twist_controller_.initialize(robot_state, root_name, tip_name);
 
   return true;
 }
@@ -170,9 +114,13 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot, TiXmlElement
 
 void CartesianPoseController::update()
 {
-  // get current time
-  double time = robot_->hw_->current_time_;
+  // check if joints are calibrated
+  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
+
+  // get time
+  double time = robot_state_->hw_->current_time_;
   double dt = time - last_time_;
+  last_time_ = time;
 
   // get current pose
   pose_meas_ = getPose();
@@ -186,34 +134,18 @@ void CartesianPoseController::update()
   // send feedback twist and feedforward twist to twist controller
   twist_controller_.twist_desi_ = twist_fb + twist_ff_;
   twist_controller_.update();
-
-  // remember time
-  last_time_ = time;
 }
 
 
 
 Frame CartesianPoseController::getPose()
 {
-  // check if joints are calibrated
-  for (unsigned int i = 0; i < joints_.size(); ++i) {
-    if (!joints_[i]->calibrated_)
-      fprintf(stderr,"Joint not calibrated\n");
-  }
-
-  // get the joint positions 
-  JntArray jnt_pos(num_joints_);
-  unsigned int i_corr = 0;
-  for (unsigned int i=0; i<num_joints_; i++){
-    while (joints_[i_corr]->joint_->type_ ==  mechanism::JOINT_FIXED)
-      i_corr++;
-    jnt_pos(i) = joints_[i_corr]->position_;
-    i_corr++;
-  }
+  // get the joint positions and velocities
+  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // get cartesian pose
   Frame result;
-  jnt_to_pose_solver_->JntToCart(jnt_pos, result);
+  jnt_to_pose_solver_->JntToCart(jnt_pos_, result);
 
   return result;
 }
@@ -233,6 +165,7 @@ CartesianPoseControllerNode::CartesianPoseControllerNode()
   command_notifier_(NULL)
 {}
 
+
 CartesianPoseControllerNode::~CartesianPoseControllerNode()
 {
   if (command_notifier_) delete command_notifier_;
@@ -241,20 +174,19 @@ CartesianPoseControllerNode::~CartesianPoseControllerNode()
 
 bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get name of topic to listen to
-  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic_ == "") {
-    fprintf(stderr, "No topic given to CartesianPoseControllerNode\n");
-    return false;
-  }
+  // get name of root and tip
+  string tip_name;
+  node_->param(controller_name+"/root_name", root_name_, string("no_name_given"));
+  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initXml(robot, config))
+  if (!controller_.initialize(robot, root_name_, tip_name))
     return false;
   
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  boost::bind(&CartesianPoseControllerNode::command, this, _1), topic_ + "/command", controller_.root_link_, 1);
-
+  command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  
+								 boost::bind(&CartesianPoseControllerNode::command, this, _1),
+								 controller_name + "/command", root_name_, 1);
   return true;
 }
 
@@ -272,14 +204,8 @@ void CartesianPoseControllerNode::command(const tf::MessageNotifier<std_msgs::Po
   PoseStampedMsgToTF(*pose_msg, pose_stamped);
 
   // convert to reference frame of root link of the controller chain  
-  robot_state_.transformPose(controller_.root_link_, pose_stamped, pose_stamped);
+  robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
   TransformToFrame(pose_stamped, controller_.pose_desi_);
-
-  //controller_.pose_desi_.p(0) = pose_msg_.pose.position.x;
-  //controller_.pose_desi_.p(1) = pose_msg_.pose.position.y;
-  //controller_.pose_desi_.p(2) = pose_msg_.pose.position.z;
-  //controller_.pose_desi_.M = Rotation::Quaternion(pose_msg_.pose.orientation.x, pose_msg_.pose.orientation.y,
-  //					  pose_msg_.pose.orientation.z, pose_msg_.pose.orientation.w);
 }
 
 

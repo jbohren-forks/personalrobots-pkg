@@ -47,13 +47,13 @@
 
 namespace controller {
 
-class CartesianTwistController : public Controller
+class CartesianTwistController
 {
 public:
   CartesianTwistController();
   ~CartesianTwistController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
   void update();
 
   // input of the controller
@@ -64,21 +64,21 @@ public:
 
 
 private:
+  ros::Node* node_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
-
-  // robot structure
-  mechanism::RobotState *robot_;       
 
   // pid controllers
   std::vector<control_toolbox::Pid> pid_controller_;     
 
+  // robot description
+  mechanism::RobotState *robot_state_;
+  mechanism::Chain robot_;
+
   // kdl stuff for kinematics
   KDL::Chain             chain_;
   KDL::ChainFkSolverVel* jnt_to_twist_solver_;
-
-  // to get joint positions, velocities, and to set joint torques
-  std::vector<mechanism::JointState*> joints_; 
+  KDL::JntArrayVel       jnt_posvel_;
 
   // internal wrench controller
   CartesianWrenchController wrench_controller_;
@@ -92,7 +92,7 @@ private:
 class CartesianTwistControllerNode : public Controller
 {
  public:
-  CartesianTwistControllerNode() {};
+  CartesianTwistControllerNode();
   ~CartesianTwistControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
@@ -103,6 +103,7 @@ class CartesianTwistControllerNode : public Controller
   void joystick();
   
  private:
+  ros::Node* node_;
   double joystick_max_trans_, joystick_max_rot_;
   std::string topic_;
 

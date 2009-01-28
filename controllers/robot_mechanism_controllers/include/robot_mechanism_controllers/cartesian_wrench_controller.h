@@ -47,24 +47,28 @@
 
 namespace controller {
 
-class CartesianWrenchController : public Controller
+class CartesianWrenchController 
 {
 public:
   CartesianWrenchController();
   ~CartesianWrenchController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
   void update();
 
   // input of the controller
   KDL::Wrench wrench_desi_;
 
 private:
-  mechanism::RobotState *robot_;
+  ros::Node* node_;
+  unsigned int num_joints_, num_segments_;
+  mechanism::RobotState *robot_state_;
+  mechanism::Chain robot_;
 
-  mechanism::Chain chain_;
-  KDL::Chain kdl_chain_;
+  KDL::Chain chain_;
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
+  KDL::JntArray jnt_pos_, jnt_eff_;
+  KDL::Jacobian jacobian_;
 };
 
 
@@ -75,7 +79,7 @@ private:
 class CartesianWrenchControllerNode : public Controller
 {
  public:
-  CartesianWrenchControllerNode() {};
+  CartesianWrenchControllerNode();
   ~CartesianWrenchControllerNode();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
@@ -83,8 +87,7 @@ class CartesianWrenchControllerNode : public Controller
   void command();
 
  private:
-  std::string topic_;
-
+  ros::Node* node_;
   CartesianWrenchController controller_;
 
   robot_msgs::Wrench wrench_msg_;

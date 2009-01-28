@@ -47,30 +47,30 @@
 
 namespace controller {
 
-class CartesianPoseController : public Controller
+class CartesianPoseController
 {
 public:
   CartesianPoseController();
   ~CartesianPoseController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
   void update();
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
   KDL::Twist twist_ff_;
 
-  // root link of the controller
-  std::string root_link_;
 
 private:
   KDL::Frame getPose();
 
+  ros::Node* node_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
 
   // robot structure
-  mechanism::RobotState *robot_;       
+  mechanism::RobotState *robot_state_;       
+  mechanism::Chain robot_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> pid_controller_;     
@@ -78,6 +78,7 @@ private:
   // kdl stuff for kinematics
   KDL::Chain             chain_;
   KDL::ChainFkSolverPos* jnt_to_pose_solver_;
+  KDL::JntArray          jnt_pos_;
 
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_; 
@@ -105,8 +106,7 @@ class CartesianPoseControllerNode : public Controller
   ros::Node* node_;
   tf::TransformListener robot_state_;
   tf::MessageNotifier<std_msgs::PoseStamped>* command_notifier_;
-
-  std::string topic_;
+  std::string root_name_;
 
   CartesianPoseController controller_;
 
