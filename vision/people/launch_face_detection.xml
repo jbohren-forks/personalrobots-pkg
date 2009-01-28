@@ -1,6 +1,6 @@
 <launch>
   <!-- Face detection -->
-  <node pkg="people" type="face_detector" args="face_detection_nodes.txt none" output="screen" />
-  <!-- args="<filename containing training file paths and reliabilities> <haar cascade path> <output mode: none, local, remote> -->
+  <node pkg="people" type="face_detector" args="face_detection_nodes.txt local" output="screen" />
+  <!-- args="<filename containing training file paths and reliabilities> <output mode: none, local, remote> -->
 </launch>
 
