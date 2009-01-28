@@ -180,7 +180,10 @@ namespace kinematic_planning
 		ROS_ERROR("Motion plan cannot be computed %d times", times);
 		return false;
 	    }
-	    
+
+	    if (dynamic_cast<ompl::SpaceInformationKinematic::GoalRegionKinematic_t>(psetup->si->getGoal()))
+		ROS_INFO("Goal threshold is %g", dynamic_cast<ompl::SpaceInformationKinematic::GoalRegionKinematic_t>(psetup->si->getGoal())->threshold);
+
 	    unsigned int t_index = 0;
 	    double t_distance = 0.0;
 	    bool result = psetup->mp->isTrivial(&t_index, &t_distance);

@@ -183,9 +183,9 @@ public:
 	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
 	// determine intervals; a value of 0 means forever
-	param("refresh_interval_collision_map", m_intervalCollisionMap, 5.0);
-	param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.2);
-	param("refresh_interval_base_pose", m_intervalBasePose, 1.0);
+	param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
+	param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
+	param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
     }
     
     /** Free the memory */
@@ -490,6 +490,7 @@ public:
 	    
 	    if (trivial)
 		break;
+	    
 	    while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
 	}
@@ -601,6 +602,13 @@ public:
 	    else
 		ROS_INFO("Currently executed path is still valid");
 	}
+	else
+	    if (!m_currentPlanStatus.valid)
+	    {
+		m_collisionMonitorChange = true;
+		update = true;
+	    }
+	
 	m_statusLock.unlock();
 	m_continueReplanningLock.unlock();
 
