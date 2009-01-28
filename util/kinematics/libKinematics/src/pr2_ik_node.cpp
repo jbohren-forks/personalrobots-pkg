@@ -209,6 +209,7 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::request &req, ro
         resp.traj.points[i].positions[j] = arm_kinematics_->solution_ik_[i][j]; 
       }
     }
+
     return true;
   }
   return false;

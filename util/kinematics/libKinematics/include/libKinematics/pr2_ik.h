@@ -69,7 +69,7 @@ namespace kinematics
 
     double increment_;
 
-    bool computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_guess);
+    bool computeIKFast(NEWMAT::Matrix g, int joint_num, double &initial_guess);
 
     bool computeIKFastWithConstraints(NEWMAT::Matrix g, int joint_num, double initial_guess);
 

@@ -942,7 +942,7 @@ bool arm7DOF::computeNewGuess(const double &initial_value, double &return_val, i
   return false;  
 }
 
-bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_guess)
+bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double &initial_guess)
 {
   if(!(joint_num == 0 || joint_num == 2))
   {
@@ -969,6 +969,7 @@ bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_gues
       ComputeIKEfficient(g,current_guess);
       if(solution_ik_.size() > 0)
       {
+        initial_guess = current_guess;
         return true;
       }
       if(!computeNewGuess(initial_guess,current_guess,joint_num))
@@ -987,6 +988,7 @@ bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double initial_gues
 //      printf("current_guess:: %f\n",current_guess);
       if(solution_ik_.size() > 0)
       {
+           initial_guess = current_guess;
             return true;
       }
       if(!computeNewGuess(initial_guess,current_guess,joint_num))
