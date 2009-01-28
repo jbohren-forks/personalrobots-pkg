@@ -41,7 +41,7 @@
 #include <std_msgs/Point2DFloat32.h>
 #include <std_msgs/Point32.h>
 #include <costmap_2d/observation.h>
-#include <freespace_controller/world_model.h>
+#include <trajectory_rollout/world_model.h>
 
 namespace trajectory_rollout {
   /**

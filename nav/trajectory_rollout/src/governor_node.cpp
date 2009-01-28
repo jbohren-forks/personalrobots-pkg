@@ -37,186 +37,188 @@
 using namespace std;
 using namespace trajectory_rollout;
 
-
-GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
-  ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
-  tf_(*this, true, (uint64_t)10000000000ULL), 
-  ma_(map_, OUTER_RADIUS),
-  tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, 
-      PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_, footprint_spec),
-  cycle_time_(0.1)
-{
-  robot_vel_.setIdentity();
-  robot_vel_.frame_id_ = "base_link";
-  robot_vel_.stamp_ = ros::Time();
-
-  //so we can draw the local path
-  advertise<std_msgs::Polyline2D>("local_path", 10);
-
-  //so we can draw the robot footprint to help with debugging
-  advertise<std_msgs::Polyline2D>("robot_footprint", 10);
-
-  advertise<std_msgs::BaseVel>("cmd_vel", 1);
-  subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
-  subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
-}
-
-void GovernorNode::odomReceived(){
-  //we want to make sure that processPlan isn't using robot_vel_
-  vel_lock.lock();
-
-  btQuaternion qt(odom_msg_.vel.th, 0, 0);
-  robot_vel_.setData(btTransform(qt, btVector3(odom_msg_.vel.x, odom_msg_.vel.y, 0)));
-  robot_vel_.frame_id_ = "base_link";
-  robot_vel_.stamp_ = ros::Time();
-
-  //give robot_vel_ back
-  vel_lock.unlock();
-}
-
-void GovernorNode::planReceived(){
-  //make sure we don't process the map while we update it
-  map_lock.lock();
-  
-  //update the map from the message
-  map_.update(plan_msg_.map);
-
-  // Synchronize the obstacle data
-  ma_.synchronize();
-
-  //update the global plan from the message
-  vector<std_msgs::Point2DFloat32> plan;
-
-  for(unsigned int i = 0; i < plan_msg_.plan.get_path_size(); ++i){
-    plan.push_back(plan_msg_.plan.path[i]);
-  }
-  tc_.updatePlan(plan);
-
-  map_lock.unlock();
-}
-
-void GovernorNode::processPlan(){
-  tf::Stamped<tf::Pose> robot_pose, global_pose;
-  robot_pose.setIdentity();
-  robot_pose.frame_id_ = "base_link";
-  robot_pose.stamp_ = ros::Time();
-
-  try
+namespace trajectory_rollout{
+  GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
+    ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
+    tf_(*this, true, (uint64_t)10000000000ULL), 
+    ma_(map_, OUTER_RADIUS),
+    cm_(ma_),
+    tc_(cm_, ma_, footprint_spec, ROBOT_SIDE_RADIUS, OUTER_RADIUS, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, 
+        SIM_TIME, SIM_RES, VEL_SAMPLES, PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE),
+    cycle_time_(0.1)
   {
-    tf_.transformPose("map", robot_pose, global_pose);
-  }
-  catch(tf::LookupException& ex)
-  {
-    puts("no global->local Tx yet");
-    printf("%s\n", ex.what());
-    return;
-  }
-  catch(tf::ConnectivityException& ex)
-  {
-    puts("no global->local Tx yet");
-    printf("%s\n", ex.what());
-    return;
-  }
-  catch(tf::ExtrapolationException& ex)
-  {
-    //      puts("extrapolation required");
-    //      printf("%s\n", ex.what());
-    return;
+    robot_vel_.setIdentity();
+    robot_vel_.frame_id_ = "base_link";
+    robot_vel_.stamp_ = ros::Time();
+
+    //so we can draw the local path
+    advertise<std_msgs::Polyline2D>("local_path", 10);
+
+    //so we can draw the robot footprint to help with debugging
+    advertise<std_msgs::Polyline2D>("robot_footprint", 10);
+
+    advertise<std_msgs::BaseVel>("cmd_vel", 1);
+    subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
+    subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
   }
 
-  tf::Stamped<tf::Pose> robot_vel;
-  //we need robot_vel_ to compute global_vel so we'll lock
-  vel_lock.lock();
-  robot_vel = robot_vel_;
-  //give robot_vel_ back
-  vel_lock.unlock();
+  void GovernorNode::odomReceived(){
+    //we want to make sure that processPlan isn't using robot_vel_
+    vel_lock.lock();
 
-  tf::Stamped<tf::Pose> drive_cmds;
-  //we need to lock the map while we process it
-  map_lock.lock();
-  ma_.updateOrigin(map_.origin_x, map_.origin_y);
-  //ma_.updateResolution(map_.scale);
-  //ma_.updateSize(map_.size_x_, map_.size_y_);
-  ros::Time start = ros::Time::now();
-  Trajectory path = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
-  ros::Time end = ros::Time::now();
-  fprintf(stderr, "Cycle Time: %.3f\n", (end - start).toSec());
-  //give map_ back
-  map_lock.unlock();
+    btQuaternion qt(odom_msg_.vel.th, 0, 0);
+    robot_vel_.setData(btTransform(qt, btVector3(odom_msg_.vel.x, odom_msg_.vel.y, 0)));
+    robot_vel_.frame_id_ = "base_link";
+    robot_vel_.stamp_ = ros::Time();
+
+    //give robot_vel_ back
+    vel_lock.unlock();
+  }
+
+  void GovernorNode::planReceived(){
+    //make sure we don't process the map while we update it
+    map_lock.lock();
+
+    //update the map from the message
+    map_.update(plan_msg_.map);
+
+    // Synchronize the obstacle data
+    ma_.synchronize();
+
+    //update the global plan from the message
+    vector<std_msgs::Point2DFloat32> plan;
+
+    for(unsigned int i = 0; i < plan_msg_.plan.get_path_size(); ++i){
+      plan.push_back(plan_msg_.plan.path[i]);
+    }
+    tc_.updatePlan(plan);
+
+    map_lock.unlock();
+  }
+
+  void GovernorNode::processPlan(){
+    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    robot_pose.setIdentity();
+    robot_pose.frame_id_ = "base_link";
+    robot_pose.stamp_ = ros::Time();
+
+    try
+    {
+      tf_.transformPose("map", robot_pose, global_pose);
+    }
+    catch(tf::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
+    catch(tf::ConnectivityException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
+    catch(tf::ExtrapolationException& ex)
+    {
+      //      puts("extrapolation required");
+      //      printf("%s\n", ex.what());
+      return;
+    }
+
+    tf::Stamped<tf::Pose> robot_vel;
+    //we need robot_vel_ to compute global_vel so we'll lock
+    vel_lock.lock();
+    robot_vel = robot_vel_;
+    //give robot_vel_ back
+    vel_lock.unlock();
+
+    tf::Stamped<tf::Pose> drive_cmds;
+    //we need to lock the map while we process it
+    map_lock.lock();
+    ma_.updateOrigin(map_.origin_x, map_.origin_y);
+    //ma_.updateResolution(map_.scale);
+    //ma_.updateSize(map_.size_x_, map_.size_y_);
+    ros::Time start = ros::Time::now();
+    Trajectory path = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
+    ros::Time end = ros::Time::now();
+    fprintf(stderr, "Cycle Time: %.3f\n", (end - start).toSec());
+    //give map_ back
+    map_lock.unlock();
 
 
-  double uselessPitch, uselessRoll, yaw;
-  robot_vel.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-  printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), yaw);
+    double uselessPitch, uselessRoll, yaw;
+    robot_vel.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+    printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), yaw);
 
-  if(path.cost_ >= 0){
-    //let's print debug output to the screen
-    path_msg.set_points_size(tc_.num_steps_);
-    path_msg.color.r = 0;
-    path_msg.color.g = 0;
-    path_msg.color.b = 1.0;
-    path_msg.color.a = 0;
-    double x = 0.0;
-    double y = 0.0;
-    double th = 0.0;
-    for(int i = 0; i < tc_.num_steps_; ++i){
-      double pt_x, pt_y, pt_th;
-      path.getPoint(i, pt_x, pt_y, pt_th);
-      path_msg.points[i].x = pt_x; 
-      path_msg.points[i].y = pt_y;
+    if(path.cost_ >= 0){
+      //let's print debug output to the screen
+      path_msg.set_points_size(path.getPointsSize());
+      path_msg.color.r = 0;
+      path_msg.color.g = 0;
+      path_msg.color.b = 1.0;
+      path_msg.color.a = 0;
+      double x = 0.0;
+      double y = 0.0;
+      double th = 0.0;
+      for(unsigned int i = 0; i < path.getPointsSize(); ++i){
+        double pt_x, pt_y, pt_th;
+        path.getPoint(i, pt_x, pt_y, pt_th);
+        path_msg.points[i].x = pt_x; 
+        path_msg.points[i].y = pt_y;
 
-      //so we can draw the footprint on the map
-      if(i == 0){
-        x = pt_x; 
-        y = pt_y;
-        th = pt_th;
+        //so we can draw the footprint on the map
+        if(i == 0){
+          x = pt_x; 
+          y = pt_y;
+          th = pt_th;
+        }
       }
-    }
-    publish("local_path", path_msg);
-    printf("path msg\n");
+      publish("local_path", path_msg);
+      printf("path msg\n");
 
-    vector<std_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
-    //let's also draw the footprint of the robot for the last point on the selected trajectory
-    footprint_msg.set_points_size(footprint.size());
-    footprint_msg.color.r = 1.0;
-    footprint_msg.color.g = 0;
-    footprint_msg.color.b = 0;
-    footprint_msg.color.a = 0;
-    for(unsigned int i = 0; i < footprint.size(); ++i){
-      footprint_msg.points[i].x = footprint[i].x;
-      footprint_msg.points[i].y = footprint[i].y;
-      //printf("(%.2f, %.2f)\n", footprint_msg.points[i].x, footprint_msg.points[i].y);
+      vector<std_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
+      //let's also draw the footprint of the robot for the last point on the selected trajectory
+      footprint_msg.set_points_size(footprint.size());
+      footprint_msg.color.r = 1.0;
+      footprint_msg.color.g = 0;
+      footprint_msg.color.b = 0;
+      footprint_msg.color.a = 0;
+      for(unsigned int i = 0; i < footprint.size(); ++i){
+        footprint_msg.points[i].x = footprint[i].x;
+        footprint_msg.points[i].y = footprint[i].y;
+        //printf("(%.2f, %.2f)\n", footprint_msg.points[i].x, footprint_msg.points[i].y);
+      }
+      publish("robot_footprint", footprint_msg);
     }
-    publish("robot_footprint", footprint_msg);
+
+    //drive the robot!
+    cmd_vel_msg_.vx = drive_cmds.getOrigin().getX();
+    cmd_vel_msg_.vy = drive_cmds.getOrigin().getY();
+    drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+    cmd_vel_msg_.vw = yaw;
+
+
+    if(path.cost_ < 0)
+      printf("Local Plan Failed :(\n");
+    printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
+    publish("cmd_vel", cmd_vel_msg_);
   }
 
-  //drive the robot!
-  cmd_vel_msg_.vx = drive_cmds.getOrigin().getX();
-  cmd_vel_msg_.vy = drive_cmds.getOrigin().getY();
-  drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-  cmd_vel_msg_.vw = yaw;
+  //wait out remaining time of cycle
+  void GovernorNode::sleep(ros::Time start){
+    ros::Time end = start;
+    ros::Duration cycle;
+    cycle = cycle.fromSec(cycle_time_);
+    end = end + cycle;
 
-  
-  if(path.cost_ < 0)
-    printf("Local Plan Failed :(\n");
-  printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
-  publish("cmd_vel", cmd_vel_msg_);
-}
+    ros::Duration sleepTime = ros::Time::now() - end;
 
-//wait out remaining time of cycle
-void GovernorNode::sleep(ros::Time start){
-  ros::Time end = start;
-  ros::Duration cycle;
-  cycle = cycle.fromSec(cycle_time_);
-  end = end + cycle;
-
-  ros::Duration sleepTime = ros::Time::now() - end;
-
-  if (sleepTime <= ros::Duration())
-    printf("Governor Node missed deadline and is not sleeping\n");
-  else
-    sleepTime.sleep();
-}
+    if (sleepTime <= ros::Duration())
+      printf("Governor Node missed deadline and is not sleeping\n");
+    else
+      sleepTime.sleep();
+  }
+};
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
