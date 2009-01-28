@@ -120,7 +120,7 @@ namespace kinematic_planning
 		m_kmodel = NULL;
 	    }
 	}
-
+	
 	void attachObject(void)
 	{
 	    m_collisionSpace->lock();
@@ -277,7 +277,7 @@ namespace kinematic_planning
 	
 	double radiusOfBox(std_msgs::Point32 &point)
 	{
-	    return std::max(std::max(point.x, point.y), point.z) * 2.0;
+	    return std::max(std::max(point.x, point.y), point.z) * 1.73;
 	}
 	
 	robot_msgs::CollisionMap              m_collisionMap;
