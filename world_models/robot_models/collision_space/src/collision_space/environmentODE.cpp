@@ -486,7 +486,7 @@ void collision_space::EnvironmentModelODE::addSelfCollisionGroup(unsigned int mo
     }
 }
 
-int collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, std::string &link, bool state)
+int collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, const std::string &link, bool state)
 { 
     int result = -1;
     if (model_id < m_modelsGeom.size())

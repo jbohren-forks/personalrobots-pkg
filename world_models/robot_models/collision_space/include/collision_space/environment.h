@@ -105,7 +105,7 @@ namespace collision_space
 	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links) = 0;
 
 	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
-	virtual int setCollisionCheck(unsigned int model_id, std::string &link, bool state) = 0;
+	virtual int setCollisionCheck(unsigned int model_id, const std::string &link, bool state) = 0;
 
 	/** Get the number of loaded models */
 	unsigned int getModelCount(void) const;
