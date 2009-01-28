@@ -47,7 +47,7 @@
 #include <robot_srvs/ValidateKinematicPath.h>
 
 #include <std_srvs/Empty.h>
-#include <std_msgs/VisualizationMarker.h>
+#include <robot_msgs/VisualizationMarker.h>
 #include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -320,7 +320,7 @@ public:
 	
 	subscribe("kinematic_planning_status", m_planStatus, &PlanKinematicPath::currentPathToGoal, this, 1);
 
-	advertise<std_msgs::VisualizationMarker>("visualizationMarker", 10240);
+	advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
 	m_id = 0;
     }
 
@@ -520,14 +520,14 @@ protected:
 
     void sendPoint(double x, double y, double z, double radius, const std::string &frame_id)
     {
-	std_msgs::VisualizationMarker mk;
+	robot_msgs::VisualizationMarker mk;
 	mk.header.stamp = ros::Time::now();
 	
 	mk.header.frame_id = frame_id;
 
 	mk.id = m_id++;
-	mk.type = std_msgs::VisualizationMarker::SPHERE;
-	mk.action = std_msgs::VisualizationMarker::ADD;
+	mk.type = robot_msgs::VisualizationMarker::SPHERE;
+	mk.action = robot_msgs::VisualizationMarker::ADD;
 	mk.x = x;
 	mk.y = y;
 	mk.z = z;
