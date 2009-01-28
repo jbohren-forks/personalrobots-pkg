@@ -34,7 +34,6 @@
 
 
 #include <highlevel_controllers/move_base.hh>
-#include <costmap_2d/basic_observation_buffer.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
@@ -46,6 +45,8 @@
 #include <angles/angles.h>
 #include <boost/thread.hpp>
 #include <robot_filter/RobotFilter.h>
+
+using namespace costmap_2d;
 
 namespace ros {
   namespace highlevel_controllers {
@@ -218,29 +219,7 @@ namespace ros {
 
       // Allocate Velocity Controller
       double mapSize(2.0);
-      double pathDistanceBias(0.0);
-      double goalDistanceBias(1.0);
-      double accLimit_x(1.0);
-      double accLimit_y(1.0);
-      double accLimit_th(1.0);
-      double sim_time = 1.0;
-      //Note: sim_steps and samples_per_dim should be unsigned
-      //ints but the param function does not like it
-      int sim_steps = 20; 
-      int samples_per_dim = 25;
-      double dfast_scale = 0;
-      double occdist_scale = 0.2;
       param("/trajectory_rollout/map_size", mapSize, 2.0);
-      param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
-      param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
-      param("/trajectory_rollout/acc_limit_x", accLimit_x, 1.0);
-      param("/trajectory_rollout/acc_limit_y", accLimit_y, 1.0);
-      param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
-      param("/trajectory_rollout/occdist_scale", occdist_scale, occdist_scale);
-      param("/trajectory_rollout/dfast_scale", dfast_scale, dfast_scale);
-      param("/trajectory_rollout/samples_per_dim", samples_per_dim, samples_per_dim);
-      param("/trajectory_rollout/sim_steps", sim_steps, sim_steps);
-      param("/trajectory_rollout/sim_time", sim_time, sim_time);
       param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
       param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
 
@@ -270,18 +249,8 @@ namespace ros {
       pt.y = 0;
       footprint_.push_back(pt);
 
-      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *local_map_accessor_,
-          sim_time,
-          sim_steps,
-	  samples_per_dim,
-          pathDistanceBias,
-          goalDistanceBias,
-          dfast_scale,
-          occdist_scale,
-          accLimit_x,
-          accLimit_y,
-          accLimit_th, 
-          footprint_);
+      controller_ = new trajectory_rollout::TrajectoryControllerROS(*this, *local_map_accessor_, 
+          footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
@@ -719,7 +688,17 @@ namespace ros {
 	ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
         std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-        if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
+
+        lock();
+        // Aggregate buffered observations across all sources. Must be thread safe
+        std::vector<costmap_2d::Observation> observations;
+        baseScanBuffer_->get_observations(observations);
+        tiltScanBuffer_->get_observations(observations);
+        lowObstacleBuffer_->get_observations(observations);
+        stereoCloudBuffer_->get_observations(observations);
+        unlock();
+
+        if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan, observations)){
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }

@@ -66,6 +66,8 @@
 #include <highlevel_controllers/move_base.hh>
 #include <navfn.h>
 
+using namespace costmap_2d;
+
 namespace ros {
   namespace highlevel_controllers {
 

@@ -13,7 +13,7 @@ rospack_add_boost_directories()
 genmsg()
 
 # Library
-rospack_add_library(highlevel_controllers src/move_base.cpp src/velocity_controllers.cpp)
+rospack_add_library(highlevel_controllers src/move_base.cpp)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 rospack_link_boost(highlevel_controllers thread)
 

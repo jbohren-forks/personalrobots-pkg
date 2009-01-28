@@ -72,6 +72,8 @@
 #include <sbpl/headers.h>
 #include <err.h>
 
+using namespace costmap_2d;
+
 
 namespace {
   

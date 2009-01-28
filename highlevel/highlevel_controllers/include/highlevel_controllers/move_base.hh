@@ -36,7 +36,7 @@
 #define HIGHLEVEL_CONTROLLERS_MOVE_BASE_H
 
 #include <highlevel_controllers/highlevel_controller.hh>
-#include <highlevel_controllers/velocity_controllers.hh>
+#include <trajectory_rollout/trajectory_controller_ros.h>
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d.h>
@@ -100,7 +100,7 @@ namespace ros {
        * @brief Accessor for the cost map. Use mainly for initialization
        * of specialized map strunture for planning
        */
-      const CostMapAccessor& getCostMap() const {return *global_map_accessor_;}
+      const costmap_2d::CostMapAccessor& getCostMap() const {return *global_map_accessor_;}
 
       /**
        * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
@@ -238,11 +238,11 @@ namespace ros {
       costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
 
       /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
-      VelocityController* controller_;
+      trajectory_rollout::TrajectoryControllerROS* controller_;
 
-      CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
-      CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
-      CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
+      costmap_2d::CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
+      costmap_2d::CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
+      costmap_2d::CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
 
       tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
