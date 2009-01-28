@@ -35,7 +35,7 @@
 ## A basic node to listen to and display incoming diagnostic messages using wx
 
 import rostools
-rostools.update_path('pr2_power_board')
+rostools.load_manifest('pr2_power_board')
 
 import sys
 import rospy

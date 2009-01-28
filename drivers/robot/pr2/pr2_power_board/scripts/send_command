@@ -37,7 +37,7 @@
 
 PKG = 'pr2_power_board' # this package name
 
-import rostools; rostools.update_path(PKG) 
+import rostools; rostools.load_manifest(PKG) 
 
 import sys
 import os

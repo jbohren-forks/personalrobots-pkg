@@ -33,7 +33,7 @@
 #
 
 import rostools
-rostools.update_path('static_map_server')
+rostools.load_manifest('static_map_server')
 
 import sys, time
 import rospy

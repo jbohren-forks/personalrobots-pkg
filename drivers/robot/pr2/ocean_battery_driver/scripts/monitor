@@ -37,7 +37,7 @@ IBPS battery monitor
 
 To run, invoke rosrun ocean_battery_driver monitor
 """
-import rostools; rostools.update_path('ocean_battery_driver')
+import rostools; rostools.load_manifest('ocean_battery_driver')
 
 import os
 import sys
