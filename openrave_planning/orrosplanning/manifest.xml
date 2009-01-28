@@ -12,5 +12,5 @@
   <depend package="robot_msgs"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="tf"/>
-  <depend package="collision_map"/>
+  <depend package="robot_msgs"/>
 </package>
