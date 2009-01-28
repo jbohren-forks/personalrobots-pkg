@@ -43,7 +43,7 @@
     <param name="/trajectory_rollout/max_vel_th" value="1.0" />
     <param name="/trajectory_rollout/min_vel_th" value="-1.0" />
     <param name="/trajectory_rollout/min_in_place_vel_th" value="0.4" />
-    <param name="/trajectory_rollout/freespace_model" value="true" />
+    <param name="/trajectory_rollout/freespace_model" value="false" />
 
 
     <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
