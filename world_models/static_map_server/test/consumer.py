@@ -36,7 +36,7 @@ PKG = 'static_map_server'
 NAME = 'consumer'
 
 import rostools
-rostools.update_path(PKG)
+rostools.load_manifest(PKG)
 
 import sys, unittest, time
 
