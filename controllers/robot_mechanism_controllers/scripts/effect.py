@@ -37,8 +37,8 @@ CONTROLLER_NAME = "quick_effort_controller_%08d" % random.randint(0,10**8-1)
 import sys
 
 import rostools
-rostools.update_path('robot_mechanism_controllers')
-rostools.update_path('mechanism_control')
+rostools.load_manifest('robot_mechanism_controllers')
+rostools.load_manifest('mechanism_control')
 import rospy
 from std_msgs.msg import *
 from mechanism_control import mechanism

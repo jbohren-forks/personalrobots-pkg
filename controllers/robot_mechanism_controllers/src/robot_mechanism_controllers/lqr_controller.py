@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rostools
-rostools.update_path('rospy')
-rostools.update_path('robot_srvs')
-rostools.update_path('robot_mechanism_controllers')
+import rostools; rostools.load_manifest('robot_mechanism_controllers')
 
 import rospy, sys
 from robot_srvs.srv import *

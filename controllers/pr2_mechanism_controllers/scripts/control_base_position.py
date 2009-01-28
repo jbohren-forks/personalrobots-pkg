@@ -31,7 +31,7 @@
 
 PKG = "pr2_mechanism_controllers"
 
-import rostools; rostools.update_path(PKG)
+import rostools; rostools.load_manifest(PKG)
 
 import sys
 import os
