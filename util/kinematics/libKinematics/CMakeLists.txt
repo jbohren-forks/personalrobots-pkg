@@ -16,5 +16,8 @@ target_link_libraries(bin/test_ik libKinematics)
 rospack_add_executable(bin/test_ik_fast src/test/test_ik_fast.cpp)
 target_link_libraries(bin/test_ik_fast libKinematics)
 
+rospack_add_executable(bin/ik_node src/pr2_ik_node.cpp)
+target_link_libraries(bin/ik_node libKinematics)
+
 rospack_add_executable(bin/test_ik_fast_single src/test/test_ik_fast_single.cpp)
 target_link_libraries(bin/test_ik_fast_single libKinematics)

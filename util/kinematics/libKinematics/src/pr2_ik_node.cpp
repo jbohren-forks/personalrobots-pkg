@@ -33,7 +33,7 @@
 
 #include <libKinematics/pr2_ik_node.h>
 
-LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name)
+LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),root_x_(0.0),root_y_(0.0), root_z_(0.0)
 {};
 
 LibKinematicsNode::~LibKinematicsNode(){};
@@ -87,6 +87,11 @@ bool LibKinematicsNode::initializeKinematicModel()
   }
 
   robot_desc::URDF::Link *link_current = groups[group_index]->linkRoots[0];
+
+  root_x_ = link_current->xyz[0];
+  root_y_ = link_current->xyz[1];
+  root_z_ = link_current->xyz[2];
+
   root_link_name_ = link_current->name;
   joint_type.resize(NUM_JOINTS);
 
@@ -167,6 +172,48 @@ bool LibKinematicsNode::init()
   return true;
 }
 
+bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::request &req, robot_srvs::IKService::response &resp)
+{
+  std_msgs::Pose pose;
+  pose = req.pose;
+
+  tf::Pose tf_pose;
+  tf::PoseMsgToTF(pose,tf_pose);
+
+  NEWMAT::Matrix g0(4,4);
+  btScalar m[16];
+  tf_pose.getOpenGLMatrix(m);
+
+  ROS_INFO("computeIKSolution: Input transform");
+  for(int i=0; i < 4; i++)
+  {
+    for(int j=0; j < 4; j++)
+    {
+      g0(j+1,i+1) = m[i*4+j];
+    }
+  }
+
+  g0(1,4) = g0(1,4) - root_x_;
+  g0(2,4) = g0(2,4) - root_y_;
+  g0(3,4) = g0(3,4) - root_z_;
+
+  if(arm_kinematics_->computeIKFast(g0,2,init_solution_theta3_))
+  {
+    resp.traj.set_points_size(arm_kinematics_->solution_ik_.size());
+
+    for(int i=0; i < 7; i++)
+    {
+      resp.traj.points[i].set_positions_size(7); 
+      for(int j=0; j < 7; j++)
+      {
+        resp.traj.points[i].positions[j] = arm_kinematics_->solution_ik_[i][j]; 
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
 
 using namespace kinematics;
 
@@ -194,7 +241,7 @@ int main(int argc, char **argv)
 
  kn.arm_kinematics_->computeIKFast(g,2,kn.init_solution_theta3_);
 
- for(int i=0; i < kn.arm_kinematics_->solution_ik_.size(); i++)
+ for(int i=0; i < (int) kn.arm_kinematics_->solution_ik_.size(); i++)
  { 
    for(int j=0; j< 7; j++)
    {

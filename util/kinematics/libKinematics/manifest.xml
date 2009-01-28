@@ -8,7 +8,9 @@
 <depend package="newmat10"/>
 <depend package="angles"/>
 <depend package="roscpp"/>
+<depend package="robot_srvs"/>
 <depend package="wg_robot_description_parser"/>
+<depend package="tf"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llibKinematics"/>
 </export>

@@ -36,6 +36,11 @@
 #include <ros/node.h>
 #include <urdf/URDF.h>
 
+#include <robot_srvs/IKService.h>
+
+#include <tf/tf.h>
+#include <LinearMath/btTransform.h>
+
 using namespace kinematics;
 
 namespace kinematics
@@ -62,6 +67,8 @@ namespace kinematics
 
     double init_solution_theta3_;
 
+    bool processIKRequest(robot_srvs::IKService::request &req, robot_srvs::IKService::response &resp);
+
     private:
 
     std::string robot_description_model_;
@@ -77,6 +84,12 @@ namespace kinematics
     robot_desc::URDF::Link* findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group);
 
     double increment_;
+
+    double root_x_;
+
+    double root_y_;
+
+    double root_z_;
 
   };
 }
