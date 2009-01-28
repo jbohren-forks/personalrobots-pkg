@@ -88,7 +88,7 @@
 #include <robot_msgs/KinematicPlanStatus.h>
 
 #include <std_msgs/Empty.h>
-#include <pr2_mechanism_controllers/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
@@ -136,7 +136,7 @@ private:
                       const std::string &model);
   void stopArm(void);
   void getTrajectoryMsg(robot_msgs::KinematicPath &path, 
-                        pr2_mechanism_controllers::JointTraj &traj);
+                        robot_msgs::JointTraj &traj);
   void kpsCallback();
 };
 
@@ -281,7 +281,7 @@ void MoveArm::requestStopReplanning(void)
 }
 
 void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path, 
-                               pr2_mechanism_controllers::JointTraj &traj)
+                               robot_msgs::JointTraj &traj)
 {
   traj.set_points_size(path.get_states_size());
 
@@ -299,7 +299,7 @@ void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path,
 {
   pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
   pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
-  pr2_mechanism_controllers::JointTraj traj;
+  robot_msgs::JointTraj traj;
   getTrajectoryMsg(path, traj);
   send_traj_start_req.traj = traj;
   if(!ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
