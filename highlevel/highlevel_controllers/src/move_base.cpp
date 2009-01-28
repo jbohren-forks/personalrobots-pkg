@@ -122,6 +122,7 @@ namespace ros {
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      param("/costmap_2d/robot_radius", robotRadius, robotRadius);
       param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
