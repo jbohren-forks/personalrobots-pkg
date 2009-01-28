@@ -700,14 +700,14 @@ int
   tictoc.sleep ();
 
   // Box example: 22.2 cm x 10.5 cm x 5.8 cm
-  SubtractObjectFromCollisionMap::request req;
+/*  SubtractObjectFromCollisionMap::request req;
   req.object.min_bound.x = req.object.min_bound.y = req.object.min_bound.z = 0.0;
   req.object.max_bound.z = 0.35; //0.222;
   req.object.max_bound.x = 0.105 * 2;
   req.object.max_bound.y = 0.058 * 4;
   SubtractObjectFromCollisionMap::response resp;
   ros::service::call ("~subtract_object", req, resp);
-
+*/
   p.spin ();
 
   ros::fini ();
