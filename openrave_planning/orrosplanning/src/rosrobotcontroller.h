@@ -109,7 +109,7 @@ class ROSRobotController : public ControllerBase
             return true;
         }
 
-        void GetTrajPoint(const vector<dReal>& vrobotvalues, pr2_mechanism_controllers::JointTrajPoint& pt)
+        void GetTrajPoint(const vector<dReal>& vrobotvalues, robot_msgs::JointTrajPoint& pt)
         {
             pt.positions.resize(_vjointmap.size());
             typeof(pt.positions.begin()) itcontrollerpos = pt.positions.begin();
