@@ -63,6 +63,7 @@
  * - None
  **/
 
+#include <fstream>
 #include <highlevel_controllers/move_base.hh>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
@@ -98,7 +99,14 @@ MoveBaseTopological::MoveBaseTopological(char *input_file_name) :
   graph_.initializeRoadmap();
   initialize();
   ROS_DEBUG ("Finished initializing MoveBaseTopological roadmap");
+
+  // Debug: output the roadmap graph
+  ofstream stream;
+  stream.open ("roadmaps.ppm");
+  graph_.outputPpm(stream, 3);
+  // ofstream destructor will close the stream
 }
+
 
 
 bool MoveBaseTopological::makePlan(){
