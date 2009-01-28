@@ -32,6 +32,7 @@
 
 #include <utility>
 #include <set>
+#include <vector>
 #include <iostream>
 
 
@@ -56,6 +57,7 @@ bool operator== (const GridCell& c, const GridCell& c2);
 
 
 typedef std::set<GridCell> Region;
+typedef std::vector<GridCell> GridCellVector;
 
 } // Namespace topological_map
 

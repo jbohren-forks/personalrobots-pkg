@@ -87,6 +87,16 @@ private:
   /// Initialize the distance-from-obstacles map
   void initializeDistanceMap ();
 
+  void findBestConnector(const VertexCellMap& neighbor_connectors, const GridCell& start, const GridCell& goal, double* best_cost, BottleneckVertex* next_region);
+  void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
+                                 double* best_cost, GridCellVector* solution, const BottleneckVertex& current, bool use_current=true);
+  void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
+                                 double* best_cost, GridCellVector* solution);
+
+  double computeConnectorCost(const GridCell& start, const GridCell& goal, const GridCell& connector, GridCellVector* path=0);
+  
+
+
   const unsigned char* costmap_;
   Roadmap* roadmap_;
   NavFn nav_fn_planner_;
