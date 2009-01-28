@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rostools
-rostools.update_path('kinematic_calibration')
+rostools.load_manifest('kinematic_calibration')
 
 import rospy
 import sys

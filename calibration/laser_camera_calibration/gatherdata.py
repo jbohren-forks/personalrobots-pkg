@@ -38,7 +38,7 @@
 PKG = 'laser_camera_calibration' # this package name
 NAME = 'lasercamera_gatherer'
 
-import rostools; rostools.update_path(PKG) 
+import rostools; rostools.load_manifest(PKG) 
 
 import sys
 import thread

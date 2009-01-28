@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import rostools
-rostools.update_path('kinematic_calibration')
+rostools.load_manifest('kinematic_calibration')
 import rospy
 import sys
 import Image as Image

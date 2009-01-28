@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rostools; rostools.update_path('kinematic_calibration') 
+import rostools; rostools.load_manifest('kinematic_calibration') 
 import sys
 import rospy
 from std_msgs.msg import PointStamped, Point
