@@ -40,7 +40,7 @@
     is looked at as well.  */
 
 #include <kinematic_planning/KinematicStateMonitor.h>
-#include <pr2_mechanism_controllers/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <cassert>
@@ -53,7 +53,7 @@ public:
     TestExecutionPath(const std::string& robot_model) : ros::Node("test_kinematic_path"),
 							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
     {
-	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);	
+	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);	
 	sleep_duration_ = 4;
 	use_topic_ = true;
     }
@@ -61,7 +61,7 @@ public:
     void testJointLimitsRightArm(const std::string& jname = "")
     {
 	// we send a trajectory with one state
-	pr2_mechanism_controllers::JointTraj traj;
+	robot_msgs::JointTraj traj;
 	const int controllerDim = 8;
 	std::string groupName = "pr2::right_arm";
 	traj.set_points_size(1);

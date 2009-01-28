@@ -48,7 +48,7 @@
 
 #include <std_srvs/Empty.h>
 #include <std_msgs/VisualizationMarker.h>
-#include <pr2_mechanism_controllers/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
@@ -130,7 +130,7 @@ public:
     
     void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
-	pr2_mechanism_controllers::JointTraj traj;
+	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	m_node->publish("right_arm_trajectory_command", traj);
 	ROS_INFO("Sent trajectory to controller");
@@ -144,7 +144,7 @@ public:
 	pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
 	pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
 	
-	pr2_mechanism_controllers::JointTraj traj;
+	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	
 	send_traj_start_req.traj = traj;
@@ -273,7 +273,7 @@ public:
     
 protected:
     
-    void getTrajectoryMsg(robot_msgs::KinematicPath &path, pr2_mechanism_controllers::JointTraj &traj)
+    void getTrajectoryMsg(robot_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {
 	traj.set_points_size(path.get_states_size());
 	
@@ -316,7 +316,7 @@ public:
 							m_pr(dynamic_cast<ros::Node*>(this))
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
-	advertise<pr2_mechanism_controllers::JointTraj>("right_arm_trajectory_command", 1);
+	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	
 	subscribe("kinematic_planning_status", m_planStatus, &PlanKinematicPath::currentPathToGoal, this, 1);
 
