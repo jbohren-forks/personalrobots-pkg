@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rostools
-rostools.update_path('trajectory_rollout')
+rostools.load_manifest('trajectory_rollout')
 
 import sys, traceback, logging, rospy
 from robot_msgs.msg import Planner2DGoal
