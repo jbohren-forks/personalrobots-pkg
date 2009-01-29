@@ -43,16 +43,17 @@
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 #include <robot_srvs/KinematicReplanState.h>
 #include <robot_srvs/KinematicReplanLinkPosition.h>
-#include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include <std_srvs/Empty.h>
+#include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <robot_msgs/JointTraj.h>
-#include <robot_srvs/IKService.h>
+
+#include <pr2_msgs/MoveArmGoal.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
+#include <std_srvs/Empty.h>
 
 #include <sstream>
 #include <cassert>
@@ -340,6 +341,9 @@ public:
 			      kinematic_planning::CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
 			      m_pr(dynamic_cast<ros::Node*>(this))
     {
+
+	advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	
@@ -425,59 +429,6 @@ public:
 	    m_pr.performCall(r, PlanningRequest::C_ARM);
 	}	
     }
-
-
-    void runTestRightEx(bool replan = false)
-    {
-	robot_msgs::KinematicPlanStateRequest  req;
-
-	robotState = m_robotState;
-	
-	req.params.model_id = "pr2::right_arm";
-	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "IKSBL";
-	req.threshold = 0.2;
-	req.interpolate = 1;
-	req.times = 1;
-
-	currentState(req.start_state);
-	
-	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;
-
-
-	doIK(0.75025, -0.188, 0.859675, 0,0 ,0,1, req.goal_state);	
-	/*
-
-	req.goal_state.vals[0] = 0.114249;
-	req.goal_state.vals[1] = 0.315477;	
-	req.goal_state.vals[2] = 0.393613;	
-	req.goal_state.vals[3] = -1.00633;	
-	req.goal_state.vals[4] = 3.12397;	
-	req.goal_state.vals[5] = 0.623655;	
-	req.goal_state.vals[6] = 2.67552;	
-	*/
-
-	req.allowed_time = 30.0;
-
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
-	
-	if (replan)
-	{
-	    robot_srvs::KinematicReplanState::request r;
-	    r.value = req;
-	    m_pr.performCall(r, PlanningRequest::C_ARM);
-	}
-	else
-	{
-	    robot_srvs::KinematicPlanState::request r;
-	    r.value = req;
-	    m_pr.performCall(r, PlanningRequest::C_ARM);
-	}	
-    }
-
     
     void runRightArmTo0(bool replan = false)
     {
@@ -595,36 +546,6 @@ public:
 	}	
     }
     
-    void doIK(double px, double py, double pz,
-	      double qx, double qy, double qz, double qw,
-	      robot_msgs::KinematicState &state)
-    {
-	robot_srvs::IKService::request req;
-	robot_srvs::IKService::response res;
-	
-	req.pose.position.x = px;
-	req.pose.position.y = py;
-	req.pose.position.z = pz;
-	req.pose.orientation.x = qx;
-	req.pose.orientation.y = qy;
-	req.pose.orientation.z = qz;
-	req.pose.orientation.w = qw;
-	
-	if (!ros::service::call("perform_pr2_ik", req, res))
-	    ROS_ERROR("Failed calling IK service");
-		
-	if (res.traj.points.size() > 0)
-	{
-	    ROS_INFO("Got %d solutions", res.traj.points.size());
-	    state.set_vals_size(res.traj.points[0].positions.size());
-	    for (unsigned int i  = 0 ; i < res.traj.points[0].positions.size() ; ++i)
-		state.vals[i] = res.traj.points[0].positions[i];
-	}
-	else
-	    ROS_ERROR("IK Failed");
-	
-    }
-    
 protected:
 
     void sendPoint(double x, double y, double z, double radius, const std::string &frame_id)
@@ -670,6 +591,22 @@ protected:
 		sendPoint(v.x(), v.y(), v.z(), std::max(std::max(sphere->size[0], sphere->size[1]), sphere->size[2] / 2.0), link->name);
 	    }
         }
+    }
+public:
+    void testMoveArm(void)
+    {
+	pr2_msgs::MoveArmGoal ag;
+	ag.implicit_goal = 0;
+	ag.enable = 1;
+	ag.timeout = 10;
+
+	ag.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i <ag.goal_state.get_vals_size(); ++i)
+	    ag.goal_state.vals[i] = 0.0;	
+	ag.goal_state.vals[1] = -0.2;
+	ag.goal_state.vals[0] = -0.5;
+
+	publish("right_arm_goal", ag);
     }
     
     // in replanning mode, current path to goal
@@ -720,6 +657,9 @@ int main(int argc, char **argv)
 	    plan->printCurrentState();
 	    plan->printLinkPoses();
 
+	    //		plan->runRightArmTo0(true);
+	    plan->testMoveArm();
+	    
 	    /*	    
 	    sleep(3);		
 	    
@@ -747,10 +687,6 @@ int main(int argc, char **argv)
 	    case 'e':
 		plan->runTestRightEEf(true);    
 		break;
-	    case 'x':
-		plan->runTestRightEx(true);    
-		break;
-
 	    default:
 		ROS_WARN("No test");
 		break;

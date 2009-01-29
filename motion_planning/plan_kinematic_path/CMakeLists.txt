@@ -2,4 +2,10 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(plan_kinematic_path)
 rospack_add_executable(plan_kinematic_path src/plan_kinematic_path.cpp)
-rospack_add_executable(test_path_execution src/test_path_execution.cpp)
+
+
+
+rospack_add_executable(test_path_execution src/right_arm/test_path_execution.cpp)
+rospack_add_executable(execute_plan_to_state src/right_arm/execute_plan_to_state.cpp)
+rospack_add_executable(execute_plan_to_state_minimal src/right_arm/execute_plan_to_state_minimal.cpp)
+rospack_add_executable(execute_plan_to_position_minimal src/right_arm/execute_plan_to_position_minimal.cpp)
