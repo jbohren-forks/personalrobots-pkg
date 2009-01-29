@@ -84,7 +84,6 @@
 #include <robot_srvs/KinematicReplanState.h>
 #include <robot_srvs/KinematicReplanLinkPosition.h>
 #include <robot_msgs/DisplayKinematicPath.h>
-#include <robot_srvs/ValidateKinematicPath.h>
 #include <robot_msgs/KinematicPlanStatus.h>
 
 #include <std_msgs/Empty.h>
@@ -96,7 +95,7 @@
 #include <sstream>
 #include <cassert>
 
-#include "tf/transform_listener.h"
+#include <tf/transform_listener.h>
 
 class MoveArm : public HighlevelController<pr2_msgs::MoveArmState, 
                                            pr2_msgs::MoveArmGoal>
@@ -110,19 +109,25 @@ public:
   MoveArm(const std::string& node_name, 
           const std::string& state_topic, 
           const std::string& goal_topic,
-          const std::string& kinematic_model);
+          const std::string& kinematic_model,
+	  const std::string& controller_name);
 
   virtual ~MoveArm() {};
 
 private:
   const std::string kinematic_model_;
-  bool have_new_traj_;
+  const std::string controller_name_;
+
+  bool                      have_new_traj_;
+  robot_msgs::KinematicPath new_traj_;
+
   bool replanning_;
-  int traj_id_;
-  int plan_id_;
-  robot_srvs::KinematicReplanState::request active_request_state_;
+  int  traj_id_;
+  int  plan_id_;
+
+  robot_srvs::KinematicReplanState::request        active_request_state_;
   robot_srvs::KinematicReplanLinkPosition::request active_request_link_position_;
-  robot_msgs::KinematicPlanStatus kps_msg_;
+  robot_msgs::KinematicPlanStatus                  kps_msg_;
 
   // HighlevelController interface that we must implement
   virtual void updateGoalMsg();
@@ -137,15 +142,18 @@ private:
   void stopArm(void);
   void getTrajectoryMsg(robot_msgs::KinematicPath &path, 
                         robot_msgs::JointTraj &traj);
+  void printKinematicPath(robot_msgs::KinematicPath &path);
   void kpsCallback();
 };
 
 MoveArm::MoveArm(const std::string& node_name, 
                  const std::string& state_topic, 
                  const std::string& goal_topic,
-                 const std::string& kinematic_model)
+                 const std::string& kinematic_model,
+		 const std::string& controller_name)
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(node_name, state_topic, goal_topic),
     kinematic_model_(kinematic_model),
+    controller_name_(controller_name),
     have_new_traj_(false),
     replanning_(false),
     traj_id_(-1),
@@ -181,7 +189,7 @@ bool MoveArm::makePlan()
 
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
-    req.value.params.planner_id = "IKSBL";
+    req.value.params.planner_id = "SBL";
     req.value.threshold = 0.01;
     req.value.interpolate = 1;
     req.value.times = 1;
@@ -208,7 +216,7 @@ bool MoveArm::makePlan()
     else
     {
       plan_id_ = res.id;
-      ROS_INFO("Issued a replanning request");	    
+      ROS_INFO("Issued a replanning request. Waiting for plan ID %d", plan_id_);	    
       return true;
     }
   }
@@ -265,7 +273,7 @@ bool MoveArm::dispatchCommands()
   kps_msg_.lock();
   if(have_new_traj_)
   {
-    sendArmCommand(kps_msg_.path, kinematic_model_);
+    sendArmCommand(new_traj_, kinematic_model_);
     have_new_traj_ = false;
   }
   kps_msg_.unlock();
@@ -278,6 +286,21 @@ void MoveArm::requestStopReplanning(void)
   ros::Node::publish("replan_stop", dummy);
   replanning_ = false;
   ROS_INFO("Issued a request to stop replanning");	
+}
+
+void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)
+{
+    unsigned int nstates = path.get_states_size();    
+    ROS_INFO("Obtained solution path with %u states", nstates);    
+    std::stringstream ss;
+    ss << std::endl;
+    for (unsigned int i = 0 ; i < nstates ; ++i)
+    {
+	for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+	    ss <<  path.states[i].vals[j] << " ";	
+	ss << std::endl;	
+    }    
+    ROS_INFO(ss.str().c_str());
 }
 
 void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path, 
@@ -302,11 +325,12 @@ void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path,
   robot_msgs::JointTraj traj;
   getTrajectoryMsg(path, traj);
   send_traj_start_req.traj = traj;
-  if(!ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+  if(!ros::service::call(controller_name_ + "/TrajectoryStart", send_traj_start_req, send_traj_start_res))
     ROS_WARN("Failed to send trajectory to controller");
   else
   {
     traj_id_ = send_traj_start_res.trajectoryid;
+    printKinematicPath(path);
     ROS_INFO("Sent trajectory to controller");
   }
 }
@@ -319,8 +343,8 @@ void MoveArm::stopArm()
   {
     pr2_mechanism_controllers::TrajectoryCancel::request  stop_traj_start_req;
     pr2_mechanism_controllers::TrajectoryCancel::response stop_traj_start_res;
-
-    if(!ros::service::call("right_arm_trajectory_controller/TrajectoryCancel",
+    stop_traj_start_req.trajectoryid = 0;  // make sure we stop all trajectories    
+    if(!ros::service::call(controller_name_ + "/TrajectoryCancel",
                            stop_traj_start_req, stop_traj_start_res))
       ROS_WARN("Failed to cancel trajectory");
     else
@@ -335,10 +359,19 @@ void MoveArm::kpsCallback()
 {
   if(!kps_msg_.valid)
     stopArm();
-  else if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
+  else
   {
-    if(!kps_msg_.path.states.empty())
-      have_new_traj_ = true;
+    if(kps_msg_.id >= 0 && (kps_msg_.id == plan_id_))
+    {
+      if(!kps_msg_.path.states.empty())
+      {
+	have_new_traj_ = true;
+	new_traj_ = kps_msg_.path;
+      }
+      
+      // by the time have_new_traj_ is looked at, it could be the case a
+      // new message is received and the trajectory is lost
+    }
   }
 }
 
@@ -348,7 +381,8 @@ public:
   MoveRightArm(): MoveArm("rightArmController", 
                           "right_arm_state", 
                           "right_arm_goal", 
-                          "pr2::right_arm")
+                          "pr2::right_arm",
+			  "right_arm_trajectory_controller")
   {
   };
 
@@ -361,17 +395,23 @@ public:
   MoveLeftArm(): MoveArm("leftArmController", 
                          "left_arm_state", 
                          "left_arm_goal", 
-                         "pr2::left_arm")
+                         "pr2::left_arm",
+			 "left_arm_trajectory_controller")
   {
   }
 };
+
+void usage(void)
+{
+    std::cout << "Usage: ./move_arm left|right [standard ROS arguments]" << std::endl;
+}
 
 int
 main(int argc, char** argv)
 {
 
-  if(argc != 2){
-    std::cout << "Usage: ./move_arm left|right";
+  if(argc < 2){
+    usage();
     return -1;
   }
 
@@ -391,7 +431,7 @@ main(int argc, char** argv)
     ros::fini();
   }
   else {
-    std::cout << "Usage: ./move_arm left|right";
+    usage();      
     return -1;
   }
 
