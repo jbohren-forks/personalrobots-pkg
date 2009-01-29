@@ -91,11 +91,10 @@ namespace kinematic_planning
         planning_models::KinematicModel* getKModel(void) { return m_kmodel; }
         planning_models::KinematicModel::StateParams* getRobotState() { return m_robotState; }
 	
-        KinematicStateMonitor(ros::Node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
+        KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, 1000000000ULL)
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    
-	    m_robotModelName = robot_model_name;
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
 	    m_robotState = NULL;
@@ -165,14 +164,11 @@ namespace kinematic_planning
 	
 	virtual void loadRobotDescription(void)
 	{
-	    if (!m_robotModelName.empty() && m_robotModelName != "-")
-	    {
-		std::string content;
-		if (m_node->getParam(m_robotModelName, content))
-		    setRobotDescriptionFromData(content.c_str());
-		else
-		    ROS_ERROR("Robot model '%s' not found!", m_robotModelName.c_str());
-	    }
+	    std::string content;
+	    if (m_node->getParam("robot_description", content))
+		setRobotDescriptionFromData(content.c_str());
+	    else
+		ROS_ERROR("Robot model not found!");
 	}
 	
 	virtual void defaultPosition(void)
@@ -297,7 +293,6 @@ namespace kinematic_planning
 	ros::Node                                    *m_node;
 	tf::TransformListener                         m_tf; 
 	robot_desc::URDF                             *m_urdf;
-	std::string                                   m_robotModelName;
 	planning_models::KinematicModel              *m_kmodel;
 
 	// info about the pose; this is not placed in the robot's kinematic state 

@@ -50,19 +50,19 @@ class TestExecutionPath : public ros::Node,
 {
 public:
     
-    TestExecutionPath(const std::string& robot_model) : ros::Node("test_kinematic_path"),
-							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model)
+    TestExecutionPath() : ros::Node("test_kinematic_path"),
+			  kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
     {
-	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);	
+	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	sleep_duration_ = 4;
-	use_topic_ = true;
+	use_topic_ = false;
     }
     
     void testJointLimitsRightArm(const std::string& jname = "")
     {
 	// we send a trajectory with one state
 	robot_msgs::JointTraj traj;
-	const int controllerDim = 8;
+	const int controllerDim = 7;
 	std::string groupName = "pr2::right_arm";
 	traj.set_points_size(1);
         traj.points[0].set_positions_size(controllerDim);
@@ -164,32 +164,21 @@ protected:
 };
 
 
-void usage(const char *progname)
-{
-    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
-    printf("       \"robot_model\" is the name (string) of a robot description to be used when building the map.\n");
-}
-
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
     
-    if (argc >= 2)
+    TestExecutionPath *plan = new TestExecutionPath();
+    plan->loadRobotDescription();
+    if (plan->loadedRobot())
     {
-	TestExecutionPath *plan = new TestExecutionPath(argv[1]);
-	plan->loadRobotDescription();
-	if (plan->loadedRobot())
-	{
-	    sleep(2);
-	    plan->testJointLimitsRightArm("r_elbow_flex_joint");
-	}
-	sleep(1);
-	
-	plan->shutdown();
-	delete plan;
+	sleep(2);
+	plan->testJointLimitsRightArm();
     }
-    else
-	usage(argv[0]);
+    sleep(1);
+    
+    plan->shutdown();
+    delete plan;
     
     return 0;    
 }

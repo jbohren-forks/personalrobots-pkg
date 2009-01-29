@@ -127,9 +127,8 @@ public:
 	ompl::SpaceInformation::StateValidityChecker_t svc;
     };    
     
-    MotionValidator(const std::string &robot_model) : ros::Node("motion_validator"),
-						      CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
-									    robot_model)
+    MotionValidator(void) : ros::Node("motion_validator"),
+			    CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this))
     {
 	advertiseService("validate_path", &MotionValidator::validatePath);
     }
@@ -262,37 +261,26 @@ private:
     
 };
 
-void usage(const char *progname)
-{
-    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
-    printf("       \"robot_model\" is the name (string) of a robot description to be used for path validation.\n");
-}
-
 int main(int argc, char **argv)
 { 
-    if (argc >= 2)
-    { 
-	ros::init(argc, argv);
-	
-	MotionValidator *validator = new MotionValidator(argv[1]);
-	validator->loadRobotDescription();
-	
-	std::vector<std::string> mlist;    
-	validator->knownModels(mlist);
-	ROS_INFO("Known models:");    
-	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    ROS_INFO("  * %s", mlist[i].c_str());
-	if (mlist.size() > 0)
-	    validator->spin();
-	else
-	    ROS_ERROR("No models defined. Path validation node cannot start.");
-	
-	validator->shutdown();
-	
-	delete validator;	
-    }
+    ros::init(argc, argv);
+    
+    MotionValidator *validator = new MotionValidator();
+    validator->loadRobotDescription();
+    
+    std::vector<std::string> mlist;    
+    validator->knownModels(mlist);
+    ROS_INFO("Known models:");    
+    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	ROS_INFO("  * %s", mlist[i].c_str());
+    if (mlist.size() > 0)
+	validator->spin();
     else
-	usage(argv[0]);
+	ROS_ERROR("No models defined. Path validation node cannot start.");
+    
+    validator->shutdown();
+    
+    delete validator;	
         
     return 0;    
 }

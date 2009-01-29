@@ -157,9 +157,8 @@ class KinematicPlanning : public ros::Node,
 {
 public:
     
-    KinematicPlanning(const std::string &robot_model) : ros::Node("kinematic_planning"),
-							CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
-									      robot_model)
+    KinematicPlanning(void) : ros::Node("kinematic_planning"),
+			      CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this))
     {
 	advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState);
 	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
@@ -346,7 +345,10 @@ public:
 		m_continueReplanningLock.unlock();
 	    
 	    if (issueStop)
+	    {
+		ROS_INFO("Motion plan was succesfully executed");
 		stopReplanning();
+	    }
 	}
     }
     
@@ -792,43 +794,32 @@ public:
     
 };
 
-void usage(const char *progname)
-{
-    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
-    printf("       \"robot_model\" is the name (string) of a robot description to be used for planning.\n");
-}
-
 int main(int argc, char **argv)
 { 
-    if (argc >= 2)
-    { 
-	ros::init(argc, argv);
-	OutputHandlerROScon rosconOutputHandler;	
-	ompl::msg::useOutputHandler(&rosconOutputHandler);
-	
-	KinematicPlanning *planner = new KinematicPlanning(argv[1]);
-	planner->loadRobotDescription();
-	
-	std::vector<std::string> mlist;    
-	planner->knownModels(mlist);
-	ROS_INFO("Known models:");    
-	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    ROS_INFO("  * %s", mlist[i].c_str());    
-	
-	planner->waitForState();
-	planner->startPublishingStatus();
-	
-	if (mlist.size() > 0)
-	    planner->spin();
-	else
-	    ROS_ERROR("No models defined. Kinematic planning node cannot start.");
-	
-	planner->shutdown();
-
-	delete planner;	
-    }
+    ros::init(argc, argv);
+    OutputHandlerROScon rosconOutputHandler;	
+    ompl::msg::useOutputHandler(&rosconOutputHandler);
+    
+    KinematicPlanning *planner = new KinematicPlanning();
+    planner->loadRobotDescription();
+    
+    std::vector<std::string> mlist;    
+    planner->knownModels(mlist);
+    ROS_INFO("Known models:");    
+    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	ROS_INFO("  * %s", mlist[i].c_str());    
+    
+    planner->waitForState();
+    planner->startPublishingStatus();
+    
+    if (mlist.size() > 0)
+	planner->spin();
     else
-	usage(argv[0]);
+	ROS_ERROR("No models defined. Kinematic planning node cannot start.");
+    
+    planner->shutdown();
+    
+    delete planner;	
     
     return 0;    
 }

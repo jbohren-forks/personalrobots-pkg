@@ -102,11 +102,10 @@ class StateValidityMonitor : public ros::Node,
 {
 public:
     
-    StateValidityMonitor(const std::string &robot_model) : ros::Node("state_validity_monitor"),
-							   CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this),
-										 robot_model),
-							   last_(-1),
-							   id_(0)
+    StateValidityMonitor(void) : ros::Node("state_validity_monitor"),
+				 CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
+				 last_(-1),
+				 id_(0)
     {
 	advertise<std_msgs::Byte>("state_validity", 1);	
 	advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
@@ -211,28 +210,17 @@ private:
     
 };
 
-void usage(const char *progname)
-{
-    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
-    printf("       \"robot_model\" is the name (string) of a robot description to be used for path validation.\n");
-}
-
 int main(int argc, char **argv)
 { 
-    if (argc >= 2)
-    { 
-	ros::init(argc, argv);
-	
-	StateValidityMonitor *validator = new StateValidityMonitor(argv[1]);
-	validator->loadRobotDescription();
-	validator->waitForState();
-	validator->spin();
-	validator->shutdown();
-	
-	delete validator;	
-    }
-    else
-	usage(argv[0]);
-        
+    ros::init(argc, argv);
+    
+    StateValidityMonitor *validator = new StateValidityMonitor();
+    validator->loadRobotDescription();
+    validator->waitForState();
+    validator->spin();
+    validator->shutdown();
+    
+    delete validator;	
+
     return 0;    
 }

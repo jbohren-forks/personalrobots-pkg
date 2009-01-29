@@ -37,7 +37,7 @@
 
 /** This is a simple program for requesting a motion plan */
 
-#include <kinematic_planning/KinematicStateMonitor.h>
+#include <kinematic_planning/CollisionSpaceMonitor.h>
 
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
@@ -49,11 +49,18 @@
 #include <std_srvs/Empty.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <robot_msgs/JointTraj.h>
+#include <robot_srvs/IKService.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
+
 #include <sstream>
 #include <cassert>
+
+
+planning_models::KinematicModel::StateParams *robotState = NULL;
+bool stopped = true;
+
 
 class PlanningRequest
 {
@@ -233,17 +240,32 @@ public:
 	m_replanning = false;
     }
     
-    void useReplannedPath(robot_msgs::KinematicPath &path)
+    void stopRobot();
+    
+    void useReplannedPath(bool valid, robot_msgs::KinematicPath &path, double distance)
     {
+	
 	if (m_replanning)
 	{
-	    if (path.get_states_size() == 0)
-		return;
-	    
-	    if (m_statePlanning)
-		executePath(m_activeRequestState, path, -1.0, m_replanningController);
+	    if (!valid)
+		stopRobot();
 	    else
-		executePath(m_activeRequestLinkPosition, path, -1.0, m_replanningController);
+	    {
+		if (path.states.size() > 0)
+		{
+		    stopped = false;
+		    
+	    if (m_statePlanning)
+		executePath(m_activeRequestState, path, distance, m_replanningController);
+	    else
+		executePath(m_activeRequestLinkPosition, path, distance, m_replanningController);
+		}
+		
+		//		stopRobot();
+		
+	    }
+	    
+	    
 	}
 	//	else
 	//	    ROS_WARN("Received new path for replanning, but we are not in replanning mode");
@@ -255,7 +277,7 @@ public:
     {
 	printPath(path, distance);
 	sendDisplay(req.start_state, path, req.params.model_id);
-	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
+	//	verifyPath(req.start_state, req.constraints, path, req.params.model_id);
 	//	if (controller == C_ARM)
 	sendArmCommand(path, req.params.model_id);
     }
@@ -282,6 +304,9 @@ protected:
 	    traj.points[i].set_positions_size(path.states[i].get_vals_size());
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
 		traj.points[i].positions[j] = path.states[i].vals[j];
+
+	    //	    traj.points[i].positions.insert(traj.points[i].positions.begin() + 2, robotState->getParams("r_upper_arm_roll_joint")[0]);
+	    
 	    traj.points[i].time = 0.0;
 	}	
     }
@@ -307,13 +332,13 @@ protected:
 };
 
 class PlanKinematicPath : public ros::Node,
-			  public kinematic_planning::KinematicStateMonitor
+			  public kinematic_planning::CollisionSpaceMonitor
 {
 public:
     
-    PlanKinematicPath(const std::string& robot_model) : ros::Node("plan_kinematic_path"),
-							kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this), robot_model),
-							m_pr(dynamic_cast<ros::Node*>(this))
+    PlanKinematicPath(void) : ros::Node("plan_kinematic_path"),
+			      kinematic_planning::CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
+			      m_pr(dynamic_cast<ros::Node*>(this))
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
@@ -334,17 +359,12 @@ public:
 	robot_msgs::KinematicPath empty_path;
 	robot_msgs::KinematicState state;
 	currentState(state);
-	m_pr.sendDisplay(state, empty_path, "pr2");
-	//	printf("\n\nReceived state: ");
 	//	m_robotState->print();
-	//	printf("\n\nLink poses:\n");
 	//	printLinkPoses();
 	
-	//	if (m_robotState->seenAll())
-	//	    printf("SEEN ALL\n");
+	//	exit(0);
 	
-
-	//	printCurrentState();
+	m_pr.sendDisplay(state, empty_path, "pr2");
     }
     
     void currentState(robot_msgs::KinematicState &state)
@@ -357,8 +377,7 @@ public:
     // execute this when a new path is received
     void currentPathToGoal(void)
     {
-	m_pr.useReplannedPath(m_planStatus.path);
-	//	m_pr.requestStopReplanning();
+	m_pr.useReplannedPath(m_planStatus.valid, m_planStatus.path, m_planStatus.distance);
     }
     
     void requestStopReplanning(void)
@@ -369,10 +388,12 @@ public:
     void runTestRightArm(bool replan = false)
     {
 	robot_msgs::KinematicPlanStateRequest  req;
+	stopped = false;
+	robotState = m_robotState;
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "LRSBL";
+	req.params.planner_id = "IKSBL";
 	req.threshold = 0.2;
 	req.interpolate = 1;
 	req.times = 1;
@@ -404,14 +425,69 @@ public:
 	    m_pr.performCall(r, PlanningRequest::C_ARM);
 	}	
     }
+
+
+    void runTestRightEx(bool replan = false)
+    {
+	robot_msgs::KinematicPlanStateRequest  req;
+
+	robotState = m_robotState;
+	
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "IKSBL";
+	req.threshold = 0.2;
+	req.interpolate = 1;
+	req.times = 1;
+
+	currentState(req.start_state);
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
+	    req.goal_state.vals[i] = 0.0;
+
+
+	doIK(0.75025, -0.188, 0.859675, 0,0 ,0,1, req.goal_state);	
+	/*
+
+	req.goal_state.vals[0] = 0.114249;
+	req.goal_state.vals[1] = 0.315477;	
+	req.goal_state.vals[2] = 0.393613;	
+	req.goal_state.vals[3] = -1.00633;	
+	req.goal_state.vals[4] = 3.12397;	
+	req.goal_state.vals[5] = 0.623655;	
+	req.goal_state.vals[6] = 2.67552;	
+	*/
+
+	req.allowed_time = 30.0;
+
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	if (replan)
+	{
+	    robot_srvs::KinematicReplanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}
+	else
+	{
+	    robot_srvs::KinematicPlanState::request r;
+	    r.value = req;
+	    m_pr.performCall(r, PlanningRequest::C_ARM);
+	}	
+    }
+
     
     void runRightArmTo0(bool replan = false)
     {
 	robot_msgs::KinematicPlanStateRequest  req;
-	
+	stopped = false;
+	robotState = m_robotState;
+
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "LRSBL";
+	req.params.planner_id = "IKSBL";
 	req.threshold = 0.2;
 	req.interpolate = 1;
 	req.times = 1;
@@ -422,7 +498,7 @@ public:
 	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;	
 	req.goal_state.vals[1] = -0.2;
-	req.goal_state.vals[0] = -0.8;
+	req.goal_state.vals[0] = -1.5;
 
 	req.allowed_time = 30.0;
 	
@@ -451,32 +527,37 @@ public:
     
     void runTestRightEEf(bool replan = false)
     {
+	stopped = false;
+	
+	robotState = m_robotState;
+	
 	robot_msgs::KinematicPlanLinkPositionRequest req;
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "LRSBL";
+	req.params.planner_id = "IKSBL";
 	req.interpolate = 1;
 	req.times = 1;
 	
 	//	currentState(req.start_state);
 
-	req.start_state.set_vals_size(0);
+	currentState(req.start_state);//.set_vals_size(0);
        
 
 	req.set_goal_constraints_size(1);
 	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;
 	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
-	req.goal_constraints[0].pose.position.x = 0.845663;	
-	req.goal_constraints[0].pose.position.y = -0.09723536;	
-	req.goal_constraints[0].pose.position.z = 0.792653;	
+	req.goal_constraints[0].pose.position.x = 0.75025;
+	req.goal_constraints[0].pose.position.y = -0.188;	
+	req.goal_constraints[0].pose.position.z = 0.829675;	
 
 	req.goal_constraints[0].pose.orientation.x = 0;
 	req.goal_constraints[0].pose.orientation.y = 0;
 	req.goal_constraints[0].pose.orientation.z = 0;
 	req.goal_constraints[0].pose.orientation.w = 1;	
 
-	req.goal_constraints[0].position_distance = 0.01;
-	req.goal_constraints[0].orientation_distance = 0.3;
+	double d = 0.005;
+	req.goal_constraints[0].position_distance = d;
+	req.goal_constraints[0].orientation_distance = 0.05;
 	req.goal_constraints[0].orientation_importance = 0.005;
 	
 	// an example of constraints: do not move the elbow too much
@@ -490,7 +571,7 @@ public:
 	  req.constraints.pose[0].position_distance = 0.01;
 	*/
 	
-	req.allowed_time = 50;
+	req.allowed_time = 16.67;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];
 	req.params.volumeMin.y = -5.0 + m_basePos[1];
@@ -514,8 +595,36 @@ public:
 	}	
     }
     
-
-
+    void doIK(double px, double py, double pz,
+	      double qx, double qy, double qz, double qw,
+	      robot_msgs::KinematicState &state)
+    {
+	robot_srvs::IKService::request req;
+	robot_srvs::IKService::response res;
+	
+	req.pose.position.x = px;
+	req.pose.position.y = py;
+	req.pose.position.z = pz;
+	req.pose.orientation.x = qx;
+	req.pose.orientation.y = qy;
+	req.pose.orientation.z = qz;
+	req.pose.orientation.w = qw;
+	
+	if (!ros::service::call("perform_pr2_ik", req, res))
+	    ROS_ERROR("Failed calling IK service");
+		
+	if (res.traj.points.size() > 0)
+	{
+	    ROS_INFO("Got %d solutions", res.traj.points.size());
+	    state.set_vals_size(res.traj.points[0].positions.size());
+	    for (unsigned int i  = 0 ; i < res.traj.points[0].positions.size() ; ++i)
+		state.vals[i] = res.traj.points[0].positions[i];
+	}
+	else
+	    ROS_ERROR("IK Failed");
+	
+    }
+    
 protected:
 
     void sendPoint(double x, double y, double z, double radius, const std::string &frame_id)
@@ -552,11 +661,13 @@ protected:
     {
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
 	{
-	    planning_models::KinematicModel::Sphere *sphere = dynamic_cast<planning_models::KinematicModel::Sphere*>(link->attachedBodies[i]->shape);
+	    planning_models::KinematicModel::Box *sphere = dynamic_cast<planning_models::KinematicModel::Box*>(link->attachedBodies[i]->shape);
 	    if (sphere)
 	    {
 		btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();
-		sendPoint(v.x(), v.y(), v.z(), sphere->radius, link->name);
+		printf("extents: %g, %g, %g\n", sphere->size[0], sphere->size[1], sphere->size[2]);
+		
+		sendPoint(v.x(), v.y(), v.z(), std::max(std::max(sphere->size[0], sphere->size[1]), sphere->size[2] / 2.0), link->name);
 	    }
         }
     }
@@ -568,44 +679,78 @@ protected:
     
 };
 
-
-void usage(const char *progname)
+void PlanningRequest::stopRobot()
 {
-    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
-    printf("       \"robot_model\" is the name (string) of a robot description to be used when building the map.\n");
+    if (stopped)
+	return;
+    stopped = true;
+    
+    robot_msgs::KinematicPath stop_path;
+    robot_msgs::KinematicState state;
+    dynamic_cast<PlanKinematicPath*>(m_node)->currentState(state);
+    stop_path.set_states_size(1);
+    stop_path.states[0].set_vals_size(7);
+    for (int i = 0 ; i < 7 ; i++)
+    {
+	stop_path.states[0].vals[i] = state.vals[20 + i];
+	
+    }
+    
+
+    
+    ROS_WARN("************************* STOPPING ROBOT!");
+    
+    if (m_statePlanning)
+	executePath(m_activeRequestState, stop_path, -1.0, m_replanningController);
+    else
+	executePath(m_activeRequestLinkPosition, stop_path, -1.0, m_replanningController);
 }
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
     
-    if (argc >= 2)
-    {
-	PlanKinematicPath *plan = new PlanKinematicPath(argv[1]);
+	PlanKinematicPath *plan = new PlanKinematicPath();
 	plan->loadRobotDescription();
 	if (plan->loadedRobot())
 	{
-	    //	    sleep(5);
+	    sleep(2);
 	    plan->waitForState();
 	    ROS_INFO("Received robot state");
 	    plan->printCurrentState();
 	    plan->printLinkPoses();
-	    
+
+	    /*	    
 	    sleep(3);		
 	    
+
+	    while(1)
+	    {
+		
+		plan->runRightArmTo0(true);
+	    sleep(10);
+	    
+	    plan->runTestRightArm(true);    
+	    sleep(10);
+	}
+	    */
 	    char test = (argc < 3) ? ' ' : argv[2][0];
 	    
 	    switch (test)
 	    {
 	    case '0':
-		plan->runRightArmTo0(false);
+		plan->runRightArmTo0(true);
 		break;
 	    case 'r':
-		plan->runTestRightArm(false);    
+		plan->runTestRightArm(true);    
 		break;
 	    case 'e':
-		plan->runTestRightEEf(false);    
+		plan->runTestRightEEf(true);    
 		break;
+	    case 'x':
+		plan->runTestRightEx(true);    
+		break;
+
 	    default:
 		ROS_WARN("No test");
 		break;
@@ -617,9 +762,6 @@ int main(int argc, char **argv)
 	
 	plan->shutdown();
 	delete plan;
-    }
-    else
-	usage(argv[0]);
     
     return 0;    
 }

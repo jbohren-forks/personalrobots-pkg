@@ -95,8 +95,7 @@ namespace kinematic_planning
 
     public:
 	
-        CollisionSpaceMonitor(ros::Node *node, const std::string &robot_model,
-			      collision_space::EnvironmentModel *collisionSpace = NULL) : KinematicStateMonitor(node, robot_model)
+        CollisionSpaceMonitor(ros::Node *node, collision_space::EnvironmentModel *collisionSpace = NULL) : KinematicStateMonitor(node)
 	{
 	    if (collisionSpace)
 		m_collisionSpace = collisionSpace;
