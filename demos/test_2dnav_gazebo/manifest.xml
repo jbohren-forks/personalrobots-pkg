@@ -1,0 +1,25 @@
+<package>
+  <description>Test 2dnav stack in 3d sim.</description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="NA" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/Simulator</url>
+  <depend package="nav_view"/>
+  <depend package="gazebo_plugin"/>
+  <depend package="map_server"/>
+  <depend package="amcl_player"/>
+  <depend package="fake_localization"/>
+  <depend package="wavefront_player"/>
+  <depend package="teleop_base_keyboard"/>
+  <depend package="teleop_arm_keyboard"/>
+  <depend package="laser_view"/>
+  <depend package="pr2_gui"/>
+  <depend package="highlevel_controllers"/>
+  <depend package="executive_trex_pr2"/>
+  <depend package="robot_pose_ekf"/>
+  <depend package="pr2_gazebo"/>
+  <depend package="pr2_prototype1_gazebo"/>
+  <depend package="transformations"/>
+  <depend package="ransac_ground_plane_extraction"/>
+  <depend package="point_cloud_assembler"/>
+</package>
