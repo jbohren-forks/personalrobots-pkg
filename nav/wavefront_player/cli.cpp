@@ -20,7 +20,7 @@ public:
     wf_goal.goal.th = th;
     wf_goal.enable = 1;
     subscribe("state", wf_state, &WavefrontCLI::state_cb, 1);
-    advertise("goal", wf_state, &WavefrontCLI::goal_subscriber_callback, 1);
+    advertise("goal", wf_goal, &WavefrontCLI::goal_subscriber_callback, 1);
   }
   void state_cb()
   {
