@@ -41,7 +41,7 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
-unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
+unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale)
 {
     unsigned int pos = m_models.size();
     m_models.push_back(model);

@@ -1,0 +1,4 @@
+<launch>
+	<param name="self_collision_scale_factor" type="double" value="1.15" />
+	<node pkg="self_watch" type="self_watch" args="robot_description:=robotdesc/pr2" output="screen" />
+</launch>

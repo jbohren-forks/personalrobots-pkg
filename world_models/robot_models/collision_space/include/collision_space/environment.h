@@ -38,6 +38,7 @@
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
+#include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
 #include <vector>
 #include <string>
@@ -65,6 +66,16 @@ namespace collision_space
     {
     public:
 	
+	/** Definition of a contact point */
+	struct Contact
+	{
+	    btVector3                              pos;     // contact position
+	    btVector3                              normal;  // normal unit vector at contact 
+	    double                                 depth;   // depth (penetration between bodies)
+	    planning_models::KinematicModel::Link *link1;   // first link involved in contact
+	    planning_models::KinematicModel::Link *link2;   // if the contact is between two links, this is not NULL
+	};
+	
 	EnvironmentModel(void)
 	{
 	    m_selfCollision = true;
@@ -82,6 +93,9 @@ namespace collision_space
 		
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id) = 0;
+
+	/** Get the list of contacts (collisions) */
+	virtual bool getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
 	
 	/** Remove all obstacles from collision model */
 	virtual void clearObstacles(void) = 0;
@@ -92,8 +106,11 @@ namespace collision_space
 	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
 
-	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links);
+	/** Add a robot model. Ignore robot links if their name is not
+	    specified in the string vector. The scale argument can be
+	    used to increase or decrease the size of the robot's
+	    bodies */
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale = 1.0);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;

@@ -1,0 +1,14 @@
+<package>
+  <description>A node that warns when the robot is about to hit itself</description>
+  <author>Ioan A. Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="rosconsole" />
+
+  <depend package="robot_msgs" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="planning_models" />
+  <depend package="collision_space" />
+  
+</package>

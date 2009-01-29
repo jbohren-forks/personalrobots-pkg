@@ -82,6 +82,9 @@ namespace collision_space
 	/** Return the space ID for the space in which the particular model is instanciated */
 	dSpaceID getModelODESpace(unsigned int model_id) const;
 	
+	/** Get the list of contacts (collisions) */
+	virtual bool getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count = 1);
+
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id);
 	
@@ -95,7 +98,7 @@ namespace collision_space
 	virtual void addStaticPlane(double a, double b, double c, double d);
 
 	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links);
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale = 1.0);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);
@@ -110,7 +113,10 @@ namespace collision_space
 	virtual int setCollisionCheck(unsigned int model_id, const std::string &link, bool state);
 	
     protected:
-		
+	
+	/** Internal function for collision detection */
+	void testCollision(unsigned int model_id, void *data);
+	
 	class ODECollide2
 	{
 	public:
@@ -220,11 +226,12 @@ namespace collision_space
 	struct ModelInfo
 	{
 	    std::vector< kGeom* >                    linkGeom;
+	    double                                   scale;
 	    dSpaceID                                 space;
 	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
-	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const;
+	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape, double scale) const;
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
