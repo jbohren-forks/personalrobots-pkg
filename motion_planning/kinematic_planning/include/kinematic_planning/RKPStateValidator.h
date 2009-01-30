@@ -77,6 +77,11 @@ namespace kinematic_planning
 	    m_kce.clear();
 	}
 	
+	const KinematicConstraintEvaluatorSet&  getKinematicConstraintEvaluatorSet(void) const
+	{
+	    return m_kce;
+	}
+	
     protected:
 	RKPModelBase                    *m_model;
 	KinematicConstraintEvaluatorSet  m_kce;

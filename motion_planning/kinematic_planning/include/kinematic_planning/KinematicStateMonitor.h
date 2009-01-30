@@ -168,7 +168,7 @@ namespace kinematic_planning
 	    if (m_node->getParam("robot_description", content))
 		setRobotDescriptionFromData(content.c_str());
 	    else
-		ROS_ERROR("Robot model not found!");
+		ROS_ERROR("Robot model not found! Did you remap robot_description?");
 	}
 	
 	virtual void defaultPosition(void)

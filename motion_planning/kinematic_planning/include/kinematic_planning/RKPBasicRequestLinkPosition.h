@@ -58,7 +58,21 @@ namespace kinematic_planning
 		PoseConstraintEvaluator *pce = new PoseConstraintEvaluator();
 		pce->use(m_model->kmodel, pc[i]);
 		m_pce.push_back(pce);
-		threshold += pc[i].position_distance + pc[i].orientation_distance * pc[i].orientation_importance;
+
+		switch (pc[i].type)
+		{
+		case robot_msgs::PoseConstraint::ONLY_POSITION:
+		    threshold += pc[i].position_distance;
+		    break;
+		case robot_msgs::PoseConstraint::ONLY_ORIENTATION:
+		    threshold += pc[i].orientation_distance;
+		    break;
+		case robot_msgs::PoseConstraint::COMPLETE_POSE:
+		    threshold += pc[i].position_distance + pc[i].orientation_distance * pc[i].orientation_importance;
+		    break;
+		default:
+		    break;
+		}
 	    }
 	}
 	
