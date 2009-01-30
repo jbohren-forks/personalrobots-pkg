@@ -56,11 +56,8 @@ namespace kinematic_planning
        @section topic ROS topics
        
        Subscribes to (name/type):
-       - @b collision_map/CollisionMap : data describing the 3D environment
-       - @b attach_object/AttachedObject : data describing an object to be attached to a link
-       
-       Additional subscriptions due to inheritance from KinematicStateMonitor:
-       - @b robot_srvs/MechanismModel : position for each of the robot's joints
+       - @b "collision_map"/CollisionMap : data describing the 3D environment
+       - @b "attach_object"/AttachedObject : data describing an object to be attached to a link
        
        Publishes to (name/type):
        - None
@@ -73,7 +70,7 @@ namespace kinematic_planning
        - None
        
        Provides (name/type):
-       - @b set_collision_state/CollisionCheckState : service to allow enabling and disabling collision checking for links
+       - @b "set_collision_state"/CollisionCheckState : service to allow enabling and disabling collision checking for links
        
        <hr>
        

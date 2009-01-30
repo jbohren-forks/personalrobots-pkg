@@ -28,3 +28,6 @@ byte done
 # If computing the path was not possible, this will be set to 0
 # otherwise, it will be 1
 byte valid
+
+# If the data the planner has when planning is stale, set this flag to 1
+byte unsafe

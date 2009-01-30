@@ -36,23 +36,22 @@
 
 /**
 
-
 @htmlinclude ../manifest.html
 
-@b StateValidityMonitor is a node capable of verifying if the current
-state of the robot is valid or not.
+@b DisplayPlannerCollisionModel is a node that displays the state of
+the robot's collision space, as seen by the planner
 
 <hr>
 
 @section usage Usage
 @verbatim
-$ state_validity_monitor robot_model [standard ROS args]
+$ display_planner_collision_model [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ state_validity_monitor robotdesc/pr2
+$ display_planner_collision_model robot_description:=robotdesc/pr2
 @endverbatim
 
 <hr>
@@ -63,7 +62,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name/type):
-- @b "state_validity"/Byte : 1 if state is valid, 0 if it is invalid
+- @b "visualizationMarker"/VisualizationMarker 
 
 <hr>
 
@@ -94,19 +93,21 @@ Provides (name/type):
 #include <map>
 using namespace kinematic_planning;
 
-class StateValidityMonitor : public ros::Node,
-			     public CollisionSpaceMonitor
+class DisplayPlannerCollisionModel : public ros::Node,
+				     public CollisionSpaceMonitor
 {
 public:
     
-    StateValidityMonitor(void) : ros::Node("state_validity_monitor"),
-				 CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
-				 last_(-1)
+    DisplayPlannerCollisionModel(void) : ros::Node("display_planner_collision_model"),
+					 CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
+					 id_(0)
     {
-	advertise<std_msgs::Byte>("state_validity", 1);	
+	advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
+
+	advertise<robot_msgs::AttachedObject>("attach_object", 1);
     }
     
-    virtual ~StateValidityMonitor(void)
+    virtual ~DisplayPlannerCollisionModel(void)
     {
     }
     
@@ -115,37 +116,75 @@ protected:
     void afterWorldUpdate(void)
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
-	last_ = -1;
-    }
-    
-    void stateUpdate(void)
-    {
-	CollisionSpaceMonitor::stateUpdate();
-
-	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1)
+	
+	unsigned int n = m_collisionMap.get_boxes_size();	
+	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    m_collisionSpace->lock();
-	    m_kmodel->computeTransforms(m_robotState->getParams());
-	    m_collisionSpace->updateRobotModel(0);
-	    bool invalid = m_collisionSpace->isCollision(0);
-	    m_collisionSpace->unlock();
-	    std_msgs::Byte msg;
-	    msg.data = invalid ? 0 : 1;
-	    if (last_ != msg.data)
-	    {
-		last_ = msg.data;
-		publish("state_validity", msg);		
-		if (invalid)
-		    ROS_WARN("State is in collision");
-		else
-		    ROS_INFO("State is valid");
-	    }	    
+	    sendPoint(m_collisionMap.boxes[i].center.x,
+		      m_collisionMap.boxes[i].center.y,
+		      m_collisionMap.boxes[i].center.z,
+		      radiusOfBox(m_collisionMap.boxes[i].extents),
+		      m_collisionMap.header, 1);
 	}
     }
+    
+    void afterAttachBody(planning_models::KinematicModel::Link *link)
+    {
+	rostools::Header header = m_attachedObject.header;
+	header.frame_id = link->name;
+	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
+        {
+            planning_models::KinematicModel::Box *box = dynamic_cast<planning_models::KinematicModel::Box*>(link->attachedBodies[i]->shape);
+            if (box)
+            {
+                btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();
+                sendPoint(v.x(), v.y(), v.z(), std::max(std::max(box->size[0], box->size[1]), box->size[2] / 2.0), header, 0);
+            }
+        }
+    }
 
+    
 private:
     
-    int last_;
+    void sendPoint(double x, double y, double z, double radius, const rostools::Header &header, int color)
+    {
+	robot_msgs::VisualizationMarker mk;
+	mk.header = header;
+	
+	mk.id = id_++;
+	mk.type = robot_msgs::VisualizationMarker::SPHERE;
+	mk.action = robot_msgs::VisualizationMarker::ADD;
+	mk.x = x;
+	mk.y = y;
+	mk.z = z;
+
+	mk.roll = 0;
+	mk.pitch = 0;
+	mk.yaw = 0;
+	
+	mk.xScale = radius * 2.0;
+	mk.yScale = radius * 2.0;
+	mk.zScale = radius * 2.0;
+		
+	mk.alpha = 255;
+
+	if (color == 0)
+	{
+	    mk.r = 255;
+	    mk.g = 10;
+	    mk.b = 10;
+	}
+	else
+	{
+	    mk.r = 10;
+	    mk.g = 255;
+	    mk.b = 10;
+	}
+	
+	publish("visualizationMarker", mk);
+    }
+
+    int id_;
     
 };
 
@@ -153,13 +192,14 @@ int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
     
-    StateValidityMonitor *validator = new StateValidityMonitor();
-    validator->loadRobotDescription();
-    validator->waitForState();
-    validator->spin();
-    validator->shutdown();
+    DisplayPlannerCollisionModel *disp = new DisplayPlannerCollisionModel();
+    disp->loadRobotDescription();
     
-    delete validator;	
+    disp->spin();
+    disp->shutdown();
+
+    
+    delete disp;	
 
     return 0;    
 }

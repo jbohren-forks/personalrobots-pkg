@@ -68,8 +68,8 @@ instantiated each time. Since planners may require different
 setup/configuration code, there exists a base class that defines the
 functionality and an inherited class for each type of planner that can
 be instantiated. The planners are associated to string names: RRT,
-LazyRRT, EST, SBL. These string names can be used for the planner_id
-component of the planning request.
+LazyRRT, EST, SBL, IKSBL. These string names can be used for the 
+planner_id component of the planning request.
 
 When checking states for validity, a resolution at which paths are
 check needs to be defined. To make things easier for the user, this
@@ -80,20 +80,33 @@ robot is to be used, different settings man need to be used.
 \todo
 - Find a better way to specify resolution for state validity
 checking.
-- Move code from header files to .cpp files (maybe define a library?)
 
+When using replanning, this node monitors the current state of the
+robot and that of the environment. When a change is detected, the
+currently executed path is checked for validity. If the current path
+is no longer valid, the validity status is set to false and a new path
+is computed. When the new path is computed, it is sent in the status
+messsage and validity is set to true (unless no solution is found, in
+which case the status remains invalid; a change in the map or a call
+to force_replanning will make the planner try again). When the planner
+detects that the robot reached the desired position, it stops the
+replanning thread and sets the done flag to true.
+
+If the monitored state of the robot and of the environment is not
+updated for a while (see the @ref parameters section), the unsafe flag
+of the planning status is set to true.
 
 <hr>
 
 @section usage Usage
 @verbatim
-$ kinematic_planning robot_model [standard ROS args]
+$ kinematic_planning [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ kinematic_planning robotdesc/pr2
+$ kinematic_planning robot_description:=robotdesc/pr2
 @endverbatim
 
 <hr>
@@ -101,21 +114,11 @@ $ kinematic_planning robotdesc/pr2
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "replan_kinematic_path_state"/KinematicPlanStateRequest : given a robot model, starting and goal states,
- this service computes and recomputes a collision free path until the monitored state is actually at the goal or
- stopping is requested. Changes in the collision model trigger replanning.
-
-
-- @b "replan_kinematic_path_position"/KinematicPlanStateRequest : given a robot model, starting state and goal
- poses of certain links, this service computes a collision free path until the monitored state is actually at the 
-goal or stopping is requested. Changes in the collision model trigger replanning.  
-  
-- @b "replan_stop"/Empty : signal the planner to stop replanning
-
-Additional subscriptions due to inheritance from CollisionSpaceMonitor:
+- None
 
 Publishes to (name/type):
-- @b "path_to_goal"/KinematicPath : the current path to goal (published when replanning)
+- @b "kinematic_planning_status"/KinematicPlanStatus : the current path to goal (published when replanning) and the 
+  status of the motion planner (whether the path is valid, complete, etc)
 
 <hr>
 
@@ -125,16 +128,39 @@ Uses (name/type):
 - None
 
 Provides (name/type):
+
 - @b "plan_kinematic_path_state"/KinematicPlanState : given a robot model, starting and goal 
-states, this service computes a collision free path
+  states, this service computes a collision free path
+
 - @b "plan_kinematic_path_position"/KinematicPlanLinkPosition : given a robot model, starting
- state and goal poses of certain links, this service computes a collision free path
+  state and goal poses of certain links, this service computes a collision free path
+
+- @b "replan_kinematic_path_state"/KinematicReplanState : given a robot model, starting and goal states,
+  this service computes and recomputes a collision free path until the monitored state is actually at the goal or
+  stopping is requested. Changes in the collision model trigger replanning. The computed path is published
+  as part of the status message.
+
+- @b "replan_kinematic_path_position"/KinematicReplanLinkPosition : given a robot model, starting state and goal
+  poses of certain links, this service computes a collision free path until the monitored state is actually at the 
+  goal or stopping is requested. Changes in the collision model trigger replanning.
+
+- @b "replan_force"/Empty : signal the planner to replan one more step
+
+- @b "replan_stop"/Empty : signal the planner to stop replanning
 
 
 <hr>
 
 @section parameters ROS parameters
-- None
+- @b "refresh_interval_collision_map"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true
+
+- @b "refresh_interval_kinematic_state"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true
+
+- @b "refresh_interval_base_pose"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true, unless we are planning in the robot frame, in which case, this the pase pose does not matter
+  (the collision map would be in the same frame)
 
 **/
 
@@ -172,6 +198,7 @@ public:
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.valid = 1;
+	m_currentPlanStatus.unsafe = 0;
 	m_currentlyExecutedPath.set_states_size(0);
 	
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
@@ -439,21 +466,11 @@ public:
 	
 	bool result = false;
 	
-	if (isSafeToPlan())
-	{
-	    result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-	    
-	    res.value.id = -1;
-	    res.value.done = trivial ? 1 : 0;
-	    res.value.valid = res.value.path.get_states_size() > 0;
-	}
-	else
-	{
-	    res.value.id = -1;
-	    res.value.done = 0;
-	    res.value.valid = 0;
-	    res.value.path.set_states_size(0);
-	}
+	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
 	
 	return result;
     }
@@ -471,26 +488,19 @@ public:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
+	    bool safe = isSafeToPlan();
+
+	    currentState(m_currentPlanToStateRequest.start_state);
+	    m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
+	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
 	    
-	    if (isSafeToPlan())
-	    {
-		currentState(m_currentPlanToStateRequest.start_state);
-		m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
-		m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
-	    
-		m_statusLock.lock();	    
-		m_currentPlanStatus.path = solution;
-		m_currentPlanStatus.distance = distance;
-		m_currentPlanStatus.done = trivial ? 1 : 0;
-		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
-		m_statusLock.unlock();	    
-	    }
-	    else
-	    {
-		m_statusLock.lock();	    
-		m_currentPlanStatus.valid = 0;
-		m_statusLock.unlock();	    
-	    }
+	    m_statusLock.lock();	    
+	    m_currentPlanStatus.path = solution;
+	    m_currentPlanStatus.distance = distance;
+	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
+	    m_statusLock.unlock();	    
 	    
 	    if (trivial)
 		break;
@@ -512,22 +522,13 @@ public:
 	
 	bool result = false;
 	
-	if (isSafeToPlan())
-	{
-	    result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-
-	    res.value.id = -1;
-	    res.value.done = trivial ? 1 : 0;
-	    res.value.valid = res.value.path.get_states_size() > 0;
-	}
-	else
-	{
-	    res.value.id = -1;
-	    res.value.done = 0;
-	    res.value.valid = 0;
-	    res.value.path.set_states_size(0);
-	}
+	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
 	
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
+
 	return result;
     }
 
@@ -545,26 +546,19 @@ public:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
+	    bool safe = isSafeToPlan();
 	    
-	    if (isSafeToPlan())
-	    {
-		currentState(m_currentPlanToPositionRequest.start_state);
-		m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;
-		m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
-		
-		m_statusLock.lock();	    
-		m_currentPlanStatus.path = solution;
-		m_currentPlanStatus.distance = distance;
-		m_currentPlanStatus.done = trivial ? 1 : 0;
-		m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
-		m_statusLock.unlock();
-	    }
-	    else
-	    {
-		m_statusLock.lock();	    
-		m_currentPlanStatus.valid = 0;
-		m_statusLock.unlock();
-	    }
+	    currentState(m_currentPlanToPositionRequest.start_state);
+	    m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;
+	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
+	    
+	    m_statusLock.lock();	    
+	    m_currentPlanStatus.path = solution;
+	    m_currentPlanStatus.distance = distance;
+	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
+	    m_statusLock.unlock();
 	    
 	    if (trivial)
 		break;

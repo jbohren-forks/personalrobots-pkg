@@ -65,8 +65,9 @@ namespace kinematic_planning
        @section topic ROS topics
        
        Subscribes to (name/type):
-       - @b robot_srvs/MechanismModel : position for each of the robot's joints
-       
+       - @b "mechanism_model"/MechanismModel : position for each of the robot's joints
+       - @b "odom_combined"/PoseWithCovariance : localized robot pose
+
        Publishes to (name/type):
        - None
        
@@ -82,6 +83,9 @@ namespace kinematic_planning
        
        <hr>
        
+       @section parameters ROS parameters
+       - @b "robot_description"/string : the URDF description of the robot we are monitoring
+
     **/
     
     class KinematicStateMonitor

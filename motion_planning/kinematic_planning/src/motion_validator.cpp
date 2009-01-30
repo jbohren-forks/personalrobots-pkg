@@ -36,7 +36,6 @@
 
 /**
 
-@mainpage
 
 @htmlinclude ../manifest.html
 
@@ -48,13 +47,13 @@ straight line between two states.
 
 @section usage Usage
 @verbatim
-$ motion_validator robot_model [standard ROS args]
+$ motion_validator [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ motion_validator robotdesc/pr2
+$ motion_validator robot_description:=robotdesc/pr2
 @endverbatim
 
 <hr>
@@ -63,8 +62,6 @@ $ motion_validator robotdesc/pr2
 
 Subscribes to (name/type):
 - None
-
-Additional subscriptions due to inheritance from NodeCollisionModel:
 
 Publishes to (name/type):
 - None
@@ -77,7 +74,7 @@ Uses (name/type):
 - None
 
 Provides (name/type):
-- @b "validate_path"/KinematicPlanState : given a robot model, starting and goal states, this service computes a collision free path
+- @b "validate_path"/ValidateKinematicPath : given a robot model, starting and goal states, this service computes whether the straight path is valid
 
 
 <hr>
@@ -157,7 +154,7 @@ public:
 		return false;
 	    }
 	    
-	    ROS_INFO("Validating path for '%s'...", req.model_id.c_str());
+	    ROS_INFO("Validating direct path for '%s'...", req.model_id.c_str());
 	    
 	    const unsigned int dim = model->si->getStateDimension();
 	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
