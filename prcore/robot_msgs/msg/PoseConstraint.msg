@@ -31,6 +31,8 @@ string robot_link
 float64 x
 float64 y
 float64 z
+
+# euler angles around YXZ
 float64 roll   # around Z axis
 float64 pitch  # around X axis
 float64 yaw    # around Y axis
