@@ -59,6 +59,7 @@ protected:
 	
 	// increase the robot parts by x%, to detect collisions before they happen	
 	param("self_collision_scale_factor", m_scaling, 1.2);
+	param("self_collision_padding", m_padding, 0.05);
 	
 	// load the string description of the robot 
 	std::string content;
@@ -111,7 +112,7 @@ protected:
 		}
 		
 		// add the robot model to the collision space
-		m_collisionSpace->addRobotModel(m_kmodel, links, m_scaling);
+		m_collisionSpace->addRobotModel(m_kmodel, links, m_scaling, m_padding);
 
 		
 		// get the self collision groups and add them to the collision space
@@ -131,7 +132,7 @@ protected:
 		if (nscgroups == 0)
 		    ROS_WARN("No self-collision checking enabled");
 
-		ROS_INFO("Self-collision monitor is active, with scaling %g", m_scaling);
+		ROS_INFO("Self-collision monitor is active, with scaling %g, padding %g", m_scaling, m_padding);
 	    }
 	    else
 		ROS_ERROR("Unable to parse robot description");
@@ -203,6 +204,7 @@ protected:
     // small factor; when a collision is found between the inflated
     // parts, the robot should take action to preserve itself
     double                                        m_scaling;
+    double                                        m_padding;
     
     // the complete robot state
     planning_models::KinematicModel::StateParams *m_robotState;

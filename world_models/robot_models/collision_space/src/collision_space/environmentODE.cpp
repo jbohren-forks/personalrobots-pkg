@@ -54,15 +54,16 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	dSpaceDestroy(m_spaceBasicGeoms);
 }
 
-unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale)
+unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale, double padding)
 {
-    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links, scale);
+    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
     
     if (m_modelsGeom.size() <= id)
     {
 	m_modelsGeom.resize(id + 1);
 	m_modelsGeom[id].space = dHashSpaceCreate(0);	
 	m_modelsGeom[id].scale = scale;
+	m_modelsGeom[id].padding = padding;
     }
 
     std::map<std::string, bool> exists;
@@ -85,12 +86,12 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	    kGeom *kg = new kGeom();
 	    kg->link = robot->links[i];
 	    kg->enabled = true;
-	    dGeomID g = createODEGeom(m_modelsGeom[id].space, robot->links[i]->shape, scale);
+	    dGeomID g = createODEGeom(m_modelsGeom[id].space, robot->links[i]->shape, scale, padding);
 	    assert(g);
 	    kg->geom.push_back(g);
 	    for (unsigned int k = 0 ; k < kg->link->attachedBodies.size() ; ++k)
 	    {
-		dGeomID ga = createODEGeom(m_modelsGeom[id].space, kg->link->attachedBodies[k]->shape, scale);
+		dGeomID ga = createODEGeom(m_modelsGeom[id].space, kg->link->attachedBodies[k]->shape, scale, padding);
 		assert(ga);
 		kg->geom.push_back(ga);
 	    }
@@ -100,26 +101,26 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
     return id;
 }
 
-dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape, double scale) const
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape, double scale, double padding) const
 {
     dGeomID g = NULL;
     switch (shape->type)
     {
     case planning_models::KinematicModel::Shape::SPHERE:
 	{
-	    g = dCreateSphere(space, static_cast<planning_models::KinematicModel::Sphere*>(shape)->radius * scale);
+	    g = dCreateSphere(space, static_cast<planning_models::KinematicModel::Sphere*>(shape)->radius * scale + padding);
 	}
 	break;
     case planning_models::KinematicModel::Shape::BOX:
 	{
 	    const double *size = static_cast<planning_models::KinematicModel::Box*>(shape)->size;
-	    g = dCreateBox(space, size[0] * scale, size[1] * scale, size[2] * scale);
+	    g = dCreateBox(space, size[0] * scale + padding, size[1] * scale + padding, size[2] * scale + padding);
 	}	
 	break;
     case planning_models::KinematicModel::Shape::CYLINDER:
 	{
-	    g = dCreateCylinder(space, static_cast<planning_models::KinematicModel::Cylinder*>(shape)->radius * scale,
-				static_cast<planning_models::KinematicModel::Cylinder*>(shape)->length * scale);
+	    g = dCreateCylinder(space, static_cast<planning_models::KinematicModel::Cylinder*>(shape)->radius * scale + padding,
+				static_cast<planning_models::KinematicModel::Cylinder*>(shape)->length * scale + padding);
 	}
 	break;
     default:
@@ -154,7 +155,7 @@ void collision_space::EnvironmentModelODE::updateAttachedBodies(unsigned int mod
 	const unsigned int nab = kg->link->attachedBodies.size();
 	for (unsigned int k = 0 ; k < nab ; ++k)
 	{
-	    dGeomID ga = createODEGeom(m_modelsGeom[model_id].space, kg->link->attachedBodies[k]->shape, m_modelsGeom[model_id].scale);
+	    dGeomID ga = createODEGeom(m_modelsGeom[model_id].space, kg->link->attachedBodies[k]->shape, m_modelsGeom[model_id].scale, m_modelsGeom[model_id].padding);
 	    assert(ga);
 	    kg->geom.push_back(ga);
 	}

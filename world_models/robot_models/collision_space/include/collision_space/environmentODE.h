@@ -97,8 +97,13 @@ namespace collision_space
 	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addStaticPlane(double a, double b, double c, double d);
 
-	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale = 1.0);
+	/** Add a robot model. Ignore robot links if their name is not
+	    specified in the string vector. The scale argument can be
+	    used to increase or decrease the size of the robot's
+	    bodies (multiplicative factor). The padding can be used to
+	    increase or decrease the robot's bodies with by an
+	    additive term */
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);
@@ -227,11 +232,12 @@ namespace collision_space
 	{
 	    std::vector< kGeom* >                    linkGeom;
 	    double                                   scale;
+	    double                                   padding;
 	    dSpaceID                                 space;
 	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
-	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape, double scale) const;
+	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape, double scale, double padding) const;
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
