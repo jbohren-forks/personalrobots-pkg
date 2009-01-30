@@ -8,7 +8,50 @@
 
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
-    <include file="$(find world_3d_map)/run.xml"/>
+
+    <node pkg="laser_scan" type="scan_shadows_filter_node"/>
+    <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.05 --accuratetiming 0" output="screen">
+      <env name="OPENRAVE_DATA" value="$(find openrave)/share/openrave:$(find openrave_robot_description)"/>
+      <env name="OPENRAVE_PLUGINS" value="$(find openrave)/share/openrave/plugins"/>
+    </node>
+
+    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+      <remap from="scan_in" to="robotlinks_cloud_filtered" />
+      <param name="tf_cache_time_secs" type="double" value="10.0" />
+      <param name="max_scans" type="int" value="400" />
+      <param name="fixed_frame" type="string" value="base_link" />
+      <param name="downsample_factor" type="int" value="1" />
+    </node>
+
+    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+      <remap from="full_cloud" to="point_cloud_snapshotted" />
+      <remap from="build_cloud" to="/point_cloud_assembler/build_cloud" />
+    </node>
+    <!--node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" /-->
+
+    <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true" output="screen">
+      <param name="end_effector_frame_l" type="string" value="r_gripper_l_finger_tip_link" />
+      <param name="end_effector_frame_r" type="string" value="r_gripper_r_finger_tip_link" />
+      <param name="robot_max_x" type="double" value="1.2" />
+      <param name="robot_max_y" type="double" value="1.2" />
+      <param name="robot_max_z" type="double" value="1.2" />
+      <param name="leaf_width_x" type="double" value="0.008" />
+      <param name="leaf_width_y" type="double" value="0.008" />
+      <param name="leaf_width_z" type="double" value="0.008" />
+      <param name="window_size" type="int" value="3" />
+      <remap from="full_cloud" to="point_cloud_snapshotted" />
+    </node>
+
+
+
+
+
+
+
+
+
+
 
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
 
