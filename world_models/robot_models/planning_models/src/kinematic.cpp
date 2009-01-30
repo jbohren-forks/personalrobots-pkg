@@ -460,15 +460,9 @@ void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) con
     joints.insert(joints.end(), localJoints.begin(), localJoints.end());  
 }
 
-unsigned int planning_models::KinematicModel::getGroupSize(int groupID) const
+unsigned int planning_models::KinematicModel::getGroupDimension(int groupID) const
 {
-    unsigned int size = 0;
-    std::vector<Joint*> joints;
-    getJoints(joints);
-    for (unsigned int i = 0 ; i < joints.size() ; ++i)
-	if (groupID < 0 || joints[i]->inGroup[groupID])
-	    size++;
-    return size;
+    return groupID >= 0 ? groupStateIndexList[groupID].size() : stateDimension;
 }
 
 void planning_models::KinematicModel::getJointsInGroup(std::vector<std::string> &names, int groupID) const

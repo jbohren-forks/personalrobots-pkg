@@ -558,7 +558,9 @@ namespace planning_models
 
 	/** Get the names of the joints in a specific group */
 	void         getJointsInGroup(std::vector<std::string> &names, int groupID = -1) const;
-	unsigned int getGroupSize(int groupID = -1) const;
+
+	/** Returns the dimension of the group (as a state, not number of joints) */
+	unsigned int getGroupDimension(int groupID = -1) const;
 
 	void defaultState(void);
 	void computeTransforms(const double *params, int groupID = -1);
