@@ -203,8 +203,8 @@ public:
 	
 	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
 	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
-	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
 	advertiseService("replan_force",                   &KinematicPlanning::forceReplanning);
+	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
 
 	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
@@ -335,9 +335,11 @@ public:
 	    bool replan_inactive = m_continueReplanningLock.try_lock();
 	    
 	    m_statusLock.lock();
-	    
+
+	    // replanning thread is waiting 
 	    if (replan_inactive)
 	    {
+		// check if we reached the goal position
 		if (m_currentRequestType == R_STATE)
 		{
 		    currentState(m_currentPlanToStateRequest.start_state);
@@ -352,9 +354,20 @@ public:
 			issueStop = m_currentPlanStatus.done;
 		    }
 	    }
+
+	    // we check the safety of the plan, unless we are
+	    // reporting a path, in which case we want to make sure
+	    // the sent safety value is the one before the motion
+	    // planning started
+	    if (m_currentPlanStatus.path.states.empty())
+		m_currentPlanStatus.unsafe = isSafeToPlan() ? 0 : 1;
 	    
 	    publish("kinematic_planning_status", m_currentPlanStatus);
 	    
+	    // if we are sending a new path, remember it
+	    // we will need to check it for validity when the ma changes
+	    // we also make sure the next time the status is sent, we do not
+	    // resend the path
 	    if (m_currentPlanStatus.path.get_states_size() > 0)
 	    {
 		m_currentlyExecutedPath = m_currentPlanStatus.path;
@@ -362,6 +375,8 @@ public:
 	    }
 	    else
 	    {
+		// if we are not sending anything, and the path is not valid or done,
+		// we mark the fact there is no path that we are currently monitoring
 		if (!m_currentPlanStatus.valid || m_currentPlanStatus.done)
 		    m_currentlyExecutedPath.set_states_size(0);
 	    }
