@@ -377,7 +377,8 @@ public:
 	    m_currentPlanStatus.distance = -1.0;
 	    res.id = m_currentPlanStatus.id;
 	    m_statusLock.unlock();	    
-
+	    
+	    ROS_INFO("Start replanning with plan id %d", res.id);
 	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToStateThread, this));
 	    m_replanningLock.unlock();
 	    st = true;
@@ -413,9 +414,11 @@ public:
 	    m_currentPlanStatus.distance = -1.0;
 	    res.id = m_currentPlanStatus.id;
 	    m_statusLock.unlock();	    
-
+	    
+	    ROS_INFO("Start replanning with plan id %d", res.id);
 	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
 	    m_replanningLock.unlock();	
+
 	    st = true;
 	}
 	else
@@ -461,7 +464,6 @@ public:
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
-
 	while (m_currentRequestType == R_STATE && !trivial)
 	{    
 	    step++;

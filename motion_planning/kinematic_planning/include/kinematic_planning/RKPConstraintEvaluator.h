@@ -167,30 +167,30 @@ namespace kinematic_planning
 			switch (m_pc.type & (~0xFF))
 			{
 			case robot_msgs::PoseConstraint::ORIENTATION_RPY:
-			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
-				angles::shortest_angular_distance(pitch, m_pc.pitch) +
-				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
+				fabs(angles::shortest_angular_distance(pitch, m_pc.pitch)) +
+				fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_RP:
-			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
-				angles::shortest_angular_distance(pitch, m_pc.pitch);
+			    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
+				fabs(angles::shortest_angular_distance(pitch, m_pc.pitch));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_RY:
-			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
-				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
+				fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_PY:
-			    *distAng = angles::shortest_angular_distance(pitch, m_pc.pitch) +
-				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pc.pitch)) +
+				fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_R:
-			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll);
+			    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_P:
-			    *distAng = angles::shortest_angular_distance(pitch, m_pc.pitch);
+			    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pc.pitch));
 			    break;
 			case robot_msgs::PoseConstraint::ORIENTATION_Y:
-			    *distAng = angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    *distAng = fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
 			    break;
 			default:
 			    *distAng = 0.0;
