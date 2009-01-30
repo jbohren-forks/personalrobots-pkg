@@ -39,6 +39,7 @@
 
 #include <planning_models/kinematic.h>
 #include <robot_msgs/KinematicConstraints.h>
+#include <angles/angles.h>
 #include <iostream>
 #include <vector>
 
@@ -110,13 +111,48 @@ namespace kinematic_planning
 	    {	
 		if (distPos)
 		{
-		    if ((m_pc.type == robot_msgs::PoseConstraint::ONLY_POSITION || m_pc.type == robot_msgs::PoseConstraint::COMPLETE_POSE))
+		    if (m_pc.type & 0xFF)
 		    {		    
-			btVector3 bodyPos = m_link->globalTrans.getOrigin();
-			double dx = bodyPos.getX() - m_pc.pose.position.x;
-			double dy = bodyPos.getY() - m_pc.pose.position.y;
-			double dz = bodyPos.getZ() - m_pc.pose.position.z;
-			*distPos = dx * dx + dy * dy + dz * dz;
+			const btVector3 &bodyPos = m_link->globalTrans.getOrigin();
+			double dx, dy, dz;			
+			switch (m_pc.type & 0xFF)
+			{
+			case robot_msgs::PoseConstraint::POSITION_XYZ:
+			    dx = bodyPos.getX() - m_pc.x;
+			    dy = bodyPos.getY() - m_pc.y;
+			    dz = bodyPos.getZ() - m_pc.z;
+			    *distPos = dx * dx + dy * dy + dz * dz;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_XY:
+			    dx = bodyPos.getX() - m_pc.x;
+			    dy = bodyPos.getY() - m_pc.y;
+			    *distPos = dx * dx + dy * dy;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_XZ:
+			    dx = bodyPos.getX() - m_pc.x;
+			    dz = bodyPos.getZ() - m_pc.z;
+			    *distPos = dx * dx + dz * dz;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_YZ:
+			    dy = bodyPos.getY() - m_pc.y;
+			    dz = bodyPos.getZ() - m_pc.z;
+			    *distPos = dy * dy + dz * dz;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_X:
+			    dx = bodyPos.getX() - m_pc.x;
+			    *distPos = dx * dx;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_Y:
+			    dy = bodyPos.getY() - m_pc.y;
+			    *distPos = dy * dy;
+			    break;
+			case robot_msgs::PoseConstraint::POSITION_Z:
+			    dz = bodyPos.getZ() - m_pc.z;
+			    *distPos = dz * dz;
+			    break;
+			default:
+			    *distPos = 0.0;
+			}
 		    }
 		    else
 			*distPos = 0.0;
@@ -124,10 +160,42 @@ namespace kinematic_planning
 		
 		if (distAng)
 		{
-		    if ((m_pc.type == robot_msgs::PoseConstraint::ONLY_ORIENTATION || m_pc.type == robot_msgs::PoseConstraint::COMPLETE_POSE))
+		    if (m_pc.type & (~0xFF))
 		    {
-			btQuaternion quat(m_pc.pose.orientation.x, m_pc.pose.orientation.y, m_pc.pose.orientation.z, m_pc.pose.orientation.w);
-			*distAng = quat.angle(m_link->globalTrans.getRotation());
+			btScalar yaw, pitch, roll;
+			m_link->globalTrans.getBasis().getEulerYPR(yaw, pitch, roll);			
+			switch (m_pc.type & (~0xFF))
+			{
+			case robot_msgs::PoseConstraint::ORIENTATION_RPY:
+			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
+				angles::shortest_angular_distance(pitch, m_pc.pitch) +
+				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_RP:
+			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
+				angles::shortest_angular_distance(pitch, m_pc.pitch);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_RY:
+			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll) + 
+				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_PY:
+			    *distAng = angles::shortest_angular_distance(pitch, m_pc.pitch) +
+				angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_R:
+			    *distAng = angles::shortest_angular_distance(roll, m_pc.roll);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_P:
+			    *distAng = angles::shortest_angular_distance(pitch, m_pc.pitch);
+			    break;
+			case robot_msgs::PoseConstraint::ORIENTATION_Y:
+			    *distAng = angles::shortest_angular_distance(yaw, m_pc.yaw);
+			    break;
+			default:
+			    *distAng = 0.0;
+			    break;
+			}    
 		    }
 		    else
 			*distAng = 0.0;
@@ -144,25 +212,9 @@ namespace kinematic_planning
 	
 	bool decide(double dPos, double dAng)
 	{
-	    bool result = true;
-	    switch (m_pc.type)
-	    {
-	    case robot_msgs::PoseConstraint::ONLY_POSITION:
-		result = dPos < m_pc.position_distance;
-		break;
-		
-	    case robot_msgs::PoseConstraint::ONLY_ORIENTATION:
-		result = dAng < m_pc.orientation_distance;
-		break;
-		
-	    case robot_msgs::PoseConstraint::COMPLETE_POSE:		
-		result = (dPos < m_pc.position_distance) && (dAng < m_pc.orientation_distance);
-		break;
-		
-	    default:
-		break;
-	    }
-	    return result;
+	    bool v1 = (m_pc.type & 0xFF) ? dPos < m_pc.position_distance : true;
+	    bool v2 = (m_pc.type & (~0xFF)) ? dAng < m_pc.orientation_distance : true;
+	    return v1 && v2;
 	}
 	
 	const robot_msgs::PoseConstraint& getConstraintMessage(void) const
@@ -175,12 +227,86 @@ namespace kinematic_planning
 	    if (m_link)
 	    {
 		out << "Constraint on link '" << m_pc.robot_link << "'" << std::endl;
-		if (m_pc.type !=  robot_msgs::PoseConstraint::ONLY_ORIENTATION)
-		    out << "  Desired position: " << m_pc.pose.position.x << ", " << m_pc.pose.position.y << ", " << m_pc.pose.position.z
-			<< " (within distance: " << m_pc.position_distance << ")" << std::endl;
-		if (m_pc.type !=  robot_msgs::PoseConstraint::ONLY_POSITION)
-		    out << "  Desired orientation: " << m_pc.pose.orientation.x << ", " << m_pc.pose.orientation.y << ", " << m_pc.pose.orientation.z << ", " << m_pc.pose.orientation.w 
-			<< " (within distance: " << m_pc.orientation_distance << ")" << std::endl;
+
+		if (m_pc.type & 0xFF)
+		{
+		    out << "  Desired position: ";
+		    switch (m_pc.type & 0xFF)
+		    {
+		    case robot_msgs::PoseConstraint::POSITION_XYZ:
+			out << "x = " << m_pc.x << " ";
+			out << "y = " << m_pc.y << " ";
+			out << "z = " << m_pc.z << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_XY:
+			out << "x = " << m_pc.x << " ";
+			out << "y = " << m_pc.y << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_XZ:
+			out << "x = " << m_pc.x << " ";
+			out << "z = " << m_pc.z << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_YZ:
+			out << "y = " << m_pc.y << " ";
+			out << "z = " << m_pc.z << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_X:
+			out << "x = " << m_pc.x << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_Y:
+			out << "y = " << m_pc.y << " ";
+			break;
+		    case robot_msgs::PoseConstraint::POSITION_Z:
+			out << "z = " << m_pc.z << " ";
+			break;
+		    default:
+			break;
+		    }
+		    
+		    out << " (within distance: " << m_pc.position_distance << ")" << std::endl;
+		}
+		
+
+		if (m_pc.type & (~0xFF))
+		{
+		    out << "  Desired orientation: ";
+		    switch (m_pc.type & (~0xFF))
+		    {
+		    case robot_msgs::PoseConstraint::ORIENTATION_RPY:
+			out << "roll = " << m_pc.roll << " ";
+			out << "pitch = " << m_pc.pitch << " ";
+			out << "yaw = " << m_pc.yaw << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_RP:
+			out << "roll = " << m_pc.roll << " ";
+			out << "pitch = " << m_pc.pitch << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_RY:
+			out << "roll = " << m_pc.roll << " ";
+			out << "yaw = " << m_pc.yaw << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_PY:
+			out << "pitch = " << m_pc.pitch << " ";
+			out << "yaw = " << m_pc.yaw << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_R:
+			out << "roll = " << m_pc.roll << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_P:
+			out << "pitch = " << m_pc.pitch << " ";
+			break;
+		    case robot_msgs::PoseConstraint::ORIENTATION_Y:
+			out << "yaw = " << m_pc.yaw << " ";
+			break;
+		    default:
+			break;
+		    }    
+		    
+		    out << " (within distance: " << m_pc.orientation_distance;
+		    if (m_pc.type & 0xFF)
+			out << " and with importance " << m_pc.orientation_importance;
+		    out << ")" << std::endl;
+		}
 	    }
 	    else
 		out << "No constraint" << std::endl;

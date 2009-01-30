@@ -80,18 +80,16 @@ public:
 
 	// place some constraints on the goal
 	req.set_goal_constraints_size(1);
-	// other options are ONLY_POSITION, ONLY_ORIENTATION
 	// see the constraints message definition
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;	
-        req.goal_constraints[0].robot_link = "r_gripper_palm_link";	
-        req.goal_constraints[0].pose.position.x = 0.75025;	
-        req.goal_constraints[0].pose.position.y = -0.188;	
-        req.goal_constraints[0].pose.position.z = 0.829675;	
-        req.goal_constraints[0].pose.orientation.x = 0;	
-        req.goal_constraints[0].pose.orientation.y = 0;	
-        req.goal_constraints[0].pose.orientation.z = 0;	
-        req.goal_constraints[0].pose.orientation.w = 1;	
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RY;
+	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
+	req.goal_constraints[0].x = 0.75025;
+	req.goal_constraints[0].y = -0.188;	
+	req.goal_constraints[0].z = 0.829675;	
 
+	req.goal_constraints[0].roll = 0.0;
+	req.goal_constraints[0].yaw = 0.0;
+	
 	// the threshold for solution is position_distance + orientation_distance * orientation_importance
 	// but the distance requirements must be satisfied by 
         req.goal_constraints[0].position_distance = 0.005;      // in L2square norm

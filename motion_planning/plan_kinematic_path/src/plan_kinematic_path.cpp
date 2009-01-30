@@ -127,17 +127,15 @@ public:
 	
 	// set the goal constraints
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::COMPLETE_POSE;
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RY;
 	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
-	req.goal_constraints[0].pose.position.x = 0.75025;
-	req.goal_constraints[0].pose.position.y = -0.188;	
-	req.goal_constraints[0].pose.position.z = 0.829675;	
+	req.goal_constraints[0].x = 0.75025;
+	req.goal_constraints[0].y = -0.188;	
+	req.goal_constraints[0].z = 0.829675;	
 
-	req.goal_constraints[0].pose.orientation.x = 0;
-	req.goal_constraints[0].pose.orientation.y = 0;
-	req.goal_constraints[0].pose.orientation.z = 0;
-	req.goal_constraints[0].pose.orientation.w = 1;	
-
+	req.goal_constraints[0].roll = 0.0;
+	req.goal_constraints[0].yaw = 0.0;
+	
 	req.goal_constraints[0].position_distance = 0.001;
 	req.goal_constraints[0].orientation_distance = 0.03;
 	req.goal_constraints[0].orientation_importance = 0.01;

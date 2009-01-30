@@ -123,11 +123,11 @@ public:
 
 	// the goal region is basically the position of a set of bodies
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ;
 	req.goal_constraints[0].robot_link = "wrist_flex_right";
-	req.goal_constraints[0].pose.position.x = 0.0;
-	req.goal_constraints[0].pose.position.y = 0.0;
-	req.goal_constraints[0].pose.position.z = -100.0;
+	req.goal_constraints[0].x = 0.0;
+	req.goal_constraints[0].y = 0.0;
+	req.goal_constraints[0].z = -100.0;
 	req.goal_constraints[0].position_distance = 0.01;
 	
 

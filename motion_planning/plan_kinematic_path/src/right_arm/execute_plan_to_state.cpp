@@ -119,11 +119,11 @@ public:
 	// are set large so that we always find a solution
 	// all these values have to be in the base_link frame 
 	req.constraints.set_pose_size(1);
-	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
+	req.constraints.pose[0].type = robot_msgs::PoseConstraint::POSITION_XYZ;
 	req.constraints.pose[0].robot_link = "r_gripper_palm_link";
-	req.constraints.pose[0].pose.position.x = 1;
-	req.constraints.pose[0].pose.position.y = 1;
-	req.constraints.pose[0].pose.position.z = 1;
+	req.constraints.pose[0].x = 1;
+	req.constraints.pose[0].y = 1;
+	req.constraints.pose[0].z = 1;
 	req.constraints.pose[0].position_distance = 10.0; // L2Square
 
 	// allow 1 second computation time
