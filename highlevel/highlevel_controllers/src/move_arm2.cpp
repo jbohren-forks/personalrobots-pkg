@@ -357,7 +357,7 @@ void MoveArm::stopArm()
 
 void MoveArm::kpsCallback()
 {
-  if(!kps_msg_.valid)
+  if(!kps_msg_.valid || kps_msg_.unsafe)
     stopArm();
   else
   {
