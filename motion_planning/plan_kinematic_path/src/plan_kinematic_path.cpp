@@ -127,8 +127,8 @@ public:
 	
 	// set the goal constraints
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RY;
-	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RPY;
+	req.goal_constraints[0].robot_link = "r_gripper_r_finger_tip_link";
 	req.goal_constraints[0].x = 0.75025;
 	req.goal_constraints[0].y = -0.188;	
 	req.goal_constraints[0].z = 0.829675;	
@@ -261,16 +261,23 @@ int main(int argc, char **argv)
     {
 	sleep(1);
 	
-	plan->runRightArmToPositionA();
+	while (1)
+	{
+	    
+	    plan->runRightArmToPositionA();
 	
-	sleep(4);
+	    sleep(4);
+	    
+	    plan->runRightArmToPositionB();
+	    
+	    sleep(5);
+	}
 	
-	plan->runRightArmToPositionB();
-	
+	/*	
 	sleep(30);
 	
 	plan->runRightArmToCoordinates();
-
+	*/
 	plan->spin();
     }
     
