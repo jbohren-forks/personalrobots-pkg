@@ -388,7 +388,7 @@ namespace kinematic_planning
 	    std::stringstream ss;
 	    psetup->si->printSettings(ss);
 	    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
-	    ROS_INFO(ss.str().c_str());
+	    ROS_INFO("%s", ss.str().c_str());
 	    ROS_INFO("=======================================");	
 	    
 	    /* compute actual motion plan */

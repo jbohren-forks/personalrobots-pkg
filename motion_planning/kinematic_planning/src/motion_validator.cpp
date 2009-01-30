@@ -210,7 +210,7 @@ public:
 	ROS_INFO("=======================================");	
 	std::stringstream ss;
 	m_kmodel->printModelInfo(ss);
-	ROS_INFO(ss.str().c_str());
+	ROS_INFO("%s", ss.str().c_str());
 	ROS_INFO("=======================================");
 
 	/* set the data for the model */

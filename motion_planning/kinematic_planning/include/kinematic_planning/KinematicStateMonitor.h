@@ -202,7 +202,7 @@ namespace kinematic_planning
 	{
 	    std::stringstream ss;
 	    m_robotState->print(ss);
-	    ROS_INFO(ss.str().c_str());
+	    ROS_INFO("%s", ss.str().c_str());
 	}
 	
 	bool isStateUpdated(double sec)

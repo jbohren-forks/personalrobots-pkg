@@ -628,7 +628,7 @@ public:
 	ROS_INFO("=======================================");	
 	std::stringstream ss;
 	m_kmodel->printModelInfo(ss);
-	ROS_INFO(ss.str().c_str());	
+	ROS_INFO("%s", ss.str().c_str());	
 	ROS_INFO("=======================================");
 
 	/* set the data for the model */
@@ -773,25 +773,25 @@ public:
     /** Issue a ROS error */
     virtual void error(const std::string &text)
     {
-	ROS_ERROR(text.c_str());
+	ROS_ERROR("%s", text.c_str());
     }	    
     
     /** Issue a ROS warning */
     virtual void warn(const std::string &text)
     {
-	ROS_WARN(text.c_str());
+	ROS_WARN("%s", text.c_str());
     }
     
     /** Issue ROS info */
     virtual void inform(const std::string &text)
     {
-	ROS_INFO(text.c_str());
+	ROS_INFO("%s", text.c_str());
     }	    
     
     /** Issue ROS info */
     virtual void message(const std::string &text)
     {
-	ROS_INFO(text.c_str());
+	ROS_INFO("%s", text.c_str());
     }
     
 };
