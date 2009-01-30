@@ -64,6 +64,8 @@
 #include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
+
+static const std::string GROUPNAME = "pr2::right_arm";
     
 class Example : public ros::Node,
 		public kinematic_planning::KinematicStateMonitor
@@ -88,7 +90,7 @@ public:
 	// construct the request for the motion planner
 	robot_msgs::KinematicPlanStateRequest req;
 	
-	req.params.model_id = "pr2::right_arm";
+	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "SBL";
 	req.threshold = 0.1;
@@ -135,16 +137,16 @@ public:
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
 	{
 	    // send the path to the visualizer
-	    sendDisplay(req.start_state, s_res.value.path, "pr2::right_arm");
+	    sendDisplay(req.start_state, s_res.value.path, GROUPNAME);
 
 	    // check if the straight line path would have been valid
-	    verifyDirectPath(req.start_state, req.constraints, req.goal_state, "pr2::right_arm");
+	    verifyDirectPath(req.start_state, req.constraints, req.goal_state, GROUPNAME);
 	    
 	    // send the path to the controller
 	    if (use_topic_)
-		sendArmCommand(s_res.value.path, "pr2::right_arm");
+		sendArmCommand(s_res.value.path, GROUPNAME);
 	    else
-		sendArmCommandAndWait(s_res.value.path, "pr2::right_arm");
+		sendArmCommandAndWait(s_res.value.path, GROUPNAME);
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");

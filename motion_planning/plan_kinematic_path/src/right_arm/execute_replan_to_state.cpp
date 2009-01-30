@@ -49,6 +49,8 @@
 
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
+
+static const std::string GROUPNAME = "pr2::right_arm";
     
 class Example : public ros::Node,
 		public kinematic_planning::KinematicStateMonitor
@@ -71,7 +73,7 @@ public:
 	// construct the request for the motion planner
 	robot_msgs::KinematicPlanStateRequest req;
 	
-	req.params.model_id = "pr2::right_arm";
+	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "SBL";
 	req.threshold = 0.1;
@@ -113,7 +115,7 @@ protected:
 		if (!plan_status_.path.states.empty())
 		{
 		    robot_stopped_ = false;
-		    sendArmCommand(plan_status_.path, "pr2::right_arm");
+		    sendArmCommand(plan_status_.path, GROUPNAME);
 		}
 	    }
 	    else
@@ -135,7 +137,7 @@ protected:
 	
 	// get the current params for the robot's right arm
 	double cmd[7];
-	m_robotState->copyParams(cmd, m_kmodel->getGroupID("pr2::right_arm"));
+	m_robotState->copyParams(cmd, m_kmodel->getGroupID(GROUPNAME));
 	
 	robot_msgs::KinematicPath stop_path;	
 	stop_path.set_states_size(1);
@@ -143,7 +145,7 @@ protected:
 	for (unsigned int i = 0 ; i < 7 ; ++i)
 	    stop_path.states[0].vals[i] = cmd[i];
 	
-	sendArmCommand(stop_path, "pr2::right_arm");
+	sendArmCommand(stop_path, GROUPNAME);
     }
     
     // get the current state from the StateParams instance monitored by the KinematicStateMonitor

@@ -46,6 +46,8 @@
 
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
+
+static const std::string GROUPNAME = "pr2::right_arm";
     
 class Example : public ros::Node,
 		public kinematic_planning::KinematicStateMonitor
@@ -64,7 +66,7 @@ public:
 	// construct the request for the motion planner
 	robot_msgs::KinematicPlanLinkPositionRequest req;
 	
-	req.params.model_id = "pr2::right_arm";
+	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "IKSBL"; 
 	req.interpolate = 1;
@@ -102,7 +104,7 @@ public:
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_position", s_req, s_res))
-	    sendArmCommand(s_res.value.path, "pr2::right_arm");
+	    sendArmCommand(s_res.value.path, GROUPNAME);
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
     }
