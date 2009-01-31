@@ -1,5 +1,4 @@
-/*********************************************************************
-* Software License Agreement (BSD License)
+/********************************************************************* Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
@@ -92,6 +91,8 @@
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
+#include <planning_models/kinematic.h>
+
 #include <sstream>
 #include <cassert>
 
@@ -112,11 +113,12 @@ public:
           const std::string& kinematic_model,
 	  const std::string& controller_name);
 
-  virtual ~MoveArm() {};
+  virtual ~MoveArm();
 
 private:
   const std::string kinematic_model_;
   const std::string controller_name_;
+  planning_models::KinematicModel* robot_model_;
 
   bool                      have_new_traj_;
   robot_msgs::KinematicPath new_traj_;
@@ -146,6 +148,12 @@ private:
   void kpsCallback();
 };
 
+MoveArm::~MoveArm() {
+  if (robot_model_) {
+    delete robot_model_;
+  }
+}
+
 MoveArm::MoveArm(const std::string& node_name, 
                  const std::string& state_topic, 
                  const std::string& goal_topic,
@@ -154,6 +162,7 @@ MoveArm::MoveArm(const std::string& node_name,
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(node_name, state_topic, goal_topic),
     kinematic_model_(kinematic_model),
     controller_name_(controller_name),
+    robot_model_(NULL),
     have_new_traj_(false),
     replanning_(false),
     traj_id_(-1),
@@ -165,6 +174,22 @@ MoveArm::MoveArm(const std::string& node_name,
                        &MoveArm::kpsCallback,
                        1);
 
+  //Create robot model.
+  robot_model_ = new planning_models::KinematicModel();
+  robot_desc::URDF file;
+  std::string model = "/robotdesc/pr2";
+  param("move_arm/model", model, model);
+  std::string data = "";
+  param(model, data, data);
+  if (data == "") {
+    ROS_ERROR("Could not open robot description: %s. Please set move_arm/model.", model.c_str());
+    ROS_ASSERT(false);
+    exit(1);
+  }
+  file.loadString(data.c_str());
+  robot_model_->build(file);
+
+
   // Say that we're up and ready
   initialize();
 }
@@ -172,9 +197,7 @@ MoveArm::MoveArm(const std::string& node_name,
 void MoveArm::updateGoalMsg()
 {
   lock();
-  stateMsg.implicit_goal = goalMsg.implicit_goal;
-  stateMsg.goal_state = goalMsg.goal_state;
-  stateMsg.goal_constraints = goalMsg.goal_constraints;
+  stateMsg.configuration = goalMsg.configuration;
   unlock();
 }
 
@@ -182,49 +205,86 @@ bool MoveArm::makePlan()
 {
   // Not clear whether we need to call lock() here...
 
-  if(!goalMsg.implicit_goal)
+  /*if(!goalMsg.implicit_goal)
+    {*/
+  robot_srvs::KinematicReplanState::request  req;
+  robot_srvs::KinematicReplanState::response  res;
+  
+  req.value.params.model_id = kinematic_model_;
+  req.value.params.distance_metric = "L2Square";
+  req.value.params.planner_id = "SBL";
+  req.value.threshold = 0.01;
+  req.value.interpolate = 1;
+  req.value.times = 1;
+  
+  // req.start_state is left empty, because we only support replanning, in
+  // which case the planner monitors the robot's current state.
+  
+
+  //Copies in the state.
+  //First create stateparams for the group of intrest.
+  planning_models::KinematicModel::StateParams state(robot_model_);
+  
+  //Set the stateparam's values from the goal (need to be locked).
+  goalMsg.lock();
+  for (unsigned int i = 0; i < goalMsg.configuration.size(); i++) 
   {
-    robot_srvs::KinematicReplanState::request  req;
-    robot_srvs::KinematicReplanState::response  res;
-
-    req.value.params.model_id = kinematic_model_;
-    req.value.params.distance_metric = "L2Square";
-    req.value.params.planner_id = "SBL";
-    req.value.threshold = 0.01;
-    req.value.interpolate = 1;
-    req.value.times = 1;
-
-    // req.start_state is left empty, because we only support replanning, in
-    // which case the planner monitors the robot's current state.
-
-    req.value.goal_state = goalMsg.goal_state;
-
-    req.value.allowed_time = 0.5;
-
-    //req.params.volume* are left empty, because we're not planning for the
-    //base
-
-    if(replanning_)
-      requestStopReplanning();
-    replanning_ = true;
-    active_request_state_ = req;
-    if(!ros::service::call("replan_kinematic_path_state", req, res))
-    {
-      ROS_WARN("Service call on replan_kinematic_path_state failed");
-      return false;
-    }
-    else
-    {
-      plan_id_ = res.id;
-      ROS_INFO("Issued a replanning request. Waiting for plan ID %d", plan_id_);	    
-      return true;
-    }
+    unsigned int axes = robot_model_->getJoint(goalMsg.configuration[i].name)->usedParams;
+    ROS_ASSERT(axes == 1);
+    double* param = new double[axes];
+    param[0] = goalMsg.configuration[i].position;
+    state.setParams(param, goalMsg.configuration[i].name);
+    delete[] param;
   }
+  goalMsg.unlock();
+  
+  //Debug
+  //state.print();
+
+  //Copy the stateparams in to the req.
+  unsigned int len = robot_model_->getGroupDimension(robot_model_->getGroupID(kinematic_model_));
+  double* param = new double[len];
+  state.copyParams(param, robot_model_->getGroupID(kinematic_model_));
+
+  req.value.goal_state.vals.clear();
+  for (unsigned int i = 0; i < len; i++) {
+    //ROS_INFO("%f", param[i]);
+    req.value.goal_state.vals.push_back(param[i]);
+  }
+
+  delete[] param;
+  
+
+  
+  req.value.allowed_time = 0.5;
+  
+  //req.params.volume* are left empty, because we're not planning for the
+  //base
+  //Lock here to prevent issues where plan_id_ is not set and a plan is gotten.
+  kps_msg_.lock();
+  bool ret = false;
+  if(replanning_)
+    requestStopReplanning();
+  replanning_ = true;
+  active_request_state_ = req;
+  if(!ros::service::call("replan_kinematic_path_state", req, res))
+  {
+    ROS_WARN("Service call on replan_kinematic_path_state failed");
+    ret = false;
+  }
+  else
+  {
+    plan_id_ = res.id;
+    ROS_INFO("Issued a replanning request. Waiting for plan ID %d", plan_id_);	    
+    ret = true;
+  }
+  kps_msg_.unlock();
+  return ret;
+    /*}
   else
   {
     robot_srvs::KinematicReplanLinkPosition::request req;
     robot_srvs::KinematicReplanLinkPosition::response res;
-
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
     req.value.params.planner_id = "IKSBL";
@@ -256,7 +316,7 @@ bool MoveArm::makePlan()
       ROS_INFO("Issued a replanning request");	    
       return true;
     }
-  }
+    }*/
 }
 
 bool MoveArm::goalReached()
@@ -371,6 +431,8 @@ void MoveArm::kpsCallback()
       
       // by the time have_new_traj_ is looked at, it could be the case a
       // new message is received and the trajectory is lost
+    } else {
+      ROS_INFO("KPS message has wrong id: %d, should be: %d", kps_msg_.id, plan_id_);
     }
   }
 }

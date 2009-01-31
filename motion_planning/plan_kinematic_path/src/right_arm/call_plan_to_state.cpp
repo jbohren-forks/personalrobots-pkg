@@ -62,15 +62,12 @@ public:
     {
 	// construct the request for the highlevel controller
 	pr2_msgs::MoveArmGoal ag;
-	ag.implicit_goal = 0;
 	ag.enable = 1;
 	ag.timeout = 10.0;
 
-	ag.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i <ag.goal_state.get_vals_size(); ++i)
-            ag.goal_state.vals[i] = 0.0;
-	ag.goal_state.vals[0] = -0.5;
-	ag.goal_state.vals[1] = -0.2;
+	ag.set_configuration_size(1);
+	ag.configuration[0].name = "r_shoulder_pan_joint";
+	ag.configuration[0].position = -0.5;
 	publish("right_arm_goal", ag);
     }
     
