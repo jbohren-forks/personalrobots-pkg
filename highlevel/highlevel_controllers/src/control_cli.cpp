@@ -52,7 +52,6 @@ public:
     dead = false;
     advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
-    advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
     advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
     advertise<robot_msgs::MechanismState>("mechanism_state", 1);

@@ -51,5 +51,5 @@ rospack_add_executable(recharge_controller src/recharge_controller.cpp)
 
 #CLI
 # Disabled, pending update to new message formats
-#rospack_add_executable(cli src/control_cli.cpp)
-#rospack_link_boost(cli thread)
+rospack_add_executable(cli src/control_cli.cpp)
+rospack_link_boost(cli thread)
