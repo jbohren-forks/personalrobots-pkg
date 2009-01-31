@@ -168,30 +168,31 @@ MoveArm::MoveArm(const std::string& node_name,
     traj_id_(-1),
     plan_id_(-1)
 {
-  // TODO: subscribe to relevant topics
   ros::Node::subscribe("kinematic_planning_status",
                        kps_msg_,
                        &MoveArm::kpsCallback,
                        1);
+  
+  advertise<std_msgs::Empty>("replan_stop", 1);
+  advertise<std_msgs::Empty>("replan_force", 1);
 
   //Create robot model.
-  robot_model_ = new planning_models::KinematicModel();
-  robot_desc::URDF file;
-  std::string model = "/robotdesc/pr2";
-  param("move_arm/model", model, model);
-  std::string data = "";
-  param(model, data, data);
-  if (data == "") {
-    ROS_ERROR("Could not open robot description: %s. Please set move_arm/model.", model.c_str());
-    ROS_ASSERT(false);
-    exit(1);
+  std::string model;
+  if (getParam("robot_description", model))
+  {
+    robot_desc::URDF file;
+    file.loadString(model.c_str());
+    robot_model_ = new planning_models::KinematicModel();
+    robot_model_->setVerbose(false);
+    robot_model_->build(file);
+    // make sure we are in the robot's self frame
+    robot_model_->reduceToRobotFrame();
+    
+    // Say that we're up and ready
+    initialize();
   }
-  file.loadString(data.c_str());
-  robot_model_->build(file);
-
-
-  // Say that we're up and ready
-  initialize();
+  else
+    ROS_ERROR("Robot model not found! Did you remap robot_description?");
 }
 
 void MoveArm::updateGoalMsg()
@@ -223,7 +224,7 @@ bool MoveArm::makePlan()
 
   //Copies in the state.
   //First create stateparams for the group of intrest.
-  planning_models::KinematicModel::StateParams state(robot_model_);
+  planning_models::KinematicModel::StateParams *state = robot_model_->newStateParams();
   
   //Set the stateparam's values from the goal (need to be locked).
   goalMsg.lock();
@@ -233,19 +234,22 @@ bool MoveArm::makePlan()
     ROS_ASSERT(axes == 1);
     double* param = new double[axes];
     param[0] = goalMsg.configuration[i].position;
-    state.setParams(param, goalMsg.configuration[i].name);
+    state->setParams(param, goalMsg.configuration[i].name);
     delete[] param;
   }
   goalMsg.unlock();
-  
+    
   //Debug
   //state.print();
 
   //Copy the stateparams in to the req.
   unsigned int len = robot_model_->getGroupDimension(robot_model_->getGroupID(kinematic_model_));
   double* param = new double[len];
-  state.copyParams(param, robot_model_->getGroupID(kinematic_model_));
-
+  state->copyParams(param, robot_model_->getGroupID(kinematic_model_));
+  
+  delete state;
+  
+  
   req.value.goal_state.vals.clear();
   for (unsigned int i = 0; i < len; i++) {
     //ROS_INFO("%f", param[i]);
@@ -254,14 +258,13 @@ bool MoveArm::makePlan()
 
   delete[] param;
   
-
-  
   req.value.allowed_time = 0.5;
   
   //req.params.volume* are left empty, because we're not planning for the
   //base
   //Lock here to prevent issues where plan_id_ is not set and a plan is gotten.
   kps_msg_.lock();
+
   bool ret = false;
   if(replanning_)
     requestStopReplanning();
@@ -279,6 +282,7 @@ bool MoveArm::makePlan()
     ret = true;
   }
   kps_msg_.unlock();
+
   return ret;
     /*}
   else
@@ -431,9 +435,7 @@ void MoveArm::kpsCallback()
       
       // by the time have_new_traj_ is looked at, it could be the case a
       // new message is received and the trajectory is lost
-    } else {
-      ROS_INFO("KPS message has wrong id: %d, should be: %d", kps_msg_.id, plan_id_);
-    }
+    } 
   }
 }
 
