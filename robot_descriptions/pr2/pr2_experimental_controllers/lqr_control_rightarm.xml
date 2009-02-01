@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="right_arm_controller" type="LQRControllerNode">
+    <model name="serial_chain">
+    <kinematics>right_arm</kinematics>
+    <robot_description>pr2</robot_description>
+    <joints>
+      <joint name="r_shoulder_pan_joint"/>
+      <joint name="r_shoulder_lift_joint"/>
+      <joint name="r_upper_arm_roll_joint"/>
+      <joint name="r_upper_arm_joint"/>
+      <joint name="r_elbow_flex_joint"/>
+      <joint name="r_forearm_roll_joint"/>
+      <joint name="r_wrist_flex_joint"/>      
+    </joints>
+    </model>
+  </controller>
+</controllers>
