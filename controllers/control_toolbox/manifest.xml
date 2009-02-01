@@ -9,6 +9,7 @@
   <repository>http://pr.willowgarage.com/repos</repository>
   <depend package="tinyxml" />
   <depend package="robot_kinematics" />
+  <depend package="eigen" />
   <depend package="newmat10" />
   <depend package="rosconsole" />
   <depend package="tf" />

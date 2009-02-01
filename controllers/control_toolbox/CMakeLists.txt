@@ -4,7 +4,6 @@ include_directories(include/control_toolbox/eigen2)
 rospack(control_toolbox)
 genmsg()
 gensrv()
-include_directories(include/control_toolbox/eigen2)
 rospack_add_library(control_toolbox
  src/pid.cpp
  src/serialchain_model.cpp

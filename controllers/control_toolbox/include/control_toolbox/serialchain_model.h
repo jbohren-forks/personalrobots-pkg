@@ -35,15 +35,20 @@
 #define LINEARSYSTEM_MODEL_H
 
 #include <Eigen/Core>
-#include "system_model.h"
+#include <robot_kinematics/kdl_chain_wrapper.h>
+#include <robot_kinematics/RevoluteChainRNESolver.h>
+#include <robot_kinematics/robot_kinematics.h>
+#include <control_toolbox/system_model.h>
 #include <map>
 
-#include <robot_kinematics/robot_kinematics.h>
+
+namespace control_toolbox
+{
 
 /** @class SerialChainModel
   * @brief Provides a model for a chain of rigid body
   * Given a chain of n links, this class provides a model of a system of 2n states (angles and angular velocities) and n inputs (torques at each node)
-  * The state of the system is: angle_1 angle_2  ... vel_1 vel_2 ... 
+  * The state of the system is: angle_1 angle_2  ... vel_1 vel_2 ...
   * Example of a XML configuration snippet:
   * <model type="SerialChainModel">
   *   <kinematics>kin_chain_name</kinematics>
@@ -62,45 +67,52 @@ public:
   typedef Base::InputMatrix InputMatrix;
   typedef Base::StateVector StateVector;
   typedef Base::InputVector InputVector;
-  
-  SerialChainModel() : kdl_torque_(NULL),states_(-1),inputs_(-1){}
-  
+
+  SerialChainModel();
+
   virtual ~SerialChainModel(){}
-  
+
   int states() const { return states_; }
-  
+
   int inputs() const { return inputs_; }
-  
+
   /** @brief This function contains all the parameters required to initialize the model
     */
   bool init(const std::string & robot_description, const std::string & chain_name);
-  
-  bool init(const robot_kinematics::RobotKinematics & r_kin, robot_kinematics::SerialChain *chain);
-  
+
+  bool init(const KDL::Chain &);
+
   bool getLinearization(const StateVector & x, StateMatrix & A, InputMatrix & B, InputVector & u0);
-  
+
   bool forward(const StateVector & x, const InputVector & u, double dt, StateVector & next);
 
   /** These functions depend on ROS-specific informations
     */
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config){return false;}
-  
+
   virtual bool toState(const mechanism::RobotState * rstate, StateVector &state)const {return false;}
-  
+
   virtual bool toState(const robot_msgs::JointCmd * cmd, StateVector & state) const {return false;}
 
 
 private:
-  robot_kinematics::RobotKinematics robot_kin_;
+	//FIXME: to deprecate
+//  robot_kinematics::RobotKinematics robot_kin_;
 
-  robot_kinematics::SerialChain *chain_;
-  
+  //FIXME to deprecate
+//  robot_kinematics::SerialChain *chain_;
+
   // An array that stores temporary results from inverse dynamics
-  KDL::Vector *kdl_torque_;
-  
+//  KDL::Vector *kdl_torque_;
+
   int states_, inputs_;
-  
+
+  robot_kinematics::RevoluteChainRNESolver<robot_kinematics::KDLChainWrapper> solver_;
+
 };
+
+
+}
 
 #endif
 
