@@ -10,8 +10,7 @@
 namespace features {
 
 // Metaprogram to determine accumulation data type (float->float, uint8_t->int)
-template< typename T >
-struct Promote {};
+template< typename T > struct Promote {};
 template<> struct Promote<float> { typedef float type; };
 template<> struct Promote<uint8_t> { typedef int type; };
 
@@ -107,7 +106,7 @@ inline void sum_50t_176c(uint8_t **pp, uint8_t *sig, uint16_t *temp)
   ttemp = (__m128i *)temp;
 
   // empty ttemp[]
-  tzero = _mm_xor_si128(tzero,tzero);
+  tzero = _mm_xor_si128(tzero,tzero);     // set to zero
   for (int i=0; i<22; i++)
     ttemp[i] = tzero;
 
@@ -222,7 +221,7 @@ inline void sum_50t_176c(uint8_t **pp, uint8_t *sig, uint16_t *temp)
   ssig[10] =_mm_packus_epi16(_mm_srai_epi16(ttemp[20],2),_mm_srai_epi16(ttemp[21],2));
 #else
   #error "just to let you know: using unoptimized byte additions for signature! now uncomment this line"
-#  return L1Distance(176, s1, s2);
+  return L1Distance(176, s1, s2);
 #endif
 }
 
@@ -246,6 +245,7 @@ template<> struct L1DistanceFunc<uint8_t>
   L1DistanceFunc(int arg = 0) {}
   inline int operator()(const uint8_t* a, const uint8_t* b) const {
     return L1Distance_176(a, b);
+    //return L1Distance(128, a, b);
   }
 };
 

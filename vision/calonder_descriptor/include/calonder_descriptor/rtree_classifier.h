@@ -4,14 +4,18 @@
 #include "calonder_descriptor/randomized_tree.h"
 #include "calonder_descriptor/basic_math.h"
 
+class RTTester;
+
 namespace features {
 
 class RTreeClassifier
 {   
 public:
-  static const int DEFAULT_TREES = 50;
+  friend class ::RTTester;
+  static const int DEFAULT_TREES = 48;
+  static const size_t DEFAULT_NUM_QUANT_BITS = 4;  
     
-  RTreeClassifier(bool keep_floats);
+  RTreeClassifier();
 
   void train(std::vector<BaseKeypoint> const& base_set, 
              Rng &rng,
@@ -19,7 +23,7 @@ public:
              int depth = RandomizedTree::DEFAULT_DEPTH,
              int views = RandomizedTree::DEFAULT_VIEWS,
              size_t reduced_num_dim = RandomizedTree::DEFAULT_REDUCED_NUM_DIM,
-             int num_quant_bits=0);
+             int num_quant_bits = DEFAULT_NUM_QUANT_BITS);
   void train(std::vector<BaseKeypoint> const& base_set,
              Rng &rng, 
              PatchGenerator &make_patch,
@@ -27,7 +31,7 @@ public:
              int depth = RandomizedTree::DEFAULT_DEPTH,
              int views = RandomizedTree::DEFAULT_VIEWS,
              size_t reduced_num_dim = RandomizedTree::DEFAULT_REDUCED_NUM_DIM,
-             int num_quant_bits=0);
+             int num_quant_bits = DEFAULT_NUM_QUANT_BITS);
 
   // Caller is responsible for calling free() on returned signature
   //float* getSignature(IplImage* patch);
@@ -41,25 +45,33 @@ public:
 
   static int countNonZeroElements(float *vec, int n, double tol=1e-10);
   static inline void safeSignatureAlloc(uint8_t **sig, int num_sig=1, int sig_len=176);
+  static inline uint8_t* safeSignatureAlloc(int num_sig=1, int sig_len=176);  
     
   inline int classes() { return classes_; }
   inline int original_num_classes() { return original_num_classes_; }
+  
+  void setQuantization(int num_quant_bits);
+  void discardFloatPosteriors();
   
   void read(const char* file_name);
   void read(std::istream &is);
   void write(const char* file_name) const;
   void write(std::ostream &os) const;
 
-  // debug/experimental
-  void saveAllPosteriors(std::string file_url);
-  void setPosteriorsFromTextfile(std::string url, int red_dim);
+  // experimental and debug
+  void saveAllFloatPosteriors(std::string file_url);
+  void saveAllBytePosteriors(std::string file_url);
+  void setFloatPosteriorsFromTextfile_176(std::string url);
+  float countZeroElements();
+   
+  std::vector<RandomizedTree> trees_;
 
 private:    
   int classes_;
+  int num_quant_bits_;
   uint8_t **posteriors_;
   uint16_t *ptemp_;
-  int original_num_classes_;
-  std::vector<RandomizedTree> trees_;
+  int original_num_classes_;  
   bool keep_floats_;
 };
 
@@ -76,6 +88,14 @@ inline void RTreeClassifier::safeSignatureAlloc(uint8_t **sig, int num_sig, int 
    posix_memalign(&p_sig, 16, num_sig*sig_len*sizeof(uint8_t));
    *sig = reinterpret_cast<uint8_t*>(p_sig);
 }
+
+inline uint8_t* RTreeClassifier::safeSignatureAlloc(int num_sig, int sig_len)
+{
+   uint8_t *sig;
+   safeSignatureAlloc(&sig, num_sig, sig_len);
+   return sig;
+}
+
 
 } // namespace features
 
