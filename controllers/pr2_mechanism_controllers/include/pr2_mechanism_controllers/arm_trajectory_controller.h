@@ -180,6 +180,8 @@ namespace controller
  *      (only one topic can be specified)
  *  - through a non blocking service call: this service call can specify a single configuration as a target (and maybe multiple configuration in the future)
  *  - through a blocking service call: this service can receive a list of position commands that will be followed one after the other
+ * @note This controller makes the assumptiom that a point update is real-time safe.
+ * This is not the case for example for the LQR controller.
  *
  */
   class ArmTrajectoryControllerNode : public Controller
