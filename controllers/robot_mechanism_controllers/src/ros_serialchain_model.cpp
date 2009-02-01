@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
- 
+
  #include <ros/node.h>
  #include <ros/console.h>
  #include <mechanism_model/robot.h>
@@ -42,13 +42,18 @@
 namespace controller
 {
 
+SerialChainModelWrapper::SerialChainModelWrapper()
+{
+	ROS_DEBUG("XXXXX");
+}
+
 bool SerialChainModelWrapper::toState(const mechanism::RobotState * rstate, StateVector &state) const
 {
   ROS_ASSERT(rstate);
   const int N=state.rows();
   //Assuming we are in the (position,velocity) representation
   ROS_ASSERT(N==int(2*indexes_.size()));
-  
+
   for(IndexMap::const_iterator it=indexes_.begin();it!=indexes_.end();++it)
   {
     const std::string &name=it->first;
@@ -64,7 +69,7 @@ bool SerialChainModelWrapper::toState(const mechanism::RobotState * rstate, Stat
   }
   return true;
 }
-  
+
 bool SerialChainModelWrapper::toState(const robot_msgs::JointCmd * cmd, StateVector & state) const
 {
   ROS_ASSERT(cmd);
@@ -77,7 +82,7 @@ bool SerialChainModelWrapper::toState(const robot_msgs::JointCmd * cmd, StateVec
     ROS_ERROR("Size mismatch");
     return false;
   }
-  
+
   int s=0;
   for(unsigned int i=0;i<names.size();++i)
   {
@@ -86,6 +91,7 @@ bool SerialChainModelWrapper::toState(const robot_msgs::JointCmd * cmd, StateVec
     {
       state(it->second,0)=positions.at(i);
       state(it->second+n,0)=velocities.at(i);
+//      ROS_DEBUG_STREAM("Setting "<<names.at(i));
       s++;
     }
   }
@@ -110,8 +116,10 @@ bool SerialChainModelWrapper::setEffort(mechanism::RobotState *robot_state, cons
       ROS_ERROR_STREAM("Failed to get state for joint name "<<name);
       return false;
     }
-    state->commanded_effort_=effort(n);
+    state->commanded_effort_=effort(n,0);
+//    ROS_DEBUG_STREAM(n<<" ==> "<<effort(n));
   }
+
   return true;
 }
 
@@ -141,7 +149,7 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
   }
   const std::string desc_name=desc_node->GetText();
   ROS_DEBUG_STREAM("robot description is "<<desc_name);
-  
+
   ros::Node * const node = ros::Node::instance();
   ROS_ASSERT(node);
   std::string desc_content;
@@ -151,7 +159,7 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
     ROS_ERROR("Failed to initialize model kinematics");
     return false;
   }
-  
+
   TiXmlElement *joints = config->FirstChildElement("joints");
   if(!joints)
   {
@@ -169,7 +177,7 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
     joints=joints->NextSiblingElement("joint");
   }
   ROS_DEBUG("Loaded joints");
-  
+
   if(2*s!=states())
   {
     ROS_ERROR_STREAM("Size mismatch: we have "<<s<<" loaded joints but the model advertizes "<<states()<<" states");

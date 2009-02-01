@@ -34,29 +34,31 @@
 #pragma once
 #include <map>
 #include <control_toolbox/serialchain_model.h>
- 
+
 namespace controller
 {
  /** @brief Wrapper around the SerialChainModel class to perform the conversions \
-   * to and from the robot state space, as well as fetch parameters from the parameter server 
+   * to and from the robot state space, as well as fetch parameters from the parameter server
    */
-class SerialChainModelWrapper : public SerialChainModel
+class SerialChainModelWrapper : public control_toolbox::SerialChainModel
 {
     typedef std::map<std::string,int> IndexMap;
 public:
 
+  SerialChainModelWrapper();
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  
+
   bool toState(const mechanism::RobotState * rstate, StateVector &state)const;
-  
+
   bool toState(const robot_msgs::JointCmd * cmd, StateVector & state) const;
-  
+
   bool setEffort(mechanism::RobotState *robot_state, const InputVector &effort) const;
 
 private:
   // A map between the name of the joints and the indexes in the vector
   IndexMap indexes_;
 };
- 
+
 }
 

@@ -3,39 +3,17 @@ import rostools
 rostools.load_manifest('robot_mechanism_controllers')
 
 from robot_mechanism_controllers.lqr_controller import *
-foo=LQRProxy('left_arm_controller')
-foo.cmd(['shoulder_pan_left_joint',\
-      'shoulder_pitch_left_joint',\
-      "upperarm_roll_left_joint",\
-      "elbow_flex_left_joint",\
-      "forearm_roll_left_joint",\
-      "wrist_flex_left_joint",\
-      "gripper_roll_left_joint"],\
-    [1,0,0,0,0,0,0],\
+foo=LQRProxy('right_arm_controller')
+foo.cmd(['r_shoulder_pan_joint',\
+      'r_shoulder_lift_joint',\
+      "r_upper_arm_roll_joint",\
+      "r_upper_arm_joint",\
+      "r_elbow_flex_joint",\
+      "r_forearm_roll_joint",\
+      "r_wrist_flex_joint"],\
+    [-1,0.5,-1.0,1.0,-1,1,1],\
     #[-1,-0.2,-1,-1,-1,-1,-1],\
     [0.0,0,0,0,0,0,0],\
-    #[1,1,1,1,1,1,1,100,1000,100,100,100,100,100],\
-    [100,1000,100,100,100,10000,100,1,1,1,1,1,1,1],\
-    [0.1,0.1,0.1,0.1,0.1,0.1,0.1])
-    
-
-      #<joint name="upperarm_roll_left_joint"/>
-      #<joint name="elbow_flex_left_joint"/>
-      #<joint name="forearm_roll_left_joint"/>
-      #<joint name="wrist_flex_left_joint"/>      
-      #<joint name="gripper_roll_left_joint"/>
-    
-    #.013779, -5.8e-05, 0.179474
-#Creating kinematic group:: left_arm
-#Robot kinematics:: done creating all kinematic groups
-#[DEBUG] elbow_flex_left:        4
-#[DEBUG] forearm_roll_left:      5
-#[DEBUG] gripper_roll_left:      7
-#[DEBUG] shoulder_pan_left:      1
-#[DEBUG] shoulder_pitch_left:    2
-#[DEBUG] upperarm_roll_left:     3
-#[DEBUG] wrist_flex_left:        6
-#[DEBUG] Model has 14 states and 7 inputs, controller loaded 7 joints
-#[DEBUG] DONE LOADING LQR CONTROLLER NODE
-#You have to load parameters now.
-#Spawned left_arm_controller
+    [1000000,10000,1000,1000,1000,1000,1000,100,00,10,10,10,10,1],\
+    #[10,1,1,1,1,  0,0,0,0,0],\
+    [10,10,10,10,10,100,100])

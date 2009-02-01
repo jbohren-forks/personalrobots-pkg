@@ -66,14 +66,14 @@ LQRController::~LQRController()
 void LQRController::update()
 {
   queue_.processAll();
-  
+
   //Fills the current state
   model_->toState(robot_,state_);
 
   //Computes update from controller
   commands_=-gains_*(state_-target_); //+input_offset_;
-  
-  //Updates joints
+
+  //Updates joints efforts
   model_->setEffort(robot_,commands_);
 }
 
@@ -81,7 +81,7 @@ bool LQRController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_=robot;
   return true;
-} 
+}
 
 void LQRController::setModel(ModelType *model)
 {
@@ -90,11 +90,11 @@ void LQRController::setModel(ModelType *model)
   const int n=model_->states();
   const int m=model_->inputs();
   //Using the set method ensures the matrices are resized if necessary
-  target_.set(StateVector::Zero(n,1));
-  gains_.set(GainsMatrix::Zero(m,n));
-  state_.set(StateVector::Zero(n,1));
-  input_offset_.set(InputVector::Zero(m,1));
-  commands_.set(InputVector::Zero(m,1));
+  target_=StateVector::Zero(n,1);
+  gains_=GainsMatrix::Zero(m,n);
+  state_=StateVector::Zero(n,1);
+  input_offset_=InputVector::Zero(m,1);
+  commands_=InputVector::Zero(m,1);
 }
 
 //------------------ Jobs --------------
@@ -107,10 +107,10 @@ LQRController::UpdateGainsJob::UpdateGainsJob(LQRController * c, const StateMatr
   ROS_DEBUG_STREAM("target is "<<target.transpose());
   const int n=weights.rows();
   const int m=input_weights.rows();
-  
+
   input_offset_.resize(m,1);
   gains_.resize(m,n);
-  
+
   //Computes a linearization around the target point
   StateMatrix A(n,n);
   InputMatrix B(n,m);
@@ -182,13 +182,13 @@ LQRController::ModelType * createModel(mechanism::RobotState * robot, TiXmlEleme
 bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   //Init the model.
-  
+
   ROS_DEBUG("LOADING LQR CONTROLLER NODE");
   ros::Node * const node = ros::Node::instance();
   string prefix = config->Attribute("name");
   ROS_DEBUG_STREAM("the prefix is "<<prefix);
 
-  
+
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
@@ -213,10 +213,10 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
     // Default parameters
     const int n = model->states();
     const int m = model->inputs();
-    state_cost_.set(LQRController::StateCostMatrix::Identity(n,n));
-    input_cost_.set(LQRController::InputCostMatrix::Identity(m,m));
-    target_.set(LQRController::StateVector::Zero(n,1));
-    
+    state_cost_=LQRController::StateCostMatrix::Identity(n,n);
+    input_cost_=LQRController::InputCostMatrix::Identity(m,m);
+    target_=LQRController::StateVector::Zero(n,1);
+
     ROS_DEBUG("DONE LOADING LQR CONTROLLER NODE\n");
     return model;
   }
@@ -229,7 +229,7 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
 {
   const int n = c_->model()->states();
   const int m = c_->model()->inputs();
-  
+
   //Decodes state cost
   const std::vector<double> & s_c = req.state_cost;
   if((int)s_c.size()!=n && (int)s_c.size()!=n*n && (int)s_c.size()!=0)
@@ -251,7 +251,7 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
       for(int j=0;j<n;j++)
         state_cost_(i,j)=s_c.at(i*n+j);
   }
-  
+
 //   ROS_DEBUG("1bis");
   const std::vector<double> & i_c = req.input_cost;
   if((int)i_c.size()!=m && (int)i_c.size()!=m*m && i_c.size()!=0)
@@ -274,15 +274,15 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
       for(int j=0;j<m;j++)
         input_cost_(i,j)=i_c.at(i*m+j);
   }
-  
+
 //   ROS_DEBUG("4");
   if(!c_->model()->toState(&(req.target),target_))
     return false;
 //   ROS_DEBUG("5");
-  
+
   c_->add(new LQRController::UpdateGainsJob(c_,state_cost_,input_cost_,target_));
 //   ROS_DEBUG("6");
-  
+
   return true;
 }
 
@@ -294,11 +294,11 @@ bool LQRControllerNode::setTargetAsynchronous(const robot_msgs::JointCmd &cmd)
   return true;
 }
 
-//FIXME robot_srvs::SetJointCmd should use robot_msgs::JointCmd  
+//FIXME robot_srvs::SetJointCmd should use robot_msgs::JointCmd
 bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::request &req,
               robot_srvs::SetJointCmd::response &resp)
 {
-  
+
   robot_msgs::JointCmd cmd;
   cmd.names=req.names;
   cmd.positions=req.positions;
@@ -306,7 +306,7 @@ bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::request &req,
   return setTargetAsynchronous(cmd);
 /*  if(!c_->model_->toState(req.names,req.positions,req.velocity,target_))
     return false;
-  
+
   return true;*/
 }
 
