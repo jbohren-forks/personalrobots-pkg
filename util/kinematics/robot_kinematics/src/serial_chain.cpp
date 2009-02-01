@@ -41,7 +41,8 @@ using namespace KDL;
 using namespace std;
 using namespace robot_kinematics;
 
-SerialChain::SerialChain()
+SerialChain::SerialChain() :
+	link_kdl_frame_(NULL) //<-- need to initialize when calling finalize()
 {
 }
 
@@ -54,11 +55,11 @@ void SerialChain::finalize()
   this->differentialKinematicsInv = new ChainIkSolverVel_pinv(this->chain);
   this->differentialKinematics    = new ChainFkSolverVel_recursive(this->chain);
   this->inverseKinematics         = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematicsInv);
-  
+
 #ifdef KDL_DYNAMICS
   this->inverseDynamics           = new ChainIdSolver_NE(this->chain);
-#endif  
-  
+#endif
+
   if(!this->link_kdl_frame_)
   {
     this->link_kdl_frame_         = new KDL::Frame[this->num_joints_];
@@ -67,7 +68,7 @@ void SerialChain::finalize()
   if(!this->joints_)
   {
     this->joints_ = new mechanism::Joint[this->num_joints_];
-  }  
+  }
 */
 }
 
@@ -126,7 +127,7 @@ bool SerialChain::computeDKInv(const JntArray & q_in, const Twist &v_in, JntArra
   if (this->differentialKinematicsInv->CartToJnt(q_in,v_in, qdot_out) >= 0)
     return true;
   else
-    return false;  
+    return false;
 }
 
 bool SerialChain::computeDK(const JntArrayVel & q_in, FrameVel& out)
@@ -134,7 +135,7 @@ bool SerialChain::computeDK(const JntArrayVel & q_in, FrameVel& out)
   if (this->differentialKinematics->JntToCart(q_in,out) >= 0)
     return true;
   else
-    return false;  
+    return false;
 }
 
 int SerialChain::getID(std::string name)
@@ -156,7 +157,7 @@ bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_do
     return true;
   }
   else
-    return false;  
+    return false;
 }
 
 bool SerialChain::computeGravityTerms(const JntArray &q, Vector* torque)
@@ -173,7 +174,7 @@ bool SerialChain::computeGravityTerms(const JntArray &q, Vector* torque)
     return true;
   }
   else
-    return false;  
+    return false;
 }
 
 void SerialChain::computeMassMatrix(const JntArray &q, Vector* torque, NEWMAT::Matrix &mass)
@@ -268,6 +269,6 @@ void angle_within_mod180(JntArray &q, int nJnts)
   for(int i=0; i < nJnts; i++)
   {
     q(i) = angle_within_mod180(q(i));
-  }	
+  }
 }
 

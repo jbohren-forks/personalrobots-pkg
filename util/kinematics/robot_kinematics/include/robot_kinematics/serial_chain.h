@@ -57,16 +57,22 @@ double modulus_double(double a, double b);
 double angle_within_mod180(double ang);
 void angle_within_mod180(KDL::JntArray &q, int nJnts);
 
+
+//FIXME (tjhunter)
+//This class has a number of problems:
+//-provide proper interface to the member data
+//-finalize is a horrible name, it usually means finalize before destruction (not init)
+//-memory leaks (confirmed with valgrind)
 namespace robot_kinematics
 {
   /* \class
-   * \brief The SerialChain class is a wrapper for the serial chain class found in the KDL library. It allows the additional 
+   * \brief The SerialChain class is a wrapper for the serial chain class found in the KDL library. It allows the additional
    * specification of a transformation from the externally-defined "link" frame to the joint coordinate frame defined by KDL.
    */
   class SerialChain
   {
     public:
-     
+
     SerialChain();
 
     ~SerialChain(){
@@ -80,7 +86,7 @@ namespace robot_kinematics
           delete[] joint_names_;
 */
      };
-     
+
     /*! \brief String name for the serial chain, eg : "rightArm"
      */
     std::string name;
@@ -89,7 +95,7 @@ namespace robot_kinematics
      */
     KDL::Chain chain;
 
-    /*! \brief A frame representing the transformation from the link frame (specified externally) to the KDL frame 
+    /*! \brief A frame representing the transformation from the link frame (specified externally) to the KDL frame
      * (specified by KDL at the joint axis)
      */
     KDL::Frame *link_kdl_frame_;
@@ -99,7 +105,7 @@ namespace robot_kinematics
     int num_joints_;
 
     /*! \brief Compute the forward kinematics and return as a KDL::frame
-     * \param q - input joint angles 
+     * \param q - input joint angles
      * \param f - output end effector frame (result of the fwd kinematics)
      * returns True if ok, False if error.
      */
@@ -107,7 +113,7 @@ namespace robot_kinematics
 
 
     /*! \brief Compute the forward kinematics and return as a KDL::frame
-     * \param q - input joint angles 
+     * \param q - input joint angles
      * \param f - output end effector frame (result of the fwd kinematics)
      * \param link number - 0 is the base frame and will return an identity matrix for the transformation, frame 1 rotates with the 1st joint and so on until frame num_joints;
      * returns True if ok, False if error.
@@ -115,7 +121,7 @@ namespace robot_kinematics
     bool computeFK(const KDL::JntArray &q, KDL::Frame &f, int frame_number);
 
     /*! \brief Compute the forward kinematics and return as a NEWMAT::Matrix
-     * \param q - input joint angles 
+     * \param q - input joint angles
      * \param f - output end effector frame (result of the fwd kinematics)
      * returns True if ok, False if error.
      */
@@ -123,30 +129,30 @@ namespace robot_kinematics
 
     /*! \brief Compute the inverse kinematics and return as a KDL::JntArray
      * \param q_init - initial guess for the inverse kinematics solution
-     * \param f - end effector frame 
-     * \param q_out - final solution to the IK 
+     * \param f - end effector frame
+     * \param q_out - final solution to the IK
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out);
 
     /*! \brief Compute the inverse kinematics and return as a KDL::JntArray.
      * This uses the stored previous guess for the inverse kinematics as a starting point for the solution
-     * \param f - end effector frame 
-     * \param q_out - final solution to the IK 
+     * \param f - end effector frame
+     * \param q_out - final solution to the IK
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::Frame &f, KDL::JntArray &q_out);
 
     /*! \brief Compute the inverse kinematics
-     * This uses the stored previous guess for the inverse kinematics as a starting point for the solution 
+     * This uses the stored previous guess for the inverse kinematics as a starting point for the solution
      * and stores the result in q_IK_result
-     * \param f - end effector frame 
+     * \param f - end effector frame
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::Frame &f);
 
     /*! \brief Compute the inverse differential kinematics
-     * \param q_in - input joint array 
+     * \param q_in - input joint array
      * \param v_in - input end-effector twist
      * \param qdot_out - output joint velocities
      * returns True if ok, False if error.
@@ -155,15 +161,15 @@ namespace robot_kinematics
 
 
     /*! \brief Compute the differential kinematics
-     * \param q_in - input joint velocities 
-     * \param v_in - 
+     * \param q_in - input joint velocities
+     * \param v_in -
      * returns True if ok, False if error.
      */
     bool computeDK(const KDL::JntArrayVel & q_in, KDL::FrameVel & out);
 
 
     /*! \brief Compute the inverse dynamics
-     * \param q - input joint array 
+     * \param q - input joint array
      * \param q_dot - input joint velocities
      * \param q_dotdot - input joint accelerations
      * \param torque - output vector of torques required to acheive desired joint trajectory
@@ -176,19 +182,19 @@ namespace robot_kinematics
     void computeMassMatrix(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &mass);
 
     /*! \brief Compute the Christoffel symbols
-     * \param q - input joint array (n x 1) 
+     * \param q - input joint array (n x 1)
      * \param torque - preallocated vector of torques of type KDL::Vector and size (n x 1) (must be preallocated and passed in as a pointer)
-     * \param christoffel - matrix of Christoffel symbols, must be predefined and passed in as a reference of type NEWMAT::Matrix and size (n^2 x n). The Christoffel symbol corresponding to C_{ijk} is given by indexing the NEWMAT matrix christoffel((i-1)*n+j,k) where i,j,k go from 1 to n and n is the total number of joints. 
+     * \param christoffel - matrix of Christoffel symbols, must be predefined and passed in as a reference of type NEWMAT::Matrix and size (n^2 x n). The Christoffel symbol corresponding to C_{ijk} is given by indexing the NEWMAT matrix christoffel((i-1)*n+j,k) where i,j,k go from 1 to n and n is the total number of joints.
      * \return True if ok, False if error. */
     void computeChristoffelSymbols(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &christoffel);
 
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
 
-    /*! \brief Finalize the chain after all the segments have been added. This must be done AFTER all links have been added using addLink 
+    /*! \brief Finalize the chain after all the segments have been added. This must be done AFTER all links have been added using addLink
      */
     void finalize();
 
-    int getID(std::string name);//< returns an int corresponding to the input name. 
+    int getID(std::string name);//< returns an int corresponding to the input name.
 
     KDL::JntArray *q_IK_guess; //< is used as the IK guess.
 
