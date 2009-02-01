@@ -29,7 +29,7 @@
  */
 
 /*
- * Author: Melonee Wise 
+ * Author: Melonee Wise
  */
 
 #include "urdf/parser.h"
@@ -104,12 +104,12 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  task_jac_.set(Eigen::MatrixXf::Zero(6, num_joints_));
-  identity_.set(Eigen::MatrixXf::Identity(num_joints_, num_joints_));
-  constraint_null_space_.set(Eigen::MatrixXf::Zero(num_joints_, num_joints_));
-  constraint_torq_.set(Eigen::MatrixXf::Zero(num_joints_, 1));
-  task_torq_.set(Eigen::MatrixXf::Zero(num_joints_, 1));
- 
+  task_jac_=Eigen::MatrixXf::Zero(6, num_joints_);
+  identity_=Eigen::MatrixXf::Identity(num_joints_, num_joints_);
+  constraint_null_space_=Eigen::MatrixXf::Zero(num_joints_, num_joints_);
+  constraint_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
+  task_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
+
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -167,8 +167,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
 
 void EndeffectorConstraintController::update()
 {
-  
-  
+
+
 
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
@@ -191,7 +191,7 @@ void EndeffectorConstraintController::update()
   {
     jnt_to_pose_solver_->JntToCart(jnt_pos, desired_frame_);
     desired_frame_.M.GetRPY(desired_roll_, desired_pitch_, desired_yaw_);
-    initialized_ = true; 
+    initialized_ = true;
   }
 
   // get the chain jacobian
@@ -211,20 +211,20 @@ void EndeffectorConstraintController::update()
   // get endeffector pose
   jnt_to_pose_solver_->JntToCart(jnt_pos, endeffector_frame_);
 
-  // compute the constraint jacobian and the constraint force 
+  // compute the constraint jacobian and the constraint force
   computeConstraintJacobian();
-  
+
   // compute the constraint wrench to apply
   constraint_wrench_ = constraint_jac_ * constraint_force_;
 
-  // compute the constraint null space to project 
+  // compute the constraint null space to project
   computeConstraintNullSpace();
-  
+
   // convert the wrench into joint torques
-  
+
   constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
   task_torq_ = constraint_null_space_ * task_jac_.transpose() * task_wrench_;
-  
+
   j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
   {
@@ -244,10 +244,10 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   double f_pitch = 0;
   double f_yaw = 0;
   double roll, pitch, yaw;
-  
+
   // Compute the end effector angle from the origin of the circle
   double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
-  
+
   // Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 0; // this is the end of the cylinder
   constraint_jac_(1,1) = 0;
@@ -291,12 +291,12 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     f_r = 0;
   }
-  
+
   endeffector_frame_.M.GetRPY(roll, pitch, yaw);
   double roll_error = desired_roll_- roll;
   double pitch_error = desired_pitch_- pitch;
   double yaw_error = desired_yaw_- yaw;
-  
+
   //roll constraint
   if (abs(roll_error) > 0.05)
   {
@@ -308,7 +308,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     f_roll = 0;
   }
-  
+
   //pitch constraint
   if (abs(pitch_error) > 0.05)
   {
@@ -320,7 +320,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     f_pitch = 0;
   }
-  
+
   //yaw constraint
   if (abs(yaw_error) > 0.05)
   {
@@ -342,11 +342,11 @@ void EndeffectorConstraintController::computeConstraintJacobian()
 
 void EndeffectorConstraintController::computeConstraintNullSpace()
 {
-  // Compute generalized inverse, this is the transpose as long as the constraints are 
+  // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
   constraint_null_space_ = identity_ - task_jac_.transpose()*constraint_jac_*constraint_jac_.transpose()*task_jac_;
-  
-  
+
+
 }
 
 
