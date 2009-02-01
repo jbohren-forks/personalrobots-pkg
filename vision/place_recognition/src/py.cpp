@@ -381,7 +381,7 @@ PyObject *mkvocabularytree(PyObject *self, PyObject *args)
 {
   vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
   object->vt = new VocabularyTree();
-  object->classifier = new RTreeClassifier(true);
+  object->classifier = new RTreeClassifier();
   object->classifier->read(classifier_file);
 
   return (PyObject*)object;
@@ -396,7 +396,7 @@ PyObject *mkload(PyObject *self, PyObject *args)
 
   vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
   object->vt = new VocabularyTree();
-  object->classifier = new RTreeClassifier(true);
+  object->classifier = new RTreeClassifier();
   object->classifier->read(classifier_file);
   object->vt->load(filename);
 

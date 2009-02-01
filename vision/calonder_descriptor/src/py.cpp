@@ -427,7 +427,8 @@ static PyTypeObject classifier_Type = {
 PyObject *classifier(PyObject *self, PyObject *args)
 {
     classifier_t *object = PyObject_NEW(classifier_t, &classifier_Type);
-    object->classifier = new RTreeClassifier(true);
+    //object->classifier = new RTreeClassifier(true);
+    object->classifier = new RTreeClassifier();
     return (PyObject*)object;
 }
 
