@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
   if (!g_options.xml_)
     Usage("You must specify a robot description XML file");
 
-  ros::Node *node = new ros::Node("mechanism_control",
+  ros::Node *node = new ros::Node("pr2_etherCAT",
                                   ros::Node::DONT_HANDLE_SIGINT);
 
   // Catch attempts to quit

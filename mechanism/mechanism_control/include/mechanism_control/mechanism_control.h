@@ -1,6 +1,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2008, Eric Berger
+// Copyright (C) 2008-2009, Willow Garage, Inc.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,13 @@
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
+#include <boost/circular_buffer.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
 #include <mechanism_model/controller.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <misc_utils/advertised_service_guard.h>
@@ -51,8 +57,8 @@
 #include <robot_srvs/SpawnController.h>
 #include <robot_srvs/KillController.h>
 #include <robot_msgs/MechanismState.h>
+#include <robot_msgs/DiagnosticMessage.h>
 #include "tf/tfMessage.h"
-
 
 typedef controller::Controller* (*ControllerAllocator)();
 
@@ -83,6 +89,20 @@ private:
   boost::mutex controllers_lock_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
   std::string controller_names_[MAX_NUM_CONTROLLERS];
+
+  typedef boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::max, boost::accumulators::tag::mean, boost::accumulators::tag::variance> > TimeStatistics;
+  struct {
+    TimeStatistics acc_;
+    double max_;
+    boost::circular_buffer<double> max1_;
+    struct {
+      TimeStatistics acc_;
+      double max_;
+      boost::circular_buffer<double> max1_;
+    } controllers_[MAX_NUM_CONTROLLERS];
+  } diagnostics_;
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  void publishDiagnostics();
 
   // Killing a controller:
   // 1. Non-realtime thread places the index of the controller into please_remove_

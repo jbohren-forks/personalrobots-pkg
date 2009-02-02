@@ -33,12 +33,17 @@
 #include "ros/console.h"
 
 using namespace mechanism;
+using namespace boost::accumulators;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw), initialized_(0), please_remove_(-1), removed_(NULL)
+  state_(NULL), hw_(hw), initialized_(0), publisher_("/diagnostics", 1), please_remove_(-1), removed_(NULL)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
   model_.hw_ = hw;
+
+  diagnostics_.max1_.resize(60);
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+    diagnostics_.controllers_[i].max1_.resize(60);
 }
 
 MechanismControl::~MechanismControl()
@@ -72,22 +77,94 @@ controller::Controller* MechanismControl::getControllerByName(std::string name)
   return NULL;
 }
 
+#define ADD_STRING_FMT(lab, fmt, ...) \
+  s.label = (lab); \
+  { char buf[1024]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    s.value = buf; \
+  } \
+  strings.push_back(s)
+
+void MechanismControl::publishDiagnostics()
+{
+  if (publisher_.trylock())
+  {
+    int active = 0;
+    TimeStatistics a;
+
+    vector<robot_msgs::DiagnosticStatus> statuses;
+    vector<robot_msgs::DiagnosticValue> values;
+    vector<robot_msgs::DiagnosticString> strings;
+    robot_msgs::DiagnosticStatus status;
+    robot_msgs::DiagnosticValue v;
+    robot_msgs::DiagnosticString s;
+
+    status.name = "Mechanism Control";
+    status.level = 0;
+    status.message = "OK";
+
+    for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+    {
+      if (controllers_[i] != NULL)
+      {
+        ++active;
+        double m = extract_result<tag::max>(diagnostics_.controllers_[i].acc_);
+        diagnostics_.controllers_[i].max1_.push_back(m);
+        diagnostics_.controllers_[i].max_ = std::max(m, diagnostics_.controllers_[i].max_);
+        ADD_STRING_FMT(controller_names_[i], "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", mean(diagnostics_.controllers_[i].acc_)*1e6, sqrt(variance(diagnostics_.controllers_[i].acc_))*1e6, m*1e6, *std::max_element(diagnostics_.controllers_[i].max1_.begin(), diagnostics_.controllers_[i].max1_.end())*1e6, diagnostics_.controllers_[i].max_*1e6);
+        /* Clear accumulator */
+        diagnostics_.controllers_[i].acc_ = a;
+      }
+    }
+
+    double m = extract_result<tag::max>(diagnostics_.acc_);
+    diagnostics_.max1_.push_back(m);
+    diagnostics_.max_ = std::max(m, diagnostics_.max_);
+    ADD_STRING_FMT("Overall", "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", mean(diagnostics_.acc_)*1e6, sqrt(variance(diagnostics_.acc_))*1e6, m*1e6, *std::max_element(diagnostics_.max1_.begin(), diagnostics_.max1_.end())*1e6, diagnostics_.max_*1e6);
+    ADD_STRING_FMT("Active controllers", "%d", active);
+
+    status.set_values_vec(values);
+    status.set_strings_vec(strings);
+    statuses.push_back(status);
+    publisher_.msg_.set_status_vec(statuses);
+    publisher_.unlockAndPublish();
+
+    /* Clear accumulator */
+    diagnostics_.acc_ = a;
+  }
+}
 
 // Must be realtime safe.
 void MechanismControl::update()
 {
+  static int count = 0;
+
   state_->propagateState();
   state_->zeroCommands();
 
   // Update all controllers
+  double start_update = realtime_gettime();
   for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
   {
     if (controllers_[i] != NULL)
+    {
+      double start = realtime_gettime();
       controllers_[i]->update();
+      double end = realtime_gettime();
+      diagnostics_.controllers_[i].acc_(end - start);
+    }
   }
+  double end_update = realtime_gettime();
+  diagnostics_.acc_(end_update - start_update);
 
   state_->enforceSafety();
   state_->propagateEffort();
+
+  if (++count == 1000)
+  {
+    count = 0;
+    publishDiagnostics();
+  }
 
   // If there's a controller to remove, we take it out of the controllers array.
   if (please_remove_ >= 0)
