@@ -19,7 +19,7 @@
 all: installed
 
 TARBALL_VERSION=   r910
-SVN_REVISION=    -r 965
+SVN_REVISION=    -r 967
 
 TARBALL=     build/libsunflower-$(TARBALL_VERSION).tar.gz
 TARBALL_URL= http://pr.willowgarage.com/downloads/libsunflower-$(TARBALL_VERSION).tar.gz
@@ -27,7 +27,6 @@ SOURCE_DIR=  $(PWD)/build/libsunflower-$(TARBALL_VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
-ESTAR_DIR=   `rospack find estar`/local
 BOOST_DIR=   `rosboost-cfg --include_dirs`
 
 SVN_DIR=     $(PWD)/build/sunflower-svn
@@ -36,12 +35,11 @@ SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk
 #include $(shell rospack find mk)/download_unpack_build.mk
 include $(shell rospack find mk)/svn_checkout.mk
 
-installed: $(SVN_DIR) patched
+installed: $(SVN_DIR) patched Makefile
 	cd $(SVN_DIR) && ./bootstrap-buildsystem.sh
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(SVN_DIR)/configure --with-pic \
 	                                        --prefix=$(INST_DIR) \
-                                                --with-estar=$(ESTAR_DIR) \
                                                 --with-boost=$(BOOST_DIR)
 	$(MAKE) -C $(BUILD_DIR) install
 	touch installed
@@ -71,7 +69,6 @@ $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && \
 	$(SOURCE_DIR)/configure --with-pic --prefix=$(INST_DIR) \
-                                                   --with-estar=$(ESTAR_DIR) \
                                                    --with-boost=$(BOOST_DIR)
 
 clean:
