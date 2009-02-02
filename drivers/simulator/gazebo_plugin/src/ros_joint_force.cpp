@@ -95,22 +95,27 @@ void RosJointForce::InitChild()
 void RosJointForce::UpdateChild()
 {
   // this->myIface->Lock(1);
-  // this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
+  double current_time = Simulator::Instance()->GetSimTime();
   // // Let me explain this number: each joint reports 4 vectors: Force and torque
   // // on each jointed object, respectively. These vectors have 4 elements: x,y,z
   // // and a fourth one. So we transmit 4 dReals per vector.
-  // this->myIface->data->data_count = n_joints*4*4*sizeof(dReal);
+  int data_count = n_joints*4*4*sizeof(dReal);
+  std::cout << "data_count:" << data_count << std::endl;
 
-  // for(int i=0; i< n_joints; i++) {
-  //   // Copy vector for force on first object
-  //   memcpy(this->myIface->data->data + (i*4 + 0)*4*sizeof(dReal), this->jointfeedbacks[i]->f1, 4*sizeof(dReal));
-  //   // Copy vector for torque on first object
-  //   memcpy(this->myIface->data->data + (i*4 + 1)*4*sizeof(dReal), this->jointfeedbacks[i]->t1, 4*sizeof(dReal));
-  //   // Copy vector for force on second object
-  //   memcpy(this->myIface->data->data + (i*4 + 2)*4*sizeof(dReal), this->jointfeedbacks[i]->f2, 4*sizeof(dReal));
-  //   // Copy vector for torque on second object
-  //   memcpy(this->myIface->data->data + (i*4 + 3)*4*sizeof(dReal), this->jointfeedbacks[i]->t2, 4*sizeof(dReal));
-  // }
+  double data[1000];
+
+  for(int i=0; i< n_joints; i++) {
+    // Copy vector for force on first object
+    memcpy(data + (i*4 + 0)*4*sizeof(dReal), this->jointfeedbacks[i]->f1, 4*sizeof(dReal));
+    // Copy vector for torque on first object
+    memcpy(data + (i*4 + 1)*4*sizeof(dReal), this->jointfeedbacks[i]->t1, 4*sizeof(dReal));
+    // Copy vector for force on second object
+    memcpy(data + (i*4 + 2)*4*sizeof(dReal), this->jointfeedbacks[i]->f2, 4*sizeof(dReal));
+    // Copy vector for torque on second object
+    memcpy(data + (i*4 + 3)*4*sizeof(dReal), this->jointfeedbacks[i]->t2, 4*sizeof(dReal));
+
+  }
+  std::cout << " data: " << data << std::endl;
   // this->myIface->Unlock();
 }
 

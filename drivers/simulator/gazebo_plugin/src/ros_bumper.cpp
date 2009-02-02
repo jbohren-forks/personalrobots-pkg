@@ -101,7 +101,8 @@ void RosBumper::UpdateChild()
   std::string my_geom_name;
   int i_hit_geom;
   double when_i_hit;
-  std::string geom_i_hit;;
+  std::string geom_i_hit;
+  dJointFeedback contact_forces;
 
   for (unsigned int i=0; i < num_contacts; i++)
   {
@@ -109,13 +110,17 @@ void RosBumper::UpdateChild()
     i_hit_geom = this->myParent->GetContactState(i); 
     when_i_hit= this->myParent->GetContactTime(i); 
     geom_i_hit = this->myParent->GetContactGeomName(i); 
+    contact_forces = this->myParent->GetContactFeedback(i); 
     if (i_hit_geom == 1)
     {
       std::ostringstream stream;
       stream    << "touched!    i:" << i
                 << "      my geom:" << my_geom_name
                 << "   other geom:" << geom_i_hit
-                << "         time:" << when_i_hit    << std::endl;
+                << "         time:" << when_i_hit
+                << " f1:" << contact_forces.f1[0]<<","<<contact_forces.f1[1]<<","<<contact_forces.f1[2]
+                << " f2:" << contact_forces.f2[0]<<","<<contact_forces.f2[1]<<","<<contact_forces.f2[2]
+                << std::endl;
       //std::cout << stream.str();
       this->bumperMsg.data = stream.str();
       rosnode->publish(this->bumperTopicName,this->bumperMsg);
