@@ -59,6 +59,7 @@ namespace trajectory_rollout{
     inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius),
     sim_time_(sim_time), sim_granularity_(sim_granularity), samples_per_dim_(samples_per_dim),
     pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), occdist_scale_(occdist_scale),
+    acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta),
     prev_x_(0), prev_y_(0), heading_lookahead_(heading_lookahead), 
     oscillation_reset_dist_(oscillation_reset_dist), holonomic_robot_(holonomic_robot),
     max_vel_x_(max_vel_x), min_vel_x_(min_vel_x), 

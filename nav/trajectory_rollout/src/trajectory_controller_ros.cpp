@@ -36,6 +36,7 @@
 *********************************************************************/
 
 #include <trajectory_rollout/trajectory_controller_ros.h>
+#include <ros/console.h>
 
 using namespace std;
 using namespace std_msgs;
@@ -60,8 +61,8 @@ namespace trajectory_rollout {
     ros_node.param("/trajectory_rollout/sim_time", sim_time, 1.0);
     ros_node.param("/trajectory_rollout/sim_granularity", sim_granularity, 0.025);
     ros_node.param("/trajectory_rollout/samples_per_dim", samples_per_dim, 20);
-    ros_node.param("/trajectory_rollout/pdist_scale", pdist_scale, 0.6);
-    ros_node.param("/trajectory_rollout/gdist_scale", gdist_scale, 0.8);
+    ros_node.param("/trajectory_rollout/path_distance_bias", pdist_scale, 0.6);
+    ros_node.param("/trajectory_rollout/goal_distance_bias", gdist_scale, 0.8);
     ros_node.param("/trajectory_rollout/occdist_scale", occdist_scale, 0.2);
     ros_node.param("/trajectory_rollout/heading_lookahead", heading_lookahead, 0.325);
     ros_node.param("/trajectory_rollout/oscillation_reset_dist", oscillation_reset_dist, 0.05);
@@ -78,9 +79,11 @@ namespace trajectory_rollout {
       origin.x = 0;
       origin.y = 0;
       world_model_ = new PointGrid(70.0, 70.0, 1.0, origin, 2.0, 2.0);
+      ROS_ERROR("Freespace\n");
     }
     else{
       world_model_ = new CostmapModel(ma); 
+      ROS_ERROR("Costmap\n");
     }
 
     tc_ = new TrajectoryController(*world_model_, ma, footprint_spec, inscribed_radius, circumscribed_radius,

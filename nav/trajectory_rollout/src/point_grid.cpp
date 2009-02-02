@@ -36,6 +36,7 @@
 *********************************************************************/
 
 #include <trajectory_rollout/point_grid.h>
+#include <ros/console.h>
 #include <sys/time.h>
 #include <math.h>
 
@@ -261,7 +262,7 @@ namespace trajectory_rollout {
       upper_right.y = max(upper_right.y, poly[i].y);
     }
 
-    printf("Lower: (%.2f, %.2f), Upper: (%.2f, %.2f)\n", lower_left.x, lower_left.y, upper_right.x, upper_right.y);
+    ROS_DEBUG("Lower: (%.2f, %.2f), Upper: (%.2f, %.2f)\n", lower_left.x, lower_left.y, upper_right.x, upper_right.y);
     points_.clear();
     getPointsInRange(lower_left, upper_right, points_);
 
