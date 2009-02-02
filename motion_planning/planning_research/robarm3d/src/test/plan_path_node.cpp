@@ -146,7 +146,7 @@ int PlanPathNode::planrobarmROS(const pr2_mechanism_controllers::JointTrajPoint 
 }
 
 
-bool PlanPathNode::planPath(robarm3d::PlanPathSrv::request &req, robarm3d::PlanPathSrv::response &resp)
+bool PlanPathNode::planPath(robarm3d::PlanPathSrv::Request &req, robarm3d::PlanPathSrv::Response &resp)
 {
   pr2_mechanism_controllers::JointTraj traj; 
   int bRet = planrobarmROS(req.start,req.goal,traj);

@@ -80,7 +80,7 @@ public:
     void runRightArmToPositionA(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanStateRequest req;
+      robot_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -102,8 +102,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicReplanState::request  s_req;
-	robot_srvs::KinematicReplanState::response s_res;
+	robot_srvs::KinematicReplanState::Request  s_req;
+	robot_srvs::KinematicReplanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("replan_kinematic_path_state", s_req, s_res))
@@ -144,8 +144,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicReplanLinkPosition::request  s_req;
-	robot_srvs::KinematicReplanLinkPosition::response s_res;
+	robot_srvs::KinematicReplanLinkPosition::Request  s_req;
+	robot_srvs::KinematicReplanLinkPosition::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("replan_kinematic_path_position", s_req, s_res))

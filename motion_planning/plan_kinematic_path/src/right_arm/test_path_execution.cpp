@@ -109,11 +109,11 @@ public:
 		}		
 		else
 		{
-		    pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
-		    pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+		    pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+		    pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
 		    
-		    pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
-		    pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+		    pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;
+		    pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
 		    
 		    send_traj_start_req.traj = traj;
 		    int traj_done = -1;

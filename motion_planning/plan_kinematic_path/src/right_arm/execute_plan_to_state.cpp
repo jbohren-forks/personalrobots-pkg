@@ -130,8 +130,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicPlanState::request  s_req;
-	robot_srvs::KinematicPlanState::response s_res;
+	robot_srvs::KinematicPlanState::Request  s_req;
+	robot_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
@@ -190,10 +190,10 @@ protected:
     // also demo how to wait for the trajectory to finish executing
     void sendArmCommandAndWait(robot_msgs::KinematicPath &path, const std::string &model)
     {	
-	pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;	
-	pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
-	pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;	
-	pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;	
+	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;	
+	pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
 
 	robot_msgs::JointTraj traj;	
         getTrajectoryMsg(path, traj);
@@ -235,8 +235,8 @@ protected:
     bool verifyDirectPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
 			  robot_msgs::KinematicState &goal, const std::string &model)
     {  
-	robot_srvs::ValidateKinematicPath::request  req;	    
-	robot_srvs::ValidateKinematicPath::response res;
+	robot_srvs::ValidateKinematicPath::Request  req;	    
+	robot_srvs::ValidateKinematicPath::Response res;
 	req.model_id = model;	    
 	req.start_state = start;	    
 	req.constraints = cstrs;

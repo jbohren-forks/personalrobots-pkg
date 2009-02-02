@@ -328,7 +328,7 @@ public:
     // services //
     //////////////
 
-    bool body_destroy_srv(body_destroy::request& req, body_destroy::response& res)
+    bool body_destroy_srv(body_destroy::Request& req, body_destroy::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -338,7 +338,7 @@ public:
         return GetEnv()->RemoveKinBody(pbody,true);
     }
 
-    bool body_enable_srv(body_enable::request& req, body_enable::response& res)
+    bool body_enable_srv(body_enable::Request& req, body_enable::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -349,7 +349,7 @@ public:
         return true;
     }
 
-    bool body_getaabb_srv(body_getaabb::request& req, body_getaabb::response& res)
+    bool body_getaabb_srv(body_getaabb::Request& req, body_getaabb::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -362,7 +362,7 @@ public:
         return true;
     }
 
-    bool body_getaabbs_srv(body_getaabbs::request& req, body_getaabbs::response& res)
+    bool body_getaabbs_srv(body_getaabbs::Request& req, body_getaabbs::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -379,7 +379,7 @@ public:
         return true;
     }
 
-    bool body_getdof_srv(body_getdof::request& req, body_getdof::response& res)
+    bool body_getdof_srv(body_getdof::Request& req, body_getdof::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -388,7 +388,7 @@ public:
         return true;
     }
 
-    bool body_getjointvalues_srv(body_getjointvalues::request& req, body_getjointvalues::response& res)
+    bool body_getjointvalues_srv(body_getjointvalues::Request& req, body_getjointvalues::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -417,7 +417,7 @@ public:
         return true;
     }
 
-    bool body_setjointvalues_srv(body_setjointvalues::request& req, body_setjointvalues::response& res)
+    bool body_setjointvalues_srv(body_setjointvalues::Request& req, body_setjointvalues::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -464,7 +464,7 @@ public:
         return true;
     }
 
-    bool body_settransform_srv(body_settransform::request& req, body_settransform::response& res)
+    bool body_settransform_srv(body_settransform::Request& req, body_settransform::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -483,7 +483,7 @@ public:
         return true;
     }
 
-    bool env_checkcollision_srv(env_checkcollision::request& req, env_checkcollision::response& res)
+    bool env_checkcollision_srv(env_checkcollision::Request& req, env_checkcollision::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL )
@@ -564,7 +564,7 @@ public:
         return true;
     }
 
-    bool env_closefigures_srv(env_closefigures::request& req, env_closefigures::response& res)
+    bool env_closefigures_srv(env_closefigures::Request& req, env_closefigures::Response& res)
     {
         bool bSuccess = true;
 
@@ -580,7 +580,7 @@ public:
         return bSuccess;
     }
 
-    bool env_createbody_srv(env_createbody::request& req, env_createbody::response& res)
+    bool env_createbody_srv(env_createbody::Request& req, env_createbody::Response& res)
     {
         LockEnvironment envlock(this);
         KinBody* pbody = GetEnv()->CreateKinBody();
@@ -603,7 +603,7 @@ public:
         return true;
     }
 
-    bool env_createplanner_srv(env_createplanner::request& req, env_createplanner::response& res)
+    bool env_createplanner_srv(env_createplanner::Request& req, env_createplanner::Response& res)
     {
         boost::shared_ptr<PlannerBase> pplanner(GetEnv()->CreatePlanner(req.plannertype.c_str()));
         if( !pplanner )
@@ -614,7 +614,7 @@ public:
         return true;
     }
 
-    bool env_createproblem_srv(env_createproblem::request& req, env_createproblem::response& res)
+    bool env_createproblem_srv(env_createproblem::Request& req, env_createproblem::Response& res)
     {
         boost::shared_ptr<ProblemInstance> pproblem(GetEnv()->CreateProblem(req.problemtype.c_str()));
         if( !pproblem )
@@ -650,7 +650,7 @@ public:
         return true;
     }
 
-    bool env_createrobot_srv(env_createrobot::request& req, env_createrobot::response& res)
+    bool env_createrobot_srv(env_createrobot::Request& req, env_createrobot::Response& res)
     {
         RobotBase* probot = GetEnv()->CreateRobot(req.type.c_str());
         if( !probot )
@@ -670,7 +670,7 @@ public:
         return true;
     }
 
-    bool env_destroyproblem_srv(env_destroyproblem::request& req, env_destroyproblem::response& res)
+    bool env_destroyproblem_srv(env_destroyproblem::Request& req, env_destroyproblem::Response& res)
     {
         boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
@@ -734,7 +734,7 @@ public:
         }
     }
 
-    bool env_getbodies_srv(env_getbodies::request& req, env_getbodies::response& res)
+    bool env_getbodies_srv(env_getbodies::Request& req, env_getbodies::Response& res)
     {
         vector<KinBody*> vbodies;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedBodies(vbodies));
@@ -764,7 +764,7 @@ public:
         return true;
     }
 
-    bool env_getbody_srv(env_getbody::request& req, env_getbody::response& res)
+    bool env_getbody_srv(env_getbody::Request& req, env_getbody::Response& res)
     {
         KinBody* pbody = GetEnv()->GetKinBody(_ravembstowcs(req.name.c_str()).c_str());
         if( pbody == NULL )
@@ -844,7 +844,7 @@ public:
         }
     }
 
-    bool env_getrobots_srv(env_getrobots::request& req, env_getrobots::response& res)
+    bool env_getrobots_srv(env_getrobots::Request& req, env_getrobots::Response& res)
     {
         vector<RobotBase*> vrobots;
         boost::shared_ptr<EnvironmentBase::EnvLock> lock(GetEnv()->GetLockedRobots(vrobots));
@@ -875,13 +875,13 @@ public:
         return true;
     }
 
-    bool env_loadplugin_srv(env_loadplugin::request& req, env_loadplugin::response& res)
+    bool env_loadplugin_srv(env_loadplugin::Request& req, env_loadplugin::Response& res)
     {
         LockEnvironment envlock(this);
         return GetEnv()->LoadPlugin(req.filename.c_str());
     }
 
-    bool env_loadscene_srv(env_loadscene::request& req, env_loadscene::response& res)
+    bool env_loadscene_srv(env_loadscene::Request& req, env_loadscene::Response& res)
     {
         if( req.resetscene )
             AddWorker(new ResetEnvironmentWorker(GetEnv()), true);
@@ -894,7 +894,7 @@ public:
         return true;
     }
 
-    bool env_plot_srv(env_plot::request& req, env_plot::response& res)
+    bool env_plot_srv(env_plot::Request& req, env_plot::Response& res)
     {
         bool bOneColor = req.colors.size() != req.points.size();
         float falpha = max(0.0f, 1.0f-req.transparency);
@@ -905,31 +905,31 @@ public:
         
         void* figure = NULL;
         switch(req.drawtype) {
-        case env_plot::request::Draw_Point:
+        case env_plot::Request::Draw_Point:
             if( bOneColor )
                 figure = GetEnv()->plot3(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,vOneColor, 0);
             else
                 figure = GetEnv()->plot3(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,&req.colors[0], 0);
             break;
-        case env_plot::request::Draw_LineStrip:
+        case env_plot::Request::Draw_LineStrip:
             if( bOneColor )
                 figure = GetEnv()->drawlinestrip(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,vOneColor);
             else
                 figure = GetEnv()->drawlinestrip(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,&req.colors[0]);
             break;
-        case env_plot::request::Draw_LineList:
+        case env_plot::Request::Draw_LineList:
             if( bOneColor )
                 figure = GetEnv()->drawlinelist(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,vOneColor);
             else
                 figure = GetEnv()->drawlinelist(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,&req.colors[0]);
             break;
-        case env_plot::request::Draw_TriList:
+        case env_plot::Request::Draw_TriList:
             //if( bOneColor )
             figure = GetEnv()->drawtrimesh(&req.points[0],3*sizeof(req.points[0]), NULL, req.points.size()/9, vOneColor);
             //else
                 //figure = GetEnv()->plot3(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,&req.colors[0], 0);
             break;
-        case env_plot::request::Draw_Sphere:
+        case env_plot::Request::Draw_Sphere:
             if( bOneColor )
                 figure = GetEnv()->plot3(&req.points[0],req.points.size()/3,3*sizeof(req.points[0]),req.size,vOneColor, 1);
             else
@@ -947,7 +947,7 @@ public:
         return true;
     }
 
-    bool env_raycollision_srv(env_raycollision::request& req, env_raycollision::response& res)
+    bool env_raycollision_srv(env_raycollision::Request& req, env_raycollision::Response& res)
     {
         KinBody* pbody = req.bodyid != 0 ? GetEnv()->GetBodyFromNetworkId(req.bodyid) : NULL;
         
@@ -1016,42 +1016,42 @@ public:
         return true;
     }
 
-    bool env_set_srv(env_set::request& req, env_set::response& res)
+    bool env_set_srv(env_set::Request& req, env_set::Response& res)
     {
-        if( req.setmask & env_set::request::Set_Simulation ) {
+        if( req.setmask & env_set::Request::Set_Simulation ) {
             LockEnvironment envlock(this);
             switch(req.sim_action) {
-            case env_set::request::SimAction_Start:
+            case env_set::Request::SimAction_Start:
                 if( req.sim_timestep > 0 )
                     _fSimulationTimestep = req.sim_timestep;
                 GetEnv()->StartSimulation(_fSimulationTimestep);
                 break;
-            case env_set::request::SimAction_Stop:
+            case env_set::Request::SimAction_Stop:
                 GetEnv()->StopSimulation();
                 break;
-            case env_set::request::SimAction_Timestep:
+            case env_set::Request::SimAction_Timestep:
                 _fSimulationTimestep = req.sim_timestep;
                 GetEnv()->StartSimulation(_fSimulationTimestep);
                 break;
             }
         }
-        if( req.setmask & env_set::request::Set_PhysicsEngine ) {
+        if( req.setmask & env_set::Request::Set_PhysicsEngine ) {
             SetPhysicsEngine(req.physicsengine);
         }
-        if( req.setmask & env_set::request::Set_CollisionChecker ) {
+        if( req.setmask & env_set::Request::Set_CollisionChecker ) {
             int options = GetEnv()->GetCollisionOptions();
             if( SetCollisionChecker(req.collisionchecker) )
                 GetEnv()->SetCollisionOptions(options);
         }
-        if( req.setmask & env_set::request::Set_Gravity ) {
+        if( req.setmask & env_set::Request::Set_Gravity ) {
             _vgravity = Vector(req.gravity[0],req.gravity[1],req.gravity[2]);
             if( !!_pphysics )
                 _pphysics->SetGravity(_vgravity);
         }
-        if( req.setmask & env_set::request::Set_PublishAnytime ) {
+        if( req.setmask & env_set::Request::Set_PublishAnytime ) {
             GetEnv()->SetPublishBodiesAnytime(req.publishanytime>0);
         }
-        if( req.setmask & env_set::request::Set_DebugLevel ) {
+        if( req.setmask & env_set::Request::Set_DebugLevel ) {
             map<string,DebugLevel> mlevels;
             mlevels["fatal"] = Level_Fatal;
             mlevels["error"] = Level_Error;
@@ -1071,11 +1071,11 @@ public:
             }
             GetEnv()->SetDebugLevel(level);
         }
-        if( req.setmask & env_set::request::Set_Viewer ) {
+        if( req.setmask & env_set::Request::Set_Viewer ) {
             GetEnv()->AttachViewer(NULL);
             SetViewer(req.viewer);
         }
-        if( req.setmask & env_set::request::Set_ViewerDims ) {
+        if( req.setmask & env_set::Request::Set_ViewerDims ) {
             if( GetEnv()->GetViewer() != NULL )
                 GetEnv()->GetViewer()->ViewerSetSize(req.viewerwidth,req.viewerheight);
         }
@@ -1083,7 +1083,7 @@ public:
         return true;
     }
 
-    bool env_triangulate_srv(env_triangulate::request& req, env_triangulate::response& res)
+    bool env_triangulate_srv(env_triangulate::Request& req, env_triangulate::Response& res)
     {
         set<int> setobjids;
         FOREACH(it, req.bodyids)
@@ -1119,7 +1119,7 @@ public:
         return true;
     }
 
-    bool env_wait_srv(env_wait::request& req, env_wait::response& res)
+    bool env_wait_srv(env_wait::Request& req, env_wait::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1146,7 +1146,7 @@ public:
         return true;
     }
 
-    bool planner_init_srv(planner_init::request& req, planner_init::response& res)
+    bool planner_init_srv(planner_init::Request& req, planner_init::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.robotid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1166,7 +1166,7 @@ public:
         return itplanner->second->InitPlan(probot, &params);
     }
 
-    bool planner_plan_srv(planner_plan::request& req, planner_plan::response& res)
+    bool planner_plan_srv(planner_plan::Request& req, planner_plan::Response& res)
     {
         map<int, boost::shared_ptr<PlannerBase> >::iterator itplanner = _mapplanners.find(req.plannerid);
         if( itplanner == _mapplanners.end() )
@@ -1202,7 +1202,7 @@ public:
         return true;
     }
 
-    bool problem_sendcommand_srv(problem_sendcommand::request& req, problem_sendcommand::response& res)
+    bool problem_sendcommand_srv(problem_sendcommand::Request& req, problem_sendcommand::Response& res)
     {
         boost::mutex::scoped_lock lock(_mutexProblems);
         map<int, boost::shared_ptr<ProblemInstance> >::iterator itprob = _mapproblems.find(req.problemid);
@@ -1214,7 +1214,7 @@ public:
         return bSuccessful;
     }
 
-    bool robot_controllersend_srv(robot_controllersend::request& req, robot_controllersend::response& res)
+    bool robot_controllersend_srv(robot_controllersend::Request& req, robot_controllersend::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1230,7 +1230,7 @@ public:
         return bsuccess;
     }
 
-    bool robot_controllerset_srv(robot_controllerset::request& req, robot_controllerset::response& res)
+    bool robot_controllerset_srv(robot_controllerset::Request& req, robot_controllerset::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1241,7 +1241,7 @@ public:
         return bsuccess;
     }
 
-    bool robot_getactivevalues_srv(robot_getactivevalues::request& req, robot_getactivevalues::response& res)
+    bool robot_getactivevalues_srv(robot_getactivevalues::Request& req, robot_getactivevalues::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1273,7 +1273,7 @@ public:
         return true;
     }
 
-    bool robot_sensorgetdata_srv(robot_sensorgetdata::request& req, robot_sensorgetdata::response& res)
+    bool robot_sensorgetdata_srv(robot_sensorgetdata::Request& req, robot_sensorgetdata::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1384,7 +1384,7 @@ public:
         return true;
     }
 
-    bool robot_sensorsend_srv(robot_sensorsend::request& req, robot_sensorsend::response& res)
+    bool robot_sensorsend_srv(robot_sensorsend::Request& req, robot_sensorsend::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1425,7 +1425,7 @@ public:
         probot->SetActiveDOFs(vjointindices, active.affine, (active.affine&RobotBase::DOF_RotationAxis)?&vaxis:NULL);
     }
     
-    bool robot_setactivedofs_srv(robot_setactivedofs::request& req, robot_setactivedofs::response& res)
+    bool robot_setactivedofs_srv(robot_setactivedofs::Request& req, robot_setactivedofs::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1437,7 +1437,7 @@ public:
         return true;
     }
 
-    bool robot_setactivevalues_srv(robot_setactivevalues::request& req, robot_setactivevalues::response& res)
+    bool robot_setactivevalues_srv(robot_setactivevalues::Request& req, robot_setactivevalues::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1482,7 +1482,7 @@ public:
         return true;
     }
 
-    bool robot_starttrajectory_srv(robot_starttrajectory::request& req, robot_starttrajectory::response& res)
+    bool robot_starttrajectory_srv(robot_starttrajectory::Request& req, robot_starttrajectory::Response& res)
     {
         KinBody* pbody = GetEnv()->GetBodyFromNetworkId(req.bodyid);
         if( pbody == NULL || !pbody->IsRobot() )
@@ -1501,8 +1501,8 @@ public:
         OpenRAVE::Trajectory::TPOINT pt; pt.q.resize(probot->GetActiveDOF());
         pt.trans = probot->GetTransform();
 
-        bool bOverwriteTransforms = !(req.options & robot_starttrajectory::request::Traj_UseTransforms);
-        bool bAutoCalcTiming = !(req.options & robot_starttrajectory::request::Traj_UseTimestamps);
+        bool bOverwriteTransforms = !(req.options & robot_starttrajectory::Request::Traj_UseTransforms);
+        bool bAutoCalcTiming = !(req.options & robot_starttrajectory::Request::Traj_UseTimestamps);
 
         FOREACH(it, req.trajectory.points) {
             ROS_ASSERT( it->position.size() == pt.q.size() );

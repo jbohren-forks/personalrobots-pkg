@@ -52,18 +52,18 @@ class ROSRobotController : public ControllerBase
             assert(pnode != NULL);
             Destroy();
             
-            _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::request, pr2_mechanism_controllers::TrajectoryStart::response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
-            _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::request, pr2_mechanism_controllers::TrajectoryCancel::response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
-            _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::request, pr2_mechanism_controllers::TrajectoryWait::response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
-            _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::request, pr2_mechanism_controllers::TrajectoryQuery::response>(_strTrajectoryServiceDir+"TrajectoryQuery", true);
+            _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::Request, pr2_mechanism_controllers::TrajectoryStart::Response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
+            _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::Request, pr2_mechanism_controllers::TrajectoryCancel::Response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
+            _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::Request, pr2_mechanism_controllers::TrajectoryWait::Response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
+            _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::Request, pr2_mechanism_controllers::TrajectoryQuery::Response>(_strTrajectoryServiceDir+"TrajectoryQuery", true);
         
             if( !_srvTrajectoryQuery ) {
                 RAVELOG_ERRORA("failed to find %s service\n", (_strTrajectoryServiceDir+"TrajectoryQuery").c_str());
                 return false;
             }
         
-            pr2_mechanism_controllers::TrajectoryQuery::request req;
-            pr2_mechanism_controllers::TrajectoryQuery::response res;
+            pr2_mechanism_controllers::TrajectoryQuery::Request req;
+            pr2_mechanism_controllers::TrajectoryQuery::Response res;
             if( !_srvTrajectoryQuery->call(req,res) ) {
                 RAVELOG_ERRORA("failed to query trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
@@ -233,8 +233,8 @@ public:
 
         // set a path between the current and desired positions
         bool bSuccess = true;
-        pr2_mechanism_controllers::TrajectoryStart::request req;
-        pr2_mechanism_controllers::TrajectoryStart::response res;
+        pr2_mechanism_controllers::TrajectoryStart::Request req;
+        pr2_mechanism_controllers::TrajectoryStart::Response res;
         
         vector<dReal> vnewvalues;
         
@@ -299,8 +299,8 @@ public:
         boost::mutex::scoped_lock lock(_mutexTrajectories);
 
         bool bSuccess = true;
-        pr2_mechanism_controllers::TrajectoryStart::request req;
-        pr2_mechanism_controllers::TrajectoryStart::response res;
+        pr2_mechanism_controllers::TrajectoryStart::Request req;
+        pr2_mechanism_controllers::TrajectoryStart::Response res;
         
         FOREACH(ittrajcontroller, _listControllers) {
             if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
@@ -518,8 +518,8 @@ private:
     {
         while(!_bDestroyThread) {
 
-            pr2_mechanism_controllers::TrajectoryQuery::request req;
-            pr2_mechanism_controllers::TrajectoryQuery::response res;
+            pr2_mechanism_controllers::TrajectoryQuery::Request req;
+            pr2_mechanism_controllers::TrajectoryQuery::Response res;
 
             // check if the first trajectory is done
             boost::mutex::scoped_lock lock(_mutexTrajectories);
@@ -540,10 +540,10 @@ private:
                         bPopTrajectory = false;
                     }
                     
-                    if( !(res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Done ||
-                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Deleted ||
-                        res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Failed ||
-                          res.done == pr2_mechanism_controllers::TrajectoryQuery::response::State_Canceled) ) {
+                    if( !(res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Done ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Deleted ||
+                        res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Failed ||
+                          res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Canceled) ) {
                         bPopTrajectory = false;
                         break;
                     }

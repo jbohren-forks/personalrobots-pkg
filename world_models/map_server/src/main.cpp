@@ -103,8 +103,8 @@ class MapServer : public ros::Node
     MapServer() : ros::Node("map_server") {}
 
     /** Callback invoked when someone requests our service */
-    bool mapCallback(std_srvs::StaticMap::request  &req,
-                     std_srvs::StaticMap::response &res )
+    bool mapCallback(std_srvs::StaticMap::Request  &req,
+                     std_srvs::StaticMap::Response &res )
     {
       // request is empty; we ignore it
 
@@ -116,7 +116,7 @@ class MapServer : public ros::Node
 
     /** The map response is cached here, to be sent out to service callers
      */
-    std_srvs::StaticMap::response map_resp_;
+    std_srvs::StaticMap::Response map_resp_;
 
     void metadataSubscriptionCallback(const ros::PublisherPtr& pub)
     {

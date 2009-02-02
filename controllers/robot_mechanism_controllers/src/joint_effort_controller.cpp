@@ -145,8 +145,8 @@ void JointEffortControllerNode::setCommand()
   c_->setCommand(cmd_.data);
 }
 
-bool JointEffortControllerNode::getCommand(robot_srvs::GetValue::request &req,
-                                           robot_srvs::GetValue::response &resp)
+bool JointEffortControllerNode::getCommand(robot_srvs::GetValue::Request &req,
+                                           robot_srvs::GetValue::Response &resp)
 {
   double cmd;
   c_->getCommand(cmd);

@@ -74,8 +74,8 @@ int main( int argc, char** argv )
   signal(SIGTERM, finalize);
 
   /*********** Start moving the arm ************/
-  robot_srvs::SetJointCmd::request  req;
-  robot_srvs::SetJointCmd::response resp;
+  robot_srvs::SetJointCmd::Request  req;
+  robot_srvs::SetJointCmd::Response resp;
 
   int num_joints = 7;
 

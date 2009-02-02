@@ -96,14 +96,14 @@ public:
 //   * @brief Overloaded method for convenience
 //   * @param req
 //   */
-//  void setJointCmd(robot_msgs::SetJointPosCmd::request &req);
+//  void setJointCmd(robot_msgs::SetJointPosCmd::Request &req);
 
   void getJointCmd(robot_msgs::JointCmd & cmd) const;
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
   */
-//  void getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::response &resp);
+//  void getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::Response &resp);
 
 //  void getCurrentConfiguration(std::vector<double> &);
 
@@ -114,9 +114,9 @@ public:
 
   boost::mutex arm_controller_lock_;
 
-//  void setJointGains(const pr2_mechanism_controllers::SetJointGains::request &req);
+//  void setJointGains(const pr2_mechanism_controllers::SetJointGains::Request &req);
 
-//  void getJointGains(pr2_mechanism_controllers::GetJointGains::response &resp);
+//  void getJointGains(pr2_mechanism_controllers::GetJointGains::Response &resp);
 
   controller::JointEffortController* getJointEffortControllerByName(std::string name);
 
@@ -219,8 +219,8 @@ class PR2ArmDynamicsControllerNode : public Controller
      * @param resp The response is empty
      * @return
      */
-    bool setJointSrv(robot_srvs::SetJointCmd::request &req,
-                     robot_srvs::SetJointCmd::response &resp);
+    bool setJointSrv(robot_srvs::SetJointCmd::Request &req,
+                     robot_srvs::SetJointCmd::Response &resp);
 
     /** @brief service that returns the goal of the controller
      * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm
@@ -228,8 +228,8 @@ class PR2ArmDynamicsControllerNode : public Controller
      * @param resp the response, contains a JointPosCmd message with the goal of the controller
      * @return
      */
-    bool getJointCmd(robot_srvs::GetJointCmd::request &req,
-                     robot_srvs::GetJointCmd::response &resp);
+    bool getJointCmd(robot_srvs::GetJointCmd::Request &req,
+                     robot_srvs::GetJointCmd::Response &resp);
 
   private:
     robot_msgs::JointCmd msg_;   //The message used by the ROS callback

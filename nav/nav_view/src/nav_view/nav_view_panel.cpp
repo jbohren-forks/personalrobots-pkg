@@ -197,8 +197,8 @@ void NavViewPanel::onRender( wxCommandEvent& event )
 
 void NavViewPanel::loadMap()
 {
-  std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response resp;
+  std_srvs::StaticMap::Request  req;
+  std_srvs::StaticMap::Response resp;
   printf("Requesting the map...\n");
   if( !ros::service::call("static_map", req, resp) )
   {

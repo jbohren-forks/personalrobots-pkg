@@ -97,8 +97,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicPlanState::request  s_req;
-	robot_srvs::KinematicPlanState::response s_res;
+	robot_srvs::KinematicPlanState::Request  s_req;
+	robot_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))

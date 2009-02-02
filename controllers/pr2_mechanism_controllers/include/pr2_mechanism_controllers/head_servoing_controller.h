@@ -187,8 +187,8 @@ class HeadServoingControllerNode : public Controller
      * \param req
      * \param resp (positions)
      */
-    bool getJointCmd(robot_srvs::GetJointCmd::request &req,
-                     robot_srvs::GetJointCmd::response &resp);
+    bool getJointCmd(robot_srvs::GetJointCmd::Request &req,
+                     robot_srvs::GetJointCmd::Response &resp);
     /*!
      * \brief This points the head at a specified point from a given frame.
      *

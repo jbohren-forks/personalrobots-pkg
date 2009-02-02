@@ -182,11 +182,11 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::Request &req,
+                  robot_mechanism_controllers::SetCommand::Response &resp);
 
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                  robot_mechanism_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::Request &req,
+                  robot_mechanism_controllers::GetActual::Response &resp);
 
 private:
   JointAutotuner *c_;

@@ -89,10 +89,10 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_srvs::SetVector::request &req,
-                  robot_srvs::SetVector::response &resp);
-  bool getActual(robot_srvs::GetVector::request &req,
-                 robot_srvs::GetVector::response &resp);
+  bool setCommand(robot_srvs::SetVector::Request &req,
+                  robot_srvs::SetVector::Response &resp);
+  bool getActual(robot_srvs::GetVector::Request &req,
+                 robot_srvs::GetVector::Response &resp);
   void command();
 
 private:

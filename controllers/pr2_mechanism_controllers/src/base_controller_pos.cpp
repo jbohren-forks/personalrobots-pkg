@@ -1055,8 +1055,8 @@ void BaseControllerPosNode::update()
 }
 
 bool BaseControllerPosNode::setCommand(
-  pr2_mechanism_controllers::SetBaseCommand::request &req,
-  pr2_mechanism_controllers::SetBaseCommand::response &resp)
+  pr2_mechanism_controllers::SetBaseCommand::Request &req,
+  pr2_mechanism_controllers::SetBaseCommand::Response &resp)
 {
   libTF::Vector command;
   command.x = req.vx;
@@ -1082,8 +1082,8 @@ void BaseControllerPosNode::setCommand(double vx, double vy, double vw)
 
 
 bool BaseControllerPosNode::getCommand(
-  pr2_mechanism_controllers::GetBaseCommand::request &req,
-  pr2_mechanism_controllers::GetBaseCommand::response &resp)
+  pr2_mechanism_controllers::GetBaseCommand::Request &req,
+  pr2_mechanism_controllers::GetBaseCommand::Response &resp)
 {
   libTF::Vector command;
   command = c_->getCommand();
@@ -1095,8 +1095,8 @@ bool BaseControllerPosNode::getCommand(
 }
 
 bool BaseControllerPosNode::getWheelRadiusMultiplier(
-  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
-  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+  pr2_mechanism_controllers::WheelRadiusMultiplier::Request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp)
 {
   double param_multiplier;
   node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
@@ -1106,8 +1106,8 @@ bool BaseControllerPosNode::getWheelRadiusMultiplier(
 }
 
 bool BaseControllerPosNode::setWheelRadiusMultiplier(
-  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
-  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+  pr2_mechanism_controllers::WheelRadiusMultiplier::Request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp)
 {
   double calibration_multiplier = req.radius_multiplier;
   ROS_INFO("Received radius multiplier %f ",calibration_multiplier); 

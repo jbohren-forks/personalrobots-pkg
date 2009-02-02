@@ -42,8 +42,8 @@ class KatanaServer : public ros::Node
     }
     virtual ~KatanaServer() { delete katana; }
     
-    bool get_current_pose(katana::KatanaPose::request &req,
-                    katana::KatanaPose::response &res)
+    bool get_current_pose(katana::KatanaPose::Request &req,
+                    katana::KatanaPose::Response &res)
     {
       vector<double> katana_pose = katana->get_pose();
       res.pose.x = katana_pose[0];
@@ -55,8 +55,8 @@ class KatanaServer : public ros::Node
       return true;
     }
 
-    bool move_robot_linear(katana::KatanaPose::request &req,
-                    katana::KatanaPose::response &res)
+    bool move_robot_linear(katana::KatanaPose::Request &req,
+                    katana::KatanaPose::Response &res)
     {
       vector<double> dst_pose;
       dst_pose.push_back(req.pose.x);
@@ -83,8 +83,8 @@ class KatanaServer : public ros::Node
  *        in the positive and negative direction in order to find a solution if one is
  *        not found for the specified wrist orientation.
 */
-    bool ik_calculate_srv(katana::KatanaIK::request &req,
-                    katana::KatanaIK::response &res)
+    bool ik_calculate_srv(katana::KatanaIK::Request &req,
+                    katana::KatanaIK::Response &res)
     {
       cout << "Using ik calculate for pose: " << req.pose.x << " " << req.pose.y << " "
             << req.pose.z << " " << req.theta << " " << req.psi << endl;
@@ -100,8 +100,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
 
-    bool calibrateSrv(std_srvs::StringString::request &req,
-                   std_srvs::StringString::response &res)
+    bool calibrateSrv(std_srvs::StringString::Request &req,
+                   std_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->calibrate();
@@ -115,8 +115,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
 
-    bool move_to_upright(std_srvs::StringString::request &req,
-                   std_srvs::StringString::response &res)
+    bool move_to_upright(std_srvs::StringString::Request &req,
+                   std_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->goto_upright();
@@ -130,8 +130,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
     
-    bool move_for_camera(std_srvs::StringString::request &req,
-                   std_srvs::StringString::response &res)
+    bool move_for_camera(std_srvs::StringString::Request &req,
+                   std_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->move_for_camera();
@@ -145,8 +145,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
     
-    bool move_back_to_upright(std_srvs::StringString::request &req,
-                   std_srvs::StringString::response &res)
+    bool move_back_to_upright(std_srvs::StringString::Request &req,
+                   std_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->move_back_to_upright();
@@ -160,8 +160,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
 
-    bool get_current_joint_angles(katana::StringArmCSpace::request &req,
-                   katana::StringArmCSpace::response &res)
+    bool get_current_joint_angles(katana::StringArmCSpace::Request &req,
+                   katana::StringArmCSpace::Response &res)
     {
       vector<double> jointPositions = katana->get_joint_positions();
       res.jointAngles.set_angles_size(jointPositions.size());
@@ -171,8 +171,8 @@ class KatanaServer : public ros::Node
       return (jointPositions.size() > 0);
     }
     
-    bool moveJointsSingle(katana::ArmCSpaceString::request &req,
-                   katana::ArmCSpaceString::response &res)
+    bool moveJointsSingle(katana::ArmCSpaceString::Request &req,
+                   katana::ArmCSpaceString::Response &res)
     {
       katana->allow_crash_limits(false);
       bool success = katana->goto_joint_position_deg(req.jointAngles.angles[0], req.jointAngles.angles[1],
@@ -187,8 +187,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
     
-    bool gripperCmd(std_srvs::UInt32String::request &req,
-                   std_srvs::UInt32String::response &res)
+    bool gripperCmd(std_srvs::UInt32String::Request &req,
+                   std_srvs::UInt32String::Response &res)
     {
       bool success = katana->gripper_fullstop(req.value);
       if (success) {
@@ -201,8 +201,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
 
-    bool gripperPositionCmd(std_srvs::Float32String::request &req,
-                       std_srvs::Float32String::response &res)
+    bool gripperPositionCmd(std_srvs::Float32String::Request &req,
+                       std_srvs::Float32String::Response &res)
     {
       bool success = katana->move_gripper(req.value);
       if (success) {
@@ -216,8 +216,8 @@ class KatanaServer : public ros::Node
     }
 
     
-    bool moveJointsSeqDeg(katana::ArmCSpaceSeqString::request &req,
-                   katana::ArmCSpaceSeqString::response &res)
+    bool moveJointsSeqDeg(katana::ArmCSpaceSeqString::Request &req,
+                   katana::ArmCSpaceSeqString::Response &res)
     {
       katana->allow_crash_limits(false);
       bool success = false;
@@ -237,8 +237,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
     
-    bool moveJointsSeqRad(katana::ArmCSpaceSeqString::request &req,
-                   katana::ArmCSpaceSeqString::response &res)
+    bool moveJointsSeqRad(katana::ArmCSpaceSeqString::Request &req,
+                   katana::ArmCSpaceSeqString::Response &res)
     {
       katana->allow_crash_limits(false);
       bool success = false;

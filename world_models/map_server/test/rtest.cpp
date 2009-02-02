@@ -65,8 +65,8 @@ TEST_F(MapClientTest, retrieve_valid_bmp)
 {
   try
   {
-    std_srvs::StaticMap::request  req;
-    std_srvs::StaticMap::response resp;
+    std_srvs::StaticMap::Request  req;
+    std_srvs::StaticMap::Response resp;
     // Try a few times, because the server may not be up yet.
     int i=10;
     bool call_result;

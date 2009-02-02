@@ -288,7 +288,7 @@ void quitRequested(int sig)
 
 class Shutdown {
 public:
-  bool shutdownService(std_srvs::Empty::request &req, std_srvs::Empty::response &resp)
+  bool shutdownService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
   {
     quitRequested(0);
     return true;
@@ -297,7 +297,7 @@ public:
 
 class Reset {
 public:
-  bool resetMotorsService(std_srvs::Empty::request &req, std_srvs::Empty::response &resp)
+  bool resetMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
   {
     g_reset_motors = true;
     return true;

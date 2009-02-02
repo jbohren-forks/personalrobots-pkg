@@ -98,7 +98,7 @@ namespace grasp_point_node
 
     tf::Transform calculateIntermediatePoint(tf::Transform grasp_point);  //Assumption is that the grasp point is located along the X axis of the grasp point transform
 
-    bool processGraspPointService(pr2_mechanism_controllers::GraspPointSrv::request &req, pr2_mechanism_controllers::GraspPointSrv::response &resp);
+    bool processGraspPointService(pr2_mechanism_controllers::GraspPointSrv::Request &req, pr2_mechanism_controllers::GraspPointSrv::Response &resp);
 
     bool chooseSoln(const std::vector<std::vector<double> > &ik_solns, std::vector<double> &solution);
 

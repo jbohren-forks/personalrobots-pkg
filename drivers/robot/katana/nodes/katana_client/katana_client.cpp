@@ -16,8 +16,8 @@ public:
   }
   void move_for_camera()
   {
-    std_srvs::StringString::request  req;
-    std_srvs::StringString::response res;
+    std_srvs::StringString::Request  req;
+    std_srvs::StringString::Response res;
     if (!ros::service::call("katana_move_for_camera_service", req, res))
       printf("couldn't move for camera\n");
     else
@@ -25,8 +25,8 @@ public:
   }
   void move_to_upright()
   {
-    std_srvs::StringString::request  req;
-    std_srvs::StringString::response res;
+    std_srvs::StringString::Request  req;
+    std_srvs::StringString::Response res;
     if (!ros::service::call("katana_move_upright_service", req, res))
       printf("couldn't move upright\n");
     else

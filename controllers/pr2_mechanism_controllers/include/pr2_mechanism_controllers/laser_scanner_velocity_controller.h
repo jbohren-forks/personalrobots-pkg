@@ -166,33 +166,33 @@ public:
    * \brief Send velocity command
    */
 
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::Request &req,
+                  robot_mechanism_controllers::SetCommand::Response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool getCommand(robot_mechanism_controllers::GetCommand::request &req,
-                  robot_mechanism_controllers::GetCommand::response &resp);
+  bool getCommand(robot_mechanism_controllers::GetCommand::Request &req,
+                  robot_mechanism_controllers::GetCommand::Response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool setPosition(robot_mechanism_controllers::SetPosition::request &req,
-                   robot_mechanism_controllers::SetPosition::response &resp);
+  bool setPosition(robot_mechanism_controllers::SetPosition::Request &req,
+                   robot_mechanism_controllers::SetPosition::Response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool getPosition(robot_mechanism_controllers::GetPosition::request &req,
-                   robot_mechanism_controllers::GetPosition::response &resp);
+  bool getPosition(robot_mechanism_controllers::GetPosition::Request &req,
+                   robot_mechanism_controllers::GetPosition::Response &resp);
  
   /*!
    * \brief Send velocity command
    */
 
-  bool setProfile(pr2_mechanism_controllers::SetProfile::request &req,
-                  pr2_mechanism_controllers::SetProfile::response &resp);
+  bool setProfile(pr2_mechanism_controllers::SetProfile::Request &req,
+                  pr2_mechanism_controllers::SetProfile::Response &resp);
   /*!
    * \brief Send velocity command
    */

@@ -76,8 +76,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_srvs::SetVector::request &req,
-                  robot_srvs::SetVector::response &resp);
+  bool setCommand(robot_srvs::SetVector::Request &req,
+                  robot_srvs::SetVector::Response &resp);
 
 private:
   CartesianEffortController c_;

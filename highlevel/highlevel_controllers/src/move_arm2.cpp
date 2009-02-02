@@ -127,8 +127,8 @@ private:
   int  traj_id_;
   int  plan_id_;
 
-  robot_srvs::KinematicReplanState::request        active_request_state_;
-  robot_srvs::KinematicReplanLinkPosition::request active_request_link_position_;
+  robot_srvs::KinematicReplanState::Request        active_request_state_;
+  robot_srvs::KinematicReplanLinkPosition::Request active_request_link_position_;
   robot_msgs::KinematicPlanStatus                  kps_msg_;
 
   // HighlevelController interface that we must implement
@@ -208,8 +208,8 @@ bool MoveArm::makePlan()
 
   /*if(!goalMsg.implicit_goal)
     {*/
-  robot_srvs::KinematicReplanState::request  req;
-  robot_srvs::KinematicReplanState::response  res;
+  robot_srvs::KinematicReplanState::Request  req;
+  robot_srvs::KinematicReplanState::Response  res;
   
   req.value.params.model_id = kinematic_model_;
   req.value.params.distance_metric = "L2Square";
@@ -287,8 +287,8 @@ bool MoveArm::makePlan()
     /*}
   else
   {
-    robot_srvs::KinematicReplanLinkPosition::request req;
-    robot_srvs::KinematicReplanLinkPosition::response res;
+    robot_srvs::KinematicReplanLinkPosition::Request req;
+    robot_srvs::KinematicReplanLinkPosition::Response res;
     req.value.params.model_id = kinematic_model_;
     req.value.params.distance_metric = "L2Square";
     req.value.params.planner_id = "IKSBL";
@@ -384,8 +384,8 @@ void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path,
 void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path, 
                              const std::string &model)
 {
-  pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
-  pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+  pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+  pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
   robot_msgs::JointTraj traj;
   getTrajectoryMsg(path, traj);
   send_traj_start_req.traj = traj;
@@ -405,8 +405,8 @@ void MoveArm::stopArm()
     ROS_INFO("No trajectory to stop");
   else
   {
-    pr2_mechanism_controllers::TrajectoryCancel::request  stop_traj_start_req;
-    pr2_mechanism_controllers::TrajectoryCancel::response stop_traj_start_res;
+    pr2_mechanism_controllers::TrajectoryCancel::Request  stop_traj_start_req;
+    pr2_mechanism_controllers::TrajectoryCancel::Response stop_traj_start_res;
     stop_traj_start_req.trajectoryid = 0;  // make sure we stop all trajectories    
     if(!ros::service::call(controller_name_ + "/TrajectoryCancel",
                            stop_traj_start_req, stop_traj_start_res))

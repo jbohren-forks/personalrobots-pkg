@@ -121,7 +121,7 @@ public:
 
     ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout);
 
-  bool getFrames(tf::FrameGraph::request & req, tf::FrameGraph::response & res)
+  bool getFrames(tf::FrameGraph::Request& req, tf::FrameGraph::Response& res)
   {
     res.dot_graph = allFramesAsDot();
     return true;

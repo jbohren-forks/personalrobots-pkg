@@ -269,8 +269,8 @@ double LaserScannerVelocityControllerNode::getMeasuredPosition()
 }
 
 bool LaserScannerVelocityControllerNode::setCommand(
-  robot_mechanism_controllers::SetCommand::request &req,
-  robot_mechanism_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::Request &req,
+  robot_mechanism_controllers::SetCommand::Response &resp)
 {
 
   c_->current_mode_ = LaserScannerVelocityController::VELOCITY;
@@ -281,8 +281,8 @@ bool LaserScannerVelocityControllerNode::setCommand(
 }
 
 bool LaserScannerVelocityControllerNode::getCommand(
-  robot_mechanism_controllers::GetCommand::request &req,
-  robot_mechanism_controllers::GetCommand::response &resp)
+  robot_mechanism_controllers::GetCommand::Request &req,
+  robot_mechanism_controllers::GetCommand::Response &resp)
 {
   resp.command = c_->getCommand();
 
@@ -290,8 +290,8 @@ bool LaserScannerVelocityControllerNode::getCommand(
 }
 
 bool LaserScannerVelocityControllerNode::setPosition(
-  robot_mechanism_controllers::SetPosition::request &req,
-  robot_mechanism_controllers::SetPosition::response &resp)
+  robot_mechanism_controllers::SetPosition::Request &req,
+  robot_mechanism_controllers::SetPosition::Response &resp)
 {
 
   c_->current_mode_ = LaserScannerVelocityController::POSITION;
@@ -302,8 +302,8 @@ bool LaserScannerVelocityControllerNode::setPosition(
 }
 
 bool LaserScannerVelocityControllerNode::getPosition(
-  robot_mechanism_controllers::GetPosition::request &req,
-  robot_mechanism_controllers::GetPosition::response &resp)
+  robot_mechanism_controllers::GetPosition::Request &req,
+  robot_mechanism_controllers::GetPosition::Response &resp)
 {
   c_->current_mode_ =  LaserScannerVelocityController::POSITION;
   resp.command = c_->getCommand();
@@ -313,8 +313,8 @@ bool LaserScannerVelocityControllerNode::getPosition(
 
 
 bool LaserScannerVelocityControllerNode::setProfile(
-  pr2_mechanism_controllers::SetProfile::request &req,
-  pr2_mechanism_controllers::SetProfile::response &resp)
+  pr2_mechanism_controllers::SetProfile::Request &req,
+  pr2_mechanism_controllers::SetProfile::Response &resp)
 {
   setProfileCall(req.UpperTurnaround,req.LowerTurnaround, req.upperDecelBuffer, req.lowerDecelBuffer);
   resp.time = c_->getTime();

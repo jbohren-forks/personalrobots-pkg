@@ -630,7 +630,7 @@ class CollisionMapperBuffer : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief CollisionMapBuffer "record_static_map" service callback */
     bool
-      getStaticMap (RecordStaticMapTrigger::request &req, RecordStaticMapTrigger::response &resp)
+      getStaticMap (RecordStaticMapTrigger::Request &req, RecordStaticMapTrigger::Response &resp)
     {
       static_map_lock_.lock ();
       acquire_static_map_      = true;
@@ -654,7 +654,7 @@ class CollisionMapperBuffer : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief CollisionMapBuffer "subtract_object" service callback */
     bool
-      subtractObject (SubtractObjectFromCollisionMap::request &req, SubtractObjectFromCollisionMap::response &resp)
+      subtractObject (SubtractObjectFromCollisionMap::Request &req, SubtractObjectFromCollisionMap::Response &resp)
     {
       ROS_INFO ("Got request to subtract object.");
       Point32 center;
@@ -690,8 +690,8 @@ int
 
   CollisionMapperBuffer p;
 
-//   RecordStaticMapTrigger::request req;
-//   RecordStaticMapTrigger::response resp;
+//   RecordStaticMapTrigger::Request req;
+//   RecordStaticMapTrigger::Response resp;
 //   req.map_time = ros::Time::now ();
 //   ros::service::call ("record_static_map", req, resp);
 
@@ -700,12 +700,12 @@ int
   tictoc.sleep ();
 
   // Box example: 22.2 cm x 10.5 cm x 5.8 cm
-/*  SubtractObjectFromCollisionMap::request req;
+/*  SubtractObjectFromCollisionMap::Request req;
   req.object.min_bound.x = req.object.min_bound.y = req.object.min_bound.z = 0.0;
   req.object.max_bound.z = 0.35; //0.222;
   req.object.max_bound.x = 0.105 * 2;
   req.object.max_bound.y = 0.058 * 4;
-  SubtractObjectFromCollisionMap::response resp;
+  SubtractObjectFromCollisionMap::Response resp;
   ros::service::call ("~subtract_object", req, resp);
 */
   p.spin ();

@@ -248,7 +248,7 @@ public:
 	return true;
     }
     
-    bool forceReplanning(std_srvs::Empty::request &req, std_srvs::Empty::response &res)
+    bool forceReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
 	ROS_INFO("Received request to force replanning");
 	m_continueReplanningLock.lock();
@@ -260,13 +260,13 @@ public:
     
     void stopReplanning(void)
     {
-	std_srvs::Empty::request  dummy1;
-	std_srvs::Empty::response dummy2;
+	std_srvs::Empty::Request  dummy1;
+	std_srvs::Empty::Response dummy2;
 	ROS_INFO("Auto-stopping replanning...");	
 	stopReplanning(dummy1, dummy2);
     }
     
-    bool stopReplanning(std_srvs::Empty::request &req, std_srvs::Empty::response &res)
+    bool stopReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
 	m_replanningLock.lock();
 	bool stop = false;
@@ -394,7 +394,7 @@ public:
 	}
     }
     
-    bool replanToState(robot_srvs::KinematicReplanState::request &req, robot_srvs::KinematicReplanState::response &res)
+    bool replanToState(robot_srvs::KinematicReplanState::Request &req, robot_srvs::KinematicReplanState::Response &res)
     {
 	ROS_INFO("Request for replanning to a state");
 	bool st = false;
@@ -411,7 +411,6 @@ public:
 	    m_replanningLock.lock();
 	    m_currentRequestType = R_STATE;
 	    
-	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
 	    m_currentPlanStatus.valid = 1;
 	    m_currentPlanStatus.path.set_states_size(0);
@@ -431,7 +430,7 @@ public:
 	return st;	
     }
     
-    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::request &req, robot_srvs::KinematicReplanLinkPosition::response &res)
+    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::Request &req, robot_srvs::KinematicReplanLinkPosition::Response &res)
     {
 	ROS_INFO("Request for replanning to a position");
 	bool st = false;
@@ -448,7 +447,6 @@ public:
 	    m_replanningLock.lock();
 	    m_currentRequestType = R_POSITION;
 
-	    m_statusLock.lock();	    
 	    m_currentPlanStatus.id = ++m_replanID;
 	    m_currentPlanStatus.valid = 1;
 	    m_currentPlanStatus.path.set_states_size(0);
@@ -469,7 +467,7 @@ public:
 	return st;
     }
     
-    bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
+    bool planToState(robot_srvs::KinematicPlanState::Request &req, robot_srvs::KinematicPlanState::Response &res)
     {
 	ROS_INFO("Request for planning to a state");
 	bool trivial = false;
@@ -525,7 +523,7 @@ public:
 	}
     }
 
-    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
+    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::Request &req, robot_srvs::KinematicPlanLinkPosition::Response &res)
     {	
 	ROS_INFO("Request for planning to a position");
 	bool trivial = false;
@@ -768,7 +766,7 @@ private:
     // condition being broadcasted when the map is updated
     boost::condition                                                m_collisionMonitorCondition;
     // lock used in conjuction with the condition
-    boost::mutex                                                    m_continueReplanningLock;
+    boost::mutex                                                    m_continueReplanningLock;    
 };
 
 class OutputHandlerROScon : public ompl::msg::OutputHandler

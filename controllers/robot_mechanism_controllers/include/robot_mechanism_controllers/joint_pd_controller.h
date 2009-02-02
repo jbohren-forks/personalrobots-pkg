@@ -148,8 +148,8 @@ namespace controller
     // Topics
     void setCommand();
     //Sevices
-    bool getCommand(robot_srvs::GetJointCmd::request &req,
-		    robot_srvs::GetJointCmd::response &resp);
+    bool getCommand(robot_srvs::GetJointCmd::Request &req,
+		    robot_srvs::GetJointCmd::Response &resp);
 
 
     private:

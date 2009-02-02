@@ -183,8 +183,8 @@ namespace ros {
 
 
       // get map via RPC
-      std_srvs::StaticMap::request  req;
-      std_srvs::StaticMap::response resp;
+      std_srvs::StaticMap::Request  req;
+      std_srvs::StaticMap::Response resp;
       ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("static_map", req, resp))
       {

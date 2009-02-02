@@ -23,11 +23,11 @@ void finalize(int donecare)
 
 void actuateGripper(int open)
 {
-  pr2_mechanism_controllers::TrajectoryStart::request  req_gripper_traj_start;
-  pr2_mechanism_controllers::TrajectoryStart::response res_gripper_traj_start;
+  pr2_mechanism_controllers::TrajectoryStart::Request  req_gripper_traj_start;
+  pr2_mechanism_controllers::TrajectoryStart::Response res_gripper_traj_start;
 
-  pr2_mechanism_controllers::TrajectoryQuery::request  req_gripper_traj_query;
-  pr2_mechanism_controllers::TrajectoryQuery::response res_gripper_traj_query;
+  pr2_mechanism_controllers::TrajectoryQuery::Request  req_gripper_traj_query;
+  pr2_mechanism_controllers::TrajectoryQuery::Response res_gripper_traj_query;
 
   req_gripper_traj_start.traj.set_points_size(1);
   req_gripper_traj_start.traj.points[0].set_positions_size(1);
@@ -61,11 +61,11 @@ void goHome()
 {
   double go_home[7] = {0,0.2,0.0,-1.25,0,0,0};
 
-  pr2_mechanism_controllers::TrajectoryStart::request  go_home_traj_start_req;
-  pr2_mechanism_controllers::TrajectoryStart::response go_home_traj_start_res;
+  pr2_mechanism_controllers::TrajectoryStart::Request  go_home_traj_start_req;
+  pr2_mechanism_controllers::TrajectoryStart::Response go_home_traj_start_res;
 
-  pr2_mechanism_controllers::TrajectoryQuery::request  go_home_traj_query_req;
-  pr2_mechanism_controllers::TrajectoryQuery::response go_home_traj_query_res;
+  pr2_mechanism_controllers::TrajectoryQuery::Request  go_home_traj_query_req;
+  pr2_mechanism_controllers::TrajectoryQuery::Response go_home_traj_query_res;
 
   go_home_traj_start_req.traj.set_points_size(1);
   go_home_traj_start_req.traj.points[0].set_positions_size(num_joints);
@@ -96,11 +96,11 @@ void goHome()
 
 void sendTrajectory(const pr2_mechanism_controllers::JointTraj &traj)
 {
-  pr2_mechanism_controllers::TrajectoryStart::request  send_traj_start_req;
-  pr2_mechanism_controllers::TrajectoryStart::response send_traj_start_res;
+  pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+  pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
 
-  pr2_mechanism_controllers::TrajectoryQuery::request  send_traj_query_req;
-  pr2_mechanism_controllers::TrajectoryQuery::response send_traj_query_res;
+  pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;
+  pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
 
   send_traj_start_req.traj = traj;
   int traj_done = -1;
@@ -124,8 +124,8 @@ void sendTrajectory(const pr2_mechanism_controllers::JointTraj &traj)
 
 void getGraspTrajectory(const std_msgs::PoseStamped &transform, pr2_mechanism_controllers::JointTraj &traj)
 {
-  pr2_mechanism_controllers::GraspPointSrv::request  req;
-  pr2_mechanism_controllers::GraspPointSrv::response res;
+  pr2_mechanism_controllers::GraspPointSrv::Request  req;
+  pr2_mechanism_controllers::GraspPointSrv::Response res;
 
   req.transform = transform;
 
@@ -182,15 +182,15 @@ int main(int argc, char *argv[])
   signal(SIGQUIT, finalize);
   signal(SIGTERM, finalize);
 
-  robarm3d::PlanPathSrv::request  req_plan_path;
-  robarm3d::PlanPathSrv::response res_plan_path;
+  robarm3d::PlanPathSrv::Request  req_plan_path;
+  robarm3d::PlanPathSrv::Response res_plan_path;
   req_plan_path.start.set_positions_size(num_joints);
 
-  pr2_mechanism_controllers::TrajectoryStart::request  req_traj_start;
-  pr2_mechanism_controllers::TrajectoryStart::response res_traj_start;
+  pr2_mechanism_controllers::TrajectoryStart::Request  req_traj_start;
+  pr2_mechanism_controllers::TrajectoryStart::Response res_traj_start;
 
-  pr2_mechanism_controllers::TrajectoryQuery::request  req_traj_query;
-  pr2_mechanism_controllers::TrajectoryQuery::response res_traj_query;
+  pr2_mechanism_controllers::TrajectoryQuery::Request  req_traj_query;
+  pr2_mechanism_controllers::TrajectoryQuery::Response res_traj_query;
 
   double grasp_standoff_distance = 0.2;
 

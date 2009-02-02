@@ -54,11 +54,11 @@ int main( int argc, char** argv )
   signal(SIGQUIT, finalize);
   signal(SIGTERM, finalize);
 
-  pr2_mechanism_controllers::TrajectoryStart::request  req;
-  pr2_mechanism_controllers::TrajectoryStart::response res;
+  pr2_mechanism_controllers::TrajectoryStart::Request  req;
+  pr2_mechanism_controllers::TrajectoryStart::Response res;
 
-  pr2_mechanism_controllers::TrajectoryQuery::request  req_q;
-  pr2_mechanism_controllers::TrajectoryQuery::response res_q;
+  pr2_mechanism_controllers::TrajectoryQuery::Request  req_q;
+  pr2_mechanism_controllers::TrajectoryQuery::Response res_q;
 
   int num_points = 3;
   int num_joints = 7;

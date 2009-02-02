@@ -49,8 +49,8 @@ public:
   {
     advertiseService("stereo", &BumblebeeBridge::stereo);
   }
-  bool stereo(std_srvs::PolledStereoCloud::request  &req,
-              std_srvs::PolledStereoCloud::response &res)
+  bool stereo(std_srvs::PolledStereoCloud::Request  &req,
+              std_srvs::PolledStereoCloud::Response &res)
   {
     printf("forwarding stereo cloud request\n");
     CvBridge<std_msgs::Image> cv_bridge(&res.image);

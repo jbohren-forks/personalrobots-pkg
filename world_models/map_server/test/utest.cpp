@@ -43,7 +43,7 @@ TEST(MapServer, loadValidPNG)
 {
   try
   {
-    std_srvs::StaticMap::response map_resp;
+    std_srvs::StaticMap::Response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_png_file, g_valid_image_res, false);
     EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
     EXPECT_EQ(map_resp.map.width, g_valid_image_width);
@@ -63,7 +63,7 @@ TEST(MapServer, loadValidBMP)
 {
   try
   {
-    std_srvs::StaticMap::response map_resp;
+    std_srvs::StaticMap::Response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, g_valid_image_res, false);
     EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
     EXPECT_EQ(map_resp.map.width, g_valid_image_width);
@@ -83,7 +83,7 @@ TEST(MapServer, loadInvalidFile)
 {
   try
   {
-    std_srvs::StaticMap::response map_resp;
+    std_srvs::StaticMap::Response map_resp;
     map_server::loadMapFromFile(&map_resp, "foo", 0.1, false);
   }
   catch(std::runtime_error &e)

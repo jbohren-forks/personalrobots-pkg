@@ -154,8 +154,8 @@ private:
     } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");
 
-      robot_srvs::PlanNames::request namesReq;
-      robot_srvs::PlanNames::response names;
+      robot_srvs::PlanNames::Request namesReq;
+      robot_srvs::PlanNames::Response names;
       if (ros::service::call("plan_joint_state_names", namesReq, names)) {
         for (unsigned int i = 0; i < names.get_names_size(); i++) {
           printf("%s: %d\n", names.names[i].c_str(), names.num_values[i]);

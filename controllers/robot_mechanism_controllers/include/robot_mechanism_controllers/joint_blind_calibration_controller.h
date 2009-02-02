@@ -144,8 +144,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req,
-                        robot_mechanism_controllers::CalibrateJoint::response &resp);
+  bool calibrateCommand(robot_mechanism_controllers::CalibrateJoint::Request &req,
+                        robot_mechanism_controllers::CalibrateJoint::Response &resp);
 
 private:
   JointBlindCalibrationController *c_;

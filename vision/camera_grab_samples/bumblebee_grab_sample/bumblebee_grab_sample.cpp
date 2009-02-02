@@ -39,8 +39,8 @@ public:
   }
   bool grab_image()
   {
-    std_srvs::PolledStereoCloud::request  req;
-    std_srvs::PolledStereoCloud::response res;
+    std_srvs::PolledStereoCloud::Request  req;
+    std_srvs::PolledStereoCloud::Response res;
     CvBridge<std_msgs::Image> cv_bridge(&res.image);
     if (ros::service::call("stereo", req, res))
     {

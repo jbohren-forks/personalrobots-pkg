@@ -82,16 +82,16 @@ public:
 	req.params.volumeMin.x = -10.0;	req.params.volumeMin.y = -10.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 10.0;	req.params.volumeMax.y = 10.0;	req.params.volumeMax.z = 0.0;
 
-	robot_srvs::KinematicPlanState::request r;
+	robot_srvs::KinematicPlanState::Request r;
 	r.value = req;
 	
 	performCall(r);
     }
     
     
-    void performCall(robot_srvs::KinematicPlanState::request &req)
+    void performCall(robot_srvs::KinematicPlanState::Request &req)
     {	
-	robot_srvs::KinematicPlanState::response res;
+	robot_srvs::KinematicPlanState::Response res;
 	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
@@ -136,15 +136,15 @@ public:
 	req.params.volumeMin.x = -5.0;	req.params.volumeMin.y = -5.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0;	req.params.volumeMax.y = 5.0;	req.params.volumeMax.z = 0.0;
 	
-	robot_srvs::KinematicPlanLinkPosition::request r;
+	robot_srvs::KinematicPlanLinkPosition::Request r;
 	r.value = req;
 	
 	performCall(r);
     }
 
-    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
+    void performCall(robot_srvs::KinematicPlanLinkPosition::Request &req)
     {	
-	robot_srvs::KinematicPlanLinkPosition::response res;	
+	robot_srvs::KinematicPlanLinkPosition::Response res;	
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
 	    EXPECT_TRUE(res.value.path.get_states_size() > 0);

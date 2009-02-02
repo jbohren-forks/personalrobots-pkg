@@ -80,8 +80,8 @@ public:
       {
         next_time = (next_time + period) ;
 
-        BuildCloud::request req ;
-        BuildCloud::response resp ;
+        BuildCloud::Request req ;
+        BuildCloud::Response resp ;
 
         req.begin = (next_time - period ) ;
         req.end   = next_time ;

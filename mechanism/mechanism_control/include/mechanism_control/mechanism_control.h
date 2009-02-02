@@ -127,18 +127,18 @@ public:
 
   void update();  // Must be realtime safe
 
-  bool listControllerTypes(robot_srvs::ListControllerTypes::request &req,
-                           robot_srvs::ListControllerTypes::response &resp);
-  bool listControllers(robot_srvs::ListControllers::request &req,
-                       robot_srvs::ListControllers::response &resp);
-  bool spawnController(robot_srvs::SpawnController::request &req,
-                       robot_srvs::SpawnController::response &resp);
+  bool listControllerTypes(robot_srvs::ListControllerTypes::Request &req,
+                           robot_srvs::ListControllerTypes::Response &resp);
+  bool listControllers(robot_srvs::ListControllers::Request &req,
+                       robot_srvs::ListControllers::Response &resp);
+  bool spawnController(robot_srvs::SpawnController::Request &req,
+                       robot_srvs::SpawnController::Response &resp);
 
 private:
   ros::Node *node_;
 
-  bool killController(robot_srvs::KillController::request &req,
-                      robot_srvs::KillController::response &resp);
+  bool killController(robot_srvs::KillController::Request &req,
+                      robot_srvs::KillController::Response &resp);
 
   MechanismControl *mc_;
 

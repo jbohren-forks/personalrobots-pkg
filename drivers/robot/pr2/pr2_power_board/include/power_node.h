@@ -39,8 +39,8 @@ class PowerBoard : public ros::Node
 {
   public:
     PowerBoard();
-    bool commandCallback( pr2_power_board::PowerBoardCommand::request &req_,
-                          pr2_power_board::PowerBoardCommand::response &res_);
+    bool commandCallback( pr2_power_board::PowerBoardCommand::Request &req_,
+                          pr2_power_board::PowerBoardCommand::Response &res_);
 
     void collectMessages();
     void sendDiagnostic();
@@ -53,7 +53,7 @@ class PowerBoard : public ros::Node
     int send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags);
 
   private:
-    pr2_power_board::PowerBoardCommand::request req_;
-    pr2_power_board::PowerBoardCommand::response res_;
+    pr2_power_board::PowerBoardCommand::Request req_;
+    pr2_power_board::PowerBoardCommand::Response res_;
     boost::mutex library_lock_;
 };

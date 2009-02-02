@@ -174,7 +174,7 @@ bool LibKinematicsNode::init()
   return true;
 }
 
-bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::request &req, robot_srvs::IKService::response &resp)
+bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp)
 {
   std_msgs::Pose pose;
   pose = req.pose;

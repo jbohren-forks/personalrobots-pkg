@@ -38,8 +38,8 @@ public:
   MuxSwitcher() : Node("MuxSwitcher") { }
   void switchMux(string s)
   {
-    std_srvs::StringString::request  req;
-    std_srvs::StringString::response res;
+    std_srvs::StringString::Request  req;
+    std_srvs::StringString::Response res;
     req.str = s;
     bool ok = service::call("mux", req, res);
     if (ok)

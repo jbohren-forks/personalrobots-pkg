@@ -76,7 +76,7 @@ bool ArmVelocityController::initXml(mechanism::RobotState * robot, TiXmlElement 
   return true;
 }
 
-void ArmVelocityController::setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::request &req)
+void ArmVelocityController::setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::Request &req)
 {
   cout<<"SET COMMANDS"<<endl;
   arm_controller_lock_.lock();
@@ -87,7 +87,7 @@ void ArmVelocityController::setJointVelCmd(pr2_mechanism_controllers::SetJointVe
   arm_controller_lock_.unlock();
 }
 
-void ArmVelocityController::getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::response &resp)
+void ArmVelocityController::getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::Response &resp)
 {
   arm_controller_lock_.lock();
   resp.set_velocity_size(goals_.size());
@@ -96,7 +96,7 @@ void ArmVelocityController::getJointVelCmd(pr2_mechanism_controllers::GetJointVe
   arm_controller_lock_.unlock();
 }
 
-void ArmVelocityController::setJointGains(const pr2_mechanism_controllers::SetJointGains::request &req)
+void ArmVelocityController::setJointGains(const pr2_mechanism_controllers::SetJointGains::Request &req)
 {
   cout<<"SET GAINS"<<endl;
   arm_controller_lock_.lock();
@@ -106,7 +106,7 @@ void ArmVelocityController::setJointGains(const pr2_mechanism_controllers::SetJo
   arm_controller_lock_.unlock();
 }
 
-void ArmVelocityController::getJointGains(pr2_mechanism_controllers::GetJointGains::response &req)
+void ArmVelocityController::getJointGains(pr2_mechanism_controllers::GetJointGains::Response &req)
 {
   cout<<"GET GAINS"<<endl;
   arm_controller_lock_.lock();
@@ -237,37 +237,37 @@ bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
 
 
 
-bool ArmVelocityControllerNode::setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::request &req,
-                                   pr2_mechanism_controllers::SetJointVelCmd::response &resp)
+bool ArmVelocityControllerNode::setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::Request &req,
+                                   pr2_mechanism_controllers::SetJointVelCmd::Response &resp)
 {
   c_->setJointVelCmd(req);
   return true;
 }
 
-bool ArmVelocityControllerNode::getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::request &req,
-                                   pr2_mechanism_controllers::GetJointVelCmd::response &resp)
+bool ArmVelocityControllerNode::getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::Request &req,
+                                   pr2_mechanism_controllers::GetJointVelCmd::Response &resp)
 {
   c_->getJointVelCmd(resp);
   return true;
 }
 
-bool ArmVelocityControllerNode::setJointGains(pr2_mechanism_controllers::SetJointGains::request &req,
-                                   pr2_mechanism_controllers::SetJointGains::response &resp)
+bool ArmVelocityControllerNode::setJointGains(pr2_mechanism_controllers::SetJointGains::Request &req,
+                                   pr2_mechanism_controllers::SetJointGains::Response &resp)
 {
   c_->setJointGains(req);
   return true;
 }
 
-bool ArmVelocityControllerNode::getJointGains(pr2_mechanism_controllers::GetJointGains::request &req,
-                                   pr2_mechanism_controllers::GetJointGains::response &resp)
+bool ArmVelocityControllerNode::getJointGains(pr2_mechanism_controllers::GetJointGains::Request &req,
+                                   pr2_mechanism_controllers::GetJointGains::Response &resp)
 {
   resp.name = req.name;
   c_->getJointGains(resp);
   return true;
 }
 
-bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_mechanism_controllers::SetCartesianVelCmd::request &req,
-                  pr2_mechanism_controllers::SetCartesianVelCmd::response &resp)
+bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_mechanism_controllers::SetCartesianVelCmd::Request &req,
+                  pr2_mechanism_controllers::SetCartesianVelCmd::Response &resp)
 {
   const int size =       arm_chain_->num_joints_;
 
@@ -287,7 +287,7 @@ bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_mechanism_controllers::Se
   std::cout << "TARGET VEL\n" << target_joint_vel << std::endl;
 
   // Sends commands to the controllers
-  pr2_mechanism_controllers::SetJointVelCmd::request commands;
+  pr2_mechanism_controllers::SetJointVelCmd::Request commands;
   commands.set_velocity_size(size);
   for(int i=0;i<size;++i)
     commands.velocity[i] = target_joint_vel(i);
@@ -297,7 +297,7 @@ bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_mechanism_controllers::Se
 }
 
 
-bool ArmVelocityControllerNode::getCartesianVelCmd(pr2_mechanism_controllers::GetCartesianVelCmd::request &req, pr2_mechanism_controllers::GetCartesianVelCmd::response &resp)
+bool ArmVelocityControllerNode::getCartesianVelCmd(pr2_mechanism_controllers::GetCartesianVelCmd::Request &req, pr2_mechanism_controllers::GetCartesianVelCmd::Response &resp)
 {
   return true;
 }

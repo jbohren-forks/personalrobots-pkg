@@ -97,8 +97,8 @@ public:
         req.goal_constraints[0].orientation_importance = 0.005;	// factor of importance of orientation relative to importance of position
 	
 	// define the service messages
-	robot_srvs::KinematicPlanLinkPosition::request  s_req;
-	robot_srvs::KinematicPlanLinkPosition::response s_res;
+	robot_srvs::KinematicPlanLinkPosition::Request  s_req;
+	robot_srvs::KinematicPlanLinkPosition::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_position", s_req, s_res))

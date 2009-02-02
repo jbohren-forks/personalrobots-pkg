@@ -54,8 +54,8 @@ int main( int argc, char** argv )
   signal(SIGQUIT, finalize);
   signal(SIGTERM, finalize);
 
-  pr2_mechanism_controllers::GraspPointSrv::request  req;
-  pr2_mechanism_controllers::GraspPointSrv::response res;
+  pr2_mechanism_controllers::GraspPointSrv::Request  req;
+  pr2_mechanism_controllers::GraspPointSrv::Response res;
 
   req.transform.header.stamp = ros::Time::now();
   req.transform.header.frame_id = "r_shoulder_pan_link";
@@ -89,8 +89,8 @@ int main( int argc, char** argv )
 
   sleep(1);
 
-  pr2_mechanism_controllers::TrajectoryStart::request  reqt;
-  pr2_mechanism_controllers::TrajectoryStart::response rest;
+  pr2_mechanism_controllers::TrajectoryStart::Request  reqt;
+  pr2_mechanism_controllers::TrajectoryStart::Response rest;
 
   int num_points = (int) res.traj.get_points_size();
   int num_joints = (int) res.traj.points[0].get_positions_size();

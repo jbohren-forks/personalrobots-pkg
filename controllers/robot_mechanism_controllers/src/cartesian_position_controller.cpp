@@ -218,8 +218,8 @@ void CartesianPositionControllerNode::setCommand()
 }
 
 bool CartesianPositionControllerNode::getActual(
-  robot_srvs::GetVector::request &req,
-  robot_srvs::GetVector::response &resp)
+  robot_srvs::GetVector::Request &req,
+  robot_srvs::GetVector::Response &resp)
 {
   tf::Vector3 v;
   c_.getTipPosition(&v);

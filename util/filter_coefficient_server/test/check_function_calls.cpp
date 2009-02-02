@@ -45,8 +45,8 @@ ros::Node* n;
 
 TEST(CheckFunctionCalls, checkButterLow)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -89,8 +89,8 @@ TEST(CheckFunctionCalls, checkButterLow)
 
 TEST(CheckFunctionCalls, checkButterHigh)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -134,8 +134,8 @@ TEST(CheckFunctionCalls, checkButterHigh)
 
 TEST(CheckFunctionCalls, checkButterBandstop3)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -184,8 +184,8 @@ TEST(CheckFunctionCalls, checkButterBandstop3)
 
 TEST(CheckFunctionCalls, checkButterBandstop4)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -238,8 +238,8 @@ TEST(CheckFunctionCalls, checkButterBandstop4)
 
 TEST(CheckFunctionCalls, checkCheby1Low)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -283,8 +283,8 @@ TEST(CheckFunctionCalls, checkCheby1Low)
 
 TEST(CheckFunctionCalls, checkCheby1High)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -329,8 +329,8 @@ TEST(CheckFunctionCalls, checkCheby1High)
 
 TEST(CheckFunctionCalls, checkCheby1Bandstop4)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -380,8 +380,8 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop4)
 
 TEST(CheckFunctionCalls, checkCheby1Bandstop5)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -433,8 +433,8 @@ TEST(CheckFunctionCalls, checkCheby1Bandstop5)
 
 TEST(CheckFunctionCalls, checkCheby2Low)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -478,8 +478,8 @@ TEST(CheckFunctionCalls, checkCheby2Low)
 
 TEST(CheckFunctionCalls, checkCheby2High)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -524,8 +524,8 @@ TEST(CheckFunctionCalls, checkCheby2High)
 
 TEST(CheckFunctionCalls, checkCheby2Bandstop4)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -575,8 +575,8 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop4)
 
 TEST(CheckFunctionCalls, checkCheby2Bandstop5)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -627,8 +627,8 @@ TEST(CheckFunctionCalls, checkCheby2Bandstop5)
 
 TEST(CheckFunctionCalls, checkEllipLow)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -673,8 +673,8 @@ TEST(CheckFunctionCalls, checkEllipLow)
 
 TEST(CheckFunctionCalls, checkEllipHigh)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -720,8 +720,8 @@ TEST(CheckFunctionCalls, checkEllipHigh)
 
 TEST(CheckFunctionCalls, checkEllipBandstop5)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;
@@ -773,8 +773,8 @@ TEST(CheckFunctionCalls, checkEllipBandstop5)
 
 TEST(CheckFunctionCalls, checkEllipBandstop6)
 {
-  filter_coefficient_server::Filter::request  req;
-  filter_coefficient_server::Filter::response res;
+  filter_coefficient_server::Filter::Request  req;
+  filter_coefficient_server::Filter::Response res;
   std::vector<std::string> args;
   std::vector<double> exp_b;
   std::vector<double> exp_a;

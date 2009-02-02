@@ -82,8 +82,8 @@ public:
       delete cam;
   }
 
-  bool polled_image_cb(std_srvs::PolledImage::request  &req,
-                       std_srvs::PolledImage::response &res )
+  bool polled_image_cb(std_srvs::PolledImage::Request  &req,
+                       std_srvs::PolledImage::Response &res )
   {
     images.lock();
     res.image = images.images[0];

@@ -94,8 +94,8 @@ public:
     }
     else
     {
-      BuildCloud::request req ;
-      BuildCloud::response resp ;
+      BuildCloud::Request req ;
+      BuildCloud::Response resp ;
 
       req.begin = prev_signal_.header.stamp ;
       req.end   = cur_signal_.header.stamp ;

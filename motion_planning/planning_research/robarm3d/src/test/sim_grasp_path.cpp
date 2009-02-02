@@ -154,11 +154,11 @@ int main( int argc, char** argv )
     double Z_STOP = 0.997;
     double MOE = 0.02;
 
-    pr2_mechanism_controllers::TrajectoryStart::request  req;
-    pr2_mechanism_controllers::TrajectoryStart::response res;
+    pr2_mechanism_controllers::TrajectoryStart::Request  req;
+    pr2_mechanism_controllers::TrajectoryStart::Response res;
     
-    pr2_mechanism_controllers::TrajectoryQuery::request  req_q;
-    pr2_mechanism_controllers::TrajectoryQuery::response res_q;
+    pr2_mechanism_controllers::TrajectoryQuery::Request  req_q;
+    pr2_mechanism_controllers::TrajectoryQuery::Response res_q;
 
     std_msgs::Float64 GripperPos;
     GripperPos.data = OPEN;

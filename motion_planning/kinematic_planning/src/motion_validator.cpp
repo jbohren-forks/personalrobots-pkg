@@ -137,7 +137,7 @@ public:
 	    delete i->second;
     }
     
-    bool validatePath(robot_srvs::ValidateKinematicPath::request &req, robot_srvs::ValidateKinematicPath::response &res)
+    bool validatePath(robot_srvs::ValidateKinematicPath::Request &req, robot_srvs::ValidateKinematicPath::Response &res)
     {
 	myModel *model = m_models[req.model_id];
 	if (model)

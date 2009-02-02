@@ -224,8 +224,8 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   return false;
 }
 
-bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRCommand::request &req,
-              robot_mechanism_controllers::SetLQRCommand::response &resp)
+bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRCommand::Request &req,
+              robot_mechanism_controllers::SetLQRCommand::Response &resp)
 {
   const int n = c_->model()->states();
   const int m = c_->model()->inputs();
@@ -295,8 +295,8 @@ bool LQRControllerNode::setTargetAsynchronous(const robot_msgs::JointCmd &cmd)
 }
 
 //FIXME robot_srvs::SetJointCmd should use robot_msgs::JointCmd
-bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::request &req,
-              robot_srvs::SetJointCmd::response &resp)
+bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::Request &req,
+              robot_srvs::SetJointCmd::Response &resp)
 {
 
   robot_msgs::JointCmd cmd;

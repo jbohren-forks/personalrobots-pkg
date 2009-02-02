@@ -232,12 +232,12 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::Request &req,
+                  robot_mechanism_controllers::SetCommand::Response &resp);
 
 
-  bool setProfileCall(pr2_mechanism_controllers::SetProfile::request &req,
-                      pr2_mechanism_controllers::SetProfile::response &resp);
+  bool setProfileCall(pr2_mechanism_controllers::SetProfile::Request &req,
+                      pr2_mechanism_controllers::SetProfile::Response &resp);
 
 
   void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0);

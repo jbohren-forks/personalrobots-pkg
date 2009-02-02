@@ -135,8 +135,8 @@ public:
   // Topics
   void setCommand();
   //Services
-  bool getCommand(robot_srvs::GetValue::request &req,
-		  robot_srvs::GetValue::response &resp);
+  bool getCommand(robot_srvs::GetValue::Request &req,
+		  robot_srvs::GetValue::Response &resp);
 
 private:
 

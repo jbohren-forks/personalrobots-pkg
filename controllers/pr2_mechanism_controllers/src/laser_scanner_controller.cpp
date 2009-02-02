@@ -519,8 +519,8 @@ void LaserScannerControllerNode::update()
 
 
 bool LaserScannerControllerNode::setCommand(
-  robot_mechanism_controllers::SetCommand::request &req,
-  robot_mechanism_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::Request &req,
+  robot_mechanism_controllers::SetCommand::Response &resp)
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
@@ -548,8 +548,8 @@ bool LaserScannerControllerNode::setCommand(
 
 
 bool LaserScannerControllerNode::setProfileCall(
-  pr2_mechanism_controllers::SetProfile::request &req,
-  pr2_mechanism_controllers::SetProfile::response &resp)
+  pr2_mechanism_controllers::SetProfile::Request &req,
+  pr2_mechanism_controllers::SetProfile::Response &resp)
 {
   const double num_elem = -1.0 ;     // We should only be using the dynamicProfiles, so we don't need num_elem
 

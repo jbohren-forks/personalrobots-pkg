@@ -87,7 +87,7 @@ public:
   
   bool done() { return done_ == 1; }
   robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_srvs::TestData::request test_data_;
+  robot_srvs::TestData::Request test_data_;
 
 private:
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
@@ -124,7 +124,7 @@ private:
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::request, robot_srvs::TestData::response> call_service_;
+  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::Request, robot_srvs::TestData::Response> call_service_;
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }

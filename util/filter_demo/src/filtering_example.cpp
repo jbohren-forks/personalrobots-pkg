@@ -49,8 +49,8 @@ public:
   }
   bool call_srv(std::string name, std::vector<std::string> args)
   {
-    filter_coefficient_server::Filter::request  req;
-    filter_coefficient_server::Filter::response res;
+    filter_coefficient_server::Filter::Request  req;
+    filter_coefficient_server::Filter::Response res;
     req.name = name;
     req.args = args;
     std::vector<double> a;

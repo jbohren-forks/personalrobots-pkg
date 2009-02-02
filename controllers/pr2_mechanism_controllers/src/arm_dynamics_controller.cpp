@@ -320,8 +320,8 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::request &req,
-                                   robot_srvs::SetJointCmd::response &resp)
+bool ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::Request &req,
+                                   robot_srvs::SetJointCmd::Response &resp)
 {
   std::vector<double> pos;
   std::vector<double> vel;
@@ -337,8 +337,8 @@ bool ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::request &re
   return true;
 }
 
-bool ArmDynamicsControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
-                    robot_srvs::GetJointCmd::response &resp)
+bool ArmDynamicsControllerNode::getJointCmd(robot_srvs::GetJointCmd::Request &req,
+                    robot_srvs::GetJointCmd::Response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);

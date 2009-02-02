@@ -171,8 +171,8 @@ void JointVelocityControllerNode::setCommand()
   c_->setCommand(cmd_.data);
 }
 
-bool JointVelocityControllerNode::getCommand(robot_srvs::GetValue::request &req,
-                                             robot_srvs::GetValue::response &resp)
+bool JointVelocityControllerNode::getCommand(robot_srvs::GetValue::Request &req,
+                                             robot_srvs::GetValue::Response &resp)
 {
   double cmd;
   c_->getCommand(cmd);

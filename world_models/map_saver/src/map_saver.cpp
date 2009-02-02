@@ -74,8 +74,8 @@ public:
  */
 MapGenerator::MapGenerator(string servname) : ros::Node("map_generator") {
   puts("Requesting the map...");
-  std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response resp;
+  std_srvs::StaticMap::Request  req;
+  std_srvs::StaticMap::Response resp;
   while(!ros::service::call("static_map", req, resp))
   {
     printf("request '%s' failed; trying again...", servname.c_str());

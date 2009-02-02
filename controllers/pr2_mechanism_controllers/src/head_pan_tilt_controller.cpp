@@ -204,8 +204,8 @@ void HeadPanTiltControllerNode::setJointCmd()
   c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names);
 }
 
-bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
-					    robot_srvs::GetJointCmd::response &resp)
+bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::Request &req,
+					    robot_srvs::GetJointCmd::Response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);

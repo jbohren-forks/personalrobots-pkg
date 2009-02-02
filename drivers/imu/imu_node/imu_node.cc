@@ -481,7 +481,7 @@ public:
 
 
 
-  bool addOffset(imu_node::AddOffset::request &req, imu_node::AddOffset::response &resp)
+  bool addOffset(imu_node::AddOffset::Request &req, imu_node::AddOffset::Response &resp)
   {
     double offset = req.add_offset;
     offset_ += offset;

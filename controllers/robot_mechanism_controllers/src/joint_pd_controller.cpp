@@ -190,8 +190,8 @@ void JointPDControllerNode::setCommand()
   c_->setCommand(cmd_.positions[0],cmd_.velocity[0]);
 }
 
-bool JointPDControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
-                                             robot_srvs::GetJointCmd::response &resp)
+bool JointPDControllerNode::getCommand(robot_srvs::GetJointCmd::Request &req,
+                                             robot_srvs::GetJointCmd::Response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getCommand(cmd);

@@ -456,17 +456,17 @@ namespace controller
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     // Services
-    bool setCommand(pr2_mechanism_controllers::SetBaseCommand::request &req,
-                    pr2_mechanism_controllers::SetBaseCommand::response &resp);
+    bool setCommand(pr2_mechanism_controllers::SetBaseCommand::Request &req,
+                    pr2_mechanism_controllers::SetBaseCommand::Response &resp);
 
-    bool getCommand(pr2_mechanism_controllers::GetBaseCommand::request &req,
-                    pr2_mechanism_controllers::GetBaseCommand::response &resp);
+    bool getCommand(pr2_mechanism_controllers::GetBaseCommand::Request &req,
+                    pr2_mechanism_controllers::GetBaseCommand::Response &resp);
 
-    bool getWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
-                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
+    bool getWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::Request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp);
 
-    bool setWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
-                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
+    bool setWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::Request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp);
 
     /*
      * \brief callback function for setting the desired velocity using a topic 

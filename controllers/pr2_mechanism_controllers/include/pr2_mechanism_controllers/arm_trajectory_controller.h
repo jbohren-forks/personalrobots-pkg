@@ -208,17 +208,17 @@ namespace controller
      * @param resp the response, contains a JointPosCmd message with the goal of the controller
      * @return
      */
-    bool getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
-                        pr2_mechanism_controllers::GetJointPosCmd::response &resp);
+    bool getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::Request &req,
+                        pr2_mechanism_controllers::GetJointPosCmd::Response &resp);
 
-    bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::request &req,
-                         pr2_mechanism_controllers::TrajectoryStart::response &resp);
+    bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
+                         pr2_mechanism_controllers::TrajectoryStart::Response &resp);
 
-    bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
-                           pr2_mechanism_controllers::TrajectoryQuery::response &resp);
+    bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
+                           pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
 
-    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
-                            pr2_mechanism_controllers::TrajectoryQuery::response &resp);
+    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
+                            pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
 
     void deleteTrajectoryFromQueue(int id);
 

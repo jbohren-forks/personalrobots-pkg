@@ -98,7 +98,7 @@ private:
   void scansCallback(const boost::shared_ptr<T>& scan_ptr) ;
 
   //! \brief Service Callback function called whenever we need to build a cloud
-  bool buildCloud(BuildCloud::request& req, BuildCloud::response& resp) ;
+  bool buildCloud(BuildCloud::Request& req, BuildCloud::Response& resp) ;
 
   tf::MessageNotifier<T>* scan_notifier_ ;
 
@@ -211,7 +211,7 @@ void BaseAssemblerSrv<T>::scansCallback(const boost::shared_ptr<T>& scan_ptr)
 }
 
 template <class T>
-bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::request& req, BuildCloud::response& resp)
+bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::Request& req, BuildCloud::Response& resp)
 {
   //printf("Starting Service Request\n") ;
 

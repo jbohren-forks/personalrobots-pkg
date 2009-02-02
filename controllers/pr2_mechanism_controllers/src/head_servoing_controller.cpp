@@ -228,8 +228,8 @@ void HeadServoingControllerNode::setJointCmd()
   c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names);
 }
 
-bool HeadServoingControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
-					    robot_srvs::GetJointCmd::response &resp)
+bool HeadServoingControllerNode::getJointCmd(robot_srvs::GetJointCmd::Request &req,
+					    robot_srvs::GetJointCmd::Response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);

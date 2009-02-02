@@ -87,7 +87,7 @@ private:
   std_msgs::BaseVel               _vel; 
 
   // service messages
-  pr2_mechanism_controllers::WheelRadiusMultiplier::request _srv_snd, _srv_rsp;
+  pr2_mechanism_controllers::WheelRadiusMultiplier::Request _srv_snd, _srv_rsp;
 
   // active sensors
   bool _odom_active, _imu_active, _mech_active,  _completed;

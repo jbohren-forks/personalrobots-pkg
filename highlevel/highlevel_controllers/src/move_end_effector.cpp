@@ -112,13 +112,13 @@ private:
   bool dispatchCommands();
   bool withinBounds(unsigned waypointIndex);
 
-  void setStartState(robot_srvs::NamedKinematicPlanState::request& req);
+  void setStartState(robot_srvs::NamedKinematicPlanState::Request& req);
   void setCommandParameters(pr2_mechanism_controllers::JointPosCmd& cmd);
 
   const std::string armCmdTopic;
   const std::string kinematicModel;
   robot_msgs::MechanismState mechanismState;
-  robot_srvs::NamedKinematicPlanState::response plan;
+  robot_srvs::NamedKinematicPlanState::Response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
   tf::TransformListener tf_; /**< Used to do transforms */
 
@@ -189,8 +189,8 @@ bool MoveEndEffector::makePlan(){
   //lock();
   ROS_INFO("Locked");
 
-  robot_srvs::PlanNames::request namesReq;
-  robot_srvs::PlanNames::response names;
+  robot_srvs::PlanNames::Request namesReq;
+  robot_srvs::PlanNames::Response names;
   ros::service::call("plan_joint_state_names", namesReq, names);
 
   //unsigned int needparams = 0;
@@ -202,7 +202,7 @@ bool MoveEndEffector::makePlan(){
 
 
 
-  robot_srvs::NamedKinematicPlanState::request req;
+  robot_srvs::NamedKinematicPlanState::Request req;
     
   req.params.model_id = kinematicModel;
   req.params.distance_metric = "L2Square";
@@ -387,7 +387,7 @@ void MoveEndEffector::setCommandParameters(pr2_mechanism_controllers::JointPosCm
     }
 }
 
-void MoveEndEffector::setStartState(robot_srvs::NamedKinematicPlanState::request& req){
+void MoveEndEffector::setStartState(robot_srvs::NamedKinematicPlanState::Request& req){
   for (unsigned int i = 0; i < req.start_state.get_names_size(); i++) {
     for (unsigned int k = 0; k < mechanismState.get_joint_states_size(); k++) {
       if (req.start_state.names[i] == mechanismState.joint_states[k].name && req.start_state.names[i] != "base_joint"

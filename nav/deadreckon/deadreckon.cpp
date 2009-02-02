@@ -61,8 +61,8 @@ public:
     subscribe("odom", odomMsg, &DeadReckon::odom_cb, 1);
     advertise<std_msgs::BaseVel>("cmd_vel", 1);
   }
-  bool dr_cb(deadreckon::DriveDeadReckon::request  &req,
-             deadreckon::DriveDeadReckon::response &res)
+  bool dr_cb(deadreckon::DriveDeadReckon::Request  &req,
+             deadreckon::DriveDeadReckon::Response &res)
   {
     printf("handling dead reckon request: %f %f %f\n",
            req.dist,

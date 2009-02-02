@@ -218,8 +218,8 @@ void CartesianOrientationControllerNode::setCommand()
 }
 
 bool CartesianOrientationControllerNode::getActual(
-  robot_srvs::GetQuaternion::request &req,
-  robot_srvs::GetQuaternion::response &resp)
+  robot_srvs::GetQuaternion::Request &req,
+  robot_srvs::GetQuaternion::Response &resp)
 {
   tf::Quaternion q;
   c_.getTipOrientation(&q);

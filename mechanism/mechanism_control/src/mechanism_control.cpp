@@ -399,8 +399,8 @@ void MechanismControlNode::update()
 }
 
 bool MechanismControlNode::listControllerTypes(
-  robot_srvs::ListControllerTypes::request &req,
-  robot_srvs::ListControllerTypes::response &resp)
+  robot_srvs::ListControllerTypes::Request &req,
+  robot_srvs::ListControllerTypes::Response &resp)
 {
   (void) req;
   std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
@@ -409,8 +409,8 @@ bool MechanismControlNode::listControllerTypes(
 }
 
 bool MechanismControlNode::spawnController(
-  robot_srvs::SpawnController::request &req,
-  robot_srvs::SpawnController::response &resp)
+  robot_srvs::SpawnController::Request &req,
+  robot_srvs::SpawnController::Response &resp)
 {
   TiXmlDocument doc;
   doc.Parse(req.xml_config.c_str());
@@ -467,8 +467,8 @@ bool MechanismControlNode::spawnController(
 }
 
 bool MechanismControlNode::listControllers(
-  robot_srvs::ListControllers::request &req,
-  robot_srvs::ListControllers::response &resp)
+  robot_srvs::ListControllers::Request &req,
+  robot_srvs::ListControllers::Response &resp)
 {
   std::vector<std::string> controllers;
 
@@ -479,8 +479,8 @@ bool MechanismControlNode::listControllers(
 }
 
 bool MechanismControlNode::killController(
-  robot_srvs::KillController::request &req,
-  robot_srvs::KillController::response &resp)
+  robot_srvs::KillController::Request &req,
+  robot_srvs::KillController::Response &resp)
 {
   resp.ok = mc_->killController(req.name);
   return true;

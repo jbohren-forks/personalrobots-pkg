@@ -46,8 +46,8 @@ class SlamGMapping
     void spin() { node_->spin(); }
 
     void laser_cb();
-    bool map_cb(std_srvs::StaticMap::request  &req,
-                std_srvs::StaticMap::response &res);
+    bool map_cb(std_srvs::StaticMap::Request  &req,
+                std_srvs::StaticMap::Response &res);
 
   private:
     ros::Node* node_;
@@ -61,7 +61,7 @@ class SlamGMapping
     std_msgs::LaserScan scan_;
 
     bool got_map_;
-    std_srvs::StaticMap::response map_;
+    std_srvs::StaticMap::Response map_;
 
     ros::Duration map_update_interval_;
 

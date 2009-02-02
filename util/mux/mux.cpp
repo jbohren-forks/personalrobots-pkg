@@ -120,8 +120,8 @@ public:
         break;
       }
   }
-  bool selSrvCB(std_srvs::StringString::request  &req,
-                std_srvs::StringString::response &res)
+  bool selSrvCB(std_srvs::StringString::Request  &req,
+                std_srvs::StringString::Response &res)
   {
     if (selectedTopic)
       res.str = selectedTopic->topicName;

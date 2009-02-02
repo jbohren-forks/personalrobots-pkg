@@ -521,8 +521,8 @@ PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
 
-bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
-                     pr2_power_board::PowerBoardCommand::response &res_)
+bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &req_,
+                     pr2_power_board::PowerBoardCommand::Response &res_)
 {
   res_.retval = send_command( 0, req_.breaker_number, req_.command, req_.flags);
 

@@ -77,8 +77,8 @@ public:
   /** Callback invoked for getting the full list of obstacle
       points plus a time stamp value
    */
-  bool fullTransientObstacleCallback(pr2_srvs::TransientObstacles::request  &req,
-                                     pr2_srvs::TransientObstacles::response &res);
+  bool fullTransientObstacleCallback(pr2_srvs::TransientObstacles::Request  &req,
+                                     pr2_srvs::TransientObstacles::Response &res);
 
   
 private:
@@ -114,8 +114,8 @@ CostMap2DRos::CostMap2DRos() :
   tf_(*this, true, 1 * 1000000000ULL, 0ULL),
   costmap_(WINDOW_LENGTH)
 {
-  std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response resp;
+  std_srvs::StaticMap::Request  req;
+  std_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
   while(!ros::service::call("static_map", req, resp))
   {
@@ -156,8 +156,8 @@ CostMap2DRos::CostMap2DRos() :
 CostMap2DRos::~CostMap2DRos() {
 }
 
-bool CostMap2DRos::fullTransientObstacleCallback(pr2_srvs::TransientObstacles::request  &req,
-                                                 pr2_srvs::TransientObstacles::response &res)
+bool CostMap2DRos::fullTransientObstacleCallback(pr2_srvs::TransientObstacles::Request  &req,
+                                                 pr2_srvs::TransientObstacles::Response &res)
 {
   //request is empty, so we ignore it
   

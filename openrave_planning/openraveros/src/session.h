@@ -40,7 +40,7 @@
 using namespace ros;
 
 #define REFLECT_SERVICE(srvname) \
-    bool srvname##_srv(srvname::request& req, srvname::response& res) \
+    bool srvname##_srv(srvname::Request& req, srvname::Response& res) \
     { \
         SessionState state = getstate(req); /* need separate copy in order to guarantee thread safety */ \
         if( !state._pserver ) { \
@@ -336,7 +336,7 @@ private:
         return _mapsessions[sessionid];
     }
 
-    bool session_callback(openrave_session::request& req, openrave_session::response& res)
+    bool session_callback(openrave_session::Request& req, openrave_session::Response& res)
     {
         if( req.sessionid != 0 ) {
             boost::mutex::scoped_lock lock(_mutexsession);
@@ -432,10 +432,10 @@ private:
 };
 
 // check that message constants match OpenRAVE constants
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Bodies==openrave_session::request::CloneBodies);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Viewer==openrave_session::request::CloneViewer);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Simulation==openrave_session::request::CloneSimulation);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_RealControllers==openrave_session::request::CloneRealControllers);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Bodies==openrave_session::Request::CloneBodies);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Viewer==openrave_session::Request::CloneViewer);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Simulation==openrave_session::Request::CloneSimulation);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_RealControllers==openrave_session::Request::CloneRealControllers);
 
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_X==RobotBase::DOF_X);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Y==RobotBase::DOF_Y);
@@ -444,7 +444,7 @@ BOOST_STATIC_ASSERT(ActiveDOFs::DOF_RotationAxis==RobotBase::DOF_RotationAxis);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Rotation3D==RobotBase::DOF_Rotation3D);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_RotationQuat==RobotBase::DOF_RotationQuat);
 
-BOOST_STATIC_ASSERT(env_checkcollision::request::CO_Distance==CO_Distance);
-BOOST_STATIC_ASSERT(env_checkcollision::request::CO_UseTolerance==CO_UseTolerance);
-BOOST_STATIC_ASSERT(env_checkcollision::request::CO_Contacts==CO_Contacts);
-BOOST_STATIC_ASSERT(env_checkcollision::request::CO_RayAnyHit==CO_RayAnyHit);
+BOOST_STATIC_ASSERT(env_checkcollision::Request::CO_Distance==CO_Distance);
+BOOST_STATIC_ASSERT(env_checkcollision::Request::CO_UseTolerance==CO_UseTolerance);
+BOOST_STATIC_ASSERT(env_checkcollision::Request::CO_Contacts==CO_Contacts);
+BOOST_STATIC_ASSERT(env_checkcollision::Request::CO_RayAnyHit==CO_RayAnyHit);

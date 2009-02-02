@@ -39,8 +39,8 @@ public:
   DeadReckonTest() : Node("DeadReckonTest") { }
   void test_dr(float dist, float bearing, float relHeading)
   {
-    deadreckon::DriveDeadReckon::request  req;
-    deadreckon::DriveDeadReckon::response res;
+    deadreckon::DriveDeadReckon::Request  req;
+    deadreckon::DriveDeadReckon::Response res;
     req.dist = dist;
     req.bearing = bearing;
     req.finalRelHeading = relHeading;

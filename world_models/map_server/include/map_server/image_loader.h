@@ -49,7 +49,7 @@ namespace map_server
  *
  * @throws std::runtime_error If the image file can't be loaded
  * */
-void loadMapFromFile(std_srvs::StaticMap::response* resp,
+void loadMapFromFile(std_srvs::StaticMap::Response* resp,
                      const char* fname, double res, bool negate);
 }
 

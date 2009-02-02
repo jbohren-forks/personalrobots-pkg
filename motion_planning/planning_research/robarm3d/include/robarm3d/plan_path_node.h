@@ -55,7 +55,7 @@ namespace plan_path_node
 
     std::string filename_;
 
-    bool planPath(robarm3d::PlanPathSrv::request &req, robarm3d::PlanPathSrv::response &resp);
+    bool planPath(robarm3d::PlanPathSrv::Request &req, robarm3d::PlanPathSrv::Response &resp);
 
     void init();
 

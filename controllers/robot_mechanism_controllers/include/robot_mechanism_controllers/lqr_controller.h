@@ -159,11 +159,11 @@ public:
   
   virtual ~LQRControllerNode();
 
-  bool setLQRParamsSrv(robot_mechanism_controllers::SetLQRCommand::request &req,
-                robot_mechanism_controllers::SetLQRCommand::response &resp);
+  bool setLQRParamsSrv(robot_mechanism_controllers::SetLQRCommand::Request &req,
+                robot_mechanism_controllers::SetLQRCommand::Response &resp);
                 
-  bool setTargetSrv(robot_srvs::SetJointCmd::request &req,
-                robot_srvs::SetJointCmd::response &resp);
+  bool setTargetSrv(robot_srvs::SetJointCmd::Request &req,
+                robot_srvs::SetJointCmd::Response &resp);
                 
   bool setTargetAsynchronous(const robot_msgs::JointCmd &cmd);
                 

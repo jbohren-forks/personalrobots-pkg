@@ -479,8 +479,8 @@ NavView::render()
 }
 
 bool NavView::load_full_transient() {
-  pr2_srvs::TransientObstacles::request req;
-  pr2_srvs::TransientObstacles::response res;
+  pr2_srvs::TransientObstacles::Request req;
+  pr2_srvs::TransientObstacles::Response res;
 
   puts("Calling full transient obstacle service");
   while(!ros::service::call("transient_obstacles_full", req, res)) {
@@ -542,8 +542,8 @@ void NavView::occDiffCallback() {
 bool
 NavView::load_map()
 {
-  std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response resp;
+  std_srvs::StaticMap::Request  req;
+  std_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
   while(!ros::service::call("static_map", req, resp))
   {

@@ -240,7 +240,7 @@ tf::Transform GraspPointNode::calculateIntermediatePoint(tf::Transform grasp_poi
   return result;
 }
 
-bool GraspPointNode::processGraspPointService(pr2_mechanism_controllers::GraspPointSrv::request &req, pr2_mechanism_controllers::GraspPointSrv::response &resp)
+bool GraspPointNode::processGraspPointService(pr2_mechanism_controllers::GraspPointSrv::Request &req, pr2_mechanism_controllers::GraspPointSrv::Response &resp)
 {
   std_msgs::PoseStamped grasp_point_transformed;
   std_msgs::PoseStamped grasp_point_requested = req.transform;

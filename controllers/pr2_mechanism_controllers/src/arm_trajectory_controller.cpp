@@ -437,8 +437,8 @@ void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
 }
 
 
-bool ArmTrajectoryControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
-                    pr2_mechanism_controllers::GetJointPosCmd::response &resp)
+bool ArmTrajectoryControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::Request &req,
+                    pr2_mechanism_controllers::GetJointPosCmd::Response &resp)
 {
   pr2_mechanism_controllers::JointPosCmd cmd;
   c_->getJointPosCmd(cmd);
@@ -447,8 +447,8 @@ bool ArmTrajectoryControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJ
 }
 
 
-bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::request &req,
-                    pr2_mechanism_controllers::TrajectoryStart::response &resp)
+bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
+                    pr2_mechanism_controllers::TrajectoryStart::Response &resp)
 {
   addTrajectoryToQueue(req.traj, request_trajectory_id_);
   resp.trajectoryid = request_trajectory_id_;
@@ -473,8 +473,8 @@ bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::Tra
   return true;
 }
 
-bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
-                                                    pr2_mechanism_controllers::TrajectoryQuery::response &resp)
+bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
+                                                    pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
 {
   resp.set_jointnames_size(c_->dimension_);
   resp.set_jointpositions_size(c_->dimension_);
@@ -519,8 +519,8 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
   return true;
 }
 
-bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::request &req,
-                                                     pr2_mechanism_controllers::TrajectoryQuery::response &resp)
+bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
+                                                     pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
 {
   int status = ArmTrajectoryControllerNode::NUM_STATUS;
 

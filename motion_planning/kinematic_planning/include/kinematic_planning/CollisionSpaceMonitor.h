@@ -165,7 +165,7 @@ namespace kinematic_planning
 		afterAttachBody(link);
 	}
 	
-	bool setCollisionState(robot_srvs::CollisionCheckState::request &req, robot_srvs::CollisionCheckState::response &res)
+	bool setCollisionState(robot_srvs::CollisionCheckState::Request &req, robot_srvs::CollisionCheckState::Response &res)
 	{
 	    m_collisionSpace->lock();
 	    int model_id = m_collisionSpace->getModelID(req.robot_name);

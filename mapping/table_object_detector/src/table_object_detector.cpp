@@ -176,7 +176,7 @@ class TableObjectDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectTable (FindTable::request &req, FindTable::response &resp)
+      detectTable (FindTable::Request &req, FindTable::Response &resp)
     {
       timeval t1, t2;
       double time_spent;
@@ -659,8 +659,8 @@ class TableObjectDetector : public ros::Node
       {
         tictoc.sleep ();
 
-/*        FindTable::request req;
-        FindTable::response resp;
+/*        FindTable::Request req;
+        FindTable::Response resp;
         ros::service::call ("table_object_detector", req, resp);*/
       }
 

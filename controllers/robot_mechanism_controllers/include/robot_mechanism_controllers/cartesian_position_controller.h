@@ -92,8 +92,8 @@ public:
   void update();
 
   void setCommand();
-  bool getActual(robot_srvs::GetVector::request &req,
-                 robot_srvs::GetVector::response &resp);
+  bool getActual(robot_srvs::GetVector::Request &req,
+                 robot_srvs::GetVector::Response &resp);
 
 private:
   mechanism::RobotState *robot_;

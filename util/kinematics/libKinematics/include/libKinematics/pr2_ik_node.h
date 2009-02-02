@@ -67,7 +67,7 @@ namespace kinematics
 
     double init_solution_theta3_;
 
-    bool processIKRequest(robot_srvs::IKService::request &req, robot_srvs::IKService::response &resp);
+    bool processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp);
 
     private:
 

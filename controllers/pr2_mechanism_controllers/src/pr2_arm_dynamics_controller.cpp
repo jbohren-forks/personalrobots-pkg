@@ -360,8 +360,8 @@ bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlE
   return false;
 }
 
-bool PR2ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::request &req,
-                                   robot_srvs::SetJointCmd::response &resp)
+bool PR2ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::Request &req,
+                                   robot_srvs::SetJointCmd::Response &resp)
 {
   std::vector<double> pos;
   std::vector<double> vel;
@@ -377,8 +377,8 @@ bool PR2ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::request 
   return true;
 }
 
-bool PR2ArmDynamicsControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
-                    robot_srvs::GetJointCmd::response &resp)
+bool PR2ArmDynamicsControllerNode::getJointCmd(robot_srvs::GetJointCmd::Request &req,
+                    robot_srvs::GetJointCmd::Response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);

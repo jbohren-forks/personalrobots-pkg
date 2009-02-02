@@ -204,7 +204,7 @@ class DoorHandleDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectDoor (door_handle_detector::Door::request &req, door_handle_detector::Door::response &resp)
+      detectDoor (door_handle_detector::Door::Request &req, door_handle_detector::Door::Response &resp)
     {
       timeval t1, t2;
       double time_spent;
@@ -661,10 +661,10 @@ int
 
   DoorHandleDetector p;
 
-  door_handle_detector::Door::request req;
+  door_handle_detector::Door::Request req;
   req.frame_p1.x = 1.2; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
   req.frame_p2.x = 1.4; req.frame_p2.y = -0.5; req.frame_p2.z = 0;
-  door_handle_detector::Door::response resp;
+  door_handle_detector::Door::Response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
   p.spin ();
