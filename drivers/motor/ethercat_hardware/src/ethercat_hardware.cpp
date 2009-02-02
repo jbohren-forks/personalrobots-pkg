@@ -37,8 +37,6 @@
 #include <ethercat/ethercat_xenomai_drv.h>
 #include <dll/ethercat_dll.h>
 
-#include <native/timer.h>
-
 EthercatHardware::EthercatHardware() :
   hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
@@ -59,15 +57,6 @@ EthercatHardware::~EthercatHardware()
     delete hw_;
   }
   publisher_.stop();
-}
-
-static const int NSEC_PER_SEC = 1e+9;
-
-static double now()
-{
-  RTIME n;
-  n = rt_timer_read();
-  return double(n) / NSEC_PER_SEC;
 }
 
 void EthercatHardware::init(char *interface, bool allow_unprogrammed)
@@ -156,7 +145,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
-  hw_->current_time_ = now();
+  hw_->current_time_ = realtime_gettime();
 
   // Initialize slaves
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
@@ -330,11 +319,11 @@ void EthercatHardware::update(bool reset)
   }
 
   // Transmit process data
-  double start = now();
+  double start = realtime_gettime();
   if (!em_->txandrx_PD(buffer_size_, current_buffer_)) {
     ++diagnostics_.txandrx_errors_;
   }
-  diagnostics_.iteration_[count].roundtrip_ = now() - start;
+  diagnostics_.iteration_[count].roundtrip_ = realtime_gettime() - start;
 
   // Convert status back to HW Interface
   current = current_buffer_;
@@ -358,7 +347,7 @@ void EthercatHardware::update(bool reset)
     --reset_state_;
 
   // Update current time
-  hw_->current_time_ = now();
+  hw_->current_time_ = realtime_gettime();
 
   unsigned char *tmp = current_buffer_;
   current_buffer_ = last_buffer_;
