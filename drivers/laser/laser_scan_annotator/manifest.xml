@@ -4,7 +4,7 @@ Utility for annotating laser scans with pose information
 </description>
 <author>Vijay Pradeep</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="experimental" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
