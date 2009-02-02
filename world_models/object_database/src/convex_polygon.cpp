@@ -31,7 +31,6 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace std;
 
 namespace object_database
 {
@@ -114,76 +113,3 @@ bool intersects (ConvexPolygon& p1, ConvexPolygon& p2)
 
 } // namespace object_database
 
-using namespace object_database;
-
-int main (int, char**)
-{
-  vector<Point2D> p1(3);
-  vector<Point2D> p2(4);
-  vector<Point2D> p3(3);
-
-  p1[0] = Point2D(0,0);
-  p1[1] = Point2D(3,0);
-  p1[2] = Point2D(0,4);
-
-  p2[0] = Point2D(2,-1);
-  p2[1] = Point2D(2,1);
-  p2[2] = Point2D(4,1);
-  p2[3] = Point2D(4,-1);
-
-  p3[0] = Point2D(4,1);
-  p3[1] = Point2D(4,-1);
-  p3[2] = Point2D(5,0);
-
-  ConvexPolygon poly1(p1);
-  ConvexPolygon poly2(p2);
-  ConvexPolygon poly3(p3);
-
-  if (object_database::intersects (poly1, poly2)) {
-    cout << "P1 intersects P2" << endl;
-  }
-  else {
-    cout << "P1 does not intersect P2" << endl;
-  }
-
-  if (object_database::intersects (poly2, poly1)) {
-    cout << "P2 intersects P1" << endl;
-  }
-  else {
-    cout << "P2 does not intersect P1" << endl;
-  }
-
-  if (object_database::intersects (poly1, poly3)) {
-    cout << "P1 intersects P3" << endl;
-  }
-  else {
-    cout << "P1 does not intersect P3" << endl;
-  }
-
-  if (object_database::intersects (poly3, poly1)) {
-    cout << "P3 intersects P1" << endl;
-  }
-  else {
-    cout << "P3 does not intersect P1" << endl;
-  }
-
-  if (object_database::intersects (poly2, poly3)) {
-    cout << "P2 intersects P3" << endl;
-  }
-  else {
-    cout << "P2 does not intersect P3" << endl;
-  }
-
-  if (object_database::intersects (poly3, poly2)) {
-    cout << "P3 intersects P2" << endl;
-  }
-  else {
-    cout << "P3 does not intersect P2" << endl;
-  }
-
-  
-
-  
-
-  return 0;
-}
