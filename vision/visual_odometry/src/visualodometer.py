@@ -214,6 +214,9 @@ class FeatureDetectorOrdered:
     while (len(features) < target_points) and (self.thresh > self.threshrange[0]):
       self.thresh = float(max(self.threshrange[0], self.thresh / 2))
       features = self.get_features(frame, target_points)
+    # If starving, rerun 
+    if (len(features) < 100) and (self.thresh <= self.threshrange[0]):
+      features = self.get_features(frame, target_points, True)
 
     # Try to be a bit adaptive for next time
     if len(features) > (target_points * 2):
@@ -222,8 +225,8 @@ class FeatureDetectorOrdered:
       self.thresh *= 0.95
     return features[:target_points]
 
-def FAST(imdata, xsize, ysize, thresh):
-  kp = fast.fast(imdata, xsize, ysize, 9, thresh)
+def FAST(imdata, xsize, ysize, thresh, barrier = 9):
+  kp = fast.fast(imdata, xsize, ysize, barrier, thresh)
   return sorted(fast.nonmax(kp), key = lambda x:(x[2],x[0],x[1]), reverse = True)
 
 class FeatureDetectorFast(FeatureDetectorOrdered):
@@ -231,9 +234,13 @@ class FeatureDetectorFast(FeatureDetectorOrdered):
   default_thresh = 10
   threshrange = (0.5,300)
 
-  def get_features(self, frame, target_points):
+  def get_features(self, frame, target_points, starving = False):
     assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
-    feat = FAST(frame.rawdata, frame.size[0], frame.size[1], self.thresh)
+    if starving:
+      barrier = 3
+    else:
+      barrier = 9
+    feat = FAST(frame.rawdata, frame.size[0], frame.size[1], self.thresh, barrier)
     return [ (x,y) for (x,y,r) in feat if (16 <= x and x <= (640-16) and (16 <= y) and y < (480-16)) ]
 
 class FeatureDetector4x4:
