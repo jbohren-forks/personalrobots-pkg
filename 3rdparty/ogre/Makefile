@@ -14,12 +14,10 @@ OGREROOT = $(shell rospack find ogre)/ogre
 
 CFLAGS = -g -O3 \
 	 $(shell rospack --lang=cpp --attrib=cflags export freeimage) \
-         $(shell rospack --lang=cpp --attrib=cflags export opende) \
          $(shell rospack --lang=cpp --attrib=cflags export Cg) \
          $(shell rosboost-cfg --cflags)
 
 LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
-         $(shell rospack --lang=cpp --attrib=lflags export opende) \
          $(shell rospack --lang=cpp --attrib=lflags export Cg) \
          $(shell rosboost-cfg --lflags thread) \
          -lpthread
