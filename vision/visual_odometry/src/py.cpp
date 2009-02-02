@@ -36,7 +36,7 @@ using namespace cv::willow;
 using namespace cv;
 using namespace std;
 
-#define JDC_DEBUG 1
+#define JDC_DEBUG 0
 
 /************************************************************************/
 

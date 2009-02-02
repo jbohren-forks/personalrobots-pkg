@@ -90,7 +90,9 @@ class SparseStereoFrame(Frame):
 
     assert x == int(x)
     assert y == int(y)
-    v = VO.ost_do_stereo_sparse(refpat, rimg, x, y, w, h, 31, 64, 10, 15)
+    #dlen = max(16, min(x, 64))
+    dlen = 64
+    v = VO.ost_do_stereo_sparse(refpat, rimg, x, y, w, h, 31, dlen, 10, 15)
 
     if v < 0:
       return None
