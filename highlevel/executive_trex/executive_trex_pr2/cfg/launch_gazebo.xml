@@ -60,9 +60,13 @@
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
-    <node pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false"/>
+    <node pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
+      <remap from="robot_description" to="robotdesc/pr2"/>
+    </node>
 
-    <node pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" />
+    <node pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
+      <remap from="robot_description" to="robotdesc/pr2"/>
+    </node>
 
     <!--node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/-->
 
