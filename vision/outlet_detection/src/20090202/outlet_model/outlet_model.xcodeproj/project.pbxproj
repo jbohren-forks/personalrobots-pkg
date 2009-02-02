@@ -1,0 +1,360 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2629E0460EE929FD0073CB05 /* libcv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2629E0430EE929FD0073CB05 /* libcv.dylib */; };
+		2629E0470EE929FD0073CB05 /* libcxcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2629E0440EE929FD0073CB05 /* libcxcore.dylib */; };
+		2629E0480EE929FD0073CB05 /* libhighgui.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2629E0450EE929FD0073CB05 /* libhighgui.dylib */; };
+		26877DE70F372F4900BE6788 /* outlet_tuple.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26877DE50F372F4900BE6788 /* outlet_tuple.cpp */; };
+		2690E17F0F07B23D00695BEE /* detector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2690E17C0F07B23D00695BEE /* detector.cpp */; };
+		2690E1800F07B23D00695BEE /* integral.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2690E17D0F07B23D00695BEE /* integral.cpp */; };
+		2690E1810F07B23D00695BEE /* keypoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2690E17E0F07B23D00695BEE /* keypoint.cpp */; };
+		2690E2C80F08E52300695BEE /* learning.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2690E2C70F08E52300695BEE /* learning.cpp */; };
+		2690E36F0F08F9DF00695BEE /* libml.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2690E36E0F08F9DF00695BEE /* libml.dylib */; };
+		26A74C580EE5917000F2AED3 /* outlet_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26A74C570EE5917000F2AED3 /* outlet_model.cpp */; };
+		26CF26390F20E3F7002ED785 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26CF26380F20E3F7002ED785 /* main.cpp */; };
+		26CF26570F20E598002ED785 /* planar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26CF26560F20E598002ED785 /* planar.cpp */; };
+		8DD76F6A0486A84900D96B5E /* outlet_model.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* outlet_model.1 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8DD76F690486A84900D96B5E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				8DD76F6A0486A84900D96B5E /* outlet_model.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2629E0430EE929FD0073CB05 /* libcv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcv.dylib; path = /usr/local/lib/libcv.dylib; sourceTree = "<absolute>"; };
+		2629E0440EE929FD0073CB05 /* libcxcore.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcxcore.dylib; path = /usr/local/lib/libcxcore.dylib; sourceTree = "<absolute>"; };
+		2629E0450EE929FD0073CB05 /* libhighgui.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhighgui.dylib; path = /usr/local/lib/libhighgui.dylib; sourceTree = "<absolute>"; };
+		26877DE50F372F4900BE6788 /* outlet_tuple.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = outlet_tuple.cpp; sourceTree = "<group>"; };
+		26877DE60F372F4900BE6788 /* outlet_tuple.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = outlet_tuple.h; sourceTree = "<group>"; };
+		2690E0B10EFF8E1E00695BEE /* outlet_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = outlet_model.h; sourceTree = "<group>"; };
+		2690E17C0F07B23D00695BEE /* detector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = detector.cpp; path = keypoint/detector.cpp; sourceTree = "<group>"; };
+		2690E17D0F07B23D00695BEE /* integral.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = integral.cpp; path = keypoint/integral.cpp; sourceTree = "<group>"; };
+		2690E17E0F07B23D00695BEE /* keypoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = keypoint.cpp; path = keypoint/keypoint.cpp; sourceTree = "<group>"; };
+		2690E2C60F08E52300695BEE /* learning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = learning.h; sourceTree = "<group>"; };
+		2690E2C70F08E52300695BEE /* learning.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = learning.cpp; sourceTree = "<group>"; };
+		2690E36E0F08F9DF00695BEE /* libml.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libml.dylib; path = /usr/local/lib/libml.dylib; sourceTree = "<absolute>"; };
+		26A74C570EE5917000F2AED3 /* outlet_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = outlet_model.cpp; sourceTree = "<group>"; };
+		26CF26380F20E3F7002ED785 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		26CF26550F20E598002ED785 /* planar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = planar.h; sourceTree = "<group>"; };
+		26CF26560F20E598002ED785 /* planar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = planar.cpp; sourceTree = "<group>"; };
+		8DD76F6C0486A84900D96B5E /* outlet_model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = outlet_model; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6859E8B029090EE04C91782 /* outlet_model.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = outlet_model.1; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8DD76F660486A84900D96B5E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2629E0460EE929FD0073CB05 /* libcv.dylib in Frameworks */,
+				2629E0470EE929FD0073CB05 /* libcxcore.dylib in Frameworks */,
+				2629E0480EE929FD0073CB05 /* libhighgui.dylib in Frameworks */,
+				2690E36F0F08F9DF00695BEE /* libml.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* outlet_model */ = {
+			isa = PBXGroup;
+			children = (
+				2690E36E0F08F9DF00695BEE /* libml.dylib */,
+				2629E0430EE929FD0073CB05 /* libcv.dylib */,
+				2629E0440EE929FD0073CB05 /* libcxcore.dylib */,
+				2629E0450EE929FD0073CB05 /* libhighgui.dylib */,
+				08FB7795FE84155DC02AAC07 /* Source */,
+				C6859E8C029090F304C91782 /* Documentation */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = outlet_model;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				26877DE50F372F4900BE6788 /* outlet_tuple.cpp */,
+				26877DE60F372F4900BE6788 /* outlet_tuple.h */,
+				26CF26380F20E3F7002ED785 /* main.cpp */,
+				2690E2C60F08E52300695BEE /* learning.h */,
+				2690E2C70F08E52300695BEE /* learning.cpp */,
+				2690E17C0F07B23D00695BEE /* detector.cpp */,
+				2690E17D0F07B23D00695BEE /* integral.cpp */,
+				2690E17E0F07B23D00695BEE /* keypoint.cpp */,
+				2690E0B10EFF8E1E00695BEE /* outlet_model.h */,
+				26A74C570EE5917000F2AED3 /* outlet_model.cpp */,
+				26CF26550F20E598002ED785 /* planar.h */,
+				26CF26560F20E598002ED785 /* planar.cpp */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8DD76F6C0486A84900D96B5E /* outlet_model */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C6859E8C029090F304C91782 /* Documentation */ = {
+			isa = PBXGroup;
+			children = (
+				C6859E8B029090EE04C91782 /* outlet_model.1 */,
+			);
+			name = Documentation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8DD76F620486A84900D96B5E /* outlet_model */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "outlet_model" */;
+			buildPhases = (
+				8DD76F640486A84900D96B5E /* Sources */,
+				8DD76F660486A84900D96B5E /* Frameworks */,
+				8DD76F690486A84900D96B5E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = outlet_model;
+			productInstallPath = "$(HOME)/bin";
+			productName = outlet_model;
+			productReference = 8DD76F6C0486A84900D96B5E /* outlet_model */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "outlet_model" */;
+			compatibilityVersion = "Xcode 3.1";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* outlet_model */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DD76F620486A84900D96B5E /* outlet_model */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8DD76F640486A84900D96B5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26A74C580EE5917000F2AED3 /* outlet_model.cpp in Sources */,
+				2690E17F0F07B23D00695BEE /* detector.cpp in Sources */,
+				2690E1800F07B23D00695BEE /* integral.cpp in Sources */,
+				2690E1810F07B23D00695BEE /* keypoint.cpp in Sources */,
+				2690E2C80F08E52300695BEE /* learning.cpp in Sources */,
+				26CF26390F20E3F7002ED785 /* main.cpp in Sources */,
+				26CF26570F20E598002ED785 /* planar.cpp in Sources */,
+				26877DE70F372F4900BE6788 /* outlet_tuple.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB923208733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_OUTLET_HR,
+					_TUNING,
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_NOT_USED_IN_PRECOMPS = "";
+				INSTALL_PATH = /usr/local/bin;
+				PRELINK_LIBS = "";
+				PRODUCT_NAME = outlet_model;
+			};
+			name = Debug;
+		};
+		1DEB923308733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_OUTLET_HR,
+					_TUNING,
+				);
+				GCC_VERSION = 4.0;
+				HEADER_SEARCH_PATHS = /usr/local/include/opencv;
+				INSTALL_PATH = /usr/local/bin;
+				LD_OPENMP_FLAGS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACH_O_TYPE = mh_execute;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "";
+				PRELINK_LIBS = "ml highgui cv cxcore";
+				PRODUCT_NAME = outlet_model;
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+			};
+			name = Release;
+		};
+		1DEB923608733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include/opencv;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-lhighgui",
+					"-lcv",
+					"-lcxcore",
+				);
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = Debug;
+		};
+		1DEB923708733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = Release;
+		};
+		2690E5420F14B19900695BEE /* ReleasePredict */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = ReleasePredict;
+		};
+		2690E5430F14B19900695BEE /* ReleasePredict */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_PREDICT,
+					_LEARN_OUTLETS,
+					_EUROPE,
+				);
+				GCC_VERSION = 4.0;
+				HEADER_SEARCH_PATHS = /usr/local/include/opencv;
+				INSTALL_PATH = /usr/local/bin;
+				LD_OPENMP_FLAGS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACH_O_TYPE = mh_execute;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "";
+				PRELINK_LIBS = "ml highgui cv cxcore";
+				PRODUCT_NAME = outlet_model;
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+			};
+			name = ReleasePredict;
+		};
+		2690E5440F14B1A500695BEE /* ReleaseTrain */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = ReleaseTrain;
+		};
+		2690E5450F14B1A500695BEE /* ReleaseTrain */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_TRAIN,
+					_EUROPE,
+				);
+				GCC_VERSION = 4.0;
+				HEADER_SEARCH_PATHS = /usr/local/include/opencv;
+				INSTALL_PATH = /usr/local/bin;
+				LD_OPENMP_FLAGS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACH_O_TYPE = mh_execute;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "";
+				PRELINK_LIBS = "ml highgui cv cxcore";
+				PRODUCT_NAME = outlet_model;
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+			};
+			name = ReleaseTrain;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "outlet_model" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923208733DC60010E9CD /* Debug */,
+				1DEB923308733DC60010E9CD /* Release */,
+				2690E5430F14B19900695BEE /* ReleasePredict */,
+				2690E5450F14B1A500695BEE /* ReleaseTrain */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "outlet_model" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923608733DC60010E9CD /* Debug */,
+				1DEB923708733DC60010E9CD /* Release */,
+				2690E5420F14B19900695BEE /* ReleasePredict */,
+				2690E5440F14B1A500695BEE /* ReleaseTrain */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
