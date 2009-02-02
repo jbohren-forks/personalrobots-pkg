@@ -267,7 +267,25 @@ Index: server/physics/Geom.hh
 ===================================================================
 --- server/physics/Geom.hh	(revision 7168)
 +++ server/physics/Geom.hh	(working copy)
-@@ -188,6 +188,20 @@
+@@ -28,6 +28,7 @@
+ #define GEOM_HH
+ 
+ #include <ode/ode.h>
++#include <vector>
+ 
+ #include "Param.hh"
+ #include "Entity.hh"
+@@ -162,6 +163,9 @@
+     ///  Contact parameters
+     public: ContactParams *contact; 
+ 
++    ///  Contact parameters
++    //public: std::vector<dJointID> cID; 
++    public: dJointID cID; 
+   
+     /// The body this geom belongs to
+     protected: Body *body;
+@@ -188,6 +192,20 @@
      ///  Mass as a double
      protected: ParamT<double> *massP;
  
@@ -1509,6 +1527,20 @@ Index: server/physics/ode/ODEPhysics.cc
  
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
+@@ -290,6 +320,13 @@
+         dJointID c = dJointCreateContact (self->worldId,
+                                           self->contactGroup, &contact);
+ 
++        // create a list of "dJointID *c" in Geom, so we can do a
++        // dJointFeedback *jft = dJointGetFeedback( c[i] ) later
++        //geom1->cID.push_back(c);
++        //geom2->cID.push_back(c);
++        geom1->cID = c;
++        geom2->cID = c;
++
+         // Call the geom's contact callbacks
+         geom1->contact->contactSignal( geom1, geom2 );
+         geom2->contact->contactSignal( geom2, geom1 );
 Index: server/physics/Joint.cc
 ===================================================================
 --- server/physics/Joint.cc	(revision 7168)
@@ -2101,12 +2133,24 @@ Index: server/sensors/contact/ContactSensor.hh
 ===================================================================
 --- server/sensors/contact/ContactSensor.hh	(revision 7168)
 +++ server/sensors/contact/ContactSensor.hh	(working copy)
-@@ -68,6 +68,12 @@
+@@ -33,6 +33,8 @@
+ #include "Sensor.hh"
+ #include "Body.hh"
+ 
++#define GAZEBO_MAX_OPAQUE_DATA 1024*1024*8
++
+ namespace gazebo
+ {
+ 
+@@ -68,6 +70,15 @@
      /// \brief Return a contact state
      public: uint8_t GetContactState(unsigned int index) const;
  
 +    /// \brief Return contact geometry name
 +    public: std::string GetContactGeomName(unsigned int index) const;
++
++    /// \brief Return contact feedback, f1,f2,t1,t2
++    public:  dJointFeedback GetContactFeedback(unsigned int index) const;
 +
 +    /// \brief Return geometry name
 +    public: std::string GetGeomName(unsigned int index) const;
@@ -2114,7 +2158,7 @@ Index: server/sensors/contact/ContactSensor.hh
      /// \brief Reset the contact states
      public: void ResetContactStates();
  
-@@ -93,9 +99,11 @@
+@@ -93,9 +104,14 @@
      /// Geom name parameter
      private: std::vector< ParamT<std::string> *> geomNamesP;
  
@@ -2123,6 +2167,9 @@ Index: server/sensors/contact/ContactSensor.hh
      private: double *contactTimes;
      private: unsigned int contactCount;
 +    private: std::vector<std::string> contactNames;
++    /// \brief a place for storing joint feedbacks, including contact joints
++    private:  dJointFeedback contactFeedbacks[GAZEBO_MAX_OPAQUE_DATA];
++
    };
    /// \}
    /// \}
@@ -2130,7 +2177,7 @@ Index: server/sensors/contact/ContactSensor.cc
 ===================================================================
 --- server/sensors/contact/ContactSensor.cc	(revision 7168)
 +++ server/sensors/contact/ContactSensor.cc	(working copy)
-@@ -107,6 +107,26 @@
+@@ -107,6 +107,36 @@
  }
  
  //////////////////////////////////////////////////////////////////////////////
@@ -2142,6 +2189,16 @@ Index: server/sensors/contact/ContactSensor.cc
 +
 +  return std::string("");
 +}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Return the contact feedback forces and torques
++dJointFeedback ContactSensor::GetContactFeedback(unsigned int index) const
++{
++  if (index < this->contactCount)
++    return this->contactFeedbacks[index];
++  return dJointFeedback();
++}
++
 +
 +//////////////////////////////////////////////////////////////////////////////
 +/// Return the self geom name
@@ -2157,23 +2214,63 @@ Index: server/sensors/contact/ContactSensor.cc
  /// Reset the contact states
  void ContactSensor::ResetContactStates()
  {
-@@ -138,6 +158,8 @@
+@@ -138,9 +168,13 @@
    this->contactCount = this->geomNamesP.size();
    this->contactTimes = new double[ this->contactCount ];
    this->contactStates = new uint8_t[ this->contactCount ];
 +  for (unsigned int i=0; i< this->contactCount; i++)
 +    this->contactNames.push_back("");
  
++  memset(this->contactTimes,0, sizeof(double) * this->contactCount);
    memset(this->contactStates,0, sizeof(uint8_t) * this->contactCount);
-   memset(this->contactStates,0, sizeof(double) * this->contactCount);
-@@ -206,6 +228,7 @@
+-  memset(this->contactStates,0, sizeof(double) * this->contactCount);
++  //memset(this->contactFeedbacks,0, sizeof(dJointFeedback) * this->contactCount);
++  //this->contactFeedbacks = new dJointFeedback[this->contactCount];
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
+@@ -195,6 +229,11 @@
+ /// Contact callback
+ void ContactSensor::ContactCallback(Geom *g1, Geom *g2)
+ {
++
++  // somehow here, extract contact information when user requests it
++  //
++
++
+   std::vector< ParamT<std::string> *>::iterator iter;
+   int i = 0;
+ 
+@@ -204,9 +243,29 @@
+   {
+     if ( **(*iter) == g1->GetName() || **(*iter) == g2->GetName() )
      {
++      if (i < GAZEBO_MAX_OPAQUE_DATA)
++      {
++        dJointSetFeedback(g1->cID, this->contactFeedbacks+i);
++
++        // std::cout << "contact id:" << i
++        //           << " geom1:" << g1->GetName()
++        //           << " geom2:" << g2->GetName();
++        // std::cout << " contact joint ID:" << g1->cID
++        //           << " f1:"<<this->contactFeedbacks[i].f1[0]<<","<<this->contactFeedbacks[i].f1[1]<<","<<this->contactFeedbacks[i].f1[2]<<","<<this->contactFeedbacks[i].f1[3]
++        //           << " t1:"<<this->contactFeedbacks[i].t1[0]<<","<<this->contactFeedbacks[i].t1[1]<<","<<this->contactFeedbacks[i].t1[2]<<","<<this->contactFeedbacks[i].t1[3]
++        //           << " f1_magnitude:" << dLENGTH(this->contactFeedbacks[i].f1)
++        //           << " f2:"<<this->contactFeedbacks[i].f2[0]<<","<<this->contactFeedbacks[i].f2[1]<<","<<this->contactFeedbacks[i].f2[2]<<","<<this->contactFeedbacks[i].f2[3]
++        //           << " t2:"<<this->contactFeedbacks[i].t2[0]<<","<<this->contactFeedbacks[i].t2[1]<<","<<this->contactFeedbacks[i].t2[2]<<","<<this->contactFeedbacks[i].t2[3]
++        //           << " f2_magnitude:" << dLENGTH(this->contactFeedbacks[i].f2)
++        //           << std::endl;
++      }
++
        this->contactStates[i] = 1;
        this->contactTimes[i] = Simulator::Instance()->GetRealTime();
 +      this->contactNames[i] = **(*iter)==g1->GetName()? g2->GetName() : g1->GetName();
      }
    }
  
+ }
++
++
 Index: server/sensors/ray/RaySensor.hh
 ===================================================================
 --- server/sensors/ray/RaySensor.hh	(revision 7168)
