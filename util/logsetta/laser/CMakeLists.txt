@@ -1,0 +1,1 @@
+rospack_add_executable(laser_extract laser_extract.cpp)

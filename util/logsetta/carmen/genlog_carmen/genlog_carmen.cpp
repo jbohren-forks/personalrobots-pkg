@@ -127,8 +127,8 @@ int main(int argc, char **argv)
 
   player.open(files, ros::Time());
 
-  player.addHandler<std_msgs::RobotBase2DOdom>(string("*"), &odom_callback, NULL);
-  player.addHandler<std_msgs::LaserScan>(string("*"), &scan_callback, NULL);
+  player.addHandler<std_msgs::RobotBase2DOdom>(string("/odom"), &odom_callback, NULL);
+  player.addHandler<std_msgs::LaserScan>(string("/scan"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");
 
