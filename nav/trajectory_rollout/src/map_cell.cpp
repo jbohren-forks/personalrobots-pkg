@@ -32,14 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "trajectory_rollout/map_cell.h"
+#include <trajectory_rollout/map_cell.h>
 
-MapCell::MapCell()
-  : cx(0), cy(0), path_dist(DBL_MAX), goal_dist(DBL_MAX), occ_dist(0.0), occ_state(0), path_mark(false), goal_mark(false), within_robot(false)
-{}
+namespace trajectory_rollout{
 
-MapCell::MapCell(const MapCell& mc)
-  : cx(mc.cx), cy(mc.cy), path_dist(mc.path_dist), goal_dist(mc.goal_dist), 
+  MapCell::MapCell()
+    : cx(0), cy(0), path_dist(DBL_MAX), goal_dist(DBL_MAX), occ_dist(0.0), occ_state(0), path_mark(false), goal_mark(false), within_robot(false)
+  {}
+
+  MapCell::MapCell(const MapCell& mc)
+    : cx(mc.cx), cy(mc.cy), path_dist(mc.path_dist), goal_dist(mc.goal_dist), 
     occ_dist(mc.occ_dist), occ_state(mc.occ_state), path_mark(mc.path_mark), 
     goal_mark(mc.goal_mark), within_robot(mc.within_robot)
-{}
+  {}
+};

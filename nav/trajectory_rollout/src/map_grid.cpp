@@ -34,128 +34,130 @@
 #include <trajectory_rollout/map_grid.h>
 
 using namespace std;
-using namespace trajectory_rollout;
 
-MapGrid::MapGrid(unsigned int size_x, unsigned int size_y) 
-  : size_x_(size_x), size_y_(size_y)
-{
-  commonInit();
-}
+namespace trajectory_rollout{
 
-MapGrid::MapGrid(unsigned int size_x, unsigned int size_y, double s, double x, double y)
-  : size_x_(size_x), size_y_(size_y), scale(s), origin_x(x), origin_y(y)
-{
-  commonInit();
-}
+  MapGrid::MapGrid(unsigned int size_x, unsigned int size_y) 
+    : size_x_(size_x), size_y_(size_y)
+  {
+    commonInit();
+  }
 
-MapGrid::MapGrid(const MapGrid& mg){
-  size_y_ = mg.size_y_;
-  size_x_ = mg.size_x_;
-  map_ = mg.map_;
-}
+  MapGrid::MapGrid(unsigned int size_x, unsigned int size_y, double s, double x, double y)
+    : size_x_(size_x), size_y_(size_y), scale(s), origin_x(x), origin_y(y)
+  {
+    commonInit();
+  }
 
-void MapGrid::commonInit(){
-  //don't allow construction of zero size grid
-  assert(size_y_ != 0 && size_x_ != 0);
+  MapGrid::MapGrid(const MapGrid& mg){
+    size_y_ = mg.size_y_;
+    size_x_ = mg.size_x_;
+    map_ = mg.map_;
+  }
 
-  map_.resize(size_y_ * size_x_);
+  void MapGrid::commonInit(){
+    //don't allow construction of zero size grid
+    assert(size_y_ != 0 && size_x_ != 0);
 
-  //make each cell aware of its location in the grid
-  for(unsigned int i = 0; i < size_y_; ++i){
-    for(unsigned int j = 0; j < size_x_; ++j){
-      unsigned int id = size_x_ * i + j;
-      map_[id].cx = j;
-      map_[id].cy = i;
+    map_.resize(size_y_ * size_x_);
+
+    //make each cell aware of its location in the grid
+    for(unsigned int i = 0; i < size_y_; ++i){
+      for(unsigned int j = 0; j < size_x_; ++j){
+        unsigned int id = size_x_ * i + j;
+        map_[id].cx = j;
+        map_[id].cy = i;
+      }
     }
   }
-}
 
-size_t MapGrid::getIndex(int x, int y){
-  return size_x_ * y + x;
-}
+  size_t MapGrid::getIndex(int x, int y){
+    return size_x_ * y + x;
+  }
 
-MapGrid& MapGrid::operator= (const MapGrid& mg){
-  size_y_ = mg.size_y_;
-  size_x_ = mg.size_x_;
-  map_ = mg.map_;
-  return *this;
-}
+  MapGrid& MapGrid::operator= (const MapGrid& mg){
+    size_y_ = mg.size_y_;
+    size_x_ = mg.size_x_;
+    map_ = mg.map_;
+    return *this;
+  }
 
-void MapGrid::sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y){
-  if(map_.size() != size_x * size_y)
-    map_.resize(size_x * size_y);
+  void MapGrid::sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y){
+    if(map_.size() != size_x * size_y)
+      map_.resize(size_x * size_y);
 
-  if(size_x_ != size_x || size_y_ != size_y){
-    size_x_ = size_x;
-    size_y_ = size_y;
+    if(size_x_ != size_x || size_y_ != size_y){
+      size_x_ = size_x;
+      size_y_ = size_y;
+
+      for(unsigned int i = 0; i < size_y_; ++i){
+        for(unsigned int j = 0; j < size_x_; ++j){
+          int index = size_x_ * i + j;
+          map_[index].cx = j;
+          map_[index].cy = i;
+        }
+      }
+    }
+    origin_x = o_x;
+    origin_y = o_y;
+  }
+
+  //allow easy updating from message representations
+  void MapGrid::update(ScoreMap2D& new_map){
+    if(map_.size() != new_map.size_y * new_map.size_x){
+      map_.resize(new_map.size_y * new_map.size_x);
+    }
+
+    size_y_ = new_map.size_y;
+    size_x_ = new_map.size_x;
+    scale = new_map.scale;
+    origin_x = new_map.origin.x;
+    origin_y = new_map.origin.y;
 
     for(unsigned int i = 0; i < size_y_; ++i){
       for(unsigned int j = 0; j < size_x_; ++j){
         int index = size_x_ * i + j;
         map_[index].cx = j;
         map_[index].cy = i;
+        map_[index].path_dist = new_map.data[index].path_dist;
+        map_[index].goal_dist = new_map.data[index].goal_dist;
+        map_[index].occ_dist = new_map.data[index].occ_dist;
+        map_[index].occ_state = new_map.data[index].occ_state;
       }
     }
   }
-  origin_x = o_x;
-  origin_y = o_y;
-}
 
-//allow easy updating from message representations
-void MapGrid::update(ScoreMap2D& new_map){
-  if(map_.size() != new_map.size_y * new_map.size_x){
-    map_.resize(new_map.size_y * new_map.size_x);
-  }
-
-  size_y_ = new_map.size_y;
-  size_x_ = new_map.size_x;
-  scale = new_map.scale;
-  origin_x = new_map.origin.x;
-  origin_y = new_map.origin.y;
-
-  for(unsigned int i = 0; i < size_y_; ++i){
-    for(unsigned int j = 0; j < size_x_; ++j){
-      int index = size_x_ * i + j;
-      map_[index].cx = j;
-      map_[index].cy = i;
-      map_[index].path_dist = new_map.data[index].path_dist;
-      map_[index].goal_dist = new_map.data[index].goal_dist;
-      map_[index].occ_dist = new_map.data[index].occ_dist;
-      map_[index].occ_state = new_map.data[index].occ_state;
+  //reset the path_dist and goal_dist fields for all cells
+  void MapGrid::resetPathDist(){
+    for(unsigned int i = 0; i < map_.size(); ++i){
+      map_[i].path_dist = DBL_MAX;
+      map_[i].goal_dist = DBL_MAX;
+      map_[i].path_mark = false;
+      map_[i].goal_mark = false;
+      map_[i].within_robot = false;
     }
   }
-}
 
-//reset the path_dist and goal_dist fields for all cells
-void MapGrid::resetPathDist(){
-  for(unsigned int i = 0; i < map_.size(); ++i){
-    map_[i].path_dist = DBL_MAX;
-    map_[i].goal_dist = DBL_MAX;
-    map_[i].path_mark = false;
-    map_[i].goal_mark = false;
-    map_[i].within_robot = false;
-  }
-}
+  //allow easy creation of messages
+  ScoreMap2D MapGrid::genMsg(){
+    ScoreMap2D map_msg;
+    map_msg.size_y = size_y_;
+    map_msg.size_x = size_x_;
+    map_msg.scale =scale;
+    map_msg.origin.x = origin_x;
+    map_msg.origin.y = origin_y;
 
-//allow easy creation of messages
-ScoreMap2D MapGrid::genMsg(){
-  ScoreMap2D map_msg;
-  map_msg.size_y = size_y_;
-  map_msg.size_x = size_x_;
-  map_msg.scale =scale;
-  map_msg.origin.x = origin_x;
-  map_msg.origin.y = origin_y;
+    map_msg.set_data_size(size_y_ * size_x_);
 
-  map_msg.set_data_size(size_y_ * size_x_);
-
-  for(unsigned int i = 0; i < size_y_; ++i){
-    for(unsigned int j = 0; j < size_x_; ++j){
-      int index = size_x_ * i + j;
-      map_msg.data[i].path_dist = map_[index].path_dist;
-      map_msg.data[i].goal_dist = map_[index].goal_dist;
-      map_msg.data[i].occ_state = map_[index].occ_state;
-      map_msg.data[i].occ_dist = map_[index].occ_dist;
+    for(unsigned int i = 0; i < size_y_; ++i){
+      for(unsigned int j = 0; j < size_x_; ++j){
+        int index = size_x_ * i + j;
+        map_msg.data[i].path_dist = map_[index].path_dist;
+        map_msg.data[i].goal_dist = map_[index].goal_dist;
+        map_msg.data[i].occ_state = map_[index].occ_state;
+        map_msg.data[i].occ_dist = map_[index].occ_dist;
+      }
     }
+    return map_msg;
   }
-  return map_msg;
-}
+};

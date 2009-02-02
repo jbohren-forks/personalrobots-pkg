@@ -31,39 +31,43 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#ifndef MAP_CELL_H_
-#define MAP_CELL_H_
+#ifndef TRAJECTORY_ROLLOUT_MAP_CELL_H_
+#define TRAJECTORY_ROLLOUT_MAP_CELL_H_
 
 #include <trajectory_rollout/trajectory_inc.h>
 
-//Information contained in each map cell
-class MapCell{
-  public:
-    //default constructor
-    MapCell();
+namespace trajectory_rollout {
+  /**
+   * @class MapCell
+   * @brief Stores path distance and goal distance information used for scoring trajectories
+   */
+  class MapCell{
+    public:
+      /**
+       * @brief  Default constructor
+       */
+      MapCell();
 
-    MapCell(const MapCell& mc);
+      /**
+       * @brief  Copy constructor
+       * @param mc The MapCell to be copied
+       */
+      MapCell(const MapCell& mc);
 
-    //cell index in the grid map
-    unsigned int cx, cy;
+      unsigned int cx, cy; ///< @brief Cell index in the grid map
 
-    //distance to planner's path
-    double path_dist;
+      double path_dist; ///< @brief Distance to planner's path
 
-    //distance to goal
-    double goal_dist;
+      double goal_dist; ///< @brief Distance to local goal
 
-    //grown obstacles
-    double occ_dist;
+      double occ_dist; ///< @brief Distance to obstacles
 
-    //occupancy state (-1 = free, 0 = unknown, 1 = occupied)
-    int occ_state;
+      int occ_state; ///< @brief Occupancy state (-1 = free, 0 = unknown, 1 = occupied)
 
-    //marks for computing path/goal distances
-    bool path_mark, goal_mark;
+      bool path_mark, goal_mark; ///< @brief Marks fir computing path/goal distances
 
-    //mark for cells within the robot footprint
-    bool within_robot;
+      bool within_robot; ///< @brief Mark for cells within the robot footprint
+  };
 };
 
 #endif

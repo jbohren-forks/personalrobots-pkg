@@ -31,63 +31,120 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#ifndef MAP_GRID_H_
-#define MAP_GRID_H_
+#ifndef TRAJECTORY_ROLLOUT_MAP_GRID_H_
+#define TRAJECTORY_ROLLOUT_MAP_GRID_H_
 
 #include <vector>
 #include <iostream>
-#include "assert.h"
 #include <trajectory_rollout/trajectory_inc.h>
 #include <trajectory_rollout/ScoreMap2D.h>
 
 #include <trajectory_rollout/map_cell.h>
 
-//A grid of MapCells
-class MapGrid{
-  public:
-    MapGrid(unsigned int size_x, unsigned int size_y);
+namespace trajectory_rollout{
+  /**
+   * @class MapGrid
+   * @brief A grid of MapCell cells that is used to propagate path and goal distances for the trajectory controller.
+   */
+  class MapGrid{
+    public:
+      /**
+       * @brief  Creates a map of size_x by size_y
+       * @param size_x The width of the map 
+       * @param size_y The height of the map 
+       */
+      MapGrid(unsigned int size_x, unsigned int size_y);
 
-    MapGrid(unsigned int size_x, unsigned int size_y, double scale, double x, double y);
+      /**
+       * @brief  Creates a map of size_x by size_y with the desired scale and origin
+       * @param size_x The width of the map 
+       * @param size_y The height of the map 
+       * @param scale The resolution of each MapCell
+       * @param x The x coordinate of the origin of the map
+       * @param y The y coordinate of the origin of the map
+       */
+      MapGrid(unsigned int size_x, unsigned int size_y, double scale, double x, double y);
 
-    //cells will be accessed by (col, row)
-    inline MapCell& operator() (unsigned int x, unsigned int y){
-      return map_[size_x_ * y + x];
-    }
+      /**
+       * @brief  Returns a map cell accessed by (col, row)
+       * @param x The x coordinate of the cell 
+       * @param y The y coordinate of the cell 
+       * @return A reference to the desired cell
+       */
+      inline MapCell& operator() (unsigned int x, unsigned int y){
+        return map_[size_x_ * y + x];
+      }
 
-    inline MapCell operator() (unsigned int x, unsigned int y) const {
-      return map_[size_x_ * y + x];
-    }
+      /**
+       * @brief  Returns a map cell accessed by (col, row)
+       * @param x The x coordinate of the cell 
+       * @param y The y coordinate of the cell 
+       * @return A copy of the desired cell
+       */
+      inline MapCell operator() (unsigned int x, unsigned int y) const {
+        return map_[size_x_ * y + x];
+      }
 
-    ~MapGrid(){}
+      /**
+       * @brief  Destructor for a MapGrid
+       */
+      ~MapGrid(){}
 
-    MapGrid(const MapGrid& mg);
-    MapGrid& operator= (const MapGrid& mg);
-    
-    //allow easy updating from message representations
-    void update(trajectory_rollout::ScoreMap2D& new_map);
+      /**
+       * @brief  Copy constructor for a MapGrid
+       * @param mg The MapGrid to copy 
+       */
+      MapGrid(const MapGrid& mg);
 
-    //reset path distance fields for all cells
-    void resetPathDist();
+      /**
+       * @brief  Assignment operator for a MapGrid
+       * @param mg The MapGrid to assign from 
+       */
+      MapGrid& operator= (const MapGrid& mg);
 
-    //check if we need to resize
-    void sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y);
+      //allow easy updating from message representations
+      void update(trajectory_rollout::ScoreMap2D& new_map);
 
-    // Utility to share initialization code across constructors
-    void commonInit();
+      /**
+       * @brief reset path distance fields for all cells
+       */
+      void resetPathDist();
 
-    size_t getIndex(int x, int y);
+      /**
+       * @brief  check if we need to resize
+       * @param size_x The desired width
+       * @param size_y The desired height
+       * @param o_x the desired x coordinate of the origin
+       * @param o_y the desired y coordinate of the origin
+       */
+      void sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y);
 
-    //allow easy creation of messages
-    trajectory_rollout::ScoreMap2D genMsg();
+      /**
+       * @brief Utility to share initialization code across constructors
+       */
+      void commonInit();
 
-    unsigned int size_x_, size_y_;
-    std::vector<MapCell> map_;
+      /**
+       * @brief  Returns a 1D index into the MapCell array for a 2D index
+       * @param x The desired x coordinate
+       * @param y The desired y coordinate
+       * @return The associated 1D index 
+       */
+      size_t getIndex(int x, int y);
 
-    //grid scale in meters/cell
-    double scale;
+      /**
+       * @brief  Allow easy creation of messages
+       * @return A ScoreMap2D corresponding to the MapGrid
+       */
+      trajectory_rollout::ScoreMap2D genMsg();
 
-    //lower left corner of grid in world space
-    double origin_x, origin_y;
+      unsigned int size_x_, size_y_; ///< @brief The dimensions of the grid
+      std::vector<MapCell> map_; ///< @brief Storage for the MapCells
+
+      double scale; ///< @brief grid scale in meters/cell
+
+      double origin_x, origin_y; ///< @brief lower left corner of grid in world space
+  };
 };
 
 #endif

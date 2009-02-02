@@ -57,6 +57,7 @@ namespace trajectory_rollout{
     : map_(ma.getWidth(), ma.getHeight()), ma_(ma), 
     world_model_(world_model), footprint_spec_(footprint_spec),
     inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius),
+    goal_x_(0), goal_y_(0),
     sim_time_(sim_time), sim_granularity_(sim_granularity), samples_per_dim_(samples_per_dim),
     pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), occdist_scale_(occdist_scale),
     acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta),
