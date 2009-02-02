@@ -1,0 +1,12 @@
+<package>
+<description>Database containing info about state of objects in the world</description>
+<author>Bhaskara Marthi</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<depend package="roscpp" />
+<depend package="rosconsole" />
+<depend package="ros_exception" />
+<export>
+<cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
+</export>
+</package>
