@@ -1564,7 +1564,7 @@ Index: server/physics/Joint.cc
    Param::Begin(&this->parameters);
    this->erpP = new ParamT<double>("erp",0.4,0);
    this->cfmP = new ParamT<double>("cfm",10e-3,0);
-@@ -50,6 +55,13 @@
+@@ -50,7 +55,15 @@
    this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0), 0);
    this->provideFeedbackP = new ParamT<bool>("provideFeedback", false, 0);
    this->fudgeFactorP = new ParamT<double>( "fudgeFactor", 1.0, 0 );
@@ -1576,9 +1576,11 @@ Index: server/physics/Joint.cc
 +  this->mimicKdP = new ParamT<double>("mimicKd", 0.0, 0);
 +  this->mimicFMaxP = new ParamT<double>("mimicFMax", 1000.0, 0);
    Param::End();
++
  }
  
-@@ -67,6 +79,12 @@
+ 
+@@ -67,6 +80,12 @@
    delete this->anchorOffsetP;
    delete this->provideFeedbackP;
    delete this->fudgeFactorP;
@@ -1591,7 +1593,7 @@ Index: server/physics/Joint.cc
  }
  
  
-@@ -92,6 +110,12 @@
+@@ -92,6 +111,12 @@
    this->cfmP->Load(node);
    this->provideFeedbackP->Load(node);
    this->fudgeFactorP->Load(node);
@@ -1604,7 +1606,7 @@ Index: server/physics/Joint.cc
  
    Body *body1 = this->model->GetBody( **(this->body1NameP));
    Body *body2 = this->model->GetBody(**(this->body2NameP));
-@@ -116,23 +140,26 @@
+@@ -116,23 +141,26 @@
    this->Attach(body1,body2);
  
    /// Add a renderable for the joint
@@ -1644,7 +1646,7 @@ Index: server/physics/Joint.cc
  
    if (**this->provideFeedbackP)
    {
-@@ -147,6 +174,29 @@
+@@ -147,6 +175,29 @@
    {
      this->SetAnchor(anchorVec);
    }
@@ -1674,7 +1676,7 @@ Index: server/physics/Joint.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -184,13 +234,45 @@
+@@ -184,13 +235,56 @@
  /// Update the joint
  void Joint::Update()
  {
@@ -1695,6 +1697,17 @@ Index: server/physics/Joint.cc
 +    dynamic_cast<HingeJoint*>(this)->SetParam(dParamVel, cmd);
 +    last_error = current_error;
 +    last_time = current_time;
++    // std::cout <<   " joint name " << this->nameP->GetValue()
++    //           <<" current_error " << this->current_error
++    //           <<   " last_error " << this->last_error
++    //           <<          " cmd " << cmd
++    //           << " mimic offset " << this->mimicOffset
++    //           << " mimic multip " << this->mimicMult
++    //           << " mimic     kp " << this->mimicKp
++    //           <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
++    //           <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
++    //           <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
++    //           << std::endl;
 +  }
 +
 +  // if (this->type                  == Joint::HINGE )
@@ -1704,9 +1717,9 @@ Index: server/physics/Joint.cc
 +  //             << " mimic offset " << this->mimicOffset
 +  //             << " mimic multip " << this->mimicMult
 +  //             << " mimic     kp " << this->mimicKp
-+  //             <<     "    fmax  " << (dynamic_cast<HingeJoint*>this)->GetParam(dParamFMax)
-+  //             <<     "     vel  " << (dynamic_cast<HingeJoint*>this)->GetParam(dParamVel)
-+  //             <<     "     ang  " << (dynamic_cast<HingeJoint*>this)->GetAngle()
++  //             <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
++  //             <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
++  //             <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
 +  //             << std::endl;
 +  // }
 +
@@ -1723,7 +1736,7 @@ Index: server/physics/Joint.cc
  
    Vector3 start;
    if (this->body1)
-@@ -206,6 +288,7 @@
+@@ -206,6 +300,7 @@
      this->line2->SetPoint(0, start);
      this->line2->Update();
    }
@@ -2137,7 +2150,7 @@ Index: server/sensors/contact/ContactSensor.hh
  #include "Sensor.hh"
  #include "Body.hh"
  
-+#define GAZEBO_MAX_OPAQUE_DATA 1024*1024*8
++#define GAZEBO_MAX_CONTACT_FB_DATA 10
 +
  namespace gazebo
  {
@@ -2168,7 +2181,7 @@ Index: server/sensors/contact/ContactSensor.hh
      private: unsigned int contactCount;
 +    private: std::vector<std::string> contactNames;
 +    /// \brief a place for storing joint feedbacks, including contact joints
-+    private:  dJointFeedback contactFeedbacks[GAZEBO_MAX_OPAQUE_DATA];
++    private:  dJointFeedback contactFeedbacks[GAZEBO_MAX_CONTACT_FB_DATA];
 +
    };
    /// \}
@@ -2245,7 +2258,7 @@ Index: server/sensors/contact/ContactSensor.cc
    {
      if ( **(*iter) == g1->GetName() || **(*iter) == g2->GetName() )
      {
-+      if (i < GAZEBO_MAX_OPAQUE_DATA)
++      if (i < GAZEBO_MAX_CONTACT_FB_DATA)
 +      {
 +        dJointSetFeedback(g1->cID, this->contactFeedbacks+i);
 +
