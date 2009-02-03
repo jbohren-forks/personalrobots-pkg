@@ -80,7 +80,7 @@ bool ArmPositionController::initXml(mechanism::RobotState * robot, TiXmlElement 
 void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values, const std::vector<std::string> & j_names)
 {
   assert(j_values.size() == j_names.size());
-  for(uint i=0;i<j_values.size();++i)
+  for(unsigned int i=0;i<j_values.size();++i)
   {
     const std::string & name = j_names[i];
     const int id = getJointControllerPosByName(name);
@@ -97,7 +97,7 @@ void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values, 
 void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values)
 {
   assert(j_values.size() == joint_position_controllers_.size());
-  for(uint i=0;i<j_values.size();++i)
+  for(unsigned int i=0;i<j_values.size();++i)
   {
       goals_[i] = j_values[i];
       error_margins_[i] = -1;
@@ -125,10 +125,10 @@ void ArmPositionController::setJointPosCmd(const pr2_mechanism_controllers::Join
 {
   assert(cmd.get_names_size()==cmd.get_positions_size());
 
-  for(uint i=0;i<error_margins_.size();++i)
+  for(unsigned int i=0;i<error_margins_.size();++i)
     error_margins_[i]=-1;
 
-  for(uint i=0;i<cmd.get_names_size();++i)
+  for(unsigned int i=0;i<cmd.get_names_size();++i)
   {
     const std::string & name = cmd.names[i];
     const int id = getJointControllerPosByName(name);

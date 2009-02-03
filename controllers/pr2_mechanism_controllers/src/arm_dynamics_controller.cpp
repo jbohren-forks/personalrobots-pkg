@@ -110,7 +110,7 @@ bool ArmDynamicsController::initXml(mechanism::RobotState * robot, TiXmlElement 
 void ArmDynamicsController::setJointCmd(const std::vector<double> &j_values, const std::vector<double> &j_values_dot,  const std::vector<double> &j_values_dot_dot, const std::vector<std::string> & j_names)
 {
   assert(j_values.size() == j_names.size());
-  for(uint i = 0; i < j_values.size(); ++i)
+  for(unsigned int i = 0; i < j_values.size(); ++i)
   {
     const std::string & name = j_names[i];
     const int id = getJointControllerByName(name);
