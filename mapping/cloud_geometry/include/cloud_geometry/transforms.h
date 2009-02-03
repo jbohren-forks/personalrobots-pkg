@@ -58,6 +58,34 @@ namespace cloud_geometry
     void getPlaneToPlaneTransformation (std::vector<double> plane_a, std::vector<double> plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Transform a 3D point using a given 4x4 rigid transformation
+      * \param point_in the input point
+      * \param point_out the resultant transformed point
+      * \param transform the 4x4 rigid transformation
+      */
+    inline void
+      transformPoint (std_msgs::Point32 *point_in, std_msgs::Point32 &point_out, Eigen::Matrix4d transformation)
+    {
+      point_out.x = transformation (0, 0) * point_in->x + transformation (0, 1) * point_in->y + transformation (0, 2) * point_in->z + transformation (0, 3);
+      point_out.y = transformation (1, 0) * point_in->x + transformation (1, 1) * point_in->y + transformation (1, 2) * point_in->z + transformation (1, 3);
+      point_out.z = transformation (2, 0) * point_in->x + transformation (2, 1) * point_in->y + transformation (2, 2) * point_in->z + transformation (2, 3);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Transform a set of 3D points using a given 4x4 rigid transformation
+      * \param points_in the input points
+      * \param points_out the resultant transformed points
+      * \param transform the 4x4 rigid transformation
+      */
+    inline void
+      transformPoints (std::vector<std_msgs::Point32> *points_in, std::vector<std_msgs::Point32> &points_out, Eigen::Matrix4d transformation)
+    {
+      points_out.resize (points_in->size ());
+      for (unsigned i = 0; i < points_in->size (); i++)
+        transformPoint (&points_in->at (i), points_out[i], transformation);
+    }
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Obtain the inverse of a 4x4 rigid transformation matrix

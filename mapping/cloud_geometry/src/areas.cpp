@@ -340,18 +340,18 @@ namespace cloud_geometry
       * \param polygon a polygon
       */
     bool
-      isPointIn2DPolygon (std_msgs::Point32 point, std_msgs::Polygon3D polygon)
+      isPointIn2DPolygon (std_msgs::Point32 point, std_msgs::Polygon3D *polygon)
     {
       bool in_poly = false;
       double x1, x2, y1, y2;
 
-      int nr_poly_points = polygon.points.size ();
-      double xold = polygon.points[nr_poly_points - 1].x;
-      double yold = polygon.points[nr_poly_points - 1].y;
+      int nr_poly_points = polygon->points.size ();
+      double xold = polygon->points[nr_poly_points - 1].x;
+      double yold = polygon->points[nr_poly_points - 1].y;
       for (int i = 0; i < nr_poly_points; i++)
       {
-        double xnew = polygon.points[i].x;
-        double ynew = polygon.points[i].y;
+        double xnew = polygon->points[i].x;
+        double ynew = polygon->points[i].y;
         if (xnew > xold)
         {
           x1 = xold;
