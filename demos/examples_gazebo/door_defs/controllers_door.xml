@@ -7,7 +7,7 @@
   </controller>
   <controller name="handle_controller" topic="handle_controller" type="JointPositionControllerNode">
     <joint name="handle_joint" >
-      <pid p="1.0" d="0.0" i="0.0" iClamp="0" />
+      <pid p="10.0" d="0.0" i="0.0" iClamp="0" />
     </joint>
   </controller>
 </controllers>

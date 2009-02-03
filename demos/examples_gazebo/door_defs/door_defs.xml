@@ -24,6 +24,16 @@
            safety_length_min="0.1" safety_length_max="0.1"
            k_position="100.0" k_velocity="10.0" />
     <joint_properties damping="100" friction="0.0" />
+
+    <map name="door_latch" flag="gazebo">
+      <elem key="latchJoint" value="handle_joint" />
+      <elem key="latchAngle" value="-1.57" />
+      <elem key="doorClosedAngle" value="0.0" />
+      <elem key="latchKp" value="200.0" />
+      <elem key="latchKd" value="0.0" />
+      <elem key="latchFMax" value="1000.0" />
+    </map>
+
   </joint>
   <joint name="handle_joint" type="revolute" >
     <axis xyz="1 0 0" />
@@ -54,7 +64,7 @@
     <visual>
       <origin xyz="0 0 0.001" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Grey</elem>
+        <elem key="material" value="Gazebo/Grey" />
       </map>
       <geometry name="floor_visual_geom">
         <mesh scale="4 4 0.002" />
@@ -88,7 +98,7 @@
     <visual>
       <origin xyz="0 5 1" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/GrassFloor</elem>
+        <elem key="material" value="Gazebo/GrassFloor" />
       </map>
       <geometry name="wall1_visual_geom">
         <mesh scale="0.2 10 2" />
@@ -101,7 +111,7 @@
       </geometry>
     </collision>
     <map name="door_gravity" flag="gazebo">
-      <elem key="selfCollide">true</elem>
+      <elem key="selfCollide" value="true" />
     </map>
   </link>
 
@@ -119,7 +129,7 @@
     <visual>
       <origin xyz="0 -5 1" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/GrassFloor</elem>
+        <elem key="material" value="Gazebo/GrassFloor" />
       </map>
       <geometry name="wall2_visual_geom">
         <mesh scale="0.2 10 2" />
@@ -132,7 +142,7 @@
       </geometry>
     </collision>
     <map name="door_gravity" flag="gazebo">
-      <elem key="selfCollide">true</elem>
+      <elem key="selfCollide" value="true" />
     </map>
   </link>
   
@@ -150,7 +160,7 @@
     <visual >
       <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/White</elem>
+        <elem key="material" value="Gazebo/White" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.1 1.0 2.0" />
@@ -163,8 +173,8 @@
       </geometry>
     </collision>
     <map name="door_gravity" flag="gazebo">
-      <elem key="turnGravityOff">true</elem>
-      <elem key="selfCollide">true</elem>
+      <elem key="turnGravityOff" value="true" />
+      <elem key="selfCollide" value="true" />
     </map>
   </link>
 
@@ -182,7 +192,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.1" rpy="${0*M_PI/2.0} 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Black</elem>
+        <elem key="material" value="Gazebo/Black" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.04 0.04 0.2" />
@@ -195,10 +205,10 @@
       </geometry>
     </collision>
     <map name="handle_gravity" flag="gazebo">
-      <elem key="turnGravityOff">true</elem>
+      <elem key="turnGravityOff" value="true" />
     </map>
     <map name="door_gravity" flag="gazebo">
-      <elem key="selfCollide">true</elem>
+      <elem key="selfCollide" value="true" />
     </map>
   </link>
 
