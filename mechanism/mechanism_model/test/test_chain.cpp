@@ -126,7 +126,7 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
   setJoint(state.get(), 1, M_PI/4);
 
   KDL::JntArray jnts(model.joints_.size());
-  chain.positionsToKDL(state->joint_states_, jnts);
+  chain.getPositions(state->joint_states_, jnts);
 
 
   // FK with mechanism
