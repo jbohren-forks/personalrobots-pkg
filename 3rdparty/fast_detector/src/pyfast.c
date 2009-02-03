@@ -17,8 +17,6 @@ static inline int corner_score(const byte*  imp, const int *pointer_dir, int bar
 	int c_b = *imp - barrier;
 	int sp=0, sn = 0;
 
-	int i=0;
-
 #if 0
 	for(i=0; i<16; i++)
 	{
@@ -70,14 +68,6 @@ PyObject *fast(PyObject *self, PyObject *args)
     int numcorners = 0, num_nonmax = 0;
     xyr *corners = fast_corner_detect_9(imdata, xsize, ysize, barrier, &numcorners);
 
-#if 0
-    xyr *nm = fast_nonmax(imdata, xsize, ysize, corners, numcorners, 3, &num_nonmax);
-#else
-    num_nonmax = numcorners;
-    xyr *nm = corners;
-    corners = NULL;
-#endif
-
     int	pixel[16];
     pixel[0] = 0 + 3 * xsize;		
     pixel[1] = 1 + 3 * xsize;		
@@ -98,8 +88,8 @@ PyObject *fast(PyObject *self, PyObject *args)
 
     PyObject *r = PyList_New(0);
     int i;
-    for (i = 0; i < num_nonmax; i++) {
-      int x = nm[i].x, y = nm[i].y;
+    for (i = 0; i < numcorners; i++) {
+      int x = corners[i].x, y = corners[i].y;
       int s = corner_score(imdata + x + y * xsize, pixel, barrier);
       if (s > threshold) {
         PyObject *t = PyTuple_New(3);
@@ -107,12 +97,10 @@ PyObject *fast(PyObject *self, PyObject *args)
         PyTuple_SetItem(t, 1, PyInt_FromLong(y));
         PyTuple_SetItem(t, 2, PyInt_FromLong(s));
         PyList_Append(r, t);
+        Py_DECREF(t);
       }
     }
-    if (corners)
-        free(corners);
-    if (nm)
-        free(nm);
+    free(corners);
 
     return r;
 }
@@ -166,7 +154,6 @@ PyObject *nonmax(PyObject *self, PyObject *args)
   for (i = 0; i < sz; i++) {
     if (!suppress[i]) {
       PyObject *t = PyList_GET_ITEM(ppts, i);
-      Py_INCREF(t);
       PyList_Append(r, t);
     }
   }
