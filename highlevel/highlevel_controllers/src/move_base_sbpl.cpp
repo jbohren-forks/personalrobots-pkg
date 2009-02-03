@@ -157,28 +157,14 @@ namespace ros {
 	string environmentType;
 	local_param("environmentType", environmentType, string("2D"));
 	
-	boost::shared_ptr<mpglue::Costmap> mcm(mpglue::createCostmap(&getCostMap()));
+	boost::shared_ptr<mpglue::CostmapAccessor>
+	  mcm(mpglue::createCostmapAccessor(&getCostMap()));
 	boost::shared_ptr<mpglue::IndexTransform> mit(mpglue::createIndexTransform(&getCostMap()));
 	
-	if ("2D" == environmentType) {
-	  static int const obst_cost_thresh(CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-	  env_.reset(mpglue::create2DEnvironment(mcm, mit, obst_cost_thresh));
-	}
+	if ("2D" == environmentType)
+	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit));
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
-	  string obst_cost_thresh_str;
-	  local_param(prefix + "obst_cost_thresh", obst_cost_thresh_str, string("lethal"));
-	  int obst_cost_thresh(0);
-	  if ("lethal" == obst_cost_thresh_str)
-	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
-	  else if ("inscribed" == obst_cost_thresh_str)
-	    obst_cost_thresh = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
-	  else {
-	    ROS_ERROR("invalid env3d/obst_cost_thresh \"%s\"\n"
-		      "  valid options: lethal, inscribed, or circumscribed",
-		      obst_cost_thresh_str.c_str());
-	    throw int(6);
-	  }
 	  //// ignored by SBPL (at least in r9900).
 	  // double goaltol_x, goaltol_y, goaltol_theta;
 	  // local_param(prefix + "goaltol_x", goaltol_x, 0.3);
@@ -188,9 +174,9 @@ namespace ros {
 	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
-	  env_.reset(mpglue::create3DKINEnvironment(mcm, mit, obst_cost_thresh,
-						    getFootprint(), nominalvel_mpersecs,
-						    timetoturn45degsinplace_secs));
+	  env_.reset(mpglue::SBPLEnvironment::create3DKIN(mcm, mit,
+							  getFootprint(), nominalvel_mpersecs,
+							  timetoturn45degsinplace_secs));
 	}
 	else {
 	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
