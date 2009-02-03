@@ -113,7 +113,7 @@ class DoorHandleDetector : public ros::Node
       param ("~search_k_closest", k_, 6);                               // 6 k-neighbors by default
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
-      param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees
+      param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees, wrt the Z-axis
       eps_angle_ = (eps_angle_ * M_PI / 180.0);                         // convert to radians
 
       param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
@@ -359,44 +359,44 @@ class DoorHandleDetector : public ros::Node
       double best_goodness_factor = 0;
       int best_cluster = -1;
       for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        if (goodness_factor[cc] > best_goodness_factor)
-        {
-          best_goodness_factor = goodness_factor[cc];
-          best_cluster = cc;
-        }
-      }
+	{
+	  if (goodness_factor[cc] > best_goodness_factor)
+	    {
+	      best_goodness_factor = goodness_factor[cc];
+	      best_cluster = cc;
+	    }
+	}
       for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        if (cc != best_cluster)
-          pmap_.polygons[cc].points.resize(0);
-      }
+	{
+	  if (cc != best_cluster)
+	    pmap_.polygons[cc].points.resize(0);
+	}
       if (best_cluster == -1)
-      {
-        ROS_ERROR("did not find a door");
-        return (false);
-      }
+	{
+	  ROS_ERROR("did not find a door");
+	  return false;
+	}
 
       // Find the handle by performing a segmentation in intensity space in the original cloud
       findDoorHandle (&cloud_in_, &indices_in_bounds, &coeff, &pmap_.polygons[best_cluster], handle_indices, handle_center);
       ROS_DEBUG ("Number of points selected: %d.", handle_indices.size ());
       
-      if (publish_debug_){
-        double r, g, b, rgb;
-        r = g = b = 1.0;
-        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-        rgb = *(float*)(&res);
-
-        // Mark all the points inside
-        for (unsigned int k = 0; k < handle_indices.size (); k++)
-        {
-          cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-          cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-          cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-          cloud_annotated_.chan[0].vals[nr_p] = rgb;
-          nr_p++;
-        }
-      }
+      if (publish_debug_)
+	{
+	  double r, g, b, rgb;
+	  r = g = b = 1.0;
+	  int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+	  rgb = *(float*)(&res);
+	  
+	  // Mark all the points inside
+	  for (unsigned int k = 0; k < handle_indices.size (); k++){
+	    cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
+	    cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
+	    cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
+	    cloud_annotated_.chan[0].vals[nr_p] = rgb;
+	    nr_p++;
+	  }
+	}
   
       resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
       resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
@@ -431,22 +431,11 @@ class DoorHandleDetector : public ros::Node
     {
       cout << "size cluster for handle detection = " << poly->points.size() << endl;
 
-      vector<std_msgs::Point32> handle_visualize(indices->size());
-      for (unsigned int i = 0; i < indices->size (); i++)
-      {
-        handle_visualize[i].x = points->pts.at(indices->at (i)).x;
-        handle_visualize[i].y = points->pts.at(indices->at (i)).y;
-        handle_visualize[i].z = points->pts.at(indices->at (i)).z;
-      }
-      std_msgs::PointCloud  handle_cloud; 
-      handle_cloud.header.frame_id = "base_link";
-      handle_cloud.pts  = handle_visualize;
-      publish("handle_visualization", handle_cloud);
-
-
       handle_indices.resize (indices->size ());
       int nr_p = 0;
       Point32 pt;
+      vector<std_msgs::Point32> handle_visualize;
+      vector<float> colors;
       for (unsigned int i = 0; i < indices->size (); i++)
       {
         // Select all the points in the given bounds which are between the given handle min->max height
@@ -464,20 +453,51 @@ class DoorHandleDetector : public ros::Node
           pt.y = points->pts.at (indices->at (i)).y - distance_to_plane * coeff->at (1);
           pt.z = points->pts.at (indices->at (i)).z - distance_to_plane * coeff->at (2);
 
-  
-          if (fabs (distance_to_plane) < handle_distance_door_max_threshold_)
-          {
-            if (fabs (distance_to_plane) > handle_distance_door_min_threshold_)
-            {
-              if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly))
-              {
-                handle_indices[nr_p] = indices->at (i);
-                nr_p++;
-              }
-            }
-          }
-        } 
+	  std_msgs::Point32 pnt;
+	  pnt.x = points->pts.at(indices->at (i)).x;
+	  pnt.y = points->pts.at(indices->at (i)).y;
+	  pnt.z = points->pts.at(indices->at (i)).z;
+	  handle_visualize.push_back(pnt);
+	  
+	  if (fabs (distance_to_plane) < handle_distance_door_max_threshold_ && fabs (distance_to_plane) > handle_distance_door_min_threshold_)
+	    {
+	      double r, g, b, rgb;
+	      r = 0;
+	      g = 1;
+	      b = 0;
+	      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+	      rgb = *(float*)(&res);
+	      colors.push_back(rgb);
+	      if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly))
+		{
+		  handle_indices[nr_p] = indices->at (i);
+		  nr_p++;
+		}
+	    }
+	  else
+	    {
+	      double r, g, b, rgb;
+	      r = 1;
+	      g = 0;
+	      b = 0;
+	      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+	      rgb = *(float*)(&res);
+	      colors.push_back(rgb);
+	    }
+	}
       }
+      cout << "added " << handle_visualize.size() << " points to visualize" << endl;
+      std_msgs::ChannelFloat32 channel;
+      channel.name = "rgb";
+      channel.vals = colors;
+      std_msgs::PointCloud  handle_cloud; 
+      handle_cloud.header.stamp = ros::Time::now();
+      handle_cloud.header.frame_id = "base_link";
+      handle_cloud.pts  = handle_visualize;
+      handle_cloud.chan.push_back(channel);
+
+      publish("handle_visualization", handle_cloud);
+
       handle_indices.resize (nr_p);
       cout << "found " << nr_p << " point candidates for door handle" << endl;
 
