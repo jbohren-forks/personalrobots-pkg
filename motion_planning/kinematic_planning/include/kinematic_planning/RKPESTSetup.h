@@ -66,16 +66,16 @@ namespace kinematic_planning
 	{
 	    preSetup(model, options);
 	    
-	    ompl::EST_t sbl = new ompl::EST(si);
-	    mp              = sbl;	
+	    ompl::EST_t est = new ompl::EST(si);
+	    mp              = est;	
 	    
 	    bool setDim  = false;
 	    bool setProj = false;
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = string_utils::fromString<double>(options["range"]);
-		sbl->setRange(range);
+		double range = parseDouble(options["range"], est->getRange());
+		est->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
@@ -91,7 +91,7 @@ namespace kinematic_planning
 		    projection.push_back(comp);
 		}
 		
-		sbl->setProjectionEvaluator(new ompl::OrthogonalProjectionEvaluator(projection));
+		est->setProjectionEvaluator(new ompl::OrthogonalProjectionEvaluator(projection));
 		
 		ROS_INFO("Projection is set to %s", proj.c_str());
 		setProj = true;	    
@@ -109,7 +109,7 @@ namespace kinematic_planning
 		    cdim.push_back(comp);
 		}
 		
-		sbl->setCellDimensions(cdim);
+		est->setCellDimensions(cdim);
 		setDim = true;
 		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
 	    }

@@ -65,14 +65,14 @@ namespace kinematic_planning
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = string_utils::fromString<double>(options["range"]);
+		double range = parseDouble(options["range"], rrt->getRange());
 		rrt->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
 	    if (options.find("goal_bias") != options.end())
 	    {	
-		double bias = string_utils::fromString<double>(options["goal_bias"]);
+		double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
 		rrt->setGoalBias(bias);
 		ROS_INFO("Goal bias is set to %g", bias);
 	    }

@@ -45,7 +45,7 @@
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 
 #include <ros/console.h>
-#include <string_utils/string_utils.h>
+#include <boost/lexical_cast.hpp>
 #include <cassert>
 
 #include <vector>
@@ -119,6 +119,20 @@ namespace kinematic_planning
 	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
 	ompl::PathSmootherKinematic_t                                           smoother;
 
+    protected:
+	
+	double parseDouble(const std::string &value, double def)
+	{
+	    try
+	    {
+		return boost::lexical_cast<double>(value);
+	    }
+	    catch (...)
+	    {
+		return def;
+	    }
+	}
+	
     };
 
     

@@ -74,7 +74,7 @@ namespace kinematic_planning
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = string_utils::fromString<double>(options["range"]);
+		double range = parseDouble(options["range"], sbl->getRange());
 		sbl->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
