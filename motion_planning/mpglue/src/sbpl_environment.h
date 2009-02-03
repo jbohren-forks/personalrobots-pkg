@@ -74,15 +74,22 @@ namespace mpglue {
   class SBPLEnvironment
   {
   public:
-    ////     struct invalid_pose: public std::runtime_error
-    ////     { invalid_pose(std::string const & method, std_msgs::Pose2DFloat32 const & pose); };
-    
     struct invalid_state: public std::runtime_error
     { invalid_state(std::string const & method, int state); };
     
-    SBPLEnvironment(boost::shared_ptr<Costmap> cm,
+    SBPLEnvironment(boost::shared_ptr<CostmapAccessor const> cm,
 		    boost::shared_ptr<IndexTransform const> it);
     virtual ~SBPLEnvironment();
+    
+    
+    static SBPLEnvironment * create2D(boost::shared_ptr<CostmapAccessor const> cm,
+				      boost::shared_ptr<IndexTransform const> it);
+    
+    static SBPLEnvironment * create3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
+					 boost::shared_ptr<IndexTransform const> it,
+					 footprint_t const & footprint,
+					 double nominalvel_mpersecs,
+					 double timetoturn45degsinplace_secs);
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
@@ -141,33 +148,21 @@ namespace mpglue {
     
     virtual std::string getName() const = 0;
     
-    boost::shared_ptr<Costmap> getCostmap() { return cm_; }
-    boost::shared_ptr<Costmap const> getCostmap() const { return cm_; }
+    boost::shared_ptr<CostmapAccessor const> getCostmap() const { return cm_; }
     boost::shared_ptr<IndexTransform const> getIndexTransform() const { return it_; }
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost) = 0;
     
-    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
+    virtual StateChangeQuery const *
+    createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
     
-    boost::shared_ptr<Costmap> cm_;
+    boost::shared_ptr<CostmapAccessor const> cm_;
     boost::shared_ptr<IndexTransform const> it_;
     
   private:
     std::vector<nav2dcell_t> changedcellsV_;
   };
-  
-  
-  SBPLEnvironment * create2DEnvironment(boost::shared_ptr<Costmap> cm,
-					boost::shared_ptr<IndexTransform const> it,
-					int obst_cost_thresh);
-  
-  SBPLEnvironment * create3DKINEnvironment(boost::shared_ptr<Costmap> cm,
-					   boost::shared_ptr<IndexTransform const> it,
-					   int obst_cost_thresh,
-					   footprint_t const & footprint,
-					   double nominalvel_mpersecs,
-					   double timetoturn45degsinplace_secs);
   
 }
 

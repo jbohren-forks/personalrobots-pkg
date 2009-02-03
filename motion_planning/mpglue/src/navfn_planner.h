@@ -52,7 +52,7 @@ namespace mpglue {
     : public CostmapPlanner
   {
   public:
-    NavFnPlanner(boost::shared_ptr<Costmap const> costmap,
+    NavFnPlanner(boost::shared_ptr<CostmapAccessor const> costmap,
 		 boost::shared_ptr<IndexTransform const> itransform);
     
   protected:

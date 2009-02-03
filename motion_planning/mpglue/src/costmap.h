@@ -46,6 +46,7 @@ namespace costmap_2d {
 }
 
 namespace sfl {
+  class TraversabilityMap;
   class RDTravmap;
   class GridFrame;
 }
@@ -53,15 +54,13 @@ namespace sfl {
 namespace mpglue {
   
   
-  template<typename cost_type,
-	   typename index_type>
-  class GenericCostmap
+  class CostmapAccessor
   {
   public:
-    typedef cost_type cost_t;
-    typedef index_type index_t;
+    typedef int cost_t;
+    typedef ssize_t index_t;
     
-    virtual ~GenericCostmap() {}
+    virtual ~CostmapAccessor() {}
     
     virtual cost_t getWSpaceObstacleCost() const = 0;
     virtual cost_t getCSpaceObstacleCost() const = 0;
@@ -73,35 +72,33 @@ namespace mpglue {
     virtual index_t getYEnd() const = 0;
     
     virtual bool isValidIndex(index_t index_x, index_t index_y) const = 0;
-    virtual bool isWSpaceObstacle(index_t index_x, index_t index_y, bool out_of_bounds_is_obstacle) const = 0;
-    virtual bool isCSpaceObstacle(index_t index_x, index_t index_y, bool out_of_bounds_is_obstacle) const = 0;
-    virtual bool isFreespace(index_t index_x, index_t index_y, bool out_of_bounds_is_freespace) const = 0;
+    virtual bool isWSpaceObstacle(index_t index_x, index_t index_y,
+				  bool out_of_bounds_is_obstacle) const = 0;
+    virtual bool isCSpaceObstacle(index_t index_x, index_t index_y,
+				  bool out_of_bounds_is_obstacle) const = 0;
+    virtual bool isFreespace(index_t index_x, index_t index_y,
+			     bool out_of_bounds_is_freespace) const = 0;
     
     virtual bool getCost(index_t index_x, index_t index_y, cost_t * cost) const = 0;
   };
   
-  //// a typedef makes it harder to forward-declare
-  // typedef GenericCostmap<int, ssize_t> Costmap;
-  class Costmap
-    : public GenericCostmap<int, ssize_t>
-  {
-  };
   
-  
-  template<typename index_type>
-  class GenericIndexTransform
+  class IndexTransform
   {
   public:
-    typedef index_type index_t;
+    typedef ssize_t index_t;
     
-    virtual ~GenericIndexTransform() {}
+    virtual ~IndexTransform() {}
     
-    virtual void globalToIndex(double global_x, double global_y, index_t * index_x, index_t * index_y) const = 0;
-    virtual void indexToGlobal(index_t index_x, index_t index_y, double * global_x, double * global_y) const = 0;
+    virtual void globalToIndex(double global_x, double global_y,
+			       index_t * index_x, index_t * index_y) const = 0;
+    virtual void indexToGlobal(index_t index_x, index_t index_y,
+			       double * global_x, double * global_y) const = 0;
     virtual double getResolution() const = 0;
     
     template<typename other_index_t>
-    void globalToIndex(double global_x, double global_y, other_index_t * index_x, other_index_t * index_y) const {
+    void globalToIndex(double global_x, double global_y,
+		       other_index_t * index_x, other_index_t * index_y) const {
       index_t ix, iy;
       globalToIndex(global_x, global_y, &ix, &iy);
       *index_x = ix;
@@ -109,20 +106,15 @@ namespace mpglue {
     }
   };
   
-  //// a typedef makes it harder to forward-declare
-  // typedef GenericIndexTransform<ssize_t> IndexTransform;
-  class IndexTransform
-    : public GenericIndexTransform<ssize_t>
-  {
-  };
   
   template<typename index_type>
   double interpolateIndexToGlobal(index_type dis_idx, double dis_glob, double idx, double res)
   { return dis_glob + res * (idx - dis_idx); }
   
   
-  Costmap * createCostmap(costmap_2d::ObstacleMapAccessor const * cm);
-  Costmap * createCostmap(sfl::RDTravmap const * rdt);
+  CostmapAccessor * createCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm);
+  CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt);
+  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt);
   
   IndexTransform * createIndexTransform(costmap_2d::ObstacleMapAccessor const * cm);
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);

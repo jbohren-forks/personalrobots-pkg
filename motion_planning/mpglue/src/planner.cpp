@@ -121,7 +121,7 @@ namespace mpglue {
   
   CostmapPlanner::
   CostmapPlanner(CostmapPlannerStats & stats,
-		 boost::shared_ptr<Costmap const> costmap,
+		 boost::shared_ptr<CostmapAccessor const> costmap,
 		 boost::shared_ptr<IndexTransform const> itransform)
     : stats__(stats),
       costmap_(costmap),
@@ -302,7 +302,7 @@ namespace mpglue {
   
   AnytimeCostmapPlanner::
   AnytimeCostmapPlanner(AnytimeCostmapPlannerStats & stats,
-			boost::shared_ptr<Costmap const> costmap,
+			boost::shared_ptr<CostmapAccessor const> costmap,
 			boost::shared_ptr<IndexTransform const> itransform)
     : CostmapPlanner(stats, costmap, itransform),
       stats__(stats)

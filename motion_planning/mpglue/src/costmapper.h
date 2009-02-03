@@ -32,77 +32,62 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "navfn_planner.h"
-#include "costmap.h"
-#include <navfn.h>
+/** \file costmapper.h Uniform handling of various costmap implementations. */
+
+#ifndef MPGLUE_COSTMAPPER_HPP
+#define MPGLUE_COSTMAPPER_HPP
+
+#include <mpglue/costmap.h>
+#include <boost/shared_ptr.hpp>
+#include <set>
+
+namespace sfl {
+  class Mapper2d;
+}
 
 namespace mpglue {
   
-  NavFnPlanner::
-  NavFnPlanner(boost::shared_ptr<CostmapAccessor const> costmap,
-	       boost::shared_ptr<IndexTransform const> itransform)
-    : CostmapPlanner(stats_, costmap, itransform)
-  {
-  }
   
-  
-  /**
-     \todo find a way to handle cost changes
-  */
-  void NavFnPlanner::
-  preCreatePlan() throw(std::exception)
-  {
-    if ( ! planner_) {
-      // NavFn cannot handle negative costmap indices, so cut off at [0][0]
-      int const nx(costmap_->getXEnd());
-      int const ny(costmap_->getYEnd());
-      planner_.reset(new NavFn(nx, ny));
-      COSTTYPE * cm(planner_->costarr);
-      for (int iy(0); iy < ny; ++iy)
-	for (int ix(0); ix < nx; ++ix, ++cm) {
-	  if (costmap_->isCSpaceObstacle(ix, iy, false))
-	    *cm = COST_OBS;
-	  else {
-	    int cost;
-	    if ( ! costmap_->getCost(ix, iy, &cost))
-	      *cm = COST_NEUTRAL;	// default to freespace
-	    else {
-	      *cm = COST_NEUTRAL + COST_FACTOR * cost;
-	      if (*cm >= COST_OBS)
-		*cm = COST_OBS - 1;
-	    }
-	  }
-	}
-    }
+  struct index_pair {
+    typedef ssize_t index_t;
     
-    if (start_changed_) {
-      int foo[2] = { stats_.start_ix, stats_.start_iy };
-      planner_->setStart(foo);
-    }
+    index_pair(index_t _ix, index_t _iy): ix(_ix), iy(_iy) {}
     
-    if (goal_pose_changed_) {
-      int foo[2] = { stats_.goal_ix, stats_.goal_iy };
-      planner_->setGoal(foo);
-    }
-  }
+    bool operator < (index_pair const & rhs) const
+    { return (ix < rhs.ix) || ((ix == rhs.ix) && (iy < rhs.iy)); }
+    
+    index_t ix, iy;
+  };
   
   
-  boost::shared_ptr<waypoint_plan_t> NavFnPlanner::
-  doCreatePlan() throw(std::exception)
+  class Costmapper
   {
-    boost::shared_ptr<waypoint_plan_t> plan;
-    if (planner_->calcNavFnAstar()) {
-      plan.reset(new waypoint_plan_t());
-      convertPlan(*itransform_, planner_->getPathX(), planner_->getPathY(), planner_->getPathLen(),
-		  plan.get(), &stats_.plan_length, &stats_.plan_angle_change, 0);
-    }
-    return plan;
-  }
+  public:
+    typedef ssize_t index_t;
+    typedef std::set<index_pair> collection_t;
+    
+    virtual ~Costmapper() {}
+    
+    virtual boost::shared_ptr<CostmapAccessor const> getAccessor() const = 0;
+    virtual boost::shared_ptr<IndexTransform const> getIndexTransform() const = 0;
+    
+    virtual size_t updateObstacles(/** use null if there are no added obstacles */
+				   collection_t const * added_obstacle_indices,
+				   /** use null if there are no removed obstacles */
+				   collection_t const * removed_obstacle_indices,
+				   /** use null if you are not interested in debug messages */
+				   std::ostream * dbgos) = 0;
+    
+    size_t addObstacles(collection_t const & obstacle_indices, std::ostream * dbgos)
+    { return updateObstacles(&obstacle_indices, 0, dbgos); }
+    
+    size_t removeObstacles(collection_t const & freespace_indices, std::ostream * dbgos)
+    { return updateObstacles(0, &freespace_indices, dbgos); }
+  };
   
   
-//   void NavFnPlanner::
-//   postCreatePlan() throw(std::exception)
-//   {
-//   }
+  boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<sfl::Mapper2d> m2d);
   
 }
+
+#endif // MPGLUE_COSTMAPPER_HPP

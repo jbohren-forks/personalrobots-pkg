@@ -45,7 +45,7 @@
 namespace mpglue {
   
   
-  class Costmap;
+  class CostmapAccessor;
   class IndexTransform;
   
   
@@ -159,7 +159,7 @@ namespace mpglue {
 	polymorphic handling of planning statistics throughout the
 	planner hierarchy. */
     CostmapPlanner(CostmapPlannerStats & stats,
-		   boost::shared_ptr<Costmap const> costmap,
+		   boost::shared_ptr<CostmapAccessor const> costmap,
 		   boost::shared_ptr<IndexTransform const> itransform);
     
     /** Hook for subclasses. Called by createPlan() before calling
@@ -180,7 +180,7 @@ namespace mpglue {
     /** \note Two underscores because implementing subclasses might
 	want to use stats_ for the specific storage they require. */    
     CostmapPlannerStats & stats__;
-    boost::shared_ptr<Costmap const> costmap_;
+    boost::shared_ptr<CostmapAccessor const> costmap_;
     boost::shared_ptr<IndexTransform const> itransform_;
     
     bool start_changed_;
@@ -219,7 +219,7 @@ namespace mpglue {
     
   protected:
     AnytimeCostmapPlanner(AnytimeCostmapPlannerStats & stats,
-			  boost::shared_ptr<Costmap const> costmap,
+			  boost::shared_ptr<CostmapAccessor const> costmap,
 			  boost::shared_ptr<IndexTransform const> itransform);
     
     /** Calls CostmapPlanner::postCreatePlan() and then likewise

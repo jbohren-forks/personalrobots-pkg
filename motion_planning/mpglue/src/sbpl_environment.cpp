@@ -86,7 +86,7 @@ namespace {
     : public SBPLEnvironment
   {
   public:
-    SBPLEnvironment2D(boost::shared_ptr<Costmap> cm,
+    SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
 		      boost::shared_ptr<IndexTransform const> it,
 		      int obsthresh);
     virtual ~SBPLEnvironment2D();
@@ -121,7 +121,7 @@ namespace {
     : public SBPLEnvironment
   {
   public:
-    SBPLEnvironment3DKIN(boost::shared_ptr<Costmap> cm,
+    SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 			 boost::shared_ptr<IndexTransform const> it,
 			 int obst_cost_thresh,
 			 footprint_t const & footprint,
@@ -168,7 +168,7 @@ namespace mpglue {
   
   
   SBPLEnvironment::
-  SBPLEnvironment(boost::shared_ptr<Costmap> cm,
+  SBPLEnvironment(boost::shared_ptr<CostmapAccessor const> cm,
 		  boost::shared_ptr<IndexTransform const> it)
     : cm_(cm),
       it_(it)
@@ -220,22 +220,24 @@ namespace mpglue {
   }
   
   
-  SBPLEnvironment * create2DEnvironment(boost::shared_ptr<Costmap> cm,
-					boost::shared_ptr<IndexTransform const> it,
-					int obst_cost_thresh)
+  SBPLEnvironment * SBPLEnvironment::
+  create2D(boost::shared_ptr<CostmapAccessor const> cm,
+	   boost::shared_ptr<IndexTransform const> it)
   {
+    int const obst_cost_thresh(cm->getCSpaceObstacleCost());
     SBPLEnvironment2D * env(new SBPLEnvironment2D(cm, it, obst_cost_thresh));
     return env;
   }
   
   
-  SBPLEnvironment * create3DKINEnvironment(boost::shared_ptr<Costmap> cm,
-					   boost::shared_ptr<IndexTransform const> it,
-					   int obst_cost_thresh,
-					   footprint_t const & footprint,
-					   double nominalvel_mpersecs,
-					   double timetoturn45degsinplace_secs)
+  SBPLEnvironment * SBPLEnvironment::
+  create3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
+	      boost::shared_ptr<IndexTransform const> it,
+	      footprint_t const & footprint,
+	      double nominalvel_mpersecs,
+	      double timetoturn45degsinplace_secs)
   {
+    int const obst_cost_thresh(cm->getWSpaceObstacleCost());
     SBPLEnvironment3DKIN * env(new SBPLEnvironment3DKIN(cm, it, obst_cost_thresh,
 							footprint, nominalvel_mpersecs,
 							timetoturn45degsinplace_secs));
@@ -247,7 +249,7 @@ namespace mpglue {
 namespace {
   
   SBPLEnvironment2D::
-  SBPLEnvironment2D(boost::shared_ptr<Costmap> cm,
+  SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
 		    boost::shared_ptr<IndexTransform const> it,
 		    int obsthresh)
     : SBPLEnvironment(cm, it),
@@ -258,7 +260,7 @@ namespace {
     // freespace.
     //
     // bad: Most costmaps do not support negative grid indices, so the
-    // generic Costmap::getXBegin() and getYBegin() are ignored
+    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
     // and simply assumed to always return 0 (which they won't if we
     // use growable costmaps).
     env_->InitializeEnv(cm->getXEnd(), // width
@@ -405,7 +407,7 @@ namespace {
   
   
   SBPLEnvironment3DKIN::
-  SBPLEnvironment3DKIN(boost::shared_ptr<Costmap> cm,
+  SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 		       boost::shared_ptr<IndexTransform const> it,
 		       int obst_cost_thresh,
 		       footprint_t const & footprint,
@@ -429,7 +431,7 @@ namespace {
     // freespace.
     //
     // bad: Most costmaps do not support negative grid indices, so the
-    // generic Costmap::getXBegin() and getYBegin() are ignored
+    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
     // and simply assumed to always return 0 (which they won't if we
     // use growable costmaps).
     //

@@ -71,7 +71,7 @@ namespace mpglue {
     SBPLPlannerWrap(boost::shared_ptr<SBPLEnvironment> environment,
 		    boost::shared_ptr<SBPLPlanner> planner);
     
-    // grr, shared_ptr can be used covariantly...
+    // grr, shared_ptr cannot be used covariantly...
     virtual boost::shared_ptr<SBPLPlannerStats> copyMyStats() const
     {
       boost::shared_ptr<SBPLPlannerStats> stats(stats_.copy());
@@ -89,17 +89,17 @@ namespace mpglue {
   };
   
   
-  SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<Costmap> cm,
+  SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<CostmapAccessor> cm,
 				    boost::shared_ptr<IndexTransform const> it,
 				    bool forward_search,
 				    int obst_cost_thresh);
   
-  SBPLPlannerWrap * createADStar2D(boost::shared_ptr<Costmap> cm,
+  SBPLPlannerWrap * createADStar2D(boost::shared_ptr<CostmapAccessor> cm,
 				   boost::shared_ptr<IndexTransform const> it,
 				   bool forward_search,
 				   int obst_cost_thresh);
   
-  SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<Costmap> cm,
+  SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
 				       boost::shared_ptr<IndexTransform const> it,
 				       bool forward_search,
 				       int obst_cost_thresh,
@@ -107,7 +107,7 @@ namespace mpglue {
 				       double nominalvel_mpersecs,
 				       double timetoturn45degsinplace_secs);
   
-  SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<Costmap> cm,
+  SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
 				      boost::shared_ptr<IndexTransform const> it,
 				      bool forward_search,
 				      int obst_cost_thresh,

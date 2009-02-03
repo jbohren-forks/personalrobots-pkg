@@ -12,6 +12,7 @@ rospack (mpglue)
 
 rospack_add_library (mpglue
 		     src/costmap.cpp
+		     src/costmapper.cpp
 		     src/planner.cpp
 		     src/sbpl_planner.cpp
 		     src/navfn_planner.cpp
