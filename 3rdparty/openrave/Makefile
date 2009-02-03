@@ -4,6 +4,7 @@ SVN_DIR = openrave_svn
 # Should really specify a revision
 SVN_REVISION = -r 618
 SVN_URL = https://openrave.svn.sourceforge.net/svnroot/openrave
+SVN_PATCH = fini_patch.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
 .PHONY: openrave

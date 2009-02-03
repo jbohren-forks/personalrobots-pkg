@@ -1,0 +1,12 @@
+Index: plugins/rosrave/roslaser2d.cpp
+===================================================================
+--- plugins/rosrave/roslaser2d.cpp	(revision 618)
++++ plugins/rosrave/roslaser2d.cpp	(working copy)
+@@ -126,7 +126,6 @@
+     ros::Node* pnode = ros::Node::instance();
+ 
+     if( pnode && !pnode->checkMaster() ) {
+-        ros::fini();
+         delete pnode;
+         pnode = NULL;
+     }
