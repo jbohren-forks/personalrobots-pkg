@@ -37,6 +37,7 @@
 
 #include <trajectory_rollout/trajectory_controller_ros.h>
 #include <ros/console.h>
+#include <sys/time.h>
 
 using namespace std;
 using namespace std_msgs;
@@ -110,6 +111,7 @@ namespace trajectory_rollout {
       std::list<std_msgs::Pose2DFloat32>& localPlan,
       const std::vector<costmap_2d::Observation>& observations){
 
+
     localPlan.clear();
 
     tf::Stamped<tf::Pose> drive_cmds;
@@ -135,10 +137,23 @@ namespace trajectory_rollout {
       copiedGlobalPlan.push_back(p);
     }
 
+    /* For timing uncomment
+    struct timeval start, end;
+    double start_t, end_t, t_diff;
+    gettimeofday(&start, NULL);
+    */
     tc_->updatePlan(copiedGlobalPlan);
 
     //compute what trajectory to drive along
     Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations);
+
+    /* For timing uncomment
+    gettimeofday(&end, NULL);
+    start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    t_diff = end_t - start_t;
+    ROS_ERROR("Cycle time: %.9f", t_diff);
+    */
 
     //pass along drive commands
     cmd_vel.vx = drive_cmds.getOrigin().getX();

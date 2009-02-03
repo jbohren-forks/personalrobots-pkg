@@ -268,7 +268,7 @@ namespace trajectory_rollout{
       //if a point on this trajectory has no clear path to goal it is invalid
       if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
         ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
-        traj.cost_ = -1.0;
+        traj.cost_ = -2.0;
         return;
       }
 
@@ -598,6 +598,7 @@ namespace trajectory_rollout{
     swap = best_traj;
     best_traj = comp_traj;
     comp_traj = swap;
+    
 
     strafe_left = false;
     strafe_right = false;
@@ -607,6 +608,10 @@ namespace trajectory_rollout{
     rotating_right = false;
     stuck_left = false;
     stuck_right = false;
+
+    //if the trajectory failed because the footprint hits something, we're still going to back up
+    if(best_traj->cost_ == -1.0)
+      best_traj->cost_ = 1.0;
 
     return *best_traj;
 
