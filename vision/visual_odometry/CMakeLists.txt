@@ -27,4 +27,6 @@ rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initia
 #rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers )
 
 # unit tests
-rospack_add_pyunit(test/directed.py)
+# Please don't uncomment this test until you verify that it completes,
+# rather then hanging indefinitely.
+#rospack_add_pyunit(test/directed.py)
