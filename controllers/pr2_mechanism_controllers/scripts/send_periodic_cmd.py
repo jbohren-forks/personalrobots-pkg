@@ -2,7 +2,7 @@
 
 PKG = "pr2_mechanism_controllers"
 
-import rostools; rostools.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG) 
 
 import sys
 import os
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     cmd = PeriodicCmd()
     controller =    sys.argv[1]
-    cmd.header =    rostools.msg.Header(None, None, None)
+    cmd.header =    roslib.msg.Header(None, None, None)
     cmd.profile =   sys.argv[2] 
     cmd.period =    float (sys.argv[3])
     cmd.amplitude = float (sys.argv[4])

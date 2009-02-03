@@ -39,9 +39,9 @@ PKG = 'test_gazebo_plugin'
 NAME = 'test_pendulum'
 
 import math
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, os.path, threading, time

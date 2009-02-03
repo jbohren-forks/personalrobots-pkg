@@ -5,8 +5,8 @@
 """    Usage: python plot_phsp.py <bag>
 """
 
-import rostools
-rostools.load_manifest('vslam')
+import roslib
+roslib.load_manifest('vslam')
 import rospy
 import sys
 import numpy

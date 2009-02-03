@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import rostools
-rostools.load_manifest('robot_mechanism_controllers')
+import roslib
+roslib.load_manifest('robot_mechanism_controllers')
 
 from robot_mechanism_controllers.lqr_controller import *
 foo=LQRProxy('right_arm_controller')

@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
-import rostools
-rostools.load_manifest('trajectory_rollout')
+import roslib
+roslib.load_manifest('trajectory_rollout')
 
 import sys, time, traceback, logging, rospy, random
 from robot_msgs.msg import Planner2DGoal

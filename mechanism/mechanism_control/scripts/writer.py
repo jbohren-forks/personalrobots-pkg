@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 PKG = 'mechanism_control'
 
-import rostools
-rostools.load_manifest(PKG)
+import roslib
+roslib.load_manifest(PKG)
 
 import sys, traceback, logging, rospy
 from robot_msgs.msg import MechanismState

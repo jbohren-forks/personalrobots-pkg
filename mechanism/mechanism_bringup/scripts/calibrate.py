@@ -34,14 +34,14 @@
 
 # Author: Stuart Glaser
 
-import rostools
+import roslib
 import copy
 import threading
 import sys, os
 from time import sleep
 
 # Loads interface with the robot.
-rostools.load_manifest('mechanism_bringup')
+roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
 from robot_srvs.srv import *

@@ -32,8 +32,8 @@
 #*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #*  POSSIBILITY OF SUCH DAMAGE.
 #***********************************************************
-import rostools
-rostools.load_manifest('executive_python')
+import roslib
+roslib.load_manifest('executive_python')
 import rospy
 from battery_monitor_adapter import *
 from recharge_adapter import *

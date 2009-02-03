@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-import rostools
-rostools.load_manifest('mechanism_control')
+import roslib
+roslib.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism

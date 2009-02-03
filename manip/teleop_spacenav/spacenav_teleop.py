@@ -28,7 +28,7 @@
 
 # Author: Stuart Glaser
 
-import rostools; rostools.load_manifest('teleop_spacenav')
+import roslib; roslib.load_manifest('teleop_spacenav')
 import rospy, sys, math
 from std_msgs.msg import Vector3
 

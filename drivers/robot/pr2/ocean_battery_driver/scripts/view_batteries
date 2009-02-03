@@ -34,8 +34,8 @@
 
 ## A basic node to listen to and display incoming diagnostic messages using wx
 
-import rostools
-rostools.load_manifest('ocean_battery_driver')
+import roslib
+roslib.load_manifest('ocean_battery_driver')
 
 import sys
 import rospy

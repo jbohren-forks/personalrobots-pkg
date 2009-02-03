@@ -1,8 +1,8 @@
 #! /usr/bin/python
 
 import math 
-import rostools
-rostools.load_manifest('2dnav_pr2')
+import roslib
+roslib.load_manifest('2dnav_pr2')
 
 import glob
 import sys, traceback, logging, rospy

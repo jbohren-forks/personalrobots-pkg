@@ -38,14 +38,14 @@
 PKG = 'laser_camera_calibration' # this package name
 NAME = 'lasercamera_gatherer'
 
-import rostools; rostools.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG) 
 
 import sys
 import thread
 from numpy import *
 
 import rospy
-from rostools import rostime
+from roslib import rostime
 from std_msgs.msg import LaserScan
 from robot_msgs.msg import MechanismState
 from checkerboard_detector.msg import ObjectDetection

@@ -38,10 +38,10 @@ PKG = 'test_2dnav_gazebo'
 NAME = 'test_set_goal'
 
 import math
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
-rostools.load_manifest('numpy')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
+roslib.load_manifest('numpy')
 
 
 import sys, unittest

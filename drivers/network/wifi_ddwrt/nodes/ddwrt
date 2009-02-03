@@ -37,7 +37,7 @@
 ## subscribing to the same topic.
 
 PKG = 'wifi_ddwrt'
-import rostools; rostools.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG) 
 
 import sys, time, StringIO, string
 

@@ -34,8 +34,8 @@
 #*  POSSIBILITY OF SUCH DAMAGE.
 #***********************************************************
 
-import rostools
-rostools.load_manifest('executive_python')
+import roslib
+roslib.load_manifest('executive_python')
 import rospy
 import random
 from std_msgs.msg import *

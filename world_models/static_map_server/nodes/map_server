@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-import rostools
-rostools.load_manifest('static_map_server')
+import roslib
+roslib.load_manifest('static_map_server')
 
 import sys, time
 import rospy

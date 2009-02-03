@@ -31,8 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rostools
-rostools.load_manifest('visual_odometry')
+import roslib
+roslib.load_manifest('visual_odometry')
 
 from std_msgs.msg import Position
 from robot_msgs.msg import VisualizationMarker

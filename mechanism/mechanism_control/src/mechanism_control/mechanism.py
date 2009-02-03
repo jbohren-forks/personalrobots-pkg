@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Wrappers around the services provided by MechanismControlNode
 
-import rostools; rostools.load_manifest('mechanism_control')
+import roslib; roslib.load_manifest('mechanism_control')
 
 import sys
 

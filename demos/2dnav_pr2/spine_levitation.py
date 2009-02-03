@@ -1,6 +1,6 @@
 #! /usr/bin/python
-import rostools
-rostools.load_manifest("2dnav_pr2")
+import roslib
+roslib.load_manifest("2dnav_pr2")
 import rospy
 import time
 import math

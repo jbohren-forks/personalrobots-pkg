@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rostools; rostools.load_manifest('2dnav_pr2')
+import roslib; roslib.load_manifest('2dnav_pr2')
 
 import sys, traceback, logging, rospy
 from std_msgs.msg import RobotBase2DOdom

@@ -41,10 +41,10 @@ PKG = 'test_pr2_mechanism_controllers_gazebo'
 NAME = 'test_arm'
 
 import math
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
-rostools.load_manifest('numpy')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
+roslib.load_manifest('numpy')
 
 import sys, unittest
 import os, os.path, threading, time

@@ -32,8 +32,8 @@
 #
 # Author: Stuart Glaser
 
-import rostools, time
-rostools.load_manifest('mechanism_control')
+import roslib, time
+roslib.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism

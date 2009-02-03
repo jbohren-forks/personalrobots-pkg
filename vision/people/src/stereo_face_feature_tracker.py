@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('people')
+import roslib
+roslib.load_manifest('people')
 import rospy
 import rostest
 import face_detection

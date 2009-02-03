@@ -40,7 +40,7 @@
 #include <collision_space/environmentODE.h>
 #include <algorithm>
 #include <robot_msgs/VisualizationMarker.h>
-#include <rostools/Time.h>
+#include <roslib/Time.h>
 #include <tf/transform_broadcaster.h>
 #include <collision_space/util.h>
 #include <random_utils/random_utils.h>

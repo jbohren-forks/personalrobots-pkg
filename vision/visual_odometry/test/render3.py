@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('visual_odometry')
+import roslib
+roslib.load_manifest('visual_odometry')
 import rostest
 import rospy
 

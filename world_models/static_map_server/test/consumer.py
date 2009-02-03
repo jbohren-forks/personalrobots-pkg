@@ -35,8 +35,8 @@
 PKG = 'static_map_server'
 NAME = 'consumer'
 
-import rostools
-rostools.load_manifest(PKG)
+import roslib
+roslib.load_manifest(PKG)
 
 import sys, unittest, time
 

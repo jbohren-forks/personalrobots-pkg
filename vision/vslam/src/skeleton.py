@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('vslam')
+import roslib
+roslib.load_manifest('vslam')
 
 import Image
 from votools import TreeOptimizer3

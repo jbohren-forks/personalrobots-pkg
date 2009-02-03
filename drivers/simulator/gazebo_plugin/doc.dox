@@ -306,7 +306,7 @@ Additional ROS topics and services used by PR2 simulation can be found in packag
      <tr><td> \b finger_tip_R_right_ground_truth      </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on right arm. </td>  </tr>
      <tr><td> \b axis_right/ptz_state                 </td> <td>  axis_cam::PTZActuatorState          </td>  <td> Ros_PTZ.hh              </td> <td> PTZ cameras actuator positions.                            </td>  </tr>
      <tr><td> \b axis_left/ptz_state                  </td> <td>  axis_cam::PTZActuatorState          </td>  <td> Ros_PTZ.hh              </td> <td> PTZ cameras actuator positions.                            </td>  </tr>
-     <tr><td> \b time                                 </td> <td>  rostools::Time                      </td>  <td> Ros_Time.hh             </td> <td> Simulation time.                                           </td>  </tr>
+     <tr><td> \b time                                 </td> <td>  roslib::Time                      </td>  <td> Ros_Time.hh             </td> <td> Simulation time.                                           </td>  </tr>
      </table><br>
  - ROS topics subscribed by the simulator
      <table border="1">
@@ -330,7 +330,7 @@ Additional ROS topics and services used by PR2 simulation can be found in packag
      </table><br>
 
 @section templates How To Construct Your Own ROS Gazebo Plugin
-Here is a sample code for making a very simple plugin in Gazebo that publishes \c rostools::Time message over a ROS topic.
+Here is a sample code for making a very simple plugin in Gazebo that publishes \c roslib::Time message over a ROS topic.
 \li \b my_plugin.h:
 @verbatim
 #ifndef MY_PLUGIN_HH
@@ -340,7 +340,7 @@ Here is a sample code for making a very simple plugin in Gazebo that publishes \
 #include <gazebo/Body.hh>
 #include <gazebo/World.hh>
 #include <ros/node.h>
-#include <rostools/Time.h>
+#include <roslib/Time.h>
 
 namespace gazebo
 {
@@ -370,7 +370,7 @@ namespace gazebo
     private: ros::thread::mutex lock_;
     /// \brief pointer to ROS node
     ros::node *rosnode_;
-    rostools::Time my_message_;
+    roslib::Time my_message_;
 
     /// \brief For loading XML parameters
     private: ParamT<std::string> *my_topic_name_p_;
@@ -440,7 +440,7 @@ namespace gazebo {
   void MyPlugin::InitChild()
   {
     // Perform initializations
-    rosnode_->advertise<rostools::Time>(this->my_topic_name_,10);
+    rosnode_->advertise<roslib::Time>(this->my_topic_name_,10);
   }
 
   ////////////////////////////////////////////////////////////////////////////////

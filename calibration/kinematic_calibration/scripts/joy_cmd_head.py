@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rostools; rostools.load_manifest('kinematic_calibration') 
+import roslib; roslib.load_manifest('kinematic_calibration') 
 import sys
 import rospy
 from std_msgs.msg import PointStamped, Point
@@ -10,7 +10,7 @@ from joy.msg import Joy
 def joy_callback(data, pub):
     print 'Got joystick Comand'
     if data.buttons[7] == 1:
-        pub.publish(PointStamped(rostools.msg.Header(None, None, 'r_gripper_palm_link'), Point(0.17, 0, 0)))
+        pub.publish(PointStamped(roslib.msg.Header(None, None, 'r_gripper_palm_link'), Point(0.17, 0, 0)))
         print 'Sent head Command'
 
 if __name__ == '__main__':

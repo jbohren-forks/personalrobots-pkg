@@ -31,8 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rostools
-rostools.load_manifest('visual_odometry')
+import roslib
+roslib.load_manifest('visual_odometry')
 
 import sys
 import time
@@ -112,7 +112,7 @@ class VO:
       p = VOPose()
       p.inliers = self.vo.inl
       # XXX - remove after camera sets frame_id
-      p.header = rostools.msg.Header(0, stamp, "stereo_link")
+      p.header = roslib.msg.Header(0, stamp, "stereo_link")
       p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
       self.pub_vo.publish(p)
 

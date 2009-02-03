@@ -38,9 +38,9 @@ PKG = 'test_pr2_sensors_gazebo'
 NAME = 'test_camera'
 
 import math
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, os.path, threading, time

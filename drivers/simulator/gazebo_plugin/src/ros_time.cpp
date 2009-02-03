@@ -60,7 +60,7 @@ RosTime::RosTime(Entity *parent)
     }
 
     // for rostime
-    rosnode_->advertise<rostools::Time>("time",10);
+    rosnode_->advertise<roslib::Time>("time",10);
 
 }
 

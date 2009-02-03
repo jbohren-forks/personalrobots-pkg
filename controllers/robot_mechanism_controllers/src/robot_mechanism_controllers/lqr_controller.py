@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rostools; rostools.load_manifest('robot_mechanism_controllers')
+import roslib; roslib.load_manifest('robot_mechanism_controllers')
 
 import rospy, sys
 from robot_srvs.srv import *

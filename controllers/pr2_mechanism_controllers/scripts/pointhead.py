@@ -30,7 +30,7 @@
 
 PKG = "pr2_mechanism_controllers"
 
-import rostools; rostools.load_manifest(PKG)
+import roslib; roslib.load_manifest(PKG)
 
 import sys
 import os
@@ -54,7 +54,7 @@ def point_head_cart_client(x,y,z,frame):
     head_angles = rospy.Publisher('head_controller/frame_track_point', PointStamped)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
-    head_angles.publish(PointStamped(rostools.msg.Header(None, None, frame), Point(x, y, z)))
+    head_angles.publish(PointStamped(rospy.Header(None, None, frame), Point(x, y, z)))
     sleep(1)
 
 

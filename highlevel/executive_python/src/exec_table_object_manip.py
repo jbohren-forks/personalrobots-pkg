@@ -120,8 +120,8 @@
 #
 #15. Goto (1)
 
-import rostools
-rostools.load_manifest('executive_python')
+import roslib
+roslib.load_manifest('executive_python')
 import rospy
 import random
 from robot_msgs.msg import VisualizationMarker
@@ -337,7 +337,7 @@ SubtractObjectFromCollisionMap)
       resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
       self.scan_start_time = t
       if self.first_time:
-        self.recordStaticMap(rostools.rostime.Time().from_seconds(resp.time))
+        self.recordStaticMap(roslib.rostime.Time().from_seconds(resp.time))
         self.first_time = False
 
     #print 'Waiting for slow scan to complete...'

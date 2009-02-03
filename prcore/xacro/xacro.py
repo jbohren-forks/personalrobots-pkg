@@ -42,11 +42,11 @@ class XacroException(Exception): pass
 def isnumber(x):
     return hasattr(x, '__int__')
 
-import rostools; rostools.load_manifest('xacro')
+import roslib; roslib.load_manifest('xacro')
 # Suppresses the output from roslaunch by killing the logger
-import rostools.scriptutil
+import roslib.scriptutil
 def return_none(a=0,b=0): return None
-rostools.scriptutil.configure_logging = return_none
+roslib.scriptutil.configure_logging = return_none
 import roslaunch
 def eval_extension(str):
     return roslaunch.core.resolve_args(str)

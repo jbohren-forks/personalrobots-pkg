@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # Provides quick access to the services exposed by MechanismControlNode
 
-import rostools, time
-rostools.load_manifest('mechanism_control')
+import roslib, time
+roslib.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism

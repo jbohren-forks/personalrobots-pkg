@@ -38,9 +38,9 @@ PKG = 'pr2_gazebo'
 NAME = 'tuck_arms'
 
 import math
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
 
 
 import sys, unittest

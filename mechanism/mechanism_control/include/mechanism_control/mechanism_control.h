@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 #include "ros/node.h"
-#include "rostools/Time.h"
+#include "roslib/Time.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>

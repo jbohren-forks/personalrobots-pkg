@@ -31,8 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rostools
-rostools.load_manifest('ntp_monitor')
+import roslib
+roslib.load_manifest('ntp_monitor')
 
 from robot_msgs.msg import *
 import sys

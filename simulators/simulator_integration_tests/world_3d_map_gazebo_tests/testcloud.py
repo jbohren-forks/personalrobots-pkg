@@ -37,8 +37,8 @@
 PKG = 'simulator_integration_tests'
 NAME = 'testcloud'
 
-import rostools
-rostools.load_manifest(PKG)
+import roslib
+roslib.load_manifest(PKG)
 
 import sys, unittest
 import os, os.path, threading, time

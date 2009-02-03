@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import rostools
-rostools.load_manifest('vslam')
+import roslib
+roslib.load_manifest('vslam')
 import rostest
 import rospy
 

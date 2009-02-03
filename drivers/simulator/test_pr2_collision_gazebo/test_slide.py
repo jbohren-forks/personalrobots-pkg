@@ -36,9 +36,9 @@
 PKG = 'test_pr2_collision_gazebo'
 NAME = 'test_slide'
 
-import rostools
-rostools.load_manifest(PKG)
-rostools.load_manifest('rostest')
+import roslib
+roslib.load_manifest(PKG)
+roslib.load_manifest('rostest')
 
 import unittest, sys, os, math
 import time

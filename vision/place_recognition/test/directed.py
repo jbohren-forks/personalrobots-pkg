@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('place_recognition')
+import roslib
+roslib.load_manifest('place_recognition')
 import rostest
 import pylab, numpy
 import Image

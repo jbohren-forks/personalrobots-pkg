@@ -38,7 +38,7 @@
 PKG = 'executive_trex_pr2' # this package name
 NAME = 'fake_battery_controller'
 
-import rostools; rostools.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG) 
 
 import sys
 import time

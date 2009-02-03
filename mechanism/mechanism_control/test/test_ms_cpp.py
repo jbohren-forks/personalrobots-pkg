@@ -42,13 +42,13 @@ PUBTOPIC = "chatter"
 PUBNODE = 'mechanism_control'
 SUBTOPIC = 'mechanism_state'
 
-import rostools; rostools.load_manifest(PKG)
+import roslib; roslib.load_manifest(PKG)
 
 import sys, time
 import unittest
 
 # ad-hoc import here as we don't want to change the manifest for test dependencies
-rostools.load_manifest('rostest')
+roslib.load_manifest('rostest')
 import rospy, rostest
 from mechanism_control.msg import MechanismState, ActuatorState, JointState
 

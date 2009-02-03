@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('calonder_descriptor')
+import roslib
+roslib.load_manifest('calonder_descriptor')
 import rostest
 
 import sys

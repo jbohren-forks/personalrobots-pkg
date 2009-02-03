@@ -35,7 +35,7 @@
 #include "boost/thread/mutex.hpp"
 #include <std_msgs/Image.h>
 // roscpp - used for broadcasting time over ros
-#include <rostools/Time.h>
+#include <roslib/Time.h>
 
 namespace gazebo
 {
@@ -74,7 +74,7 @@ namespace gazebo
    
     \brief ROS Time Controller
       \li Starts a ROS node if none exists
-      \li broadcast simulator time over rostools::Time.
+      \li broadcast simulator time over roslib::Time.
       \li Example Usage:
           \verbatim
             <model:physical name="robot_model1">
@@ -123,7 +123,7 @@ class RosTime : public Controller
   private: boost::mutex lock;
   /// \brief pointer to ros node
   ros::Node *rosnode_;
-  rostools::Time timeMsg;
+  roslib::Time timeMsg;
 
 };
 

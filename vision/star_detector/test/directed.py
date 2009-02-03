@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('star_detector')
+import roslib
+roslib.load_manifest('star_detector')
 import rostest
 
 import sys
