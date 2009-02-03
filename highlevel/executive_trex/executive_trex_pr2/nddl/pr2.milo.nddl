@@ -333,7 +333,7 @@ Navigator::Active{
 
   // Check end conditions. Note that this formulation should always be resolved in implementation
   // by binding to an existing token. We allow for the fact that an effort to achieve the goal may have timed out,
-  // in which case we will not check the end condition (which would force a replan). Insetad we will simply let it go.
+  // in which case we will not check the end condition (which would force a replan). Instead we will simply let it go.
   // s = baseState[end];
   // distance(s.x, s.y, w.x, w.y) <= XY_ERROR
   bool temp_t;
