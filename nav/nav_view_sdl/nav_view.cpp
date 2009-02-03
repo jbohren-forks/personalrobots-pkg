@@ -222,7 +222,7 @@ void
 quit(int sig)
 {
   SDL_Quit();
-  ros::fini();
+  
   exit(0);
 }
 
@@ -251,7 +251,7 @@ main(int argc, char **argv)
     view.load_full_transient();
   }
   view.main_loop();
-  ros::fini();
+  
   return 0;
 }
 

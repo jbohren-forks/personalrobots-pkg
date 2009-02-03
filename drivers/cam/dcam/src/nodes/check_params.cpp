@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
   CheckParams cp;
 
-  ros::fini();
+  
   return 0;
 }
 

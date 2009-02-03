@@ -280,7 +280,7 @@ int
   ScanShadowsFilter f;
   f.spin ();
 
-  ros::fini ();
+  
 
   return (0);
 }

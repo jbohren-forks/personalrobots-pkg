@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   AudioWriter *aw = new AudioWriter(&n);
   while (n.ok())
     ros::Duration(0, 500000000).sleep();
-  ros::fini();
+  
   delete aw;
   return 0;
 }

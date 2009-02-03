@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     printf("failed to grab a bumblebee image. please make sure that the "
            "bumblebee_bridge node is running and that the xml-rpc standalone "
            "program is running on the windows box.\n");
-  ros::fini();
+  
   return 0;
 }
 

@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 
   phase_space_odometry.spin() ;
 
-  ros::fini() ;
+  
 
   printf("**** Exiting ****\n") ;
 

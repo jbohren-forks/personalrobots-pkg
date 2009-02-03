@@ -253,7 +253,7 @@ int main(int argc, char **argv)
    printf("\n");
  }
 
-  ros::fini();
+  
   return 0;
 }
 

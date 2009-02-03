@@ -156,7 +156,7 @@ int main(int argc, char **argv){
 
   LP.spin();
 
-  ros::fini();
+  
 
   cvReleaseImage(&Rbp);
   cvReleaseImage(&BlankImage);

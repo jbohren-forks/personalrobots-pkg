@@ -78,5 +78,5 @@ int main( int argc, char** argv )
   if (left_arm->computeFK(pr2_config,f))
     cout<<"End effector transformation:"<<f<<endl;
 
-  ros::fini();
+  
 }

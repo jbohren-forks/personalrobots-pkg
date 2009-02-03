@@ -261,7 +261,7 @@ main(int argc, char** argv)
   while (node.ok() && node.alive()) {
     usleep(100);
   }
-  ros::fini();
+  
 
   return(0);
 }

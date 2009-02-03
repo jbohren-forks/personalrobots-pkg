@@ -177,7 +177,7 @@ int main(int argc, char** argv)
 
   phase_space_loc.spin() ;
 
-  ros::fini() ;
+  
 
   printf("**** Exiting ****\n") ;
 

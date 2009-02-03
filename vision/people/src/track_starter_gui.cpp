@@ -346,7 +346,7 @@ int main(int argc, char**argv)
   g_do_cb = true;
   TrackStarterGUI tsgui;
   tsgui.spin();
-  ros::fini();
+  
   return 0;
 
 }

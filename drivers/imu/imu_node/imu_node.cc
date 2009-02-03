@@ -514,7 +514,7 @@ main(int argc, char** argv)
 
   in.spin();
 
-  ros::fini();
+  
 
   return(0);
 }

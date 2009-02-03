@@ -126,7 +126,7 @@ int main(int argc, char **argv)
     ROS_FATAL("unable to close portaudio");
     ROS_BREAK();
   }
-  ros::fini();
+  
   return 0;
 }
 

@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     publish(node);
     usleep(100);
   }
-  ros::fini();
+  
   delete node;
   return 0;
 }

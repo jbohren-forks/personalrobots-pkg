@@ -42,7 +42,7 @@ main(int argc, char** argv)
 
   gn.spin();
 
-  ros::fini();
+  
   return(0);
 }
 

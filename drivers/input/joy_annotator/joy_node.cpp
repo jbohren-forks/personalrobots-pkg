@@ -123,7 +123,7 @@ int main(int argc, char **argv)
    joy.start();
    joy.spin();
    joy.stop();
-   ros::fini();
+   
    return 0;
 }
 

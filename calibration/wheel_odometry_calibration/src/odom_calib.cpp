@@ -227,6 +227,6 @@ int main(int argc, char **argv)
   my_odom_calibration_node.stop();
 
   // Clean up
-  ros::fini();
+  
   return 0;
 }

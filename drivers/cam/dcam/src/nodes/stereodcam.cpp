@@ -474,7 +474,7 @@ int main(int argc, char **argv)
 
   delete g_sdc;
 
-  ros::fini();
+  
   return 0;
 }
 

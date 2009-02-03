@@ -270,7 +270,7 @@ main(int argc, char** argv)
     ROS_DEBUG("Caught expection running node. Cleaning up.\n");
   }
 
-  ros::fini();
+  
 
   return(0);
 }

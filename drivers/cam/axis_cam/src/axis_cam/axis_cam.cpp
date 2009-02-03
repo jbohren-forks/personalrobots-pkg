@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 
   a.spin();
 
-  ros::fini();
+  
 
   return 0;
 }

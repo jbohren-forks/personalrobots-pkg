@@ -184,7 +184,7 @@ protected:
     void TearDown(void)
     {
 	sleep(1);
-	ros::fini();
+	
 	delete plan;
     }
     

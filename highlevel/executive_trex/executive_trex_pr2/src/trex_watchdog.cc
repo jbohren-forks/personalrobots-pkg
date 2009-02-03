@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     std::cout << e << std::endl;
   }
 
-  ros::fini();
+  
 
   return(0);
 }

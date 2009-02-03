@@ -362,7 +362,7 @@ main(int argc, char** argv)
     sn.Update();
   }
   
-  ros::fini();
+  
 
   exit(0);
 }

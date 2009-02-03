@@ -327,7 +327,7 @@ int main(int argc, char** argv)
   ArmPhaseSpaceGrabber grabber ;
   grabber.spin() ;
 
-  ros::fini() ;
+  
 
   return 0 ;
 }

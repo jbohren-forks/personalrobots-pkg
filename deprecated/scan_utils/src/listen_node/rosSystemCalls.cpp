@@ -56,7 +56,7 @@ void shutdownROS()
 		return;
 	}
 			   
-	ros::fini();
+	
 	fprintf(stderr,"ROS finished\n");
 	state = ROS_DONE;
 }

@@ -152,7 +152,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   DeadReckon dr;
   dr.spin();
-  ros::fini();
+  
   return 0;
 }
 

@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   CvView view;
   view.spin();
-  ros::fini();
+  
   return 0;
 }
 

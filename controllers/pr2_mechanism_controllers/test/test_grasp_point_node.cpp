@@ -117,6 +117,6 @@ int main( int argc, char** argv )
     ROS_INFO("Trajectory failed");
   }
 //  sleep(20);
-  ros::fini();
+  
   return 0;
 }

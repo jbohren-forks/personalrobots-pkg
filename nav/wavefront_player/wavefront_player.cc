@@ -260,7 +260,7 @@ main(int argc, char** argv)
     wn.doOneCycle();
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
   }
-  ros::fini();
+  
   return(0);
 }
 

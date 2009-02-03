@@ -63,7 +63,7 @@ main(int argc, char** argv)
   Test t;
   t.spin();
 
-  ros::fini();
+  
   return 0;
 }
 

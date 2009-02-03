@@ -309,7 +309,7 @@ int main(int argc, char **argv)
   GraspPointNode graspnode("grasp_point_node");
   graspnode.init();
   graspnode.spin();
-  ros::fini();
+  
   return 0;
 }
 

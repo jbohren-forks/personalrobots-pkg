@@ -104,7 +104,7 @@ int main(int argc, char **argv)
   printf("quality (as defined by JPEG) = %d\n", quality);
   CvMovieStreamer ms(argv[1], delay, loop, quality);
   ms.stream_movie();
-  ros::fini();
+  
   return 0;
 }
 

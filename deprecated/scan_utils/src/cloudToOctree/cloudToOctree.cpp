@@ -126,6 +126,6 @@ int main(int argc, char **argv)
 	if (cellSize <= 0) cellSize = 0.02;
 	scan_utils::CloudToOctree cto(cellSize);
 	cto.spin();
-	ros::fini();
+	
 	return 0;
 }

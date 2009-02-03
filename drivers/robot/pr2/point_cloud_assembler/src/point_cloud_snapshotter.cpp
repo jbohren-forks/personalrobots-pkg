@@ -121,6 +121,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   PointCloudSnapshotter snapshotter ;
   snapshotter.spin();
-  ros::fini();
+  
   return 0;
 }

@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     ros::Duration().fromSec(0.1).sleep();
   if (!amcl_cli.done)
     printf("failed\n");
-  ros::fini();
+  
   return 0;
 }
 

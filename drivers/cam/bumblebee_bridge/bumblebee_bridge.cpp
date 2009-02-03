@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     BumblebeeBridge b;
     b.spin();
-    ros::fini();
+    
   }
   return 0;
 }

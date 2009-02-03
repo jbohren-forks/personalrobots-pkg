@@ -56,6 +56,6 @@ int main(int argc, char **argv) {
     t.speak();
     std::cout << std::endl;
   }
-  ros::fini();
+  
   return 0;
 }

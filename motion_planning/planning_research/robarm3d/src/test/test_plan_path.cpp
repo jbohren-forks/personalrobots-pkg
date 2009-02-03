@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   else
   {
     ROS_ERROR("Could not get initial joint angles");
-    ros::fini();
+    
     exit(-1);
   }
 
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
   else
   {
     ROS_ERROR("Could not get path");
-    ros::fini();    
+        
     exit(-1);
   }
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
   else
   {
     ROS_ERROR("Could not get initial joint angles");
-    ros::fini();
+    
     exit(-1);
   }
 
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
   else
   {
     ROS_ERROR("Could not get path");
-    ros::fini();    
+        
     exit(-1);
   }
 
@@ -316,6 +316,6 @@ int main(int argc, char *argv[])
 
   actuateGripper(1);
 
-  ros::fini();
+  
   return 1;
 }

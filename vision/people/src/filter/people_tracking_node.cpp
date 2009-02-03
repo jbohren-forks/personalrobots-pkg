@@ -273,6 +273,6 @@ int main(int argc, char **argv)
   my_tracking_node.spin();
 
   // Clean up
-  ros::fini();
+  
   return 0;
 }

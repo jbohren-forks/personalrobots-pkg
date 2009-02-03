@@ -108,7 +108,7 @@ main(int argc, char** argv)
 
   jbs.spin();
 
-  ros::fini();
+  
 
   return 0;
 }

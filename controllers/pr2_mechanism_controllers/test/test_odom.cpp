@@ -171,5 +171,5 @@ int main( int argc, char** argv )
 
   odom_log_file.close();
 
-  ros::fini();
+  
 }

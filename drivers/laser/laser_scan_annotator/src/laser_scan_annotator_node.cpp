@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   LaserScanAnnotatorNode t ;
   t.spin();
-  ros::fini();
+  
   return 0;
 }
 

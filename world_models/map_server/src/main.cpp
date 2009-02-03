@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   {
     fprintf(stderr, "%s\n", e.what());
   }
-  ros::fini();
+  
   return 0;
 }
 

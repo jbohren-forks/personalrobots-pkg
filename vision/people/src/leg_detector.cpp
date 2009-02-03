@@ -581,7 +581,7 @@ int main(int argc, char **argv)
   g_argv = argv;
   LegDetector ld;
   ld.spin();
-  ros::fini();
+  
   return 0;
 }
 

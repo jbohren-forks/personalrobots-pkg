@@ -66,6 +66,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   Listener l;
   l.spin();
-  ros::fini();
+  
   return 0;
 }

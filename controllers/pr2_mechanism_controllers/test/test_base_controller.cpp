@@ -76,7 +76,7 @@ int main( int argc, char** argv )
   xfit = bc.c_->iterativeLeastSquares(A,B,"Gaussian",10);
   cout << "done" << xfit << endl;
 */  
-  ros::fini();
+  
   delete robot_model;
   delete robot_state;
 }

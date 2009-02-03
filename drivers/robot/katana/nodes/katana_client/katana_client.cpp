@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     c.move_for_camera();
   else if (string(argv[1]) == string("move_to_upright"))
     c.move_to_upright();
-  ros::fini();
+  
   return 0;
 }
 

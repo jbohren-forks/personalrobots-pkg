@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
   // Cleanup pid file
   cleanupPidFile();
 
-  ros::fini();
+  
   delete node;
 
   return 0;

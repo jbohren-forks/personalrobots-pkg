@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   {
     fprintf(stderr, "Error: Could not open the space navigator device\n");
     fprintf(stderr, "Did you remember to run spacenavd (as root)?\n");
-    ros::fini();
+    
     return 1;
   }
 
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
   node.unadvertise("/spacenav/offset");
 
-  ros::fini();
+  
 
   return 0;
 }

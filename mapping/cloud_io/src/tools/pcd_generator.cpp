@@ -118,7 +118,7 @@ int
   c.start ();
   c.spin ();
 
-  ros::fini ();
+  
 
   return (0);
 }

@@ -139,6 +139,6 @@ int main(int argc, char **argv)
     }
   }
 
-  ros::fini();
+  
   return 0;
 }

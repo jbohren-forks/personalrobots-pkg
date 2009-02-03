@@ -194,7 +194,7 @@ int main(int argc, char** argv)
 
   phase_space_pose_stamped.spin() ;
 
-  ros::fini() ;
+  
 
   return 0 ;
 }

@@ -139,7 +139,7 @@ int main(int argc, char ** argv)
     if( !bExit )
         s_sessionserver->spin();
     s_sessionserver.reset();
-    ros::fini();
+    
     s_pmasternode.reset();
     return 0;
 }

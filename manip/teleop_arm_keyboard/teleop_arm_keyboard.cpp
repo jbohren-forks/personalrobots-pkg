@@ -232,7 +232,7 @@ struct termios cooked, raw;
 void quit(int sig)
 {
   //  tbk->stopRobot();
-  ros::fini();
+  
   tcsetattr(kfd, TCSANOW, &cooked);
   exit(0);
 }

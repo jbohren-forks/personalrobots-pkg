@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   CvMTurk view;
   view.spin();  //infinite loop in node which calls back to image_cb() "image call back".  exit by calling shutdown()
-  ros::fini();
+  
   return 0;
 }
 

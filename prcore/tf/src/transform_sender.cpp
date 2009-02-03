@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,8 +33,8 @@ class TransformSender : public ros::Node
 {
 public:
   //constructor
-  TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) : 
-    ros::Node("transform_sender", ros::Node::ANONYMOUS_NAME),broadcaster(*this), 
+  TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) :
+    ros::Node("transform_sender", ros::Node::ANONYMOUS_NAME),broadcaster(*this),
     transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
   ~TransformSender() { }
@@ -42,7 +42,7 @@ public:
   //A pointer to the rosTFServer class
   tf::TransformBroadcaster broadcaster;
 
-  
+
 
   // A function to call to send data periodically
   void send () {
@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
 
   TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
                             atof(argv[4]), atof(argv[5]), atof(argv[6]),
-                            ros::Time::now(), 
+                            ros::Time::now(),
                             argv[7], argv[8]);
 
 
@@ -82,7 +82,6 @@ int main(int argc, char ** argv)
     ROS_INFO("Sending transform from %s with parent %s\n", argv[7], argv[8]);
     usleep(atoi(argv[9])*1000);
   }
-  ros::fini();
 
   return 0;
 };

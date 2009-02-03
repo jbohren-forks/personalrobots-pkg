@@ -65,6 +65,6 @@ int main(int argc, char **argv)
   }
   else
     printf("success\n");
-  ros::fini();
+  
   return 0;
 }

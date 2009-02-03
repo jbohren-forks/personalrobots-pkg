@@ -64,6 +64,6 @@ int main(int argc, char **argv)
   }
   DeadReckonTest drt;
   drt.test_dr(atof(argv[1]), atof(argv[2]), atof(argv[3]));
-  ros::fini();
+  
 }
 

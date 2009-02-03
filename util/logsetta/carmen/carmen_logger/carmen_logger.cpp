@@ -97,6 +97,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   CarmenLogger l;
   l.spin();
-  ros::fini();
+  
   return 0;
 }

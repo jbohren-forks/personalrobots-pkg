@@ -311,5 +311,5 @@ int main( int argc, char** argv )
     node->publish("r_gripper_controller/set_command",GripperPos);
     sleep(3);
 
-    ros::fini();
+    
 }

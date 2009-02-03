@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     topics.push_back(argv[i]);
   Mux mux(argv[1], argv[2], topics);
   mux.spin();
-  ros::fini();
+  
   return 0;
 }
 

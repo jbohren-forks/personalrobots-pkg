@@ -127,7 +127,7 @@ int main (int argc, char** argv)
   ros::init(argc,argv);
   ros::highlevel_controllers::IndefiniteNav node;
   node.run();
-  ros::fini();
+  
   return(0);
 }
   

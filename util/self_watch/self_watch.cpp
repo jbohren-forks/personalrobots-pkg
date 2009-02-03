@@ -228,6 +228,6 @@ int main(int argc, char **argv)
     
     sw.spin();
     
-    ros::fini();
+    
     return 0;
 }

@@ -149,7 +149,7 @@ TEST(MessageNotifier, noTransforms)
 TEST(MessageNotifier, preexistingTransforms)
 {
 	Notification n(1);
-	Counter<tf::tfMessage> c("tf_message", 1); 
+	Counter<tf::tfMessage> c("tf_message", 1);
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 
@@ -281,7 +281,7 @@ TEST(MessageNotifier, queueSize)
 TEST(MessageNotifier, setTopic)
 {
 	Notification n(1);
-	Counter<tf::tfMessage> c("tf_message", 1); 
+	Counter<tf::tfMessage> c("tf_message", 1);
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTopic("test_message2");
@@ -378,7 +378,6 @@ int main(int argc, char** argv)
 	delete g_broadcaster;
 	delete g_tf;
 
-	ros::fini();
 	delete g_node;
 
 	return ret;

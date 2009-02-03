@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   joy.start();
   joy.spin();
   joy.stop();
-  ros::fini();
+  
 //  exit(0);
   return 0;
 }

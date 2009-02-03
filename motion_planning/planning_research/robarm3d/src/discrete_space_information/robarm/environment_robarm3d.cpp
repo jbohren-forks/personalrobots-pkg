@@ -3126,7 +3126,7 @@ void EnvironmentROBARM::OutputPlanningStats()
 
 void EnvironmentROBARM::CloseKinNode()
 {
-    ros::fini();
+    
     sleep(1);
 }
 

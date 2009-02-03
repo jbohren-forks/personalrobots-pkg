@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     usleep(10000);
     view.check_keys();
   }
-  ros::fini();
+  
   return 0;
 }
 

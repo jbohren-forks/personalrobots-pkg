@@ -913,7 +913,7 @@ int main(int argc, char** argv)
   CloseAllDevices();
   CloseAllInterfaces();
 
-  ros::fini();
+  
   delete myBoard;
   return 0;
 

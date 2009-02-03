@@ -890,7 +890,7 @@ int main(int argc, char **argv)
   VidereBlobTracker v(BLOBNEARCENTER, DISPLAY, REMOTE_GUI);
   v.spin();
 
-  ros::fini();
+  
   return 0;
 }
 

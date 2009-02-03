@@ -124,5 +124,5 @@ int main( int argc, char** argv )
   else
     cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
 
-  ros::fini();
+  
 }

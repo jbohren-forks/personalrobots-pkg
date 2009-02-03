@@ -710,7 +710,7 @@ int
 */
   p.spin ();
 
-  ros::fini ();
+  
   return (0);
 }
 /* ]--- */

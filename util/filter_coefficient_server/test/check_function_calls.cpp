@@ -833,7 +833,7 @@ main(int argc, char** argv)
   n = new ros::Node("check_fucntion_calls");
 
   int ret = RUN_ALL_TESTS();
-  ros::fini();
+  
   delete n;
 
   return ret;

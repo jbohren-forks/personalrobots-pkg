@@ -473,7 +473,7 @@ int main(int argc, char ** argv)
     s_pmasternode->spin();
 
     plinksfilter.reset();
-    ros::fini();
+    
     s_pmasternode.reset();
     return 0;
 }

@@ -39,5 +39,5 @@ int main(int argc, char** argv)
   g_argv = argv;
   TestDelay t;
   t.spin();
-  ros::fini();
+  
 }

@@ -308,7 +308,7 @@ int
   //p.src_textured_ = string (argv[2]); //string ( "/work/data/WG/Stereo2/pcd_clouds/stereoImage_CnoTex22.pcd");
   p.spin ();
 
-  ros::fini ();
+  
 
   return (0);
 }

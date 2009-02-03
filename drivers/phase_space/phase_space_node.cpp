@@ -300,7 +300,7 @@ int main(int argc, char** argv)
   printf("Shutting Down OWL Client\n") ;
   phase_space_node.shutdownOwlClient() ;
 
-  ros::fini() ;
+  
   
   printf("**** Exiting ****\n") ;
   

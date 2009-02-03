@@ -104,6 +104,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   LaserScanAssemblerSrv pc_assembler;
   pc_assembler.spin();
-  ros::fini();
+  
   return 0;
 }

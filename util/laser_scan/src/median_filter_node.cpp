@@ -57,7 +57,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   MedianFilterNode t;
   t.spin();
-  ros::fini();
+  
   return 0;
 }
 

@@ -309,6 +309,6 @@ int main( int argc, char** argv )
 
     node->unsubscribe("mechanism_state");
     node->unadvertise("left_arm_commands");
-    ros::fini();
+    
     return 0;
 }

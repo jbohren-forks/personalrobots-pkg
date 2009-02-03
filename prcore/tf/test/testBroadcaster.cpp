@@ -74,7 +74,6 @@ int main(int argc, char ** argv)
       myTestBroadcaster.test();
       usleep(1000);
   }
-  ros::fini();
 
   return 0;
 };

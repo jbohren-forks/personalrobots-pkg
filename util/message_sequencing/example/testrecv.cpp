@@ -34,5 +34,5 @@ int main(int argc, char** argv)
   ros::init(argc, argv);
   TestRecv t;
   t.spin();
-  ros::fini();
+  
 }

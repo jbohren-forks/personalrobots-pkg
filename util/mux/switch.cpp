@@ -59,6 +59,6 @@ int main(int argc, char **argv)
   }
   MuxSwitcher ms;
   ms.switchMux(argv[1]);
-  ros::fini();
+  
 }
 

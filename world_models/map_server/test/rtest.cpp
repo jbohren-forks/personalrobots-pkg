@@ -53,7 +53,7 @@ class MapClientTest : public testing::Test
     }
     virtual void TearDown()
     {
-      ros::fini();
+      
       delete n;
     }
 };

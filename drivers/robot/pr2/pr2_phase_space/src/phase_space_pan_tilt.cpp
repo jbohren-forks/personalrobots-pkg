@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
   phase_space_pan_tilt.spin() ;
 
-  ros::fini() ;
+  
 
   printf("**** Exiting ****\n") ;
 

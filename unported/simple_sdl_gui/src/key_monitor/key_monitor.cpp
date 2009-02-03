@@ -60,6 +60,6 @@ int main(int argc, char **argv)
   Key_Monitor k;
   k.spin();
   return 0;
-  ros::fini();
+  
 }
 

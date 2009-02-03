@@ -256,6 +256,6 @@ int main(int argc, char** argv){
     //printf("Cycle Time: %.2f\n", t_diff);
   }
 
-  ros::fini();
+  
   return(0);
 }

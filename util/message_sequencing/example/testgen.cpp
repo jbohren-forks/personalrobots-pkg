@@ -39,5 +39,5 @@ int main(int argc, char** argv)
   ros::init(argc, argv);
   TestGen t;
   t.spin();
-  ros::fini();
+  
 }

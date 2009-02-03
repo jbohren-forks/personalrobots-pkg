@@ -125,7 +125,7 @@ int
   CloudDownsampler p;
   p.spin ();
 
-  ros::fini ();
+  
   return (0);
 }
 /* ]--- */

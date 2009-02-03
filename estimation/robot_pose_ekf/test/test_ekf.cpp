@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -90,12 +90,12 @@ public:
 
 protected:
   /// constructor
-  TestEKF() 
+  TestEKF()
   {
     ekf_counter_ = 0;
     odom_counter_ = 0;
 
-    init(g_argc, g_argv); 
+    init(g_argc, g_argv);
     node_ = new Node("TestEKF");
   }
 
@@ -103,7 +103,6 @@ protected:
   /// Destructor
   ~TestEKF()
   {
-    fini();
     delete node_;
   }
 };
@@ -114,11 +113,11 @@ protected:
 TEST_F(TestEKF, test)
 {
   ROS_INFO("Subscribing to robot_pose_ekf/odom_combined");
-  ASSERT_TRUE(node_->subscribe("robot_pose_ekf/odom_combined", ekf_msg_, &TestEKF::EKFCallback, 
+  ASSERT_TRUE(node_->subscribe("robot_pose_ekf/odom_combined", ekf_msg_, &TestEKF::EKFCallback,
 			       (TestEKF*)this, 10));
 
   ROS_INFO("Subscribing to odom");
-  ASSERT_TRUE(node_->subscribe("odom", odom_msg_, &TestEKF::OdomCallback, 
+  ASSERT_TRUE(node_->subscribe("odom", odom_msg_, &TestEKF::OdomCallback,
 			       (TestEKF*)this, 10));
 
   // wait while bag is played back

@@ -519,7 +519,7 @@ int main(int argc, char **argv)
   FaceDetector fd(node_name.str(), numlines, names, haar_filenames, reliabilities, use_depth, do_display, external_init);
 
   fd.spin();
-  ros::fini();
+  
   return 0;
 }
 

@@ -107,6 +107,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   GrabCloudData grabber ;
   grabber.spin();
-  ros::fini();
+  
   return 0;
 }

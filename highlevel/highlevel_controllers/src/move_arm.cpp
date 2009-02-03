@@ -453,12 +453,12 @@ main(int argc, char** argv)
   if(param == "left"){
     MoveLeftArm node;
     node.run();
-    ros::fini();
+    
   }
   else if(param == "right"){
     MoveRightArm node;
     node.run();
-    ros::fini();
+    
   }
   else {
     std::cout << "Usage: ./move_arm left|right";

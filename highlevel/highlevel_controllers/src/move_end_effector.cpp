@@ -444,12 +444,12 @@ main(int argc, char** argv)
   if(param == "left"){
     MoveLeftEndEffector node;
     node.run();
-    ros::fini();
+    
   }
   else if(param == "right"){
     MoveRightEndEffector node;
     node.run();
-    ros::fini();
+    
   }
   else {
     std::cout << "Usage: ./move_end_effector left|right";

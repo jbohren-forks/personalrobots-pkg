@@ -160,7 +160,7 @@ int
   b.dump_to_disk_ = true;
   b.spin ();
 
-  ros::fini ();
+  
 
   return (0);
 }

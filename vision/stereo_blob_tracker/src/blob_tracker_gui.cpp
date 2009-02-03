@@ -423,7 +423,7 @@ int main(int argc, char **argv)
   gui.spin();
 
 
-  ros::fini();
+  
 
   return 0;
 }

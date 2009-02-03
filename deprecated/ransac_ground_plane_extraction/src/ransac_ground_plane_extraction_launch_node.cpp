@@ -13,6 +13,6 @@ int main(int argc, char** argv)
   catch(char const* e){
     std::cout << e << std::endl;
   }
-  ros::fini();
+  
   return(0);
 }

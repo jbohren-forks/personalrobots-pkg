@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv) ;
   ScanIntensityFilter filter ;
   filter.spin() ;
-  ros::fini() ;
+  
   return 0 ;
 }
 

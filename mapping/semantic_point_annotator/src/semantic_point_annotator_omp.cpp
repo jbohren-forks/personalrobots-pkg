@@ -689,7 +689,7 @@ int
   SemanticPointAnnotator p;
   p.spin ();
 
-  ros::fini ();
+  
 
   return (0);
 }

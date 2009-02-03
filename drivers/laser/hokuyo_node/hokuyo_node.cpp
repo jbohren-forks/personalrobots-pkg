@@ -636,7 +636,7 @@ main(int argc, char** argv)
 
   h.spin();
 
-  ros::fini();
+  
 
   return(0);
 }

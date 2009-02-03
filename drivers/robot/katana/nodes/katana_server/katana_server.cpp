@@ -270,6 +270,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   KatanaServer katanaSrv;
   katanaSrv.spin();
-  ros::fini();
+  
   return 0;
 }

@@ -250,6 +250,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv) ;
   SensorKinematicsGrabber grabber ;
   grabber.spin() ;
-  ros::fini() ;
+  
   return 0 ;
 }

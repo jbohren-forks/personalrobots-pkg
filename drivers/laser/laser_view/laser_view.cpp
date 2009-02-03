@@ -137,7 +137,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   LaserView view;
   view.main_loop();
-  ros::fini();
+  
   return 0;
 }
 

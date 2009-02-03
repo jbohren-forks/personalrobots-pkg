@@ -195,7 +195,7 @@ int main(int argc, char** argv)
     FakeOdomNode odom;
     odom.spin();
 
-    ros::fini();
+    
     
     return 0;
 }

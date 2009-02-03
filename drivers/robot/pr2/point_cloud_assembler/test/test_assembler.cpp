@@ -98,7 +98,6 @@ protected:
   /// Destructor
   ~TestAssembler()
   {
-    fini();
     delete node_;
   }
 };

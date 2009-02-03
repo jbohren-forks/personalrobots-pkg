@@ -357,6 +357,6 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     CheckerboardDetectorNode checker;
     checker.spin();
-    ros::fini();
+    
     return 0;
 }

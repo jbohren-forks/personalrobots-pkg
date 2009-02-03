@@ -406,7 +406,7 @@ int main(int argc, char **argv)
 
   sp.spin();
 
-  ros::fini();
+  
   return 0;
 }
 
