@@ -37,22 +37,15 @@
 #ifndef MPBENCH_BENCHMARK_SETUP_HPP
 #define MPBENCH_BENCHMARK_SETUP_HPP
 
-#include <mpglue/costmap.h>
+#include <mpglue/costmapper.h>
 #include <mpglue/plan.h>
 #include <mpglue/planner.h>
+#include <mpglue/footprint.h>
+#include <sfl/gplan/GridFrame.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
-#include <map>
-
-namespace sfl {
-  class Mapper2d;
-  class RDTravmap;
-}
-
-namespace costmap_2d {
-  class CostMap2D;
-}
+#include <set>
 
 namespace mpbench {
   
@@ -100,15 +93,13 @@ namespace mpbench {
     };
     
     struct result {
-      result(size_t planner_id,
-	     size_t task_id,
+      result(size_t task_id,
 	     size_t episode_id,
 	     startspec const & start,
 	     goalspec const & goal,
 	     boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 	     boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
       
-      size_t planner_id;
       size_t task_id;
       size_t episode_id;
       startspec start;
@@ -119,6 +110,62 @@ namespace mpbench {
     
   }
   
+  typedef std::vector<std::string> tokenlist_t;
+  
+  struct SetupOptions {    
+    SetupOptions(std::string const & world_spec,
+		 std::string const & planner_spec,
+		 std::string const & robot_spec,
+		 std::string const & costmap_spec);
+    
+    static void help(/** The stream to write the help to. */
+		     std::ostream & os,
+		     /** The title will be printed as-is, followed by
+			 a newline. If the title is an empty string,
+			 nothing is printed. */
+		     std::string const & title,
+		     /** The prefix is prepended to each line of the
+			 help, except for the title. */
+		     std::string const & prefix);
+    
+    void dump(/** The stream to write the description to. */
+	      std::ostream & os,
+	      /** The title will be printed as-is, followed by a
+		  newline. If the title is an empty string, nothing is
+		  printed. */
+	      std::string const & title,
+	      /** The prefix is prepended to each line of the
+		  description, except for the title. */
+	      std::string const & prefix) const;
+    
+    std::string const world_spec;
+    std::string const planner_spec;
+    std::string const robot_spec;
+    std::string const costmap_spec;
+    
+    tokenlist_t world_tok;
+    tokenlist_t planner_tok;
+    tokenlist_t robot_tok;
+    tokenlist_t costmap_tok;
+    
+    std::string robot_name;
+    double robot_inscribed_radius;
+    double robot_circumscribed_radius;
+    double robot_nominal_forward_speed;
+    double robot_nominal_rotation_speed;
+    
+    std::string costmap_name;
+    double costmap_resolution;	/**< cell size [m] (square cells) */
+    double costmap_inscribed_radius; /**< radius [m] of CSpace "lethal" inflation */
+    double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
+    double costmap_inflation_radius; /**< distance [m] of freespace cells from obstacles */
+    int costmap_obstacle_cost;
+    
+    unsigned int pgm_obstacle_gray;
+    bool pgm_invert_gray;
+  };
+  
+  typedef std::set<mpglue::index_pair> indexlist_t;
   typedef std::vector<boost::shared_ptr<task::setup> > tasklist_t;
   typedef std::vector<boost::shared_ptr<task::result> > resultlist_t;
   
@@ -126,23 +173,17 @@ namespace mpbench {
   class Setup
   {
   public:
-    Setup(/** name of the setup */
-	  std::string const & name,
-	  /** cell size [m] (square cells) */
-	  double resolution,
-	  /** inscribed radius of the robot [m] */
-	  double inscribed_radius,
-	  /** circumscribed radius of the robot [m] */
-	  double circumscribed_radius,
-	  /** distance from obstacles where cells become
-	      freespace [m] */
-	  double inflation_radius,
-	  /** the cost value at or above which a cell is
-	      considered an obstacle */
-	  int obstacle_cost,
-	  bool use_sfl_costs);
+    explicit Setup(SetupOptions const & options);
     
     virtual ~Setup();
+    
+    static boost::shared_ptr<Setup> create(std::string const & world_spec,
+					   std::string const & planner_spec,
+					   std::string const & robot_spec,
+					   std::string const & costmap_spec,
+					   std::ostream * progress_os,
+					   std::ostream * debug_os)
+      throw(std::runtime_error);
     
     /**
        Print a human-readable description of the setup to a
@@ -168,20 +209,18 @@ namespace mpbench {
 				    std::string const & prefix) const;
     
     /**
-       Call sfl::TraversabilityMap::DumpMap() on the instance stored
-       in the underlying sfl::Mapper2d.
+       \todo re-implement
     */
     void dumpTravmap(std::ostream & os) const;
     
     /**
        Draw an obstacle line into the costmap, expanded by the robot
        radius and with costs descending out up to the freespace
-       distance. This uses the underlying sfl::Mapper2d instance to
-       automatically grow it sfl::TraversabilityMap.
+       distance.
     */
     void drawLine(double x0, double y0, double x1, double y1,
 		  /** optional: verbose operation if non-null */
-		  std::ostream * progress_os);
+		  std::ostream * progress_os, std::ostream * debug_os);
     
     void drawPoint(double xx, double yy,
 		   std::ostream * progress_os);
@@ -197,11 +236,9 @@ namespace mpbench {
 		       double goal_x, double goal_y, double goal_th, 
 		       double goal_tol_xy, double goal_tol_th);
     
-    boost::shared_ptr<sfl::RDTravmap> getRawSFLTravmap() const;
-    costmap_2d::CostMap2D const & getRaw2DCostmap() const;
-    
-    boost::shared_ptr<mpglue::Costmap> getCostmap() const;
-    boost::shared_ptr<mpglue::IndexTransform> getIndexTransform() const;
+    boost::shared_ptr<mpglue::CostmapPlanner> getPlanner();
+    boost::shared_ptr<mpglue::CostmapAccessor const> getCostmap() const;
+    boost::shared_ptr<mpglue::IndexTransform const> getIndexTransform() const;
     
     tasklist_t const & getTasks() const;
     void getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const;
@@ -209,49 +246,21 @@ namespace mpbench {
     void getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
     void getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const;
     
-    std::string const name;
-    double const resolution;
-    double const inscribed_radius;
-    double const circumscribed_radius;
-    double const inflation_radius;
-    int const obstacle_cost;
-    bool const use_sfl_cost;
+    mpglue::footprint_t const & getFootprint() const;
+    SetupOptions const & getOptions() const { return opt_; }
     
   protected:
-    boost::shared_ptr<sfl::Mapper2d> m2d_;
+    SetupOptions opt_;
+    sfl::GridFrame gridframe_;
+    indexlist_t wspace_obstacles_;
     tasklist_t tasklist_;
     double bbx0_, bby0_, bbx1_, bby1_; // workspace bounding box
     
   private:
-    mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
-    mutable boost::shared_ptr<sfl::RDTravmap> rdtravmap_; // lazy init
-    mutable boost::shared_ptr<mpglue::Costmap> costmapWrap_; // lazy init
-    mutable boost::shared_ptr<mpglue::IndexTransform> indexTransform_; // lazy init
-    
-    costmap_2d::CostMap2D * createCostMap2D() const;
+    mutable boost::shared_ptr<mpglue::footprint_t> footprint_;
+    boost::shared_ptr<mpglue::CostmapPlanner> planner_;
+    boost::shared_ptr<mpglue::Costmapper> costmapper_;
   };
-  
-  
-  struct SetupOptions {
-    // fills in some "sensible" default values
-    SetupOptions();
-    
-    std::string spec;
-    double resolution;
-    double inscribed_radius;
-    double circumscribed_radius;
-    double inflation_radius;
-    int obstacle_cost;
-    bool use_sfl_cost;
-    double door_width;
-    double hall_width;
-    unsigned int obstacle_gray;
-    bool invert_gray;
-  };
-  
-  
-  Setup * createSetup(SetupOptions const & opt, std::ostream * progress_os)
-    throw(std::runtime_error);
   
 }
 

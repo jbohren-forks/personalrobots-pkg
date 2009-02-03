@@ -36,8 +36,12 @@
 
 #include "setup.h"
 #include "parse.h"
-#include <costmap_2d/costmap_2d.h>
-#include <sfl/gplan/GridFrame.hpp>
+#include <mpglue/navfn_planner.h>
+#include <mpglue/sbpl_environment.h>
+#include <mpglue/sbpl_planner.h>
+#include <costmap_2d/obstacle_map_accessor.h>
+#include <sbpl/headers.h>
+////#include <costmap_2d/costmap_2d.h>
 #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
 #include <sfl/util/strutil.hpp>
@@ -64,6 +68,48 @@ using namespace std;
 namespace {
   
   
+  struct obstacle_adder: public sfl::GridFrame::draw_callback {
+    obstacle_adder(mpbench::indexlist_t & _il, ostream * _dbgos)
+      : il(_il), dbgos(_dbgos) {}
+    
+    virtual void operator () (ssize_t ix, ssize_t iy) {
+      if (dbgos)
+	*dbgos << "obstacle_adder: " << ix << " " << iy << "\n";
+      il.insert(mpglue::index_pair(ix, iy));
+    }
+    
+    mpbench::indexlist_t & il;
+    ostream * dbgos;
+  };
+  
+  
+  std::string canonicalPlannerName(std::string const & name_or_alias)
+  {
+    static map<string, string> planner_alias;
+    if (planner_alias.empty()) {
+      planner_alias.insert(make_pair("ARAStar",      "ARAStar"));
+      planner_alias.insert(make_pair("ara",          "ARAStar"));
+      planner_alias.insert(make_pair("ARA",          "ARAStar"));
+      planner_alias.insert(make_pair("arastar",      "ARAStar"));
+    
+      planner_alias.insert(make_pair("ADStar",       "ADStar"));
+      planner_alias.insert(make_pair("ad",           "ADStar"));
+      planner_alias.insert(make_pair("AD",           "ADStar"));
+      planner_alias.insert(make_pair("adstar",       "ADStar"));
+      
+      planner_alias.insert(make_pair("NavFn",        "NavFn"));
+      planner_alias.insert(make_pair("navfn",        "NavFn"));
+      planner_alias.insert(make_pair("nf",           "NavFn"));
+      planner_alias.insert(make_pair("NF",           "NavFn"));
+    }
+    
+    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+    if (planner_alias.end() == is)
+      return "";
+    return is->second;
+  }
+  
+  
   void drawDots(mpbench::Setup & setup,
 		double hall, double door,
 		std::ostream * progress_os)
@@ -87,12 +133,12 @@ namespace {
   
   void drawSquare(mpbench::Setup & setup,
 		  double hall, double door,
-		  std::ostream * progress_os)
+		  std::ostream * progress_os, std::ostream * debug_os)
   {
-    setup.drawLine(   0,     0,  hall,     0, progress_os);
-    setup.drawLine(   0,     0,     0,  hall, progress_os);
-    setup.drawLine(   0,  hall,  hall,  hall, progress_os);
-    setup.drawLine(hall,     0,  hall,  hall, progress_os);
+    setup.drawLine(   0,     0,  hall,     0, progress_os, debug_os);
+    setup.drawLine(   0,     0,     0,  hall, progress_os, debug_os);
+    setup.drawLine(   0,  hall,  hall,  hall, progress_os, debug_os);
+    setup.drawLine(hall,     0,  hall,  hall, progress_os, debug_os);
 
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
@@ -107,29 +153,29 @@ namespace {
   
   void drawOffice1(mpbench::Setup & setup,
 		   double hall, double door,
-		   std::ostream * progress_os)
+		   std::ostream * progress_os, std::ostream * debug_os)
   {
     // outer bounding box
-    setup.drawLine(       0,         0,  3 * hall,         0, progress_os);
-    setup.drawLine(       0,         0,         0,  5 * hall, progress_os);
-    setup.drawLine(       0,  5 * hall,  3 * hall,  5 * hall, progress_os);
-    setup.drawLine(3 * hall,         0,  3 * hall,  5 * hall, progress_os);
+    setup.drawLine(       0,         0,  3 * hall,         0, progress_os, debug_os);
+    setup.drawLine(       0,         0,         0,  5 * hall, progress_os, debug_os);
+    setup.drawLine(       0,  5 * hall,  3 * hall,  5 * hall, progress_os, debug_os);
+    setup.drawLine(3 * hall,         0,  3 * hall,  5 * hall, progress_os, debug_os);
     
     // two long walls along y-axis, each with a door near the northern end
-    setup.drawLine(    hall,  3 * hall,      hall,  5 * hall - 2 * door, progress_os);
-    setup.drawLine(    hall,  5 * hall,      hall,  5 * hall -     door, progress_os);
-    setup.drawLine(2 * hall,      hall,  2 * hall,  5 * hall - 2 * door, progress_os);
-    setup.drawLine(2 * hall,  5 * hall,  2 * hall,  5 * hall -     door, progress_os);
+    setup.drawLine(    hall,  3 * hall,      hall,  5 * hall - 2 * door, progress_os, debug_os);
+    setup.drawLine(    hall,  5 * hall,      hall,  5 * hall -     door, progress_os, debug_os);
+    setup.drawLine(2 * hall,      hall,  2 * hall,  5 * hall - 2 * door, progress_os, debug_os);
+    setup.drawLine(2 * hall,  5 * hall,  2 * hall,  5 * hall -     door, progress_os, debug_os);
     
     // some shorter walls along x-axis
-    setup.drawLine(         0,      hall,  0.5 * hall,      hall, progress_os);
-    setup.drawLine(         0,  2 * hall,  0.5 * hall,  2 * hall, progress_os);
-    setup.drawLine(1.5 * hall,      hall,  2   * hall,      hall, progress_os);
+    setup.drawLine(         0,      hall,  0.5 * hall,      hall, progress_os, debug_os);
+    setup.drawLine(         0,  2 * hall,  0.5 * hall,  2 * hall, progress_os, debug_os);
+    setup.drawLine(1.5 * hall,      hall,  2   * hall,      hall, progress_os, debug_os);
     
     // y-axis wall with two office doors
-    setup.drawLine(0.5 * hall,              0,  0.5 * hall,    hall - 2*door, progress_os);
-    setup.drawLine(0.5 * hall,  hall -   door,  0.5 * hall,    hall +   door, progress_os);
-    setup.drawLine(0.5 * hall,  hall + 2*door,  0.5 * hall,  2*hall         , progress_os);
+    setup.drawLine(0.5*hall,              0,  0.5*hall,    hall - 2*door, progress_os, debug_os);
+    setup.drawLine(0.5*hall,  hall -   door,  0.5*hall,    hall +   door, progress_os, debug_os);
+    setup.drawLine(0.5*hall,  hall + 2*door,  0.5*hall,  2*hall         , progress_os, debug_os);
     
     // tasks...
     if (progress_os)
@@ -175,7 +221,7 @@ namespace {
 		   bool minimal,
 		   double hall, double door,
 		   size_t ncube,
-		   std::ostream * progress_os)
+		   std::ostream * progress_os, std::ostream * debug_os)
   {
     if (ncube < 2)
       ncube = 2;
@@ -189,7 +235,7 @@ namespace {
     setup.drawLine(R0,
 		   - 0.5 * hall + yoff,
 		   R1 * cos( - alpha / 2),
-		   R1 * sin( - alpha / 2) + yoff, progress_os);
+		   R1 * sin( - alpha / 2) + yoff, progress_os, debug_os);
     
     for (size_t ii(0); ii < ncube; ++ii) {
       double const ux(cos(ii * alpha));
@@ -201,21 +247,21 @@ namespace {
       setup.drawLine(R0 * ux - 0.5 * hall * nx,
 		     R0 * uy - 0.5 * hall * ny + yoff,
 		     R0 * ux - 0.5 * door * nx,
-		     R0 * uy - 0.5 * door * ny + yoff, progress_os);
+		     R0 * uy - 0.5 * door * ny + yoff, progress_os, debug_os);
       setup.drawLine(R0 * ux + 0.5 * door * nx,
 		     R0 * uy + 0.5 * door * ny + yoff,
 		     R0 * ux + 0.5 * hall * nx,
-		     R0 * uy + 0.5 * hall * ny + yoff, progress_os);
+		     R0 * uy + 0.5 * hall * ny + yoff, progress_os, debug_os);
       // upper wall
       setup.drawLine(R0 * ux + 0.5 * hall * nx,
 		     R0 * uy + 0.5 * hall * ny + yoff,
 		     R1 * cos((ii + 0.5) * alpha),
-		     R1 * sin((ii + 0.5) * alpha) + yoff, progress_os);
+		     R1 * sin((ii + 0.5) * alpha) + yoff, progress_os, debug_os);
       // hind wall
       setup.drawLine(R1 * cos((ii + 0.5) * alpha),
 		     R1 * sin((ii + 0.5) * alpha) + yoff,
 		     R1 * cos((ii - 0.5) * alpha),
-		     R1 * sin((ii - 0.5) * alpha) + yoff, progress_os);
+		     R1 * sin((ii - 0.5) * alpha) + yoff, progress_os, debug_os);
     }
     
     // tasks...
@@ -307,64 +353,29 @@ namespace {
     : public mpbench::Setup
   {
   protected:
-    OfficeBenchmark(std::string const & name,
-		    double resolution,
-		    double inscribed_radius,
-		    double circumscribed_radius,
-		    double inflation_radius,
-		    int obstacle_cost,
-		    bool use_sfl_cost,
-		    double door_width,
-		    double hall_width);
+    OfficeBenchmark(mpbench::SetupOptions const & options,
+		    std::ostream * progress_os);
     
   public:
-    /**
-       Valid names are:
-       - dots: 4 dots in a square of hall_width side length
-       - square: a square of hall_width side length
-       - office1: two offices, two hallways, some doors
-    */
-    static OfficeBenchmark * create(std::string const & name,
-				    double resolution,
-				    double inscribed_radius,
-				    double circumscribed_radius,
-				    double inflation_radius,
-				    int obstacle_cost,
-				    bool use_sfl_cost,
-				    double door_width,
-				    double hall_width,
-				    std::ostream * progress_os);
+    static shared_ptr<OfficeBenchmark> create(mpbench::SetupOptions const & options,
+					      std::ostream * progress_os,
+					      std::ostream * debug_os);
     
     virtual void dumpSubDescription(std::ostream & os,
 				    std::string const & prefix) const;
     
-    double const door_width;
-    double const hall_width;
+    double door_width;
+    double hall_width;
   };
   
   
-  mpbench::Setup * createNetPGMBenchmark(std::string const & pgmFileName,
-					 std::string const & xmlFileName,
-					 unsigned int obstacle_gray,
-					 bool invert_gray,
-					 double resolution,
-					 double inscribed_radius,
-					 double circumscribed_radius,
-					 double inflation_radius,
-					 int obstacle_cost,
-					 bool use_sfl_cost,
+  mpbench::Setup * createNetPGMBenchmark(mpbench::SetupOptions const & opt,
 					 std::ostream * progress_os) throw(runtime_error);
   
   void readXML(string const & xmlFileName, mpbench::Setup * setup, std::ostream * progress_os)
     throw(runtime_error);  
   
-  mpbench::Setup * createXMLBenchmark(std::string const & xmlFileName,
-				      double resolution,
-				      double inscribed_radius,
-				      double circumscribed_radius,
-				      double inflation_radius,
-				      int obstacle_cost,
-				      bool use_sfl_cost,
+  mpbench::Setup * createXMLBenchmark(mpbench::SetupOptions const & opt,
 				      std::ostream * progress_os) throw(runtime_error);
   
 }
@@ -374,39 +385,14 @@ namespace mpbench {
   
   
   Setup::
-  Setup(std::string const & _name,
-		     double _resolution,
-		     double _inscribed_radius,
-		     double _circumscribed_radius,
-		     double _inflation_radius,
-		     int _obstacle_cost,
-		     bool _use_sfl_cost)
-    : name(_name),
-      resolution(_resolution),
-      inscribed_radius(_inscribed_radius),
-      circumscribed_radius(_circumscribed_radius),
-      inflation_radius(_inflation_radius),
-      obstacle_cost(_obstacle_cost),
-      use_sfl_cost(_use_sfl_cost),
+  Setup(SetupOptions const & options)
+    : opt_(options),
+      gridframe_(options.costmap_resolution),
       bbx0_(0),
       bby0_(0),
       bbx1_(0),
       bby1_(0)
   {
-    sfl::GridFrame const gframe(resolution);
-    boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
-      growstrategy(new sfl::Mapper2d::always_grow());
-    //    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
-    double const buffer_zone(sfl::maxval(0.0, circumscribed_radius - inscribed_radius));
-    double const padding_factor(0);
-    m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
-				 inscribed_radius, buffer_zone, padding_factor,
-				 0, obstacle_cost,
-				 // costmap_2d seems to use a quadratic decay in r7215
-				 sfl::exponential_travmap_cost_decay(2),
-				 name, sfl::RWlock::Create(name), growstrategy));
-    
-
   }
   
   
@@ -414,27 +400,20 @@ namespace mpbench {
   ~Setup()
   {
   }
-
-
-  void Setup::
-  dumpTravmap(std::ostream & os) const
-  {
-    getRawSFLTravmap()->DumpMap(&os);
-  }
   
   
   void Setup::
   drawLine(double x0, double y0, double x1, double y1,
-	   std::ostream * progress_os)
+	   std::ostream * progress_os, std::ostream * debug_os)
   {
     if (progress_os)
       *progress_os << "Setup::drawLine(" << x0 << "  " << y0 << "  "
 		   << x1 << "  " << y1 << ")\n" << flush;
-    sfl::Mapper2d::buffered_obstacle_adder boa(m2d_.get(), 0);
-    m2d_->gridframe.DrawGlobalLine(x0, y0, x1, y1,
-				   0, std::numeric_limits<ssize_t>::max(),
-				   0, std::numeric_limits<ssize_t>::max(),
-				   boa);
+    obstacle_adder obstadd(wspace_obstacles_, debug_os);
+    gridframe_.DrawGlobalLine(x0, y0, x1, y1,
+			      0, std::numeric_limits<ssize_t>::max(),
+			      0, std::numeric_limits<ssize_t>::max(),
+			      obstadd);
     bbx0_ = minval(bbx0_, minval(x0, x1));
     bby0_ = minval(bby0_, minval(y0, y1));
     bbx1_ = maxval(bbx1_, maxval(x0, x1));
@@ -448,7 +427,9 @@ namespace mpbench {
   {
     if (progress_os)
       *progress_os << "Setup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
-    m2d_->AddBufferedObstacle(xx, yy, 0);
+    sfl::GridFrame const gridframe(opt_.costmap_resolution);
+    sfl::GridFrame::index_t const idx(gridframe_.GlobalIndex(xx, yy));
+    wspace_obstacles_.insert(mpglue::index_pair(idx.v0, idx.v1));
     bbx0_ = minval(bbx0_, xx);
     bby0_ = minval(bby0_, yy);
     bbx1_ = maxval(bbx1_, xx);
@@ -481,144 +462,69 @@ namespace mpbench {
   }
   
   
-  boost::shared_ptr<sfl::RDTravmap> Setup::
-  getRawSFLTravmap() const
-  {
-    if ( ! rdtravmap_)
-      rdtravmap_ = m2d_->CreateRDTravmap();
-    return rdtravmap_;
-  }
-  
-  
-  costmap_2d::CostMap2D const & Setup::
-  getRaw2DCostmap() const
-  {
-    if ( ! costmap_)
-      costmap_.reset(createCostMap2D());
-    return *costmap_;
-  }
-  
-  
   tasklist_t const & Setup::
   getTasks() const
   {
     return tasklist_;
   }
   
-  
-  costmap_2d::CostMap2D * Setup::
-  createCostMap2D() const
-  {
-    boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
-    ssize_t const width(rdt->GetXEnd());
-    ssize_t const height(rdt->GetYEnd());
-    std::vector<unsigned char> data;
-    data.reserve(width * height);
-    for (ssize_t iy(0); iy < height; ++iy)
-      for (ssize_t ix(0); ix < width; ++ix) {
-	
-	if (rdt->IsWObst(ix, iy))
-	  data.push_back(costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE);
-	
-	else if (use_sfl_cost) {
-	  int cost;
-	  if (rdt->GetValue(ix, iy, cost)) {
-	    if (cost >= 0xff)
-	      data.push_back(0xff);
-	    else
-	      data.push_back(cost & 0xff);
-	  }
-	}
-	
-	else
-	  data.push_back(0);	// suppose 0 means freespace
-      }
-    
-    // hm... what if our obstacle cost needs more than 8 bits?    
-    unsigned char const threshold(obstacle_cost & 0xff);
-    double const maxZ(0.5);
-    double const zLB(0.10);
-    double const zUB(0.15);
-    double const weight(1);
-    costmap_2d::CostMap2D * cm;
-    if (use_sfl_cost)
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
-				     threshold, maxZ, zLB, zUB,
-				     0,	// inflationRadius
-				     0,	// circumscribedRadius
-				     0,	// inscribedRadius
-				     weight);
-    else
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
-				     threshold, maxZ, zLB, zUB,
-				     inflation_radius, circumscribed_radius, inscribed_radius,
-				     weight);
-    return cm;
-  }
-    
 }
+
+using namespace mpbench;
 
 namespace {
   
   OfficeBenchmark::
-  OfficeBenchmark(std::string const & name,
-		  double resolution,
-		  double inscribed_radius,
-		  double circumscribed_radius,
-		  double inflation_radius,
-		  int obstacle_cost,
-		  bool use_sfl_cost,
-		  double _door_width,
-		  double _hall_width)
-    : Setup(name, resolution,
-			 inscribed_radius, circumscribed_radius, inflation_radius,
-			 obstacle_cost, use_sfl_cost),
-      door_width(_door_width),
-      hall_width(_hall_width)
+  OfficeBenchmark(SetupOptions const & options,
+		  std::ostream * progress_os)
+    : Setup(options),
+      door_width(1.2),
+      hall_width(3)
   {
+    if (sfl::token_to(options.world_tok, 2, door_width) && progress_os)
+      *progress_os << "mpbench::OfficeBenchmark: door_width set to " << door_width
+		   << "\n" << flush;
+    if (sfl::token_to(options.world_tok, 3, hall_width) && progress_os)
+      *progress_os << "mpbench::OfficeBenchmark: hall_width set to " << hall_width
+		   << "\n" << flush;
   }
   
   
-  OfficeBenchmark * OfficeBenchmark::
-  create(std::string const & name,
-	 double resolution,
-	 double inscribed_radius,
-	 double circumscribed_radius,
-	 double inflation_radius,
-	 int obstacle_cost,
-	 bool use_sfl_cost,
-	 double door_width,
-	 double hall_width,
-	 std::ostream * progress_os)
+  shared_ptr<OfficeBenchmark> OfficeBenchmark::
+  create(SetupOptions const & options,
+	 std::ostream * progress_os,
+	 std::ostream * debug_os)
   {
-    OfficeBenchmark * setup(new OfficeBenchmark(name, resolution,
-						inscribed_radius,
-						circumscribed_radius,
-						inflation_radius,
-						obstacle_cost,
-						use_sfl_cost,
-						door_width,
-						hall_width));
+    shared_ptr<OfficeBenchmark> setup;
+    string name;
+    if ( ! sfl::token_to(options.world_tok, 1, name)) {
+      if (progress_os)
+	*progress_os << "OfficeBenchmark::create(): could not extract name from spec\n" << flush;
+      return setup;
+    }
+    setup.reset(new OfficeBenchmark(options, progress_os));
     if ("dots" == name)
-      drawDots(*setup, hall_width, door_width, progress_os);
+      drawDots(*setup, setup->hall_width, setup->door_width, progress_os);
     else if ("square" == name)
-      drawSquare(*setup, hall_width, door_width, progress_os);
+      drawSquare(*setup, setup->hall_width, setup->door_width, progress_os, debug_os);
     else if ("office1" == name)
-      drawOffice1(*setup, hall_width, door_width, progress_os);
+      drawOffice1(*setup, setup->hall_width, setup->door_width, progress_os, debug_os);
     else if ("cubicle" == name)
-      drawCubicle(*setup, false, false, hall_width, door_width, 3, progress_os);
+      drawCubicle(*setup, false, false, setup->hall_width, setup->door_width, 3,
+		  progress_os, debug_os);
     else if ("cubicle2" == name)
-      drawCubicle(*setup, true, false, hall_width, door_width, 3, progress_os);
+      drawCubicle(*setup, true, false, setup->hall_width, setup->door_width, 3,
+		  progress_os, debug_os);
     else if ("cubicle3" == name)
-      drawCubicle(*setup, true, true, hall_width, door_width, 3, progress_os);
+      drawCubicle(*setup, true, true, setup->hall_width, setup->door_width, 3,
+		  progress_os, debug_os);
     else {
-      delete setup;
+      setup.reset();
       if (progress_os)
 	*progress_os << "OfficeBenchmark::create(): invalid name \"" << name << "\", use one of:\n"
 		     << "  dots: 4 dots in a square of hall_width side length\n"
 		     << "  square: a square of hall_width side length\n"
 		     << "  office1: two offices, two hallways, some doors\n" << flush;
-      return 0;
     }
     return setup;
   }
@@ -636,18 +542,36 @@ namespace {
 
 namespace mpbench {  
   
-  void Setup::
-  dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
+  
+  void SetupOptions::
+  dump(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "name:                 " << name << "\n"
-       << prefix << "resolution:           " << resolution << "\n"
-       << prefix << "inscribed_radius:     " << inscribed_radius << "\n"
-       << prefix << "circumscribed_radius: " << circumscribed_radius << "\n"
-       << prefix << "inflation_radius:     " << inflation_radius << "\n"
-       << prefix << "obstacle_cost:        " << obstacle_cost << "\n"
-       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n");
+    os << prefix << "world spec:                   " << world_spec << "\n"
+       << prefix << "planner spec:                 " << planner_spec << "\n"
+       << prefix << "robot spec:                   " << robot_spec << "\n"
+       << prefix << "costmap spec:                 " << costmap_spec << "\n"
+       << prefix << "robot_name:                   " << robot_name << "\n"
+       << prefix << "robot_inscribed_radius:       " << robot_inscribed_radius << "\n"
+       << prefix << "robot_circumscribed_radius:   " << robot_circumscribed_radius << "\n"
+       << prefix << "robot_nominal_forward_speed:  " << robot_nominal_forward_speed << "\n"
+       << prefix << "robot_nominal_rotation_speed: " << robot_nominal_rotation_speed << "\n"
+       << prefix << "costmap_name:                 " << costmap_name << "\n"
+       << prefix << "costmap_resolution:           " << costmap_resolution << "\n"
+       << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
+       << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
+       << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
+       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n"
+       << prefix << "pgm_obstacle_gray:            " << pgm_obstacle_gray << "\n"
+       << prefix << "pgm_invert_gray:              " << pgm_invert_gray << "\n";
+  }
+  
+  
+  void Setup::
+  dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
+  {
+    opt_.dump(os, title, prefix);
     dumpSubDescription(os, prefix);
     os << prefix << "tasks:\n";
     for (tasklist_t::const_iterator it(tasklist_.begin()); it != tasklist_.end(); ++it) {
@@ -729,15 +653,13 @@ namespace mpbench {
     }
     
     result::
-    result(size_t _planner_id,
-	   size_t _task_id,
+    result(size_t _task_id,
 	   size_t _episode_id,
 	   startspec const & _start,
 	   goalspec const & _goal,
 	   boost::shared_ptr<mpglue::waypoint_plan_t> _plan,
 	   boost::shared_ptr<mpglue::CostmapPlannerStats> _stats)
-      : planner_id(_planner_id),
-	task_id(_task_id),
+      : task_id(_task_id),
 	episode_id(_episode_id),
 	start(_start),
 	goal(_goal),
@@ -752,149 +674,317 @@ namespace mpbench {
   void Setup::
   getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ - resolution;
-    y0 = bby0_ - resolution;
-    x1 = bbx1_ + resolution;
-    y1 = bby1_ + resolution;
+    x0 = bbx0_ - opt_.costmap_resolution;
+    y0 = bby0_ - opt_.costmap_resolution;
+    x1 = bbx1_ + opt_.costmap_resolution;
+    y1 = bby1_ + opt_.costmap_resolution;
   }
   
   
   void Setup::
   getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ - inscribed_radius;
-    y0 = bby0_ - inscribed_radius;
-    x1 = bbx1_ + inscribed_radius;
-    y1 = bby1_ + inscribed_radius;
+    x0 = bbx0_ - opt_.costmap_inscribed_radius;
+    y0 = bby0_ - opt_.costmap_inscribed_radius;
+    x1 = bbx1_ + opt_.costmap_inscribed_radius;
+    y1 = bby1_ + opt_.costmap_inscribed_radius;
   }
   
   
   void Setup::
   getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ - circumscribed_radius;
-    y0 = bby0_ - circumscribed_radius;
-    x1 = bbx1_ + circumscribed_radius;
-    y1 = bby1_ + circumscribed_radius;
+    x0 = bbx0_ - opt_.costmap_circumscribed_radius;
+    y0 = bby0_ - opt_.costmap_circumscribed_radius;
+    x1 = bbx1_ + opt_.costmap_circumscribed_radius;
+    y1 = bby1_ + opt_.costmap_circumscribed_radius;
   }
   
   
   void Setup::
   getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ - inflation_radius;
-    y0 = bby0_ - inflation_radius;
-    x1 = bbx1_ + inflation_radius;
-    y1 = bby1_ + inflation_radius;
+    x0 = bbx0_ - opt_.costmap_inflation_radius;
+    y0 = bby0_ - opt_.costmap_inflation_radius;
+    x1 = bbx1_ + opt_.costmap_inflation_radius;
+    y1 = bby1_ + opt_.costmap_inflation_radius;
   }
   
   
-  boost::shared_ptr<mpglue::Costmap> Setup::
+  boost::shared_ptr<mpglue::CostmapPlanner> Setup::
+  getPlanner()
+  {
+    return planner_;
+  }
+  
+  
+  boost::shared_ptr<mpglue::CostmapAccessor const> Setup::
   getCostmap() const
   {
-    if (costmapWrap_)
-      return costmapWrap_;
-    if (use_sfl_cost)
-      costmapWrap_.reset(mpglue::createCostmap(getRawSFLTravmap().get()));
-    else
-      costmapWrap_.reset(mpglue::createCostmap(&getRaw2DCostmap()));
-    return costmapWrap_;
+    return costmapper_->getAccessor();
   }
   
   
-  boost::shared_ptr<mpglue::IndexTransform> Setup::
+  boost::shared_ptr<mpglue::IndexTransform const> Setup::
   getIndexTransform() const
   {
-    if (indexTransform_)
-      return indexTransform_;
-    if (use_sfl_cost)
-      indexTransform_.reset(mpglue::createIndexTransform(&getRawSFLTravmap()->GetGridFrame()));
-    else
-      indexTransform_.reset(mpglue::createIndexTransform(&getRaw2DCostmap()));
-    return indexTransform_;
+    return costmapper_->getIndexTransform();
   }
   
   
   SetupOptions::
-  SetupOptions()
-    : spec("hc:office1"),
-      resolution(0.05),
-      inscribed_radius(0.325),	// from highlevel_controllers/test/launch_move_base.xml r7215
-      circumscribed_radius(0.46), // dito
-      inflation_radius(0.55),	// dito
-      obstacle_cost(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE),
-      use_sfl_cost(false),
-      door_width(1.2),
-      hall_width(3),
-      obstacle_gray(64),
-      invert_gray(true)
+  SetupOptions(std::string const & _world_spec,
+	       std::string const & _planner_spec,
+	       std::string const & _robot_spec,
+	       std::string const & _costmap_spec)
+    : world_spec(_world_spec),
+      planner_spec(_planner_spec),
+      robot_spec(_robot_spec),
+      costmap_spec(_costmap_spec),
+      robot_name("pr2"),
+      robot_inscribed_radius(0.325),
+      robot_circumscribed_radius(0.46),
+      robot_nominal_forward_speed(0.6),	// approx human walking speed
+      robot_nominal_rotation_speed(0.6), // XXXX guesstimate
+      costmap_name("sfl"),
+      costmap_resolution(0.05),
+      costmap_inscribed_radius(0.325),
+      costmap_circumscribed_radius(0.46),
+      costmap_inflation_radius(0.55),
+      costmap_obstacle_cost(costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE),
+      pgm_obstacle_gray(64),
+      pgm_invert_gray(true)
   {
+    sfl::tokenize(world_spec, ':', world_tok);
+    sfl::tokenize(planner_spec, ':', planner_tok);
+    sfl::tokenize(robot_spec, ':', robot_tok);
+    sfl::tokenize(costmap_spec, ':', costmap_tok);
+    
+    sfl::token_to(robot_tok, 0, robot_name);
+    if (sfl::token_to(robot_tok, 1, robot_inscribed_radius))
+      robot_inscribed_radius *= 1e-3;
+    if (sfl::token_to(robot_tok, 2, robot_circumscribed_radius))
+      robot_circumscribed_radius *= 1e-3;
+    if (sfl::token_to(robot_tok, 3, robot_nominal_forward_speed))
+      robot_nominal_forward_speed *= 1e-3;
+    if (sfl::token_to(robot_tok, 4, robot_nominal_rotation_speed))
+      robot_nominal_rotation_speed *= 1e-3;
+    
+    sfl::token_to(costmap_tok, 0, costmap_name);
+    if (sfl::token_to(costmap_tok, 1, costmap_resolution))
+      costmap_resolution *= 1e-3;
+    if (sfl::token_to(costmap_tok, 2, costmap_inscribed_radius))
+      costmap_inscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 3, costmap_circumscribed_radius))
+      costmap_circumscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 4, costmap_inflation_radius))
+      costmap_inflation_radius *= 1e-3;
+    sfl::token_to(costmap_tok, 5, costmap_obstacle_cost);
+  }
+
+
+  void SetupOptions::
+  help(std::ostream & os, std::string const & title, std::string const & prefix)
+  {
+    if ( ! title.empty())
+      os << title << "\n";
+    os << prefix << "available world specs:\n"
+       << prefix << "  hc  : name [: door_width [: hall_width ]]\n"
+       << prefix << "        name can be dots, square, office1, cubicle, cubcile2, cubicle3\n"
+       << prefix << "        door_width and hall_width are in meters (default 1.2 and 3)\n"
+       << prefix << "  pgm : pgm_filename [: xml_filename ]\n"
+       << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
+       << prefix << "  xml : xml_filename\n"
+       << prefix << "available planner specs (can use registered aliases instead):\n"
+       << prefix << "  NavFn\n"
+       << prefix << "  ADStar | ARAStar [: 2d | 3dkin [: fwd | bwd ]]\n"
+       << prefix << "available robot specs:\n"
+       << prefix << "  pr2 [: inscribed [: circumscribed [: fwd_speed [: rot_speed ]]]]\n"
+       << prefix << "      inscribed radius (millimeters), default 325mm\n"
+       << prefix << "      circumscribed radius (millimeters), default 460mm\n"
+       << prefix << "      nominal forward speed (millimeters per second), default 600mm/s\n"
+       << prefix << "      nominal rotation speed (milliradians per second), default 600mrad/s\n"
+       << prefix << "available costmap specs:\n"
+       << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
+       << prefix << "      all lengths and radii in millimeters\n"
+       << prefix << "      defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
   }
   
   
-  Setup * createSetup(SetupOptions const & opt,
-		      std::ostream * progress_os)
-    throw(std::runtime_error)
+  shared_ptr<Setup> Setup::
+  create(std::string const & world_spec,
+	 std::string const & planner_spec,
+	 std::string const & robot_spec,
+	 std::string const & costmap_spec,
+	 std::ostream * progress_os,
+	 std::ostream * debug_os) throw(std::runtime_error)
   {
-    string spec(opt.spec);
-    string format;
-    if ( ! sfl::splitstring(spec, ':', format, spec))
-      throw runtime_error("mpbench::createSetup(): could not extract format from \""
-			  + opt.spec + "\"");
-    if ("hc" == format)
-      return OfficeBenchmark::create(spec,
-				     opt.resolution,
-				     opt.inscribed_radius,
-				     opt.circumscribed_radius,
-				     opt.inflation_radius,
-				     opt.obstacle_cost,
-				     opt.use_sfl_cost,
-				     opt.door_width,
-				     opt.hall_width,
-				     progress_os);
-    if ("pgm" == format) {
-      string pgm_filename;
-      string xml_filename;
-      sfl::splitstring(spec, ':', pgm_filename, xml_filename);
-      return createNetPGMBenchmark(pgm_filename,
-				   xml_filename,
-				   opt.obstacle_gray,
-				   opt.invert_gray,
-				   opt.resolution,
-				   opt.inscribed_radius,
-				   opt.circumscribed_radius,
-				   opt.inflation_radius,
-				   opt.obstacle_cost,
-				   opt.use_sfl_cost,
-				   progress_os);
+    SetupOptions const opt(SetupOptions(world_spec,
+					planner_spec,
+					robot_spec,
+					costmap_spec));
+    
+    if (progress_os)
+      *progress_os << "creating world from \"" << opt.world_spec << "\"\n" << flush;
+    
+    shared_ptr<Setup> setup;
+    if (opt.world_tok.empty())
+      throw runtime_error("mpbench::Setup::create(): could not extract world format from \""
+			  + opt.world_spec + "\"");
+    if ("hc" == opt.world_tok[0])
+      setup = OfficeBenchmark::create(opt, progress_os, debug_os);
+    else if ("pgm" == opt.world_tok[0])
+      setup.reset(createNetPGMBenchmark(opt, progress_os));
+    else if ("xml" == opt.world_tok[0])
+      setup.reset(createXMLBenchmark(opt, progress_os));
+    else
+      throw runtime_error("mpbench::Setup::create(): invalid format \"" + opt.world_tok[0]
+			  + "\" in spec \"" + opt.world_spec + "\"");
+    
+    if (progress_os)
+      *progress_os << "creating CostmapManager (currently hardcoded sfl::Mapper2d)\n" << flush;
+    boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
+      growstrategy(new sfl::Mapper2d::always_grow());
+    double const buffer_zone(opt.costmap_circumscribed_radius - opt.costmap_inscribed_radius);
+    double const padding_factor(0);
+    shared_ptr<sfl::Mapper2d> m2d(new sfl::Mapper2d(setup->gridframe_,
+						    0, 0, // grid_xbegin, grid_xend
+						    0, 0, // grid_ybegin, grid_yend
+						    opt.costmap_inscribed_radius,
+						    sfl::maxval(0.0, buffer_zone),
+						    padding_factor,
+						    0, // freespace cost
+						    opt.costmap_obstacle_cost,
+						    // costmap_2d
+						    // seems to use a
+						    // quadratic decay
+						    // in r7215
+						    sfl::exponential_travmap_cost_decay(2),
+						    "m2d",
+						    sfl::RWlock::Create("m2d"),
+						    growstrategy));
+    setup->costmapper_ = mpglue::createCostmapper(m2d);
+    
+    if (progress_os)
+      *progress_os << "creating cost map (currently just one episode)\n" << flush;
+    setup->costmapper_->addObstacles(setup->wspace_obstacles_, debug_os);
+    
+    if (progress_os)
+      *progress_os << "creating planner from \"" << opt.planner_spec << "\"\n" << flush;
+    
+    if (opt.planner_tok.empty())
+      throw runtime_error("mpbench::Setup::create(): no planner tokens");
+    string planner_name(canonicalPlannerName(opt.planner_tok[0]));
+    shared_ptr<mpglue::CostmapPlanner> planner;
+    
+    if ("NavFn" == planner_name) {
+      if (progress_os)
+	*progress_os << "  creating NavFnPlanner\n" << flush;
+      setup->planner_.reset(new mpglue::NavFnPlanner(setup->getCostmap(),
+						     setup->getIndexTransform()));
     }
-    if ("xml" == format)
-      return createXMLBenchmark(spec,
-				opt.resolution,
-				opt.inscribed_radius,
-				opt.circumscribed_radius,
-				opt.inflation_radius,
-				opt.obstacle_cost,
-				opt.use_sfl_cost,
-				progress_os);
-    throw runtime_error("mpbench::createSetup(): invalid format \"" + format + "\"");
-    return 0;
+    
+    else {
+      if (progress_os)
+	*progress_os << "  creating SBPLPlanner subtype\n" << flush;
+      
+      // The remaining possibilities are (currently) all derived from
+      // SBPL and thus all need an SBPLEnvironment instance, so we
+      // create that first.
+      string envstr("2d");
+      sfl::token_to(opt.planner_tok, 1, envstr);
+      shared_ptr<mpglue::SBPLEnvironment> sbpl_environment;
+      if ("2d" == envstr) {
+	if (progress_os)
+	  *progress_os << "  creating 2DEnvironment\n" << flush;
+	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(setup->getCostmap(),
+								 setup->getIndexTransform()));
+      }
+      else if ("3dkin" == envstr) {
+	if (progress_os)
+	  *progress_os << "  creating 3DKINEnvironment\n" << flush;
+	double const
+	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt.robot_nominal_rotation_speed);
+	sbpl_environment.
+	  reset(mpglue::SBPLEnvironment::create3DKIN(setup->getCostmap(),
+						     setup->getIndexTransform(),
+						     setup->getFootprint(),
+						     opt.robot_nominal_forward_speed,
+						     timetoturn45degsinplace_secs));
+      }
+      else
+	throw runtime_error("mpbench::Setup::create(): invalid environment token \""
+			    + envstr + "\", must be \"2d\" or \"3dkin\"");
+      if ( ! sbpl_environment)
+	throw runtime_error("mpbench::Setup::create(): failed to create SBPLEnvironment from \""
+			    + envstr + "\"");
+      
+      string dirstr("bwd");
+      sfl::token_to(opt.planner_tok, 2, dirstr);
+      bool forwardsearch(false);
+      if ("fwd" == dirstr) {
+	if (progress_os)
+	  *progress_os << "  search direction: forward\n" << flush;
+	forwardsearch = true;
+      }
+      else if ("bwd" == dirstr) {
+	if (progress_os)
+	  *progress_os << "  search direction: backward\n" << flush;
+      }
+      else
+	throw runtime_error("mpbench::Setup::create(): invalid search direction \"" + dirstr
+			    + "\", should be \"fwd\" or \"bwd\"");
+      
+      shared_ptr<SBPLPlanner> sbpl_planner;
+      if ("ARAStar" == planner_name) {
+	if (progress_os)
+	  *progress_os << "  creating ARAPlanner\n" << flush;	
+	sbpl_planner.reset(new ARAPlanner(sbpl_environment->getDSI(), forwardsearch));
+      }
+      else if ("ADStar" == planner_name) {
+	if (progress_os)
+	  *progress_os << "  creating ADPlanner\n" << flush;	
+	sbpl_planner.reset(new ADPlanner(sbpl_environment->getDSI(), forwardsearch));
+      }
+      else
+	throw runtime_error("mpbench::Setup::create(): invalid planner name \"" + planner_name
+			    + "\"");
+      
+      shared_ptr<mpglue::AnytimeCostmapPlanner>
+	foo(new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner));
+      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
+      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
+      
+      setup->planner_ = foo;
+    }
+    
+    if ( ! setup->planner_)
+      throw runtime_error("mpbench::Setup::create(): failed to create planner from spec \""
+			  + opt.planner_spec + "\"");
+    
+    if (progress_os)
+      *progress_os << "finished creating setup\n" << flush;
+    return setup;
+  }
+  
+  
+  mpglue::footprint_t const & Setup::
+  getFootprint() const
+  {
+    if ( ! footprint_) {
+      footprint_.reset(new mpglue::footprint_t());
+      mpglue::initSimpleFootprint(*footprint_,
+				  opt_.robot_inscribed_radius,
+				  opt_.robot_circumscribed_radius);
+    }
+    return *footprint_;
   }
   
 }
 
 namespace {
   
-  mpbench::Setup * createNetPGMBenchmark(std::string const & pgmFileName,
-					 std::string const & xmlFileName,
-					 unsigned int obstacle_gray,
-					 bool invert_gray,
-					 double resolution,
-					 double inscribed_radius,
-					 double circumscribed_radius,
-					 double inflation_radius,
-					 int obstacle_cost,
-					 bool use_sfl_cost,
+  mpbench::Setup * createNetPGMBenchmark(SetupOptions const & opt,
 					 std::ostream * progress_os) throw(runtime_error)
   {
     mpbench::Setup * bench(0);
@@ -910,22 +1000,30 @@ namespace {
     
 #else // MPBENCH_HAVE_NETPGM
     
-    FILE * pgmfile(fopen(pgmFileName.c_str(), "rb"));
-    if ( ! pgmfile) {
+    if (opt.world_tok.size() < 2) {
       ostringstream os;
-      os << "createNetPGMBenchmark(): fopen(" << pgmFileName << "): " << strerror(errno);
+      os << "createNetPGMBenchmark(): no PGM filename in world spec \"" << opt.world_spec << "\"";
       if (progress_os)
 	*progress_os << "ERROR in " << os.str() << "\n";
       throw runtime_error(os.str());
     }
-    bench = new mpbench::Setup(pgmFileName + ":" + xmlFileName,
-			       resolution, inscribed_radius, circumscribed_radius,
-			       inflation_radius, obstacle_cost, use_sfl_cost);
+    
+    FILE * pgmfile(fopen(opt.world_tok[1].c_str(), "rb"));
+    if ( ! pgmfile) {
+      ostringstream os;
+      os << "createNetPGMBenchmark(): fopen(" << opt.world_tok[1] << "): " << strerror(errno);
+      if (progress_os)
+	*progress_os << "ERROR in " << os.str() << "\n";
+      throw runtime_error(os.str());
+    }
+    bench = new mpbench::Setup(opt);
     if (progress_os)
-      *progress_os << "createNetPGMBenchmark(): translating PGM file " << pgmFileName << "\n";
-    readNetPGM(*bench, pgmfile, obstacle_gray, invert_gray, resolution);
-    if ( ! xmlFileName.empty())
-      readXML(xmlFileName, bench, progress_os);
+      *progress_os << "createNetPGMBenchmark(): translating PGM file " << opt.world_tok[1] << "\n";
+    readNetPGM(*bench, pgmfile, opt.pgm_obstacle_gray, opt.pgm_invert_gray,
+	       opt.costmap_resolution);
+    
+    if (opt.world_tok.size() > 2)
+      readXML(opt.world_tok[2], bench, progress_os);
     
 #endif // MPBENCH_HAVE_NETPGM
     
@@ -958,17 +1056,10 @@ namespace {
   }
   
   
-  mpbench::Setup * createXMLBenchmark(std::string const & xmlFileName,
-				      double resolution,
-				      double inscribed_radius,
-				      double circumscribed_radius,
-				      double inflation_radius,
-				      int obstacle_cost,
-				      bool use_sfl_cost,
+  mpbench::Setup * createXMLBenchmark(SetupOptions const & opt,
 				      std::ostream * progress_os) throw(runtime_error)
   {
     mpbench::Setup * bench(0);
-    
     
 #ifndef MPBENCH_HAVE_EXPAT
     
@@ -981,16 +1072,22 @@ namespace {
     
 #else // MPBENCH_HAVE_EXPAT
     
-    bench = new mpbench::Setup(xmlFileName,
-			       resolution, inscribed_radius, circumscribed_radius,
-			       inflation_radius, obstacle_cost, use_sfl_cost);
+    if (opt.world_tok.size() < 2) {
+      ostringstream os;
+      os << "createXMLBenchmark(): no XML filename in world spec \"" << opt.world_spec << "\"";
+      if (progress_os)
+	*progress_os << "ERROR in " << os.str() << "\n";
+      throw runtime_error(os.str());
+    }
+    
+    bench = new mpbench::Setup(opt);
     if (progress_os)
-      *progress_os << "createXMLBenchmark(): parsing " << xmlFileName << "\n";
-    readXML(xmlFileName, bench, progress_os);
+      *progress_os << "createXMLBenchmark(): parsing " << opt.world_tok[1] << "\n";
+    readXML(opt.world_tok[1], bench, progress_os);
     
 #endif // MPBENCH_HAVE_EXPAT
     
-    return bench;    
+    return bench;
   }
 
 }

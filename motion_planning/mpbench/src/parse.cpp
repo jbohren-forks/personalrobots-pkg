@@ -299,7 +299,8 @@ void end_element_handler(void * user_data,
       is >> x0 >> y0 >> x1 >> y1;
       if ( ! is)
 	throwme(sp, "could not read x0 y0 x1 y1 from \"" + sp->buffer->GetString() + "\"");
-      sp->setup->drawLine(x0, y0, x1, y1, sp->progress_os);
+      static ostream * dbgos(0); // XXXX maybe switchable one day...
+      sp->setup->drawLine(x0, y0, x1, y1, sp->progress_os, dbgos);
     }
     break;
     

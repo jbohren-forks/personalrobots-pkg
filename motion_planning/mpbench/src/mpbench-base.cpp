@@ -59,22 +59,25 @@ static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
 static void print_summary();
-static std::string canonicalPlannerName(std::string const & name_or_alias);
 
-static footprint_t const & getFootprint();
 static string baseFilename();
 static string sanitizeSpec(string const & spec);
 
+static char * const d_world_spec("hc:office1:1.2:3");
+static char * const d_planner_spec("ad:2d:bwd");
+static char * const d_robot_spec("pr2:325:460:600:600");
+static char * const d_costmap_spec("ros:50");
+
 static bool enableGfx;
+static string world_spec;
 static string planner_spec;
-static vector<string> planner_name;
-static string costmapType;
-static SetupOptions opt;
+static string costmap_spec;
+static string robot_spec;
 static bool websiteMode;
 
 static shared_ptr<Setup> setup;
-static vector<shared_ptr<CostmapPlanner> > planner;
 static shared_ptr<ostream> logos;
+static ostream * dbgos(0);
 
 static shared_ptr<footprint_t> footprint;
 
@@ -93,15 +96,12 @@ int main(int argc, char ** argv)
   print_summary();
   if (enableGfx)
     display(gfx::Configuration(*setup,
-			       planner_name,
-			       opt,
 			       websiteMode,
 			       baseFilename(),
-			       getFootprint(),
 			       resultlist,
 			       true, // XXXX to do: depends on 3DKIN
 			       *logos),
-	    opt.spec.c_str(),
+	    "mpbench",
 	    3, // hack: layoutID
 	    &argc, argv);
 }
@@ -112,7 +112,6 @@ void cleanup()
   if (logos)
     *logos << "byebye!\n" << flush;
   setup.reset();
-  planner.clear();
   logos.reset();
   resultlist.clear();
 }
@@ -121,39 +120,25 @@ void cleanup()
 void usage(ostream & os)
 {
   os << "options:\n"
-     << "   -h               help (this message)\n"
-     << "   -p  <spec>       colon-separated planner names\n"
-     << "   -m  <name>       name of the costmap implementation\n"
-    ////     << "   -e  <name>       environment representation type\n"
-     << "   -s  <spec>       setup specification, e.g. hc:office1 or pgm:costs.pgm:tasks.xml\n"
-     << "   -r  <cellsize>   set grid resolution\n"
-     << "   -i  <in-radius>  set INSCRIBED radius\n"
-     << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
-     << "   -I  <inflate-r>  set INFLATION radius\n"
-     << "   -d  <doorwidth>  set width of doors (office setups)\n"
-     << "   -H  <hallwidth>  set width of hallways (office setups)\n"
-    ////     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
-     << "   -g  <gray>       cutoff for obstacles in PGM images\n"
-    ////     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
-    ////     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
-     << "   -X               dump filename base to stdout (use as last option)\n"
-     << "   -W               run in website generation mode\n";
+     << "   -h          help (this message)\n"
+     << "   -v          verbose: print debug message\n"
+     << "   -w  <spec>  world specification string (default " << d_world_spec << ")\n"
+     << "   -p  <spec>  planner specification string (default " << d_planner_spec << ")\n"
+     << "   -r  <spec>  robot specification string (default " << d_robot_spec << ")\n"
+     << "   -c  <spec>  costmap specification string (default " << d_costmap_spec << ")\n"
+     << "   -X          dump filename base to stdout (use as last option)\n"
+     << "   -W          run in website generation mode\n";
+  SetupOptions::help(os, "help on setup options:", "  ");
 }
 
 
 static string summarizeOptions()
 {
   ostringstream os;
-  os << "-p" << sanitizeSpec(planner_spec)
-     << "-s" << sanitizeSpec(opt.spec)
-     << "-m" << costmapType
-    ////     << "-e" << canonicalEnvironmentName(environmentType)
-     << "-r" << (int) rint(1e3 * opt.resolution)
-     << "-i" << (int) rint(1e3 * opt.inscribed_radius)
-     << "-c" << (int) rint(1e3 * opt.circumscribed_radius)
-     << "-I" << (int) rint(1e3 * opt.inflation_radius)
-     << "-d" << (int) rint(1e3 * opt.door_width)
-     << "-H" << (int) rint(1e3 * opt.hall_width);
+  os << "-w" << sanitizeSpec(world_spec)
+     << "-p" << sanitizeSpec(planner_spec)
+     << "-r" << sanitizeSpec(robot_spec)
+     << "-c" << sanitizeSpec(costmap_spec);
   return os.str();
 }
 
@@ -172,7 +157,6 @@ string sanitizeSpec(string const & spec)
       forbidden.insert(cc);
     forbidden.insert('.');
     forbidden.insert('/');
-    forbidden.insert(':');
     forbidden.insert(';');
     forbidden.insert('<');
     forbidden.insert('>');
@@ -193,28 +177,14 @@ string sanitizeSpec(string const & spec)
 }
 
 
-static void sanitizeOptions()
-{
-  if (opt.inscribed_radius > opt.circumscribed_radius)
-    opt.circumscribed_radius = opt.inscribed_radius;
-  if (opt.inscribed_radius > opt.inflation_radius)
-    opt.inflation_radius = opt.inscribed_radius;
-  if (opt.circumscribed_radius > opt.inflation_radius)
-    opt.inflation_radius = opt.circumscribed_radius;
-}
-
-
 void parse_options(int argc, char ** argv)
 {
-  // these should become options
   enableGfx = true;
-  
-  // default values for options
-  planner_spec = "ara:ad:nf";
-  costmapType = "costmap_2d";
-  ////  environmentType = "2D";
+  world_spec = d_world_spec;
+  planner_spec = d_planner_spec;
+  robot_spec = d_robot_spec;
+  costmap_spec = d_costmap_spec;
   websiteMode = false;
-  // most other options handled through SetupOptions
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -229,164 +199,51 @@ void parse_options(int argc, char ** argv)
 	usage(cout);
 	exit(EXIT_SUCCESS);
 	
+      case 'v':
+	dbgos = &cout;
+	break;
+	
+      case 'w':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  warnx("-w requires world_spec argument");
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	world_spec = argv[ii];
+ 	break;
+	
       case 'p':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -p requires a spec argument\n";
+ 	  warnx("-p requires planner_spec argument");
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
 	planner_spec = argv[ii];
  	break;
 	
-      case 's':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -s requires a spec argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	opt.spec = argv[ii];
- 	break;
-	
-      case 'm':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -m requires a name argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	costmapType = argv[ii];
- 	break;
-	
       case 'r':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -r requires a cellsize argument\n";
+ 	  warnx("-r requires robot_spec argument");
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.resolution;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading cellsize argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
- 	break;
-	
-      case 'i':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -i requires inscribed radius argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.inscribed_radius;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading inscribed radius argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
+	robot_spec = argv[ii];
  	break;
 	
       case 'c':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -c requires circumscribed radius argument\n";
+ 	  warnx("-c requires costmap_spec argument");
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.circumscribed_radius;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading circumscribed radius argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
- 	break;
-	
-      case 'I':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -I requires inflation radius argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.inflation_radius;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading inflation radius argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
- 	break;
-	
-      case 'd':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -d requires a doorwidth argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.door_width;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading doorwidth argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
- 	break;
-	
-      case 'H':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -H requires a hallwidth argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.hall_width;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading hallwidth argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
- 	break;
-	
-      case 'g':
-	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -g requires a gray argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	{
-	  istringstream is(argv[ii]);
-	  is >> opt.obstacle_gray;
-	  if ( ! is) {
-	    cerr << argv[0] << ": error reading gray argument from \"" << argv[ii] << "\"\n";
-	    usage(cerr);
-	    exit(EXIT_FAILURE);
-	  }
-	}
+	costmap_spec = argv[ii];
  	break;
 	
       case 'X':
-	sanitizeOptions();
 	cout << baseFilename() << "\n";
 	exit(EXIT_SUCCESS);
 	
@@ -395,131 +252,28 @@ void parse_options(int argc, char ** argv)
 	break;
 	
       default:
-	cerr << argv[0] << ": invalid option '" << argv[ii] << "'\n";
+	warnx("invalid option %s", argv[ii]);
 	usage(cerr);
 	exit(EXIT_FAILURE);
       }
   }
-  
-  sanitizeOptions();
 }
 
 
 void create_setup()
 {
-  if ("costmap_2d" == costmapType)
-    opt.use_sfl_cost = false;
-  else if ("sfl" == costmapType)
-    opt.use_sfl_cost = true;
-  else
-    errx(EXIT_FAILURE,
-	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
-	 costmapType.c_str());
-  
-  *logos << "creating setup \"" << opt.spec << "\"\n" << flush;
   try {
-    setup.reset(createSetup(opt, logos.get()));
+    setup = Setup::create(world_spec, planner_spec, robot_spec, costmap_spec, logos.get(), dbgos);
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "create_setup(): EXCEPTION %s", ee.what());
   }
-  if ( ! setup)
-    errx(EXIT_FAILURE, "create_setup(): could not create setup from spec \"%s\"",
-	 opt.spec.c_str());
   setup->dumpDescription(*logos, "", "  ");
-  
-  {
-    string spec(planner_spec);
-    string head;
-    while (sfl::splitstring(spec, ':', head, spec)) {
-      string name(canonicalPlannerName(head));
-      bool const strict_name_check(true);
-      if ( ! name.empty()) {
-	planner_name.push_back(name);
-	*logos << "added planner name " << name << "\n" << flush;
-      }
-      else if (strict_name_check)
-	errx(EXIT_FAILURE, "create_setup(): strict_name_check failed on \"%s\"", head.c_str());
-    }
-  }
-  if (planner_name.empty())
-    errx(EXIT_FAILURE, "create_setup(): no valid planner names in spec \"%s\"",
-	 planner_spec.c_str());
-  
-  bool const forwardsearch(false); // XXXX to do: add an option for this
-  int const obstcost_thresh_2d(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-  int const obstcost_thresh_3dkin(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
-  double const nominalvel_mpersecs(0.6); // XXXX to do: config! human leisurely walking speed
-  double const timetoturn45degsinplace_secs(0.6); // XXXX to do: config! guesstimate
-  
-  for (size_t in(0); in < planner_name.size(); ++in) {
-    if ("NavFn" == planner_name[in]) {
-      *logos << "creating NavFnPlanner\n" << flush;
-      shared_ptr<CostmapPlanner> foo(new NavFnPlanner(setup->getCostmap(),
-						      setup->getIndexTransform()));
-      planner.push_back(foo);
-    }
-    else if ("ARAStar2D" == planner_name[in]) {
-      shared_ptr<SBPLPlannerWrap> foo(createARAStar2D(setup->getCostmap(),
-						      setup->getIndexTransform(),
-						      forwardsearch,
-						      obstcost_thresh_2d));
-      if ( ! foo)
-	errx(EXIT_FAILURE, "create_setup(): createARAStar2D() failed");
-      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
-      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      planner.push_back(foo);
-    }
-    else if ("ADStar2D" == planner_name[in]) {
-      shared_ptr<SBPLPlannerWrap> foo(createADStar2D(setup->getCostmap(),
-						     setup->getIndexTransform(),
-						     forwardsearch,
-						     obstcost_thresh_2d));
-      if ( ! foo)
-	errx(EXIT_FAILURE, "create_setup(): createADStar2D() failed");
-      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
-      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      planner.push_back(foo);
-    }
-    else if ("ARAStar3DKIN" == planner_name[in]) {
-      shared_ptr<SBPLPlannerWrap> foo(createARAStar3DKIN(setup->getCostmap(),
-							 setup->getIndexTransform(),
-							 forwardsearch,
-							 obstcost_thresh_3dkin,
-							 getFootprint(),
-							 nominalvel_mpersecs,
-							 timetoturn45degsinplace_secs));
-      if ( ! foo)
-	errx(EXIT_FAILURE, "create_setup(): createARAStar3DKIN() failed");
-      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
-      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      planner.push_back(foo);
-    }
-    else if ("ADStar3DKIN" == planner_name[in]) {
-      shared_ptr<SBPLPlannerWrap> foo(createADStar3DKIN(setup->getCostmap(),
-							setup->getIndexTransform(),
-							forwardsearch,
-							obstcost_thresh_3dkin,
-							getFootprint(),
-							nominalvel_mpersecs,
-							timetoturn45degsinplace_secs));
-      if ( ! foo)
-	errx(EXIT_FAILURE, "create_setup(): createADStar3DKIN() failed");
-      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
-      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      planner.push_back(foo);
-    }
-    else {
-      errx(EXIT_FAILURE, "create_setup(): invalid planner name \"%s\"",
-	   planner_name[in].c_str());
-    }
-  }
-  
   *logos << "finished creating setup\n" << flush;
 }
 
 
-static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_id,
+static void plan_iteratively(size_t task_id, size_t episode_id,
 			     task::startspec const & start, task::goalspec const & goal,
 			     SBPLPlannerWrap & planner_ref)
 {
@@ -544,7 +298,7 @@ static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_i
 		       + sfl::to_string(jj) + ": FAILURE", "    ");
       *logos << flush;
       shared_ptr<task::result>
-	result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+	result(new task::result(task_id, episode_id, start, goal, plan, stats));
       resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
       break;
     }
@@ -578,7 +332,7 @@ static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_i
 		       + sfl::to_string(jj) + "  IMPROVED", "    ");
     *logos << flush;
     shared_ptr<task::result>
-      result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+      result(new task::result(task_id, episode_id, start, goal, plan, stats));
     resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
     
     prev_epsilon = stats->solution_epsilon;
@@ -586,7 +340,7 @@ static void plan_iteratively(size_t planner_id, size_t task_id, size_t episode_i
 }
 
 
-static void plan_once(size_t planner_id, size_t task_id, size_t episode_id,
+static void plan_once(size_t task_id, size_t episode_id,
 		      task::startspec const & start, task::goalspec const & goal,
 		      CostmapPlanner & planner_ref)
 {
@@ -611,7 +365,7 @@ static void plan_once(size_t planner_id, size_t task_id, size_t episode_id,
   *logos << flush;
   
   shared_ptr<task::result>
-    result(new task::result(planner_id, task_id, episode_id, start, goal, plan, stats));
+    result(new task::result(task_id, episode_id, start, goal, plan, stats));
   resultlist.push_back(result);
 }
 
@@ -619,43 +373,41 @@ static void plan_once(size_t planner_id, size_t task_id, size_t episode_id,
 void run_tasks()
 {
   try {
-    for (size_t planner_id(0); planner_id < planner.size(); ++planner_id) {
-      *logos << "running tasks for planner " << planner_id << "\n" << flush;
+    boost::shared_ptr<mpglue::CostmapPlanner> planner(setup->getPlanner());
+    *logos << "running tasks\n" << flush;
+    
+    tasklist_t const & tasklist(setup->getTasks());
+    for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
+      if ( ! tasklist[task_id])
+	errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
+      task::setup const task(*tasklist[task_id]);
+      if (task.start.empty())
+	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
-      tasklist_t const & tasklist(setup->getTasks());
-      for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
-	if ( ! tasklist[task_id])
-	  errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
-	task::setup const task(*tasklist[task_id]);
-	if (task.start.empty())
-	  errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
+      *logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+      planner->setGoal(task.goal.px, task.goal.py, task.goal.pth);
+      planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
-	*logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
-	planner[planner_id]->setGoal(task.goal.px, task.goal.py, task.goal.pth);
-	planner[planner_id]->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
-      
-	for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
-	  task::startspec const & start(task.start[episode_id]);
-	  CostmapPlanner * costmap_planner(planner[planner_id].get());
-	  
-	  costmap_planner->setStart(start.px, start.py, start.pth);
-	  costmap_planner->forcePlanningFromScratch(start.from_scratch);
-	  
-	  // not all planners can be run iteratively...
-	  SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(costmap_planner));
-	  if ( ! sbpl_planner)
-	    plan_once(planner_id, task_id, episode_id, start, task.goal, *costmap_planner);
-	  else {
-	    sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
-	    sbpl_planner->setAllocatedTime(start.alloc_time);
-	    if (start.allow_iteration)
-	      plan_iteratively(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
-	    else
-	      plan_once(planner_id, task_id, episode_id, start, task.goal, *sbpl_planner);
-	  }
-	} // endfor(episode)
-      } // endfor(task)
-    } // endfor(planner)
+      for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
+	task::startspec const & start(task.start[episode_id]);
+	
+	planner->setStart(start.px, start.py, start.pth);
+	planner->forcePlanningFromScratch(start.from_scratch);
+	
+	// not all planners can be run iteratively...
+	SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(planner.get()));
+	if ( ! sbpl_planner)
+	  plan_once(task_id, episode_id, start, task.goal, *planner);
+	else {
+	  sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+	  sbpl_planner->setAllocatedTime(start.alloc_time);
+	  if (start.allow_iteration)
+	    plan_iteratively(task_id, episode_id, start, task.goal, *sbpl_planner);
+	  else
+	    plan_once(task_id, episode_id, start, task.goal, *sbpl_planner);
+	}
+      } // endfor(episode)
+    } // endfor(task)
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "EXCEPTION in run_tasks():\n%s", ee.what());
@@ -692,7 +444,7 @@ void print_summary()
   double x0, y0, x1, y1;
   setup->getWorkspaceBounds(x0, y0, x1, y1);
   double area((x1-x0)*(y1-y0));
-  double ncells(ceil(area / pow(opt.resolution, 2)));
+  double ncells(ceil(area / pow(setup->getOptions().costmap_resolution, 2)));
   *logos << "\nsummary:\n"
 	 << "  map size:\n"
 	 << "    area [m2]:                 " << area << "\n"
@@ -719,58 +471,4 @@ void print_summary()
 	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
 	 << "</table>\n";
   }
-}
-
-
-footprint_t const & getFootprint()
-{
-  if ( ! footprint) {
-    footprint.reset(new footprint_t());
-    initSimpleFootprint(*footprint, opt.inscribed_radius, opt.circumscribed_radius);
-  }
-  return *footprint;
-}
-
-
-std::string canonicalPlannerName(std::string const & name_or_alias)
-{
-  static map<string, string> planner_alias;
-  if (planner_alias.empty()) {
-    planner_alias.insert(make_pair("ARAStar2D",    "ARAStar2D"));
-    planner_alias.insert(make_pair("ara",          "ARAStar2D"));
-    planner_alias.insert(make_pair("ARA",          "ARAStar2D"));
-    planner_alias.insert(make_pair("arastar",      "ARAStar2D"));
-    planner_alias.insert(make_pair("ARAStar",      "ARAStar2D"));
-    planner_alias.insert(make_pair("ara2d",        "ARAStar2D"));
-    planner_alias.insert(make_pair("ARA2D",        "ARAStar2D"));
-    planner_alias.insert(make_pair("arastar2d",    "ARAStar2D"));
-    
-    planner_alias.insert(make_pair("ARAStar3DKIN", "ARAStar3DKIN"));
-    planner_alias.insert(make_pair("ara3d",        "ARAStar3DKIN"));
-    planner_alias.insert(make_pair("ARA3D",        "ARAStar3DKIN"));
-    planner_alias.insert(make_pair("arastar3d",    "ARAStar3DKIN"));
-    planner_alias.insert(make_pair("ARAStar3D",    "ARAStar3DKIN"));
-    
-    planner_alias.insert(make_pair("ADStar2D",     "ADStar2D"));
-    planner_alias.insert(make_pair("ad",           "ADStar2D"));
-    planner_alias.insert(make_pair("AD",           "ADStar2D"));
-    planner_alias.insert(make_pair("adstar",       "ADStar2D"));
-    planner_alias.insert(make_pair("ADStar",       "ADStar2D"));
-
-    planner_alias.insert(make_pair("ADStar3DKIN",  "ADStar3DKIN"));
-    planner_alias.insert(make_pair("ad3d",         "ADStar3DKIN"));
-    planner_alias.insert(make_pair("AD3D",         "ADStar3DKIN"));
-    planner_alias.insert(make_pair("adstar3d",     "ADStar3DKIN"));
-    planner_alias.insert(make_pair("ADStar3D",     "ADStar3DKIN"));
-
-    planner_alias.insert(make_pair("NavFn",        "NavFn"));
-    planner_alias.insert(make_pair("navfn",        "NavFn"));
-    planner_alias.insert(make_pair("nf",           "NavFn"));
-    planner_alias.insert(make_pair("NF",           "NavFn"));
-  }
-  
-  map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
-  if (planner_alias.end() == is)
-    return "";
-  return is->second;
 }

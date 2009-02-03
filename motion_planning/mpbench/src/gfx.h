@@ -45,20 +45,15 @@ namespace mpbench {
     
     struct Configuration {
       Configuration(Setup const & setup,
-		    std::vector<std::string> const & planner_name,
-		    SetupOptions const & opt,
 		    bool websiteMode,
 		    std::string const & baseFilename,
-		    mpglue::footprint_t const & footprint,
 		    resultlist_t const & resultlist,
 		    bool ignorePlanTheta,
 		    std::ostream & logOs);
       
       Setup const & setup;
-      std::vector<std::string> const & planner_name;
       double const resolution;
       double const inscribedRadius;
-      double const circumscribedRadius;
       bool const websiteMode;
       std::string const baseFilename;
       mpglue::footprint_t const & footprint;
@@ -73,7 +68,8 @@ namespace mpbench {
 	prefix. You can make further screenshots by pressing 'p'. In
 	websiteMode, it just ends up taking two screenshots (one big
 	one small) and then calls exit(). */
-    void display(Configuration const & config, char const * windowName,
+    void display(Configuration const & config,
+		 char const * windowName,
 		 /** XXXX temporary hack */
 		 size_t layoutID,
 		 int * argc, char ** argv);
