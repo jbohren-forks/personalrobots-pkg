@@ -537,7 +537,7 @@ class DoorHandleDetector : public ros::Node
 
       // Split points into clusters
       vector<vector<int> > clusters;
-      findClusters (points, &possible_handle_indices, clusters_growing_tolerance_, clusters, 0, 1, 2, 5);
+      findClusters (points, &possible_handle_indices, clusters_growing_tolerance_, clusters, -1, -1, -1, 5);
       for (unsigned int i=0; i<clusters.size(); i++)
 	cout << "cluster " << i << " has size " << clusters[i].size() << endl;
 
@@ -616,9 +616,11 @@ class DoorHandleDetector : public ros::Node
         int sq_idx = 0;
         seed_queue.push_back (i);
 
-        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+        double norm_a = 0.0;
+        if (nx_idx != -1)         // If we use normal indices...
+          norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+                         points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+                         points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
 
         processed[i] = true;
 
@@ -631,14 +633,22 @@ class DoorHandleDetector : public ros::Node
           {
             if (!processed.at (nn_indices[j]))
             {
-              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
-              // [-1;1]
-              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
-              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
+              if (nx_idx != -1)         // If we use normal indices...
+              {
+                double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                                      points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                                      points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+                // [-1;1]
+                double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                               points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                               points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+                if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
+                {
+                  processed[nn_indices[j]] = true;
+                  seed_queue.push_back (nn_indices[j]);
+                }
+              }
+              else
               {
                 processed[nn_indices[j]] = true;
                 seed_queue.push_back (nn_indices[j]);
@@ -791,8 +801,7 @@ int
 
   p.spin ();
 
-  
-
+  p.shutdown ();
   return (0);
 }
 /* ]--- */
