@@ -125,6 +125,7 @@ public:
   , failed_transform_count_(0)
   , transform_message_count_(0)
   , incoming_message_count_(0)
+  , time_tolerance_(0.0)
   {
     setTopic(topic);
 
@@ -182,6 +183,14 @@ public:
     subscribeToMessage();
   }
 
+  /** 
+   * \brief Set the required tolerance for the notifier to return true
+   */
+  void setTolerance(const ros::Duration& tolerance)
+  {
+    time_tolerance_ = tolerance;
+  }
+
   /**
    * \brief Clear any messages currently in the queue
    */
@@ -217,7 +226,16 @@ private:
     {
       MessagePtr& message = *it;
 
-      if (tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp))
+      bool ready = false;
+      if (time_tolerance_ != ros::Duration(0.0))
+      {      
+        ready = (tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp) &&
+                 tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp + time_tolerance_) );
+      }
+      else
+        ready = tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp);
+
+      if (ready)
       {
         // If we get here the transform succeeded, so push the message onto the notify list, and erase it from or message list
         to_notify.push_back(message);
@@ -437,6 +455,8 @@ private:
   int failed_transform_count_;
   int transform_message_count_;
   int incoming_message_count_;
+
+  ros::Duration time_tolerance_; ///< Provide additional tolerance on time for messages which are stamped but can have associated duration
 };
 
 } // namespace tf
