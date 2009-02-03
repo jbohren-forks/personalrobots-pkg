@@ -229,6 +229,7 @@ class TestDirected(unittest.TestCase):
         afs = []
         P = None
         for i in range(50):
+          print "render", i
           P = movement(i, P)
           li = Image.new("L", (640, 480))
           ri = Image.new("L", (640, 480))
@@ -256,6 +257,7 @@ class TestDirected(unittest.TestCase):
           print numpy.abs((ep.M - vo.pose.M))
         self.assert_(numpy.alltrue(numpy.abs((ep.M - vo.pose.M)) < 0.2))
 
+      return
       def run(vos):
         for af in afs:
           for vo in vos:
