@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
@@ -104,7 +103,7 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
   task_jac_=Eigen::MatrixXf::Zero(6, num_joints_);
-  identity_=Eigen::MatrixXf::Identity(num_joints_, num_joints_);
+  identity_=Eigen::MatrixXf::Identity(6, 6);
   constraint_null_space_=Eigen::MatrixXf::Zero(num_joints_, num_joints_);
   constraint_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
   task_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
@@ -221,14 +220,14 @@ void EndeffectorConstraintController::update()
   // convert the wrench into joint torques
 
   constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
-  task_torq_ = constraint_null_space_ * task_jac_.transpose() * task_wrench_;
+  task_torq_ = task_jac_.transpose()* constraint_null_space_ * task_wrench_;
 
   j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
   {
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
-    joints_[j++]->commanded_effort_ = constraint_torq_(i)+ task_torq_(i);
+    joints_[j++]->commanded_effort_ = constraint_torq_(i);//+ task_torq_(i);
   }
 }
 
@@ -262,7 +261,6 @@ void EndeffectorConstraintController::computeConstraintJacobian()
     f_x = x_dist_to_wall * f_x_max; /// @todo: FIXME, replace with some exponential function
     if((x_dist_to_wall-threshold_x) > 0 && DEBUG)
     {
-     
       ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
     }
   }
@@ -292,20 +290,19 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   }
 
 
- Twist pose_error = diff(desired_frame_,endeffector_frame_);
-
+ Twist pose_error = diff(endeffector_frame_, desired_frame_);
 
   static int cnt = 0; ++cnt;
   if (cnt % 10 == 0)
-    ROS_ERROR("Meas: % .3lf  % .3lf  % .3lf", pose_error(3), pose_error(4), pose_error(5));
+    //ROS_ERROR("Meas: % .3lf  % .3lf  % .3lf", pose_error(3), pose_error(4), pose_error(5));
   //ROS_ERROR("roll_error: %f rad\n", (roll_error))
 
   //roll constraint
   if (fabs(pose_error(3)) > 0.05)
   {
     //determine sign
-    constraint_jac_(3,2) = -pose_error(3)/fabs(pose_error(3));
-    f_roll = fabs(pose_error(3)) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    constraint_jac_(3,2) = 1;
+    f_roll = pose_error(3) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -316,8 +313,8 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   if (fabs(pose_error(4)) > 0.05)
   {
     //determine sign
-    constraint_jac_(4,3) =-pose_error(4)/fabs(pose_error(4));
-    f_pitch = fabs(pose_error(4)) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    constraint_jac_(4,3) = 1;
+    f_pitch = pose_error(4) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -328,8 +325,8 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   if (fabs(pose_error(5)) > 0.05)
   {
     //determine sign
-    constraint_jac_(5,4) = -pose_error(5)/fabs(pose_error(5)); 
-    f_yaw = fabs(pose_error(5)) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    constraint_jac_(5,4) = 1; 
+    f_yaw = pose_error(5) * pose_error(5)* f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -347,9 +344,7 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
 {
   // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
-  constraint_null_space_ = identity_ - task_jac_.transpose()*constraint_jac_*constraint_jac_.transpose()*task_jac_;
-
-
+  constraint_null_space_ = identity_ - constraint_jac_*constraint_jac_.transpose();
 }
 
 
