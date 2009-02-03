@@ -87,7 +87,7 @@ void on_trackbar(int)
     //cvSet(display.Ipl(), CV_RGB(0, 255, 255), mask.Ipl());
     
     // Rectify and display first blob
-    /*
+    
     static const double E = 1.5;
     CBlob *blob = blobs.GetBlob(1);
     double orientation = CBlobGetOrientation()(*blob);
@@ -113,7 +113,7 @@ void on_trackbar(int)
     CvMat transform = cvMat(2, 3, CV_32F, buffer);
     cvWarpAffine(image.Ipl(), rectified.Ipl(), &transform);
     cvShowImage(rect_wndname, rectified.Ipl());
-    */
+    
   }
   
   cvShowImage(wndname, display.Ipl());
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
   cvCvtColor(image.Ipl(), image_hsv.Ipl(), CV_BGR2HSV);
 
   cvNamedWindow(wndname);
-  //cvNamedWindow(rect_wndname);
+  cvNamedWindow(rect_wndname);
   cvCreateTrackbar("Hue min", wndname, &hue_min, 180, on_trackbar);
   cvCreateTrackbar("Hue max", wndname, &hue_max, 180, on_trackbar);
   cvCreateTrackbar("Sat min", wndname, &sat_min, 255, on_trackbar);
@@ -156,6 +156,9 @@ int main(int argc, char** argv)
       case 's':
         cvSaveImage("orange.jpg", display.Ipl());
         printf("Saved orange.jpg\n");
+      case 'r':
+        cvSaveImage("rectified.jpg", rectified.Ipl());
+        printf("Saved rectified.jpg\n");
     }
   }
 
