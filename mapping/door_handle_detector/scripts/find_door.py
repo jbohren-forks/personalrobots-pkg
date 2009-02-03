@@ -36,9 +36,9 @@
 ## Simple demo of a rospy service client that calls a service to add
 ## two integers. 
 
-PKG = 'rospy_tutorials' # this package name
+PKG = 'door_handle_detector' # this package name
 
-import rostools; rostools.update_path(PKG) 
+import rostools; rostools.load_manifest(PKG) 
 
 import sys
 import os
@@ -46,6 +46,7 @@ import string
 
 import rospy
 from std_msgs.msg import Point
+from door_handle_detector.srv import Door
 
 def find_door(p1, p2):
     # block until the door_handle_detector service is available
@@ -54,9 +55,10 @@ def find_door(p1, p2):
     print "Service is available"
     try:
         # create a handle to the add_two_ints service
-        find_door = rospy.ServiceProxy('door_handle_detector', FindDoor)
+        find_door = rospy.ServiceProxy('door_handle_detector', Door)
         print "Requesting (%s, %s) and (%s, %s)"%(p1.x, p1.y, p2.x, p2.y)
         res = find_door(p1, p2)
+        print "Request finished"
         return res
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
@@ -89,13 +91,15 @@ def move_arm(x, y, z, rx, ry, rz, w):
 
 if __name__ == "__main__":
     
-    p1 = Point
-    p2 = Point
+    p1 = Point()
+    p2 = Point()
 
-    p1.x = 1.0
+    p1.x = 2.5
     p1.y = -0.5
+    p1.z = 0.0
     p2.x = 1.0
     p2.y = 0.5
+    p2.z = 0.0
     
     res = find_door(p1, p2)
     print "Frame found at (%s, %s)  (%s, %s)"%(res.frame_p1.x, res.frame_p1.y, 

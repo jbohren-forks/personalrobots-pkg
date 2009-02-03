@@ -123,8 +123,8 @@ class DoorHandleDetector : public ros::Node
       param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
 
       param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
-      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
       param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
+      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
       param ("~door_max_width", door_max_width_, 1.2);                    // maximumwidth of a door: 1.2m
       ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                  door_min_height_, door_max_height_, door_min_width_, door_max_width_);
@@ -144,6 +144,7 @@ class DoorHandleDetector : public ros::Node
       // This should be set to whatever the leaf_width factor is in the downsampler
       param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
 
+      advertise<std_msgs::PointCloud>("handle_visualization",10);
       if (publish_debug_)
       {
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
@@ -206,6 +207,10 @@ class DoorHandleDetector : public ros::Node
     bool
       detectDoor (door_handle_detector::Door::Request &req, door_handle_detector::Door::Response &resp)
     {
+      cout << "Start detecting door at points ";
+      cout << "(" << req.frame_p1.x << " " <<req.frame_p1.y << " "<<req.frame_p1.z << ")   ";
+      cout << "(" << req.frame_p2.x << " " <<req.frame_p2.y << " "<<req.frame_p2.z << ")" << endl;
+
       timeval t1, t2;
       double time_spent;
 
@@ -214,6 +219,9 @@ class DoorHandleDetector : public ros::Node
       // Obtain the bounding box information
       Point32 minB, maxB;
       get3DBounds (&req.frame_p1, &req.frame_p2, minB, maxB);
+
+
+      cout << " - receive door scan" << endl;
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
@@ -274,6 +282,8 @@ class DoorHandleDetector : public ros::Node
       // Create Kd-Tree
       estimatePointNormals (&cloud_down_);
 
+      cout << " - Select points whose normals are perpendicular to the Z-axis" << endl;
+
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
       // Check all points
@@ -307,18 +317,21 @@ class DoorHandleDetector : public ros::Node
       pmap_.header = cloud_down_.header;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
+
+
+      cout << " - Process all clusters" << endl;
       nr_p = 0;
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> coeff;
+      vector<double> goodness_factor(clusters.size());
       std_msgs::Point32 minP, maxP, handle_center;
+
       // Process all clusters
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
-        double r, g, b, rgb;
-        r = g = b = 1.0;
-        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-        rgb = *(float*)(&res);
+	// initial goodness factor
+	goodness_factor[cc] = 1;
 
         // Find the best plane in this cluster
         fitSACPlane (&cloud_down_, &clusters[cc], inliers, coeff);
@@ -328,47 +341,58 @@ class DoorHandleDetector : public ros::Node
         // Filter the region based on its height and width
         cloud_geometry::getMinMax (&pmap_.polygons[cc], minP, maxP);
 
-        // Get the door_frame distance in the X-Y plane
-        double door_frame = sqrt ( (minP.x - maxP.x) * (minP.x - maxP.x) + (minP.y - maxP.y) * (minP.y - maxP.y) );
+        // adapt the goodness factor for each cluster
+        double door_frame = sqrt ( pow((minP.x - maxP.x),2) + pow((minP.y - maxP.y),2) );
         double door_height = fabs (maxP.z - minP.z);
-        if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
-        {
-          pmap_.polygons[cc].points.resize (0);      // Don't send this polygon if it doesn't match our door rules
-          continue;
-        }
+	if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
+	  goodness_factor[cc] = 0;
+	double area = cloud_geometry::areas::compute2DPolygonalArea(pmap_.polygons[cc], coeff);
+	goodness_factor[cc] *= (area / (door_frame * door_height));
 
-        ROS_DEBUG ("Door candidate accepted with width %f and height %f.", door_frame, door_height);
+	cout << "minP and maxP (" << minP.x << " " << minP.y <<" "<< minP.z <<") ("<< maxP.x <<" " << maxP.y <<" "<< maxP.z << ")" << endl;
+	cout << "width = " << door_frame << endl;
+	cout << "height = " << door_height << endl;
+	cout << "area = " << cloud_geometry::areas::compute2DPolygonalArea(pmap_.polygons[cc], coeff) << endl;
+      } // loop over clusters
 
-        // Find the handle by performing a segmentation in intensity space in the original cloud
-        findHandle (&cloud_in_, &indices_in_bounds, &coeff, &pmap_.polygons[cc], handle_indices, handle_center);
-
-        ROS_DEBUG ("Number of points selected: %d.", handle_indices.size ());
-
-        if (publish_debug_)
-        {
-          // Mark all the points inside
-          for (unsigned int k = 0; k < handle_indices.size (); k++)
-          {
-            cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-            cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-            cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
-            nr_p++;
-          }
-          // Mark all the points inside
-  /*        for (unsigned int k = 0; k < inliers.size (); k++)
-          {
-            cloud_annotated_.pts[nr_p].x = cloud_down_.pts.at (inliers[k]).x;
-            cloud_annotated_.pts[nr_p].y = cloud_down_.pts.at (inliers[k]).y;
-            cloud_annotated_.pts[nr_p].z = cloud_down_.pts.at (inliers[k]).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
-            nr_p++;
-          }*/
-        }
-
-        break;      // assume one door for now for testing
+      // find best cluster
+      double best_goodness_factor = 0;
+      int best_cluster = -1;
+      for (int cc = 0; cc < (int)clusters.size (); cc++){
+	if (goodness_factor[cc] > best_goodness_factor){
+	  best_goodness_factor = goodness_factor[cc];
+	  best_cluster = cc;
+	}
+      }
+      for (int cc = 0; cc < (int)clusters.size (); cc++){
+	if (cc != best_cluster)
+	  pmap_.polygons[cc].points.resize(0);
+      }
+      if (best_cluster == -1){
+	ROS_ERROR("did not find a door");
+	return false;
       }
 
+      // Find the handle by performing a segmentation in intensity space in the original cloud
+      findDoorHandle (&cloud_in_, &indices_in_bounds, &coeff, &pmap_.polygons[best_cluster], handle_indices, handle_center);
+      ROS_DEBUG ("Number of points selected: %d.", handle_indices.size ());
+      
+      if (publish_debug_){
+        double r, g, b, rgb;
+        r = g = b = 1.0;
+        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+        rgb = *(float*)(&res);
+
+	// Mark all the points inside
+	for (unsigned int k = 0; k < handle_indices.size (); k++){
+	  cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
+	  cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
+	  cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
+	  cloud_annotated_.chan[0].vals[nr_p] = rgb;
+	  nr_p++;
+	}
+      }
+  
       resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
       resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
       resp.height = fabs (maxP.z - minP.z);
@@ -391,44 +415,62 @@ class DoorHandleDetector : public ros::Node
       }
 
 
+      cout << "Finished detecting door" << endl;
       return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
+      findDoorHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
                   vector<int> &handle_indices, Point32 &handle_center)
     {
+      cout << "size cluster for handle detection = " << poly->points.size() << endl;
+
+      vector<std_msgs::Point32> handle_visualize(indices->size());
+      for (unsigned int i = 0; i < indices->size (); i++){
+	handle_visualize[i].x = points->pts.at(indices->at (i)).x;
+	handle_visualize[i].y = points->pts.at(indices->at (i)).y;
+	handle_visualize[i].z = points->pts.at(indices->at (i)).z;
+      }
+      std_msgs::PointCloud  handle_cloud; 
+      handle_cloud.header.frame_id = "base_link";
+      handle_cloud.pts  = handle_visualize;
+      publish("handle_visualization", handle_cloud);
+
+
       handle_indices.resize (indices->size ());
       int nr_p = 0;
       Point32 pt;
       for (unsigned int i = 0; i < indices->size (); i++)
       {
         // Select all the points in the given bounds which are between the given handle min->max height
-        if (points->pts.at (indices->at (i)).z > handle_min_height_ && points->pts.at (indices->at (i)).z < handle_max_height_)
+        if (points->pts.at (indices->at (i)).z > handle_min_height_ && 
+	    points->pts.at (indices->at (i)).z < handle_max_height_)
         {
 
           // Calculate the distance from the point to the plane
           double distance_to_plane = coeff->at (0) * points->pts.at (indices->at (i)).x +
                                      coeff->at (1) * points->pts.at (indices->at (i)).y +
                                      coeff->at (2) * points->pts.at (indices->at (i)).z +
-                                     coeff->at (3) * 1;
+                                     coeff->at (3);
           // Calculate the projection of the point on the plane
           pt.x = points->pts.at (indices->at (i)).x - distance_to_plane * coeff->at (0);
           pt.y = points->pts.at (indices->at (i)).y - distance_to_plane * coeff->at (1);
           pt.z = points->pts.at (indices->at (i)).z - distance_to_plane * coeff->at (2);
 
-          if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly) && fabs (distance_to_plane) < handle_distance_door_max_threshold_)
-          {
-            if (fabs (distance_to_plane) > handle_distance_door_min_threshold_)
-            {
-              handle_indices[nr_p] = indices->at (i);
-              nr_p++;
-            }
-          }
-        }
+	  
+	  if (fabs (distance_to_plane) < handle_distance_door_max_threshold_){
+	    if (fabs (distance_to_plane) > handle_distance_door_min_threshold_){
+	      if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly)){
+		handle_indices[nr_p] = indices->at (i);
+		nr_p++;
+	      }
+	    }
+	  }
+	}
       }
       handle_indices.resize (nr_p);
+      cout << "found " << nr_p << " point candidates for door handle" << endl;
 
       // Project the handle on the door plane (just for kicks)
       for (int i = 0; i < nr_p; i++)
@@ -443,6 +485,13 @@ class DoorHandleDetector : public ros::Node
         points->pts.at (handle_indices[i]).y -= distance_to_plane * coeff->at (1);
         points->pts.at (handle_indices[i]).z -= distance_to_plane * coeff->at (2);
       }
+
+      // Split points into clusters
+      vector<vector<int> > clusters;
+      findClusters (points, &handle_indices, clusters_growing_tolerance_, clusters, 0, 1, 2, 5);
+      for (unsigned int i=0; i<clusters.size(); i++)
+	cout << "cluster " << i << " has size " << clusters[i].size() << endl;
+
 
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
