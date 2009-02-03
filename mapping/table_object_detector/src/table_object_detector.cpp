@@ -294,6 +294,11 @@ class TableObjectDetector : public ros::Node
       cloud_geometry::getMinMax (&cloud_down_, &inliers, minP, maxP);
       resp.table.min_x = minP.x; resp.table.min_y = minP.y;
       resp.table.max_x = maxP.x; resp.table.max_y = maxP.y;
+      
+      // Get the goal position for the robot base
+//      resp.base_target_pose.x  = ;
+//      resp.base_target_pose.y  = ;
+//      resp.base_target_pose.th = ;
 
       // Compute the convex hull
       pmap_.header = cloud_down_.header;
@@ -356,7 +361,7 @@ class TableObjectDetector : public ros::Node
           pt.y = points->pts.at (i).y - distance_to_plane * coeff->at (1);
           pt.z = points->pts.at (i).z - distance_to_plane * coeff->at (2);
 
-          if (cloud_geometry::areas::isPointIn2DPolygon (pt, *poly))
+          if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
           {
             object_indices[nr_p] = i;
             nr_p++;
