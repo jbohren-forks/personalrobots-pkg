@@ -945,7 +945,7 @@ Index: server/physics/Joint.hh
 ===================================================================
 --- server/physics/Joint.hh	(revision 7168)
 +++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,23 @@
+@@ -163,6 +163,41 @@
      private: ParamT<bool> *provideFeedbackP;
      private: ParamT<double> *fudgeFactorP;
  
@@ -956,6 +956,7 @@ Index: server/physics/Joint.hh
 +    private: ParamT<double> *mimicKpP;
 +    private: ParamT<double> *mimicKdP;
 +    private: ParamT<double> *mimicFMaxP;
++
 +    private: Joint *mimicJoint;
 +    private: bool enableMimic;
 +    private: double mimicMult;
@@ -963,8 +964,25 @@ Index: server/physics/Joint.hh
 +    private: double mimicKp;
 +    private: double mimicKd;
 +    private: double mimicFMax;
-+    private: double current_time, last_time;
-+    private: double current_error, last_error;
++    private: double current_time_mimic, last_time_mimic;
++    private: double current_error_mimic, last_error_mimic;
++
++    private: ParamT<std::string> *latchJointP;
++    private: ParamT<double> *latchAngleP;
++    private: ParamT<double> *doorClosedAngleP;
++    private: ParamT<double> *latchKpP;
++    private: ParamT<double> *latchKdP;
++    private: ParamT<double> *latchFMaxP;
++
++    private: Joint* latchJoint;
++    private: bool enableLatch;
++    private: double latchAngle;
++    private: double doorClosedAngle;
++    private: double latchKp;
++    private: double latchKd;
++    private: double latchFMax;
++    private: double current_time_latch, last_time_latch;
++    private: double current_error_latch, last_error_latch;
 +
      /// Feedback data for this joint
      private: dJointFeedback *feedback;
@@ -1554,17 +1572,20 @@ Index: server/physics/Joint.cc
  
  using namespace gazebo;
  
-@@ -41,6 +43,9 @@
+@@ -41,6 +43,12 @@
    this->visual = NULL;
    this->model = NULL;
  
 +  this->enableMimic = false;
 +  this->mimicJoint = NULL;
 +
++  this->enableLatch = false;
++  this->latchJoint = NULL;
++
    Param::Begin(&this->parameters);
    this->erpP = new ParamT<double>("erp",0.4,0);
    this->cfmP = new ParamT<double>("cfm",10e-3,0);
-@@ -50,7 +55,15 @@
+@@ -50,7 +58,22 @@
    this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0), 0);
    this->provideFeedbackP = new ParamT<bool>("provideFeedback", false, 0);
    this->fudgeFactorP = new ParamT<double>( "fudgeFactor", 1.0, 0 );
@@ -1575,12 +1596,19 @@ Index: server/physics/Joint.cc
 +  this->mimicKpP = new ParamT<double>("mimicKp", 10.0, 0);
 +  this->mimicKdP = new ParamT<double>("mimicKd", 0.0, 0);
 +  this->mimicFMaxP = new ParamT<double>("mimicFMax", 1000.0, 0);
++
++  this->latchJointP = new ParamT<std::string>("latchJoint", std::string(), 0);
++  this->latchAngleP = new ParamT<double>("latchAngle", 0.0, 0);
++  this->doorClosedAngleP = new ParamT<double>("doorClosedAngle", 0.0, 0);
++  this->latchKpP = new ParamT<double>("latchKp", 10.0, 0);
++  this->latchKdP = new ParamT<double>("latchKd", 0.0, 0);
++  this->latchFMaxP = new ParamT<double>("latchFMax", 1000.0, 0);
    Param::End();
 +
  }
  
  
-@@ -67,6 +80,12 @@
+@@ -67,6 +90,18 @@
    delete this->anchorOffsetP;
    delete this->provideFeedbackP;
    delete this->fudgeFactorP;
@@ -1590,10 +1618,16 @@ Index: server/physics/Joint.cc
 +  delete this->mimicKpP;
 +  delete this->mimicKdP;
 +  delete this->mimicFMaxP;
++  delete this->latchJointP;
++  delete this->latchAngleP;
++  delete this->doorClosedAngleP;
++  delete this->latchKpP;
++  delete this->latchKdP;
++  delete this->latchFMaxP;
  }
  
  
-@@ -92,6 +111,12 @@
+@@ -92,6 +127,18 @@
    this->cfmP->Load(node);
    this->provideFeedbackP->Load(node);
    this->fudgeFactorP->Load(node);
@@ -1603,10 +1637,16 @@ Index: server/physics/Joint.cc
 +  this->mimicKpP->Load(node);
 +  this->mimicKdP->Load(node);
 +  this->mimicFMaxP->Load(node);
++  this->latchJointP->Load(node);
++  this->latchAngleP->Load(node);
++  this->doorClosedAngleP->Load(node);
++  this->latchKpP->Load(node);
++  this->latchKdP->Load(node);
++  this->latchFMaxP->Load(node);
  
    Body *body1 = this->model->GetBody( **(this->body1NameP));
    Body *body2 = this->model->GetBody(**(this->body2NameP));
-@@ -116,23 +141,26 @@
+@@ -116,23 +163,26 @@
    this->Attach(body1,body2);
  
    /// Add a renderable for the joint
@@ -1646,82 +1686,155 @@ Index: server/physics/Joint.cc
  
    if (**this->provideFeedbackP)
    {
-@@ -147,6 +175,29 @@
+@@ -147,6 +197,37 @@
    {
      this->SetAnchor(anchorVec);
    }
 +
 +  // Check mimic option
-+  this->mimicJoint = this->model->GetJoint( **(this->mimicJointP));
-+  if (this->mimicJoint != NULL && this->mimicJoint != this)
++  if (this->type == Joint::HINGE && **(this->mimicJointP) != std::string())
 +  {
 +    // enforce constraint
 +    this->enableMimic = true;
++
 +    this->mimicMult   = this->mimicMultP->GetValue();
 +    this->mimicOffset = this->mimicOffsetP->GetValue();
 +    this->mimicKp     = this->mimicKpP->GetValue();
 +    this->mimicKd     = this->mimicKdP->GetValue();
 +    this->mimicFMax   = this->mimicFMaxP->GetValue();
-+    std::cout << this->nameP->GetValue() << " this joint will mimic joint " << this->mimicJointP->GetValue() << std::endl;
-+    if (this->type == Joint::HINGE)
-+    {
-+      dynamic_cast<HingeJoint*>(this)->SetParam(dParamFMax, this->mimicFMax);
-+      dynamic_cast<HingeJoint*>(this)->SetTorque(0);
-+    }
-+    current_time = Simulator::Instance()->GetSimTime();
-+    last_time = current_time;
-+    current_error = (this->mimicMult*((dynamic_cast<HingeJoint*>(this->mimicJoint))->GetAngle()) - this->mimicOffset - dynamic_cast<HingeJoint*>(this)->GetAngle());
-+    last_error = current_error;
++
++    dynamic_cast<HingeJoint*>(this)->SetParam(dParamFMax, this->mimicFMax);
++    dynamic_cast<HingeJoint*>(this)->SetTorque(0);
++
++  }
++
++  if (this->type == Joint::HINGE && **(this->latchJointP) != std::string())
++  {
++    this->enableLatch = true;
++    this->latchAngle = this->latchAngleP->GetValue();
++    this->doorClosedAngle = this->doorClosedAngleP->GetValue();
++    this->latchKp     = this->latchKpP->GetValue();
++    this->latchKd     = this->latchKdP->GetValue();
++    this->latchFMax   = this->latchFMaxP->GetValue();
++
++    dynamic_cast<HingeJoint*>(this)->SetParam(dParamFMax, this->latchFMax);
++    dynamic_cast<HingeJoint*>(this)->SetTorque(0);
++
 +  }
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -184,13 +235,56 @@
+@@ -184,13 +265,121 @@
  /// Update the joint
  void Joint::Update()
  {
 -//TODO: Evaluate impact of this code on performance
 -  this->visual->SetVisible(World::Instance()->GetShowJoints());
 +  // enforce mimic
-+  double cmd = 0;
 +  // only enforce constraint for same type hinge joints
 +  if (this->enableMimic           == true         &&
-+      this->mimicJoint->GetType() == Joint::HINGE &&
 +      this->type                  == Joint::HINGE )
 +  {
-+    current_time = Simulator::Instance()->GetSimTime();
-+    current_error = (this->mimicMult*((dynamic_cast<HingeJoint*>(this->mimicJoint))->GetAngle()) - this->mimicOffset - dynamic_cast<HingeJoint*>(this)->GetAngle());
++    // get the joint
++    if (this->mimicJoint == NULL)
++    {
++      this->mimicJoint = this->model->GetJoint( **(this->mimicJointP));
++      if (this->mimicJoint == NULL || this->mimicJoint == this || this->mimicJoint->GetType() != Joint::HINGE) // check initialization
++        this->enableMimic = false;
++      else
++      {
++        // initialize a few things
++        std::cout << " this joint " << this->nameP->GetValue() << " will mimic joint " << this->mimicJointP->GetValue() << std::endl;
++        current_time_mimic = Simulator::Instance()->GetSimTime();
++        last_time_mimic = current_time_mimic;
++        current_error_mimic = (this->mimicMult*((dynamic_cast<HingeJoint*>(this->mimicJoint))->GetAngle()) - this->mimicOffset - dynamic_cast<HingeJoint*>(this)->GetAngle());
++        last_error_mimic = current_error_mimic;
++      }
++    }
++    else
++    {
++      current_time_mimic = Simulator::Instance()->GetSimTime();
++      current_error_mimic = (this->mimicMult*((dynamic_cast<HingeJoint*>(this->mimicJoint))->GetAngle()) - this->mimicOffset - dynamic_cast<HingeJoint*>(this)->GetAngle());
  
-+    cmd =  this->mimicKp * current_error
-+         + this->mimicKd * (current_error - last_error) * (current_time - last_time);
-+    dynamic_cast<HingeJoint*>(this)->SetParam(dParamVel, cmd);
-+    last_error = current_error;
-+    last_time = current_time;
-+    // std::cout <<   " joint name " << this->nameP->GetValue()
-+    //           <<" current_error " << this->current_error
-+    //           <<   " last_error " << this->last_error
-+    //           <<          " cmd " << cmd
-+    //           << " mimic offset " << this->mimicOffset
-+    //           << " mimic multip " << this->mimicMult
-+    //           << " mimic     kp " << this->mimicKp
-+    //           <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
-+    //           <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
-+    //           <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
-+    //           << std::endl;
++      double cmd =  this->mimicKp * current_error_mimic
++                  + this->mimicKd * (current_error_mimic - last_error_mimic) * (current_time_mimic - last_time_mimic);
++
++      dynamic_cast<HingeJoint*>(this)->SetParam(dParamVel, cmd);
++
++      last_error_mimic = current_error_mimic;
++      last_time_mimic = current_time_mimic;
++      // std::cout <<   " joint name " << this->nameP->GetValue()
++      //           <<" current_error " << this->current_error_mimic
++      //           <<   " last_error " << this->last_error_mimic
++      //           <<          " cmd " << cmd
++      //           << " mimic offset " << this->mimicOffset
++      //           << " mimic multip " << this->mimicMult
++      //           << " mimic     Kp " << this->mimicKp
++      //           << " mimic     Kd " << this->mimicKd
++      //           <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
++      //           <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
++      //           <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
++      //           << std::endl;
++    }
 +  }
 +
-+  // if (this->type                  == Joint::HINGE )
-+  // {
-+  //   std::cout <<   " joint name " << this->nameP->GetValue()
-+  //             <<          " cmd " << cmd
-+  //             << " mimic offset " << this->mimicOffset
-+  //             << " mimic multip " << this->mimicMult
-+  //             << " mimic     kp " << this->mimicKp
-+  //             <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
-+  //             <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
-+  //             <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
-+  //             << std::endl;
-+  // }
++  // Check latch option
++  if (this->enableLatch)
++  {
++    if (this->latchJoint == NULL)
++    {
++      this->latchJoint = this->model->GetJoint( **(this->latchJointP));
++      if (this->latchJoint == NULL || this->latchJoint == this) // check initialization
++        this->enableLatch = false;
++      else
++      {
++        std::cout << " this joint " << this->nameP->GetValue() << " latched by joint " << this->latchJoint << " by angle " << this->latchAngle << std::endl;
++        // initialize a few things
++        current_time_latch = Simulator::Instance()->GetSimTime();
++        last_time_latch = current_time_latch;
++        current_error_latch = (dynamic_cast<HingeJoint*>(this->latchJoint))->GetAngle() - this->doorClosedAngle;
++        last_error_latch = current_error_latch;
++      }
++    }
++    else
++    {
++
++      // enforce latch constraint if door in conditions match
++      if (fabs((dynamic_cast<HingeJoint*>(this))            ->GetAngle() - this->doorClosedAngle) <= 0.01 &&   // door at closed position
++          fabs((dynamic_cast<HingeJoint*>(this->latchJoint))->GetAngle() - this->latchAngle     ) <= 0.01)   // handle at latched position
++      {
++        dynamic_cast<HingeJoint*>(this)->SetParam(dParamFMax, this->latchFMax);
++        // latch door
++        current_time_latch = Simulator::Instance()->GetSimTime();
++        current_error_latch = this->doorClosedAngle - (dynamic_cast<HingeJoint*>(this))->GetAngle();
++
++        double cmd =  this->latchKp * current_error_latch
++                    + this->latchKd * (current_error_latch - last_error_latch) * (current_time_latch - last_time_latch);
++
++        dynamic_cast<HingeJoint*>(this)->SetParam(dParamVel, cmd);
++
++        last_error_latch = current_error_latch;
++        last_time_latch = current_time_latch;
++        // std::cout <<   " joint name " << this->nameP->GetValue()
++        //           <<" current_error " << this->current_error_latch
++        //           <<   " last_error " << this->last_error_latch
++        //           <<          " cmd " << cmd
++        //           << " latch     Kp " << this->latchKp
++        //           << " latch     Kd " << this->latchKd
++        //           <<     "    fmax  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamFMax)
++        //           <<     "     vel  " << (dynamic_cast<HingeJoint*>(this))->GetParam(dParamVel)
++        //           <<     "     ang  " << (dynamic_cast<HingeJoint*>(this))->GetAngle()
++        //           << std::endl;
++      }
++      else
++      {
++        dynamic_cast<HingeJoint*>(this)->SetParam(dParamFMax, 0.0);
++      }
++    }
++  }
++
++
++
 +
 +  //TODO: Evaluate impact of this code on performance
 +  if (Simulator::Instance()->GetRenderEngineEnabled())
@@ -1736,7 +1849,7 @@ Index: server/physics/Joint.cc
  
    Vector3 start;
    if (this->body1)
-@@ -206,6 +300,7 @@
+@@ -206,6 +395,7 @@
      this->line2->SetPoint(0, start);
      this->line2->Update();
    }
