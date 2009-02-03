@@ -130,7 +130,7 @@ protected:
     
     void afterAttachBody(planning_models::KinematicModel::Link *link)
     {
-	rostools::Header header = m_attachedObject.header;
+	roslib::Header header = m_attachedObject.header;
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
@@ -146,7 +146,7 @@ protected:
     
 private:
     
-    void sendPoint(double x, double y, double z, double radius, const rostools::Header &header, int color)
+    void sendPoint(double x, double y, double z, double radius, const roslib::Header &header, int color)
     {
 	robot_msgs::VisualizationMarker mk;
 	mk.header = header;
