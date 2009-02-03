@@ -359,44 +359,46 @@ class DoorHandleDetector : public ros::Node
       double best_goodness_factor = 0;
       int best_cluster = -1;
       for (int cc = 0; cc < (int)clusters.size (); cc++)
-	{
-	  if (goodness_factor[cc] > best_goodness_factor)
-	    {
-	      best_goodness_factor = goodness_factor[cc];
-	      best_cluster = cc;
-	    }
-	}
+      {
+        if (goodness_factor[cc] > best_goodness_factor)
+          {
+            best_goodness_factor = goodness_factor[cc];
+            best_cluster = cc;
+          }
+      }
       for (int cc = 0; cc < (int)clusters.size (); cc++)
-	{
-	  if (cc != best_cluster)
-	    pmap_.polygons[cc].points.resize(0);
-	}
+      {
+        if (cc != best_cluster)
+          pmap_.polygons[cc].points.resize(0);
+      }
+
       if (best_cluster == -1)
-	{
-	  ROS_ERROR("did not find a door");
-	  return false;
-	}
+      {
+        ROS_ERROR("did not find a door");
+        return false;
+      }
 
       // Find the handle by performing a segmentation in intensity space in the original cloud
       findDoorHandle (&cloud_in_, &indices_in_bounds, &coeff, &pmap_.polygons[best_cluster], handle_indices, handle_center);
       ROS_DEBUG ("Number of points selected: %d.", handle_indices.size ());
       
       if (publish_debug_)
-	{
-	  double r, g, b, rgb;
-	  r = g = b = 1.0;
-	  int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-	  rgb = *(float*)(&res);
-	  
-	  // Mark all the points inside
-	  for (unsigned int k = 0; k < handle_indices.size (); k++){
-	    cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-	    cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-	    cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-	    cloud_annotated_.chan[0].vals[nr_p] = rgb;
-	    nr_p++;
-	  }
-	}
+      {
+        double r, g, b, rgb;
+        r = g = b = 1.0;
+        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+        rgb = *(float*)(&res);
+        
+        // Mark all the points inside
+        for (unsigned int k = 0; k < handle_indices.size (); k++)
+        {
+          cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
+          cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
+          cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
+          cloud_annotated_.chan[0].vals[nr_p] = rgb;
+          nr_p++;
+        }
+      }
   
       resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
       resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
