@@ -14,6 +14,7 @@
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
   <property name="M_PI" value="3.1415926535897931" />
+  <property name="wall_x_loc" value="2.0" />
 
   <!-- joint blocks -->
   <joint name="door_joint" type="revolute" >
@@ -52,7 +53,7 @@
   <!-- link blocks -->
   <link name="floor_link">
     <parent name="world" />
-    <origin xyz="1.5 0.65 0.01" rpy="0 0 0" />
+    <origin xyz="${wall_x_loc} 0.65 0.01" rpy="0 0 0" />
     <joint name="floor_joint" />
     <inertial>
       <mass value="1000" />
