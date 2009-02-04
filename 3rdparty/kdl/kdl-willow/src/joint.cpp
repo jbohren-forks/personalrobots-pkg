@@ -20,32 +20,31 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "joint.hpp"
-#include <iostream>
 
 namespace KDL {
 
-    // constructor for joint along x,y or z axes, at origin of reference frame
+    // constructor for joint along x,y or z axis, at origin of reference frame
     Joint::Joint(const JointType& _type, const double& _scale, const double& _offset,
                  const double& _inertia, const double& _damping, const double& _stiffness):
         type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
     {
-      assert(type != RotAxes && type != TransAxes);
+      if (type == RotAxis || type == TransAxis) throw joint_type_ex;
     }
 
-    // constructgor for joint along arbitrary axes, at arbitrary origin
-    Joint::Joint(const Vector& _origin, const Vector& _axes, const JointType& _type, const double& _scale, const double& _offset,
+    // constructgor for joint along arbitrary axis, at arbitrary origin
+    Joint::Joint(const Vector& _origin, const Vector& _axis, const JointType& _type, const double& _scale, const double& _offset,
 	         const double& _inertia, const double& _damping, const double& _stiffness):
-      origin(_origin), axes(_axes / _axes.Norm()), type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
+      origin(_origin), axis(_axis / _axis.Norm()), type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
     {
-      assert(type == RotAxes || type == TransAxes);
+      if (type != RotAxis && type != TransAxis) throw joint_type_ex;
 
       // pre-calculate stuff
       joint_pose.p = origin;
       joint_pose.M = Rotation::Identity();
       q_previous = 0;
-      axes_sqr_0 = pow(axes(0),2);
-      axes_sqr_1 = pow(axes(1),2);
-      axes_sqr_2 = pow(axes(2),2);
+      axis_sqr(0) = pow(axis(0),2);
+      axis_sqr(1) = pow(axis(1),2);
+      axis_sqr(2) = pow(axis(2),2);
     }
 
     Joint::~Joint()
@@ -56,35 +55,36 @@ namespace KDL {
     {
 
         switch(type){
-	case RotAxes:{
+	case RotAxis:{
+	  // calculate the rotation matrix around the vector "axis"
+	  if (q != q_previous){
 	    q_previous = q;
 	    Rotation& rot = joint_pose.M;
 
 	    double cq = cos(scale*q+offset);
 	    double cq_min = (1-cq);
 	    double sq = sin(scale*q+offset);
+	    rot(0,0) = axis_sqr(0) + (axis_sqr(1)+axis_sqr(2))*cq;
+	    rot(1,1) = axis_sqr(1) + (axis_sqr(2)+axis_sqr(0))*cq;
+	    rot(2,2) = axis_sqr(2) + (axis_sqr(0)+axis_sqr(1))*cq;
 	    
-	    rot(0,0) = axes_sqr_0 + (axes_sqr_1+axes_sqr_2)*cq;
-	    rot(1,1) = axes_sqr_1 + (axes_sqr_2+axes_sqr_0)*cq;
-	    rot(2,2) = axes_sqr_2 + (axes_sqr_0+axes_sqr_1)*cq;
-	    
-	    double m_01_a = axes(0)*axes(1)*cq_min;
-	    double m_01_b = axes(2)*sq;
+	    double m_01_a = axis(0)*axis(1)*cq_min;
+	    double m_01_b = axis(2)*sq;
 	    rot(0,1) = m_01_a-m_01_b;
 	    rot(1,0) = m_01_a+m_01_b;
 	    
-	    double m_02_a = axes(0)*axes(2)*cq_min;
-	    double m_02_b = axes(1)*sq;
+	    double m_02_a = axis(0)*axis(2)*cq_min;
+	    double m_02_b = axis(1)*sq;
 	    rot(0,2) = m_02_a+m_02_b;
 	    rot(2,0) = m_02_a-m_02_b;
 	    
-	    double m_12_a = axes(1)*axes(2)*cq_min;
-	    double m_12_b = axes(0)*sq;
+	    double m_12_a = axis(1)*axis(2)*cq_min;
+	    double m_12_b = axis(0)*sq;
 	    rot(1,2) = m_12_a-m_12_b;
 	    rot(2,1) = m_12_a+m_12_b;
-
-	    return joint_pose;
-	    break;}
+	  }
+	  return joint_pose;
+	  break;}
         case RotX:
             return Frame(Rotation::RotX(scale*q+offset));
             break;
@@ -94,8 +94,8 @@ namespace KDL {
         case RotZ:
             return  Frame(Rotation::RotZ(scale*q+offset));
             break;
-	case TransAxes:
-	    return Frame(origin + (axes * (scale*q+offset)));
+	case TransAxis:
+	    return Frame(origin + (axis * (scale*q+offset)));
 	    break;
         case TransX:
             return  Frame(Vector(scale*q+offset,0.0,0.0));
@@ -115,9 +115,9 @@ namespace KDL {
     Twist Joint::twist(const double& qdot)const
     {
         switch(type){
-	case RotAxes:
-  	    return Twist(Vector(0,0,0), axes * (scale * qdot));
-	    break;
+	case RotAxis:
+	  return Twist(Vector(0,0,0), axis * ( scale * qdot));
+	  break;
         case RotX:
             return Twist(Vector(0.0,0.0,0.0),Vector(scale*qdot,0.0,0.0));
             break;
@@ -127,8 +127,8 @@ namespace KDL {
         case RotZ:
             return Twist(Vector(0.0,0.0,0.0),Vector(0.0,0.0,scale*qdot));
             break;
-	case TransAxes:
-	    return Twist(axes * (scale * qdot), Vector(0,0,0));
+	case TransAxis:
+	    return Twist(axis * (scale * qdot), Vector(0,0,0));
 	    break;
         case TransX:
             return Twist(Vector(scale*qdot,0.0,0.0),Vector(0.0,0.0,0.0));
@@ -145,31 +145,5 @@ namespace KDL {
         }
     }
 
-    Wrench Joint::wrench(const double& eff)const
-    {
-        switch(type){
-        case RotX:
-            return Wrench(Vector(0.0,0.0,0.0),Vector(scale*eff,0.0,0.0));
-            break;
-        case RotY:
-            return Wrench(Vector(0.0,0.0,0.0),Vector(0.0,scale*eff,0.0));
-            break;
-        case RotZ:
-            return Wrench(Vector(0.0,0.0,0.0),Vector(0.0,0.0,scale*eff));
-            break;
-        case TransX:
-            return Wrench(Vector(scale*eff,0.0,0.0),Vector(0.0,0.0,0.0));
-            break;
-        case TransY:
-            return Wrench(Vector(0.0,scale*eff,0.0),Vector(0.0,0.0,0.0));
-            break;
-        case TransZ:
-            return Wrench(Vector(0.0,0.0,scale*eff),Vector(0.0,0.0,0.0));
-            break;
-        case None:
-            return Wrench::Zero();
-            break;
-        }
-    }
 } // end of namespace KDL
 
