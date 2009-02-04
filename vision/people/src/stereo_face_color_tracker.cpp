@@ -268,8 +268,9 @@ public:
   void image_cb_all(ros::Time t)
   {
 
-    ros::Time startt, endt;
-    startt = t.now();
+    struct timeval timeofday;
+    gettimeofday(&timeofday,NULL);
+    ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
     boost::mutex::scoped_lock lock(cv_mutex_);
  
@@ -403,7 +404,8 @@ public:
     cvReleaseMat(&my_end_point);
     cvReleaseMat(&my_size);     
 
-    endt = t.now();
+    gettimeofday(&timeofday,NULL);
+    ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diff = endt-startt;
     printf("Start %f End %f Duration %f\n", startt.toSec(), endt.toSec(), diff.toSec());
 
@@ -446,7 +448,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
-  bool color_calib = true;
+  bool color_calib = false;
   bool detect_faces = false;
 
   if (argc > 1) {
