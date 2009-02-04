@@ -11,7 +11,7 @@
   <depend package="rosconsole" />
   <depend package="roscpp" />
   <depend package="tf" />
-  <depend package="rostime" />
+  <depend package="roslib" />
   <depend package="rospy" />
   <depend package="costmap_2d" />
   <url>http://pr.willowgarage.com</url>

@@ -9,7 +9,7 @@
   <depend package="std_msgs" />
   <depend package="rosconsole" />
   <depend package="tf" />
-  <depend package="rostime" />
+  <depend package="roslib" />
   <depend package="rospy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

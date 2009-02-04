@@ -24,7 +24,7 @@
  <depend package="tf"/>
  <depend package="sbpl"/>
  <depend package="mpglue"/>
- <depend package="rostime"/>
+ <depend package="roslib"/>
  <depend package="navfn"/>
  <depend package="topological_map"/>
  <depend package="angles"/>
