@@ -149,7 +149,7 @@ namespace ros {
        */
       virtual void updateGoalMsg();
 
-    private:
+    protected:
       /**
        * @brief Use global pose to publish currrent state data at the start of each cycle
        */
