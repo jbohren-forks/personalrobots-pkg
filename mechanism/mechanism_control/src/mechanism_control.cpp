@@ -197,7 +197,10 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
   boost::mutex::scoped_lock lock(controllers_lock_);
 
   if (getControllerByName(name))
+  {
+    ROS_ERROR("A controller with the name %s already exists", name.c_str());
     return false;
+  }
 
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
@@ -209,6 +212,7 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
     }
   }
 
+  ROS_ERROR("No room for new controller: %s", name.c_str());
   return false;
 }
 
@@ -225,8 +229,7 @@ bool MechanismControl::spawnController(const std::string &type,
     return false;
   }
 
-  printf("Spawning %s: %p\n", name.c_str(), &model_);
-
+  ROS_INFO("Spawning %s", name.c_str());
 
   if (!c->initXml(state_, config) ||
       !addController(c, name))
@@ -249,6 +252,7 @@ bool MechanismControl::killController(const std::string &name)
     {
       found = true;
       please_remove_ = i;
+      ROS_INFO("Kill: controller %s found", name.c_str());
       break;
     }
   }
@@ -258,8 +262,16 @@ bool MechanismControl::killController(const std::string &name)
     while (removed_ == NULL)
       usleep(10000);
 
+    ROS_INFO("Kill: controller %s removed", name.c_str());
+
     delete removed_;
     removed_ = NULL;
+
+    ROS_INFO("Kill: controller %s destroyed", name.c_str());
+  }
+  else
+  {
+    ROS_ERROR("Kill failed: no controller named %s exists", name.c_str());
   }
 
   controllers_lock_.unlock();
