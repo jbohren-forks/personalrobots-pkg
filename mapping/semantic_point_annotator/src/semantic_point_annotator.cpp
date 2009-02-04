@@ -212,7 +212,7 @@ class SemanticPointAnnotator : public ros::Node
       for (unsigned int i = 0; i < inliers_parallel.size (); i++)
       {
         // Compute a distance from 0,0,0 to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (robot_origin, coeff[i]);
+        double distance = cloud_geometry::distances::pointToPlaneDistance (&robot_origin, coeff[i]);
 
         double r = 1.0, g = 1.0, b = 1.0;
         // Test for floor

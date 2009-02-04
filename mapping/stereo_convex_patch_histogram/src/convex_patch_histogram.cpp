@@ -130,7 +130,7 @@ class ConvexPatchHistogram : public ros::Node
       for (unsigned int i = 0; i < indices.size (); i++)
       {
         // Compute a distance from each point to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (points->pts[i], coeff);
+        double distance = cloud_geometry::distances::pointToPlaneDistance (&points->pts[i], coeff);
         if (distance < 3 * sac_distance_threshold_)
         {
           indices[nr_p] = i;

@@ -11,6 +11,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_executable(semantic_point_annotator_node src/semantic_point_annotator_omp.cpp)
 target_link_libraries(semantic_point_annotator_node)
 
+rospack_add_executable(sac_ground_removal_node src/sac_ground_removal.cpp)
+target_link_libraries(sac_ground_removal_node sample_consensus)
+
 # check for OpenMP
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)

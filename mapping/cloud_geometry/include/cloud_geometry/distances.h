@@ -51,9 +51,9 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistance (std_msgs::Point32 p, std::vector<double> plane_coefficients)
+      pointToPlaneDistance (std_msgs::Point32 *p, std::vector<double> plane_coefficients)
     {
-      return (fabs (plane_coefficients[0]*p.x + plane_coefficients[1]*p.y + plane_coefficients[2]*p.z + plane_coefficients[3]));
+      return (fabs (plane_coefficients[0]*p->x + plane_coefficients[1]*p->y + plane_coefficients[2]*p->z + plane_coefficients[3]));
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (unsigned) defined by ax+by+cz+d=0
@@ -64,9 +64,9 @@ namespace cloud_geometry
       * \param d the normalized <i>d</i> coefficient of a plane
       */
     inline double
-      pointToPlaneDistance (std_msgs::Point32 p, double a, double b, double c, double d)
+      pointToPlaneDistance (std_msgs::Point32 *p, double a, double b, double c, double d)
     {
-      return (fabs (a * p.x + b * p.y + c * p.z + d));
+      return (fabs (a * p->x + b * p->y + c * p->z + d));
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
