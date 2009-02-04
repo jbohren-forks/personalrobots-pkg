@@ -35,6 +35,8 @@
 #define ENDEFFECTOR_CONSTRAINT_CONTEROLLER_H
 
 #include <vector>
+#include "boost/scoped_ptr.hpp"
+#include "mechanism_model/chain.h"
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
 #include "ros/node.h"
@@ -67,15 +69,16 @@ public:
   Eigen::Matrix<float,6,1> task_wrench_;
 
 private:
-  unsigned int  num_joints_, num_segments_;
+
+  mechanism::RobotState *robot_;
 
   // kdl stuff for kinematics
-  KDL::Chain                 chain_;
-  KDL::ChainJntToJacSolver*  jnt_to_jac_solver_;
-  KDL::ChainFkSolverPos* jnt_to_pose_solver_;
+  mechanism::Chain chain_;
+  KDL::Chain kdl_chain_;
+  boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
+  boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
-  std::vector<mechanism::JointState*> joints_;
   Eigen::Matrix<float,6,5> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
   Eigen::Matrix<float,5,1> constraint_force_;
@@ -99,8 +102,6 @@ private:
   double desired_pitch_;
   double desired_yaw_;
   bool initialized_;
-
-
 };
 
 
@@ -121,6 +122,8 @@ class EndeffectorConstraintControllerNode : public Controller
   SubscriptionGuard guard_command_;
 
   robot_msgs::Wrench wrench_msg_;
+
+  unsigned int loop_count_;
 };
 
 } // namespace

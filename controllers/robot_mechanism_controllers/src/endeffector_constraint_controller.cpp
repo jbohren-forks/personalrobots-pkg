@@ -50,7 +50,6 @@ ROS_REGISTER_CONTROLLER(EndeffectorConstraintController)
 EndeffectorConstraintController::EndeffectorConstraintController()
 : jnt_to_jac_solver_(NULL),
   jnt_to_pose_solver_(NULL),
-  joints_(0,(mechanism::JointState*)NULL),
   initialized_(false)
 {
   constraint_jac_.setZero();
@@ -63,28 +62,36 @@ EndeffectorConstraintController::EndeffectorConstraintController()
 
 EndeffectorConstraintController::~EndeffectorConstraintController()
 {
-  if (jnt_to_jac_solver_) delete jnt_to_jac_solver_;
-  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
 }
 
 
 
 bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // set disired wrench to 0
-  for (unsigned int i=0; i<6; i++){
-    task_wrench_(i) = 0;
+  assert(robot);
+  robot_ = robot;
+
+  TiXmlElement *chain = config->FirstChildElement("chain");
+  if (!chain) {
+    ROS_ERROR("EndeffectorConstraintController was not given a chain");
+    return false;
   }
 
-  // parse robot description from xml file
-  ros::Node *node = ros::Node::instance();
-  robot_kinematics::RobotKinematics robot_kinematics ;
-  string robot_desc;
-  node->param("robotdesc/pr2", robot_desc, string("")) ;
-  robot_kinematics.loadString(robot_desc.c_str()) ;
-  robot_kinematics::SerialChain* serial_chain = robot_kinematics.getSerialChain("right_arm");
-  if (serial_chain == NULL)
-    fprintf(stderr, "Got NULL Chain\n") ;
+  // Gets names for the root and tip of the chain
+  const char *root_name = chain->Attribute("root");
+  const char *tip_name = chain->Attribute("tip");
+  if (!root_name) {
+    ROS_ERROR("Chain element for EndeffectorConstraintController must specify the root");
+    return false;
+  }
+  if (!tip_name)  {
+    ROS_ERROR("Chain element for EndeffectorConstraintController must specify the tip");
+    return false;
+  }
+
+  if (!chain_.init(robot->model_, root_name, tip_name))
+    return false;
+  chain_.toKDL(kdl_chain_);
 
   // some parameters
   node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
@@ -95,111 +102,51 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
   node->param("constraint/f_r_max"      , f_pose_max  , 20.0) ; /// max r force
 
-  // convert description to KDL chain
-  chain_        = serial_chain->chain;
-  num_joints_   = chain_.getNrOfJoints();
-  num_segments_ = chain_.getNrOfSegments();
-  printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
-  jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
-  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  task_jac_=Eigen::MatrixXf::Zero(6, num_joints_);
-  identity_=Eigen::MatrixXf::Identity(6, 6);
-  constraint_null_space_=Eigen::MatrixXf::Zero(num_joints_, num_joints_);
-  constraint_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
-  task_torq_=Eigen::MatrixXf::Zero(num_joints_, 1);
+  // Constructs solvers and allocates matrices.
+  unsigned int num_joints   = kdl_chain_.getNrOfJoints();
+  jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
+  task_jac_ = Eigen::MatrixXf::Zero(6, num_joints);
+  identity_ = Eigen::MatrixXf::Identity(6, 6);
+  constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints, num_joints);
+  constraint_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
+  task_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
+  task_wrench_ = Eigen::Matrix<float,6,1>::Zero();
 
-
-  // get chain
-  TiXmlElement *chain = config->FirstChildElement("chain");
-  if (!chain) {
-    fprintf(stderr, "Error: EndeffectorConstraintController was not given a chain\n");
-    return false;
+  // Sets desired wrench to 0
+  for (unsigned int i=0; i<6; i++){
+    task_wrench_(i) = 0;
   }
 
-  // get names for root and tip of robot
-  const char *root_name = chain->Attribute("root");
-  const char *tip_name = chain->Attribute("tip");
-  if (!root_name) {
-    fprintf(stderr, "Error: Chain element for EndeffectorConstraintController must specify the root\n");
-    return false;
-  }
-  if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for EndeffectorConstraintController must specify the tip\n");
-    return false;
-  }
-
-  // test if we can get root from robot
-  assert(robot);
-  if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorConstraintController)\n", root_name);
-    return false;
-  }
-
-  // get tip from robot
-  mechanism::LinkState *current = robot->getLinkState(tip_name);
-  if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorConstraintController)\n", tip_name);
-    return false;
-  }
-
-  // Works up the chain, from the tip to the root, and get joints
-  while (current->link_->name_ != std::string(root_name))
-    {
-      // get joint from current link
-      joints_.push_back(robot->getJointState(current->link_->joint_name_));
-      assert(joints_[joints_.size()-1]);
-
-      // get parent link
-      current = robot->getLinkState(current->link_->parent_name_);
-
-      if (!current) {
-	fprintf(stderr, "Error: for EndeffectorConstraintController, tip is not connected to root\n");
-	return false;
-      }
-    }
-  // reverse order of joint vector
-  std::reverse(joints_.begin(), joints_.end());
   return true;
 }
 
 
 void EndeffectorConstraintController::update()
 {
+  if (!chain_.allCalibrated(robot_->joint_states_))
+    return;
 
+  // Gets the joint positions
+  JntArray jnt_pos(kdl_chain_.getNrOfJoints());
+  chain_.getPositions(robot_->joint_states_, jnt_pos);
 
-
-  // check if joints are calibrated
-  for (unsigned int i = 0; i < joints_.size(); ++i) {
-    if (!joints_[i]->calibrated_)
-      return;
-  }
-
-  // get the joint positions
-  JntArray jnt_pos(num_joints_);
-  unsigned int j = 0;
-  for (unsigned int i=0; i<num_joints_; i++)
-  {
-    while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
-      ++j;
-    jnt_pos(i) = joints_[j++]->position_;
-  }
-
-  //grab the inital pose of the robot for testing...
+  // Grabs the inital pose of the robot for testing...
   if(!initialized_)
   {
     jnt_to_pose_solver_->JntToCart(jnt_pos, desired_frame_);
     initialized_ = true;
   }
 
-  // get the chain jacobian
-  Jacobian jacobian(num_joints_, num_segments_);
+  Jacobian jacobian(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfSegments());
 
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
+  // TODO: Write a function for doing this conversion
   //convert to eigen for easier math
   for (unsigned int i = 0; i < 6; i++)
   {
-    for (unsigned int j = 0; j < num_joints_; j++)
+    for (unsigned int j = 0; j < kdl_chain_.getNrOfJoints(); j++)
     {
       task_jac_(i,j) = jacobian(i,j);
     }
@@ -225,16 +172,12 @@ void EndeffectorConstraintController::update()
   //ROS_ERROR("%f %f %f", task_torq_(0),task_torq_(1),task_torq_(1));
   //ROS_ERROR("%.3f %.3f %.3f",constraint_null_space_(0,0), constraint_null_space_(1,1), constraint_null_space_(2,2));
   //ROS_ERROR("%.3f %.3f %.3f",task_jac_(0,5), task_jac_(1,5), task_jac_(2,5));
- 
 
 
-  j = 0;
-  for (unsigned int i=0; i<num_joints_; i++)
-  {
-    while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
-      ++j;
-    joints_[j++]->commanded_effort_ = constraint_torq_(i) + task_torq_(i);
-  }
+  JntArray jnt_eff(kdl_chain_.getNrOfJoints());
+  for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
+    jnt_eff(i) = constraint_torq_(i) + task_torq_(i);
+  chain_.setEfforts(jnt_eff, robot_->joint_states_);
 }
 
 
@@ -249,7 +192,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
 
 
   // Compute the end effector angle from the origin of the circle
-  double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
+  //double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
 
   // Constarint for a cylinder centered around the x axis
   constraint_jac_(0,0) = 0; // this is the end of the cylinder
@@ -296,15 +239,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   }
 
 
- Twist pose_error = diff(endeffector_frame_, desired_frame_);
-
-  static int cnt = 0; ++cnt;
-  if (cnt % 10 == 0)
-    //ROS_ERROR("Meas: % .3lf  % .3lf  % .3lf", pose_error(3), pose_error(4), pose_error(5));
-  //ROS_ERROR("roll_error: %f rad\n", (roll_error))
-
-
-
+  Twist pose_error = diff(endeffector_frame_, desired_frame_);
 
   //roll constraint
   if (fabs(pose_error(3)) > 0)
@@ -334,7 +269,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   if (fabs(pose_error(5)) > 0)
   {
     //determine sign
-    //constraint_jac_(5,4) = 1; 
+    //constraint_jac_(5,4) = 1;
     f_yaw = pose_error(5)* f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -362,7 +297,7 @@ ROS_REGISTER_CONTROLLER(EndeffectorConstraintControllerNode)
 
 
 EndeffectorConstraintControllerNode::EndeffectorConstraintControllerNode()
-: node_(ros::Node::instance())
+: node_(ros::Node::instance()), loop_count_(0)
 {
 }
 
@@ -375,9 +310,9 @@ EndeffectorConstraintControllerNode::~EndeffectorConstraintControllerNode()
 bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to from xml file
-  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
+  topic_ = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic_ == "") {
-    fprintf(stderr, "No topic given to EndeffectorConstraintControllerNode\n");
+    fprintf(stderr, "No name given to EndeffectorConstraintControllerNode\n");
     return false;
   }
 
@@ -400,10 +335,13 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
 void EndeffectorConstraintControllerNode::update()
 {
   controller_.update();
-  static int count=0;
-  count++;
-  if (count%100==0)
+
+  ++loop_count_;
+  if (loop_count_ % 100 == 0)
   {
+#if 0
+
+    // Debugging code.  Not currently realtime safe
 
     robot_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
@@ -424,10 +362,6 @@ void EndeffectorConstraintControllerNode::update()
     marker.g = 255;
     marker.b = 0;
     node_->publish("visualizationMarker", marker );
-  }
-
-  if (count%100==0)
-  {
 
     robot_msgs::VisualizationMarker marker;
     marker.header.frame_id = "torso_lift_link";
@@ -448,9 +382,8 @@ void EndeffectorConstraintControllerNode::update()
     marker.g = 0;
     marker.b = 0;
     node_->publish("visualizationMarker", marker );
+#endif
   }
-
-
 
 }
 
