@@ -10,7 +10,14 @@
   <depend package="std_msgs" />  
   <depend package="std_srvs" />  
   <depend package="rostest" />  
-  <depend package="pyyaml" />  
+
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
+
+  <sysdepend package="python-yaml" os="ubuntu" version="7.04-feisty"/>
+  <sysdepend package="python-yaml" os="ubuntu" version="7.10-gutsy"/>
+  <sysdepend package="python-yaml" os="ubuntu" version="8.04-hardy"/>
+  <sysdepend package="py25-yaml" os="macports" />
+  <sysdepend package="PyYAML" os="centos" version="5.2"/>
+
 </package>
