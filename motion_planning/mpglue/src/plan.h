@@ -96,7 +96,9 @@ namespace mpglue {
   /**
      Convert a plan from an float index-pair sequence (as computed by
      NavFn) to waypoints that are understandable. Optionally provides
-     some statistics on the plan.
+     some statistics on the plan. Have a look at
+     convertPlanInterpolate() though, it takes advantage of the
+     sub-pixel resolution available in NavFn.
   */
   void convertPlan(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
 		   IndexTransform const & itransform,
@@ -122,6 +124,34 @@ namespace mpglue {
 		       \note This only makes sense for plans that are
 		       aware of the robot's heading though. */
 		   double * optDirectionChangeRad);
+  
+  /**
+     Uses interpolateIndexToGlobal() for sub-pixel resolution.
+  */
+  void convertPlanInterpolate(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
+			      IndexTransform const & itransform,
+			      /** in: array of X-coordinates (continuous grid index). */
+			      float const * path_x,
+			      /** in: array of Y-coordinates (continuous grid index). */
+			      float const * path_y,
+			      /** in: the length of path_x[] and path_y[]. */
+			      int path_len,
+			      /** out: the converted plan (it is just appended
+				  to, not cleared for you) */
+			      waypoint_plan_t * plan,
+			      /** optional out: the cumulated path length */
+			      double * optPlanLengthM,
+			      /** optional out: the cumulated change in the path
+				  tangential direction (the angle between the
+				  x-axis and the delta between two successive
+				  waypoints) */
+			      double * optTangentChangeRad,
+			      /** optional out: the cumulated change in the
+				  direction of the waypoints (the delta of
+				  std_msgs::Pose2DFloat32::th values).
+				  \note This only makes sense for plans that are
+				  aware of the robot's heading though. */
+			      double * optDirectionChangeRad);
   
 }
 

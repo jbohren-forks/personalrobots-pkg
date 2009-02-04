@@ -40,8 +40,10 @@ namespace mpglue {
   
   NavFnPlanner::
   NavFnPlanner(boost::shared_ptr<CostmapAccessor const> costmap,
-	       boost::shared_ptr<IndexTransform const> itransform)
-    : CostmapPlanner(stats_, costmap, itransform)
+	       boost::shared_ptr<IndexTransform const> itransform,
+	       bool _interpolate_plan)
+    : CostmapPlanner(stats_, costmap, itransform),
+      interpolate_plan_(_interpolate_plan)
   {
   }
   
@@ -93,8 +95,14 @@ namespace mpglue {
     boost::shared_ptr<waypoint_plan_t> plan;
     if (planner_->calcNavFnAstar()) {
       plan.reset(new waypoint_plan_t());
-      convertPlan(*itransform_, planner_->getPathX(), planner_->getPathY(), planner_->getPathLen(),
-		  plan.get(), &stats_.plan_length, &stats_.plan_angle_change, 0);
+      if (interpolate_plan_)
+	convertPlanInterpolate(*itransform_, planner_->getPathX(), planner_->getPathY(),
+			       planner_->getPathLen(), plan.get(), &stats_.plan_length,
+			       &stats_.plan_angle_change, 0);
+      else
+	convertPlan(*itransform_, planner_->getPathX(), planner_->getPathY(),
+		    planner_->getPathLen(), plan.get(), &stats_.plan_length,
+		    &stats_.plan_angle_change, 0);
     }
     return plan;
   }

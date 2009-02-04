@@ -796,18 +796,24 @@ namespace mpbench {
        << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
        << prefix << "  xml : xml_filename\n"
        << prefix << "available planner specs (can use registered aliases instead):\n"
-       << prefix << "  NavFn\n"
-       << prefix << "  ADStar | ARAStar [: 2d | 3dkin [: fwd | bwd ]]\n"
+       << prefix << "  NavFn [: int | dsc ]\n"
+       << prefix << "        int = interpolate path (default)\n"
+       << prefix << "        dsc = use discretized path instead\n"
+       << prefix << "  ADStar | ARAStar [: 2d | 3dkin [: bwd | fwd ]]\n"
+       << prefix << "        2d = use 2D environment (default)\n"
+       << prefix << "        3dkin = use 3DKIN environment\n"
+       << prefix << "        bwd = use backward search (default)\n"
+       << prefix << "        fwd = use forward search\n"
        << prefix << "available robot specs:\n"
        << prefix << "  pr2 [: inscribed [: circumscribed [: fwd_speed [: rot_speed ]]]]\n"
-       << prefix << "      inscribed radius (millimeters), default 325mm\n"
-       << prefix << "      circumscribed radius (millimeters), default 460mm\n"
-       << prefix << "      nominal forward speed (millimeters per second), default 600mm/s\n"
-       << prefix << "      nominal rotation speed (milliradians per second), default 600mrad/s\n"
+       << prefix << "        inscribed radius (millimeters), default 325mm\n"
+       << prefix << "        circumscribed radius (millimeters), default 460mm\n"
+       << prefix << "        nominal forward speed (millimeters per second), default 600mm/s\n"
+       << prefix << "        nominal rotation speed (milliradians per second), default 600mrad/s\n"
        << prefix << "available costmap specs:\n"
        << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
-       << prefix << "      all lengths and radii in millimeters\n"
-       << prefix << "      defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
+       << prefix << "        all lengths and radii in millimeters\n"
+       << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
   }
   
   
@@ -880,8 +886,17 @@ namespace mpbench {
     if ("NavFn" == planner_name) {
       if (progress_os)
 	*progress_os << "  creating NavFnPlanner\n" << flush;
+      string int_str("int");
+      sfl::token_to(opt.planner_tok, 1, int_str);
+      bool interpolate_path(true);
+      if ("dsc" == int_str)
+	interpolate_path = false;
+      else if ("int" != int_str)
+	throw runtime_error("mpbench::Setup::create(): invalid environment interpolate_path \""
+			    + int_str + "\", must be \"int\" or \"dsc\"");
       setup->planner_.reset(new mpglue::NavFnPlanner(setup->getCostmap(),
-						     setup->getIndexTransform()));
+						     setup->getIndexTransform(),
+						     interpolate_path));
     }
     
     else {

@@ -496,9 +496,9 @@ namespace {
       shared_ptr<task::result> result(*ir);
       if ( ! result)
 	continue;
-      if ((task_id >= 0) && (task_id != result->task_id))
+      if ((task_id >= 0) && (static_cast<size_t>(task_id) != result->task_id))
 	continue;
-      if ((episode_id >= 0) && (episode_id != result->episode_id))
+      if ((episode_id >= 0) && (static_cast<size_t>(episode_id) != result->episode_id))
 	continue;
       drawResult(*result, detailed);
     }

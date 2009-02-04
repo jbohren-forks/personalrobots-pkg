@@ -53,7 +53,9 @@ namespace mpglue {
   {
   public:
     NavFnPlanner(boost::shared_ptr<CostmapAccessor const> costmap,
-		 boost::shared_ptr<IndexTransform const> itransform);
+		 boost::shared_ptr<IndexTransform const> itransform,
+		 /** whether to use convertPlanInterpolate() or not */
+		 bool interpolate_plan);
     
   protected:
     virtual void preCreatePlan() throw(std::exception);
@@ -62,6 +64,7 @@ namespace mpglue {
     
     boost::shared_ptr<NavFn> planner_;
     CostmapPlannerStats stats_;
+    bool interpolate_plan_;
   };
   
 }

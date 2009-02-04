@@ -1,0 +1,67 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>2e-3</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <map>
+    <init>
+      <!-- outer bounding box -->
+      <addline>  0     0     6    0    </addline>
+      <addline>  0     0     0    5.5  </addline>
+      <addline>  0     5.5   6    5.5  </addline>
+      <addline>  6     0     6    5.5  </addline>
+      <!-- wall with opening along y-axis -->
+      <addline>  3.5   0     3.5  4    </addline>
+      <addline>  3.5   4.75  3.5  5.5  </addline>
+      <!-- short "tunnel" along x-axis -->
+      <addline>  2.325 4     3.5  4    </addline>
+      <addline>  2.325 4.75  3.5  4.75 </addline>
+    </init>
+  </map>
+  
+  <task>
+    <description>left to right</description>
+    <goal>
+      <pose>4.75  1 -1.55</pose>
+    </goal>
+    <start>
+      <pose>1.0   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.2   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.4   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.6   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.8   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.0   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.2   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.4   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.6   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.8   1  1.55</pose>
+    </start>
+  </task>
+</setup>

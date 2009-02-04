@@ -105,9 +105,6 @@ namespace mpglue {
   }
   
   
-  /**
-     \todo Interpolation could easily be made optional using a bool param.
-  */
   void convertPlan(IndexTransform const & itransform,
 		   float const * path_x,
 		   float const * path_y,
@@ -116,6 +113,37 @@ namespace mpglue {
 		   double * optPlanLengthM,
 		   double * optTangentChangeRad,
 		   double * optDirectionChangeRad)
+  {
+    PlanConverter pc(plan);
+    ssize_t prev_ix(0), prev_iy(0);
+    for (int ii(0); ii < path_len; ++ii, ++path_x, ++path_y) {
+      ssize_t const ix(static_cast<ssize_t>(rint(*path_x)));
+      ssize_t const iy(static_cast<ssize_t>(rint(*path_y)));
+      if ((0 == ii) || (ix != prev_ix) || (iy != prev_iy)) {
+	double px, py;
+	itransform.indexToGlobal(ix, iy, &px, &py);
+	pc.addWaypoint(px, py, 0);
+      }
+      prev_ix = ix;
+      prev_iy = iy;
+    }
+    if (optPlanLengthM)
+      *optPlanLengthM = pc.plan_length;
+    if (optTangentChangeRad)
+      *optTangentChangeRad = pc.tangent_change;
+    if (optDirectionChangeRad)
+      *optDirectionChangeRad = pc.direction_change;
+  }
+  
+  
+  void convertPlanInterpolate(IndexTransform const & itransform,
+			      float const * path_x,
+			      float const * path_y,
+			      int path_len,
+			      waypoint_plan_t * plan,
+			      double * optPlanLengthM,
+			      double * optTangentChangeRad,
+			      double * optDirectionChangeRad)
   {
     PlanConverter pc(plan);
     double const resolution(itransform.getResolution());
