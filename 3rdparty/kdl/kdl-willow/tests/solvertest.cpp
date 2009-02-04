@@ -42,15 +42,15 @@ void SolverTest::setUp()
                               Frame(Vector(0.0,0.0,0.1))));
 
 
-    chain2a.addSegment(Segment(Joint(Vector(10,0,0), Vector(1,0,1),Joint::RotAxes),
+    chain2a.addSegment(Segment(Joint(Vector(10,0,0), Vector(1,0,1),Joint::RotAxis),
 			       Frame(Vector(0.0,0.0,0.5))));
-    chain2a.addSegment(Segment(Joint(Vector(0,5,0), Vector(1,0,0),Joint::RotAxes),
+    chain2a.addSegment(Segment(Joint(Vector(0,5,0), Vector(1,0,0),Joint::RotAxis),
 			       Frame(Vector(0.0,0.0,0.4))));
-    chain2a.addSegment(Segment(Joint(Vector(0,0,5), Vector(1,0,4),Joint::RotAxes),
+    chain2a.addSegment(Segment(Joint(Vector(0,0,5), Vector(1,0,4),Joint::RotAxis),
                               Frame(Vector(0.0,0.0,0.3))));
-    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(1,0,0),Joint::RotAxes),
+    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(1,0,0),Joint::RotAxis),
                               Frame(Vector(0.0,0.0,0.2))));
-    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(0,0,1),Joint::RotAxes),
+    chain2a.addSegment(Segment(Joint(Vector(0,0,0), Vector(0,0,1),Joint::RotAxis),
                               Frame(Vector(0.0,0.0,0.1))));
 
 
