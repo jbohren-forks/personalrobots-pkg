@@ -3,7 +3,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(wg_robot_description_parser)
 set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
 
-ADD_DEFINITIONS(`rosboost-cfg --cflags`)
+rospack_add_boost_directories()
 
 rospack_add_library(URDF src/URDF.cpp src/parser.cpp)
 rospack_add_compile_flags(URDF -Wextra)
