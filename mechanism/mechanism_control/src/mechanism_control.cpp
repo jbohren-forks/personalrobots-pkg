@@ -192,13 +192,31 @@ void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
   controllers_lock_.unlock();
 }
 
-bool MechanismControl::addController(controller::Controller *c, const std::string &name)
+bool MechanismControl::spawnController(const std::string &type,
+                                       const std::string &name,
+                                       TiXmlElement *config)
 {
   boost::mutex::scoped_lock lock(controllers_lock_);
 
   if (getControllerByName(name))
   {
     ROS_ERROR("A controller with the name %s already exists", name.c_str());
+    return false;
+  }
+
+  controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
+  if (c == NULL)
+  {
+    ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
+              name.c_str(), type.c_str());
+    return false;
+  }
+
+  ROS_INFO("Spawning %s", name.c_str());
+
+  if (!c->initXml(state_, config))
+  {
+    delete c;
     return false;
   }
 
@@ -213,32 +231,8 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
   }
 
   ROS_ERROR("No room for new controller: %s", name.c_str());
+  delete c;
   return false;
-}
-
-
-bool MechanismControl::spawnController(const std::string &type,
-                                       const std::string &name,
-                                       TiXmlElement *config)
-{
-  controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
-  if (c == NULL)
-  {
-    ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
-              name.c_str(), type.c_str());
-    return false;
-  }
-
-  ROS_INFO("Spawning %s", name.c_str());
-
-  if (!c->initXml(state_, config) ||
-      !addController(c, name))
-  {
-    delete c;
-    return false;
-  }
-
-  return true;
 }
 
 bool MechanismControl::killController(const std::string &name)

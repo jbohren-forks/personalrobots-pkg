@@ -73,7 +73,6 @@ public:
   // Non real-time functions
   bool initXml(TiXmlElement* config);
   void getControllerNames(std::vector<std::string> &v);
-  bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
   bool killController(const std::string &name);
   controller::Controller* getControllerByName(std::string name);
