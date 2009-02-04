@@ -910,7 +910,8 @@ namespace mpbench {
 						     setup->getIndexTransform(),
 						     setup->getFootprint(),
 						     opt.robot_nominal_forward_speed,
-						     timetoturn45degsinplace_secs));
+						     timetoturn45degsinplace_secs,
+						     progress_os));
       }
       else
 	throw runtime_error("mpbench::Setup::create(): invalid environment token \""

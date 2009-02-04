@@ -45,6 +45,7 @@ namespace mpbench {
     
     struct Configuration {
       Configuration(Setup const & setup,
+		    int base_width, int base_height,
 		    bool websiteMode,
 		    std::string const & baseFilename,
 		    resultlist_t const & resultlist,
@@ -54,6 +55,8 @@ namespace mpbench {
       Setup const & setup;
       double const resolution;
       double const inscribedRadius;
+      int const base_width;
+      int const base_height;
       bool const websiteMode;
       std::string const baseFilename;
       mpglue::footprint_t const & footprint;

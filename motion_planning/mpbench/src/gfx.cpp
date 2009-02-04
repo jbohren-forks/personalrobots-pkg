@@ -93,6 +93,7 @@ namespace mpbench {
     
     Configuration::
     Configuration(Setup const & _setup,
+		  int _base_width, int _base_height,
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
 		  resultlist_t const & _resultlist,
@@ -101,6 +102,8 @@ namespace mpbench {
       : setup(_setup),
 	resolution(_setup.getOptions().costmap_resolution),
 	inscribedRadius(_setup.getOptions().robot_inscribed_radius),
+	base_width(_base_width),
+	base_height(_base_height),
 	websiteMode(_websiteMode),
 	baseFilename(_baseFilename),
 	footprint(_setup.getFootprint()),
@@ -136,10 +139,16 @@ namespace mpbench {
       configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
       glut_width = (int) ceil(glut_aspect * (y1 - y0) / configptr->resolution);
       glut_height = (int) ceil((x1 - x0) / configptr->resolution);
-//       while (glut_height < 800) { // wow, hack
-// 	glut_width *= 2;
-// 	glut_height *= 2;
-//       }
+      double const wscale(config.base_width / static_cast<double>(glut_width));
+      double const hscale(config.base_height / static_cast<double>(glut_height));
+      if (wscale < hscale) {
+	glut_width = static_cast<int>(rint(glut_width * wscale));
+	glut_height = static_cast<int>(rint(glut_height * wscale));
+      }
+      else {
+	glut_width = static_cast<int>(rint(glut_width * hscale));
+	glut_height = static_cast<int>(rint(glut_height * hscale));
+      }
       
       glutInit(argc, argv);
       glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
@@ -335,9 +344,6 @@ void draw()
   if (configptr->websiteMode) {
     double x0, y0, x1, y1;
     configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
-    //     glut_width = (int) ceil((y1 - y0) / configptr->resolution);
-    //     glut_height = (int) ceil((x1 - x0) / configptr->resolution);
-    //     reshape(glut_width, glut_height);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();

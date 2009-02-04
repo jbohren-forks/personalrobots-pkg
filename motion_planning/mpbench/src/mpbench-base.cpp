@@ -67,12 +67,14 @@ static char * const d_world_spec("hc:office1:1.2:3");
 static char * const d_planner_spec("ad:2d:bwd");
 static char * const d_robot_spec("pr2:325:460:600:600");
 static char * const d_costmap_spec("ros:50");
+static char * const d_geometry("800x600");
 
 static bool enableGfx;
 static string world_spec;
 static string planner_spec;
 static string costmap_spec;
 static string robot_spec;
+static string geometry;
 static bool websiteMode;
 
 static shared_ptr<Setup> setup;
@@ -94,8 +96,17 @@ int main(int argc, char ** argv)
   create_setup();
   run_tasks();
   print_summary();
-  if (enableGfx)
+  if (enableGfx) {
+    int base_width(800);
+    int base_height(600);
+    string head, tail;
+    sfl::splitstring(geometry, 'x', head, tail);
+    sfl::string_to(head, base_width);
+    sfl::string_to(tail, base_height);
+    ////    cout << "w " << base_width << " h " << base_height << "\n";
     display(gfx::Configuration(*setup,
+			       base_width,
+			       base_height,
 			       websiteMode,
 			       baseFilename(),
 			       resultlist,
@@ -104,6 +115,7 @@ int main(int argc, char ** argv)
 	    "mpbench",
 	    3, // hack: layoutID
 	    &argc, argv);
+  }
 }
 
 
@@ -126,6 +138,7 @@ void usage(ostream & os)
      << "   -p  <spec>  planner specification string (default " << d_planner_spec << ")\n"
      << "   -r  <spec>  robot specification string (default " << d_robot_spec << ")\n"
      << "   -c  <spec>  costmap specification string (default " << d_costmap_spec << ")\n"
+     << "   -g  <spec>  GLUT window size (default " << d_geometry << ")\n"
      << "   -X          dump filename base to stdout (use as last option)\n"
      << "   -W          run in website generation mode\n";
   SetupOptions::help(os, "help on setup options:", "  ");
@@ -184,6 +197,7 @@ void parse_options(int argc, char ** argv)
   planner_spec = d_planner_spec;
   robot_spec = d_robot_spec;
   costmap_spec = d_costmap_spec;
+  geometry = d_geometry;
   websiteMode = false;
   
   for (int ii(1); ii < argc; ++ii) {
@@ -241,6 +255,16 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	costmap_spec = argv[ii];
+ 	break;
+	
+      case 'g':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  warnx("-g requires geometry argument");
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	geometry = argv[ii];
  	break;
 	
       case 'X':
