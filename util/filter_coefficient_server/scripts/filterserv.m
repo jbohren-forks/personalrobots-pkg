@@ -32,7 +32,7 @@
 function res = filterserv(req)
 %filterserv - Parses arguments for octave filtering functions.
 
-res = req._create_response();
+res = req.create_response_();
 method = req.name;
 
 switch method
