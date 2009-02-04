@@ -23,6 +23,7 @@
 
 #include "chaineffsolver.hpp"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -76,7 +77,7 @@ namespace KDL {
   }
 
 
-  int ChainIEffSolver::CartToJnt(const JntArray& q, const vector<Wrench>& wrench_in, JntArray& eff_out)
+  int ChainIEffSolver::CartToJnt(const JntArray& q, const std::vector<Wrench>& wrench_in, JntArray& eff_out)
   {
     assert(q.rows() == num_joints_);
     assert(wrench_in.size() == num_segments_);
