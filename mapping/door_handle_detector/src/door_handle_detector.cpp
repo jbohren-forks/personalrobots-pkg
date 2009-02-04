@@ -141,7 +141,9 @@ class DoorHandleDetector : public ros::Node
 
       ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
 
-      param ("~door_frame_multiplier_threshold", door_frame_multiplier_threshold_, 3);
+      // This describes the size of our 3D bounding box (basically the space where we search for doors),
+      // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
+      param ("~door_frame_multiplier_threshold", door_frame_multiplier_threshold_, 4);
       param ("~publish_debug", publish_debug_, true);
 
       param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
