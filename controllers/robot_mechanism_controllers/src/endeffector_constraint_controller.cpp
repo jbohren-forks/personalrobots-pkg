@@ -94,6 +94,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   chain_.toKDL(kdl_chain_);
 
   // some parameters
+  ros::Node *node = ros::Node::instance();
+  assert(node);
   node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
   node->param("constraint/threshold_x"  , threshold_x , 0.1 ) ; /// distance within the wall to apply constraint force
   node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
