@@ -75,11 +75,15 @@ namespace image_msgs
 
     ~CvBridge()
     {
-      if (rosimg_)
+      if (rosimg_) {
         cvReleaseImageHeader(&rosimg_);
+	rosimg_ = 0;
+      }
       
-      if (cvtimg_)
+      if (cvtimg_) {
         cvReleaseImage(&cvtimg_);
+	cvtimg_ = 0;
+      }
     }
 
 
