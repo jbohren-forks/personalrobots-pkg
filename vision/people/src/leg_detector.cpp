@@ -99,7 +99,7 @@ public:
     id_ = std::string(id);
 
     object_id = "";
-   time_ = loc.stamp_;
+    time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
     Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
@@ -111,7 +111,6 @@ public:
     color_.push_back((unsigned char)(rand()%255));
     color_.push_back((unsigned char)(rand()%255));
     color_.push_back((unsigned char)(rand()%255));
-    cout << "Color " << color_[0] << " or " << rand()%255 << " or " << (int)(color_[0]) << endl;
   }
 
   void propagate(ros::Time time)
@@ -499,62 +498,42 @@ public:
       filter_visualize[i].y = est.pos_[1];
       filter_visualize[i].z = est.pos_[2];
       int rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | ((*sf_iter)->color_[2]);
-      //cout << "color 0 " << (int)((*sf_iter)->color_[0]) << endl;
-      //cout << "color 1 " << (int)((*sf_iter)->color_[1]) << endl;
-      //cout << "color 2 " << (int)((*sf_iter)->color_[2]) << endl;
-      //cout << "rgb" << rgb << endl;
       weights[i] = *(float*)&(rgb);
 
       if ((*sf_iter)->meas_time_ == scan->header.stamp)
-      {
+      {         
+	robot_msgs::PositionMeasurement pos;
+
+	pos.header.stamp = (*sf_iter)->time_;
+	pos.header.frame_id = "odom";
+	pos.name = "leg_detector";
+	pos.object_id = (*sf_iter)->object_id;
+	pos.pos.x = est.pos_[0];
+	pos.pos.y = est.pos_[1];
+	pos.pos.z = est.pos_[2];
+	pos.covariance[0] = 0.09;
+	pos.covariance[1] = 0.0;
+	pos.covariance[2] = 0.0;
+	pos.covariance[3] = 0.0;
+	pos.covariance[4] = 0.09;
+	pos.covariance[5] = 0.0;
+	pos.covariance[6] = 0.0;
+	pos.covariance[7] = 0.0;
+	pos.covariance[8] = 10000.0;
+	pos.initialization = 0;
+
+	cout <<  est.vel_.length() <<" " <<  est.pos_[0] <<" " <<  est.pos_[1] <<" " <<  est.pos_[2] <<" " <<  est.pos_.length() << endl;
+
         if (est.vel_.length() > 0.5)
         {
-          robot_msgs::PositionMeasurement pos;
-
-          pos.header.stamp = (*sf_iter)->time_;
-          pos.header.frame_id = "odom";
-          pos.name = "leg_detector";
-          pos.object_id = (*sf_iter)->object_id;
-          pos.pos.x = est.pos_[0];
-          pos.pos.y = est.pos_[1];
-          pos.pos.z = est.pos_[2];
-          pos.reliability = 0.80;
-          pos.covariance[0] = 0.09;
-          pos.covariance[1] = 0.0;
-          pos.covariance[2] = 0.0;
-          pos.covariance[3] = 0.0;
-          pos.covariance[4] = 0.09;
-          pos.covariance[5] = 0.0;
-          pos.covariance[6] = 0.0;
-          pos.covariance[7] = 0.0;
-          pos.covariance[8] = 10000.0;
-          pos.initialization = 0;
-        
+	  // If the current velocity is greater than 0.5 (m/s, I hope), publish the position.
+          pos.reliability = 0.80;        
           publish("people_tracker_measurements", pos);               
         }
         else if ((*sf_iter)->object_id != "")
         {
-          robot_msgs::PositionMeasurement pos;
-
-          pos.header.stamp = (*sf_iter)->time_;
-          pos.header.frame_id = "odom";
-          pos.name = "leg_detector";
-          pos.object_id = (*sf_iter)->object_id;
-          pos.pos.x = est.pos_[0];
-          pos.pos.y = est.pos_[1];
-          pos.pos.z = est.pos_[2];
+	  // If I've already seen this leg, publish its position.
           pos.reliability = 0.5;
-          pos.covariance[0] = 0.09;
-          pos.covariance[1] = 0.0;
-          pos.covariance[2] = 0.0;
-          pos.covariance[3] = 0.0;
-          pos.covariance[4] = 0.09;
-          pos.covariance[5] = 0.0;
-          pos.covariance[6] = 0.0;
-          pos.covariance[7] = 0.0;
-          pos.covariance[8] = 10000.0;
-          pos.initialization = 0;
-        
           publish("people_tracker_measurements", pos);        
         }
       }
