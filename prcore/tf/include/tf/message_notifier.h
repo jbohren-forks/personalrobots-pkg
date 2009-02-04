@@ -44,6 +44,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
+#define NOTIFIER_DEBUG(fmt, ...) \
+  ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), target_frame_.c_str(), __VA_ARGS__)
 
 namespace tf
 {
@@ -107,7 +109,7 @@ public:
    * \param topic The topic to listen on
    * \param target_frame The frame we need to be able to transform to before a message is ready
    * \param queue_size The number of messages to keep around waiting for transform data.  This is passed directly to ros::Node::subscribe.
-   * \note A queue size of 0 means infinite, which is dangerous
+   * \note A queue size of 0 means infinite, which can be dangerous
    */
   MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
       const std::string& topic, const std::string& target_frame,
@@ -132,8 +134,7 @@ public:
     node_->subscribe("/tf_message", transforms_message_,
         &MessageNotifier::incomingTFMessage, this, 1);
 
-    thread_handle_ = new boost::thread(boost::bind(
-        &MessageNotifier::workerThread, this));
+    thread_handle_ = boost::thread(boost::bind(&MessageNotifier::workerThread, this));
   }
 
   /**
@@ -150,14 +151,12 @@ public:
     new_data_.notify_all();
 
     // Wait for the worker thread to exit
-    thread_handle_->join();
-
-    delete thread_handle_;
+    thread_handle_.join();
 
     clear();
 
-    //printf("MessageNotifier: Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d\n",
-    //       successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
+    NOTIFIER_DEBUG("Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d",
+                    successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
   }
 
   /**
@@ -183,7 +182,7 @@ public:
     subscribeToMessage();
   }
 
-  /** 
+  /**
    * \brief Set the required tolerance for the notifier to return true
    */
   void setTolerance(const ros::Duration& tolerance)
@@ -216,6 +215,11 @@ private:
    */
   void gatherReadyMessages(V_Message& to_notify)
   {
+    if (!messages_.empty() && target_frame_.empty())
+    {
+      ROS_WARN("MessageNotifier [topic=%s]: empty target frame", topic_.c_str());
+    }
+
     to_notify.reserve(message_count_);
 
     int i = 0;
@@ -228,12 +232,14 @@ private:
 
       bool ready = false;
       if (time_tolerance_ != ros::Duration(0.0))
-      {      
+      {
         ready = (tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp) &&
                  tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp + time_tolerance_) );
       }
       else
+      {
         ready = tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp);
+      }
 
       if (ready)
       {
@@ -243,7 +249,7 @@ private:
         it = messages_.erase(it);
         --message_count_;
 
-        //printf("Message %d ready, count now %d\n", i, message_count_);
+        NOTIFIER_DEBUG("Message %d ready, count now %d", i, message_count_);
 
         ++successful_transform_count_;
       }
@@ -286,14 +292,14 @@ private:
         messages_.pop_front();
         --message_count_;
 
-        //printf("Removed old message, count now %d\n", message_count_);
+        NOTIFIER_DEBUG("Removed old message, count now %d", message_count_);
       }
 
       // Add the message to our list
       messages_.push_back(message);
       ++message_count_;
 
-      //printf("Added message, count now %d\n", message_count_);
+      NOTIFIER_DEBUG("Added message, count now %d", message_count_);
     }
   }
 
@@ -315,8 +321,6 @@ private:
         {
           new_data_.wait(lock);
         }
-
-        //printf("workerThread: woken, message count: %d\n", message_count_);
 
         // If we're destructing, break out of the loop
         if (destructing_)
@@ -389,7 +393,6 @@ private:
    */
   void incomingMessage()
   {
-    //printf("incoming message\n");
     // Allocate our new message and placement-new it
     Message* mem = (Message*) notifierAllocate(sizeof(Message));
     new (mem) Message();
@@ -404,7 +407,7 @@ private:
 
       new_message_queue_.push_back(message);
 
-      //printf("Added message to message queue, count now %d\n", new_message_queue_.size());
+      NOTIFIER_DEBUG("Added message to message queue, count now %d", new_message_queue_.size());
 
       new_messages_ = true;
 
@@ -420,7 +423,6 @@ private:
    */
   void incomingTFMessage()
   {
-    ////printf("incoming transforms\n");
     // Notify the worker thread that there is new data available
     new_data_.notify_all();
     new_transforms_ = true;
@@ -444,7 +446,7 @@ private:
   tfMessage transforms_message_; ///< The incoming TF transforms message
 
   bool destructing_; ///< Used to notify the worker thread that it needs to shutdown
-  boost::thread* thread_handle_; ///< Thread handle for the worker thread
+  boost::thread thread_handle_; ///< Thread handle for the worker thread
   boost::condition_variable new_data_; ///< Condition variable used for waking the worker thread
   bool new_messages_; ///< Used to skip waiting on new_data_ if new messages have come in while calling back
   volatile bool new_transforms_; ///< Used to skip waiting on new_data_ if new transforms have come in while calling back or transforming data
