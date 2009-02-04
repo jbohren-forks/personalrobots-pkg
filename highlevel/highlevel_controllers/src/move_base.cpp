@@ -217,6 +217,16 @@ namespace ros {
 			       inflationRadius, circumscribedRadius, inscribedRadius, weight, 
 			       obstacleRange, rayTraceRange, raytraceWindow);
 
+      // set up costmap service response
+      costmap_response_.map.width=resp.map.width;
+      costmap_response_.map.height=resp.map.height;
+      costmap_response_.map.resolution=resp.map.resolution;
+      costmap_response_.map.origin.x = 0.0;
+      costmap_response_.map.origin.y = 0.0;
+      costmap_response_.map.origin.th = 0.0;
+      costmap_response_.map.set_data_size(resp.map.width*resp.map.height);
+
+
       // Allocate Velocity Controller
       double mapSize(2.0);
       param("/trajectory_rollout/map_size", mapSize, 2.0);
@@ -225,6 +235,7 @@ namespace ros {
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
+
 
       global_map_accessor_ = new CostMapAccessor(*costMap_);
       local_map_accessor_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
@@ -270,6 +281,12 @@ namespace ros {
 
       //Advertize message to publish local goal for head to track
       advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
+
+      // Advertise costmap service
+      // Might be worth eventually having a dedicated node provide this service and all
+      // nodes including move_base access the costmap through it, but for now leaving costmap
+      // in move_base for fast access
+      advertiseService("costmap", &MoveBase::costmapCallback);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
@@ -917,6 +934,19 @@ namespace ros {
       reset_cost_map_ = false;
       unlock();
     }
+
+
+  /** Callback invoked when someone requests costmap */
+  bool MoveBase::costmapCallback(std_srvs::StaticMap::Request &req, std_srvs::StaticMap::Response &res )
+  {
+    const unsigned char* costmap = getCostMap().getMap();
+    res = costmap_response_;
+    copy(costmap, costmap+res.map.width*res.map.height, res.map.data.begin());
+    return true;
+  }
+
+
+
 
     /**
      * Each update loop will query all observations and aggregate them and then apply

@@ -70,6 +70,10 @@
 // Thread suppport
 #include <boost/thread.hpp>
 
+// Static map service type (for sending costmap)
+#include "std_srvs/StaticMap.h"
+
+
 #include <list>
 
 namespace robot_filter {
@@ -182,6 +186,12 @@ namespace ros {
        */
       void odomCallback();
 
+
+      /**
+       * @brief costmap service callback
+       */
+      bool costmapCallback(std_srvs::StaticMap::Request &req, std_srvs::StaticMap::Response &res);
+
       void updateGlobalPose();
 
       /**
@@ -243,6 +253,8 @@ namespace ros {
       costmap_2d::CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
       costmap_2d::CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
       costmap_2d::CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
+
+      std_srvs::StaticMap::Response costmap_response_;
 
       tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
