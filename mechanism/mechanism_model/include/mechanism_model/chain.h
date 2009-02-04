@@ -66,6 +66,9 @@ public:
   void setEfforts(KDL::JntArray&, std::vector<JointState>&);
   void addEfforts(KDL::JntArray&, std::vector<JointState>&);
 
+  // return the name of actuated joint i
+  std::string getJointName(unsigned int actuated_joint_i);
+
   // The robot model and KDL have different frames for each link.
   // These functions give the transforms between the robot model
   // frames and the KDL frames.

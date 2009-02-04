@@ -278,4 +278,9 @@ bool Chain::getAncestors(mechanism::Robot* robot, const std::string &link_name,
 }
 
 
+string Chain::getJointName(unsigned int actuated_joint_i)
+{
+  return robot_->joints_[joint_indices_[actuated_joint_i]]->name_;
+}
+
 }

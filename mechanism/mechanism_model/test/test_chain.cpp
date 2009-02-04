@@ -119,6 +119,10 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 
   KDL::Chain kdl;
   chain.toKDL(kdl);
+  for (unsigned int i=0; i<kdl.getNrOfJoints(); i++)
+    cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
+
+
   ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
   ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
 
