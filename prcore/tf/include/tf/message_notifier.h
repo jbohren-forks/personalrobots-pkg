@@ -203,6 +203,24 @@ public:
     message_count_ = 0;
   }
 
+  void enqueueMessage(const MessagePtr& message)
+  {
+    {
+      boost::mutex::scoped_lock lock(queue_mutex_);
+
+      new_message_queue_.push_back(message);
+
+      NOTIFIER_DEBUG("Added message to message queue, count now %d", new_message_queue_.size());
+
+      new_messages_ = true;
+
+      // Notify the worker thread that there is new data available
+      new_data_.notify_all();
+    }
+
+    ++incoming_message_count_;
+  }
+
 private:
 
   typedef std::vector<MessagePtr> V_Message;
@@ -402,20 +420,7 @@ private:
     // Copy the message
     *message = message_;
 
-    {
-      boost::mutex::scoped_lock lock(queue_mutex_);
-
-      new_message_queue_.push_back(message);
-
-      NOTIFIER_DEBUG("Added message to message queue, count now %d", new_message_queue_.size());
-
-      new_messages_ = true;
-
-      // Notify the worker thread that there is new data available
-      new_data_.notify_all();
-    }
-
-    ++incoming_message_count_;
+    enqueueMessage(message);
   }
 
   /**
