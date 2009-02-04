@@ -42,8 +42,12 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   model_.hw_ = hw;
 
   diagnostics_.max1_.resize(60);
+  diagnostics_.max_ = 0;
   for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  {
     diagnostics_.controllers_[i].max1_.resize(60);
+    diagnostics_.controllers_[i].max_ = 0;
+  }
 }
 
 MechanismControl::~MechanismControl()
