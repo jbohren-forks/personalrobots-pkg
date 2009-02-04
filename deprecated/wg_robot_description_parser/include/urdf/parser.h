@@ -34,7 +34,7 @@
 #define URDF_FUNCTIONAL_PARSER_H
 
 #include "tinyxml/tinyxml.h"
-#include "string_utils/string_utils.h"
+#include <vector>
 
 namespace urdf {
 

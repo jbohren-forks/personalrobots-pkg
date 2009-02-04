@@ -36,7 +36,8 @@
 
 #include <urdf/URDF.h>
 #include <math_expr/MathExpression.h>
-#include <string_utils/string_utils.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -662,7 +663,8 @@ namespace robot_desc {
         const char *nm = child->ToElement()->Attribute("name");
         if (nm)
         {
-            std::string name = string_utils::trim(nm);            
+            std::string name = nm;
+	    boost::trim(name);
             std::map<std::string, const TiXmlNode*>::const_iterator pos = m_constBlocks.find(name);
             if (pos == m_constBlocks.end())
             {
@@ -820,7 +822,8 @@ namespace robot_desc {
 
     char* URDF::findFile(const char *filename)
     {
-    std::string fnm = string_utils::trim(filename);
+	std::string fnm = filename;
+	boost::trim(fnm);
     for (unsigned int i = 0 ; i < m_paths.size() ; ++i)
     {
         std::string name = m_paths[i] + fnm;
@@ -841,7 +844,8 @@ namespace robot_desc {
     {
         if (strcmp(attributes[i]->Name(), "name") == 0)
         {
-        name = string_utils::trim(attributes[i]->ValueStr());
+        name = attributes[i]->ValueStr();
+	boost::trim(name);	
         attributes.erase(attributes.begin() + i);
         break;
         }
@@ -970,12 +974,18 @@ namespace robot_desc {
     {
         std::string extra;
         ss >> extra;
-        extra = string_utils::trim(extra);
+        boost::trim(extra);
         if (!extra.empty())
         {
-        errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
-        errorLocation(node);
-        }        
+	    try
+	    {
+		errorMessage("More data available (" + boost::lexical_cast<std::string>(read) + " read, rest is ignored): '" + data + "'");
+		errorLocation(node);
+	    }
+	    catch (...)
+	    {
+	    }
+	}        
     }
 
     if (read != count)
@@ -1026,7 +1036,7 @@ namespace robot_desc {
     {
         std::string value;
         ss >> value;
-        value = string_utils::tolower(value);
+        boost::to_lower(value);
         vals[i] = (value == "true" || value == "yes" || value == "1");
         read++;
     }
@@ -1035,11 +1045,17 @@ namespace robot_desc {
     {
         std::string extra;
         ss >> extra;
-        extra = string_utils::trim(extra);
+	boost::trim(extra);
         if (!extra.empty())
         {    
-        errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
-        errorLocation(node);
+	    try
+	    {
+		errorMessage("More data available (" + boost::lexical_cast<std::string>(read) + " read, rest is ignored): '" + data + "'");
+		errorLocation(node);
+	    }
+	    catch(...)
+	    {
+	    }	    
         }        
     }
 
@@ -1088,7 +1104,8 @@ namespace robot_desc {
             const char *nm = node->ToElement()->Attribute("name");
             if (nm)
             {
-            frame->linkName = string_utils::trim(nm);
+	    frame->linkName = nm;
+	    boost::trim(frame->linkName);		
             MARK_SET(node, frame, parent);
             if (frame->type == Frame::CHILD)
                 errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
@@ -1105,7 +1122,8 @@ namespace robot_desc {
             const char *nm = node->ToElement()->Attribute("name");
             if (nm)
             {
-            frame->linkName = string_utils::trim(nm);
+            frame->linkName = nm;
+	    boost::trim(frame->linkName);	   
             MARK_SET(node, frame, child);
             if (frame->type == Frame::PARENT)
                 errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
@@ -1602,7 +1620,8 @@ namespace robot_desc {
             const char *nm = node->ToElement()->Attribute("name");
             if (nm)
             {
-            link->parentName = string_utils::trim(nm);
+            link->parentName = nm;
+	    boost::trim(link->parentName);
             MARK_SET(node, link, parent);
             }
             else
@@ -1714,7 +1733,8 @@ namespace robot_desc {
             const char *nm = node->ToElement()->Attribute("name");            
             if (nm)
             {
-            sensor->parentName = string_utils::trim(nm);
+            sensor->parentName = nm;
+	    boost::trim(sensor->parentName);	    
             MARK_SET(node, sensor, parent);
             }
             else
@@ -1765,7 +1785,8 @@ namespace robot_desc {
             const char *filename = node->ToElement()->Attribute("filename");
             if (filename)
             {
-            sensor->calibration = string_utils::trim(filename);            
+            sensor->calibration = filename;            
+	    boost::trim(sensor->calibration);	    
             MARK_SET(node, sensor, calibration);
             }
             else
@@ -1838,10 +1859,16 @@ namespace robot_desc {
     for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
     {
         if (strcmp(attr->Name(), "name") == 0)
-        name = string_utils::trim(attr->ValueStr());
+	{	    
+        name = attr->ValueStr();
+	boost::trim(name);	
+	}	
         else
-        if (strcmp(attr->Name(), "flag") == 0)
-            flag = string_utils::trim(attr->ValueStr());
+	    if (strcmp(attr->Name(), "flag") == 0)
+	    {
+		flag = attr->ValueStr();
+		boost::trim(flag);
+	    }
     }
 
     for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
@@ -2118,8 +2145,9 @@ namespace robot_desc {
         const char *name = node->ToElement()->Attribute("name");
         if (name)
         {
-            std::string nameStr = string_utils::trim(name);
-            if (!m_name.empty() && nameStr != m_name)
+            std::string nameStr = name;
+	    boost::trim(nameStr);
+	    if (!m_name.empty() && nameStr != m_name)
             errorMessage("Loading a file with contradicting robot name: '" + m_name + "' - '" + name + "'");
             m_name = nameStr;
         }
@@ -2165,15 +2193,24 @@ namespace robot_desc {
             errorLocation(node);
             }
             if (name && value)
-            m_constants[string_utils::trim(name)] = value;
+	    {
+		std::string nameStr = name;
+		boost::trim(nameStr);
+		m_constants[nameStr] = value;
+	    }
+	    
         }
         else
             if (node->ValueStr() == "const_block")
             {
             const char *name = node->ToElement()->Attribute("name");
             if (name)
-                m_constBlocks[string_utils::trim(name)] = node;
-            else
+	    {
+		std::string nameStr = name;
+		boost::trim(nameStr);
+		m_constBlocks[nameStr] = node;
+	    }
+	    else
             {
                 errorMessage("Undefined name for constant block");
                 errorLocation(node);
@@ -2187,11 +2224,17 @@ namespace robot_desc {
             for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
             {
                 if (strcmp(attr->Name(), "name") == 0)
-                group = string_utils::trim(attr->ValueStr());
+		{
+		    group = attr->ValueStr();
+		    boost::trim(group);
+		}		
                 else
-                if (strcmp(attr->Name(), "flags") == 0)
-                    flags = attr->ValueStr();
-            }
+		    if (strcmp(attr->Name(), "flags") == 0)
+		    {
+			flags = attr->ValueStr();
+			boost::trim(flags);
+		    }
+	    }
             Group *g = NULL;
             if (m_groups.find(group) == m_groups.end())
             {
@@ -2246,15 +2289,24 @@ namespace robot_desc {
             for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
             {
                 if (strcmp(attr->Name(), "name") == 0)
-                name = string_utils::trim(attr->ValueStr());
-                else
+		{
+		    name = attr->ValueStr();
+		    boost::trim(name);
+		}
+		else
                 {
-                if (strcmp(attr->Name(), "root") == 0)
-                    root = attr->ValueStr();
-                else
-                    if (strcmp(attr->Name(), "tip") == 0)
-                    tip = attr->ValueStr();
-                }
+		    if (strcmp(attr->Name(), "root") == 0)
+		    {
+			root = attr->ValueStr();
+			boost::trim(root);
+		    }
+		    else
+			if (strcmp(attr->Name(), "tip") == 0)
+			{
+			    tip = attr->ValueStr();
+			    boost::trim(tip);
+			}
+		}
             }
             if (name.empty())
                 name = root + "_2_" + tip;

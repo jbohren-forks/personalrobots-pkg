@@ -36,7 +36,7 @@
 #include <cmath>
 #include <sstream>
 #include "tinyxml/tinyxml.h"
-#include "string_utils/string_utils.h"
+#include <boost/algorithm/string.hpp>
 #include "math_expr/MathExpression.h"
 
 
@@ -51,7 +51,8 @@ bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double
     return false;
 
   std::vector<std::string> pieces;
-  string_utils::split(s, pieces);
+  std::string str = s;
+  boost::split( pieces, str, boost::is_any_of(" "));
   for (unsigned int i = 0; i < pieces.size(); ++i)
     value->push_back(atof(pieces[i].c_str()));
 
@@ -167,7 +168,8 @@ std::string normalizeText(const std::string &text, ConstsAndBlocks &lookup)
   using namespace std;
   stringstream ss;
   vector<string> pieces;
-  string_utils::split(text, pieces);
+  
+  boost::split( pieces, text, boost::is_any_of(" "));
 
   // Evaluates each piece.
   for (unsigned int i = 0; i < pieces.size(); ++i)
