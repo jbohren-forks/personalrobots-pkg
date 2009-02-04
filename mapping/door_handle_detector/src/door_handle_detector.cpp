@@ -100,6 +100,8 @@ class DoorHandleDetector : public ros::Node
     double door_min_height_, door_min_width_, door_max_height_, door_max_width_;
     double handle_distance_door_min_threshold_, handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
     double handle_height_threshold_;
+    
+    int door_frame_multiplier_threshold_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     DoorHandleDetector () : ros::Node ("door_handle_detector"), tf_(*this)
@@ -139,6 +141,7 @@ class DoorHandleDetector : public ros::Node
 
       ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
 
+      param ("~door_frame_multiplier_threshold", door_frame_multiplier_threshold_, 3);
       param ("~publish_debug", publish_debug_, true);
 
       param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
@@ -184,12 +187,12 @@ class DoorHandleDetector : public ros::Node
       center[1] = (p1->y + p2->y) / 2.0;
 
       // Obtain the bounds (doesn't matter which is min and which is max at this point)
-      minB.x = center[0] + (3 * door_frame) / 2.0 + frame_distance_eps_;
-      minB.y = center[1] + (3 * door_frame) / 2.0 + frame_distance_eps_;
+      minB.x = center[0] + (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
+      minB.y = center[1] + (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       minB.z = min_z_bounds_;
 
-      maxB.x = center[0] - (3 * door_frame) / 2.0 + frame_distance_eps_;
-      maxB.y = center[1] - (3 * door_frame) / 2.0 + frame_distance_eps_;
+      maxB.x = center[0] - (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
+      maxB.y = center[1] - (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       maxB.z = max_z_bounds_;
 
       // Order min/max
@@ -352,6 +355,8 @@ class DoorHandleDetector : public ros::Node
         double area = cloud_geometry::areas::compute2DPolygonalArea (pmap_.polygons[cc], coeff[cc]);
         goodness_factor[cc] *= (area / (door_frame * door_height));
 
+        // Do a segmentation of all inlier points on the plane +/- door_dist_thresh in intensity space
+
 //        cout << "minP and maxP (" << minP.x << " " << minP.y <<" "<< minP.z <<") ("<< maxP.x <<" " << maxP.y <<" "<< maxP.z << ")" << endl;
 //        cout << "width = " << door_frame << endl;
 //        cout << "height = " << door_height << endl;
@@ -384,14 +389,14 @@ class DoorHandleDetector : public ros::Node
       // Find the handle by performing a segmentation
       findDoorHandle (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], handle_indices, handle_center);
       ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
-      
+
       if (publish_debug_)
       {
         double r, g, b, rgb;
         r = g = b = 1.0;
         int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
         rgb = *(float*)(&res);
-        
+
         // Mark all the points inside
         for (unsigned int k = 0; k < handle_indices.size (); k++)
         {
@@ -402,7 +407,7 @@ class DoorHandleDetector : public ros::Node
           nr_p++;
         }
       }
-  
+
       resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
       resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
       resp.height = fabs (maxP.z - minP.z);
@@ -442,11 +447,11 @@ class DoorHandleDetector : public ros::Node
       double rgb = *(float*)(&res);
       return (rgb);
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       findDoorHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
-                  vector<int> &handle_indices, Point32 &handle_center)
+                      vector<int> &handle_indices, Point32 &handle_center)
     {
       // Transform the polygon to lie on the X-Y plane (makes all isPointIn2DPolygon computations easier)
       Polygon3D poly_tr;
@@ -455,7 +460,7 @@ class DoorHandleDetector : public ros::Node
       vector<double> z_axis (3, 0); z_axis[2] = 1.0;
       cloud_geometry::transforms::getPlaneToPlaneTransformation (*coeff, z_axis, 0, 0, 0, transformation);
       cloud_geometry::transforms::transformPoints (&poly->points, poly_tr.points, transformation);
-      
+
       cout << "size cluster for handle detection = " << poly->points.size() << endl;
 
       vector<int> possible_handle_indices;
@@ -464,11 +469,11 @@ class DoorHandleDetector : public ros::Node
       Point32 pt;
       vector<std_msgs::Point32> handle_visualize;
       vector<float> colors;
-      
+
       for (unsigned int i = 0; i < indices->size (); i++)
       {
         // Select all the points in the given bounds which are between the given handle min->max height
-        if (points->pts.at (indices->at (i)).z > handle_min_height_ && 
+        if (points->pts.at (indices->at (i)).z > handle_min_height_ &&
             points->pts.at (indices->at (i)).z < handle_max_height_)
         {
 
@@ -482,13 +487,13 @@ class DoorHandleDetector : public ros::Node
           pt.y = points->pts.at (indices->at (i)).y - distance_to_plane * coeff->at (1);
           pt.z = points->pts.at (indices->at (i)).z - distance_to_plane * coeff->at (2);
 
-	  std_msgs::Point32 pnt;
-	  pnt.x = points->pts.at (indices->at (i)).x;
-	  pnt.y = points->pts.at (indices->at (i)).y;
-	  pnt.z = points->pts.at (indices->at (i)).z;
-	  handle_visualize.push_back (pnt);
-	  
-	  if (fabs (distance_to_plane) < handle_distance_door_max_threshold_ && fabs (distance_to_plane) > handle_distance_door_min_threshold_)
+          std_msgs::Point32 pnt;
+          pnt.x = points->pts.at (indices->at (i)).x;
+          pnt.y = points->pts.at (indices->at (i)).y;
+          pnt.z = points->pts.at (indices->at (i)).z;
+          handle_visualize.push_back (pnt);
+
+          if (fabs (distance_to_plane) < handle_distance_door_max_threshold_ && fabs (distance_to_plane) > handle_distance_door_min_threshold_)
           {
             // Transform the point onto X-Y for faster checking inside the polygonal bounds
             cloud_geometry::transforms::transformPoint (&pt, p_tr, transformation);
@@ -503,14 +508,14 @@ class DoorHandleDetector : public ros::Node
           }
           else
             colors.push_back (getRGB (1, 0, 0));                // Mark with red otherwise
-	}
+        }
       }
-      
+
       cout << "added " << handle_visualize.size() << " points to visualize" << endl;
       std_msgs::ChannelFloat32 channel;
       channel.name = "rgb";
       channel.vals = colors;
-      std_msgs::PointCloud handle_cloud; 
+      std_msgs::PointCloud handle_cloud;
       handle_cloud.header.stamp = ros::Time::now ();
       handle_cloud.header.frame_id = "base_link";
       handle_cloud.pts = handle_visualize;
@@ -537,9 +542,9 @@ class DoorHandleDetector : public ros::Node
 
       // Split points into clusters
       vector<vector<int> > clusters;
-      findClusters (points, &possible_handle_indices, clusters_growing_tolerance_, clusters, -1, -1, -1, 5);
+      findClusters (points, &possible_handle_indices, clusters_growing_tolerance_, clusters, -1, -1, -1, 2);
       for (unsigned int i=0; i<clusters.size(); i++)
-	cout << "cluster " << i << " has size " << clusters[i].size() << endl;
+        cout << "cluster " << i << " has size " << clusters[i].size() << endl;
 
       // \NOTE to Wim => need to think about how to filter the edges near the
       // door.  We could check for min/max in Z and if they are too big then
@@ -562,7 +567,7 @@ class DoorHandleDetector : public ros::Node
           ROS_ERROR ("Rejecting potential handle cluster because height (%g) is above threshold (%g)!", fabs (maxP.z - minP.z), handle_height_threshold_);
       }
       handle_indices.resize (nr_p);
-    
+
       // Compute the centroid for the remaining handle indices
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
@@ -794,12 +799,17 @@ int
   door_handle_detector::Door::Request req;
 //  req.frame_p1.x = 1.2; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
 //  req.frame_p2.x = 1.4; req.frame_p2.y = -0.5; req.frame_p2.z = 0;
-  req.frame_p1.x = 0.9; req.frame_p1.y = 0.7; req.frame_p1.z = 0;
-  req.frame_p2.x = 1.0; req.frame_p2.y = -0.1; req.frame_p2.z = 0;
+//  req.frame_p1.x = 0.9; req.frame_p1.y = 0.7; req.frame_p1.z = 0;
+//  req.frame_p2.x = 1.0; req.frame_p2.y = -0.1; req.frame_p2.z = 0;
+  req.frame_p1.x = 1.9; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
+  req.frame_p2.x = 2.0; req.frame_p2.y = -0.3; req.frame_p2.z = 0;
+//Picked Point with Index: 88693 [1.9313, 0.64552, 0.025881]
+//Picked Point with Index: 86094 [2.06, -0.37576, 0.024952]
+    
   door_handle_detector::Door::Response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
-  p.spin ();
+//  p.spin ();
 
   p.shutdown ();
   return (0);
