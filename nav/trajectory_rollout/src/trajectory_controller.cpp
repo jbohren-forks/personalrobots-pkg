@@ -222,7 +222,7 @@ namespace trajectory_rollout{
     double vmag = sqrt(vx_samp * vx_samp + vy_samp * vy_samp);
 
     //compute the number of steps we must take along this trajectory to be "safe"
-    double num_steps = max((vmag * sim_time_) / sim_granularity_, abs(vtheta_samp) / sim_granularity_);
+    int num_steps = int(max((vmag * sim_time_) / sim_granularity_, abs(vtheta_samp) / sim_granularity_));
 
     double dt = sim_time_ / num_steps;
 
@@ -231,6 +231,10 @@ namespace trajectory_rollout{
     traj.xv_ = vx_samp; 
     traj.yv_ = vy_samp; 
     traj.thetav_ = vtheta_samp;
+    traj.cost_ = -1.0;
+
+    if(num_steps == 0)
+      return;
 
     //initialize the costs for the trajectory
     double path_dist = 0.0;

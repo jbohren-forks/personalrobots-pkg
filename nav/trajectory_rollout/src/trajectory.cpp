@@ -35,12 +35,12 @@
 
 namespace trajectory_rollout {
   Trajectory::Trajectory()
-    : xv_(0.0), yv_(0.0), thetav_(0.0), cost_(0.0)
+    : xv_(0.0), yv_(0.0), thetav_(0.0), cost_(-1.0)
   {
   }
 
   Trajectory::Trajectory(double xv, double yv, double thetav, unsigned int num_pts)
-    : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0), x_pts_(num_pts), y_pts_(num_pts), th_pts_(num_pts)
+    : xv_(xv), yv_(yv), thetav_(thetav), cost_(-1.0), x_pts_(num_pts), y_pts_(num_pts), th_pts_(num_pts)
   {
   }
 
