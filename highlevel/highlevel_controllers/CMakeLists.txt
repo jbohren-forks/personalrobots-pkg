@@ -34,6 +34,11 @@ rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)
 target_link_libraries(move_base_navfn highlevel_controllers navfn)
 rospack_link_boost(move_base_navfn thread)
 
+# move_base_follow
+rospack_add_executable(move_base_follow src/move_base_follow.cpp)
+target_link_libraries(move_base_follow highlevel_controllers)
+rospack_link_boost(move_base_follow thread)
+
 # move_base_topological
 rospack_add_executable(move_base_topological src/move_base_topological.cpp)
 target_link_libraries(move_base_topological highlevel_controllers topological_map)
