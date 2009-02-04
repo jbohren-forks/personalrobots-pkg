@@ -363,6 +363,7 @@ int planxythetalat(int argc, char *argv[])
 
     environment_navxythetalat.PrintTimeStat(stdout);
 
+	/*
     if(planner.set_start(environment_navxythetalat.SetStart(1.6,0.5,0)) == 0)
         {
             printf("ERROR: failed to set start state\n");
@@ -378,7 +379,6 @@ int planxythetalat(int argc, char *argv[])
     environment_navxythetalat.PrintTimeStat(stdout);
 
 
-	/*
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
