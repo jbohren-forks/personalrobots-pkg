@@ -191,7 +191,7 @@ class TestDirected(unittest.TestCase):
         for (et, at) in zip(rot, expected_rot):
           self.assertAlmostEqual(et, at, 3)
 
-  def test_sim(self):
+  def xtest_sim(self):
     # Test process with one 'ideal' camera, one real-world Videre
     camera_param_list = [
       # (200.0, 200.0, 3.00,  320.0, 320.0, 240.0),
