@@ -71,6 +71,14 @@ public:
       perror("realtime_mutex_create");
       abort();
     }
+
+    // Makes the trylock() fail until the service is ready
+    lock();
+    ROS_INFO("RealtimeSrvCall is waiting for %s", topic.c_str() );
+    ros::service::waitForService(topic); 
+    ROS_INFO("RealtimeSrvCall is finished waiting for %s", topic.c_str());
+    unlock();
+
     keep_running_ = true;
     thread_ = boost::thread(&RealtimeSrvCall::callLoop, this);
   }
@@ -148,8 +156,8 @@ public:
       realtime_mutex_lock(&srv_lock_);
       while (turn_ != NON_REALTIME)
       {
-        if (!keep_running_)
-          break;
+	if (!keep_running_)
+	  break;
         realtime_cond_wait(&updated_cond_, &srv_lock_);
       }
 
@@ -157,7 +165,7 @@ public:
       SrvRes incoming(srv_res_);
       turn_ = REALTIME;
       realtime_mutex_unlock(&srv_lock_);
-
+      
       // Sends the outgoing message
       if (keep_running_)
         ros::service::call(topic_, outgoing, incoming); // ignoring incoming response for now....
