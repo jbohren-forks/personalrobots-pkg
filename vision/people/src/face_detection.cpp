@@ -235,8 +235,9 @@ public:
   {
     // cout << "image callback" << endl;
     //return;
-    ros::Time startt, endt, starttdetect, endtdetect;
-    startt = t.now();
+    struct timeval timeofday;
+    gettimeofday(&timeofday,NULL);
+    ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
     if (do_display_ == "local") {
       cv_mutex_.lock();
@@ -263,9 +264,12 @@ public:
  
     im_size = cvGetSize(cv_image_left_);
     printf("detecting faces\n");
-    starttdetect = t.now();
+    gettimeofday(&timeofday,NULL);
+    ros::Time starttdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+
     vector<Box2D3D> faces_vector = people_->detectAllFaces(cv_image_left_, 1.0, cv_image_disp_, cam_model_);
-    endtdetect = t.now();
+    gettimeofday(&timeofday,NULL);
+    ros::Time endtdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diffdetect = endtdetect - starttdetect;
     printf("Detection duration = %fsec\n", diffdetect.toSec());
 
@@ -440,7 +444,8 @@ public:
     }
     // Done display
 
-    endt = t.now();
+    gettimeofday(&timeofday,NULL);
+    ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diff = endt-startt;
     printf("Image callback duration = %fsec\n", diff.toSec());
   }
