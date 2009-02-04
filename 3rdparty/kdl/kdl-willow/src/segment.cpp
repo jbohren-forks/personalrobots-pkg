@@ -57,10 +57,5 @@ namespace KDL {
       return joint.twist(qdot).RefPoint(joint.pose(q).M * f_tip.p);
     }
 
-    Wrench Segment::wrench(const double& q, const double& eff)const
-    {
-        return joint.wrench(eff).RefPoint(pose(q).p);
-    }
-
 }//end of namespace KDL
 

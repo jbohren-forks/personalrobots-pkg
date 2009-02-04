@@ -90,19 +90,6 @@ namespace KDL {
         Twist twist(const double& q,const double& qdot)const;
 
         /**
-         * Request the 6D-force of the tip of the segment, given
-         * the joint poisitions q and the joint effort eff.
-         *
-         * @param q 1D position of the joint
-         * @param eff 1D effort at the joint
-         *
-         * @return 6D-force of the tip of the segment, expressed
-         *in the base-frame of the segment(root) and with the tip of
-         *the segment as reference point.
-         */
-        Wrench wrench(const double& q,const double& eff)const;
-
-        /**
          * Request the joint of the segment
          *
          *
