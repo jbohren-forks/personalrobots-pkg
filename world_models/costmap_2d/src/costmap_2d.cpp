@@ -80,7 +80,7 @@ namespace costmap_2d {
       inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
       weight_(std::max(0.0, std::min(weight, 1.0))), raytraceWindow_(raytraceWindow),
       sq_obstacle_range_(obstacleRange * obstacleRange), sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
-      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1), raytraceCells_ (raytraceWindow_ / resolution)
+      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1), kernelData_(NULL), raytraceCells_ (raytraceWindow_ / resolution)
   {
     if(weight != weight_){
       ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
@@ -143,6 +143,7 @@ namespace costmap_2d {
   CostMap2D::~CostMap2D() {
     if(staticData_ != NULL) delete[] staticData_;
     if(xy_markers_ != NULL) delete[] xy_markers_;
+    if(kernelData_ != NULL) delete[] kernelData_;
     if(cachedDistances != NULL){
       for (unsigned int i=0; i<=inflationRadius_; i++)
         delete[] cachedDistances[i];
