@@ -159,8 +159,8 @@ namespace costmap_2d {
     // We can assume the whole kernel is in the global map, because the robot is in the map and the borders of the map
     // are walls anyway.
     memset(kernelData_, 0, kernelWidth_ * kernelWidth_);
-    const unsigned int originX = mx - circumscribedRadius_;
-    const unsigned int originY = my - circumscribedRadius_;
+    const unsigned int originX = (mx < circumscribedRadius_) ? 0 : std::min(width_ - kernelWidth_ - 1, mx - circumscribedRadius_);
+    const unsigned int originY = (my < circumscribedRadius_) ? 0 : std::min(height_ - kernelWidth_ - 1, my - circumscribedRadius_);
     for (unsigned int i = 0; i < kernelWidth_; i++){
       for(unsigned int j = 0; j < kernelWidth_; j++){
 	unsigned int kernelIndex = (j * kernelWidth_) + i;
