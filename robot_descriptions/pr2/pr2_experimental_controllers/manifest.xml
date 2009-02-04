@@ -2,7 +2,7 @@
 
   <description brief="PR2 Controller XML's">
     
-    This package contains XML descriptions of robot mechanism controllers as defined at Willow Garage.
+    This package contains XML descriptions of experimental robot mechanism controllers as defined at Willow Garage.
     
   </description>
   <author>John Hsu</author>
