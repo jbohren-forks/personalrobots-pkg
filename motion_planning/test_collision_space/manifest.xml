@@ -14,7 +14,5 @@
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
   <depend package="collision_space"/>
-  <depend package="random_utils"/>
-
   
 </package>

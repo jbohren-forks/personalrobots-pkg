@@ -34,6 +34,7 @@
 
 /** \author Ioan Sucan */
 
+#include <cstdlib>
 #include <ros/node.h>
 #include <ros/publisher.h>
 #include <ros/time.h>
@@ -43,7 +44,6 @@
 #include <roslib/Time.h>
 #include <tf/transform_broadcaster.h>
 #include <collision_space/util.h>
-#include <random_utils/random_utils.h>
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
@@ -79,9 +79,9 @@ public:
 	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, m_tm, "base", "map"));
     }
 
-  void subCb(const ros::PublisherPtr&)
+    void subCb(const ros::PublisherPtr&)
     {
-      m_connected = true;
+	m_connected = true;
     }
     
     void sendPoint(double x, double y, double z)
@@ -119,9 +119,9 @@ public:
     {
 	for (int i = 0 ; i < TEST_POINTS ; ++i)
 	{
-	    double x = random_utils::uniform(-5.0, 5.0);
-	    double y = random_utils::uniform(-5.0, 5.0);
-	    double z = random_utils::uniform(-5.0, 5.0);
+	    double x = uniform(5.0);
+	    double y = uniform(5.0);
+	    double z = uniform(5.0);
 	    if (!s->containsPoint(x, y, z))
 		continue;
 	    sendPoint(x, y, z);
@@ -133,13 +133,13 @@ public:
     {
 	btTransform t;
 	
-	double yaw   = random_utils::uniform(-M_PI, M_PI);
-	double pitch = random_utils::uniform(-M_PI, M_PI);
-	double roll  = random_utils::uniform(-M_PI, M_PI);
+	double yaw   = uniform(M_PI);
+	double pitch = uniform(M_PI);
+	double roll  = uniform(M_PI);
 	
-	double x = random_utils::uniform(-3.0, 3.0);
-	double y = random_utils::uniform(-3.0, 3.0);
-	double z = random_utils::uniform(-3.0, 3.0);
+	double x = uniform(3.0);
+	double y = uniform(3.0);
+	double z = uniform(3.0);
 	
 	t.setRotation(btQuaternion(yaw, pitch, roll));
 	t.setOrigin(btVector3(btScalar(x), btScalar(y), btScalar(z)));
@@ -238,14 +238,21 @@ public:
 	
 	delete s;
     }
-
+    
     bool isConnected()
     {
-      return m_connected;
+	return m_connected;
     }
     
 protected:
-
+    
+    // return a random number (uniform distribution)
+    // between -magnitude and magnitude
+    double uniform(double magnitude)
+    {
+	return (2.0 * drand48() - 1.0) * magnitude;	
+    }
+    
     tf::TransformBroadcaster *m_tfServer;
     ros::Time                 m_tm;  
     int                       m_id;
