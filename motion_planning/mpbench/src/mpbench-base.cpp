@@ -171,6 +171,7 @@ string sanitizeSpec(string const & spec)
     forbidden.insert('.');
     forbidden.insert('/');
     forbidden.insert(';');
+    forbidden.insert(':');
     forbidden.insert('<');
     forbidden.insert('>');
     forbidden.insert('?');
@@ -312,6 +313,14 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
     shared_ptr<waypoint_plan_t> plan;
     plan = planner_ref.createPlan();
     shared_ptr<SBPLPlannerStats> stats(planner_ref.copyMyStats());
+    
+    // Regardless of the first iteration's start.from_scratch and
+    // start.use_initial_solution flags, we always allow reusing an
+    // existing solution and continuing beyond the initial solution
+    // from now on. After all, that's the whole point of incremental
+    // planning.
+    planner_ref.forcePlanningFromScratch(false);
+    planner_ref.stopAtFirstSolution(false);
     
     if ( ! plan) {
       // giving up immediately sort of precludes the possibility that
