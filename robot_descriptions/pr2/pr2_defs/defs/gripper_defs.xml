@@ -23,6 +23,9 @@
              k_position="1.0" k_velocity="1.0" velocity="0.5"
              safety_length_min="0.0" safety_length_max="0.0" />
       <joint_properties damping="0.2" />
+      <map name="${prefix}_l_finger_joint_feedback" flag="gazebo">
+        <elem key="provideFeedback" value="true"/>
+      </map>
     </joint>
 
     <link name="${prefix}_l_finger_link">
@@ -92,6 +95,7 @@
         <elem key="mimicKp" value="20.0" />
         <elem key="mimicKd" value="10.0" />
         <elem key="mimicFMax" value="10.0" />
+        <elem key="provideFeedback" value="true"/>
       </map>
     </joint>
 
@@ -162,6 +166,7 @@
         <elem key="mimicKp" value="20.0" />
         <elem key="mimicKd" value="10.0" />
         <elem key="mimicFMax" value="10.0" />
+        <elem key="provideFeedback" value="true"/>
       </map>
     </joint>
 
@@ -234,6 +239,7 @@
         <elem key="mimicKp" value="20.0" />
         <elem key="mimicKd" value="10.0" />
         <elem key="mimicFMax" value="10.0" />
+        <elem key="provideFeedback" value="true"/>
       </map>
     </joint>
 

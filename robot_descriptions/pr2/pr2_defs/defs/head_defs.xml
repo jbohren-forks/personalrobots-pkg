@@ -198,7 +198,7 @@
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
               <updateRate>10.0</updateRate>
-              <topicName>full_cloud</topicName>
+              <topicName>videre/cloud</topicName>
               <frameName>${name}_link</frameName>
               <interface:laser name="${name}_laser_iface" />
             </controller:ros_block_laser>

@@ -52,6 +52,20 @@
           <elem key="kd"  value="1.0" />
         </map>
       </collision>
+      <map name="${parent}_${suffix}_wheel_sensor" flag="gazebo">
+        <verbatim key="${parent}_${suffix}_wheel_bumper_sensor">
+          <sensor:contact name="${parent}_${suffix}_wheel_contact_sensor">
+            <geom>${parent}_${suffix}_wheel_collision</geom>
+            <updateRate>1000.0</updateRate>
+            <controller:ros_bumper name="${parent}_${suffix}_wheel_ros_bumper_controller" plugin="libros_bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>1000.0</updateRate>
+              <bumperTopicName>${parent}_${suffix}_wheel_bumper</bumperTopicName>
+              <interface:bumper name="${parent}_${suffix}_wheel_ros_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
     </link>
 
     <transmission type="SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
