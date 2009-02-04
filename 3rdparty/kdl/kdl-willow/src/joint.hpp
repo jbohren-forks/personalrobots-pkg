@@ -95,6 +95,13 @@ namespace KDL {
          */
         Twist twist(const double& qdot)const;
 
+        /**                                                                     
+         * Request the Vector corresponding to the axis of a revolute joint.    
+         *                                                                      
+         * @return Vector. e.g (1,0,0) for RotX etc.                            
+         */
+        Vector JointAxis() const;
+
         /**
          * Request the type of the joint.
          *

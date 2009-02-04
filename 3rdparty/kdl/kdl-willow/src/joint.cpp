@@ -145,5 +145,39 @@ namespace KDL {
         }
     }
 
+  Vector Joint::JointAxis() const
+  {
+    switch(type)
+      {
+      case RotAxis:
+        return axis;
+        break;
+      case RotX:
+        return Vector(1.,0.,0.);
+        break;
+      case RotY:
+        return Vector(0.,1.,0.);
+        break;
+      case RotZ:
+        return Vector(0.,0.,1.);
+        break;
+      case TransAxis:
+        return axis;
+        break;
+      case TransX:
+        return Vector(1.,0.,0.);
+        break;
+      case TransY:
+        return Vector(0.,1.,0.);
+        break;
+      case TransZ:
+        return Vector(0.,0.,1.);
+        break;
+      case None:
+        return Vector::Zero();
+        break;
+      }
+  }
+
 } // end of namespace KDL
 
