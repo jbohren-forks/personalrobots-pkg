@@ -93,7 +93,7 @@ class GroundRemoval : public ros::Node
       param ("~z_threshold", z_threshold_, 0.2);         // 20cm threshold for ground removal
 
       param ("~sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
-      param ("~sac_distance_threshold", sac_distance_threshold_, 0.02);   // 4 cm threshold
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 4 cm threshold
       param ("~sac_max_iterations", sac_max_iterations_, 1000);            // maximum 500 iterations
       param ("~sac_probability", sac_probability_, 0.9999);                 // 0.99 probability
 
@@ -285,7 +285,7 @@ class GroundRemoval : public ros::Node
       for (unsigned int cp = 0; cp < cloud_.pts.size (); cp++)
       {
         all_indices[cp] = cp;
-        if (fabs (cloud_.pts[cp].z) < z_threshold_)
+        if (fabs (cloud_.pts[cp].z) < z_threshold_ && cloud_.pts[cp].x < .5)
         {
           possible_ground_indices[nr_p] = cp;
           nr_p++;
@@ -297,7 +297,7 @@ class GroundRemoval : public ros::Node
 
       PointCloud cloud_down;
       Point leaf_width;
-      leaf_width.x = leaf_width.y = leaf_width.z = 0.05;
+      leaf_width.x = leaf_width.y = leaf_width.z = 0.06;
       vector<cloud_geometry::Leaf> leaves;
       cloud_geometry::downsamplePointCloud (&cloud_, &possible_ground_indices, cloud_down, leaf_width, leaves, -1);
 
@@ -312,10 +312,18 @@ class GroundRemoval : public ros::Node
       fitSACPlane (&cloud_down, ground_inliers, ground_coeff);
 
       // Use the plane coefficients to see which points from the original cloud to filter
+      nr_p = 0;
+      ground_inliers.resize (cloud_.pts.size ());
       for (unsigned int i = 0; i < cloud_.pts.size (); i++)
       {
-        cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts[i], ground_coeff);
+        double dist = cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts[i], ground_coeff);
+        if (dist < sac_distance_threshold_)
+        {
+          ground_inliers[nr_p] = i;
+          nr_p++;
+        }
       }
+      ground_inliers.resize (nr_p);
 
       // Prepare new arrays
       int nr_remaining_pts = cloud_.pts.size () - ground_inliers.size ();
@@ -358,8 +366,6 @@ int
 
   GroundRemoval p;
   p.spin ();
-
-  ros::fini ();
 
   return (0);
 }
