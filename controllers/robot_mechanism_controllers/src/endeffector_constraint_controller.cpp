@@ -93,7 +93,7 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
-  node->param("constraint/f_r_max"      , f_pose_max  , 10.0) ; /// max r force
+  node->param("constraint/f_r_max"      , f_pose_max  , 20.0) ; /// max r force
 
   // convert description to KDL chain
   chain_        = serial_chain->chain;
@@ -222,12 +222,18 @@ void EndeffectorConstraintController::update()
   constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
   task_torq_ = task_jac_.transpose()* constraint_null_space_ * task_wrench_;
 
+  //ROS_ERROR("%f %f %f", task_torq_(0),task_torq_(1),task_torq_(1));
+  //ROS_ERROR("%.3f %.3f %.3f",constraint_null_space_(0,0), constraint_null_space_(1,1), constraint_null_space_(2,2));
+  //ROS_ERROR("%.3f %.3f %.3f",task_jac_(0,5), task_jac_(1,5), task_jac_(2,5));
+ 
+
+
   j = 0;
   for (unsigned int i=0; i<num_joints_; i++)
   {
     while (joints_[j]->joint_->type_ == mechanism::JOINT_FIXED)
       ++j;
-    joints_[j++]->commanded_effort_ = constraint_torq_(i);//+ task_torq_(i);
+    joints_[j++]->commanded_effort_ = constraint_torq_(i) + task_torq_(i);
   }
 }
 
@@ -249,9 +255,9 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   constraint_jac_(0,0) = 0; // this is the end of the cylinder
   constraint_jac_(1,1) = 0;
   constraint_jac_(2,1) = 0;
-  constraint_jac_(3,2) = 0;
-  constraint_jac_(4,3) = 0;
-  constraint_jac_(5,4) = 0;
+  constraint_jac_(3,2) = 1;
+  constraint_jac_(4,3) = 1;
+  constraint_jac_(5,4) = 1;
 
   // X-wall at the end of the cylinder
   double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
@@ -297,11 +303,14 @@ void EndeffectorConstraintController::computeConstraintJacobian()
     //ROS_ERROR("Meas: % .3lf  % .3lf  % .3lf", pose_error(3), pose_error(4), pose_error(5));
   //ROS_ERROR("roll_error: %f rad\n", (roll_error))
 
+
+
+
   //roll constraint
-  if (fabs(pose_error(3)) > 0.05)
+  if (fabs(pose_error(3)) > 0)
   {
     //determine sign
-    constraint_jac_(3,2) = 1;
+    //constraint_jac_(3,2) = 1;
     f_roll = pose_error(3) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -310,11 +319,11 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   }
 
   //pitch constraint
-  if (fabs(pose_error(4)) > 0.05)
+  if (fabs(pose_error(4)) > 0)
   {
     //determine sign
-    constraint_jac_(4,3) = 1;
-    f_pitch = pose_error(4) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    //constraint_jac_(4,3) = 1;
+    f_pitch = pose_error(4) * f_pose_max*10; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -322,11 +331,11 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   }
 
   //yaw constraint
-  if (fabs(pose_error(5)) > 0.05)
+  if (fabs(pose_error(5)) > 0)
   {
     //determine sign
-    constraint_jac_(5,4) = 1; 
-    f_yaw = pose_error(5) * pose_error(5)* f_pose_max; /// @todo: FIXME, replace with some exponential function
+    //constraint_jac_(5,4) = 1; 
+    f_yaw = pose_error(5)* f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
