@@ -36,7 +36,7 @@ rosoctpath = strtrim(rosoctpath);
 addpath(fullfile(rosoctpath, '/scripts'));
 startup;
 
-__rosoct_unadvertise_service('filter_coeffs');
+rosoct_unadvertise_service('filter_coeffs');
 % Creates the service
 suc = rosoct_advertise_service('filter_coeffs',@filter_coefficient_server_Filter,@filterserv);
 
@@ -46,5 +46,5 @@ end
 
 % Loops to keep the octave session going
 while(1)
-  __rosoct_worker();
+  rosoct_worker();
 end

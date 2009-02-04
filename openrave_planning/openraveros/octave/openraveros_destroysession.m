@@ -42,7 +42,7 @@ if( ~exist('session','var') )
 end
 
 %% destroys all the sessions of a session server
-__rosoct_terminate_session(session.id);
+rosoct_terminate_session(session.id);
 
 %% if this is the global session, make sure to propagate the changes
 if( ~isempty(gsession) && session.id == gsession.id )

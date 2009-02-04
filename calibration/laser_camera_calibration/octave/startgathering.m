@@ -6,7 +6,7 @@
 
 %% by Rosen Diankov
 function calibdata = startgathering(robot)
-global lastobjdet lastlaserscan lastmecstate __calibdata __iterationcount
+global lastobjdet lastlaserscan lastmecstate g_calibdata g_iterationncount
 
 if( ~exist('robot') )
     robot = [];
@@ -17,24 +17,24 @@ rosoct_add_msgs('checkerboard_detector');
 rosoct_add_msgs('robot_msgs');
 
 queuesize = 1000; % need big buffer
-__calibdata = {};
+g_calibdata = {};
 lastobjdet = {};
-__iterationcount = 0;
-__rosoct_msg_unsubscribe("new_ObjectDetection");
+g_iterationncount = 0;
+rosoct_unsubscribe("new_ObjectDetection");
 success = rosoct_subscribe("new_ObjectDetection", @checkerboard_detector_ObjectDetection, @(msg) objdetcb(msg,robot),queuesize);
 if( ~success )
     error('subscribe failed');
 end
 
 lastlaserscan = {};
-__rosoct_msg_unsubscribe("new_tile_scan");
+rosoct_unsubscribe("new_tile_scan");
 success = rosoct_subscribe("new_tilt_scan", @std_msgs_LaserScan, @(msg) laserscancb(msg,robot),queuesize);
 if( ~success )
     error('subscribe failed');
 end
 
 lastmecstate = {};
-__rosoct_msg_unsubscribe("new_mechanism_state");
+rosoct_unsubscribe("new_mechanism_state");
 success = rosoct_subscribe("new_mechanism_state", @robot_msgs_MechanismState, @(msg) mecstatecb(msg,robot),queuesize);
 if( ~success )
     error('subscribe failed');
@@ -44,21 +44,21 @@ end
 input('press any key after data is started streaming: ');
 while(1)
     pause(0.1);
-    numprocessed = __rosoct_worker(1);
-    if( numprocessed == 0 && __iterationcount > 0 )
+    numprocessed = rosoct_worker(1);
+    if( numprocessed == 0 && g_iterationncount > 0 )
         display('stream done');
         break;
     end
 end
 
-__rosoct_msg_unsubscribe("new_ObjectDetection");
-__rosoct_msg_unsubscribe("new_tile_scan");
-__rosoct_msg_unsubscribe("new_mechanism_state");
+rosoct_unsubscribe("new_ObjectDetection");
+rosoct_unsubscribe("new_tile_scan");
+rosoct_unsubscribe("new_mechanism_state");
 
-display(sprintf('gathering calibration done, total extracted: %d, total parsed: %d', length(__calibdata), __iterationcount));
-calibdata = __calibdata;
+display(sprintf('gathering calibration done, total extracted: %d, total parsed: %d', length(g_calibdata), g_iterationncount));
+calibdata = g_calibdata;
 save calibdata.mat calibdata
-__calibdata = {};
+g_calibdata = {};
 
 function objdetcb(msg, robot)
 global lastobjdet
@@ -79,7 +79,7 @@ function equal = cmp_stamps(stamp1,stamp2)
 equal = stamp1.sec==stamp2.sec & abs(stamp1.nsec-stamp2.nsec)<0.001;
 
 function gathermsgs(robot)
-global lastobjdet lastlaserscan lastmecstate __calibdata __iterationcount
+global lastobjdet lastlaserscan lastmecstate g_calibdata g_iterationncount
 
 if( length(lastobjdet) == 0 || length(lastlaserscan) == 0 || length(lastmecstate) == 0 )
     return;
@@ -98,7 +98,7 @@ lastobjdet(1) = [];
 lastlaserscan(1) = [];
 lastmecstate(1) = [];
 
-__iterationcount = __iterationcount + 1;
+g_iterationncount = g_iterationncount + 1;
 data = [];
 rawjointvalues = cellfun(@(x) x.position, mecstatemsg.joint_states);
 if( ~isempty(robot) )
@@ -193,5 +193,5 @@ end
 plot(laserline([1 3]),laserline([2 4]),'r','linewidth',5); drawnow;
 data.laserline = laserline;
 
-__calibdata{end+1} = data;
-display(sprintf('adding data %d', length(__calibdata)));
+g_calibdata{end+1} = data;
+display(sprintf('adding data %d', length(g_calibdata)));
