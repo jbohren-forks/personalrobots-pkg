@@ -89,7 +89,8 @@ namespace mpglue {
 					 boost::shared_ptr<IndexTransform const> it,
 					 footprint_t const & footprint,
 					 double nominalvel_mpersecs,
-					 double timetoturn45degsinplace_secs);
+					 double timetoturn45degsinplace_secs,
+					 std::ostream * dbgos);
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;

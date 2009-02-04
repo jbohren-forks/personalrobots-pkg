@@ -87,8 +87,7 @@ namespace {
   {
   public:
     SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
-		      boost::shared_ptr<IndexTransform const> it,
-		      int obsthresh);
+		      boost::shared_ptr<IndexTransform const> it);
     virtual ~SBPLEnvironment2D();
     
     virtual DiscreteSpaceInformation * getDSI();
@@ -123,10 +122,10 @@ namespace {
   public:
     SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 			 boost::shared_ptr<IndexTransform const> it,
-			 int obst_cost_thresh,
 			 footprint_t const & footprint,
 			 double nominalvel_mpersecs,
-			 double timetoturn45degsinplace_secs);
+			 double timetoturn45degsinplace_secs,
+			 ostream * dbgos);
     virtual ~SBPLEnvironment3DKIN();
     
     virtual DiscreteSpaceInformation * getDSI();
@@ -145,8 +144,6 @@ namespace {
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
     virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
-    
-    int obst_cost_thresh_;
     
     /** \note This is mutable because GetStateFromPose() can
 	conceivable change the underlying EnvironmentNAV3DKIN, which we
@@ -224,8 +221,7 @@ namespace mpglue {
   create2D(boost::shared_ptr<CostmapAccessor const> cm,
 	   boost::shared_ptr<IndexTransform const> it)
   {
-    int const obst_cost_thresh(cm->getCSpaceObstacleCost());
-    SBPLEnvironment2D * env(new SBPLEnvironment2D(cm, it, obst_cost_thresh));
+    SBPLEnvironment2D * env(new SBPLEnvironment2D(cm, it));
     return env;
   }
   
@@ -235,12 +231,13 @@ namespace mpglue {
 	      boost::shared_ptr<IndexTransform const> it,
 	      footprint_t const & footprint,
 	      double nominalvel_mpersecs,
-	      double timetoturn45degsinplace_secs)
+	      double timetoturn45degsinplace_secs,
+	      ostream * dbgos)
   {
-    int const obst_cost_thresh(cm->getWSpaceObstacleCost());
-    SBPLEnvironment3DKIN * env(new SBPLEnvironment3DKIN(cm, it, obst_cost_thresh,
+    SBPLEnvironment3DKIN * env(new SBPLEnvironment3DKIN(cm, it,
 							footprint, nominalvel_mpersecs,
-							timetoturn45degsinplace_secs));
+							timetoturn45degsinplace_secs,
+							dbgos));
     return env;
   }
 
@@ -250,11 +247,12 @@ namespace {
   
   SBPLEnvironment2D::
   SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
-		    boost::shared_ptr<IndexTransform const> it,
-		    int obsthresh)
+		    boost::shared_ptr<IndexTransform const> it)
     : SBPLEnvironment(cm, it),
       env_(new EnvironmentNAV2D())
   {
+    int const obst_cost_thresh(cm->getCSpaceObstacleCost());
+    
     // good: Take advantage of the fact that InitializeEnv() can take
     // a NULL-pointer as mapdata in order to initialize to all
     // freespace.
@@ -266,7 +264,7 @@ namespace {
     env_->InitializeEnv(cm->getXEnd(), // width
 			cm->getYEnd(), // height
 			0,	// mapdata
-			obsthresh);
+			obst_cost_thresh);
     
     // as above, assume getXBegin() and getYBegin() are always zero
     for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
@@ -409,14 +407,14 @@ namespace {
   SBPLEnvironment3DKIN::
   SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 		       boost::shared_ptr<IndexTransform const> it,
-		       int obst_cost_thresh,
 		       footprint_t const & footprint,
 		       double nominalvel_mpersecs,
-		       double timetoturn45degsinplace_secs)
+		       double timetoturn45degsinplace_secs,
+		       ostream * dbgos)
     : SBPLEnvironment(cm, it),
-      obst_cost_thresh_(obst_cost_thresh),
       env_(new EnvironmentNAV3DKIN())
   {
+    int const obst_cost_thresh(cm->getWSpaceObstacleCost());
     vector<sbpl_2Dpt_t> perimeterptsV;
     perimeterptsV.reserve(footprint.size());
     for (size_t ii(0); ii < footprint.size(); ++ii) {
@@ -424,6 +422,17 @@ namespace {
       pt.x = footprint[ii].x;
       pt.y = footprint[ii].y;
       perimeterptsV.push_back(pt);
+    }
+    
+    if (dbgos) {
+      *dbgos << "mpglue::SBPLEnvironment3DKIN:\n"
+	     << "  perimeterptsV =\n";
+      for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
+	   ip != perimeterptsV.end(); ++ip)
+	*dbgos << "    " << ip->x << "\t" << ip->y << "\n";
+      *dbgos << "  nominalvel_mpersecs = " << nominalvel_mpersecs << "\n"
+	     << "  timetoturn45degsinplace_secs = " << timetoturn45degsinplace_secs << "\n"
+	     << "  obst_cost_thresh = " << obst_cost_thresh << "\n" << flush;
     }
     
     // good: Take advantage of the fact that InitializeEnv() can take
@@ -494,12 +503,15 @@ namespace {
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
       return false;
-    if (obst_cost_thresh_ <= newcost)
-      return env_->UpdateCost(ix, iy, 1); // see \note comment above if you change this!
-    return env_->UpdateCost(ix, iy, 0); // see \note comment above if you change this!
+    return env_->UpdateCost(ix, iy, newcost);
+
+    //// previously, we had just on/off obstacle information
+    //     if (obst_cost_thresh_ <= newcost)
+    //       return env_->UpdateCost(ix, iy, 1);
+    //     return env_->UpdateCost(ix, iy, 0);
   }
-
-
+  
+  
   StateChangeQuery const * SBPLEnvironment3DKIN::
   createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
   {

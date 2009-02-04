@@ -105,7 +105,8 @@ namespace mpglue {
 				       int obst_cost_thresh,
 				       footprint_t const & footprint,
 				       double nominalvel_mpersecs,
-				       double timetoturn45degsinplace_secs);
+				       double timetoturn45degsinplace_secs,
+				       std::ostream * dbgos);
   
   SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
 				      boost::shared_ptr<IndexTransform const> it,
@@ -113,7 +114,8 @@ namespace mpglue {
 				      int obst_cost_thresh,
 				      footprint_t const & footprint,
 				      double nominalvel_mpersecs,
-				      double timetoturn45degsinplace_secs);
+				      double timetoturn45degsinplace_secs,
+				      std::ostream * dbgos);
   
 }
 

@@ -221,13 +221,15 @@ namespace mpglue {
 				       bool forward_search,
 				       footprint_t const & footprint,
 				       double nominalvel_mpersecs,
-				       double timetoturn45degsinplace_secs)
+				       double timetoturn45degsinplace_secs,
+				       ostream * dbgos)
   {
     shared_ptr<SBPLEnvironment>
       environment(SBPLEnvironment::create3DKIN(cm, it,
 					       footprint,
 					       nominalvel_mpersecs,
-					       timetoturn45degsinplace_secs));
+					       timetoturn45degsinplace_secs,
+					       dbgos));
     shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
     return result;
@@ -239,13 +241,15 @@ namespace mpglue {
 				      bool forward_search,
 				      footprint_t const & footprint,
 				      double nominalvel_mpersecs,
-				      double timetoturn45degsinplace_secs)
+				      double timetoturn45degsinplace_secs,
+				      ostream * dbgos)
   {
     shared_ptr<SBPLEnvironment>
       environment(SBPLEnvironment::create3DKIN(cm, it,
 					       footprint,
 					       nominalvel_mpersecs,
-					       timetoturn45degsinplace_secs));
+					       timetoturn45degsinplace_secs,
+					       dbgos));
     shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
     return result;
