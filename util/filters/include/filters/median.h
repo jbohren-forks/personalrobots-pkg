@@ -31,9 +31,9 @@
 #define FILTERS_MEDIAN_H_
 
 #include <stdint.h>
-
+#include <sstream>
 #include "filters/filter_base.h"
-
+#include "ros/assert.h"
 /*
  * Algorithm from N. Wirth's book, implementation by N. Devillard.
  * This code in public domain.
@@ -85,55 +85,82 @@ elem_type kth_smallest(elem_type a[], int n, int k)
  *
  */
 template <typename T>
-class MedianFilter: public FilterBase <T>
+class MedianFilter: public filters::FilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
-  MedianFilter(uint32_t number_of_observations, uint32_t elements_per_observation);
+  MedianFilter();
 
   /** \brief Destructor to clean up
    */
-  ~MedianFilter()
-  {
-    delete [] data_storage_;
-    delete [] temp_storage_;
-  }
+  ~MedianFilter();
 
+  virtual bool configure(unsigned int elements, const std::string& arguments);
 
   /** \brief Update the filter and return the data seperately
-   * \param data_in double array with length elements_per_observation
-   * \param data_out double array with length elements_per_observation
+   * \param data_in double array with length width
+   * \param data_out double array with length width
    */
-  virtual bool update(T const * const data_in, T* data_out);
+  virtual bool update(const T& data_in, T& data_out);
 
 protected:
-  T * temp_storage_;                       ///< Preallocated storage for the list to sort
-  T * data_storage_;                       ///< Storage for data between updates
+  ///\todo change to vector
+  T temp_storage_;                       ///< Preallocated storage for the list to sort
+  T data_storage_;                       ///< Storage for data between updates
 
   uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
   uint32_t iterations_;                         ///< Number of iterations up to number of observations
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  uint32_t elements_per_observation_;           ///< Number of elements per observation
+  uint32_t width_;           ///< Number of elements per observation
+
+  bool configured_;  ///< Whether the filter has been configured
 
 };
 
 template <typename T>
-MedianFilter<T>::MedianFilter(uint32_t number_of_observations, uint32_t elements_per_observation):
-  last_updated_row_(number_of_observations),
+MedianFilter<T>::MedianFilter():
+  last_updated_row_(0),
   iterations_(0),
-  number_of_observations_(number_of_observations),
-  elements_per_observation_(elements_per_observation)
+  number_of_observations_(0),
+  width_(0),
+  configured_(false)
 {
-  data_storage_ = new T[number_of_observations_ * elements_per_observation];
-  temp_storage_ = new T[elements_per_observation];
+  
+};
 
+template <typename T>
+MedianFilter<T>::~MedianFilter()
+{
 };
 
 
 template <typename T>
-bool MedianFilter<T>::update(T const* const data_in, T* data_out)
+bool MedianFilter<T>::configure(uint32_t width, const std::string& number_of_observations)
 {
+  if (configured_)
+    return false;
+  width_ = width;
+  std::stringstream ss;
+  ss << number_of_observations;
+  ss >> number_of_observations_;
+  data_storage_.resize(number_of_observations_ * width_);
+  temp_storage_.resize(width_);
+  last_updated_row_ = number_of_observations_;
+  configured_ = true;
+  return true;
+};
+
+template <typename T>
+bool MedianFilter<T>::update(const T& data_in, T& data_out)
+{
+  //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
+  //  ROS_ASSERT(data_in.size() == width_);
+  // ROS_ASSERT(data_out.size() == width_);
+  if (data_in.size() != width_ || data_out.size() != width_)
+    return false;
+  if (!configured_)
+    return false;
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
     last_updated_row_ = 0;
@@ -141,9 +168,9 @@ bool MedianFilter<T>::update(T const* const data_in, T* data_out)
     last_updated_row_++;
 
   //copy incoming data into perminant storage
-  memcpy(&data_storage_[elements_per_observation_ * last_updated_row_],
-         data_in,
-         sizeof(T) * elements_per_observation_);
+  memcpy(&data_storage_[width_ * last_updated_row_],
+         &data_in[0],
+         sizeof(data_in[0]) * width_);
 
   //Return values
 
@@ -160,17 +187,20 @@ bool MedianFilter<T>::update(T const* const data_in, T* data_out)
   }
 
   //Return each value
-  for (uint32_t i = 0; i < elements_per_observation_; i++)
+  for (uint32_t i = 0; i < width_; i++)
   {
     for (uint32_t row = 0; row < length; row ++)
     {
-      temp_storage_[row] = data_storage_[i + row * elements_per_observation_];
+      temp_storage_[row] = data_storage_[i + row * width_];
     }
-    data_out[i] = median(temp_storage_, length);
+    data_out[i] = median(&temp_storage_[0], length);
   }
 
   return true;
-}
+};
+
+ROS_REGISTER_FILTER(MedianFilter, std_vector_double)
+ROS_REGISTER_FILTER(MedianFilter, std_vector_float)
 }
 
 

@@ -7,9 +7,11 @@ implementations of commonly used filters.
 </description>
 <author>Tully Foote/tfoote@willowgarage.com, Melonee Wise/mwise@willowgarage.com</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="API conditionally cleared" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="misc_utils" />
+<depend package="loki" />
+<depend package="rosconsole" />
 <export>
 <cpp cflags="-I${prefix}/include"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
 </export>

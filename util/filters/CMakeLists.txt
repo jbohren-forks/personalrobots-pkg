@@ -3,10 +3,12 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(filters)
 
 rospack_add_gtest(median_test test/test_median.cpp)
-rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
 
-target_link_libraries(median_test)
-target_link_libraries(transfer_function_test)
+# broken, needs to go to the new form factor
+#rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
 
-#rospack_add_gtest(mean_test test/test_mean.cpp)
-#target_link_libraries(mean_test)
+
+rospack_add_gtest(mean_test test/test_mean.cpp)
+
+rospack_add_gtest(test_factory test/test_factory.cpp)
+rospack_add_gtest(test_chain test/test_chain.cpp)

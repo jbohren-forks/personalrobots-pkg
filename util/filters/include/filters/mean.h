@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "filters/filter_base.h"
+#include "ros/assert.h"
 
 
 namespace filters
@@ -48,49 +49,76 @@ class MeanFilter: public FilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
-  MeanFilter(uint32_t number_of_observations, uint32_t elements_per_observation);
+  MeanFilter();
 
   /** \brief Destructor to clean up
    */
   ~MeanFilter();
 
+  virtual bool configure(unsigned int width, const std::string& number_of_observations);
+
   /** \brief Update the filter and return the data seperately
-   * \param data_in T array with length elements_per_observation
-   * \param data_out T array with length elements_per_observation
+   * \param data_in T array with length width
+   * \param data_out T array with length width
    */
-  virtual bool update(T const * const data_in, T* data_out);
+  virtual bool update( const T & data_in, T& data_out);
 
 protected:
-  T * data_storage_;                       ///< Storage for data between updates
+  T data_storage_;                       ///< Storage for data between updates
   uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
   uint32_t iterations_;                         ///< Number of iterations up to number of observations
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  uint32_t elements_per_observation_;           ///< Number of elements per observation
+  uint32_t width_;           ///< Number of elements per observation
 
+  bool configured_;
 };
 
 
+ROS_REGISTER_FILTER(MeanFilter, std_vector_double)
+ROS_REGISTER_FILTER(MeanFilter, std_vector_float)
+
+
 template <typename T>
-MeanFilter<T>::MeanFilter(uint32_t number_of_observations, uint32_t elements_per_observation):
-  last_updated_row_(number_of_observations),
+MeanFilter<T>::MeanFilter():
+  last_updated_row_(0),
   iterations_(0),
-  number_of_observations_(number_of_observations),
-  elements_per_observation_(elements_per_observation)
+  number_of_observations_(0),
+  width_(0),
+  configured_(false)
 {
-  data_storage_ = new T[number_of_observations_ * elements_per_observation];
+}
+
+template <typename T>
+bool MeanFilter<T>::configure(unsigned int width, const std::string& number_of_observations)
+{
+  if (configured_)
+    return false;
+  width_ = width;
+  std::stringstream ss;
+  ss << number_of_observations;
+  ss >> number_of_observations_;
+  last_updated_row_ = number_of_observations_;
+
+  data_storage_.resize(number_of_observations_ * width_);
+  configured_ = true;
+  return true;
 }
 
 template <typename T>
 MeanFilter<T>::~MeanFilter()
 {
-  delete [] data_storage_;
 }
 
 
 template <typename T>
-bool MeanFilter<T>::update(T const* const data_in, T* data_out)
+bool MeanFilter<T>::update(const T & data_in, T& data_out)
 {
+  //  ROS_ASSERT(data_in.size() == width_);
+  //ROS_ASSERT(data_out.size() == width_);
+  if (data_in.size() != width_ || data_out.size() != width_)
+    return false;
+
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
     last_updated_row_ = 0;
@@ -98,9 +126,9 @@ bool MeanFilter<T>::update(T const* const data_in, T* data_out)
     last_updated_row_++;
 
   //copy incoming data into perminant storage
-  memcpy(&data_storage_[elements_per_observation_ * last_updated_row_],
-         data_in,
-         sizeof(T) * elements_per_observation_);
+  memcpy(&data_storage_[width_ * last_updated_row_],
+         &data_in[0],
+         sizeof(data_in[0]) * width_);
 
   //Return values
 
@@ -117,12 +145,12 @@ bool MeanFilter<T>::update(T const* const data_in, T* data_out)
   }
 
   //Return each value
-  for (uint32_t i = 0; i < elements_per_observation_; i++)
+  for (uint32_t i = 0; i < width_; i++)
   {
     data_out[i] = 0;
     for (uint32_t row = 0; row < length; row ++)
     {
-      data_out[i] += data_storage_[i + row * elements_per_observation_];
+      data_out[i] += data_storage_[i + row * width_];
     }
     data_out[i] /= length;
   }

@@ -4,9 +4,9 @@ rospack(filter_demo)
 genmsg()
 gensrv()
 
-rospack_add_library(filter_demo
-                    src/filtering_example.cpp)
-
-rospack_add_executable(filtering_example
-                       src/filtering_example.cpp)
+#broken until transfer function filter is fixed
+#rospack_add_library(filter_demo
+#                    src/filtering_example.cpp)
+#rospack_add_executable(filtering_example
+#                       src/filtering_example.cpp)
 

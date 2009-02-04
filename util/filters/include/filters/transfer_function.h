@@ -84,7 +84,10 @@ public:
    * \param data_in vector<T> with n elements
    * \param data_out vector<T> with n elements
    */
-  virtual bool update(std::vector<T> const * const data_in, std::vector<T>* data_out) ;
+  virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
+
+  
+  //virtual bool configure(unsigned int number_of_elements, const std::string & arguments)=0;
 
 protected:
   unsigned int number_of_channels_;
@@ -125,29 +128,29 @@ TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::v
 
 
 template <typename T>
-bool TransferFunctionFilter<T>::update(std::vector<T> const* const data_in, std::vector<T>* data_out)
+bool TransferFunctionFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
 {
   // Ensure the correct number of inputs
-  assert(data_in->size() == number_of_channels_);  
+  assert(data_in.size() == number_of_channels_);  
   
   // Copy data to prevent mutation if in and out are the same ptr
-  std::vector<T> current_input = *data_in;        
+  std::vector<T> current_input = data_in;        
 
   for (uint32_t i = 0; i < current_input.size(); i++)
   {
-    (*data_out)[i]=b_[0] * current_input[i];
+    data_out[i]=b_[0] * current_input[i];
 
     for (uint32_t row = 0; row < input_buffer_.size(); row++)
     {
-      (*data_out)[i] += b_[row+1] * input_buffer_[row][i];
+      (data_out)[i] += b_[row+1] * input_buffer_[row][i];
     }
     for (uint32_t row = 0; row < output_buffer_.size(); row++)
     {
-      (*data_out)[i] -= a_[row+1] * output_buffer_[row][i];
+      (data_out)[i] -= a_[row+1] * output_buffer_[row][i];
     }
   }
   input_buffer_.push(current_input);
-  output_buffer_.push(*data_out);
+  output_buffer_.push(data_out);
 
   return true;
 }

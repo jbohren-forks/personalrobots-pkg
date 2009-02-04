@@ -65,8 +65,8 @@ private:
   boost::mutex data_lock; /// Protection from multi threaded programs
   std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
-  filters::MedianFilter<float> * range_filter_;
-  filters::MedianFilter<float> * intensity_filter_;
+  filters::MedianFilter<std::vector<float> > * range_filter_;
+  filters::MedianFilter<std::vector<float> > * intensity_filter_;
 
 };
 

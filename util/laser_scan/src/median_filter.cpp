@@ -38,8 +38,13 @@ LaserMedianFilter::LaserMedianFilter(unsigned int filter_length):
   filter_length_(filter_length),
   num_ranges_(1)
 {
-  range_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-  intensity_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
+  range_filter_ = new MedianFilter<std::vector<float> >();
+  std::stringstream ss;
+  ss << filter_length_;
+  range_filter_->configure(num_ranges_, ss.str());
+  
+  intensity_filter_ = new MedianFilter<std::vector<float> >();//(filter_length_, num_ranges_);
+  intensity_filter_->configure(num_ranges_, ss.str());
 };
 
 LaserMedianFilter::~LaserMedianFilter()
@@ -61,14 +66,19 @@ bool LaserMedianFilter::update(const std_msgs::LaserScan& scan_in, std_msgs::Las
 
 
     num_ranges_ = scan_in.get_ranges_size();
-    range_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-    intensity_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-
+    range_filter_ = new MedianFilter<std::vector<float> >();
+    std::stringstream ss;
+    ss << filter_length_;
+    range_filter_->configure(num_ranges_, ss.str());
+    
+    intensity_filter_ = new MedianFilter<std::vector<float> >();//(filter_length_, num_ranges_);
+    intensity_filter_->configure(num_ranges_, ss.str());
+  
   }
 
   /** \todo check for length of intensities too */
-  range_filter_->update(&scan_in.ranges[0], &scan_out.ranges[0]);
-  intensity_filter_->update(&scan_in.intensities[0], &scan_out.intensities[0]);
+  range_filter_->update(scan_in.ranges, scan_out.ranges);
+  intensity_filter_->update(scan_in.intensities, scan_out.intensities);
 
 
   return true;
