@@ -64,6 +64,11 @@ public:
   /// Return vector of grid cells going from start to goal.
   /// Grid cells will be contiguous early on but eventually become noncontiguous.
   vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal);
+  
+  /// Return vector of grid cells going from start to goal.
+  /// Grid cells will be contiguous early on but eventually become noncontiguous.
+  /// Store the cost of the optimal path in cost
+  vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal, float* cost);
 
   /// Output the roadmap and region graph as a plain ppm file
   void outputPpm (std::ostream& = std::cout, int bottleneck_vertex_radius = 1);
@@ -87,11 +92,11 @@ private:
   /// Initialize the distance-from-obstacles map
   void initializeDistanceMap ();
 
-  void findBestConnector(const VertexCellMap& neighbor_connectors, const GridCell& start, const GridCell& goal, double* best_cost, BottleneckVertex* next_region);
+  void findBestConnector(const VertexCellMap& neighbor_connectors, const GridCell& start, const GridCell& goal, float* best_cost, BottleneckVertex* next_region);
   void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
-                                 double* best_cost, GridCellVector* solution, const BottleneckVertex& current, bool use_current=true);
+                                 float* best_cost, GridCellVector* solution, const BottleneckVertex& current, bool use_current=true);
   void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
-                                 double* best_cost, GridCellVector* solution);
+                                 float* best_cost, GridCellVector* solution);
 
   double computeConnectorCost(const GridCell& start, const GridCell& goal, const GridCell& connector, GridCellVector* path=0);
   

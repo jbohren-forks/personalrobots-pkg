@@ -41,7 +41,8 @@
 #include <ros/console.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
-#include "topological_map/roadmap_bottleneck_graph.h"
+#include <topological_map/NavigationCost.h>
+#include <topological_map/roadmap_bottleneck_graph.h>
 
 
 
@@ -66,8 +67,10 @@ public:
   void setResolution(double r) { resolution_=r; }
 
   void poseCallback(void);
+  bool navigationCostCallback(topological_map::NavigationCost::Request&, topological_map::NavigationCost::Response&);
 
-  void convertToMapIndices(double, double, int*, int*);
+  void convertToMapIndices(double x, double y, int* r, int* c);
+  void convertToMapIndices(double x, double y, GridCell* c);
 
 
 private:
@@ -77,9 +80,11 @@ private:
   BottleneckGraphRos& operator= (const BottleneckGraphRos&);
 
 
-  RoadmapBottleneckGraph bottleneck_graph_;
+  RoadmapBottleneckGraph graph_;
   NodeStatus node_status_;
   GridArray grid_;
+  unsigned char* costmap_;
+
 
   int sx_, sy_;
   int region_id_;
@@ -87,6 +92,7 @@ private:
   double resolution_;
 
   int size_, skip_, radius_, distanceMin_, distanceMax_;
+
 
   boost::mutex lock_;
 

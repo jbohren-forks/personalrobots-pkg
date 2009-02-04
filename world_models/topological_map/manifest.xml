@@ -11,6 +11,6 @@
 <depend package="sbpl" />
 <depend package="navfn" />
 <export>
-<cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
+<cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>
 </package>

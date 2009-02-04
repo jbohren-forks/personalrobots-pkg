@@ -80,7 +80,7 @@
 **/
 
 
-#include <topological_map/ros_bottleneck_graph.h>
+#include <topological_map/ros_topological_planner.h>
 
 using namespace std;
 
@@ -94,21 +94,25 @@ namespace topological_map
  ************************************************************/
 
 BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : 
-  ros::Node("bottleneck_graph_ros"), node_status_(WAITING_FOR_MAP), num_added_roadmap_points_(0), 
-  size_(size), skip_(skip), radius_(radius), distanceMin_(distanceMin), distanceMax_(distanceMax) 
+  ros::Node("topological_planner"), node_status_(WAITING_FOR_MAP), costmap_(0), num_added_roadmap_points_(0), 
+  size_(size), skip_(skip), radius_(radius), distanceMin_(distanceMin), distanceMax_(distanceMax)
 {
 }
  
 
 BottleneckGraphRos::BottleneckGraphRos(char* filename) :
-  ros::Node("bottleneck_graph_ros"), num_added_roadmap_points_(0)
+  ros::Node("topological_planner"), costmap_(0), num_added_roadmap_points_(0)
 {
-  bottleneck_graph_.readFromFile(filename);
+  graph_.readFromFile(filename);
   node_status_ = READY;
 }
 
 BottleneckGraphRos::~BottleneckGraphRos()
-{}
+{
+  if (costmap_) {
+    delete[] costmap_;
+  }
+}
 
 
 
@@ -118,33 +122,62 @@ BottleneckGraphRos::~BottleneckGraphRos()
  * Callbacks
  ************************************************************/
 
+bool BottleneckGraphRos::navigationCostCallback (topological_map::NavigationCost::Request& req, topological_map::NavigationCost::Response& resp)
+{
+  GridCell start, goal;
+
+  convertToMapIndices (req.start.x, req.start.y, &start);
+  convertToMapIndices (req.goal.x, req.goal.y, &goal);
+  
+  std_srvs::StaticMap::Request  costmap_req;
+  std_srvs::StaticMap::Response costmap_resp;
+  while (!ros::service::call("costmap", costmap_req, costmap_resp))
+  {
+    ROS_WARN("Costmap request failed; trying again...\n");
+    usleep(1000000);
+  }
+
+  // Check array bounds and copy costmap
+  ROS_ASSERT (((int)costmap_resp.map.height==sy_)&&((int)costmap_resp.map.width==sx_));
+  copy (costmap_resp.map.data.begin(), costmap_resp.map.data.end(), costmap_);
+  lock_.lock();
+  graph_.setCostmap(costmap_);
+  lock_.unlock();
+
+  float cost;
+  graph_.findOptimalPath(start, goal, &cost);
+  resp.cost=cost;
+  return true;
+}
+
+
+
 void BottleneckGraphRos::poseCallback (void)
 {
+  // Will eventually do caching of exit costs here
   int r, c;
-  if ((node_status_==READY) && bottleneck_graph_.isReady()) {
+  if ((node_status_==READY) && graph_.isReady()) {
     lock_.lock();
 
     convertToMapIndices (pose_.pos.x, pose_.pos.y, &r,&c);
-    int region = bottleneck_graph_.regionId(r,c);
+    int region = graph_.regionId(r,c);
     if (region!=region_id_) {
       region_id_=region;
       BottleneckVertex v;
-      bottleneck_graph_.lookupVertex (r, c, &v);
-      if (bottleneck_graph_.vertexDescription(v).type == BOTTLENECK) {
+      graph_.lookupVertex (r, c, &v);
+      if (graph_.vertexDescription(v).type == BOTTLENECK) {
         ROS_DEBUG ("Moving into bottleneck vertex %d", region);
       }
       else {
         ROS_DEBUG ("Moving into open vertex %d", region);
       }
-
-      // Remove low-level cells from previous region and add the new ones
-      bottleneck_graph_.switchToRegion (region_id_);
     }
-    
     lock_.unlock();
-
   }
 }
+
+
+
 
 
 
@@ -156,9 +189,9 @@ void BottleneckGraphRos::computeBottleneckGraph (void)
 {
   lock_.lock();
   ROS_INFO ("Computing bottleneck graph... (this could take a while)\n");
-  bottleneck_graph_.initializeFromGrid(grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
+  graph_.initializeFromGrid(grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
   ROS_INFO ("Done computing bottleneck graph\n");
-  //bottleneck_graph_.printBottlenecks();
+  //graph_.printBottlenecks();
   node_status_=READY;
   lock_.unlock();
 }  
@@ -184,6 +217,7 @@ void BottleneckGraphRos::loadMap (void)
   resolution_ = resp.map.resolution;
 
   grid_.resize(boost::extents[sy_][sx_]);
+  costmap_ = new unsigned char[sy_*sx_]; // deleted in destructor
   
   int i = 0;
   bool expected[255];
@@ -210,12 +244,15 @@ void BottleneckGraphRos::setupTopics (void)
   ROS_INFO ("Setting up node topics");
   subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 10);
 
+  // Advertise 2d cost
+  advertiseService("navigation_cost", &BottleneckGraphRos::navigationCostCallback);
 }
+
 
 void BottleneckGraphRos::generateRoadmap (void)
 {
   node_status_ = COMPUTING_ROADMAP;
-  bottleneck_graph_.initializeRoadmap();
+  graph_.initializeRoadmap();
 }
 
 
@@ -224,7 +261,7 @@ void BottleneckGraphRos::writeToFile (char* filename)
   ROS_INFO ("Writing bottleneck graph to file %s", filename);
   lock_.lock();
   ROS_DEBUG ("Writing acquired lock");
-  bottleneck_graph_.printBottlenecks(filename);
+  graph_.printBottlenecks(filename);
   lock_.unlock();
   ROS_INFO ("Done writing");
 }
@@ -243,8 +280,18 @@ void BottleneckGraphRos::convertToMapIndices (double x, double y, int* r, int* c
   *c = (int)floor(x/resolution_);
 }
 
+void BottleneckGraphRos::convertToMapIndices (double x, double y, GridCell* c)
+{
+  int row, col;
+  convertToMapIndices (x, y, &row, &col);
+  c->first=row;
+  c->second=col;
+}
+
 
 } // namespace topological_map
+
+
 
 
 
