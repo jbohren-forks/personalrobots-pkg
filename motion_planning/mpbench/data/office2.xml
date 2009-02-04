@@ -1,4 +1,17 @@
 <setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>false</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>2e-3</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
   <map>
     <init>
       <!-- outer bounding box -->
@@ -25,15 +38,33 @@
       <addline>  1.5  4.2   1.5  5.4 </addline>
     </change>
   </map>
+
   <task>
     <description>through door or around hall</description>
-    <goal>         4.5  13.5   0     0.3  4 </goal>
-    <start> true   1.5  13.5  -1.55         </start>
-    <start> false  1.5  12.5  -1.55         </start>
-    <start> false  1.5  11.5  -1.55         </start>
-    <start> false  1.5  10.5  -1.55         </start>
-    <start> false  1.5   9.5  -1.55         </start>
-    <start> false  1.5   8.5  -1.55         </start>
-    <start> false  1.5   7.5  -1.55         </start>
+    <goal>
+      <pose>4.5  13.5   0</pose>
+    </goal>
+    <start>
+      <from_scratch>true</from_scratch>
+      <pose>1.5  13.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  12.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  11.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  10.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5   9.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5   8.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5   7.5  -1.55</pose>
+    </start>
   </task>
 </setup>
