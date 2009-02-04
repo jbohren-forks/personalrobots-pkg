@@ -7,7 +7,7 @@
   <review status="3rdparty" notes=""/>
   <url>http://www.coin3d.org/</url>
   <export>
-  <!-- use soqt-config instead of exporting the flags! -->
+    <!-- use soqt-config instead of exporting the flags! -->
     <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
   </export> 
   <sysdepend os="ubuntu" version="7.04-feisty" package="libqt4-core"/>
