@@ -176,7 +176,7 @@ namespace ros {
 	  // Could also sanity check the other parameters...
 	  env_.reset(mpglue::SBPLEnvironment::create3DKIN(mcm, mit,
 							  getFootprint(), nominalvel_mpersecs,
-							  timetoturn45degsinplace_secs));
+							  timetoturn45degsinplace_secs, 0));
 	}
 	else {
 	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
