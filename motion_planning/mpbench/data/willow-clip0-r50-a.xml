@@ -1,20 +1,61 @@
 <setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>false</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>2e-3</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
   <task>
     <description>pool table to sink</description>
-    <goal>         4.5  13.5   0     0.3  4 </goal>
-    <start> true   1.5  14.5  -1.55         </start>
-    <start> false  1.5  13.5  -1.55         </start>
-    <start> false  1.5  12.5  -1.55         </start>
-    <start> false  1.5  11.5  -1.55         </start>
-    <start> false  1.5  10.5  -1.55         </start>
+    <goal>
+      <pose>4.5  13.5   0</pose>
+    </goal>
+    <start>
+      <from_scratch>true</from_scratch>
+      <pose>1.5  14.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  13.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  12.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  11.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>1.5  10.5  -1.55</pose>
+    </start>
   </task>
+
   <task>
     <description>green room to sink</description>
-    <goal>         4.5  13.5   0     0.3  4 </goal>
-    <start> true   9   5.5  -1.55         </start>
-    <start> false  9   4.5  -1.55         </start>
-    <start> false  9   3.5  -1.55         </start>
-    <start> false  9   2.5  -1.55         </start>
-    <start> false  9   1.5  -1.55         </start>
+    <goal>
+      <pose>4.5  13.5   0</pose>
+    </goal>
+    <start>
+      <from_scratch>true</from_scratch>
+      <pose>9   5.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>9   4.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>9   3.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>9   2.5  -1.55</pose>
+    </start>
+    <start>
+      <pose>9   1.5  -1.55</pose>
+    </start>
   </task>
+  
 </setup>

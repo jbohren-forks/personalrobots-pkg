@@ -77,23 +77,7 @@ namespace mpbench {
   };
   
   
-  typedef enum {
-    SETUP,
-    MAP,
-    INIT,
-    CHANGE,
-    ADDLINE,
-    RMLINE,
-    TASK,
-    DESCRIPTION,
-    GOAL,
-    START,
-    NONE
-  } tag_t;
-  
-  tag_t getTag(std::string const & tag_name) throw(std::runtime_error);
-  
-  typedef std::stack<tag_t> tag_stack_t;
+  typedef std::stack<std::string> tag_stack_t;
   
   class Setup;
   
@@ -116,6 +100,10 @@ namespace mpbench {
     int bufsize;
     Setup * setup;
     std::ostream * progress_os;
+    task::startspec def_start;
+    task::goalspec def_goal;
+    task::startspec tmp_start;
+    task::goalspec tmp_goal;
     task::setup tmp_task;
   };
   

@@ -133,7 +133,11 @@ namespace mpbench {
       bufsize(128),
       setup(0),
       progress_os(0),
-      tmp_task("", task::goalspec(0, 0, 0, 0, 0))
+      def_start(false, false, true, numeric_limits<double>::max(), 0, 0, 0),
+      def_goal(0, 0, 0, 1, M_PI),
+      tmp_start(def_start),
+      tmp_goal(def_goal),
+      tmp_task("", def_goal)
   {
   }
   
@@ -187,29 +191,6 @@ namespace mpbench {
     }
   }
   
-  
-  tag_t getTag(std::string const & tag_name) throw(std::runtime_error)
-  {
-    typedef map<string, tag_t> foo_t;
-    static foo_t foo;
-    if (foo.empty()) {
-      foo.insert(make_pair("setup", SETUP));
-      foo.insert(make_pair("map", MAP));
-      foo.insert(make_pair("init", INIT));
-      foo.insert(make_pair("change", CHANGE));
-      foo.insert(make_pair("addline", ADDLINE));
-      foo.insert(make_pair("rmline", RMLINE));
-      foo.insert(make_pair("task", TASK));
-      foo.insert(make_pair("description", DESCRIPTION));
-      foo.insert(make_pair("goal", GOAL));
-      foo.insert(make_pair("start", START));
-    }
-    foo_t::const_iterator ifoo(foo.find(tag_name));
-    if (foo.end() == ifoo)
-      throw runtime_error("mpbench::getTag(): unknown tag <" + tag_name + ">");
-    return ifoo->second;
-  }
-  
 }
 
 
@@ -230,45 +211,48 @@ void start_element_handler(void * user_data,
 {
   mpbench::SetupParser * sp(reinterpret_cast<mpbench::SetupParser *>(user_data));
 
-  mpbench::tag_t prevtag;
-  if (sp->tag_stack.empty())
-    prevtag = NONE;
-  else
+  string prevtag("NONE");
+  if ( ! sp->tag_stack.empty())
     prevtag = sp->tag_stack.top();
+  string const tag(name);
   
-  mpbench::tag_t tag;
-  try {
-    tag = getTag(name);
-  }
-  catch (runtime_error const & ee) {
-    throwme(sp, ee.what());
-  }
-  
-  switch (tag) {
-    
-  case ADDLINE:
-  case RMLINE:
-    if ((INIT != prevtag) && (CHANGE != prevtag))
-      throwme(sp, "<" + string(name) + "> only allowed inside <init> or <change>");
+  if (("addline" == tag) || ("rmline" == tag)) {
+    if (("init" != prevtag) && ("change" != prevtag))
+      throwme(sp, "<" + tag + "> only allowed in <init> or <change>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
-    break;
-    
-  case DESCRIPTION:
-  case GOAL:
-  case START:
-    if (TASK != prevtag)
-      throwme(sp, "<" + string(name) + "> only allowed inside <task>");
+  }
+  else if ("description" == tag) {
+    if ("task" != prevtag)
+      throwme(sp, "<description> only allowed in <task>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
-    break;
-    
-  case TASK:
+  }
+  else if (("from_scratch" == tag) || ("use_initial_solution" == tag)
+	   || ("allow_iteration" == tag) || ("alloc_time" == tag)) {
+    if ("start" != prevtag)
+      throwme(sp, "<" + tag + "> only allowed in <start>, not in <" + prevtag + ">");
+    sp->buffer.reset(new mpbench::StringBuffer());
+  }
+  else if ("tolerance" == tag) {
+    if ("goal" != prevtag)
+      throwme(sp, "<tolerance> only allowed in <goal>, not in <" + prevtag + ">");
+    sp->buffer.reset(new mpbench::StringBuffer());
+  }
+  else if ("pose" == tag) {
+    if (("start" != prevtag) && ("goal" != prevtag))
+      throwme(sp, "<pose> only allowed in <start> or <goal>, not in <" + prevtag + ">");
+    sp->buffer.reset(new mpbench::StringBuffer());
+  }
+  else if ("task" == tag) {
     sp->tmp_task.description = "none";
     sp->tmp_task.start.clear();
-    break;
-    
-  default:
-    break;
   }
+  else if ("start" == tag) {
+    sp->tmp_start = sp->def_start;
+  }
+  else if ("goal" == tag) {
+    sp->tmp_goal = sp->def_goal;
+  }
+  // else just ignore it
   
   sp->tag_stack.push(tag);
 }
@@ -280,19 +264,15 @@ void end_element_handler(void * user_data,
 {
   mpbench::SetupParser * sp(reinterpret_cast<mpbench::SetupParser *>(user_data));
   
-  mpbench::tag_t tag(NONE);
-  try {
-    tag = getTag(name);
-  }
-  catch (runtime_error const & ee) {
-    throwme(sp, ee.what());
-  }
+  sp->tag_stack.pop();
+  string prevtag("NONE");
+  if ( ! sp->tag_stack.empty())
+    prevtag = sp->tag_stack.top();
+  string const tag(name);
   
-  switch (tag) {
-    
-  case ADDLINE:
+  if ("addline" == tag) {
     if ( ! sp->buffer)
-      throwme(sp, "BUG: no string buffer");
+      throwme(sp, "BUG: no string buffer for <addline>");
     else {
       istringstream is(sp->buffer->GetString());
       double x0, y0, x1, y1;
@@ -302,66 +282,110 @@ void end_element_handler(void * user_data,
       static ostream * dbgos(0); // XXXX maybe switchable one day...
       sp->setup->drawLine(x0, y0, x1, y1, sp->progress_os, dbgos);
     }
-    break;
-    
-  case RMLINE:
-    warnx("WIP: ignoring <rmline>");
-    break;
-    
-  case DESCRIPTION:
-    if ( ! sp->buffer)
-      throwme(sp, "BUG: no string buffer");
-    sp->tmp_task.description = sp->buffer->GetString();
-    break;
-    
-  case GOAL:
-    if ( ! sp->buffer)
-      throwme(sp, "BUG: no string buffer");
-    else {
-      istringstream is(sp->buffer->GetString());
-      is >> sp->tmp_task.goal.px
-	 >> sp->tmp_task.goal.py
-	 >> sp->tmp_task.goal.pth
-	 >> sp->tmp_task.goal.tol_xy
-	 >> sp->tmp_task.goal.tol_th;
-      if ( ! is)
-	throwme(sp, "could not read px py pth tol_xy tol_th from \"" + sp->buffer->GetString() + "\"");
-    }
-    break;
-    
-  case START:
-    if ( ! sp->buffer)
-      throwme(sp, "BUG: no string buffer");
-    else {
-      istringstream is(sp->buffer->GetString());
-      string from_scratch_str;
-      double px, py, pth;
-      is >> from_scratch_str >> px >> py >> pth;
-      if ( ! is)
-	throwme(sp, "could not read from_scratch px py pth from \""
-		+ sp->buffer->GetString() + "\"");
-      bool from_scratch;
-      if ( ! sfl::string_to(from_scratch_str, from_scratch))
-	throwme(sp, "could not convert \"" + sp->buffer->GetString() + "\" to boolean");
-      // XXXX to do: parse other parameters as well
-      bool const use_initial_solution(false);
-      bool const allow_iteration(false);
-      double const alloc_time(numeric_limits<double>::max());
-      sp->tmp_task.start.push_back(task::startspec(from_scratch, use_initial_solution,
-						   allow_iteration, alloc_time, px, py, pth));
-    }
-    break;
-    
-  case TASK:
-    sp->setup->addTask(sp->tmp_task);
-    break;
-    
-  default:
-    break;
   }
   
+  else if ("rmline" == tag) {
+    warnx("WIP: ignoring <rmline>");
+  }
+  
+  else if ("description" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <description>");
+    sp->tmp_task.description = sp->buffer->GetString();
+  }
+  
+  else if ("from_scratch" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <from_scratch>");
+    if ( ! sfl::string_to(sp->buffer->GetString(), sp->tmp_start.from_scratch))
+      throwme(sp, "from_scratch: expected boolean, not " + sp->buffer->GetString());
+  }
+  
+  else if ("use_initial_solution" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <use_initial_solution>");
+    if ( ! sfl::string_to(sp->buffer->GetString(), sp->tmp_start.use_initial_solution))
+      throwme(sp, "use_initial_solution: expected boolean, not " + sp->buffer->GetString());
+  }
+  
+  else if ("allow_iteration" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <allow_iteration>");
+    if ( ! sfl::string_to(sp->buffer->GetString(), sp->tmp_start.allow_iteration))
+      throwme(sp, "allow_iteration: expected boolean, not " + sp->buffer->GetString());
+  }
+  
+  else if ("alloc_time" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <alloc_time>");
+    if (("inf" == sp->buffer->GetString()) || ("max" == sp->buffer->GetString()))
+      sp->tmp_start.alloc_time = numeric_limits<double>::max();
+    else {
+      if ( ! sfl::string_to(sp->buffer->GetString(), sp->tmp_start.alloc_time))
+	throwme(sp, "alloc_time: expected number, not " + sp->buffer->GetString());
+      if (0 > sp->tmp_start.alloc_time)
+	throwme(sp, "alloc_time: expected non-negative number, not " + sp->buffer->GetString());
+    }
+  }
+  
+  else if ("tolerance" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <tolerance>");
+    istringstream is(sp->buffer->GetString());
+    is >> sp->tmp_goal.tol_xy
+       >> sp->tmp_goal.tol_th;
+    if ( ! is)
+      throwme(sp, "could not read tolerance from \"" + sp->buffer->GetString() + "\"");
+  }
+  
+  else if ("pose" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <pose>");
+    istringstream is(sp->buffer->GetString());
+    if ("start" == prevtag) {
+      is >> sp->tmp_start.px
+	 >> sp->tmp_start.py
+	 >> sp->tmp_start.pth;
+      if ( ! is)
+	throwme(sp, "could not read start pose from \"" + sp->buffer->GetString() + "\"");
+    }
+    else if ("goal" == prevtag) {
+      is >> sp->tmp_goal.px
+	 >> sp->tmp_goal.py
+	 >> sp->tmp_goal.pth;
+      if ( ! is)
+	throwme(sp, "could not read goal pose from \"" + sp->buffer->GetString() + "\"");
+    }
+    else
+      throwme(sp, "<pose> only allowed in <start> or <goal>, not in <" + prevtag + ">");
+  }
+  
+  else if ("goal" == tag) {
+    if ("defaults" == prevtag)
+      sp->def_goal = sp->tmp_goal;
+    else if ("task" == prevtag)
+      sp->tmp_task.goal = sp->tmp_goal;
+    else
+      throwme(sp, "<goal> only allowed in <defaults> or <task>, not in <" + prevtag + ">");
+  }
+  
+  else if ("start" == tag) {
+    if ("defaults" == prevtag)
+      sp->def_start = sp->tmp_start;
+    else if ("task" == prevtag)
+      sp->tmp_task.start.push_back(sp->tmp_start);
+    else
+      throwme(sp, "<start> only allowed in <defaults> or <task>, not in <" + prevtag + ">");
+  }
+  
+  else if ("task" == tag) {
+    sp->setup->addTask(sp->tmp_task);
+  }
+  
+  else				// dbg
+    warnx("unhandled closing </%s>", name);
+  
   sp->buffer.reset();
-  sp->tag_stack.pop();
 }
 
 
