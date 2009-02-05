@@ -31,7 +31,7 @@
 #include <sstream>
 #include <iostream>
 #include "axis_cam/axis_cam.h"
-#include "string_utils/string_utils.h"
+#include <boost/algorithm/string.hpp>
 #include <cstring>
 #include <cstdlib>
 
@@ -299,7 +299,7 @@ int AxisCam::query_params()
     string line;
     getline(ptz_ss, line);
     vector<string> tokens;
-    string_utils::split(line, tokens, "=");
+    boost::split(tokens, line, boost::is_any_of("="));
     if (tokens.size() != 2)
       continue;
     if (tokens[0] == string("pan"))
