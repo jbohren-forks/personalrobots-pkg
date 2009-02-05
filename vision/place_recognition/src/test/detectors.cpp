@@ -56,14 +56,14 @@ std::vector<Keypoint> fastKeypoints(IplImage *image, int threshold, int barrier)
 {
   int num_corners = 0, num_nonmax = 0;
   unsigned char* imdata = (unsigned char*)image->imageData;
-  xy* corners = fast_corner_detect_9(imdata, image->width, image->height, threshold, &num_corners);
-  xy* nm = fast_nonmax(imdata, image->width, image->height, corners, num_corners, barrier, &num_nonmax);
+  xyr* corners = fast_corner_detect_9(imdata, image->width, image->height, threshold, &num_corners);
+  xyr* nm = fast_nonmax(imdata, image->width, image->height, corners, num_corners, barrier, &num_nonmax);
 
   // Copy keypoints over
   std::vector<Keypoint> keypts;
   keypts.reserve(num_nonmax);
   for (int i = 0; i < num_nonmax; ++i)
-    keypts.push_back( Keypoint(nm[i].x, nm[i].y, 3, 0) );
+    keypts.push_back( Keypoint(nm[i].x, nm[i].y, 3, nm[i].r) );
 
   free(corners);
   free(nm);

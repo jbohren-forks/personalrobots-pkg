@@ -83,7 +83,7 @@ static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
 
   FeatureMatrix image_features;
 
-  if (descriptors == NULL) {
+  if (descriptors == NULL || descriptors == Py_None) {
     // Prepare keypoint detector, classifier
     // TODO: use FAST instead?
     StarDetector detector(cvSize(640, 480), 5, 10.0);
@@ -144,7 +144,7 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
 
   sig_data_t *image_features;
 
-  if (descriptors == NULL) {
+  if (descriptors == NULL || descriptors == Py_None) {
     // Prepare keypoint detector, classifier
     // TODO: use FAST instead?
     StarDetector detector(cvSize(640, 480), 5, 10.0);

@@ -9,6 +9,8 @@ import random
 
 sys.path.append('lib')
 import place_recognition
+#import calonder
+#import fast
 
 ims = [ Image.open("/u/prdata/videre-bags/james4/im.%06u.left_rectified.tiff" % (20 * i)) for i in range(100)]
 
@@ -25,4 +27,4 @@ else:
 for (a,q) in zip(random.sample(ims, 100), random.sample(ims, 100)):
   print a, q
   vt.add(a)
-  vt.topN(q)
+  vt.topN(q, None, 10)

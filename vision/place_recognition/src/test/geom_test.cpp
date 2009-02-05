@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   // Prepare keypoint detector, classifier
   //StarDetector detector(cvSize(640, 480), 7, 10.0);
   std::vector<Keypoint> pts;
-  RTreeClassifier classifier(true);
+  RTreeClassifier classifier;
   classifier.read(classifier_file);
   unsigned int dimension = classifier.classes();
 
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
     //KeepBestPoints(pts, MAX_FEATURES);
 
     // Compute descriptors, disparities
-    float* train_buffer = Eigen::ei_aligned_malloc<float>(dimension * pts.size());
+    float* train_buffer = (float*) Eigen::ei_aligned_malloc(dimension * pts.size() * sizeof(float));
     train_buffers.push_back(train_buffer);
     buffer_sizes.push_back(pts.size());
     float* train_sig = train_buffer;
@@ -142,7 +142,8 @@ int main(int argc, char** argv)
     sig_t* feature_block = NULL;
     posix_memalign((void**)&feature_block, 16, buffer_sizes[i]*dimension*sizeof(sig_t));
     for (unsigned int j = 0; j < buffer_sizes[i]; ++j) {
-      memcpy((void*)(feature_block + j*dimension), (void*)(test_buffers[i] + j*dimension),
+      memcpy((void*)(feature_block + j*dimension),
+             (void*)(test_buffers[i] + j*dimension),
              dimension*sizeof(sig_t));
     }
     current_row += buffer_sizes[i];
@@ -161,7 +162,7 @@ int main(int argc, char** argv)
 
   // Free training buffers
   for (unsigned int i = 0; i < train_buffers.size(); ++i) {
-    free(train_buffers[i]);
+    Eigen::ei_aligned_free(train_buffers[i]);
   }
   
   // Validation

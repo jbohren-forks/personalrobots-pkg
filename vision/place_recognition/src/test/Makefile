@@ -1,9 +1,8 @@
 CC = g++
 CFLAGS = -c -g -Wall
 # Boost
-BOOST_ROOT = $(shell rospack find boost)/boost
-CFLAGS += -I$(BOOST_ROOT)/include
-LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_filesystem -Wl,-rpath $(BOOST_ROOT)/lib
+CFLAGS += -I$(ROS_BOOST_ROOT)/include
+LDFLAGS += -L$(ROS_BOOST_ROOT)/lib -lboost_filesystem-gcc42-mt -Wl,-rpath $(ROS_BOOST_ROOT)/lib
 # OpenCV
 CV_LATEST = $(shell rospack find opencv_latest)/opencv
 CFLAGS += -I$(CV_LATEST)/include/opencv -I$(CV_LATEST)/include
