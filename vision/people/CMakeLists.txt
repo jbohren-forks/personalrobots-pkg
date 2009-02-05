@@ -34,6 +34,10 @@ rospack_add_executable(face_detector
                        src/utils.cpp)
 rospack_link_boost(face_detector thread)
 
+rospack_add_executable(people_follower
+                       src/people_follower.cpp )
+rospack_link_boost(people_follower thread)
+
 rospack_add_executable(stereo_face_color_tracker
                        src/stereo_face_color_tracker.cpp 
                        src/people.cpp 
