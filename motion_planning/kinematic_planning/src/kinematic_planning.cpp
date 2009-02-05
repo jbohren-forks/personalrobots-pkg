@@ -122,6 +122,14 @@ Publishes to (name/type):
 
 <hr>
 
+@section notes Notes
+
+This node inherits from CollisionSpaceMonitor. Additional relevant
+topics, services and parameters are documented in
+CollisionSpaceMonitor.
+
+<hr>
+
 @section services ROS services
 
 Uses (name/type):

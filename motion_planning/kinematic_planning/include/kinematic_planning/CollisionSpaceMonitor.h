@@ -75,7 +75,11 @@ namespace kinematic_planning
        <hr>
        
        @section notes Notes
-       
+
+       This class inherits from KinematicStateMonitor. Additional
+       relevant topics, services and parameters are documented in
+       KinematicStateMonitor.
+
        This class uses the following special groups (from the URDF document)
        
        - "collision_check" with the flag "collision": if present, this is used
