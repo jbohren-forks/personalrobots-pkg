@@ -70,4 +70,12 @@ if __name__ == '__main__':
         while not rospy.is_shutdown():
             rospy.spin()
     finally:
-        [kill_controller(name) for name in spawned]
+        for name in spawned:
+            for i in range(3):
+                try:
+                    rospy.logout("Trying to kill %s" % name)
+                    kill_controller(name)
+                    rospy.logout("Succeeded in killing %s" % name)
+                    break
+                except rospy.service.ServiceException:
+                    rospy.logerr("ServiceException while killing %s" % name)
