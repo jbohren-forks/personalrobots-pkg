@@ -750,17 +750,36 @@ namespace robot_desc {
     {
     clear();
     bool result = false;
-    
+    size_t n = data ? strlen(data) : 0;
+    if (n > 0)
+    {
+	// if we do not finish with an 'end-of-line', we add it
+	// we look at the possibility of finishing lines with \n, \r\n and \n\r
+	char *myData = NULL;
+	if ((data[n - 1] != '\n') && ((n == 1) || (n > 1 && (data[n - 2] != '\n' || data[n - 1] != '\r'))))
+	{
+	    myData = new char[n + 2];
+	    memcpy(myData, data, sizeof(char) * n);
+	    myData[n] = '\n'; myData[n + 1] = '\0';
+	}
+	
     TiXmlDocument *doc = new TiXmlDocument();
     doc->SetUserData(NULL);    
     m_docs.push_back(doc);
-    if (doc->Parse(data))
+    if (doc->Parse(myData ? myData : data))
     {
         defaultConstants();
         result = parse(dynamic_cast<const TiXmlNode*>(doc));
     }
     else
+    {
         errorMessage(doc->ErrorDesc());
+    }
+    if (myData)
+	delete[] myData;
+    }
+    else
+	errorMessage("No input data");
     
     return result;
     }
@@ -2073,7 +2092,6 @@ namespace robot_desc {
     bool URDF::parse(const TiXmlNode *node)
     {
     if (!node) return false;
-    
     int type =  node->Type();
     switch (type)
     {
