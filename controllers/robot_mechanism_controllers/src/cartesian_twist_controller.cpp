@@ -88,6 +88,7 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   control_toolbox::Pid pid_trans(p, i, d, i_clamp, -i_clamp);
   for (unsigned int i=0; i<3; i++)
     pid_controller_.push_back(pid_trans);
+
   node_->param(controller_name+"/rot_p", p, 0.0) ;
   node_->param(controller_name+"/rot_i", i, 0.0) ;
   node_->param(controller_name+"/rot_d", d, 0.0) ;
@@ -96,6 +97,9 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   for (unsigned int i=0; i<3; i++)
     pid_controller_.push_back(pid_rot);
   fprintf(stderr, "pid controllers created\n");
+
+  node_->param(controller_name+"/twist_to_wrench_trans", twist_to_wrench_trans_, 0.0) ;
+  node_->param(controller_name+"/twist_to_wrench_rot", twist_to_wrench_rot_, 0.0) ;
 
   // time
   last_time_ = robot_state->hw_->current_time_;
@@ -134,8 +138,11 @@ void CartesianTwistController::update()
   Twist error = twist_meas_ - twist_desi_;
 
   // pid feedback
-  for (unsigned int i=0; i<6; i++)
-    wrench_out_(i)  = pid_controller_[i].updatePid(error(i), dt);
+  for (unsigned int i=0; i<3; i++)
+    wrench_out_.force(i) = (twist_desi_.vel(i) * twist_to_wrench_trans_) + pid_controller_[i].updatePid(error.vel(i), dt);
+
+  for (unsigned int i=0; i<3; i++)
+    wrench_out_.torque(i) = (twist_desi_.rot(i) * twist_to_wrench_rot_) + pid_controller_[i+3].updatePid(error.rot(i), dt);
 
   // send wrench to wrench controller
   wrench_controller_.wrench_desi_ = wrench_out_;

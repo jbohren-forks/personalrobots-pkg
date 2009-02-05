@@ -66,7 +66,7 @@ public:
 private:
   ros::Node* node_;
   unsigned int  num_joints_, num_segments_;
-  double last_time_;
+  double last_time_, twist_to_wrench_trans_, twist_to_wrench_rot_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> pid_controller_;     
