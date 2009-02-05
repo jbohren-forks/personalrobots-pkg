@@ -19,7 +19,7 @@ in a way that can be managed by the ROS dependency system.
 <sysdepend os="ubuntu" version="8.04-hardy" package="libavformat-dev"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libavcodec-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libavcodec-dev"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="libjasper-dev"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libjasper-1.701-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libjasper-dev"/>
 <versioncontrol type="svn" url="https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/latest_tested_snapshot/opencv"/>
 </package>
