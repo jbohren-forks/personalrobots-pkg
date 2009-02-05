@@ -1,10 +1,10 @@
 all: installed
 
 # TODO: update to download the packages individually
-HTTP_MISCELLANEOUS = "http://downloads.sourceforge.net/octave/miscellaneous-1.0.7.tar.gz?download"
-HTTP_OPTIM         = "http://downloads.sourceforge.net/octave/optim-1.0.4.tar.gz?download"
-HTTP_SIGNAL        = "http://downloads.sourceforge.net/octave/signal-1.0.8.tar.gz?download"
-HTTP_SPECFUN       = "http://downloads.sourceforge.net/octave/specfun-1.0.7.tar.gz?download"
+HTTP_MISCELLANEOUS = "http://pr.willowgarage.com/downloads/miscellaneous-1.0.7.tar.gz"
+HTTP_OPTIM         = "http://pr.willowgarage.com/downloads/optim-1.0.4.tar.gz"
+HTTP_SIGNAL        = "http://pr.willowgarage.com/downloads/signal-1.0.8.tar.gz"
+HTTP_SPECFUN       = "http://pr.willowgarage.com/downloads/specfun-1.0.7.tar.gz"
 
 TAR_MISCELLANEOUS = miscellaneous-1.0.7.tar.gz
 TAR_OPTIM         = optim-1.0.4.tar.gz
