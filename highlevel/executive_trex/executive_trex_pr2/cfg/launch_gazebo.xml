@@ -2,12 +2,11 @@
   <master auto="start"/>
   <group name="wg">
 
-    <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
+    <include file="$(find pr2_gazebo)/pr2_simple_trajectory.launch"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
 
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
-
 
     <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true"/>
     <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.05 --accuratetiming 0" respawn="true">
@@ -43,15 +42,7 @@
       <remap from="full_cloud" to="point_cloud_snapshotted" />
     </node>
 
-
-
-
-
-
-
-
-
-
+    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" output="screen"/>-->
 
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true">
       <remap from="robot_description" to="robotdesc/pr2"/>
@@ -60,7 +51,7 @@
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
-    <node pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
+    <node pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false" output="screen">
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
@@ -68,7 +59,7 @@
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
-    <!--node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/-->
+    <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
 
 
     <node pkg="nav_view" type="nav_view" respawn="false" />
