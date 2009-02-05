@@ -18,12 +18,3 @@
  	"MAKELIB = g++ -shared -o" \
  	"RANLIB = true"
  
-@@ -90,7 +90,7 @@
- 	$(MAKE) targets \
- 	"ANNLIB = libANN.a" \
- 	"C++ = g++" \
--	"CFLAGS = -O3" \
-+	"CFLAGS = -O3 -fPIC" \
- 	"MAKELIB = libtool -static -o " \
- 	"RANLIB = true"
- 
