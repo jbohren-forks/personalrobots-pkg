@@ -280,7 +280,7 @@ namespace estimation
   {
     // receive data
     boost::mutex::scoped_lock lock(vel_mutex_);
-    vel_desi_(1) = vel_.vx;   vel_desi_(2) = vel_.vw;
+    vel_desi_(1) = vel_.vel.vx;   vel_desi_(2) = vel_.ang_vel.vz;
 
     // active
     //if (!vel_active_) vel_active_ = true;

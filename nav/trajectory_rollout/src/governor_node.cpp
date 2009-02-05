@@ -57,7 +57,7 @@ namespace trajectory_rollout{
     //so we can draw the robot footprint to help with debugging
     advertise<std_msgs::Polyline2D>("robot_footprint", 10);
 
-    advertise<std_msgs::BaseVel>("cmd_vel", 1);
+    advertise<std_msgs::PoseDot>("cmd_vel", 1);
     subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
     subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
   }
@@ -192,15 +192,15 @@ namespace trajectory_rollout{
     }
 
     //drive the robot!
-    cmd_vel_msg_.vx = drive_cmds.getOrigin().getX();
-    cmd_vel_msg_.vy = drive_cmds.getOrigin().getY();
+    cmd_vel_msg_.vel.vx = drive_cmds.getOrigin().getX();
+    cmd_vel_msg_.vel.vy = drive_cmds.getOrigin().getY();
     drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-    cmd_vel_msg_.vw = yaw;
+    cmd_vel_msg_.ang_vel.vz = yaw;
 
 
     if(path.cost_ < 0)
       printf("Local Plan Failed :(\n");
-    printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
+    printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vel.vx, cmd_vel_msg_.vel.vy, cmd_vel_msg_.ang_vel.vz);
     publish("cmd_vel", cmd_vel_msg_);
   }
 

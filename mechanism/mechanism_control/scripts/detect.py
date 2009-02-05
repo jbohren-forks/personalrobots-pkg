@@ -38,7 +38,7 @@ def callback(data):
    
 
 def listener_with_user_data():
-    rospy.Subscriber("/mechanism_state", MechanismState, callback)
+    rospy.TopicSub("/mechanism_state", MechanismState, callback)
     rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 

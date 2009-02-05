@@ -3,14 +3,14 @@
 #include <math.h>
 #include "ros/node.h"
 #include "joy/Joy.h"
-#include "std_msgs/BaseVel.h"
+#include "std_msgs/PoseDot.h"
 
 using namespace ros;
 
 class TeleopBase : public Node
 {
    public:
-      std_msgs::BaseVel cmd, cmd_passthrough;
+      std_msgs::PoseDot cmd, cmd_passthrough;
       joy::Joy joy;
       double req_vx, req_vy, req_vw, max_vx, max_vy, max_vw;
       int axis_vx, axis_vy, axis_vw;
@@ -19,7 +19,7 @@ class TeleopBase : public Node
 
   TeleopBase(bool deadman_no_publish = false) : Node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3), deadman_no_publish_(deadman_no_publish)
       {
-         cmd.vx = cmd.vy = cmd.vw = 0;
+         cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
          if (!hasParam("max_vx") || !getParam("max_vx", max_vx))
             ROS_WARN("maximum linear velocity (max_vx) not set. Assuming 0.6");
          if (!hasParam("max_vy") || !getParam("max_vy", max_vy))
@@ -41,7 +41,7 @@ class TeleopBase : public Node
          printf("deadman_button: %d\n", deadman_button);
          printf("passthrough_button: %d\n", passthrough_button);
 
-         advertise<std_msgs::BaseVel>("cmd_vel", 1);
+         advertise<std_msgs::PoseDot>("cmd_vel", 1);
          subscribe("joy", joy, &TeleopBase::joy_cb, 1);
          subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb, 1);
          printf("done with ctor\n");
@@ -92,16 +92,16 @@ class TeleopBase : public Node
             else
             {
                // use commands from the local sticks
-               cmd.vx = req_vx;
-               cmd.vy = req_vy;
-               cmd.vw = req_vw;
+               cmd.vel.vx = req_vx;
+               cmd.vel.vy = req_vy;
+               cmd.ang_vel.vz = req_vw;
             }
-         fprintf(stderr,"teleop_base:: %f, %f, %f\n",cmd.vx,cmd.vy,cmd.vw);
+         fprintf(stderr,"teleop_base:: %f, %f, %f\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz);
          publish("cmd_vel", cmd);
          }
          else
          {
-           cmd.vx = cmd.vy = cmd.vw = 0;
+           cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
             if (!deadman_no_publish_)
            {
              publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled

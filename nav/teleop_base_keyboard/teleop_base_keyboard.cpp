@@ -55,7 +55,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- @b "cmd_vel"/BaseVel : velocity to the robot; sent on every keypress.
+- @b "cmd_vel"/PoseDot : velocity to the robot; sent on every keypress.
 
 <hr>
 
@@ -71,7 +71,7 @@ Publishes to (name / type):
 #include <stdlib.h>
 
 #include <ros/node.h>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 
 #define KEYCODE_I 0x69
 #define KEYCODE_J 0x6a
@@ -106,18 +106,18 @@ bool always_command = false;
 class TBK_Node : public ros::Node
 {
   private:
-    std_msgs::BaseVel cmdvel;
+    std_msgs::PoseDot cmdvel;
 
   public:
     TBK_Node() : ros::Node("tbk")
     {
-      advertise<std_msgs::BaseVel>("cmd_vel",1);
+      advertise<std_msgs::PoseDot>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();
     void stopRobot()
     {
-      cmdvel.vx = cmdvel.vw = 0.0;
+      cmdvel.vel.vx = cmdvel.ang_vel.vz = 0.0;
       publish("cmd_vel", cmdvel);
     }
 };
@@ -277,8 +277,8 @@ TBK_Node::keyboardLoop()
     }
     if (dirty == true)
     {
-      cmdvel.vx = speed * max_tv;
-      cmdvel.vw = turn * max_rv;
+      cmdvel.vel.vx = speed * max_tv;
+      cmdvel.ang_vel.vz = turn * max_rv;
 
       publish("cmd_vel",cmdvel);
     }

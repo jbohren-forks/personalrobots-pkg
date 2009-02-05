@@ -106,8 +106,8 @@ namespace trajectory_rollout {
 
   bool TrajectoryControllerROS::computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& global_plan, 
       const tf::Stamped<tf::Pose>& global_pose, 
-      const std_msgs::BaseVel& global_vel, 
-      std_msgs::BaseVel& cmd_vel,
+      const std_msgs::PoseDot& global_vel, 
+      std_msgs::PoseDot& cmd_vel,
       std::list<std_msgs::Pose2DFloat32>& localPlan,
       const std::vector<costmap_2d::Observation>& observations){
 
@@ -118,8 +118,8 @@ namespace trajectory_rollout {
     drive_cmds.frame_id_ = "base_link";
 
     tf::Stamped<tf::Pose> robot_vel;
-    btQuaternion qt(global_vel.vw, 0, 0);
-    robot_vel.setData(btTransform(qt, btVector3(global_vel.vx, global_vel.vy, 0)));
+    btQuaternion qt(global_vel.ang_vel.vz, 0, 0);
+    robot_vel.setData(btTransform(qt, btVector3(global_vel.vel.vx, global_vel.vel.vy, 0)));
     robot_vel.frame_id_ = "base_link";
     robot_vel.stamp_ = ros::Time();
 
@@ -156,12 +156,12 @@ namespace trajectory_rollout {
     */
 
     //pass along drive commands
-    cmd_vel.vx = drive_cmds.getOrigin().getX();
-    cmd_vel.vy = drive_cmds.getOrigin().getY();
+    cmd_vel.vel.vx = drive_cmds.getOrigin().getX();
+    cmd_vel.vel.vy = drive_cmds.getOrigin().getY();
     double uselessPitch, uselessRoll, yaw;
     drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
 
-    cmd_vel.vw = yaw;
+    cmd_vel.ang_vel.vz = yaw;
 
     //if we cannot move... tell someone
     if(path.cost_ < 0)

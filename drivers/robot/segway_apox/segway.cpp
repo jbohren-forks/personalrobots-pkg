@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/BaseVel.h"
+#include "std_msgs/PoseDot.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
@@ -33,7 +33,7 @@ class Segway : public Node
 
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
-    std_msgs::BaseVel cmd_vel;
+    std_msgs::PoseDot cmd_vel;
     std_msgs::RobotBase2DOdom odom;
     std_msgs::String op_mode;
 		rmp_frame_t rmp;
@@ -116,8 +116,8 @@ void Segway::cmd_vel_cb()
 {
   req_mutex.lock();
   req_time = ros::Time::now().toSec();
-  req_x_vel = cmd_vel.vx;
-	req_yaw_rate = cmd_vel.vw;
+  req_x_vel = cmd_vel.vel.vx;
+	req_yaw_rate = cmd_vel.ang_vel.vz;
 	req_mutex.unlock();
 }
 

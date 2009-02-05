@@ -43,7 +43,7 @@
 
 // messages
 #include "std_msgs/RobotBase2DOdom.h"
-#include "std_msgs/BaseVel.h"
+#include "std_msgs/PoseDot.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "robot_msgs/MechanismState.h"
 
@@ -84,7 +84,7 @@ private:
   robot_msgs::MechanismState      _mech;
 
   // estimated robot pose message to send
-  std_msgs::BaseVel               _vel; 
+  std_msgs::PoseDot               _vel; 
 
   // service messages
   pr2_mechanism_controllers::WheelRadiusMultiplier::Request _srv_snd, _srv_rsp;

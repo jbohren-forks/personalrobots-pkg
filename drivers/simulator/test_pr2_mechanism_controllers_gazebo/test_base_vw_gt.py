@@ -116,13 +116,13 @@ class BaseTest(unittest.TestCase):
     
     def test_base(self):
         print "LNK\n"
-        pub = rospy.Publisher("cmd_vel", BaseVel)
+        pub = rospy.Publisher("cmd_vel", PoseDot)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom",                   RobotBase2DOdom,      self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 60.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            pub.publish(BaseVel(0.0,0.0,TARGET_VW))
+            pub.publish(PoseDot(Velocity(0.0,0.0,0),AngularVelocity(0,0,TARGET_VW)))
             time.sleep(0.1)
         self.assert_(self.success)
         

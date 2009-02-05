@@ -51,7 +51,6 @@ EndeffectorConstraintController::EndeffectorConstraintController()
 : jnt_to_jac_solver_(NULL),
   jnt_to_pose_solver_(NULL),
   initialized_(false)
-  
 {
   constraint_jac_.setZero();
   constraint_wrench_.setZero();
@@ -100,26 +99,19 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
   node->param("constraint/threshold_x"  , threshold_x , 0.1 ) ; /// distance within the wall to apply constraint force
   node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
-  node->param("constraint/elbow_limit"  , elbow_limit , -0.523 ) ; /// elbow limit
   node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
   node->param("constraint/f_r_max"      , f_pose_max  , 20.0) ; /// max r force
-  node->param("constraint/f_limit_max"  , f_limit_max , 20.0) ; /// max r force
-  
+
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
   jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
   jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
   task_jac_ = Eigen::MatrixXf::Zero(6, num_joints);
   identity_ = Eigen::MatrixXf::Identity(6, 6);
-  identity_joint_ = Eigen::MatrixXf::Identity(num_joints, num_joints);
-  constraint_null_space_ = Eigen::MatrixXf::Zero(6, 6);
-  joint_constraint_force_= Eigen::MatrixXf::Zero(1, 1);
-  joint_constraint_jac_= Eigen::MatrixXf::Zero(num_joints, 1);
-  joint_constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints, num_joints);
+  constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints, num_joints);
   constraint_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
-  joint_constraint_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
   task_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
   task_wrench_ = Eigen::Matrix<float,6,1>::Zero();
 
@@ -176,9 +168,8 @@ void EndeffectorConstraintController::update()
 
   // convert the wrench into joint torques
 
-  joint_constraint_torq_ = joint_constraint_jac_.transpose()*joint_constraint_force_;
-  constraint_torq_ = joint_constraint_null_space_*task_jac_.transpose() * constraint_wrench_;
-  task_torq_ = joint_constraint_null_space_ * task_jac_.transpose()* constraint_null_space_ * task_wrench_;
+  constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
+  task_torq_ = task_jac_.transpose()* constraint_null_space_ * task_wrench_;
 
   //ROS_ERROR("%f %f %f", task_torq_(0),task_torq_(1),task_torq_(1));
   //ROS_ERROR("%.3f %.3f %.3f",constraint_null_space_(0,0), constraint_null_space_(1,1), constraint_null_space_(2,2));
@@ -187,7 +178,7 @@ void EndeffectorConstraintController::update()
 
   JntArray jnt_eff(kdl_chain_.getNrOfJoints());
   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
-    jnt_eff(i) = joint_constraint_torq_(i)+constraint_torq_(i) + task_torq_(i);
+    jnt_eff(i) = constraint_torq_(i) + task_torq_(i);
   chain_.setEfforts(jnt_eff, robot_->joint_states_);
 }
 
@@ -287,22 +278,6 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     f_yaw = 0;
   }
-  
-  //joint constraint force - stop the elbow from going past -30 degrees (.5235 rad)
-  JntArray jnt_pos(kdl_chain_.getNrOfJoints());
-  chain_.getPositions(robot_->joint_states_, jnt_pos);
-  
-  double joint_e = elbow_limit-jnt_pos(3);
-   
-  if(joint_e < 0)
-  {
-    joint_constraint_jac_(3)=1;
-    joint_constraint_force_(0)=joint_e*f_limit_max;
-  }
-  else
-  {
-    joint_constraint_force_(0)=0;
-  }
 
   constraint_force_(0) = f_x;
   constraint_force_(1) = f_r;
@@ -316,7 +291,6 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
   // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
   constraint_null_space_ = identity_ - constraint_jac_*constraint_jac_.transpose();
-  joint_constraint_null_space_ = identity_joint_ - joint_constraint_jac_*joint_constraint_jac_.transpose();
 }
 
 

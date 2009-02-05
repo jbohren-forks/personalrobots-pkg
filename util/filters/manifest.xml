@@ -9,10 +9,9 @@ implementations of commonly used filters.
 <license>BSD</license>
 <review status="API conditionally cleared" notes=""/>
 <url>http://pr.willowgarage.com</url>
-<depend package="misc_utils" />
 <depend package="loki" />
 <depend package="rosconsole" />
 <export>
-<cpp cflags="-I${prefix}/include"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
+<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
 </export>
 </package>

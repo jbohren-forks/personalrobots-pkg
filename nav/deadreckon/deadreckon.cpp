@@ -29,7 +29,7 @@
 
 #include <cmath>
 #include "ros/node.h"
-#include "std_msgs/BaseVel.h"
+#include "std_msgs/PoseDot.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "deadreckon/DriveDeadReckon.h"
 using namespace std;
@@ -38,7 +38,7 @@ using namespace ros;
 class DeadReckon : public ros::Node
 {
 public:
-  std_msgs::BaseVel velMsg;
+  std_msgs::PoseDot velMsg;
   std_msgs::RobotBase2DOdom odomMsg;
   double maxTV, maxRV, distEps, headEps, finalEps, tgtX, tgtY, tgtTh;
   enum
@@ -59,7 +59,7 @@ public:
     param("drFinalEps", finalEps, 0.05);
     advertiseService("DriveDeadReckon", &DeadReckon::dr_cb);
     subscribe("odom", odomMsg, &DeadReckon::odom_cb, 1);
-    advertise<std_msgs::BaseVel>("cmd_vel", 1);
+    advertise<std_msgs::PoseDot>("cmd_vel", 1);
   }
   bool dr_cb(deadreckon::DriveDeadReckon::Request  &req,
              deadreckon::DriveDeadReckon::Response &res)
@@ -93,7 +93,7 @@ public:
   }
   void odom_cb()
   {
-    velMsg.vx = velMsg.vw = 0;
+    velMsg.vel.vx = velMsg.ang_vel.vz = 0;
     double dx = tgtX - odomMsg.pos.x, dy = tgtY - odomMsg.pos.y;
     double distToGo = sqrt(dx*dx + dy*dy);
     double bearing = normalizeAngle(atan2(dy, dx) - odomMsg.pos.th);
@@ -107,8 +107,8 @@ public:
     switch(drState)
     {
       case DR_FACE_TGT:
-        velMsg.vx = 0;
-        velMsg.vw = saturate(bearing, -maxRV, maxRV);
+        velMsg.vel.vx = 0;
+        velMsg.ang_vel.vz = saturate(bearing, -maxRV, maxRV);
         if (fabs(bearing) < headEps)
         {
           drState = DR_DRIVE_TO_TGT;
@@ -116,15 +116,15 @@ public:
         }
         break;
       case DR_DRIVE_TO_TGT:
-        velMsg.vw = 0;
+        velMsg.ang_vel.vz = 0;
         if (!backup)
         {
-          velMsg.vx = saturate(distToGo, 0.2, maxTV);
+          velMsg.vel.vx = saturate(distToGo, 0.2, maxTV);
           if (distToGo > 0.3)
-            velMsg.vw = saturate(bearing, -maxRV, maxRV);
+            velMsg.ang_vel.vz = saturate(bearing, -maxRV, maxRV);
         }
         else
-          velMsg.vx = saturate(-distToGo, -0.2, -maxTV);
+          velMsg.vel.vx = saturate(-distToGo, -0.2, -maxTV);
         if (distToGo < distEps)
         {
           drState = DR_FACE_FINAL_HEADING;
@@ -132,8 +132,8 @@ public:
         }
         break;
       case DR_FACE_FINAL_HEADING:
-        velMsg.vx = 0;
-        velMsg.vw = saturate(finalBearing, -maxRV, maxRV);
+        velMsg.vel.vx = 0;
+        velMsg.ang_vel.vz = saturate(finalBearing, -maxRV, maxRV);
         if (fabs(finalBearing) < finalEps)
         {
           printf("going back to idle\n");
@@ -141,7 +141,7 @@ public:
         }
         break;
       case DR_IDLE:
-        velMsg.vx = velMsg.vw = 0;
+        velMsg.vel.vx = velMsg.ang_vel.vz = 0;
     }
     publish("cmd_vel", velMsg);
   }

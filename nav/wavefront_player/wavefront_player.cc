@@ -77,7 +77,7 @@ Subscribes to (name/type):
 - @b "scan"/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
-- @b "cmd_vel"/BaseVel : velocity commands to robot
+- @b "cmd_vel"/PoseDot : velocity commands to robot
 - @b "state"/Planner2DState : current planner state (e.g., goal reached, no
 path)
 - @b "gui_path"/Polyline2D : current global path (for visualization)
@@ -116,7 +116,7 @@ robot.
 // The messages that we'll use
 #include <robot_msgs/Planner2DState.h>
 #include <robot_msgs/Planner2DGoal.h>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
 #include <std_srvs/StaticMap.h>
@@ -368,7 +368,7 @@ WavefrontNode::WavefrontNode() :
   advertise<robot_msgs::Planner2DState>("state",1);
   advertise<std_msgs::Polyline2D>("gui_path",1);
   advertise<std_msgs::Polyline2D>("gui_laser",1);
-  advertise<std_msgs::BaseVel>("cmd_vel",1);
+  advertise<std_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
   scan_notifier = new tf::MessageNotifier<std_msgs::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
@@ -548,15 +548,15 @@ WavefrontNode::stopRobot()
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-std_msgs::BaseVel* cmdvel;
+std_msgs::PoseDot* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new std_msgs::BaseVel();
-  cmdvel->vx = vx;
-  cmdvel->vw = vth;
+    cmdvel = new std_msgs::PoseDot();
+  cmdvel->vel.vx = vx;
+  cmdvel->ang_vel.vz = vth;
   this->ros::Node::publish("cmd_vel", *cmdvel);
   if(vx || vy || vth)
     this->stopped = false;

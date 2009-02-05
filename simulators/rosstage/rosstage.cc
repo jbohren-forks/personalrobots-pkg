@@ -57,7 +57,7 @@ $ rosstage willow-erratic.world
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "cmd_vel"/BaseVel : velocity commands to differentially drive the 
+- @b "cmd_vel"/PoseDot : velocity commands to differentially drive the 
 position model.
 
 Publishes to (name / type):
@@ -87,7 +87,7 @@ Publishes to (name / type):
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 #include <roslib/Time.h>
 
 #include "tf/transform_broadcaster.h"
@@ -99,7 +99,7 @@ class StageNode : public ros::Node
 {
   private:
     // Messages that we'll send or receive
-    std_msgs::BaseVel velMsg;
+    std_msgs::PoseDot velMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::RobotBase2DOdom odomMsg;
     std_msgs::PoseWithRatesStamped groundTruthMsg;
@@ -169,7 +169,7 @@ StageNode::cmdvelReceived()
 {
   boost::mutex::scoped_lock lock(msg_lock);
 
-  this->positionmodel->SetSpeed(this->velMsg.vx, this->velMsg.vy, this->velMsg.vw);
+  this->positionmodel->SetSpeed(this->velMsg.vel.vx, this->velMsg.vel.vy, this->velMsg.ang_vel.vz);
   this->base_last_cmd = this->sim_time;
 }
 

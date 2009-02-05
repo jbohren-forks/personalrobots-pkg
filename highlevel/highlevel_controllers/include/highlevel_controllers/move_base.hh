@@ -54,8 +54,8 @@
 // Message structures used
 #include <robot_msgs/Planner2DState.h>
 #include <robot_msgs/Planner2DGoal.h>
+#include <std_msgs/PoseDot.h>
 #include <std_msgs/LaserScan.h>
-#include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PointCloud.h>
 

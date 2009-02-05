@@ -98,7 +98,7 @@ namespace ros {
       // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
-      std_msgs::BaseVel cmdVel; // Commanded velocities      
+      std_msgs::PoseDot cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -106,10 +106,10 @@ namespace ros {
         double uselessPitch, uselessRoll, yaw;
         global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
         ROS_DEBUG("Moving to desired goal orientation\n");
-        cmdVel.vx = 0;
-        cmdVel.vy = 0;
-        cmdVel.vw =  stateMsg.goal.th - yaw;
-        cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
+        cmdVel.vel.vx = 0;
+        cmdVel.vel.vy = 0;
+        cmdVel.ang_vel.vz =  stateMsg.goal.th - yaw;
+        cmdVel.ang_vel.vz = cmdVel.ang_vel.vz >= 0.0 ? cmdVel.ang_vel.vz + .4 : cmdVel.ang_vel.vz - .4;
       }
       else {
         // The plan is bogus if it is empty
@@ -119,10 +119,10 @@ namespace ros {
         }
 
         // Set current velocities from odometry
-        std_msgs::BaseVel currentVel;
-        currentVel.vx = base_odom_.vel.x;
-        currentVel.vy = base_odom_.vel.y;
-        currentVel.vw = base_odom_.vel.th;
+        std_msgs::PoseDot currentVel;
+        currentVel.vel.vx = base_odom_.vel.x;
+        currentVel.vel.vy = base_odom_.vel.y;
+        currentVel.ang_vel.vz = base_odom_.vel.th;
 
         ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
@@ -145,9 +145,9 @@ namespace ros {
 
         if(!planOk){
           // Zero out the velocities
-          cmdVel.vx = 0;
-          cmdVel.vy = 0;
-          cmdVel.vw = 0;
+          cmdVel.vel.vx = 0;
+          cmdVel.vel.vy = 0;
+          cmdVel.ang_vel.vz = 0;
         }
         else {
           publishPath(false, localPlan);

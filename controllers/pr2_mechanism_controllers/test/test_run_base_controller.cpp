@@ -35,7 +35,7 @@
 #include <libTF/libTF.h>
 #include <ros/node.h>
 #include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
 
@@ -131,29 +131,33 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  std_msgs::BaseVel cmd;
-  cmd.vx = 0;
-  cmd.vy = 0;
-  cmd.vw = 0;
+  std_msgs::PoseDot cmd;
+  cmd.vel.vx = 0;
+  cmd.vel.vy = 0;
+  cmd.vel.vz = 0;
+  cmd.ang_vel.vx = 0;
+  cmd.ang_vel.vy = 0;
+  cmd.ang_vel.vz = 0;
 
   double run_time = 0;
   bool run_time_set = false;
+  int file_num = 0;
 
   if(argc >= 2)
-    cmd.vx = atof(argv[1]);
+    cmd.vel.vx = atof(argv[1]);
 
   if(argc >= 3)
-    cmd.vy = atof(argv[2]);
+    cmd.vel.vy = atof(argv[2]);
 
   if(argc >= 4)
-    cmd.vw = atof(argv[3]);
+    cmd.ang_vel.vz = atof(argv[3]);
 
   if(argc ==5)
   { 
      run_time = atof(argv[4]);
      run_time_set = true;
   }
-  node->advertise<std_msgs::BaseVel>("cmd_vel",1);
+  node->advertise<std_msgs::PoseDot>("cmd_vel",1);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);
@@ -164,7 +168,7 @@ int main( int argc, char** argv )
   while(!done)
   {
      ros::Duration delta_time = ros::Time::now() - start_time;
-     cout << "Sending out command " << cmd.vx << " " << cmd.vy << " " << cmd.vw  << endl;
+     cout << "Sending out command " << cmd.vel.vx << " " << cmd.vel.vy << " " << cmd.ang_vel.vz  << endl;
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.vel.ang_vel);

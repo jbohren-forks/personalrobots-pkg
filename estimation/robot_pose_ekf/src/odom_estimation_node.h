@@ -44,7 +44,7 @@
 
 // messages
 #include "std_msgs/RobotBase2DOdom.h"
-#include "std_msgs/BaseVel.h"
+#include "std_msgs/PoseDot.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
@@ -90,7 +90,7 @@ private:
   OdomEstimation my_filter_;
 
   // messages to receive
-  std_msgs::BaseVel               vel_;  
+  std_msgs::PoseDot               vel_;  
   std_msgs::RobotBase2DOdom       odom_;  
   std_msgs::PoseWithRatesStamped  imu_;  
   robot_msgs::VOPose              vo_;  

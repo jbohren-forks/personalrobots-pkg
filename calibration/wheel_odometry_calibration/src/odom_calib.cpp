@@ -53,7 +53,7 @@ namespace calibration
       _completed(false)
   {
     // advertise the velocity commands
-    advertise<std_msgs::BaseVel>("cmd_vel",10);
+    advertise<std_msgs::PoseDot>("cmd_vel",10);
 
     // subscribe to messages
     subscribe("odom",            _odom, &odom_calib::odom_callback, 10);
@@ -134,7 +134,8 @@ namespace calibration
 
     // wait for sensor measurements from odom and imu
     while (!(_odom_active && _imu_active)){
-      _vel.vx = 0; _vel.vy = 0;  _vel.vw = 0;
+      _vel.vel.vx = 0; _vel.vel.vy = 0; _vel.vel.vz = 0;
+      _vel.ang_vel.vx = 0; _vel.ang_vel.vy = 0; _vel.ang_vel.vz = 0;
       publish("cmd_vel", _vel);
       if (!_odom_active)
 	ROS_INFO("Waiting for wheel odometry to start");
@@ -157,14 +158,14 @@ namespace calibration
       // still moving
       Duration duration = Time::now() - _time_begin;
       if (duration.toSec() <= _duration){
-	_vel.vx = _trans_vel;
-	_vel.vw = _rot_vel;
+	_vel.vel.vx = _trans_vel;
+	_vel.ang_vel.vz = _rot_vel;
       }
       // finished turning
       else{
 	_completed = true;
-	_vel.vx = 0;
-	_vel.vw = 0;
+	_vel.vel.vx = 0;
+	_vel.ang_vel.vz = 0;
       }
       publish("cmd_vel", _vel);
       usleep(50000);
@@ -176,8 +177,8 @@ namespace calibration
   {
     // give robot time to stop
     for (unsigned int i=0; i<10; i++){
-      _vel.vx = 0;
-      _vel.vw = 0;
+      _vel.vel.vx = 0;
+      _vel.ang_vel.vz = 0;
       publish("cmd_vel", _vel);
       usleep(50000);
     }

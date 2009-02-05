@@ -34,7 +34,7 @@
 
 
 #include <highlevel_controllers/move_base.hh>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
@@ -277,7 +277,7 @@ namespace ros {
       advertise<std_msgs::Polyline2D>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
-      advertise<std_msgs::BaseVel>("cmd_vel", 1);
+      advertise<std_msgs::PoseDot>("cmd_vel", 1);
 
       //Advertize message to publish local goal for head to track
       advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
@@ -660,7 +660,7 @@ namespace ros {
       // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
-      std_msgs::BaseVel cmdVel; // Commanded velocities      
+      std_msgs::PoseDot cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -668,10 +668,10 @@ namespace ros {
         double uselessPitch, uselessRoll, yaw;
         global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
         ROS_DEBUG("Moving to desired goal orientation\n");
-        cmdVel.vx = 0;
-        cmdVel.vy = 0;
-        cmdVel.vw =  stateMsg.goal.th - yaw;
-        cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
+        cmdVel.vel.vx = 0;
+        cmdVel.vel.vy = 0;
+        cmdVel.ang_vel.vz =  stateMsg.goal.th - yaw;
+        cmdVel.ang_vel.vz = cmdVel.ang_vel.vz >= 0.0 ? cmdVel.ang_vel.vz + .4 : cmdVel.ang_vel.vz - .4;
       }
       else {
         // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
@@ -697,10 +697,10 @@ namespace ros {
         }
 
         // Set current velocities from odometry
-        std_msgs::BaseVel currentVel;
-        currentVel.vx = base_odom_.vel.x;
-        currentVel.vy = base_odom_.vel.y;
-        currentVel.vw = base_odom_.vel.th;
+        std_msgs::PoseDot currentVel;
+        currentVel.vel.vx = base_odom_.vel.x;
+        currentVel.vel.vy = base_odom_.vel.y;
+        currentVel.ang_vel.vz = base_odom_.vel.th;
 
 	ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
@@ -723,9 +723,9 @@ namespace ros {
 
         if(!planOk){
           // Zero out the velocities
-          cmdVel.vx = 0;
-          cmdVel.vy = 0;
-          cmdVel.vw = 0;
+          cmdVel.vel.vx = 0;
+          cmdVel.vel.vy = 0;
+          cmdVel.ang_vel.vz = 0;
         }
         else {
           publishPath(false, localPlan);
@@ -885,10 +885,10 @@ namespace ros {
 
     void MoveBase::stopRobot(){
       ROS_DEBUG("Stopping the robot now!\n");
-      std_msgs::BaseVel cmdVel; // Commanded velocities
-      cmdVel.vx = 0.0;
-      cmdVel.vy = 0.0;
-      cmdVel.vw = 0.0;
+      std_msgs::PoseDot cmdVel; // Commanded velocities
+      cmdVel.vel.vx = 0.0;
+      cmdVel.vel.vy = 0.0;
+      cmdVel.ang_vel.vz = 0.0;
       publish("cmd_vel", cmdVel);
     }
 

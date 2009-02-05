@@ -34,7 +34,7 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <std_msgs/BaseVel.h>
+#include <std_msgs/PoseDot.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
 #include <iostream>
@@ -112,23 +112,26 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  std_msgs::BaseVel cmd;
-  cmd.vx = 0;
-  cmd.vy = 0;
-  cmd.vw = 0;
+  std_msgs::PoseDot cmd;
+  cmd.vel.vx = 0;
+  cmd.vel.vy = 0;
+  cmd.vel.vz = 0;
+  cmd.ang_vel.vx = 0;
+  cmd.ang_vel.vy = 0;
+  cmd.ang_vel.vz = 0;
 
   double run_time = 0;
   bool run_time_set = false;
   int file_num = 0;
 
   if(argc >= 2)
-    cmd.vx = atof(argv[1]);
+    cmd.vel.vx = atof(argv[1]);
 
   if(argc >= 3)
-    cmd.vy = atof(argv[2]);
+    cmd.vel.vy = atof(argv[2]);
 
   if(argc >= 4)
-    cmd.vw = atof(argv[3]);
+    cmd.ang_vel.vz = atof(argv[3]);
 
   if(argc >=5)
   { 
@@ -141,7 +144,7 @@ int main( int argc, char** argv )
      file_num = atoi(argv[5]);
   }
 
-  node->advertise<std_msgs::BaseVel>("cmd_vel",10);
+  node->advertise<std_msgs::PoseDot>("cmd_vel",10);
   sleep(1);
 
   libTF::Vector ang_rates;
