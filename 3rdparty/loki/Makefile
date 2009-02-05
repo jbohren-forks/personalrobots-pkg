@@ -10,7 +10,7 @@ build: SVN_UP_REVERT_PATCH loki
 
 .PHONY: loki
 loki: 
-	cd $(SVN_DIR) && make $(PARALLEL_JOBS)
+	cd $(SVN_DIR) && make $(ROS_PARALLEL_JOBS)
 
 clean:
 	-cd $(SVN_DIR) && make clean

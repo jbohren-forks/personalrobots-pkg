@@ -15,7 +15,7 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 installed: $(SVN_DIR) patched
 	mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
-	cd $(SVN_DIR)/build && make $(PARALLEL_JOBS) && make install
+	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
 	@echo "patch opencv.pc to pass -Wl,-rpath,-L{libdir}"
 	-mv $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.pc $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.bak
 	sed 's%Libs: -L$${libdir} -lcxcore%Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lcxcore%g' $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.bak > $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.pc

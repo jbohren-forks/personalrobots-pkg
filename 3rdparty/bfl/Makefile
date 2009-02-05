@@ -15,7 +15,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 installed: $(SVN_DIR) patched
 	mkdir -p $(SVN_DIR)/build-boost
 	cd $(SVN_DIR)/build-boost && $(CMAKE) $(CMAKE_ARGS) ..
-	cd $(SVN_DIR)/build-boost && make $(PARALLEL_JOBS) && make install
+	cd $(SVN_DIR)/build-boost && make $(ROS_PARALLEL_JOBS) && make install
 	touch installed
 
 clean:

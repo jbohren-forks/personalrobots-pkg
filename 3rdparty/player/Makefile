@@ -145,7 +145,7 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 installed: wiped $(SOURCE_DIR)/unpacked
 	mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
-	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) install
+	cd $(SOURCE_DIR)/build && make $(ROS_PARALLEL_JOBS) install
 	touch installed
 
 wiped: Makefile

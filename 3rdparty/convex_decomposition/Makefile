@@ -16,7 +16,7 @@ installed: wiped $(SOURCE_DIR)/unpacked
 	@echo "ROOT is: $(ROOT)"
 	-mkdir -p $(ROOT)
 	-mkdir -p $(ROOT)/bin
-	cd $(SOURCE_DIR) ; make $(PARALLEL_JOBS); make install
+	cd $(SOURCE_DIR) ; make $(ROS_PARALLEL_JOBS); make install
 	touch installed
 
 wiped: Makefile

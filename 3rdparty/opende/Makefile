@@ -25,7 +25,7 @@ ROOT = $(shell rospack find opende)/opende
 installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-new-trimesh --enable-shared $(CONFIGURE_FLAGS)
-	cd $(SVN_DIR) && make $(PARALLEL_JOBS)
+	cd $(SVN_DIR) && make $(ROS_PARALLEL_JOBS)
 	cd $(SVN_DIR) && make install
 	@echo "patch ode-config to pass -Wl,-rpath,-L{exec_prefix}/lib"
 	sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode/g' opende-svn/ode-config > opende/bin/ode-config

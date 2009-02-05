@@ -17,7 +17,7 @@ xenomai: changelist.txt linux
 	cd linux && \
 	cp ../config-$(LINUX_VERSION)-AOpen .config && \
 	make oldconfig && make prepare scripts
-	cd $(SVN_DIR)/build && make $(PARALLEL_JOBS) SUDO=false install
+	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) SUDO=false install
 	touch xenomai
 
 clean:
@@ -37,11 +37,11 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 download_kernel: $(LINUX_ARCHIVE)
 
 kernel: xenomai
-	make  $(PARALLEL_JOBS) -C linux
+	make  $(ROS_PARALLEL_JOBS) -C linux
 
 install_kernel: xenomai
-	sudo make  $(PARALLEL_JOBS) -C $(SVN_DIR)/build devices
-	sudo make  $(PARALLEL_JOBS) -C linux install modules_install
+	sudo make  $(ROS_PARALLEL_JOBS) -C $(SVN_DIR)/build devices
+	sudo make  $(ROS_PARALLEL_JOBS) -C linux install modules_install
 	cd /boot && sudo update-initramfs -c -k 2.6.24.3 && sudo update-grub
 
 $(LINUX_ARCHIVE): 

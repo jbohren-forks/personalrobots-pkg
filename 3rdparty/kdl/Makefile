@@ -13,7 +13,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 installed: wiped 
 	-mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
-	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) && make install
+	cd $(SOURCE_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
 	touch installed
 
 wiped: Makefile
