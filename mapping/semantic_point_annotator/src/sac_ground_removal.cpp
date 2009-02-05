@@ -49,6 +49,8 @@
 // Sample Consensus
 #include <sample_consensus/sac.h>
 #include <sample_consensus/msac.h>
+#include <sample_consensus/ransac.h>
+#include <sample_consensus/lmeds.h>
 #include <sample_consensus/sac_model_plane.h>
 
 // Cloud geometry
@@ -80,24 +82,17 @@ class GroundRemoval : public ros::Node
     double clusters_growing_tolerance_;
     int clusters_min_pts_;
 
-    // additional downsampling parameters
-    double cut_distance_;
-
-    vector<cloud_geometry::Leaf> leaves_;
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     GroundRemoval () : ros::Node ("sac_ground_removal")
     {
-      param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
-
       param ("~z_threshold", z_threshold_, 0.2);         // 20cm threshold for ground removal
 
       param ("~sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
-      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 4 cm threshold
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.035);   // 4 cm threshold
       param ("~sac_max_iterations", sac_max_iterations_, 100);            // maximum 500 iterations
       param ("~sac_probability", sac_probability_, 0.99);                 // 0.99 probability
 
-      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.2);   // 0.2 m
+      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.15);   // 0.2 m
       param ("~clusters_min_pts", clusters_min_pts_, 5);                         // 5 points
 
       string cloud_topic ("full_cloud");
@@ -132,13 +127,6 @@ class GroundRemoval : public ros::Node
       if (hasParam ("~sac_distance_threshold"))  getParam ("~sac_distance_threshold", sac_distance_threshold_);
       if (hasParam ("~sac_max_iterations")) getParam ("~sac_max_iterations", sac_max_iterations_);
       if (hasParam ("~sac_probability"))  getParam ("~sac_probability", sac_probability_);
-
-      if (hasParam ("~cut_distance"))
-      {
-        getParam ("~cut_distance", cut_distance_);
-        leaves_.resize (0);
-        ROS_INFO ("Done clearing leaves.");
-      }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,70 +195,6 @@ class GroundRemoval : public ros::Node
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
-      * \param points pointer to the point cloud message
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
-      * \param clusters the resultant clusters
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
-      */
-    void
-      findClusters (PointCloud *points, double tolerance, vector<vector<int> > &clusters,
-                    unsigned int min_pts_per_cluster = 1)
-    {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points);
-
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (points->pts.size (), false);
-
-      vector<int> nn_indices;
-      // Process all points in the indices vector
-      for (unsigned int i = 0; i < points->pts.size (); i++)
-      {
-        if (processed[i])
-          continue;
-
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
-        {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)
-          {
-            if (!processed.at (nn_indices[j]))
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-
-          sq_idx++;
-        }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
-        {
-          vector<int> r;
-          //r.indices = seed_queue;
-          r.resize (seed_queue.size ());
-          for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = seed_queue[j];
-          clusters.push_back (r);
-        }
-      }
-
-      // Destroy the tree
-      delete tree;
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       fitSACPlane (PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
     {
@@ -280,13 +204,13 @@ class GroundRemoval : public ros::Node
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (sac_max_iterations_);
-      sac->setProbability (sac_probability_);
+      sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, sac_distance_threshold_);
+//      sac->setMaxIterations (sac_max_iterations_);
+//      sac->setProbability (sac_probability_);
       model->setDataSet (points, *indices);
 
       // Search for the best plane
-      if (sac->computeModel ())
+      if (sac->computeModel (0))
       {
         // Obtain the inliers and the planar model coefficients
         if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
@@ -295,33 +219,6 @@ class GroundRemoval : public ros::Node
         coeff   = sac->computeCoefficients ();
 //        fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (),
 //                 coeff[0], coeff[1], coeff[2], coeff[3]);
-
-        // Project the inliers onto the model
-        //model->projectPointsInPlace (sac->getInliers (), coeff[1]);
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      fitSACPlane (PointCloud *points, vector<int> &inliers, vector<double> &coeff)
-    {
-      // Create and initialize the SAC model
-      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (sac_max_iterations_);
-      sac->setProbability (sac_probability_);
-      model->setDataSet (points);
-
-      // Search for the best plane
-      if (sac->computeModel ())
-      {
-        // Obtain the inliers and the planar model coefficients
-        if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
-          return;
-        inliers = sac->getInliers ();
-        coeff   = sac->computeCoefficients ();
-        fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (),
-                 coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model
         //model->projectPointsInPlace (sac->getInliers (), coeff[1]);
@@ -373,18 +270,9 @@ class GroundRemoval : public ros::Node
 
       ROS_INFO ("Number of possible ground indices: %d.", possible_ground_indices.size ());
 
-      PointCloud cloud_down;
-      Point leaf_width;
-      leaf_width.x = leaf_width.y = leaf_width.z = 0.1;
-      vector<cloud_geometry::Leaf> leaves;
-      cloud_geometry::downsamplePointCloud (&cloud_, &possible_ground_indices, cloud_down, leaf_width, leaves, -1);
-
-      ROS_INFO ("Number of points left after downsampling: %d.", cloud_down.pts.size ());
-
       vector<vector<int> > clusters;
       // Split the Z-parallel points into clusters
-      //findClusters (&cloud_, &possible_ground_indices, clusters_growing_tolerance_, clusters, clusters_min_pts_);
-      findClusters (&cloud_down, clusters_growing_tolerance_, clusters, clusters_min_pts_);
+      findClusters (&cloud_, &possible_ground_indices, clusters_growing_tolerance_, clusters, clusters_min_pts_);
 
       ROS_INFO ("Number of clusters: %d", clusters.size ());
 
@@ -400,34 +288,63 @@ class GroundRemoval : public ros::Node
 
       for (unsigned int cc = 0; cc < clusters.size (); cc++)
       {
-        ROS_INFO ("Cluster size: %d.", clusters[cc].size ());
+        //ROS_INFO ("Cluster size: %d.", clusters[cc].size ());
         vector<int> cluster_ground_inliers;
         // Find the dominant plane in the space of possible ground indices
-        fitSACPlane (&cloud_down, &clusters[cc], cluster_ground_inliers, ground_coeff);
+        fitSACPlane (&cloud_, &clusters[cc], cluster_ground_inliers, ground_coeff);
+
+/*
+        cerr << ground_coeff[0] << " " << ground_coeff[1] << " " << ground_coeff[2] << " " << ground_coeff[3] << endl;
+
+        if (ground_coeff[2] < 0)
+        {
+          ground_coeff[0] *= -1;
+          ground_coeff[1] *= -1;
+          ground_coeff[2] *= -1;
+          ground_coeff[3] *= -1;
+        }
 
         nr_p = 0;
-        cluster_ground_inliers.resize (possible_ground_indices.size ());
-        for (unsigned int i = 0; i < possible_ground_indices.size (); i++)
+        vector<int> remaining_cluster_ground_indices;
+        sort (clusters[cc].begin (), clusters[cc].end ());
+        sort (cluster_ground_inliers.begin (), cluster_ground_inliers.end ());
+        set_difference (clusters[cc].begin (), clusters[cc].end (), cluster_ground_inliers.begin (), cluster_ground_inliers.end (),
+                        inserter (remaining_cluster_ground_indices, remaining_cluster_ground_indices.begin ()));
+
+        for (unsigned int i = 0; i < remaining_cluster_ground_indices.size (); i++)
         {
-          double dist = cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts.at (possible_ground_indices[i]), ground_coeff);
-          if (dist < sac_distance_threshold_)
+          Point32 *pt = &cloud_.pts.at (remaining_cluster_ground_indices[i]);
+          double dist = ground_coeff[0] * pt->x + ground_coeff[1] * pt->y + ground_coeff[2] * pt->z + ground_coeff[3];
+          if (dist < 0)
           {
-            cluster_ground_inliers[nr_p] = possible_ground_indices[i];
-            nr_p++;
+            cluster_ground_inliers.push_back (remaining_cluster_ground_indices[i]);
           }
+
         }
-        cluster_ground_inliers.resize (nr_p);
+*/
+//        nr_p = 0;
+//        cluster_ground_inliers.resize (possible_ground_indices.size ());
+//        for (unsigned int i = 0; i < possible_ground_indices.size (); i++)
+//        {
+//          double dist = cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts.at (possible_ground_indices[i]), ground_coeff);
+//          if (dist < sac_distance_threshold_)
+//          {
+//            cluster_ground_inliers[nr_p] = possible_ground_indices[i];
+//            nr_p++;
+//          }
+//        }
+//        cluster_ground_inliers.resize (nr_p);
 
 //        float r = rand () / (RAND_MAX + 1.0);
 //        float g = rand () / (RAND_MAX + 1.0);
 //        float b = rand () / (RAND_MAX + 1.0);
 
-//        int cur_size = ground_inliers.size ();
-//        ground_inliers.resize (cur_size + cluster_ground_inliers.size ());
+        int cur_size = ground_inliers.size ();
+        ground_inliers.resize (cur_size + cluster_ground_inliers.size ());
         for (unsigned int i = 0; i < cluster_ground_inliers.size (); i++)
         {
-//          ground_inliers[cur_size + i] = cluster_ground_inliers[i];
-          ground_inliers.push_back (cluster_ground_inliers[i]);
+          ground_inliers[cur_size + i] = cluster_ground_inliers[i];
+//          ground_inliers.push_back (cluster_ground_inliers[i]);
 //          cloud_noground_.pts[nr_p].x = cloud_.pts.at (ground_inliers[i]).x;
 //          cloud_noground_.pts[nr_p].y = cloud_.pts.at (ground_inliers[i]).y;
 //          cloud_noground_.pts[nr_p].z = cloud_.pts.at (ground_inliers[i]).z;
