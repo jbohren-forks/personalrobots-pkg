@@ -136,6 +136,9 @@ namespace estimation
            << people_poses_.front().goal.x << " "
            << people_poses_.front().goal.y << " "
            << people_poses_.front().goal.th << endl;
+      cout << "distance between them "<< sqrt(pow(people_pos_.goal.x-people_poses_.front().goal.x,2) -
+                                              pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) << endl;
+
 
       // send goal to planner
       if ((Time::now() - time_last_publish_).toSec() > 1/publish_rate_){
