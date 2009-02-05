@@ -66,10 +66,10 @@ public:
 private:
   ros::Node* node_;
   unsigned int  num_joints_, num_segments_;
-  double last_time_, twist_to_wrench_trans_, twist_to_wrench_rot_;
+  double last_time_, ff_trans_, ff_rot_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid> pid_controller_;     
+  std::vector<control_toolbox::Pid>fb_pid_controller_;     
 
   // robot description
   mechanism::RobotState *robot_state_;
