@@ -119,7 +119,14 @@ class BagToPcd: public ros::Node
       pin.header.frame_id = "laser_tilt_mount_link";
       pin.point.x = pin.point.y = pin.point.z = 0.0;
 
-      tf_.transformPoint ("base_link", pin, pout);
+      try
+      {
+        tf_.transformPoint (cloud_.header.frame_id, pin, pout);
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud_.header.frame_id.c_str (), pin.header.frame_id.c_str ());
+      }
 
       fprintf (stderr, "Received %d data points. Viewpoint is <%.3f, %.3f, %.3f>\n", cloud_.pts.size (), pout.point.x, pout.point.y, pout.point.z);
 
