@@ -104,8 +104,12 @@ int main( int argc, char** argv )
   cmd.points[2].time = 0.0;
 
   node->advertise<robot_msgs::JointTraj>("arm_trajectory_command",1);
+  node->advertise<robot_msgs::JointTraj>("left_arm_trajectory_controller/arm_trajectory_command",1);
+  node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_controller/arm_trajectory_command",1);
   sleep(1);
   node->publish("arm_trajectory_command",cmd);
+  node->publish("left_arm_trajectory_controller/arm_trajectory_command",cmd);
+  node->publish("right_arm_trajectory_controller/arm_trajectory_command",cmd);
   sleep(4);
 
   ros::Time start_time = ros::Time::now();
