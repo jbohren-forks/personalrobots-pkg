@@ -32,7 +32,6 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "image_msgs/CvBridge.h"
-#include "image_msgs/StereoInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "checkerboard_detector/ObjectDetection.h"

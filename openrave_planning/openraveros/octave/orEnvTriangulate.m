@@ -30,7 +30,7 @@ if(~isempty(res))
     tripoints = reshape(res.points,[3 numpoints/3]);
     
     numinds = length(res.indices);
-    triindices = reshape(res.indices,[3 numinds/3]);
+    triindices = reshape(res.indices,[3 numinds/3])+1;
 else
     tripoints = [];
     triindices = [];
