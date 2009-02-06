@@ -5,13 +5,13 @@
 #include "katana/katana.h"
 #include "ros/common.h"
 #include "ros/node.h"
-#include "std_srvs/StringString.h"
+#include "deprecated_srvs/StringString.h"
 #include "katana/StringArmCSpace.h"
 #include "katana/ArmCSpaceSeqString.h"
 #include "katana/ArmCSpaceString.h"
 #include "katana/ArmCSpaceSeqString.h"
-#include "std_srvs/UInt32String.h"
-#include "std_srvs/Float32String.h"
+#include "katana/UInt32String.h"
+#include "katana/Float32String.h"
 #include "katana/KatanaIK.h"
 #include "katana/KatanaPose.h"
 
@@ -100,8 +100,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
 
-    bool calibrateSrv(std_srvs::StringString::Request &req,
-                   std_srvs::StringString::Response &res)
+    bool calibrateSrv(deprecated_srvs::StringString::Request &req,
+                   deprecated_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->calibrate();
@@ -115,8 +115,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
 
-    bool move_to_upright(std_srvs::StringString::Request &req,
-                   std_srvs::StringString::Response &res)
+    bool move_to_upright(deprecated_srvs::StringString::Request &req,
+                   deprecated_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->goto_upright();
@@ -130,8 +130,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
     
-    bool move_for_camera(std_srvs::StringString::Request &req,
-                   std_srvs::StringString::Response &res)
+    bool move_for_camera(deprecated_srvs::StringString::Request &req,
+                   deprecated_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->move_for_camera();
@@ -145,8 +145,8 @@ class KatanaServer : public ros::Node
       return(success);
     }
     
-    bool move_back_to_upright(std_srvs::StringString::Request &req,
-                   std_srvs::StringString::Response &res)
+    bool move_back_to_upright(deprecated_srvs::StringString::Request &req,
+                   deprecated_srvs::StringString::Response &res)
     {
       katana->allow_crash_limits(true);
       bool success = katana->move_back_to_upright();
@@ -187,8 +187,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
     
-    bool gripperCmd(std_srvs::UInt32String::Request &req,
-                   std_srvs::UInt32String::Response &res)
+    bool gripperCmd(katana::UInt32String::Request &req,
+                   katana::UInt32String::Response &res)
     {
       bool success = katana->gripper_fullstop(req.value);
       if (success) {
@@ -201,8 +201,8 @@ class KatanaServer : public ros::Node
       return (success);
     }
 
-    bool gripperPositionCmd(std_srvs::Float32String::Request &req,
-                       std_srvs::Float32String::Response &res)
+    bool gripperPositionCmd(katana::Float32String::Request &req,
+                       katana::Float32String::Response &res)
     {
       bool success = katana->move_gripper(req.value);
       if (success) {
