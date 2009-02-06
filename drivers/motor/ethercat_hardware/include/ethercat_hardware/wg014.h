@@ -41,6 +41,7 @@ class WG014 : public EthercatDevice
 {
 public:
   WG014() : EthercatDevice() {}
+  ~WG014();
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer) {}

@@ -99,87 +99,80 @@ void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void
   data_[length] = checksum;
 }
 
+WG0X::~WG0X()
+{
+  delete sh_->get_fmmu_config();
+  delete sh_->get_pd_config();
+}
+
 EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh_ = sh;
   bool isWG06 = sh->get_product_code() == WG06::PRODUCT_CODE;
 
-  EC_FMMU *statusFMMU = new EC_FMMU(startAddress, // Logical start address
-                                    sizeof(WG0XStatus), // Logical length
-                                    0x00, // Logical StartBit
-                                    0x07, // Logical EndBit
-                                    STATUS_PHY_ADDR, // Physical Start address
-                                    0x00, // Physical StartBit
-                                    true, // Read Enable
-                                    false, // Write Enable
-                                    true); // Enable
+  EtherCAT_FMMU_Config *fmmu = new EtherCAT_FMMU_Config(isWG06 ? 3 : 2);
+  (*fmmu)[0] = EC_FMMU(startAddress, // Logical start address
+                       sizeof(WG0XStatus), // Logical length
+                       0x00, // Logical StartBit
+                       0x07, // Logical EndBit
+                       STATUS_PHY_ADDR, // Physical Start address
+                       0x00, // Physical StartBit
+                       true, // Read Enable
+                       false, // Write Enable
+                       true); // Enable
 
   startAddress += sizeof(WG0XStatus);
 
-  EC_FMMU *commandFMMU = new EC_FMMU(startAddress, // Logical start address
-                                    sizeof(WG0XCommand),// Logical length
-                                    0x00, // Logical StartBit
-                                    0x07, // Logical EndBit
-                                    COMMAND_PHY_ADDR, // Physical Start address
-                                    0x00, // Physical StartBit
-                                    false, // Read Enable
-                                    true, // Write Enable
-                                    true); // Enable
+  (*fmmu)[1] = EC_FMMU(startAddress, // Logical start address
+                       sizeof(WG0XCommand),// Logical length
+                       0x00, // Logical StartBit
+                       0x07, // Logical EndBit
+                       COMMAND_PHY_ADDR, // Physical Start address
+                       0x00, // Physical StartBit
+                       false, // Read Enable
+                       true, // Write Enable
+                       true); // Enable
 
   startAddress += sizeof(WG0XCommand);
 
-  EtherCAT_FMMU_Config *fmmu;
   if (isWG06)
   {
-    EC_FMMU *pressureFMMU = new EC_FMMU(startAddress, // Logical start address
-                                      sizeof(WG06Pressure), // Logical length
-                                      0x00, // Logical StartBit
-                                      0x07, // Logical EndBit
-                                      PRESSURE_PHY_ADDR, // Physical Start address
-                                      0x00, // Physical StartBit
-                                      true, // Read Enable
-                                      false, // Write Enable
-                                      true); // Enable
+    (*fmmu)[2] = EC_FMMU(startAddress, // Logical start address
+                         sizeof(WG06Pressure), // Logical length
+                         0x00, // Logical StartBit
+                         0x07, // Logical EndBit
+                         PRESSURE_PHY_ADDR, // Physical Start address
+                         0x00, // Physical StartBit
+                         true, // Read Enable
+                         false, // Write Enable
+                         true); // Enable
 
     startAddress += sizeof(WG06Pressure);
-
-    fmmu = new EtherCAT_FMMU_Config(3);
-    (*fmmu)[2] = *pressureFMMU;
   }
-  else
-  {
-    fmmu = new EtherCAT_FMMU_Config(2);
-  }
-  (*fmmu)[0] = *statusFMMU;
-  (*fmmu)[1] = *commandFMMU;
   sh->set_fmmu_config(fmmu);
 
-
-  EtherCAT_PD_Config *pd = isWG06 ? new EtherCAT_PD_Config(5) : new EtherCAT_PD_Config(4);
+  EtherCAT_PD_Config *pd = new EtherCAT_PD_Config(isWG06 ? 5 : 4);
 
   // Sync managers
-  EC_SyncMan *commandSM = new EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG0XCommand), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
-  commandSM->ChannelEnable = true;
-  commandSM->ALEventEnable = true;
+  (*pd)[0] = EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG0XCommand), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
+  (*pd)[0].ChannelEnable = true;
+  (*pd)[0].ALEventEnable = true;
 
-  EC_SyncMan *statusSM = new EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG0XStatus));
-  statusSM->ChannelEnable = true;
+  (*pd)[1] = EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG0XStatus));
+  (*pd)[1].ChannelEnable = true;
 
-  EC_SyncMan *pressureSM = new EC_SyncMan(PRESSURE_PHY_ADDR, sizeof(WG06Pressure));
-  pressureSM->ChannelEnable = true;
+  (*pd)[2] = EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
+  (*pd)[2].ChannelEnable = true;
+  (*pd)[2].ALEventEnable = true;
 
-  EC_SyncMan *mbxCommandSM = new EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
-  mbxCommandSM->ChannelEnable = true;
-  mbxCommandSM->ALEventEnable = true;
+  (*pd)[3] = EC_SyncMan(MBX_STATUS_PHY_ADDR, MBX_STATUS_SIZE, EC_QUEUED);
+  (*pd)[3].ChannelEnable = true;
 
-  EC_SyncMan *mbxStatusSM = new EC_SyncMan(MBX_STATUS_PHY_ADDR, MBX_STATUS_SIZE, EC_QUEUED);
-  mbxStatusSM->ChannelEnable = true;
-
-  (*pd)[0] = *commandSM;
-  (*pd)[1] = *statusSM;
-  (*pd)[2] = *mbxCommandSM;
-  (*pd)[3] = *mbxStatusSM;
-  if (isWG06) (*pd)[4] = *pressureSM;
+  if (isWG06)
+  {
+    (*pd)[4] = EC_SyncMan(PRESSURE_PHY_ADDR, sizeof(WG06Pressure));
+    (*pd)[4].ChannelEnable = true;
+  }
 
   sh->set_pd_config(pd);
 

@@ -202,12 +202,20 @@ public:
   {
     strings_.reserve(10);
     values_.reserve(10);
-    max_current_error_ = 0;
-    max_voltage_error_ = 0;
-    consecutive_current_errors_ = 0;
-    consecutive_voltage_errors_ = 0;
     reason_ = "OK";
+
+    voltage_error_ = max_voltage_error_ = 0;
+    current_error_ = max_current_error_ = 0;
+    voltage_estimate_ = 0;
+    consecutive_voltage_errors_ = 0;
+    consecutive_current_errors_ = 0;
+    last_timestamp_ = 0;
+    last_last_timestamp_ = 0;
+    drops_ = 0;
+    consecutive_drops_ = 0;
+    max_consecutive_drops_ = 0;
   }
+  ~WG0X();
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool);
@@ -316,7 +324,7 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), publisher_("pressure", 1) {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), last_pressure_time_(0), publisher_("pressure", 1) {}
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   enum
   {

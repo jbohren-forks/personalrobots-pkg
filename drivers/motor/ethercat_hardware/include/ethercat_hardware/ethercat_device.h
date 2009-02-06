@@ -56,6 +56,7 @@ public:
   EthercatDevice(bool has_actuator = false, int command_size = 0, int status_size = 0) :
     has_actuator_(has_actuator), command_size_(command_size), status_size_(status_size) {}
 
+  virtual ~EthercatDevice() {}
 
   virtual EthercatDevice *configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
   virtual int initialize(Actuator *, bool allow_unprogrammed=0) = 0;

@@ -40,6 +40,12 @@
 EthercatHardware::EthercatHardware() :
   hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
+  for (uint32_t i = 0; i < sizeof(diagnostics_.iteration_)/sizeof(diagnostics_.iteration_[0]); ++i)
+  {
+    diagnostics_.iteration_[i].roundtrip_ = 0;
+  }
+  diagnostics_.max_roundtrip_ = 0;
+  diagnostics_.txandrx_errors_ = 0;
 }
 
 EthercatHardware::~EthercatHardware()
@@ -48,9 +54,15 @@ EthercatHardware::~EthercatHardware()
   {
     close_socket(ni_);
   }
+  if (slaves_)
+  {
+    for (uint32_t i = 0; i < num_slaves_; ++i)
+      delete slaves_[i];
+    delete[] slaves_;
+  }
   if (buffers_)
   {
-    delete buffers_;
+    delete[] buffers_;
   }
   if (hw_)
   {
@@ -69,11 +81,13 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     ROS_BREAK();
   }
 
+#if 0
   if (set_socket_timeout(ni_, 1000*500))
   {
     ROS_FATAL("Unable to change socket timeout");
     ROS_BREAK();
   }
+#endif
 
   // Initialize Application Layer (AL)
   EtherCAT_DataLinkLayer::instance()->attach(ni_);
@@ -90,11 +104,13 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     ROS_BREAK();
   }
 
+#if 0
   if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 100)))
   {
     ROS_FATAL("Unable to change socket timeout");
     ROS_BREAK();
   }
+#endif
 
   // Initialize Master
   if ((em_ = EtherCAT_Master::instance()) == NULL)
@@ -140,7 +156,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   last_buffer_ = buffers_ + buffer_size_;
 
   // Make sure motors are disabled
-  memset(current_buffer_, 0, buffer_size_);
+  memset(current_buffer_, 0, 2 * buffer_size_);
   em_->txandrx_PD(buffer_size_, current_buffer_);
 
   // Create HardwareInterface
@@ -246,11 +262,11 @@ void EthercatHardware::publishDiagnostics()
     total += diagnostics_.iteration_[i].roundtrip_;
     diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
   }
-  v.value = total / 1000.0;
+  v.value = total / 1000.0 * 1e6;
   v.label = "Average roundtrip time";
   values_.push_back(v);
 
-  v.value = diagnostics_.max_roundtrip_;
+  v.value = diagnostics_.max_roundtrip_ * 1e6;
   v.label = "Maximum roundtrip time";
   values_.push_back(v);
 

@@ -39,6 +39,12 @@
 
 static bool reg = DeviceFactory::Instance().Register(WG014::PRODUCT_CODE, deviceCreator<WG014>);
 
+WG014::~WG014()
+{
+  delete sh_->get_fmmu_config();
+  delete sh_->get_pd_config();
+}
+
 EthercatDevice *WG014::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh_ = sh;
