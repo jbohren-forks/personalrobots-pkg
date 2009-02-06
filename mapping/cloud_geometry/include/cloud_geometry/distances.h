@@ -100,6 +100,32 @@ namespace cloud_geometry
 
     void lineToLineSegment (std::vector<double> line_a, std::vector<double> line_b, std::vector<double> &segment);
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Creates a parallel 2D line at a given distance in an X-Y plane (Z is ignored)
+      * \param line_a the 3D coefficients of the input line (point, direction)
+      * \param line_b the 3D coefficients of the resultant parallel line (point, direction), with point.z copied and
+      *        direction.z = 0
+      * \param distance the desired distance between the lines
+      */
+    inline void
+      createParallel2DLine (std::vector<double> line_a, std::vector<double> &line_b, double distance)
+    {
+      line_b.resize (6);
+      // The direction of the resultant line is equal to the first
+      line_b[3] = line_a[3];
+      line_b[4] = line_a[4];
+      line_b[5] = line_a[5];
+
+      // Create a point on an orthogonal line, at the given distance
+      double angle = atan2 (line_a[3], -line_a[4]);
+      if (angle < 0)
+        angle += 2 * M_PI;
+
+      line_b[0] = line_a[0] + distance * cos (angle);
+      line_b[1] = line_a[1] + distance * sin (angle);
+      line_b[2] = line_a[2];
+    }
+
   }
 }
 
