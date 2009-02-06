@@ -457,6 +457,14 @@
     </map>
 
 
+    <joint name="${side}_gripper_tool_joint" type="fixed" />
+    <link name="${side}_gripper_tool_frame">
+      <parent name="${side}_gripper_palm_link" />
+      <joint name="${side}_gripper_tool_joint" />
+      <origin xyz="0.18 0 0" rpy="0 0 0" />
+    </link>
+
+
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
     <!-- sin(angle*reduction) = motor_encoder * A + B -->
