@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(tinyxml)
-include_directories(${tinyxml_SOURCE_DIR}/include/tinyxml-2.5.3)
+include_directories(${tinyxml_SOURCE_DIR}/include/tinyxml)
 set(LIBRARY_OUTPUT_PATH ${tinyxml_SOURCE_DIR})
 rospack_add_library(tinyxml tinystr.cpp tinyxml.cpp tinyxmlerror.cpp tinyxmlparser.cpp)
