@@ -82,22 +82,32 @@ private:
   Eigen::Matrix<float,6,5> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
   Eigen::Matrix<float,5,1> constraint_force_;
+  // joint constraint
+  Eigen::MatrixXf joint_constraint_force_;
+  Eigen::MatrixXf joint_constraint_jac_;
+  Eigen::MatrixXf joint_constraint_null_space_;
+  
   Eigen::MatrixXf task_jac_;
   Eigen::MatrixXf identity_;
+  Eigen::MatrixXf identity_joint_; 
   Eigen::MatrixXf constraint_null_space_;
   Eigen::MatrixXf constraint_torq_;
+  Eigen::MatrixXf joint_constraint_torq_;
   Eigen::MatrixXf task_torq_;
   KDL::Frame endeffector_frame_;
   KDL::Frame desired_frame_;
 
   // some parameters to define the constraint
   double wall_x;
+  double elbow_limit;
   double threshold_x;
   double wall_r;
   double threshold_r;
   double f_x_max;
   double f_r_max;
   double f_pose_max;
+  double f_limit_max; 
+  
   double desired_roll_;
   double desired_pitch_;
   double desired_yaw_;
