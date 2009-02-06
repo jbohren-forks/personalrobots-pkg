@@ -1,3 +1,4 @@
+
 // Software License Agreement (BSD License)
 // Copyright (c) 2008, Rosen Diankov (rdiankov@cs.cmu.edu)
 // Redistribution and use in source and binary forms, with or without
@@ -280,7 +281,7 @@ private:
             }
         }
         catch(tf::TransformException& ex) {
-            ROS_WARN("failed to get tf frame");
+            ROS_WARN("failed to get tf frame: %s", ex.what());
             return;
         }
 
@@ -325,7 +326,7 @@ private:
             }
         }
         catch(tf::TransformException& ex) {
-            ROS_WARN("failed to get tf frame");
+            ROS_WARN("failed to get tf frame: %s", ex.what());
             return;
         }
         
