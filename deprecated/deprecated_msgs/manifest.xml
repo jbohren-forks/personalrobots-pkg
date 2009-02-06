@@ -1,0 +1,18 @@
+<package>
+  <description brief="ROS Messages slated for deletion">
+
+These messages have been selected for future deletion.  but need time to be phased out.  
+Do not use these messages!
+  </description>
+  <author>Tully Foote/tfoote@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="deprecated" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/deprecated_msgs</url>
+  <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
+  <depend package="roslib"/>
+  <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+

@@ -1,0 +1,20 @@
+<package>
+  <description brief="Deprecated ROS Services">
+
+ROS services which have been selected for deletion but need time to be 
+phased out.
+
+DO NOT USE THESE MESSAGES!
+  </description>
+  <author>Tully Foote/tfoote@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="deprecated" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/deprecated_srvs</url>
+  <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
+  <depend package="roslib"/>
+  <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+</package>
+
