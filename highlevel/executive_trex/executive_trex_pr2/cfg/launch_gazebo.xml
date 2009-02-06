@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-
+    <param name="use_sim_time" type="boolean" value="true" />
     <include file="$(find pr2_gazebo)/pr2_simple_trajectory.launch"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
@@ -51,11 +51,16 @@
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
-    <node pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false" output="screen">
+
+    <node name="right_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
+      <param name="controller_frequency" value="0.6"/>
+      <param name="planner_frequency" value="5.0"/>
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
-    <node pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
+    <node name="left_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
+      <param name="controller_frequency" value="0.6"/>
+      <param name="planner_frequency" value="5.0"/>
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
