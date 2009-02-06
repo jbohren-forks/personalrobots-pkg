@@ -418,6 +418,10 @@ class CollisionMapperBuffer : public ros::Node
         ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
         return (false);
       }
+      catch (tf::ExtrapolationException)
+      {
+	ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
+      }
 
       center.x = tgt.point.x; center.y = tgt.point.y; center.z = tgt.point.z;
 
@@ -430,6 +434,10 @@ class CollisionMapperBuffer : public ros::Node
       {
         ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
         return (false);
+      }
+      catch (tf::ExtrapolationException)
+      {
+	ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
       }
 
       center.x += tgt.point.x; center.y += tgt.point.y; center.z += tgt.point.z;
@@ -463,6 +471,10 @@ class CollisionMapperBuffer : public ros::Node
       {
         ROS_ERROR ("TF not running or wrong TF end_effector_frame specified!");
         return;
+      }
+      catch (tf::ExtrapolationException)
+      {
+	ROS_ERROR("Extrapolation exception from %s to %s.", target_frame.c_str(), points->header.frame_id.c_str());
       }
 
       vector<int> object_indices (points_tgt.pts.size ());
