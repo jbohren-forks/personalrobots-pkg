@@ -174,8 +174,10 @@ public:
   Fl_Light_Button *x3d_button;
   static Fl_Menu_Item menu_Stereo[];
   Fl_Window *video_window;
-  static Fl_Menu_Item menu_Size[];
-  static Fl_Menu_Item menu_Rate[];
+  Fl_Choice *video_size;
+  static Fl_Menu_Item menu_video_size[];
+  Fl_Choice *video_rate;
+  static Fl_Menu_Item menu_video_rate[];
   Fl_Light_Button *video_button;
   Fl_Choice *cam_select;
   Fl_Light_Button *color_button;

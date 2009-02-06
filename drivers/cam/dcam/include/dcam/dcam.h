@@ -86,6 +86,17 @@ typedef enum {
 #endif
 
 
+// Frame size
+typedef enum { 
+  SIZE_640x480 = 0, 
+  SIZE_320x240,
+  SIZE_1280x960,
+  SIZE_512x384,
+  SIZE_1024x768
+} size_coding_t;
+
+
+
 // STOC modes
 typedef enum { 
   PROC_MODE_OFF = 0, 
@@ -127,7 +138,11 @@ typedef enum {
 #define VIDERE_CAM_PROC_THRESH_OFFSET         (11*4)
 
 // define some Videre modes
+#define VIDERE_STEREO_1280x960 DC1394_VIDEO_MODE_1280x960_YUV422
+#define VIDERE_STEREO_1024x768 DC1394_VIDEO_MODE_1024x768_YUV422
 #define VIDERE_STEREO_640x480 DC1394_VIDEO_MODE_640x480_YUV422
+#define VIDERE_STEREO_512x384 DC1394_VIDEO_MODE_512x384_YUV422
+#define VIDERE_STEREO_320x240 DC1394_VIDEO_MODE_320x240_YUV422
 
 
 using namespace cam;

@@ -100,6 +100,7 @@ bool isTracking;		// true if we want to track the chessboard live
 bool isExit;			// true if we want to exit
 dc1394video_mode_t videoMode;	// current video mode
 dc1394framerate_t videoRate;	// current video rate
+size_coding_t videoSize;	// current video size
 
 // GUI stuff
 stereogui *stg;			// GUI object
@@ -296,8 +297,9 @@ main(int argc, char **argv)	// no arguments
   dev->setRangeMin(0.5);	// in meters
 
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
-  videoMode = VIDERE_STEREO_640x480;
   videoRate = DC1394_FRAMERATE_30;
+  videoSize = SIZE_640x480;
+  stg->video_size->value(1);	// set to 640x480
 
   while (fltk_check() && !isExit) // process GUI commands, serve video
     {
@@ -308,21 +310,52 @@ main(int argc, char **argv)	// no arguments
 	  if (dev)
 	    {
 	      debug_message("[Dcam] Setting format, frame rate and PROC mode");
-	      dev->setFormat(videoMode, videoRate);
-	      if (dev->isSTOC)
-		stg->stoc_button->value(true); // turn it on
-	      dev->setProcMode(pmode);
-	      debug_message("[Dcam] Starting device");
-	      dev->start();
-	      dev->setTextureThresh(sp_tthresh);
-	      dev->setUniqueThresh(sp_uthresh);
-	      dev->setSpeckleSize(sp_ssize);
-	      dev->setSpeckleDiff(sp_sdiff);
-	      dev->setCorrsize(sp_corr);
-	      // set auto exp, auto gain max
-	      dev->setMaxAutoVals(100,48);
+	      if (dev->isVidereStereo)
+		{
+		  videoMode = VIDERE_STEREO_640x480;
+		  switch(videoSize)
+		    {
+		    case SIZE_640x480:
+		      videoMode = VIDERE_STEREO_640x480;
+		      break;
+		    case SIZE_320x240:
+		      videoMode = VIDERE_STEREO_320x240;
+		      break;
+		    case SIZE_1280x960:
+		      videoMode = VIDERE_STEREO_1280x960;
+		      break;
+		    }
+		}
 
-	      isVideo = true;	// needed to keep thread running
+
+	      try 
+		{ 
+		  dev->setFormat(videoMode, videoRate); 
+		  if (dev->isSTOC)
+		    stg->stoc_button->value(true); // turn it on
+		  dev->setProcMode(pmode);
+		  debug_message("[Dcam] Starting device");
+		  dev->start();
+		  dev->setTextureThresh(sp_tthresh);
+		  dev->setUniqueThresh(sp_uthresh);
+		  dev->setSpeckleSize(sp_ssize);
+		  dev->setSpeckleDiff(sp_sdiff);
+		  dev->setCorrsize(sp_corr);
+		  // set auto exp, auto gain max
+		  dev->setMaxAutoVals(100,48);
+		  dev->setGain(0,true);
+		  dev->setExposure(0,true);
+		  dev->setBrightness(0,true);
+
+		  isVideo = true;	// needed to keep thread running
+		}
+
+	      catch (dcam::DcamException &err)
+		{ 
+		  debug_message("[Dcam] Can't set video format"); 
+		  stg->video_button->value(false);
+		}
+
 	      startCam = false;
 	    }
 	}
@@ -486,6 +519,8 @@ initcam(uint64_t guid)
 
   dev = new dcam::StereoDcam(guid);
   stg->exposure_val->range(dev->expMax,dev->expMin);
+  stg->gain_val->range(dev->gainMax,dev->gainMin);
+  stg->brightness_val->range(dev->brightMax,dev->brightMin);
 
   return dev;
 }
@@ -2302,7 +2337,7 @@ do_auto_gain_cb(Fl_Light_Button *w, void *x)
       else
 	{
 	  int val = (int)stg->gain_val->value();
-	  dev->setGain(100-val,false);
+	  dev->setGain(val,false);
 	}
     }
 }
@@ -2314,7 +2349,7 @@ do_gain_cb(Fl_Slider *w, void *x)
   if (dev)
     {
       int val = (int)w->value();
-      dev->setGain(100-val,false);
+      dev->setGain(val,false);
       stg->gain_auto_button->value(false);
     }
 }
@@ -2330,7 +2365,7 @@ do_auto_brightness_cb(Fl_Light_Button *w, void *x)
       else
 	{
 	  int val = (int)stg->brightness_val->value();
-	  dev->setBrightness(100-val,false);
+	  dev->setBrightness(val,false);
 	}
     }
 }
@@ -2342,7 +2377,7 @@ do_brightness_cb(Fl_Slider *w, void *x)
   if (dev)
     {
       int val = (int)w->value();
-      dev->setBrightness(100-val,false);
+      dev->setBrightness(val,false);
       stg->brightness_auto_button->value(false);
     }
 }
@@ -2777,15 +2812,20 @@ video_window_cb(Fl_Menu_ *w, void *u)
 }
 
 // video size
+// set up correct video mode based on this 
 void
 video_size_cb(Fl_Choice *w, void *u)
 {
   Fl_Menu_ *mw = (Fl_Menu_ *)w;
   const Fl_Menu_Item* m = mw->mvalue();
   
-  if (!strcmp(m->label(), "None"))
-    {
-    }
+  if (!strcmp(m->label(), "640x480"))
+    videoSize = SIZE_640x480;
+  if (!strcmp(m->label(), "1280x960"))
+    videoSize = SIZE_1280x960;
+  if (!strcmp(m->label(), "320x240"))
+    videoSize = SIZE_320x240;
+
 }
 
 // video rate
@@ -2799,9 +2839,9 @@ video_rate_cb(Fl_Choice *w, void *u)
     videoRate = DC1394_FRAMERATE_30;
   else if (!strcmp(m->label(), "15 Hz"))
     videoRate = DC1394_FRAMERATE_15;
-  else if (!strcmp(m->label(), "7 Hz"))
+  else if (!strcmp(m->label(), "7.5 Hz"))
     videoRate = DC1394_FRAMERATE_7_5;
-  else if (!strcmp(m->label(), "3 Hz"))
+  else if (!strcmp(m->label(), "3.75 Hz"))
     videoRate = DC1394_FRAMERATE_3_75;
 }
 

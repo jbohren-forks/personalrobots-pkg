@@ -28,17 +28,18 @@ Fl_Menu_Item stereogui::menu_Stereo[] = {
  {0,0,0,0,0,0,0,0,0}
 };
 
-Fl_Menu_Item stereogui::menu_Size[] = {
+Fl_Menu_Item stereogui::menu_video_size[] = {
  {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
-Fl_Menu_Item stereogui::menu_Rate[] = {
+Fl_Menu_Item stereogui::menu_video_rate[] = {
  {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"3.75 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
@@ -1296,18 +1297,18 @@ stereogui::stereogui() {
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       } // Fl_Box* o
-      { Fl_Choice* o = new Fl_Choice(50, 135, 90, 20, "Size");
-        o->down_box(FL_BORDER_BOX);
-        o->labelsize(11);
-        o->callback((Fl_Callback*)video_size_cb);
-        o->menu(menu_Size);
-      } // Fl_Choice* o
-      { Fl_Choice* o = new Fl_Choice(50, 165, 90, 20, "Rate");
-        o->down_box(FL_BORDER_BOX);
-        o->labelsize(11);
-        o->callback((Fl_Callback*)video_rate_cb);
-        o->menu(menu_Rate);
-      } // Fl_Choice* o
+      { video_size = new Fl_Choice(50, 135, 90, 20, "Size");
+        video_size->down_box(FL_BORDER_BOX);
+        video_size->labelsize(11);
+        video_size->callback((Fl_Callback*)video_size_cb);
+        video_size->menu(menu_video_size);
+      } // Fl_Choice* video_size
+      { video_rate = new Fl_Choice(50, 165, 90, 20, "Rate");
+        video_rate->down_box(FL_BORDER_BOX);
+        video_rate->labelsize(11);
+        video_rate->callback((Fl_Callback*)video_rate_cb);
+        video_rate->menu(menu_video_rate);
+      } // Fl_Choice* video_rate
       o->end();
     } // Fl_Group* o
     { Fl_Group* o = new Fl_Group(20, 25, 295, 170);

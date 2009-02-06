@@ -1149,13 +1149,13 @@ dcam::Dcam::setMaxAutoVals(int exp, int gain)
   uint32_t v;
   if (exp < 1) exp = 1;
   if (exp > gainMax) exp = gainMax;
-  exp |= 0x04BD0000;
-  setRegister(0xFF000, exp);
+  v = 0x04BD0000 | exp;
+  setRegister(0xFF000, v);
 
   if (gain < 0) gain = 0;
   if (gain > gainMax) gain = gainMax;
-  gain = 0x04360000 | (gain+16);
-  setRegister(0xFF000, gain);
+  v = 0x04360000 | (gain+16);
+  setRegister(0xFF000, v);
 
   return true;
 }
@@ -1178,10 +1178,29 @@ dcam::Dcam::setBrightness(int val, bool isauto)
     v = brightMax;
 
   if (isauto)
-    setFeatureMode(DC1394_FEATURE_BRIGHTNESS,DC1394_FEATURE_MODE_AUTO);
+    {
+      setFeatureMode(DC1394_FEATURE_BRIGHTNESS,DC1394_FEATURE_MODE_AUTO);
+    }
+
   else
-    setFeature(DC1394_FEATURE_BRIGHTNESS,v);   //   ??? do we have to set manual here ???
+    {
+#if 0				// this doesn't seem to have any effect...
+      if (v > 0)		// set the brightness target too
+	{	
+	  if (v > brightMax-6) v = brightMax-6;
+	  v = 0xff & v;
+	  v = 0x04460000 | v | ((v+6)<<8);
+	  printf("setting v\n");
+	  v = 0x0446fff0;
+	  setRegister(0xFF000, v);
+	  usleep(50000);
+	  setRegister(0xFF000, 0x04478080);
+	}
+#endif
+      setFeature(DC1394_FEATURE_BRIGHTNESS,v);   //   ??? do we have to set manual here ???
+    }
 }
+
 
 
 //
