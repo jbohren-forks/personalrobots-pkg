@@ -5,7 +5,7 @@
   </description>
   <author>Lee Thomason</author>
   <url>http://www.grinninglizard.com/tinyxml</url>
-  <license>zlib license</license>
+  <license>zlib</license>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix} -L${prefix} -ltinyxml"/>
         <doxymaker external="http://www.grinninglizard.com/tinyxml"/>
