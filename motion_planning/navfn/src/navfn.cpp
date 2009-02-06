@@ -150,6 +150,12 @@ NavFn::~NavFn()
     delete[] pathx;
   if(pathy)
     delete[] pathy;
+  if(pb1)
+    delete[] pb1;
+  if(pb2)
+    delete[] pb2;
+  if(pb3)
+    delete[] pb3;
 }
 
 
