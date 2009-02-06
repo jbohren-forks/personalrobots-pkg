@@ -78,4 +78,5 @@ if __name__ == '__main__':
                     rospy.logout("Succeeded in killing %s" % name)
                     break
                 except rospy.service.ServiceException:
+                    raise
                     rospy.logerr("ServiceException while killing %s" % name)
