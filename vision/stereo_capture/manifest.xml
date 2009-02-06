@@ -2,7 +2,7 @@
   <description>
   An package for capturing structured light stereo images.
   </description>
-  <author>Ethan Dreyfuss</author>
+  <author>Ethan Dreyfuss, Gary Bradski</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
