@@ -12,6 +12,7 @@
 % For image data
 %  data.KK - 3x3 intrinsic matrix
 %  data.T - 3x4 camera matrix (to project a point multiply by KK*inv(T))
+%  data.P - 3x4 camera projection matrix
 %  data.I - the rgb image size(I) = [height width 3]
 function data = orRobotSensorGetData(robotid, sensorindex)
 
@@ -37,11 +38,11 @@ switch(data.type)
         numint = length(res.laserint);
         data.laserint = reshape(res.laserint,[3 numint/3]);
     case 'camera'
-        error('camera not supported yet');
-        data.KK = reshape(res.KK,[3 3]);
-        data.T = reshape(res.T.m,[3 4]);
-        data.rawimage = res.image;
-        display('image decoding not implemented yet');
+        data.KK = reshape(res.caminfo.K,[3 3]);
+        data.P = reshape(res.caminfo.P,[3 4]);
+        data.T = inv([inv(data.KK)*data.P; 0 0 0 1]);
+        data.T = data.T(1:3,:);
+        data.I = image_msgs_processImage(res.camimage);
     otherwise
         error('unknown type')
 end

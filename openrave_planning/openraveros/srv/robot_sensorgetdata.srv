@@ -19,12 +19,5 @@ float32[] laserpos
 float32[] laserint
 
 ## camera
-
-#  data.KK - 3x3 intrinsic matrix
-float32[9] KK
-
-#  data.T - 3x4 camera matrix (to project a point multiply by KK*inv(T))
-AffineTransformMatrix T
-
-#  data.I - the rgb image size(I) = [height width 3]
-std_msgs/Image image
+image_msgs/CamInfo caminfo # camera calibration parameters and where camera is
+image_msgs/Image camimage # camera image

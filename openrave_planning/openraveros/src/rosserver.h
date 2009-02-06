@@ -26,6 +26,9 @@
 
 #include "openraveros.h"
 
+#include "image_msgs/Image.h"
+#include "image_msgs/CamInfo.h"
+
 class ROSServer : public RaveServerBase
 {
     class LockEnvironment
@@ -138,7 +141,7 @@ class ROSServer : public RaveServerBase
     public:
         SetControllerWorker(RobotBase* probot, const string& type, const string& cmd, bool& retval) : _probot(probot), _type(type), _cmd(cmd), _retval(retval) {}
         virtual void work() {
-            _retval = _probot->SetController(_ravembstowcs(_type.c_str()).c_str(), _cmd.c_str(), true);
+            _retval = _probot->SetController(__stdmbstowcs(_type.c_str()).c_str(), _cmd.c_str(), true);
         }
     private:
         RobotBase* _probot;
@@ -766,7 +769,7 @@ public:
 
     bool env_getbody_srv(env_getbody::Request& req, env_getbody::Response& res)
     {
-        KinBody* pbody = GetEnv()->GetKinBody(_ravembstowcs(req.name.c_str()).c_str());
+        KinBody* pbody = GetEnv()->GetKinBody(__stdmbstowcs(req.name.c_str()).c_str());
         if( pbody == NULL )
             return false;
         res.bodyid = pbody->GetNetworkId();
@@ -1279,8 +1282,8 @@ public:
         if( pbody == NULL || !pbody->IsRobot() )
             return false;
 
+        LockEnvironment envlock(this);
         RobotBase* probot = (RobotBase*)pbody;
-
         if( req.sensorindex >= probot->GetSensors().size() )
             return false;
 
@@ -1335,50 +1338,69 @@ public:
         }
         case SensorBase::ST_Camera:
             res.type = "camera";
-            RAVELOG_ERRORA("camera data serialization not implemented yet!\n");
-            ROS_ASSERT(0);
-            break;
-//            SensorBase::CameraSensorData* pcameradata = (SensorBase::CameraSensorData*)pdata.get();
-//
-//            if( psensor->GetSensorGeometry()->GetType() != SensorBase::ST_Camera ) {
-//                RAVELOG(L"sensor geometry not a camera type\n");
-//                return false;
-//            }
-//
-//            SensorBase::CameraGeomData* pgeom = (SensorBase::CameraGeomData*)psensor->GetSensorGeometry();
-//
-//            if( (int)pcameradata->vimagedata.size() != pgeom->width*pgeom->height*3 ) {
-//                RAVELOG(L"image data wrong size %d != %d\n", pcameradata->vimagedata.size(), pgeom->width*pgeom->height*3);
-//                return false;
-//            }
-//
-//            sout << pgeom->width << " " << pgeom->height << " ";
-//            for(int i = 0; i < 4; ++i)
-//                sout << pgeom->KK[i] << " ";
-//            sout << TransformMatrix(pcameradata->t) << " ";
-//            //FOREACH(it, pcameradata->vimagedata) sout << (int)*it << " ";
-//
-//            // RLE encoding (about 3x faster than sending raw images)
-//            int curvalue = 0, lastdiff = 0, lastvalue = 0xffffff&*(int*)&pcameradata->vimagedata[0];
-//            list<int> difs, values;
-//            for(int i = 1; i < (int)pcameradata->vimagedata.size()/3; ++i) {
-//                curvalue = 0xffffff&*(int*)&pcameradata->vimagedata[3*i];
-//                if( curvalue != lastvalue ) {
-//                    values.push_back(lastvalue);
-//                    difs.push_back(i-lastdiff);
-//                    lastdiff = i;
-//                    lastvalue = curvalue;
-//                }
-//            }
-//            difs.push_back(pcameradata->vimagedata.size()/3-lastdiff);
-//            values.push_back(curvalue);
-//
-//            sout << values.size() << " ";
-//            FOREACH(it, values)
-//                sout << *it << " ";
-//            sout << difs.size() << " ";
-//            FOREACH(it, difs)
-//                sout << *it << " ";
+            SensorBase::CameraSensorData* pcameradata = (SensorBase::CameraSensorData*)pdata.get();
+
+            if( psensor->GetSensorGeometry()->GetType() != SensorBase::ST_Camera ) {
+                RAVELOG(L"sensor geometry not a camera type\n");
+                return false;
+            }
+
+            SensorBase::CameraGeomData* pgeom = (SensorBase::CameraGeomData*)psensor->GetSensorGeometry();
+
+            if( (int)pcameradata->vimagedata.size() != pgeom->width*pgeom->height*3 ) {
+                RAVELOG(L"image data wrong size %d != %d\n", pcameradata->vimagedata.size(), pgeom->width*pgeom->height*3);
+                return false;
+            }
+
+            res.caminfo.width = pgeom->width;
+            res.caminfo.height = pgeom->height;
+            for(int i = 0; i < 5; ++i)
+                res.caminfo.D[i] = 0;
+            res.caminfo.K[0] = pgeom->KK[0]; res.caminfo.K[1] = 0; res.caminfo.K[2] = pgeom->KK[2];
+            res.caminfo.K[3] = 0; res.caminfo.K[4] = pgeom->KK[1]; res.caminfo.K[5] = pgeom->KK[3];
+            res.caminfo.K[6] = 0; res.caminfo.K[7] = 0; res.caminfo.K[8] = 1;
+
+            TransformMatrix tKK;
+            for(int i = 0; i < 3; ++i) {
+                tKK.m[4*i+0] = res.caminfo.K[3*i+0];
+                tKK.m[4*i+1] = res.caminfo.K[3*i+1];
+                tKK.m[4*i+2] = res.caminfo.K[3*i+2];
+            }
+
+            TransformMatrix tP = tKK * pcameradata->t.inverse();
+
+            res.caminfo.R[0] = 1; res.caminfo.R[1] = 0; res.caminfo.R[2] = 0;
+            res.caminfo.R[3] = 0; res.caminfo.R[4] = 1; res.caminfo.R[5] = 0;
+            res.caminfo.R[6] = 0; res.caminfo.R[7] = 0; res.caminfo.R[8] = 1;
+
+            for(int i = 0; i < 3; ++i) {
+                res.caminfo.P[4*i+0] = tP.m[4*i+0];
+                res.caminfo.P[4*i+1] = tP.m[4*i+1];
+                res.caminfo.P[4*i+2] = tP.m[4*i+2];
+                res.caminfo.P[4*i+3] = tP.trans[i];
+            }
+
+            res.camimage.header.stamp = ros::Time::now();
+            res.camimage.header.seq = pcameradata->id;
+            res.camimage.label = _stdwcstombs(probot->GetSensors()[req.sensorindex].GetName());
+            res.camimage.encoding = "rgb";
+            res.camimage.depth = "uint8";
+            std_msgs::MultiArrayLayout& layout = res.camimage.uint8_data.layout;
+
+            int nchannels = 3;
+            layout.dim.resize(3);
+            layout.dim.resize(3);
+            layout.dim[0].label  = "height";
+            layout.dim[0].size   = pgeom->height;
+            layout.dim[0].stride = pgeom->width*pgeom->height*nchannels;
+            layout.dim[1].label  = "width";
+            layout.dim[1].size   = pgeom->width;
+            layout.dim[1].stride = pgeom->width*nchannels;
+            layout.dim[2].label  = "channel";
+            layout.dim[2].size   = nchannels;
+            layout.dim[2].stride = nchannels;
+            res.camimage.uint8_data.data.resize(layout.dim[0].stride);
+            memcpy(&res.camimage.uint8_data.data[0], &pcameradata->vimagedata[0], res.camimage.uint8_data.data.size());
         }
         
         return true;
@@ -1405,7 +1427,7 @@ public:
             return false;
         }
         
-        stringstream ss(req.args);
+        stringstream ss; ss << req.cmd << " " << req.args;
         stringstream sout;
         bool bsuccess = false;
         AddWorker(new SendCmdSensorWorker(sensor.GetSensor(),ss,sout,bsuccess), true);

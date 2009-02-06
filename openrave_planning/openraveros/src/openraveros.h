@@ -74,7 +74,7 @@
 #define stricmp strcasecmp
 #endif
 
-inline std::wstring _ravembstowcs(const char* pstr)
+inline std::wstring __stdmbstowcs(const char* pstr)
 {
     size_t len = mbstowcs(NULL, pstr, 0);
     std::wstring w; w.resize(len);
