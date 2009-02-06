@@ -35,7 +35,7 @@
   <!-- Test for publication of 'left stereo camera image publish rate' topic -->
   <test test-name="hztest_test_stereo_left_image" pkg="rostest" type="hztest" time-limit="60" name="stereo_left_image_test">
     <param name="topic" value="stereo_l/image" />
-    <param name="hz" value="15.0" />
+    <param name="hz" value="20.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
     <param name="check_intervals" value="false" />    
