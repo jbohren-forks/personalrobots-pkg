@@ -87,31 +87,13 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   jnt_pos_.resize(num_joints_);
   jnt_vel_.resize(num_joints_);
 
-  // get pid controller
+  // get pid controller parameters
   double p, i, d, i_clamp;
-  string name;
-  node_->param(controller_name+"/trans_p", p, 0.0) ;
-  node_->param(controller_name+"/trans_i", i, 0.0) ;
-  node_->param(controller_name+"/trans_d", d, 0.0) ;
-  node_->param(controller_name+"/trans_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pid_trans(p, i, d, i_clamp, -i_clamp);
-  for (unsigned int i=0; i<3; i++)
-    pid_controller_.push_back(pid_trans);
-
-  node_->param(controller_name+"/rot_p", p, 0.0) ;
-  node_->param(controller_name+"/rot_i", i, 0.0) ;
-  node_->param(controller_name+"/rot_d", d, 0.0) ;
-  node_->param(controller_name+"/rot_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pid_rot(p, i, d, i_clamp, -i_clamp);
-  for (unsigned int i=0; i<3; i++)
-    pid_controller_.push_back(pid_rot);
-
   node_->param(controller_name+"/joint_p", p, 0.0) ;
   node_->param(controller_name+"/joint_i", i, 0.0) ;
   node_->param(controller_name+"/joint_d", d, 0.0) ;
   node_->param(controller_name+"/joint_i_clamp", i_clamp, 0.0) ;
   control_toolbox::Pid pid_joint(p, i, d, i_clamp, -i_clamp);
-  fprintf(stderr, "pid controllers created\n");
 
   // time
   last_time_ = robot_state->hw_->current_time_;
@@ -145,13 +127,12 @@ void CartesianTwistControllerIk::update()
   // calculate joint velocities
   twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
 
-  cout << "twist desi ";
-  for (unsigned int i=0; i<6; i++)
-    cout << twist_desi_(i) << " ";
-  cout << endl;
-
+  /*
+  cout << "vel ";
   for (unsigned int i=0; i<num_joints_; i++)
-    cout << "jnt  " << i << " q=" << jnt_pos_(i) << "  vel=" << jnt_vel_(i) << endl;
+    cout << jnt_vel_(i) << "  ";
+  cout << endl;
+  */
 
   // send joint velocities to joint velocity controllers
   for (unsigned int i=0; i<num_joints_; i++){
@@ -236,9 +217,6 @@ void CartesianTwistControllerIkNode::joystick()
     controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * joystick_max_trans_;
     controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * joystick_max_rot_;
   }
-
-  cout << "joystick " << controller_.twist_desi_.vel(0) << " " << controller_.twist_desi_.vel(1) << endl;
-
 }
 
 
