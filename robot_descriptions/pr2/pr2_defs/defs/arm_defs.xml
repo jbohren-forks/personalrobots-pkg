@@ -161,7 +161,7 @@
       <limit min="-3.9" max="0.8" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.45}"
              k_position="100" k_velocity="2"
              safety_length_min="0.15" safety_length_max="0.15" />
-      <calibration reference_position="${-M_PI/2 + upper_arm_roll_cal}" values="1.5 -1 " />
+      <calibration reference_position="${reflect*M_PI/2 + upper_arm_roll_cal}" values="1.5 -1 " />
 
       <joint_properties damping="1.0" />
     </joint>
@@ -697,7 +697,7 @@
       <pid p="5.0" i="0" d="0" iClamp="0" />
     </controller>
 
-    <controller type="WristCalibrationControllerNode" name="cal_wrist">
+    <controller type="WristCalibrationControllerNode" name="cal_${side}_wrist">
       <calibrate transmission="${side}_wrist_trans"
                  actuator_l="${side}_wrist_l_motor" actuator_r="${side}_wrist_r_motor"
                  flex_joint="${side}_wrist_flex_joint" roll_joint="${side}_wrist_roll_joint"
