@@ -1,0 +1,12 @@
+<package>
+  <description>
+  TinyXML is a simple, small, C++ XML parser that can be easily integrating
+  into other programs. 
+  </description>
+  <author>Lee Thomason</author>
+  <url>http://www.grinninglizard.com/tinyxml</url>
+  <license>zlib license</license>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix} -ltinyxml"/>
+  </export>
+</package>
