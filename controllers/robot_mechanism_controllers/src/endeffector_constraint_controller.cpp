@@ -99,6 +99,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
   node->param("constraint/threshold_x"  , threshold_x , 0.1 ) ; /// distance within the wall to apply constraint force
   node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
+  node->param("constraint/elbow_limit"  , elbow_limit , -1.52 ) ; /// elbow limit
+
   node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
@@ -110,7 +112,11 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
   task_jac_ = Eigen::MatrixXf::Zero(6, num_joints);
   identity_ = Eigen::MatrixXf::Identity(6, 6);
-  constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints, num_joints);
+  identity_joint_ = Eigen::MatrixXf::Identity(num_joints, num_joints);
+  constraint_null_space_ = Eigen::MatrixXf::Zero(6, 6);
+  joint_constraint_force_= Eigen::MatrixXf::Zero(num_joints, 1);
+  joint_constraint_jac_= Eigen::MatrixXf::Zero(num_joints, 1);
+  joint_constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints, num_joints);
   constraint_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
   task_torq_ = Eigen::MatrixXf::Zero(num_joints, 1);
   task_wrench_ = Eigen::Matrix<float,6,1>::Zero();
@@ -167,11 +173,13 @@ void EndeffectorConstraintController::update()
   computeConstraintNullSpace();
 
   // convert the wrench into joint torques
+  joint_constraint_torq_ = joint_constraint_force_;
+  constraint_torq_ = joint_constraint_null_space_*task_jac_.transpose() * constraint_wrench_;
+  task_torq_ = joint_constraint_null_space_ * task_jac_.transpose()* constraint_null_space_ * task_wrench_;
 
-  constraint_torq_ = task_jac_.transpose() * constraint_wrench_;
-  task_torq_ = task_jac_.transpose()* constraint_null_space_ * task_wrench_;
 
-  //ROS_ERROR("%f %f %f", task_torq_(0),task_torq_(1),task_torq_(1));
+  //ROS_ERROR("%s", chain_.getJointName(3));
+  //ROS_ERROR("%f %f %f", jnt_pos(2),jnt_pos(3),jnt_pos(4));
   //ROS_ERROR("%.3f %.3f %.3f",constraint_null_space_(0,0), constraint_null_space_(1,1), constraint_null_space_(2,2));
   //ROS_ERROR("%.3f %.3f %.3f",task_jac_(0,5), task_jac_(1,5), task_jac_(2,5));
 
@@ -277,6 +285,26 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   else
   {
     f_yaw = 0;
+  }
+
+  
+  //joint constraint force - stop the elbow from going past -30 degrees (.5235 rad)
+  JntArray jnt_pos(kdl_chain_.getNrOfJoints());
+  chain_.getPositions(robot_->joint_states_, jnt_pos);
+  
+  double joint_e = elbow_limit-jnt_pos(2);
+  if(joint_e < -0.01) 
+  {
+    joint_constraint_jac_(2)=1;
+  }
+
+  if(joint_e < 0)
+  {
+    joint_constraint_force_(2)=joint_e*f_limit_max;
+  }
+  else 
+  {
+    joint_constraint_force_(0)=0;
   }
 
   constraint_force_(0) = f_x;
