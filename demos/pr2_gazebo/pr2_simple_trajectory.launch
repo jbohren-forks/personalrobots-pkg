@@ -2,6 +2,7 @@
   <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/pr2/pr2_defs/robots for full pr2 -->
   <group name="wg">
     <!-- send pr2.xml to param server -->
+    <param name="/use_sim_time" value="true"/>
     <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
     <!-- start gazebo -->
