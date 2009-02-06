@@ -32,7 +32,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/ImageArray.h"
-#include "std_srvs/PolledImage.h"
+#include "deprecated_srvs/PolledImage.h"
 #include "image_utils/image_codec.h"
 
 #include "axis_cam/axis_cam.h"
@@ -82,8 +82,8 @@ public:
       delete cam;
   }
 
-  bool polled_image_cb(std_srvs::PolledImage::Request  &req,
-                       std_srvs::PolledImage::Response &res )
+  bool polled_image_cb(deprecated_srvs::PolledImage::Request  &req,
+                       deprecated_srvs::PolledImage::Response &res )
   {
     images.lock();
     res.image = images.images[0];
