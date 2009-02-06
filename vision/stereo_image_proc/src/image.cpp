@@ -823,12 +823,21 @@ StereoData::calcPt(int x, int y, float *fx, float *fy, float *fz)
 //
 
 void
-StereoData::extractParams(char *ps)
+StereoData::extractParams(char *ps, bool store)
 {
   std::string params;
   params = ps;
   double *pp;
   bool isSVS = false;
+
+  if (store && ps != NULL)
+    {
+      if (imLeft->params)
+	delete [] imLeft->params;
+      char *bb = new char[strlen(ps)];
+      strcpy(bb,ps);
+      imLeft->params = bb;
+    }
 
   printf("\n\n  [extractParams] Parameters:\n\n");
 
@@ -1127,7 +1136,7 @@ PrintStr(int val, char *str)
 }
 
 char *
-StereoData::createParams()
+StereoData::createParams(bool store)
 {
   char *str = new char[4096];
   int n = 0;
@@ -1185,6 +1194,15 @@ StereoData::createParams()
   n += PrintMatStr(imRight->P,3,4,&str[n]);    
 
   str[n] = 0;			// just in case
+
+  if (store)
+    {
+      if (imLeft->params)
+	delete [] imLeft->params;
+      char *bb = new char[n];
+      strcpy(bb,str);
+      imLeft->params = bb;
+    }
 
   return str;
 }

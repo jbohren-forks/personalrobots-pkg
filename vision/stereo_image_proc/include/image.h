@@ -283,8 +283,10 @@ namespace cam
     void releaseBuffers();	// get rid of all buffers
 
     // parameters
-    void extractParams(char *params); // extracts params from string and puts in vars
-    char *createParams();	// takes parameters and puts them into a string
+    void extractParams(char *params, bool store = false); // extracts params from string and puts in vars
+                                // optionally stores into image object
+    char *createParams(bool store = false); // takes parameters and puts them into a string
+                                // optionally stores into image object
 
     // stereo processing params
     int corrSize;		// correlation window size, assumed square
