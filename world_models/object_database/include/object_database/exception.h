@@ -30,7 +30,7 @@
 #ifndef OBJECT_DATABASE_EXCEPTION_H
 #define OBJECT_DATABASE_EXCEPTION_H
 
-#include "ros_exception/exception.h"
+#include <stdexcept>
 
 using std::string;
 
@@ -40,10 +40,10 @@ namespace object_database
 /// \brief A base class for all object_database exceptions 
 /// This inherits from ros::exception 
 /// which inherits from std::runtime_exception
-class ObjectDatabaseException: public ros::Exception
+class ObjectDatabaseException: public std::runtime_error
 { 
 public:
-  ObjectDatabaseException(const string& errorDescription) : ros::Exception(errorDescription) {};
+  ObjectDatabaseException(const string& errorDescription) : std::runtime_error(errorDescription) {};
 };
 
 /// \brief Exception denoting a nonexistent object type
