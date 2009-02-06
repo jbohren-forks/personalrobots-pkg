@@ -454,4 +454,50 @@ namespace cloud_geometry
     std::vector<Leaf> leaves;
     downsamplePointCloud (points, points_down, leaf_size, leaves, -1);
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute both the mean and the standard deviation of a channel/dimension of the cloud
+    * \param points a pointer to the point cloud message
+    * \param d_idx the channel index
+    * \param mean the resultant mean of the distribution
+    * \param stddev the resultant standard deviation of the distribution
+    */
+  void
+    getChannelMeanStd (std_msgs::PointCloud *points, int d_idx, double &mean, double &stddev)
+  {
+    double sum = 0, sq_sum = 0;
+
+    for (unsigned int i = 0; i < points->pts.size (); i++)
+    {
+      sum += points->chan.at (d_idx).vals.at (i);
+      sq_sum += points->chan.at (d_idx).vals.at (i) * points->chan.at (d_idx).vals.at (i);
+    }
+    mean = sum / points->pts.size ();
+    double variance = (double)(sq_sum - sum * sum / points->pts.size ()) / (points->pts.size () - 1);
+    stddev = sqrt (variance);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute both the mean and the standard deviation of a channel/dimension of the cloud using indices
+    * \param points a pointer to the point cloud message
+    * \param indices a pointer to the point cloud indices to use
+    * \param d_idx the channel index
+    * \param mean the resultant mean of the distribution
+    * \param stddev the resultant standard deviation of the distribution
+    */
+  void
+    getChannelMeanStd (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, double &mean, double &stddev)
+  {
+    double sum = 0, sq_sum = 0;
+
+    for (unsigned int i = 0; i < indices->size (); i++)
+    {
+      sum += points->chan.at (d_idx).vals.at (indices->at (i));
+      sq_sum += points->chan.at (d_idx).vals.at (indices->at (i)) * points->chan.at (d_idx).vals.at (indices->at (i));
+    }
+    mean = sum / indices->size ();
+    double variance = (double)(sq_sum - sum * sum / indices->size ()) / (indices->size () - 1);
+    stddev = sqrt (variance);
+  }
+
 }

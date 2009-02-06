@@ -379,12 +379,12 @@ namespace cloud_geometry
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
-  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
     * \param point a 2D point
     */
-  inline double 
+  inline double
     getAngle2D (double point[2])
   {
     double rad;
@@ -423,7 +423,7 @@ namespace cloud_geometry
       u (0) = 0;
       u (2) = 1;
     }
-    
+
     // Compute the v vector and normalize it
     v (0) = plane_coeff->at (1) * u (2) - plane_coeff->at (2) * u (1);
     v (1) = plane_coeff->at (2) * u (0) - plane_coeff->at (0) * u (2);
@@ -432,7 +432,7 @@ namespace cloud_geometry
     v (0) /= v_length;
     v (1) /= v_length;
     v (2) /= v_length;
-    
+
     // Recompute u and normalize it
     u (0) = v (1) * plane_coeff->at (2) - v (2) * plane_coeff->at (1);
     u (1) = v (2) * plane_coeff->at (0) - v (0) * plane_coeff->at (2);
@@ -442,7 +442,10 @@ namespace cloud_geometry
     u (1) /= u_length;
     u (2) /= u_length;
   }
-  
+
+
+  void getChannelMeanStd (std_msgs::PointCloud *points, int d_idx, double &mean, double &stddev);
+  void getChannelMeanStd (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, double &mean, double &stddev);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
