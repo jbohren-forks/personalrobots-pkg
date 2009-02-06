@@ -265,7 +265,7 @@ main(int argc, char** argv)
 }
 
 WavefrontNode::WavefrontNode() :
-        ros::Node("wavfront_player"),
+        ros::Node("wavefront_player"),
         planner_state(NO_GOAL),
         enable(true),
         rotate_dir(0),
