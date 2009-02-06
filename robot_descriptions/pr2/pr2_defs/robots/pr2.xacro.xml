@@ -45,7 +45,7 @@
   </pr2_ptz>
 
   <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
-    <origin xyz="0.0  0.1975 0.2265" rpy="0 0 0" />
+    <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
   </pr2_ptz>
 
   <!-- Define groups of links; a link may be part of multiple groups -->
