@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ros_exception/exception.h>
+#include <stdexcept>
 
 namespace libTF{
 
@@ -38,10 +38,10 @@ namespace libTF{
  * This will provide a base class for libTF exceptions 
  * to make it convenient to catch all libTF exceptions.
  */
-class Exception : public ros::Exception
+class Exception : public std::runtime_error
 {
 public:
-  Exception(const std::string errorDescription) : ros::Exception(errorDescription) { ; };
+  Exception(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
 };
 
 

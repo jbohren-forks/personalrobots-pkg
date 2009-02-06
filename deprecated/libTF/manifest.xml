@@ -9,7 +9,6 @@ Library for doing transformations.
 <review status="deprecated" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
-<depend package="ros_exception"/>
 <depend package="angles"/>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
