@@ -7,10 +7,10 @@
 
     <param name="/trex/input_file" value="pr2.cfg"/>
     <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find test_executive_trex_pr2)/arm.0"/>
-    <param name="/trex/time_limit" value="60"/>
+    <param name="/trex/time_limit" value="180"/>
     <param name="/trex/log_dir" value="$(find test_executive_trex_pr2)/arm.0"/>
     <param name="/trex/play_back" value="0"/>
-    <test test-name="executive_trex_arm.0" pkg="executive_trex_pr2" type="trexdebug" time-limit="100" />
+    <test test-name="executive_trex_arm.0" pkg="executive_trex_pr2" type="trexdebug" time-limit="200" />
 
   </group>
 </launch>

@@ -9,6 +9,19 @@ rightArmGoal_0.des_forearm_roll = 0.0;
 rightArmGoal_0.des_wrist_flex = 0.0;
 rightArmGoal_0.des_gripper_roll = 0.0;
 
+rejectable(rightArmState.Holds checkGoalRight_0);
+float distance_cgr_0;
+concurrent(checkGoalRight_0.start, rightArmGoal_0.start);
+calcDistance(distance_cgr_0, rightArmGoal_0.des_shoulder_pan, rightArmGoal_0.des_shoulder_pitch, 
+			     rightArmGoal_0.des_upperarm_roll, rightArmGoal_0.des_elbow_flex, 
+			     rightArmGoal_0.des_forearm_roll, rightArmGoal_0.des_wrist_flex, rightArmGoal_0.des_gripper_roll,
+			     checkGoalRight_0.shoulder_pan, checkGoalRight_0.shoulder_pitch, 
+			     checkGoalRight_0.upperarm_roll, checkGoalRight_0.elbow_flex, 
+			     checkGoalRight_0.forearm_roll, checkGoalRight_0.wrist_flex, checkGoalRight_0.gripper_roll);
+leq(distance_cgr_0, 0.2); 
+assertCompleted(checkGoalRight_0.state);
+
+
 rejectable(moveLeftArm.Inactive leftArmGoal_0);
 leftArmGoal_0.des_shoulder_pan = 1.0;
 leftArmGoal_0.des_shoulder_pitch= 0.0;
@@ -17,3 +30,15 @@ leftArmGoal_0.des_elbow_flex = 0.0;
 leftArmGoal_0.des_forearm_roll = 0.0;
 leftArmGoal_0.des_wrist_flex = 0.0;
 leftArmGoal_0.des_gripper_roll = 0.0;
+
+rejectable(leftArmState.Holds checkGoalLeft_0);
+float distance_cgl_0;
+concurrent(checkGoalLeft_0.start, leftArmGoal_0.start);
+calcDistance(distance_cgl_0, leftArmGoal_0.des_shoulder_pan, leftArmGoal_0.des_shoulder_pitch, 
+			     leftArmGoal_0.des_upperarm_roll, leftArmGoal_0.des_elbow_flex, 
+			     leftArmGoal_0.des_forearm_roll, leftArmGoal_0.des_wrist_flex, leftArmGoal_0.des_gripper_roll,
+			     checkGoalLeft_0.shoulder_pan, checkGoalLeft_0.shoulder_pitch, 
+			     checkGoalLeft_0.upperarm_roll, checkGoalLeft_0.elbow_flex, 
+			     checkGoalLeft_0.forearm_roll, checkGoalLeft_0.wrist_flex, checkGoalLeft_0.gripper_roll);
+leq(distance_cgl_0, 0.2); 
+assertCompleted(checkGoalLeft_0.state);
