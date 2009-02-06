@@ -40,8 +40,7 @@ namespace KDL
 		for(int i=1;i<=nJoints;i++)
 		{
 			link_i = chain.getSegment(i-1);
-                        // todo: UNCOMMENT BELOW
-			//z_i_minus_one = link_i.getJoint().JointAxis();
+			z_i_minus_one = link_i.getJoint().JointAxis();
 
 			r_cm = link_i.getCM();
 			_iRi_minus_one = T_tip.M.Inverse();
