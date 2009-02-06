@@ -18,9 +18,6 @@
  *
  */
 
-/*! \mainpage
- *  \htmlinclude manifest.html
- */
 
 #ifndef HOKUYO_HH
 #define HOKUYO_HH
