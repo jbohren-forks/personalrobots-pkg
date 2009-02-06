@@ -52,7 +52,7 @@
 #include <iostream>
 
 #define WD 1180
-#define HT 768
+#define HT 768 
 #define DELAY 30
 #define BLOCK_SIZE 4
 
@@ -109,6 +109,8 @@ public:
       while (ok())
 	{
 	  key = cvWaitKey(10);	
+	  if(key == 27 ) //ESC
+	     break;
 	    
 	  if(!BlankScreen){
 	    grayscale_rbp(Rbp);

@@ -35,6 +35,10 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <time.h>
+#include <iostream>
+#include <iomanip>
+
 
 #include "image_msgs/CvBridge.h"
 
@@ -87,26 +91,43 @@ public:
 
   TopicSynchronizer<StereoView> sync;
 
-  bool capture;
-  bool captureNoTex;
+  bool capture;      //Capture stereo with and without texture
+  bool captureNoTex; //Capture stereo without texture
+  bool captureByTime;
+  bool captureNoTexByTime;
   std_msgs::UInt8 projector_status;
+  clock_t trigger;
 
   boost::mutex cv_mutex;
 
   string fileName;
+  char fileNumString[20];
+  string mydir,XXX,SR,NP,m;
   unsigned int fileNum;
 
   StereoView() : ros::Node("stereo_view"), 
-                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), lastLeft(NULL), lastRight(NULL),
-                 sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
-		 capture(false), captureNoTex(false)
+                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), 
+                 lastLeft(NULL), lastRight(NULL), sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
+		 capture(false), captureNoTex(false), captureByTime(false), captureNoTexByTime(false)
   {
     //param("~file_name", fileName, "stereoImage");  //Base string to use, images will be [base][L/R/D].jpg (left, right, disparity)
     //param("~start_number", fileNum, 0);  //Number to start with (i.e. if program crashes start with n+1
                                          //where n is the number of the last image saved
     
-    fileName = "data/stereoImage";
-    fileNum = 10;
+  #define TIMER_FREQ 300000.0
+  #define CAPTURE_FEQ_SECS  (15.0*TIMER_FREQ)
+
+    mydir = "data/";
+    XXX = "001";
+    SR = "R";
+    NP = "N";
+    m = "1";
+  
+  
+    fileNum = 0;
+ 
+
+    
 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -157,8 +178,8 @@ public:
     //Nothing to see here, move along
   }
 
-  void image_cb_all(ros::Time t)
-  {
+void image_cb_all(ros::Time t)
+{
     cv_mutex.lock();
 
     cout<<"Project status is: "<<(int)projector_status.data<<endl;
@@ -166,12 +187,11 @@ public:
     if (lbridge.fromImage(limage, "bgr"))
     {
       if(!projector_status.data)
-	{
-	  if(lastLeft != NULL)string s1, s2(fileName), s3(fileName), s4(fileName);
-	    cvReleaseImage(&lastLeft);
-
-	  lastLeft = cvCloneImage(lbridge.toIpl());
-	}
+			{
+	  			if(lastLeft != NULL)
+	    			cvReleaseImage(&lastLeft);
+	  			lastLeft = cvCloneImage(lbridge.toIpl());
+			}
       
       cvShowImage("left", lbridge.toIpl());
     }
@@ -194,7 +214,7 @@ public:
       IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
       cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
 
-      if(projector_status.data)
+   if(projector_status.data)
 	{
 	  if(lastDisparity != NULL)
 	    cvReleaseImage(&lastDisparity);
@@ -217,34 +237,45 @@ public:
     if(capture && (lastDisparity != NULL)) //Look here to save the non texture disparity image
       {
         cout << "Shouldn't get here" << endl;
-	stringstream ss1, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
-	ss1<<fileName<<"L"<<fileNum<<".jpg";
-	ss2<<fileName<<"R"<<fileNum<<".jpg";
-	ss3<<fileName<<"D"<<fileNum<<".jpg";
-	ss4<<fileName<<"D"<<fileNum<<".u16";
-        ss5<<fileName<<"d"<<fileNum<<".jpg";
-        sscloud<<fileName<<"_C"<<fileNum<<".txt";
-        sscloudNoTex<<fileName<<"_CnoTex"<<fileNum<<".txt";
-	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<< " " << ss5.str() << endl;
+	stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
+	
+    sprintf(fileNumString,"%.4d",fileNum);
+    fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
+	
+	ss1jpg<<fileName<<".L"<<".jpg";
+	ss1<<fileName<<".L"<<".png";
+	ss2<<fileName<<".R"<<".png";
+	ss3<<fileName<<".D"<<".png";
+//	ss4<<fileName<<".D"<<fileNum<<".u16";
+        ss5<<fileName<<".d"<<".png";
+        sscloud<<fileName<<".C"<<".txt";
+        sscloudNoTex<<fileName<<".CnoTex"<<".txt";
+	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<< ss5.str() << endl;
 	cvSaveImage(ss1.str().c_str(), lastLeft);
 	cvSaveImage(ss2.str().c_str(), lastRight);
 	cvSaveImage(ss3.str().c_str(), lastScaledDisparity);
-	cvSave(ss4.str().c_str(), lastDisparity);
+//	cvSave(ss4.str().c_str(), lastDisparity);
         cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
         write_out_point_cloud(sscloud.str(),cloud);
         write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
 	
 	fileNum++;
 	capture = false;
+	cout << "!!!!!!!!!!!!!!!!!!! move move move !!!!!!!!!!!!!!!!!!!!!" << endl;
       }
     if(captureNoTex)
     {
-	stringstream ss1, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
-	ss1<<fileName<<"L"<<fileNum<<".jpg";
-	ss2<<fileName<<"R"<<fileNum<<".jpg";
-        ss5<<fileName<<"d"<<fileNum<<".jpg";
-        sscloudNoTex<<fileName<<"_CnoTex"<<fileNum<<".txt";
-	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<<ss4.str()<< " " << ss5.str() << endl;
+	stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
+	
+    sprintf(fileNumString,"%.4d",fileNum);
+    fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
+
+	ss1jpg<<fileName<<".L"<<".jpg";
+	ss1<<fileName<<".L"<<".png";
+	ss2<<fileName<<".R"<<".png";
+        ss5<<fileName<<".d"<<".png";
+        sscloudNoTex<<fileName<<".CnoTex"<<".txt";
+	cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<< ss5.str() << endl;
 	cvSaveImage(ss1.str().c_str(), lbridge.toIpl());
 	cvSaveImage(ss2.str().c_str(), rbridge.toIpl());
         cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
@@ -269,7 +300,7 @@ public:
     b = (rgb & 0xff) / 255.0f;
   }
   
-  void write_out_point_cloud(string filename,  std_msgs::PointCloud &cloud_ )
+  void write_out_point_cloud(string file_name,  std_msgs::PointCloud &cloud_ )
   {
     int c_idx = -1;
     for (unsigned int d = 0; d < cloud_.chan.size (); d++)
@@ -279,7 +310,7 @@ public:
     }
     
     
-    ofstream fout(filename.c_str());
+    ofstream fout(file_name.c_str());
 
     float r = 0.0, g = 0.0, b = 0.0;
     
@@ -315,18 +346,64 @@ public:
     while (ok())
     {
       cv_mutex.lock();
-      int key = cvWaitKey(3);
+      int key = cvWaitKey(3)&0x00FF;
+      if(key == 27) //ESC
+      	break;
       
       switch (key) {
-      case 'c':
-        capture = true;
+      case 'c':         //With textured light
+      	if(!captureNoTexByTime)
+	        capture = true;
         break;
-      case 's':
-         captureNoTex = true;
+      case 's':         //Without textured light
+			if(!captureByTime)
+			    captureNoTex = true;
          break;
-    }
-
-
+      case 'h':
+         printf(
+                "\nCapture images and point clouds to /data directory\n"
+                "\tc -- Capture if projected light is running\n"
+                "\tC -- Timed capture toggel if projected light is running\n"
+                "\ts -- Capture (save) if *not* running projected light\n"
+                "\tS -- Timed caputre if *not* running projected light\n\n"
+                );
+         break;
+      case 'C':		//Peroidic capture ith textured light
+      	captureByTime ^= 1;
+      	captureNoTexByTime = false;
+      	trigger = clock() + CAPTURE_FEQ_SECS;
+      	cout << "On_off" << (int)captureByTime <<  ":  Time of first captureByTime = " << setprecision(12) << trigger << endl;
+      	break;
+      case 'S':      //Periodic capture without textured light
+      	captureNoTexByTime ^= 1;
+      	captureByTime = false;
+      	trigger = clock() + CAPTURE_FEQ_SECS;
+      	cout << "On_off" << (int)captureNoTexByTime <<  ":  Time of first captureNoTexByTime = " << setprecision(12) << trigger << endl;
+      	break;      	
+      }
+      //Timed delay
+      if(captureByTime)  //With textured light
+      {
+      	clock_t timenow = clock();
+      	if(timenow > trigger)
+      	{
+      		capture = true;
+      		captureNoTex = false;
+      		trigger = timenow + CAPTURE_FEQ_SECS;
+      		cout << "CaptureByTime Tigger = " <<  setprecision(10) << (float)timenow << endl;
+      	}
+      }
+      if(captureNoTexByTime) //without textured light
+      {
+      	clock_t timenow = clock();
+      	if(timenow > trigger)
+      	{
+      		captureNoTex = true;
+      		capture = false;
+      		trigger = timenow + CAPTURE_FEQ_SECS;
+      		cout << "CaptureNoTexByTime Tigger = " <<  setprecision(10) << (float)timenow << endl;
+      	}
+      }
       cv_mutex.unlock();
       usleep(10000);
     }
