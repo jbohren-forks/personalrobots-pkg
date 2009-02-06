@@ -954,8 +954,8 @@ namespace ros {
      */
     void MoveBase::mapUpdateLoop()
     {
-      ros::Duration *d = new ros::Duration();
-      d->fromSec(1.0/map_update_frequency_);
+      ros::Duration d;
+      d.fromSec(1.0/map_update_frequency_);
 
       while (active_){
         //Avoids laser race conditions.
@@ -963,10 +963,8 @@ namespace ros {
 	  updateCostMap();
         }
 
-        d->sleep();
+        d.sleep();
       }
-
-      delete d;
     }
   }
 }
