@@ -464,7 +464,7 @@ int main(int argc, char ** argv)
     }
 
     ros::init(argc,argv);
-    s_pmasternode.reset(new ros::Node("robobtlinks_filter"));
+    s_pmasternode.reset(new ros::Node("robotlinks_filter"));
 
     if( !s_pmasternode->checkMaster() )
         return -1;
