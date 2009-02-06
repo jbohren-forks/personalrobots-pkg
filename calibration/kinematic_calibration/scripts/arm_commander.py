@@ -4,10 +4,10 @@ roslib.load_manifest('kinematic_calibration')
 
 import rospy
 import sys
-from roscpp.msg import Empty
+from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
-from robot_msgs.msg import JointCmd
+from robot_msgs.msg import *
 
 cmd_count = 0
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 	print "Successfully Remapped Arm Commands"
 
 	print "***** Remapping Head Commands *****"
-	head_mapping = [headers.index(x) for x in ['HeadPan', 'HeadTilt']]
+	head_mapping = [headers.index(x) for x in ['head_pan_joint', 'head_tilt_joint']]
 	head_cmd = [[y[x] for x in head_mapping] for y in cmd]
 	print "First remapped head cmd:"
 	print head_cmd[0]

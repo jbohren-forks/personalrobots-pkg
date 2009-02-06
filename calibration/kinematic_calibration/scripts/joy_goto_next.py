@@ -3,7 +3,7 @@
 import roslib; roslib.load_manifest('kinematic_calibration') 
 import sys
 import rospy
-from roscpp.msg import Empty
+from std_msgs.msg import Empty
 from time import sleep
 from joy.msg import Joy 
 
