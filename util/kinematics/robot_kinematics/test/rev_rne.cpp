@@ -118,9 +118,8 @@ Frame fromDH(double a, double alpha, double d,double theta)
 Segment segFromDH(double a, double alpha, double d, double theta, double m, const Eigen::Matrix3d & I, const Eigen::Vector3d & cm)
 {
   Segment s=Segment(Joint(Joint::RotZ),
-      fromDH(a,alpha,d,theta),
-      Inertia(m,I(0,0),I(1,1),I(2,2),I(0,1),I(0,2),I(1,2)),
-      Vector(cm(0),cm(1),cm(2)));
+                    fromDH(a,alpha,d,theta),
+                    Inertia(m,Vector(cm(0), cm(1), cm(2)),I(0,0),I(1,1),I(2,2),I(0,1),I(0,2),I(1,2)));
   return s;
 }
 

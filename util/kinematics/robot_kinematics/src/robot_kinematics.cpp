@@ -206,21 +206,21 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
 
     KDL::Vector com;
     /* Get inertia matrix and center of mass in KDL frame*/
-    inertia = getInertiaInKDLFrame(link_current, com);
+    inertia = getInertiaInKDLFrame(link_current);
 
     myfile << link_current->name << endl;
     myfile << "KDL Joint in XML Frame" << endl << frame1 << endl << endl;
     myfile << "KDL next joint frame in current KDL joint frame" << endl << frame2 << endl << endl;
-    myfile << "Mass " << inertia.m << endl;
-    myfile << "Inertia" << endl << inertia.I << endl;
-    myfile << "COM " << com << endl << endl;
+    myfile << "Mass " << inertia.m_ << endl;
+    myfile << "Inertia" << endl << inertia.I_ << endl;
+    myfile << "COM " << inertia.cog_ << endl << endl;
 
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
 
 //    if(link_current->joint->type == robot_desc::URDF::Link::Joint::FIXED)
 //      this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::None),frame2,inertia,com));
 //    else        
-    this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2,inertia,com));
+    this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2,inertia));
 
     this->chains_[chain_counter_].joint_id_map_[link_current->name] = link_count + 1;
     link_current = link_next;
@@ -264,9 +264,8 @@ robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::L
   return NULL;
 }
 
-KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector &pos)
+KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_current)
 {
-  KDL::Inertia inertia;
   NEWMAT::Matrix frame(4,4);
   NEWMAT::Matrix I(4,4);
   NEWMAT::Matrix It(4,4);
@@ -306,40 +305,11 @@ KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_
 
   It = frame.t() * I * frame; // In general the similarity transform is f I f' but here we are doing f' I f since we are going in the inverse direction.
 
-  inertia.m = link_current->inertial->mass;
-
-  inertia.I.data[0] = It(1,1);
-  inertia.I.data[1] = It(1,2);
-  inertia.I.data[2] = It(1,3);
-
-  inertia.I.data[3] = It(2,1);
-  inertia.I.data[4] = It(2,2);
-  inertia.I.data[5] = It(2,3);
-
-  inertia.I.data[6] = It(3,1);
-  inertia.I.data[7] = It(3,2);
-  inertia.I.data[8] = It(3,3);
-
-  pos[0] = com_pos_t(1,1);
-  pos[1] = com_pos_t(2,1);
-  pos[2] = com_pos_t(3,1);
-
   cout << "new " << com_pos_t(1,1) << ", " << com_pos_t(2,1) << ", " << com_pos_t(3,1) << endl;
 
-  return inertia;
-/*
-  inertia.I.data[0] = link_current->inertial.inertia[0];
-  inertia.I.data[1] = link_current->inertial.inertia[1];
-  inertia.I.data[2] = link_current->inertial.inertia[2];
-
-  inertia.I.data[3] = link_current->inertial.inertia[1];
-  inertia.I.data[4] = link_current->inertial.inertia[3];
-  inertia.I.data[5] = link_current->inertial.inertia[4];
-
-  inertia.I.data[6] = link_current->inertial.inertia[2];
-  inertia.I.data[7] = link_current->inertial.inertia[4];
-  inertia.I.data[8] = link_current->inertial.inertia[5];
-*/
+  return Inertia(link_current->inertial->mass, 
+                 Vector(com_pos_t(1,1), com_pos_t(2,1), com_pos_t(3,1)), 
+                 It(1,1), It(2,2), It(3,3), It(1,2), It(1,3), It(2,3));
 }
 
 

@@ -61,12 +61,12 @@ KDLChainWrapper::Rotation KDLChainWrapper::relRotation(int i, const Scalar &q_i)
 
 KDLChainWrapper::Vector KDLChainWrapper::center(int i) const
 {
-  return Vector(Map<Vector>(chain_.getSegment(i).getCM().data));
+  return Vector(Map<Vector>(chain_.getSegment(i).getInertia().getCog().data));
 }
 
 KDLChainWrapper::Inertia KDLChainWrapper::inertia(int i) const
 {
-  return Inertia(Map<Inertia>(chain_.getSegment(i).getInertia().I.data));
+  return Inertia(Map<Inertia>(chain_.getSegment(i).getInertia().I_.data));
 }
 
 KDLChainWrapper::Rotation KDLChainWrapper::tipRot(int i) const
@@ -86,7 +86,7 @@ KDLChainWrapper::Vector KDLChainWrapper::axis(int i) const
 
 KDLChainWrapper::Scalar KDLChainWrapper::mass(int i) const
 {
-  return chain_.getSegment(i).getInertia().m;
+  return chain_.getSegment(i).getInertia().m_;
 }
 
 KDLChainWrapper::Vector KDLChainWrapper::gravity() const
