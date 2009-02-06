@@ -74,7 +74,7 @@ void LinkModifier::modifyLink(KDL::Segment& segment) const
   KDL::Frame f_tip = segment.getFrameToTip() ;
   f_tip.p = f_tip.p + trans_ ;
   f_tip.M = f_tip.M * rot_ ;
-  segment = KDL::Segment(segment.getJoint(), f_tip, segment.getInertia(), segment.getCM() ) ;
+  segment = KDL::Segment(segment.getJoint(), f_tip, segment.getInertia()) ;
 }
 
 int ChainModifier::specifyAllParams(const NEWMAT::Matrix& all_params)
