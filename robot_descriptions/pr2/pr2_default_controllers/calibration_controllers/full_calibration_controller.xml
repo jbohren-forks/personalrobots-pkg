@@ -9,11 +9,9 @@
   <forearm_calibrator side="r" />
   <gripper_calibrator side="r" />
 
-  <!--
   <upper_arm_calibrator side="l" />
   <forearm_calibrator side="l" />
   <gripper_calibrator side="l" />
-  -->
 
   <base_calibrator />
 
