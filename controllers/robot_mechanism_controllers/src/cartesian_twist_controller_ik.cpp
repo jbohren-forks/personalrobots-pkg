@@ -145,7 +145,8 @@ void CartesianTwistControllerIk::update()
   last_time_ = time;
 
   // get the joint positions and velocities
-  robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
+  //robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
+  robot_.getPositions(robot_state_->joint_states_, jnt_posvel_.q);
 
   // get cartesian twist error
   FrameVel twist; 
@@ -158,7 +159,16 @@ void CartesianTwistControllerIk::update()
     error(i) = pid_controller_[i].updatePid(error(i), dt);
 
   // get joint velocities
-  twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, error, jnt_vel_);
+  //twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, error, jnt_vel_);
+  twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, twist_desi_, jnt_vel_);
+
+  cout << "twist desi ";
+  for (unsigned int i=0; i<6; i++)
+    cout << twist_desi_(i) << " ";
+  cout << endl;
+
+  for (unsigned int i=0; i<num_joints_; i++)
+    cout << "jnt  " << i << " q=" << jnt_posvel_.q(i) << "  vel=" << jnt_vel_ << endl;
 
   // send joint velocities to joint velocity controllers
   for (unsigned int i=0; i<6; i++){
@@ -194,6 +204,8 @@ bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXml
   // get parameters
   node_->param(controller_name+"/joystick_max_trans", joystick_max_trans_, 0.0);
   node_->param(controller_name+"/joystick_max_rot", joystick_max_rot_, 0.0);
+
+  cout << "joystick max " << joystick_max_trans_ << " " << joystick_max_rot_ << endl;
 
   // get name of root and tip
   string root_name, tip_name;
