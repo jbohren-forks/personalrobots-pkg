@@ -8,5 +8,6 @@
   <license>zlib license</license>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix} -L${prefix} -ltinyxml"/>
+        <doxymaker external="http://www.grinninglizard.com/tinyxml"/>
   </export>
 </package>
