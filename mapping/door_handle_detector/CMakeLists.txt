@@ -11,6 +11,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_executable(door_handle_detector_node src/door_handle_detector.cpp)
 target_link_libraries(door_handle_detector_node)
 
+rospack_add_executable(door_handle_detection_test test/door_handle_detection_test.cpp)
+target_link_libraries(door_handle_detection_test)
+
 # check for OpenMP
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)
