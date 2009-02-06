@@ -32,7 +32,7 @@
 #ifndef TF_EXCEPTIONS_H
 #define TF_EXCEPTIONS_H
 
-#include "ros_exception/exception.h"
+#include <stdexcept>
 
 namespace tf{
 
@@ -40,10 +40,10 @@ namespace tf{
  * This inherits from ros::exception 
  * which inherits from std::runtime_exception
  */
-class TransformException: public ros::Exception
+class TransformException: public std::runtime_error
 { 
 public:
-  TransformException(const std::string errorDescription) : ros::Exception(errorDescription) { ; };
+  TransformException(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
 };
 
 
