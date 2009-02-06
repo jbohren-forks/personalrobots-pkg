@@ -80,8 +80,7 @@ private:
   KDL::Chain             chain_;
   KDL::ChainFkSolverVel* jnt_to_twist_solver_;
   KDL::ChainIkSolverVel_pinv* twist_to_jnt_solver_;
-  KDL::JntArrayVel       jnt_posvel_;
-  KDL::JntArray          jnt_vel_;
+  KDL::JntArray          jnt_pos_, jnt_vel_;
 
   // internal wrench controller
   CartesianWrenchController wrench_controller_;

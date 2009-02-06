@@ -84,7 +84,7 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   num_segments_ = chain_.getNrOfSegments();
   jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
   twist_to_jnt_solver_ = new ChainIkSolverVel_pinv(chain_);
-  jnt_posvel_.resize(num_joints_);
+  jnt_pos_.resize(num_joints_);
   jnt_vel_.resize(num_joints_);
 
   // get pid controller
@@ -139,28 +139,11 @@ void CartesianTwistControllerIk::update()
   // check if joints are calibrated
   if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
 
-  // get time
-  double time = robot_state_->hw_->current_time_;
-  double dt = time - last_time_;
-  last_time_ = time;
+  // get the joint positions 
+  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
-  // get the joint positions and velocities
-  //robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
-  robot_.getPositions(robot_state_->joint_states_, jnt_posvel_.q);
-
-  // get cartesian twist error
-  FrameVel twist; 
-  jnt_to_twist_solver_->JntToCart(jnt_posvel_, twist);
-  twist_meas_ = twist.deriv();
-  Twist error = twist_meas_ - twist_desi_;
-
-  // pid feedback
-  for (unsigned int i=0; i<6; i++)
-    error(i) = pid_controller_[i].updatePid(error(i), dt);
-
-  // get joint velocities
-  //twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, error, jnt_vel_);
-  twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, twist_desi_, jnt_vel_);
+  // calculate joint velocities
+  twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
 
   cout << "twist desi ";
   for (unsigned int i=0; i<6; i++)
@@ -168,10 +151,10 @@ void CartesianTwistControllerIk::update()
   cout << endl;
 
   for (unsigned int i=0; i<num_joints_; i++)
-    cout << "jnt  " << i << " q=" << jnt_posvel_.q(i) << "  vel=" << jnt_vel_ << endl;
+    cout << "jnt  " << i << " q=" << jnt_pos_(i) << "  vel=" << jnt_vel_(i) << endl;
 
   // send joint velocities to joint velocity controllers
-  for (unsigned int i=0; i<6; i++){
+  for (unsigned int i=0; i<num_joints_; i++){
     joint_vel_controllers_[i]->setCommand(jnt_vel_(i));
     joint_vel_controllers_[i]->update();
   }
@@ -253,6 +236,9 @@ void CartesianTwistControllerIkNode::joystick()
     controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * joystick_max_trans_;
     controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * joystick_max_rot_;
   }
+
+  cout << "joystick " << controller_.twist_desi_.vel(0) << " " << controller_.twist_desi_.vel(1) << endl;
+
 }
 
 
