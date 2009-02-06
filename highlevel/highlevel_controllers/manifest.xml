@@ -1,9 +1,12 @@
 <package>
- <description brief='Contains high-level controllers which receive goals and generate state updates on goal achievement. These controllers
-		    represent an encapsulated task that leverages underlying system components, including real-time controllers, to achieve
-		    a given goal. All such controllers can be tasked with a goal, will report state periodically, can have a goal recalled,
-		    and operate with general semantics of being active or inactive.'>
- </description>
+  <description brief="Receive goals and generate states on goal achievement">
+    Contains high-level controllers which receive goals and generate state
+    updates on goal achievement. These controllers represent an encapsulated
+    task that leverages underlying system components, including real-time
+    controllers, to achieve a given goal. All such controllers can be tasked
+    with a goal, will report state periodically, can have a goal recalled, and
+    operate with general semantics of being active or inactive.
+  </description>
  <author>Conor McGann</author>
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
