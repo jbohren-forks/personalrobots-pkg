@@ -22,25 +22,45 @@
 #ifndef KDLINERTIA_HPP
 #define KDLINERTIA_HPP
 
-#include "inertiamatrix.hpp"
+#include "frames.hpp"
+
 
 namespace KDL {
 
-	/**
-		This class offers the inertia-structure of a body
-		*/
-	class Inertia{
-		public:
-			Inertia(double m=0,double Ixx=0,double Iyy=0,double Izz=0,double Ixy=0,double Ixz=0,double Iyz=0);
+  class InertiaMatrix{
+  public:
+    InertiaMatrix(double Ixx=0,double Iyy=0,double Izz=0,double Ixy=0,double Ixz=0,double Iyz=0);
+    InertiaMatrix(const InertiaMatrix& inert);
+    InertiaMatrix operator=(const InertiaMatrix& inert);
+    ~InertiaMatrix() {};
+    
+    static inline InertiaMatrix Zero(){  return InertiaMatrix(); };
+    Vector operator*(const KDL::Vector& v) const;
 
-    static inline Inertia Zero(){
-        return Inertia(0,0,0,0,0,0,0);
-    };
-            ~Inertia();
-		public:
-			double m;
-			InertiaMatrix I;
-	};
+    double data[9];
+  };
+
+
+
+  /**
+     This class offers the inertia-structure of a body
+  */
+  class Inertia{
+  public:
+    Inertia(double m=0, const Vector& cog=Vector::Zero(), double Ixx=0,double Iyy=0,double Izz=0,double Ixy=0,double Ixz=0,double Iyz=0);
+    ~Inertia() {};
+    
+    static inline Inertia Zero(){ return Inertia(); };
+    Vector getCog() const {return cog_;};
+
+  public:
+    Vector cog_;
+    double m_;
+    InertiaMatrix I_;
+  };
+
+
+  
 
 }
 

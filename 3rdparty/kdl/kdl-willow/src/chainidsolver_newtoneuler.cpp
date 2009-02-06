@@ -42,7 +42,7 @@ namespace KDL
 			link_i = chain.getSegment(i-1);
 			z_i_minus_one = link_i.getJoint().JointAxis();
 
-			r_cm = link_i.getCM();
+			r_cm = link_i.getInertia().getCog();
 			_iRi_minus_one = T_tip.M.Inverse();
 
 			b_i = z_i_minus_one;
@@ -84,15 +84,15 @@ namespace KDL
 			link_i = chain.getSegment(i);
 			T_tip = link_i.getFrameToTip();
 			rot = T_tip.M * rot;
-			r_cm = link_i.getCM();
+			r_cm = link_i.getInertia().getCog();
 
 			r = T_tip.p; // I want vector in body coordinates.
 			r_iplusone_c = r_cm-r;
 
 			gen_mass = link_i.getInertia();
 
-			I = gen_mass.I;
-			m = gen_mass.m;
+			I = gen_mass.I_;
+			m = gen_mass.m_;
 
 			T = link_i.pose(q(i));
 

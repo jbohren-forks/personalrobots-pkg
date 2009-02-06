@@ -131,13 +131,13 @@ std::ostream& operator << (std::ostream& os,const InertiaMatrix& I)
 	os << "[";
 	for (int i=0;i<3;i++)
 	{
-		os << std::setw(KDL_FRAME_WIDTH) << I.data[3*i+0] << "," <<
-			std::setw(KDL_FRAME_WIDTH) << I.data[3*i+1] << "," <<
-			std::setw(KDL_FRAME_WIDTH) << I.data[3*i+2];
-		if (i<2)
-			os << ";"<< std::endl << " ";
-		else
-			os << "]";
+          os << std::setw(KDL_FRAME_WIDTH) << I.data[3*i+0] << "," <<
+            std::setw(KDL_FRAME_WIDTH) << I.data[3*i+1] << "," <<
+            std::setw(KDL_FRAME_WIDTH) << I.data[3*i+2];
+          if (i<2)
+            os << ";"<< std::endl << " ";
+          else
+            os << "]";
 	}
 	return os;
 }

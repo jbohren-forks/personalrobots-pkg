@@ -80,7 +80,7 @@
 #include "frames.hpp"
 #include "jntarray.hpp"
 #include "jacobian.hpp"
-#include "inertiamatrix.hpp"
+#include "inertia.hpp"
 
 namespace KDL {
 

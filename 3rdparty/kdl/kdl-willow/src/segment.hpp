@@ -49,7 +49,6 @@ namespace KDL {
         Joint joint;
         Inertia M;
         Frame f_tip;
-        Vector r_cm; // Vector of center of mass from frame origin in local coordinates.
         
     public:
         /**
@@ -61,8 +60,7 @@ namespace KDL {
          * the segment, default: Frame::Identity()
          * @param M rigid body inertia of the segment, default: Inertia::Zero()
          */
-        Segment(const Joint& joint=Joint(Joint::None), const Frame& f_tip=Frame::Identity(),const Inertia& M = Inertia::Zero(),
-								const Vector& r_cm = Vector::Zero());
+        Segment(const Joint& joint=Joint(Joint::None), const Frame& f_tip=Frame::Identity(),const Inertia& M = Inertia::Zero());
         Segment(const Segment& in);
         Segment& operator=(const Segment& arg);
 
@@ -110,17 +108,6 @@ namespace KDL {
             return M;
         }
 
-        /** 
-         * Request the location of center of mass of the segment
-         * 
-         * 
-         * @return const reference to the center of mass (vector) of the segment
-         */        
-				const Vector& getCM()const
-				{
-					return r_cm;
-				}
-        
         /** 
          * Request the pose from the joint end to the tip of the
          *segment.
