@@ -5,5 +5,8 @@
   <author>Edward Rosten and Tom Drummond</author>
   <license>BSD</license>
   <review status="3rdparty" notes=""/>
+  <export>
+    <cpp cflags="-I${prefix}/src" lflags=" -L${prefix}/lib -lfast_detector"/>
+  </export>
 
 </package>
