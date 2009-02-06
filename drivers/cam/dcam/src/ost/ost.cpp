@@ -98,6 +98,8 @@ bool is3D;			// true if 3D points requested
 bool useSTOC;			// true if we want to use STOC processing
 bool isTracking;		// true if we want to track the chessboard live
 bool isExit;			// true if we want to exit
+dc1394video_mode_t videoMode;	// current video mode
+dc1394framerate_t videoRate;	// current video rate
 
 // GUI stuff
 stereogui *stg;			// GUI object
@@ -294,6 +296,8 @@ main(int argc, char **argv)	// no arguments
   dev->setRangeMin(0.5);	// in meters
 
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
+  videoMode = VIDERE_STEREO_640x480;
+  videoRate = DC1394_FRAMERATE_30;
 
   while (fltk_check() && !isExit) // process GUI commands, serve video
     {
@@ -304,7 +308,7 @@ main(int argc, char **argv)	// no arguments
 	  if (dev)
 	    {
 	      debug_message("[Dcam] Setting format, frame rate and PROC mode");
-	      dev->setFormat(VIDERE_STEREO_640x480);
+	      dev->setFormat(videoMode, videoRate);
 	      if (dev->isSTOC)
 		stg->stoc_button->value(true); // turn it on
 	      dev->setProcMode(pmode);
@@ -315,6 +319,9 @@ main(int argc, char **argv)	// no arguments
 	      dev->setSpeckleSize(sp_ssize);
 	      dev->setSpeckleDiff(sp_sdiff);
 	      dev->setCorrsize(sp_corr);
+	      // set auto exp, auto gain max
+	      dev->setMaxAutoVals(100,48);
+
 	      isVideo = true;	// needed to keep thread running
 	      startCam = false;
 	    }
@@ -1875,7 +1882,7 @@ cal_set_dev_params()
 {
   if (!dev)
     return;			// no device yet...
-  dev->camIm->params = dev->stIm->createParams();
+  dev->camIm->params = dev->stIm->createParams(true);
 }
 
 
@@ -1893,22 +1900,30 @@ void cal_save_params(char *fname)
 
 void cal_save_params_cb(Fl_Button*, void*)
 {
-  char *fname = fl_file_chooser("Save params (.ini)", NULL, NULL);
+  char *fname = fl_file_chooser("Save params (.ini)", "{.ini}", NULL);
   if (fname == NULL)
     return;
 
-  // strip off image suffix (or any other suffix)
-  char *lname = NULL, *rname = NULL, *bname = NULL;
-  int ind = -1;
-  bool ret;
-  ret = parse_filename(fname, &lname, &rname, &ind, &bname);
-  debug_message("[oST] File base name: %s\n", bname);
+  // find suffix, add one if not there
+  debug_message("[oST] File name: %s", fname);
+  int n = strlen(fname);
+  int sufn = 0;
+  for (int i=n-1; i>n-6; i--)
+    {
+      if (fname[i] == '.')
+	{
+	  sufn = i;
+	  break;
+	}
+    }
+  
+  char fn[1024];		// filename we want to use
+  strcpy(fn,fname);
+  if (sufn == 0)		// no suffix
+    strcpy(&fn[n],".ini");
 
-  char ff[1024];
-
-  sprintf(ff, "%s.ini", bname);
-  cal_save_params(ff);
-  debug_message("[oST] Wrote %s", ff);
+  cal_save_params(fn);
+  debug_message("[oST] Wrote %s", fn);
 }
 
 
@@ -2641,10 +2656,87 @@ void save_images_cb(Fl_Menu_ *w, void *u)
 // saving and loading parameters
 
 void load_params_cb(Fl_Menu_ *w, void *u)
-{}
+{
+  if (!dev) return;		// no device
+  char *fname = fl_file_chooser("Load params (.ini)", "{*.ini}", NULL);
+  if (fname == NULL)
+    return;
+
+  debug_message("[oST] File name: %s", fname);
+  FILE *fp = fopen(fname,"r");
+  if (fp == NULL)
+    {
+      debug_message("[oST] Can't read file %s",fname);
+      return;
+    }
+  
+  char bb[4096];
+  int n = fread(bb,1,4095,fp);
+  fclose(fp);
+  debug_message("[oST] Read %d bytes",n);
+  
+  if (n > 0)
+    {
+      bb[n] = 0;
+      dev->stIm->extractParams(bb); // set up parameters
+      dev->putParameters(bb);	// save in device object
+    }
+}
+
+
+//
+// saves parameters, append ".ini" suffix if there is no suffix
+//
 
 void save_params_cb(Fl_Menu_ *w, void *u)
-{}
+{
+  if (!dev) return;		// no device
+  char *fname = fl_file_chooser("Save params (.ini)", "{*.ini}", NULL);
+  if (fname == NULL)
+    return;
+
+  // find suffix, add one if not there
+  debug_message("[oST] File name: %s", fname);
+  int n = strlen(fname);
+  int sufn = 0;
+  for (int i=n-1; i>n-6; i--)
+    {
+      if (fname[i] == '.')
+	{
+	  sufn = i;
+	  break;
+	}
+    }
+  
+  char fn[1024];		// filename we want to use
+  strcpy(fn,fname);
+  if (sufn == 0)		// no suffix
+    strcpy(&fn[n],".ini");
+  char *bb = dev->stIm->createParams(); // get parameter string from current params
+  FILE *fp = fopen(fn,"w");
+  if (fp == NULL)
+    {
+      debug_message("[oST] Can't write to file %s",fn);
+      return;
+    }
+  
+  fprintf(fp, "%s", bb);
+  fclose(fp);
+  debug_message("[oST] Wrote parameters");
+}
+
+
+//
+// uploads params to device
+//
+
+void upload_params_cb(Fl_Menu_ *w, void *u)
+{
+  if (!dev) return;		// no device
+  int ret = fl_choice("Really upload, erasing old camera calibration?","No","Yes",NULL);
+  if (ret == 1)
+    dev->setParameters();
+}
 
 
 //
@@ -2703,9 +2795,14 @@ video_rate_cb(Fl_Choice *w, void *u)
   Fl_Menu_ *mw = (Fl_Menu_ *)w;
   const Fl_Menu_Item* m = mw->mvalue();
   
-  if (!strcmp(m->label(), "None"))
-    {
-    }
+  if (!strcmp(m->label(), "30 Hz"))
+    videoRate = DC1394_FRAMERATE_30;
+  else if (!strcmp(m->label(), "15 Hz"))
+    videoRate = DC1394_FRAMERATE_15;
+  else if (!strcmp(m->label(), "7 Hz"))
+    videoRate = DC1394_FRAMERATE_7_5;
+  else if (!strcmp(m->label(), "3 Hz"))
+    videoRate = DC1394_FRAMERATE_3_75;
 }
 
 

@@ -195,7 +195,7 @@ namespace dcam
     uint32_t expMax, expMin;
     uint32_t gainMax, gainMin;
     uint32_t brightMax, brightMin;
-
+    bool setMaxAutoVals(int exp, int gain); // set max for auto gain and exposure algorithm
 
     // low-level register access
     // implicitly assumes CCR base, so that DCAM register are at offsets
@@ -209,6 +209,8 @@ namespace dcam
     virtual bool setHDR(bool on); // high dynamic range
 
     virtual char *getParameters(); // download from device
+    virtual char *retParameters(); // just return current param string
+    virtual bool putParameters(char *p); // just set current param string, handle buffering
     virtual bool setParameters(); // upload to device
     virtual bool setSTOCParams(uint8_t *cbuf, int cn, // upload to STOC device
 			       uint8_t *lbuf, int ln, // STOC firmware, left and right warp tables

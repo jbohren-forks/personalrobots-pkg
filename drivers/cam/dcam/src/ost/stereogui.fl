@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0107 
+version 1.0108 
 header_name {stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
@@ -7,43 +7,48 @@ class stereogui {open
   Function {stereogui()} {open
   } {
     Fl_Window ost_main {
-      label {Open STereo}
-      xywh {451 255 655 305} type Single labelsize 11 visible
+      label {Open STereo} open
+      xywh {455 285 655 305} type Single labelsize 11 hide
     } {
       Fl_Output info_message {
         xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
-      Fl_Menu_Bar {} {
+      Fl_Menu_Bar {} {open
         xywh {0 0 680 20}
       } {
         Submenu {} {
-          label File open
+          label File open selected
           xywh {0 0 63 20}
         } {
           MenuItem {} {
             label {Load Images...}
             callback load_images_cb
-            xywh {0 0 30 20} divider
+            xywh {0 0 30 20} labelsize 11 divider
           }
           MenuItem {} {
             label {Save Images...}
             callback save_images_cb
-            xywh {0 0 30 20} divider
+            xywh {0 0 30 20} labelsize 11 divider
           }
           MenuItem {} {
             label {Load Params...}
             callback load_params_cb
-            xywh {0 0 30 20}
+            xywh {0 0 30 20} labelsize 11
           }
           MenuItem {} {
             label {Save Params...}
             callback save_params_cb
-            xywh {0 0 30 20} divider
+            xywh {0 0 30 20} labelsize 11 divider
+          }
+          MenuItem {} {
+            label {Upload Params...}
+            callback upload_params_cb
+            xywh {10 10 30 20} labelsize 11 divider
           }
           MenuItem {} {
             label Exit
             callback do_exit_cb
-            xywh {10 10 30 20}
+            xywh {10 10 30 20} labelsize 11
           }
         }
         MenuItem {} {
@@ -941,10 +946,10 @@ class stereogui {open
       }
     }
     Fl_Window stereo_window {
-      label Stereo open
-      xywh {457 827 340 295} type Single visible
+      label Stereo
+      xywh {461 857 340 295} type Single hide
     } {
-      Fl_Group {} {open selected
+      Fl_Group {} {
         xywh {15 155 285 120}
       } {
         Fl_Box {} {
@@ -977,7 +982,7 @@ class stereogui {open
           xywh {230 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
       }
-      Fl_Group {} {open
+      Fl_Group {} {
         xywh {20 30 320 110}
       } {
         Fl_Box {} {
@@ -1049,8 +1054,8 @@ class stereogui {open
       }
     }
     Fl_Window video_window {
-      label Video open
-      xywh {453 593 425 205} type Single visible
+      label Video
+      xywh {457 623 425 205} type Single hide
     } {
       Fl_Group {} {open
         xywh {20 85 285 170}

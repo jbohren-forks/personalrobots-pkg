@@ -835,6 +835,23 @@ dcam::Dcam::setRawType()
 
 
 // Parameters
+char *
+dcam::Dcam::retParameters()
+{
+  return camIm->params;
+}
+
+bool
+dcam::Dcam::putParameters(char *bb)
+{
+  if (camIm->params)
+    delete [] camIm->params;
+  int n = strlen(bb);
+  char *str = new char[n+1];
+  strcpy(str,bb);
+  camIm->params = str;
+  return true;
+}
 
 char *
 dcam::Dcam::getParameters()
@@ -919,7 +936,9 @@ dcam::Dcam::setParameters()
   uint32_t quad = 0;
   char *bb = camIm->params;
   int n = strlen(bb);
+  PRINTF("[Dcam] Writing %d bytes\n", n);
 
+  
   while (n--)
     {
       int b = *bb++;
@@ -1118,6 +1137,31 @@ dcam::Dcam::setGain(int val, bool isauto)
   else
     setFeature(DC1394_FEATURE_GAIN,v);      // ??? do we have to set manual here ???
 }
+
+//
+//
+//
+bool
+dcam::Dcam::setMaxAutoVals(int exp, int gain)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (exp < 1) exp = 1;
+  if (exp > gainMax) exp = gainMax;
+  exp |= 0x04BD0000;
+  setRegister(0xFF000, exp);
+
+  if (gain < 0) gain = 0;
+  if (gain > gainMax) gain = gainMax;
+  gain = 0x04360000 | (gain+16);
+  setRegister(0xFF000, gain);
+
+  return true;
+}
+
+
+// brightness
 
 void
 dcam::Dcam::setBrightness(int val, bool isauto)
