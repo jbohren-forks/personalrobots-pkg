@@ -33,10 +33,10 @@
 #include <utility>
 #include <map>
 #include <iostream>
+#include <stdexcept>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/multi_array.hpp>
-#include "ros_exception/exception.h"
 #include "gridcell.h"
 
 namespace topological_map
@@ -120,10 +120,10 @@ private:
 };
 
 
-class TopologicalMapException: public ros::Exception
+class TopologicalMapException: public std::runtime_error
 { 
 public:
-  TopologicalMapException(const std::string errorDescription) : ros::Exception(errorDescription) {};
+  TopologicalMapException(const std::string errorDescription) : std::runtime_error(errorDescription) {};
 };
 
 class InvalidGridCellException: public TopologicalMapException
