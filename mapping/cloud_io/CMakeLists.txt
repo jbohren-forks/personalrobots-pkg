@@ -5,6 +5,8 @@ set(ROS_BUILD_TYPE Release)
 rospack(cloud_io)
 add_definitions(-Wall)
 
+rospack_add_boost_directories()
+
 rospack_add_library(cloud_io src/read.cpp src/write.cpp src/misc.cpp)
 
 rospack_add_gtest(bin/test_io test/test_io.cpp)

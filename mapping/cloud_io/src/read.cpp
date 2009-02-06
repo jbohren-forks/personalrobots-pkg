@@ -32,7 +32,7 @@
 
 #include <stdlib.h>
 #include "cloud_io/cloud_io.h"
-#include "string_utils/string_utils.h"
+#include <boost/algorithm/string.hpp>
 
 namespace cloud_io
 {
@@ -70,7 +70,7 @@ namespace cloud_io
         continue;
 
       std::vector<std::string> st;
-      string_utils::split (line, st, " ");
+      boost::split (st, line, boost::is_any_of(" "));
 
       std::string line_type = st.at (0);
 
