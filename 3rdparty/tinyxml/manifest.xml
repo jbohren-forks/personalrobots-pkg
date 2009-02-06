@@ -7,6 +7,6 @@
   <url>http://www.grinninglizard.com/tinyxml</url>
   <license>zlib license</license>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix} -ltinyxml"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix} -L${prefix} -ltinyxml"/>
   </export>
 </package>
