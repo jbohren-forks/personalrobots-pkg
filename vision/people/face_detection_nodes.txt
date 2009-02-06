@@ -1,4 +1,4 @@
 2
-frontalface ./cascades/haarcascade_frontalface_alt.xml 0.9
-profileface ./cascades/haarcascade_profileface.xml 0.7
+frontalface ../../3rd_party/opencv_latest/opencv/share/opencv/haarcascades/haarcascade_frontalface_alt.xml 0.9
+profileface ../../3rd_party/opencv_latest/opencv/share/opencv/haarcascades/haarcascade_profileface.xml 0.7
 
