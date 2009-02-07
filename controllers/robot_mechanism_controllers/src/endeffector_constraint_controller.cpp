@@ -319,6 +319,8 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
   // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
   constraint_null_space_ = identity_ - constraint_jac_*constraint_jac_.transpose();
+  joint_constraint_null_space_ =  identity_joint_ - joint_constraint_jac_*joint_constraint_jac_.transpose();
+
 }
 
 
