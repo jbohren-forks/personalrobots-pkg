@@ -1,19 +1,29 @@
 <package>
   <description>
+  
     A complete package for 3D point cloud processing, oferring both generic libraries and specific purpose nodes.
 
     The list of libraries includes:
 
-    - cloud_geometry: areas, distances, intersections, 3D normals/features estimation,
-                      norms, projections, statistics, transformations, etc 
+    - cloud_geometry: areas, distances, intersections, 3D normals/features estimation, norms, projections, statistics,
+                      transformations, etc
 
     - cloud_io: a library for Input/Output PCD (Point Cloud Data) processing
+    
+    - cloud_kdtree: a library for nD spatial decomposition and nearest neighbors searches for PointCloud messages using k-D
+                    trees.
 
-    - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC,
-                        etc,) and geometric shape models
+
+    - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC, etc,) and geometric shape
+                        models
 
    The list of nodes includes:
+
    - cloud_downsampler_node: a node which uniformly downsamples a 3D point cloud
+
+   - normal_estimation_node: a node which estimates local surface properties at each point such as surface normals,
+                             curvature changes, moment invariants, etc.
+
   </description>
 
   <author>Radu Bogdan Rusu</author>
@@ -25,8 +35,10 @@
   <depend package="std_msgs" />
   <depend package="eigen" />
   <depend package="tf" />
+  <depend package="ANN" />
+<!--  <depend package="FL-ANN" /> -->
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree" />
   </export>
 </package>
