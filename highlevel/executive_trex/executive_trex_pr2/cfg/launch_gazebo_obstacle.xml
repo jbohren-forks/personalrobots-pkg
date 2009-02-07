@@ -1,21 +1,20 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-
-    <include file="$(find pr2_gazebo)/pr2_obs.launch"/>
+    <param name="use_sim_time" type="boolean" value="true" />
+    <include file="$(find pr2_gazebo)/pr2_obs_trajectory.launch"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
 
-    <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
+    <node pkg="fake_localization" type="fake_localization" respawn="false" />
 
-
-    <node pkg="laser_scan" type="scan_shadows_filter_node"/>
-    <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.05 --accuratetiming 0" output="screen">
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true"/>
+    <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.1 --accuratetiming 0" respawn="true">
       <env name="OPENRAVE_DATA" value="$(find openrave)/share/openrave:$(find openrave_robot_description)"/>
       <env name="OPENRAVE_PLUGINS" value="$(find openrave)/share/openrave/plugins"/>
     </node>
 
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv"  name="point_cloud_assembler" respawn="true">
       <remap from="scan_in" to="robotlinks_cloud_filtered" />
       <param name="tf_cache_time_secs" type="double" value="10.0" />
       <param name="max_scans" type="int" value="400" />
@@ -23,14 +22,14 @@
       <param name="downsample_factor" type="int" value="1" />
     </node>
 
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="full_cloud" to="point_cloud_snapshotted" />
       <remap from="build_cloud" to="/point_cloud_assembler/build_cloud" />
     </node>
     <!--node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" /-->
 
-    <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true" output="screen">
+    <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true">
       <param name="end_effector_frame_l" type="string" value="r_gripper_l_finger_tip_link" />
       <param name="end_effector_frame_r" type="string" value="r_gripper_r_finger_tip_link" />
       <param name="robot_max_x" type="double" value="1.2" />
@@ -39,19 +38,31 @@
       <param name="leaf_width_x" type="double" value="0.008" />
       <param name="leaf_width_y" type="double" value="0.008" />
       <param name="leaf_width_z" type="double" value="0.008" />
-      <param name="window_size" type="int" value="3" />
+      <param name="window_size" type="int" value="6" />
       <remap from="full_cloud" to="point_cloud_snapshotted" />
     </node>
 
+    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" output="screen"/>-->
 
-
-    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
+    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true">
+      <remap from="robot_description" to="robotdesc/pr2"/>
+      <remap from="collision_map" to="collision_map_buffer"/>
+    </node>
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
-    <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
 
-    <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />
+    <node name="right_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
+      <param name="controller_frequency" value="0.6"/>
+      <param name="planner_frequency" value="5.0"/>
+      <remap from="robot_description" to="robotdesc/pr2"/>
+    </node>
+
+    <node name="left_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
+      <param name="controller_frequency" value="0.6"/>
+      <param name="planner_frequency" value="5.0"/>
+      <remap from="robot_description" to="robotdesc/pr2"/>
+    </node>
 
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
 

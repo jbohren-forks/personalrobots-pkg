@@ -9,7 +9,7 @@
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
 
     <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true"/>
-    <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.05 --accuratetiming 0" respawn="true">
+    <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.1 --accuratetiming 0" respawn="true">
       <env name="OPENRAVE_DATA" value="$(find openrave)/share/openrave:$(find openrave_robot_description)"/>
       <env name="OPENRAVE_PLUGINS" value="$(find openrave)/share/openrave/plugins"/>
     </node>
@@ -38,7 +38,7 @@
       <param name="leaf_width_x" type="double" value="0.008" />
       <param name="leaf_width_y" type="double" value="0.008" />
       <param name="leaf_width_z" type="double" value="0.008" />
-      <param name="window_size" type="int" value="3" />
+      <param name="window_size" type="int" value="6" />
       <remap from="full_cloud" to="point_cloud_snapshotted" />
     </node>
 
