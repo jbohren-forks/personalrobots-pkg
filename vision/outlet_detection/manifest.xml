@@ -9,8 +9,12 @@
   <depend package="opencv_latest"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
+  <depend package="fast_detector"/>
+  <depend package="calonder_descriptor"/>
+  <depend package="place_recognition"/>
+  <depend package="matplotlib"/>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lcalonder"/>
+    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lblob"/>
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
