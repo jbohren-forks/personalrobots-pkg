@@ -66,6 +66,7 @@
 #include <cloud_geometry/distances.h>
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/transforms.h>
+#include <cloud_geometry/statistics.h>
 
 #include <sys/time.h>
 
@@ -345,7 +346,7 @@ class DoorHandleDetector : public ros::Node
         cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff[cc], pmap_.polygons[cc]);
 
         // Filter the region based on its height and width
-        cloud_geometry::getMinMax (&pmap_.polygons[cc], minP, maxP);
+        cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], minP, maxP);
 
         // adapt the goodness factor for each cluster
         double door_frame = sqrt (pow ((minP.x - maxP.x), 2) + pow ((minP.y - maxP.y), 2));
@@ -553,7 +554,7 @@ class DoorHandleDetector : public ros::Node
       nr_p = 0;
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
-        cloud_geometry::getMinMax (points, &clusters[i], minP, maxP);
+        cloud_geometry::statistics::getMinMax (points, &clusters[i], minP, maxP);
         if (fabs (maxP.z - minP.z) < handle_height_threshold_)
         {
           for (unsigned int j = 0; j < clusters[i].size (); j++)
