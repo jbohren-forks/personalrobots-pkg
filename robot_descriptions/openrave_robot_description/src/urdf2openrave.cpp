@@ -143,92 +143,98 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
     TiXmlElement *geom = new TiXmlElement("geom");
 
     string type;
+    btTransform vis;
 
-    // I'm not at all sure that this is the right thing to do.
-    if(!link->visual)
-    {
-      printf("skipping link without visual tag: %s\n", link->name.c_str());
-      return;
+    if(!link->visual) {
+        printf("link without visual tag: %s\n", link->name.c_str());
+        type = "box";
+        double extents[3] = {0.001,0.001,0.001};
+        addKeyValue(geom, "extents", values2str(3,extents));
     }
-    switch(link->visual->geometry->type) {
-    case robot_desc::URDF::Link::Geometry::MESH: {
-        robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
+    else {
+        switch(link->visual->geometry->type) {
+        case robot_desc::URDF::Link::Geometry::MESH: {
+            robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
 
-        // Trim Both leading and trailing spaces  
-        size_t startpos = mesh->filename.find_first_not_of(" \t");
-        size_t endpos = mesh->filename.find_last_not_of(" \t");        
+            // Trim Both leading and trailing spaces  
+            size_t startpos = mesh->filename.find_first_not_of(" \t");
+            size_t endpos = mesh->filename.find_last_not_of(" \t");        
 
-        if(( string::npos == startpos ) || ( string::npos == endpos))
-            mesh->filename = "";
-        else
-            mesh->filename = mesh->filename.substr( startpos, endpos-startpos+1 ); 
-
-        if( mesh->filename.empty() ) {
-            cerr << "mesh file is empty for link " << link->name << ", adding box" << endl;
-            type = "box";
-            double extents[3] = {0.01,0.01,0.01};
-            addKeyValue(geom, "extents", values2str(3,extents));
-        }
-        else {
-            type = "trimesh";
-            stringstream ss;
-            
-            s_listResourceNames.push_back(mesh->filename + ".iv");
-            
-            string collisionfilename;
-
-            map<string, string> mcolinfo = link->collision->data.getMapTagValues("collision", "mesh");
-            if( mcolinfo["type"] == string("visual"))
-                collisionfilename = mesh->filename + string(".iv");
+            if(( string::npos == startpos ) || ( string::npos == endpos))
+                mesh->filename = "";
             else
-                collisionfilename = string("convex/") + mesh->filename + string("_convex.iv");
+                mesh->filename = mesh->filename.substr( startpos, endpos-startpos+1 ); 
 
-            // check for convex meshes
-            ifstream ifile((s_inresdir + collisionfilename).c_str(), ios_base::binary);
-            if( !ifile ) {
-                cerr << "failed to find convex decomposition file: " << s_inresdir << collisionfilename << endl;
-                collisionfilename = mesh->filename + string(".iv");
+            if( mesh->filename.empty() ) {
+                cerr << "mesh file is empty for link " << link->name << ", adding box" << endl;
+                type = "box";
+                double extents[3] = {0.01,0.01,0.01};
+                addKeyValue(geom, "extents", values2str(3,extents));
             }
             else {
-                s_listResourceNames.push_back(collisionfilename);
-            }
-
-            //s_listResourceNames.push_back(mesh->filename + "_low.iv");
+                type = "trimesh";
+                stringstream ss;
             
-            ss << mesh->filename << ".iv " << mesh->scale[0];
-            addKeyValue(geom, "render", ss.str());
+                s_listResourceNames.push_back(mesh->filename + ".iv");
+            
+                string collisionfilename;
 
-            ss.str("");
-            ss << collisionfilename << " " << mesh->scale[0]; // don't use low!
-            addKeyValue(geom, "data", ss.str());
+                map<string, string> mcolinfo = link->collision->data.getMapTagValues("collision", "mesh");
+                if( mcolinfo["type"] == string("visual"))
+                    collisionfilename = mesh->filename + string(".iv");
+                else
+                    collisionfilename = string("convex/") + mesh->filename + string("_convex.iv");
+
+                // check for convex meshes
+                ifstream ifile((s_inresdir + collisionfilename).c_str(), ios_base::binary);
+                if( !ifile ) {
+                    cerr << "failed to find convex decomposition file: " << s_inresdir << collisionfilename << endl;
+                    collisionfilename = mesh->filename + string(".iv");
+                }
+                else {
+                    s_listResourceNames.push_back(collisionfilename);
+                }
+
+                //s_listResourceNames.push_back(mesh->filename + "_low.iv");
+            
+                ss << mesh->filename << ".iv " << mesh->scale[0];
+                addKeyValue(geom, "render", ss.str());
+
+                ss.str("");
+                ss << collisionfilename << " " << mesh->scale[0]; // don't use low!
+                addKeyValue(geom, "data", ss.str());
+            }
+            break;
         }
-        break;
-    }
-    case robot_desc::URDF::Link::Geometry::BOX: {
-        type = "box";
-        robot_desc::URDF::Link::Geometry::Box* box = static_cast<robot_desc::URDF::Link::Geometry::Box*>(link->visual->geometry->shape);
-        addKeyValue(geom, "extents", values2str(3,box->size));
-        break;
-    }
-    case robot_desc::URDF::Link::Geometry::CYLINDER: {
-        type = "cylinder";
-        robot_desc::URDF::Link::Geometry::Cylinder* cylinder = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(link->visual->geometry->shape);
-        addKeyValue(geom,"radius",values2str(1,&cylinder->radius));
-        addKeyValue(geom,"height",values2str(1,&cylinder->length));
-        break;
-    }
-    case robot_desc::URDF::Link::Geometry::SPHERE: {
-        type = "sphere";
-        double radius = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(link->visual->geometry->shape)->radius;
-        addKeyValue(geom,"radius",values2str(1,&radius));
-        break;
-    }
-    default: {
-        fprintf(stderr,"Unknown body type: %d in geometry '%s'\n", link->visual->geometry->type, link->visual->geometry->name.c_str());
-        exit(-1);
-    }
-    }
+        case robot_desc::URDF::Link::Geometry::BOX: {
+            type = "box";
+            robot_desc::URDF::Link::Geometry::Box* box = static_cast<robot_desc::URDF::Link::Geometry::Box*>(link->visual->geometry->shape);
+            addKeyValue(geom, "extents", values2str(3,box->size));
+            break;
+        }
+        case robot_desc::URDF::Link::Geometry::CYLINDER: {
+            type = "cylinder";
+            robot_desc::URDF::Link::Geometry::Cylinder* cylinder = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(link->visual->geometry->shape);
+            addKeyValue(geom,"radius",values2str(1,&cylinder->radius));
+            addKeyValue(geom,"height",values2str(1,&cylinder->length));
+            break;
+        }
+        case robot_desc::URDF::Link::Geometry::SPHERE: {
+            type = "sphere";
+            double radius = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(link->visual->geometry->shape)->radius;
+            addKeyValue(geom,"radius",values2str(1,&radius));
+            break;
+        }
+        default: {
+            fprintf(stderr,"Unknown body type: %d in geometry '%s'\n", link->visual->geometry->type, link->visual->geometry->name.c_str());
+            exit(-1);
+        }
+        }
 		
+        setupTransform(vis, link->visual->xyz, link->visual->rpy);
+        copyOpenraveMap(link->visual->data, geom);
+    }
+
     geom->SetAttribute("type", type);
         
     // compute the visualisation transfrom
@@ -236,13 +242,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
     //        setupTransform(coll, link->collision->xyz, link->collision->rpy);
     //        coll.inverse();
 		
-    btTransform vis;
-    setupTransform(vis, link->visual->xyz, link->visual->rpy);
     //        coll = coll.inverseTimes(vis);
 		
     addTransform(geom, vis);
-	           
-    copyOpenraveMap(link->visual->data, geom);
     body->LinkEndChild(geom); // end geom
 
     // mass
