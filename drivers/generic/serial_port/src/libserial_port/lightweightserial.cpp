@@ -35,7 +35,7 @@
 #include <string.h>
 
 LightweightSerial::LightweightSerial(const char *port, int baud) : 
-  baud(baud), happy(false), fd(0)
+  baud(baud), fd(0), happy(false)
 {
 	printf("about to try to open [%s]\n", port);
 	fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
@@ -70,7 +70,7 @@ LightweightSerial::LightweightSerial(const char *port, int baud) :
 
 	// flush the buffer of the serial device
 	uint8_t b;
-	while (this->read(&b) > 0);
+	while (this->read(&b) > 0) { }
   happy = true;
 }
 
@@ -85,7 +85,7 @@ bool LightweightSerial::read(uint8_t *b)
 {
   if (!happy)
     return false;
-  unsigned long nread;
+  long nread;
 	nread = ::read(fd,b,1);
 	if (nread < 0)
 	{
@@ -100,7 +100,7 @@ int LightweightSerial::read_block(uint8_t *block, uint32_t max_read_len)
 {
 	if (!happy)
     return false;
-  unsigned long nread = ::read(fd,block,(size_t)max_read_len);
+  long nread = ::read(fd,block,(size_t)max_read_len);
   return (nread < 0 ? 0 : nread);
 }
 
