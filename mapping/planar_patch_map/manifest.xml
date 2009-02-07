@@ -10,8 +10,6 @@
 
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="cloud_io" />
-  <depend package="sample_consensus" />
+  <depend package="point_cloud_mapping" />
   <depend package="cloud_octree" />
-  <depend package="cloud_geometry" />
 </package>

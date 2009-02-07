@@ -63,6 +63,7 @@
 #include <cloud_geometry/distances.h>
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/transforms.h>
+#include <cloud_geometry/statistics.h>
 
 #include <sys/time.h>
 
@@ -291,7 +292,7 @@ class TableObjectDetector : public ros::Node
 
       // Get the table bounds
       std_msgs::Point32 minP, maxP;
-      cloud_geometry::getMinMax (&cloud_down_, &inliers, minP, maxP);
+      cloud_geometry::statistics::getMinMax (&cloud_down_, &inliers, minP, maxP);
       resp.table.min_x = minP.x; resp.table.min_y = minP.y;
       resp.table.max_x = maxP.x; resp.table.max_y = maxP.y;
       
@@ -382,7 +383,7 @@ class TableObjectDetector : public ros::Node
         vector<int> object_idx = object_clusters.at (i);
 
         // Check whether this object cluster is supported by the table or just flying through thin air
-        cloud_geometry::getMinMax (points, &object_idx, minPCluster, maxPCluster);
+        cloud_geometry::statistics::getMinMax (points, &object_idx, minPCluster, maxPCluster);
         if (minPCluster.z > (maxP->z + object_min_distance_from_table_) )
             continue;
 
@@ -392,7 +393,7 @@ class TableObjectDetector : public ros::Node
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
-        cloud_geometry::getMinMax (points, &object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
+        cloud_geometry::statistics::getMinMax (points, &object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
         cloud_geometry::nearest::computeCentroid (points, &object_idx, table.objects[i].center);
       }
       object_indices.resize (nr_p);

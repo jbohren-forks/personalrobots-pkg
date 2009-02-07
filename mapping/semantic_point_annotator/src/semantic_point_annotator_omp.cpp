@@ -61,6 +61,7 @@
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/distances.h>
 #include <cloud_geometry/nearest.h>
+#include <cloud_geometry/statistics.h>
 
 #include <sys/time.h>
 
@@ -397,7 +398,7 @@ class SemanticPointAnnotator : public ros::Node
       double r, g, b;
       // Get the minimum and maximum bounds of the plane
       Point32 minP, maxP;
-      cloud_geometry::getMinMax (points, indices, minP, maxP);
+      cloud_geometry::statistics::getMinMax (points, indices, minP, maxP);
       // Test for wall
       if (maxP.z > rule_wall_)
       {
