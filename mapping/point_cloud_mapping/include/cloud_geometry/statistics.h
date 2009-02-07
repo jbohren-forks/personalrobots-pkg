@@ -248,24 +248,7 @@ namespace cloud_geometry
       stddev = sqrt (variance);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Compute both the trimean (a statistical resistent L-Estimate) of an array of values
-      * \note The trimean is computed by adding the 25th percentile plus twice the 50th percentile plus the 75th
-      * percentile and dividing by four.
-      * \param values the array of values
-      * \param trimean the resultant trimean of the distribution
-      */
-    inline void
-      getTrimean (std::vector<int> *values, double &trimean)
-    {
-      double sum = 0;
-
-      for (unsigned int i = 0; i < values->size (); i++)
-      {
-        sum += values->at (i);
-      }
-      trimean = sum / values->size ();
-    }
+    void getTrimean (std::vector<int> *values, double &trimean);
 
   }
 }
