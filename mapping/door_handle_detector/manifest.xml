@@ -10,11 +10,8 @@
 
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="robot_msgs" />
-  <depend package="cloud_io" />
-  <depend package="sample_consensus" />
+  <depend package="point_cloud_mapping" />
   <depend package="cloud_kdtree" />
-  <depend package="cloud_geometry" />
 
   <depend package="checkerboard_detector" />
   <depend package="robot_msgs" />
