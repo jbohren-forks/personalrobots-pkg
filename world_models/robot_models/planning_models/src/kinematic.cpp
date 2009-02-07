@@ -352,6 +352,7 @@ bool planning_models::KinematicModel::reduceToRobotFrame(void)
     bool result = true;
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 	result = result && m_robots[i]->reduceToRobotFrame();
+    defaultState();
     return result;
 }
 
@@ -426,6 +427,7 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool 
     }
     
     computeParameterNames();
+    defaultState();
 }
 
 int planning_models::KinematicModel::getGroupID(const std::string &group) const
@@ -791,10 +793,16 @@ void planning_models::KinematicModel::printModelInfo(std::ostream &out)
     out << "Number of robots = " << getRobotCount() << std::endl;
     out << "Complete model state dimension = " << m_mi.stateDimension << std::endl;
     
+    std::ios_base::fmtflags old_flags = out.flags();    
+    out.setf(std::ios::fixed, std::ios::floatfield);
+    std::streamsize old_prec = out.precision();
+    out.precision(5);
     out << "State bounds: ";
     for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
 	out << "[" << m_mi.stateBounds[2 * i] << ", " << m_mi.stateBounds[2 * i + 1] << "] ";
     out << std::endl;
+    out.precision(old_prec);    
+    out.flags(old_flags);
     
     out << "Parameter index:" << std::endl;
     for (std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.begin() ; 
