@@ -308,8 +308,8 @@ bool MoveArm::makePlan()
 
   //Erase the first element, because the trajectory controllers could
   //try to use it as a waypoint, slowing things down.
-  if (!current_trajectory_.empty()) 
-    current_trajectory_.erase(current_trajectory_.begin());
+  if (!current_trajectory_.states.empty()) 
+    current_trajectory_.states.erase(current_trajectory_.states.begin());
   
 
   if (!res.value.valid)
