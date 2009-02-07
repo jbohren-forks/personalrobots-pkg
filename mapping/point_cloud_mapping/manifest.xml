@@ -1,6 +1,19 @@
 <package>
   <description>
-    A complete library for 3D point cloud processing.
+    A complete package for 3D point cloud processing, oferring both generic libraries and specific purpose nodes.
+
+    The list of libraries includes:
+
+    - cloud_geometry: areas, distances, intersections, 3D normals/features estimation,
+                      norms, projections, statistics, transformations, etc 
+
+    - cloud_io: a library for Input/Output PCD (Point Cloud Data) processing
+
+    - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC,
+                        etc,) and geometric shape models
+
+   The list of nodes includes:
+   - cloud_downsampler_node: a node which uniformly downsamples a 3D point cloud
   </description>
 
   <author>Radu Bogdan Rusu</author>
@@ -10,4 +23,10 @@
 
   <depend package="roscpp" />
   <depend package="std_msgs" />
+  <depend package="eigen" />
+  <depend package="tf" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus" />
+  </export>
 </package>
