@@ -32,7 +32,9 @@
 
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/areas.h>
+#include <cloud_geometry/distances.h>
 #include <cloud_geometry/transforms.h>
+#include <cloud_geometry/intersections.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -159,7 +161,7 @@ namespace cloud_geometry
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
         epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
       }
-      
+
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
 
       std_msgs::Polyline2D hull_2d;
