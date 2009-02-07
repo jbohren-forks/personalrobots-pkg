@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE Debug)
 rospack(sample_consensus)
-add_definitions(-Wall)
 
 rospack_add_library(sample_consensus src/sac.cpp src/sac_model.cpp
                     src/lmeds.cpp src/ransac.cpp src/msac.cpp src/mlesac.cpp src/rransac.cpp src/rmsac.cpp

@@ -4,8 +4,6 @@ set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(collision_map)
-#add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
-add_definitions(-Wall -O3 -DNDEBUG)
 
 include(CheckIncludeFile)
 include(CheckLibraryExists)
