@@ -500,4 +500,64 @@ namespace cloud_geometry
     stddev = sqrt (variance);
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Determines a set of point indices outside of a \mu +/- \sigma * \std distribution interval, in a given
+    * channel space, where \mu and \std are the mean and the standard deviation of the channel distribution.
+    * \param points a pointer to the point cloud message
+    * \param indices a pointer to the point cloud indices to use
+    * \param d_idx the channel index
+    * \param mean the mean of the distribution
+    * \param stddev the standard deviation of the distribution
+    * \param alpha a multiplication factor for stddev
+    * \param inliers the resultant point indices
+    */
+  void
+    selectPointsOutsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
+                                     double mean, double stddev, double alpha, std::vector<int> &inliers)
+  {
+    inliers.resize (indices->size ());
+    int nr_i = 0;
+    for (unsigned int i = 0; i < indices->size (); i++)
+    {
+      if ( (points->chan.at (d_idx).vals.at (indices->at (i)) > (mean + alpha * stddev)) ||
+           (points->chan.at (d_idx).vals.at (indices->at (i)) < (mean - alpha * stddev))
+         )
+      {
+        inliers[nr_i] = indices->at (i);
+        nr_i++;
+      }
+    }
+    inliers.resize (nr_i);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Determines a set of point indices inside of a \mu +/- \sigma * \std distribution interval, in a given
+    * channel space, where \mu and \std are the mean and the standard deviation of the channel distribution.
+    * \param points a pointer to the point cloud message
+    * \param indices a pointer to the point cloud indices to use
+    * \param d_idx the channel index
+    * \param mean the mean of the distribution
+    * \param stddev the standard deviation of the distribution
+    * \param alpha a multiplication factor for stddev
+    * \param inliers the resultant point indices
+    */
+  void
+    selectPointsInsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
+                                    double mean, double stddev, double alpha, std::vector<int> &inliers)
+  {
+    inliers.resize (indices->size ());
+    int nr_i = 0;
+    for (unsigned int i = 0; i < indices->size (); i++)
+    {
+      if ( (points->chan.at (d_idx).vals.at (indices->at (i)) < (mean + alpha * stddev)) &&
+           (points->chan.at (d_idx).vals.at (indices->at (i)) > (mean - alpha * stddev))
+         )
+      {
+        inliers[nr_i] = indices->at (i);
+        nr_i++;
+      }
+    }
+    inliers.resize (nr_i);
+  }
+
 }

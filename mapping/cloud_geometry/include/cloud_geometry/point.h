@@ -447,6 +447,12 @@ namespace cloud_geometry
   void getChannelMeanStd (std_msgs::PointCloud *points, int d_idx, double &mean, double &stddev);
   void getChannelMeanStd (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, double &mean, double &stddev);
 
+  void selectPointsOutsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
+                                        double mean, double stddev, double alpha, std::vector<int> &inliers);
+  void selectPointsInsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
+                                       double mean, double stddev, double alpha, std::vector<int> &inliers);
+
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
     * \param p the point
