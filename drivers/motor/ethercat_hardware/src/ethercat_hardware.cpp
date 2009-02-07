@@ -81,7 +81,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     ROS_BREAK();
   }
 
-#if 0
+#if 1
   if (set_socket_timeout(ni_, 1000*500))
   {
     ROS_FATAL("Unable to change socket timeout");

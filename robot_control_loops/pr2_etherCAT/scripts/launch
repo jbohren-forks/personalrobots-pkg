@@ -1,0 +1,14 @@
+#!/bin/sh
+
+ifconfig eth0 > /dev/null 2>&1
+if [ "$?" = "0" ]; then
+  echo "In non-realtime mode"
+  echo "Switching to realtime"
+  /usr/local/rtnet/sbin/rtup
+  sleep 5
+else
+  echo "In realtime mode"
+fi
+
+echo "Launching pr2_etherCAT [$PWD] with options $*"
+../pr2_etherCAT $*
