@@ -55,6 +55,7 @@
 #include <sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 // Kd Tree
 #include <cloud_kdtree/kdtree.h>
@@ -88,12 +89,12 @@ class DoorHandleDetector : public ros::Node
 
     // Parameters
     double frame_distance_eps_, min_z_bounds_, max_z_bounds_;
-    string input_cloud_topic_;
+    string input_cloud_topic_, fixed_frame_;
     int k_;
     double clusters_growing_tolerance_;
-    int clusters_min_pts_;
+    int clusters_min_pts_, num_cloud_data_received_;
 
-    bool need_cloud_data_, publish_debug_;
+    bool publish_debug_;
 
     double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
@@ -104,57 +105,19 @@ class DoorHandleDetector : public ros::Node
     int door_frame_multiplier_threshold_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    DoorHandleDetector () : ros::Node ("door_handle_detector"), tf_(*this)
+    DoorHandleDetector () : 
+      ros::Node ("door_handle_detector"), 
+      tf_(*this)
     {
-      param ("~frame_distance_eps", frame_distance_eps_, 0.2);          // Allow 20cm extra space by default
-
-      param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
-      param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
-
-      param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
-      param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
-      param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
-      param ("~search_k_closest", k_, 6);                               // 6 k-neighbors by default
-
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
-      param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees, wrt the Z-axis
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);                         // convert to radians
 
-      param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
-      region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
-
-      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.05);  // 5 cm
-      param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
-
-      param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
-      param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-      param ("~door_max_width", door_max_width_, 1.2);                    // maximumwidth of a door: 1.2m
-      ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
-                 door_min_height_, door_max_height_, door_min_width_, door_max_width_);
-
-      param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
-      param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
-      param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
-      param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.05); // minimum distance between the handle and the door
-      param ("~handle_height_threshold", handle_height_threshold_, 0.1); // Additional threshold for filtering large Z clusters (potentially part of the handle)
-
-      ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
-
-      // This describes the size of our 3D bounding box (basically the space where we search for doors),
-      // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
-      param ("~door_frame_multiplier_threshold", door_frame_multiplier_threshold_, 4);
-      param ("~publish_debug", publish_debug_, true);
-
-      param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
+      // door detection service
       advertiseService("door_handle_detector", &DoorHandleDetector::detectDoor, this);
 
-      // This should be set to whatever the leaf_width factor is in the downsampler
-      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
-
-      advertise<std_msgs::PointCloud>("handle_visualization",10);
+      // ouput point clouds for visualization
       if (publish_debug_)
       {
+        advertise<PointCloud>("handle_visualization",10);
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
         advertise<PointCloud> ("cloud_annotated", 1);
 
@@ -170,83 +133,120 @@ class DoorHandleDetector : public ros::Node
     void
       updateParametersFromServer ()
     {
-      if (hasParam ("~frame_distance_eps"))
-        getParam ("~frame_distance_eps", frame_distance_eps_);
-      if (hasParam ("~input_cloud_topic"))
-        getParam ("~input_cloud_topic", input_cloud_topic_);
-      // \NOTE to Wim : Perhaps we need to read the other parameters from the server here ?
+      // fixed frame to work in
+      param ("~/fixed_frame", fixed_frame_, string("odom_combined"));
+
+      param ("~frame_distance_eps", frame_distance_eps_, 0.2);          // Allow 20cm extra space by default
+
+      // This describes the size of our 3D bounding box (basically the space where we search for doors),
+      // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
+      param ("~door_frame_multiplier_threshold", door_frame_multiplier_threshold_, 4);
+      param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
+      param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
+
+      param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
+      param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
+      param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 5 cm  --> This should be set to whatever the leaf_width factor is in the downsampler
+      param ("~search_k_closest", k_, 6);                               // 6 k-neighbors by default
+
+      param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees, wrt the Z-axis
+      eps_angle_ = (eps_angle_ * M_PI / 180.0);                         // convert to radians
+
+      param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
+      region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
+
+      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.05);  // 5 cm
+      param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
+
+      param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
+      param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
+      param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+      param ("~door_max_width", door_max_width_, 1.2);                    // maximumwidth of a door: 1.2m
+
+      param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
+      param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
+      param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
+      param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.05); // minimum distance between the handle and the door
+      param ("~handle_height_threshold", handle_height_threshold_, 0.1); // Additional threshold for filtering large Z clusters (potentially part of the handle)
+
+      param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
+
+
+      param ("~publish_debug", publish_debug_, true);
+      ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
+                 door_min_height_, door_max_height_, door_min_width_, door_max_width_);
+      ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       get3DBounds (Point32 *p1, Point32 *p2, Point32 &minB, Point32 &maxB)
     {
-      // Get the door_frame distance in the X-Y plane
+      // Get the door_frame distance in the X-Y plane                                                                                 
       float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
-
+      
       float center[2];
       center[0] = (p1->x + p2->x) / 2.0;
       center[1] = (p1->y + p2->y) / 2.0;
-
-      // Obtain the bounds (doesn't matter which is min and which is max at this point)
+      
+      // Obtain the bounds (doesn't matter which is min and which is max at this point)                                               
       minB.x = center[0] + (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       minB.y = center[1] + (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       minB.z = min_z_bounds_;
-
+      
       maxB.x = center[0] - (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       maxB.y = center[1] - (door_frame_multiplier_threshold_ * door_frame) / 2.0 + frame_distance_eps_;
       maxB.z = max_z_bounds_;
-
-      // Order min/max
+      
+      // Order min/max                                                                                                                
       if (minB.x > maxB.x)
-      {
-        float tmp = minB.x;
-        minB.x = maxB.x;
-        maxB.x = tmp;
-      }
+        {
+          float tmp = minB.x;
+          minB.x = maxB.x;
+          maxB.x = tmp;
+        }
       if (minB.y > maxB.y)
-      {
-        float tmp = minB.y;
-        minB.y = maxB.y;
-        maxB.y = tmp;
-      }
+        {
+          float tmp = minB.y;
+          minB.y = maxB.y;
+          maxB.y = tmp;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
       detectDoor (door_handle_detector::Door::Request &req, door_handle_detector::Door::Response &resp)
     {
-      cout << "Start detecting door at points ";
-      cout << "(" << req.frame_p1.x << " " <<req.frame_p1.y << " "<<req.frame_p1.z << ")   ";
-      cout << "(" << req.frame_p2.x << " " <<req.frame_p2.y << " "<<req.frame_p2.z << ")" << endl;
-
-      timeval t1, t2;
-      double time_spent;
-
+      // update all our parameters from the server
       updateParametersFromServer ();
 
-      // Obtain the bounding box information
-      Point32 minB, maxB;
-      get3DBounds (&req.frame_p1, &req.frame_p2, minB, maxB);
-
-
-      cout << " - receive door scan" << endl;
-
       // Subscribe to a point cloud topic
-      need_cloud_data_ = true;
-      subscribe (input_cloud_topic_.c_str (), cloud_in_, &DoorHandleDetector::cloud_cb, 1);
-
-      // Wait until the scan is ready, sleep for 10ms
+      num_cloud_data_received_ = 0;
+      tf::MessageNotifier<PointCloud>*  cloud_notifier;
+      cloud_notifier = new tf::MessageNotifier<PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
+                                                          input_cloud_topic_.c_str (), req.door.header.frame_id, 1);
+      // Wait until at least 2 scans are received (the first scan received could be from when the robot was still moving)
       ros::Duration tictoc (0, 10000000);
-      while (need_cloud_data_)
+      while (num_cloud_data_received_ < 2)
       {
         tictoc.sleep ();
       }
       // Unsubscribe from the point cloud topic
-      unsubscribe (input_cloud_topic_.c_str ()) ;
+      delete cloud_notifier;
 
+      // define bounding box in frame of point cloud
+      Point32 frame_p1 = req.door.frame_p1;    Point32 frame_p2 = req.door.frame_p2;
+      transformPoint(req.door.header.frame_id, cloud_in_.header.frame_id, cloud_in_.header.stamp, frame_p1);
+      transformPoint(req.door.header.frame_id, cloud_in_.header.frame_id, cloud_in_.header.stamp, frame_p2);
+      Point32 minB, maxB;
+      get3DBounds (&frame_p1, &frame_p2, minB, maxB);
+
+
+      timeval t1, t2;
+      double time_spent;
       gettimeofday (&t1, NULL);
-      // We have a pointcloud, estimate the true point bounds
+      // We have a pointcloud, select the points inside our bounds
       vector<int> indices_in_bounds (cloud_in_.pts.size ());
       int nr_p = 0;
       for (unsigned int i = 0; i < cloud_in_.pts.size (); i++)
@@ -260,7 +260,6 @@ class DoorHandleDetector : public ros::Node
         }
       }
       indices_in_bounds.resize (nr_p);
-
       ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z, indices_in_bounds.size ());
 
       // Downsample the cloud in the bounding box for faster processing
@@ -276,7 +275,6 @@ class DoorHandleDetector : public ros::Node
         return (false);
       }
       leaves.resize (0);
-
       ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
 
       // Reserve space for 4 channels: nx, ny, nz, curvature
@@ -298,7 +296,7 @@ class DoorHandleDetector : public ros::Node
       // Check all points
       for (unsigned int i = 0; i < cloud_down_.pts.size (); i++)
       {
-        std_msgs::Point32 p;
+        Point32 p;
         p.x = cloud_down_.chan[0].vals[i];
         p.y = cloud_down_.chan[1].vals[i];
         p.z = cloud_down_.chan[2].vals[i];
@@ -333,7 +331,7 @@ class DoorHandleDetector : public ros::Node
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
-      std_msgs::Point32 minP, maxP, handle_center;
+      Point32 minP, maxP, handle_center;
 
       // Process all clusters
       for (int cc = 0; cc < (int)clusters.size (); cc++)
@@ -410,16 +408,15 @@ class DoorHandleDetector : public ros::Node
         }
       }
 
-      resp.door_p1.x = minP.x; resp.door_p1.y = minP.y;
-      resp.door_p2.x = maxP.x; resp.door_p2.y = maxP.y;
-      resp.height = fabs (maxP.z - minP.z);
-      resp.handle = handle_center;
+      resp.door.door_p1.x = minP.x; resp.door.door_p1.y = minP.y;
+      resp.door.door_p2.x = maxP.x; resp.door.door_p2.y = maxP.y;
+      resp.door.handle = handle_center;
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Door found. P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. Height = %f. Handle = [%f, %f, %f]. Total time: %f.",
-                resp.door_p1.x, resp.door_p1.y, resp.door_p1.z, resp.door_p2.x, resp.door_p2.y, resp.door_p2.z,
-                resp.height, resp.handle.x, resp.handle.y, resp.handle.z,
+      ROS_INFO ("Door found. P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. Handle = [%f, %f, %f]. Total time: %f.",
+                resp.door.door_p1.x, resp.door.door_p1.y, resp.door.door_p1.z, resp.door.door_p2.x, resp.door.door_p2.y, resp.door.door_p2.z,
+                resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 time_spent);
 
       if (publish_debug_)
@@ -452,8 +449,8 @@ class DoorHandleDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findDoorHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
-                      vector<int> &handle_indices, Point32 &handle_center)
+    findDoorHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
+                    vector<int> &handle_indices, Point32 &handle_center)
     {
       // Transform the polygon to lie on the X-Y plane (makes all isPointIn2DPolygon computations easier)
       Polygon3D poly_tr;
@@ -469,7 +466,7 @@ class DoorHandleDetector : public ros::Node
       possible_handle_indices.resize (indices->size ());
       int nr_p = 0;
       Point32 pt;
-      vector<std_msgs::Point32> handle_visualize;
+      vector<Point32> handle_visualize;
       vector<float> colors;
 
       for (unsigned int i = 0; i < indices->size (); i++)
@@ -489,7 +486,7 @@ class DoorHandleDetector : public ros::Node
           pt.y = points->pts.at (indices->at (i)).y - distance_to_plane * coeff->at (1);
           pt.z = points->pts.at (indices->at (i)).z - distance_to_plane * coeff->at (2);
 
-          std_msgs::Point32 pnt;
+          Point32 pnt;
           pnt.x = points->pts.at (indices->at (i)).x;
           pnt.y = points->pts.at (indices->at (i)).y;
           pnt.z = points->pts.at (indices->at (i)).z;
@@ -514,10 +511,10 @@ class DoorHandleDetector : public ros::Node
       }
 
       cout << "added " << handle_visualize.size() << " points to visualize" << endl;
-      std_msgs::ChannelFloat32 channel;
+      ChannelFloat32 channel;
       channel.name = "rgb";
       channel.vals = colors;
-      std_msgs::PointCloud handle_cloud;
+      PointCloud handle_cloud;
       handle_cloud.header.stamp = ros::Time::now ();
       handle_cloud.header.frame_id = "base_link";
       handle_cloud.pts = handle_visualize;
@@ -551,7 +548,7 @@ class DoorHandleDetector : public ros::Node
       // \NOTE to Wim => need to think about how to filter the edges near the
       // door.  We could check for min/max in Z and if they are too big then
       // we discard the cluster. Below is an example:
-      std_msgs::Point32 minP, maxP;
+      Point32 minP, maxP;
       handle_indices.resize (possible_handle_indices.size ());
       nr_p = 0;
       for (unsigned int i = 0; i < clusters.size (); i++)
@@ -586,9 +583,10 @@ class DoorHandleDetector : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void cloud_cb(const tf::MessageNotifier<PointCloud>::MessagePtr& cloud)
     {
-      need_cloud_data_ = false;
+      cloud_in_ = *cloud;
+      num_cloud_data_received_++;
     }
 
 
@@ -764,7 +762,7 @@ class DoorHandleDetector : public ros::Node
         cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, &points_k_indices[i], plane_parameters, curvature);
 
         // See if we need to flip any plane normals
-        Point32 vp_m;
+        Point vp_m;
         vp_m.x = viewpoint_cloud.point.x - cloud_down_.pts[i].x;
         vp_m.y = viewpoint_cloud.point.y - cloud_down_.pts[i].y;
         vp_m.z = viewpoint_cloud.point.z - cloud_down_.pts[i].z;
@@ -788,6 +786,32 @@ class DoorHandleDetector : public ros::Node
     }
 
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+    transformPoint(const string& from_frame, const string& to_frame, const ros::Time& time, Point& point)
+  {
+    tf::Stamped<tf::Point> point_tf;
+    PointMsgToTF(point, point_tf);
+    point_tf.stamp_ = time;
+    point_tf.frame_id_ = from_frame;
+    tf_.transformPoint (to_frame, point_tf, point_tf);
+    tf::PointTFToMsg(point_tf, point);
+  }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+    transformPoint(const string& from_frame, const string& to_frame, const ros::Time& time, Point32& point)
+  {
+    Point tmp;
+    tmp.x = point.x;    tmp.y = point.y;    tmp.z = point.z;
+    transformPoint(from_frame, to_frame, time, tmp);
+    point.x = tmp.x;    point.y = tmp.y;    point.z = tmp.z;
+  }
+
+
+
 };
 
 /* ---[ */
@@ -797,21 +821,16 @@ int
   ros::init (argc, argv);
 
   DoorHandleDetector p;
-
   door_handle_detector::Door::Request req;
-//  req.frame_p1.x = 1.2; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
-//  req.frame_p2.x = 1.4; req.frame_p2.y = -0.5; req.frame_p2.z = 0;
-//  req.frame_p1.x = 0.9; req.frame_p1.y = 0.7; req.frame_p1.z = 0;
-//  req.frame_p2.x = 1.0; req.frame_p2.y = -0.1; req.frame_p2.z = 0;
-  req.frame_p1.x = 1.9; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
-  req.frame_p2.x = 2.0; req.frame_p2.y = -0.3; req.frame_p2.z = 0;
-//Picked Point with Index: 88693 [1.9313, 0.64552, 0.025881]
-//Picked Point with Index: 86094 [2.06, -0.37576, 0.024952]
-    
-  door_handle_detector::Door::Response resp;
-  ros::service::call ("door_handle_detector", req, resp);
+  req.door.frame_p1.x = 2.0;
+  req.door.frame_p1.y = -0.5;
+  req.door.frame_p2.x = 2.0;
+  req.door.frame_p2.y = 0.5;
+  req.door.header.frame_id = "odom";
 
-//  p.spin ();
+  door_handle_detector::Door::Response res;
+  p.detectDoor(req, res);
+
 
   p.shutdown ();
   return (0);

@@ -10,7 +10,7 @@
   <param name="door_handle_detector/door_max_width" value="1.2" />
   <param name="door_handle_detector/clusters_growing_tolerance" value="0.04" />
   <param name="door_handle_detector/normal_eps_angle_" value="8.0" />
-  <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" respawn="true" output="screen">
+  <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" output="screen">
   <remap from="full_cloud" to="snapshot_cloud" />
   </node>
 </launch>

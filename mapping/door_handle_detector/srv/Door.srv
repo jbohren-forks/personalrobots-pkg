@@ -1,7 +1,3 @@
-std_msgs/Point32 frame_p1
-std_msgs/Point32 frame_p2
+robot_msgs/Door door
 ---
-std_msgs/Point32 door_p1
-std_msgs/Point32 door_p2
-float32 height
-std_msgs/Point32 handle
+robot_msgs/Door door
