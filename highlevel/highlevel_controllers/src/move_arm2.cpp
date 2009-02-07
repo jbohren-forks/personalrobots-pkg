@@ -265,7 +265,7 @@ bool MoveArm::makePlan()
   //Copies in the state.
   //First create stateparams for the group of intrest.
   planning_models::KinematicModel::StateParams *state = robot_model_->newStateParams();
-
+ 
   //Make sure there is no start state, so the planner will use the mech state.
   req.value.start_state.vals.clear();
   
@@ -287,8 +287,6 @@ bool MoveArm::makePlan()
   ROS_INFO("Going for:");
   state->print();
 
-
-  delete state;
     
   //FIXME: should be something?
   req.value.allowed_time = 0.5;
@@ -298,7 +296,7 @@ bool MoveArm::makePlan()
 
   bool ret = ros::service::call("plan_kinematic_path_state", req, res);
   if (!ret)
-    ROS_WARN("Service call on plan_kinematic_path_state failed");
+    ROS_ERROR("Service call on plan_kinematic_path_state failed");
   else
     stateMsg.done = res.value.done;
 
@@ -307,7 +305,17 @@ bool MoveArm::makePlan()
   current_trajectory_ = res.value.path;
   trajectory_changed_ = true;
 
+
+  //Erase the first element, because the trajectory controllers could
+  //try to use it as a waypoint, slowing things down.
+  if (!current_trajectory_.empty()) 
+    current_trajectory_.erase(current_trajectory_.begin());
   
+
+  if (!res.value.valid)
+    ROS_ERROR("Plan is invalid.");
+  
+  delete state;
   return ret && res.value.valid;
     /*}
   else
@@ -408,7 +416,7 @@ void MoveArm::stopArm()
   stop_traj_start_req.trajectoryid = 0;  // make sure we stop all trajectories    
   if(!ros::service::call(controller_name_ + "/TrajectoryCancel",
 			 stop_traj_start_req, stop_traj_start_res))
-    ROS_WARN("Failed to cancel trajectory");
+    ROS_ERROR("Failed to cancel trajectory");
   else
     ROS_INFO("Cancelled trajectory");
 }
