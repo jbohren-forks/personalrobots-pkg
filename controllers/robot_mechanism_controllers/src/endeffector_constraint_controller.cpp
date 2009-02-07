@@ -186,7 +186,7 @@ void EndeffectorConstraintController::update()
 
   JntArray jnt_eff(kdl_chain_.getNrOfJoints());
   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
-    jnt_eff(i) = constraint_torq_(i) + task_torq_(i);
+    jnt_eff(i) = joint_constraint_torq_(i)+ constraint_torq_(i) + task_torq_(i);
   chain_.setEfforts(jnt_eff, robot_->joint_states_);
 }
 
@@ -293,7 +293,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   chain_.getPositions(robot_->joint_states_, jnt_pos);
   
   double joint_e = elbow_limit-jnt_pos(2);
-  if(joint_e < -0.01) 
+  if(joint_e < -0.1) 
   {
     joint_constraint_jac_(2)=1;
   }
