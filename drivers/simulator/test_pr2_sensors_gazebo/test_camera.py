@@ -138,10 +138,11 @@ class TestCameras(unittest.TestCase):
         print " got image message from ROS, begin comparing images "
 
         print "  - load validation image from file test_camera.valid.ppm "
-        if os.path.isfile("test_camera.valid.ppm"):
-          im0 = pili.open("test_camera.valid.ppm")
-        elif os.path.isfile("test/test_camera.valid.ppm"):
-          im0 = pili.open("test/test_camera.valid.ppm")
+        fname = roslib.packages.get_pkg_dir('test_pr2_sensors_gazebo') + '/test_camera.valid.ppm'
+        if os.path.isfile(fname):
+          im0 = pili.open(fname)
+        #elif os.path.isfile("test/test_camera.valid.ppm"):
+        #  im0 = pili.open("test/test_camera.valid.ppm")
         else:
           print "cannot find validation file: test_camera.valid.ppm"
           self.success = False
