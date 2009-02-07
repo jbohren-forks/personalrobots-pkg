@@ -144,6 +144,12 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
 
     string type;
 
+    // I'm not at all sure that this is the right thing to do.
+    if(!link->visual)
+    {
+      printf("skipping link without visual tag: %s\n", link->name.c_str());
+      return;
+    }
     switch(link->visual->geometry->type) {
     case robot_desc::URDF::Link::Geometry::MESH: {
         robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
