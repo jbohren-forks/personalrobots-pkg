@@ -92,7 +92,31 @@ namespace cloud_geometry
       centroid.z /= indices->size ();
     }
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the centroid of a set of points using their indices and return it as a Point32 message.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param centroid the output centroid
+      */
+    inline void
+      computeCentroid (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> &centroid)
+    {
+      centroid.resize (3);
+      centroid[0] = centroid[1] = centroid[2] = 0;
+      // For each point in the cloud
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        centroid[0] += points->pts.at (indices->at (i)).x;
+        centroid[1] += points->pts.at (indices->at (i)).y;
+        centroid[2] += points->pts.at (indices->at (i)).z;
+      }
+
+      centroid[0] /= indices->size ();
+      centroid[1] /= indices->size ();
+      centroid[2] /= indices->size ();
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the 3x3 covariance matrix of a given set of points. The result is returned as a Eigen::Matrix3d.
       * \note The (x-y-z) centroid is also returned as a Point32 message.
       * \param points the input point cloud
@@ -193,7 +217,7 @@ namespace cloud_geometry
 
     void computeMomentInvariants (std_msgs::PointCloud *points, double &j1, double &j2, double &j3);
     void computeMomentInvariants (std_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3);
-    
+
     bool isBoundaryPoint (std_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors, Eigen::Vector3d u, Eigen::Vector3d v, double angle_threshold = M_PI / 2.0);
   }
 }

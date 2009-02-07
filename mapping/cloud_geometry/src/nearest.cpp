@@ -30,8 +30,9 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_geometry/point.h>
 #include <cloud_geometry/nearest.h>
+#include <cloud_geometry/point.h>
+#include <cloud_geometry/statistics.h>
 
 namespace cloud_geometry
 {
@@ -215,12 +216,12 @@ namespace cloud_geometry
         points_c.pts[i].z = points->pts[i].z - centroid.z;
       }
 
-      double mu200 = computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
-      double mu020 = computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
-      double mu002 = computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
-      double mu110 = computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
-      double mu101 = computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
-      double mu011 = computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
+      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
+      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
+      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
+      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
+      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
 
       j1 = mu200 + mu020 + mu002;
       j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
@@ -252,12 +253,12 @@ namespace cloud_geometry
         points_c.pts[i].z = points->pts.at (indices->at (i)).z - centroid.z;
       }
 
-      double mu200 = computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
-      double mu020 = computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
-      double mu002 = computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
-      double mu110 = computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
-      double mu101 = computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
-      double mu011 = computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
+      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
+      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
+      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
+      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
+      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
 
       j1 = mu200 + mu020 + mu002;
       j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;

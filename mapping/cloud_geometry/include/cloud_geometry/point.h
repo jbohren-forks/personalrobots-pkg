@@ -140,47 +140,6 @@ namespace cloud_geometry
       array[3 + d] = points.chan[channels.at (d)].vals[index];
   }
 
-  std_msgs::Point32 computeMedian (std_msgs::PointCloud points);
-  std_msgs::Point32 computeMedian (std_msgs::PointCloud points, std::vector<int> indices);
-
-  double computeMedianAbsoluteDeviation (std_msgs::PointCloud points, double sigma);
-  double computeMedianAbsoluteDeviation (std_msgs::PointCloud points, std::vector<int> indices, double sigma);
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Compute the centralized moment at a 3D points patch
-    * \param points the point cloud data message
-    * \param p the p-dimension
-    * \param q the q-dimension
-    * \param r the r-dimension
-    */
-  inline double
-    computeCentralizedMoment (std_msgs::PointCloud *points, double p, double q, double r)
-  {
-    double result = 0.0;
-    for (unsigned int cp = 0; cp < points->pts.size (); cp++)
-      result += pow (points->pts[cp].x, p) * pow (points->pts[cp].y, q) * pow (points->pts[cp].z, r);
-
-    return (result);
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Compute the centralized moment at a 3D points patch, using their indices.
-    * \param points the point cloud data message
-    * \param indices the point cloud indices that need to be used
-    * \param p the p-dimension
-    * \param q the q-dimension
-    * \param r the r-dimension
-    */
-  inline double
-    computeCentralizedMoment (std_msgs::PointCloud *points, std::vector<int> *indices, double p, double q, double r)
-  {
-    double result = 0.0;
-    for (unsigned int cp = 0; cp < indices->size (); cp++)
-      result += pow (points->pts.at (indices->at (cp)).x, p) * pow (points->pts.at (indices->at (cp)).y, q) * pow (points->pts.at (indices->at (cp)).z, r);
-
-    return (result);
-  }
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute the cross product between two points (vectors).
     * \param p1 the first point/vector
@@ -205,6 +164,17 @@ namespace cloud_geometry
     dot (std_msgs::Point32 p1, std_msgs::Point32 p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (std::vector<double> *p1, std::vector<double> *p2)
+  {
+    return (p1->at (0) * p2->at (0) + p1->at (1) * p2->at (1) + p1->at (2) * p2->at (2));
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,141 +206,6 @@ namespace cloud_geometry
                                            std_msgs::Point32 axis, std::vector<int> &indices);
   void getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
                                                 std_msgs::Point32 axis, std::vector<int> &indices);
-
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud
-    * \param points the point cloud message
-    * \param minP the resultant minimum bounding box coordinates
-    * \param maxP the resultant maximum bounding box coordinates
-    */
-  inline void
-    getMinMax (std_msgs::PointCloud *points, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
-  {
-    minP.x = minP.y = minP.z = FLT_MAX;
-    maxP.x = maxP.y = maxP.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < points->pts.size (); i++)
-    {
-      minP.x = (points->pts[i].x < minP.x) ? points->pts[i].x : minP.x;
-      minP.y = (points->pts[i].y < minP.y) ? points->pts[i].y : minP.y;
-      minP.z = (points->pts[i].z < minP.z) ? points->pts[i].z : minP.z;
-
-      maxP.x = (points->pts[i].x > maxP.x) ? points->pts[i].x : maxP.x;
-      maxP.y = (points->pts[i].y > maxP.y) ? points->pts[i].y : maxP.y;
-      maxP.z = (points->pts[i].z > maxP.z) ? points->pts[i].z : maxP.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud
-    * \param points the point cloud message
-    * \param minP the resultant minimum bounding box coordinates
-    * \param maxP the resultant maximum bounding box coordinates
-    */
-  inline void
-    getMinMax (std_msgs::Polygon3D *poly, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
-  {
-    minP.x = minP.y = minP.z = FLT_MAX;
-    maxP.x = maxP.y = maxP.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < poly->points.size (); i++)
-    {
-      minP.x = (poly->points[i].x < minP.x) ? poly->points[i].x : minP.x;
-      minP.y = (poly->points[i].y < minP.y) ? poly->points[i].y : minP.y;
-      minP.z = (poly->points[i].z < minP.z) ? poly->points[i].z : minP.z;
-
-      maxP.x = (poly->points[i].x > maxP.x) ? poly->points[i].x : maxP.x;
-      maxP.y = (poly->points[i].y > maxP.y) ? poly->points[i].y : maxP.y;
-      maxP.z = (poly->points[i].z > maxP.z) ? poly->points[i].z : maxP.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud, using point indices
-    * \param points the point cloud message
-    * \param indices the point cloud indices to use
-    * \param minP the resultant minimum bounding box coordinates
-    * \param maxP the resultant maximum bounding box coordinates
-    */
-  inline void
-    getMinMax (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
-  {
-    minP.x = minP.y = minP.z = FLT_MAX;
-    maxP.x = maxP.y = maxP.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < indices->size (); i++)
-    {
-      minP.x = (points->pts.at (indices->at (i)).x < minP.x) ? points->pts.at (indices->at (i)).x : minP.x;
-      minP.y = (points->pts.at (indices->at (i)).y < minP.y) ? points->pts.at (indices->at (i)).y : minP.y;
-      minP.z = (points->pts.at (indices->at (i)).z < minP.z) ? points->pts.at (indices->at (i)).z : minP.z;
-
-      maxP.x = (points->pts.at (indices->at (i)).x > maxP.x) ? points->pts.at (indices->at (i)).x : maxP.x;
-      maxP.y = (points->pts.at (indices->at (i)).y > maxP.y) ? points->pts.at (indices->at (i)).y : maxP.y;
-      maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
-    * in a given pointcloud, without considering points outside of a distance threshold from the laser origin
-    * \param points the point cloud data message
-    * \param min_pt the resultant minimum bounds
-    * \param max_pt the resultant maximum bounds
-    * \param c_idx the index of the channel holding distance information
-    * \param cut_distance a maximum admissible distance threshold for points from the laser origin
-    */
-  inline void
-    getMinMax (std_msgs::PointCloud *points, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt,
-               int c_idx, double cut_distance)
-  {
-    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < points->pts.size (); i++)
-    {
-      if (c_idx != -1 && points->chan[c_idx].vals[i] > cut_distance)
-        continue;
-      min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
-      min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
-      min_pt.z = (points->pts[i].z < min_pt.z) ? points->pts[i].z : min_pt.z;
-
-      max_pt.x = (points->pts[i].x > max_pt.x) ? points->pts[i].x : max_pt.x;
-      max_pt.y = (points->pts[i].y > max_pt.y) ? points->pts[i].y : max_pt.y;
-      max_pt.z = (points->pts[i].z > max_pt.z) ? points->pts[i].z : max_pt.z;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Get the minimum and maximum values on each of the 3 (x-y-z) dimensions
-    * in a given pointcloud, without considering points outside of a distance threshold from the laser origin
-    * \param points the point cloud data message
-    * \param indices the point cloud indices to use
-    * \param min_pt the resultant minimum bounds
-    * \param max_pt the resultant maximum bounds
-    * \param c_idx the index of the channel holding distance information
-    * \param cut_distance a maximum admissible distance threshold for points from the laser origin
-    */
-  inline void
-    getMinMax (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &min_pt, std_msgs::Point32 &max_pt,
-               int c_idx, double cut_distance)
-  {
-    min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-    max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
-
-    for (unsigned int i = 0; i < indices->size (); i++)
-    {
-      if (c_idx != -1 && points->chan[c_idx].vals[indices->at (i)] > cut_distance)
-        continue;
-      min_pt.x = (points->pts[indices->at (i)].x < min_pt.x) ? points->pts[indices->at (i)].x : min_pt.x;
-      min_pt.y = (points->pts[indices->at (i)].y < min_pt.y) ? points->pts[indices->at (i)].y : min_pt.y;
-      min_pt.z = (points->pts[indices->at (i)].z < min_pt.z) ? points->pts[indices->at (i)].z : min_pt.z;
-
-      max_pt.x = (points->pts[indices->at (i)].x > max_pt.x) ? points->pts[indices->at (i)].x : max_pt.x;
-      max_pt.y = (points->pts[indices->at (i)].y > max_pt.y) ? points->pts[indices->at (i)].y : max_pt.y;
-      max_pt.z = (points->pts[indices->at (i)].z > max_pt.z) ? points->pts[indices->at (i)].z : max_pt.z;
-    }
-  }
 
   void downsamplePointCloud (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
@@ -442,16 +277,6 @@ namespace cloud_geometry
     u (1) /= u_length;
     u (2) /= u_length;
   }
-
-
-  void getChannelMeanStd (std_msgs::PointCloud *points, int d_idx, double &mean, double &stddev);
-  void getChannelMeanStd (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, double &mean, double &stddev);
-
-  void selectPointsOutsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
-                                        double mean, double stddev, double alpha, std::vector<int> &inliers);
-  void selectPointsInsideDistribution (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx,
-                                       double mean, double stddev, double alpha, std::vector<int> &inliers);
-
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
