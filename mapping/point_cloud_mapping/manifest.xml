@@ -1,6 +1,6 @@
 <package>
   <description>
-  
+
     A complete package for 3D point cloud processing, oferring both generic libraries and specific purpose nodes.
 
     The list of libraries includes:
@@ -9,10 +9,11 @@
                       transformations, etc
 
     - cloud_io: a library for Input/Output PCD (Point Cloud Data) processing
-    
+
     - cloud_kdtree: a library for nD spatial decomposition and nearest neighbors searches for PointCloud messages using k-D
                     trees.
 
+    - cloud_octree: a library for 3D spatial decomposition of PointCloud messages using octree data structures.
 
     - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC, etc,) and geometric shape
                         models
@@ -39,6 +40,6 @@
 <!--  <depend package="FL-ANN" /> -->
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree -lcloud_octree" />
   </export>
 </package>

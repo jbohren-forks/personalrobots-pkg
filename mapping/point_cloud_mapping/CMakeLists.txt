@@ -52,6 +52,12 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
   rospack_add_gtest (bin/test_cloud_kdtree test/cloud_kdtree/test_kdtree.cpp)
   target_link_libraries (bin/test_cloud_kdtree cloud_kdtree)
 
+# ---[ Cloud Octree library
+  rospack_add_library (cloud_octree
+                       src/cloud_octree/octree.cpp
+                       src/cloud_octree/octree_node.cpp
+                      )
+
 # ---[ Sample-Consensus library
   rospack_add_library (sample_consensus
                        src/sample_consensus/sac.cpp
