@@ -93,23 +93,26 @@ namespace cloud_geometry
       * \param point holder for the computed 3D point
       */
     bool
-      lineWithPlaneIntersection (std::vector<double> plane, std::vector<double> line, std_msgs::Point32 &point)
+      lineWithPlaneIntersection (std::vector<double> *plane, std::vector<double> *line, std_msgs::Point32 &point)
     {
-      double dn = line.at (3) * plane.at (0) + line.at (4) * plane.at (1) + line.at (5) * plane.at (2);
-      // Check for division by zero
-      if (dn == 0)
+      // line Direction * plane Normal
+      double dn = line->at (3) * plane->at (0) + line->at (4) * plane->at (1) + line->at (5) * plane->at (2);
+      // Check for parallelism
+      if (fabs (dn) < 1e-7)
         return (false);
 
-      std_msgs::Point32 p2;
-      p2.x = line.at (0) + line.at (3);    // point + direction = 2nd point
-      p2.y = line.at (1) + line.at (4);
-      p2.z = line.at (2) + line.at (5);
+      // Get a point on the plane
+      // w = P0 - V0
+      double w[3];
+      w[0] = line->at (0) + (plane->at (3) * plane->at (0));
+      w[1] = line->at (1) + (plane->at (3) * plane->at (1));
+      w[2] = line->at (2) + (plane->at (3) * plane->at (2));
 
       // point = P1 - (P0 - P1) . (d + n . P1) / [(P0-P1) . n];
-      double u = (line.at (0) * plane.at (0) + line.at (1) * plane.at (1) + line.at (2) * plane.at (2) + plane.at (3)) / dn;
-      point.x = p2.x - u * line.at (3);
-      point.y = p2.y - u * line.at (4);
-      point.z = p2.z - u * line.at (5);
+      double u = (plane->at (0) * w[0] + plane->at (1) * w[1] + plane->at (2) * w[2]) / dn;
+      point.x = line->at (0) - u * line->at (3);
+      point.y = line->at (1) - u * line->at (4);
+      point.z = line->at (2) - u * line->at (5);
       return (true);
     }
 
@@ -231,7 +234,7 @@ namespace cloud_geometry
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Bounding box intersection modified from Graphics Gems Vol I. The method returns a non-zero value if the
-      * bounding box is hit. 
+      * bounding box is hit.
       * \param line the coefficients of the line (point, direction)
       * \param cube the 6 bounds of the cube
       */
