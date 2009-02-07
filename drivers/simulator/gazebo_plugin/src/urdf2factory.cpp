@@ -180,6 +180,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
     double linkSize[3];
     std::string type = getGeometrySize(link->collision->geometry, &linkGeomSize, linkSize);
     
+    // This should be made smarter.
+    if(!link->visual) 
+    {
+      printf("ignoring link without visual tag: %s\n", link->name.c_str());
+      return;
+    }
+
     if (!type.empty())
     {
         /* create new body */
