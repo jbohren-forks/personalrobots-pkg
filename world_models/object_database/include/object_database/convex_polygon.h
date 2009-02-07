@@ -47,6 +47,15 @@ public:
   /// Create polygon with given vertices (which must be in radial order)
   ConvexPolygon(const vector<Point2D>& vertices);
 
+  /// Named constructor that takes in array (x1, ..., x_2n) and returns an
+  /// n-sized polygon with vertices (x1,x2), (x3,x4), etc
+  static ConvexPolygon polygonFromArray(const double* vertices, int num_vertices);
+
+  /// Create empty polygon - don't call any ops on this
+  ConvexPolygon() {}
+  
+  // The default copy and assignment are fine
+  
   /// Return a (const) reference to the ith vertex
   const Point2D& getVertex(const int i) const { return vertices_[i]; }
 
@@ -55,6 +64,8 @@ public:
 
   /// Does polygon contain this point?
   bool contains (const Point2D& p) const;
+  
+  friend std::ostream& operator<< (std::ostream& stream, const ConvexPolygon& poly);
 
 private:
   vector<Point2D> vertices_;
@@ -67,7 +78,7 @@ private:
  ************************************************************/
 
 /// Do the two polygons intersect?
-bool intersects (ConvexPolygon& p1, ConvexPolygon& p2);
+bool intersects (const ConvexPolygon& p1, const ConvexPolygon& p2);
 
 
 /************************************************************

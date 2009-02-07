@@ -27,46 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "object_database/convex_polygon.h"
-#include <vector>
-#include <gtest/gtest.h>
+#include <object_database/half_plane.h>
+#include <iostream>
 
-using namespace object_database;
+using std::ostream;
 
-TEST(Polygon, intersection)
+namespace object_database
 {
-  vector<Point2D> p1(3);
-  vector<Point2D> p2(4);
-  vector<Point2D> p3(3);
 
-  p1[0] = Point2D(0,0);
-  p1[1] = Point2D(3,0);
-  p1[2] = Point2D(0,4);
-
-  p2[0] = Point2D(2,-1);
-  p2[1] = Point2D(2,1);
-  p2[2] = Point2D(4,1);
-  p2[3] = Point2D(4,-1);
-
-  p3[0] = Point2D(4,1);
-  p3[1] = Point2D(4,-1);
-  p3[2] = Point2D(5,0);
-
-  ConvexPolygon poly1(p1);
-  ConvexPolygon poly2(p2);
-  ConvexPolygon poly3(p3);
-
-  EXPECT_TRUE(intersects (poly1, poly2));
-  EXPECT_TRUE(intersects (poly2, poly1));
-  EXPECT_FALSE(intersects (poly1, poly3));
-  EXPECT_FALSE(intersects (poly3, poly1));
-  EXPECT_TRUE(intersects (poly2, poly3));
-  EXPECT_TRUE(intersects (poly3, poly2));
+ostream& operator<< (ostream& stream, const Point2D& p) 
+{ 
+  stream << "(" << p.x << ", " << p.y << ")"; return stream;
 }
 
+ostream& operator<< (ostream& stream, const HalfPlane& p) 
+{ 
+  stream << "{" << p.a_ << "x+" << p.b_ << "y+" << p.c_ << ">=0}"; return stream; 
+}
 
-int main (int argc, char** argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

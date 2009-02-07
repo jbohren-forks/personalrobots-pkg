@@ -31,6 +31,13 @@
 #define OBJECT_DATABASE_OBJECT_DATABASE_H
 
 #include <string>
+#include <vector>
+#include <map>
+#include <boost/shared_ptr.hpp>
+#include <object_database/convex_polygon.h>
+
+using std::string;
+using std::vector;
 
 namespace object_database
 {
@@ -38,11 +45,14 @@ namespace object_database
 /// Defines an object type in the object database, which consists of the type name, and a vector of keys
 struct ObjectTypeDescription
 {
-  ObjectTypeDescription(String object_type, String[] keys) : object_type_(object_type), keys_(keys) {}
-  
-  String object_type_;
-  vector<String> keys_;
+  ObjectTypeDescription(string obj_type, vector<string> obj_keys) : object_type(obj_type), keys(obj_keys) {}
+
+  string object_type;
+  vector<string> keys;
 };
+
+/// A smart pointer to a vector of ints (that represent object ids)
+typedef boost::shared_ptr<vector<int> > ObjectsPtr;
 
 
 class ObjectDatabase 
@@ -51,42 +61,97 @@ public:
 
   /// Create object database with given object types
   ObjectDatabase(vector<ObjectTypeDescription> object_type_descriptions);
-  ~ObjectDatabase();
+
+  // destructor not needed
   
-  /// Assert the existence of a new object of given type.  
+  /// \post A new object of the given type has been added to the db
   /// \return Return the id of the new object.
-  int addObject (const String& object_type);
+  /// \throws InvalidObjectType
+  int addObject (const string& object_type);
   
-  /// Assert the existence of a new object of given type, with this id.
-  /// If id's already in use for this type, throws a DuplicateObjectId exception
-  void addObject (const String& object_type, const int& id);
+  /// \pre There exists no object in the db of the given type and id
+  /// \post There exists one object in the db of the given type and id
+  /// \throws InvalidObjectType
+  /// \throws DuplicateObjectId
+  void addObject (const string& object_type, const int id);
 
-  /// Set the geometry of this object
-  /// Throws an InvalidObjectType or UnknownObjectId exception if object doesn't exist.
-  void setGeometry (const String& object_type, const int& id, const ConvexPolygon& geom);
+  /// \post There exists no object with type \a object_type and id \a id
+  /// \throws InvalidObjectType
+  /// \throws DuplicateObjectId
+  void removeObject (const string& object_type, const int id);
 
-  /// Set value of an existing key for this object
-  /// Can throw InvalidObjectType, UnknownObjectId, or NonexistentKey exceptions.
-  void setKeyValue (const String& object_type, const int& id, const String& key, const int& value);
+  /// \post Geometry of object \a id of type \a object_type is a copy of \a geom
+  /// \throws InvalidObjectType 
+  /// \throws UnknownObjectId
+  void setGeometry (const string& object_type, const int id, const ConvexPolygon& geom);
+
+  /// \post Value of \a key for object \a id of type \a object_type equals \a value
+  /// \throws InvalidObjectType
+  /// \throws UnknownObjectId
+  /// \throws NonexistentKey
+  void setKeyValue (const string& object_type, const int id, const string& key, const double value);
   
-  /// Get value for this key
-  /// Can throw InvalidObjectType, UnknownObject or NonexistentKey exceptions.
-  int getKeyValue (const String& object_type, const int& id, const String& key) const;
+  /// \return value of \a key for object \a id of type \a object_type
+  /// \throws InvalidObjectType
+  /// \throws UnknownObject
+  /// \throws NonexistentKey
+  double getKeyValue (const string& object_type, const int id, const string& key) const;
   
-  /// Get objects of a given type
-  vector<Objects> get_objects (const String& object_type) const;
-
-  /// Get objects of a given type intersecting a given region
-  vector<Objects> get_objects (const String& object_type, const ConvexPolygon& region) const;
+  /// \return objects of type \a object_type intersecting \a region
+  ObjectsPtr getObjects (const string& object_type, const ConvexPolygon& region) const;
 
 private:
+
+  // Nested class used for storing individual object descriptions
+  struct ObjectDescription;
+
+  // Smart pointers to object description
+  typedef boost::shared_ptr<ObjectDescription> ObjDescPtr;
+  typedef boost::shared_ptr<const ObjectDescription> ObjDescConstPtr;
+
+  /// For a given object type, map from integer id to the object description
+  typedef std::map<int,ObjDescPtr> ObjectMap;
+
+  struct AddIntersectingObjects;
 
   // Forbid copy and assign
   ObjectDatabase(const ObjectDatabase&);
   ObjectDatabase& operator=(const ObjectDatabase&);
 
-  // Todo
-  
+  /// \return smart pointer to const description of object of the given type and id
+  /// \throws InvalidObjectType
+  /// \throws UnknownObject
+  ObjDescConstPtr getObjectDescription (const string& object_type, const int id) const;
+
+  /// \return smart pointer to description of object of the given type and id
+  /// \throws InvalidObjectType
+  /// \throws UnknownObject
+  ObjDescPtr getObjectDescription (const string& object_type, const int id);
+
+  /// \return the number of this type
+  /// \throws InvalidObjectType
+  int lookupType (const string& name) const;
+
+  /// \return the index for a key of type
+  /// \throws NonexistentKey
+  /// \throws InvalidObjectType
+  int lookupKey (const string& object_type, const string& key) const;
+
+  /// Add object given type num and id
+  /// \throws DuplicateObjectId
+  void addObject (const int type_num, const int object_id);
+
+  /// \return an unused id for this type num
+  int getFreeId (const int type_num) const;
+
+  /// \return type name for this number
+  const string& typeName (const int type_num) const { return object_type_descriptions_[type_num].object_type; }
+
+  /// Object type descriptions, sorted by name
+  vector<ObjectTypeDescription> object_type_descriptions_;
+
+  /// Object descriptions
+  vector<ObjectMap> object_descriptions_;
 };
    
 

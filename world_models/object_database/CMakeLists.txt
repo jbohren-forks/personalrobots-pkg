@@ -8,7 +8,7 @@ rospack(object_database)
 set(ROS_COMPILE_FLAGS "-g -pg -O3" ${ROS_COMPILE_FLAGS})
 set(ROS_LINK_FLAGS "-g -pg -O3" ${ROS_LINK_FLAGS})
 
-rospack_add_library(object_database src/convex_polygon.cpp)
+rospack_add_library(object_database src/object_database.cpp src/convex_polygon.cpp src/half_plane.cpp)
 
-rospack_add_gtest(polygon_test test/polygon_test.cpp)
-target_link_libraries(polygon_test object_database)
+rospack_add_gtest(test/object_db_test test/object_db_test.cpp)
+target_link_libraries(test/object_db_test object_database)

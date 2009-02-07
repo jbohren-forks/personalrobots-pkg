@@ -31,6 +31,7 @@
 #include <iostream>
 #include <algorithm>
 
+using namespace std;
 
 namespace object_database
 {
@@ -87,13 +88,22 @@ ConvexPolygon::ConvexPolygon (const vector<Point2D>& vertices)
   }
 }
 
+ConvexPolygon ConvexPolygon::polygonFromArray (const double* vertices, int num_vertices)
+{
+  vector<Point2D> points;
+  for (int i=0; i<2*num_vertices; i+=2) {
+    points.push_back(Point2D(vertices[i], vertices[i+1]));
+  }
+  return ConvexPolygon(points);
+}
 
 bool ConvexPolygon::contains (const Point2D& p) const
 {
+  // true iff each half plane contains p
   return std::find_if (half_planes_.begin(), half_planes_.end(), DoesNotContain (p)) == half_planes_.end();
 }
 
-bool intersects (ConvexPolygon& p1, ConvexPolygon& p2)
+bool intersects (const ConvexPolygon& p1, const ConvexPolygon& p2)
 {
   int n1=p1.numVertices();
   int n2=p2.numVertices();
@@ -110,6 +120,16 @@ bool intersects (ConvexPolygon& p1, ConvexPolygon& p2)
   return false;
 }
 
+
+std::ostream& operator<< (std::ostream& stream, const ConvexPolygon& poly)
+{
+  stream << "[Polygon ";
+  for (unsigned int i=0; i<poly.vertices_.size(); i++) {
+    stream << "(" << poly.vertices_[i].x << ", " << poly.vertices_[i].y << ") ";
+  }
+  stream << "]";
+  return stream;
+}
 
 } // namespace object_database
 

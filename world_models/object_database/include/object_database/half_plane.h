@@ -42,7 +42,6 @@ struct Point2D
   Point2D(const double px=0.0, const double py=0.0) : x(px), y(py) {}
 };
 
-std::ostream& operator<< (std::ostream& stream, Point2D p) { stream << "(" << p.x << ", " << p.y << ")"; return stream; }
 
 
 
@@ -60,7 +59,7 @@ private:
   double a_, b_, c_;
 };
 
-std::ostream& operator<< (std::ostream& stream, const HalfPlane& p) { stream << "{" << p.a_ << "x+" << p.b_ << "y+" << p.c_ << ">=0}"; return stream; }
+
 
 
 

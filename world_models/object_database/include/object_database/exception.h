@@ -30,9 +30,12 @@
 #ifndef OBJECT_DATABASE_EXCEPTION_H
 #define OBJECT_DATABASE_EXCEPTION_H
 
+#include <string>
+#include <boost/format.hpp>
 #include <stdexcept>
 
 using std::string;
+using boost::format;
 
 namespace object_database
 {
@@ -43,35 +46,35 @@ namespace object_database
 class ObjectDatabaseException: public std::runtime_error
 { 
 public:
-  ObjectDatabaseException(const string& errorDescription) : std::runtime_error(errorDescription) {};
+ObjectDatabaseException(const format& error_string) : std::runtime_error(error_string.str()) {};
 };
 
 /// \brief Exception denoting a nonexistent object type
 class InvalidObjectType: public ObjectDatabaseException
 {
 public:
-  InvalidObjectType(const string& errorDescription) : ObjectDatabaseException(errorDescription) {}
+  InvalidObjectType(const string& name) : ObjectDatabaseException(format("Unknown object type %1%") %name) {}
 };
 
 /// \brief Exception denoting a nonexistent object id
 class UnknownObjectId: public ObjectDatabaseException
 {
 public:
-  UnknownObjectId(const string& errorDescription) : ObjectDatabaseException(errorDescription) {}
+  UnknownObjectId(const string& type, const int ind) : ObjectDatabaseException(format("Unknown id %1% for object type %2%") %ind % type) {}
 };
 
 /// \brief Exception thrown when trying to add an object id that already exists
 class DuplicateObjectId: public ObjectDatabaseException
 {
 public:
-  DuplicateObjectId(const string& errorDescription) : ObjectDatabaseException(errorDescription) {}
+  DuplicateObjectId(const string& type, const int id) : ObjectDatabaseException(format("Id %1% alrady exists for type %2%") %id % type) {}
 };
 
 /// \brief Exception thrown when trying to access a nonexistent key-value pair
 class UnknownKey: public ObjectDatabaseException
 {
 public:
-  UnknownKey(const string& errorDescription) : ObjectDatabaseException(errorDescription) {}
+  UnknownKey(const string& type, const string& key) : ObjectDatabaseException(format("Unknown key %1% for object type %2%") %key %type) {}
 };
 
 
