@@ -147,9 +147,9 @@ namespace kinematic_planning
 	
 	RKPModel *m = models[req.params.model_id];
 	
-	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
+	if (m->kmodel->getModelInfo().stateDimension != req.start_state.get_vals_size())
 	{
-	    ROS_ERROR("Dimension of start state expected to be %d but was received as %d", m->kmodel->stateDimension, req.start_state.get_vals_size());
+	    ROS_ERROR("Dimension of start state expected to be %d but was received as %d", m->kmodel->getModelInfo().stateDimension, req.start_state.get_vals_size());
 	    return false;
 	}
 	

@@ -159,7 +159,7 @@ protected:
     // get the current state from the StateParams instance monitored by the KinematicStateMonitor
     void currentState(robot_msgs::KinematicState &state)
     {
-	state.set_vals_size(m_kmodel->stateDimension);
+	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
 	    state.vals[i] = m_robotState->getParams()[i];	
     }

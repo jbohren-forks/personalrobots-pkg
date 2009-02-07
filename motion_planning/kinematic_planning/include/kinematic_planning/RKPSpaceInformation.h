@@ -56,28 +56,28 @@ namespace kinematic_planning
 	    m_divisions = divisions;
 	    
 	    /* compute the state space for this group */
-	    m_stateDimension = m_groupID >= 0 ? m_kmodel->groupStateIndexList[m_groupID].size() : m_kmodel->stateDimension;
+	    m_stateDimension = m_groupID >= 0 ? m_kmodel->getModelInfo().groupStateIndexList[m_groupID].size() : m_kmodel->getModelInfo().stateDimension;
 	    m_stateComponent.resize(m_stateDimension);
 	    
 	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
 	    {	
 		if (m_stateComponent[i].type == StateComponent::UNKNOWN)
 		    m_stateComponent[i].type = StateComponent::NORMAL;
-		int p = m_groupID >= 0 ? m_kmodel->groupStateIndexList[m_groupID][i] * 2 : i * 2;
-		m_stateComponent[i].minValue   = m_kmodel->stateBounds[p    ];
-		m_stateComponent[i].maxValue   = m_kmodel->stateBounds[p + 1];
+		int p = m_groupID >= 0 ? m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2 : i * 2;
+		m_stateComponent[i].minValue   = m_kmodel->getModelInfo().stateBounds[p    ];
+		m_stateComponent[i].maxValue   = m_kmodel->getModelInfo().stateBounds[p + 1];
 		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
 		
-		for (unsigned int j = 0 ; j < m_kmodel->floatingJoints.size() ; ++j)
-		    if (m_kmodel->floatingJoints[j] == p)
+		for (unsigned int j = 0 ; j < m_kmodel->getModelInfo().floatingJoints.size() ; ++j)
+		    if (m_kmodel->getModelInfo().floatingJoints[j] == p)
 		    {
 			m_floatingJoints.push_back(i);
 			m_stateComponent[i + 3].type = StateComponent::QUATERNION;
 			break;
 		    }
 		
-		for (unsigned int j = 0 ; j < m_kmodel->planarJoints.size() ; ++j)
-		    if (m_kmodel->planarJoints[j] == p)
+		for (unsigned int j = 0 ; j < m_kmodel->getModelInfo().planarJoints.size() ; ++j)
+		    if (m_kmodel->getModelInfo().planarJoints[j] == p)
 		    {
 			m_planarJoints.push_back(i);
 			break;		    

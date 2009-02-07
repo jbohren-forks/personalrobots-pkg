@@ -150,8 +150,8 @@ namespace planning_models
 	    /** Name of the joint */
 	    std::string       name;
 	    
-	    /** The model that owns this joint */
-	    KinematicModel   *owner;
+	    /** The robot that owns this joint */
+	    Robot            *owner;
 
 	    /** the links that this joint connects */	    
 	    Link             *before;
@@ -338,7 +338,7 @@ namespace planning_models
 	    std::string                name;
 
 	    /** The model that owns this link */
-	    KinematicModel            *owner;
+	    Robot                     *owner;
 
 	    /** Joint that connects this link to the parent link */
 	    Joint                     *before;
@@ -378,15 +378,14 @@ namespace planning_models
 	};
 	
 	/** A robot structure */
-	class Robot
+	struct Robot
 	{
-	public:
-
 	    Robot(KinematicModel *model)
 	    {
 		owner = model;	  
 		chain = NULL;
 		stateDimension = 0;
+		rootTransform.setIdentity();
 	    }
 	    
 	    virtual ~Robot(void)
@@ -395,10 +394,14 @@ namespace planning_models
 		    delete chain;
 	    }
 	    
-	    void computeTransforms(const double *params, int groupID = -1);
-	    
+	    /** Add transforms to the rootTransform such that the robot is in its planar/floating link frame */
+	    bool reduceToRobotFrame(void);
+
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
+	    
+	    /** A transform that is applied to the entire robot */
+	    btTransform         rootTransform;
 
 	    /** List of links in the robot */
 	    std::vector<Link*>  links;
@@ -440,20 +443,42 @@ namespace planning_models
 	    std::vector<std::vector<Joint*> >        groupChainStart;
 	    
 	};
+
+	/** State information */
+	struct ModelInfo
+	{
+	    /** Cumulative list of floating joints */
+	    std::vector<int>    floatingJoints;
+	    
+	    /** Cumulative list of planar joints */
+	    std::vector<int>    planarJoints;
+	    
+	    /** Cumulative state dimension */
+	    unsigned int        stateDimension;
+	    
+	    /** Cumulative state bounds */
+	    std::vector<double> stateBounds;
+	    
+	    /** A map defining the parameter names in the complete state */
+	    std::map<std::string, unsigned int>      parameterIndex;
+	    std::map<unsigned int, std::string>      parameterName;
+	    
+	    /** Cumulative index list */
+	    std::vector< std::vector<unsigned int> > groupStateIndexList;
+	    
+	    /** Cumulative list of group roots */
+	    std::vector< std::vector<Joint*> >       groupChainStart;
+	};
 	
 	/** A class that can hold the named parameters of this planning model */
 	class StateParams
 	{
 	public:
 
-	    StateParams(KinematicModel *model)
+	    StateParams(KinematicModel *model) : m_owner(model), m_mi(model->getModelInfo())
 	    {
 		assert(model->isBuilt());
-		m_owner = model;
-		m_dim = m_owner->stateDimension > 0 ? m_owner->stateDimension : 0;
-		m_params = m_dim > 0 ? new double[m_dim] : NULL;
-		m_pos = m_owner->parameterNames;
-		m_name = m_owner->parameterValues;
+		m_params = m_mi.stateDimension > 0 ? new double[m_mi.stateDimension] : NULL;
 		setAll(0);
 		reset();
 	    }
@@ -511,18 +536,15 @@ namespace planning_models
 	protected:
 	    
 	    KinematicModel                      *m_owner;
-	    unsigned int                         m_dim;
+	    ModelInfo                           &m_mi;
 	    double                              *m_params;
-	    std::map<std::string, unsigned int>  m_pos;
-	    std::map<unsigned int, std::string>  m_name;
 	    std::map<unsigned int, bool>         m_seen;
 	};
 	
 	
 	KinematicModel(void)
 	{
-	    rootTransform.setIdentity();
-	    stateDimension = 0;
+	    m_mi.stateDimension = 0;
 	    m_ignoreSensors = false;
 	    m_verbose = false;	    
 	    m_built = false;
@@ -534,13 +556,15 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
+	void         build(const std::string &description, bool ignoreSensors = false);
 	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
 	bool         isBuilt(void) const;
 	StateParams* newStateParams(void);
 	
 	void         setVerbose(bool verbose);	
 	
-
+	const std::string& getModelName(void) const;
+	
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
 
@@ -571,35 +595,14 @@ namespace planning_models
 	void printModelInfo(std::ostream &out = std::cout);
 	void printLinkPoses(std::ostream &out = std::cout) const;
 	
-	/** The name of the model */
-	std::string         name;
-	    
-	/** A transform that is applied to the entire model */
-	btTransform         rootTransform;
+	ModelInfo&       getModelInfo(void);
+	const ModelInfo& getModelInfo(void) const;
 	
-	/** Cumulative list of floating joints */
-	std::vector<int>    floatingJoints;
-
-	/** Cumulative list of planar joints */
-	std::vector<int>    planarJoints;
-	
-	/** Cumulative state dimension */
-	unsigned int        stateDimension;
-	
-	/** Cumulative state bounds */
-	std::vector<double> stateBounds;
-	
-	/** A map defining the parameter names in the complete state */
-	std::map<std::string, unsigned int>      parameterNames;
-	std::map<unsigned int, std::string>      parameterValues;
-	
-	/** Cumulative index list */
-	std::vector< std::vector<unsigned int> > groupStateIndexList;
-
-	/** Cumulative list of group roots */
-	std::vector< std::vector<Joint*> >       groupChainStart;
-
     protected:
+	
+	/** The name of the model */
+	std::string                       m_name;
+	ModelInfo                         m_mi;
 	
 	std::vector<Robot*>               m_robots;
 	std::vector<std::string>          m_groups;

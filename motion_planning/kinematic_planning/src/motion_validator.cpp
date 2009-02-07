@@ -142,9 +142,9 @@ public:
 	myModel *model = m_models[req.model_id];
 	if (model)
 	{
-	    if (model->kmodel->stateDimension != req.start_state.get_vals_size())
+	    if (model->kmodel->getModelInfo().stateDimension != req.start_state.get_vals_size())
 	    {
-		ROS_ERROR("Dimension of start state expected to be %d but was received as %d", model->kmodel->stateDimension, req.start_state.get_vals_size());
+		ROS_ERROR("Dimension of start state expected to be %d but was received as %d", model->kmodel->getModelInfo().stateDimension, req.start_state.get_vals_size());
 		return false;
 	    }
 	    
@@ -167,7 +167,7 @@ public:
 		
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)
-		    start->values[i] = req.start_state.vals[model->kmodel->groupStateIndexList[model->groupID][i]];
+		    start->values[i] = req.start_state.vals[model->kmodel->getModelInfo().groupStateIndexList[model->groupID][i]];
 	    }
 	    else
 	    {
@@ -215,7 +215,7 @@ public:
 	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
-	model->groupName = m_kmodel->name;
+	model->groupName = m_kmodel->getModelName();
 	setupModel(model);
 
 	/* remember the model by the robot's name */

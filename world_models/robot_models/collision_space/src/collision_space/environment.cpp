@@ -77,7 +77,7 @@ unsigned int collision_space::EnvironmentModel::getModelCount(void) const
 int collision_space::EnvironmentModel::getModelID(const std::string& robot_name) const
 {
     for (unsigned int i = 0 ; i < m_models.size() ; ++i)
-	if (m_models[i]->name == robot_name)
+	if (m_models[i]->getModelName() == robot_name)
 	    return i;
     return -1;
 }

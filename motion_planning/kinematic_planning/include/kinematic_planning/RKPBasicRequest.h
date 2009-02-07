@@ -152,7 +152,7 @@ namespace kinematic_planning
 		
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)
-		    start->values[i] = start_state.vals[model->kmodel->groupStateIndexList[model->groupID][i]];
+		    start->values[i] = start_state.vals[model->kmodel->getModelInfo().groupStateIndexList[model->groupID][i]];
 	    }
 	    else
 	    {

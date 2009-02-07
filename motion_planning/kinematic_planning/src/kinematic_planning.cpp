@@ -231,14 +231,6 @@ public:
 	    delete i->second;
     }
     
-    void currentState(robot_msgs::KinematicState &state)
-    {
-	state.set_vals_size(m_kmodel->stateDimension);
-	const double *params = m_robotState->getParams();
-	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
-            state.vals[i] = params[i];
-    }
-    
     bool isSafeToPlan(void)
     {
 	if (!isMapUpdated(m_intervalCollisionMap))
@@ -316,6 +308,141 @@ public:
 	    delete m_statusThread;
 	}	
     }
+    
+    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::Request &req, robot_srvs::KinematicReplanLinkPosition::Response &res)
+    {
+	ROS_INFO("Request for replanning to a position");
+	bool st = false;
+	res.id = -1;
+	
+	stopReplanning();
+	
+	if (m_robotState)
+	{
+	    // back up the request
+	    m_currentPlanToPositionRequest = req.value;
+	    
+	    // start planning thread
+	    m_replanningLock.lock();
+	    m_currentRequestType = R_POSITION;
+
+	    m_currentPlanStatus.id = ++m_replanID;
+	    m_currentPlanStatus.valid = 1;
+	    m_currentPlanStatus.path.set_states_size(0);
+	    m_currentPlanStatus.done = 0;
+	    m_currentPlanStatus.distance = -1.0;
+	    res.id = m_currentPlanStatus.id;
+	    m_statusLock.unlock();	    
+	    
+	    ROS_INFO("Start replanning with plan id %d", res.id);
+	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
+	    m_replanningLock.unlock();	
+
+	    st = true;
+	}
+	else
+	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+	
+	return st;
+    }
+    
+    bool planToState(robot_srvs::KinematicPlanState::Request &req, robot_srvs::KinematicPlanState::Response &res)
+    {
+	ROS_INFO("Request for planning to a state");
+	bool trivial = false;
+	if (req.value.start_state.get_vals_size() == 0)
+	{
+	    currentState(req.value.start_state);
+	    ROS_INFO("Using current state as starting point");
+	}
+	
+	bool result = false;
+	
+	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
+	
+	return result;
+    }
+
+    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::Request &req, robot_srvs::KinematicPlanLinkPosition::Response &res)
+    {	
+	ROS_INFO("Request for planning to a position");
+	bool trivial = false;
+	if (req.value.start_state.get_vals_size() == 0)
+	{
+	    currentState(req.value.start_state);
+	    ROS_INFO("Using current state as starting point");
+	}
+	
+	bool result = false;
+	
+	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
+	
+	res.value.id = -1;
+	res.value.done = trivial ? 1 : 0;
+	res.value.valid = res.value.path.get_states_size() > 0;
+
+	return result;
+    }
+
+    virtual void setRobotDescription(robot_desc::URDF *file)
+    {
+	CollisionSpaceMonitor::setRobotDescription(file);	
+	defaultPosition();
+	
+	ROS_INFO("=======================================");	
+	std::stringstream ss;
+	m_kmodel->printModelInfo(ss);
+	ROS_INFO("%s", ss.str().c_str());	
+	ROS_INFO("=======================================");
+
+	/* set the data for the model */
+	RKPModel *model = new RKPModel();
+	model->collisionSpaceID = 0;
+	model->collisionSpace = m_collisionSpace;
+        model->kmodel = m_kmodel;
+	model->groupName = m_kmodel->getModelName();
+	createMotionPlanningInstances(model);
+	
+	/* remember the model by the robot's name */
+	m_models[model->groupName] = model;
+	
+	/* create a model for each group */
+	std::vector<std::string> groups;
+	m_kmodel->getGroups(groups);
+
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	{
+	    RKPModel *model = new RKPModel();
+	    model->collisionSpaceID = 0;
+	    model->collisionSpace = m_collisionSpace;
+	    model->kmodel = m_kmodel;
+	    model->groupID = m_kmodel->getGroupID(groups[i]);
+	    model->groupName = groups[i];
+	    createMotionPlanningInstances(model);
+	    m_models[model->groupName] = model;
+	}
+    }
+
+    void currentState(robot_msgs::KinematicState &state)
+    {
+	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
+	const double *params = m_robotState->getParams();
+	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
+            state.vals[i] = params[i];
+    }
+    
+    void knownModels(std::vector<std::string> &model_ids)
+    {
+	for (std::map<std::string, RKPModel*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
+	    model_ids.push_back(i->first);
+    }
+
+protected:
     
     void publishStatus(void)
     {
@@ -438,64 +565,6 @@ public:
 	return st;	
     }
     
-    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::Request &req, robot_srvs::KinematicReplanLinkPosition::Response &res)
-    {
-	ROS_INFO("Request for replanning to a position");
-	bool st = false;
-	res.id = -1;
-	
-	stopReplanning();
-	
-	if (m_robotState)
-	{
-	    // back up the request
-	    m_currentPlanToPositionRequest = req.value;
-	    
-	    // start planning thread
-	    m_replanningLock.lock();
-	    m_currentRequestType = R_POSITION;
-
-	    m_currentPlanStatus.id = ++m_replanID;
-	    m_currentPlanStatus.valid = 1;
-	    m_currentPlanStatus.path.set_states_size(0);
-	    m_currentPlanStatus.done = 0;
-	    m_currentPlanStatus.distance = -1.0;
-	    res.id = m_currentPlanStatus.id;
-	    m_statusLock.unlock();	    
-	    
-	    ROS_INFO("Start replanning with plan id %d", res.id);
-	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
-	    m_replanningLock.unlock();	
-
-	    st = true;
-	}
-	else
-	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
-	
-	return st;
-    }
-    
-    bool planToState(robot_srvs::KinematicPlanState::Request &req, robot_srvs::KinematicPlanState::Response &res)
-    {
-	ROS_INFO("Request for planning to a state");
-	bool trivial = false;
-	if (req.value.start_state.get_vals_size() == 0)
-	{
-	    currentState(req.value.start_state);
-	    ROS_INFO("Using current state as starting point");
-	}
-	
-	bool result = false;
-	
-	res.value.unsafe = isSafeToPlan() ? 0 : 1;
-	result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-	res.value.id = -1;
-	res.value.done = trivial ? 1 : 0;
-	res.value.valid = res.value.path.get_states_size() > 0;
-	
-	return result;
-    }
-
     /** Wait for a change in the environment and recompute the motion plan */
     void replanToStateThread(void)
     {
@@ -529,28 +598,6 @@ public:
 	    while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
 		m_collisionMonitorCondition.wait(m_continueReplanningLock);
 	}
-    }
-
-    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::Request &req, robot_srvs::KinematicPlanLinkPosition::Response &res)
-    {	
-	ROS_INFO("Request for planning to a position");
-	bool trivial = false;
-	if (req.value.start_state.get_vals_size() == 0)
-	{
-	    currentState(req.value.start_state);
-	    ROS_INFO("Using current state as starting point");
-	}
-	
-	bool result = false;
-	
-	res.value.unsafe = isSafeToPlan() ? 0 : 1;
-	result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-	
-	res.value.id = -1;
-	res.value.done = trivial ? 1 : 0;
-	res.value.valid = res.value.path.get_states_size() > 0;
-
-	return result;
     }
 
     /** Wait for a change in the environment and recompute the motion plan */
@@ -633,51 +680,6 @@ public:
 
 	if (update)
 	    m_collisionMonitorCondition.notify_all();
-    }
-    
-    virtual void setRobotDescription(robot_desc::URDF *file)
-    {
-	CollisionSpaceMonitor::setRobotDescription(file);	
-	defaultPosition();
-	
-	ROS_INFO("=======================================");	
-	std::stringstream ss;
-	m_kmodel->printModelInfo(ss);
-	ROS_INFO("%s", ss.str().c_str());	
-	ROS_INFO("=======================================");
-
-	/* set the data for the model */
-	RKPModel *model = new RKPModel();
-	model->collisionSpaceID = 0;
-	model->collisionSpace = m_collisionSpace;
-        model->kmodel = m_kmodel;
-	model->groupName = m_kmodel->name;
-	createMotionPlanningInstances(model);
-	
-	/* remember the model by the robot's name */
-	m_models[model->groupName] = model;
-	
-	/* create a model for each group */
-	std::vector<std::string> groups;
-	m_kmodel->getGroups(groups);
-
-	for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	{
-	    RKPModel *model = new RKPModel();
-	    model->collisionSpaceID = 0;
-	    model->collisionSpace = m_collisionSpace;
-	    model->kmodel = m_kmodel;
-	    model->groupID = m_kmodel->getGroupID(groups[i]);
-	    model->groupName = groups[i];
-	    createMotionPlanningInstances(model);
-	    m_models[model->groupName] = model;
-	}
-    }
-    
-    void knownModels(std::vector<std::string> &model_ids)
-    {
-	for (std::map<std::string, RKPModel*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
-	    model_ids.push_back(i->first);
     }
     
 private:
