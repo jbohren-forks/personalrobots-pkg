@@ -39,55 +39,27 @@ roslib.load_manifest('exec_sim')
 import rospy
 import threading
 
-from robot_msgs.msg import Planner2DGoal, Planner2DState
+from highlevel_controllers.msg import Ping 
 
-class NavigationSimulator:
-  def __init__(self):
+class HighlevelController:
+  def __init__(self, state_type, state_topic, goal_type, goal_topic):
     #create the ros interfaces from the simulator to the world
-    rospy.Subscriber(goal_topic, PLanner2DGoal, self.updateGoal)
-    self.pub = rospy.Publisher(state_topic, Planner2DState)
+    rospy.Subscriber(goal_topic, goal_type, self.goalCallback)
+    rospy.Subscriber("highlevel_controllers/shutdown", Ping, self.shutdownCallback)
+    self.pub = rospy.Publisher(state_topic, state_type)
 
-    #set the initial state
-    self.state = Planner2DState
+    #we need a lock to access data in callbacks
+    self.lock = threading.Lock()
+
+  def deactivate(self):
     self.state.active = 0
     self.state.valid = 0
+    self.handleDeactivation()
+
+  def activate(self):
+    self.state.active = 1
+    self.state.valid = 0
     self.state.done = 0
+    self.state.aborted = 0
     self.state.preempted = 0
-
-    self.state.pos.x = 0.0
-    self.state.pos.y = 0.0
-    self.state.pos.th = 0.0
-
-    self.state.goal.x = 0.0
-    self.state.goal.y = 0.0
-    self.state.goal.th = 0.0
-
-    #we'll need a lock to access data in ros callbacks
-    self.state_lock = threading.Lock()
-
-  def setPosition(self, x, y, th):
-    self.state.pos.x = x
-    self.state.pos.y = y
-    self.state.pos.th = th
-
-  def setGoal(self, x, y, th):
-    self.state.goal.x = x
-    self.state.goal.y = y
-    self.state.goal.th = th
-
-  def sendStateMsg(self):
-    self.state.header.stamp = rospy.get_rostime()
-    self.pub.publish(self.state)
-
-  def updateGoal(self, goal_msg):
-    #only update if the goal message is enabled
-    if goal_msg.enable == 1:
-      self.state_lock.acquire()
-      self.setGoal(goal_msg.goal.x, goal_msg.goal.y, goal_msg.goal.th)
-      self.state_lock.release()
-
-  def simulation_step(self):
-    self.state_lock.acquire()
-
-    self.state_lock.release()
-
+    self.handleActivation()
