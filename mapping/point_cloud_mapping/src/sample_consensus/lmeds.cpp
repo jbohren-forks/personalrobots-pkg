@@ -32,7 +32,7 @@
 
 #include <algorithm>
 #include <cfloat>
-#include "sample_consensus/lmeds.h"
+#include <sample_consensus/lmeds.h>
 
 namespace sample_consensus
 {

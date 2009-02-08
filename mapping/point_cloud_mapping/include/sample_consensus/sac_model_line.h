@@ -33,22 +33,22 @@
 #ifndef _SAMPLE_CONSENSUS_SACMODELLINE_H_
 #define _SAMPLE_CONSENSUS_SACMODELLINE_H_
 
-#include "sample_consensus/sac_model.h"
-#include "sample_consensus/model_types.h"
+#include <sample_consensus/sac_model.h>
+#include <sample_consensus/model_types.h>
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for 3D plane segmentation.
+  /** \brief A Sample Consensus Model class for 3D line segmentation.
     */
   class SACModelLine : public SACModel
   {
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelPlane. */
+      /** \brief Constructor for base SACModelLine. */
       SACModelLine () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelPlane. */
+      /** \brief Destructor for base SACModelLine. */
       virtual ~SACModelLine () { }
 
       virtual std::vector<int> getSamples (int &iterations);

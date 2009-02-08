@@ -44,17 +44,6 @@ namespace cloud_geometry
   namespace transforms
   {
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Get the angle between two planes
-      * \param plane_a the normalized coefficients of the first plane
-      * \param plane_b the normalized coefficients of the second plane
-      */
-    inline double
-      getAngleBetweenPlanes (std::vector<double> plane_a, std::vector<double> plane_b)
-    {
-      return (acos (plane_a[0] * plane_b[0] + plane_a[1] * plane_b[1] + plane_a[2] * plane_b[2]));
-    }
-
     void getPlaneToPlaneTransformation (std::vector<double> plane_a, std::vector<double> plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);
 

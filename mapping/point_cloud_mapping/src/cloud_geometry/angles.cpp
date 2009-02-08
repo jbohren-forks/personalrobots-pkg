@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -28,19 +28,16 @@
  *
  */
 
-/* author: Radu Bogdan Rusu */
+/** \author Radu Bogdan Rusu */
 
-#ifndef INCLUDE_MODELTYPES_H
-#define INCLUDE_MODELTYPES_H
+#include <cloud_geometry/point.h>
+#include <cloud_geometry/angles.h>
 
-#define SACMODEL_PLANE         0
-#define SACMODEL_LINE          1
-#define SACMODEL_CIRCLE2D      2
-#define SACMODEL_CIRCLE3D      3
-#define SACMODEL_SPHERE        4
-#define SACMODEL_CYLINDER      5
-#define SACMODEL_CONE          6
-#define SACMODEL_TORUS         7
-#define SACMODEL_ORIENTED_LINE 8
+namespace cloud_geometry
+{
 
-#endif
+  namespace angles
+  {
+
+  }
+}

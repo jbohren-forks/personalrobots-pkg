@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "sample_consensus/sac.h"
+#include <sample_consensus/sac.h>
 
 using namespace sample_consensus;
 

@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <cloud_geometry/angles.h>
 #include <cloud_geometry/transforms.h>
 
 namespace cloud_geometry
@@ -50,7 +51,7 @@ namespace cloud_geometry
       getPlaneToPlaneTransformation (std::vector<double> plane_a, std::vector<double> plane_b,
                                      float tx, float ty, float tz, Eigen::Matrix4d &transformation)
     {
-      double angle = getAngleBetweenPlanes (plane_a, plane_b);
+      double angle = cloud_geometry::angles::getAngleBetweenPlanes (plane_a, plane_b);
       // Compute the rotation axis R = Nplane x (0, 0, 1)
       std_msgs::Point32 r_axis;
       r_axis.x = plane_a[1]*plane_b[2] - plane_a[2]*plane_b[1];
@@ -77,7 +78,7 @@ namespace cloud_geometry
       transformation (2, 0) = 2*(xz - wy);       transformation (2, 1) = 2*(yz + wx);       transformation (2, 2) = -xx -yy + zz + ww; transformation (2, 3) = tz;
       transformation (3, 0) = 0;                 transformation (3, 1) = 0;                 transformation (3, 2) = 0;                 transformation (3, 3) = 1;
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Convert an axis-angle representation to a 3x3 rotation matrix
       * \note The formula is given by: A = I * cos (th) + ( 1 - cos (th) ) * axis * axis' - E * sin (th), where 
@@ -92,15 +93,15 @@ namespace cloud_geometry
       double cos_a = cos (angle);
       double sin_a = sin (angle);
       double cos_a_m = 1.0 - cos_a;
-      
+
       double a_xy = axis.x * axis.y * cos_a_m;
       double a_xz = axis.x * axis.z * cos_a_m;
       double a_yz = axis.y * axis.z * cos_a_m;
-      
+
       double s_x = sin_a * axis.x;
       double s_y = sin_a * axis.y;
       double s_z = sin_a * axis.z;
-      
+
       rotation (0, 0) = cos_a + axis.x * axis.x * cos_a_m;
       rotation (0, 1) = a_xy - s_z;
       rotation (0, 2) = a_xz + s_y;

@@ -216,28 +216,6 @@ namespace cloud_geometry
   void downsamplePointCloud (std_msgs::PointCloud *points, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
-    * \param point a 2D point
-    */
-  inline double
-    getAngle2D (double point[2])
-  {
-    double rad;
-    if (point[0] == 0)
-      rad = (point[1] < 0) ? -M_PI / 2.0 : M_PI / 2.0;
-    else
-    {
-      rad = atan (point[1] / point[0]);
-      if (point[0] < 0)
-        rad += M_PI;
-    }
-    if (rad < 0)
-      rad += 2 * M_PI;
-
-    return (rad);
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal
     * \param plane_coeff the plane coefficients (containing n, the plane normal)
     * \param u the resultant u direction
@@ -286,6 +264,19 @@ namespace cloud_geometry
     cerr_p (std_msgs::Point32 p)
   {
     std::cerr << p.x << " " << p.y << " " << p.z << std::endl;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Write the polygon data to screen (stderr)
+    * \param poly the polygon
+    */
+  inline void
+    cerr_poly (std_msgs::Polygon3D poly)
+  {
+    for (unsigned int i = 0; i < poly.points.size (); i++)
+    {
+      std::cerr << poly.points[i].x << " " << poly.points[i].y << " " << poly.points[i].z << std::endl;
+    }
   }
 
 }

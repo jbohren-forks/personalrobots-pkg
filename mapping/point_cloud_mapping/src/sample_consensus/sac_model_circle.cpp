@@ -30,8 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "sample_consensus/sac_model_circle.h"
-#include "cloud_geometry/nearest.h"
+#include <sample_consensus/sac_model_circle.h>
+#include <cloud_geometry/nearest.h>
 
 namespace sample_consensus
 {

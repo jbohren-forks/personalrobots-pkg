@@ -28,11 +28,14 @@
  *
  */
 
-/** \author Radu Bogdan Rusu */
+/** \author Radu Bogdan Rusu
+  *
+  * \todo Change the internal representation of the line model from 2 points to 1 point + direction.
+  */
 
-#include "sample_consensus/sac_model_line.h"
-#include "cloud_geometry/point.h"
-#include "cloud_geometry/nearest.h"
+#include <sample_consensus/sac_model_line.h>
+#include <cloud_geometry/point.h>
+#include <cloud_geometry/nearest.h>
 
 namespace sample_consensus
 {
@@ -76,6 +79,12 @@ namespace sample_consensus
 
     std::vector<int> inliers;
 
+    // Obtain the line direction
+    std_msgs::Point32 p3, p4;
+    p3.x = model_coefficients.at (3) - model_coefficients.at (0);
+    p3.y = model_coefficients.at (4) - model_coefficients.at (1);
+    p3.z = model_coefficients.at (5) - model_coefficients.at (2);
+
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
@@ -86,11 +95,6 @@ namespace sample_consensus
       // P1P0 = < x-x1,  y-y1, z-z1 > = <x4, y4, z4>
       // P1P2 x P1P0 = < y3*z4 - z3*y4, -(x3*z4 - x4*z3), x3*y4 - x4*y3 >
       //             = < (y2-y1)*(z-z1) - (z2-z1)*(y-y1), -[(x2-x1)*(z-z1) - (x-x1)*(z2-z1)], (x2-x1)*(y-y1) - (x-x1)*(y2-y1) >
-      std_msgs::Point32 p3, p4;
-      p3.x = model_coefficients.at (3) - model_coefficients.at (0);
-      p3.y = model_coefficients.at (4) - model_coefficients.at (1);
-      p3.z = model_coefficients.at (5) - model_coefficients.at (2);
-
       p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
       p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
       p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
@@ -117,16 +121,17 @@ namespace sample_consensus
   {
     std::vector<double> distances (indices_.size ());
 
+    // Obtain the line direction
+    std_msgs::Point32 p3, p4;
+    p3.x = model_coefficients.at (3) - model_coefficients.at (0);
+    p3.y = model_coefficients.at (4) - model_coefficients.at (1);
+    p3.z = model_coefficients.at (5) - model_coefficients.at (2);
+
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      std_msgs::Point32 p3, p4;
-      p3.x = model_coefficients.at (3) - model_coefficients.at (0);
-      p3.y = model_coefficients.at (4) - model_coefficients.at (1);
-      p3.z = model_coefficients.at (5) - model_coefficients.at (2);
-
       p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
       p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
       p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;

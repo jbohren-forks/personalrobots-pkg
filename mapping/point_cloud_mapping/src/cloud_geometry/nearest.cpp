@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <cloud_geometry/angles.h>
 #include <cloud_geometry/nearest.h>
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/statistics.h>
@@ -292,10 +293,10 @@ namespace cloud_geometry
         uvn_nn[1] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * v (0) + 
                     (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * v (1) + 
                     (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * v (2);
-        angles[i] = getAngle2D (uvn_nn);
+        angles[i] = cloud_geometry::angles::getAngle2D (uvn_nn);
       }
       sort (angles.begin (), angles.end ());
-      
+
       // Compute the maximal angle difference between two consecutive angles
       double max_dif = DBL_MIN, dif;
       for (unsigned int i = 0; i < neighbors->size () - 2; i++)
@@ -308,7 +309,7 @@ namespace cloud_geometry
       dif = 2 * M_PI - angles[neighbors->size () - 2] + angles[0];
       if (max_dif < dif)
         max_dif = dif;
-        
+
       // Check results
       if (max_dif > angle_threshold)
         return (true);

@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <algorithm>
-#include "sample_consensus/sac_model.h"
+#include <sample_consensus/sac_model.h>
 
 namespace sample_consensus
 {

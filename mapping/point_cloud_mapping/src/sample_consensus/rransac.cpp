@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <limits>
-#include "sample_consensus/rransac.h"
+#include <sample_consensus/rransac.h>
 
 namespace sample_consensus
 {

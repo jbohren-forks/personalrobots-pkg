@@ -16,6 +16,7 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
 
 # ---[ Cloud Geometry library
   rospack_add_library (cloud_geometry
+                       src/cloud_geometry/angles.cpp
                        src/cloud_geometry/areas.cpp
                        src/cloud_geometry/distances.cpp
                        src/cloud_geometry/intersections.cpp
@@ -70,6 +71,7 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
                        src/sample_consensus/rmsac.cpp
                        src/sample_consensus/sac_model_plane.cpp
                        src/sample_consensus/sac_model_line.cpp
+                       src/sample_consensus/sac_model_oriented_line.cpp
                        src/sample_consensus/sac_model_circle.cpp
                        src/sample_consensus/sac_model_sphere.cpp
                        src/sample_consensus/sac_model_cylinder.cpp

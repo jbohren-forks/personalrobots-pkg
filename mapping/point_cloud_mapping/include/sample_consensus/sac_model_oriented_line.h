@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -30,58 +30,50 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELCYLINDER_H_
-#define _SAMPLE_CONSENSUS_SACMODELCYLINDER_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
+#define _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
 
+#include <std_msgs/Point32.h>
 #include <sample_consensus/sac_model.h>
+#include <sample_consensus/sac_model_line.h>
 #include <sample_consensus/model_types.h>
-
-/** \brief Define the maximum number of iterations for collinearity checks */
-#define MAX_ITERATIONS_COLLINEAR 1000
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for cylinder segmentation.
+  /** \brief A Sample Consensus Model class for oriented 3D line segmentation.
     */
-  class SACModelCylinder : public SACModel
+  class SACModelOrientedLine : public SACModelLine
   {
     public:
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelCylinder. */
-      SACModelCylinder () { nx_idx_ = ny_idx_ = nz_idx_ = -1; }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelCylinder. */
-      virtual ~SACModelCylinder () { }
-
-      virtual std::vector<int> getSamples (int &iterations);
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Test whether the given model coefficients are valid given the input point cloud data.
-        * \param model_coefficients the model coefficients that need to be tested
-        * \todo implement this
+      /** \brief Set the axis along which we need to search for a line
+        * \param ax a pointer to the axis
         */
-      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
+      void
+        setAxis (std_msgs::Point32 *ax)
+      {
+        this->axis_.x = ax->x;
+        this->axis_.y = ax->y;
+        this->axis_.z = ax->z;
+      }
 
-      virtual bool computeModelCoefficients (std::vector<int> indices);
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Set the angle epsilon (delta) threshold
+        * \param ea the maximum allowed threshold between the line direction and the given axis
+        */
+      void setEpsAngle (float ea) { this->eps_angle_ = ea; } 
 
-      virtual std::vector<double> refitModel (std::vector<int> inliers);
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
 
-      virtual std_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
-
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
-
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_CYLINDER). */
-      virtual int getModelType () { return (SACMODEL_CYLINDER); }
+      /** \brief Return an unique id for this model (SACMODEL_ORIENTED_LINE). */
+      virtual int getModelType () { return (SACMODEL_ORIENTED_LINE); }
 
-    private:
-      /** \brief The coordinates of point normals in the dataset. */
-      int nx_idx_, ny_idx_, nz_idx_;
-
+    protected:
+      std_msgs::Point32 axis_;
+      float eps_angle_;
   };
 }
 

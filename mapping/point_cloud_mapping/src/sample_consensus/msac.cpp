@@ -32,7 +32,7 @@
 
 #include <cfloat>
 #include <limits>
-#include "sample_consensus/msac.h"
+#include <sample_consensus/msac.h>
 
 namespace sample_consensus
 {
