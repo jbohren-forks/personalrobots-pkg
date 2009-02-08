@@ -302,7 +302,7 @@ class DoorHandleDetector : public ros::Node
         p.y = cloud_down_.chan[1].vals[i];
         p.z = cloud_down_.chan[2].vals[i];
         // Compute the angle between their normal and the given axis
-        double angle = acos (cloud_geometry::dot (p, z_axis_));
+        double angle = acos (cloud_geometry::dot (&p, &z_axis_));
         if ( fabs (M_PI / 2.0 - angle) < eps_angle_)
           indices_xy.push_back (i);
       }
