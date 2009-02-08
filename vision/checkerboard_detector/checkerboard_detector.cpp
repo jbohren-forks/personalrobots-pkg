@@ -43,7 +43,9 @@
 using namespace std;
 using namespace ros;
 
-class CheckerboardDetectorNode : public Node
+boost::shared_ptr<ros::Node> s_pmasternode;
+
+class CheckerboardDetector
 {
 public:
     struct CHECKERBOARD
@@ -68,9 +70,9 @@ public:
     boost::mutex _mutexcalib;
     IplImage* frame;
 
-    CheckerboardDetectorNode() : Node("checkerboard_detector"), uidnext(1), intrinsic_matrix(NULL), frame(NULL)
+    CheckerboardDetector() : uidnext(1), intrinsic_matrix(NULL), frame(NULL)
     {
-        param("display",display,1);
+        s_pmasternode->param("display",display,1);
 
         char str[32];
         int index = 0;
@@ -80,23 +82,23 @@ public:
             string type;
 
             sprintf(str,"grid%d_size_x",index);
-            if( !getParam(str,dimx) )
+            if( !s_pmasternode->getParam(str,dimx) )
                 break;
             
             sprintf(str,"grid%d_size_y",index);
-            if( !getParam(str,dimy) )
+            if( !s_pmasternode->getParam(str,dimy) )
                 break;
 
             sprintf(str,"rect%d_size_x",index);
-            if( !getParam(str,fRectSize[0]) )
+            if( !s_pmasternode->getParam(str,fRectSize[0]) )
                 break;
 
             sprintf(str,"rect%d_size_y",index);
-            if( !getParam(str,fRectSize[1]) )
+            if( !s_pmasternode->getParam(str,fRectSize[1]) )
                 break;
 
             sprintf(str,"type%d",index);
-            if( !getParam(str,type) ) {
+            if( !s_pmasternode->getParam(str,type) ) {
                 sprintf(str,"checker%dx%d", dimx, dimy);
                 type = str;
             }
@@ -117,7 +119,7 @@ public:
             index++;
         }
 
-        param("frame_id",frame_id,string(""));
+        s_pmasternode->param("frame_id",frame_id,string(""));
 
         if( maptypes.size() == 0 ) {
             ROS_ERROR("no checkerboards to detect");
@@ -130,16 +132,20 @@ public:
         }
 
         lasttime = ros::Time::now();
-        advertise<checkerboard_detector::ObjectDetection>("ObjectDetection",1);
-        subscribe("CamInfo", _caminfomsg, &CheckerboardDetectorNode::caminfo_cb,1);
-        subscribe("Image", _imagemsg, &CheckerboardDetectorNode::image_cb,1);
+        s_pmasternode->advertise<checkerboard_detector::ObjectDetection>("ObjectDetection",1);
+        s_pmasternode->subscribe("CamInfo", _caminfomsg, &CheckerboardDetector::caminfo_cb,this,1);
+        s_pmasternode->subscribe("Image", _imagemsg, &CheckerboardDetector::image_cb,this,1);
     }
-    ~CheckerboardDetectorNode()
+    ~CheckerboardDetector()
     {
         if( frame )
             cvReleaseImage(&frame);
         if( intrinsic_matrix )
             cvReleaseMat(&intrinsic_matrix);
+
+        s_pmasternode->unsubscribe("CamInfo");
+        s_pmasternode->unsubscribe("Image");
+        s_pmasternode->unadvertise("ObjectDetection");
     }
 
     void caminfo_cb()
@@ -248,7 +254,7 @@ public:
         
         _objdetmsg.set_objects_vec(vobjects);
         _objdetmsg.header.frame_id = frame_id;
-        publish("ObjectDetection", _objdetmsg);
+        s_pmasternode->publish("ObjectDetection", _objdetmsg);
 
         ROS_INFO("checkerboard: image: %ux%u (size=%u), num: %u, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
                  (unsigned int)_imagemsg.uint8_data.data.size(), (unsigned int)_objdetmsg.get_objects_size(),
@@ -327,7 +333,7 @@ public:
         cvInitMatHeader(&kcmat,1,4,CV_32FC1,kc);
 
         CvMat img_points;
-        cvInitMatHeader(&img_points, 1,imgpts.size(), CV_32FC2, const_cast<CvPoint2D32f*>(imgpts.data()));
+        cvInitMatHeader(&img_points, 1,imgpts.size(), CV_32FC2, const_cast<CvPoint2D32f*>(&imgpts[0]));
         
         cvFindExtrinsicCameraParams2(objpoints, &img_points, intrinsic_matrix, &kcmat, &R3, &T3);
         cvReleaseMat(&objpoints);
@@ -353,9 +359,16 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv);
-    CheckerboardDetectorNode checker;
-    checker.spin();
+    ros::init(argc,argv);
+    s_pmasternode.reset(new ros::Node("checkerboard_detector"));
+
+    if( !s_pmasternode->checkMaster() )
+        return -1;
     
+    boost::shared_ptr<CheckerboardDetector> checker(new CheckerboardDetector());
+    
+    s_pmasternode->spin();
+    checker.reset();
+    s_pmasternode.reset();
     return 0;
 }

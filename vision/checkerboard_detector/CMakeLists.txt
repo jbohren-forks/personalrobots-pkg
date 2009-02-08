@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+#set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(checkerboard_detector)
-rospack_add_executable(checkerboard_detector checkerboard_detector.cpp)
-
 rospack_add_boost_directories()
+
+rospack_add_executable(checkerboard_detector checkerboard_detector.cpp)
 rospack_link_boost(checkerboard_detector thread)
+
+rospack_add_executable(checkerboard_calibration checkerboard_calibration.cpp)
+rospack_link_boost(checkerboard_calibration thread)
 
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)
