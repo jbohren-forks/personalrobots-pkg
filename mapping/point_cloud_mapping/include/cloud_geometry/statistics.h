@@ -248,7 +248,7 @@ namespace cloud_geometry
       stddev = sqrt (variance);
     }
 
-    void getTrimean (std::vector<int> *values, double &trimean);
+    void getTrimean (std::vector<int> values, double &trimean);
 
   }
 }

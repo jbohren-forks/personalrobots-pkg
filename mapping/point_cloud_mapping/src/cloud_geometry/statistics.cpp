@@ -32,7 +32,7 @@
 
 #include <algorithm>
 #include <cfloat>
-#include "cloud_geometry/statistics.h"
+#include <cloud_geometry/statistics.h>
 
 namespace cloud_geometry
 {
@@ -301,16 +301,16 @@ namespace cloud_geometry
       * \param trimean the resultant trimean of the distribution
       */
     void
-      getTrimean (std::vector<int> *values, double &trimean)
+      getTrimean (std::vector<int> values, double &trimean)
     {
-      nth_element (values->begin (), values->begin () + (int)(values->size () * 0.25), values->end ());
-      int p_25 = *(values->begin () + (int)(values->size () * 0.25));
+      nth_element (values.begin (), values.begin () + (int)(values.size () * 0.25), values.end ());
+      int p_25 = *(values.begin () + (int)(values.size () * 0.25));
 
-      nth_element (values->begin (), values->begin () + (int)(values->size () * 0.5), values->end ());
-      int p_50 = *(values->begin () + (int)(values->size () * 0.5));
+      nth_element (values.begin (), values.begin () + (int)(values.size () * 0.5), values.end ());
+      int p_50 = *(values.begin () + (int)(values.size () * 0.5));
 
-      nth_element (values->begin (), values->begin () + (int)(values->size () * 0.75), values->end ());
-      int p_75 = *(values->begin () + (int)(values->size () * 0.75));
+      nth_element (values.begin (), values.begin () + (int)(values.size () * 0.75), values.end ());
+      int p_75 = *(values.begin () + (int)(values.size () * 0.75));
 
       trimean = (p_25 + 2.0 * p_50 + p_75) / 4.0;
     }
