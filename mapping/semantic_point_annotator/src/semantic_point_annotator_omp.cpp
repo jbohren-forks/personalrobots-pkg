@@ -471,11 +471,11 @@ class SemanticPointAnnotator : public ros::Node
 
       // ---[ Select points whose normals are parallel with the Z-axis
       vector<int> indices_z;
-      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_z);
+      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, indices_z);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
-      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_xy);
+      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, indices_xy);
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
