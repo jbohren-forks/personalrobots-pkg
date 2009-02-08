@@ -58,6 +58,7 @@
 #include <cloud_kdtree/kdtree.h>
 
 // Cloud geometry
+#include <cloud_geometry/angles.h>
 #include <cloud_geometry/areas.h>
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/distances.h>
@@ -275,7 +276,7 @@ class TableObjectDetector : public ros::Node
       {
         // Find the best plane in this cluster
         fitSACPlane (&cloud_down_, &clusters[i], inliers, coeff);
-        double angle = cloud_geometry::transforms::getAngleBetweenPlanes (coeff, z_coeff) * 180.0 / M_PI;
+        double angle = cloud_geometry::angles::getAngleBetweenPlanes (coeff, z_coeff) * 180.0 / M_PI;
         if ( fabs (angle) < (eps_angle_  * 180.0 / M_PI) || fabs (180.0 - angle) < (eps_angle_  * 180.0 / M_PI) )
         {
           c_good = i;
