@@ -2,5 +2,5 @@
 <launch>
   <machine name="localhost" address="localhost" default="true"/>  
   <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
-  <node pkg="ormanipulation" type="rungrasptables.m" output="screen"/>
+  <node pkg="ormanipulation" cwd="node" type="rungrasptables.m" output="screen"/>
 </launch>

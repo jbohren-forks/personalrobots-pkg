@@ -12,7 +12,12 @@ if( ~isempty(openraverospath) )
 end
 
 setrealsession();
-openraveros_restart('openrave_session','qtcoin',1);
+viewer = '';
+if( ~strcmp(getenv('ORMANIPULATION_NOVIEWER'),'1') )
+    viewer = 'qtcoin';
+end
+
+openraveros_restart('openrave_session',viewer,1);
 orEnvSetOptions('wdims 800 600');
 orEnvSetOptions('simulation timestep 0.001');
 %orEnvSetOptions('collision bullet');

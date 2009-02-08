@@ -6,6 +6,7 @@
   <license>BSD</license>
   <depend package="openraveros"/>
   <depend package="orplugins"/>
+  <depend package="roslaunch"/>
   <depend package="laser_scan"/>
   <depend package="robot_self_filter"/>
   <depend package="collision_map"/>

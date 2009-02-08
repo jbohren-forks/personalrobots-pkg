@@ -26,3 +26,4 @@ clean:
 
 wipe: clean
 	rm -rf build
+

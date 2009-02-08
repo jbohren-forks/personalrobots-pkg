@@ -2,5 +2,7 @@
 <launch>
   <machine name="localhost" address="localhost" default="true"/>  
   <include file="$(find ormanipulation)/startopenrave.ros.xml"/>
-  <node pkg="ormanipulation" cwd="node" type="runmaketables.m" output="screen"/>
+  <node pkg="ormanipulation" cwd="node" type="runmaketables.m" output="screen">
+    <env name="ORMANIPULATION_NOVIEWER" value="1"/>
+  </node>
 </launch>

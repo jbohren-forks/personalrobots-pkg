@@ -147,6 +147,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
 
     if(!link->visual) {
         printf("link without visual tag: %s\n", link->name.c_str());
+        return; // return for now until openrave supports these bodies better
         type = "box";
         double extents[3] = {0.001,0.001,0.001};
         addKeyValue(geom, "extents", values2str(3,extents));

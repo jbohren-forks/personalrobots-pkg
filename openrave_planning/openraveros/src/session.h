@@ -281,9 +281,9 @@ private:
         while(_ok) {
             
             {
+                usleep(1000);
                 boost::mutex::scoped_lock lockcreate(_mutexViewer);
-                if( _strviewer.size() == 0 || !_penvViewer ) {
-                    usleep(1000);
+                if( _strviewer.size() == 0 || !_penvViewer ) {                    
                     continue;
                 }
 
