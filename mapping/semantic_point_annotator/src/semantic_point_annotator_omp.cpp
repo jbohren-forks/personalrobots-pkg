@@ -106,31 +106,31 @@ class SemanticPointAnnotator : public ros::Node
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
       param ("~region_growing_tolerance", region_growing_tolerance_, 0.25);  // 10 cm
-      
+
       param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
-      region_angle_threshold_ = (region_angle_threshold_ * M_PI / 180.0); // convert to radians
+      region_angle_threshold_ = cloud_geometry::deg2rad (region_angle_threshold_); // convert to radians
 
       param ("~p_sac_min_points_left", sac_min_points_left_, 10);
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);   // 50 points at high resolution
 
       // This should be set to whatever the leaf_width factor is in the downsampler
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
-      
+
       param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
 
       param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
       param ("~concave", concave_, false);                              // Create concave hulls by default
       param ("~boundary_angle_threshold", boundary_angle_threshold_, 120.0); // Boundary angle threshold
-      
+
       if (polygonal_map_)
         advertise<PolygonalMap> ("semantic_polygonal_map", 1);
 
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);                                 // convert to radians
-      
+      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                // convert to radians
+
       if (concave_)
         ROS_INFO ("Concave hulls enabled. Angle threshold set to %g.", boundary_angle_threshold_);
 
-      boundary_angle_threshold_ = (boundary_angle_threshold_ * M_PI / 180.0);   // convert to radians
+      boundary_angle_threshold_ = cloud_geometry::deg2rad (boundary_angle_threshold_);  // convert to radians
 
       string cloud_topic ("cloud_normals");
 

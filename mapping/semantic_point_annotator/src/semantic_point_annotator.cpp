@@ -94,8 +94,7 @@ class SemanticPointAnnotator : public ros::Node
       param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
       param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
       param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
-
-      eps_angle_ = (eps_angle_ * M_PI / 180.0);     // conver to radians
+      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
 
       subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, 1);
 
