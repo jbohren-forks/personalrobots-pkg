@@ -66,10 +66,11 @@ public:
     vector<int> _vNumPointsPerImage;
 
     CvMat *_intrinsic_matrix, *_distortion_coeffs; // intrinsic matrices
+    IplImage* _pUndistortionMapX, *_pUndistortionMapY;
     TransformMatrix _tProjection; // project matrix
     bool _bHasCalibration, _bClearData, _bTakeObservation;
 
-    CheckerboardCalibration() : frame(NULL), _intrinsic_matrix(NULL), _distortion_coeffs(NULL), _bHasCalibration(false), _bClearData(false), _bTakeObservation(false)
+    CheckerboardCalibration() : frame(NULL), _intrinsic_matrix(NULL), _distortion_coeffs(NULL), _pUndistortionMapX(NULL), _pUndistortionMapY(NULL), _bHasCalibration(false), _bClearData(false), _bTakeObservation(false)
     {
         s_pmasternode->param("display",display,1);
 
@@ -124,6 +125,10 @@ public:
             cvReleaseMat(&_intrinsic_matrix);
         if( _distortion_coeffs )
             cvReleaseMat(&_distortion_coeffs);
+        if( _pUndistortionMapX )
+            cvReleaseImage(&_pUndistortionMapX);
+        if( _pUndistortionMapY )
+            cvReleaseImage(&_pUndistortionMapY);
 
         s_pmasternode->unsubscribe("Image");
     }
@@ -150,8 +155,6 @@ private:
         }
 
         int ncorners;
-        
-        // do until no more checkerboards detected
         _checkerboard.corners.resize(_checkerboard.grid3d.size()+64);
         int allfound = cvFindChessboardCorners( pimggray, _checkerboard.griddims, &_checkerboard.corners[0],
                                                 &ncorners, CV_CALIB_CB_ADAPTIVE_THRESH );
@@ -240,6 +243,13 @@ private:
 
                 cvReleaseMat(&rotation_vectors);
                 cvReleaseMat(&translation_vectors);
+
+                // create undistortion maps
+                if( _pUndistortionMapX == NULL )
+                    _pUndistortionMapX = cvCreateImage( cvSize(frame->width, frame->height), IPL_DEPTH_32F, 1);
+                if( _pUndistortionMapY == NULL )
+                    _pUndistortionMapY = cvCreateImage( cvSize(frame->width, frame->height), IPL_DEPTH_32F, 1);
+                cvInitUndistortMap( _intrinsic_matrix, _distortion_coeffs, _pUndistortionMapX, _pUndistortionMapY );
                 _bHasCalibration = true;
             }
             else
@@ -248,39 +258,57 @@ private:
 
         if( display ) {            
             if( _bHasCalibration ) {
-                IplImage* frameres = cvCloneImage(frame);
-                RaveTransform<float> tlocal = FindTransformation(_checkerboard.corners, _checkerboard.grid3d);
+                IplImage* frame_undist = cvCloneImage(frame);
+                IplImage* pimggray_undist = cvCloneImage(pimggray);
 
-                CvSize& s = _checkerboard.griddims;
-                CvPoint X[4];
-                int inds[4] = {0, s.width-1, s.width*(s.height-1), s.width*s.height-1 };
+                cvRemap( pimggray, pimggray_undist, _pUndistortionMapX, _pUndistortionMapY, CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS);
+                cvRemap( frame, frame_undist, _pUndistortionMapX, _pUndistortionMapY, CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS);
+
+                int ncorners;
+                _checkerboard.corners.resize(_checkerboard.grid3d.size()+64);
+                int allfound = cvFindChessboardCorners( pimggray_undist, _checkerboard.griddims, &_checkerboard.corners[0],
+                                                        &ncorners, CV_CALIB_CB_ADAPTIVE_THRESH );
+                _checkerboard.corners.resize(ncorners);
+        
+                if(allfound && ncorners == (int)_checkerboard.grid3d.size()) {
+                    //cvCvtColor(pimggray,frame,CV_GRAY2RGB);
+                    cvFindCornerSubPix(pimggray_undist, &_checkerboard.corners[0], _checkerboard.corners.size(), cvSize(5,5),cvSize(-1,-1),
+                                       cvTermCriteria(CV_TERMCRIT_ITER,20,1e-2));
+
+
+                    RaveTransform<float> tlocal = FindTransformation(_checkerboard.corners, _checkerboard.grid3d);
+
+                    CvSize& s = _checkerboard.griddims;
+                    CvPoint X[4];
+                    int inds[4] = {0, s.width-1, s.width*(s.height-1), s.width*s.height-1 };
             
-                for(int i = 0; i < 4; ++i) {
-                    Vector p = _tProjection * tlocal * _checkerboard.grid3d[inds[i]];
-                    X[i].x = (int)(p.x/p.z);
-                    X[i].y = (int)(p.y/p.z);
+                    for(int i = 0; i < 4; ++i) {
+                        Vector p = _tProjection * tlocal * _checkerboard.grid3d[inds[i]];
+                        X[i].x = (int)(p.x/p.z);
+                        X[i].y = (int)(p.y/p.z);
+                    }
+                
+                    // draw two lines
+                    CvScalar col0 = CV_RGB(255,0,0);
+                    CvScalar col1 = CV_RGB(0,255,0);
+                    cvLine(frame_undist, X[0], X[1], col0, 1);
+                    cvLine(frame_undist, X[0], X[2], col1, 1);
+                
+                    // draw all the points
+                    for(size_t i = 0; i < _checkerboard.grid3d.size(); ++i) {
+                        Vector p = _tProjection * tlocal * _checkerboard.grid3d[i];
+                        int x = (int)(p.x/p.z);
+                        int y = (int)(p.y/p.z);
+                        cvCircle(frame_undist, cvPoint(x,y), 6, CV_RGB(0,0,0), 2);
+                        cvCircle(frame_undist, cvPoint(x,y), 2, CV_RGB(0,0,0), 2);
+                        cvCircle(frame_undist, cvPoint(x,y), 4, CV_RGB(128,128,0), 3);
+                    }
+                
+                    cvCircle(frame_undist, X[0], 3, CV_RGB(255,255,128), 3);
                 }
-                
-                // draw two lines
-                CvScalar col0 = CV_RGB(255,0,0);
-                CvScalar col1 = CV_RGB(0,255,0);
-                cvLine(frameres, X[0], X[1], col0, 1);
-                cvLine(frameres, X[0], X[2], col1, 1);
-                
-                // draw all the points
-                for(size_t i = 0; i < _checkerboard.grid3d.size(); ++i) {
-                    Vector p = _tProjection * tlocal * _checkerboard.grid3d[i];
-                    int x = (int)(p.x/p.z);
-                    int y = (int)(p.y/p.z);
-                    cvCircle(frameres, cvPoint(x,y), 6, CV_RGB(0,0,0), 2);
-                    cvCircle(frameres, cvPoint(x,y), 2, CV_RGB(0,0,0), 2);
-                    cvCircle(frameres, cvPoint(x,y), 4, CV_RGB(128,128,0), 3);
-                }
-                
-                cvCircle(frameres, X[0], 3, CV_RGB(255,255,128), 3);
 
-                cvShowImage("Calibration Result",frameres);
-                cvReleaseImage(&frameres);
+                cvShowImage("Calibration Result",frame_undist);
+                cvReleaseImage(&frame_undist);
             }
 
             if(allfound && ncorners == (int)_checkerboard.grid3d.size())
@@ -304,12 +332,15 @@ private:
         CvMat R3, T3;
         cvInitMatHeader(&R3, 3, 1, CV_32FC1, fR3);
         cvInitMatHeader(&T3, 3, 1, CV_32FC1, &pose.trans.x);
-        
-        // for some reason distortion coeffs are needed
+
+        float kc[4] = {0};
+        CvMat kcmat;
+        cvInitMatHeader(&kcmat,1,4,CV_32FC1,kc);
+
         CvMat img_points;
         cvInitMatHeader(&img_points, 1,imgpts.size(), CV_32FC2, const_cast<CvPoint2D32f*>(&imgpts[0]));
     
-        cvFindExtrinsicCameraParams2(objpoints, &img_points, _intrinsic_matrix, _distortion_coeffs, &R3, &T3);
+        cvFindExtrinsicCameraParams2(objpoints, &img_points, _intrinsic_matrix, &kcmat, &R3, &T3);
         cvReleaseMat(&objpoints);
         
         double fang = sqrt(fR3[0]*fR3[0] + fR3[1]*fR3[1] + fR3[2]*fR3[2]);

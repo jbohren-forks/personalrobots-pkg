@@ -327,7 +327,6 @@ public:
         cvInitMatHeader(&R3, 3, 1, CV_32FC1, fR3);
         cvInitMatHeader(&T3, 3, 1, CV_64FC1, &pose.position.x);
         
-        // for some reason distortion coeffs are needed
         float kc[4] = {0};
         CvMat kcmat;
         cvInitMatHeader(&kcmat,1,4,CV_32FC1,kc);
