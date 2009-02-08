@@ -241,7 +241,7 @@ class TableObjectDetector : public ros::Node
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
-      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
+      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_down_, 0, 1, 2, eps_angle_, &z_axis_, indices_z);
 
 /*      indices_z.resize (cloud_down_.pts.size ());
       for (unsigned int i = 0; i < cloud_down_.pts.size (); i++)
