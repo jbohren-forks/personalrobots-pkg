@@ -222,11 +222,11 @@ namespace sample_consensus
     w.y = (u.y + cloud_->pts.at (indices.at (0)).y) - cloud_->pts.at (indices.at (1)).y;
     w.z = (u.z + cloud_->pts.at (indices.at (0)).z) - cloud_->pts.at (indices.at (1)).z;
 
-    double a = cloud_geometry::dot (u, u);
-    double b = cloud_geometry::dot (u, v);
-    double c = cloud_geometry::dot (v, v);
-    double d = cloud_geometry::dot (u, w);
-    double e = cloud_geometry::dot (v, w);
+    double a = cloud_geometry::dot (&u, &u);
+    double b = cloud_geometry::dot (&u, &v);
+    double c = cloud_geometry::dot (&v, &v);
+    double d = cloud_geometry::dot (&u, &w);
+    double e = cloud_geometry::dot (&v, &w);
     double denominator = a*c - b*b;
     double sc, tc;
     // Compute the line parameters of the two closest points

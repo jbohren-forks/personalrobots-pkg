@@ -41,6 +41,16 @@ namespace cloud_geometry
 
   namespace distances
   {
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistance (std_msgs::Point32 *p1, std_msgs::Point32 *p2)
+    {
+      return (sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) ));
+    }
 
     double pointToLineDistance (std_msgs::Point32 p, std_msgs::Point32 q, std_msgs::Point32 dir);
     double pointToLineDistance (std_msgs::Point32 p, std::vector<double> line_coefficients);

@@ -146,12 +146,12 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline std_msgs::Point32
-    cross (std_msgs::Point32 p1, std_msgs::Point32 p2)
+    cross (std_msgs::Point32 *p1, std_msgs::Point32 *p2)
   {
     std_msgs::Point32 r;
-    r.x = p1.y*p2.z - p1.z*p2.y;
-    r.y = p1.z*p2.x - p1.x*p2.z;
-    r.z = p1.x*p2.y - p1.y*p2.x;
+    r.x = p1->y*p2->z - p1->z*p2->y;
+    r.y = p1->z*p2->x - p1->x*p2->z;
+    r.z = p1->x*p2->y - p1->y*p2->x;
     return (r);
   }
 
@@ -161,9 +161,9 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (std_msgs::Point32 p1, std_msgs::Point32 p2)
+    dot (std_msgs::Point32 *p1, std_msgs::Point32 *p2)
   {
-    return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,9 +223,9 @@ namespace cloud_geometry
   }
 
   void getPointIndicesAxisParallelNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                           std_msgs::Point32 axis, std::vector<int> &indices);
+                                           std_msgs::Point32 *axis, std::vector<int> &indices);
   void getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                                std_msgs::Point32 axis, std::vector<int> &indices);
+                                                std_msgs::Point32 *axis, std::vector<int> &indices);
 
   void downsamplePointCloud (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointCloud &points_down, std_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);

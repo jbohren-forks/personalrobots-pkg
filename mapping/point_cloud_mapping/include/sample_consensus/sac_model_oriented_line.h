@@ -62,7 +62,7 @@ namespace sample_consensus
       /** \brief Set the angle epsilon (delta) threshold
         * \param ea the maximum allowed threshold between the line direction and the given axis
         */
-      void setEpsAngle (float ea) { this->eps_angle_ = ea; } 
+      void setEpsAngle (double ea) { this->eps_angle_ = ea; } 
 
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
@@ -73,7 +73,7 @@ namespace sample_consensus
 
     protected:
       std_msgs::Point32 axis_;
-      float eps_angle_;
+      double eps_angle_;
   };
 }
 

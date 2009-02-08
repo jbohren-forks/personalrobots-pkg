@@ -64,7 +64,7 @@ namespace cloud_geometry
     */
   void
     getPointIndicesAxisParallelNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                        std_msgs::Point32 axis, std::vector<int> &indices)
+                                        std_msgs::Point32 *axis, std::vector<int> &indices)
   {
     // Check all points
     for (unsigned int i = 0; i < points->pts.size (); i++)
@@ -74,7 +74,7 @@ namespace cloud_geometry
       p.y = points->chan[ny].vals[i];
       p.z = points->chan[nz].vals[i];
       // Compute the angle between their normal and the given axis
-      double angle = acos (dot (p, axis));
+      double angle = acos (dot (&p, axis));
       if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
         indices.push_back (i);
     }
@@ -92,7 +92,7 @@ namespace cloud_geometry
     */
   void
     getPointIndicesAxisPerpendicularNormals (std_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                             std_msgs::Point32 axis, std::vector<int> &indices)
+                                             std_msgs::Point32 *axis, std::vector<int> &indices)
   {
     // Check all points
     for (unsigned int i = 0; i < points->pts.size (); i++)
@@ -102,7 +102,7 @@ namespace cloud_geometry
       p.y = points->chan[ny].vals[i];
       p.z = points->chan[nz].vals[i];
       // Compute the angle between their normal and the given axis
-      double angle = acos (dot (p, axis));
+      double angle = acos (dot (&p, axis));
       if (fabs (M_PI / 2.0 - angle) < eps_angle)
         indices.push_back (i);
     }

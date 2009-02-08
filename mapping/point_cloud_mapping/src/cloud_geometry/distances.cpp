@@ -57,7 +57,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      std_msgs::Point32 c = cross (p_t, dir);
+      std_msgs::Point32 c = cross (&p_t, &dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -83,7 +83,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      std_msgs::Point32 c = cross (p_t, dir);
+      std_msgs::Point32 c = cross (&p_t, &dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -122,11 +122,11 @@ namespace cloud_geometry
       w.y = p2.y - line_b.at (1);
       w.z = p2.z - line_b.at (2);
 
-      double a = dot (u, u);
-      double b = dot (u, v);
-      double c = dot (v, v);
-      double d = dot (u, w);
-      double e = dot (v, w);
+      double a = dot (&u, &u);
+      double b = dot (&u, &v);
+      double c = dot (&v, &v);
+      double d = dot (&u, &w);
+      double e = dot (&v, &w);
       double denominator = a*c - b*b;
       double sc, tc;
       // Compute the line parameters of the two closest points
