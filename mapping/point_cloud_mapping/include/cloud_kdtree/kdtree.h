@@ -201,6 +201,9 @@ namespace cloud_kdtree
 
       void radiusSearch (unsigned int index, double radius, int max_nn = INT_MAX);
 
+      bool radiusSearch (std_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn = INT_MAX);
+      bool radiusSearch (int p_idx, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn = INT_MAX);
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Obtain the neighbors' point indices on the last nearestKSearch or radiusSearch
         * \param indices vector container for neighbor point indices storage

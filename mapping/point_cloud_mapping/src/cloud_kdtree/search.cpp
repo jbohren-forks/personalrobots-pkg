@@ -126,6 +126,7 @@ namespace cloud_kdtree
     * \param p_idx the given query point index
     * \param k the number of neighbors to search for
     * \param indices the resulting point indices
+    * \param distances the resultant point distances
     */
   bool
     KdTree::nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances)
@@ -135,6 +136,55 @@ namespace cloud_kdtree
 #else
     fprintf (stderr, "FL-ANN version is not implemented yet !");
 #endif
+    return (true);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Search for all the nearest neighbors of the query point in a given radius.
+    * \param p_idx the given query point index
+    * \param radius the radius of the sphere bounding all of p_idx's neighbors
+    * \param indices the resulting point indices
+    * \param distances the resultant point distances
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
+    */
+  bool
+    KdTree::radiusSearch (int p_idx, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn)
+  {
+#ifdef USE_ANN
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[p_idx], radius * radius, 0, &indices[0], &distances[0], epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
+    indices.resize (neighbors_in_radius_);
+    distances.resize (neighbors_in_radius_);
+    ann_kd_tree_->annkFRSearch (points_[p_idx], radius * radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
+#else
+    fprintf (stderr, "FL-ANN version is not implemented yet !");
+#endif
+    return (true);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Search for all the nearest neighbors of the query point in a given radius.
+    * \param p_q the given query point
+    * \param radius the radius of the sphere bounding all of p_idx's neighbors
+    * \param indices the resulting point indices
+    * \param distances the resultant point distances
+    * \param max_nn if given, bounds the maximum returned neighbors to this value
+    */
+  bool
+    KdTree::radiusSearch (std_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn)
+  {
+    ANNpoint p = annAllocPt (3);
+    p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
+#ifdef USE_ANN
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, &indices[0], &distances[0], epsilon_);
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
+    indices.resize (neighbors_in_radius_);
+    distances.resize (neighbors_in_radius_);
+    ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
+#else
+    fprintf (stderr, "FL-ANN version is not implemented yet !");
+#endif
+    annDeallocPt (p);
     return (true);
   }
 
