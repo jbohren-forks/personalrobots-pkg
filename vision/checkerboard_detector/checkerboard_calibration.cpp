@@ -265,18 +265,18 @@ private:
                 cvRemap( frame, frame_undist, _pUndistortionMapX, _pUndistortionMapY, CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS);
 
                 int ncorners;
-                _checkerboard.corners.resize(_checkerboard.grid3d.size()+64);
-                int allfound = cvFindChessboardCorners( pimggray_undist, _checkerboard.griddims, &_checkerboard.corners[0],
+                vector<CvPoint2D32f> corners(_checkerboard.grid3d.size()+64);
+                int allfound = cvFindChessboardCorners( pimggray_undist, _checkerboard.griddims, &corners[0],
                                                         &ncorners, CV_CALIB_CB_ADAPTIVE_THRESH );
-                _checkerboard.corners.resize(ncorners);
+                corners.resize(ncorners);
         
                 if(allfound && ncorners == (int)_checkerboard.grid3d.size()) {
                     //cvCvtColor(pimggray,frame,CV_GRAY2RGB);
-                    cvFindCornerSubPix(pimggray_undist, &_checkerboard.corners[0], _checkerboard.corners.size(), cvSize(5,5),cvSize(-1,-1),
+                    cvFindCornerSubPix(pimggray_undist, &corners[0], corners.size(), cvSize(5,5),cvSize(-1,-1),
                                        cvTermCriteria(CV_TERMCRIT_ITER,20,1e-2));
 
 
-                    RaveTransform<float> tlocal = FindTransformation(_checkerboard.corners, _checkerboard.grid3d);
+                    RaveTransform<float> tlocal = FindTransformation(corners, _checkerboard.grid3d);
 
                     CvSize& s = _checkerboard.griddims;
                     CvPoint X[4];
