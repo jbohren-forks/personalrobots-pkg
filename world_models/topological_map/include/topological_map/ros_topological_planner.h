@@ -59,7 +59,7 @@ class BottleneckGraphRos: public ros::Node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
-  BottleneckGraphRos(char* filename);
+  BottleneckGraphRos(char* filename, double resolution);
   ~BottleneckGraphRos();
 
   void loadMap(void);

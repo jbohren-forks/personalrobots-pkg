@@ -91,6 +91,9 @@ public:
   bool lookupVertex (const GridCell& c, BottleneckVertex* v) const;
   VertexDescription& vertexDescription (const BottleneckVertex& v) { return (boost::get(desc_t(), graph_))[v]; }
   
+  int numRows() const { return num_rows_; }
+  int numCols() const { return num_cols_; }
+  
 
   void printBottleneckGraph (void);
   void printBottlenecks (const char *filename);

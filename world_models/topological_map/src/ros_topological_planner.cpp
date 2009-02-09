@@ -101,11 +101,15 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
 }
  
 
-BottleneckGraphRos::BottleneckGraphRos(char* filename) :
-  ros::Node("topological_planner"), costmap_(0), num_added_roadmap_points_(0)
+BottleneckGraphRos::BottleneckGraphRos(char* filename, double resolution) :
+  ros::Node("topological_planner"), costmap_(0), num_added_roadmap_points_(0), resolution_(resolution)
 {
   graph_.readFromFile(filename);
+  sx_ = graph_.numCols();
+  sy_ = graph_.numRows();
   node_status_ = READY;
+  costmap_ = new unsigned char[sy_*sx_]; // deleted in destructor
+  ROS_DEBUG ("Read from file %d by %d graph with resolution %f", sy_, sx_, resolution_);
 }
 
 BottleneckGraphRos::~BottleneckGraphRos()
@@ -376,6 +380,7 @@ int main(int argc, char** argv)
   int inflationRadius=-1;
   int distanceLower=1;
   int distanceUpper=2;
+  double resolution=0.0;
   char* inputFile=0;
   char* outputFile=0;
   char* pgmOutputFile=0;
@@ -391,10 +396,11 @@ int main(int argc, char** argv)
        {"input-file", required_argument, 0, 'i'},
        {"output-file", required_argument, 0, 'o'},
        {"pgm-output-file", required_argument, 0, 'p'},
+       {"resolution", required_argument, 0, 'R'},
        {0, 0, 0, 0}};
 
     int option_index=0;
-    int c = getopt_long (argc, argv, "b:k:r:d:D:i:o:p:", options, &option_index);
+    int c = getopt_long (argc, argv, "b:k:r:d:D:i:o:p:R:", options, &option_index);
     if (c==-1) {
       break;
     }
@@ -427,6 +433,9 @@ int main(int argc, char** argv)
       case 'p':
         pgmOutputFile=optarg;
         break;
+      case 'R':
+        resolution=atof(optarg);
+        break;
       case '?':
         exitWithUsage();
       default:
@@ -442,10 +451,14 @@ int main(int argc, char** argv)
   topological_map::BottleneckGraphRos* node;
 
   if (inputFile) {
-    ROS_INFO ("Reading bottleneck graph from %s", inputFile);
-    node = new topological_map::BottleneckGraphRos(inputFile);
-    node->loadMap();
-    node->setupTopics();
+    if (resolution==0.0) {
+      exitWithUsage();
+    }
+    else {
+      ROS_INFO ("Reading bottleneck graph from %s", inputFile);
+      node = new topological_map::BottleneckGraphRos(inputFile, resolution);
+      node->setupTopics();
+    }
   }
   else {
     ROS_INFO ("Creating bottleneck graph with bottleneck size %d, skip %d, inflation %d, distance lower bound %d, distance upper bound %d\n",
