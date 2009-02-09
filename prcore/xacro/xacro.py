@@ -29,7 +29,7 @@
 # Author: Stuart Glaser
 
 
-import os.path, sys, os
+import os.path, sys, os, getopt
 import subprocess
 from xml.dom.minidom import parse, parseString
 import xml.dom
@@ -406,8 +406,30 @@ def eval_self_contained(doc):
     symbols = grab_properties(doc)
     eval_all(doc.documentElement, macros, symbols)
 
+def print_usage(exit_code = 0):
+    print "Usage: %s [-o <output>] <input>" % 'xacro.py'
+    sys.exit(exit_code)
+
 if __name__ == '__main__':
-    f = open(sys.argv[1])
+
+    try:
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "ho:")
+    except getopt.GetoptError, err:
+        print str(err)
+        print_usage(2)
+
+    output = sys.stdout
+    for o, a in opts:
+        if o == '-h':
+            print_usage(0)
+        elif o == '-o':
+            output = open(a, 'w')
+
+    if len(args) < 1:
+        print "No input given"
+        print_usage(2)
+
+    f = open(args[0])
     doc = parse(f)
     f.close()
 
@@ -415,5 +437,5 @@ if __name__ == '__main__':
     process_includes(doc, os.path.dirname(sys.argv[1]))
     eval_self_contained(doc)
 
-    doc.writexml(sys.stdout)
+    doc.writexml(output)
     print
