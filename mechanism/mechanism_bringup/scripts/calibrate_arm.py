@@ -152,37 +152,40 @@ if __name__ == '__main__':
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
     # Set side = r for now
-    side = "r"
+    rside = "r"
+    lside = "l"
 
     holding = [] # Tracks which controllers are being held by name
 
-    # Calibrate all joints sequentially
-    # Hold joints after they're calibrated.
-    # Can set desired joint position by using name + /set_command service
-    # for joint position controllers
-    calibrate(xml_for_wrist(r))
-    hold_joint(side + "_wrist_roll", 4, 0.5, 0, 1.0, holding)
-    hold_joint(side + "_wrist_flex", 4, 0.5, 0, 1.0, holding)
-
-    forearm_roll_name = side + "_forearm_roll"
-    calibrate(xml_for_cal(forearm_roll_name, 5, 0, 0, 0))
-    hold_joint(forearm_roll_name, 20, 1.0, 0.2, 1.0, holding)
-
-    elbow_flex_name = side + "_elbow_flex"
-    calibrate(xml_for_cal(elbow_flex_name, 6, 0.2, 0, 1))
-    hold_joint(elbow_flex_name, 100, 20, 10, 2, holding)
-
-    upperarm_roll_name = side + "_upper_arm_roll"
-    calibrate(xml_for_cal(upperarm_roll_name, 6, 0.2, 0, 2))
-    hold_joint(upperarm_roll_name, 25, 2, 0.5, 1.0, holding)
-
-    shoulder_lift_name = side + "_shoulder_lift"
-    calibrate(xml_for_cal(shoulder_lift_name, 9, 1.0, 0, 6))
-    hold_joint(shoulder_lift_name, 60, 10, 5, 4, holding)
-
-    shoulder_pan_name = side + "_shoulder_pan"
-    calibrate(xml_for_cal(shoulder_pan_name, 7, 0.5, 0, 1.0))
-    # Don't bother holding shoulder pan
+    for side in [rside, lside]:
+        print "Calibrating %s arm" % side
+        # Calibrate all joints sequentially
+        # Hold joints after they're calibrated.
+        # Can set desired joint position by using name + /set_command service
+        # for joint position controllers
+        calibrate(xml_for_wrist(side))
+        hold_joint(side + "_wrist_roll", 4, 0.5, 0, 1.0, holding)
+        hold_joint(side + "_wrist_flex", 4, 0.5, 0, 1.0, holding)
+        
+        forearm_roll_name = side + "_forearm_roll"
+        calibrate(xml_for_cal(forearm_roll_name, 5, 0, 0, 0))
+        hold_joint(forearm_roll_name, 20, 1.0, 0.2, 1.0, holding)
+        
+        elbow_flex_name = side + "_elbow_flex"
+        calibrate(xml_for_cal(elbow_flex_name, 6, 0.2, 0, 1))
+        hold_joint(elbow_flex_name, 100, 20, 10, 2, holding)
+        
+        upperarm_roll_name = side + "_upper_arm_roll"
+        calibrate(xml_for_cal(upperarm_roll_name, 6, 0.2, 0, 2))
+        hold_joint(upperarm_roll_name, 25, 2, 0.5, 1.0, holding)
+        
+        shoulder_lift_name = side + "_shoulder_lift"
+        calibrate(xml_for_cal(shoulder_lift_name, 9, 1.0, 0, 6))
+        hold_joint(shoulder_lift_name, 60, 10, 5, 4, holding)
+        
+        shoulder_pan_name = side + "_shoulder_pan"
+        calibrate(xml_for_cal(shoulder_pan_name, 7, 0.5, 0, 1.0))
+        # Don't bother holding shoulder pan
     
     # Kill all holding controllers
     for name in holding:
@@ -192,6 +195,27 @@ if __name__ == '__main__':
                 break # Go to next controller if no exception
             except:
                 print "Failed to kill controller %s on try %d" % (name, i)
+
+    sleep(3)
+    print "Calibrating rest of robot"
+
+    # Calibrate other controllers given
+        xml = ''
+    
+    if len(sys.argv) > 1:
+        #xmls = [slurp(filename) for filename in sys.argv[1:]]
+        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in sys.argv[1:]]
+
+        # Poor man's xml splicer
+        for i in range(len(xmls) - 1):
+            xmls[i] = xmls[i].replace('</controllers>', '')
+            xmls[i+1] = xmls[i+1].replace('<controllers>', '')
+        xml = "\n".join(xmls)
+    else:
+        print "Reading from stdin..."
+        xml = sys.stdin.read()
+
+    calibrate(xml)
             
 
     print "Calibration complete"
