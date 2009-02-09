@@ -62,6 +62,8 @@ RosTime::RosTime(Entity *parent)
     // for rostime
     rosnode_->advertise<roslib::Time>("time",10);
 
+    // broadcasting sim time, so set parameter
+    rosnode_->setParam("/use_sim_time", true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
