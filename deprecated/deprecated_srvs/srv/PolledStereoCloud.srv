@@ -1,0 +1,5 @@
+---
+std_msgs/Image image
+std_msgs/Point32[] points
+uint32[] rows
+uint32[] cols
