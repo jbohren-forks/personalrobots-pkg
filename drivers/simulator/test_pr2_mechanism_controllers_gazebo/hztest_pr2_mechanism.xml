@@ -8,7 +8,7 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (base_pose_ground_truth_test vs. scan_test). -->
     <param name="topic" value="base_pose_ground_truth" />
-    <param name="hz" value="1000.0" />
+    <param name="hz" value="100.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
     <param name="check_intervals" value="false" />
@@ -29,7 +29,7 @@
     for this test (tf_message_test vs. scan_test). -->
     <param name="topic" value="tf_message" />
     <param name="hz" value="100.0" />
-    <param name="hzerror" value="15.0" /> <!-- why? shouldn't this be 100Hz? -->
+    <param name="hzerror" value="20.0" /> <!-- why? shouldn't this be 100Hz? -->
     <param name="test_duration" value="2.0" />
     <param name="check_intervals" value="false" />
   </test>
