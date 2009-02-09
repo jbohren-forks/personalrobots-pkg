@@ -174,21 +174,35 @@ if __name__ == '__main__':
     #sleep(0.5)        
         
     print "Calibrating elbow flex"
-    calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1))
+    calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1) + "\n" + xml_for_cal("l_elbow_flex", -1.0, 6, 0.2, 0, 1))
+    #hold_joint("r_forearm_roll", 20, 1.0, 0.5, 1.0, holding)    
+    #hold_joint("l_forearm_roll", 20, 1.0, 0.5, 1.0, holding)
     hold_joint("r_elbow_flex", 100, 20, 10, 2, holding)
+    hold_joint("l_elbow_flex", 100, 20, 10, 2, holding)
         
     print "Calibrating right upperarm roll"
     upperarm_roll_name = "r_upper_arm_roll"
     calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
     hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
 
+    print "Calibrating left upperarm roll" 
+    upperarm_roll_name = "l_upper_arm_roll"
+    calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
+    hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
+        
     print "Calibrating shoulder lift"
-    calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6))
+    shoulder_lift_name = "r_shoulder_lift"
+    calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6))
+
     hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
+    hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
     
     print "Calibrating shoulder pan" 
     calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
     hold_joint("r_shoulder_pan", 60, 10, 5, 4, holding)
+
+    calibrate(xml_for_cal("l_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
+    hold_joint("l_shoulder_pan", 60, 10, 5, 4, holding)
 
     sleep(0.5)
     print "Calibrating rest of robot"
