@@ -27,7 +27,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "std_srvs/PolledStereoCloud.h"
+#include "deprecated_srvs/PolledStereoCloud.h"
 #include "image_utils/cv_bridge.h"
 #include "opencv/highgui.h"
 
@@ -39,8 +39,8 @@ public:
   }
   bool grab_image()
   {
-    std_srvs::PolledStereoCloud::Request  req;
-    std_srvs::PolledStereoCloud::Response res;
+    deprecated_srvs::PolledStereoCloud::Request  req;
+    deprecated_srvs::PolledStereoCloud::Response res;
     CvBridge<std_msgs::Image> cv_bridge(&res.image);
     if (ros::service::call("stereo", req, res))
     {
