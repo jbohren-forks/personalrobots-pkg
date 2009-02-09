@@ -59,8 +59,6 @@ class BaseController extends AgentTimeline {
  * default preempt = false;
  *
  * if(active && !abort && !preempt){
- *   met_by(Holds p);
- *   meets(Holds s);
  *   duration = 1;
  *
  *   // Apply updates to generate new base state
@@ -205,7 +203,15 @@ BaseController::Holds{
 
 
 /**
- * By default it will retain prior values
+ * By default it will retain prior values. We will constrain its duration to 1.
+ *
+ * duration = 1;
+ *
+ * on commit {
+ *  x = previous.x;
+ *  y = previous.y;
+ *  th= previous.th;
+ * }
  */
 BaseState::Holds{
   met_by(Holds p);
