@@ -8,8 +8,11 @@ using namespace borg;
 
 int main(int, char **)
 {
+  printf("borg ctor\n");
   Borg borg(Borg::INIT_CAM);
+  printf("borg startimagestream\n");
   borg.cam->startImageStream();
+  printf("borg preparestill\n");
   borg.cam->prepareStill();
   Borg::Image *image = new Borg::Image(new uint8_t[640*480],
                                        ros::Time::now().toSec(), 0);

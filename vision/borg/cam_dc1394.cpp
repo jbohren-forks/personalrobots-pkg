@@ -67,8 +67,8 @@ bool CamDC1394::_init()
 
   if (!g_silent)
     dc1394_camera_print_info(cam, stdout);
-  ENSURE(dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B));
-  ENSURE(dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800));
+  //ENSURE(dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B));
+  //ENSURE(dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800));
   ENSURE(dc1394_video_set_mode(cam, DC1394_VIDEO_MODE_FORMAT7_0));
   ENSURE(dc1394_format7_set_roi(cam, DC1394_VIDEO_MODE_FORMAT7_0,
                                 DC1394_COLOR_CODING_MONO8,
@@ -78,8 +78,8 @@ bool CamDC1394::_init()
                                              DC1394_CAPTURE_FLAGS_DEFAULT))
   {
     dc1394_reset_bus(cam);
-    ENSURE(dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B));
-    ENSURE(dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800));
+    //ENSURE(dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B));
+    //ENSURE(dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800));
     ENSURE(dc1394_capture_setup(cam, 8, DC1394_CAPTURE_FLAGS_DEFAULT));
     ENSURE(dc1394_video_set_mode(cam, DC1394_VIDEO_MODE_FORMAT7_0));
     ENSURE(dc1394_format7_set_roi(cam, DC1394_VIDEO_MODE_FORMAT7_0,
