@@ -43,7 +43,7 @@
 #include <ros/time.h>
 #include <ros/console.h>
 
-#include <urdf/URDF.h>
+#include <planning_models/urdf.h>
 #include <planning_models/kinematic.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
@@ -130,7 +130,7 @@ namespace kinematic_planning
 	
 	void setRobotDescriptionFromData(const char *data)
 	{
-	    robot_desc::URDF *file = new robot_desc::URDF();
+	    planning_models::URDF *file = new planning_models::URDF();
 	    if (file->loadString(data))
 		setRobotDescription(file);
 	    else
@@ -139,14 +139,14 @@ namespace kinematic_planning
 	
 	void setRobotDescriptionFromFile(const char *filename)
 	{
-	    robot_desc::URDF *file = new robot_desc::URDF();
+	    planning_models::URDF *file = new planning_models::URDF();
 	    if (file->loadFile(filename))
 		setRobotDescription(file);
 	    else
 		delete file;
 	}
 	
-	virtual void setRobotDescription(robot_desc::URDF *file)
+	virtual void setRobotDescription(planning_models::URDF *file)
 	{
 	    if (m_urdf)
 		delete m_urdf;
@@ -296,7 +296,7 @@ namespace kinematic_planning
 
 	ros::Node                                    *m_node;
 	tf::TransformListener                         m_tf; 
-	robot_desc::URDF                             *m_urdf;
+	planning_models::URDF                        *m_urdf;
 	planning_models::KinematicModel              *m_kmodel;
 
 	// info about the pose; this is not placed in the robot's kinematic state 

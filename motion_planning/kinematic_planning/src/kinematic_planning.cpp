@@ -389,7 +389,7 @@ public:
 	return result;
     }
 
-    virtual void setRobotDescription(robot_desc::URDF *file)
+    virtual void setRobotDescription(planning_models::URDF *file)
     {
 	CollisionSpaceMonitor::setRobotDescription(file);	
 	defaultPosition();
@@ -688,12 +688,12 @@ private:
     void createMotionPlanningInstances(RKPModel* model)
     {	
 	std::map<std::string, std::string> options;
-	robot_desc::URDF::Group *group = m_urdf->getGroup(model->kmodel->getURDFGroup(model->groupName));
+	planning_models::URDF::Group *group = m_urdf->getGroup(model->kmodel->getURDFGroup(model->groupName));
 	
 	options.clear();
 	if (group)
 	{
-	    const robot_desc::URDF::Map &data = group->data;
+	    const planning_models::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "RRT");
 	}
 	
@@ -703,7 +703,7 @@ private:
 	options.clear();
 	if (group)
 	{
-	    const robot_desc::URDF::Map &data = group->data;
+	    const planning_models::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "LazyRRT");
 	}
 	model->addLazyRRT(options);
@@ -711,7 +711,7 @@ private:
 	options.clear();
 	if (group)
 	{
-	    const robot_desc::URDF::Map &data = group->data;
+	    const planning_models::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "EST");
 	}
 	model->addEST(options);
@@ -719,7 +719,7 @@ private:
 	options.clear();
 	if (group)
 	{
-	    const robot_desc::URDF::Map &data = group->data;
+	    const planning_models::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "SBL");
 	}
 	model->addSBL(options); 
@@ -727,7 +727,7 @@ private:
 	options.clear();
 	if (group)
 	{
-	    const robot_desc::URDF::Map &data = group->data;
+	    const planning_models::URDF::Map &data = group->data;
 	    options = data.getMapTagValues("planning", "IKSBL");
 	}
 	model->addIKSBL(options); 

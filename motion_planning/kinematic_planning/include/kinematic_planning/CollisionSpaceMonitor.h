@@ -185,13 +185,13 @@ namespace kinematic_planning
 	    return true;	    
 	}
 	
-	virtual void setRobotDescription(robot_desc::URDF *file)
+	virtual void setRobotDescription(planning_models::URDF *file)
 	{
 	    KinematicStateMonitor::setRobotDescription(file);
 	    if (m_kmodel)
 	    {
 		std::vector<std::string> links;
-		robot_desc::URDF::Group *g = file->getGroup("collision_check");
+		planning_models::URDF::Group *g = file->getGroup("collision_check");
 		if (g && g->hasFlag("collision"))
 		    links = g->linkNames;
 		m_collisionSpace->lock();
@@ -218,9 +218,9 @@ namespace kinematic_planning
 
     protected:
 	
-	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
+	void addSelfCollisionGroups(unsigned int cid, planning_models::URDF *model)
 	{
-	    std::vector<robot_desc::URDF::Group*> groups;
+	    std::vector<planning_models::URDF::Group*> groups;
 	    model->getGroups(groups);
 	    
 	    m_collisionSpace->lock();

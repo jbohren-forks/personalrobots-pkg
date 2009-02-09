@@ -66,7 +66,7 @@ protected:
 	if (getParam("robot_description", content))
 	{
 	    // parse the description
-	    robot_desc::URDF *file = new robot_desc::URDF();
+	    planning_models::URDF *file = new planning_models::URDF();
 	    if (file->loadString(content.c_str()))
 	    {
 		// create a kinematic model out of the parsed description
@@ -97,7 +97,7 @@ protected:
 
 		// get the list of links that are enabled for collision checking
 		std::vector<std::string> links;
-		robot_desc::URDF::Group *g = file->getGroup("collision_check");
+		planning_models::URDF::Group *g = file->getGroup("collision_check");
 		if (g && g->hasFlag("collision"))
 		    links = g->linkNames;
 
@@ -117,7 +117,7 @@ protected:
 		
 		// get the self collision groups and add them to the collision space
 		int nscgroups = 0;
-		std::vector<robot_desc::URDF::Group*> groups;
+		std::vector<planning_models::URDF::Group*> groups;
 		file->getGroups(groups);
 		for (unsigned int i = 0 ; i < groups.size() ; ++i)
 		    if (groups[i]->hasFlag("self_collision"))

@@ -37,7 +37,7 @@
 #ifndef KINEMATIC_ROBOT_MODEL_
 #define KINEMATIC_ROBOT_MODEL_
 
-#include <urdf/URDF.h>
+#include <planning_models/urdf.h>
 #include <LinearMath/btTransform.h>
 
 #include <iostream>
@@ -183,7 +183,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params) = 0;
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot) = 0;
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot) = 0;
 	};
 
 	/** A fixed joint */
@@ -195,7 +195,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	};
 
 	/** A planar joint */
@@ -212,7 +212,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	};
 
 	/** A floating joint */
@@ -229,7 +229,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	};
 
 	/** A prismatic joint */
@@ -247,7 +247,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	    
 	    btVector3 axis;
 	    double    limit[2];
@@ -268,7 +268,7 @@ namespace planning_models
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    virtual void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	    
 	    btVector3 axis;
 	    btVector3 anchor;
@@ -374,7 +374,7 @@ namespace planning_models
 	    const double* computeTransform(const double *params, int groupID = -1);
 
 	    /** Extract the information needed by the joint given the URDF description */
-	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    void extractInformation(const URDF::Link *urdfLink, Robot *robot);
 	    
 	};
 	
@@ -558,7 +558,7 @@ namespace planning_models
 	}
 	
 	void         build(const std::string &description, bool ignoreSensors = false);
-	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
+	virtual void build(const URDF &model, bool ignoreSensors = false);
 	bool         isBuilt(void) const;
 	StateParams* newStateParams(void);
 	
@@ -617,19 +617,19 @@ namespace planning_models
     private:
 	
 	/** Build the needed datastructure for a joint */
-	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
+	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, const URDF::Link *urdfLink, const URDF &model);
 
 	/** Build the needed datastructure for a link */
-	void buildChainL(Robot *robot, Joint *parent, Link  *link,  const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
+	void buildChainL(Robot *robot, Joint *parent, Link  *link,  const URDF::Link *urdfLink, const URDF &model);
 
 	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
-	void constructGroupList(const robot_desc::URDF &model);
+	void constructGroupList(const URDF &model);
 	
 	/* compute the parameter names  */
 	void computeParameterNames(void);
 
 	/** Allocate a joint of appropriate type, depending on the loaded link */
-	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
+	Joint* createJoint(const URDF::Link* urdfLink);
 	
     };
 
