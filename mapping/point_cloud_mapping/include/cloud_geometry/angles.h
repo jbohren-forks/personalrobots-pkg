@@ -40,6 +40,7 @@
 #include <std_msgs/Polygon3D.h>
 #include <std_msgs/Polyline2D.h>
 
+#include <cloud_geometry/point.h>
 #include <cloud_geometry/nearest.h>
 
 namespace cloud_geometry
@@ -88,14 +89,12 @@ namespace cloud_geometry
     inline double
       getAngle3D (std_msgs::Point32 *v1, std_msgs::Point32 *v2)
     {
-      // Compute the dot product between the vectors
-      double dot     = (v1->x * v2->x) + (v1->y * v2->y) + (v1->z * v2->z);
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
       double norm_v2 = (v2->x * v2->x) + (v2->y * v2->y) + (v2->z * v2->z);
 
       // Compute the actual angle
-      double rad = acos ( dot / sqrt (norm_v1 * norm_v2) );
+      double rad = acos ( cloud_geometry::dot (v1, v2) / sqrt (norm_v1 * norm_v2) );
 
       // Check against NaN
       if (isnan (rad))

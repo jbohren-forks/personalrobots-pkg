@@ -55,6 +55,22 @@ namespace cloud_geometry
   };
 
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Check whether two given points are equal with some epsilon delta
+    * \param p1 a pointer to the first point
+    * \param p2 a pointer to the second point
+    * \param eps the maximum allowed difference between the points' values
+    */
+  inline bool
+    checkPointEqual (std_msgs::Point32 *p1, std_msgs::Point32 *p2, double eps = 1e-10)
+  {
+    if (
+        (fabs (p1->x - p2->x) < eps) && (fabs (p1->y - p2->y) < eps) && (fabs (p1->z - p2->z) < eps)
+        )
+      return (true);
+    return (false);
+  }
+
   int getChannelIndex (std_msgs::PointCloud *points, std::string channel_name);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

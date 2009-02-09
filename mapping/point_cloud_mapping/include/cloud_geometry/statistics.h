@@ -94,7 +94,7 @@ namespace cloud_geometry
       getMinMax (std_msgs::PointCloud *points, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
     {
       minP.x = minP.y = minP.z = FLT_MAX;
-      maxP.x = maxP.y = maxP.z = FLT_MIN;
+      maxP.x = maxP.y = maxP.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < points->pts.size (); i++)
       {
@@ -119,7 +119,7 @@ namespace cloud_geometry
       getMinMax (std_msgs::Polygon3D *poly, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
     {
       minP.x = minP.y = minP.z = FLT_MAX;
-      maxP.x = maxP.y = maxP.z = FLT_MIN;
+      maxP.x = maxP.y = maxP.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < poly->points.size (); i++)
       {
@@ -144,7 +144,7 @@ namespace cloud_geometry
       getMinMax (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::Point32 &minP, std_msgs::Point32 &maxP)
     {
       minP.x = minP.y = minP.z = FLT_MAX;
-      maxP.x = maxP.y = maxP.z = FLT_MIN;
+      maxP.x = maxP.y = maxP.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < indices->size (); i++)
       {
@@ -172,7 +172,7 @@ namespace cloud_geometry
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-      max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
+      max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < points->pts.size (); i++)
       {
@@ -203,7 +203,7 @@ namespace cloud_geometry
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
-      max_pt.x = max_pt.y = max_pt.z = FLT_MIN;
+      max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < indices->size (); i++)
       {
