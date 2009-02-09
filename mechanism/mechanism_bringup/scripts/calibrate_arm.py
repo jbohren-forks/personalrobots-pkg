@@ -51,6 +51,10 @@ from std_msgs.msg import *
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
 
+spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
+kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+
+
 def slurp(filename):
     f = open(filename)
     stuff = f.read()
@@ -61,8 +65,8 @@ rospy.wait_for_service('spawn_controller')
 
 
 def calibrate(config):
-    spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-    kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+    #spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
+    #kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
     # Spawns the controllers
     resp = spawn_controller(config)
@@ -104,16 +108,16 @@ def calibrate(config):
 #
 # Functions make xml code for controllers 
 #
-def xml_for_cal(name, p, i, d, iClamp):
+def xml_for_cal(name, velocity, p, i, d, iClamp):
     return '''\
 <controller name=\"cal_%s" topic="cal_%s"\
 type="JointCalibrationControllerNode">\
 <calibrate joint="%s_joint"\
 actuator="%s_motor"\
 transmission="%s_trans"\
-velocity="1.0" />\
+velocity="%d" />\
 <pid p="%d" i="%d" d="%d" iClamp="%d" />\
-</controller>''' % (name, name, name, name, name, p, i, d, iClamp)  
+</controller>''' % (name, name, name, name, name, velocity, p, i, d, iClamp)  
 
 def xml_for_hold(name, p, i, d, iClamp):
     return '''\
@@ -124,83 +128,87 @@ def xml_for_hold(name, p, i, d, iClamp):
 
 def xml_for_wrist(side):
     return '''\
-<controller type=\"WristCalibrationControllerNode\" name=\"cal_wrist\">\
+<controller name=\"cal_%s_wrist\"  type=\"WristCalibrationControllerNode\" >\
 <calibrate transmission=\"%s_wrist_trans\"\
 actuator_l=\"%s_wrist_l_motor\" actuator_r=\"%s_wrist_r_motor\"\ 
 flex_joint=\"%s_wrist_flex_joint\" roll_joint=\"%s_wrist_roll_joint\"\ 
-velocity=\"1.2\" />\
-<pid p=\"3.0\" i=\"0.2\" d=\"0\" iClamp=\"2.0\" />\
-</controller>''' % side
+velocity=\"1.5\" />\
+<pid p=\"4.0\" i=\"0.2\" d=\"0\" iClamp=\"2.0\" />\
+</controller>''' % (side, side, side, side, side, side)
 
 def hold_joint(name, p, i, d, iClamp, holding):
-    spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-
     # Try to launch 3x
     # If launched, add to list of holding controllers and return true 
-    for i in range(0,2):
-        resp = spawn_controller(xml_for_hold(name, 4, 0.5, 0.2, 1.0))
-        if resp.ok[0] != 0:
-            holding.append(resp.name[0])
-            return true
+    for i in range(1,4):
+        try:
+            resp = spawn_controller(xml_for_hold(name, 4, 0.5, 0.2, 1.0))
+            if resp.ok[0] != 0:
+                holding.append(resp.name[0])
+                return True
+        except:
+            print "Failed to spawn holding controller %s on try %d" % (name, i)
 
-    return false
+    return False
+
 
 if __name__ == '__main__':
     rospy.init_node('calibration', anonymous=True)
 
-    spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-    kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+    holding = [] # Tracks which controllers are holding joints by name
 
-    # Set side = r for now
-    rside = "r"
-    lside = "l"
-
-    holding = [] # Tracks which controllers are being held by name
-
-    for side in [rside, lside]:
-        print "Calibrating %s arm" % side
-        # Calibrate all joints sequentially
-        # Hold joints after they're calibrated.
-        # Can set desired joint position by using name + /set_command service
-        # for joint position controllers
-        calibrate(xml_for_wrist(side))
-        hold_joint(side + "_wrist_roll", 4, 0.5, 0, 1.0, holding)
-        hold_joint(side + "_wrist_flex", 4, 0.5, 0, 1.0, holding)
-        
-        forearm_roll_name = side + "_forearm_roll"
-        calibrate(xml_for_cal(forearm_roll_name, 5, 0, 0, 0))
-        hold_joint(forearm_roll_name, 20, 1.0, 0.2, 1.0, holding)
-        
-        elbow_flex_name = side + "_elbow_flex"
-        calibrate(xml_for_cal(elbow_flex_name, 6, 0.2, 0, 1))
-        hold_joint(elbow_flex_name, 100, 20, 10, 2, holding)
-        
-        upperarm_roll_name = side + "_upper_arm_roll"
-        calibrate(xml_for_cal(upperarm_roll_name, 6, 0.2, 0, 2))
-        hold_joint(upperarm_roll_name, 25, 2, 0.5, 1.0, holding)
-        
-        shoulder_lift_name = side + "_shoulder_lift"
-        calibrate(xml_for_cal(shoulder_lift_name, 9, 1.0, 0, 6))
-        hold_joint(shoulder_lift_name, 60, 10, 5, 4, holding)
-        
-        shoulder_pan_name = side + "_shoulder_pan"
-        calibrate(xml_for_cal(shoulder_pan_name, 7, 0.5, 0, 1.0))
-        # Don't bother holding shoulder pan
     
-    # Kill all holding controllers
-    for name in holding:
-        for i in range(1,6):
-            try:
-                kill_controller(name)
-                break # Go to next controller if no exception
-            except:
-                print "Failed to kill controller %s on try %d" % (name, i)
+    # Calibrate all joints sequentially
+    # Hold joints after they're calibrated.
+    # Can set desired joint position by using name + /set_command service
+    # for joint position controllers
+    
+    #print "Calibrating %s wrist" % side
+    # Wrist controller still doesn't work
+    #calibrate(xml_for_wrist("l") + "\n" + xml_for_wrist("r"))
 
-    sleep(3)
+    #sleep(0.5)
+    #hold_joint(side + "_wrist_roll", 4, 0.5, 0, 1.0, holding)
+    #hold_joint(side + "_wrist_flex", 4, 0.5, 0, 1.0, holding)
+
+    #calibrate(xml_for_cal(forearm_roll_name, 5, 0, 0, 0))
+    #sleep(0.5)        
+        
+    print "Calibrating elbow flex"
+    calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1) + "\n" + xml_for_cal("l_elbow_flex", -1.0, 6, 0.2, 0, 1))
+    #hold_joint("r_forearm_roll", 20, 1.0, 0.5, 1.0, holding)    
+    #hold_joint("l_forearm_roll", 20, 1.0, 0.5, 1.0, holding)
+    hold_joint("r_elbow_flex", 100, 20, 10, 2, holding)
+    hold_joint("l_elbow_flex", 100, 20, 10, 2, holding)
+        
+    print "Calibrating right upperarm roll"
+    upperarm_roll_name = "r_upper_arm_roll"
+    calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
+    hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
+
+    print "Calibrating left upperarm roll" 
+    upperarm_roll_name = "l_upper_arm_roll"
+    calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
+    hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
+        
+    print "Calibrating shoulder lift"
+    shoulder_lift_name = "r_shoulder_lift"
+    calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6))
+
+    hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
+    hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
+    
+    print "Calibrating shoulder pan" 
+    calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
+    hold_joint("r_shoulder_pan", 60, 10, 5, 4, holding)
+
+    calibrate(xml_for_cal("l_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
+    hold_joint("l_shoulder_pan", 60, 10, 5, 4, holding)
+
+    sleep(0.5)
     print "Calibrating rest of robot"
 
     # Calibrate other controllers given
-        xml = ''
+    xml = ''
     
     if len(sys.argv) > 1:
         #xmls = [slurp(filename) for filename in sys.argv[1:]]
@@ -215,7 +223,16 @@ if __name__ == '__main__':
         print "Reading from stdin..."
         xml = sys.stdin.read()
 
-    calibrate(xml)
-            
+    try:
+        calibrate(xml)
+    finally:
+        # Kill all holding controllers
+        for name in holding:
+            for i in range(1,6):
+                try:
+                    kill_controller(name)
+                    break # Go to next controller if no exception
+                except:
+                    print "Failed to kill controller %s on try %d" % (name, i)
 
     print "Calibration complete"
