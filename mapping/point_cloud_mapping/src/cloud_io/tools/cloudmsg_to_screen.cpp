@@ -34,7 +34,7 @@
   * Useful for tools which don't want to link against \a cloud_io (I guess).
   *
   */
-#include <cloud_io/cloud_io.h>
+#include <point_cloud_mapping/cloud_io.h>
 
 /* ---[ */
 int

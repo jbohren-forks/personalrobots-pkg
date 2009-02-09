@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_io/cloud_io.h>
+#include <point_cloud_mapping/cloud_io.h>
 
 namespace cloud_io
 {

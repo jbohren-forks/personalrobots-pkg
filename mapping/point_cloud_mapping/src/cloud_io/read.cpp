@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <stdlib.h>
-#include <cloud_io/cloud_io.h>
+#include <point_cloud_mapping/cloud_io.h>
 #include <boost/algorithm/string.hpp>
 
 namespace cloud_io
