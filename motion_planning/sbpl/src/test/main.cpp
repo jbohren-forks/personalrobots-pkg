@@ -435,7 +435,7 @@ int planxythetalat(int argc, char *argv[])
 
 int planandnavigate2d(int argc, char *argv[])
 {
-	double allocated_time_secs_foreachplan = 10.0; //in seconds
+	double allocated_time_secs_foreachplan = 0.2; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV2D environment_nav2D;
 	EnvironmentNAV2D trueenvironment_nav2D;
@@ -445,7 +445,7 @@ int planandnavigate2d(int argc, char *argv[])
     FILE* fSol = fopen("sol.txt", "w");
     int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = false;
+	bool bPrint = true;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
@@ -454,6 +454,18 @@ int planandnavigate2d(int argc, char *argv[])
 	unsigned char obsthresh = 0;
 	//srand(0);
 	int plantime_over1secs=0, plantime_over0p5secs=0, plantime_over0p1secs=0, plantime_over0p05secs=0, plantime_below0p05secs=0;
+
+	//set parameters - should be done before initialization 
+	if(!trueenvironment_nav2D.SetEnvParameter("is16connected", 1))
+	{
+		printf("ERROR: failed to set parameters\n");
+		exit(1);
+	}
+	if(!environment_nav2D.SetEnvParameter("is16connected", 1))
+	{
+		printf("ERROR: failed to set parameters\n");
+		exit(1);
+	}
 
 
     //initialize true map and robot map
@@ -1046,7 +1058,7 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    //planandnavigate2d(argc, argv);
+    planandnavigate2d(argc, argv);
 
     //3D planning
     //plan3dkin(argc, argv);
@@ -1055,7 +1067,7 @@ int main(int argc, char *argv[])
     //planandnavigate3dkin(argc, argv);
 
     //xytheta planning
-	planxythetalat(argc, argv);
+	//planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);

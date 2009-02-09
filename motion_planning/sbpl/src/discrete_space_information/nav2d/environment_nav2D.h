@@ -36,7 +36,9 @@
 //-1, 0, 1 per each dX and dY
 #define ENVNAV2D_ACTIONSWIDTH 8
 
-#define ENVNAV2D_DEFAULTOBSTHRESH 253 //253-for willow garage	//see explanation of the value below
+#define ENVNAV2D_DEFAULTOBSTHRESH 1 //253-for willow garage	//see explanation of the value below
+
+#define ENVNAV2D_MAXDIRS 16
 
 //configuration parameters
 typedef struct ENV_NAV2D_CONFIG
@@ -52,8 +54,19 @@ typedef struct ENV_NAV2D_CONFIG
 	//the default is defined above
 	unsigned char obsthresh; 
 
-	int dXY[ENVNAV2D_ACTIONSWIDTH][2];
+//	int dXY[ENVNAV2D_ACTIONSWIDTH][2];
 
+	int dx_[ENVNAV2D_MAXDIRS];
+	int dy_[ENVNAV2D_MAXDIRS];
+    //the intermediate cells through which the actions go 
+    int dxintersects_[ENVNAV2D_MAXDIRS][2];
+    int dyintersects_[ENVNAV2D_MAXDIRS][2];
+	//distances of transitions
+	int dxy_distance_mm_[ENVNAV2D_MAXDIRS];
+
+
+
+	int numofdirs; //for now either 8 or 16 (default is 8)
 
 } EnvNAV2DConfig_t;
 
@@ -77,6 +90,8 @@ typedef struct
 
 	int startstateid;
 	int goalstateid;
+
+	bool bInitialized;
 
 	//hash table of size x_size*y_size. Maps from coords to stateId	
 	int HashTableSize;
@@ -144,6 +159,8 @@ public:
 	unsigned char GetMapCost(int x, int y);
 	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh);
 
+	bool SetEnvParameter(char* parameter, int value);
+
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 
 	EnvironmentNAV2D();
@@ -182,6 +199,7 @@ private:
 
 	bool IsValidCell(int X, int Y);
 
+	void Computedxy();
 
 };
 

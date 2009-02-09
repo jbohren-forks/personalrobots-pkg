@@ -44,6 +44,9 @@ static clock_t time_getsuccs = 0;
 EnvironmentNAV2D::EnvironmentNAV2D()
 {
 	EnvNAV2DCfg.obsthresh = ENVNAV2D_DEFAULTOBSTHRESH;
+
+	EnvNAV2DCfg.numofdirs = 8;
+	EnvNAV2D.bInitialized = false;
 	
 };
 
@@ -230,6 +233,7 @@ void EnvironmentNAV2D::InitializeEnvConfig()
 {
 	//aditional to configuration file initialization of EnvNAV2DCfg if necessary
 
+	/*
 	//actions
 	EnvNAV2DCfg.dXY[0][0] = -1;
 	EnvNAV2DCfg.dXY[0][1] = -1;
@@ -247,8 +251,49 @@ void EnvironmentNAV2D::InitializeEnvConfig()
 	EnvNAV2DCfg.dXY[6][1] = 0;
 	EnvNAV2DCfg.dXY[7][0] = 1;
 	EnvNAV2DCfg.dXY[7][1] = 1;
+	*/
+	Computedxy();
 
 
+}
+
+void EnvironmentNAV2D::Computedxy()
+{
+
+	//initialize some constants for 2D search
+	EnvNAV2DCfg.dx_[0] = 1; EnvNAV2DCfg.dy_[0] = 1;		EnvNAV2DCfg.dxintersects_[0][0] = 0; EnvNAV2DCfg.dyintersects_[0][0] = 1; EnvNAV2DCfg.dxintersects_[0][1] = 1; EnvNAV2DCfg.dyintersects_[0][1] = 0; 
+	EnvNAV2DCfg.dx_[1] = 1; EnvNAV2DCfg.dy_[1] = 0;		EnvNAV2DCfg.dxintersects_[1][0] = 0; EnvNAV2DCfg.dyintersects_[1][0] = 0; EnvNAV2DCfg.dxintersects_[1][1] = 0; EnvNAV2DCfg.dyintersects_[1][1] = 0;
+	EnvNAV2DCfg.dx_[2] = 1; EnvNAV2DCfg.dy_[2] = -1;	EnvNAV2DCfg.dxintersects_[2][0] = 0; EnvNAV2DCfg.dyintersects_[2][0] = -1; EnvNAV2DCfg.dxintersects_[2][1] = 1; EnvNAV2DCfg.dyintersects_[2][1] = 0;
+	EnvNAV2DCfg.dx_[3] = 0; EnvNAV2DCfg.dy_[3] = 1;		EnvNAV2DCfg.dxintersects_[3][0] = 0; EnvNAV2DCfg.dyintersects_[3][0] = 0; EnvNAV2DCfg.dxintersects_[3][1] = 0; EnvNAV2DCfg.dyintersects_[3][1] = 0;
+	EnvNAV2DCfg.dx_[4] = 0; EnvNAV2DCfg.dy_[4] = -1;	EnvNAV2DCfg.dxintersects_[4][0] = 0; EnvNAV2DCfg.dyintersects_[4][0] = 0; EnvNAV2DCfg.dxintersects_[4][1] = 0; EnvNAV2DCfg.dyintersects_[4][1] = 0;
+	EnvNAV2DCfg.dx_[5] = -1; EnvNAV2DCfg.dy_[5] = 1;	EnvNAV2DCfg.dxintersects_[5][0] = 0; EnvNAV2DCfg.dyintersects_[5][0] = 1; EnvNAV2DCfg.dxintersects_[5][1] = -1; EnvNAV2DCfg.dyintersects_[5][1] = 0;
+	EnvNAV2DCfg.dx_[6] = -1; EnvNAV2DCfg.dy_[6] = 0;	EnvNAV2DCfg.dxintersects_[6][0] = 0; EnvNAV2DCfg.dyintersects_[6][0] = 0; EnvNAV2DCfg.dxintersects_[6][1] = 0; EnvNAV2DCfg.dyintersects_[6][1] = 0;
+	EnvNAV2DCfg.dx_[7] = -1; EnvNAV2DCfg.dy_[7] = -1;	EnvNAV2DCfg.dxintersects_[7][0] = 0; EnvNAV2DCfg.dyintersects_[7][0] = -1; EnvNAV2DCfg.dxintersects_[7][1] = -1; EnvNAV2DCfg.dyintersects_[7][1] = 0;
+
+    //Note: these actions have to be starting at 8 and through 15, since they 
+    //get multiplied correspondingly in Dijkstra's search based on index
+    EnvNAV2DCfg.dx_[8] = 2; EnvNAV2DCfg.dy_[8] = 1;	EnvNAV2DCfg.dxintersects_[8][0] = 1; EnvNAV2DCfg.dyintersects_[8][0] = 0; EnvNAV2DCfg.dxintersects_[8][1] = 1; EnvNAV2DCfg.dyintersects_[8][1] = 1;
+	EnvNAV2DCfg.dx_[9] = 1; EnvNAV2DCfg.dy_[9] = 2;	EnvNAV2DCfg.dxintersects_[9][0] = 0; EnvNAV2DCfg.dyintersects_[9][0] = 1; EnvNAV2DCfg.dxintersects_[9][1] = 1; EnvNAV2DCfg.dyintersects_[9][1] = 1;
+	EnvNAV2DCfg.dx_[10] = -1; EnvNAV2DCfg.dy_[10] = 2;	EnvNAV2DCfg.dxintersects_[10][0] = 0; EnvNAV2DCfg.dyintersects_[10][0] = 1; EnvNAV2DCfg.dxintersects_[10][1] = -1; EnvNAV2DCfg.dyintersects_[10][1] = 1;
+	EnvNAV2DCfg.dx_[11] = -2; EnvNAV2DCfg.dy_[11] = 1;	EnvNAV2DCfg.dxintersects_[11][0] = -1; EnvNAV2DCfg.dyintersects_[11][0] = 0; EnvNAV2DCfg.dxintersects_[11][1] = -1; EnvNAV2DCfg.dyintersects_[11][1] = 1;
+	EnvNAV2DCfg.dx_[12] = -2; EnvNAV2DCfg.dy_[12] = -1;	EnvNAV2DCfg.dxintersects_[12][0] = -1; EnvNAV2DCfg.dyintersects_[12][0] = 0; EnvNAV2DCfg.dxintersects_[12][1] = -1; EnvNAV2DCfg.dyintersects_[12][1] = -1;
+	EnvNAV2DCfg.dx_[13] = -1; EnvNAV2DCfg.dy_[13] = -2;	EnvNAV2DCfg.dxintersects_[13][0] = 0; EnvNAV2DCfg.dyintersects_[13][0] = -1; EnvNAV2DCfg.dxintersects_[13][1] = -1; EnvNAV2DCfg.dyintersects_[13][1] = -1;
+	EnvNAV2DCfg.dx_[14] = 1; EnvNAV2DCfg.dy_[14] = -2;	EnvNAV2DCfg.dxintersects_[14][0] = 0; EnvNAV2DCfg.dyintersects_[14][0] = -1; EnvNAV2DCfg.dxintersects_[14][1] = 1; EnvNAV2DCfg.dyintersects_[14][1] = -1;
+	EnvNAV2DCfg.dx_[15] = 2; EnvNAV2DCfg.dy_[15] = -1; EnvNAV2DCfg.dxintersects_[15][0] = 1; EnvNAV2DCfg.dyintersects_[15][0] = 0; EnvNAV2DCfg.dxintersects_[15][1] = 1; EnvNAV2DCfg.dyintersects_[15][1] = -1;
+
+	//compute distances
+	for(int dind = 0; dind  < ENVNAV2D_MAXDIRS; dind++)
+	{
+
+		if(EnvNAV2DCfg.dx_[dind] != 0 && EnvNAV2DCfg.dy_[dind] != 0){
+            if(dind <= 7)
+                EnvNAV2DCfg.dxy_distance_mm_[dind] = (int)(ENVNAV2D_COSTMULT*1.414);	//the cost of a diagonal move in millimeters
+            else
+                EnvNAV2DCfg.dxy_distance_mm_[dind] = (int)(ENVNAV2D_COSTMULT*2.236);	//the cost of a move to 1,2 or 2,1 or so on in millimeters
+		}
+		else
+			EnvNAV2DCfg.dxy_distance_mm_[dind] = ENVNAV2D_COSTMULT;	//the cost of a horizontal move in millimeters
+	}
 }
 
 
@@ -392,6 +437,8 @@ void EnvironmentNAV2D::InitializeEnvironment()
 	//create goal state 
 	HashEntry = CreateNewHashEntry(EnvNAV2DCfg.EndX_c, EnvNAV2DCfg.EndY_c);
 	EnvNAV2D.goalstateid = HashEntry->stateID;
+
+	EnvNAV2D.bInitialized = true;
 }
 
 static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
@@ -591,13 +638,13 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 	
 	//iterate through actions
     bool bTestBounds = false;
-    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
-       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+    if(HashEntry->X <= 1 || HashEntry->X >= EnvNAV2DCfg.EnvWidth_c-2 || 
+       HashEntry->Y <= 1 || HashEntry->Y >= EnvNAV2DCfg.EnvHeight_c-2)
         bTestBounds = true;
-	for (int aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
+	for (int aind = 0; aind < EnvNAV2DCfg.numofdirs; aind++)
 	{
-        int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
-        int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
+        int newX = HashEntry->X + EnvNAV2DCfg.dx_[aind];
+        int newY = HashEntry->Y + EnvNAV2DCfg.dy_[aind];
 
         //skip the invalid cells
         if(bTestBounds){
@@ -605,24 +652,29 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
                 continue;
         }
 
-
+		//compute cost multiplier
 		int costmult = EnvNAV2DCfg.Grid2D[newX][newY];
-
 		//for diagonal move, take max over adjacent cells
-        if(newX != HashEntry->X && newY != HashEntry->Y)
+        if(newX != HashEntry->X && newY != HashEntry->Y && aind <= 7)
 		{
+			//check two more cells through which the action goes
 			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][newY]);
-			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[newX][HashEntry->Y]);
+			costmult = __max(costmult,  EnvNAV2DCfg.Grid2D[newX][HashEntry->Y]);
 		}
+		else if(aind > 7)
+		{
+			//check two more cells through which the action goes
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][0]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][0]]);
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][1]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][1]]);
+		}
+
+
 		//check that it is valid
 		if(costmult >= EnvNAV2DCfg.obsthresh)
 			continue;
 
 		//otherwise compute the actual cost
-		cost = (costmult+1)*ENVNAV2D_COSTMULT;
-        //diagonal moves are costlier
-        if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(ceil(1.414214*cost));
+		cost = (costmult+1)*EnvNAV2DCfg.dxy_distance_mm_[aind];
 
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
@@ -669,8 +721,8 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
     //clear the successor array
     SuccIDV->clear();
     CostV->clear();
-    SuccIDV->reserve(ENVNAV2D_ACTIONSWIDTH);
-    CostV->reserve(ENVNAV2D_ACTIONSWIDTH);
+    SuccIDV->reserve(EnvNAV2DCfg.numofdirs);
+    CostV->reserve(EnvNAV2DCfg.numofdirs);
 
 	//goal state should be absorbing
 	if(SourceStateID == EnvNAV2D.goalstateid)
@@ -681,13 +733,13 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 	
 	//iterate through actions
     bool bTestBounds = false;
-    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
-       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+    if(HashEntry->X <= 1 || HashEntry->X >= EnvNAV2DCfg.EnvWidth_c-2 || 
+       HashEntry->Y <= 1 || HashEntry->Y >= EnvNAV2DCfg.EnvHeight_c-2)
         bTestBounds = true;
-	for (aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
+	for (aind = 0; aind < EnvNAV2DCfg.numofdirs; aind++)
 	{
-        int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
-        int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
+        int newX = HashEntry->X + EnvNAV2DCfg.dx_[aind];
+        int newY = HashEntry->Y + EnvNAV2DCfg.dy_[aind];
     
         //skip the invalid cells
          if(bTestBounds){
@@ -698,21 +750,25 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 		int costmult = EnvNAV2DCfg.Grid2D[newX][newY];
 
 		//for diagonal move, take max over adjacent cells
-        if(newX != HashEntry->X && newY != HashEntry->Y)
+        if(newX != HashEntry->X && newY != HashEntry->Y && aind <= 7)
 		{
 			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][newY]);
 			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[newX][HashEntry->Y]);
 		}
+		else if(aind > 7)
+		{
+			//check two more cells through which the action goes
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][0]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][0]]);
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][1]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][1]]);
+		}
+
+
 		//check that it is valid
 		if(costmult >= EnvNAV2DCfg.obsthresh)
 			continue;
 
 		//otherwise compute the actual cost
-		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
-        //diagonal moves are costlier
-        if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(ceil(1.414214*cost));
-		 
+		int cost = (costmult+1)*EnvNAV2DCfg.dxy_distance_mm_[aind];		 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY)) == NULL)
@@ -743,8 +799,8 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
     //clear the successor array
     PredIDV->clear();
     CostV->clear();
-    PredIDV->reserve(ENVNAV2D_ACTIONSWIDTH);
-    CostV->reserve(ENVNAV2D_ACTIONSWIDTH);
+    PredIDV->reserve(EnvNAV2DCfg.numofdirs);
+    CostV->reserve(EnvNAV2DCfg.numofdirs);
 
 	//get X, Y for the state
 	EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[TargetStateID];
@@ -757,13 +813,14 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 
 	//iterate through actions
     bool bTestBounds = false;
-    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
-       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+    if(HashEntry->X <= 1 || HashEntry->X >= EnvNAV2DCfg.EnvWidth_c-2 || 
+       HashEntry->Y <= 1 || HashEntry->Y >= EnvNAV2DCfg.EnvHeight_c-2)
         bTestBounds = true;
-	for (aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
+	for (aind = 0; aind < EnvNAV2DCfg.numofdirs; aind++)
 	{
-        int predX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
-        int predY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
+		//the actions are undirected, so we can use the same array of actions as in getsuccs case
+        int predX = HashEntry->X + EnvNAV2DCfg.dx_[aind];
+        int predY = HashEntry->Y + EnvNAV2DCfg.dy_[aind];
     
         //skip the invalid cells
          if(bTestBounds){
@@ -774,20 +831,26 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 		//compute costmult
 		 int costmult = targetcostmult;
 		//for diagonal move, take max over adjacent cells
-        if(predX != HashEntry->X && predY != HashEntry->Y)
+        if(predX != HashEntry->X && predY != HashEntry->Y && aind < 7)
 		{
 			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][predY]);
 			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[predX][HashEntry->Y]);
 		}
+		else if(aind > 7)
+		{
+			//check two more cells through which the action goes
+			//since actions are undirected, we don't have to figure out what are the intersecting cells on moving from <predX,predY> to <X,Y>. 
+			//it is the same cells as moving from <X,Y> to <predX,predY>, which is action aind
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][0]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][0]]);
+            costmult = __max(costmult, EnvNAV2DCfg.Grid2D[HashEntry->X + EnvNAV2DCfg.dxintersects_[aind][1]][HashEntry->Y + EnvNAV2DCfg.dyintersects_[aind][1]]);
+		}
+
 		//check that it is valid
 		if(costmult >= EnvNAV2DCfg.obsthresh)
 			continue;
 
-		//otherwise compute the actual cost
-		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
-        //diagonal moves are costlier
-        if(predX != HashEntry->X && predY != HashEntry->Y)
-            cost = (int)(ceil(1.414214*cost));
+		//otherwise compute the actual cost (once again we use the fact that actions are undirected to determine the cost)
+		int cost = (costmult+1)*EnvNAV2DCfg.dxy_distance_mm_[aind];		 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY)) == NULL)
@@ -960,14 +1023,18 @@ void EnvironmentNAV2D::PrintTimeStat(FILE* fOut)
 void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
+	int aind;
 
 	for(int i = 0; i < (int)changedcellsV->size(); i++)
 	{
 		cell = changedcellsV->at(i);
 		preds_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y));
-		for(int j = 0; j < 8; j++){
-			int affx = cell.x + EnvNAV2DCfg.dXY[j][0];
-			int affy = cell.y + EnvNAV2DCfg.dXY[j][1];
+
+		for (aind = 0; aind < EnvNAV2DCfg.numofdirs; aind++)
+		{
+			//the actions are undirected, so we can use the same array of actions as in getsuccs case
+			int affx = cell.x + EnvNAV2DCfg.dx_[aind];
+			int affy = cell.y + EnvNAV2DCfg.dy_[aind];
 			if(affx < 0 || affx >= EnvNAV2DCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV2DCfg.EnvHeight_c)
 				continue;
 			preds_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy));
@@ -981,14 +1048,16 @@ void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t> const * change
 void EnvironmentNAV2D::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
 {
 	nav2dcell_t cell;
+	int aind;
 
 	for(int i = 0; i < (int)changedcellsV->size(); i++)
 	{
 		cell = changedcellsV->at(i);
 		succs_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y));
-		for(int j = 0; j < 8; j++){
-			int affx = cell.x + EnvNAV2DCfg.dXY[j][0];
-			int affy = cell.y + EnvNAV2DCfg.dXY[j][1];
+		for (aind = 0; aind < EnvNAV2DCfg.numofdirs; aind++)
+		{		
+			int affx = cell.x + EnvNAV2DCfg.dx_[aind];
+			int affy = cell.y + EnvNAV2DCfg.dy_[aind];
 			if(affx < 0 || affx >= EnvNAV2DCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV2DCfg.EnvHeight_c)
 				continue;
 			succs_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy));
@@ -1024,6 +1093,32 @@ void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* s
 	*obsthresh = EnvNAV2DCfg.obsthresh;
 }
 
+bool EnvironmentNAV2D::SetEnvParameter(char* parameter, int value)
+{
+
+	if(EnvNAV2D.bInitialized == true)
+	{
+		printf("ERROR: all parameters must be set before initialization of the environment\n");
+		return false;
+	}
+
+	printf("setting parameter %s to %d\n", parameter, value);
+
+	if(strcmp(parameter, "is16connected") == 0)
+	{
+		if(value != 0)
+			EnvNAV2DCfg.numofdirs = 16;
+		else
+			EnvNAV2DCfg.numofdirs = 8;
+	}
+	else
+	{
+		printf("ERROR: invalid parameter %s\n", parameter);
+		return false;
+	}
+
+	return true;
+}
 
 
 //------------------------------------------------------------------------------
