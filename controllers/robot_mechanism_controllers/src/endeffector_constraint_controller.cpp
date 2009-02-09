@@ -30,7 +30,7 @@
 /*
  * Author: Melonee Wise
  */
-
+#include "angles/angles.h"
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_mechanism_controllers/endeffector_constraint_controller.h"
@@ -174,8 +174,8 @@ void EndeffectorConstraintController::update()
 
   // convert the wrench into joint torques
   joint_constraint_torq_ = joint_constraint_force_;
-  constraint_torq_ = joint_constraint_null_space_*task_jac_.transpose() * constraint_wrench_;
-  task_torq_ = joint_constraint_null_space_ * task_jac_.transpose()* constraint_null_space_ * task_wrench_;
+  constraint_torq_ = joint_constraint_null_space_ * task_jac_.transpose() * constraint_wrench_;
+  task_torq_ = joint_constraint_null_space_ * task_jac_.transpose() * constraint_null_space_ * task_wrench_;
 
 
   //ROS_ERROR("%s", chain_.getJointName(3));
@@ -186,7 +186,7 @@ void EndeffectorConstraintController::update()
 
   JntArray jnt_eff(kdl_chain_.getNrOfJoints());
   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
-    jnt_eff(i) = joint_constraint_torq_(i)+ constraint_torq_(i) + task_torq_(i);
+    jnt_eff(i) = joint_constraint_torq_(i) + constraint_torq_(i) + task_torq_(i);
   chain_.setEfforts(jnt_eff, robot_->joint_states_);
 }
 
@@ -292,7 +292,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   JntArray jnt_pos(kdl_chain_.getNrOfJoints());
   chain_.getPositions(robot_->joint_states_, jnt_pos);
   
-  double joint_e = elbow_limit-jnt_pos(2);
+  double joint_e = angles::shortest_angular_distance(jnt_pos(2),elbow_limit);
   if(joint_e < -0.1) 
   {
     joint_constraint_jac_(2)=1;
