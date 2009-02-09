@@ -42,6 +42,7 @@
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <topological_map/NavigationCost.h>
+#include <topological_map/ConnectorCosts.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
 
 
@@ -49,8 +50,10 @@
 namespace topological_map
 {
 
-
 enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, COMPUTING_ROADMAP, READY };
+
+typedef topological_map::ConnectorCosts::Response ConnectorResponse;
+
 
 class BottleneckGraphRos: public ros::Node
 {
@@ -68,9 +71,12 @@ public:
 
   void poseCallback(void);
   bool navigationCostCallback(topological_map::NavigationCost::Request&, topological_map::NavigationCost::Response&);
+  bool connectorCostsCallback (topological_map::ConnectorCosts::Request& req, ConnectorResponse& resp);
+
 
   void convertToMapIndices(double x, double y, int* r, int* c);
   void convertToMapIndices(double x, double y, GridCell* c);
+  void convertFromMapIndices(const GridCell& c, double* x, double* y);
 
 
 private:
@@ -79,6 +85,7 @@ private:
   BottleneckGraphRos (const BottleneckGraphRos&);
   BottleneckGraphRos& operator= (const BottleneckGraphRos&);
 
+  void updateCostMap ();
 
   RoadmapBottleneckGraph graph_;
   NodeStatus node_status_;

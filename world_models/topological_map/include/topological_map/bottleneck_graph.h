@@ -85,8 +85,10 @@ public:
   void initializeFromGrid (const GridArray& g, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMin, int distanceMax);
   void readFromFile (const char* filename);
 
-  int regionId (int r, int c);
-  bool lookupVertex (int r, int c, BottleneckVertex* v);
+  int regionId (const int r, const int c) const;
+  int regionId (const GridCell& c) const;
+  bool lookupVertex (const int r, const int c, BottleneckVertex* v) const;
+  bool lookupVertex (const GridCell& c, BottleneckVertex* v) const;
   VertexDescription& vertexDescription (const BottleneckVertex& v) { return (boost::get(desc_t(), graph_))[v]; }
   
 

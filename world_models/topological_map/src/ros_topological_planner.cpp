@@ -79,7 +79,8 @@
    <hr>
 **/
 
-
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
 #include <topological_map/ros_topological_planner.h>
 
 using namespace std;
@@ -115,20 +116,8 @@ BottleneckGraphRos::~BottleneckGraphRos()
 }
 
 
-
-
-
-/************************************************************
- * Callbacks
- ************************************************************/
-
-bool BottleneckGraphRos::navigationCostCallback (topological_map::NavigationCost::Request& req, topological_map::NavigationCost::Response& resp)
+void BottleneckGraphRos::updateCostMap ()
 {
-  GridCell start, goal;
-
-  convertToMapIndices (req.start.x, req.start.y, &start);
-  convertToMapIndices (req.goal.x, req.goal.y, &goal);
-  
   std_srvs::StaticMap::Request  costmap_req;
   std_srvs::StaticMap::Response costmap_resp;
   while (!ros::service::call("costmap", costmap_req, costmap_resp))
@@ -143,12 +132,73 @@ bool BottleneckGraphRos::navigationCostCallback (topological_map::NavigationCost
   lock_.lock();
   graph_.setCostmap(costmap_);
   lock_.unlock();
+}
+
+
+
+
+struct PopulateConnectorCostResponse 
+{
+  PopulateConnectorCostResponse (BottleneckGraphRos* bgraph, ConnectorResponse& resp) : graph(bgraph), response(resp), ind(0) {}
+  void operator() (const ConnectorCostPair& pair)
+  {
+    double x, y;
+    graph->convertFromMapIndices(pair.first, &x, &y);
+    response.connectors[ind].x=x;
+    response.connectors[ind].y=y;
+    response.connectors[ind].th=0;
+    response.costs[ind]=pair.second;
+    ind++;
+    ROS_DEBUG_STREAM ( "Now have " << ind << " connectors");
+  }
+
+  BottleneckGraphRos* graph;
+  ConnectorResponse& response;
+  int ind;
+};
+
+
+
+
+
+/************************************************************
+ * Callbacks
+ ************************************************************/
+
+bool BottleneckGraphRos::navigationCostCallback (topological_map::NavigationCost::Request& req, topological_map::NavigationCost::Response& resp)
+{
+  GridCell start, goal;
+
+  convertToMapIndices (req.start.x, req.start.y, &start);
+  convertToMapIndices (req.goal.x, req.goal.y, &goal);
+  
+  updateCostMap();
 
   float cost;
   graph_.findOptimalPath(start, goal, &cost);
   resp.cost=cost;
   return true;
 }
+
+bool BottleneckGraphRos::connectorCostsCallback (topological_map::ConnectorCosts::Request& req, ConnectorResponse& resp)
+{
+  GridCell start, goal;
+  convertToMapIndices (req.start.x, req.start.y, &start);
+  convertToMapIndices (req.goal.x, req.goal.y, &goal);
+
+  updateCostMap();
+
+  ConnectorCostVector connector_costs=graph_.evaluateConnectors(start, goal);
+  resp.set_connectors_size(connector_costs.size());
+  resp.set_costs_size(connector_costs.size());
+
+  ROS_DEBUG_STREAM ("Expect to add " << connector_costs.size() << " connectors");
+  for_each(connector_costs.begin(), connector_costs.end(), PopulateConnectorCostResponse(this, resp));
+  ROS_DEBUG_STREAM ("Connector costs callback called and added " << resp.costs.size() << " points");
+  return true;
+}
+
+    
 
 
 
@@ -246,6 +296,9 @@ void BottleneckGraphRos::setupTopics (void)
 
   // Advertise 2d cost
   advertiseService("navigation_cost", &BottleneckGraphRos::navigationCostCallback);
+
+  // Advertise connector costs
+  advertiseService("connector_costs", &BottleneckGraphRos::connectorCostsCallback);
 }
 
 
@@ -286,6 +339,12 @@ void BottleneckGraphRos::convertToMapIndices (double x, double y, GridCell* c)
   convertToMapIndices (x, y, &row, &col);
   c->first=row;
   c->second=col;
+}
+
+void BottleneckGraphRos::convertFromMapIndices (const GridCell& c, double* x, double* y)
+{
+  *y=c.first*resolution_;
+  *x=c.second*resolution_;
 }
 
 

@@ -42,6 +42,9 @@ typedef AdjacencyListSBPLEnv<GridCell> Roadmap;
 typedef map<BottleneckVertex,GridCell> VertexCellMap;
 typedef map<BottleneckVertex,VertexCellMap> VertexPairCellMap;
 typedef boost::multi_array<int, 2> DistanceMap;
+typedef std::pair<BottleneckVertex,GridCell> RegionConnectorPair;
+typedef std::pair<GridCell,float> ConnectorCostPair;
+typedef vector<ConnectorCostPair> ConnectorCostVector;
 
 
 /// \brief A bottleneck graph together with a roadmap that can be passed to SBPL planners
@@ -63,26 +66,34 @@ public:
 
   /// Return vector of grid cells going from start to goal.
   /// Grid cells will be contiguous early on but eventually become noncontiguous.
-  vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal);
+  GridCellVector findOptimalPath (const GridCell& start, const GridCell& goal);
   
   /// Return vector of grid cells going from start to goal.
   /// Grid cells will be contiguous early on but eventually become noncontiguous.
   /// Store the cost of the optimal path in cost
-  vector<GridCell> findOptimalPath (const GridCell& start, const GridCell& goal, float* cost);
+  GridCellVector findOptimalPath (const GridCell& start, const GridCell& goal, float* cost);
 
   /// Output the roadmap and region graph as a plain ppm file
   void outputPpm (std::ostream& = std::cout, int bottleneck_vertex_radius = 1);
 
   /// Print the roadmap in human readable form
   void printRoadmap ();
-  
+
+  /// Compute the cost of going from start to goal via connector
+  /// If path is provided, store the path in it
+  double computeConnectorCost(const GridCell& start, const GridCell& goal, const GridCell& connector, GridCellVector* path=0);
+
+  /// Evaluate all connectors adjacent to start for the problem of getting to goal
+  ConnectorCostVector evaluateConnectors (const GridCell& start, const GridCell& goal);  
   
 private:
 
   /// \post A cell equal to c exists in the roadmap, and is connected to other cells currently in the same region
   /// \return Number of cells added (either 0 or 1)
   int ensureCellExists (const GridCell& cell);
-
+  
+  /// \return among the gridcells in r1 that are adjacent to r2, the one that maximizes the distance from obstacles.
+  /// throws a TopologicalMapException if the set of such gridcells is empty.
   GridCell pointOnBorder (const Region& r1, const Region& r2);
 
   /// Use NavFn planner to plan from start to goal, and store the resulting path and cost
@@ -92,15 +103,8 @@ private:
   /// Initialize the distance-from-obstacles map
   void initializeDistanceMap ();
 
-  void findBestConnector(const VertexCellMap& neighbor_connectors, const GridCell& start, const GridCell& goal, float* best_cost, BottleneckVertex* next_region);
-  void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
-                                 float* best_cost, GridCellVector* solution, const BottleneckVertex& current, bool use_current=true);
-  void findBestNeighborConnector(const BottleneckVertex& region, const GridCell& start, const GridCell& goal, 
-                                 float* best_cost, GridCellVector* solution);
-
-  double computeConnectorCost(const GridCell& start, const GridCell& goal, const GridCell& connector, GridCellVector* path=0);
-  
-
+  /// Return vector of adjacent vertex-connector pairs given a vertex
+  vector<RegionConnectorPair> adjacentConnectors (const BottleneckVertex& v);
 
   const unsigned char* costmap_;
   Roadmap* roadmap_;

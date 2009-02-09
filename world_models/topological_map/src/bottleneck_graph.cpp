@@ -710,7 +710,7 @@ void IndexedBottleneckGraph::indexRegions ()
 }
 
 
-bool IndexedBottleneckGraph::lookupVertex (int r, int c, BottleneckVertex* region) {
+bool IndexedBottleneckGraph::lookupVertex (const int r, const int c, BottleneckVertex* region) const {
   if ((r>=0) && (c>=0) && (r<num_rows_) && (c<num_cols_) && is_free_[r][c]) {
     *region = grid_cell_vertex_[r][c];
     return true;
@@ -720,13 +720,22 @@ bool IndexedBottleneckGraph::lookupVertex (int r, int c, BottleneckVertex* regio
   }
 }
 
-int IndexedBottleneckGraph::regionId (int r, int c) 
+bool IndexedBottleneckGraph::lookupVertex (const GridCell& c, BottleneckVertex* region) const {
+  return lookupVertex (c.first, c.second, region);
+}
+
+int IndexedBottleneckGraph::regionId (const int r, const int c) const
 {
   BottleneckVertex region;
   if (lookupVertex(r, c, &region))
     return boost::get(desc_t(), graph_, region).id;
   else 
     return -1;
+}
+
+int IndexedBottleneckGraph::regionId (const GridCell& c) const
+{
+  return regionId(c.first, c.second);
 }
 
 
