@@ -53,7 +53,6 @@ def slurp(filename):
     f.close()
     return stuff
 
-rospy.wait_for_service('spawn_controller')
 
 
 def calibrate(config):
@@ -90,11 +89,14 @@ def calibrate(config):
         [kill_controller(name) for name in launched]
 
 
-if __name__ == '__main__':
+def main():
+    rospy.wait_for_service('spawn_controller')
+    if  rospy.is_shutdown(): return
+
     rospy.init_node('calibration', anonymous=True)
 
     xml = ''
-    
+
     if len(sys.argv) > 1:
         #xmls = [slurp(filename) for filename in sys.argv[1:]]
         xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in sys.argv[1:]]
@@ -110,3 +112,6 @@ if __name__ == '__main__':
 
     calibrate(xml)
     print "Calibration complete"
+
+if __name__ == '__main__':
+    main()
