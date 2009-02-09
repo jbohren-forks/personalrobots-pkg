@@ -1,5 +1,0 @@
-int32 frame_id
-float32 start_angle
-float32 angle_increment
-float32[] scan
-
