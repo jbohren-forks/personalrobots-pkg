@@ -10,5 +10,5 @@ else
   echo "In realtime mode"
 fi
 
-echo "Launching pr2_etherCAT [$PWD] with options $*"
-../pr2_etherCAT $*
+echo "Launching pr2_etherCAT with options $*"
+`$ROS_ROOT/bin/rospack find pr2_etherCAT`/pr2_etherCAT $*
