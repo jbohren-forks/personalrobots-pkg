@@ -147,7 +147,7 @@ namespace cloud_geometry
       plane_parameters (2) = eigen_vectors (0, 2) / norm;
 
       // Hessian form (D = nc . p_plane (centroid here) + p)
-      plane_parameters (3) = -1 * (plane_parameters (0) * centroid.x + plane_parameters[1] * centroid.y + plane_parameters[2] * centroid.z);
+      plane_parameters (3) = -1 * (plane_parameters (0) * centroid.x + plane_parameters (1) * centroid.y + plane_parameters (2) * centroid.z);
 
       // Compute the curvature surface change
       curvature = fabs ( eigen_values (0) / (eigen_values (0) + eigen_values (1) + eigen_values (2)) );
@@ -187,7 +187,7 @@ namespace cloud_geometry
       plane_parameters (2) = eigen_vectors (2, 0) / norm;
 
       // Hessian form (D = nc . p_plane (centroid here) + p)
-      plane_parameters (3) = -1 * (plane_parameters (0) * centroid.x + plane_parameters[1] * centroid.y + plane_parameters[2] * centroid.z);
+      plane_parameters (3) = -1 * (plane_parameters (0) * centroid.x + plane_parameters (1) * centroid.y + plane_parameters (2) * centroid.z);
 
       // Compute the curvature surface change
       curvature = fabs ( eigen_values (0) / (eigen_values (0) + eigen_values (1) + eigen_values (2)) );
@@ -287,11 +287,11 @@ namespace cloud_geometry
       std::vector<double> angles (neighbors->size () - 1);
       for (unsigned int i = 0; i < neighbors->size () - 1; i++)
       {
-        uvn_nn[0] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * u (0) + 
-                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * u (1) + 
+        uvn_nn[0] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * u (0) +
+                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * u (1) +
                     (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * u (2);
-        uvn_nn[1] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * v (0) + 
-                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * v (1) + 
+        uvn_nn[1] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * v (0) +
+                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * v (1) +
                     (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * v (2);
         angles[i] = cloud_geometry::angles::getAngle2D (uvn_nn);
       }
