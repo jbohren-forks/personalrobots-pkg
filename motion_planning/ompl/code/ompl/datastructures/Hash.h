@@ -32,63 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
-#define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
+/** I actually found this macro magic online (forgot where, a forum, I think) */
 
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
-#include <planning_models/kinematic.h>
-#include <collision_space/environment.h>
-#include "kinematic_planning/RKPModelBase.h"
-#include "kinematic_planning/RKPConstraintEvaluator.h"
+#ifndef OMPL_DATASTRUCTURES_HASH_
+#define OMPL_DATASTRUCTURES_HASH_
 
-namespace kinematic_planning
-{
-    
-    class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
-    {
-    public:
-        StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
-	{
-	    m_model = model;
-	}
-	
-	// in multi-threaded mode, this function is assumed safe; currently, it is not
-	virtual bool operator()(const ompl::SpaceInformation::State_t state) const
-	{
-	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
-	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
-	    
-	    bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
-	    
-	    if (valid)
-		valid = m_kce.decide();
-	    
-	    return valid;
-	}
-	
-	void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
-	{
-	    m_kce.use(m_model->kmodel, kc);
-	}
-	
-	void clearConstraints(void)
-	{
-	    m_kce.clear();
-	}
-	
-	const KinematicConstraintEvaluatorSet&  getKinematicConstraintEvaluatorSet(void) const
-	{
-	    return m_kce;
-	}
-	
-    protected:
-	mutable RKPModelBase            *m_model;
-	KinematicConstraintEvaluatorSet  m_kce;
-    };  
-    
-} // kinematic_planning
+
+#ifdef __GNUC__
+// OS X doesn't have features.h.  Instead we'll just paste in the
+// definition of __GNUC_PREREQ() taken from a Linux version of features.h.
+//#  include <features.h>
+#ifndef __GNUC_PREREQ
+#if defined __GNUC__ && defined __GNUC_MINOR__
+# define __GNUC_PREREQ(maj, min) \
+                ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#else
+# define __GNUC_PREREQ(maj, min) 0
+#endif
+#endif
+
+#  if __GNUC_PREREQ(4,1)
+#    include <tr1/unordered_map>
+#    define OMPL_NS_HASH std::tr1
+#    define OMPL_NAME_HASH unordered_map
+#  elif __GNUC_PREREQ(3,2)
+#    include <ext/hash_map>
+#    define OMPL_NS_HASH __gnu_cxx
+#    define OMPL_NAME_HASH hash_map
+#  else
+#    error Need to include <hash_map> or equivalent
+#  endif
+
+#else
+#  error Need to include <hash_map> or equivalent
+#endif
 
 #endif
-    

@@ -58,7 +58,7 @@ namespace ompl
 	    {
 	    }
 	    
-	    virtual double operator()(const _T &a, const _T &b) = 0;
+	    virtual double operator()(const _T &a, const _T &b) const = 0;
 	};
 	
 

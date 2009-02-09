@@ -75,12 +75,12 @@ namespace kinematic_planning
 		delete m_pce[i];
 	}
 	
-	virtual double distanceGoal(ompl::SpaceInformationKinematic::StateKinematic_t state)
+	virtual double distanceGoal(ompl::SpaceInformationKinematic::StateKinematic_t state) const
 	{
 	    return evaluateGoalAux(state, NULL);
 	}
 	
-	virtual bool isSatisfied(ompl::SpaceInformation::State_t state, double *dist)
+	virtual bool isSatisfied(ompl::SpaceInformation::State_t state, double *dist) const
 	{
 	    std::vector<bool> decision;
 	    double d = evaluateGoalAux(static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(state), &decision);
@@ -102,7 +102,7 @@ namespace kinematic_planning
 	
     protected:
 	
-	double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision)
+	double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision) const
 	{
 	    update(state);
 	    
@@ -120,14 +120,15 @@ namespace kinematic_planning
 	    
 	    return distance;
 	}
-	
-	void update(ompl::SpaceInformationKinematic::StateKinematic_t state)
+
+	// this function shuld be thread safe, but it is not
+	void update(ompl::SpaceInformationKinematic::StateKinematic_t state) const
 	{
 	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	}    
 	
-	RKPModel                              *m_model;
+	mutable RKPModel                      *m_model;
 	std::vector<PoseConstraintEvaluator*>  m_pce;
 	
     };

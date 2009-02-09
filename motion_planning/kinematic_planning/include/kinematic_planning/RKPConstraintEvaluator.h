@@ -60,7 +60,7 @@ namespace kinematic_planning
 	
 	virtual void clear(void) = 0;
 	virtual bool use(planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
-	virtual bool decide(void) = 0;
+	virtual bool decide(void) const = 0;
 	virtual void print(std::ostream &out = std::cout) const
 	{
 	}
@@ -97,7 +97,7 @@ namespace kinematic_planning
 	    m_link = NULL;
 	}
 	
-	virtual bool decide(void)
+	virtual bool decide(void) const
 	{
 	    double dPos, dAng;
 	    evaluate(&dPos, &dAng);
@@ -105,7 +105,7 @@ namespace kinematic_planning
 	    return decide(dPos, dAng);
 	}
 	
-	void evaluate(double *distPos, double *distAng)
+	void evaluate(double *distPos, double *distAng) const
 	{
 	    if (m_link)
 	    {	
@@ -210,7 +210,7 @@ namespace kinematic_planning
 	    }
 	}
 	
-	bool decide(double dPos, double dAng)
+	bool decide(double dPos, double dAng) const
 	{
 	    bool v1 = (m_pc.type & 0xFF) ? dPos < m_pc.position_distance : true;
 	    bool v2 = (m_pc.type & (~0xFF)) ? dAng < m_pc.orientation_distance : true;
@@ -353,7 +353,7 @@ namespace kinematic_planning
 	    return result;
 	}
 	
-	bool decide(void)
+	bool decide(void) const
 	{
 	    for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
 		if (!m_kce[i]->decide())
