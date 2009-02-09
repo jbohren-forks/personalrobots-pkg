@@ -34,8 +34,8 @@
 
 /** \author Ioan Sucan */
 
-#ifndef URDF_PARSER_
-#define URDF_PARSER_
+#ifndef PLANNING_MODELS_URDF_PARSER_
+#define PLANNING_MODELS_URDF_PARSER_
 
 #include <tinyxml/tinyxml.h>
 #include <iostream>
@@ -845,7 +845,7 @@ namespace planning_models
 	std::string                             m_location;
     };
     
-} // namespace robot_desc
+} // planning_models
 
-#endif
+#endif PLANNING_MODELS_URDF_PARSER
 
