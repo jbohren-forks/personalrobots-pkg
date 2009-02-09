@@ -51,7 +51,7 @@ namespace map_server
 {
 
 void
-loadMapFromFile(std_srvs::StaticMap::Response* resp,
+loadMapFromFile(robot_srvs::StaticMap::Response* resp,
                 const char* fname, double res, bool negate)
 {
   SDL_Surface* img;

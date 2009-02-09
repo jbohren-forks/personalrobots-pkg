@@ -102,7 +102,7 @@ Publishes to (name / type):
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
 #include "pr2_msgs/OccDiff.h"
-#include "std_srvs/StaticMap.h"
+#include "robot_srvs/StaticMap.h"
 #include <pr2_srvs/TransientObstacles.h>
 #include "sdlgl/sdlgl.h"
 
@@ -542,8 +542,8 @@ void NavView::occDiffCallback() {
 bool
 NavView::load_map()
 {
-  std_srvs::StaticMap::Request  req;
-  std_srvs::StaticMap::Response resp;
+  robot_srvs::StaticMap::Request  req;
+  robot_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
   while(!ros::service::call("static_map", req, resp))
   {

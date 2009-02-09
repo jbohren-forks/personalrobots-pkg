@@ -41,7 +41,7 @@ roslib.load_manifest(PKG)
 import sys, unittest, time
 
 import rospy, rostest
-from std_srvs.srv import *
+from robot_srvs.srv import *
 
 class TestConsumer(unittest.TestCase):
     def __init__(self, *args):

@@ -38,7 +38,7 @@
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
-#include <std_srvs/StaticMap.h>
+#include <robot_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
 #include <algorithm>
 #include <iterator>
@@ -183,8 +183,8 @@ namespace ros {
 
 
       // get map via RPC
-      std_srvs::StaticMap::Request  req;
-      std_srvs::StaticMap::Response resp;
+      robot_srvs::StaticMap::Request  req;
+      robot_srvs::StaticMap::Response resp;
       ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("static_map", req, resp))
       {
@@ -937,7 +937,7 @@ namespace ros {
 
 
   /** Callback invoked when someone requests costmap */
-  bool MoveBase::costmapCallback(std_srvs::StaticMap::Request &req, std_srvs::StaticMap::Response &res )
+  bool MoveBase::costmapCallback(robot_srvs::StaticMap::Request &req, robot_srvs::StaticMap::Response &res )
   {
     const unsigned char* costmap = getCostMap().getMap();
     res = costmap_response_;

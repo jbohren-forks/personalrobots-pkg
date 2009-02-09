@@ -371,8 +371,8 @@ SlamGMapping::updateMap()
 }
 
 bool 
-SlamGMapping::map_cb(std_srvs::StaticMap::Request  &req,
-                     std_srvs::StaticMap::Response &res)
+SlamGMapping::map_cb(robot_srvs::StaticMap::Request  &req,
+                     robot_srvs::StaticMap::Response &res)
 {
   if(got_map_)
   {

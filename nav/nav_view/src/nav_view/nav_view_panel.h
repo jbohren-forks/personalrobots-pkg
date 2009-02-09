@@ -36,7 +36,7 @@
 #include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
-#include "std_srvs/StaticMap.h"
+#include "robot_srvs/StaticMap.h"
 
 #include <OgreTexture.h>
 #include <OgreMaterial.h>

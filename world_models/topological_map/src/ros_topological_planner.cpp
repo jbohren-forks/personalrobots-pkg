@@ -122,8 +122,8 @@ BottleneckGraphRos::~BottleneckGraphRos()
 
 void BottleneckGraphRos::updateCostMap ()
 {
-  std_srvs::StaticMap::Request  costmap_req;
-  std_srvs::StaticMap::Response costmap_resp;
+  robot_srvs::StaticMap::Request  costmap_req;
+  robot_srvs::StaticMap::Response costmap_resp;
   while (!ros::service::call("costmap", costmap_req, costmap_resp))
   {
     ROS_WARN("Costmap request failed; trying again...\n");
@@ -254,8 +254,8 @@ void BottleneckGraphRos::loadMap (void)
 {
     
   lock_.lock();
-  std_srvs::StaticMap::Request req;
-  std_srvs::StaticMap::Response resp;
+  robot_srvs::StaticMap::Request req;
+  robot_srvs::StaticMap::Response resp;
   ROS_INFO ("Requesting map... \n");
   while (!ros::service::call("static_map", req, resp))
   {

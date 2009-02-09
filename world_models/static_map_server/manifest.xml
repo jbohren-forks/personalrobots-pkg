@@ -8,7 +8,7 @@
   <url>http://pr.willowgarage.com/</url>
   <depend package="rospy" />
   <depend package="std_msgs" />  
-  <depend package="std_srvs" />  
+  <depend package="robot_srvs" />  
   <depend package="rostest" />  
 
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>

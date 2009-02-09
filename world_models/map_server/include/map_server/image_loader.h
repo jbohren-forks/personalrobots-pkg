@@ -33,7 +33,7 @@
  * Author: Brian Gerkey
  */
 
-#include "std_srvs/StaticMap.h"
+#include "robot_srvs/StaticMap.h"
 
 namespace map_server
 {
@@ -49,7 +49,7 @@ namespace map_server
  *
  * @throws std::runtime_error If the image file can't be loaded
  * */
-void loadMapFromFile(std_srvs::StaticMap::Response* resp,
+void loadMapFromFile(robot_srvs::StaticMap::Response* resp,
                      const char* fname, double res, bool negate);
 }
 

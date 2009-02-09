@@ -39,7 +39,7 @@ import sys, time
 import rospy
 #import std_msgs.msg
 import std_msgs.msg
-import std_srvs.srv
+import robot_srvs.srv
 
 import Image
 import yaml
@@ -52,7 +52,7 @@ class map_server:
         pass
 
     def map_handler(self, req):
-        r = std_srvs.srv.StaticMapResponse(std_msgs.msg.OccMap2D(self.scale,
+        r = robot_srvs.srv.StaticMapResponse(std_msgs.msg.OccMap2D(self.scale,
                                                                     self.im.size[0],
                                                                     self.im.size[1],
                                                                     std_msgs.msg.Pose2DFloat32(*tuple(self.origin)),
@@ -96,7 +96,7 @@ class map_server:
         self.origin = yaml_defs['origin']
 
         rospy.init_node(NAME)
-        s1 = rospy.Service("static_map", std_srvs.srv.StaticMap, self.map_handler)
+        s1 = rospy.Service("static_map", robot_srvs.srv.StaticMap, self.map_handler)
         rospy.spin()
 
 if __name__ == '__main__':

@@ -36,7 +36,7 @@
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/PointCloud.h>
 #include <pr2_msgs/OccDiff.h>
-#include <std_srvs/StaticMap.h>
+#include <robot_srvs/StaticMap.h>
 #include <pr2_srvs/TransientObstacles.h>
 
 //Laser projection
@@ -114,8 +114,8 @@ CostMap2DRos::CostMap2DRos() :
   tf_(*this, true, 1 * 1000000000ULL, 0ULL),
   costmap_(WINDOW_LENGTH)
 {
-  std_srvs::StaticMap::Request  req;
-  std_srvs::StaticMap::Response resp;
+  robot_srvs::StaticMap::Request  req;
+  robot_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
   while(!ros::service::call("static_map", req, resp))
   {

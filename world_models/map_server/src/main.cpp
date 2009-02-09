@@ -74,7 +74,7 @@ map_server mymap.png 0.1
 @section services ROS services
 
 Offers (name/type):
-- @b "static_map"/std_srvs::StaticMap : Retrieve the map via this service
+- @b "static_map"/robot_srvs::StaticMap : Retrieve the map via this service
 
 @section parameters ROS parameters
 
@@ -94,7 +94,7 @@ Offers (name/type):
 #include "ros/node.h"
 #include "ros/publisher.h"
 #include "map_server/image_loader.h"
-#include "std_msgs/MapMetaData.h"
+#include "robot_msgs/MapMetaData.h"
 
 class MapServer : public ros::Node
 {
@@ -103,8 +103,8 @@ class MapServer : public ros::Node
     MapServer() : ros::Node("map_server") {}
 
     /** Callback invoked when someone requests our service */
-    bool mapCallback(std_srvs::StaticMap::Request  &req,
-                     std_srvs::StaticMap::Response &res )
+    bool mapCallback(robot_srvs::StaticMap::Request  &req,
+                     robot_srvs::StaticMap::Response &res )
     {
       // request is empty; we ignore it
 
@@ -116,14 +116,14 @@ class MapServer : public ros::Node
 
     /** The map response is cached here, to be sent out to service callers
      */
-    std_srvs::StaticMap::Response map_resp_;
+    robot_srvs::StaticMap::Response map_resp_;
 
     void metadataSubscriptionCallback(const ros::PublisherPtr& pub)
     {
       publish( "map_metadata", meta_data_message_ );
     }
 
-    std_msgs::MapMetaData meta_data_message_;
+    robot_msgs::MapMetaData meta_data_message_;
 };
 
 int main(int argc, char **argv)

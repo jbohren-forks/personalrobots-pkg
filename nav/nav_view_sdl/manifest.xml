@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
-  <depend package="std_srvs"/>
+  <depend package="robot_srvs"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_srvs"/>
   <depend package="sdlgl"/>

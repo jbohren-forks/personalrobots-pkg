@@ -39,7 +39,7 @@
 #include <boost/thread.hpp>
 #include <ros/node.h>
 #include <ros/console.h>
-#include <std_srvs/StaticMap.h>
+#include <robot_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <topological_map/NavigationCost.h>
 #include <topological_map/ConnectorCosts.h>
