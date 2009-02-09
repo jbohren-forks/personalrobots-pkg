@@ -37,6 +37,7 @@
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Point32.h>
 #include <std_msgs/Point2DFloat32.h>
+#include <std_msgs/Polygon3D.h>
 
 #include <Eigen/Core>
 #include <Eigen/QR>
@@ -67,6 +68,29 @@ namespace cloud_geometry
       centroid.x /= points->pts.size ();
       centroid.y /= points->pts.size ();
       centroid.z /= points->pts.size ();
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the centroid of a 3D polygon and return it as a Point32 message.
+      * \param poly the input polygon
+      * \param centroid the output centroid
+      */
+    inline void
+      computeCentroid (std_msgs::Polygon3D *poly, std_msgs::Point32 &centroid)
+    {
+      centroid.x = centroid.y = centroid.z = 0;
+      // For each point in the cloud
+      for (unsigned int i = 0; i < poly->points.size (); i++)
+      {
+        centroid.x += poly->points.at (i).x;
+        centroid.y += poly->points.at (i).y;
+        centroid.z += poly->points.at (i).z;
+      }
+
+      centroid.x /= poly->points.size ();
+      centroid.y /= poly->points.size ();
+      centroid.z /= poly->points.size ();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
