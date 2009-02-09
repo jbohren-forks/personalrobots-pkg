@@ -55,7 +55,8 @@
 namespace planning_models
 {
     
-    /** Definition of a kinematic model */
+    /** Definition of a kinematic model. This class is not thread
+	safe, however multiple instances can be created */
     class KinematicModel
     {
     public:
