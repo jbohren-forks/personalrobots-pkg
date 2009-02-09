@@ -104,6 +104,7 @@ namespace kinematic_planning
 	
 	double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision) const
 	{
+	    m_model->lock.lock();
 	    update(state);
 	    
 	    if (decision)
@@ -117,11 +118,11 @@ namespace kinematic_planning
 		    (*decision)[i] = m_pce[i]->decide(dPos, dAng);
 		distance += dPos + m_pce[i]->getConstraintMessage().orientation_importance * dAng;
 	    }
-	    
+	    m_model->lock.unlock();
+
 	    return distance;
 	}
 
-	// this function shuld be thread safe, but it is not
 	void update(ompl::SpaceInformationKinematic::StateKinematic_t state) const
 	{
 	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);

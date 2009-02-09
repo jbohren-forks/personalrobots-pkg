@@ -54,9 +54,9 @@ namespace kinematic_planning
 	    m_model = model;
 	}
 	
-	// in multi-threaded mode, this function is assumed safe; currently, it is not
 	virtual bool operator()(const ompl::SpaceInformation::State_t state) const
 	{
+	    m_model->lock.lock();
 	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	    
@@ -64,6 +64,7 @@ namespace kinematic_planning
 	    
 	    if (valid)
 		valid = m_kce.decide();
+	    m_model->lock.unlock();
 	    
 	    return valid;
 	}

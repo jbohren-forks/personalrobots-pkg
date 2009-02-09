@@ -39,7 +39,7 @@
 
 #include <collision_space/environment.h>
 #include <planning_models/kinematic.h>
-
+#include <boost/thread/mutex.hpp>
 #include <string>
 
 namespace kinematic_planning
@@ -60,6 +60,7 @@ namespace kinematic_planning
 	{
 	}
 	
+	boost::mutex                       lock;
 	collision_space::EnvironmentModel *collisionSpace;
 	unsigned int                       collisionSpaceID;
 	planning_models::KinematicModel   *kmodel;
