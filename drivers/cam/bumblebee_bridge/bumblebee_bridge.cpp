@@ -30,7 +30,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "std_srvs/PolledStereoCloud.h"
+#include "deprecated_srvs/PolledStereoCloud.h"
 #include <string>
 #include "XmlRpc.h"
 #include <stdexcept>
@@ -49,8 +49,8 @@ public:
   {
     advertiseService("stereo", &BumblebeeBridge::stereo);
   }
-  bool stereo(std_srvs::PolledStereoCloud::Request  &req,
-              std_srvs::PolledStereoCloud::Response &res)
+  bool stereo(deprecated_srvs::PolledStereoCloud::Request  &req,
+              deprecated_srvs::PolledStereoCloud::Response &res)
   {
     printf("forwarding stereo cloud request\n");
     CvBridge<std_msgs::Image> cv_bridge(&res.image);
