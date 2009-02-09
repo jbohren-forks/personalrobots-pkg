@@ -17,7 +17,6 @@
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
   <depend package="robot_msgs" />
-  <depend package="stl_utils" />
   <depend package="angles" />
   <depend package="transformations" />  
   <depend package="gazebo_robot_description"/>

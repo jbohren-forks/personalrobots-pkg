@@ -37,7 +37,22 @@
 
 #include <string>
 #include <vector>
-#include <stl_utils/stl_utils.h>
+
+// See http://prdev.willowgarage.com/trac/personalrobots/ticket/883
+template <class C>
+void deleteElements(C *c)
+{
+  typename C::iterator it;
+  for (it = c->begin(); it != c->end(); ++it)
+  {
+    if (*it != NULL)
+    {
+      delete (*it);
+      *it = NULL;
+    }
+  }
+}
+
 
 class ActuatorState{
 public:

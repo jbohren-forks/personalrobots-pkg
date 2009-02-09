@@ -36,9 +36,9 @@
  * The robot model tracks the state of the robot.
  *
  * State path:
- *               +---------------+                
+ *               +---------------+
  * Actuators --> | Transmissions | --> Joints --> Links
- *               +---------------+                
+ *               +---------------+
  *
  * Author: Stuart Glaser
  */
@@ -49,7 +49,6 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "stl_utils/stl_utils.h"
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
@@ -110,7 +109,7 @@ public:
   * Each transmission refers to the actuators and joints it connects by name.
   * Since name lookup is slow, for each transmission in the robot model we
   * cache pointers to the actuators and joints that it connects.
-  **/ 
+  **/
   std::vector<std::vector<Actuator*> > transmissions_in_;
   std::vector<std::vector<JointState*> > transmissions_out_;
 
