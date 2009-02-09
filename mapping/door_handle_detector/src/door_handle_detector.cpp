@@ -51,6 +51,9 @@
 // Include the service call type
 #include "door_handle_detector/Door.h"
 
+#include <tf/message_notifier.h>
+
+
 using namespace std;
 using namespace std_msgs;
 
@@ -63,13 +66,15 @@ class DoorHandleDetector : public ros::Node
     PointCloud cloud_annotated_;
     Point32 z_axis_;
     PolygonalMap pmap_;
+    tf::MessageNotifier<std_msgs::PointCloud>*  message_notifier_;
 
     PointStamped viewpoint_cloud_;
 
     tf::TransformListener tf_;
 
-    string input_cloud_topic_;
-    bool need_cloud_data_, publish_debug_;
+  string input_cloud_topic_, fixed_frame_;
+    bool publish_debug_;
+    unsigned int num_clouds_received_;
 
 
     // Parameters regarding geometric constraints for the door/handle
@@ -100,10 +105,12 @@ class DoorHandleDetector : public ros::Node
     double rectangle_constrain_edge_angle_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    DoorHandleDetector () : ros::Node ("door_handle_detector"), tf_(*this)
+  DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_(NULL), tf_(*this)
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
+        param ("~fixed_frame", fixed_frame_, string("odom_combined"));        
+
         param ("~door_min_z", door_min_z_, 0.4);                            // the minimum Z point on the door must be lower than this value
         param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
         param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
@@ -190,39 +197,45 @@ class DoorHandleDetector : public ros::Node
       // \NOTE to Wim : Perhaps we need to read the other parameters from the server here ?
     }
 
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief This is the main service callback: it gets called whenever a request to find a new door is given     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
       detectDoor (door_handle_detector::Door::Request &req, door_handle_detector::Door::Response &resp)
     {
-      ros::Time ts;
-      ros::Duration duration;
-      cout << "Start detecting door at points ";
-      cout << "(" << req.door.frame_p1.x << " " <<req.door.frame_p1.y << " "<<req.door.frame_p1.z << ")   ";
-      cout << "(" << req.door.frame_p2.x << " " <<req.door.frame_p2.y << " "<<req.door.frame_p2.z << ")" << endl;
-
       updateParametersFromServer ();
 
-      // Obtain the bounding box information
-      Point32 minB, maxB;
-      get3DBounds (&req.door.frame_p1, &req.door.frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
-
-      // Subscribe to a point cloud topic
-      need_cloud_data_ = true;
-      subscribe (input_cloud_topic_.c_str (), cloud_in_, &DoorHandleDetector::cloud_cb, 1);
-
-      // Wait until the scan is ready, sleep for 10ms
+      // receive a new laser scan
+      num_clouds_received_ = 0;
+      message_notifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
+                                                                        input_cloud_topic_.c_str (), req.door.header.frame_id, 1);
       ros::Duration tictoc (0, 10000000);
-      while (need_cloud_data_)
+      while (num_clouds_received_ < 1)
       {
         tictoc.sleep ();
       }
-      // Unsubscribe from the point cloud topic
-      unsubscribe (input_cloud_topic_.c_str ()) ;
+      delete message_notifier_;
 
-      cout << " - door scan received" << endl;
 
+      // Obtain the bounding box information in the reference frame of the laser scan
+      Point32 minB, maxB;
+      tf::Stamped<Point32> frame_p1, frame_p2;
+      tf::Stamped<Point32> z_diff(Point32(), cloud_in_.header.stamp, fixed_frame_);
+      z_diff.x = 0; z_diff.y = 0; z_diff.z = 0;
+      transformPoint(cloud_in_.header.frame_id, tf::Stamped<Point32>(req.door.frame_p1, cloud_in_.header.stamp, req.door.header.frame_id), frame_p1);
+      transformPoint(cloud_in_.header.frame_id, tf::Stamped<Point32>(req.door.frame_p2, cloud_in_.header.stamp, req.door.header.frame_id), frame_p2);
+      transformPoint(cloud_in_.header.frame_id, z_diff, z_diff);
+      get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_+z_diff.z, door_max_z_bounds_+z_diff.z, door_frame_multiplier_);
+
+      cout << "Start detecting door at points in frame " << cloud_in_.header.frame_id << " ";
+      cout << "(" << frame_p1.x << " " << frame_p1.y << ")   ";
+      cout << "(" << frame_p2.x << " " << frame_p2.y << ")" << endl;
+
+
+
+      ros::Time ts;
+      ros::Duration duration;
       ts = ros::Time::now ();
       // We have a pointcloud, estimate the true point bounds
       vector<int> indices_in_bounds (cloud_in_.pts.size ());
@@ -404,6 +417,7 @@ class DoorHandleDetector : public ros::Node
       resp.door.door_p2.x = maxP.x; resp.door.door_p2.y = maxP.y;
       resp.door.height = fabs (maxP.z - minP.z);
       resp.door.handle = handle_center;
+      resp.door.header.frame_id = cloud_in_.header.frame_id;
 
       duration = ros::Time::now () - ts;
       ROS_INFO ("Door found. P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. Height = %f. Handle = [%f, %f, %f]. Total time: %f.",
@@ -647,14 +661,42 @@ class DoorHandleDetector : public ros::Node
 #endif
     }
 
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void cloud_cb ()
+  void cloud_cb(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& cloud)
     {
-      need_cloud_data_ = false;
+      cout << "scan received" << endl;
+      cloud_in_ = *cloud;
+      num_clouds_received_++;
     }
-};
+
+
+  void transformPoint(const std::string &target_frame, const tf::Stamped< std_msgs::Point32 > &stamped_in, tf::Stamped< std_msgs::Point32 > &stamped_out)
+  {
+    tf::Stamped<tf::Point> tmp;
+    tmp.stamp_ = stamped_in.stamp_;
+    tmp.frame_id_ = stamped_in.frame_id_;
+    tmp[0] = stamped_in.x;
+    tmp[1] = stamped_in.y;
+    tmp[2] = stamped_in.z;
+
+    tf_.transformPoint(target_frame, tmp, tmp);
+
+    stamped_out.stamp_ = tmp.stamp_;
+    stamped_out.frame_id_ = tmp.frame_id_;
+    stamped_out.x = tmp[0];
+    stamped_out.y = tmp[1];
+    stamped_out.z = tmp[2];
+  }
+
+
+
+
+}; 
+
+
 
 /* ---[ */
 int
@@ -665,6 +707,7 @@ int
   DoorHandleDetector p;
 
   door_handle_detector::Door::Request req;
+  req.door.header.frame_id = "base_link";
   req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
   req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
 
