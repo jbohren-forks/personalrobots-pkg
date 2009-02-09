@@ -32,7 +32,7 @@ installed: $(SOURCE_DIR)/unpacked Makefile
 	touch installed
 
 clean:
-	-cd freeimage-3.11.0 && make clean
+	-cd build/freeimage-3.11.0 && make clean
 	rm -rf installed
 
 wipe: clean
