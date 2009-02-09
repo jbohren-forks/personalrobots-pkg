@@ -1,0 +1,2 @@
+Depends on Prosilica SDK.
+Makefile currently requires PROSILICA_SDK environment variable to be set.

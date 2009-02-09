@@ -1,0 +1,11 @@
+<package>
+  <description>A ROS node to provide access to Prosilica cameras.</description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="image_msgs" />
+  <depend package="diagnostic_updater" />
+  <url></url>
+</package>
