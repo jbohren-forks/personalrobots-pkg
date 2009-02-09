@@ -13,3 +13,5 @@ target_link_libraries(prosilica PvAPI)
 rospack_add_executable(prosilica_node prosilica_node.cpp)
 target_link_libraries(prosilica_node prosilica)
 target_link_libraries(prosilica_node PvAPI)
+
+rospack_add_executable(prosilica_view prosilica_view.cpp)

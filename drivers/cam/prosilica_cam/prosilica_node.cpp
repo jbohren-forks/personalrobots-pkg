@@ -55,7 +55,8 @@ private:
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
 
 public:
-  ProsilicaNode() : ros::Node("prosilica"), cam_(NULL), running_(false), count_(0), diagnostic_(this)
+  ProsilicaNode() : ros::Node("prosilica"), cam_(NULL),
+                    running_(false), count_(0), diagnostic_(this)
   {
     prosilica::init();
     //diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
@@ -76,9 +77,10 @@ public:
       // TODO: other params
 
       cam_.reset( new prosilica::Camera(guid) );
-      cam_->setFrameCallback(boost::bind(&ProsilicaNode::processFrame, this, _1));
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
       // TODO: start, check diagnostics?
 
+      ROS_FATAL("Found camera, guid = %u\n", guid);
       advertise<image_msgs::Image>("~image", 1);
     } else {
       ROS_FATAL("Found no Prosilica cameras\n");
@@ -122,11 +124,6 @@ public:
     return true;
   }
   
-  int publishImage()
-  {
-    return 0;
-  }
-
   void freqStatus(robot_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
@@ -155,10 +152,21 @@ public:
   }
 
 private:
-  void processFrame(tPvFrame* frame)
+  void publishImage(tPvFrame* frame)
   {
-    printf("Received frame, format = %d\n", frame->Format);
-    // TODO: publish the image
+    //ROS_FATAL("Received frame, format = %d\n", frame->Format);
+
+    if (frame->Format == ePvFmtRgb24)
+    {
+      fillImage(img_, "image", frame->Height, frame->Width, 3,
+                "rgb", "uint8", frame->ImageBuffer);
+    } else {
+      ROS_WARN("Received frame with unsupported pixel format %d\n", frame->Format);
+      return;
+    }
+
+    //img_.header.stamp = ros::Time().fromNSec(??);
+    publish("~image", img_);
   }
 };
 

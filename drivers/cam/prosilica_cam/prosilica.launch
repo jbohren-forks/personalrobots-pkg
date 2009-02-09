@@ -1,0 +1,7 @@
+<launch>
+  <group ns="prosilica">
+    <!-- params for the prosilica node 
+      -->
+  </group>
+  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false"/>
+</launch>

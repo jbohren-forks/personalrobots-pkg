@@ -79,6 +79,10 @@ Camera::Camera(uint64_t guid, size_t bufferSize)
   if ( PvCameraOpen(guid, ePvAccessMaster, &handle_) )
     throw ProsilicaException("Unable to open requested camera\n");
 
+  // set pixel format
+  if ( PvAttrEnumSet(handle_, "PixelFormat", "Rgb24") )
+    throw ProsilicaException("Unable to set pixel format\n");
+  
   // query for attributes (TODO: more)
   if ( PvAttrUint32Get(handle_, "TotalBytesPerFrame", &frameSize_) )
     throw ProsilicaException("Unable to retrieve attribute\n");
@@ -105,8 +109,8 @@ Camera::~Camera()
 
   if (frames_)
   {
-    for (int i = 0; i < bufferSize_; ++i)
-      delete[] frames_[i].ImageBuffer;
+    for (unsigned int i = 0; i < bufferSize_; ++i)
+      delete[] (char*)frames_[i].ImageBuffer;
     delete[] frames_;
   }
 }
@@ -134,7 +138,7 @@ void Camera::start()
     throw ProsilicaException("Could not set acquisition mode\n");
   }
 
-  for (int i = 0; i < bufferSize_; ++i)
+  for (unsigned int i = 0; i < bufferSize_; ++i)
     PvCaptureQueueFrame(handle_, frames_ + i, Camera::frameDone);
 }
 
