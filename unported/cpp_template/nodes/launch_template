@@ -1,8 +1,0 @@
-#!/usr/bin/env ruby
-require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
-g = YAMLGraph.new
-g.param 'template.some_param', '1.234'
-g.node 'cpp_template/template', {'launch'=>'xterm'}
-g.flow 'template:float_out', 'template:float_in'
-YAMLGraphLauncher.new.launch g
-
