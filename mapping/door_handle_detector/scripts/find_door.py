@@ -38,7 +38,7 @@
 
 PKG = 'door_handle_detector' # this package name
 
-import rostools; rostools.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG) 
 
 import sys
 import os
@@ -46,9 +46,12 @@ import string
 
 import rospy
 from std_msgs.msg import Point
+from robot_msgs.msg import Door
 from door_handle_detector.srv import Door
 
-def find_door(p1, p2):
+
+
+def detect_door(door_estimateion):
     # block until the door_handle_detector service is available
     print "Waiting for service...", rospy.resolve_name('door_handle_detector')
     rospy.wait_for_service('door_handle_detector')
@@ -56,10 +59,9 @@ def find_door(p1, p2):
     try:
         # create a handle to the add_two_ints service
         find_door = rospy.ServiceProxy('door_handle_detector', Door)
-        print "Requesting (%s, %s) and (%s, %s)"%(p1.x, p1.y, p2.x, p2.y)
-        res = find_door(p1, p2)
+        door_position = find_door(door_estimation)
         print "Request finished"
-        return res
+        return door_position
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
@@ -91,22 +93,21 @@ def move_arm(x, y, z, rx, ry, rz, w):
 
 if __name__ == "__main__":
     
-    p1 = Point()
-    p2 = Point()
+    door_estimate = Door()
+    door_estimate.frame_p1.x = 1.5
+    door_estimate.frame_p1.y = 0.5
+    door_estimate.frame_p2.x = 1.5
+    door_estimate.frame_p2.y = -0.5
+    door_estimate.header.frame_id = "odom_combined"
 
-    p1.x = 2.5
-    p1.y = -0.5
-    p1.z = 0.0
-    p2.x = 1.0
-    p2.y = 0.5
-    p2.z = 0.0
-    
-    res = find_door(p1, p2)
-    print "Frame found at (%s, %s)  (%s, %s)"%(res.frame_p1.x, res.frame_p1.y, 
-                                               res.frame_p2.x, res.frame_p2.y)
-    print "Door found at (%s, %s)  (%s, %s)"%(res.door_p1.x, res.door_p1.y, 
-                                              res.door_p2.x, res.door_p2.y)
-    print "Handle found at (%s, %s)"%(res.handle.x, res.handle.y)
+     # find door
+    door_position = detect_door(door_estimate)
+
+    print "Frame found at (%s, %s)  (%s, %s)"%(door_position.door.frame_p1.x, door_position.door.frame_p1.y, 
+                                               door_position.door.frame_p2.x, door_position.door.frame_p2.y)
+    print "Door found at (%s, %s)  (%s, %s)"%(door_position.door.door_p1.x, door_position.door.door_p1.y, 
+                                              door_position.door.door_p2.x, door_position.door.door_p2.y)
+    print "Handle found at (%s, %s)"%(door_position.door.handle.x, door_position.door.handle.y)
 
 
     
