@@ -1,8 +1,0 @@
-#!/usr/bin/env ruby
-(puts "aaaaaa no ROS_ROOT"; exit) if !ENV['ROS_ROOT']
-require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
-g = YAMLGraph.new
-#g.param 'ros_launch_args', '["/usr/bin/xterm", "-T", launch_node_name, "-e", launch_rospack, "run", launch_pkg, launch_node_exe]'
-g.param 'top_urg_node.device', '/dev/ttyACM0'
-g.node 'hokuyo_top_urg/top_urg_node'
-YAMLGraphLauncher.new.launch g

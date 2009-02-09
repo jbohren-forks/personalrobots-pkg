@@ -1,5 +1,0 @@
-cpp:
-  make:
-    - src/libhokuyo_top_urg
-    - src/test_standalone
-    - src/top_urg_node
