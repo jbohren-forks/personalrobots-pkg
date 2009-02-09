@@ -64,47 +64,6 @@
 #include <sample_consensus/sac_model_plane.h>
 #include <sample_consensus/sac_model_oriented_line.h>
 
-inline int
-  getDoorEdges (std::vector<std_msgs::Point32> points, double eps_angle, double thresh, std_msgs::Point32 *z_axis)
-{
-  std_msgs::PointCloud pc;
-  pc.pts = points;
-
-  // Create and initialize the SAC model
-  sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
-  sample_consensus::SAC *sac                    = new sample_consensus::RANSAC (model, thresh);
-  sac->setMaxIterations (500);
-  model->setAxis (z_axis);
-  model->setEpsAngle (eps_angle);
-  model->setDataSet (&pc);
-
-  std::vector<int> inliers;
-  std::vector<double> coeff;
-  // Search for the best plane
-  if (sac->computeModel ())
-  {
-    // Obtain the inliers and the planar model coefficients
-    if ((int)sac->getInliers ().size () < 2)
-    {
-      //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-      inliers.resize (0);
-      coeff.resize (0);
-      return (-1);
-    }
-    inliers = sac->getInliers ();
-    coeff   = sac->computeCoefficients ();
-
-    ROS_INFO ("Found a model supported by %d inliers: [%g, %g, %g, %g, %g, %g]", sac->getInliers ().size (),
-              coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-
-    // Project the inliers onto the model
-    //model->projectPointsInPlace (inliers, coeff);
-  }
-  delete sac;
-  delete model;
-  return (0);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison operator for a vector of vectors
 inline bool

@@ -343,13 +343,6 @@ class DoorHandleDetector : public ros::Node
         }
         double area = cloud_geometry::areas::compute2DPolygonalArea (pmap_.polygons[cc], coeff[cc]);
         goodness_factor[cc] *= (area / (door_frame * door_height));
-
-#if DEBUG
-//        cout << "minP and maxP (" << minP.x << " " << minP.y <<" "<< minP.z <<") ("<< maxP.x <<" " << maxP.y <<" "<< maxP.z << ")" << endl;
-//        cout << "width = " << door_frame << endl;
-//        cout << "height = " << door_height << endl;
-//        cout << "area = " << cloud_geometry::areas::compute2DPolygonalArea(pmap_.polygons[cc], coeff[cc]) << " ; support = " << clusters[cc].size () << endl;
-#endif
       } // loop over clusters
 
       // Find the best cluster
@@ -385,6 +378,8 @@ class DoorHandleDetector : public ros::Node
         ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
       }
 
+      // This needs to be removed
+#if 1
       if (publish_debug_)
       {
         double r, g, b, rgb;
@@ -402,6 +397,7 @@ class DoorHandleDetector : public ros::Node
           nr_p++;
         }
       }
+#endif
 
       // Prepare the reply
       resp.door.door_p1.x = minP.x; resp.door.door_p1.y = minP.y;
@@ -415,6 +411,8 @@ class DoorHandleDetector : public ros::Node
                 resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 duration.toSec ());
 
+// This needs to be removed
+#if 1
       if (publish_debug_)
       {
         cloud_annotated_.pts.resize (nr_p);
@@ -423,6 +421,7 @@ class DoorHandleDetector : public ros::Node
         publish ("cloud_annotated", cloud_down_);//cloud_annotated_);
         publish ("semantic_polygonal_map", pmap_);
       }
+#endif
 
       cout << "Finished detecting door" << endl;
       return (true);
@@ -489,8 +488,6 @@ class DoorHandleDetector : public ros::Node
         if (!cloud_geometry::areas::isPointIn2DPolygon (p_tr, &poly_tr))        // Is the point's projection inside the door ?
           continue;
 
-// This needs to be moved
-//#if 0
         // ---[ Fourth test (geometric)
         // Check whether the line viewpoint->point intersects the polygon
         viewpoint_pt_line[3] = points->pts.at (indices->at (i)).x - viewpoint->point.x;
@@ -519,14 +516,17 @@ class DoorHandleDetector : public ros::Node
             && distance_to_plane < 0
             )        // Is the viewpoint<->point intersection inside the door ?
           continue;
-//#endif
 
+
+// This needs to be removed
+#if 1
         std_msgs::Point32 pnt;
         pnt.x = points->pts.at (indices->at (i)).x;
         pnt.y = points->pts.at (indices->at (i)).y;
         pnt.z = points->pts.at (indices->at (i)).z;
         //handle_visualize.push_back (viewpoint_door_intersection);//p_tr);//pnt);
         handle_visualize.push_back (pnt);
+#endif
 
         possible_handle_indices[nr_phi] = indices->at (i);
         nr_phi++;
@@ -570,21 +570,6 @@ class DoorHandleDetector : public ros::Node
         }
       }
 
-      // Filter more cluster points based on their euclidean distance to the door
-//        vector<int> cluster (clusters[i].size ());
-//        int nr_c = 0;
-//        for (unsigned int j = 0; j < clusters[i].size (); j++)
-//        {
-//          double distance_to_plane = cloud_geometry::distances::pointToPlaneDistance (&points->pts.at (clusters[i][j]), *door_coeff);
-//          if (distance_to_plane > handle_distance_door_min_threshold_)
-//          {
-//            cluster[j] = clusters[i][j];
-//            nr_c++;
-//          }
-//        }
-//        cluster.resize (nr_c);
-//        clusters[i] = cluster;
-
       // ---[ Seventh test (geometric)
       // Check the elongation of the clusters -- Filter clusters based on min/max Z
       std_msgs::Point32 minP, maxP;
@@ -621,10 +606,6 @@ class DoorHandleDetector : public ros::Node
       }
       handle_indices.resize (nr_phi);
 
-#if 1
-//      handle_indices = possible_handle_indices;
-#endif
-
       // Compute the centroid for the remaining handle indices
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
@@ -637,8 +618,8 @@ class DoorHandleDetector : public ros::Node
       handle_center.z -= distance_to_plane * door_coeff->at (2);
 
 
-      // Check for other constraints
-
+// This needs to be removed
+#if 1
       std_msgs::PointCloud handle_cloud;
       //        handle_indices_clusters = possible_handle_indices;
       handle_cloud.chan.resize (1);
@@ -663,66 +644,8 @@ class DoorHandleDetector : public ros::Node
       pmap.header.stamp = ros::Time::now ();
       pmap.header.frame_id = "base_link";
       publish ("pmap", pmap);
+#endif
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*    void
-      findDoorHandle (PointCloud *points, vector<int> *indices, vector<double> *coeff, Polygon3D *poly,
-                      vector<int> &handle_indices, Point32 &handle_center)
-    {
-      int nr_p = 0;
-      Point32 pt;
-      vector<std_msgs::Point32> handle_visualize;
-      vector<float> colors;
-
-      for (unsigned int i = 0; i < indices->size (); i++)
-      {
-          if (fabs (distance_to_plane) < handle_distance_door_max_threshold_ && fabs (distance_to_plane) > handle_distance_door_min_threshold_)
-          {
-            // Transform the point onto X-Y for faster checking inside the polygonal bounds
-            cloud_geometry::transforms::transformPoint (&pt, p_tr, transformation);
-            if (cloud_geometry::areas::isPointIn2DPolygon (p_tr, &poly_tr))
-            {
-              possible_handle_indices[nr_p] = indices->at (i);
-              nr_p++;
-              colors.push_back (getRGB (0, 1, 0));              // Mark with green if inside the polygon and close to the door
-            }
-            else
-              colors.push_back (getRGB (0, 0, 1));              // Mark with blue if close to the door but outside the polygon
-          }
-          else
-            colors.push_back (getRGB (1, 0, 0));                // Mark with red otherwise
-      }
-
-      cout << "added " << handle_visualize.size() << " points to visualize" << endl;
-      std_msgs::ChannelFloat32 channel;
-      channel.name = "rgb";
-      channel.vals = colors;
-      std_msgs::PointCloud handle_cloud;
-      handle_cloud.header.stamp = ros::Time::now ();
-      handle_cloud.header.frame_id = "base_link";
-      handle_cloud.pts = handle_visualize;
-      handle_cloud.chan.push_back (channel);
-
-      publish ("handle_visualization", handle_cloud);
-
-      possible_handle_indices.resize (nr_p);
-      cout << "found " << nr_p << " point candidates for door handle" << endl;
-
-      // Project the handle on the door plane (just for kicks)
-      for (int i = 0; i < nr_p; i++)
-      {
-        // Calculate the distance from the point to the plane
-        double distance_to_plane = coeff->at (0) * points->pts.at (possible_handle_indices[i]).x +
-                                   coeff->at (1) * points->pts.at (possible_handle_indices[i]).y +
-                                   coeff->at (2) * points->pts.at (possible_handle_indices[i]).z +
-                                   coeff->at (3) * 1;
-        // Calculate the projection of the point on the plane
-        points->pts.at (possible_handle_indices[i]).x -= distance_to_plane * coeff->at (0);
-        points->pts.at (possible_handle_indices[i]).y -= distance_to_plane * coeff->at (1);
-        points->pts.at (possible_handle_indices[i]).z -= distance_to_plane * coeff->at (2);
-      }
-    }*/
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
@@ -742,10 +665,6 @@ int
   DoorHandleDetector p;
 
   door_handle_detector::Door::Request req;
-//  req.frame_p1.x = 1.2; req.frame_p1.y = 0.6; req.frame_p1.z = 0;
-//  req.frame_p2.x = 1.4; req.frame_p2.y = -0.5; req.frame_p2.z = 0;
-//  req.frame_p1.x = 0.9; req.frame_p1.y = 0.7; req.frame_p1.z = 0;
-//  req.frame_p2.x = 1.0; req.frame_p2.y = -0.1; req.frame_p2.z = 0;
   req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
   req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
 
