@@ -56,10 +56,10 @@
         <verbatim key="${parent}_${suffix}_wheel_bumper_sensor">
           <sensor:contact name="${parent}_${suffix}_wheel_contact_sensor">
             <geom>${parent}_${suffix}_wheel_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${parent}_${suffix}_wheel_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${parent}_${suffix}_wheel_bumper</bumperTopicName>
               <interface:bumper name="${parent}_${suffix}_wheel_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -264,7 +264,7 @@
       <verbatim key="sensor_base_laser_ray">
         <controller:ros_p3d name="p3d_base_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>base_link</bodyName>
           <topicName>base_pose_ground_truth</topicName>
           <gaussianNoise>0.01</gaussianNoise>

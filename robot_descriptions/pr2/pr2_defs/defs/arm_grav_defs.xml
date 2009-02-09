@@ -62,10 +62,10 @@
         <verbatim key="${side}_shoulder_pan_bumper_sensor">
           <sensor:contact name="${side}_shoulder_pan_contact_sensor">
             <geom>${side}_shoulder_pan_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_shoulder_pan_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_shoulder_pan_bumper</bumperTopicName>
               <interface:bumper name="${side}_shoulder_pan_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -126,10 +126,10 @@
         <verbatim key="${side}_shoulder_lift_bumper_sensor">
           <sensor:contact name="${side}_shoulder_lift_contact_sensor">
             <geom>${side}_shoulder_lift_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_shoulder_lift_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_shoulder_lift_bumper</bumperTopicName>
               <interface:bumper name="${side}_shoulder_lift_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -194,10 +194,10 @@
         <verbatim key="${side}_upper_arm_roll_bumper_sensor">
           <sensor:contact name="${side}_upper_arm_roll_contact_sensor">
             <geom>${side}_upper_arm_roll_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_upper_arm_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_upper_arm_roll_bumper</bumperTopicName>
               <interface:bumper name="${side}_upper_arm_roll_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -261,10 +261,10 @@
         <verbatim key="${side}_elbow_flex_bumper_sensor">
           <sensor:contact name="${side}_elbow_flex_contact_sensor">
             <geom>${side}_elbow_flex_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_elbow_flex_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_elbow_flex_bumper</bumperTopicName>
               <interface:bumper name="${side}_elbow_flex_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -287,7 +287,7 @@
         <!--
         <controller:ros_p3d name="p3d_${side}_shoulder_pan_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_shoulder_pan_link</bodyName>
           <topicName>${side}_shoulder_pan_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -296,7 +296,7 @@
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_shoulder_lift_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_shoulder_lift_link</bodyName>
           <topicName>${side}_shoulder_lift_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -305,7 +305,7 @@
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_upper_arm_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_upper_arm_roll_link</bodyName>
           <topicName>${side}_upper_arm_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -314,7 +314,7 @@
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_elbow_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_elbow_flex_link</bodyName>
           <topicName>${side}_elbow_flex_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -374,10 +374,10 @@
         <verbatim key="${side}_forearm_roll_bumper_sensor">
           <sensor:contact name="${side}_forearm_roll_contact_sensor">
             <geom>${side}_forearm_roll_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_forearm_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_forearm_roll_bumper</bumperTopicName>
               <interface:bumper name="${side}_forearm_roll_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -439,10 +439,10 @@
         <verbatim key="${side}_wrist_flex_bumper_sensor">
           <sensor:contact name="${side}_wrist_flex_contact_sensor">
             <geom>${side}_wrist_flex_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_wrist_flex_bumper</bumperTopicName>
               <interface:bumper name="${side}_wrist_flex_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -496,10 +496,10 @@
         <verbatim key="${side}_wrist_roll_bumper_sensor">
           <sensor:contact name="${side}_wrist_roll_contact_sensor">
             <geom>${side}_wrist_roll_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${side}_wrist_roll_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${side}_wrist_roll_bumper</bumperTopicName>
               <interface:bumper name="${side}_wrist_roll_ros_bumper_iface" />
             </controller:ros_bumper>
@@ -523,7 +523,7 @@
         <!--
         <controller:ros_p3d name="p3d_${side}_forearm_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_forearm_roll_link</bodyName>
           <topicName>${side}_forearm_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -532,7 +532,7 @@
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_wrist_flex_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_wrist_flex_link</bodyName>
           <topicName>${side}_wrist_flex_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
@@ -541,7 +541,7 @@
         </controller:ros_p3d>
         <controller:ros_p3d name="p3d_${side}_wrist_roll_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
-          <updateRate>1000.0</updateRate>
+          <updateRate>100.0</updateRate>
           <bodyName>${side}_wrist_roll_link</bodyName>
           <topicName>${side}_wrist_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>

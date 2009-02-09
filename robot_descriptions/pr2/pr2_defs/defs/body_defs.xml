@@ -53,10 +53,10 @@
         <verbatim key="${name}_bumper_sensor">
           <sensor:contact name="${name}_contact_sensor">
             <geom>${name}_collision</geom>
-            <updateRate>1000.0</updateRate>
+            <updateRate>100.0</updateRate>
             <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libros_bumper.so">
               <alwaysOn>true</alwaysOn>
-              <updateRate>1000.0</updateRate>
+              <updateRate>100.0</updateRate>
               <bumperTopicName>${name}_bumper</bumperTopicName>
               <interface:bumper name="${name}_ros_bumper_iface" />
             </controller:ros_bumper>
