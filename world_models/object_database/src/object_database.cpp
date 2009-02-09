@@ -28,7 +28,6 @@
  */
 
 #include <object_database/object_database.h>
-#include <iostream>
 #include <algorithm>
 #include <ros/console.h>
 #include <object_database/exception.h>
