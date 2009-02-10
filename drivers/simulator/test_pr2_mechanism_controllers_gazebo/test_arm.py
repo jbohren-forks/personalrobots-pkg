@@ -69,20 +69,21 @@ POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 TEST_TIMEOUT    = 50.0
 
 # pre-recorded poses for above commands
-TARGET_ARM_TX         =  0.697079458962
-TARGET_ARM_TY         =  0.298321990173
-TARGET_ARM_TZ         =  0.788284959682
-TARGET_ARM_QX         =  0.237303684388
-TARGET_ARM_QY         =  -0.183131139797
-TARGET_ARM_QZ         =  0.190090503477
-TARGET_ARM_QW         =  0.934887986606
-TARGET_GRIPPER_TX     =   0.759604836385
-TARGET_GRIPPER_TY     =   0.327703622909
-TARGET_GRIPPER_TZ     =   0.825872564018
-TARGET_GRIPPER_QX     =   0.201779841484
-TARGET_GRIPPER_QY     =   -0.221575348589
-TARGET_GRIPPER_QZ     =   0.349992333295
-TARGET_GRIPPER_QW     =   0.88752162064
+TARGET_PALM_TX     =   0.707932405635
+TARGET_PALM_TY     =   0.302486634619
+TARGET_PALM_TZ     =   0.784961973515
+TARGET_PALM_QX     =   0.237333965585
+TARGET_PALM_QY     =   -0.182954011269
+TARGET_PALM_QZ     =   0.190066678152
+TARGET_PALM_QW     =   0.934919823513
+
+TARGET_FNGR_TX     =   0.770409128528
+TARGET_FNGR_TY     =   0.332355930864
+TARGET_FNGR_TZ     =   0.822766287069
+TARGET_FNGR_QX     =   0.201867284399
+TARGET_FNGR_QY     =   -0.221524091779
+TARGET_FNGR_QZ     =   0.349958602096
+TARGET_FNGR_QW     =   0.887527832279
 
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
@@ -113,15 +114,15 @@ class ArmTest(unittest.TestCase):
 
     def fngrP3dInput(self, p3d):
         i = 0
-        pos_error = abs(p3d.pos.position.x - TARGET_GRIPPER_TX) + \
-                    abs(p3d.pos.position.y - TARGET_GRIPPER_TY) + \
-                    abs(p3d.pos.position.z - TARGET_GRIPPER_TZ)
+        pos_error = abs(p3d.pos.position.x - TARGET_FNGR_TX) + \
+                    abs(p3d.pos.position.y - TARGET_FNGR_TY) + \
+                    abs(p3d.pos.position.z - TARGET_FNGR_TZ)
 
         #target pose rotation matrix
-        target_rm = rotation_matrix_from_quaternion([TARGET_GRIPPER_QX  \
-                                                    ,TARGET_GRIPPER_QY  \
-                                                    ,TARGET_GRIPPER_QZ  \
-                                                    ,TARGET_GRIPPER_QW])
+        target_rm = rotation_matrix_from_quaternion([TARGET_FNGR_QX  \
+                                                    ,TARGET_FNGR_QY  \
+                                                    ,TARGET_FNGR_QZ  \
+                                                    ,TARGET_FNGR_QW])
 
         #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
@@ -157,15 +158,15 @@ class ArmTest(unittest.TestCase):
 
     def palmP3dInput(self, p3d):
         i = 0
-        pos_error = abs(p3d.pos.position.x - TARGET_ARM_TX) + \
-                    abs(p3d.pos.position.y - TARGET_ARM_TY) + \
-                    abs(p3d.pos.position.z - TARGET_ARM_TZ)
+        pos_error = abs(p3d.pos.position.x - TARGET_PALM_TX) + \
+                    abs(p3d.pos.position.y - TARGET_PALM_TY) + \
+                    abs(p3d.pos.position.z - TARGET_PALM_TZ)
 
         #target pose rotation matrix
-        target_rm = rotation_matrix_from_quaternion([TARGET_ARM_QX  \
-                                                    ,TARGET_ARM_QY  \
-                                                    ,TARGET_ARM_QZ  \
-                                                    ,TARGET_ARM_QW])
+        target_rm = rotation_matrix_from_quaternion([TARGET_PALM_QX  \
+                                                    ,TARGET_PALM_QY  \
+                                                    ,TARGET_PALM_QZ  \
+                                                    ,TARGET_PALM_QW])
 
         #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
