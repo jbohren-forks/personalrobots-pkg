@@ -53,7 +53,7 @@ public:
               deprecated_srvs::PolledStereoCloud::Response &res)
   {
     printf("forwarding stereo cloud request\n");
-    CvBridge<std_msgs::Image> cv_bridge(&res.image);
+    CvBridge<deprecated_msgs::Image> cv_bridge(&res.image);
     XmlRpcClient c(BUMBLEBEE_HOST, BUMBLEBEE_PORT);
     XmlRpcValue noargs, result;
     try
