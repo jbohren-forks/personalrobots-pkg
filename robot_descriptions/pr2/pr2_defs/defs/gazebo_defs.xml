@@ -28,7 +28,7 @@
 
     <controller:ros_time name="ros_time" plugin="libros_time.so">
       <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
+      <updateRate>1000.0</updateRate>
       <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
     </controller:ros_time>
 
