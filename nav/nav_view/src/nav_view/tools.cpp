@@ -169,7 +169,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       }
       else
       {
-        std_msgs::Pose2DFloat32 pose;
+        deprecated_msgs::Pose2DFloat32 pose;
         pose.x = pos_.x;
         pose.y = pos_.y;
         pose.th = angle;

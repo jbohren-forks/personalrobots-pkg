@@ -35,7 +35,7 @@
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
-#include "std_msgs/Pose2DFloat32.h"
+#include "deprecated_msgs/Pose2DFloat32.h"
 #include "robot_srvs/StaticMap.h"
 
 #include <OgreTexture.h>
