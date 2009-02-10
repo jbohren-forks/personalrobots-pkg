@@ -35,7 +35,7 @@
 #include <libTF/libTF.h>
 #include <ros/node.h>
 #include <robot_srvs/SetJointCmd.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 
 static int done = 0;
 

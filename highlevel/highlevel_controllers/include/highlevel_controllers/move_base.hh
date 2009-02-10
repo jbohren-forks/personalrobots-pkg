@@ -56,7 +56,7 @@
 #include <robot_msgs/Planner2DGoal.h>
 #include <std_msgs/PoseDot.h>
 #include <laser_scan/LaserScan.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PointCloud.h>
 
 // For transform support
@@ -124,7 +124,7 @@ namespace ros {
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
        * @see publishPlan
        */
-      void updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan);
+      void updatePlan(const std::list<deprecated_msgs::Pose2DFloat32>& newPlan);
       
       /**
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
@@ -199,7 +199,7 @@ namespace ros {
        */
       void stopRobot();
 
-      void publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path);
+      void publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path);
 
       void publishFootprint(double x, double y, double th);
 
@@ -230,7 +230,7 @@ namespace ros {
       std_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud groundPlaneCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
-      std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
+      deprecated_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
 
       tf::TransformListener tf_; /**< Used to do transforms */
@@ -258,13 +258,13 @@ namespace ros {
 
       tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
-      std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
+      deprecated_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
 
       /** Parameters that will be passed on initialization soon */
       double baseLaserMaxRange_; /**< Used in laser scan projection */
       double tiltLaserMaxRange_; /**< Used in laser scan projection */
 
-      std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
+      std::list<deprecated_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
       // Filter parameters
       double minZ_;

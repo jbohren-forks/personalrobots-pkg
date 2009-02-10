@@ -35,13 +35,13 @@
 #ifndef MPGLUE_PLAN_HPP
 #define MPGLUE_PLAN_HPP
 
-#include <std_msgs/Pose2DFloat32.h>
+#include <deprecated_msgs/Pose2DFloat32.h>
 #include <vector>
 
 namespace mpglue {
   
   typedef std::vector<int> raw_sbpl_plan_t;
-  typedef std::vector<std_msgs::Pose2DFloat32> waypoint_plan_t;
+  typedef std::vector<deprecated_msgs::Pose2DFloat32> waypoint_plan_t;
   
   class SBPLEnvironment;
   class IndexTransform;
@@ -55,7 +55,7 @@ namespace mpglue {
   {
   public:
     explicit PlanConverter(waypoint_plan_t * plan);
-    void addWaypoint(std_msgs::Pose2DFloat32 const & waypoint);
+    void addWaypoint(deprecated_msgs::Pose2DFloat32 const & waypoint);
     void addWaypoint(double px, double py, double pth);
     
     double plan_length, tangent_change, direction_change;
@@ -72,7 +72,7 @@ namespace mpglue {
      SBPLPlanner subclasses) to waypoints that are
      understandable. Optionally provides some statistics on the plan.
   */
-  void convertPlan(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
+  void convertPlan(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
 		   SBPLEnvironment const & environment,
 		   /** in: the raw plan */
 		   raw_sbpl_plan_t const & raw,
@@ -88,7 +88,7 @@ namespace mpglue {
 		   double * optTangentChangeRad,
 		   /** optional out: the cumulated change in the
 		       direction of the waypoints (the delta of
-		       std_msgs::Pose2DFloat32::th values).
+		       deprecated_msgs::Pose2DFloat32::th values).
 		       \note This only makes sense for plans that are
 		       aware of the robot's heading though. */
 		   double * optDirectionChangeRad);
@@ -100,7 +100,7 @@ namespace mpglue {
      convertPlanInterpolate() though, it takes advantage of the
      sub-pixel resolution available in NavFn.
   */
-  void convertPlan(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
+  void convertPlan(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
 		   IndexTransform const & itransform,
 		   /** in: array of X-coordinates (continuous grid index). */
 		   float const * path_x,
@@ -120,7 +120,7 @@ namespace mpglue {
 		   double * optTangentChangeRad,
 		   /** optional out: the cumulated change in the
 		       direction of the waypoints (the delta of
-		       std_msgs::Pose2DFloat32::th values).
+		       deprecated_msgs::Pose2DFloat32::th values).
 		       \note This only makes sense for plans that are
 		       aware of the robot's heading though. */
 		   double * optDirectionChangeRad);
@@ -128,7 +128,7 @@ namespace mpglue {
   /**
      Uses interpolateIndexToGlobal() for sub-pixel resolution.
   */
-  void convertPlanInterpolate(/** in: how to translate state IDs to std_msgs::Pose2DFloat32 */
+  void convertPlanInterpolate(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
 			      IndexTransform const & itransform,
 			      /** in: array of X-coordinates (continuous grid index). */
 			      float const * path_x,
@@ -148,7 +148,7 @@ namespace mpglue {
 			      double * optTangentChangeRad,
 			      /** optional out: the cumulated change in the
 				  direction of the waypoints (the delta of
-				  std_msgs::Pose2DFloat32::th values).
+				  deprecated_msgs::Pose2DFloat32::th values).
 				  \note This only makes sense for plans that are
 				  aware of the robot's heading though. */
 			      double * optDirectionChangeRad);

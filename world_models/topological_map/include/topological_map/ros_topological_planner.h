@@ -40,7 +40,7 @@
 #include <ros/node.h>
 #include <ros/console.h>
 #include <robot_srvs/StaticMap.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <topological_map/NavigationCost.h>
 #include <topological_map/ConnectorCosts.h>
 #include <topological_map/roadmap_bottleneck_graph.h>
@@ -103,7 +103,7 @@ private:
 
   boost::mutex lock_;
 
-  std_msgs::RobotBase2DOdom pose_;
+  deprecated_msgs::RobotBase2DOdom pose_;
 };
 
 

@@ -130,20 +130,20 @@ namespace ros {
 	  float *x = planner_.getPathX();
 	  float *y = planner_.getPathY();
 	  int len = planner_.getPathLen();
-	  std::list<std_msgs::Pose2DFloat32> newPlan;
+	  std::list<deprecated_msgs::Pose2DFloat32> newPlan;
 	  for(int i=0; i < len; i++){
 	    double wx, wy;
 	    unsigned int mx = (unsigned int) x[i];
 	    unsigned int my = (unsigned int) y[i];
 	    getCostMap().MC_WC(mx, my, wx, wy);
-	    std_msgs::Pose2DFloat32 step;
+	    deprecated_msgs::Pose2DFloat32 step;
 	    step.x = wx;
 	    step.y = wy;
 	    newPlan.push_back(step);
 	  }
 	  
 	  //This is a hack for now to add the goal.
-	  std_msgs::Pose2DFloat32 goalstep;
+	  deprecated_msgs::Pose2DFloat32 goalstep;
 	  goalstep.x = goalX;
 	  goalstep.y = goalY;
 	  newPlan.push_back(goalstep);

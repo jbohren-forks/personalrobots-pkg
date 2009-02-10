@@ -36,7 +36,7 @@
 #include <ros/node.h>
 #include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/PoseDot.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
 
 static int done = 0;
@@ -88,7 +88,7 @@ class test_run_base
 
     std_msgs::PoseWithRatesStamped ground_truth;
 
-    std_msgs::RobotBase2DOdom odom;
+    deprecated_msgs::RobotBase2DOdom odom;
 
     int subscriber_connected;
 

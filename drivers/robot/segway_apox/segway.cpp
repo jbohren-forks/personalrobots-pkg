@@ -4,7 +4,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "std_msgs/PoseDot.h"
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
 extern "C" {
@@ -34,7 +34,7 @@ class Segway : public Node
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
     std_msgs::PoseDot cmd_vel;
-    std_msgs::RobotBase2DOdom odom;
+    deprecated_msgs::RobotBase2DOdom odom;
     std_msgs::String op_mode;
 		rmp_frame_t rmp;
 		dgc_usbcan_p can;
@@ -68,7 +68,7 @@ Segway::Segway() :
   req_timeout(false)
 {
   odom.header.frame_id = "odom";
-  advertise<std_msgs::RobotBase2DOdom>("odom", 1);
+  advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb, 1);
   subscribe("operating_mode", op_mode, &Segway::op_mode_cb, 1);
 }

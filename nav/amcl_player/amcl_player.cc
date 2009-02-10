@@ -98,9 +98,9 @@ Publishes to (name / type):
 
 // Messages that I need
 #include "laser_scan/LaserScan.h"
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include "robot_msgs/ParticleCloud.h"
-#include "std_msgs/Pose2DFloat32.h"
+#include "deprecated_msgs/Pose2DFloat32.h"
 #include "robot_srvs/StaticMap.h"
 
 // For transform support
@@ -144,11 +144,11 @@ class AmclNode: public ros::Node, public Driver
     ConfigFile* cf;
 
     // incoming messages
-    std_msgs::RobotBase2DOdom localizedOdomMsg;
+    deprecated_msgs::RobotBase2DOdom localizedOdomMsg;
     robot_msgs::ParticleCloud particleCloudMsg;
-    std_msgs::RobotBase2DOdom odomMsg;
+    deprecated_msgs::RobotBase2DOdom odomMsg;
     laser_scan::LaserScan laserMsg;
-    std_msgs::Pose2DFloat32 initialPoseMsg;
+    deprecated_msgs::Pose2DFloat32 initialPoseMsg;
     
     // Message callbacks
     void odomReceived();
@@ -437,7 +437,7 @@ AmclNode::AmclNode() :
   this->tf = new tf::TransformBroadcaster(*this);
   this->tfL = new tf::TransformListener(*this);
 
-  advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
+  advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",2);
   advertise<robot_msgs::ParticleCloud>("particlecloud",2);
   //subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
   subscribe("scan", laserMsg, &AmclNode::laserReceived,2);

@@ -85,7 +85,7 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 #include <laser_scan/LaserScan.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/PoseDot.h>
 #include <roslib/Time.h>
@@ -101,7 +101,7 @@ class StageNode : public ros::Node
     // Messages that we'll send or receive
     std_msgs::PoseDot velMsg;
     laser_scan::LaserScan laserMsg;
-    std_msgs::RobotBase2DOdom odomMsg;
+    deprecated_msgs::RobotBase2DOdom odomMsg;
     std_msgs::PoseWithRatesStamped groundTruthMsg;
     roslib::Time timeMsg;
 
@@ -225,7 +225,7 @@ StageNode::SubscribeModels()
   }
 
   advertise<laser_scan::LaserScan>("base_scan",10);
-  advertise<std_msgs::RobotBase2DOdom>("odom",10);
+  advertise<deprecated_msgs::RobotBase2DOdom>("odom",10);
   advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth",10);
   advertise<roslib::Time>("time",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);

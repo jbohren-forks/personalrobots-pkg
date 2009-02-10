@@ -53,7 +53,7 @@
 #include <newmat10/newmatio.h>
 #include <newmat10/newmatap.h>
 
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PoseDot.h>
 #include <pr2_msgs/Odometer.h>
 #include <pr2_msgs/Covariance2D.h>
@@ -185,9 +185,9 @@ namespace controller
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     /*!
-     * \brief Fill a structure of the form std_msgs::RobotBase2DOdom with odometry data
+     * \brief Fill a structure of the form deprecated_msgs::RobotBase2DOdom with odometry data
      */
-    void setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_);
+    void setOdomMessage(deprecated_msgs::RobotBase2DOdom &odom_msg_);
 
     /*!
      * \brief compute the desired wheel speeds
@@ -502,9 +502,9 @@ namespace controller
     boost::mutex ros_lock_;
 
     /*!
-     * \brief std_msgs representation of an odometry message
+     * \brief deprecated_msgs representation of an odometry message
      */
-    std_msgs::RobotBase2DOdom odom_msg_;
+    deprecated_msgs::RobotBase2DOdom odom_msg_;
 
     double last_time_message_sent_ ;/** last time odometry message was published */
 
@@ -512,7 +512,7 @@ namespace controller
 
     double odom_publish_rate_; /** rate at which odometry message will be published ( = 1/odom_publish_delta_t_)*/
            
-    realtime_tools::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
+    realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
     realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 

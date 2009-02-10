@@ -86,7 +86,7 @@ Publishes to (name / type):
 //rosTF
 #include "tf/transform_broadcaster.h"
 // Messages that I need
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
 #include <std_msgs/PoseDot.h>
 #include <robot_msgs/BatteryState.h>
@@ -102,7 +102,7 @@ class ErraticNode: public ros::Node
   public:
     QueuePointer q;
 
-    std_msgs::RobotBase2DOdom odom;
+    deprecated_msgs::RobotBase2DOdom odom;
     std_msgs::PoseDot cmdvel;
 
     tf::TransformBroadcaster tf;
@@ -118,7 +118,7 @@ class ErraticNode: public ros::Node
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
 
-      advertise<std_msgs::RobotBase2DOdom>("odom", 1);
+      advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
       advertise<robot_msgs::BatteryState>("battery_state", 1);
 
       // The Player address that will be assigned to this device.  The format

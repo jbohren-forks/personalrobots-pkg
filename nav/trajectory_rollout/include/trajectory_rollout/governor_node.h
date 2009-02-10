@@ -43,7 +43,7 @@
 #include <std_msgs/PoseDot.h>
 #include <trajectory_rollout/ScoreMap2D.h>
 #include <trajectory_rollout/WavefrontPlan.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 
 //for GUI debugging
 #include <std_msgs/Polyline2D.h>
@@ -158,7 +158,7 @@ namespace trajectory_rollout {
 
       //incoming messages
       trajectory_rollout::WavefrontPlan plan_msg_;
-      std_msgs::RobotBase2DOdom odom_msg_;
+      deprecated_msgs::RobotBase2DOdom odom_msg_;
 
       //outgoing messages
       std_msgs::Polyline2D poly_line_msg_;

@@ -1,11 +1,11 @@
 #include <cstdio>
 #include "ros/node.h"
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 
 class AmclCLI: public ros::Node
 {
 public:
-  std_msgs::RobotBase2DOdom pose_msg;
+  deprecated_msgs::RobotBase2DOdom pose_msg;
   bool done;
 
   AmclCLI(): ros::Node("amcl_cli"), done(false)

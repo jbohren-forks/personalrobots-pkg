@@ -22,4 +22,4 @@ float32 recharge_level
 float32 goal_recharge_level
 
 # The goal pose for accessing the plug
-std_msgs/Pose2DFloat32 goal_pose
+deprecated_msgs/Pose2DFloat32 goal_pose

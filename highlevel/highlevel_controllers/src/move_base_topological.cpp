@@ -135,12 +135,12 @@ bool MoveBaseTopological::makePlan(){
     // Invoke the planner
     vector<GridCell> solution=graph_.findOptimalPath(start, goal);
 
-    std::list<std_msgs::Pose2DFloat32> newPlan;
+    std::list<deprecated_msgs::Pose2DFloat32> newPlan;
     ROS_DEBUG ("Topological planner found plan with waypoints: ");
     for (unsigned int i=0; i<solution.size(); i++) {
       double wx=solution[i].second*resolution;
       double wy=(solution[i].first)*resolution;
-      std_msgs::Pose2DFloat32 step;
+      deprecated_msgs::Pose2DFloat32 step;
       step.x = wx;
       step.y = wy;
       newPlan.push_back(step);

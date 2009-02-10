@@ -42,7 +42,7 @@
 
 
 // messages
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include "std_msgs/PoseDot.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "robot_msgs/MechanismState.h"
@@ -79,7 +79,7 @@ private:
   void AngleOverflowCorrect(double& a, double ref);
 
   // messages to receive
-  std_msgs::RobotBase2DOdom       _odom;  
+  deprecated_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
   robot_msgs::MechanismState      _mech;
 

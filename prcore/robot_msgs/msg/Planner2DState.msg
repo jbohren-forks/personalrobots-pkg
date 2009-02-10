@@ -10,13 +10,13 @@ byte aborted
 #Was the planner told to stop?
 byte preempted
 # Current location (m,m,rad)
-std_msgs/Pose2DFloat32 pos
+deprecated_msgs/Pose2DFloat32 pos
 # Goal location (m,m,rad)
-std_msgs/Pose2DFloat32 goal
+deprecated_msgs/Pose2DFloat32 goal
 # Current waypoint location (m,m,rad)
-std_msgs/Pose2DFloat32 waypoint
+deprecated_msgs/Pose2DFloat32 waypoint
 # Current list of waypoints in the plan
-std_msgs/Pose2DFloat32[] waypoints
+deprecated_msgs/Pose2DFloat32[] waypoints
 # Current waypoint index. May be negative if there's no plan, or if
 # the plan is done
 int32 waypoint_idx

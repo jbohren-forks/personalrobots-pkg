@@ -32,11 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include <string>
 #include "rosrecord/Player.h"
 
-void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, ros::Time t_no_use, void* f)
+void localize_callback(std::string name, deprecated_msgs::RobotBase2DOdom* bL, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("localize_actual.txt", "w");
 
-  player.addHandler<std_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file);
+  player.addHandler<deprecated_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file);
 
   while(player.nextMsg())  {}
 

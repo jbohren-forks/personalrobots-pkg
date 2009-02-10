@@ -1,7 +1,7 @@
 # A request to the topological planner for a cost estimate
 # between two 2d poses
 
-std_msgs/Pose2DFloat32 start
-std_msgs/Pose2DFloat32 goal
+deprecated_msgs/Pose2DFloat32 start
+deprecated_msgs/Pose2DFloat32 goal
 ---
 float64 cost

@@ -36,7 +36,7 @@
 #include <highlevel_controllers/move_base.hh>
 #include <std_msgs/PoseDot.h>
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/Pose2DFloat32.h>
+#include <deprecated_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <robot_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
@@ -514,7 +514,7 @@ namespace ros {
       stopRobot();
     }
 
-    void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
+    void MoveBase::updatePlan(const std::list<deprecated_msgs::Pose2DFloat32>& newPlan){
       lock();
 
       // If we have a valid plan then only swap in the new plan if it is shorter.
@@ -527,7 +527,7 @@ namespace ros {
       unlock();
     }
 
-    /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>&). */
+    /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<deprecated_msgs::Pose2DFloat32>&). */
     void MoveBase::updatePlan(mpglue::waypoint_plan_t const & newPlan) {
       sentry<MoveBase> guard(this);
       if (!isValid() || plan_.size() > newPlan.size()){
@@ -542,8 +542,8 @@ namespace ros {
      * applied to protect access to the plan.
      */
     bool MoveBase::inCollision() const {
-      for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
-        const std_msgs::Pose2DFloat32& w = *it;
+      for(std::list<deprecated_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
+        const deprecated_msgs::Pose2DFloat32& w = *it;
         unsigned int ind = costMap_->WC_IND(w.x, w.y);
         if((*costMap_)[ind] >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
           ROS_DEBUG("path in collision at <%f, %f>\n", w.x, w.y);
@@ -569,13 +569,13 @@ namespace ros {
       publish("robot_footprint", footprint_msg);
     }
 
-    void MoveBase::publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path) {
+    void MoveBase::publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
 
       unsigned int i = 0;
-      for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = path.begin(); it != path.end(); ++it){
-        const std_msgs::Pose2DFloat32& w = *it;
+      for(std::list<deprecated_msgs::Pose2DFloat32>::const_iterator it = path.begin(); it != path.end(); ++it){
+        const deprecated_msgs::Pose2DFloat32& w = *it;
         guiPathMsg.points[i].x = w.x;
         guiPathMsg.points[i].y = w.y;
         i++;
@@ -678,9 +678,9 @@ namespace ros {
         // the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
         // by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
         // path
-        std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
+        std::list<deprecated_msgs::Pose2DFloat32>::iterator it = plan_.begin();
         while(it != plan_.end()){
-          const std_msgs::Pose2DFloat32& w = *it;
+          const deprecated_msgs::Pose2DFloat32& w = *it;
           // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
           if(fabs(global_pose_.getOrigin().x() - w.x) < 2 && fabs(global_pose_.getOrigin().y() - w.y) < 2){
             ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
@@ -704,7 +704,7 @@ namespace ros {
 
 	ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
-        std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+        std::list<deprecated_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 
         lock();
         // Aggregate buffered observations across all sources. Must be thread safe

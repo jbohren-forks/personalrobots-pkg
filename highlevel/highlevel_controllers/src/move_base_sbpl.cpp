@@ -264,8 +264,8 @@ namespace ros {
 	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
 	// to lock protect those.
 	stateMsg.lock();
-	std_msgs::Pose2DFloat32 const start(stateMsg.pos);
-	std_msgs::Pose2DFloat32 const goal(stateMsg.goal);
+	deprecated_msgs::Pose2DFloat32 const start(stateMsg.pos);
+	deprecated_msgs::Pose2DFloat32 const goal(stateMsg.goal);
 	stateMsg.unlock();
 	
 	// Assume the robot is constantly moving, so always set start.

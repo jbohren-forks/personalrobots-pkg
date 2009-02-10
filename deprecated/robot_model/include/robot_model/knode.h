@@ -47,7 +47,7 @@
 #include <ros/time.h>
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <tf/transform_listener.h>
 #include <cmath>
 
@@ -301,7 +301,7 @@ namespace robot_model
 	
 	tf::TransformListener                         m_tf; 
 	ros::Node                                    *m_node;
-	std_msgs::RobotBase2DOdom                     m_localizedPose;
+	deprecated_msgs::RobotBase2DOdom              m_localizedPose;
 	bool                                          m_haveBasePos;	
 	
 	robot_msgs::MechanismState                    m_mechanismState;

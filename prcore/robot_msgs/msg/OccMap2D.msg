@@ -10,7 +10,7 @@ uint32 width
 uint32 height
 # The origin of the map [m, m, rad].  This is the real-world pose of the
 # cell (0,0) in the map.
-std_msgs/Pose2DFloat32 origin
+deprecated_msgs/Pose2DFloat32 origin
 # The map data, in row-major order, starting with (0,0).  Occupancy
 # probabilities are in the range [0,100].  Unknown is -1.
 byte[] data

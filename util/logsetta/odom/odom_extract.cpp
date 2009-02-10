@@ -32,11 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include <string>
 #include "rosrecord/Player.h"
 
-void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* f)
+void odom_callback(std::string name, deprecated_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen((std::string(argv[2])+".txt").c_str() , "w");
 
-  player.addHandler<std_msgs::RobotBase2DOdom>(std::string(argv[2]), &odom_callback, file);
+  player.addHandler<deprecated_msgs::RobotBase2DOdom>(std::string(argv[2]), &odom_callback, file);
 
   while(player.nextMsg())  {}
 

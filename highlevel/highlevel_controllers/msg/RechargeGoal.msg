@@ -6,7 +6,7 @@ byte plugIn
 float32 recharge_level
 
 # Sets the pose for accessing the plug
-std_msgs/Pose2DFloat32 pose
+deprecated_msgs/Pose2DFloat32 pose
 
 # True to submit a goal, false to recall it
 byte enable

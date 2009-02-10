@@ -571,7 +571,7 @@ void BaseController::updateJointControllers()
     base_casters_[i].controller_.update();
 }
 
-void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
+void BaseController::setOdomMessage(deprecated_msgs::RobotBase2DOdom &odom_msg_)
 {
   odom_msg_.header.frame_id   = "odom";
   odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
@@ -1081,7 +1081,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
-  publisher_ = new realtime_tools::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
+  publisher_ = new realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom> ("odom", 1) ;
 
   if (odometer_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometer_publisher_ ;

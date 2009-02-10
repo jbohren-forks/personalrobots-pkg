@@ -55,7 +55,7 @@ namespace mpglue {
   
   
   void PlanConverter::
-  addWaypoint(std_msgs::Pose2DFloat32 const & waypoint)
+  addWaypoint(deprecated_msgs::Pose2DFloat32 const & waypoint)
   {
     if (0 < count_) {
       double const dx(waypoint.x - prevx_);
@@ -78,7 +78,7 @@ namespace mpglue {
   void PlanConverter::
   addWaypoint(double px, double py, double pth)
   {
-    std_msgs::Pose2DFloat32 pp;
+    deprecated_msgs::Pose2DFloat32 pp;
     pp.x = px;
     pp.y = py;
     pp.th = pth;

@@ -72,10 +72,10 @@ namespace ros {
       stateMsg.unlock();
 
       // Simply pass on the goal as the plan for the controller
-      std::list<std_msgs::Pose2DFloat32> newPlan;
+      std::list<deprecated_msgs::Pose2DFloat32> newPlan;
 
       //This is a hack for now to add the goal.
-      std_msgs::Pose2DFloat32 goalstep;
+      deprecated_msgs::Pose2DFloat32 goalstep;
       goalstep.x = goalX;
       goalstep.y = goalY;
       newPlan.push_back(goalstep);
@@ -126,7 +126,7 @@ namespace ros {
 
         ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
-        std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+        std::list<deprecated_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 
         lock();
         // Aggregate buffered observations across all sources. Must be thread safe

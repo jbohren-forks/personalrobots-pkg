@@ -38,7 +38,7 @@
 #define MPGLUE_PLANNER_HPP
 
 #include <mpglue/plan.h>
-#include <std_msgs/Pose2DFloat32.h>
+#include <deprecated_msgs/Pose2DFloat32.h>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 
@@ -106,7 +106,7 @@ namespace mpglue {
     virtual void setStart(double px, double py, double pth) throw(std::out_of_range);
     
     /** Delegated to setStart(double, double, double). */
-    void setStart(std_msgs::Pose2DFloat32 const & start) throw(std::out_of_range)
+    void setStart(deprecated_msgs::Pose2DFloat32 const & start) throw(std::out_of_range)
     { setStart(start.x, start.y, start.th); }
     
     /** Default implementation just stores the goal and its
@@ -114,7 +114,7 @@ namespace mpglue {
     virtual void setGoal(double px, double py, double pth) throw(std::out_of_range);
 
     /** Delegated to setGoal(double, double, double). */
-    void setGoal(std_msgs::Pose2DFloat32 const & goal) throw(std::out_of_range)
+    void setGoal(deprecated_msgs::Pose2DFloat32 const & goal) throw(std::out_of_range)
     { setGoal(goal.x, goal.y, goal.th); }
 
     /** Default implementation just stores the goal tolerance in the

@@ -43,7 +43,7 @@
 #include "odom_estimation.h"
 
 // messages
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include "std_msgs/PoseDot.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
@@ -91,7 +91,7 @@ private:
 
   // messages to receive
   std_msgs::PoseDot               vel_;  
-  std_msgs::RobotBase2DOdom       odom_;  
+  deprecated_msgs::RobotBase2DOdom       odom_;  
   std_msgs::PoseWithRatesStamped  imu_;  
   robot_msgs::VOPose              vo_;  
 

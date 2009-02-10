@@ -99,8 +99,8 @@ namespace {
     virtual int SetStart(double px, double py, double pth);
     virtual int SetGoal(double px, double py, double pth);
     virtual void SetGoalTolerance(double tol_xy, double tol_th);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
+    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
+    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
     virtual std::string getName() const;
     
   protected:
@@ -137,8 +137,8 @@ namespace {
     virtual int SetStart(double px, double py, double pth);
     virtual int SetGoal(double px, double py, double pth);
     virtual void SetGoalTolerance(double tol_xy, double tol_th);
-    virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
+    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
+    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
     virtual std::string getName() const;
     
   protected:
@@ -365,7 +365,7 @@ namespace {
   
   /** \note Always sets pose.th == -42 so people can detect that it is
       undefined. */
-  std_msgs::Pose2DFloat32 SBPLEnvironment2D::
+  deprecated_msgs::Pose2DFloat32 SBPLEnvironment2D::
   GetPoseFromState(int stateID) const
     throw(invalid_state)
   {
@@ -377,7 +377,7 @@ namespace {
     // wouldn't have a stateID)
     double px, py;
     it_->indexToGlobal(ix, iy, &px, &py);
-    std_msgs::Pose2DFloat32 pose;
+    deprecated_msgs::Pose2DFloat32 pose;
     pose.x = px;
     pose.y = py;
     pose.th = -42;
@@ -386,7 +386,7 @@ namespace {
   
   
   int SBPLEnvironment2D::
-  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
+  GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
   {
     ssize_t ix, iy;
     it_->globalToIndex(pose.x, pose.y, &ix, &iy);
@@ -562,7 +562,7 @@ namespace {
   }
   
   
-  std_msgs::Pose2DFloat32 SBPLEnvironment3DKIN::
+  deprecated_msgs::Pose2DFloat32 SBPLEnvironment3DKIN::
   GetPoseFromState(int stateID) const
     throw(invalid_state)
   {
@@ -574,7 +574,7 @@ namespace {
     // PoseDiscToCont() retval
     double px, py, pth;
     env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
-    std_msgs::Pose2DFloat32 pose;
+    deprecated_msgs::Pose2DFloat32 pose;
     pose.x = px;
     pose.y = py;
     pose.th = pth;
@@ -583,7 +583,7 @@ namespace {
   
   
   int SBPLEnvironment3DKIN::
-  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
+  GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
   {
     int ix, iy, ith;
     if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))

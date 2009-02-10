@@ -46,7 +46,7 @@
 #include "robot_msgs/MocapBody.h"
 
 #include "std_msgs/Transform.h"
-#include "std_msgs/RobotBase2DOdom.h"
+#include "deprecated_msgs/RobotBase2DOdom.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 
 #include <tf/tf.h>
@@ -74,7 +74,7 @@ public :
     param("~publish_transform", publish_transform_, true) ;
     param("~base_id", base_id_, 1) ;
 
-    advertise<std_msgs::RobotBase2DOdom>("localizedpose", 1);
+    advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose", 1);
     advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster(*this);
@@ -151,7 +151,7 @@ public :
 private:
 
   robot_msgs::MocapSnapshot snapshot_;
-  std_msgs::RobotBase2DOdom m_currentPos;
+  deprecated_msgs::RobotBase2DOdom m_currentPos;
   tf::TransformBroadcaster *m_tfServer;
   unsigned int publish_success_count_ ;
   unsigned int publish_attempt_count_ ;

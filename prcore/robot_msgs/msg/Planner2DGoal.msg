@@ -1,5 +1,5 @@
 Header header
-std_msgs/Pose2DFloat32 goal
+deprecated_msgs/Pose2DFloat32 goal
 byte enable
 
 # Total timelimit for the controller, if a plan is not

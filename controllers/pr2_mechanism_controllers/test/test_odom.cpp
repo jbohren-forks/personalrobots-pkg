@@ -35,7 +35,7 @@
 #include <libTF/libTF.h>
 #include <ros/node.h>
 #include <std_msgs/PoseDot.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
 #include <iostream>
 #include <fstream>
@@ -87,7 +87,7 @@ class test_run_base
 
     ~test_run_base() {}
 
-    std_msgs::RobotBase2DOdom odom;
+    deprecated_msgs::RobotBase2DOdom odom;
 
     void odomMsgReceived()
     {

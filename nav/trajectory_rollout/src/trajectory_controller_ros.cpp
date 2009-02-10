@@ -104,11 +104,11 @@ namespace trajectory_rollout {
     return tc_->drawFootprint(x_i, y_i, theta_i);
   }
 
-  bool TrajectoryControllerROS::computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& global_plan, 
+  bool TrajectoryControllerROS::computeVelocityCommands(const std::list<deprecated_msgs::Pose2DFloat32>& global_plan, 
       const tf::Stamped<tf::Pose>& global_pose, 
       const std_msgs::PoseDot& global_vel, 
       std_msgs::PoseDot& cmd_vel,
-      std::list<std_msgs::Pose2DFloat32>& localPlan,
+      std::list<deprecated_msgs::Pose2DFloat32>& localPlan,
       const std::vector<costmap_2d::Observation>& observations){
 
 
@@ -130,7 +130,7 @@ namespace trajectory_rollout {
 
     // Temporary Transformation till api below changes
     std::vector<std_msgs::Point2DFloat32> copiedGlobalPlan;
-    for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = global_plan.begin(); it != global_plan.end(); ++it){
+    for(std::list<deprecated_msgs::Pose2DFloat32>::const_iterator it = global_plan.begin(); it != global_plan.end(); ++it){
       std_msgs::Point2DFloat32 p;
       p.x = it->x;
       p.y = it->y;
@@ -172,7 +172,7 @@ namespace trajectory_rollout {
       double p_x, p_y, p_th;
       path.getPoint(i, p_x, p_y, p_th);
 
-      std_msgs::Pose2DFloat32 p;
+      deprecated_msgs::Pose2DFloat32 p;
       p.x = p_x; 
       p.y = p_y;
       p.th = p_th;
