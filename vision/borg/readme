@@ -1,0 +1,12 @@
+HOW TO USE:
+
+start by running scripts/perms  to ensure that you have enough permissions to open the firewire device.
+
+then, you can use ./home and ./goto (e.g., "./goto 90" ) to make sure the stage can move around. use "./laser 1" and "./laser 0" to turn on/off the laser.
+
+once you're ready to scan, do:
+
+./scan_pipeline >OUTPUT.TXT
+
+this will run the whole pipeline and export the point cloud into OUTPUT.TXT
+
