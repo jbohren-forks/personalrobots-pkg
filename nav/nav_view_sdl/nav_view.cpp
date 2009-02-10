@@ -100,7 +100,7 @@ Publishes to (name / type):
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
-#include "std_msgs/Pose2DFloat32.h"
+#include "deprecated_msgs/Pose2DFloat32.h"
 #include "pr2_msgs/OccDiff.h"
 #include "robot_srvs/StaticMap.h"
 #include <pr2_srvs/TransientObstacles.h>
@@ -120,7 +120,7 @@ public:
   std_msgs::Polyline2D local_path;
   std_msgs::Polyline2D robot_footprint;
   std_msgs::Polyline2D laserscan;
-  std_msgs::Pose2DFloat32 initialpose;
+  deprecated_msgs::Pose2DFloat32 initialpose;
   std_msgs::Polyline2D inflatedObstacles;
   std_msgs::Polyline2D rawObstacles;
   pr2_msgs::OccDiff occ_diff_;
@@ -149,7 +149,7 @@ public:
     param("max_frame_rate", max_frame_rate, 5.0);
     param("/global_frame_id", global_frame, std::string("map"));
     advertise<robot_msgs::Planner2DGoal>("goal",1);
-    advertise<std_msgs::Pose2DFloat32>("initialpose",1);
+    advertise<deprecated_msgs::Pose2DFloat32>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
     subscribe("gui_path", pathline, &NavView::generic_cb,1);
     subscribe("local_path", local_path, &NavView::generic_cb,1);
