@@ -1,4 +1,0 @@
-left_scan_extent 30
-right_scan_extent 75
-iris 300
-focus 6930

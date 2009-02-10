@@ -1,3 +1,0 @@
-left_scan_extent 20
-right_scan_extent 85
-shutter 0.2

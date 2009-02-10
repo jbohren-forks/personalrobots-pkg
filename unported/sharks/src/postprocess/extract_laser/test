@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-(puts "please enter a directory name"; exit) if ARGV.length != 1
-fn = Dir.glob(ARGV[0] + '/*.jpg').sort
-puts "#{fn.length} files"
-exit if fn.length == 0
-`./extract_laser #{fn[-1]} #{fn[0,fn.length-1].join(' ')}`

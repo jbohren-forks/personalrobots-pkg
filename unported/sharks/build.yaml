@@ -1,4 +1,0 @@
-cpp:
-  make:
-    - src/libsharks
-    - src/loneshark
