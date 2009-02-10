@@ -1,27 +1,28 @@
-all: rtnet
+all: installed
 
 RTNET_VERSION = 0.9.10
-RTNET_ARCHIVE = rtnet-$(RTNET_VERSION).tar.bz2
+TARBALL = rtnet-$(RTNET_VERSION).tar.bz2
 
-download: $(RTNET_ARCHIVE)
+TARBALL_URL = http://pr.willowgarage.com/downloads/$(TARBALL)
+SOURCE_DIR = build/rtnet-0.9.10
+UNPACK_CMD = tar xjf
+TARBALL_PATCH = rtnet-$(RTNET_VERSION).patch
+include $(shell rospack find mk)/download_unpack_build.mk
 
-rtnet: rtnet-src
-	cd rtnet-src && \
-	cp ../rtnet_config .rtnet_config && \
+installed: wiped $(SOURCE_DIR)/unpacked Makefile
+	cd $(SOURCE_DIR) && \
+	cp ../../rtnet_config .rtnet_config && \
     make oldconfig && \
 	make install
+	touch installed
 
-$(RTNET_ARCHIVE): 
-	wget http://pr.willowgarage.com/downloads/$(RTNET_ARCHIVE)
-
-rtnet-src: $(RTNET_ARCHIVE)
-	tar xjf $(RTNET_ARCHIVE)
-	mv $(subst .tar.bz2,,$(RTNET_ARCHIVE)) $@
-	touch $@
+wiped: Makefile
+	make wipe
+	touch wiped
 
 clean:
-	-make -C rtnet-src clean
+	-make -C $(SOURCE_DIR) clean
 	
 wipe:
-	rm -rf rtnet rtnet-src $(RTNET_ARCHIVE)
+	rm -rf rtnet build $(TARBALL)
 

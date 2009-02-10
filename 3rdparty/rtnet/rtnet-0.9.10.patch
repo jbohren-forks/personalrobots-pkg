@@ -1,0 +1,20 @@
+--- ./examples/xenomai/posix/rtt-responder.c	2007-10-12 18:06:26.000000000 -0700
++++ ./examples/xenomai/posix/rtt-responder.c	2009-02-09 17:51:01.457720030 -0800
+@@ -38,6 +38,7 @@
+ #include <netinet/in.h>
+ #include <sys/mman.h>
+ #include <arpa/inet.h>
++#include <limits.h>
+ 
+ #include <rtnet.h>
+ 
+--- ./examples/xenomai/posix/rtt-sender.c	2007-10-12 18:06:26.000000000 -0700
++++ ./examples/xenomai/posix/rtt-sender.c	2009-02-09 17:51:21.567758697 -0800
+@@ -42,6 +42,7 @@
+ #include <netinet/in.h>
+ #include <sys/mman.h>
+ #include <arpa/inet.h>
++#include <limits.h>
+ 
+ #include <rtnet.h>
+ 
