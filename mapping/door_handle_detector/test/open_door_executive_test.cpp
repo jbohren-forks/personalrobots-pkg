@@ -34,50 +34,146 @@
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <checkerboard_detector/ObjectDetection.h>
-
+#include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
-#include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
-
+#include <robot_mechanism_controllers/cartesian_trajectory_controller.h>
+#include <kdl/frames.hpp>
 
 using namespace tf;
+using namespace KDL;
 
 class OpenDoorExecutiveTest : public ros::Node
 {
-  public:
-    tf::TransformListener tf_; 
+private:
+  tf::TransformListener tf_; 
 
-    OpenDoorExecutiveTest(std::string node_name):
-      ros::Node(node_name),
-      tf_(*this)
-    {
-      subscribe(listen_topic_, checkerboard_msg_,  &OpenDoorExecutiveTest::doorCallback,1);
-      advertise<robot_msgs::Door>(publish_topic_,1);
+  enum {INITIALIZED, DETECTING, GRASPING, FINISHED };
+  int state_;
+  robot_msgs::Door my_door_;
+
+
+public:
+  OpenDoorExecutiveTest(std::string node_name):
+    ros::Node(node_name),
+    tf_(*this),
+    state_(INITIALIZED)
+  {
+    // initialize my door
+    double tmp;
+    param("~/door_frame_p1_x", tmp, 0.0); my_door_.frame_p1.x = tmp;
+    param("~/door_frame_p1_y", tmp, 0.0); my_door_.frame_p1.y = tmp;
+    param("~/door_frame_p2_x", tmp, 0.0); my_door_.frame_p2.x =tmp;
+    param("~/door_frame_p2_y", tmp, 0.0); my_door_.frame_p2.y =tmp;
+    param("~/door_hinge" , my_door_.hinge, -1);
+    param("~/door_rot_dir" , my_door_.rot_dir, -1);
+    my_door_.header.frame_id = "odom_combined";
+
+    advertise<std_msgs::PoseStamped>("cartesian_trajectory/command",1);
+  }
+  
+  
+  ~OpenDoorExecutiveTest()
+  {}
+  
+  
+  bool DetectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
+  {
+    door_handle_detector::DoorDetector::Request  req;
+    door_handle_detector::DoorDetector::Response res;
+    req.door = door_estimate;
+    if (ros::service::call("door_handle_detector", req, res)){
+      door_detection = res.door;
+      return true;
     }
+    else
+      return false;
+  }
 
 
-    ~OpenDoorExecutiveTest()
-    {
-      unadvertise(publish_topic_);
-      unsubscribe(listen_topic_);
+  bool GraspDoor(const robot_msgs::Door& door)
+  {
+    std_msgs::PoseStamped pose_msg;
+    Stamped<Pose> pose;
+    pose.frame_id_ = door.header.frame_id;
+
+    Vector normal = getNormalOnDoor(door);
+    Vector point(door.handle.x, door.handle.y, door.handle.y);
+
+    pose.setOrigin( Vector3(point[0], point[1], point[2]) );
+    Vector z_axis(0,0,1);
+    double z_angle = dot(normal, z_axis);
+    pose.setRotation( Quaternion(z_angle, 0, 0) ); 
+    PoseStampedTFToMsg(pose, pose_msg);
+
+    // move in front of door
+    pose_msg.pose.position.x = pose_msg.pose.position.x - 0.1;
+    publish("cartesian_trajectory/command", pose_msg);
+    usleep(1e6 * 10);
+    
+    // move over door handle
+    pose_msg.pose.position.x = pose_msg.pose.position.x + 0.1;
+    publish("cartesian_trajectory/command", pose_msg);
+    usleep(1e6 * 10);
+
+    return true;
+  }
+
+
+
+  void spin()
+  {
+    switch (state_){
+
+    case INITIALIZED:{
+      state_ = DETECTING;
+      break;
     }
+    case DETECTING:{
+      DetectDoor(my_door_, my_door_);
+      state_ = GRASPING;
+      break;
+    }
+    case GRASPING:{
+      GraspDoor(my_door_);
+
+      state_ = FINISHED;
+      break;
+    }
+    }
+  }
+
+
+
+  Vector getNormalOnDoor(const robot_msgs::Door& door)
+  {
+    Vector door1, door2, tmp;
+    door1[0] = door.door_p1.x;
+    door1[1] = door.door_p1.y;
+    door2[0] = door.door_p2.x;
+    door2[1] = door.door_p2.y;
+    tmp = (door1 - door2); tmp.Normalize();
+    return (tmp * Vector(0,0,1));
+  }
+
+
 }; // class
 
 
+
+
+
+// -----------------------------------
+//              MAIN
+// -----------------------------------
 
 int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  OpenDoorExecutiveTest node("test_door_detection");
+  OpenDoorExecutiveTest executive("open_door_executive_test");
 
-  try {
-    node.spin();
-  }
-  catch(char const* e){
-    std::cout << e << std::endl;
-  }
-  
-  return(0);
+  executive.spin();
+
+  return 0;
 }
