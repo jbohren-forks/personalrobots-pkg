@@ -84,6 +84,8 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_msgs/KinematicPlanStatus.h>
 
+#include <urdf/URDF.h>
+
 #include <std_msgs/Empty.h>
 #include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -167,7 +169,7 @@ MoveArm::MoveArm(const std::string& node_name,
     file.loadString(model.c_str());
     robot_model_ = new planning_models::KinematicModel();
     robot_model_->setVerbose(false);
-    robot_model_->build(file);
+    robot_model_->build(model);
     // make sure we are in the robot's self frame
     robot_model_->reduceToRobotFrame();
     
