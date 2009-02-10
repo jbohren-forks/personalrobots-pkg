@@ -1,0 +1,14 @@
+<launch>
+   <include file="$(find pr2_alpha)/prg.machine" />
+
+    <!--param name="door_detection_test_node/door_width" type="int" value="0"/>
+    <param name="door_detection_test_node/door_checkerboard_x_offset" type="double" value="0.0"/>
+    <param name="door_detection_test_node/door_checkerboard_z_offset" type="double" value="0.0"/>
+
+    <param name="door_detection_test_node/checkerboard_handle_x_offset" type="double" value="0.0"/>
+    <param name="door_detection_test_node/checkerboard_handle_z_offset" type="double" value="0.0"/-->
+
+    <node machine="two" pkg="door_handle_detector" type="door_handle_detection_test" respawn="true" output="screen">
+    </node>
+
+</launch> 
