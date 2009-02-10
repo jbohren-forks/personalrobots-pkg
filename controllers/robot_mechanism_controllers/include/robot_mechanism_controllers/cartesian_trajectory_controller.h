@@ -48,13 +48,16 @@
 
 namespace controller {
 
+static const std::string controller_name = "cartesian_trajectory";
+
+
 class CartesianTrajectoryController
 {
 public:
   CartesianTrajectoryController();
   ~CartesianTrajectoryController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string name = controller_name);
   void update();
   bool moveTo(const KDL::Frame& pose_desi, double duration=0);
 
@@ -62,6 +65,7 @@ private:
   KDL::Frame getPose();
 
   ros::Node* node_;
+  std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_, time_started_, time_passed_, max_duration_;
   bool is_moving_;
@@ -101,6 +105,8 @@ class CartesianTrajectoryControllerNode : public Controller
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
   ros::Node* node_;
+  std::string controller_name_;
+
   tf::TransformListener robot_state_;
   tf::MessageNotifier<std_msgs::PoseStamped>* command_notifier_;
 

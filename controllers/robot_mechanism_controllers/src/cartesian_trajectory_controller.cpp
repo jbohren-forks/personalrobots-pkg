@@ -43,7 +43,6 @@ using namespace KDL;
 using namespace tf;
 
 
-static const std::string controller_name = "cartesian_trajectory";
 
 
 namespace controller {
@@ -62,9 +61,11 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 
 
 
-bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name)
+  bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string name)
 {
   cout << "initializing cartesian trajectory controller between " << root_name << " and " << tip_name << endl;
+
+  controller_name_ = name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -83,10 +84,10 @@ bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_stat
 
   // initialize motion profile
   double max_vel_trans, max_vel_rot, max_acc_trans, max_acc_rot;
-  node_->param(controller_name+"/max_vel_trans", max_vel_trans, 0.0) ;
-  node_->param(controller_name+"/max_vel_rot", max_vel_rot, 0.0) ;
-  node_->param(controller_name+"/max_acc_trans", max_acc_trans, 0.0) ;
-  node_->param(controller_name+"/max_acc_rot", max_acc_rot, 0.0) ;
+  node_->param(controller_name_+"/max_vel_trans", max_vel_trans, 0.0) ;
+  node_->param(controller_name_+"/max_vel_rot", max_vel_rot, 0.0) ;
+  node_->param(controller_name_+"/max_acc_trans", max_acc_trans, 0.0) ;
+  node_->param(controller_name_+"/max_acc_rot", max_acc_rot, 0.0) ;
   for (unsigned int i=0; i<3; i++){
     motion_profile_[i  ].SetMax(max_vel_trans, max_acc_trans);
     motion_profile_[i+3].SetMax(max_vel_rot,   max_acc_rot);
@@ -222,19 +223,22 @@ CartesianTrajectoryControllerNode::~CartesianTrajectoryControllerNode()
 
 bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  // get the controller name
+  node_->param(controller_name+"/controller_name", controller_name_, controller_name);
+
   // get name of root and tip
   string tip_name;
-  node_->param(controller_name+"/root_name", root_name_, string("no_name_given"));
-  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
+  node_->param(controller_name_+"/root_name", root_name_, string("no_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name_, tip_name))
+  if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
     return false;
 
   // subscribe to pose commands
   command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  
 								 boost::bind(&CartesianTrajectoryControllerNode::command, this, _1),
-								 controller_name + "/command", root_name_, 1);
+								 controller_name_ + "/command", root_name_, 1);
   return true;
 }
 
