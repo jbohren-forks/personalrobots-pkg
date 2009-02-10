@@ -1120,12 +1120,6 @@ stereogui::stereogui() {
         done_button->callback((Fl_Callback*)cal_ok_cb);
         o->user_data((void *)this);
       } // Fl_Button* done_button
-      { Fl_Button* o = epi_button = new Fl_Button(220, 50, 60, 25, "Epi check");
-        epi_button->down_box(FL_DOWN_BOX);
-        epi_button->labelsize(11);
-        epi_button->callback((Fl_Callback*)cal_epipolar_cb);
-        o->user_data((void *)this);
-      } // Fl_Button* epi_button
       { Fl_Button* o = upload_params_button = new Fl_Button(130, 270, 130, 40, "Upload params");
         upload_params_button->down_box(FL_DOWN_BOX);
         upload_params_button->callback((Fl_Callback*)cal_upload_params_cb);

@@ -1565,18 +1565,6 @@ double epi_scanline_error0(bool horz)
 }
 
 
-//
-// calculate epipolar error
-// assumes images have already been loaded
-// assumes horizontal epilines
-//
-
-void cal_epipolar_cb(Fl_Button*, void*)
-{
-  double err = epi_scanline_error();
-  debug_message("Epiline RMS error: %f pixels", err);
-}
-
 
 // stereo button state check
 void

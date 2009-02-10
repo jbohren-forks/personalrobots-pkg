@@ -38,7 +38,6 @@ extern void cal_check_y_cb(Fl_Value_Input*, void*);
 extern void cal_calibrate_cb(Fl_Button*, void*);
 extern void cal_save_params_cb(Fl_Button*, void*);
 extern void cal_ok_cb(Fl_Button*, void*);
-extern void cal_epipolar_cb(Fl_Button*, void*);
 extern void cal_upload_params_cb(Fl_Button*, void*);
 #include <FL/Fl_Check_Button.H>
 extern void cal_fixed_aspect_cb(Fl_Check_Button*, void*);
@@ -161,7 +160,6 @@ public:
   Fl_Button *calibrate_button;
   Fl_Button *save_params_button;
   Fl_Button *done_button;
-  Fl_Button *epi_button;
   Fl_Button *upload_params_button;
   Fl_Check_Button *fixed_aspect_button;
   Fl_Check_Button *fixed_kappa2_button;
