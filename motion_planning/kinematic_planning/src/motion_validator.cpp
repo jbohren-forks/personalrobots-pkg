@@ -200,7 +200,7 @@ public:
 	}
     }
 
-    virtual void setRobotDescription(planning_models::URDF *file)
+    virtual void setRobotDescription(robot_desc::URDF *file)
     {
 	CollisionSpaceMonitor::setRobotDescription(file);	
 	

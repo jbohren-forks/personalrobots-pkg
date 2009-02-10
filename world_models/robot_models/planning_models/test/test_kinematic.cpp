@@ -747,8 +747,6 @@ TEST(FK, MoreRobots)
     
     EXPECT_TRUE(sameStringIgnoringWS(MODEL3_INFO, ss.str()));
 
-    model->printLinkPoses();
-
     EXPECT_NEAR(-1.0, model->getLink("base_link1")->globalTrans.getOrigin().x(), 1e-5);
     EXPECT_NEAR(-1.0, model->getLink("base_link1")->globalTrans.getOrigin().y(), 1e-5);
     EXPECT_NEAR(0.0, model->getLink("base_link1")->globalTrans.getOrigin().z(), 1e-5);
