@@ -53,7 +53,7 @@ LaserMedianFilter::~LaserMedianFilter()
   delete intensity_filter_;
 };
 
-bool LaserMedianFilter::update(const std_msgs::LaserScan& scan_in, std_msgs::LaserScan& scan_out)
+bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan::LaserScan& scan_out)
 {
   boost::mutex::scoped_lock lock(data_lock);
   scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too

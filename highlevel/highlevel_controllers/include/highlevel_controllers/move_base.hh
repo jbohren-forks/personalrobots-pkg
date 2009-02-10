@@ -55,7 +55,7 @@
 #include <robot_msgs/Planner2DState.h>
 #include <robot_msgs/Planner2DGoal.h>
 #include <std_msgs/PoseDot.h>
-#include <std_msgs/LaserScan.h>
+#include <laser_scan/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/PointCloud.h>
 
@@ -174,7 +174,7 @@ namespace ros {
       /**
        * @brief Callbacks for perceiving obstalces
        */
-      void baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message);
+      void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void tiltScanCallback();
       void tiltCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message);
       void groundPlaneCloudCallback();
@@ -225,8 +225,8 @@ namespace ros {
       bool checkWatchDog() const;
 
       // Callback messages
-      std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
-      std_msgs::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
+      laser_scan::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
+      laser_scan::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud groundPlaneCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
@@ -283,7 +283,7 @@ namespace ros {
       
       //Robot filter
       robot_filter::RobotFilter* filter_;
-      tf::MessageNotifier<std_msgs::LaserScan>* baseScanNotifier_; 
+      tf::MessageNotifier<laser_scan::LaserScan>* baseScanNotifier_; 
       tf::MessageNotifier<std_msgs::PointCloud>* tiltLaserNotifier_;
 
       //flag for reseting the costmap.

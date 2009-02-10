@@ -35,7 +35,7 @@
 
 #include "laser_scan/laser_scan.h"
 
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 

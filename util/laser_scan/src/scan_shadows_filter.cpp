@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/LaserScan.h>
+#include <laser_scan/LaserScan.h>
 
 #include <float.h>
 
@@ -55,7 +55,7 @@ class ScanShadowsFilter : public ros::Node
   public:
 
     // ROS related
-    LaserScan tilt_scan_msg_;               // Filled by subscriber with new tilte laser scans
+    laser_scan::LaserScan tilt_scan_msg_;               // Filled by subscriber with new tilte laser scans
     laser_scan::LaserProjection projector_; // Used to project laser scans
 
     double tilt_laser_max_range_;           // Used in laser scan projection

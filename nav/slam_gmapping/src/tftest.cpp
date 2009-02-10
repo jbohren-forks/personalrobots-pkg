@@ -1,4 +1,4 @@
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "ros/node.h"
 #include "tf/transform_listener.h"
 
@@ -52,7 +52,7 @@ class Test
   private:
     ros::Node* node_;
     tf::TransformListener* tf_;
-    std_msgs::LaserScan scan_;
+    laser_scan::LaserScan scan_;
 };
 
 int

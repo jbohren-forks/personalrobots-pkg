@@ -35,7 +35,7 @@
 #include <sstream>
 
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 
 #include "filters/median.h"
 #include "boost/thread/mutex.hpp"
@@ -55,7 +55,7 @@ public:
    * \param scan_in The new scan to filter
    * \param scan_out The filtered scan
    */
-  bool update(const std_msgs::LaserScan& scan_in, std_msgs::LaserScan& scan_out);
+  bool update(const laser_scan::LaserScan& scan_in, laser_scan::LaserScan& scan_out);
 
 
 private:
@@ -63,7 +63,7 @@ private:
   unsigned int num_ranges_; /// How many data point are in each row
 
   boost::mutex data_lock; /// Protection from multi threaded programs
-  std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
+  laser_scan::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
   filters::MedianFilter<std::vector<float> > * range_filter_;
   filters::MedianFilter<std::vector<float> > * intensity_filter_;

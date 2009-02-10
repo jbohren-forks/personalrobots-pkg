@@ -47,9 +47,9 @@ in order to invalidate them.
 
 
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 
-using namespace std_msgs;
+using namespace laser_scan;
 
 class ScanIntensityFilter : public ros::Node
 {

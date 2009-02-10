@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <string>
 #include "ros/node.h"
-#include "std_srvs/StringString.h"
+#include "deprecated_srvs/StringString.h"
 
 using std::vector;
 using std::endl;

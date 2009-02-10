@@ -28,7 +28,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "std_srvs/StringString.h"
+#include "deprecated_srvs/StringString.h"
 using namespace std;
 using namespace ros;
 
@@ -38,8 +38,8 @@ public:
   MuxSwitcher() : Node("MuxSwitcher") { }
   void switchMux(string s)
   {
-    std_srvs::StringString::Request  req;
-    std_srvs::StringString::Response res;
+    deprecated_srvs::StringString::Request  req;
+    deprecated_srvs::StringString::Response res;
     req.str = s;
     bool ok = service::call("mux", req, res);
     if (ok)

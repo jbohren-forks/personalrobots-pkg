@@ -32,7 +32,6 @@
 
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <std_msgs/LaserScan.h>
 #include <std_msgs/PointCloud.h>
 
 namespace gazebo

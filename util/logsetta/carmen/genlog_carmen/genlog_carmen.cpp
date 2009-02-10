@@ -30,7 +30,7 @@
 
 #include <cmath>
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include <vector>
 #include <string>
@@ -84,7 +84,7 @@ void odom_callback(string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, ro
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
-void scan_callback(string name, std_msgs::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
+void scan_callback(string name, laser_scan::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
 {
 
   double rel_time = t.toSec();
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   player.open(files, ros::Time());
 
   player.addHandler<std_msgs::RobotBase2DOdom>(string("/odom"), &odom_callback, NULL);
-  player.addHandler<std_msgs::LaserScan>(string("/scan"), &scan_callback, NULL);
+  player.addHandler<laser_scan::LaserScan>(string("/scan"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");
 

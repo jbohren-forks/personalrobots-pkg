@@ -28,18 +28,18 @@
  */
 
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "laser_scan/median_filter.h"
 
 class MedianFilterNode : public ros::Node
 {
 public:
-  std_msgs::LaserScan msg;
+  laser_scan::LaserScan msg;
 
 
   MedianFilterNode() : ros::Node("median_filter_node"), filter(5)
   {
-    advertise<std_msgs::LaserScan>("~output", 1000);
+    advertise<laser_scan::LaserScan>("~output", 1000);
     subscribe("scan_in", msg, &MedianFilterNode::callback, 3);
   }
   void callback()

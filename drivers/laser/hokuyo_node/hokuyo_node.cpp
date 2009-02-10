@@ -70,7 +70,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">std_msgs/LaserScan</a> : scan data from the laser.
+- @b "scan"/<a href="../../laser_scan/html/classstd__msgs_1_1LaserScan.html">laser_scan/LaserScan</a> : scan data from the laser.
 - @b "/diagnostics"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
@@ -105,7 +105,7 @@ Reads the following parameters from the parameter server
 #include "ros/time.h"
 #include "ros/common.h"
 
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 
 #include "self_test/self_test.h"
 #include "diagnostic_updater/diagnostic_updater.h"
@@ -129,7 +129,7 @@ private:
 
 public:
   hokuyo::Laser laser_;
-  std_msgs::LaserScan scan_msg_;
+  laser_scan::LaserScan scan_msg_;
 
   double min_ang_;
   double max_ang_;
@@ -146,7 +146,7 @@ public:
 
   HokuyoNode() : ros::Node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
-    advertise<std_msgs::LaserScan>("scan", 100);
+    advertise<laser_scan::LaserScan>("scan", 100);
 
     if (hasParam("~min_ang_degrees") && hasParam("~min_ang"))
     {

@@ -54,7 +54,7 @@ void ScanAssembler::startNewCloud(const std::string& target_frame, unsigned int 
   point_count_ = 0 ;
 }
 
-int ScanAssembler::addScan(const std_msgs::LaserScan& scan)
+int ScanAssembler::addScan(const laser_scan::LaserScan& scan)
 {
   PointCloud target_frame_cloud ;                                                     // Stores the current scan in the target frame
 

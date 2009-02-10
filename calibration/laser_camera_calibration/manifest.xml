@@ -11,6 +11,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="robot_msgs"/>
   <depend package="std_msgs"/>
+  <depend package="laser_scan"/>
   <depend package="rosrecord"/>
   <depend package="rospy"/>
   <depend package="rosoct"/>

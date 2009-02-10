@@ -97,7 +97,7 @@ Publishes to (name / type):
 #include "ros/node.h"
 
 // Messages that I need
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "robot_msgs/ParticleCloud.h"
 #include "std_msgs/Pose2DFloat32.h"
@@ -147,7 +147,7 @@ class AmclNode: public ros::Node, public Driver
     std_msgs::RobotBase2DOdom localizedOdomMsg;
     robot_msgs::ParticleCloud particleCloudMsg;
     std_msgs::RobotBase2DOdom odomMsg;
-    std_msgs::LaserScan laserMsg;
+    laser_scan::LaserScan laserMsg;
     std_msgs::Pose2DFloat32 initialPoseMsg;
     
     // Message callbacks
@@ -190,7 +190,7 @@ class AmclNode: public ros::Node, public Driver
                      const ros::Time& t, const std::string& f);
 
     // buffer of not-yet-transformed scans
-    std::deque<std_msgs::LaserScan> laser_scans;
+    std::deque<laser_scan::LaserScan> laser_scans;
     
     //time for tolerance on the published transform, 
     //basically defines how long a map->odom transform is good for
@@ -787,13 +787,13 @@ AmclNode::laserReceived()
   }
 
   // Put it on the queue
-  std_msgs::LaserScan newscan(laserMsg);
+  laser_scan::LaserScan newscan(laserMsg);
   laser_scans.push_back(newscan);
 
   // Process the queued scans
   while(!laser_scans.empty())
   {
-    std_msgs::LaserScan scan = laser_scans.front();
+    laser_scan::LaserScan scan = laser_scans.front();
 
     //make sure that we don't fall to far in the past
     // To work around the lack of ros::Time support in roscpp, we'll take the time of the

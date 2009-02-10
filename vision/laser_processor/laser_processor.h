@@ -45,7 +45,7 @@
 #include <unistd.h>
 #include <math.h>
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/Point.h"
 
@@ -70,7 +70,7 @@ namespace laser_processor
     float x;
     float y;
 
-    static Sample* Extract(int ind, std_msgs::LaserScan& scan);
+    static Sample* Extract(int ind, laser_scan::LaserScan& scan);
 
   private:
     Sample() {};
@@ -116,7 +116,7 @@ namespace laser_processor
 
     inline void clear() { mask_.clear(); filled = false; }
 
-    void addScan(std_msgs::LaserScan& scan);
+    void addScan(laser_scan::LaserScan& scan);
 
     bool hasSample(Sample* s, float thresh);
   };
@@ -126,13 +126,13 @@ namespace laser_processor
   class ScanProcessor
   {
     std::list<SampleSet*> clusters_;
-    std_msgs::LaserScan scan_;
+    laser_scan::LaserScan scan_;
 
   public:
 
     std::list<SampleSet*>& getClusters() { return clusters_; }
 
-    ScanProcessor(std_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold = 0.03);
+    ScanProcessor(laser_scan::LaserScan& scan, ScanMask& mask_, float mask_threshold = 0.03);
 
     ~ScanProcessor();
 

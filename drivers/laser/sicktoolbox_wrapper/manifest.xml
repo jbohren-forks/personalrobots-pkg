@@ -8,5 +8,5 @@
   <review status="unreviewed" notes=""/>
   <depend package="sicktoolbox"/>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
+  <depend package="laser_scan"/>
 </package>

@@ -38,7 +38,7 @@
 #include "laser_scan/laser_scan.h"
 
 // Messages
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "std_msgs/PointCloud.h"
 
 namespace point_cloud_utils {
@@ -68,7 +68,7 @@ public:
    * \param scan The scan that we want to add to the point cloud
    * \return Negative value on error
    */
-  int addScan(const std_msgs::LaserScan& scan ) ;
+  int addScan(const laser_scan::LaserScan& scan ) ;
   
   /**
    * \brief Retrieves the current assembled point cloud

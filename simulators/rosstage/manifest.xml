@@ -6,5 +6,6 @@
   <depend package="roscpp" />
   <depend package="stage" />
   <depend package="std_msgs" />
+  <depend package="laser_scan" />
   <depend package="tf" />
 </package>

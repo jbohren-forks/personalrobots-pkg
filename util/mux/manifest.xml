@@ -12,5 +12,5 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="std_srvs"/>
+  <depend package="deprecated_srvs"/>
 </package>

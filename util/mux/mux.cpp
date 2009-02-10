@@ -29,7 +29,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/String.h"
-#include "std_srvs/StringString.h"
+#include "deprecated_srvs/StringString.h"
 using namespace std;
 using namespace ros;
 
@@ -120,8 +120,8 @@ public:
         break;
       }
   }
-  bool selSrvCB(std_srvs::StringString::Request  &req,
-                std_srvs::StringString::Response &res)
+  bool selSrvCB(deprecated_srvs::StringString::Request  &req,
+                deprecated_srvs::StringString::Response &res)
   {
     if (selectedTopic)
       res.str = selectedTopic->topicName;

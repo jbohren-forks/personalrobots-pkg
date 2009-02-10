@@ -13,6 +13,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
+  <depend package="laser_scan"/>
   <depend package="imu_node"/>
   <depend package="rosrecord"/>
 <depend package="robot_msgs"/>

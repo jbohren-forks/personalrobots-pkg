@@ -35,11 +35,12 @@
 
 #include "laser_scan/laser_scan.h"
 
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
 using namespace std_msgs;
+using namespace laser_scan;
 using namespace std ;
 
 namespace point_cloud_assembler
@@ -55,10 +56,10 @@ namespace point_cloud_assembler
  * \section services ROS Services
  * - "~build_cloud" - Inhertited from point_cloud_assembler::BaseAssemblerSrv
  */
-class LaserScanAssemblerSrv : public BaseAssemblerSrv<std_msgs::LaserScan>
+class LaserScanAssemblerSrv : public BaseAssemblerSrv<laser_scan::LaserScan>
 {
 public:
-  LaserScanAssemblerSrv() : BaseAssemblerSrv<std_msgs::LaserScan>("laser_scan_assembler")
+  LaserScanAssemblerSrv() : BaseAssemblerSrv<laser_scan::LaserScan>("laser_scan_assembler")
   {
     // ***** Set Laser Projection Method *****
     param("~ignore_laser_skew", ignore_laser_skew_, true) ;

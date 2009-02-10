@@ -29,13 +29,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
 
 class CarmenLogger : public ros::Node
 {
 public:
-  std_msgs::LaserScan laserMsg;
+  laser_scan::LaserScan laserMsg;
   std_msgs::RobotBase2DOdom odomMsg;
   double robot_x, robot_y, robot_th, robot_tv, robot_rv;
   double start_time;

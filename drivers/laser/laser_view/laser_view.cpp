@@ -36,7 +36,7 @@
 #include <math.h>
 #include <GL/gl.h>
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "sdlgl/sdlgl.h"
 
 using namespace ros;
@@ -44,7 +44,7 @@ using namespace ros;
 class LaserView : public Node, public SDLGL
 {
 public:
-  std_msgs::LaserScan laser;
+  laser_scan::LaserScan laser;
   float view_scale, view_x, view_y;
 
   LaserView() : Node("laser_view"),

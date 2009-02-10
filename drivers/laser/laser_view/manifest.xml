@@ -3,6 +3,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
+  <depend package="laser_scan"/>
   <depend package="sdlgl"/>
 </package>

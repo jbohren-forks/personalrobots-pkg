@@ -28,14 +28,14 @@
  */
 
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
 #include "laser_scan_annotator/LaserScanAnnotated.h"
 #include "boost/thread.hpp"
 
 using namespace std ;
-using namespace std_msgs ;
+using namespace laser_scan ;
 
 namespace laser_scan_annotator
 {
@@ -104,7 +104,7 @@ public:
   }
 
 protected:
-  std_msgs::LaserScan scan_in_ ;
+  laser_scan::LaserScan scan_in_ ;
   string fixed_frame_ ;
 
 

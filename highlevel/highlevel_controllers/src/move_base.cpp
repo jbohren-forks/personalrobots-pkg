@@ -291,7 +291,7 @@ namespace ros {
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      baseScanNotifier_ = new tf::MessageNotifier<std_msgs::LaserScan>(&tf_, this,  
+      baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, this,  
                                  boost::bind(&MoveBase::baseScanCallback, this, _1), 
                                 "base_scan", global_frame_, 50); 
       tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
@@ -419,7 +419,7 @@ namespace ros {
       stateMsg.pos.th = (float)yaw;
     }
 
-    void MoveBase::baseScanCallback(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
+    void MoveBase::baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message)
     {
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;

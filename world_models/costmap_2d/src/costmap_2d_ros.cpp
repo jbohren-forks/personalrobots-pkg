@@ -33,7 +33,7 @@
 #include <ros/node.h>
 
 // our ros messages
-#include <std_msgs/LaserScan.h>
+#include <laser_scan/LaserScan.h>
 #include <std_msgs/PointCloud.h>
 #include <pr2_msgs/OccDiff.h>
 #include <robot_srvs/StaticMap.h>
@@ -98,13 +98,13 @@ private:
   CostMap2D costmap_;
 
   //laser scan message
-  std_msgs::LaserScan laser_msg_;
+  laser_scan::LaserScan laser_msg_;
   std_msgs::Polyline2D pointcloud_msg_;
 
   //projector for the laser
   laser_scan::LaserProjection projector_;
 
-  std::list<std_msgs::LaserScan> buffered_laser_scans;
+  std::list<laser_scan::LaserScan> buffered_laser_scans;
 
 };
 
@@ -188,13 +188,13 @@ bool CostMap2DRos::fullTransientObstacleCallback(pr2_srvs::TransientObstacles::R
 
 void CostMap2DRos::laserReceived() {
   
-  std_msgs::LaserScan newscan(laser_msg_);
+  laser_scan::LaserScan newscan(laser_msg_);
   this->buffered_laser_scans.push_back(newscan);
 
   std::list<unsigned int> new_occ_ids;
   std::list<unsigned int> new_unocc_ids;
 
-  for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
+  for(std::list<laser_scan::LaserScan>::iterator it = this->buffered_laser_scans.begin();
       it != this->buffered_laser_scans.end();
       it++)
   {

@@ -32,7 +32,7 @@
 #include <csignal>
 #include <sicklms-1.0/SickLMS.hh>
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 using namespace SickToolbox;
 using namespace std;
 
@@ -45,7 +45,7 @@ void ctrlc_handler(int)
 class SickNode : public ros::Node
 {
 public:
-  std_msgs::LaserScan scan_msg;
+  laser_scan::LaserScan scan_msg;
   int scan_count;
   string port;
   int baud;
@@ -54,7 +54,7 @@ public:
   SickNode() : ros::Node("sicklms"), scan_count(0), last_print_time(0)
   {
     scan_msg.header.frame_id = "base_laser";
-    advertise<std_msgs::LaserScan>("scan", 1);
+    advertise<laser_scan::LaserScan>("scan", 1);
     param("sicklms/port", port, string("/dev/ttyUSB0"));
     param("sicklms/baud", baud, 500000);
     param("sicklms/inverted", inverted, true);

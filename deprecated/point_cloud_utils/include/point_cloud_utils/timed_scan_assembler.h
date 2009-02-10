@@ -35,7 +35,7 @@
 #include "boost/thread/mutex.hpp"
 
 #include "std_msgs/PointCloud.h"
-#include "std_msgs/LaserScan.h"
+#include "laser_scan/LaserScan.h"
 
 #include "point_cloud_utils/scan_assembler.h"
 
@@ -62,7 +62,7 @@ public:
 private:
   void scansCallback() ;
 
-  std_msgs::LaserScan scan_ ;
+  laser_scan::LaserScan scan_ ;
 
   bool got_first_scan_ ;
   bool done_getting_scans_ ;
