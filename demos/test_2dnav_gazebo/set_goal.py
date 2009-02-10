@@ -49,6 +49,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
 from robot_msgs.msg import *
+from deprecated_msgs.msg import *
 from transformations import *
 from numpy import *
 
@@ -160,10 +161,10 @@ class NavStackTest(unittest.TestCase):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("goal", Planner2DGoal) #received by wavefront_player or equivalent
-        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
-        rospy.Subscriber("base_bumper"           , String              , self.bumpedInput)
-        rospy.Subscriber("torso_lift_bumper"     , String              , self.bumpedInput)
+        rospy.subscribe_topic("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
+        rospy.subscribe_topic("odom"                  , RobotBase2DOdom     , self.odomInput)
+        rospy.subscribe_topic("base_bumper"           , String              , self.bumpedInput)
+        rospy.subscribe_topic("torso_lift_bumper"     , String              , self.bumpedInput)
 
         rospy.init_node(NAME, anonymous=True)
 

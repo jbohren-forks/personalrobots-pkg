@@ -22,5 +22,7 @@
   <depend package="transformations"/>
   <depend package="ransac_ground_plane_extraction"/>
   <depend package="point_cloud_assembler"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
   <depend package="deprecated_msgs"/>
 </package>
