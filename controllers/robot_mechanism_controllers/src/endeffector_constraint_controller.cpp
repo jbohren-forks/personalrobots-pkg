@@ -104,7 +104,8 @@ bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXm
   node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
   node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
   node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
-  node->param("constraint/f_r_max"      , f_pose_max  , 20.0) ; /// max r force
+  node->param("constraint/f_pose_max"   , f_pose_max  , 20.0) ; /// max r force
+  node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max r force
 
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
@@ -268,7 +269,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     //determine sign
     //constraint_jac_(4,3) = 1;
-    f_pitch = pose_error(4) * f_pose_max*10; /// @todo: FIXME, replace with some exponential function
+    f_pitch = pose_error(4) * f_pose_max * 10; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -280,7 +281,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     //determine sign
     //constraint_jac_(5,4) = 1;
-    f_yaw = pose_error(5)* f_pose_max; /// @todo: FIXME, replace with some exponential function
+    f_yaw = pose_error(5) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -292,19 +293,19 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   JntArray jnt_pos(kdl_chain_.getNrOfJoints());
   chain_.getPositions(robot_->joint_states_, jnt_pos);
   
-  double joint_e = angles::shortest_angular_distance(jnt_pos(2),elbow_limit);
+  double joint_e = angles::shortest_angular_distance(jnt_pos(2), elbow_limit);
   if(joint_e < -0.1) 
   {
-    joint_constraint_jac_(2)=1;
+    joint_constraint_jac_(2) = 1;
   }
 
   if(joint_e < 0)
   {
-    joint_constraint_force_(2)=joint_e*f_limit_max;
+    joint_constraint_force_(2) = joint_e * f_limit_max;
   }
   else 
   {
-    joint_constraint_force_(0)=0;
+    joint_constraint_force_(2) = 0;
   }
 
   constraint_force_(0) = f_x;
@@ -318,8 +319,8 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
 {
   // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
-  constraint_null_space_ = identity_ - constraint_jac_*constraint_jac_.transpose();
-  joint_constraint_null_space_ =  identity_joint_ - joint_constraint_jac_*joint_constraint_jac_.transpose();
+  constraint_null_space_ = identity_ - constraint_jac_ * constraint_jac_.transpose();
+  joint_constraint_null_space_ =  identity_joint_ - joint_constraint_jac_ * joint_constraint_jac_.transpose();
 
 }
 
