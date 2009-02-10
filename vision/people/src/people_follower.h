@@ -90,7 +90,7 @@ private:
 
   ros::Time time_last_publish_;
 
-  double follow_distance_, publish_rate_;
+  double follow_distance_, publish_rate_, distance_threshold_;
   bool initialized_;
   std_msgs::PointCloud  robot_goal_cloud_; 
 
