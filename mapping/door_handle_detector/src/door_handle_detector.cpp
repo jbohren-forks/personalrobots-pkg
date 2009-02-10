@@ -112,7 +112,7 @@ class DoorHandleDetector : public ros::Node
       {
         param ("~fixed_frame", fixed_frame_, string("odom_combined"));        
 
-        param ("~door_min_z", door_min_z_, 0.4);                            // the minimum Z point on the door must be lower than this value
+        param ("~door_min_z", door_min_z_, 0.2);                            // the minimum Z point on the door must be lower than this value
         param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
         param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
         param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
@@ -226,12 +226,9 @@ class DoorHandleDetector : public ros::Node
       // Obtain the bounding box information in the reference frame of the laser scan
       Point32 minB, maxB;
       tf::Stamped<Point32> frame_p1, frame_p2;
-      tf::Stamped<Point32> z_diff(Point32(), cloud_time_, fixed_frame_);
-      z_diff.x = 0; z_diff.y = 0; z_diff.z = 0;
       transformPoint(cloud_frame_, tf::Stamped<Point32>(req.door.frame_p1, cloud_time_, door_frame_), frame_p1);
       transformPoint(cloud_frame_, tf::Stamped<Point32>(req.door.frame_p2, cloud_time_, door_frame_), frame_p2);
-      transformPoint(cloud_frame_, z_diff, z_diff);
-      get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_+z_diff.z, door_max_z_bounds_+z_diff.z, door_frame_multiplier_);
+      get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
 
       cout << "Start detecting door at points in frame " << cloud_frame_ << " ";
       cout << "(" << frame_p1.x << " " << frame_p1.y << ")   ";
@@ -435,7 +432,8 @@ class DoorHandleDetector : public ros::Node
       resp.door.height = fabs (maxP.z - minP.z);
 
       duration = ros::Time::now () - ts;
-      ROS_INFO ("Door found. P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. Height = %f. Handle = [%f, %f, %f]. Total time: %f.",
+      ROS_INFO ("Door found. Result in frame %s \n  P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. \n  Height = %f. \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
+		resp.door.header.frame_id.c_str(),
                 resp.door.door_p1.x, resp.door.door_p1.y, resp.door.door_p1.z, resp.door.door_p2.x, resp.door.door_p2.y, resp.door.door_p2.z,
                 resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 duration.toSec ());
@@ -664,7 +662,7 @@ class DoorHandleDetector : public ros::Node
       }
       cout << "added " << handle_visualize.size() << " points to visualize" << endl;
       handle_cloud.header.stamp = ros::Time::now ();
-      handle_cloud.header.frame_id = "base_link";
+      handle_cloud.header.frame_id = cloud_frame_;
       handle_cloud.pts = handle_visualize;
 
       publish ("handle_visualization", handle_cloud);
@@ -687,7 +685,7 @@ class DoorHandleDetector : public ros::Node
       num_clouds_received_++;
     }
 
-
+  
   void transformPoint(const std::string &target_frame, const tf::Stamped< std_msgs::Point32 > &stamped_in, tf::Stamped< std_msgs::Point32 > &stamped_out)
   {
     tf::Stamped<tf::Point> tmp;
@@ -722,14 +720,14 @@ int
   DoorHandleDetector p;
 
   door_handle_detector::DoorDetector::Request req;
-  req.door.header.frame_id = "base_link";
+  req.door.header.frame_id = "odom_combined";
   req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
   req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
 
   door_handle_detector::DoorDetector::Response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
-//  p.spin ();
+  p.spin ();
 
   p.shutdown ();
   return (0);

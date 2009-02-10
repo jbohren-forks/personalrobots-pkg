@@ -60,13 +60,13 @@ public:
     state_(INITIALIZED)
   {
     // initialize my door
-    double tmp;
-    param("~/door_frame_p1_x", tmp, 0.0); my_door_.frame_p1.x = tmp;
-    param("~/door_frame_p1_y", tmp, 0.0); my_door_.frame_p1.y = tmp;
-    param("~/door_frame_p2_x", tmp, 0.0); my_door_.frame_p2.x = tmp;
-    param("~/door_frame_p2_y", tmp, 0.0); my_door_.frame_p2.y = tmp;
-    param("~/door_hinge"     , tmp,-1.0); my_door_.hinge      = tmp;
-    param("~/door_rot_dir"   , tmp,-1.0); my_door_.rot_dir    = tmp;
+    double tmp; int tmp2;
+    param("~/door_frame_p1_x", tmp, 1.5); my_door_.frame_p1.x = tmp;
+    param("~/door_frame_p1_y", tmp, -0.5); my_door_.frame_p1.y = tmp;
+    param("~/door_frame_p2_x", tmp, 1.5); my_door_.frame_p2.x = tmp;
+    param("~/door_frame_p2_y", tmp, 0.5); my_door_.frame_p2.y = tmp;
+    param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
+    param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
     my_door_.header.frame_id = "odom_combined";
 
     advertise<std_msgs::PoseStamped>("cartesian_trajectory/command",1);
@@ -98,11 +98,12 @@ public:
     pose.frame_id_ = door.header.frame_id;
 
     Vector normal = getNormalOnDoor(door);
-    Vector point(door.handle.x, door.handle.y, door.handle.y);
+    Vector point(door.handle.x, door.handle.y, door.handle.z);
 
     pose.setOrigin( Vector3(point[0], point[1], point[2]) );
     Vector z_axis(0,0,1);
     double z_angle = dot(normal, z_axis);
+    cout << "z_angle " << z_angle << endl;
     pose.setRotation( Quaternion(z_angle, 0, 0) ); 
     PoseStampedTFToMsg(pose, pose_msg);
 
@@ -123,37 +124,44 @@ public:
 
   void spin()
   {
-    switch (state_){
-
-    case INITIALIZED:{
-      state_ = DETECTING;
-      break;
-    }
-    case DETECTING:{
-      DetectDoor(my_door_, my_door_);
-      state_ = GRASPING;
-      break;
-    }
-    case GRASPING:{
-      GraspDoor(my_door_);
-
-      state_ = FINISHED;
-      break;
-    }
-    }
+    while (ok()){
+	switch (state_){
+	  
+	case INITIALIZED:{
+	  state_ = DETECTING;
+	  break;
+	}
+	case DETECTING:{
+	  DetectDoor(my_door_, my_door_);
+	  state_ = GRASPING;
+	  break;
+	}
+	case GRASPING:{
+	  GraspDoor(my_door_);
+	  
+	  state_ = FINISHED;
+	  break;
+	}
+	}
+	usleep(1e3*100);
+      }
   }
 
 
 
   Vector getNormalOnDoor(const robot_msgs::Door& door)
   {
-    Vector door1, door2, tmp;
+    Vector door1, door2, tmp, normal;
     door1[0] = door.door_p1.x;
     door1[1] = door.door_p1.y;
     door2[0] = door.door_p2.x;
     door2[1] = door.door_p2.y;
     tmp = (door1 - door2); tmp.Normalize();
-    return (tmp * Vector(0,0,1));
+    normal = tmp * Vector(0,0,1);
+
+    cout << "normal on door = " <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
+
+    return normal;
   }
 
 
