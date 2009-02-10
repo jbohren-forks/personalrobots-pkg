@@ -37,10 +37,10 @@
 
 #include <stdexcept>
 #include <boost/function.hpp>
+#include <boost/thread.hpp>
 
 // PvApi.h is blissfully unaware of the usual detection macros
 // TODO: do this properly
-//       beware: Prosilica's sized types seem screwed up
 #define _LINUX
 #define _x86
 #include <PvApi.h>
@@ -57,6 +57,13 @@ void fini();                // releases internal resources
 size_t numCameras();        // number of cameras found
 uint64_t getGuid(size_t i); // camera ids
 
+enum AutoSetting
+{
+  Manual,
+  Auto,
+  AutoOnce
+};
+
 class Camera
 {
 public:
@@ -64,9 +71,16 @@ public:
 
   ~Camera();
 
+  //! Must be used before calling start().
   void setFrameCallback(boost::function<void (tPvFrame*)> callback);
+  //! Start continuous capture.
   void start();
+  //! Stop continuous capture.
   void stop();
+
+  void setExposure(int val, AutoSetting isauto = Manual);
+  void setGain(int val, AutoSetting isauto = Manual);
+  void setWhiteBalance(int val, AutoSetting isauto = Manual);
 
 private:
   tPvHandle handle_; // handle to open camera
@@ -74,6 +88,7 @@ private:
   tPvUint32 frameSize_; // bytes per frame
   size_t bufferSize_; // number of frame buffers
   boost::function<void (tPvFrame*)> userCallback_;
+  boost::mutex frameMutex_;
 
   static void frameDone(tPvFrame* frame);
 };

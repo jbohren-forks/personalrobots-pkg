@@ -104,7 +104,6 @@ Camera::~Camera()
 {
   stop();
   
-  PvCaptureQueueClear(handle_);
   PvCameraClose(handle_);
 
   if (frames_)
@@ -132,7 +131,8 @@ void Camera::start()
     throw ProsilicaException("Could not start camera\n");
 
   // set the acquisition mode to continuous
-  if ( PvCommandRun(handle_, "AcquisitionStart") )
+  if ( PvAttrEnumSet(handle_, "FrameStartTriggerMode", "Freerun") ||
+       PvCommandRun(handle_, "AcquisitionStart") )
   {
     PvCaptureEnd(handle_); // reset to non capture mode
     throw ProsilicaException("Could not set acquisition mode\n");
@@ -146,16 +146,21 @@ void Camera::stop()
 {
   PvCommandRun(handle_, "AcquisitionStop");
   PvCaptureEnd(handle_);
+  PvCaptureQueueClear(handle_);
 }
 
 void Camera::frameDone(tPvFrame* frame)
 {
-  // TODO: thread safety?
+  // don't requeue if capture has stopped
   if (frame->Status == ePvErrUnplugged || frame->Status == ePvErrCancelled)
     return;
 
   Camera* camPtr = (Camera*) frame->Context[0];
-  camPtr->userCallback_(frame);
+  if (frame->Status == ePvErrSuccess && camPtr) {
+    // TODO: thread safety OK here?
+    boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
+    camPtr->userCallback_(frame);
+  }
   
   PvCaptureQueueFrame(camPtr->handle_, frame, Camera::frameDone);
 }
