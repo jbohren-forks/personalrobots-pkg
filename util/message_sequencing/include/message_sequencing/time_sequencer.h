@@ -201,8 +201,8 @@ public:
   virtual const std::string __getMD5Sum()   const { return M::__s_getMD5Sum(); }
 
   // Topic buffer is for subscribing, not publishing
-  virtual uint32_t serializationLength() { return 0; }
-  virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) { assert(0); return NULL; }
+  virtual uint32_t serializationLength() const { return 0; }
+  virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) const { assert(0); return NULL; }
 
   /**
    * \brief Deserialize is called by ros on incoming messages.
