@@ -162,16 +162,7 @@ if __name__ == '__main__':
     # Can set desired joint position by using name + /set_command service
     # for joint position controllers
     
-    #print "Calibrating %s wrist" % side
-    # Wrist controller still doesn't work
-    #calibrate(xml_for_wrist("l") + "\n" + xml_for_wrist("r"))
-
-    #sleep(0.5)
-    #hold_joint(side + "_wrist_roll", 4, 0.5, 0, 1.0, holding)
-    #hold_joint(side + "_wrist_flex", 4, 0.5, 0, 1.0, holding)
-
-    #calibrate(xml_for_cal(forearm_roll_name, 5, 0, 0, 0))
-    #sleep(0.5)        
+    # Wrist and forearm calibrated with forearm_calibrator in arm_defs.xml
         
     print "Calibrating elbow flex"
     calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1) + "\n" + xml_for_cal("l_elbow_flex", -1.0, 6, 0.2, 0, 1))
