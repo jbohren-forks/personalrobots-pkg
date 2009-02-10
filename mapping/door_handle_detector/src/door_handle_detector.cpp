@@ -49,7 +49,7 @@
 #include "geometric_helper.h"
 
 // Include the service call type
-#include "door_handle_detector/Door.h"
+#include "door_handle_detector/DoorDetector.h"
 
 #include <tf/message_notifier.h>
 
@@ -202,7 +202,7 @@ class DoorHandleDetector : public ros::Node
     /** \brief This is the main service callback: it gets called whenever a request to find a new door is given     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectDoor (door_handle_detector::Door::Request &req, door_handle_detector::Door::Response &resp)
+      detectDoor (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
     {
       updateParametersFromServer ();
 
@@ -706,12 +706,12 @@ int
 
   DoorHandleDetector p;
 
-  door_handle_detector::Door::Request req;
+  door_handle_detector::DoorDetector::Request req;
   req.door.header.frame_id = "base_link";
   req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
   req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
 
-  door_handle_detector::Door::Response resp;
+  door_handle_detector::DoorDetector::Response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
 //  p.spin ();

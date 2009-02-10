@@ -45,9 +45,9 @@ import os
 import string
 
 import rospy
-from std_msgs.msg import Point
+from std_msgs.msg import Point32
 from robot_msgs.msg import Door
-from door_handle_detector.srv import Door
+from door_handle_detector.srv import DoorDetector
 
 
 
@@ -71,7 +71,7 @@ def detect_door(door_estimateion):
 
 def move_arm(x, y, z, rx, ry, rz, w):
     print "Create publisher to arm"
-    pub = rospy.Publisher('/arm_pose/command', PoseStamped)
+    pub = rospy.Publisher('/arm_trajectory/command', PoseStamped)
     
     m = PoseStamped()
     m.header.frame_id = 'odom_combined'
@@ -101,13 +101,20 @@ if __name__ == "__main__":
     door_estimate.header.frame_id = "odom_combined"
 
      # find door
-    door_position = detect_door(door_estimate)
+    #door_position = detect_door(door_estimate)
+    door_position = door_estimate
 
-    print "Frame found at (%s, %s)  (%s, %s)"%(door_position.door.frame_p1.x, door_position.door.frame_p1.y, 
-                                               door_position.door.frame_p2.x, door_position.door.frame_p2.y)
-    print "Door found at (%s, %s)  (%s, %s)"%(door_position.door.door_p1.x, door_position.door.door_p1.y, 
-                                              door_position.door.door_p2.x, door_position.door.door_p2.y)
-    print "Handle found at (%s, %s)"%(door_position.door.handle.x, door_position.door.handle.y)
+    tmp = Point32()
+    tmp.x = door_position.frame_p1.x - door_position.frame_p2.x
+    tmp.y = door_position.frame_p1.y - door_position.frame_p2.y
+    tmp.z = door_position.frame_p1.z - door_position.frame_p2.z
+    print "finished"
+
+    #print "Frame found at (%s, %s)  (%s, %s)"%(door_position.door.frame_p1.x, door_position.door.frame_p1.y, 
+    #                                           door_position.door.frame_p2.x, door_position.door.frame_p2.y)
+    #print "Door found at (%s, %s)  (%s, %s)"%(door_position.door.door_p1.x, door_position.door.door_p1.y, 
+    #                                          door_position.door.door_p2.x, door_position.door.door_p2.y)
+    #print "Handle found at (%s, %s)"%(door_position.door.handle.x, door_position.door.handle.y)
 
 
     
