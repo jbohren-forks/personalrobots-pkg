@@ -19,7 +19,7 @@
 #include <vector>
 #include <map>
 using namespace std;
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/String.h"
 typedef signed char schar;
 
@@ -151,8 +151,8 @@ void on_mouse(int event, int x, int y, int flags, void *params)
 class AxisBlobTracker : public ros::Node
 {
 public:
-  std_msgs::Image image_;
-  CvBridge<std_msgs::Image> cv_bridge_;
+  deprecated_msgs::Image image_;
+  CvBridge<deprecated_msgs::Image> cv_bridge_;
 
   IplImage *cv_image_;
   IplImage *cv_image_cpy_;
@@ -171,7 +171,7 @@ public:
 
 
   // Constructor
-  AxisBlobTracker(bool d) : ros::Node("axis_blob_tracker"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL), cv_image_cpy_(NULL), cv_feat_image_cpy_(NULL), cv_backproject_image_cpy_(NULL), cv_mask_image_cpy_(NULL), quit(false)
+  AxisBlobTracker(bool d) : ros::Node("axis_blob_tracker"), cv_bridge_(&image_, CvBridge<deprecated_msgs::Image>::CORRECT_BGR), cv_image_(NULL), cv_image_cpy_(NULL), cv_feat_image_cpy_(NULL), cv_backproject_image_cpy_(NULL), cv_mask_image_cpy_(NULL), quit(false)
   {
     btracker_ = new BTracker();    
 

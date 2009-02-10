@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 using namespace std;
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/String.h"
 
 #include "stereo_blob_tracker/Rect2DStamped.h"
@@ -140,7 +140,7 @@ struct imgData
 {
   string label;
   IplImage *cv_image;
-  CvBridge<std_msgs::Image> *bridge;
+  CvBridge<deprecated_msgs::Image> *bridge;
 };
 
 /// BlobTrackerGUI subscribes to the tracker images, display them
@@ -151,8 +151,8 @@ public:
   bool display_;
   // for subscription
   // images from the tracker
-  std_msgs::ImageArray image_msg_;
-  std_msgs::ImageArray aux_image_msg_;
+  deprecated_msgs::ImageArray image_msg_;
+  deprecated_msgs::ImageArray aux_image_msg_;
   Rect2DStamped trackedBox_msg_;
 
   // for publishing. diagonal line of the rectangular selected area.
@@ -262,7 +262,7 @@ public:
       if (j == images.end())
       {
         images[l].label = image_msg_.images[i].label;
-        images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg_.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+        images[l].bridge = new CvBridge<deprecated_msgs::Image>(&image_msg_.images[i], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
         // cvNamedWindow(l.c_str(), 0 /*manually resizable */);
 	images[l].cv_image = 0;
       } else {
