@@ -34,7 +34,7 @@
 import roslib
 roslib.load_manifest('visual_odometry')
 
-from std_msgs.msg import Position
+from std_msgs.msg import Point
 from robot_msgs.msg import VisualizationMarker
 import rospy
 from visualodometer import Pose
@@ -123,7 +123,7 @@ class Marker:
     marker.points = points
     vm_pub.publish(marker)
 
-    marker.points = [Position(p.x, p.y, -tableh) for p in points]
+    marker.points = [Point(p.x, p.y, -tableh) for p in points]
     marker.id += 200
     marker.r = 0
     marker.g = 0
@@ -155,7 +155,7 @@ class Marker:
         x /= factor
         y /= factor
         z /= factor
-        return Position(x,y,z)
+        return Point(x,y,z)
         
       for i,(x,y) in enumerate([ (0,0), (640,0), (0,480), (640,480)]):
         model = [(0,0,0), cam.pix2cam(x, y, 640)]
