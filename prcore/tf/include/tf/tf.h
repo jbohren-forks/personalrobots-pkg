@@ -46,6 +46,8 @@
 
 namespace tf
 {
+/** \brief remap names \todo document me */
+std::string remap(const std::string& prefix, const std::string& frame_id);
 
 enum ErrorValues { NO_ERROR = 0, LOOKUP_ERROR, CONNECTIVITY_ERROR, EXTRAPOLATION_ERROR};
 
@@ -98,7 +100,6 @@ public:
   void clear();
 
   void setTransform(const Stamped<btTransform>& transform);
-
 
   /*********** Accessors *************/
 
@@ -226,6 +227,9 @@ protected:
   ros::Duration max_extrapolation_distance_;
 
 
+  /// transform prefix to apply as necessary 
+  std::string tf_prefix_;
+
   /************************* Internal Functions ****************************/
 
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there. 
@@ -278,6 +282,7 @@ protected:
   btTransform computeTransformFromList(const TransformLists & list);
 
 };
+
 
 
 }

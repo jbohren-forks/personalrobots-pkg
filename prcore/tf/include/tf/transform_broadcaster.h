@@ -40,6 +40,7 @@
 namespace tf
 {
 
+
 /** \brief This class provides an easy way to publish coordinate frame transform information.  
  * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the 
  * necessary data needed for each message.  */
@@ -51,6 +52,7 @@ public:
     node_(anode)
   {
     node_.advertise<tfMessage>("/tf_message", 100);
+    node_.param(std::string("~tf_prefix"),tf_prefix_, std::string(""));
   };
   /** \brief Send a Stamped<Transform> with parent parent_id 
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
@@ -59,6 +61,8 @@ public:
     tfMessage message;
     std_msgs::TransformStamped msgtf;
     TransformStampedTFToMsg(transform, msgtf);
+    msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
+    msgtf.parent_id = tf::remap(tf_prefix_, msgtf.parent_id);
     message.transforms.push_back(msgtf);
     node_.publish("/tf_message", message);
   } 
@@ -70,7 +74,8 @@ public:
     std_msgs::TransformStamped msgtf;
     msgtf.header.stamp = time;
     msgtf.header.frame_id = frame_id;
-    msgtf.parent_id = parent_id;
+    msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
+    msgtf.parent_id = remap(tf_prefix_, parent_id);
     TransformTFToMsg(transform, msgtf.transform);
     message.transforms.push_back(msgtf);
     node_.publish("/tf_message", message);
@@ -79,6 +84,8 @@ public:
 private:
   /// Internal reference to ros::Node
   ros::Node & node_;
+
+  std::string tf_prefix_;
 
 };
 

@@ -66,6 +66,7 @@ public:
     node_.subscribe("/reset_time", empty_, &TransformListener::reset_callback, this,100); ///\todo magic number
 
     node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+    node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
   };
 
   ~TransformListener()

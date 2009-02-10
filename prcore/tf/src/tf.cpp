@@ -33,6 +33,27 @@
 #include <sys/time.h>
 using namespace tf;
 
+std::string tf::remap(const std::string& prefix, const std::string& frame_id)
+{
+  if (prefix.size() > 0)
+  {
+    if (prefix[0] == '/')
+      return frame_id;
+    else
+    {
+      std::string composite;
+      composite = "/";
+      composite.append(prefix);
+      composite.append("/");
+      composite.append(frame_id);
+      return composite;
+    }
+
+  }
+  else
+    return frame_id;
+};
+
 Transformer::Transformer(bool interpolating,
                                 ros::Duration cache_time):
   cache_time(cache_time),
@@ -80,11 +101,14 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
                      const ros::Time& time, Stamped<btTransform>& transform)
 {
+  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
+  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
+
   int retval = NO_ERROR;
   ros::Time temp_time;
   //If getting the latest get the latest common time
   if (time == ros::Time())
-    retval = getLatestCommonTime(target_frame, source_frame, temp_time);
+    retval = getLatestCommonTime(mapped_target_frame, mapped_source_frame, temp_time);
   else
     temp_time = time;
 
@@ -92,7 +116,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   TransformLists t_list;
 
   if (retval == NO_ERROR)
-    retval = lookupLists(lookupFrameNumber( target_frame), temp_time, lookupFrameNumber( source_frame), t_list, &error_string);
+    retval = lookupLists(lookupFrameNumber( mapped_target_frame), temp_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -116,17 +140,20 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
+  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
+  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
+  std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
   int retval = NO_ERROR;
   ros::Time temp_target_time, temp_source_time;
   //If getting the latest get the latest common time
   if (target_time == ros::Time())
-    retval = getLatestCommonTime(target_frame, fixed_frame, temp_target_time);
+    retval = getLatestCommonTime(mapped_target_frame, mapped_fixed_frame, temp_target_time);
   else
     temp_target_time = target_time;
 
   //If getting the latest get the latest common time
   if (source_time == ros::Time() && retval == NO_ERROR)
-    retval = getLatestCommonTime(fixed_frame, source_frame, temp_source_time);
+    retval = getLatestCommonTime(mapped_fixed_frame, mapped_source_frame, temp_source_time);
   else
     temp_source_time = source_time;
 
@@ -134,7 +161,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   //calculate first leg
   TransformLists t_list;
   if (retval == NO_ERROR)
-    retval = lookupLists(lookupFrameNumber( fixed_frame), temp_source_time, lookupFrameNumber( source_frame), t_list, &error_string);
+    retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), temp_source_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -154,7 +181,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
   TransformLists t_list2;
   ///\todo check return
-  retval =  lookupLists(lookupFrameNumber( target_frame), temp_target_time, lookupFrameNumber( fixed_frame), t_list2, &error_string);
+  retval =  lookupLists(lookupFrameNumber( mapped_target_frame), temp_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, &error_string);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {
@@ -179,9 +206,12 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
                      const ros::Time& time)
 {
+  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
+  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
+
   TransformLists t_list;
   ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), t_list, NULL);
+  int retval = lookupLists(lookupFrameNumber( mapped_target_frame), time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -207,10 +237,14 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame)
 {
+  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
+  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
+  std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
+
   //calculate first leg
   TransformLists t_list;
   ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame), t_list, NULL);
+  int retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), source_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {
@@ -229,7 +263,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
 
   TransformLists t_list2;
   ///\todo check return
-  retval =  lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame), t_list2, NULL);
+  retval =  lookupLists(lookupFrameNumber( mapped_target_frame), target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, NULL);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {

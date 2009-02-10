@@ -38,6 +38,7 @@ target_link_libraries(testListener tf)
 rospack_add_executable(testBroadcaster test/testBroadcaster.cpp)
 target_link_libraries(testBroadcaster tf)
 rospack_add_executable(transform_sender src/transform_sender.cpp)
+target_link_libraries(transform_sender tf)
 
 rospack_add_executable(test_notifier test/test_notifier.cpp)
 rospack_declare_test(test_notifier)
