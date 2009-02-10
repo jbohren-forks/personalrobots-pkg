@@ -292,8 +292,11 @@ public:
 	  tf::PointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
 	  try {
-	    tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
+     	    tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
 	    (*it).second.pos.header.stamp = limage_.header.stamp;
+	    (*it).second.pos.pos.x = loc[0];
+            (*it).second.pos.pos.y = loc[1];
+            (*it).second.pos.pos.z = loc[2];
 	  } 
 	  catch (tf::TransformException& ex) {
 	  }
@@ -322,7 +325,7 @@ public:
 	  pos.pos.z = -1.0*one_face->center3d.val[1]; 
 	  pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
 	  pos.reliability = reliabilities_[0];
-	  pos.initialization = 0;
+	  pos.initialization = 1;//0;
 	  pos.covariance[0] = 0.04; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;
 	  pos.covariance[3] = 0.0;  pos.covariance[4] = 0.04; pos.covariance[5] = 0.0;
 	  pos.covariance[6] = 0.0;  pos.covariance[7] = 0.0;  pos.covariance[8] = 0.04;
