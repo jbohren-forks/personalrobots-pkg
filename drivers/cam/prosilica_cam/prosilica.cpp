@@ -34,18 +34,52 @@
 
 #include "prosilica.h"
 
+#define CHECK_ERR(fnc, amsg)                               \
+do {                                                       \
+  tPvErr err = fnc;                                        \
+  if (err != ePvErrSuccess) {                              \
+    char msg[256];                                         \
+    snprintf(msg, 256, "%s: %s", errorStrings[err], amsg); \
+    throw ProsilicaException(msg);                         \
+  }                                                        \
+} while (false)
+
 namespace prosilica {
 
 static const int MAX_CAMERA_LIST = 10;
+static const char* autoValues[] = {"Manual", "Auto", "AutoOnce"};
+static const char* errorStrings[] = {"No error",
+                                     "Unexpected camera fault",
+                                     "Unexpected fault in PvApi or driver",
+                                     "Camera handle is invalid",
+                                     "Bad parameter to API call",
+                                     "Sequence of API calls is incorrect",
+                                     "Camera or attribute not found",
+                                     "Camera cannot be opened in the specified mode",
+                                     "Camera was unplugged",
+                                     "Setup is invalid (an attribute is invalid)",
+                                     "System/network resources or memory not available",
+                                     "1394 bandwidth not available",
+                                     "Too many frames on queue",
+                                     "Frame buffer is too small",
+                                     "Frame cancelled by user",
+                                     "The data for the frame was lost",
+                                     "Some data in the frame is missing",
+                                     "Timeout during wait",
+                                     "Attribute value is out of the expected range",
+                                     "Attribute is not this type (wrong access function)",
+                                     "Attribute write forbidden at this time",
+                                     "Attribute is not available at this time",
+                                     "A firewall is blocking the traffic"};
 
 static tPvCameraInfo cameraList[MAX_CAMERA_LIST];
 static unsigned long cameraNum = 0;
 
 void init()
 {
-  if ( PvInitialize() )
-    throw ProsilicaException("Failed to initialize Prosilica API\n");
+  CHECK_ERR( PvInitialize(), "Failed to initialize Prosilica API" );
 
+  // TODO: should timeout after a while
   while (true)
   {
     cameraNum = PvCameraList(cameraList, MAX_CAMERA_LIST, NULL);
@@ -76,16 +110,14 @@ uint64_t getGuid(size_t i)
 Camera::Camera(uint64_t guid, size_t bufferSize)
   : bufferSize_(bufferSize)
 {
-  if ( PvCameraOpen(guid, ePvAccessMaster, &handle_) )
-    throw ProsilicaException("Unable to open requested camera\n");
+  CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_), "Unable to open requested camera" );
 
   // set pixel format
-  if ( PvAttrEnumSet(handle_, "PixelFormat", "Rgb24") )
-    throw ProsilicaException("Unable to set pixel format\n");
+  CHECK_ERR( PvAttrEnumSet(handle_, "PixelFormat", "Rgb24"), "Unable to set pixel format" );
   
   // query for attributes (TODO: more)
-  if ( PvAttrUint32Get(handle_, "TotalBytesPerFrame", &frameSize_) )
-    throw ProsilicaException("Unable to retrieve attribute\n");
+  CHECK_ERR( PvAttrUint32Get(handle_, "TotalBytesPerFrame", &frameSize_),
+             "Unable to retrieve frame size" );
   
   // allocate frame buffers
   frames_ = new tPvFrame[bufferSize];
@@ -96,8 +128,6 @@ Camera::Camera(uint64_t guid, size_t bufferSize)
     frames_[i].ImageBufferSize = frameSize_;
     frames_[i].Context[0] = (void*)this; // for frameDone callback
   }
-  
-  // TODO: set auto-exposure, white balance, etc?
 }
 
 Camera::~Camera()
@@ -124,14 +154,14 @@ void Camera::setFrameCallback(boost::function<void (tPvFrame*)> callback)
 void Camera::start()
 {
   if (userCallback_.empty())
-    throw ProsilicaException("Must set frame callback before calling start()\n");
+    throw ProsilicaException("Must set frame callback before calling start()");
   
   // set camera in acquisition mode
-  if ( PvCaptureStart(handle_) )
-    throw ProsilicaException("Could not start camera\n");
+  CHECK_ERR( PvCaptureStart(handle_), "Could not start camera");
 
   // set the acquisition mode to continuous
-  if ( PvAttrEnumSet(handle_, "FrameStartTriggerMode", "Freerun") ||
+  if ( PvAttrEnumSet(handle_, "AcquisitionMode", "Continuous") ||
+       PvAttrEnumSet(handle_, "FrameStartTriggerMode", "Freerun") ||
        PvCommandRun(handle_, "AcquisitionStart") )
   {
     PvCaptureEnd(handle_); // reset to non capture mode
@@ -147,6 +177,21 @@ void Camera::stop()
   PvCommandRun(handle_, "AcquisitionStop");
   PvCaptureEnd(handle_);
   PvCaptureQueueClear(handle_);
+}
+
+void Camera::setExposure(unsigned int val, AutoSetting isauto)
+{
+  
+}
+
+void Camera::setGain(unsigned int val, AutoSetting isauto)
+{
+
+}
+
+void Camera::setWhiteBalance(unsigned int val, AutoSetting isauto)
+{
+
 }
 
 void Camera::frameDone(tPvFrame* frame)

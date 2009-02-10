@@ -57,6 +57,13 @@ void fini();                // releases internal resources
 size_t numCameras();        // number of cameras found
 uint64_t getGuid(size_t i); // camera ids
 
+enum AcquisitionMode
+{
+  Continuous,
+  //FixedRate,
+  Triggered
+};
+
 enum AutoSetting
 {
   Manual,
@@ -78,9 +85,9 @@ public:
   //! Stop continuous capture.
   void stop();
 
-  void setExposure(int val, AutoSetting isauto = Manual);
-  void setGain(int val, AutoSetting isauto = Manual);
-  void setWhiteBalance(int val, AutoSetting isauto = Manual);
+  void setExposure(unsigned int val, AutoSetting isauto = Manual);
+  void setGain(unsigned int val, AutoSetting isauto = Manual);
+  void setWhiteBalance(unsigned int val, AutoSetting isauto = Manual);
 
 private:
   tPvHandle handle_; // handle to open camera
