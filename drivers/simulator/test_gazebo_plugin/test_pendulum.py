@@ -140,8 +140,8 @@ class PendulumTest(unittest.TestCase):
 
     def test_pendulum(self):
         print "LNK\n"
-        rospy.subscribe_topic("link1_pose", PoseWithRatesStamped, self.p3dInput1)
-        rospy.subscribe_topic("link2_pose", PoseWithRatesStamped, self.p3dInput2)
+        rospy.Subscriber("link1_pose", PoseWithRatesStamped, self.p3dInput1)
+        rospy.Subscriber("link2_pose", PoseWithRatesStamped, self.p3dInput2)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 20.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

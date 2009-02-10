@@ -178,8 +178,8 @@ class TestCameras(unittest.TestCase):
         print " wait TEST_INIT_WAIT sec for objects to settle and arms to tuck "
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
-        #rospy.subscribe_topic("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups
-        rospy.subscribe_topic("stereo_l/image", Image, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
+        #rospy.Subscriber("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups
+        rospy.Subscriber("stereo_l/image", Image, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         #self.pollThread.start()
         timeout_t = time.time() + TEST_DURATION

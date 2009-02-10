@@ -90,7 +90,7 @@ class TestSlide(unittest.TestCase):
     
     def test_slide(self):
         print "LINK\n"
-        rospy.subscribe_topic("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
+        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 50.0
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
