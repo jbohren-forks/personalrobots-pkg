@@ -118,7 +118,7 @@ robot.
 #include <robot_msgs/Planner2DGoal.h>
 #include <std_msgs/PoseDot.h>
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/LaserScan.h>
+#include <laser_scan/LaserScan.h>
 #include <robot_srvs/StaticMap.h>
 
 // For GUI debug
@@ -210,14 +210,14 @@ class WavefrontNode: public ros::Node
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
-    tf::MessageNotifier<std_msgs::LaserScan>* scan_notifier;
+    tf::MessageNotifier<laser_scan::LaserScan>* scan_notifier;
 
     // Lock for access to class members in callbacks
     boost::mutex lock;
 
     // Message callbacks
     void goalReceived();
-    void laserReceived(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message);
+    void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
 
     // Internal helpers
     void sendVelCmd(double vx, double vy, double vth);
@@ -371,7 +371,7 @@ WavefrontNode::WavefrontNode() :
   advertise<std_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
-  scan_notifier = new tf::MessageNotifier<std_msgs::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
+  scan_notifier = new tf::MessageNotifier<laser_scan::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
 }
 
 WavefrontNode::~WavefrontNode()
@@ -434,7 +434,7 @@ WavefrontNode::goalReceived()
 }
 
 void
-WavefrontNode::laserReceived(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
+WavefrontNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message)
 {
 	// Assemble a point cloud, in the laser's frame
 	std_msgs::PointCloud local_cloud;
