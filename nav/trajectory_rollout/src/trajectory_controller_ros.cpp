@@ -79,7 +79,7 @@ namespace trajectory_rollout {
       Point2DFloat32 origin;
       origin.x = 0;
       origin.y = 0;
-      world_model_ = new PointGrid(70.0, 70.0, 1.0, origin, 2.0, 2.0);
+      world_model_ = new PointGrid(70.0, 70.0, 0.2, origin, 2.0, 2.0, 0.01);
       ROS_ERROR("Freespace\n");
     }
     else{

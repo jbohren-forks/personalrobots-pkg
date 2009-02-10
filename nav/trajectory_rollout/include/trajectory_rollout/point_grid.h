@@ -38,6 +38,7 @@
 #define POINT_GRID_H_
 #include <vector>
 #include <list>
+#include <cfloat>
 #include <std_msgs/Point2DFloat32.h>
 #include <std_msgs/Point32.h>
 #include <costmap_2d/observation.h>
@@ -62,8 +63,10 @@ namespace trajectory_rollout {
        * @param  origin The origin of the bottom left corner of the grid
        * @param  max_z The maximum height for an obstacle to be added to the grid
        * @param  obstacle_range The maximum distance for obstacles to be added to the grid
+       * @param  min_separation The minimum distance between points in the grid
        */
-      PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, double max_z, double obstacle_range);
+      PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, 
+          double max_z, double obstacle_range, double min_separation);
 
       /**
        * @brief  Destructor for a point grid
@@ -119,6 +122,32 @@ namespace trajectory_rollout {
         }
 
         return true;
+      }
+
+      /**
+       * @brief  Get the bounds in world coordinates of a cell in the point grid, assumes a legal cell when called
+       * @param  gx The x coordinate of the grid cell 
+       * @param  gy The y coordinate of the grid cell 
+       * @param  lower_left The lower left bounds of the cell in world coordinates to be filled in
+       * @param  upper_right The upper right bounds of the cell in world coordinates to be filled in
+       */
+      inline void getCellBounds(unsigned int gx, unsigned int gy, std_msgs::Point2DFloat32& lower_left, std_msgs::Point2DFloat32& upper_right) const {
+        lower_left.x = gx * resolution_ + origin_.x;
+        lower_left.y = gy * resolution_ + origin_.y;
+
+        upper_right.x = lower_left.x + resolution_;
+        upper_right.y = lower_left.y + resolution_;
+      }
+
+
+      /**
+       * @brief  Compute the distance between two points
+       * @param pt1 The first point 
+       * @param pt2 The second point 
+       * @return The distance between the two points
+       */
+      inline double distance(std_msgs::Point32& pt1, std_msgs::Point32& pt2){
+        return sqrt((pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y));
       }
 
       /**
@@ -195,6 +224,22 @@ namespace trajectory_rollout {
       void insert(std_msgs::Point32 pt);
 
       /**
+       * @brief  Find the distance between a point and its nearest neighbor in the grid
+       * @param pt The point used for comparison 
+       * @return  The distance between the point passed in and its nearest neighbor in the point grid
+       */
+      double nearestNeighborDistance(std_msgs::Point32& pt);
+
+      /**
+       * @brief  Find the distance between a point and its nearest neighbor in a cell
+       * @param pt The point used for comparison 
+       * @param gx The x coordinate of the cell
+       * @param gy The y coordinate of the cell
+       * @return  The distance between the point passed in and its nearest neighbor in the cell
+       */
+      double getNearestInCell(std_msgs::Point32& pt, unsigned int gx, unsigned int gy); 
+
+      /**
        * @brief  Removes points from the grid that lie within the polygon
        * @param poly A specification of the polygon to clear from the grid 
        */
@@ -208,6 +253,7 @@ namespace trajectory_rollout {
       std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
       double max_z_;  ///< @brief The height cutoff for adding points as obstacles
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
+      double min_separation_;  ///< @brief The minimum distance required between points in the grid
       std::vector< std::list<std_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
 
   };
