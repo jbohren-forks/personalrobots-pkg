@@ -39,7 +39,7 @@ do {                                                       \
   tPvErr err = fnc;                                        \
   if (err != ePvErrSuccess) {                              \
     char msg[256];                                         \
-    snprintf(msg, 256, "%s: %s", errorStrings[err], amsg); \
+    snprintf(msg, 256, "%s: %s", amsg, errorStrings[err]); \
     throw ProsilicaException(msg);                         \
   }                                                        \
 } while (false)
@@ -48,6 +48,7 @@ namespace prosilica {
 
 static const int MAX_CAMERA_LIST = 10;
 static const char* autoValues[] = {"Manual", "Auto", "AutoOnce"};
+static const char* triggerModes[] = {"Freerun", "Software"};
 static const char* errorStrings[] = {"No error",
                                      "Unexpected camera fault",
                                      "Unexpected fault in PvApi or driver",
@@ -112,6 +113,11 @@ Camera::Camera(uint64_t guid, size_t bufferSize)
 {
   CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_), "Unable to open requested camera" );
 
+  // adjust packet size according to the current network capacity
+  tPvUint32 maxPacketSize = 8228;
+  PvAttrUint32Get(handle_, "PacketSize", &maxPacketSize);
+  PvCaptureAdjustPacketSize(handle_, maxPacketSize);
+  
   // set pixel format
   CHECK_ERR( PvAttrEnumSet(handle_, "PixelFormat", "Rgb24"), "Unable to set pixel format" );
   
@@ -144,28 +150,30 @@ Camera::~Camera()
   }
 }
 
-// TODO: this is kind of wacky... using extra layer of indirection for callbacks
-//       seems necessary though due to Prosilica's slightly weird callback interface
 void Camera::setFrameCallback(boost::function<void (tPvFrame*)> callback)
 {
   userCallback_ = callback;
 }
 
-void Camera::start()
+void Camera::start(AcquisitionMode mode)
 {
-  if (userCallback_.empty())
+  if (mode != Triggered && userCallback_.empty())
     throw ProsilicaException("Must set frame callback before calling start()");
   
   // set camera in acquisition mode
-  CHECK_ERR( PvCaptureStart(handle_), "Could not start camera");
+  CHECK_ERR( PvCaptureStart(handle_), "Could not start capture");
 
-  // set the acquisition mode to continuous
-  if ( PvAttrEnumSet(handle_, "AcquisitionMode", "Continuous") ||
-       PvAttrEnumSet(handle_, "FrameStartTriggerMode", "Freerun") ||
-       PvCommandRun(handle_, "AcquisitionStart") )
-  {
+  // start capture after setting acquisition and trigger modes
+  try {
+    CHECK_ERR( PvAttrEnumSet(handle_, "AcquisitionMode", "Continuous"),
+               "Could not set acquisition mode" );
+    CHECK_ERR( PvAttrEnumSet(handle_, "FrameStartTriggerMode", triggerModes[mode]),
+               "Could not set trigger mode" );
+    CHECK_ERR( PvCommandRun(handle_, "AcquisitionStart"),
+               "Could not start acquisition" );
+  } catch (ProsilicaException& e) {
     PvCaptureEnd(handle_); // reset to non capture mode
-    throw ProsilicaException("Could not set acquisition mode\n");
+    throw; // rethrow
   }
 
   for (unsigned int i = 0; i < bufferSize_; ++i)
@@ -220,7 +228,7 @@ void Camera::frameDone(tPvFrame* frame)
     return;
 
   Camera* camPtr = (Camera*) frame->Context[0];
-  if (frame->Status == ePvErrSuccess && camPtr) {
+  if (frame->Status == ePvErrSuccess && camPtr && !camPtr->userCallback_.empty()) {
     // TODO: thread safety OK here?
     boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
     camPtr->userCallback_(frame);

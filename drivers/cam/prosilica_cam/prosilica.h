@@ -78,12 +78,15 @@ public:
 
   ~Camera();
 
-  //! Must be used before calling start().
+  //! Must be used before calling start() in a non-triggered mode.
   void setFrameCallback(boost::function<void (tPvFrame*)> callback);
-  //! Start continuous capture.
-  void start();
-  //! Stop continuous capture.
+  //! Start capture.
+  void start(AcquisitionMode mode = Continuous);
+  //! Stop capture.
   void stop();
+  //! Capture a single frame from the camera. Must be called after
+  //! start(Triggered).
+  tPvFrame* grab(unsigned long timeout_ms = PVINFINITE);
 
   void setExposure(unsigned int val, AutoSetting isauto = Manual);
   void setGain(unsigned int val, AutoSetting isauto = Manual);
