@@ -49,20 +49,32 @@ roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
 from robot_srvs.srv import *
+
 from robot_mechanism_controllers.srv import *
+from robot_mechanism_controllers import controllers
+
+
+class SendMessageOnSubscribe(rospy.SubscribeListener):
+    def __init__(self, msg):
+        self.msg = msg
+        print "Waiting for subscriber..."
+
+    def peer_subscribe(self, topic_name, topic_publish, peer_publish):
+        peer_publish(self.msg)
+        sleep(0.1)  
+        # TODO: change this line when flushing messages is implemented                                                                             
+      #  rospy.signal_shutdown("Done")
+       # sys.exit(0)
+
 
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 kill_controller = rospy.ServiceProxy('kill_controller', KillController)
-
 
 def slurp(filename):
     f = open(filename)
     stuff = f.read()
     f.close()
     return stuff
-
-rospy.wait_for_service('spawn_controller')
-
 
 def calibrate(config):
     #spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
@@ -73,10 +85,10 @@ def calibrate(config):
 
     # Accumulates the list of spawned controllers
     launched = []
-    print "OKs: " + ','.join([str(ok) for ok in resp.ok])
+    print "OKs: " + ','.join([str(ord(ok)) for ok in resp.ok])
     try:
         for i in range(len(resp.ok)):
-            if resp.ok[i] == 0:
+            if ord(resp.ok[i]) == 0:
                 print "Failed: %s" % resp.name[i]
             else:
                 launched.append(resp.name[i])
@@ -150,12 +162,22 @@ def hold_joint(name, p, i, d, iClamp, holding):
 
     return False
 
+def set_controller(controller, command):
+    #    try:
+    #rospy.init_node('control', anonymous = True)
+    #finally:
+    pub = rospy.Publisher('/' + controller + '/set_command', Float64,
+                              SendMessageOnSubscribe(Float64(command)))
+
 
 if __name__ == '__main__':
+    rospy.wait_for_service('spawn_controller')
+    #   if  rospy.is_shutdown(): 
+    #    return
+
     rospy.init_node('calibration', anonymous=True)
 
     holding = [] # Tracks which controllers are holding joints by name
-
     
     # Calibrate all joints sequentially
     # Hold joints after they're calibrated.
@@ -166,11 +188,12 @@ if __name__ == '__main__':
         
     print "Calibrating elbow flex"
     calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1) + "\n" + xml_for_cal("l_elbow_flex", -1.0, 6, 0.2, 0, 1))
-    #hold_joint("r_forearm_roll", 20, 1.0, 0.5, 1.0, holding)    
-    #hold_joint("l_forearm_roll", 20, 1.0, 0.5, 1.0, holding)
     hold_joint("r_elbow_flex", 100, 20, 10, 2, holding)
     hold_joint("l_elbow_flex", 100, 20, 10, 2, holding)
-        
+
+    set_controller("r_elbow_flex_controller", float(3.0))
+    set_controller("l_elbow_flex_controller", float(3.0))
+    
     print "Calibrating right upperarm roll"
     upperarm_roll_name = "r_upper_arm_roll"
     calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
@@ -188,12 +211,17 @@ if __name__ == '__main__':
     hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
     hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
     
+    set_controller("r_shoulder_lift_controller", float(3.0))
+    set_controller("l_shoulder_lift_controller", float(3.0))
+
     print "Calibrating shoulder pan" 
     calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
     hold_joint("r_shoulder_pan", 60, 10, 5, 4, holding)
+    set_controller("r_shoulder_pan_controller", float(-0.5))
 
     calibrate(xml_for_cal("l_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
     hold_joint("l_shoulder_pan", 60, 10, 5, 4, holding)
+    set_controller("l_shoulder_pan_controller", float(0.5))
 
     sleep(0.5)
     print "Calibrating rest of robot"
