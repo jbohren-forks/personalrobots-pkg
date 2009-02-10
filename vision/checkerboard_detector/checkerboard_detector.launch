@@ -1,0 +1,24 @@
+<launch>
+ <group name="wg">
+   <include file="$(find pr2_alpha)/prg.machine" />
+   <node machine="four" pkg="stereo_image_proc" type="stereoproc" />
+   <!--node machine="four" pkg="checkerboard_detector" type="checkerboard_detector" args="Image:=stereo/left/image_rect" /-->
+ </group>
+
+
+ <group ns="checkerdetector" clear_params="true">
+    <param name="display" type="int" value="1"/>
+    <param name="frame_id" type="string" value="stereo_link"/>
+    <param name="rect0_size_x" type="double" value="0.02733"/>
+    <param name="rect0_size_y" type="double" value="0.027"/>
+    <param name="grid0_size_x" type="int" value="6"/>
+    <param name="grid0_size_y" type="int" value="8"/>
+    <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
+    <node machine="two" pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
+      <remap from="CamInfo" to="/stereo/left/cam_info"/>
+      <remap from="Image" to="/stereo/left/image_rect"/>
+<!--       <env name="DISPLAY" value=":0.0"/> -->
+    </node>
+  </group>
+
+</launch> 
