@@ -64,25 +64,25 @@ CMD_VEL         = [0,0,0,0,0,0,0]
 GRP_CMD_POS     = 0.3
 
 TARGET_DURATION = 1.0
-ROT_TARGET_TOL      = 0.02  #empirical test result john - 20090106
-POS_TARGET_TOL      = 0.02  #empirical test result john - 20090106
+ROT_TARGET_TOL      = 0.01  #empirical test result john - 20090110
+POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 TEST_TIMEOUT    = 50.0
 
 # pre-recorded poses for above commands
-TARGET_ARM_TX         =  0.703305819503
-TARGET_ARM_TY         =  0.270579779085
-TARGET_ARM_TZ         =  0.789835186655
-TARGET_ARM_QX         =  -0.23728153595
-TARGET_ARM_QY         =  0.182723242802
-TARGET_ARM_QZ         =  -0.190178621726
-TARGET_ARM_QW         =  -0.934955496842
-TARGET_GRIPPER_TX     =  0.765601972524
-TARGET_GRIPPER_TY     =  0.299927644187
-TARGET_GRIPPER_TZ     =  0.827281715659
-TARGET_GRIPPER_QX     =  -0.201821946334
-TARGET_GRIPPER_QY     =  0.221139617347
-TARGET_GRIPPER_QZ     =  -0.350190747038
-TARGET_GRIPPER_QW     =  -0.887542456622
+TARGET_ARM_TX         =  0.697079458962
+TARGET_ARM_TY         =  0.298321990173
+TARGET_ARM_TZ         =  0.788284959682
+TARGET_ARM_QX         =  0.237303684388
+TARGET_ARM_QY         =  -0.183131139797
+TARGET_ARM_QZ         =  0.190090503477
+TARGET_ARM_QW         =  0.934887986606
+TARGET_GRIPPER_TX     =   0.759604836385
+TARGET_GRIPPER_TY     =   0.327703622909
+TARGET_GRIPPER_TZ     =   0.825872564018
+TARGET_GRIPPER_QX     =   0.201779841484
+TARGET_GRIPPER_QY     =   -0.221575348589
+TARGET_GRIPPER_QZ     =   0.349992333295
+TARGET_GRIPPER_QW     =   0.88752162064
 
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
@@ -137,7 +137,9 @@ class ArmTest(unittest.TestCase):
                     abs( rot_euler[2] )
 
         print " fngr Error pos: " + str(pos_error) + " rot: " + str(rot_error)
-        #self.printP3D(p3d)
+
+        #self.printP3D(p3d) #for getting new valid data
+
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_fngr:
           print " fngr duration: " + str(time.time() - self.duration_start_fngr)
@@ -179,7 +181,9 @@ class ArmTest(unittest.TestCase):
                     abs( rot_euler[2] )
 
         print " palm Error pos: " + str(pos_error) + " rot: " + str(rot_error)
-        #self.printP3D(p3d)
+
+        #self.printP3D(p3d) #for getting new valid data
+
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_palm:
           print " palm duration: " + str(time.time() - self.duration_start_palm)
