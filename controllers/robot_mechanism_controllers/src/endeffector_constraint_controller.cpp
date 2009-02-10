@@ -288,13 +288,13 @@ void EndeffectorConstraintController::computeConstraintJacobian()
     f_yaw = 0;
   }
 
-  
+
   //joint constraint force - stop the elbow from going past -30 degrees (.5235 rad)
   JntArray jnt_pos(kdl_chain_.getNrOfJoints());
   chain_.getPositions(robot_->joint_states_, jnt_pos);
-  
+
   double joint_e = angles::shortest_angular_distance(jnt_pos(2), elbow_limit);
-  if(joint_e < -0.1) 
+  if(joint_e < -0.05)
   {
     joint_constraint_jac_(2) = 1;
   }
@@ -303,7 +303,7 @@ void EndeffectorConstraintController::computeConstraintJacobian()
   {
     joint_constraint_force_(2) = joint_e * f_limit_max;
   }
-  else 
+  else
   {
     joint_constraint_force_(2) = 0;
   }
