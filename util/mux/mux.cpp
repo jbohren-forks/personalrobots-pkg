@@ -51,8 +51,8 @@ public:
   virtual const string __getMD5Sum()   const { return string("*"); }
   static const string __s_getDataType() { return string("*"); }
   static const string __s_getMD5Sum()   { return string("*"); }
-  uint32_t serializationLength() { return msgBufUsed; }
-  virtual uint8_t *serialize(uint8_t *writePtr, uint32_t)
+  uint32_t serializationLength() const { return msgBufUsed; }
+  virtual uint8_t *serialize(uint8_t *writePtr, uint32_t) const
   {
     // yack up what we stored
     memcpy(writePtr, msgBuf, msgBufUsed);
