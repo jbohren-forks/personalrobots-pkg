@@ -261,36 +261,51 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   return (PyObject*)object;
 }
 
-static int im2arr(CvArr **dst, PyObject *src)
+static PyObject *im2arr(CvArr **dst, PyObject *src)
 {
   int width, height;
   if (!PyObject_HasAttrString(src, "size") ||
       !PyObject_HasAttrString(src, "mode") ||
       !PyObject_HasAttrString(src, "tostring"))
-    return 0;
+    return NULL;
 
-  if (!PyArg_ParseTuple(PyObject_GetAttrString(src, "size"), "ii", &width, &height))
-    return 0;
-
-  char *mode = PyString_AsString(PyObject_GetAttrString(src, "mode"));
-  int depth, nchannels, bps;
-  nchannels = (int)strlen(mode);
-  if (strcmp(mode, "F") == 0) {
-    depth = IPL_DEPTH_32F;
-    bps = 4;
-  } else {
-    depth = IPL_DEPTH_8U;
-    bps = 1;
+  {
+    PyObject *ob_size = PyObject_GetAttrString(src, "size");
+    if (!PyArg_ParseTuple(ob_size, "ii", &width, &height))
+      return NULL;
+    Py_DECREF(ob_size);
   }
+
+  int depth, nchannels, bps;
+  {
+    PyObject *ob_mode = PyObject_GetAttrString(src, "mode");
+    char *mode = PyString_AsString(ob_mode);
+
+    nchannels = (int)strlen(mode);
+    if (strcmp(mode, "F") == 0) {
+      depth = IPL_DEPTH_32F;
+      bps = 4;
+    } else {
+      depth = IPL_DEPTH_8U;
+      bps = 1;
+    }
+
+    Py_DECREF(ob_mode);
+    mode = NULL;
+  }
+
+  PyObject *ob_tostring = PyObject_GetAttrString(src, "tostring");
+  PyObject *ob_string = PyObject_CallObject(ob_tostring, NULL);
+  Py_DECREF(ob_tostring);
 
   char *string;
   Py_ssize_t length;
-  PyString_AsStringAndSize(PyObject_CallObject(PyObject_GetAttrString(src, "tostring"), NULL), &string, &length);
+  PyString_AsStringAndSize(ob_string, &string, &length);
 
   *dst = cvCreateImageHeader(cvSize(width, height), depth, nchannels);
   cvSetData(*dst, (void*)string, nchannels * bps * width);
 
-  return 1;
+  return ob_string;
 }
 
 PyObject *getSignatures(PyObject *self, PyObject *args)
@@ -303,7 +318,8 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
 
   IplImage *cva;
   IplImage subrect;
-  if (!im2arr((CvArr**)&cva, pim)) assert(0);
+  PyObject *imob = im2arr((CvArr**)&cva, pim);
+  if (!imob) assert(0);
 
   PyObject *r = PyList_New(0);
 
@@ -324,10 +340,11 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
 
     signature_t *object = PyObject_NEW(signature_t, &signature_Type);
     object->size = pc->classifier->classes();
-    posix_memalign((void**)&object->data, 16, object->size * sizeof(float));
+    posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
     pc->classifier->getSignature(input, object->data);
     PyList_Append(r, (PyObject*)object);
   }
+  Py_DECREF(imob);
   return r;
 }
 
