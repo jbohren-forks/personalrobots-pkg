@@ -6,7 +6,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
 #include "color_calib.h"
@@ -19,14 +19,14 @@ struct imgData
 {
   string label;
   IplImage *cv_image;
-  CvBridge<std_msgs::Image> *bridge;
+  CvBridge<deprecated_msgs::Image> *bridge;
   color_calib::Calibration* color_cal;
 };
 
 class CvView : public ros::Node
 {
 public:
-  std_msgs::ImageArray image_msg;
+  deprecated_msgs::ImageArray image_msg;
 
   boost::mutex cv_mutex;
 
@@ -75,7 +75,7 @@ public:
       if (j == images.end())
       {
         images[l].label = image_msg.images[i].label;
-        images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+        images[l].bridge = new CvBridge<deprecated_msgs::Image>(&image_msg.images[i], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
         cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
         images[l].cv_image = 0;
         images[l].color_cal = new color_calib::Calibration(this);

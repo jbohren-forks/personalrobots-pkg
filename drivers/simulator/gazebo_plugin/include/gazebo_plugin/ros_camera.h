@@ -29,7 +29,7 @@
 
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <std_msgs/Image.h>
+#include <deprecated_msgs/Image.h>
 #include <gazebo/Controller.hh>
 
 namespace gazebo
@@ -42,7 +42,7 @@ namespace gazebo
 
   \brief Ros Camera Plugin Controller.
   
-  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS std_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
+  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS deprecated_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
 
   Example Usage:
   \verbatim
@@ -68,7 +68,7 @@ namespace gazebo
 
     \brief RosCamera Controller.
            \li Starts a ROS node if none exists. \n
-           \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS.
+           \li Simulates a generic camera and broadcast deprecated_msgs::Image topic over ROS.
            \li Example Usage:
   \verbatim
   <model:physical name="camera_model">
@@ -120,7 +120,7 @@ class RosCamera : public Controller
   private: ros::Node *rosnode;
 
   /// \brief ROS image message
-  private: std_msgs::Image imageMsg;
+  private: deprecated_msgs::Image imageMsg;
 
   /// \brief ROS image topic name
   private: std::string topicName;

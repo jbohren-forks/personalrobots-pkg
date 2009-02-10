@@ -40,7 +40,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
 #include <sys/stat.h>
@@ -53,7 +53,7 @@ using namespace color_calib;
 class ColorCalib : public ros::Node
 {
 public:
-  std_msgs::ImageArray image_msg;
+  deprecated_msgs::ImageArray image_msg;
 
   boost::mutex cv_mutex;
 
@@ -81,7 +81,7 @@ public:
 
       if (image_msg.images[i].colorspace == std::string("rgb24"))
       {
-        CvBridge<std_msgs::Image>* cv_bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+        CvBridge<deprecated_msgs::Image>* cv_bridge = new CvBridge<deprecated_msgs::Image>(&image_msg.images[i], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
         IplImage* img;
 
         if (cv_bridge->to_cv(&img))

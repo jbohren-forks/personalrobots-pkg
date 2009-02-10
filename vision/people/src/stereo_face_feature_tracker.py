@@ -5,7 +5,8 @@ import rostest
 import face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
-from std_msgs.msg import Image, ImageArray, String, PointStamped, PointCloud, Point
+from std_msgs.msg import String, PointStamped, PointCloud, Point
+from deprecated_msgs.msg import Image, ImageArray
 from robot_msgs.msg import PositionMeasurement
 import visual_odometry as VO
 import starfeature

@@ -71,8 +71,8 @@ Advanced use: in some particular cases (e.g. smooth surfaces without big dispari
 #include <opencv/cxcore.h>
 #include "ros/node.h"
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/ImageArray.h>
-#include <std_msgs/Image.h>
+#include <deprecated_msgs/ImageArray.h>
+#include <deprecated_msgs/Image.h>
 #include "limits.h"
 #include "image_utils/cv_bridge.h"
 #include <vector>
@@ -221,11 +221,11 @@ class SpacetimeStereoNode : public ros::Node
 {
 	public:
 	//IplImage *frame;
-	std_msgs::ImageArray frame_msg;
+	deprecated_msgs::ImageArray frame_msg;
 	std_msgs::String cal_msg;
 	bool builtBridge;
-	CvBridge<std_msgs::Image> *left_bridge_in;
-	CvBridge<std_msgs::Image> *right_bridge_in;
+	CvBridge<deprecated_msgs::Image> *left_bridge_in;
+	CvBridge<deprecated_msgs::Image> *right_bridge_in;
 	//boost::mutex frame_mutex_;
 
 	bool IsCal;	
@@ -267,8 +267,8 @@ class SpacetimeStereoNode : public ros::Node
 	{
 		
 		if(!builtBridge) {
-			left_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[1], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-			right_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[0], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+			left_bridge_in = new CvBridge<deprecated_msgs::Image>(&frame_msg.images[1], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
+			right_bridge_in = new CvBridge<deprecated_msgs::Image>(&frame_msg.images[0], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
 			builtBridge = true;
 		}
 		

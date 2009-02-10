@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 
 #include "boost/thread/mutex.hpp"
 
@@ -15,7 +15,7 @@
 #include <vector>
 #include <map>
 using namespace std;
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/String.h"
 #include "std_msgs/PointStamped.h"
 #include "stereo_blob_tracker/Rect2DStamped.h"
@@ -193,7 +193,7 @@ struct imgData
 {
   string label;
   IplImage *cv_image;
-  CvBridge<std_msgs::Image> *bridge;
+  CvBridge<deprecated_msgs::Image> *bridge;
 };
 
 // this class is originally copied from CvView in cv_view_array.cpp in vision/cv_view package.
@@ -208,7 +208,7 @@ public:
 
   // for subscription
   const string imagesTopic_; // ("images");
-  std_msgs::ImageArray image_msg_;
+  deprecated_msgs::ImageArray image_msg_;
   const string calParamTopic_; // "calparam"
   std_msgs::String cal_params_;
   const string selectionBoxTopic_; // selectionbox
@@ -379,7 +379,7 @@ public:
       if (j == images.end())
       {
         images[l].label = image_msg_.images[i].label;
-        images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg_.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+        images[l].bridge = new CvBridge<deprecated_msgs::Image>(&image_msg_.images[i], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
         // cvNamedWindow(l.c_str(), 0 /*manually resizable */);
 	images[l].cv_image = 0;
       } else {

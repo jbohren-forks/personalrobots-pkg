@@ -42,7 +42,8 @@ from vis import Vis
 
 from math import *
 
-from std_msgs.msg import Image, ImageArray, String
+from std_msgs.msg import String
+from deprecated_msgs.msg import Image, ImageArray
 from robot_msgs.msg import VisualizationMarker
 from cv_view.msg import Line, Lines
 from visual_odometry.msg import Frame, Pose44, Keypoint, Descriptor

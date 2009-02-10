@@ -9,6 +9,7 @@
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
+<depend package="deprecated_msgs"/>
 <depend package="robot_msgs"/>
 <depend package="std_srvs"/>
 <depend package="opencv_latest"/>

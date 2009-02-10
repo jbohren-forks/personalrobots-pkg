@@ -31,7 +31,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 #include "axis_cam/PTZActuatorCmd.h"
 #include "axis_cam/PTZActuatorState.h"
 #include "image_utils/cv_bridge.h"
@@ -44,15 +44,15 @@
 class AxisDemo : public ros::Node
 {
 public:
-  std_msgs::Image image_;
-  CvBridge<std_msgs::Image> cv_bridge_;
+  deprecated_msgs::Image image_;
+  CvBridge<deprecated_msgs::Image> cv_bridge_;
 
   axis_cam::PTZActuatorCmd   ptz_cmd_;
   axis_cam::PTZActuatorState ptz_state_;
 
   IplImage *cv_image_;
 
-  AxisDemo() : ros::Node("axis_demo"), cv_bridge_(&image_, CvBridge<std_msgs::Image>::CORRECT_BGR), cv_image_(NULL)
+  AxisDemo() : ros::Node("axis_demo"), cv_bridge_(&image_, CvBridge<deprecated_msgs::Image>::CORRECT_BGR), cv_image_(NULL)
   {
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
 

@@ -113,8 +113,8 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   std::cout << "================= " << this->leftCloudTopicName << std::endl;
   rosnode->advertise<std_msgs::PointCloud>(this->leftCloudTopicName, 1);
   rosnode->advertise<std_msgs::PointCloud>(this->rightCloudTopicName, 1);
-  rosnode->advertise<std_msgs::Image>(this->leftTopicName, 1);
-  rosnode->advertise<std_msgs::Image>(this->rightTopicName, 1);
+  rosnode->advertise<deprecated_msgs::Image>(this->leftTopicName, 1);
+  rosnode->advertise<deprecated_msgs::Image>(this->rightTopicName, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

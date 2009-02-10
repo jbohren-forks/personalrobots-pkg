@@ -5,7 +5,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 #include <sys/stat.h>
@@ -15,8 +15,8 @@ using namespace std;
 class CvView : public ros::Node
 {
 public:
-  std_msgs::Image image_msg;
-  CvBridge<std_msgs::Image> cv_bridge;
+  deprecated_msgs::Image image_msg;
+  CvBridge<deprecated_msgs::Image> cv_bridge;
 
   boost::mutex cv_mutex;
 
@@ -26,7 +26,7 @@ public:
   int img_cnt;
   bool made_dir;
 
-  CvView() : Node("cv_view", ros::Node::ANONYMOUS_NAME), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U),
+  CvView() : Node("cv_view", ros::Node::ANONYMOUS_NAME), cv_bridge(&image_msg, CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U),
              cv_image(0), img_cnt(0), made_dir(false)
   {
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);

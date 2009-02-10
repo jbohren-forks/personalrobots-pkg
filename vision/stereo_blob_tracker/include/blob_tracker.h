@@ -53,7 +53,7 @@
 
 // ROS
 #include "ros/node.h"
-#include <std_msgs/Image.h>
+#include <deprecated_msgs/Image.h>
 
 // OpenCV
 #include <opencv/cv.h>

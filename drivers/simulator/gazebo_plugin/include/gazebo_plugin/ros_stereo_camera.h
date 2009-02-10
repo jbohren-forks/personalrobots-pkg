@@ -33,7 +33,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 #include <std_msgs/PointCloud.h>
-#include <std_msgs/Image.h>
+#include <deprecated_msgs/Image.h>
 
 #include <Generic_Camera.hh>
 #include <gazebo/gazebo.h>
@@ -145,7 +145,7 @@ class RosStereoCamera : public Controller
   private: std_msgs::PointCloud leftCloudMsg;
   private: std_msgs::PointCloud rightCloudMsg;
   /// \brief ros message
-  private: std_msgs::Image imageMsg[2];
+  private: deprecated_msgs::Image imageMsg[2];
 
   /// \brief topic name
   private: std::string leftCloudTopicName;

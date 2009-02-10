@@ -4,7 +4,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 using namespace std;
@@ -13,10 +13,10 @@ using namespace ros;
 class CvView : public Node
 {
 public:
-  std_msgs::Image image_msg;
-  CvBridge<std_msgs::Image> cv_bridge;
+  deprecated_msgs::Image image_msg;
+  CvBridge<deprecated_msgs::Image> cv_bridge;
 
-  CvView() : Node("cv_view"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR)
+  CvView() : Node("cv_view"), cv_bridge(&image_msg, CvBridge<deprecated_msgs::Image>::CORRECT_BGR)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvView::image_cb, 1);

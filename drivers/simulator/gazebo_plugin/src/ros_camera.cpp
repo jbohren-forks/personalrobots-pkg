@@ -103,7 +103,7 @@ void RosCamera::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
   std::cout << "================= " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Image>(this->topicName,1);
+  rosnode->advertise<deprecated_msgs::Image>(this->topicName,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

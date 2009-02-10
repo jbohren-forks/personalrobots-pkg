@@ -33,7 +33,7 @@
 
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <std_msgs/Image.h>
+
 // roscpp - used for broadcasting time over ros
 #include <roslib/Time.h>
 

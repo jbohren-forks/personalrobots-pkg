@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 #include "std_msgs/PointStamped.h"
 #include "axis_cam/PTZActuatorCmd.h"
 #include "axis_cam/PTZActuatorState.h"

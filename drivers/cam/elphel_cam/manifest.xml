@@ -7,6 +7,7 @@ A package to configure and grab images from the Elphel IP-based camera.
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
   <depend package="std_msgs"/>
+  <depend package="deprecated_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
 

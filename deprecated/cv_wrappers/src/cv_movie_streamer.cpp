@@ -3,7 +3,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "deprecated_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 using namespace std;
@@ -27,8 +27,8 @@ map<string, string> parse_simple_options(int argc, char **argv, int start)
 class CvMovieStreamer : public Node
 {
 public:
-  std_msgs::Image image_msg;
-  CvBridge<std_msgs::Image> cv_bridge;
+  deprecated_msgs::Image image_msg;
+  CvBridge<deprecated_msgs::Image> cv_bridge;
   string movie_fname;
   int delay, loop, qual;
 
@@ -36,7 +36,7 @@ public:
   : Node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   {
-    advertise<std_msgs::Image>("image", 1);
+    advertise<deprecated_msgs::Image>("image", 1);
   }
   void stream_movie()
   {

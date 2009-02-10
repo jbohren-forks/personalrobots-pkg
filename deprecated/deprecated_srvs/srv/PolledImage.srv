@@ -1,2 +1,2 @@
 ---
-std_msgs/Image image
+deprecated_msgs/Image image
