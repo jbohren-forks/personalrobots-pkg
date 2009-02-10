@@ -181,17 +181,36 @@ void Camera::stop()
 
 void Camera::setExposure(unsigned int val, AutoSetting isauto)
 {
-  
+  CHECK_ERR( PvAttrEnumSet(handle_, "ExposureMode", autoValues[isauto]),
+             "Couldn't set exposure mode" );
+
+  if (isauto == Manual)
+    CHECK_ERR( PvAttrUint32Set(handle_, "ExposureValue", val),
+               "Couldn't set exposure value" );
 }
 
 void Camera::setGain(unsigned int val, AutoSetting isauto)
 {
+  CHECK_ERR( PvAttrEnumSet(handle_, "GainMode", autoValues[isauto]),
+             "Couldn't set gain mode" );
 
+  if (isauto == Manual)
+    CHECK_ERR( PvAttrUint32Set(handle_, "GainValue", val),
+               "Couldn't set gain value" );
 }
 
-void Camera::setWhiteBalance(unsigned int val, AutoSetting isauto)
+void Camera::setWhiteBalance(unsigned int blue, unsigned int red, AutoSetting isauto)
 {
+  CHECK_ERR( PvAttrEnumSet(handle_, "WhitebalMode", autoValues[isauto]),
+             "Couldn't set white balance mode" );
 
+  if (isauto == Manual)
+  {
+    CHECK_ERR( PvAttrUint32Set(handle_, "WhitebalValueBlue", blue),
+               "Couldn't set white balance blue value" );
+    CHECK_ERR( PvAttrUint32Set(handle_, "WhitebalValueRed", red),
+               "Couldn't set white balance red value" );
+  }
 }
 
 void Camera::frameDone(tPvFrame* frame)

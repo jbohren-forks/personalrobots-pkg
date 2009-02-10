@@ -74,13 +74,61 @@ public:
         guid = prosilica::getGuid(0);
       }
 
-      // TODO: other params
-
       cam_.reset( new prosilica::Camera(guid) );
       cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
-      // TODO: start, check diagnostics?
 
-      ROS_FATAL("Found camera, guid = %u\n", guid);
+      std::string auto_setting;
+
+      param("~exposure_auto", auto_setting, std::string("Auto"));
+      if (auto_setting == std::string("Auto"))
+        cam_->setExposure(0, prosilica::Auto);
+      else if (auto_setting == std::string("AutoOnce"))
+        cam_->setExposure(0, prosilica::AutoOnce);
+      else if (auto_setting == std::string("Manual"))
+      {
+        int val;
+        getParam("~exposure", val);
+        cam_->setExposure(val, prosilica::Manual);
+      } else {
+        ROS_FATAL("Unknown setting\n");
+        shutdown();
+      }
+
+      param("~gain_auto", auto_setting, std::string("Auto"));
+      if (auto_setting == std::string("Auto"))
+        cam_->setGain(0, prosilica::Auto);
+      else if (auto_setting == std::string("AutoOnce"))
+        cam_->setGain(0, prosilica::AutoOnce);
+      else if (auto_setting == std::string("Manual"))
+      {
+        int val;
+        getParam("~gain", val);
+        cam_->setGain(val, prosilica::Manual);
+      } else {
+        ROS_FATAL("Unknown setting\n");
+        shutdown();
+      }
+
+      param("~whitebal_auto", auto_setting, std::string("Auto"));
+      if (auto_setting == std::string("Auto"))
+        cam_->setWhiteBalance(0, 0, prosilica::Auto);
+      else if (auto_setting == std::string("AutoOnce"))
+        cam_->setWhiteBalance(0, 0, prosilica::AutoOnce);
+      else if (auto_setting == std::string("Manual"))
+      {
+        int blue, red;
+        getParam("~whitebal_blue", blue);
+        getParam("~whitebal_red", red);
+        cam_->setWhiteBalance(blue, red, prosilica::Manual);
+      } else {
+        ROS_FATAL("Unknown setting\n");
+        shutdown();
+      }
+      
+      // TODO: other params
+      // TODO: check any diagnostics?
+
+      ROS_FATAL("Found camera, guid = %lu\n", guid);
       advertise<image_msgs::Image>("~image", 1);
     } else {
       ROS_FATAL("Found no Prosilica cameras\n");

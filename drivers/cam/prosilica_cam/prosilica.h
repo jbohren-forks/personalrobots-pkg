@@ -87,7 +87,8 @@ public:
 
   void setExposure(unsigned int val, AutoSetting isauto = Manual);
   void setGain(unsigned int val, AutoSetting isauto = Manual);
-  void setWhiteBalance(unsigned int val, AutoSetting isauto = Manual);
+  void setWhiteBalance(unsigned int blue, unsigned int red,
+                       AutoSetting isauto = Manual);
 
 private:
   tPvHandle handle_; // handle to open camera
