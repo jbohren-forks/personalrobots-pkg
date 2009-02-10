@@ -15,6 +15,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
   <property name="wall_x_loc" value="2.0" />
+  <property name="handle_height" value="0.9" />
 
   <!-- joint blocks -->
   <joint name="door_joint" type="revolute" >
@@ -181,7 +182,7 @@
 
   <link name="handle_link">
     <parent name="door_link" />
-    <origin xyz="-0.10 -0.8 1.0" rpy="${0*M_PI/2.0} 0 0" />
+    <origin xyz="-0.10 -0.8 ${handle_height}" rpy="${0*M_PI/2.0} 0 0" />
     <joint name="handle_joint" />
     <inertial >
       <mass value="0.1" />
