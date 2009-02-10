@@ -386,3 +386,34 @@ Index: DecomposeSample.cpp
 -  	char *dot = strstr(mBaseName,".");
 +  	char *dot = strstr(mBaseName,".obj");
   	if ( dot ) *dot = 0;
+Index: ConvexDecomposition/cd_wavefront.cpp
+===================================================================
+--- ConvexDecomposition/cd_wavefront.cpp (revision 8299)
++++ ConvexDecomposition/cd_wavefront.cpp (working copy)
+@@ -573,6 +573,7 @@
+   FloatVector     mNormals;
+ 
+   GeometryInterface *mCallback;
++  friend class WavefrontObj;
+ };
+ 
+ 
+@@ -839,7 +840,17 @@
+ 		memcpy(mIndices, &indices[0], sizeof(int)*mTriCount*3);
+ 		ret = mTriCount;
+ 	}
+-
++    else if( obj.mVerts.size() > 0 ) {
++        // take consecutive vertices
++        mVertexCount = obj.mVerts.size()/3;
++        mVertices = new double[mVertexCount*3];
++        memcpy( mVertices, &obj.mVerts[0], sizeof(double)*mVertexCount*3 );
++        mTriCount = mVertexCount/3;
++        mIndices = new int[mTriCount*3*sizeof(int)];
++        for(int i = 0; i < mVertexCount; ++i)
++            mIndices[i] = i;
++        ret = mTriCount;
++    }
+ 
+ 	return ret;
+ }

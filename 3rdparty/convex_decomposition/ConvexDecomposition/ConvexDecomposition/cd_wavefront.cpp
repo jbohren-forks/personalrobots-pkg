@@ -573,6 +573,7 @@ private:
   FloatVector     mNormals;
 
   GeometryInterface *mCallback;
+  friend class WavefrontObj;
 };
 
 
@@ -839,7 +840,17 @@ unsigned int WavefrontObj::loadObj(const char *fname) // load a wavefront obj re
 		memcpy(mIndices, &indices[0], sizeof(int)*mTriCount*3);
 		ret = mTriCount;
 	}
-
+    else if( obj.mVerts.size() > 0 ) {
+        // take consecutive vertices
+        mVertexCount = obj.mVerts.size()/3;
+        mVertices = new double[mVertexCount*3];
+        memcpy( mVertices, &obj.mVerts[0], sizeof(double)*mVertexCount*3 );
+        mTriCount = mVertexCount/3;
+        mIndices = new int[mTriCount*3*sizeof(int)];
+        for(int i = 0; i < mVertexCount; ++i)
+            mIndices[i] = i;
+        ret = mTriCount;
+    }
 
 	return ret;
 }
