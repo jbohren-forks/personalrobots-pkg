@@ -5,7 +5,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
@@ -48,7 +48,7 @@ struct imgData
 {
   string label;
   IplImage *cv_image;
-  CvBridge<std_msgs::Image> *bridge;
+  CvBridge<deprecated_msgs::Image> *bridge;
 };
 
 
@@ -60,7 +60,7 @@ public:
   boost::mutex cv_mutex;  
   ros::record::Player lp;
   map<string, imgData> images;
-  std_msgs::ImageArray image_msg;
+  deprecated_msgs::ImageArray image_msg;
   std_msgs::String calparams;
   std_msgs::PointCloud cloud;
   string fullname;
@@ -83,7 +83,7 @@ public:
 
     // -- Load the messages.
     lp.open(fullname, ros::Time());
-    lp.addHandler<std_msgs::ImageArray>(string("videre/images"), &copyMsg<std_msgs::ImageArray>, (void*)(&image_msg), true);
+    lp.addHandler<deprecated_msgs::ImageArray>(string("videre/images"), &copyMsg<deprecated_msgs::ImageArray>, (void*)(&image_msg), true);
     lp.addHandler<std_msgs::String>(string("videre/cal_params"), &copyMsg<std_msgs::String>, (void*)(&calparams), true);
     lp.addHandler<std_msgs::PointCloud>(string("full_cloud"), &copyMsg<std_msgs::PointCloud>, (void*)(&cloud), true);
     while(lp.nextMsg());
@@ -149,7 +149,7 @@ public:
 	  if (j == images.end())
 	    {
 	      images[l].label = image_msg.images[i].label;
-	      images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+	      images[l].bridge = new CvBridge<deprecated_msgs::Image>(&image_msg.images[i], CvBridge<deprecated_msgs::Image>::CORRECT_BGR | CvBridge<deprecated_msgs::Image>::MAXDEPTH_8U);
 	      cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
 	      images[l].cv_image = 0;
 	    } 
