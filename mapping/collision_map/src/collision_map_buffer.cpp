@@ -107,7 +107,7 @@ class CollisionMapperBuffer : public ros::Node
     tf::TransformListener tf_;
 
     // Parameters
-    Point leaf_width_, robot_max_;
+    std_msgs::Point leaf_width_, robot_max_;
     int min_nr_points_;
     string end_effector_frame_l_, end_effector_frame_r_;
 
@@ -122,7 +122,7 @@ class CollisionMapperBuffer : public ros::Node
     // Internal parameters
     string cloud_frame_;
     PoseStamped gripper_orientation_link_;
-    Point32 min_object_b_, max_object_b_;
+    std_msgs::Point32 min_object_b_, max_object_b_;
     bool subtract_object_;
     int m_id_;
 
