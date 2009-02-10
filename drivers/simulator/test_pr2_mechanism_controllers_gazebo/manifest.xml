@@ -12,4 +12,5 @@
   <depend package="pr2_gazebo" />
   <depend package="gazebo_robot_description" />
   <depend package="deprecated_msgs" /> <!-- RobotBase2DOdom -->
+  <depend package="robot_msgs" /> <!-- RobotBase2DOdom -->
 </package>

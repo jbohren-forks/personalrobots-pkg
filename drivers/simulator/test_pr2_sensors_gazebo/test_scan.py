@@ -46,7 +46,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from std_msgs.msg import *
+from laser_scan.msg import *
 
 TEST_DURATION  = 15
 ERROR_TOL      = 0.05
@@ -287,7 +287,7 @@ class PointCloudTest(unittest.TestCase):
     
     def test_scan(self):
         print "LNK\n"
-        rospy.TopicSub("base_scan", LaserScan, self.pointInput)
+        rospy.subscribe_topic("base_scan", LaserScan, self.pointInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

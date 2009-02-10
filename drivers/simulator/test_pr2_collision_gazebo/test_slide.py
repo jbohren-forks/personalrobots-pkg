@@ -43,7 +43,6 @@ roslib.load_manifest('rostest')
 import unittest, sys, os, math
 import time
 import rospy, rostest
-from std_msgs.msg import *
 from robot_msgs.msg import *
 
 TARGET_X = -5.4 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
@@ -91,10 +90,9 @@ class TestSlide(unittest.TestCase):
     
     def test_slide(self):
         print "LINK\n"
-        #rospy.Subscriber("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
+        rospy.subscribe_topic("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + 50.0 #59 seconds
+        timeout_t = time.time() + 50.0
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)

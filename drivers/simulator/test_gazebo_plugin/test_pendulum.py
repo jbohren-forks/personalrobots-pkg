@@ -46,7 +46,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from std_msgs.msg import *
+from robot_msgs.msg import *
 
 class E:
     def __init__(self,x,y,z):
@@ -140,8 +140,8 @@ class PendulumTest(unittest.TestCase):
 
     def test_pendulum(self):
         print "LNK\n"
-        rospy.Subscriber("link1_pose", PoseWithRatesStamped, self.p3dInput1)
-        rospy.Subscriber("link2_pose", PoseWithRatesStamped, self.p3dInput2)
+        rospy.subscribe_topic("link1_pose", PoseWithRatesStamped, self.p3dInput1)
+        rospy.subscribe_topic("link2_pose", PoseWithRatesStamped, self.p3dInput2)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 20.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
