@@ -49,6 +49,7 @@ roslib.load_manifest('numpy')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
+from std_msgs.msg import *
 from robot_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 from transformations import *
