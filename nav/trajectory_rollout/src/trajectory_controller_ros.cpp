@@ -45,7 +45,7 @@ using namespace costmap_2d;
 
 namespace trajectory_rollout {
   TrajectoryControllerROS::TrajectoryControllerROS(ros::Node& ros_node, 
-      const costmap_2d::ObstacleMapAccessor& ma, 
+      const costmap_2d::CostMapAccessor& ma, 
       std::vector<std_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
     : world_model_(NULL), tc_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
@@ -76,11 +76,15 @@ namespace trajectory_rollout {
     ros_node.param("/trajectory_rollout/freespace_model", freespace_model, false);
 
     if(freespace_model){
+      double origin_x, origin_y;
+      ma.getOriginInWorldCoordinates(origin_x, origin_y);
       Point2DFloat32 origin;
-      origin.x = 0;
-      origin.y = 0;
-      world_model_ = new PointGrid(70.0, 70.0, 0.2, origin, 2.0, 2.0, 0.01);
-      ROS_ERROR("Freespace\n");
+      origin.x = origin_x;
+      origin.y = origin_y;
+      unsigned int cmap_width, cmap_height;
+      ma.getCostmapDimensions(cmap_width, cmap_height);
+      world_model_ = new PointGrid(cmap_width * ma.getResolution(), cmap_height * ma.getResolution(), 1.0, origin, 2.0, 2.0, 0.01);
+      ROS_ERROR("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
     }
     else{
       world_model_ = new CostmapModel(ma); 
@@ -138,22 +142,22 @@ namespace trajectory_rollout {
     }
 
     /* For timing uncomment
+    */
     struct timeval start, end;
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
-    */
     tc_->updatePlan(copiedGlobalPlan);
 
     //compute what trajectory to drive along
     Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations);
 
     /* For timing uncomment
+    */
     gettimeofday(&end, NULL);
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
     ROS_ERROR("Cycle time: %.9f", t_diff);
-    */
 
     //pass along drive commands
     cmd_vel.vel.vx = drive_cmds.getOrigin().getX();

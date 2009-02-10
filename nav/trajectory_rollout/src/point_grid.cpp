@@ -50,8 +50,8 @@ namespace trajectory_rollout {
     resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range), 
     sq_min_separation_(min_separation * min_separation)
   {
-    width_ = (int) ((size_x - origin_.x)/resolution_);
-    height_ = (int) ((size_y - origin_.y)/resolution_);
+    width_ = (int) (size_x / resolution_);
+    height_ = (int) (size_y / resolution_);
     cells_.resize(width_ * height_);
   }
 

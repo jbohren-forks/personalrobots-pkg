@@ -39,6 +39,7 @@
 
 #include <ros/node.h>
 #include <costmap_2d/obstacle_map_accessor.h>
+#include <costmap_2d/costmap_2d.h>
 #include <trajectory_rollout/world_model.h>
 #include <trajectory_rollout/point_grid.h>
 #include <trajectory_rollout/costmap_model.h>
@@ -60,13 +61,13 @@ namespace trajectory_rollout {
       /**
        * @brief  Constructs the ros wrapper
        * @param  ros_node The node that is running the controller, used to get parameters from the parameter server
-       * @param ma An ObstacleMapAccessor that allows the trajectory controller to query a costmap
+       * @param ma An CostMapAccessor that allows the trajectory controller to query a costmap
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        * @param inscribed_radius The inscribed radius of the robot
        * @param circumscribed_radius The circumscribed radius of the robot
        */
       TrajectoryControllerROS(ros::Node& ros_node,
-          const costmap_2d::ObstacleMapAccessor& ma, std::vector<std_msgs::Point2DFloat32> footprint_spec,
+          const costmap_2d::CostMapAccessor& ma, std::vector<std_msgs::Point2DFloat32> footprint_spec,
           double inscribed_radius, double cirumscribed_radius);
 
       /**
