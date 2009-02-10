@@ -1,13 +1,13 @@
 #include "ROSStateAdapter.hh"
 #include "IntervalDomain.hh"
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 
 namespace TREX {
 
-  class BaseStateAdapter: public ROSStateAdapter<std_msgs::RobotBase2DOdom> {
+  class BaseStateAdapter: public ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> {
   public:
     BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<std_msgs::RobotBase2DOdom> ( agentName, configData) {
+      : ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> ( agentName, configData) {
     }
 
     virtual ~BaseStateAdapter(){}

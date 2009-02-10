@@ -9,6 +9,7 @@
   <depend package="rospy" />
   <depend package="highlevel_controllers" />
   <depend package="gtest" />
+  <depend package="deprecated_msgs" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>
