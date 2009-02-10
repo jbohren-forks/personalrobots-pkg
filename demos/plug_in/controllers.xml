@@ -1,0 +1,11 @@
+<controllers>
+
+  <controller type="EndeffectorConstraintControllerNode" name="arm_constraint" topic="arm_constraint">
+    <chain root="torso_lift_link" tip="r_gripper_tool_frame" offset="0 0 0" />
+  </controller>
+
+  <controller type="JointEffortControllerNode" name="gripper_effort">
+    <joint name="r_gripper_l_finger_joint" />
+  </controller>
+
+</controllers>

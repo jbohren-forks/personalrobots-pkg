@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="spacenav_node" type="spacenav_node" output="screen" />
+  <node pkg="plug_in" type="spacenav_pass_through.py" />
+</launch>

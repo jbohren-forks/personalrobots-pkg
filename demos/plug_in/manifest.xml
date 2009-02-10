@@ -1,0 +1,11 @@
+<package>
+  <description>Scripts and configuration files for plugging in</description>
+  <author>Stuart Glaser and Melonee Wise</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+
+  <depend package="robot_mechanism_controllers" />
+  <depend package="spacenav_node" />
+  <depend package="pr2_etherCAT" />
+	<depend package="joy" />
+</package>
