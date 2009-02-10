@@ -72,10 +72,10 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <ros/time.h>
 
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/Pose2DFloat32.h>
 #include <std_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/ParticleCloud.h>
-#include <std_msgs/Pose2DFloat32.h>
 
 #include <angles/angles.h>
 
@@ -89,7 +89,7 @@ class FakeOdomNode: public ros::Node
 public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
-      advertise<std_msgs::RobotBase2DOdom>("localizedpose",1);
+      advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",1);
       advertise<robot_msgs::ParticleCloud>("particlecloud",1);
 
       m_tfServer = new tf::TransformBroadcaster(*this);	
@@ -130,8 +130,8 @@ private:
     
     std_msgs::PoseWithRatesStamped  m_basePosMsg;
     robot_msgs::ParticleCloud      m_particleCloud;
-    std_msgs::RobotBase2DOdom      m_currentPos;
-    std_msgs::Pose2DFloat32        m_iniPos;
+    deprecated_msgs::RobotBase2DOdom      m_currentPos;
+    deprecated_msgs::Pose2DFloat32        m_iniPos;
     
     void basePosReceived(void)
     {
