@@ -30,6 +30,7 @@
 #include "deprecated_srvs/PolledStereoCloud.h"
 #include "image_utils/cv_bridge.h"
 #include "opencv/highgui.h"
+#include "deprecated_msgs/Image.h"
 
 class BumblebeeGrabSample : public ros::Node
 {
@@ -41,7 +42,7 @@ public:
   {
     deprecated_srvs::PolledStereoCloud::Request  req;
     deprecated_srvs::PolledStereoCloud::Response res;
-    CvBridge<std_msgs::Image> cv_bridge(&res.image);
+    CvBridge<deprecated_msgs::Image> cv_bridge(&res.image);
     if (ros::service::call("stereo", req, res))
     {
       printf("success\n");

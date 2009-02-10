@@ -9,6 +9,7 @@
   </description>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="deprecated_msgs"/>
   <depend package="deprecated_srvs"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>
