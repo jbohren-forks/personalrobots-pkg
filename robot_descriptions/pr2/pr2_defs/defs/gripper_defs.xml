@@ -34,11 +34,11 @@
 
       <joint name="${prefix}_l_finger_joint" />
       <inertial>
-        <mass value="0.13894" />
-        <com xyz="0.03688 0.01629 -0.0011" /> <!-- sign / coordinates could be wrong -->
-        <inertia  ixx="0.00005738962"     ixy="0.00000441910"      ixz="-0.00000613376"
-                  iyy="0.00015025775"     iyz="-0.00000155674"
-                  izz="0.00014577390" />  <!-- coordinates could be wrong -->
+        <mass value="0.17126" />
+        <com xyz="0.03598 0.01730 -0.00164" />
+        <inertia  ixx="0.00007756198"     ixy="0.00000149095"      ixz="-0.00000983385"
+                  iyy="0.00019708305"     iyz="-0.00000306125"
+                  izz="0.00018105446" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -105,11 +105,11 @@
 
       <joint name="${prefix}_r_finger_joint" />
       <inertial>
-        <mass value="0.13777" />
-        <com xyz="-0.01596 0.03558 0.0006" />
-        <inertia  ixx="0.00014805694" ixy="-0.00000426051" ixz="-0.00000157771"
-                  iyy="0.00005880239" iyz="0.00000539169"
-                  izz="0.00014333130" />
+        <mass value="0.17389" />
+        <com xyz="0.03576 -0.01736 -0.00095" />
+        <inertia  ixx="0.00007738410"     ixy="-0.00000209309"      ixz="-0.00000836228"
+                  iyy="0.00019847383"     iyz="0.00000246110"
+                  izz="0.00018106988" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -394,11 +394,11 @@
       <joint name="${side}_gripper_palm_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <inertial>
-        <mass value="0.51645" />
-        <com xyz="0.067340 0.002406 -0.000599" /> <!-- x might be a good guess, but not sure at all about y/z -->
-        <inertia  ixx="0.00317040150" ixy="0.00001165963" ixz="0.00002108306"
-                  iyy="0.00291703860" iyz="-0.00008069583"
-                  izz="0.00036788506" />  <!-- did not switch from function provided at all, definitely wrong -->
+        <mass value="0.58007" />
+        <com xyz="0.06623 0.00053 -0.00119" />
+        <inertia  ixx="0.00035223921" ixy="-0.00001580476" ixz="-0.00000091750"
+                  iyy="0.00067741312" iyz="-0.00000059554"
+                  izz="0.00086563316" />
       </inertial>
 
       <visual>
@@ -464,8 +464,17 @@
       <origin xyz="0.18 0 0" rpy="0 0 0" />
 
       <!-- TODO: all that follows is made-up and useless, but the old parser crashes without it -->
-      <inertial><mass value="0" /> <com xyz="0 0 0" /> <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" /></inertial>
-      <collision><origin xyz="0 0 0" rpy="0 0 0" /><geometry name="${side}_gripper_dummy"><box size="0.1 0.1 0.1" /></geometry></collision>
+      <inertial>
+        <mass value="0" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+      </inertial>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${side}_gripper_dummy">
+          <box size="0.1 0.1 0.1" />
+        </geometry>
+      </collision>
     </link>
 
 
