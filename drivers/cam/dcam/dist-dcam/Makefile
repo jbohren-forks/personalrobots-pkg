@@ -16,6 +16,7 @@ SHAREDFLAGS = -shared -Wl,-soname,
 
 STOBJECTS = stereocal stereogui imwin im3Dwin calwin stereolib
 DCAMOBJECTS = dcam stereocam image stereolib
+STLIBOBJS = image stereolib stereolib2
 
 
 all:	lib/libdcam.so bin/stereocal bin/acquire bin/stacquire
@@ -29,8 +30,8 @@ bin/acquire: obj/acquire.o
 bin/stacquire: obj/stacquire.o obj/imwin.o obj/im3Dwin.o
 	$(LD) $(LDFLAGS) -o $@ obj/stacquire.o obj/imwin.o obj/im3Dwin.o
 
-lib/libdcam.so: $(DCAMOBJECTS:%=obj/%.o) 
-	$(LD) $(SHAREDFLAGS)libdcam.so -o $@ $(DCAMOBJECTS:%=obj/%.o)
+lib/libdcam.so: $(STLIBOBJS:%=obj/%.o) 
+	$(LD) $(SHAREDFLAGS)libdcam.so -o $@ $(STLIBOBJS:%=obj/%.o)
 
 # general cpp command from src->obj
 obj/%.o:src/%.cpp
@@ -43,11 +44,11 @@ obj/%.o:src/%.c
 
 obj/stereocal.o: include/stereolib.h 
 obj/stereolib.o: include/stereolib.h
-obj/dcam.o:      include/dcam.h include/image.h
-obj/stereocam.o: include/dcam.h include/stereocam.h include/image.h
-obj/image.o: 	 include/dcam.h include/image.h
-obj/acquire.o:	 include/dcam.h src/dcam.cpp include/image.h
-obj/stacquire.o: include/dcam.h src/dcam.cpp include/image.h
+obj/dcam.o:      include/dcam/dcam.h include/image.h
+obj/stereocam.o: include/dcam/dcam.h include/image.h
+obj/image.o: 	 include/dcam/dcam.h include/image.h
+obj/acquire.o:	 include/dcam/dcam.h src/libdcam/dcam.cpp include/image.h
+obj/stacquire.o: include/dcam/dcam.h src/libdcam/dcam.cpp include/image.h
 
 test:	$(OBJECTS) test.o
 	$(LD) -o test $(OBJECTS) test.o -lyaml
