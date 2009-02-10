@@ -520,6 +520,12 @@ namespace costmap_2d {
     ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
   }
 
+  void CostMapAccessor::getCostmapDimensions(unsigned int& width, unsigned int& height) const{
+    width = costMap_.getWidth();
+    height = costMap_.getHeight();
+  }
+
+
   void CostMapAccessor::updateForRobotPosition(double wx, double wy){
     if(wx < 0 || wx > costMap_.getResolution() * costMap_.getWidth())
       return;

@@ -315,6 +315,11 @@ namespace costmap_2d {
      */
     void refresh();
 
+    /**
+     * @brief Return the dimensions of the underlying costmap
+     */
+    void getCostmapDimensions(unsigned int& width, unsigned int& height) const;
+
   private:
 
     static unsigned int computeSize(double maxSize, double resolution);
