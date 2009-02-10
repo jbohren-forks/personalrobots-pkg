@@ -63,10 +63,10 @@ public:
     double tmp;
     param("~/door_frame_p1_x", tmp, 0.0); my_door_.frame_p1.x = tmp;
     param("~/door_frame_p1_y", tmp, 0.0); my_door_.frame_p1.y = tmp;
-    param("~/door_frame_p2_x", tmp, 0.0); my_door_.frame_p2.x =tmp;
-    param("~/door_frame_p2_y", tmp, 0.0); my_door_.frame_p2.y =tmp;
-    param("~/door_hinge" , my_door_.hinge, -1);
-    param("~/door_rot_dir" , my_door_.rot_dir, -1);
+    param("~/door_frame_p2_x", tmp, 0.0); my_door_.frame_p2.x = tmp;
+    param("~/door_frame_p2_y", tmp, 0.0); my_door_.frame_p2.y = tmp;
+    param("~/door_hinge"     , tmp,-1.0); my_door_.hinge      = tmp;
+    param("~/door_rot_dir"   , tmp,-1.0); my_door_.rot_dir    = tmp;
     my_door_.header.frame_id = "odom_combined";
 
     advertise<std_msgs::PoseStamped>("cartesian_trajectory/command",1);
