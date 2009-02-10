@@ -35,8 +35,9 @@
 #define CARTESIAN_TWIST_CONTEROLLER_H
 
 #include <vector>
-#include "kdl/chain.hpp"
-#include "kdl/frames.hpp"
+#include <kdl/chain.hpp>
+#include <kdl/chainfksolver.hpp>
+#include <kdl/frames.hpp>
 #include "ros/node.h"
 #include "robot_msgs/Twist.h"
 #include "mechanism_model/controller.h"
