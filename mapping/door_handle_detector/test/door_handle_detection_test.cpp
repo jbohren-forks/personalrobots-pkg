@@ -63,8 +63,8 @@ class DoorDetectionTestNode : public ros::Node
       this->param<double>("door_detection_test_node/door_checkerboard_x_offset",door_checkerboard_x_offset_,0.073);
       this->param<double>("door_detection_test_node/door_checkerboard_z_offset",door_checkerboard_z_offset_,1.47);
 
-      this->param<double>("door_detection_test_node/checkerboard_handle_z_offset",checkerboard_handle_z_offset_,0.57);
-      this->param<double>("door_detection_test_node/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.7);
+      this->param<double>("door_detection_test_node/checkerboard_handle_z_offset",checkerboard_handle_z_offset_,0.0);
+      this->param<double>("door_detection_test_node/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.0);
 
       subscribe(listen_topic_, checkerboard_msg_,  &DoorDetectionTestNode::doorCallback,1);
       advertise<robot_msgs::Door>(publish_topic_,1);
@@ -99,6 +99,13 @@ class DoorDetectionTestNode : public ros::Node
       }
     }
 
+    void PointTFToMsg32(const tf::Vector3 &in, std_msgs::Point32 &out)
+    {
+      out.x = in.x();
+      out.y = in.y();
+      out.z = in.z();
+    }
+
     void doorCallback()
     {
       robot_msgs::Door door_msg;
@@ -125,9 +132,12 @@ class DoorDetectionTestNode : public ros::Node
         door_p1 = Stamped<tf::Point>(door_pose*Point(-door_checkerboard_x_offset_,door_checkerboard_z_offset_,0.0),checkerboard_msg_.header.stamp, checkerboard_msg_.header.frame_id,dummy);
         door_p2 = Stamped<tf::Point>(door_pose*Point(door_width_ - door_checkerboard_x_offset_,door_checkerboard_z_offset_,0.0), checkerboard_msg_.header.stamp,  checkerboard_msg_.header.frame_id, dummy);
 
-        ROS_INFO("door_p1 : %s to %s", door_p1.frame_id_.c_str(),frame_id_.c_str());
+        ROS_INFO("Door to checkerboard offsets: %f %f",door_checkerboard_x_offset_,door_checkerboard_z_offset_);
+        ROS_INFO("Checkerboard to handle offsets: %f %f",checkerboard_handle_x_offset_,checkerboard_handle_z_offset_);
+
+        ROS_INFO("Transforming from %s to %s", door_p1.frame_id_.c_str(),frame_id_.c_str());
         ROS_INFO("door_p1 : %f %f %f", door_p1.m_floats[0], door_p1.m_floats[1], door_p1.m_floats[2]);
-        ROS_INFO("frame : %f %f %f", checkerboard_msg_.objects[0].pose.position.x, checkerboard_msg_.objects[0].pose.position.y,  checkerboard_msg_.objects[0].pose.position.z);
+        ROS_INFO("checkerboard frame : %f %f %f", checkerboard_msg_.objects[0].pose.position.x, checkerboard_msg_.objects[0].pose.position.y,  checkerboard_msg_.objects[0].pose.position.z);
         frame_p1 = door_p1;
         frame_p2 = door_p2;
         sleep(1);
@@ -135,19 +145,19 @@ class DoorDetectionTestNode : public ros::Node
 
         transformTFPoint(frame_id_,door_p1,target);
         ROS_INFO("door_p1 transformed : %f %f %f", target.m_floats[0], target.m_floats[1], target.m_floats[2]);
-        PointTFToMsg(target,door_msg.door_p1);
+        PointTFToMsg32(target,door_msg.door_p1);
 
         transformTFPoint(frame_id_,door_p2,target);
-        PointTFToMsg(target,door_msg.door_p2);
+        PointTFToMsg32(target,door_msg.door_p2);
 
         transformTFPoint(frame_id_,frame_p1,target);
-        PointTFToMsg(target,door_msg.frame_p1);
+        PointTFToMsg32(target,door_msg.frame_p1);
 
         transformTFPoint(frame_id_,frame_p2,target);
-        PointTFToMsg(target,door_msg.frame_p2);
+        PointTFToMsg32(target,door_msg.frame_p2);
 
         transformTFPoint(frame_id_,handle,target);
-        PointTFToMsg(handle,door_msg.handle);
+        PointTFToMsg32(handle,door_msg.handle);
 
         publish(publish_topic_,door_msg);
       }
