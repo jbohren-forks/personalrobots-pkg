@@ -5,12 +5,10 @@
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
   <include filename="$(find pr2_defs)/defs/body_defs.xml" />
   
-  <!-- Arm calibration is done by calibrate_arm.py -->
-  <!--upper_arm_calibrator side="r" /-->
+  <!-- Arm calibration is done by calibrate_arms.py -->
   <forearm_calibrator side="r" />
   <gripper_calibrator side="r" />
 
-  <!--upper_arm_calibrator side="l" /-->
   <forearm_calibrator side="l" />
   <gripper_calibrator side="l" />
 
