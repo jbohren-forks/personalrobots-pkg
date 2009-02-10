@@ -31,7 +31,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "deprecated_srvs/PolledImage.h"
 #include "image_utils/image_codec.h"
 
@@ -42,8 +42,8 @@
 class Axis_cam_node : public ros::Node
 {
 public:
-  std_msgs::ImageArray images;
-  ImageCodec<std_msgs::Image>* codec;
+  deprecated_msgs::ImageArray images;
+  ImageCodec<deprecated_msgs::Image>* codec;
 
   string axis_host;
   AxisCam *cam;
@@ -56,8 +56,8 @@ public:
 
   Axis_cam_node() : ros::Node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
   {
-    advertise<std_msgs::Image>("image", 1);
-    advertise<std_msgs::ImageArray>("images", 1);
+    advertise<deprecated_msgs::Image>("image", 1);
+    advertise<deprecated_msgs::ImageArray>("images", 1);
     advertiseService("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
@@ -70,7 +70,7 @@ public:
 
     images.set_images_size(1);
 
-    codec = new ImageCodec<std_msgs::Image>(&(images.images[0]));
+    codec = new ImageCodec<deprecated_msgs::Image>(&(images.images[0]));
 
     next_time = ros::Time::now();
     count_ = 0;
