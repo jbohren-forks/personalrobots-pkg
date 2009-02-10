@@ -47,7 +47,8 @@ using namespace costmap_2d;
 namespace trajectory_rollout {
 
   PointGrid::PointGrid(double size_x, double size_y, double resolution, Point2DFloat32 origin, double max_z, double obstacle_range, double min_separation) :
-    resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range), min_separation_(min_separation)
+    resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range), 
+    sq_min_separation_(min_separation * min_separation)
   {
     width_ = (int) ((size_x - origin_.x)/resolution_);
     height_ = (int) ((size_y - origin_.y)/resolution_);
@@ -211,7 +212,7 @@ namespace trajectory_rollout {
       return;
 
     //if the point is too close to its nearest neighbor... return
-    if(nearestNeighborDistance(pt) < min_separation_)
+    if(nearestNeighborDistance(pt) < sq_min_separation_)
       return;
 
     //get the associated index
@@ -224,12 +225,12 @@ namespace trajectory_rollout {
 
   double PointGrid::getNearestInCell(Point32& pt, unsigned int gx, unsigned int gy){
     unsigned int index = gridIndex(gx, gy);
-    double min_dist = DBL_MAX;
+    double min_sq_dist = DBL_MAX;
     //loop through the points in the cell and find the minimum distance to the passed point
     for(list<Point32>::iterator it = cells_[index].begin(); it != cells_[index].end(); ++it){
-      min_dist = min(min_dist, distance(pt, *it));
+      min_sq_dist = min(min_sq_dist, sq_distance(pt, *it));
     }
-    return min_dist;
+    return min_sq_dist;
   }
 
 
@@ -245,85 +246,85 @@ namespace trajectory_rollout {
 
     //now we need to check what cells could contain the nearest neighbor
     Point32 check_point;
-    double dist = DBL_MAX;
-    double neighbor_dist = DBL_MAX;
+    double sq_dist = DBL_MAX;
+    double neighbor_sq_dist = DBL_MAX;
     
     //left
     if(gx > 0){
       check_point.x = lower_left.x;
       check_point.y = pt.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx - 1, gy));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx - 1, gy));
     }
 
     //upper left
     if(gx > 0 && gy < height_ - 1){
       check_point.x = lower_left.x;
       check_point.y = upper_right.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx - 1, gy + 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx - 1, gy + 1));
     }
 
     //top
     if(gy < height_ - 1){
       check_point.x = pt.x;
       check_point.y = upper_right.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx, gy + 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx, gy + 1));
     }
 
     //upper right
     if(gx < width_ - 1 && gy < height_ - 1){
       check_point.x = upper_right.x;
       check_point.y = upper_right.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx + 1, gy + 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx + 1, gy + 1));
     }
 
     //right
     if(gx < width_ - 1){
       check_point.x = upper_right.x;
       check_point.y = pt.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx + 1, gy));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx + 1, gy));
     }
 
     //lower right
     if(gx < width_ - 1 && gy > 0){
       check_point.x = upper_right.x;
       check_point.y = lower_left.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx + 1, gy - 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx + 1, gy - 1));
     }
 
     //bottom
     if(gy > 0){
       check_point.x = pt.x;
       check_point.y = lower_left.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx, gy - 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx, gy - 1));
     }
 
     //lower left
     if(gx > 0 && gy > 0){
       check_point.x = lower_left.x;
       check_point.y = lower_left.y;
-      dist = distance(pt, check_point);
-      if(dist < min_separation_)
-        neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx - 1, gy - 1));
+      sq_dist = sq_distance(pt, check_point);
+      if(sq_dist < sq_min_separation_)
+        neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx - 1, gy - 1));
     }
 
     //we must also check within the cell we're in for a nearest neighbor
-    neighbor_dist = min(neighbor_dist, getNearestInCell(pt, gx, gy));
+    neighbor_sq_dist = min(neighbor_sq_dist, getNearestInCell(pt, gx, gy));
 
-    return neighbor_dist;
+    return neighbor_sq_dist;
   }
 
   void PointGrid::updateWorld(const vector<Observation>& observations, const vector<Point2DFloat32>& laser_outline){

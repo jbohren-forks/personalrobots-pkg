@@ -141,13 +141,13 @@ namespace trajectory_rollout {
 
 
       /**
-       * @brief  Compute the distance between two points
+       * @brief  Compute the squared distance between two points
        * @param pt1 The first point 
        * @param pt2 The second point 
-       * @return The distance between the two points
+       * @return The squared distance between the two points
        */
-      inline double distance(std_msgs::Point32& pt1, std_msgs::Point32& pt2){
-        return sqrt((pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y));
+      inline double sq_distance(std_msgs::Point32& pt1, std_msgs::Point32& pt2){
+        return (pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y);
       }
 
       /**
@@ -253,7 +253,7 @@ namespace trajectory_rollout {
       std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
       double max_z_;  ///< @brief The height cutoff for adding points as obstacles
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
-      double min_separation_;  ///< @brief The minimum distance required between points in the grid
+      double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
       std::vector< std::list<std_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
 
   };
