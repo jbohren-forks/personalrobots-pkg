@@ -68,7 +68,8 @@ public:
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;
-
+  Eigen::Vector3f plug_pt_;
+  Eigen::Vector3f plug_norm_;
 private:
 
   mechanism::RobotState *robot_;
@@ -80,9 +81,9 @@ private:
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
-  Eigen::Matrix<float,6,5> constraint_jac_;
+  Eigen::Matrix<float,6,4> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
-  Eigen::Matrix<float,5,1> constraint_force_;
+  Eigen::Matrix<float,4,1> constraint_force_;
   // joint constraint
   Eigen::MatrixXf joint_constraint_force_;
   Eigen::MatrixXf joint_constraint_jac_;
@@ -99,19 +100,12 @@ private:
   KDL::Frame desired_frame_;
 
   // some parameters to define the constraint
-  double wall_x;
-  double elbow_limit;
-  double threshold_x;
-  double wall_r;
-  double threshold_r;
-  double f_x_max;
+
+  double upper_arm_limit;
   double f_r_max;
   double f_pose_max;
   double f_limit_max; 
   
-  double desired_roll_;
-  double desired_pitch_;
-  double desired_yaw_;
   bool initialized_;
 };
 

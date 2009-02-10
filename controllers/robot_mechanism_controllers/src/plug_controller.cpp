@@ -96,15 +96,12 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   // some parameters
   ros::Node *node = ros::Node::instance();
   assert(node);
-  node->param("constraint/wall_x"       , wall_x      , 0.8) ; /// location of the wall
-  node->param("constraint/threshold_x"  , threshold_x , 0.1 ) ; /// distance within the wall to apply constraint force
-  node->param("constraint/wall_r"       , wall_r      , 0.2 ) ; /// cylinder radius
-  node->param("constraint/elbow_limit"  , elbow_limit , -1.52 ) ; /// elbow limit
 
-  node->param("constraint/threshold_r"  , threshold_r , 0.1) ; /// radius over with constraint is applied
-  node->param("constraint/f_x_max"      , f_x_max     , -1000.0) ; /// max x force
-  node->param("constraint/f_r_max"      , f_r_max     , -1000.0) ; /// max r force
-  node->param("constraint/f_r_max"      , f_pose_max  , 20.0) ; /// max r force
+  node->param("constraint/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
+  
+  node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
+  node->param("constraint/f_pose_max"   , f_pose_max  , 20.0) ; /// max pose force 
+  node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max upper arm limit force 
 
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
@@ -147,7 +144,6 @@ void PlugController::update()
   }
 
   Jacobian jacobian(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfSegments());
-
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
   // TODO: Write a function for doing this conversion
@@ -178,11 +174,6 @@ void PlugController::update()
   task_torq_ = joint_constraint_null_space_ * task_jac_.transpose() * constraint_null_space_ * task_wrench_;
 
 
-  //ROS_ERROR("%s", chain_.getJointName(3));
-  //ROS_ERROR("%f %f %f", jnt_pos(2),jnt_pos(3),jnt_pos(4));
-  //ROS_ERROR("%.3f %.3f %.3f",constraint_null_space_(0,0), constraint_null_space_(1,1), constraint_null_space_(2,2));
-  //ROS_ERROR("%.3f %.3f %.3f",task_jac_(0,5), task_jac_(1,5), task_jac_(2,5));
-
 
   JntArray jnt_eff(kdl_chain_.getNrOfJoints());
   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
@@ -194,54 +185,40 @@ void PlugController::update()
 void PlugController::computeConstraintJacobian()
 {
   // Clear force vector
-  double f_x = 0;
   double f_r = 0;
   double f_roll = 0;
   double f_pitch = 0;
   double f_yaw = 0;
 
+  // this will be computed based on the tool position in space
+  constraint_jac_(0,0) = 0; // line constraint
+  constraint_jac_(1,0) = 0; // line constraint
+  constraint_jac_(2,0) = 0; // line constraint
+  // the pose constraint is always on 
+  constraint_jac_(3,1) = 1; // roll 
+  constraint_jac_(4,2) = 1; // pitch 
+  constraint_jac_(5,3) = 1; // yaw 
+  
+  // put the end_effector point into eigen
+  Eigen::Vector3f end_effector_pt(endeffector_frame_.p(0), endeffector_frame_.p(1), endeffector_frame_.p(2));
+  // get the vector from the plug pt to the end effector pt
+  Eigen::Vector3f vector_to_end_effector = end_effector_pt - plug_pt_;
+  // compute the scalar projection along the plug norm
+  double scalar = plug_norm_.dot(vector_to_end_effector);
+  // subtract the two points to get the normal direction to be applied to keep the end effector on the line
+  Eigen::Vector3f radial_norm = (scalar * plug_norm_) - end_effector_pt;
+  // normalize the vector
+  Eigen::Vector3f radial_unit_vector = radial_norm.normalized();
+  // compute the distance error from the line
+  double r_dist_to_line = radial_norm.norm();
 
-  // Compute the end effector angle from the origin of the circle
-  //double ee_theta = atan2(endeffector_frame_.p(2), endeffector_frame_.p(1));
-
-  // Constarint for a cylinder centered around the x axis
-  constraint_jac_(0,0) = 0; // this is the end of the cylinder
-  constraint_jac_(1,1) = 0;
-  constraint_jac_(2,1) = 0;
-  constraint_jac_(3,2) = 1;
-  constraint_jac_(4,3) = 1;
-  constraint_jac_(5,4) = 1;
-
-  // X-wall at the end of the cylinder
-  double x_dist_to_wall = endeffector_frame_.p(0) - wall_x + threshold_x;
-  if (x_dist_to_wall > 0)
+  // update the jacobian 
+  if (r_dist_to_line > 0)
   {
-    constraint_jac_(0,0) = 0;// 1; // this is the end of the cylinder
-    f_x = x_dist_to_wall * f_x_max; /// @todo: FIXME, replace with some exponential function
-    if((x_dist_to_wall-threshold_x) > 0 && DEBUG)
-    {
-      ROS_ERROR("wall x breach! by: %f m\n", (x_dist_to_wall-threshold_x));
-    }
-  }
-  else
-  {
-    f_x = 0;
-  }
-
-  /// yz-force magnitude is a function of endeffector distance from unit circle
-  double ee_radius = sqrt( endeffector_frame_.p(1)*endeffector_frame_.p(1) + (endeffector_frame_.p(2))*(endeffector_frame_.p(2)) );
-  double r_dist_to_wall = ee_radius - wall_r + threshold_r;
-
-  // assign x-direction constraint force f_x if within range of the wall
-  if (r_dist_to_wall > 0)
-  {
-    constraint_jac_(1,1) = 0;//cos(ee_theta);
-    constraint_jac_(2,1) = 0;//sin(ee_theta);
-    f_r = r_dist_to_wall * f_r_max; /// @todo: FIXME, replace with some exponential function
-    if(r_dist_to_wall > threshold_r && DEBUG)
-    {
-      ROS_ERROR("wall radius breach! by: %f m\n", (r_dist_to_wall-threshold_r));
-    }
+    constraint_jac_(0,0) = radial_unit_vector(0);
+    constraint_jac_(1,0) = radial_unit_vector(1);
+    constraint_jac_(2,0) = radial_unit_vector(2);
+    f_r = r_dist_to_line * f_r_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -254,8 +231,6 @@ void PlugController::computeConstraintJacobian()
   //roll constraint
   if (fabs(pose_error(3)) > 0)
   {
-    //determine sign
-    //constraint_jac_(3,2) = 1;
     f_roll = pose_error(3) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -266,8 +241,6 @@ void PlugController::computeConstraintJacobian()
   //pitch constraint
   if (fabs(pose_error(4)) > 0)
   {
-    //determine sign
-    //constraint_jac_(4,3) = 1;
     f_pitch = pose_error(4) * f_pose_max * 10; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -278,8 +251,6 @@ void PlugController::computeConstraintJacobian()
   //yaw constraint
   if (fabs(pose_error(5)) > 0)
   {
-    //determine sign
-    //constraint_jac_(5,4) = 1;
     f_yaw = pose_error(5) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -288,11 +259,11 @@ void PlugController::computeConstraintJacobian()
   }
 
   
-  //joint constraint force - stop the elbow from going past -30 degrees (.5235 rad)
+  //joint constraint force - stop the upper arm from going past -90 degrees (1.57 rad)
   JntArray jnt_pos(kdl_chain_.getNrOfJoints());
   chain_.getPositions(robot_->joint_states_, jnt_pos);
   
-  double joint_e = angles::shortest_angular_distance(jnt_pos(2), elbow_limit);
+  double joint_e = angles::shortest_angular_distance(jnt_pos(2), upper_arm_limit);
   if(joint_e < -0.1) 
   {
     joint_constraint_jac_(2) = 1;
@@ -307,11 +278,10 @@ void PlugController::computeConstraintJacobian()
     joint_constraint_force_(2) = 0;
   }
 
-  constraint_force_(0) = f_x;
-  constraint_force_(1) = f_r;
-  constraint_force_(2) = f_roll;
-  constraint_force_(3) = f_pitch;
-  constraint_force_(4) = f_yaw;
+  constraint_force_(0) = f_r;
+  constraint_force_(1) = f_roll;
+  constraint_force_(2) = f_pitch;
+  constraint_force_(3) = f_yaw;
 }
 
 void PlugController::computeConstraintNullSpace()
