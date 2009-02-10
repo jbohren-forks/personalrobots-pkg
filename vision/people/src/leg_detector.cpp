@@ -50,7 +50,7 @@ static const double max_meas_jump_m          = 1.0;
 #include "rosrecord/Player.h"
 
 #include "robot_msgs/PositionMeasurement.h"
-
+#include "laser_scan/LaserScan.h"
 
 #include "roslib/Header.h"
 
@@ -216,7 +216,7 @@ public:
   int feature_id_;
 
   MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
-  MessageNotifier<std_msgs::LaserScan>*  laser_notifier_;
+  MessageNotifier<laser_scan::LaserScan>*  laser_notifier_;
 
   LegDetector() : 
     Node("laser_processor"), 
@@ -243,7 +243,7 @@ public:
     people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&tfl_, this,  
 									    boost::bind(&LegDetector::peopleCallback, this, _1), 
 									    "people_tracker_filter", fixed_frame, 10);
-    laser_notifier_ = new MessageNotifier<std_msgs::LaserScan>(&tfl_, this,  
+    laser_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tfl_, this,  
 							       boost::bind(&LegDetector::laserCallback, this, _1), 
 							       "scan", fixed_frame, 10);
 
@@ -307,7 +307,7 @@ public:
 
 
 
-  void laserCallback(const MessageNotifier<std_msgs::LaserScan>::MessagePtr& scan)
+  void laserCallback(const MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan)
   {
     filt_cloud_.pts.clear();
     filt_cloud_.chan.clear();

@@ -42,6 +42,7 @@
 #include "rosrecord/Player.h"
 
 #include "robot_msgs/PositionMeasurement.h"
+#include "laser_scan/LaserScan.h"
 
 using namespace std;
 using namespace laser_processor;
@@ -94,14 +95,14 @@ public:
       switch (load)
       {
       case LOADING_POS:
-        p.addHandler<std_msgs::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &pos_data_);
+        p.addHandler<laser_scan::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &pos_data_);
         break;
       case LOADING_NEG:
         mask_count_ = 1000; // effectively disable masking
-        p.addHandler<std_msgs::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &neg_data_);
+        p.addHandler<laser_scan::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &neg_data_);
         break;
       case LOADING_TEST:
-        p.addHandler<std_msgs::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &test_data_);
+        p.addHandler<laser_scan::LaserScan>(string("*"), &TrainLegDetector::loadCb, this, &test_data_);
         break;
       default:
         break;
@@ -113,7 +114,7 @@ public:
     }
   }
 
-  void loadCb(string name, std_msgs::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
+  void loadCb(string name, laser_scan::LaserScan* scan, ros::Time t, ros::Time t_no_use, void* n)
   {
     vector< vector<float> >* data = (vector< vector<float> >*)(n);
 

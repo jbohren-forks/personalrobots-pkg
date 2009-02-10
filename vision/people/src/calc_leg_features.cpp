@@ -40,7 +40,7 @@
 using namespace laser_processor;
 using namespace std;
 
-vector<float> calcLegFeatures(SampleSet* cluster, std_msgs::LaserScan& scan)
+vector<float> calcLegFeatures(SampleSet* cluster, laser_scan::LaserScan& scan)
 {
 
   vector<float> features;
