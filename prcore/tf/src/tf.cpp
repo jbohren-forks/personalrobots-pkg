@@ -38,7 +38,15 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
   if (prefix.size() > 0)
   {
     if (prefix[0] == '/')
-      return frame_id;
+    {
+      std::string composite = "";
+      if (frame_id.size() > 0)
+        if (frame_id[0] != '/')
+          composite = "/";
+      
+      composite.append(frame_id);
+      return composite;
+    }
     else
     {
       std::string composite;
