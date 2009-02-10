@@ -41,11 +41,13 @@
 #include "kdl/frames.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
+#include "robot_msgs/PlugPose.h"
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
+#include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"
-#include "joy/Joy.h"
+
 #include "Eigen/LU"
 #include "Eigen/Core"
 #include "robot_kinematics/robot_kinematics.h"
@@ -65,11 +67,12 @@ public:
   void update();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
+  const char *root_name_;
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;
   Eigen::Vector3f plug_pt_;
-  Eigen::Vector3f plug_norm_;
+  Eigen::Vector3f plug_norm_; // this must be normalized
 private:
 
   mechanism::RobotState *robot_;
@@ -119,16 +122,20 @@ class PlugControllerNode : public Controller
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
+  void plugPose();
 
  private:
   std::string topic_;
   ros::Node *node_;
   PlugController controller_;
   SubscriptionGuard guard_command_;
-
+  SubscriptionGuard guard_plug_pose_;
+  
   robot_msgs::Wrench wrench_msg_;
-
+  robot_msgs::PlugPose plug_pose_msg_;
   unsigned int loop_count_;
+  
+  tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
 };
 
 } // namespace

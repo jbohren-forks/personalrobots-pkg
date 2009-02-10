@@ -78,9 +78,9 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   }
 
   // Gets names for the root and tip of the chain
-  const char *root_name = chain->Attribute("root");
+  root_name_ = chain->Attribute("root");
   const char *tip_name = chain->Attribute("tip");
-  if (!root_name) {
+  if (!root_name_) {
     ROS_ERROR("Chain element for PlugController must specify the root");
     return false;
   }
@@ -89,7 +89,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   }
 
-  if (!chain_.init(robot->model_, root_name, tip_name))
+  if (!chain_.init(robot->model_, root_name_, tip_name))
     return false;
   chain_.toKDL(kdl_chain_);
 
@@ -212,7 +212,7 @@ void PlugController::computeConstraintJacobian()
   // compute the distance error from the line
   double r_dist_to_line = radial_norm.norm();
 
-  // update the jacobian 
+  // update the jacobian for the line constraint
   if (r_dist_to_line > 0)
   {
     constraint_jac_(0,0) = radial_unit_vector(0);
@@ -225,7 +225,7 @@ void PlugController::computeConstraintJacobian()
     f_r = 0;
   }
 
-
+  // compute the pose error using a twist
   Twist pose_error = diff(endeffector_frame_, desired_frame_);
 
   //roll constraint
@@ -299,7 +299,7 @@ ROS_REGISTER_CONTROLLER(PlugControllerNode)
 
 
 PlugControllerNode::PlugControllerNode()
-: node_(ros::Node::instance()), loop_count_(0)
+: node_(ros::Node::instance()), loop_count_(0), TF(*ros::Node::instance(),false, 10000000000ULL)
 {
 }
 
@@ -327,9 +327,10 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
   node_->subscribe(topic_ + "/command", wrench_msg_,
                   &PlugControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
-  node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
-
-
+  // subscribe to plug pose commands
+  node_->subscribe(topic_ + "/plug_pose", plug_pose_msg_,
+                  &PlugControllerNode::plugPose, this, 1);
+  guard_plug_pose_.set(topic_ + "/plug_pose");
   return true;
 }
 
@@ -338,61 +339,61 @@ void PlugControllerNode::update()
 {
   controller_.update();
 
-  ++loop_count_;
-  if (loop_count_ % 100 == 0)
-  {
-#if 0
-
-    // Debugging code.  Not currently realtime safe
-
-    robot_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "torso_lift_link";
-    marker.id = 0;
-    marker.type = robot_msgs::VisualizationMarker::CUBE;
-    marker.action = 0;
-    marker.x = 0.6;
-    marker.y = 0;
-    marker.z = 0;
-    marker.yaw = 0;
-    marker.pitch = 0;
-    marker.roll = 0.0;
-    marker.xScale = 0.01;
-    marker.yScale = 10;
-    marker.zScale = 10;
-    marker.alpha = 200;
-    marker.r = 0;
-    marker.g = 255;
-    marker.b = 0;
-    node_->publish("visualizationMarker", marker );
-
-    robot_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "torso_lift_link";
-    marker.id = 1;
-    marker.type = robot_msgs::VisualizationMarker::SPHERE;
-    marker.action = 0;
-    marker.x = 0.6;
-    marker.y = 0;
-    marker.z = 1;
-    marker.yaw = 0;
-    marker.pitch = 0;
-    marker.roll = 0.0;
-    marker.xScale = 0.01;
-    marker.yScale = 0.4;
-    marker.zScale = 0.4;
-    marker.alpha = 200;
-    marker.r = 255;
-    marker.g = 0;
-    marker.b = 0;
-    node_->publish("visualizationMarker", marker );
-#endif
-  }
-
 }
+void PlugControllerNode::plugPose()
+{
 
+  tf::Stamped<tf::Point> point;
+  point.setX(plug_pose_msg_.point.x);
+  point.setY(plug_pose_msg_.point.y);
+  point.setZ(plug_pose_msg_.point.z);
+  point.stamp_ = ros::Time();
+  point.frame_id_ = plug_pose_msg_.header.frame_id;
+  
+  tf::Stamped<tf::Point> plug_pt;
+
+  try
+  {
+    TF.transformPoint(controller_.root_name_, point, plug_pt);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
+  
+  controller_.plug_pt_(0) = plug_pt.x();
+  controller_.plug_pt_(1) = plug_pt.y();
+  controller_.plug_pt_(2) = plug_pt.z();
+  
+  
+  tf::Stamped<tf::Vector3> vector;
+  vector.setX(plug_pose_msg_.vector.x);
+  vector.setY(plug_pose_msg_.vector.y);
+  vector.setZ(plug_pose_msg_.vector.z);
+  vector.stamp_ = ros::Time();
+  vector.frame_id_ = plug_pose_msg_.header.frame_id;
+  
+  tf::Stamped<tf::Vector3> plug_norm;
+
+  try
+  {
+    TF.transformVector(controller_.root_name_, vector, plug_norm);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
+  
+  controller_.plug_norm_(0) = plug_norm.x();
+  controller_.plug_norm_(1) = plug_norm.y();
+  controller_.plug_norm_(2) = plug_norm.z();
+  
+}
 
 void PlugControllerNode::command()
 {
-
   // convert to wrench command
   controller_.task_wrench_(0) = wrench_msg_.force.x;
   controller_.task_wrench_(1) = wrench_msg_.force.y;
@@ -401,7 +402,6 @@ void PlugControllerNode::command()
   controller_.task_wrench_(4) = wrench_msg_.torque.y;
   controller_.task_wrench_(5) = wrench_msg_.torque.z;
 
-  //  ROS_WARN("force magnitude (%f, %f, %f)\n",controller_.wrench_desi_.force(0),controller_.wrench_desi_.force(1),controller_.wrench_desi_.force(1));
 }
 
 }; // namespace
