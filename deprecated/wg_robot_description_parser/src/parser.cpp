@@ -52,9 +52,11 @@ bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double
 
   std::vector<std::string> pieces;
   std::string str = s;
+
   boost::split( pieces, str, boost::is_any_of(" "));
   for (unsigned int i = 0; i < pieces.size(); ++i)
-    value->push_back(atof(pieces[i].c_str()));
+    if (pieces[i].size() > 0)
+      value->push_back(atof(pieces[i].c_str()));
 
   return true;
 }
