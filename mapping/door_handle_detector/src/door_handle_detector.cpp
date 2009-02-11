@@ -163,8 +163,8 @@ class DoorHandleDetector : public ros::Node
         // This describes the size of our 3D bounding box (basically the space where we search for doors),
         // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
         param ("~door_frame_multiplier", door_frame_multiplier_, 4);
-        param ("~door_min_z_bounds", door_min_z_bounds_, 0.0);               // restrict the search Z dimension between 0...
-        param ("~door_max_z_bounds", door_max_z_bounds_, 3.0);               // ...and 3.0 m
+        param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);               // restrict the search Z dimension between 0...
+        param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               // ...and 3.0 m
       }
 
 
@@ -225,9 +225,10 @@ class DoorHandleDetector : public ros::Node
 
       // Obtain the bounding box information in the reference frame of the laser scan
       Point32 minB, maxB;
-      tf::Stamped<Point32> frame_p1, frame_p2;
-      transformPoint(cloud_frame_, tf::Stamped<Point32>(req.door.frame_p1, cloud_time_, door_frame_), frame_p1);
-      transformPoint(cloud_frame_, tf::Stamped<Point32>(req.door.frame_p2, cloud_time_, door_frame_), frame_p2);
+      tf::Stamped<Point32> frame_p1(req.door.frame_p1, cloud_time_, door_frame_);
+      tf::Stamped<Point32> frame_p2(req.door.frame_p2, cloud_time_, door_frame_);
+      transformPoint(cloud_frame_, frame_p1, frame_p1);
+      transformPoint(cloud_frame_, frame_p2, frame_p2);
       get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
 
       cout << "Start detecting door at points in frame " << cloud_frame_ << " ";
@@ -386,6 +387,9 @@ class DoorHandleDetector : public ros::Node
       }
       else
       {
+        // get minP and maxP of selected cluster
+        cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+
         // Find the handle by performing a composite segmentation in distance and intensity space
         findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
                                  handle_indices, handle_center);
