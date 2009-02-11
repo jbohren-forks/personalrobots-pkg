@@ -67,7 +67,7 @@ public:
     param("~/door_frame_p2_y", tmp, 0.5); my_door_.frame_p2.y = tmp;
     param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
-    my_door_.header.frame_id = "odom_combined";
+    my_door_.header.frame_id = "base_link";
 
     advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command",1);
   }
@@ -152,10 +152,14 @@ public:
   Vector getNormalOnDoor(const robot_msgs::Door& door)
   {
     Vector door1, door2, tmp, normal;
+    cout << "door p1 " << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
+    cout << "door p2 " << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
     door1[0] = door.door_p1.x;
     door1[1] = door.door_p1.y;
+    door1[2] = 0;
     door2[0] = door.door_p2.x;
     door2[1] = door.door_p2.y;
+    door2[2] = 0;
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
