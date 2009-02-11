@@ -1,4 +1,7 @@
 <launch>
+  <group ns="prosilica">
+    <param name="acquisition_mode" type="str" value="Continuous"/>
+  </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false"/>
   <node name="prosilica_view" pkg="prosilica_cam" type="prosilica_view" respawn="false" output="screen"/>
 </launch>

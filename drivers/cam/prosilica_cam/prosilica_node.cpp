@@ -43,12 +43,14 @@
 #include <boost/bind.hpp>
 
 #include "prosilica.h"
+#include "prosilica_cam/PolledImage.h"
 
 // TODO: don't inherit from Node?
 class ProsilicaNode : public ros::Node
 {
 private:
   boost::scoped_ptr<prosilica::Camera> cam_;
+  prosilica::AcquisitionMode mode_;
   image_msgs::Image img_;
   bool running_;
   int count_;
@@ -64,21 +66,34 @@ public:
     int num_cams = prosilica::numCameras();
     if (num_cams > 0)
     {
-      uint64_t guid;
+      unsigned long guid;
       if (hasParam("~guid"))
       {
         std::string guid_str;
         getParam("~guid", guid_str);
-        guid = strtoll(guid_str.c_str(), NULL, 16);
+        guid = strtol(guid_str.c_str(), NULL, 16);
       } else {
         guid = prosilica::getGuid(0);
       }
 
       cam_.reset( new prosilica::Camera(guid) );
-      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
 
+      // Acquisition control
+      std::string mode_str;
+      param("~acquisition_mode", mode_str, std::string("Continuous"));
+      if (mode_str == std::string("Continuous"))
+      {
+        mode_ = prosilica::Continuous;
+        cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
+      } else if (mode_str == std::string("Triggered"))
+        mode_ = prosilica::Triggered;
+      else {
+        ROS_FATAL("Unknown setting\n");
+        shutdown();
+      }
+      
+      // Feature control
       std::string auto_setting;
-
       param("~exposure_auto", auto_setting, std::string("Auto"));
       if (auto_setting == std::string("Auto"))
         cam_->setExposure(0, prosilica::Auto);
@@ -142,13 +157,14 @@ public:
     prosilica::fini();
   }
 
-  // TODO: catch exceptions, warn, etc.
   int start()
   {
     if (running_)
       return 0;
 
-    cam_->start();
+    cam_->start(mode_);
+    if (mode_ == prosilica::Triggered)
+      advertiseService("~poll", &ProsilicaNode::triggeredGrab);
     
     running_ = true;
 
@@ -160,16 +176,13 @@ public:
     if (!running_)
       return 0;
 
+    if (mode_ == prosilica::Triggered)
+      unadvertiseService("~poll");
     cam_->stop();
     
     running_ = false;
 
     return 0;
-  }
-
-  bool serviceCam()
-  {
-    return true;
   }
   
   void freqStatus(robot_msgs::DiagnosticStatus& status)
@@ -178,7 +191,6 @@ public:
     // TODO: complete this
   }
 
-  // TODO: more like Hokuyo node or dcam node?
   bool spin()
   {
     // Start up the camera
@@ -186,10 +198,6 @@ public:
     
     while (ok())
     {
-      /*
-      if (serviceCam())
-        publishImage();
-      */
       usleep(1000000);
       diagnostic_.update();
     }
@@ -199,22 +207,36 @@ public:
     return true;
   }
 
-private:
-  void publishImage(tPvFrame* frame)
+  bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
+                     prosilica_cam::PolledImage::Response &res)
   {
-    //ROS_FATAL("Received frame, format = %d\n", frame->Format);
+    tPvFrame* frame = cam_->grab(req.timeout_ms);
+    if (!frame)
+      return false;
 
+    return frameToImage(frame, res.image);
+  }
+
+private:
+  static bool frameToImage(tPvFrame* frame, image_msgs::Image &image)
+  {
     if (frame->Format == ePvFmtRgb24)
     {
-      fillImage(img_, "image", frame->Height, frame->Width, 3,
+      fillImage(image, "image", frame->Height, frame->Width, 3,
                 "rgb", "uint8", frame->ImageBuffer);
     } else {
       ROS_WARN("Received frame with unsupported pixel format %d\n", frame->Format);
-      return;
+      return false;
     }
 
     //img_.header.stamp = ros::Time().fromNSec(??);
-    publish("~image", img_);
+    return true;
+  }
+  
+  void publishImage(tPvFrame* frame)
+  {
+    if (frameToImage(frame, img_))
+      publish("~image", img_);
   }
 };
 

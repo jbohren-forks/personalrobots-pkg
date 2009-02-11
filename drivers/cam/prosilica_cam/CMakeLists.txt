@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(prosilica_cam)
+gensrv()
 
 # TODO: figure out how to handle Prosilica SDK dependency
 rospack_add_boost_directories()
@@ -15,3 +16,4 @@ target_link_libraries(prosilica_node prosilica)
 target_link_libraries(prosilica_node PvAPI)
 
 rospack_add_executable(prosilica_view prosilica_view.cpp)
+rospack_add_executable(prosilica_grab prosilica_grab.cpp)

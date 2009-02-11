@@ -61,7 +61,8 @@ enum AcquisitionMode
 {
   Continuous,
   //FixedRate,
-  Triggered
+  Triggered,
+  None
 };
 
 enum AutoSetting
@@ -98,6 +99,7 @@ private:
   tPvFrame* frames_; // array of frame buffers
   tPvUint32 frameSize_; // bytes per frame
   size_t bufferSize_; // number of frame buffers
+  AcquisitionMode mode_;
   boost::function<void (tPvFrame*)> userCallback_;
   boost::mutex frameMutex_;
 

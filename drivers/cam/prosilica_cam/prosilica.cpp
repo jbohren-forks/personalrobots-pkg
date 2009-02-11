@@ -33,6 +33,8 @@
 *********************************************************************/
 
 #include "prosilica.h"
+#include <cassert>
+#include <ctime>
 
 #define CHECK_ERR(fnc, amsg)                               \
 do {                                                       \
@@ -46,7 +48,7 @@ do {                                                       \
 
 namespace prosilica {
 
-static const int MAX_CAMERA_LIST = 10;
+static const unsigned int MAX_CAMERA_LIST = 10;
 static const char* autoValues[] = {"Manual", "Auto", "AutoOnce"};
 static const char* triggerModes[] = {"Freerun", "Software"};
 static const char* errorStrings[] = {"No error",
@@ -104,12 +106,12 @@ size_t numCameras()
 
 uint64_t getGuid(size_t i)
 {
-  // TODO: error checking
+  assert(i < MAX_CAMERA_LIST);
   return cameraList[i].UniqueId;
 }
 
 Camera::Camera(uint64_t guid, size_t bufferSize)
-  : bufferSize_(bufferSize)
+  : bufferSize_(bufferSize), mode_(None)
 {
   CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_), "Unable to open requested camera" );
 
@@ -157,8 +159,8 @@ void Camera::setFrameCallback(boost::function<void (tPvFrame*)> callback)
 
 void Camera::start(AcquisitionMode mode)
 {
-  if (mode != Triggered && userCallback_.empty())
-    throw ProsilicaException("Must set frame callback before calling start()");
+  assert( mode_ == None && mode != None );
+  assert( mode == Triggered || !userCallback_.empty() );
   
   // set camera in acquisition mode
   CHECK_ERR( PvCaptureStart(handle_), "Could not start capture");
@@ -176,15 +178,58 @@ void Camera::start(AcquisitionMode mode)
     throw; // rethrow
   }
 
-  for (unsigned int i = 0; i < bufferSize_; ++i)
-    PvCaptureQueueFrame(handle_, frames_ + i, Camera::frameDone);
+  if (mode != Triggered)
+    for (unsigned int i = 0; i < bufferSize_; ++i)
+      PvCaptureQueueFrame(handle_, frames_ + i, Camera::frameDone);
+
+  mode_ = mode;
 }
 
 void Camera::stop()
 {
+  if (mode_ == None)
+    return;
+  
   PvCommandRun(handle_, "AcquisitionStop");
   PvCaptureEnd(handle_);
   PvCaptureQueueClear(handle_);
+  mode_ = None;
+}
+
+tPvFrame* Camera::grab(unsigned long timeout_ms)
+{
+  assert( mode_ == Triggered );
+
+  tPvFrame* frame = &frames_[0];
+  CHECK_ERR( PvCaptureQueueFrame(handle_, frame, NULL), "Couldn't queue frame" );
+
+  unsigned long time_so_far = 0;
+  while (time_so_far < timeout_ms)
+  {
+    // trigger the camera
+    CHECK_ERR( PvCommandRun(handle_, "FrameStartTriggerSoftware"),
+               "Couldn't trigger capture" );
+
+    // TODO: maybe can simplify this (avoid checking ePvErrTimeout?)
+    // try to capture the frame
+    tPvErr e;
+    do
+    {
+      clock_t start_time = clock();
+      e = PvCaptureWaitForFrameDone(handle_, frame, timeout_ms - time_so_far);
+      if (timeout_ms != PVINFINITE)
+        time_so_far += (clock() - start_time) / (CLOCKS_PER_SEC / 1000);
+    } while (e == ePvErrTimeout && time_so_far < timeout_ms);
+
+    if (e == ePvErrSuccess)
+      return frame;
+
+    // retry if data missing, probably no hope on other errors
+    if (e != ePvErrDataMissing)
+      return NULL;
+  }
+  
+  return NULL;
 }
 
 void Camera::setExposure(unsigned int val, AutoSetting isauto)
