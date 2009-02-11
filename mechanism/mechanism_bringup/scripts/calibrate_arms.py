@@ -206,7 +206,8 @@ if __name__ == '__main__':
         
     print "Calibrating shoulder lift"
     shoulder_lift_name = "r_shoulder_lift"
-    calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6))
+    calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("l_shoulder_lift", -1.0, 9, 1.0, 0, 6))
+
 
     hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
     hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
