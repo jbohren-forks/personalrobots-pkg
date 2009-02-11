@@ -45,7 +45,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from image_msgs.msg import *
+from deprecated_msgs.msg import *
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
 
