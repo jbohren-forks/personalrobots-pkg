@@ -16,8 +16,8 @@ target_link_libraries (door_handle_detector_node)
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
 target_link_libraries(open_door_executive_test)
 
-#rospack_add_executable(door_handle_detection_test test/door_handle_detection_test.cpp)
-#target_link_libraries(door_handle_detection_test)
+rospack_add_executable(door_handle_detection_test test/door_handle_detection_test.cpp)
+target_link_libraries(door_handle_detection_test)
 
 # check for OpenMP
 include(CheckIncludeFile)

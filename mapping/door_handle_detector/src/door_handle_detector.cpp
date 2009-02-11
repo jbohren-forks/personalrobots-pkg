@@ -425,8 +425,8 @@ class DoorHandleDetector : public ros::Node
       transformPoint(door_frame_, door_p1, door_p1);
       transformPoint(door_frame_, door_p2, door_p2);
       transformPoint(door_frame_, handle, handle);
-      door_p1.z = minB.z;
-      door_p2.z = minB.z;
+      door_p1.z = minP.z;
+      door_p2.z = minP.z;
 
       resp.door.height = fabs (maxP.z - minP.z);
       resp.door.header.frame_id = door_frame_;

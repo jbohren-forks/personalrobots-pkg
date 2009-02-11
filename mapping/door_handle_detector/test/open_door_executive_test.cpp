@@ -101,19 +101,24 @@ public:
     Vector point(door.handle.x, door.handle.y, door.handle.z);
 
     pose.setOrigin( Vector3(point[0], point[1], point[2]) );
-    Vector z_axis(0,0,1);
-    double z_angle = dot(normal, z_axis);
+    Vector x_axis(1,0,0);
+    double z_angle = acos(dot(-normal, x_axis));
     cout << "z_angle " << z_angle << endl;
     pose.setRotation( Quaternion(z_angle, 0, 0) ); 
     PoseStampedTFToMsg(pose, pose_msg);
 
     // move in front of door
-    pose_msg.pose.position.x = pose_msg.pose.position.x - 0.1;
+    Vector offset = normal * 0.1;
+    pose_msg.pose.position.x = pose_msg.pose.position.x + offset[0];
+    pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
+    pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
     publish("cartesian_trajectory/command", pose_msg);
     usleep(1e6 * 10);
     
     // move over door handle
-    pose_msg.pose.position.x = pose_msg.pose.position.x + 0.1;
+    pose_msg.pose.position.x = pose_msg.pose.position.x - offset[0];
+    pose_msg.pose.position.y = pose_msg.pose.position.y - offset[1];
+    pose_msg.pose.position.z = pose_msg.pose.position.z - offset[2];
     publish("cartesian_trajectory/command", pose_msg);
     usleep(1e6 * 10);
 
