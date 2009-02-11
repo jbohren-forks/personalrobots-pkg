@@ -5,8 +5,8 @@ gensrv()
 
 # TODO: figure out how to handle Prosilica SDK dependency
 rospack_add_boost_directories()
-include_directories($ENV{PROSILICA_SDK}/inc-pc)
-link_directories($ENV{PROSILICA_SDK}/bin-pc/x86)
+include_directories($ENV{PROSILICA_SDK}/include)
+link_directories($ENV{PROSILICA_SDK}/lib)
 
 rospack_add_library(prosilica prosilica.cpp)
 target_link_libraries(prosilica PvAPI)
