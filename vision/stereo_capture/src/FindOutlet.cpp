@@ -56,6 +56,8 @@ void help()
 // bbs						Pointer to bounding box rectangle vector of length num.  (DEFAULT SETTING: NULL)
 // centers					Pointer to contour centers vectore of length num (DEFULT: NULL)
 //
+// KNOWN PROBLEM!!!  If a rejected contour compltely surrounds another contour, the whole area is deleted
+//
 #define CVCONTOUR_APPROX_LEVEL  2   // Approx.threshold - the bigger it is, the simpler is the boundary
 #define CV_CVX_WHITE	CV_RGB(0xff,0xff,0xff)
 #define CV_CVX_BLACK	CV_RGB(0x00,0x00,0x00)
@@ -91,7 +93,7 @@ static CvSeq*			contours	= NULL;
 		printf("  ... aspectLimit(%f) vs aspect(%f)\n",aspectLimit,aspect);
 		if( carea <  areaTooSmall || carea > areaTooLarge || (aspect < aspectLimit)) //Get rid of blob if it's too small or too large
 		{
-			printf("  DELETED\n");
+			printf("  DELETED\n"); //If bad contour surrounds a good one, both are delteted here :-(
 			cvSubstituteContour( scanner, NULL );
 		}
 		else //Smooth it's edges if it's large enough
