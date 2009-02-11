@@ -44,12 +44,14 @@ from time import sleep
 
 # Loads interface with the robot.                                               
 roslib.load_manifest('mechanism_bringup')
+roslib.load_manifest('mechanism_control')
 import rospy
 from std_msgs.msg import *
 from robot_srvs.srv import *
 
 from robot_mechanism_controllers.srv import *
 from robot_mechanism_controllers import controllers
+from mechanism_control import mechanism
 
 class SendMessageOnSubscribe(rospy.SubscribeListener):
     def __init__(self, msg):
@@ -61,7 +63,7 @@ class SendMessageOnSubscribe(rospy.SubscribeListener):
         sleep(0.1)
 
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+#kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
 def xml_for_hold(name, p, i, d, iClamp):
     return """                                                                 
@@ -88,16 +90,16 @@ def set_controller(controller, command):
                               SendMessageOnSubscribe(Float64(command)))
 
 def hold_side(side, pan_angle, holding):
-    hold_joint("%s_elbow_flex" % side, 100, 20, 10, 2, holding)
+    hold_joint("%s_elbow_flex" % side, 50, 15, 8, 2, holding)
     set_controller("%s_elbow_flex_controller" % side, float(3.0))
 
-    hold_joint("%s_upper_arm_roll" % side, 25, 2, 1.0, 1.0, holding)
+    hold_joint("%s_upper_arm_roll" % side, 20, 2, 1.0, 1.0, holding)
     set_controller("%s_upper_arm_roll_controller" % side, float(0.0))
 
-    hold_joint("%s_shoulder_lift" % side, 60, 10, 5, 4, holding)
+    hold_joint("%s_shoulder_lift" % side, 35, 7, 4, 3, holding)
     set_controller("%s_shoulder_lift_controller" % side, float(3.0))
 
-    hold_joint("%s_shoulder_pan" % side, 60, 10, 5, 4, holding)
+    hold_joint("%s_shoulder_pan" % side, 70, 6, 8, 4, holding)
     set_controller("%s_shoulder_pan_controller" % side, float(pan_angle))
 
 def main():
@@ -116,26 +118,28 @@ def main():
     try:
         if arms == 'r':
             print "Tucking right side"
-            hold_side("r", 0.5, holding)
+            hold_side("r", 0.2, holding)
         elif arms == 'l':
             print "Tucking left side"
-            hold_side("l", -0.5, holding)
+            hold_side("l", -0.2, holding)
         elif arms == 'b':
             print "Tucking both sides"
-            hold_side("l", -0.5, holding)
-            hold_side("r", 0.5, holding)
+            hold_side("l", -0.2, holding)
+            hold_side("r", 0.2, holding)
         else:
             print usage
         
         while not rospy.is_shutdown():
             sleep(0.5)
     finally:
-        # Kill all holding controllers                                          
+        # Kill all holding controllers
+        # DOESN'T KILL PROPERLY, NEED TO INVESTIGATE
         print "Releasing controllers"
         for name in holding:
+            print "Releasing %s" % name
             for i in range(1,6):
                 try:
-                    kill_controller(name)
+                    mechanism.kill_controller(name)
                     break # Go to next controller if no exception               
                 except:
                     print "Failed to kill controller %s on try %d" % (name, i)
