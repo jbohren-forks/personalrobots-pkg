@@ -56,6 +56,7 @@ public:
 
     // ***** Start Listening to Data *****
     scan_notifier_ = new tf::MessageNotifier<LaserScan>(&tf_, this, boost::bind(&LaserScanAnnotatorNode::callback, this, _1), "scan_in", fixed_frame_, 100) ;
+    scan_notifier_->setTolerance( ros::Duration().fromSec(.05) ) ;
   }
 
   ~LaserScanAnnotatorNode()
