@@ -52,7 +52,7 @@ namespace costmap_2d {
   ObservationBuffer::~ObservationBuffer(){
     while(!buffer_.empty()){
       std::list<Observation>::iterator it = buffer_.begin();
-      const std_msgs::PointCloud* cloud = it->cloud_;
+      const robot_msgs::PointCloud* cloud = it->cloud_;
       delete cloud;
       buffer_.erase(it);
     }

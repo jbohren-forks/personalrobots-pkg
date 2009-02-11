@@ -15,6 +15,7 @@ end
 rosoct_add_msgs('std_msgs');
 rosoct_add_msgs('checkerboard_detector');
 rosoct_add_msgs('robot_msgs');
+rosoct_add_msgs('laser_scan');
 
 queuesize = 1000; % need big buffer
 g_calibdata = {};
@@ -28,7 +29,7 @@ end
 
 lastlaserscan = {};
 rosoct_unsubscribe("new_tile_scan");
-success = rosoct_subscribe("new_tilt_scan", @std_msgs_LaserScan, @(msg) laserscancb(msg,robot),queuesize);
+success = rosoct_subscribe("new_tilt_scan", @laser_scan_LaserScan, @(msg) laserscancb(msg,robot),queuesize);
 if( ~success )
     error('subscribe failed');
 end

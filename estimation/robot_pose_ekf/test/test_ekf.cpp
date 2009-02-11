@@ -38,12 +38,11 @@
 #include <gtest/gtest.h>
 #include "ros/node.h"
 #include "robot_msgs/PoseWithCovariance.h"
-#include "std_msgs/PoseWithRatesStamped.h"
+#include "robot_msgs/PoseWithRatesStamped.h"
 
 
 using namespace ros;
 using namespace robot_msgs;
-using namespace std_msgs;
 
 
 static const double time_end     = 1230660828.0;

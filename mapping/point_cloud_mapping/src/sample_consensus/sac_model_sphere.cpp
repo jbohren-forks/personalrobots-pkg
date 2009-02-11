@@ -179,7 +179,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a sphere model
     * \todo implement this.
     */
-  std_msgs::PointCloud
+  robot_msgs::PointCloud
     SACModelSphere::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
   {
     std::cerr << "[SACModelSphere::projecPoints] Not implemented yet." << std::endl;

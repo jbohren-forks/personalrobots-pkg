@@ -34,7 +34,7 @@
 
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
-#include <std_msgs/Vector3Stamped.h>
+#include <robot_msgs/Vector3Stamped.h>
 
 namespace gazebo
 {
@@ -45,7 +45,7 @@ namespace gazebo
 
   \brief FIXME: Applied Force Feedback controller.
   
-  This is a controller that gathers applied force data from a Body and populates a libgazebo interfaace as well as publish a ROS std_msgs::Vector3Stamped message (under topicName). This controller should only be used as a child of a Model.  Below is an example of the usage of this plugin.
+  This is a controller that gathers applied force data from a Body and populates a libgazebo interfaace as well as publish a ROS robot_msgs::Vector3Stamped message (under topicName). This controller should only be used as a child of a Model.  Below is an example of the usage of this plugin.
 
   \verbatim
   <model:physical name="camera_model">
@@ -98,7 +98,7 @@ class RosF3D : public Controller
   private: ros::Node *rosnode;
 
   /// \brief ROS Vector3Stamped message
-  private: std_msgs::Vector3Stamped vector3Msg;
+  private: robot_msgs::Vector3Stamped vector3Msg;
 
   /// \brief ROS Vector3Stamped topic name
   private: std::string topicName;

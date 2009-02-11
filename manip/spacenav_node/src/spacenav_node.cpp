@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include "ros/node.h"
 #include "spnav.h"
-#include "std_msgs/Vector3.h"
+#include "robot_msgs/Vector3.h"
 #include "joy/Joy.h"
 
 #define FULL_SCALE (512.0)
@@ -45,8 +45,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   ros::Node node("spacenav");
-  node.advertise<std_msgs::Vector3>("/spacenav/offset", 2);
-  node.advertise<std_msgs::Vector3>("/spacenav/rot_offset", 2);
+  node.advertise<robot_msgs::Vector3>("/spacenav/offset", 2);
+  node.advertise<robot_msgs::Vector3>("/spacenav/rot_offset", 2);
   node.advertise<joy::Joy>("/spacenav/joy", 2);
 
   if (spnav_open() == -1)
@@ -73,10 +73,10 @@ int main(int argc, char **argv)
       if (++no_motion_count > 30)
       {
         no_motion_count = 0;
-        std_msgs::Vector3 offset_msg;
+        robot_msgs::Vector3 offset_msg;
         offset_msg.x = offset_msg.y = offset_msg.z = 0;
         node.publish("/spacenav/offset", offset_msg);
-        std_msgs::Vector3 rot_offset_msg;
+        robot_msgs::Vector3 rot_offset_msg;
         rot_offset_msg.x = rot_offset_msg.y = rot_offset_msg.z = 0;
         node.publish("/spacenav/rot_offset", rot_offset_msg);
         joystick_msg.axes[0] = offset_msg.x / FULL_SCALE;
@@ -89,13 +89,13 @@ int main(int argc, char **argv)
     }
     if (sev.type == SPNAV_EVENT_MOTION)
     {
-      std_msgs::Vector3 offset_msg;
+      robot_msgs::Vector3 offset_msg;
       offset_msg.x = sev.motion.z;
       offset_msg.y = -sev.motion.x;
       offset_msg.z = sev.motion.y;
       node.publish("/spacenav/offset", offset_msg);
 
-      std_msgs::Vector3 rot_offset_msg;
+      robot_msgs::Vector3 rot_offset_msg;
       rot_offset_msg.x = sev.motion.rz;
       rot_offset_msg.y = -sev.motion.rx;
       rot_offset_msg.z = sev.motion.ry;

@@ -17,8 +17,8 @@ string distance_metric
 # Lower coordinate for a box defining the volume in the workspace the
 # motion planner is active in.  If planning in 2D, only first 2 values
 # (x, y) of the points are used.
-std_msgs/Point volumeMin
+robot_msgs/Point volumeMin
 
 
 # Higher coordinate for the box described above
-std_msgs/Point volumeMax
+robot_msgs/Point volumeMax

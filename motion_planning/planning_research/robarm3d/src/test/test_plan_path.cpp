@@ -1,5 +1,5 @@
 #include <ros/node.h>
-#include <std_msgs/PoseStamped.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robarm3d/PlanPathSrv.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -122,7 +122,7 @@ void sendTrajectory(const pr2_mechanism_controllers::JointTraj &traj)
   } 
 }
 
-void getGraspTrajectory(const std_msgs::PoseStamped &transform, pr2_mechanism_controllers::JointTraj &traj)
+void getGraspTrajectory(const robot_msgs::PoseStamped &transform, pr2_mechanism_controllers::JointTraj &traj)
 {
   pr2_mechanism_controllers::GraspPointSrv::Request  req;
   pr2_mechanism_controllers::GraspPointSrv::Response res;
@@ -147,7 +147,7 @@ void getGraspTrajectory(const std_msgs::PoseStamped &transform, pr2_mechanism_co
 }
 
 
-void getGoalTransform(double roll, double pitch, double yaw, double x, double y, double z, std_msgs::PoseStamped &transform)
+void getGoalTransform(double roll, double pitch, double yaw, double x, double y, double z, robot_msgs::PoseStamped &transform)
 {
       tf::Quaternion quat_trans = tf::Quaternion(yaw,pitch,roll);
 
@@ -218,8 +218,8 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  std_msgs::PoseStamped first_grasp_point;
-  std_msgs::PoseStamped intermediate_point;
+  robot_msgs::PoseStamped first_grasp_point;
+  robot_msgs::PoseStamped intermediate_point;
 
   double roll = 0.0;
   double pitch = M_PI/2;

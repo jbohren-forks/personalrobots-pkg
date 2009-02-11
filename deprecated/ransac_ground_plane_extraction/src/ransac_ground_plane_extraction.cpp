@@ -17,11 +17,11 @@ RansacGroundPlaneExtraction::RansacGroundPlaneExtraction()
   max_iterations_ = 500;
 }
 
-int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal) 
+int RansacGroundPlaneExtraction::findGround(const robot_msgs::PointCloud& baseFrameCloud, const double &min_ignore_distance, const double &max_ignore_distance, const double &distance_threshold, robot_msgs::Point32 &planePoint, robot_msgs::Point32 &planeNormal) 
 {
     SmartScan smart_scan;
 
-    std_msgs::PointCloud *copy = new std_msgs::PointCloud();
+    robot_msgs::PointCloud *copy = new robot_msgs::PointCloud();
     copy->header = baseFrameCloud.header;
 
     unsigned int n = baseFrameCloud.get_pts_size();
@@ -70,9 +70,9 @@ int RansacGroundPlaneExtraction::findGround(const std_msgs::PointCloud& baseFram
     return 1;
 }
 
-std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point &point_plane, std_msgs::Vector3 &normal_plane, const std_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance) {
-  std_msgs::Point32 pt;
-  std_msgs::Point32 norm;
+robot_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const robot_msgs::PointCloud& baseFrameCloud, double remove_distance, const robot_msgs::Point &point_plane, robot_msgs::Vector3 &normal_plane, const robot_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance) {
+  robot_msgs::Point32 pt;
+  robot_msgs::Point32 norm;
 
   pt.x = point_plane.x;
   pt.y = point_plane.y;
@@ -85,7 +85,7 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
   return removeGround(baseFrameCloud, remove_distance, pt, norm, origin, threshold_distance, far_remove_distance);
 }
 
-std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::PointCloud& baseFrameCloud, double remove_distance, const std_msgs::Point32 &point_plane, std_msgs::Point32 &normal_plane, const std_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance) 
+robot_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const robot_msgs::PointCloud& baseFrameCloud, double remove_distance, const robot_msgs::Point32 &point_plane, robot_msgs::Point32 &normal_plane, const robot_msgs::PointStamped &origin, const double &threshold_distance, const double &far_remove_distance) 
 {
     SmartScan full_scan;
 
@@ -98,7 +98,7 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
 
 //    ROS_DEBUG("Done removing plane %f seconds",(ros::Time::now()-time).toSec());
 
-    std_msgs::PointCloud *return_copy = new std_msgs::PointCloud();
+    robot_msgs::PointCloud *return_copy = new robot_msgs::PointCloud();
     return_copy->header = baseFrameCloud.header;
     *return_copy = full_scan.getPointCloud();
 
@@ -108,7 +108,7 @@ std_msgs::PointCloud *RansacGroundPlaneExtraction::removeGround(const std_msgs::
     return return_copy;
 }
 
-void RansacGroundPlaneExtraction::updateGround(const std_msgs::Point32 &new_plane_point, const std_msgs::Point32 &new_plane_normal, std_msgs::Point32 &return_plane_point, std_msgs::Point32 &return_plane_normal)
+void RansacGroundPlaneExtraction::updateGround(const robot_msgs::Point32 &new_plane_point, const robot_msgs::Point32 &new_plane_normal, robot_msgs::Point32 &return_plane_point, robot_msgs::Point32 &return_plane_normal)
 {
 
   if(fabs(new_plane_normal.z) >= 0.8)

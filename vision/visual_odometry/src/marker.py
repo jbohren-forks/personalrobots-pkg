@@ -34,7 +34,7 @@
 import roslib
 roslib.load_manifest('visual_odometry')
 
-from std_msgs.msg import Point
+from robot_msgs.msg import Point
 from robot_msgs.msg import VisualizationMarker
 import rospy
 from visualodometer import Pose

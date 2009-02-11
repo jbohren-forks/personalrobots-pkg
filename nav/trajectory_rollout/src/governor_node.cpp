@@ -52,12 +52,12 @@ namespace trajectory_rollout{
     robot_vel_.stamp_ = ros::Time();
 
     //so we can draw the local path
-    advertise<std_msgs::Polyline2D>("local_path", 10);
+    advertise<robot_msgs::Polyline2D>("local_path", 10);
 
     //so we can draw the robot footprint to help with debugging
-    advertise<std_msgs::Polyline2D>("robot_footprint", 10);
+    advertise<robot_msgs::Polyline2D>("robot_footprint", 10);
 
-    advertise<std_msgs::PoseDot>("cmd_vel", 1);
+    advertise<robot_msgs::PoseDot>("cmd_vel", 1);
     subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
     subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
   }

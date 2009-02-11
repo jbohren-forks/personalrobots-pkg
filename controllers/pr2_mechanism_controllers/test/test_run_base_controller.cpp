@@ -34,10 +34,10 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseWithRatesStamped.h>
+#include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <std_msgs/Quaternion.h>
+#include <robot_msgs/Quaternion.h>
 
 static int done = 0;
 
@@ -49,7 +49,7 @@ void finalize(int donecare)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Return the rotation in Euler angles
-libTF::Vector GetAsEuler(std_msgs::Quaternion quat)
+libTF::Vector GetAsEuler(robot_msgs::Quaternion quat)
 {
   libTF::Vector vec;
 
@@ -86,7 +86,7 @@ class test_run_base
 
     ~test_run_base() {}
 
-    std_msgs::PoseWithRatesStamped ground_truth;
+    robot_msgs::PoseWithRatesStamped ground_truth;
 
     deprecated_msgs::RobotBase2DOdom odom;
 
@@ -117,7 +117,7 @@ int main( int argc, char** argv )
 
 
   // receive messages from 2dnav stack
-  std_msgs::PoseWithRatesStamped ground_truth;
+  robot_msgs::PoseWithRatesStamped ground_truth;
 
   test_run_base tb;
 
@@ -131,7 +131,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  std_msgs::PoseDot cmd;
+  robot_msgs::PoseDot cmd;
   cmd.vel.vx = 0;
   cmd.vel.vy = 0;
   cmd.vel.vz = 0;
@@ -157,7 +157,7 @@ int main( int argc, char** argv )
      run_time = atof(argv[4]);
      run_time_set = true;
   }
-  node->advertise<std_msgs::PoseDot>("cmd_vel",1);
+  node->advertise<robot_msgs::PoseDot>("cmd_vel",1);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);

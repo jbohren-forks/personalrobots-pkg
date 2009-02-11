@@ -40,7 +40,7 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <ros/node.h>
-#include <std_msgs/PoseStamped.h>
+#include <robot_msgs/PoseStamped.h>
 #include <mechanism_model/controller.h>
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
@@ -98,14 +98,14 @@ class CartesianPoseControllerNode : public Controller
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
-  void command(const tf::MessageNotifier<std_msgs::PoseStamped>::MessagePtr& pose_msg);
+  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
 
  private:
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
   ros::Node* node_;
   tf::TransformListener robot_state_;
-  tf::MessageNotifier<std_msgs::PoseStamped>* command_notifier_;
+  tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
   std::string root_name_;
 
   CartesianPoseController controller_;

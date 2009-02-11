@@ -101,9 +101,9 @@ private:
   AdvertisedServiceGuard guard_get_actual_;
 
   SubscriptionGuard guard_set_command_;
-  std_msgs::PointStamped command_msg_;
+  robot_msgs::PointStamped command_msg_;
 
-  realtime_tools::RealtimePublisher<std_msgs::PointStamped> *pos_publisher_;
+  realtime_tools::RealtimePublisher<robot_msgs::PointStamped> *pos_publisher_;
   tf::TransformListener TF;
   int loop_count_;
 };

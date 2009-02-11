@@ -89,7 +89,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   std::cout << "==== topic name for RosP3D ======== " << this->topicName << std::endl;
   if (this->topicName != "")
-    rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
+    rosnode->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

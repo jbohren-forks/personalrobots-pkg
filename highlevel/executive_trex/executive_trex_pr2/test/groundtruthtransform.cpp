@@ -1,6 +1,6 @@
 
 #include "ros/node.h"
-#include "std_msgs/Point32.h"
+#include "robot_msgs/Point32.h"
 #include "tf/transform_listener.h"
 
 using std::string;
@@ -10,11 +10,11 @@ using std::string;
  */
 class GroundTruthTransform : public ros::Node {
 public:
-  std_msgs::Point32 msg;
+  robot_msgs::Point32 msg;
   tf::TransformListener tf;
 
   GroundTruthTransform() : ros::Node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
-    advertise<std_msgs::Point32>("groundtruthposition", 1);
+    advertise<robot_msgs::Point32>("groundtruthposition", 1);
   }
 
   void speak() {

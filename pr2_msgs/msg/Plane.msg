@@ -1,2 +1,2 @@
-std_msgs/Point point
-std_msgs/Vector3 normal
+robot_msgs/Point point
+robot_msgs/Vector3 normal

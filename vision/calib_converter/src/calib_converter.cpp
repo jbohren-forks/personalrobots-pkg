@@ -6,7 +6,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "deprecated_msgs/ImageArray.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
 #include <time.h>
@@ -62,7 +62,7 @@ public:
   map<string, imgData> images;
   deprecated_msgs::ImageArray image_msg;
   std_msgs::String calparams;
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   string fullname;
 
   calib_converter(string bag) : fullname(bag)
@@ -85,7 +85,7 @@ public:
     lp.open(fullname, ros::Time());
     lp.addHandler<deprecated_msgs::ImageArray>(string("videre/images"), &copyMsg<deprecated_msgs::ImageArray>, (void*)(&image_msg), true);
     lp.addHandler<std_msgs::String>(string("videre/cal_params"), &copyMsg<std_msgs::String>, (void*)(&calparams), true);
-    lp.addHandler<std_msgs::PointCloud>(string("full_cloud"), &copyMsg<std_msgs::PointCloud>, (void*)(&cloud), true);
+    lp.addHandler<robot_msgs::PointCloud>(string("full_cloud"), &copyMsg<robot_msgs::PointCloud>, (void*)(&cloud), true);
     while(lp.nextMsg());
     
 

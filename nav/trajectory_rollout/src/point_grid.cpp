@@ -41,14 +41,14 @@
 #include <math.h>
 
 using namespace std;
+using namespace robot_msgs;
 using namespace std_msgs;
 using namespace costmap_2d;
 
 namespace trajectory_rollout {
 
-  PointGrid::PointGrid(double size_x, double size_y, double resolution, Point2DFloat32 origin, double max_z, double obstacle_range, double min_separation) :
-    resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range), 
-    sq_min_separation_(min_separation * min_separation)
+PointGrid::PointGrid(double size_x, double size_y, double resolution, std_msgs::Point2DFloat32 origin, double max_z, double obstacle_range, double min_seperation) :
+  resolution_(resolution), origin_(origin), max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range), sq_min_separation_(min_seperation * min_seperation)
   {
     width_ = (int) (size_x / resolution_);
     height_ = (int) (size_y / resolution_);

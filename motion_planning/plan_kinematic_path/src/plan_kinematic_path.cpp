@@ -55,7 +55,7 @@
 #include <robot_msgs/JointTraj.h>
 
 // message to interact with the cartesian trajectory controller
-#include <std_msgs/PoseStamped.h>
+#include <robot_msgs/PoseStamped.h>
 
 static const std::string GROUPNAME = "pr2::right_arm";
 
@@ -72,7 +72,7 @@ public:
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
-	advertise<std_msgs::PoseStamped>("cartesian_trajectory/command", 1);
+	advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
 	
 	subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
     }
@@ -156,7 +156,7 @@ public:
 
     void runRightArmToCoordinates(void)
     {
-	std_msgs::PoseStamped ps;
+	robot_msgs::PoseStamped ps;
 	ps.header.frame_id = "base_link"; // make sure this is true; this should be take from input header
 	ps.header.stamp = ros::Time::now(); // again, should be taken from input header
 	ps.pose.position.x = 0.8;

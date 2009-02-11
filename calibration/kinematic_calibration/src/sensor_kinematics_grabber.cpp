@@ -40,7 +40,7 @@
 #include "robot_msgs/MocapSnapshot.h"
 
 #include "std_msgs/Empty.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 #include "image_msgs/RawStereo.h"
 #include "kinematic_calibration/CalibrationData.h"
@@ -85,8 +85,8 @@ public:
   boost::mutex raw_stereo_lock_ ;
 
   // Point Cloud Messages
-  std_msgs::PointCloud laser_cloud_ ;
-  std_msgs::PointCloud safe_laser_cloud_ ;
+  robot_msgs::PointCloud laser_cloud_ ;
+  robot_msgs::PointCloud safe_laser_cloud_ ;
   boost::mutex laser_cloud_lock_ ;
 
   unsigned int capture_count_ ;

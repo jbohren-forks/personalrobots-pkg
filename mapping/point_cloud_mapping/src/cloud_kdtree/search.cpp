@@ -40,7 +40,7 @@ namespace cloud_kdtree
     * \param k the number of neighbors to search for
     */
   bool
-    KdTree::nearestKSearch (std_msgs::Point32 *p_q, int k)
+    KdTree::nearestKSearch (robot_msgs::Point32 *p_q, int k)
   {
     if (dim_ != 3)          // We want to discourage 3-D searching when the tree is creating for a different n-D
       return (false);
@@ -66,7 +66,7 @@ namespace cloud_kdtree
     * \param k the number of neighbors to search for
     */
   bool
-    KdTree::nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k)
+    KdTree::nearestKSearch (robot_msgs::PointCloud *points, unsigned int index, int k)
   {
     if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);
@@ -171,7 +171,7 @@ namespace cloud_kdtree
     * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn)
+    KdTree::radiusSearch (robot_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn)
   {
     ANNpoint p = annAllocPt (3);
     p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
@@ -195,7 +195,7 @@ namespace cloud_kdtree
     * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::Point32 *p_q, double radius, int max_nn)
+    KdTree::radiusSearch (robot_msgs::Point32 *p_q, double radius, int max_nn)
   {
     if (dim_ != 3)          // We want to discourage 3-D searching when the tree is creating for a different n-D
       return (false);
@@ -234,7 +234,7 @@ namespace cloud_kdtree
     * \param max_nn if given, bounds the maximum returned neighbors to this value
     */
   bool
-    KdTree::radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn)
+    KdTree::radiusSearch (robot_msgs::PointCloud *points, unsigned int index, double radius, int max_nn)
   {
     if (dim_ > (3 + (int)points->chan.size ()))  // Presume that the user know what he's doing, but check for overflow
       return (false);

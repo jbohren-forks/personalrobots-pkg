@@ -53,7 +53,7 @@ namespace calibration
       _completed(false)
   {
     // advertise the velocity commands
-    advertise<std_msgs::PoseDot>("cmd_vel",10);
+    advertise<robot_msgs::PoseDot>("cmd_vel",10);
 
     // subscribe to messages
     subscribe("odom",            _odom, &odom_calib::odom_callback, 10);

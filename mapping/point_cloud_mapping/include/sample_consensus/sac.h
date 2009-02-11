@@ -33,8 +33,8 @@
 #ifndef _SAMPLE_CONSENSUS_SAC_H_
 #define _SAMPLE_CONSENSUS_SAC_H_
 
-#include <std_msgs/Point32.h>     // ROS float point type
-#include <std_msgs/PointCloud.h>  // ROS point cloud type
+#include <robot_msgs/Point32.h>     // ROS float point type
+#include <robot_msgs/PointCloud.h>  // ROS point cloud type
 
 #include <stdlib.h>
 #include "sample_consensus/sac_model.h"
@@ -132,14 +132,14 @@ namespace sample_consensus
       /** \brief Return the point cloud representing a set of given indices.
         * \param indices a set of indices that represent the data that we're interested in
         */
-      std_msgs::PointCloud getPointCloud (std::vector<int> indices);
+      robot_msgs::PointCloud getPointCloud (std::vector<int> indices);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Project a set of given points (using their indices) onto the model and return their projections.
         * \param indices a set of indices that represent the data that we're interested in
         * \param model_coefficients the coefficients of the underlying model
         */
-      virtual std_msgs::PointCloud
+      virtual robot_msgs::PointCloud
         projectPointsToModel (std::vector<int> indices, std::vector<double> model_coefficients)
       {
         return (sac_model_->projectPoints (indices, model_coefficients));
@@ -154,7 +154,7 @@ namespace sample_consensus
         * \param nr_samples the desired number of point indices
         */
       std::set<int>
-        getRandomSamples (std_msgs::PointCloud points, int nr_samples)
+        getRandomSamples (robot_msgs::PointCloud points, int nr_samples)
       {
         std::set<int> random_idx;
         for (int i = 0; i < nr_samples; i++)
@@ -171,7 +171,7 @@ namespace sample_consensus
         * \param nr_samples the desired number of point indices
         */
       std::set<int>
-        getRandomSamples (std_msgs::PointCloud points, std::vector<int> indices, int nr_samples)
+        getRandomSamples (robot_msgs::PointCloud points, std::vector<int> indices, int nr_samples)
       {
         std::set<int> random_idx;
         for (int i = 0; i < nr_samples; i++)

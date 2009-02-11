@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "std_msgs/PoseDot.h"
+#include "robot_msgs/PoseDot.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
@@ -33,7 +33,7 @@ class Segway : public Node
 
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
-    std_msgs::PoseDot cmd_vel;
+    robot_msgs::PoseDot cmd_vel;
     deprecated_msgs::RobotBase2DOdom odom;
     std_msgs::String op_mode;
 		rmp_frame_t rmp;

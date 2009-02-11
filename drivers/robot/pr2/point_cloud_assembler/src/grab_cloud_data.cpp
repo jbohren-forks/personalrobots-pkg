@@ -40,10 +40,10 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 
-using namespace std_msgs ;
+using namespace robot_msgs ;
 
 /***
  * This a simple test app that requests a point cloud from the point_cloud_assembler, and then publishes the resulting data

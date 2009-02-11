@@ -116,13 +116,13 @@ robot.
 // The messages that we'll use
 #include <robot_msgs/Planner2DState.h>
 #include <robot_msgs/Planner2DGoal.h>
-#include <std_msgs/PoseDot.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PoseDot.h>
+#include <robot_msgs/PointCloud.h>
 #include <laser_scan/LaserScan.h>
 #include <robot_srvs/StaticMap.h>
 
 // For GUI debug
-#include <std_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline2D.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -204,8 +204,8 @@ class WavefrontNode: public ros::Node
     // incoming/outgoing messages
     robot_msgs::Planner2DGoal goalMsg;
     //MsgRobotBase2DOdom odomMsg;
-    std_msgs::Polyline2D polylineMsg;
-    std_msgs::Polyline2D pointcloudMsg;
+    robot_msgs::Polyline2D polylineMsg;
+    robot_msgs::Polyline2D pointcloudMsg;
     robot_msgs::Planner2DState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
@@ -366,9 +366,9 @@ WavefrontNode::WavefrontNode() :
   this->firstodom = true;
 
   advertise<robot_msgs::Planner2DState>("state",1);
-  advertise<std_msgs::Polyline2D>("gui_path",1);
-  advertise<std_msgs::Polyline2D>("gui_laser",1);
-  advertise<std_msgs::PoseDot>("cmd_vel",1);
+  advertise<robot_msgs::Polyline2D>("gui_path",1);
+  advertise<robot_msgs::Polyline2D>("gui_laser",1);
+  advertise<robot_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
   scan_notifier = new tf::MessageNotifier<laser_scan::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
@@ -437,11 +437,11 @@ void
 WavefrontNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message)
 {
 	// Assemble a point cloud, in the laser's frame
-	std_msgs::PointCloud local_cloud;
+	robot_msgs::PointCloud local_cloud;
 	projector_.projectLaser(*message, local_cloud, laser_maxrange);
 
 	// Convert to a point cloud in the map frame
-	std_msgs::PointCloud global_cloud;
+	robot_msgs::PointCloud global_cloud;
 
 	try
 	{
@@ -548,13 +548,13 @@ WavefrontNode::stopRobot()
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-std_msgs::PoseDot* cmdvel;
+robot_msgs::PoseDot* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new std_msgs::PoseDot();
+    cmdvel = new robot_msgs::PoseDot();
   cmdvel->vel.vx = vx;
   cmdvel->ang_vel.vz = vth;
   this->ros::Node::publish("cmd_vel", *cmdvel);

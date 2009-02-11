@@ -1,1 +1,1 @@
-std_msgs/Pose[] particles
+robot_msgs/Pose[] particles

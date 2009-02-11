@@ -33,8 +33,8 @@
 #ifndef _SAMPLE_CONSENSUS_SACMODEL_H_
 #define _SAMPLE_CONSENSUS_SACMODEL_H_
 
-#include <std_msgs/Point32.h>     // ROS float point type
-#include <std_msgs/PointCloud.h>  // ROS point cloud type
+#include <robot_msgs/Point32.h>     // ROS float point type
+#include <robot_msgs/PointCloud.h>  // ROS point cloud type
 
 #include <set>
 
@@ -46,7 +46,7 @@ namespace sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for base SACModel. */
       SACModel () : cloud_(NULL) { }
-      SACModel (std_msgs::PointCloud cloud) : cloud_(&cloud) { }
+      SACModel (robot_msgs::PointCloud cloud) : cloud_(&cloud) { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for base SACModel. */
@@ -91,7 +91,7 @@ namespace sample_consensus
       /** \brief Create a new point cloud with inliers projected onto the model. Pure virtual.
        * \param inliers the data inliers that we want to project on the model
        * \param model_coefficients the coefficients of a model */
-      virtual std_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients) = 0;
+      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Project inliers (in place) onto the given model. Pure virtual. 
@@ -110,7 +110,7 @@ namespace sample_consensus
       /** \brief Set the dataset
        * \param cloud the data set to be used */
       inline void
-        setDataSet (std_msgs::PointCloud *cloud)
+        setDataSet (robot_msgs::PointCloud *cloud)
       {
         this->cloud_ = cloud;
         indices_.clear ();
@@ -123,7 +123,7 @@ namespace sample_consensus
        * \param cloud the data set to be used
        * \param indices the point indices used */
       inline void
-        setDataSet (std_msgs::PointCloud *cloud, std::vector<int> indices)
+        setDataSet (robot_msgs::PointCloud *cloud, std::vector<int> indices)
       {
         this->cloud_   = cloud;
         this->indices_ = indices;
@@ -164,7 +164,7 @@ namespace sample_consensus
       std::vector<double> getModelCoefficients () { return (this->model_coefficients_); }
 
       /** \brief Return a pointer to the point cloud data. */
-      std_msgs::PointCloud* getCloud () { return (this->cloud_); }
+      robot_msgs::PointCloud* getCloud () { return (this->cloud_); }
 
       /** \brief Return a pointer to the point cloud data indices. */
       std::vector<int>* getIndices () { return (&this->indices_); }
@@ -172,7 +172,7 @@ namespace sample_consensus
     protected:
 
       /** \brief Holds a pointer to the point cloud data array, since we don't want to copy the whole thing here */
-      std_msgs::PointCloud *cloud_;
+      robot_msgs::PointCloud *cloud_;
 
       /** \brief The list of internal point indices used */
       std::vector<int> indices_;

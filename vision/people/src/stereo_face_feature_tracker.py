@@ -5,9 +5,9 @@ import rostest
 import face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
-from std_msgs.msg import String, PointStamped, PointCloud, Point
+from std_msgs.msg import String
 from deprecated_msgs.msg import Image, ImageArray
-from robot_msgs.msg import PositionMeasurement
+from robot_msgs.msg import PositionMeasurement, PointStamped, PointCloud, Point
 import visual_odometry as VO
 import starfeature
 import calonder
@@ -694,7 +694,7 @@ def main(argv) :
         pass
 
   #  if people_tracker.visualize:
-  #    people_tracker.pub = rospy.Publisher('/std_msgs/full_cloud',PointCloud)
+  #    people_tracker.pub = rospy.Publisher('/robot_msgs/full_cloud',PointCloud)
   #    rospy.init_node('videre_face_tracker',anonymous=True)
 
     num_frames = 0

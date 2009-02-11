@@ -7,18 +7,18 @@ namespace costmap_2d {
 						 double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter)
     : ObservationBuffer(frame_id, global_frame_id, keepAlive, refresh_interval), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ), filter_(filter) {}
 
-  void BasicObservationBuffer::buffer_cloud(const std_msgs::PointCloud& local_cloud)
+  void BasicObservationBuffer::buffer_cloud(const robot_msgs::PointCloud& local_cloud)
   {
     static const ros::Duration max_transform_delay(1, 0); // max time we will wait for a transform before chucking out the data
     point_clouds_.push_back(local_cloud);
 
-    std_msgs::PointCloud * newData = NULL;
-    std_msgs::PointCloud * map_cloud = NULL;
+    robot_msgs::PointCloud * newData = NULL;
+    robot_msgs::PointCloud * map_cloud = NULL;
 
 
     while(!point_clouds_.empty()){
-      const std_msgs::PointCloud& point_cloud = point_clouds_.front();
-      std_msgs::Point origin;
+      const robot_msgs::PointCloud& point_cloud = point_clouds_.front();
+      robot_msgs::Point origin;
 
       // Throw out point clouds that are old.
       if((local_cloud.header.stamp -  point_cloud.header.stamp) > max_transform_delay){
@@ -28,7 +28,7 @@ namespace costmap_2d {
       }
 
       tf::Stamped<btVector3> map_origin;
-      std_msgs::PointCloud base_cloud;
+      robot_msgs::PointCloud base_cloud;
 
       /* Transform to the base frame */
       try
@@ -39,7 +39,7 @@ namespace costmap_2d {
 
           tf_.transformPointCloud("base_footprint", point_cloud, base_cloud);
           newData = extractFootprintAndGround(base_cloud);
-          map_cloud = new std_msgs::PointCloud();
+          map_cloud = new robot_msgs::PointCloud();
           tf_.transformPointCloud(global_frame_id_, *newData, *map_cloud);
 
 	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.getX(), map_origin.getY(), map_origin.getZ());
@@ -85,7 +85,7 @@ namespace costmap_2d {
       }
 
       // Get the point from whihc we ray trace
-      std_msgs::Point o;
+      robot_msgs::Point o;
       o.x = map_origin.getX();
       o.y = map_origin.getY();
       o.z = map_origin.getZ();
@@ -132,8 +132,8 @@ namespace costmap_2d {
     return result;
   }
 
-  std_msgs::PointCloud * BasicObservationBuffer::extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const {
-    std_msgs::PointCloud *copy = new std_msgs::PointCloud();
+  robot_msgs::PointCloud * BasicObservationBuffer::extractFootprintAndGround(const robot_msgs::PointCloud& baseFrameCloud) const {
+    robot_msgs::PointCloud *copy = new robot_msgs::PointCloud();
     copy->header = baseFrameCloud.header;
 
     unsigned int n = baseFrameCloud.get_pts_size();

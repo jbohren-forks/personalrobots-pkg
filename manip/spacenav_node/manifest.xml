@@ -6,7 +6,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
   <depend package="spacenav" />
   <depend package="joy" />
   <url>http://pr.willowgarage.com</url>

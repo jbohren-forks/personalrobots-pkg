@@ -157,9 +157,9 @@ void BasePositionControllerNode::setPoseOdomFrameCommandCallback()
 }
 
 //! \todo This method has not yet been tested
-void BasePositionControllerNode::setPoseCommand(std_msgs::PoseStamped cmd)
+void BasePositionControllerNode::setPoseCommand(robot_msgs::PoseStamped cmd)
 {
-  std_msgs::PoseStamped pose_odom ;               // Stores the pose in the odometric frame
+  robot_msgs::PoseStamped pose_odom ;               // Stores the pose in the odometric frame
   cmd.header.stamp = ros::Time() ;                // Transform using the latest transform
   tf_.transformPose(odom_frame_name_, cmd, pose_odom) ;
 

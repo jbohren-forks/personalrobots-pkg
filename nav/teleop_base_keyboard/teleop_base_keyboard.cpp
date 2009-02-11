@@ -71,7 +71,7 @@ Publishes to (name / type):
 #include <stdlib.h>
 
 #include <ros/node.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 
 #define KEYCODE_I 0x69
 #define KEYCODE_J 0x6a
@@ -106,12 +106,12 @@ bool always_command = false;
 class TBK_Node : public ros::Node
 {
   private:
-    std_msgs::PoseDot cmdvel;
+    robot_msgs::PoseDot cmdvel;
 
   public:
     TBK_Node() : ros::Node("tbk")
     {
-      advertise<std_msgs::PoseDot>("cmd_vel",1);
+      advertise<robot_msgs::PoseDot>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();

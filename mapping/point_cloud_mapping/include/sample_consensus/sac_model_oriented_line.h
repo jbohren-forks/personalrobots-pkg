@@ -33,7 +33,7 @@
 #ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
 #define _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
 
-#include <std_msgs/Point32.h>
+#include <robot_msgs/Point32.h>
 #include <sample_consensus/sac_model.h>
 #include <sample_consensus/sac_model_line.h>
 #include <sample_consensus/model_types.h>
@@ -51,7 +51,7 @@ namespace sample_consensus
         * \param ax a pointer to the axis
         */
       void
-        setAxis (std_msgs::Point32 *ax)
+        setAxis (robot_msgs::Point32 *ax)
       {
         this->axis_.x = ax->x;
         this->axis_.y = ax->y;
@@ -72,7 +72,7 @@ namespace sample_consensus
       virtual int getModelType () { return (SACMODEL_ORIENTED_LINE); }
 
     protected:
-      std_msgs::Point32 axis_;
+      robot_msgs::Point32 axis_;
       double eps_angle_;
   };
 }

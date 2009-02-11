@@ -100,9 +100,9 @@ private:
   AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
   SubscriptionGuard guard_command_;
 
-  std_msgs::Vector3 command_msg_;
+  robot_msgs::Vector3 command_msg_;
 
-  realtime_tools::RealtimePublisher<std_msgs::Vector3> *vel_publisher_;
+  realtime_tools::RealtimePublisher<robot_msgs::Vector3> *vel_publisher_;
   int loop_count_;
 };
 

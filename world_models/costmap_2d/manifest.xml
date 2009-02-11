@@ -6,6 +6,7 @@
 <depend package="rosconsole"/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
+<depend package="robot_msgs" />
 <depend package="laser_scan" />
 <depend package="pr2_msgs" />
 <depend package="tf" />

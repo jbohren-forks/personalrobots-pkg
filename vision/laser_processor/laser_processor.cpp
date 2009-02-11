@@ -69,7 +69,7 @@ void SampleSet::clear()
   set<Sample*, CompareSample>::clear();
 }
 
-void SampleSet::appendToCloud(std_msgs::PointCloud& cloud, int r, int g, int b)
+void SampleSet::appendToCloud(robot_msgs::PointCloud& cloud, int r, int g, int b)
 {
   float color_val = 0;
 
@@ -80,7 +80,7 @@ void SampleSet::appendToCloud(std_msgs::PointCloud& cloud, int r, int g, int b)
        sample_iter != end();
        sample_iter++)
   {
-    std_msgs::Point32 point;
+    robot_msgs::Point32 point;
     point.x = (*sample_iter)->x;
     point.y = (*sample_iter)->y;
     point.z = 0;

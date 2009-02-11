@@ -29,7 +29,7 @@
 
 #include <cmath>
 #include "ros/node.h"
-#include "std_msgs/PoseDot.h"
+#include "robot_msgs/PoseDot.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include "deadreckon/DriveDeadReckon.h"
 using namespace std;
@@ -38,7 +38,7 @@ using namespace ros;
 class DeadReckon : public ros::Node
 {
 public:
-  std_msgs::PoseDot velMsg;
+  robot_msgs::PoseDot velMsg;
   deprecated_msgs::RobotBase2DOdom odomMsg;
   double maxTV, maxRV, distEps, headEps, finalEps, tgtX, tgtY, tgtTh;
   enum
@@ -59,7 +59,7 @@ public:
     param("drFinalEps", finalEps, 0.05);
     advertiseService("DriveDeadReckon", &DeadReckon::dr_cb);
     subscribe("odom", odomMsg, &DeadReckon::odom_cb, 1);
-    advertise<std_msgs::PoseDot>("cmd_vel", 1);
+    advertise<robot_msgs::PoseDot>("cmd_vel", 1);
   }
   bool dr_cb(deadreckon::DriveDeadReckon::Request  &req,
              deadreckon::DriveDeadReckon::Response &res)

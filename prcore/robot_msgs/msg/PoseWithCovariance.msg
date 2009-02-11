@@ -1,3 +1,3 @@
 Header header
-std_msgs/Pose pose
+robot_msgs/Pose pose
 float64[36] covariance

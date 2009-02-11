@@ -3,7 +3,7 @@
 import roslib; roslib.load_manifest('kinematic_calibration') 
 import sys
 import rospy
-from std_msgs.msg import PointStamped, Point
+from robot_msgs.msg import PointStamped, Point
 from time import sleep
 from joy.msg import Joy 
 

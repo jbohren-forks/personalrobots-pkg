@@ -123,7 +123,7 @@ namespace estimation
 
 
   // get evenly spaced particle cloud
-  void DetectorParticle::getParticleCloud(const Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  void DetectorParticle::getParticleCloud(const Vector3& step, double threshold, robot_msgs::PointCloud& cloud) const
   {
     ((MCPdfVector*)(filter_->PostGet()))->getParticleCloud(step, threshold, cloud);
   };

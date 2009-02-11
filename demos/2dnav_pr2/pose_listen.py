@@ -3,7 +3,7 @@
 import roslib; roslib.load_manifest('2dnav_pr2')
 
 import sys, traceback, logging, rospy
-from std_msgs.msg import RobotBase2DOdom
+from deprecated_msgs.msg import RobotBase2DOdom
 
 NAME = 'pose_listener'
 

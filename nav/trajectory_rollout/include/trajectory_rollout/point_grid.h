@@ -40,7 +40,7 @@
 #include <list>
 #include <cfloat>
 #include <std_msgs/Point2DFloat32.h>
-#include <std_msgs/Point32.h>
+#include <robot_msgs/Point32.h>
 #include <costmap_2d/observation.h>
 #include <trajectory_rollout/world_model.h>
 
@@ -79,7 +79,7 @@ namespace trajectory_rollout {
        * @param  upper_right The upper right corner of the range search
        * @param points A vector of pointers to lists of the relevant points
        */
-      void getPointsInRange(std_msgs::Point2DFloat32 lower_left, std_msgs::Point2DFloat32 upper_right, std::vector< std::list<std_msgs::Point32>* > points);
+      void getPointsInRange(std_msgs::Point2DFloat32 lower_left, std_msgs::Point2DFloat32 upper_right, std::vector< std::list<robot_msgs::Point32>* > points);
 
       /**
        * @brief  Checks if any points in the grid lie inside a convex footprint
@@ -146,7 +146,7 @@ namespace trajectory_rollout {
        * @param pt2 The second point 
        * @return The squared distance between the two points
        */
-      inline double sq_distance(std_msgs::Point32& pt1, std_msgs::Point32& pt2){
+      inline double sq_distance(robot_msgs::Point32& pt1, robot_msgs::Point32& pt2){
         return (pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y);
       }
 
@@ -157,7 +157,7 @@ namespace trajectory_rollout {
        * @param  gy The y coordinate of the corresponding grid cell to be set by the function
        * @return True if the conversion was successful, false otherwise
        */
-      inline bool gridCoords(std_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
+      inline bool gridCoords(robot_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
         if(pt.x < origin_.x || pt.y < origin_.y){
           gx = 0;
           gy = 0;
@@ -201,7 +201,7 @@ namespace trajectory_rollout {
        * @param c The point to compute orientation for
        * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
        */
-      inline double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const std_msgs::Point32& c){
+      inline double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const robot_msgs::Point32& c){
         double acx = a.x - c.x;
         double bcx = b.x - c.x;
         double acy = a.y - c.y;
@@ -215,20 +215,20 @@ namespace trajectory_rollout {
        * @param poly The polygon to check against
        * @return True if the point is in the polygon, false otherwise
        */
-      bool ptInPolygon(const std_msgs::Point32& pt, const std::vector<std_msgs::Point2DFloat32>& poly);
+      bool ptInPolygon(const robot_msgs::Point32& pt, const std::vector<std_msgs::Point2DFloat32>& poly);
 
       /**
        * @brief  Insert a point into the point grid
        * @param pt The point to be inserted 
        */
-      void insert(std_msgs::Point32 pt);
+      void insert(robot_msgs::Point32 pt);
 
       /**
        * @brief  Find the distance between a point and its nearest neighbor in the grid
        * @param pt The point used for comparison 
        * @return  The distance between the point passed in and its nearest neighbor in the point grid
        */
-      double nearestNeighborDistance(std_msgs::Point32& pt);
+      double nearestNeighborDistance(robot_msgs::Point32& pt);
 
       /**
        * @brief  Find the distance between a point and its nearest neighbor in a cell
@@ -237,7 +237,7 @@ namespace trajectory_rollout {
        * @param gy The y coordinate of the cell
        * @return  The distance between the point passed in and its nearest neighbor in the cell
        */
-      double getNearestInCell(std_msgs::Point32& pt, unsigned int gx, unsigned int gy); 
+      double getNearestInCell(robot_msgs::Point32& pt, unsigned int gx, unsigned int gy); 
 
       /**
        * @brief  Removes points from the grid that lie within the polygon
@@ -250,11 +250,11 @@ namespace trajectory_rollout {
       std_msgs::Point2DFloat32 origin_; ///< @brief The origin point of the grid
       unsigned int width_; ///< @brief The width of the grid in cells
       unsigned int height_; ///< @brief The height of the grid in cells
-      std::vector< std::list<std_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
+      std::vector< std::list<robot_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
       double max_z_;  ///< @brief The height cutoff for adding points as obstacles
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
       double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
-      std::vector< std::list<std_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
+      std::vector< std::list<robot_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
 
   };
 };

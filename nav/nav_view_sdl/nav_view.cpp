@@ -99,7 +99,7 @@ Publishes to (name / type):
 // messages and services
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
-#include "std_msgs/Polyline2D.h"
+#include "robot_msgs/Polyline2D.h"
 #include "deprecated_msgs/Pose2DFloat32.h"
 #include "pr2_msgs/OccDiff.h"
 #include "robot_srvs/StaticMap.h"
@@ -116,13 +116,13 @@ class NavView : public ros::Node, public ros::SDLGL
 public:
   robot_msgs::ParticleCloud cloud;
   robot_msgs::Planner2DGoal goal;
-  std_msgs::Polyline2D pathline;
-  std_msgs::Polyline2D local_path;
-  std_msgs::Polyline2D robot_footprint;
-  std_msgs::Polyline2D laserscan;
+  robot_msgs::Polyline2D pathline;
+  robot_msgs::Polyline2D local_path;
+  robot_msgs::Polyline2D robot_footprint;
+  robot_msgs::Polyline2D laserscan;
   deprecated_msgs::Pose2DFloat32 initialpose;
-  std_msgs::Polyline2D inflatedObstacles;
-  std_msgs::Polyline2D rawObstacles;
+  robot_msgs::Polyline2D inflatedObstacles;
+  robot_msgs::Polyline2D rawObstacles;
   pr2_msgs::OccDiff occ_diff_;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;

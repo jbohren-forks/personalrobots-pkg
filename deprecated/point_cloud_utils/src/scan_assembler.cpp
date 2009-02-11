@@ -56,7 +56,7 @@ void ScanAssembler::startNewCloud(const std::string& target_frame, unsigned int 
 
 int ScanAssembler::addScan(const laser_scan::LaserScan& scan)
 {
-  PointCloud target_frame_cloud ;                                                     // Stores the current scan in the target frame
+  robot_msgs::PointCloud target_frame_cloud ;                                                     // Stores the current scan in the target frame
 
 
   projector_.transformLaserScanToPointCloud(cloud_.header.frame_id, target_frame_cloud, scan, tf_) ;              //! \todo Add a try/catch block around this TF calls
@@ -82,7 +82,7 @@ int ScanAssembler::addScan(const laser_scan::LaserScan& scan)
   return 0 ;
 }
 
-void ScanAssembler::getPointCloud(std_msgs::PointCloud& cloud) const
+void ScanAssembler::getPointCloud(robot_msgs::PointCloud& cloud) const
 {
   cloud = cloud_ ;
   cloud.set_pts_size(point_count_) ;

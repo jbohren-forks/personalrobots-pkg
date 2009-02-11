@@ -69,7 +69,7 @@ public:
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
     my_door_.header.frame_id = "odom_combined";
 
-    advertise<std_msgs::PoseStamped>("cartesian_trajectory/command",1);
+    advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command",1);
   }
   
   
@@ -93,7 +93,7 @@ public:
 
   bool GraspDoor(const robot_msgs::Door& door)
   {
-    std_msgs::PoseStamped pose_msg;
+    robot_msgs::PoseStamped pose_msg;
     Stamped<Pose> pose;
     pose.frame_id_ = door.header.frame_id;
 

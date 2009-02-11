@@ -93,7 +93,7 @@ Reads the following parameters from the parameter server
 #include "self_test/self_test.h"
 #include "diagnostic_updater/diagnostic_updater.h"
 
-#include "std_msgs/PoseWithRatesStamped.h"
+#include "robot_msgs/PoseWithRatesStamped.h"
 
 #include "tf/transform_datatypes.h"
 #include "imu_node/AddOffset.h"
@@ -104,7 +104,7 @@ class ImuNode: public ros::Node
 {
 public:
   MS_3DMGX2::IMU imu;
-  std_msgs::PoseWithRatesStamped reading;
+  robot_msgs::PoseWithRatesStamped reading;
 
   string port;
 
@@ -125,7 +125,7 @@ public:
 
   ImuNode() : ros::Node("imu"), count_(0), self_test_(this), diagnostic_(this)
   {
-    advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
+    advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
 
     advertiseService("imu/add_offset", &ImuNode::addOffset, this);
 

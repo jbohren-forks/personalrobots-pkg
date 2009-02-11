@@ -42,9 +42,9 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Polygon3D.h>
-#include <std_msgs/PolygonalMap.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Polygon3D.h>
+#include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
 #include <sample_consensus/sac.h>
@@ -293,7 +293,7 @@ class TableObjectDetector : public ros::Node
       ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
 
       // Get the table bounds
-      std_msgs::Point32 minP, maxP;
+      robot_msgs::Point32 minP, maxP;
       cloud_geometry::statistics::getMinMax (&cloud_down_, &inliers, minP, maxP);
       resp.table.min_x = minP.x; resp.table.min_y = minP.y;
       resp.table.max_x = maxP.x; resp.table.max_y = maxP.y;
@@ -378,7 +378,7 @@ class TableObjectDetector : public ros::Node
       vector<vector<int> > object_clusters;
       findClusters (points, &object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
 
-      std_msgs::Point32 minPCluster, maxPCluster;
+      robot_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {

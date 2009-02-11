@@ -32,7 +32,7 @@
 #ifndef _datatypes_h_
 #define _datatypes_h_
 
-#include <std_msgs/Point32.h> //ROS native format for a point cloud
+#include <robot_msgs/Point32.h> //ROS native format for a point cloud
 #include <vector>
 #include "assert.h"
 
@@ -47,7 +47,7 @@ namespace scan_utils{
  */
 class Triangle{
  public:
-	std_msgs::Point32 p1,p2,p3;
+	robot_msgs::Point32 p1,p2,p3;
 	
         Triangle() : p1(), p2(), p3(){}
         Triangle(const Triangle &t) : p1(t.p1), p2(t.p2), p3(t.p3) {}
@@ -76,10 +76,10 @@ class Triangle{
     ROS-native math library 
 */
 
- float norm(const std_msgs::Point32 &f);
- std_msgs::Point32 normalize(const std_msgs::Point32 &f);
- float dot(const std_msgs::Point32 &f1, const std_msgs::Point32 &f2);
- std_msgs::Point32 cross(const std_msgs::Point32 &f1, const std_msgs::Point32 &f2);
+ float norm(const robot_msgs::Point32 &f);
+ robot_msgs::Point32 normalize(const robot_msgs::Point32 &f);
+ float dot(const robot_msgs::Point32 &f1, const robot_msgs::Point32 &f2);
+ robot_msgs::Point32 cross(const robot_msgs::Point32 &f1, const robot_msgs::Point32 &f2);
 
 /*! A 1D histogram.
  */

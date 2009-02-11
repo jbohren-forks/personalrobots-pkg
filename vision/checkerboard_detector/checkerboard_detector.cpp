@@ -311,7 +311,7 @@ public:
         }
     }
 
-    std_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts)
+    robot_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts)
     {
         CvMat *objpoints = cvCreateMat(3,objpts.size(),CV_32FC1);
         for(size_t i=0; i<objpts.size(); ++i) {
@@ -320,7 +320,7 @@ public:
             cvSetReal2D(objpoints, 2,i, objpts[i].z);
         }
         
-        std_msgs::Pose pose;
+        robot_msgs::Pose pose;
         float fR3[3];
         CvMat R3, T3;
         assert(sizeof(pose.position.x) == sizeof(double));

@@ -43,9 +43,9 @@ dimension, orientation) useful for collision detection.
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/Point.h>
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/PoseStamped.h>
+#include <robot_msgs/Point.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/VisualizationMarker.h>
 
 #include <Eigen/Core>
@@ -63,7 +63,7 @@ dimension, orientation) useful for collision detection.
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 using namespace robot_msgs;
 using namespace robot_srvs;
 
@@ -107,7 +107,7 @@ class CollisionMapperBuffer : public ros::Node
     tf::TransformListener tf_;
 
     // Parameters
-    std_msgs::Point leaf_width_, robot_max_;
+    robot_msgs::Point leaf_width_, robot_max_;
     int min_nr_points_;
     string end_effector_frame_l_, end_effector_frame_r_;
 
@@ -122,7 +122,7 @@ class CollisionMapperBuffer : public ros::Node
     // Internal parameters
     string cloud_frame_;
     PoseStamped gripper_orientation_link_;
-    std_msgs::Point32 min_object_b_, max_object_b_;
+    robot_msgs::Point32 min_object_b_, max_object_b_;
     bool subtract_object_;
     int m_id_;
 

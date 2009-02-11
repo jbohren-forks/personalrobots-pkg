@@ -39,7 +39,7 @@ import string
 from time import sleep
 
 import rospy
-from std_msgs.msg import PointStamped, Point
+from robot_msgs.msg import PointStamped, Point
 from robot_msgs.msg import JointCmd
 
 def control_base_pose_odom_frame(x,y,w):

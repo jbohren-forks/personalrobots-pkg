@@ -42,9 +42,9 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Polygon3D.h>
-#include <std_msgs/PolygonalMap.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Polygon3D.h>
+#include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
 #include <sample_consensus/sac.h>
@@ -64,7 +64,7 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class PlanarPatchMap: public ros::Node
 {
@@ -140,7 +140,7 @@ class PlanarPatchMap: public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      filterCloudBasedOnDistance (std_msgs::PointCloud *cloud_in, std_msgs::PointCloud &cloud_out,
+      filterCloudBasedOnDistance (robot_msgs::PointCloud *cloud_in, robot_msgs::PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
       cloud_out.pts.resize (cloud_in->pts.size ());

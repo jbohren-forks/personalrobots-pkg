@@ -39,7 +39,7 @@
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "misc_utils/subscription_guard.h"
-#include "std_msgs/Vector3.h"
+#include "robot_msgs/Vector3.h"
 
 namespace controller {
 
@@ -73,7 +73,7 @@ public:
 private:
   CartesianTorqueController c_;
 
-  std_msgs::Vector3 set_command_msg_;
+  robot_msgs::Vector3 set_command_msg_;
   SubscriptionGuard guard_set_command_;
 };
 

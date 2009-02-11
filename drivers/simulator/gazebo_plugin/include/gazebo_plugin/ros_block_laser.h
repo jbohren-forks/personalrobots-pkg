@@ -32,7 +32,7 @@
 
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 
 namespace gazebo
 {
@@ -90,7 +90,7 @@ namespace gazebo
  \brief ROS laser block simulation.
         \li Starts a ROS node if none exists.
         \li This controller simulates a block of laser range detections.
-            Resulting point cloud (std_msgs::PointCloud.msg) is published as a ROS topic.
+            Resulting point cloud (robot_msgs::PointCloud.msg) is published as a ROS topic.
         \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
@@ -162,7 +162,7 @@ class RosBlockLaser : public Controller
   private: ros::Node *rosnode;
 
   /// \brief ros message
-  private: std_msgs::PointCloud cloudMsg;
+  private: robot_msgs::PointCloud cloudMsg;
  
   /// \brief topic name
   private: std::string topicName;

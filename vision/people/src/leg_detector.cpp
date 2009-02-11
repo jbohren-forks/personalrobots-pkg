@@ -196,7 +196,7 @@ class LegDetector : public Node
 public:
   TransformListener tfl_;
 
-  std_msgs::PointCloud filt_cloud_;
+  robot_msgs::PointCloud filt_cloud_;
 
   ScanMask mask_;
 
@@ -235,8 +235,8 @@ public:
     }
 
     // advertise topics
-    advertise<std_msgs::PointCloud>("filt_cloud",10);
-    advertise<std_msgs::PointCloud>("kalman_filt_cloud",10);
+    advertise<robot_msgs::PointCloud>("filt_cloud",10);
+    advertise<robot_msgs::PointCloud>("kalman_filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
 
     // subscribe to topics
@@ -482,9 +482,9 @@ public:
     publish("filt_cloud", filt_cloud_);
     cvReleaseMat(&tmp_mat);
 
-    vector<std_msgs::Point32> filter_visualize(saved_features_.size());
+    vector<robot_msgs::Point32> filter_visualize(saved_features_.size());
     vector<float> weights(saved_features_.size());
-    std_msgs::ChannelFloat32 channel;
+    robot_msgs::ChannelFloat32 channel;
     int i = 0;
 
     for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
@@ -542,7 +542,7 @@ public:
     // visualize all trackers
     channel.name = "rgb";
     channel.vals = weights;
-    std_msgs::PointCloud  people_cloud; 
+    robot_msgs::PointCloud  people_cloud; 
     people_cloud.chan.push_back(channel);
     people_cloud.header.frame_id = "odom";//scan_.header.frame_id;
     people_cloud.header.stamp = scan->header.stamp;

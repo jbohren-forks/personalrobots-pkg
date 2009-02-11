@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
   <export>
     <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG" lflags="-L${prefix}/lib -lmessageseq"/>
   </export>

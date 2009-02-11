@@ -30,7 +30,7 @@
 
 #include "point_cloud_utils/timed_scan_assembler.h"
 
-using namespace std_msgs ;
+using namespace robot_msgs ;
 using namespace point_cloud_utils ;
 
 TimedScanAssembler::TimedScanAssembler(ros::Node& rosnode) : rosnode_(rosnode), scan_assembler_(rosnode)
@@ -44,7 +44,7 @@ TimedScanAssembler::~TimedScanAssembler()
 }
 
 void TimedScanAssembler::getScansBlocking(const std::string topic, const ros::Duration duration,
-                                          const std::string target_frame, std_msgs::PointCloud& cloud_out)
+                                          const std::string target_frame, robot_msgs::PointCloud& cloud_out)
 {
   got_first_scan_ = false ;                              // Must occur before subscription to prevent race condition.
   done_getting_scans_ = false ;

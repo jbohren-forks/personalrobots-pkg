@@ -45,7 +45,7 @@
 #include "robot_msgs/MocapMarker.h"
 #include "robot_msgs/MocapBody.h"
 
-#include "std_msgs/TransformWithRateStamped.h"
+#include "robot_msgs/TransformWithRateStamped.h"
 
 namespace pr2_phase_space
 {
@@ -55,7 +55,7 @@ public :
   
   PhaseSpaceOdometry() : ros::Node("phase_space_odometry")
   {
-    advertise<std_msgs::TransformWithRateStamped>("phase_space_odom", 10) ;
+    advertise<robot_msgs::TransformWithRateStamped>("phase_space_odom", 10) ;
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceOdometry::snapshotCallback, 10) ;
     publish_count_ = 0 ;
   }
@@ -70,7 +70,7 @@ public :
   {
     if (snapshot_.get_bodies_size() > 0)                        // Only execute if we have at least 1 body in the scene
     {
-      std_msgs::TransformWithRateStamped odom ;
+      robot_msgs::TransformWithRateStamped odom ;
       odom.header = snapshot_.header ;
       odom.transform = snapshot_.bodies[0].pose ;               // We're not matching IDs or anything fancy. We're simply grabing the first body we see.
       publish("phase_space_odom", odom) ;

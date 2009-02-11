@@ -16,7 +16,7 @@ image_msgs/CamInfo right_info
 robot_msgs/MechanismState mechanism_state
 
 # PointCloud generated from the tilt laser
-std_msgs/PointCloud laser_cloud
+robot_msgs/PointCloud laser_cloud
 
 # Data that we captured from phasespace
 robot_msgs/MocapSnapshot phase_space_snapshot

@@ -64,7 +64,7 @@ namespace estimation
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<std_msgs::PointCloud>("goal_pos",10);
+    advertise<robot_msgs::PointCloud>("goal_pos",10);
 
     // register message sequencer
     people_notifier_ = new MessageNotifier<PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
@@ -81,7 +81,7 @@ namespace estimation
     time_last_publish_ = Time::now();
 
     // visualization
-    robot_goal_cloud_.pts = vector<std_msgs::Point32>(1);
+    robot_goal_cloud_.pts = vector<robot_msgs::Point32>(1);
     robot_goal_cloud_.pts[0].x = 0;
     robot_goal_cloud_.pts[0].y = 0;
     robot_goal_cloud_.pts[0].z = 0;
@@ -103,8 +103,8 @@ namespace estimation
   void PeopleFollower::callback(const MessageNotifier<PositionMeasurement>::MessagePtr& people_pos_msg)
   {
     // get people pos in fixed frame
-    Stamped<Vector3> people_pos_rel, people_pos_fixed_frame;
-    people_pos_rel.setData(Vector3(people_pos_msg->pos.x, people_pos_msg->pos.y, people_pos_msg->pos.z));
+    Stamped<tf::Vector3> people_pos_rel, people_pos_fixed_frame;
+    people_pos_rel.setData(tf::Vector3(people_pos_msg->pos.x, people_pos_msg->pos.y, people_pos_msg->pos.z));
     people_pos_rel.stamp_    = people_pos_msg->header.stamp;
     people_pos_rel.frame_id_ = people_pos_msg->header.frame_id;
     robot_state_.transformPoint(fixed_frame_, people_pos_rel, people_pos_fixed_frame);

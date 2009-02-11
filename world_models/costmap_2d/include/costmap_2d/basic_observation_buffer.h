@@ -49,7 +49,7 @@ namespace costmap_2d {
   public:
     BasicObservationBuffer(const std::string& frame_id, const std::string& global_frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ, robot_filter::RobotFilter* filter = NULL);
 
-    virtual void buffer_cloud(const std_msgs::PointCloud& local_cloud);
+    virtual void buffer_cloud(const robot_msgs::PointCloud& local_cloud);
 
     virtual void get_observations(std::vector<Observation>& observations);
 
@@ -64,9 +64,9 @@ namespace costmap_2d {
      * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
      * filter based on the min and max z values
      */
-    std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
+    robot_msgs::PointCloud * extractFootprintAndGround(const robot_msgs::PointCloud& baseFrameCloud) const;
     tf::TransformListener& tf_;
-    std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
+    std::deque<robot_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
     boost::mutex buffer_mutex_;
     const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
     robot_filter::RobotFilter* filter_;

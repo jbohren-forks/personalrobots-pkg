@@ -162,7 +162,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a cylinder model
     * \todo implement this.
     */
-  std_msgs::PointCloud
+  robot_msgs::PointCloud
     SACModelCylinder::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
   {
     std::cerr << "[SACModelCylinder::projecPoints] Not implemented yet." << std::endl;
@@ -208,7 +208,7 @@ namespace sample_consensus
       if (nz_idx_ == -1) return (false);
     }
 
-    std_msgs::Point32 u, v, w;
+    robot_msgs::Point32 u, v, w;
 
     u.x = cloud_->chan[nx_idx_].vals.at (indices.at (0));
     u.y = cloud_->chan[ny_idx_].vals.at (indices.at (0));

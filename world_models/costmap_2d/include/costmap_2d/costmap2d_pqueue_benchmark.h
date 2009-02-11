@@ -67,7 +67,7 @@
 #include <queue>
 
 // For point clouds <Could Make it a template>
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 namespace costmap_2d {
 
@@ -138,7 +138,7 @@ namespace costmap_2d {
      * @see removeStaleObstacles
      */
     void updateDynamicObstacles(double ts,
-				const std_msgs::PointCloud& cloud,
+				const robot_msgs::PointCloud& cloud,
 				std::vector<unsigned int>& updates);
 
     /**
@@ -153,7 +153,7 @@ namespace costmap_2d {
      */
     void updateDynamicObstacles(double ts,
 				double wx, double wy,
-				const std_msgs::PointCloud& cloud,
+				const robot_msgs::PointCloud& cloud,
 				std::vector<unsigned int>& updates);
     /**
      * @brief A convenience method which will skip calculating the diffs
@@ -162,7 +162,7 @@ namespace costmap_2d {
      *
      * @see updateDynamicObstacles
      */
-    void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
+    void updateDynamicObstacles(double ts, const robot_msgs::PointCloud& cloud);
 
     /**
      * @brief Updates the cost map, removing stale obstacles based on the new time stamp.

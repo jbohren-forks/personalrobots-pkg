@@ -50,7 +50,7 @@
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/Image.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 #include "std_msgs/UInt8.h" //for projector status
 
 #include "color_calib.h"
@@ -75,7 +75,7 @@ public:
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
 
-  std_msgs::PointCloud cloud,cloudNoTex;
+  robot_msgs::PointCloud cloud,cloudNoTex;
 
   color_calib::Calibration lcal;
   color_calib::Calibration rcal;
@@ -300,7 +300,7 @@ void image_cb_all(ros::Time t)
     b = (rgb & 0xff) / 255.0f;
   }
   
-  void write_out_point_cloud(string file_name,  std_msgs::PointCloud &cloud_ )
+  void write_out_point_cloud(string file_name,  robot_msgs::PointCloud &cloud_ )
   {
     int c_idx = -1;
     for (unsigned int d = 0; d < cloud_.chan.size (); d++)

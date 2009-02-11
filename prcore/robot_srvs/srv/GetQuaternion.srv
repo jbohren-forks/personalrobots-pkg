@@ -1,2 +1,2 @@
 ---
-std_msgs/Quaternion q
+robot_msgs/Quaternion q

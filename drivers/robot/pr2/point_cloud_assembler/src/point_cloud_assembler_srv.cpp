@@ -39,7 +39,7 @@
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
-using namespace std_msgs;
+using namespace robot_msgs;
 using namespace std ;
 
 namespace point_cloud_assembler
@@ -51,10 +51,10 @@ namespace point_cloud_assembler
  * params
  *  * (Several params are inherited from BaseAssemblerSrv)
  */
-class PointCloudAssemblerSrv : public BaseAssemblerSrv<std_msgs::PointCloud>
+class PointCloudAssemblerSrv : public BaseAssemblerSrv<robot_msgs::PointCloud>
 {
 public:
-  PointCloudAssemblerSrv() : BaseAssemblerSrv<std_msgs::PointCloud>("point_cloud_assembler")
+  PointCloudAssemblerSrv() : BaseAssemblerSrv<robot_msgs::PointCloud>("point_cloud_assembler")
   {
 
   }

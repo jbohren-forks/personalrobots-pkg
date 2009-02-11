@@ -138,7 +138,7 @@ private:
         {
             boost::mutex::scoped_lock lock(_mutex);
             TYPEOF(_mapbodies) mapbodies = _mapbodies;
-            std_msgs::PoseStamped posestamped, poseout;
+            robot_msgs::PoseStamped posestamped, poseout;
             Transform trobot;
             string strrobotbaselink;
             bool bHasRobotTransform = false;
@@ -251,7 +251,7 @@ private:
         }
     }
 
-    Transform GetTransform(const std_msgs::Pose& pose)
+    Transform GetTransform(const robot_msgs::Pose& pose)
     {
         return Transform(Vector(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z), Vector(pose.position.x, pose.position.y, pose.position.z));
     }
@@ -261,8 +261,8 @@ private:
         btVector3 o = bt.getOrigin();
         return Transform(Vector(q.w(),q.x(),q.y(),q.z()),Vector(o.x(),o.y(),o.z()));
     }
-    std_msgs::Pose GetPose(const Transform& t) {
-        std_msgs::Pose p;
+    robot_msgs::Pose GetPose(const Transform& t) {
+        robot_msgs::Pose p;
         p.orientation.x = t.rot.y; p.orientation.y = t.rot.z; p.orientation.z = t.rot.w; p.orientation.w = t.rot.x;
         p.position.x = t.trans.x; p.position.y = t.trans.y; p.position.z = t.trans.z;
         return p;

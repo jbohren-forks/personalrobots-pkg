@@ -29,7 +29,7 @@
 #ifndef POINT_CLOUD_UTILS_BLOB_FINDER_H
 #define POINT_CLOUD_UTILS_BLOB_FINDER_H
 
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 namespace point_cloud_utils
 {
@@ -57,7 +57,7 @@ class BlobFinder
      * \param cloud Input cloud used to extract blobs
      * \param blobs stores the list of centroids for the extracted blobs
      **/
-    void findBlobs(const std_msgs::PointCloud& cloud, std_msgs::PointCloud& blobs) const ;
+    void findBlobs(const robot_msgs::PointCloud& cloud, robot_msgs::PointCloud& blobs) const ;
 
     /**
      * \brief Specify the minimum number of points that must exist within a blob for it to be considered a blob
@@ -86,7 +86,7 @@ class BlobFinder
      * \brief computes distance between 2 points
      * \todo We should probably be using a more systematic way to compute distance between points, as opposed to reimplementing it
      **/
-    double dist(const std_msgs::Point32& A, const std_msgs::Point32& B) const ;
+    double dist(const robot_msgs::Point32& A, const robot_msgs::Point32& B) const ;
 } ;
 
 }

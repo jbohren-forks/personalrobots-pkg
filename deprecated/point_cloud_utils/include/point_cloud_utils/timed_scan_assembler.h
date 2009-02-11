@@ -34,7 +34,7 @@
 #include "boost/thread/condition_variable.hpp"
 #include "boost/thread/mutex.hpp"
 
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 #include "laser_scan/LaserScan.h"
 
 #include "point_cloud_utils/scan_assembler.h"
@@ -57,7 +57,7 @@ public:
    * \param target_frame the libTF frame that the laser data should be transformed into
    * \param cloud_out (Output) Stores the assembled point cloud
    */
-  void getScansBlocking(const std::string topic, const ros::Duration duration, const std::string target_frame, std_msgs::PointCloud& cloud_out) ;
+  void getScansBlocking(const std::string topic, const ros::Duration duration, const std::string target_frame, robot_msgs::PointCloud& cloud_out) ;
 
 private:
   void scansCallback() ;

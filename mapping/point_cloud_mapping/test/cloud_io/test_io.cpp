@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -39,7 +39,7 @@ using namespace cloud_io;
 
 TEST (CloudIO, Read)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   // Please make sure that this file exists, otherwise the test will fail.
   int res = loadPCDFile ("./test/cloud_io/bun0.pcd", points);
   EXPECT_EQ (res, 0);
@@ -55,7 +55,7 @@ TEST (CloudIO, Read)
 
 TEST (CloudIO, Write)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;

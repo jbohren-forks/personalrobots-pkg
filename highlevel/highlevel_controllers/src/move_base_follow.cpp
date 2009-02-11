@@ -98,7 +98,7 @@ namespace ros {
       // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
-      std_msgs::PoseDot cmdVel; // Commanded velocities      
+      robot_msgs::PoseDot cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -119,7 +119,7 @@ namespace ros {
         }
 
         // Set current velocities from odometry
-        std_msgs::PoseDot currentVel;
+        robot_msgs::PoseDot currentVel;
         currentVel.vel.vx = base_odom_.vel.x;
         currentVel.vel.vy = base_odom_.vel.y;
         currentVel.ang_vel.vz = base_odom_.vel.th;
@@ -162,7 +162,7 @@ namespace ros {
       //publish a point that the head can track
       double ptx, pty;
       controller_->getLocalGoal(ptx, pty);
-      std_msgs::PointStamped target_point;
+      robot_msgs::PointStamped target_point;
       target_point.point.x = ptx;
       target_point.point.y = pty;
       target_point.point.z = 1;

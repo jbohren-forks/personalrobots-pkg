@@ -42,8 +42,8 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/Point.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/Point.h>
+#include <robot_msgs/PointCloud.h>
 
 // Cloud geometry
 #include <cloud_geometry/point.h>
@@ -51,7 +51,7 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class CloudDownsampler : public ros::Node
 {

@@ -34,8 +34,8 @@
 #define _CLOUD_KDTREE_KDTREE_H_
 
 // ROS includes
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Point32.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Point32.h>
 
 #include <stdlib.h>
 
@@ -83,7 +83,7 @@ namespace cloud_kdtree
       /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         */
-      KdTree (std_msgs::PointCloud *points)
+      KdTree (robot_msgs::PointCloud *points)
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
@@ -120,7 +120,7 @@ namespace cloud_kdtree
         * \param points the ROS point cloud data array
         * \param indices the point cloud indices
         */
-      KdTree (std_msgs::PointCloud *points, std::vector<int> *indices)
+      KdTree (robot_msgs::PointCloud *points, std::vector<int> *indices)
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
@@ -147,7 +147,7 @@ namespace cloud_kdtree
         * the first 3 channels in \a points are \<r,g,b\>, and dim equals 3, a resulting data point will contain
         * a 6D tuple: \<x,y,z,r,g,b\> and all subsequent nearest neighbor searches will be performed in that space.
         */
-      KdTree (std_msgs::PointCloud *points, int dim)
+      KdTree (robot_msgs::PointCloud *points, int dim)
       {
         dim_       = 3 + dim;     // default number of dimensions (3 = xyz) + the extra channels
 
@@ -186,22 +186,22 @@ namespace cloud_kdtree
 #endif
       }
 
-      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud);
-      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud);
-      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
-      int convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
+      int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud);
+      int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud);
+      int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
+      int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
 
-      bool nearestKSearch (std_msgs::Point32 *p_q, int k);
-      bool nearestKSearch (std_msgs::PointCloud *points, unsigned int index, int k);
+      bool nearestKSearch (robot_msgs::Point32 *p_q, int k);
+      bool nearestKSearch (robot_msgs::PointCloud *points, unsigned int index, int k);
       bool nearestKSearch (int p_idx, int k);
       bool nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances);
 
-      bool radiusSearch (std_msgs::Point32 *p_q, double radius, int max_nn = INT_MAX);
-      bool radiusSearch (std_msgs::PointCloud *points, unsigned int index, double radius, int max_nn = INT_MAX);
+      bool radiusSearch (robot_msgs::Point32 *p_q, double radius, int max_nn = INT_MAX);
+      bool radiusSearch (robot_msgs::PointCloud *points, unsigned int index, double radius, int max_nn = INT_MAX);
 
       void radiusSearch (unsigned int index, double radius, int max_nn = INT_MAX);
 
-      bool radiusSearch (std_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn = INT_MAX);
+      bool radiusSearch (robot_msgs::Point32 *p_q, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn = INT_MAX);
       bool radiusSearch (int p_idx, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn = INT_MAX);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,7 +258,7 @@ namespace cloud_kdtree
         * \param point the point data
         */
       inline void
-        getPoint (int index, std_msgs::Point32 &point)
+        getPoint (int index, robot_msgs::Point32 &point)
       {
         point.x = points_[index][0];
         point.y = points_[index][1];

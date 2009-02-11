@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu
   *
-  * Extremely silly PCD to C++ ROS std_msgs PointCloud converter.
+  * Extremely silly PCD to C++ ROS robot_msgs PointCloud converter.
   * Useful for tools which don't want to link against \a cloud_io (I guess).
   *
   */
@@ -46,7 +46,7 @@ int
     return (-1);
   }
   
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   int res = cloud_io::loadPCDFile (argv[1], points);
   
   if (res != 0)
@@ -55,7 +55,7 @@ int
     return (-1);
   }
   
-  fprintf (stdout, "std_msgs::PointCloud points;\n");
+  fprintf (stdout, "robot_msgs::PointCloud points;\n");
   fprintf (stdout, "points.pts.resize (%i);\n", points.pts.size ());
 
   if (points.chan.size () > 0)

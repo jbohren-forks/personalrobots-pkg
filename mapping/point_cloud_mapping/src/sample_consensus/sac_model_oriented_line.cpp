@@ -55,7 +55,7 @@ namespace sample_consensus
     std::vector<int> inliers;
 
     // Obtain the line direction
-    std_msgs::Point32 p3, p4;
+    robot_msgs::Point32 p3, p4;
     p3.x = model_coefficients.at (3) - model_coefficients.at (0);
     p3.y = model_coefficients.at (4) - model_coefficients.at (1);
     p3.z = model_coefficients.at (5) - model_coefficients.at (2);
@@ -83,7 +83,7 @@ namespace sample_consensus
       // P1P2 = sqrt (x3^2 + y3^2 + z3^2)
       // a = sqrt [(y3*z4 - z3*y4)^2 + (x3*z4 - x4*z3)^2 + (x3*y4 - x4*y3)^2]
       //double distance = SQR_NORM (cANN::cross (p4, p3)) / SQR_NORM (p3);
-      std_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)
@@ -103,7 +103,7 @@ namespace sample_consensus
     std::vector<double> distances (indices_.size ());
 
     // Obtain the line direction
-    std_msgs::Point32 p3, p4;
+    robot_msgs::Point32 p3, p4;
     p3.x = model_coefficients.at (3) - model_coefficients.at (0);
     p3.y = model_coefficients.at (4) - model_coefficients.at (1);
     p3.z = model_coefficients.at (5) - model_coefficients.at (2);
@@ -123,7 +123,7 @@ namespace sample_consensus
       p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
       p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
 
-      std_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
     }
     return (distances);

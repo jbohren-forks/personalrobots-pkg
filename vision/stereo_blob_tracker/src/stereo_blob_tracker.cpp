@@ -17,7 +17,7 @@
 using namespace std;
 #include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/String.h"
-#include "std_msgs/PointStamped.h"
+#include "robot_msgs/PointStamped.h"
 #include "stereo_blob_tracker/Rect2DStamped.h"
 using namespace stereo_blob_tracker;
 
@@ -215,7 +215,7 @@ public:
   Rect2DStamped selection_box_;
 
   // for publishing
-  std_msgs::PointStamped point_stamped_;
+  robot_msgs::PointStamped point_stamped_;
   const string trackedBoxTopic_; // trackedbox
 
   /// camara model
@@ -314,8 +314,8 @@ public:
     }
 
     // Ros: advertise a topic
-    advertise<std_msgs::PointStamped>("points", 1000);
-    advertise<std_msgs::PointStamped>("head_controller/frame_track_point", 1000);
+    advertise<robot_msgs::PointStamped>("points", 1000);
+    advertise<robot_msgs::PointStamped>("head_controller/frame_track_point", 1000);
     // tracked box
     advertise<Rect2DStamped>(trackedBoxTopic_, 1000);
 
@@ -737,7 +737,7 @@ public:
 
     string topic = "head_controller/frame_track_point" ;
 
-    std_msgs::PointStamped target;
+    robot_msgs::PointStamped target;
 
     target.point.x =  point_stamped_.point.z ;
     target.point.y = -point_stamped_.point.x ;

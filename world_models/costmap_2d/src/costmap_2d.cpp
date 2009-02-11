@@ -187,7 +187,7 @@ namespace costmap_2d {
    * @brief Updated dyanmic obstacles and compute a diff. Mainly for backward compatibility. This will go away soon.
    */
   void CostMap2D::updateDynamicObstacles(double wx, double wy,
-      const std::vector<std_msgs::PointCloud*>& clouds,
+      const std::vector<robot_msgs::PointCloud*>& clouds,
       std::vector<unsigned int>& updates){
     updates.clear();
 
@@ -208,14 +208,14 @@ namespace costmap_2d {
   }
 
   void CostMap2D::updateDynamicObstacles(double wx, double wy,
-      const std::vector<std_msgs::PointCloud*>& clouds)
+      const std::vector<robot_msgs::PointCloud*>& clouds)
   {
-    std_msgs::Point origin;
+    robot_msgs::Point origin;
     origin.x = wx;
     origin.y = wy;
     origin.z = zLB_;
     std::vector<Observation> observations;
-    for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
+    for(std::vector<robot_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
       Observation obs(origin, *it);
       observations.push_back(obs);
     }
@@ -241,7 +241,7 @@ namespace costmap_2d {
     // to remove all static lethal obstacles that can be ray traced out.
     for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
       const Observation& obs = *it;
-      const std_msgs::PointCloud& cloud = *(obs.cloud_);
+      const robot_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
         // Filter out points too high (can use for free space propagation?)
         if(cloud.pts[i].z > maxZ_)
@@ -282,7 +282,7 @@ namespace costmap_2d {
       if(!in_projection_range(obs.origin_.z))
         continue;
 
-      const std_msgs::PointCloud& cloud = *(obs.cloud_);
+      const robot_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
         if(!in_projection_range(cloud.pts[i].z))
           continue;
@@ -396,7 +396,7 @@ namespace costmap_2d {
    * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
    * origin and the sightline.
    */
-  void CostMap2D::updateFreeSpace(const std_msgs::Point& origin, double wx, double wy){
+  void CostMap2D::updateFreeSpace(const robot_msgs::Point& origin, double wx, double wy){
     unsigned int x, y, x1, y1;
     WC_MC(origin.x, origin.y, x, y);
     WC_MC(wx, wy, x1, y1);

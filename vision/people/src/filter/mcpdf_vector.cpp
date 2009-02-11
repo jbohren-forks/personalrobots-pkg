@@ -79,7 +79,7 @@
 
 
   /// Get evenly distributed particle cloud
-  void MCPdfVector::getParticleCloud(const Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  void MCPdfVector::getParticleCloud(const Vector3& step, double threshold, robot_msgs::PointCloud& cloud) const
   { 
     unsigned int num_samples = _listOfSamples.size();
     assert(num_samples > 0);
@@ -106,9 +106,9 @@
 	if (hist(r,c) > threshold) total++;
     cout << "size total " << total << endl;
 
-    vector<std_msgs::Point32> points(total);
+    vector<robot_msgs::Point32> points(total);
     vector<float> weights(total);
-    std_msgs::ChannelFloat32 channel;
+    robot_msgs::ChannelFloat32 channel;
     for (unsigned int r=1; r<= row; r++)
       for (unsigned int c=1; c<= col; c++)
 	if (hist(r,c) > threshold){

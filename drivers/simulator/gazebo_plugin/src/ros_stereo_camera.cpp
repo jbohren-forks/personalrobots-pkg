@@ -111,8 +111,8 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->rightFrameName = node->GetString("rightFrameName","default_ros_stereocamera_right_frame",0); //read from xml file
 
   std::cout << "================= " << this->leftCloudTopicName << std::endl;
-  rosnode->advertise<std_msgs::PointCloud>(this->leftCloudTopicName, 1);
-  rosnode->advertise<std_msgs::PointCloud>(this->rightCloudTopicName, 1);
+  rosnode->advertise<robot_msgs::PointCloud>(this->leftCloudTopicName, 1);
+  rosnode->advertise<robot_msgs::PointCloud>(this->rightCloudTopicName, 1);
   rosnode->advertise<deprecated_msgs::Image>(this->leftTopicName, 1);
   rosnode->advertise<deprecated_msgs::Image>(this->rightTopicName, 1);
 }

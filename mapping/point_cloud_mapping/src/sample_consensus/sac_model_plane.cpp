@@ -152,10 +152,10 @@ namespace sample_consensus
     * \param inliers the data inliers that we want to project on the plane model
     * \param model_coefficients the *normalized* coefficients of a plane model
     */
-  std_msgs::PointCloud
+  robot_msgs::PointCloud
     SACModelPlane::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
   {
-    std_msgs::PointCloud projected_cloud;
+    robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
     projected_cloud.pts.resize (inliers.size ());
 

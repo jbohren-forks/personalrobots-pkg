@@ -32,7 +32,7 @@
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
-#include <std_msgs/PointStamped.h>
+#include <robot_msgs/PointStamped.h>
 #include <boost/bind.hpp>
 
 #include <gtest/gtest.h>
@@ -61,7 +61,7 @@ public:
 		}
 	}
 
-	void notify(const MessageNotifier<std_msgs::PointStamped>::MessagePtr& message)
+	void notify(const MessageNotifier<robot_msgs::PointStamped>::MessagePtr& message)
 	{
 		++count_;
 
@@ -129,14 +129,14 @@ public:
 TEST(MessageNotifier, noTransforms)
 {
 	Notification n(1);
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 
-	Counter<std_msgs::PointStamped> c("test_message", 1);
+	Counter<robot_msgs::PointStamped> c("test_message", 1);
 
 	ros::Duration().fromSec(0.2).sleep();
 
-	std_msgs::PointStamped msg;
+	robot_msgs::PointStamped msg;
 	msg.header.stamp = ros::Time::now();
 	msg.header.frame_id = "frame2";
 	g_node->publish("test_message", msg);
@@ -150,8 +150,8 @@ TEST(MessageNotifier, preexistingTransforms)
 {
 	Notification n(1);
 	Counter<tf::tfMessage> c("tf_message", 1);
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 
 	ros::Duration().fromSec(0.2).sleep();
 
@@ -169,7 +169,7 @@ TEST(MessageNotifier, preexistingTransforms)
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 
-	std_msgs::PointStamped msg;
+	robot_msgs::PointStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame2";
 	g_node->publish("test_message", msg);
@@ -190,16 +190,16 @@ TEST(MessageNotifier, preexistingTransforms)
 TEST(MessageNotifier, postTransforms)
 {
 	Notification n(1);
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame3", 1);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame3", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 
-	Counter<std_msgs::PointStamped> c("test_message", 1);
+	Counter<robot_msgs::PointStamped> c("test_message", 1);
 
 	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
-	std_msgs::PointStamped msg;
+	robot_msgs::PointStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame4";
 	g_node->publish("test_message", msg);
@@ -232,10 +232,10 @@ TEST(MessageNotifier, postTransforms)
 TEST(MessageNotifier, queueSize)
 {
 	Notification n(10);
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame5", 10);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame5", 10);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 
-	Counter<std_msgs::PointStamped> c("test_message", 20);
+	Counter<robot_msgs::PointStamped> c("test_message", 20);
 
 	ros::Duration().fromSec(0.2).sleep();
 
@@ -243,7 +243,7 @@ TEST(MessageNotifier, queueSize)
 
 	for (int i = 0; i < 20; ++i)
 	{
-		std_msgs::PointStamped msg;
+		robot_msgs::PointStamped msg;
 		msg.header.stamp = stamp;
 		msg.header.frame_id = "frame6";
 		g_node->publish("test_message", msg);
@@ -282,8 +282,8 @@ TEST(MessageNotifier, setTopic)
 {
 	Notification n(1);
 	Counter<tf::tfMessage> c("tf_message", 1);
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTopic("test_message2");
 
 	ros::Duration().fromSec(0.2).sleep();
@@ -302,7 +302,7 @@ TEST(MessageNotifier, setTopic)
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 
-	std_msgs::PointStamped msg;
+	robot_msgs::PointStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame8";
 	g_node->publish("test_message2", msg);
@@ -324,8 +324,8 @@ TEST(MessageNotifier, setTargetFrame)
 {
 	Notification n(1);
 	Counter<tf::tfMessage> c("tf_message", 1); /// \todo Switch this to tf_message once rosTF goes away completely
-	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
-	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTargetFrame("frame1000");
 
 	ros::Duration().fromSec(0.2).sleep();
@@ -344,7 +344,7 @@ TEST(MessageNotifier, setTargetFrame)
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 
-	std_msgs::PointStamped msg;
+	robot_msgs::PointStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame10";
 	g_node->publish("test_message", msg);
@@ -367,8 +367,8 @@ int main(int argc, char** argv)
 	testing::InitGoogleTest(&argc, argv);
 	ros::init(argc, argv);
 	g_node = new ros::Node("test_notifier");
-	g_node->advertise<std_msgs::PointStamped>("test_message", 0);
-	g_node->advertise<std_msgs::PointStamped>("test_message2", 0);
+	g_node->advertise<robot_msgs::PointStamped>("test_message", 0);
+	g_node->advertise<robot_msgs::PointStamped>("test_message2", 0);
 
 	g_tf = new TransformListener(*g_node);
 	g_broadcaster = new TransformBroadcaster(*g_node);

@@ -148,7 +148,7 @@ namespace costmap_2d {
   }
 
   void CostMap2D::updateDynamicObstacles(double ts,
-					 const std_msgs::PointCloud& cloud,
+					 const robot_msgs::PointCloud& cloud,
 					 std::vector<unsigned int>& updates)
   {
     updateDynamicObstacles(ts, 0, 0, cloud, updates);
@@ -156,7 +156,7 @@ namespace costmap_2d {
 
   void CostMap2D::updateDynamicObstacles(double ts,
 					 double wx, double wy,
-					 const std_msgs::PointCloud& cloud,
+					 const robot_msgs::PointCloud& cloud,
 					 std::vector<unsigned int>& updates)
   {
     
@@ -235,7 +235,7 @@ namespace costmap_2d {
     petWatchDog(cell, WATCHDOG_LIMIT);
   }
 
-  void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud){
+  void CostMap2D::updateDynamicObstacles(double ts, const robot_msgs::PointCloud& cloud){
     std::vector<unsigned int> updates;
     updateDynamicObstacles(ts, cloud, updates);
   }

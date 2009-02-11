@@ -43,7 +43,7 @@
 
 // ROS core
 #include <ros/node.h>
-#include <std_msgs/PolygonalMap.h>
+#include <robot_msgs/PolygonalMap.h>
 
 // Most of the geometric routines that contribute to the door finding job are located here
 #include "geometric_helper.h"
@@ -55,7 +55,7 @@
 
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class DoorHandleDetector : public ros::Node
 {
@@ -66,7 +66,7 @@ class DoorHandleDetector : public ros::Node
     PointCloud cloud_annotated_;
     Point32 z_axis_;
     PolygonalMap pmap_;
-    tf::MessageNotifier<std_msgs::PointCloud>*  message_notifier_;
+    tf::MessageNotifier<robot_msgs::PointCloud>*  message_notifier_;
 
     PointStamped viewpoint_cloud_;
 
@@ -212,7 +212,7 @@ class DoorHandleDetector : public ros::Node
 
       // receive a new laser scan
       num_clouds_received_ = 0;
-      message_notifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
                                                                         input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
       while (num_clouds_received_ < 1)
@@ -306,7 +306,7 @@ class DoorHandleDetector : public ros::Node
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
-      std_msgs::Point32 minP, maxP, handle_center;
+      robot_msgs::Point32 minP, maxP, handle_center;
 
 #pragma omp parallel for schedule(dynamic)
       // Process all clusters
@@ -490,7 +490,7 @@ class DoorHandleDetector : public ros::Node
       //pmap.polygons.push_back (poly_tr_shrunk);
 
       Point32 pt;
-      vector<std_msgs::Point32> handle_visualize;
+      vector<robot_msgs::Point32> handle_visualize;
 
       vector<int> possible_handle_indices (indices->size ());
       int nr_phi = 0;
@@ -547,7 +547,7 @@ class DoorHandleDetector : public ros::Node
 
 // This needs to be removed
 #if 1
-        std_msgs::Point32 pnt;
+        robot_msgs::Point32 pnt;
         pnt.x = points->pts.at (indices->at (i)).x;
         pnt.y = points->pts.at (indices->at (i)).y;
         pnt.z = points->pts.at (indices->at (i)).z;
@@ -599,7 +599,7 @@ class DoorHandleDetector : public ros::Node
 
       // ---[ Seventh test (geometric)
       // Check the elongation of the clusters -- Filter clusters based on min/max Z
-      std_msgs::Point32 minP, maxP;
+      robot_msgs::Point32 minP, maxP;
       handle_indices.resize (handle_indices_clusters.size ());
       nr_phi = 0;
       for (unsigned int i = 0; i < clusters.size (); i++)
@@ -647,7 +647,7 @@ class DoorHandleDetector : public ros::Node
 
 // This needs to be removed
 #if 1
-      std_msgs::PointCloud handle_cloud;
+      robot_msgs::PointCloud handle_cloud;
       //        handle_indices_clusters = possible_handle_indices;
       handle_cloud.chan.resize (1);
       handle_cloud.chan[0].name = "intensities";
@@ -678,7 +678,7 @@ class DoorHandleDetector : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void cloud_cb(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& cloud)
+  void cloud_cb(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
       cout << "scan received" << endl;
       cloud_in_ = *cloud;
@@ -686,7 +686,7 @@ class DoorHandleDetector : public ros::Node
     }
 
   
-  void transformPoint(const std::string &target_frame, const tf::Stamped< std_msgs::Point32 > &stamped_in, tf::Stamped< std_msgs::Point32 > &stamped_out)
+  void transformPoint(const std::string &target_frame, const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
   {
     tf::Stamped<tf::Point> tmp;
     tmp.stamp_ = stamped_in.stamp_;

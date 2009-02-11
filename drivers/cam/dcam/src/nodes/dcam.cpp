@@ -41,7 +41,7 @@
 #include "image_msgs/FillImage.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/StereoInfo.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 #include "diagnostic_updater/diagnostic_updater.h"
 

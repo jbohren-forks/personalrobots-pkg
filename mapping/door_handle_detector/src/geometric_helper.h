@@ -37,10 +37,10 @@
 #include <vector>
 
 // ROS includes
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Polygon3D.h>
-#include <std_msgs/Point32.h>
-#include <std_msgs/PointStamped.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Polygon3D.h>
+#include <robot_msgs/Point32.h>
+#include <robot_msgs/PointStamped.h>
 
 #include <tf/transform_listener.h>
 
@@ -86,24 +86,24 @@ inline double
   return (rgb);
 }
 
-void get3DBounds (std_msgs::Point32 *p1, std_msgs::Point32 *p2, std_msgs::Point32 &min_b, std_msgs::Point32 &max_b,
+void get3DBounds (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2, robot_msgs::Point32 &min_b, robot_msgs::Point32 &max_b,
                   double min_z_bounds, double max_z_bounds, int multiplier);
 
-void getCloudViewPoint (std::string cloud_frame, std_msgs::PointStamped &viewpoint_cloud, tf::TransformListener *tf);
+void getCloudViewPoint (std::string cloud_frame, robot_msgs::PointStamped &viewpoint_cloud, tf::TransformListener *tf);
 
-bool checkDoorEdges (std_msgs::Polygon3D *poly, std_msgs::Point32 *z_axis, double min_height, double eps_angle,
+bool checkDoorEdges (robot_msgs::Polygon3D *poly, robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
                      double &door_frame1, double &door_frame2);
 
-void selectBestDistributionStatistics (std_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, std::vector<int> &inliers);
+void selectBestDistributionStatistics (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, std::vector<int> &inliers);
 
-bool checkIfClusterPerpendicular (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointStamped *viewpoint,
+bool checkIfClusterPerpendicular (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointStamped *viewpoint,
                                   std::vector<double> *coeff, double eps_angle);
-void findClusters (std_msgs::PointCloud *points, std::vector<int> *indices, double tolerance, std::vector<std::vector<int> > &clusters,
+void findClusters (robot_msgs::PointCloud *points, std::vector<int> *indices, double tolerance, std::vector<std::vector<int> > &clusters,
                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
 
-int fitSACPlane (std_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
-                 std_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
+int fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
+                 robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
 
-void estimatePointNormals (std_msgs::PointCloud *points, std::vector<int> *point_indices, std_msgs::PointCloud *points_down, int k, std_msgs::PointStamped *viewpoint_cloud);
+void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 
 #endif

@@ -64,7 +64,7 @@ namespace estimation
       tracker_counter_(0)
   {
     // initialize
-    meas_cloud_.pts = vector<std_msgs::Point32>(1);
+    meas_cloud_.pts = vector<robot_msgs::Point32>(1);
     meas_cloud_.pts[0].x = 0;
     meas_cloud_.pts[0].y = 0;
     meas_cloud_.pts[0].z = 0;
@@ -85,8 +85,8 @@ namespace estimation
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<std_msgs::PointCloud>("people_tracker_filter_visualization",10);
-    advertise<std_msgs::PointCloud>("people_tracker_measurements_visualization",10);
+    advertise<robot_msgs::PointCloud>("people_tracker_filter_visualization",10);
+    advertise<robot_msgs::PointCloud>("people_tracker_measurements_visualization",10);
 
     // register message sequencer
     message_sequencer_ = new TimeSequencer<PositionMeasurement>(this, "people_tracker_measurements", 
@@ -117,8 +117,8 @@ namespace estimation
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
     // get measurement in fixed frame
-    Stamped<Vector3> meas_rel, meas;
-    meas_rel.setData(Vector3(message->pos.x, message->pos.y, message->pos.z));
+    Stamped<tf::Vector3> meas_rel, meas;
+    meas_rel.setData(tf::Vector3(message->pos.x, message->pos.y, message->pos.z));
     meas_rel.stamp_    = message->header.stamp;
     meas_rel.frame_id_ = message->header.frame_id;
     robot_state_.transformPoint(fixed_frame_, meas_rel, meas);
@@ -150,8 +150,8 @@ namespace estimation
       // initialize a new tracker
       if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
 	stringstream tracker_name;
-	StatePosVel prior_sigma(Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
-				Vector3(0.0000001, 0.0000001, 0.0000001));
+	StatePosVel prior_sigma(tf::Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
+				tf::Vector3(0.0000001, 0.0000001, 0.0000001));
 	tracker_name << "person " << tracker_counter_++;
 	Tracker* new_tracker = new TrackerKalman(tracker_name.str(), sys_sigma_);
 	//Tracker* new_tracker = new TrackerParticle(tracker_name.str(), num_particles_tracker, sys_sigma_);
@@ -195,9 +195,9 @@ namespace estimation
       boost::mutex::scoped_lock lock(filter_mutex_);
 
       // visualization variables
-      vector<std_msgs::Point32> filter_visualize(trackers_.size());
+      vector<robot_msgs::Point32> filter_visualize(trackers_.size());
       vector<float> weights(trackers_.size());
-      std_msgs::ChannelFloat32 channel;
+      robot_msgs::ChannelFloat32 channel;
 
       // loop over trackers
       unsigned int i=0;
@@ -235,7 +235,7 @@ namespace estimation
       // visualize all trackers
       channel.name = "rgb";
       channel.vals = weights;
-      std_msgs::PointCloud  people_cloud; 
+      robot_msgs::PointCloud  people_cloud; 
       people_cloud.chan.push_back(channel);
       people_cloud.header.frame_id = fixed_frame_;
       people_cloud.pts  = filter_visualize;

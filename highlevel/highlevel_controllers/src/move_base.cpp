@@ -34,12 +34,12 @@
 
 
 #include <highlevel_controllers/move_base.hh>
-#include <std_msgs/PoseDot.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PoseDot.h>
+#include <robot_msgs/PointCloud.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
-#include <std_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline2D.h>
 #include <robot_srvs/StaticMap.h>
-#include <std_msgs/PointStamped.h>
+#include <robot_msgs/PointStamped.h>
 #include <algorithm>
 #include <iterator>
 #include <angles/angles.h>
@@ -264,23 +264,23 @@ namespace ros {
           footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
-      advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
-      advertise<std_msgs::Polyline2D>("inflated_obstacles", 1);
+      advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
+      advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
 
       // Advertize message to publish the global plan
-      advertise<std_msgs::Polyline2D>("gui_path", 1);
+      advertise<robot_msgs::Polyline2D>("gui_path", 1);
 
       // Advertize message to publish local plan
-      advertise<std_msgs::Polyline2D>("local_path", 1);
+      advertise<robot_msgs::Polyline2D>("local_path", 1);
 
       // Advertize message to publish robot footprint
-      advertise<std_msgs::Polyline2D>("robot_footprint", 1);
+      advertise<robot_msgs::Polyline2D>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
-      advertise<std_msgs::PoseDot>("cmd_vel", 1);
+      advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
       //Advertize message to publish local goal for head to track
-      advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
+      advertise<robot_msgs::PointStamped>("head_controller/head_track_point", 1);
 
       // Advertise costmap service
       // Might be worth eventually having a dedicated node provide this service and all
@@ -294,7 +294,7 @@ namespace ros {
       baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, this,  
                                  boost::bind(&MoveBase::baseScanCallback, this, _1), 
                                 "base_scan", global_frame_, 50); 
-      tiltLaserNotifier_ = new tf::MessageNotifier<std_msgs::PointCloud>(&tf_, this, 
+      tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this, 
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
       subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
@@ -422,7 +422,7 @@ namespace ros {
     void MoveBase::baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message)
     {
       // Project laser into point cloud
-      std_msgs::PointCloud local_cloud;
+      robot_msgs::PointCloud local_cloud;
       local_cloud.header = message->header;
       projector_.projectLaser(*message, local_cloud, baseLaserMaxRange_);
       lock();
@@ -433,7 +433,7 @@ namespace ros {
     void MoveBase::tiltScanCallback()
     {
       // Project laser into point cloud
-      std_msgs::PointCloud local_cloud;
+      robot_msgs::PointCloud local_cloud;
       local_cloud.header = tiltScanMsg_.header;
       projector_.projectLaser(tiltScanMsg_, local_cloud, tiltLaserMaxRange_);
       lock();
@@ -441,7 +441,7 @@ namespace ros {
       unlock();
     }
 
-    void MoveBase::tiltCloudCallback(const tf::MessageNotifier<std_msgs::PointCloud>::MessagePtr& message)
+    void MoveBase::tiltCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message)
     {
       lock();
       tiltScanBuffer_->buffer_cloud(*message);
@@ -556,7 +556,7 @@ namespace ros {
 
     void MoveBase::publishFootprint(double x, double y, double th){
       std::vector<std_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
-      std_msgs::Polyline2D footprint_msg;
+      robot_msgs::Polyline2D footprint_msg;
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;
       footprint_msg.color.g = 0;
@@ -570,7 +570,7 @@ namespace ros {
     }
 
     void MoveBase::publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path) {
-      std_msgs::Polyline2D guiPathMsg;
+      robot_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
 
       unsigned int i = 0;
@@ -660,7 +660,7 @@ namespace ros {
       // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
-      std_msgs::PoseDot cmdVel; // Commanded velocities      
+      robot_msgs::PoseDot cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -697,7 +697,7 @@ namespace ros {
         }
 
         // Set current velocities from odometry
-        std_msgs::PoseDot currentVel;
+        robot_msgs::PoseDot currentVel;
         currentVel.vel.vx = base_odom_.vel.x;
         currentVel.vel.vy = base_odom_.vel.y;
         currentVel.ang_vel.vz = base_odom_.vel.th;
@@ -740,7 +740,7 @@ namespace ros {
       //publish a point that the head can track
       double ptx, pty;
       controller_->getLocalGoal(ptx, pty);
-      std_msgs::PointStamped target_point;
+      robot_msgs::PointStamped target_point;
       target_point.point.x = ptx;
       target_point.point.y = pty;
       target_point.point.z = 1;
@@ -787,7 +787,7 @@ namespace ros {
       }
 
       // First publish raw obstacles in red
-      std_msgs::Polyline2D pointCloudMsg;
+      robot_msgs::Polyline2D pointCloudMsg;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
@@ -852,7 +852,7 @@ namespace ros {
       }
 
       // First publish raw obstacles in red
-      std_msgs::Polyline2D pointCloudMsg;
+      robot_msgs::Polyline2D pointCloudMsg;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
@@ -885,7 +885,7 @@ namespace ros {
 
     void MoveBase::stopRobot(){
       ROS_DEBUG("Stopping the robot now!\n");
-      std_msgs::PoseDot cmdVel; // Commanded velocities
+      robot_msgs::PoseDot cmdVel; // Commanded velocities
       cmdVel.vel.vx = 0.0;
       cmdVel.vel.vy = 0.0;
       cmdVel.ang_vel.vz = 0.0;

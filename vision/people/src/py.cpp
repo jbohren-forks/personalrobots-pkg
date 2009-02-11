@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/ImageArray.h"
+#include "deprecated_msgs/ImageArray.h"
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
 #include "CvStereoCamModel.h"

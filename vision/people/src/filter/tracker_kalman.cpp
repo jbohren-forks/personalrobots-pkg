@@ -153,7 +153,7 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerKalman::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
+bool TrackerKalman::updateCorrection(const tf::Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
     assert(cov.columns() == 3);
 

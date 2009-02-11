@@ -41,7 +41,7 @@ namespace cloud_io
     * \param precision the specified output numeric stream precision
     */
   int
-    savePCDFile (const char* file_name, std_msgs::PointCloud points, int precision)
+    savePCDFile (const char* file_name, robot_msgs::PointCloud points, int precision)
   {
     std::ofstream fs;
     fs.precision (precision);

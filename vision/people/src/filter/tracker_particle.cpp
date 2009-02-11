@@ -55,7 +55,7 @@ namespace estimation
     prior_(num_particles),
     filter_(NULL),
     sys_model_(sysnoise),
-    meas_model_(Vector3(0.1,0.1,0.1)),
+    meas_model_(tf::Vector3(0.1,0.1,0.1)),
     tracker_initialized_(false),
     num_particles_(num_particles)
   {};
@@ -79,7 +79,7 @@ namespace estimation
     vector<Sample<StatePosVel> > prior_samples(num_particles_);
     gauss_pos_vel.SampleFrom(prior_samples, num_particles_, CHOLESKY, NULL);
     prior_.ListOfSamplesSet(prior_samples);
-    filter_ = new BootstrapFilter<StatePosVel, Vector3>(&prior_, &prior_, 0, num_particles_/4.0);
+    filter_ = new BootstrapFilter<StatePosVel, tf::Vector3>(&prior_, &prior_, 0, num_particles_/4.0);
 
     // tracker initialized
     tracker_initialized_ = true;
@@ -110,7 +110,7 @@ namespace estimation
 
 
   // update filter correction
-  bool TrackerParticle::updateCorrection(const Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
+  bool TrackerParticle::updateCorrection(const tf::Vector3&  meas, const MatrixWrapper::SymmetricMatrix& cov)
   {
     assert(cov.columns() == 3);
 
@@ -126,7 +126,7 @@ namespace estimation
 
 
   // get evenly spaced particle cloud
-  void TrackerParticle::getParticleCloud(const tf::Vector3& step, double threshold, std_msgs::PointCloud& cloud) const
+  void TrackerParticle::getParticleCloud(const tf::Vector3& step, double threshold, robot_msgs::PointCloud& cloud) const
   {
     ((MCPdfPosVel*)(filter_->PostGet()))->getParticleCloud(step, threshold, cloud);
   };

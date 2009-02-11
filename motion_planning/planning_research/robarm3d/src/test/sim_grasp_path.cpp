@@ -39,7 +39,7 @@
 #include <ros/node.h>
 #include <cmath>
 #include <std_msgs/Float64.h>
-#include <std_msgs/PoseWithRatesStamped.h>
+#include <robot_msgs/PoseWithRatesStamped.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include "robot_msgs/MechanismState.h"
@@ -136,7 +136,7 @@ std::vector<std::vector<float> > ReadTrajectoryFile(FILE* fCfg)
 class gnd_truth
 {
   public:
-    std_msgs::PoseWithRatesStamped gripper; 
+    robot_msgs::PoseWithRatesStamped gripper; 
     void doNothing() {}
 };
 

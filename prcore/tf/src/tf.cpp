@@ -879,8 +879,8 @@ void Transformer::transformPose(const std::string& target_frame, const ros::Time
 
 /*
 void Transformer::transformTransform(const std::string& target_frame,
-                                  const std_msgs::TransformStamped& msg_in,
-                                  std_msgs::TransformStamped& msg_out)
+                                  const robot_msgs::TransformStamped& msg_in,
+                                  robot_msgs::TransformStamped& msg_out)
 {
   Stamped<Transform> pin, pout;
   TransformStampedMsgToTF(msg_in, pin);

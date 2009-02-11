@@ -32,7 +32,7 @@
 #include <vector>
 #include <list>
 
-using namespace std_msgs ;
+using namespace robot_msgs ;
 using namespace point_cloud_utils ;
 using namespace std ;
 

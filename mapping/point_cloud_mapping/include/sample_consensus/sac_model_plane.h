@@ -69,7 +69,7 @@ namespace sample_consensus
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
 
-      virtual std_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
+      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
 
       virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
       virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);

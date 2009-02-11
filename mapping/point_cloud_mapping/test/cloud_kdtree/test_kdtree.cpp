@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 #include "cloud_kdtree/kdtree.h"
 
@@ -41,7 +41,7 @@ using namespace cloud_kdtree;
 
 TEST (CloudKdTree, CreateDestroy)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
 
   // Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);
@@ -57,7 +57,7 @@ TEST (CloudKdTree, CreateDestroy)
 TEST (CloudKdTree, Search)
 {
   bool state;
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   std::vector<int> indices;
   std::vector<double> distances;
 

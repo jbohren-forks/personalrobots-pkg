@@ -46,12 +46,12 @@
 
 #include <fstream>
 
-#include <std_msgs/PointStamped.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointStamped.h>
+#include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class BagToPcd: public ros::Node
 {

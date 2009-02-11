@@ -50,7 +50,7 @@ namespace cloud_io
   * \param points the resulting point array
   */
   int
-    loadPCDFile (const char* file_name, std_msgs::PointCloud &points)
+    loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
   {
     int nr_points = 0;
     std::ifstream fs;

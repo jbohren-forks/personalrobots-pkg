@@ -34,7 +34,7 @@
 
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Planner2DGoal.h"
-#include "std_msgs/Polyline2D.h"
+#include "robot_msgs/Polyline2D.h"
 #include "deprecated_msgs/Pose2DFloat32.h"
 #include "robot_srvs/StaticMap.h"
 
@@ -189,7 +189,7 @@ protected:
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine( Ogre::ManualObject*& object, std_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
+  void createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
 
   void createTransientObject();
 
@@ -208,12 +208,12 @@ protected:
 
   robot_msgs::ParticleCloud cloud_;
   robot_msgs::Planner2DGoal goal_;
-  std_msgs::Polyline2D path_line_;
-  std_msgs::Polyline2D local_path_;
-  std_msgs::Polyline2D robot_footprint_;
-  std_msgs::Polyline2D laser_scan_;
-  std_msgs::Polyline2D inflated_obstacles_;
-  std_msgs::Polyline2D raw_obstacles_;
+  robot_msgs::Polyline2D path_line_;
+  robot_msgs::Polyline2D local_path_;
+  robot_msgs::Polyline2D robot_footprint_;
+  robot_msgs::Polyline2D laser_scan_;
+  robot_msgs::Polyline2D inflated_obstacles_;
+  robot_msgs::Polyline2D raw_obstacles_;
 
   Ogre::ManualObject* map_object_;
   Ogre::MaterialPtr map_material_;

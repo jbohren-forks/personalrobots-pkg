@@ -35,7 +35,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 #include <std_msgs/Empty.h>
 
 /*! \file
@@ -55,8 +55,8 @@ class SmartScan;
 class ScanListenNode : public ros::Node
 {
  private:
-	std_msgs::PointCloud mNewCloud,mLastCloud;
-	std_msgs::PointCloud mNewLine,mCurrentCloud;
+	robot_msgs::PointCloud mNewCloud,mLastCloud;
+	robot_msgs::PointCloud mNewLine,mCurrentCloud;
 	std_msgs::Empty mEmptyMsg;
 
 	boost::mutex mMutex;
@@ -65,7 +65,7 @@ class ScanListenNode : public ros::Node
 	void cloudCallback();
 	void shutterCallback();
 
-	SmartScan* getScan(const std_msgs::PointCloud &cloud);
+	SmartScan* getScan(const robot_msgs::PointCloud &cloud);
 
  public:
 	ScanListenNode();

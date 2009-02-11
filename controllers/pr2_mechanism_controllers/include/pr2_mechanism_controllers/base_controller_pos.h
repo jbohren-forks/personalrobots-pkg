@@ -56,7 +56,7 @@
 #include <newmat10/newmatap.h>
 
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <pr2_msgs/Odometer.h>
 #include <pr2_msgs/Covariance2D.h>
 
@@ -481,7 +481,7 @@ namespace controller
      * \brief deal with cmd_vel command from 2dnav stack
      */
     void CmdBaseVelReceived();
-    std_msgs::PoseDot baseVelMsg;
+    robot_msgs::PoseDot baseVelMsg;
 
     /*!
      * \brief mutex lock for setting and getting ros messages
@@ -489,7 +489,7 @@ namespace controller
     boost::mutex ros_lock_;
 
     /*!
-     * \brief std_msgs representation of an odometry message
+     * \brief deprecated_msgs representation of an odometry message
      */
     deprecated_msgs::RobotBase2DOdom odom_msg_;
 

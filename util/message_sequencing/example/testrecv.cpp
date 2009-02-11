@@ -1,11 +1,11 @@
 #include "ros/node.h"
-#include "std_msgs/PointStamped.h"
+#include "robot_msgs/PointStamped.h"
 #include "message_sequencing/time_sequencer.h"
 
 class TestRecv : public ros::Node
 {
 
-  message_sequencing::TimeSequencer<std_msgs::PointStamped> ts;
+  message_sequencing::TimeSequencer<robot_msgs::PointStamped> ts;
 
 public:
 
@@ -18,12 +18,12 @@ public:
 
   }
 
-  void sequencedCb(const boost::shared_ptr<std_msgs::PointStamped>& message)
+  void sequencedCb(const boost::shared_ptr<robot_msgs::PointStamped>& message)
   {
     printf("Got a stamped point from %f with: %f %f %f (%f late)\n", message->header.stamp.toSec(), message->point.x, message->point.y, message->point.z, (ros::Time::now() - message->header.stamp).toSec());
   }
 
-  void droppedCb(const boost::shared_ptr<std_msgs::PointStamped>& message)
+  void droppedCb(const boost::shared_ptr<robot_msgs::PointStamped>& message)
   {
     printf("Dropped a stamped point from %f with: %f %f %f\n", message->header.stamp.toSec(), message->point.x, message->point.y, message->point.z);
   }

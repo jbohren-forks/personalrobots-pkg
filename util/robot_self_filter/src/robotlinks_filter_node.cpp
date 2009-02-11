@@ -30,7 +30,7 @@
 #include <cstdio>
 
 #include <ros/node.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 #include <tf/transform_listener.h>
 
 #include <openrave-core.h>
@@ -121,7 +121,7 @@ public:
             ROS_ERROR("failed to init robot %s", robotname.c_str());
 
         s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 2);
-        s_pmasternode->advertise<std_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
+        s_pmasternode->advertise<robot_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
     }
     virtual ~RobotLinksFilter()
     {
@@ -236,7 +236,7 @@ private:
 
     /// prune all the points that are inside the convex hulls of the robot links
     /// Uses a different timestamp for every laser point cloud
-    void PruneWithAccurateTiming(const std_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
+    void PruneWithAccurateTiming(const robot_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         int istampchan = 0;
         while(istampchan < (int)pointcloudin.chan.size()) {
@@ -313,7 +313,7 @@ private:
 
     /// prune all the points that are inside the convex hulls of the robot links
     /// Uses the header timestamp for all laser point clouds
-    void PruneWithSimpleTiming(const std_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
+    void PruneWithSimpleTiming(const robot_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         tf::Stamped<btTransform> bttransform;
         vlaserpoints.resize(0);
@@ -423,7 +423,7 @@ private:
 
     vector<LINK> _vLinkHulls;
     boost::shared_ptr<tf::TransformListener> _tf;
-    std_msgs::PointCloud _pointcloudin, _pointcloudout;
+    robot_msgs::PointCloud _pointcloudin, _pointcloudout;
     vector<LASERPOINT> _vlaserpoints;
     string _robotname;
     dReal _convexpadding;

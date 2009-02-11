@@ -34,7 +34,7 @@
 #define _CLOUD_GEOMETRY_PROJECTIONS_H_
 
 // ROS includes
-#include <std_msgs/Point32.h>
+#include <robot_msgs/Point32.h>
 
 namespace cloud_geometry
 {
@@ -49,7 +49,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointToPlane (std_msgs::Point32 *p, std_msgs::Point32 &q, std::vector<double> *plane_coefficients)
+      pointToPlane (robot_msgs::Point32 *p, robot_msgs::Point32 &q, std::vector<double> *plane_coefficients)
     {
       double distance = plane_coefficients->at (0) * p->x +
                         plane_coefficients->at (1) * p->y +
@@ -69,7 +69,7 @@ namespace cloud_geometry
       * \param distance the computed distance from p to the plane
       */
     inline void
-      pointToPlane (std_msgs::Point32 *p, std_msgs::Point32 &q, std::vector<double> *plane_coefficients,
+      pointToPlane (robot_msgs::Point32 *p, robot_msgs::Point32 &q, std::vector<double> *plane_coefficients,
                     double &distance)
     {
       distance = plane_coefficients->at (0) * p->x +

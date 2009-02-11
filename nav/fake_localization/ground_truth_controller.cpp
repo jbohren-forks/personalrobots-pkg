@@ -35,8 +35,8 @@
 
 #include <ros/node.h>
 #include <ros/time.h>
-#include <std_msgs/PoseWithRatesStamped.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseWithRatesStamped.h>
+#include <robot_msgs/PoseDot.h>
 #include "control_toolbox/base_position_pid.h"
 #include "tf/transform_datatypes.h"
 
@@ -48,12 +48,12 @@ namespace fake_localization
 class GroundTruthController : public ros::Node
 {
 public:
-  std_msgs::PoseWithRatesStamped  m_ground_truth_ ;                     //!< Message on which we receive ground truth info
+  robot_msgs::PoseWithRatesStamped  m_ground_truth_ ;                     //!< Message on which we receive ground truth info
   control_toolbox::BasePositionPid base_position_pid_ ;                 //!< Does the PID math for controlling the robot
   tf::Vector3 xyt_target_ ;                                             //!< The ground truth pose we want to acheive
   bool first_time_ ;
   ros::Time prev_time_ ;
-  std_msgs::Point cmd_ ;
+  robot_msgs::Point cmd_ ;
   
   GroundTruthController() : ros::Node("ground_truth_controller")
   {
@@ -73,7 +73,7 @@ public:
     subscribe("base_pose_ground_truth", m_ground_truth_, &GroundTruthController::updateControl, 1) ;
     subscribe("~set_cmd", cmd_, &GroundTruthController::setCommandCallback, this, 10) ;
 
-    advertise<std_msgs::PoseDot>("cmd_vel", 1) ;
+    advertise<robot_msgs::PoseDot>("cmd_vel", 1) ;
     
     // Initialize the BasePositionPid util via xml
     TiXmlDocument xml ;
@@ -130,7 +130,7 @@ public:
     tf::Vector3 vel_cmd ;
     vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed.toSec()) ;
 
-    std_msgs::PoseDot base_vel ;
+    robot_msgs::PoseDot base_vel ;
     base_vel.vel.vx = vel_cmd.x() ;
     base_vel.vel.vy = vel_cmd.y() ;
     base_vel.ang_vel.vz = vel_cmd.z() ;

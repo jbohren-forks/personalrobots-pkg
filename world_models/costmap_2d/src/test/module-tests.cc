@@ -89,7 +89,7 @@ TEST(costmap, testResetForStaticMap){
   CostMap2D map(10, 10, staticMap, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,	3, 3, 3, 1, 100.0, 100.0, 3.0);
 
   // Populate the cost map with a wall around the perimeter. Free space should clear out the room.
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(40);
 
   // Left wall
@@ -121,7 +121,7 @@ TEST(costmap, testResetForStaticMap){
   }
 
   double wx = 5.0, wy = 5.0;
-  std_msgs::Point p;
+  robot_msgs::Point p;
   p.x = wx;
   p.y = wy;
   p.z = MAX_Z;
@@ -192,7 +192,7 @@ TEST(costmap, test15){
   // Initially it should be false
   ASSERT_EQ(buffer.isCurrent(), false);
 
-  std_msgs::Point origin; // Map origin
+  robot_msgs::Point origin; // Map origin
   origin.x = 0;
   origin.y = 0;
   origin.z = 0;
@@ -200,7 +200,7 @@ TEST(costmap, test15){
   ros::Time epoch; // Beginning of time
 
   // Buffer a point cloud with a time stamp that is very old. It should still not be current
-  std_msgs::PointCloud* p0 = new std_msgs::PointCloud();
+  robot_msgs::PointCloud* p0 = new robot_msgs::PointCloud();
   p0->set_pts_size(1);
   p0->pts[0].x = 50;
   p0->pts[0].y = 50;
@@ -213,7 +213,7 @@ TEST(costmap, test15){
   ASSERT_EQ(buffer.isCurrent(), true);
 
   // Now buffer another which has a current time stamp
-  std_msgs::PointCloud* p1 = new std_msgs::PointCloud();
+  robot_msgs::PointCloud* p1 = new robot_msgs::PointCloud();
   p1->set_pts_size(1);
   p1->pts[0].x = 50;
   p1->pts[0].y = 50;
@@ -243,7 +243,7 @@ TEST(costmap, test14){
   ASSERT_EQ(map.getCircumscribedCostLowerBound(), c);
 
   // Add a point in the center
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 50;
   cloud.pts[0].y = 50;
@@ -316,7 +316,7 @@ TEST(costmap, test12){
 
 
   // Lay out 3 obstacles in a line - along the diagonal, separated by a cell.
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(3);
   cloud.pts[0].x = 3;
   cloud.pts[0].y = 3;
@@ -342,7 +342,7 @@ TEST(costmap, test0){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
   // Add a point cloud and verify its insertion. There should be only one new one
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 0;
   cloud.pts[0].y = 0;
@@ -421,7 +421,7 @@ TEST(costmap, test3){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
 
   // Add a point cloud and verify its insertion. There should be only one new one
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(3);
   cloud.pts[0].x = 0;
   cloud.pts[0].y = 0;
@@ -451,7 +451,7 @@ TEST(costmap, test4){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
 
   // A point cloud with one point that falls within an existing obstacle
-  std_msgs::PointCloud cloud;
+  robot_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 7;
   cloud.pts[0].y = 2;
@@ -469,7 +469,7 @@ TEST(costmap, test6){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z);
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
-  std_msgs::PointCloud c0;
+  robot_msgs::PointCloud c0;
   c0.set_pts_size(2);
   c0.pts[0].x = 0;
   c0.pts[0].y = 5;
@@ -517,7 +517,7 @@ TEST(costmap, test7){
 
   // Set an obstacle at the origin and observe insertions for it and its neighbors
   std::vector<unsigned int> updates;
-  std_msgs::PointCloud c0;
+  robot_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 0;
   c0.pts[0].y = 0;
@@ -529,7 +529,7 @@ TEST(costmap, test7){
 
   // @todo Rewrite 
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
-  std_msgs::PointCloud c1;
+  robot_msgs::PointCloud c1;
   c1.set_pts_size(1);
   c1.pts[0].x = 2;
   c1.pts[0].y = 0;
@@ -543,8 +543,8 @@ TEST(costmap, test7){
 
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
-  std::vector<std_msgs::PointCloud*> cv2;
-  std_msgs::PointCloud c2;
+  std::vector<robot_msgs::PointCloud*> cv2;
+  robot_msgs::PointCloud c2;
   cv2.push_back(&c2);
   c2.set_pts_size(1);
   c2.pts[0].x = 1;
@@ -556,8 +556,8 @@ TEST(costmap, test7){
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
-  std::vector<std_msgs::PointCloud*> cv3;
-  std_msgs::PointCloud c3;
+  std::vector<robot_msgs::PointCloud*> cv3;
+  robot_msgs::PointCloud c3;
   cv3.push_back(&c3);
   c3.set_pts_size(1);
   c3.pts[0].x = 0;
@@ -577,7 +577,7 @@ TEST(costmap, test8){
   std::vector<unsigned int> updates;
 
   // Creat a small L-Shape all at once
-  std_msgs::PointCloud c0;
+  robot_msgs::PointCloud c0;
   c0.set_pts_size(3);
   c0.pts[0].x = 1;
   c0.pts[0].y = 1;
@@ -615,7 +615,7 @@ TEST(costmap, test9){
   ASSERT_EQ(ids.size(), 0);
 
   // Add an obstacle at 5,5
-  std_msgs::PointCloud c0;
+  robot_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 5;
   c0.pts[0].y = 5;
@@ -680,7 +680,7 @@ TEST(costmap, test11){
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <8, 8> to be free
-  std_msgs::PointCloud c0;
+  robot_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
   c0.pts[0].y = 9.5;
@@ -791,8 +791,8 @@ TEST(costmap, test17){
 
 
   //Add a dynamic obstacle
-  std::vector<std_msgs::PointCloud*> cv2;
-  std_msgs::PointCloud c2;
+  std::vector<robot_msgs::PointCloud*> cv2;
+  robot_msgs::PointCloud c2;
   cv2.push_back(&c2);
   c2.set_pts_size(3);
   //Dynamic obstacle that raytaces.
@@ -829,8 +829,8 @@ TEST(costmap, test17){
     ASSERT_EQ(map.getCost(i / 10, i % 10), MAP_HALL_CHAR_TEST[i]);
   }
 
-  std::vector<std_msgs::PointCloud*> cv;
-  std_msgs::PointCloud c;
+  std::vector<robot_msgs::PointCloud*> cv;
+  robot_msgs::PointCloud c;
   cv.push_back(&c);
   c.set_pts_size(1);
   //Dynamic obstacle that raytaces the one at (3.0, 4.0).

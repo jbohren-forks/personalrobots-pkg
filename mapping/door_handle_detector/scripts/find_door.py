@@ -45,8 +45,7 @@ import os
 import string
 
 import rospy
-from std_msgs.msg import Point32
-from robot_msgs.msg import Door
+from robot_msgs.msg import Door, Point, Point32
 from door_handle_detector.srv import DoorDetector
 
 

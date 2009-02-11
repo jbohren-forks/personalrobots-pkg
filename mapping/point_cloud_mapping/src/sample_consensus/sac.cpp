@@ -37,10 +37,10 @@ using namespace sample_consensus;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief return the point cloud representing a set of given indices.
   * \param indices a set of indices that represent the data that we're interested in */
-std_msgs::PointCloud
+robot_msgs::PointCloud
   SAC::getPointCloud (std::vector<int> indices)
 {
-  std_msgs::PointCloud i_points;
+  robot_msgs::PointCloud i_points;
 
   // Allocate enough space
   i_points.pts.resize (indices.size ());

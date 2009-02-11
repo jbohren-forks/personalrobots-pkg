@@ -87,7 +87,7 @@ namespace robot_filter {
   public:
     void loadRobotDescription();
     void waitForState();
-    std_msgs::PointCloud* filter(const std_msgs::PointCloud &cloud);
+    robot_msgs::PointCloud* filter(const robot_msgs::PointCloud &cloud);
 
     RobotFilter(ros::Node* node, std::string robot_model_name, bool verbose, double bodyPartScale);
     ~RobotFilter();

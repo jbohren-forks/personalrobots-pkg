@@ -103,8 +103,8 @@ namespace costmap_2d {
   {
   public:
 
-    static std::vector<std_msgs::PointCloud*> toVector(std_msgs::PointCloud& cloud){
-      std::vector<std_msgs::PointCloud*> v;
+    static std::vector<robot_msgs::PointCloud*> toVector(robot_msgs::PointCloud& cloud){
+      std::vector<robot_msgs::PointCloud*> v;
       v.push_back(&cloud);
       return v;
     }
@@ -138,7 +138,7 @@ namespace costmap_2d {
     virtual ~CostMap2D();
 
     // Hack for backward compatability
-    void updateDynamicObstacles(std_msgs::PointCloud& cloud,
+    void updateDynamicObstacles(robot_msgs::PointCloud& cloud,
 				std::vector<unsigned int>& updates){
       updateDynamicObstacles(0, 0, toVector(cloud), updates);
     }
@@ -151,7 +151,7 @@ namespace costmap_2d {
      * @param updates holds the updated cell ids and values
      */
     void updateDynamicObstacles(double wx, double wy,
-				const std::vector<std_msgs::PointCloud*>& clouds,
+				const std::vector<robot_msgs::PointCloud*>& clouds,
 				std::vector<unsigned int>& updates);
     /**
      * @brief Updates dynamic obstacles
@@ -160,7 +160,7 @@ namespace costmap_2d {
      * @param clouds holds projected scan data
      */
     void updateDynamicObstacles(double wx, double wy,
-				const std::vector<std_msgs::PointCloud*>& clouds);
+				const std::vector<robot_msgs::PointCloud*>& clouds);
 
     /**
      * @brief Updates dynamic obstacles based on a buffer of observations
@@ -207,7 +207,7 @@ namespace costmap_2d {
      * @param The origin from which to trace out
      * @param The target in map co-ordinates to trace to
      */ 
-    void updateFreeSpace(const std_msgs::Point& origin, double wx, double wy);
+    void updateFreeSpace(const robot_msgs::Point& origin, double wx, double wy);
 
     /**
      * @brief Simple test for a cell having been marked during current propaagtion

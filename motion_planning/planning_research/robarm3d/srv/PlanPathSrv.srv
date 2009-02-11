@@ -1,4 +1,4 @@
 robot_msgs/JointTrajPoint start
-std_msgs/Point goal
+robot_msgs/Point goal
 ---
 robot_msgs/JointTraj traj

@@ -34,9 +34,9 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <std_msgs/Quaternion.h>
+#include <robot_msgs/Quaternion.h>
 #include <iostream>
 #include <fstream>
 
@@ -50,7 +50,7 @@ void finalize(int donecare)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Return the rotation in Euler angles
-libTF::Vector GetAsEuler(std_msgs::Quaternion quat)
+libTF::Vector GetAsEuler(robot_msgs::Quaternion quat)
 {
   libTF::Vector vec;
 
@@ -112,7 +112,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  std_msgs::PoseDot cmd;
+  robot_msgs::PoseDot cmd;
   cmd.vel.vx = 0;
   cmd.vel.vy = 0;
   cmd.vel.vz = 0;
@@ -144,7 +144,7 @@ int main( int argc, char** argv )
      file_num = atoi(argv[5]);
   }
 
-  node->advertise<std_msgs::PoseDot>("cmd_vel",10);
+  node->advertise<robot_msgs::PoseDot>("cmd_vel",10);
   sleep(1);
 
   libTF::Vector ang_rates;

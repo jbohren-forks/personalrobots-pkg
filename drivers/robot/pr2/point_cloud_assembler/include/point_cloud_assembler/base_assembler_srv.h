@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 #include <deque>
 
@@ -87,7 +87,7 @@ public:
    * \param scan_in The scan that we want to convert
    * \param cloud_out The result of transforming scan_in into a cloud in frame fixed_frame_id
    */
-  virtual void ConvertToCloud(const std::string& fixed_frame_id, const T& scan_in, std_msgs::PointCloud& cloud_out) = 0 ;
+  virtual void ConvertToCloud(const std::string& fixed_frame_id, const T& scan_in, robot_msgs::PointCloud& cloud_out) = 0 ;
 
 protected:
   tf::TransformListener* tf_ ;
@@ -103,7 +103,7 @@ private:
   tf::MessageNotifier<T>* scan_notifier_ ;
 
   //! \brief Stores history of scans
-  std::deque<std_msgs::PointCloud> scan_hist_ ;
+  std::deque<robot_msgs::PointCloud> scan_hist_ ;
   boost::mutex scan_hist_mutex_ ;
 
   //! \brief The number points currently in the scan history
@@ -182,7 +182,7 @@ void BaseAssemblerSrv<T>::scansCallback(const boost::shared_ptr<T>& scan_ptr)
 {
   const T scan = *scan_ptr ;
 
-  std_msgs::PointCloud cur_cloud ;
+  robot_msgs::PointCloud cur_cloud ;
 
   // Convert the scan data into a universally known datatype: PointCloud
   try

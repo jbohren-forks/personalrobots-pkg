@@ -1,2 +1,2 @@
-std_msgs/Vector3 v
+robot_msgs/Vector3 v
 ---

@@ -59,7 +59,7 @@ public:
   void sendTransform(const Stamped<Transform> & transform)
   {
     tfMessage message;
-    std_msgs::TransformStamped msgtf;
+    robot_msgs::TransformStamped msgtf;
     TransformStampedTFToMsg(transform, msgtf);
     msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
     msgtf.parent_id = tf::remap(tf_prefix_, msgtf.parent_id);
@@ -71,7 +71,7 @@ public:
   void sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id)
   {
     tfMessage message;
-    std_msgs::TransformStamped msgtf;
+    robot_msgs::TransformStamped msgtf;
     msgtf.header.stamp = time;
     msgtf.header.frame_id = frame_id;
     msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);

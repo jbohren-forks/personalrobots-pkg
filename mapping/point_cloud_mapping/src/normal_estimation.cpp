@@ -43,8 +43,8 @@ moment invariants, etc.
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/PointStamped.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/PointStamped.h>
 
 #include <tf/transform_listener.h>
 
@@ -61,7 +61,7 @@ moment invariants, etc.
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class NormalEstimation : public ros::Node
 {

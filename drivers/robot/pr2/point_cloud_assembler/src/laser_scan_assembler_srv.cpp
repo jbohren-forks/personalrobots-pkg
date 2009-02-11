@@ -39,7 +39,7 @@
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
-using namespace std_msgs;
+using namespace robot_msgs;
 using namespace laser_scan;
 using namespace std ;
 

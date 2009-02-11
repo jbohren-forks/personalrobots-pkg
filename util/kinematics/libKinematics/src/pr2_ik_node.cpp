@@ -176,7 +176,7 @@ bool LibKinematicsNode::init()
 
 bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp)
 {
-  std_msgs::Pose pose;
+  robot_msgs::Pose pose;
   pose = req.pose;
 
   tf::Pose tf_pose;

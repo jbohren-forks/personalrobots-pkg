@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 
 #include <sample_consensus/sac.h>
 #include <sample_consensus/lmeds.h>
@@ -47,7 +47,7 @@ using namespace sample_consensus;
 
 TEST (LMedS, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);
@@ -127,7 +127,7 @@ TEST (LMedS, SACModelCylinder)
 
 TEST (RANSAC, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);
@@ -207,7 +207,7 @@ TEST (RANSAC, SACModelCylinder)
 
 TEST (MSAC, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);
@@ -287,7 +287,7 @@ TEST (MSAC, SACModelCylinder)
 
 TEST (MLESAC, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);
@@ -367,7 +367,7 @@ TEST (MLESAC, SACModelCylinder)
 
 TEST (RRANSAC, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);
@@ -448,7 +448,7 @@ TEST (RRANSAC, SACModelCylinder)
 
 TEST (RMSAC, SACModelCylinder)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (20);
 
   points.set_chan_size (3);

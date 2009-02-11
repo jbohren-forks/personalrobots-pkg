@@ -3,14 +3,14 @@
 #include <math.h>
 #include "ros/node.h"
 #include "joy/Joy.h"
-#include "std_msgs/PoseDot.h"
+#include "robot_msgs/PoseDot.h"
 
 using namespace ros;
 
 class TeleopBase : public Node
 {
    public:
-      std_msgs::PoseDot cmd, cmd_passthrough;
+      robot_msgs::PoseDot cmd, cmd_passthrough;
       joy::Joy joy;
       double req_vx, req_vy, req_vw, max_vx, max_vy, max_vw;
       int axis_vx, axis_vy, axis_vw;
@@ -41,7 +41,7 @@ class TeleopBase : public Node
          printf("deadman_button: %d\n", deadman_button);
          printf("passthrough_button: %d\n", passthrough_button);
 
-         advertise<std_msgs::PoseDot>("cmd_vel", 1);
+         advertise<robot_msgs::PoseDot>("cmd_vel", 1);
          subscribe("joy", joy, &TeleopBase::joy_cb, 1);
          subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb, 1);
          printf("done with ctor\n");

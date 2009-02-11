@@ -32,7 +32,7 @@
 #ifndef TF_TRANSFORMLISTENER_H
 #define TF_TRANSFORMLISTENER_H
 
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 #include "std_msgs/Empty.h"
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
@@ -83,44 +83,44 @@ public:
 
 
   /** \brief Transform a Stamped Quaternion Message into the target frame */
-  void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped& stamped_in, std_msgs::QuaternionStamped& stamped_out);
+  void transformQuaternion(const std::string& target_frame, const robot_msgs::QuaternionStamped& stamped_in, robot_msgs::QuaternionStamped& stamped_out);
   /** \brief Transform a Stamped Vector Message into the target frame */
-  void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped& stamped_in, std_msgs::Vector3Stamped& stamped_out);
+  void transformVector(const std::string& target_frame, const robot_msgs::Vector3Stamped& stamped_in, robot_msgs::Vector3Stamped& stamped_out);
   /** \brief Transform a Stamped Point Message into the target frame */
-  void transformPoint(const std::string& target_frame, const std_msgs::PointStamped& stamped_in, std_msgs::PointStamped& stamped_out);
+  void transformPoint(const std::string& target_frame, const robot_msgs::PointStamped& stamped_in, robot_msgs::PointStamped& stamped_out);
   /** \brief Transform a Stamped Pose Message into the target frame */
-  void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
+  void transformPose(const std::string& target_frame, const robot_msgs::PoseStamped& stamped_in, robot_msgs::PoseStamped& stamped_out);
 
 
   /** \brief Transform a Stamped Quaternion Message into the target frame*/
   void transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
-                           const std_msgs::QuaternionStamped& qin,
-                           const std::string& fixed_frame, std_msgs::QuaternionStamped& qout);
+                           const robot_msgs::QuaternionStamped& qin,
+                           const std::string& fixed_frame, robot_msgs::QuaternionStamped& qout);
   /** \brief Transform a Stamped Vector Message into the target frame and time */
   void transformVector(const std::string& target_frame, const ros::Time& target_time,
-                       const std_msgs::Vector3Stamped& vin,
-                           const std::string& fixed_frame, std_msgs::Vector3Stamped& vout);
+                       const robot_msgs::Vector3Stamped& vin,
+                           const std::string& fixed_frame, robot_msgs::Vector3Stamped& vout);
   /** \brief Transform a Stamped Point Message into the target frame and time  */
   void transformPoint(const std::string& target_frame, const ros::Time& target_time,
-                           const std_msgs::PointStamped& pin,
-                           const std::string& fixed_frame, std_msgs::PointStamped& pout);
+                           const robot_msgs::PointStamped& pin,
+                           const std::string& fixed_frame, robot_msgs::PointStamped& pout);
   /** \brief Transform a Stamped Pose Message into the target frame and time  */
   void transformPose(const std::string& target_frame, const ros::Time& target_time,
-                     const std_msgs::PoseStamped& pin,
-                     const std::string& fixed_frame, std_msgs::PoseStamped& pout);
+                     const robot_msgs::PoseStamped& pin,
+                     const std::string& fixed_frame, robot_msgs::PoseStamped& pout);
 
 
-  /** \brief Transform a std_msgs::PointCloud natively */
-    void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
+  /** \brief Transform a robot_msgs::PointCloud natively */
+    void transformPointCloud(const std::string& target_frame, const robot_msgs::PointCloud& pcin, robot_msgs::PointCloud& pcout);
 
-  /** @brief Transform a std_msgs::PointCloud in space and time */
+  /** @brief Transform a robot_msgs::PointCloud in space and time */
   void transformPointCloud(const std::string& target_frame, const ros::Time& target_time,
-                           const std_msgs::PointCloud& pcin,
-                           const std::string& fixed_frame, std_msgs::PointCloud& pcout);
+                           const robot_msgs::PointCloud& pcin,
+                           const std::string& fixed_frame, robot_msgs::PointCloud& pcout);
 
 
 
-    ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout);
+    ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const robot_msgs::LaserScan& scan_in, robot_msgs::PointCloud& pcout);
 
   bool getFrames(tf::FrameGraph::Request& req, tf::FrameGraph::Response& res)
   {
@@ -131,12 +131,12 @@ public:
 private:
   /// memory space for callback
   tfMessage msg_in_;
-  ///\todo Switch to std_msgs::Transform
+  ///\todo Switch to robot_msgs::Transform
   /// Callback function for ros message subscriptoin
   void subscription_callback();
 
   /** @brief a helper function to be used for both transfrom pointCloud methods */
-  void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
+  void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const robot_msgs::PointCloud& pcin, robot_msgs::PointCloud& pcout);
 
   /// clear the cached data
   void reset_callback(){clear();};

@@ -88,7 +88,7 @@ Publishes to (name / type):
 // Messages that I need
 #include <deprecated_msgs/RobotBase2DOdom.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <robot_msgs/BatteryState.h>
 
 #define PLAYER_QUEUE_LEN 32
@@ -103,7 +103,7 @@ class ErraticNode: public ros::Node
     QueuePointer q;
 
     deprecated_msgs::RobotBase2DOdom odom;
-    std_msgs::PoseDot cmdvel;
+    robot_msgs::PoseDot cmdvel;
 
     tf::TransformBroadcaster tf;
   

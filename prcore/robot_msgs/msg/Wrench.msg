@@ -1,3 +1,3 @@
 Header header
-std_msgs/Point  force
-std_msgs/Point  torque
+robot_msgs/Point  force
+robot_msgs/Point  torque

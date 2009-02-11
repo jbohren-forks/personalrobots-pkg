@@ -1,4 +1,4 @@
 time begin
 time end
 ---
-std_msgs/PointCloud cloud
+robot_msgs/PointCloud cloud

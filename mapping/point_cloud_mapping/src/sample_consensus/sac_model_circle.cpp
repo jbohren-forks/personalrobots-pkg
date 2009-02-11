@@ -159,7 +159,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a 2D circle model
     * \todo implement this.
     */
-  std_msgs::PointCloud
+  robot_msgs::PointCloud
     SACModelCircle2D::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
   {
     std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
@@ -188,7 +188,7 @@ namespace sample_consensus
   {
     model_coefficients_.resize (3);
 
-    std_msgs::Point32 u, v, m;
+    robot_msgs::Point32 u, v, m;
     u.x = ( cloud_->pts.at (indices.at (0)).x + cloud_->pts.at (indices.at (1)).x ) / 2;
     u.y = ( cloud_->pts.at (indices.at (1)).x + cloud_->pts.at (indices.at (2)).x ) / 2;
 

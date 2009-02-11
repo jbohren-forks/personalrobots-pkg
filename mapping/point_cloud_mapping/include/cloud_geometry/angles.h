@@ -34,11 +34,10 @@
 #define _CLOUD_GEOMETRY_ANGLES_H_
 
 // ROS includes
-#include <std_msgs/Point32.h>
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Point2DFloat32.h>
-#include <std_msgs/Polygon3D.h>
-#include <std_msgs/Polyline2D.h>
+#include <robot_msgs/Point32.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Polygon3D.h>
+#include <robot_msgs/Polyline2D.h>
 
 #include <cloud_geometry/point.h>
 #include <cloud_geometry/nearest.h>
@@ -87,7 +86,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (std_msgs::Point32 *v1, std_msgs::Point32 *v2)
+      getAngle3D (robot_msgs::Point32 *v1, robot_msgs::Point32 *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);

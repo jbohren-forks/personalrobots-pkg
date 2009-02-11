@@ -40,13 +40,13 @@
 #include <vector>
 
 //The messages that we'll use
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <trajectory_rollout/ScoreMap2D.h>
 #include <trajectory_rollout/WavefrontPlan.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 //for GUI debugging
-#include <std_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline2D.h>
 #include <std_msgs/Point2DFloat32.h>
 
 
@@ -161,8 +161,8 @@ namespace trajectory_rollout {
       deprecated_msgs::RobotBase2DOdom odom_msg_;
 
       //outgoing messages
-      std_msgs::Polyline2D poly_line_msg_;
-      std_msgs::PoseDot cmd_vel_msg_;
+      robot_msgs::Polyline2D poly_line_msg_;
+      robot_msgs::PoseDot cmd_vel_msg_;
 
       //since both odomReceived and processPlan access robot_vel we need to lock
       boost::mutex vel_lock;
@@ -177,8 +177,8 @@ namespace trajectory_rollout {
       double cycle_time_;
 
       //for debugging output
-      std_msgs::Polyline2D path_msg;
-      std_msgs::Polyline2D footprint_msg;
+      robot_msgs::Polyline2D path_msg;
+      robot_msgs::Polyline2D footprint_msg;
 
 
   };

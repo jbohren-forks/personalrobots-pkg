@@ -4,7 +4,7 @@
 #include "ROSAdapter.hh"
 
 // State Update messages
-#include <std_msgs/RobotBase2DOdom.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 
 namespace TREX {
 
@@ -18,7 +18,7 @@ namespace TREX {
     virtual void handleCallback();
     virtual void registerSubscribers();
     virtual void getObservations(std::vector<Observation*>& obsBuffer);
-    std_msgs::RobotBase2DOdom m_msgRobotBase2DOdom;
+    deprecated_msgs::RobotBase2DOdom m_msgRobotBase2DOdom;
   };
 }
 #endif

@@ -84,7 +84,7 @@ void RosF3D::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName", "", 1);
 
   std::cout << "==== topic name for RosF3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Vector3Stamped>(this->topicName,10);
+  rosnode->advertise<robot_msgs::Vector3Stamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

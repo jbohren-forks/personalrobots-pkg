@@ -42,9 +42,9 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Polygon3D.h>
-#include <std_msgs/PolygonalMap.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Polygon3D.h>
+#include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
 #include <sample_consensus/sac.h>
@@ -65,7 +65,7 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 class GroundRemoval : public ros::Node
 {

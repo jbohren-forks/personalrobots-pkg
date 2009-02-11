@@ -34,7 +34,7 @@
 
 // our ros messages
 #include <laser_scan/LaserScan.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 #include <pr2_msgs/OccDiff.h>
 #include <robot_srvs/StaticMap.h>
 #include <pr2_srvs/TransientObstacles.h>
@@ -55,7 +55,7 @@
 #include "costmap_2d/costmap_2d.h" 
 
 // For GUI debug
-#include <std_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline2D.h>
 
 //window length for remembering laser data (seconds)
 static const double WINDOW_LENGTH = 1.0;
@@ -99,7 +99,7 @@ private:
 
   //laser scan message
   laser_scan::LaserScan laser_msg_;
-  std_msgs::Polyline2D pointcloud_msg_;
+  robot_msgs::Polyline2D pointcloud_msg_;
 
   //projector for the laser
   laser_scan::LaserProjection projector_;
@@ -199,11 +199,11 @@ void CostMap2DRos::laserReceived() {
       it++)
   {
 
-    std_msgs::PointCloud local_cloud;
+    robot_msgs::PointCloud local_cloud;
     projector_.projectLaser((*it), local_cloud, LASER_MAX_RANGE);
     
     // Convert to a point cloud in the map frame
-    std_msgs::PointCloud global_cloud;
+    robot_msgs::PointCloud global_cloud;
     
     try
     {

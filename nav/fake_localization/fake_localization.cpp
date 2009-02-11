@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth"/std_msgs::PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth"/robot_msgs::PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -73,9 +73,9 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <deprecated_msgs/Pose2DFloat32.h>
-#include <std_msgs/PoseWithRatesStamped.h>
+#include <robot_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/ParticleCloud.h>
+#include <deprecated_msgs/Pose2DFloat32.h>
 
 #include <angles/angles.h>
 
@@ -128,7 +128,7 @@ private:
     double                         m_maxPublishFrequency;
     bool                           m_base_pos_received;
     
-    std_msgs::PoseWithRatesStamped  m_basePosMsg;
+    robot_msgs::PoseWithRatesStamped  m_basePosMsg;
     robot_msgs::ParticleCloud      m_particleCloud;
     deprecated_msgs::RobotBase2DOdom      m_currentPos;
     deprecated_msgs::Pose2DFloat32        m_iniPos;
@@ -180,7 +180,7 @@ private:
     publish("localizedpose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    std_msgs::Pose pos;
+    robot_msgs::Pose pos;
     tf::PoseTFToMsg(tf::Pose(tf::Quaternion(m_currentPos.pos.th, 0, 0), tf::Vector3(m_currentPos.pos.x, m_currentPos.pos.y, 0)),
                     pos);
     m_particleCloud.particles[0] = pos;

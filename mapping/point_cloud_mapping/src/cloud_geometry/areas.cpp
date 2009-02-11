@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (std_msgs::PointCloud points, std::vector<double> normal)
+      compute2DPolygonalArea (robot_msgs::PointCloud points, std::vector<double> normal)
     {
       int k0, k1, k2;
 
@@ -88,7 +88,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (std_msgs::Polygon3D polygon, std::vector<double> normal)
+      compute2DPolygonalArea (robot_msgs::Polygon3D polygon, std::vector<double> normal)
     {
       int k0, k1, k2;
 
@@ -125,9 +125,9 @@ namespace cloud_geometry
       * \param hull the resultant convex hull model as a \a Polygon3D
       */
     void
-      convexHull2D (std_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, std_msgs::Polygon3D &hull)
+      convexHull2D (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, robot_msgs::Polygon3D &hull)
     {
-      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending std_msgs::Point32
+      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending robot_msgs::Point32
       // to allow []/() accessors.
       std::vector<Eigen::Vector3f> epoints (indices->size ());
       for (unsigned int cp = 0; cp < indices->size (); cp++)
@@ -164,7 +164,7 @@ namespace cloud_geometry
 
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
 
-      std_msgs::Polyline2D hull_2d;
+      robot_msgs::Polyline2D hull_2d;
       convexHull2D (epoints_demean, hull_2d);
 
       int nr_points_hull = hull_2d.points.size ();
@@ -213,7 +213,7 @@ namespace cloud_geometry
       * \param hull the resultant 2D convex hull model as a \a Polyline2D
       */
     void
-      convexHull2D (std::vector<std_msgs::Point2DFloat32> points, std_msgs::Polyline2D &hull)
+      convexHull2D (std::vector<std_msgs::Point2DFloat32> points, robot_msgs::Polyline2D &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);
@@ -342,7 +342,7 @@ namespace cloud_geometry
       * \param polygon a polygon
       */
     bool
-      isPointIn2DPolygon (std_msgs::Point32 point, std_msgs::Polygon3D *polygon)
+      isPointIn2DPolygon (robot_msgs::Point32 point, robot_msgs::Polygon3D *polygon)
     {
       bool in_poly = false;
       double x1, x2, y1, y2;

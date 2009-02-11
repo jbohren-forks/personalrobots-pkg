@@ -89,7 +89,7 @@ private:
         // try to add the left-over objects
     }
 
-    Transform GetTransform(const std_msgs::Transform& pose)
+    Transform GetTransform(const robot_msgs::Transform& pose)
     {
         return Transform(Vector(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z), Vector(pose.translation.x, pose.translation.y, pose.translation.z));
     }

@@ -83,7 +83,7 @@ namespace sample_consensus
       std::cerr << "[MLESAC::computeModel] Estimated sigma value : " << sigma_ << "." << std::endl;
 
     // Compute the bounding box diagonal: V = sqrt (sum (max(pointCloud) - min(pointCloud)^2))
-    std_msgs::Point32 min_pt, max_pt;
+    robot_msgs::Point32 min_pt, max_pt;
     cloud_geometry::statistics::getMinMax (sac_model_->getCloud (), sac_model_->getIndices (), min_pt, max_pt);
 
     double v = sqrt ( (max_pt.x - min_pt.x) * (max_pt.x - min_pt.x) +

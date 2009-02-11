@@ -7,7 +7,7 @@ roslib.load_manifest('2dnav_pr2')
 import glob
 import sys, traceback, logging, rospy
 from rosrecord import *
-from std_msgs.msg import RobotBase2DOdom
+from deprecated_msgs.msg import RobotBase2DOdom
 
 NAME = 'log_parser'
 

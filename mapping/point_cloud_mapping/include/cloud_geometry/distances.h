@@ -34,7 +34,7 @@
 #define _CLOUD_GEOMETRY_DISTANCES_H_
 
 // ROS includes
-#include <std_msgs/Point32.h>
+#include <robot_msgs/Point32.h>
 
 namespace cloud_geometry
 {
@@ -47,13 +47,13 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistance (std_msgs::Point32 *p1, std_msgs::Point32 *p2)
+      pointToPointDistance (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
     {
       return (sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) ));
     }
 
-    double pointToLineDistance (std_msgs::Point32 p, std_msgs::Point32 q, std_msgs::Point32 dir);
-    double pointToLineDistance (std_msgs::Point32 p, std::vector<double> line_coefficients);
+    double pointToLineDistance (robot_msgs::Point32 p, robot_msgs::Point32 q, robot_msgs::Point32 dir);
+    double pointToLineDistance (robot_msgs::Point32 p, std::vector<double> line_coefficients);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (unsigned) defined by ax+by+cz+d=0
@@ -61,7 +61,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistance (std_msgs::Point32 *p, std::vector<double> plane_coefficients)
+      pointToPlaneDistance (robot_msgs::Point32 *p, std::vector<double> plane_coefficients)
     {
       return (fabs (plane_coefficients[0]*p->x + plane_coefficients[1]*p->y + plane_coefficients[2]*p->z + plane_coefficients[3]));
     }
@@ -74,7 +74,7 @@ namespace cloud_geometry
       * \param d the normalized <i>d</i> coefficient of a plane
       */
     inline double
-      pointToPlaneDistance (std_msgs::Point32 *p, double a, double b, double c, double d)
+      pointToPlaneDistance (robot_msgs::Point32 *p, double a, double b, double c, double d)
     {
       return (fabs (a * p->x + b * p->y + c * p->z + d));
     }
@@ -85,7 +85,7 @@ namespace cloud_geometry
       * \param sphere_coefficients the coefficients (x, y, z, R) of a sphere
       */
     inline double
-      pointToSphereDistance (std_msgs::Point32 p, std::vector<double> sphere_coefficients)
+      pointToSphereDistance (robot_msgs::Point32 p, std::vector<double> sphere_coefficients)
     {
       return (sqrt (
                     (p.x - sphere_coefficients[0]) * (p.x - sphere_coefficients[0]) +
@@ -102,7 +102,7 @@ namespace cloud_geometry
       * \param R the radius coefficient of a sphere
       */
     inline double
-      pointToSphereDistance (std_msgs::Point32 p, double x, double y, double z, double r)
+      pointToSphereDistance (robot_msgs::Point32 p, double x, double y, double z, double r)
     {
       return (sqrt ( (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y) + (p.z - z) * (p.z - z) ) - r);
     }

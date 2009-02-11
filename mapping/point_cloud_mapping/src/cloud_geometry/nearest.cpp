@@ -47,7 +47,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (std_msgs::PointCloud *points, std_msgs::PointCloud &centroid)
+      computeCentroid (robot_msgs::PointCloud *points, robot_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
@@ -84,7 +84,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (std_msgs::PointCloud *points, std::vector<int> *indices, std_msgs::PointCloud &centroid)
+      computeCentroid (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
@@ -125,9 +125,9 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (std_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature)
+      computeSurfaceNormalCurvature (robot_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature)
     {
-      std_msgs::Point32 centroid;
+      robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -165,9 +165,9 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (std_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature)
+      computeSurfaceNormalCurvature (robot_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature)
     {
-      std_msgs::Point32 centroid;
+      robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -201,14 +201,14 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (std_msgs::PointCloud *points, double &j1, double &j2, double &j3)
+      computeMomentInvariants (robot_msgs::PointCloud *points, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
-      std_msgs::Point32 centroid;
+      robot_msgs::Point32 centroid;
       computeCentroid (points, centroid);
 
       // Demean the pointset
-      std_msgs::PointCloud points_c;
+      robot_msgs::PointCloud points_c;
       points_c.pts.resize (points->pts.size ());
       for (unsigned int i = 0; i < points->pts.size (); i++)
       {
@@ -238,14 +238,14 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (std_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3)
+      computeMomentInvariants (robot_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
-      std_msgs::Point32 centroid;
+      robot_msgs::Point32 centroid;
       computeCentroid (points, indices, centroid);
 
       // Demean the pointset
-      std_msgs::PointCloud points_c;
+      robot_msgs::PointCloud points_c;
       points_c.pts.resize (indices->size ());
       for (unsigned int i = 0; i < indices->size (); i++)
       {
@@ -277,7 +277,7 @@ namespace cloud_geometry
       * \param angle_threshold the threshold angle (default $\pi / 2.0$)
       */
     bool
-      isBoundaryPoint (std_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors,
+      isBoundaryPoint (robot_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors,
                        Eigen::Vector3d u, Eigen::Vector3d v, double angle_threshold)
     {
       if (neighbors->size () < 3)

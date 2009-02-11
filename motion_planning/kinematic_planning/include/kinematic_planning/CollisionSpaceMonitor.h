@@ -37,7 +37,7 @@
 #include "kinematic_planning/KinematicStateMonitor.h"
 #include <collision_space/environmentODE.h>
 
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 #include <robot_msgs/CollisionMap.h>
 #include <robot_msgs/AttachedObject.h>
 #include <robot_srvs/CollisionCheckState.h>
@@ -140,8 +140,8 @@ namespace kinematic_planning
 		{
 		    link->attachedBodies[i] = new planning_models::KinematicModel::AttachedBody();
 		    
-		    std_msgs::PointStamped center;
-		    std_msgs::PointStamped centerP;
+		    robot_msgs::PointStamped center;
+		    robot_msgs::PointStamped centerP;
 		    center.point.x = m_attachedObject.objects[i].center.x;
 		    center.point.y = m_attachedObject.objects[i].center.y;
 		    center.point.z = m_attachedObject.objects[i].center.z;
@@ -275,7 +275,7 @@ namespace kinematic_planning
 	{
 	}
 	
-	double radiusOfBox(std_msgs::Point32 &point)
+	double radiusOfBox(robot_msgs::Point32 &point)
 	{
 	    return std::max(std::max(point.x, point.y), point.z) * 1.73;
 	}

@@ -184,7 +184,7 @@ bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
     return false;
   
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<std_msgs::PoseStamped>(&robot_state_, node_,  
+  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  
 								 boost::bind(&CartesianPoseControllerNode::command, this, _1),
 								 controller_name + "/command", root_name_, 1);
   return true;
@@ -197,7 +197,7 @@ void CartesianPoseControllerNode::update()
 }
 
 
-void CartesianPoseControllerNode::command(const tf::MessageNotifier<std_msgs::PoseStamped>::MessagePtr& pose_msg)
+void CartesianPoseControllerNode::command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;

@@ -45,11 +45,11 @@ namespace cloud_geometry
       * \param dir the direction of the line
       */
     double
-      pointToLineDistance (std_msgs::Point32 p, std_msgs::Point32 q, std_msgs::Point32 dir)
+      pointToLineDistance (robot_msgs::Point32 p, robot_msgs::Point32 q, robot_msgs::Point32 dir)
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      std_msgs::Point32 r, p_t;
+      robot_msgs::Point32 r, p_t;
       r.x = q.x + dir.x;
       r.y = q.y + dir.y;
       r.z = q.z + dir.z;
@@ -57,7 +57,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      std_msgs::Point32 c = cross (&p_t, &dir);
+      robot_msgs::Point32 c = cross (&p_t, &dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -68,11 +68,11 @@ namespace cloud_geometry
       * \param line_coefficients the line coefficients (point.x point.y point.z direction.x direction.y direction.z)
       */
     double
-      pointToLineDistance (std_msgs::Point32 p, std::vector<double> line_coefficients)
+      pointToLineDistance (robot_msgs::Point32 p, std::vector<double> line_coefficients)
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      std_msgs::Point32 r, p_t, dir;
+      robot_msgs::Point32 r, p_t, dir;
       dir.x = line_coefficients[3];
       dir.y = line_coefficients[4];
       dir.z = line_coefficients[5];
@@ -83,7 +83,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      std_msgs::Point32 c = cross (&p_t, &dir);
+      robot_msgs::Point32 c = cross (&p_t, &dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -99,7 +99,7 @@ namespace cloud_geometry
     {
       segment.resize (6);
 
-      std_msgs::Point32 p2, q2;
+      robot_msgs::Point32 p2, q2;
       p2.x = line_a.at (0) + line_a.at (3);    // point + direction = 2nd point
       p2.y = line_a.at (1) + line_a.at (4);
       p2.z = line_a.at (2) + line_a.at (5);
@@ -107,7 +107,7 @@ namespace cloud_geometry
       q2.y = line_b.at (1) + line_b.at (4);
       q2.z = line_b.at (2) + line_b.at (5);
 
-      std_msgs::Point32 u, v, w;
+      robot_msgs::Point32 u, v, w;
 
       // a = x2 - x1 = line_a[1] - line_a[0]
       u.x = p2.x - line_a.at (0);

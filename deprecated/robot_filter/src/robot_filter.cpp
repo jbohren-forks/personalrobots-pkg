@@ -128,7 +128,7 @@ namespace robot_filter {
   /** Remove points from the cloud if the robot sees parts of
       itself. Works for pointclouds in the robot frame. Creates
       a new cloud dynamically, so be sure to delete it. */
-  std_msgs::PointCloud* RobotFilter::filter(const std_msgs::PointCloud &cloud)
+  robot_msgs::PointCloud* RobotFilter::filter(const robot_msgs::PointCloud &cloud)
   {
 
     if (m_selfSeeParts.empty() && m_model->getUrdf()) {
@@ -151,7 +151,7 @@ namespace robot_filter {
     }
 
 
-    std_msgs::PointCloud *copy = new std_msgs::PointCloud();
+    robot_msgs::PointCloud *copy = new robot_msgs::PointCloud();
     copy->header = cloud.header;
     
 

@@ -39,7 +39,7 @@
 
 // Messages
 #include "laser_scan/LaserScan.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 
 namespace point_cloud_utils {
 
@@ -75,11 +75,11 @@ public:
    * The timestamp on the cloud is the timestamp of the last scan that was added
    * \param cloud Point Cloud to populate
    */
-  void getPointCloud(std_msgs::PointCloud& cloud) const ;
+  void getPointCloud(robot_msgs::PointCloud& cloud) const ;
 
 private:
   tf::TransformListener tf_ ;
-  std_msgs::PointCloud cloud_ ;
+  robot_msgs::PointCloud cloud_ ;
   unsigned int point_count_ ;
   laser_scan::LaserProjection projector_ ;
 } ;

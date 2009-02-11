@@ -1,3 +1,3 @@
 Header header
-std_msgs/Point  vel
-std_msgs/Point  rot
+robot_msgs/Point  vel
+robot_msgs/Point  rot

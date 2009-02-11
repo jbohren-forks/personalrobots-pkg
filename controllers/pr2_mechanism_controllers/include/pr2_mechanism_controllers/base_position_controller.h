@@ -38,8 +38,8 @@
 #include "control_toolbox/base_position_pid.h"
 #include "pr2_mechanism_controllers/base_controller.h"
 #include "tf/transform_listener.h"
-#include "std_msgs/PoseStamped.h"
-#include "std_msgs/Point.h"
+#include "robot_msgs/PoseStamped.h"
+#include "robot_msgs/Point.h"
 
 #include "misc_utils/advertised_service_guard.h"
 
@@ -74,7 +74,7 @@ public :
    * closest to the orientation of the pose in the odometric frame.
    * \param cmd The pose that we want to reach
    */
-  void setPoseCommand(std_msgs::PoseStamped cmd) ;
+  void setPoseCommand(robot_msgs::PoseStamped cmd) ;
 
   /**
    * Sets an x,y,theta position for the base to reach in wheel odometry frame.  This command doesn't do any transforms. It simply sets the PID targets
@@ -106,8 +106,8 @@ private :
   std::string odom_frame_name_ ;                               // Stores the name of the odometric frame. This is the frame that we control in
   
   // Message Holders
-  std_msgs::PoseStamped pose_cmd_ ;
-  std_msgs::Point pose_odom_frame_cmd_ ;
+  robot_msgs::PoseStamped pose_cmd_ ;
+  robot_msgs::Point pose_odom_frame_cmd_ ;
 } ;
 
 }

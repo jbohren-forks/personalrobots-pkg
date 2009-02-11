@@ -34,18 +34,18 @@
 #define _CLOUD_IO_CLOUDIO_H_
 
 // ROS includes
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 
 #include <vector>
 #include <fstream>
 
 namespace cloud_io
 {
-  int loadPCDFile (const char* fileName, std_msgs::PointCloud &points);
+  int loadPCDFile (const char* fileName, robot_msgs::PointCloud &points);
 
-  int savePCDFile (const char* fileName, std_msgs::PointCloud points, int precision);
+  int savePCDFile (const char* fileName, robot_msgs::PointCloud points, int precision);
 
-  int getIndex (std_msgs::PointCloud points, std::string value);
+  int getIndex (robot_msgs::PointCloud points, std::string value);
 
 }
 #endif

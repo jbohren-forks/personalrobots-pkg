@@ -948,7 +948,7 @@ void BaseControllerNode::update()
     {
       double x=0,y=0,yaw=0,vx,vy,vyaw;
       this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      std_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+      robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
       out.header.stamp.fromSec(time);
       out.header.frame_id = "odom";
       out.parent_id = "base_footprint";
@@ -971,7 +971,7 @@ void BaseControllerNode::update()
       //out.yaw = 
 
 
-      std_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+      robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
       out2.header.stamp.fromSec(time);
       out2.header.frame_id = "base_footprint";
       out2.parent_id = "base_link";

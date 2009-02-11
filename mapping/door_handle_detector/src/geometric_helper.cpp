@@ -33,14 +33,14 @@
 #include "geometric_helper.h"
 
 using namespace std;
-using namespace std_msgs;
+using namespace robot_msgs;
 
 bool
-  checkDoorEdges (std_msgs::Polygon3D *poly, std_msgs::Point32 *z_axis, double min_height, double eps_angle,
+  checkDoorEdges (robot_msgs::Polygon3D *poly, robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
                   double &door_frame1, double &door_frame2)
 {
   // Compute the centroid of the polygon
-  std_msgs::Point32 centroid;
+  robot_msgs::Point32 centroid;
   cloud_geometry::nearest::computeCentroid (poly, centroid);
 
   // Divide into left and right
@@ -65,9 +65,9 @@ bool
 //  std::cerr << "Inliers: " << inliers_left.size () << " " << inliers_right.size () << " " << poly->points.size () << std::endl;
 
   door_frame1 = door_frame2 = 0.0;
-  std_msgs::Point32 line_dir;
+  robot_msgs::Point32 line_dir;
   // Parse over all the <left> lines defined by the polygon and check their length
-  std::vector<std_msgs::Point32> new_points;
+  std::vector<robot_msgs::Point32> new_points;
   for (unsigned int i = 0; i < inliers_left.size () - 1; i++)
   {
     // Check if the points are equal
@@ -404,7 +404,7 @@ void
   */
 int
   fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-               std_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts)
+               robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts)
 {
   if ((int)indices.size () < min_pts)
   {

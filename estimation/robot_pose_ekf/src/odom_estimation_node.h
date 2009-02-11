@@ -44,9 +44,9 @@
 
 // messages
 #include "deprecated_msgs/RobotBase2DOdom.h"
-#include "std_msgs/PoseDot.h"
-#include "std_msgs/PoseWithRatesStamped.h"
-#include "std_msgs/PoseStamped.h"
+#include "robot_msgs/PoseDot.h"
+#include "robot_msgs/PoseWithRatesStamped.h"
+#include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
 #include "robot_msgs/PoseWithCovariance.h"
 
@@ -90,9 +90,9 @@ private:
   OdomEstimation my_filter_;
 
   // messages to receive
-  std_msgs::PoseDot               vel_;  
+  robot_msgs::PoseDot               vel_;  
   deprecated_msgs::RobotBase2DOdom       odom_;  
-  std_msgs::PoseWithRatesStamped  imu_;  
+  robot_msgs::PoseWithRatesStamped  imu_;  
   robot_msgs::VOPose              vo_;  
 
   // estimated robot pose message to send

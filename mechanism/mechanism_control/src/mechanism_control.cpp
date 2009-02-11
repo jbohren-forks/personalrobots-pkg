@@ -389,7 +389,7 @@ void MechanismControlNode::update()
 
         tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
         tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
-        std_msgs::TransformStamped &out = transform_publisher_.msg_.transforms[ti++];
+        robot_msgs::TransformStamped &out = transform_publisher_.msg_.transforms[ti++];
 
         out.header.stamp.fromSec(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;

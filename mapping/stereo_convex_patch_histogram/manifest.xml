@@ -11,6 +11,6 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="roscpp" />
-  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
   <depend package="point_cloud_mapping" />
 </package>

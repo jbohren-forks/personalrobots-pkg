@@ -49,7 +49,7 @@
 
 #include <std_msgs/Point2DFloat32.h>
 #include <std_msgs/Position2DInt.h>
-#include <std_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 
 namespace trajectory_rollout {
   /**
@@ -96,8 +96,8 @@ namespace trajectory_rollout {
        */
       bool computeVelocityCommands(const std::list<deprecated_msgs::Pose2DFloat32>& global_plan, 
           const tf::Stamped<tf::Pose>& global_pose, 
-          const std_msgs::PoseDot& global_vel, 
-          std_msgs::PoseDot& cmd_vel,
+          const robot_msgs::PoseDot& global_vel, 
+          robot_msgs::PoseDot& cmd_vel,
           std::list<deprecated_msgs::Pose2DFloat32>& localPlan,
           const std::vector<costmap_2d::Observation>& observations = std::vector<costmap_2d::Observation>(0));
 

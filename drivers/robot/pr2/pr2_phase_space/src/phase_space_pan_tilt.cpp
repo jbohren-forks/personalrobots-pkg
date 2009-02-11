@@ -47,7 +47,7 @@
 #include "robot_msgs/MocapMarker.h"
 #include "robot_msgs/MocapBody.h"
 
-#include "std_msgs/PointStamped.h"
+#include "robot_msgs/PointStamped.h"
 
 using namespace std ;
 
@@ -60,7 +60,7 @@ public :
   PhaseSpacePanTilt() : ros::Node("phase_space_pan_tilt"), topic("head_controller/track_point")
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePanTilt::snapshotCallback, 10) ;
-    advertise<std_msgs::PointStamped>(topic, 10) ;
+    advertise<robot_msgs::PointStamped>(topic, 10) ;
   }
   
   ~PhaseSpacePanTilt()
@@ -81,7 +81,7 @@ public :
 
       robot_msgs::MocapMarker& cur_marker = snapshot_.markers[0] ;
       
-      std_msgs::PointStamped target_point ;
+      robot_msgs::PointStamped target_point ;
       target_point.header = snapshot_.header ;
       target_point.point = cur_marker.location ;
       

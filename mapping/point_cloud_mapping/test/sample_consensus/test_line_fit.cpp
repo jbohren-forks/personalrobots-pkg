@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 
 #include <cloud_geometry/point.h>
 #include <sample_consensus/sac.h>
@@ -48,7 +48,7 @@ using namespace sample_consensus;
 
 TEST (LMedS, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -76,7 +76,7 @@ TEST (LMedS, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -89,7 +89,7 @@ TEST (LMedS, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);
@@ -108,7 +108,7 @@ TEST (LMedS, SACModelLine)
 
 TEST (RANSAC, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -136,7 +136,7 @@ TEST (RANSAC, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -149,7 +149,7 @@ TEST (RANSAC, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);
@@ -168,7 +168,7 @@ TEST (RANSAC, SACModelLine)
 
 TEST (MSAC, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -196,7 +196,7 @@ TEST (MSAC, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -209,7 +209,7 @@ TEST (MSAC, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);
@@ -228,7 +228,7 @@ TEST (MSAC, SACModelLine)
 
 /*TEST (MLESAC, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -256,7 +256,7 @@ TEST (MSAC, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -269,7 +269,7 @@ TEST (MSAC, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);
@@ -289,7 +289,7 @@ TEST (MSAC, SACModelLine)
 
 TEST (RRANSAC, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -318,7 +318,7 @@ TEST (RRANSAC, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -331,7 +331,7 @@ TEST (RRANSAC, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);
@@ -350,7 +350,7 @@ TEST (RRANSAC, SACModelLine)
 
 TEST (RMSAC, SACModelLine)
 {
-  std_msgs::PointCloud points;
+  robot_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 1;  points.pts[0].y = 2;    points.pts[0].z = 3;
@@ -379,7 +379,7 @@ TEST (RMSAC, SACModelLine)
   std::vector<double> coeff = sac->computeCoefficients ();
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
-  std_msgs::Point32 dir;
+  robot_msgs::Point32 dir;
   dir.x = fabs (coeff[3] - coeff[0]);
   dir.y = fabs (coeff[4] - coeff[1]);
   dir.z = fabs (coeff[5] - coeff[2]);
@@ -392,7 +392,7 @@ TEST (RMSAC, SACModelLine)
   std::vector<double> coeff_ref = sac->refineCoefficients ();
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
-  std_msgs::Point32 dir_ref;
+  robot_msgs::Point32 dir_ref;
   dir_ref.x = fabs (coeff_ref[3] - coeff_ref[0]);
   dir_ref.y = fabs (coeff_ref[4] - coeff_ref[1]);
   dir_ref.z = fabs (coeff_ref[5] - coeff_ref[2]);

@@ -47,7 +47,7 @@
 #include "robot_msgs/MocapMarker.h"
 #include "robot_msgs/MocapBody.h"
 
-#include "std_msgs/PoseStamped.h"
+#include "robot_msgs/PoseStamped.h"
 
 #include "tf/transform_datatypes.h"
 
@@ -65,7 +65,7 @@ namespace pr2_phase_space
  *               which is normally published by robot_msgs::MocapSnapshot
  *
  * Publishes to (name [type]):
- * - @b "cmd" [std_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
+ * - @b "cmd" [robot_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
  *               probably have to remap this topic name in order to feed this command into a controller.
  * @section parameters ROS parameters
  * - @b ~body_id : The PhaseSpace ID associated with the rigid body we want to track
@@ -84,7 +84,7 @@ public :
   PhaseSpacePoseStamped() : ros::Node("phase_space_point_stamped")
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePoseStamped::snapshotCallback, 10) ;
-    advertise<std_msgs::PoseStamped>("cmd", 1) ;
+    advertise<robot_msgs::PoseStamped>("cmd", 1) ;
 
     param("~body_id", body_id_, 1) ;
     param("~num_to_skip", num_to_skip_, 0) ;
@@ -147,7 +147,7 @@ public :
         // Transform our starting frame by our fixed transform
         tf::Transform pose_result(transform_.inverse()*pose_phasespace ) ;
 
-        std_msgs::PoseStamped pose_msg ;
+        robot_msgs::PoseStamped pose_msg ;
 
         pose_msg.header.stamp = ros::Time() ;
         pose_msg.header.frame_id =  frame_id_ ;

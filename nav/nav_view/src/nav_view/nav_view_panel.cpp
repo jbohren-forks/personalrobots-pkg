@@ -507,7 +507,7 @@ void NavViewPanel::processParticleCloud()
   queueRender();
 }
 
-void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, std_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
+void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
 {
   path.lock();
 

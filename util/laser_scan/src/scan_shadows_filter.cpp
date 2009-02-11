@@ -35,7 +35,7 @@
  */
 
 #include <ros/node.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/PointCloud.h>
 #include <laser_scan/LaserScan.h>
 
 #include <float.h>
@@ -46,7 +46,7 @@
 // TF
 #include <tf/transform_listener.h>
 
-using namespace std_msgs;
+using namespace robot_msgs;
 
 /** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
  */

@@ -33,8 +33,8 @@
 #define COSTMAP_2D_OBSERVATION_H
 
 
-#include <std_msgs/Point.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/Point.h>
+#include <robot_msgs/PointCloud.h>
 
 namespace costmap_2d {
 
@@ -47,11 +47,11 @@ namespace costmap_2d {
   public:
     // Structors
     Observation() : cloud_(NULL){}
-    Observation(std_msgs::Point& p, std_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
+    Observation(robot_msgs::Point& p, robot_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
     Observation(const Observation& org): origin_(org.origin_), cloud_(org.cloud_){}
 
-    std_msgs::Point origin_;
-    std_msgs::PointCloud* cloud_;
+    robot_msgs::Point origin_;
+    robot_msgs::PointCloud* cloud_;
   };
 
 }

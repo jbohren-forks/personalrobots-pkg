@@ -1,5 +1,5 @@
 #include "ros/node.h"
-#include "std_msgs/PointStamped.h"
+#include "robot_msgs/PointStamped.h"
 #include "ros/time.h"
 
 
@@ -10,7 +10,7 @@ public:
 
   TestGen() : ros::Node("test_gen")
   {
-    advertise<std_msgs::PointStamped>("orig",10);
+    advertise<robot_msgs::PointStamped>("orig",10);
   }
 
   bool spin()
@@ -20,7 +20,7 @@ public:
     {
       usleep(100000);
 
-      std_msgs::PointStamped p1;
+      robot_msgs::PointStamped p1;
       p1.header.stamp = ros::Time::now();
       p1.point.x = count;
       p1.point.y = 0.0;

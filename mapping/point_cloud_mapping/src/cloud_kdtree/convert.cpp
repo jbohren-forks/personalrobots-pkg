@@ -42,7 +42,7 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (robot_msgs::PointCloud *ros_cloud, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud->pts.size () == 0)
@@ -82,7 +82,7 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud->pts.size () == 0 || indices->size () > ros_cloud->pts.size ())
@@ -119,7 +119,7 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (robot_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty, or if the requested number of dimensions is bigger than
     // what the ros_cloud message holds
@@ -165,7 +165,7 @@ namespace cloud_kdtree
     * \param ann_cloud the ANN point cloud array
     */
   int
-    KdTree::convertCloudToArray (std_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud)
+    KdTree::convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud)
   {
     // No point in doing anything if the array is empty, or if the requested number of dimensions is bigger than
     // what the ros_cloud message holds

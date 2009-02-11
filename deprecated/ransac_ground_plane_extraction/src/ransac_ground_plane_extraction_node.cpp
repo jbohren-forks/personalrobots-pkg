@@ -60,7 +60,7 @@ RansacGroundPlaneExtractionNode::RansacGroundPlaneExtractionNode(std::string nod
     publish_obstacle_cloud_ = true;
 
   if(publish_obstacle_cloud_)
-    advertise<std_msgs::PointCloud>(publish_obstacle_topic_,1);
+    advertise<robot_msgs::PointCloud>(publish_obstacle_topic_,1);
   advertise<pr2_msgs::PlaneStamped>(publish_ground_plane_topic_, 1);
 
   subscribe(listen_topic_,  cloud_msg_,  &RansacGroundPlaneExtractionNode::cloudCallback,1);
@@ -82,15 +82,15 @@ RansacGroundPlaneExtractionNode::~RansacGroundPlaneExtractionNode()
 void RansacGroundPlaneExtractionNode::cloudCallback()
 {
 
-  std_msgs::Point32 plane_point;
-  std_msgs::Point32 plane_normal;
+  robot_msgs::Point32 plane_point;
+  robot_msgs::Point32 plane_normal;
 
-  std_msgs::Point32 estimated_plane_point;
-  std_msgs::Point32 estimated_plane_normal;
+  robot_msgs::Point32 estimated_plane_point;
+  robot_msgs::Point32 estimated_plane_normal;
 
   pr2_msgs::PlaneStamped ground_plane_msg;
 
-  std_msgs::PointStamped sensor_origin, transformed_sensor_origin;
+  robot_msgs::PointStamped sensor_origin, transformed_sensor_origin;
 
   sensor_origin.header.stamp = cloud_msg_.header.stamp;
   sensor_origin.header.frame_id = "base_link";

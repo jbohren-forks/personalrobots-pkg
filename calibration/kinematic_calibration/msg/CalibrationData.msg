@@ -11,7 +11,7 @@ image_msgs/RawStereo raw_stereo
 robot_msgs/MechanismState mechanism_state
 
 # PointCloud generated from the tilt laser
-std_msgs/PointCloud laser_cloud
+robot_msgs/PointCloud laser_cloud
 
 # Data that we captured from phasespace
 robot_msgs/MocapSnapshot mocap_snapshot

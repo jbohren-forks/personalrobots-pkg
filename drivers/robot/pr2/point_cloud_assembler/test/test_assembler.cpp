@@ -37,12 +37,12 @@
 #include <string>
 #include <gtest/gtest.h>
 #include "ros/node.h"
-#include "std_msgs/PointCloud.h"
+#include "robot_msgs/PointCloud.h"
 #include "laser_scan/LaserScan.h"
 #include "boost/thread.hpp"
 
 using namespace ros;
-using namespace std_msgs;
+using namespace robot_msgs;
 using namespace laser_scan;
 
 

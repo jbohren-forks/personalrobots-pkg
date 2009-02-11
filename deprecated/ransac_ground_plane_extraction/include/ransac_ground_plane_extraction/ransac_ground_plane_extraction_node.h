@@ -33,9 +33,9 @@
 #define RANSAC_GROUND_PLANE_EXTRACTION_NODE_H
 
 #include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
-#include <std_msgs/PointCloud.h>
-#include <std_msgs/Point32.h>
-#include <std_msgs/PointStamped.h>
+#include <robot_msgs/PointCloud.h>
+#include <robot_msgs/Point32.h>
+#include <robot_msgs/PointStamped.h>
 #include <pr2_msgs/PlaneStamped.h>
 #include <ros/node.h>
 #include <tf/transform_listener.h>
@@ -73,9 +73,9 @@ namespace ransac_ground_plane_extraction {
 
   RansacGroundPlaneExtraction ground_plane_extractor_;
 
-  std_msgs::PointCloud cloud_msg_; /**< Filled by subscriber with new clouds*/
+  robot_msgs::PointCloud cloud_msg_; /**< Filled by subscriber with new clouds*/
 
-  std_msgs::PointCloud *obstacle_cloud_;
+  robot_msgs::PointCloud *obstacle_cloud_;
 
   std::string listen_topic_;
 
