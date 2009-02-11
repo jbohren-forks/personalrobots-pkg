@@ -121,39 +121,36 @@ def calibrate(config):
 # Functions make xml code for controllers 
 #
 def xml_for_cal(name, velocity, p, i, d, iClamp):
-    return '''\
-<controller name=\"cal_%s" topic="cal_%s"\
-type="JointCalibrationControllerNode">\
-<calibrate joint="%s_joint"\
-actuator="%s_motor"\
-transmission="%s_trans"\
-velocity="%d" />\
-<pid p="%d" i="%d" d="%d" iClamp="%d" />\
-</controller>''' % (name, name, name, name, name, velocity, p, i, d, iClamp)  
+    return """
+<controller name="cal_%s" topic="cal_%s" type="JointCalibrationControllerNode">
+<calibrate joint="%s_joint" actuator="%s_motor"
+transmission="%s_trans" velocity="%d" />
+<pid p="%d" i="%d" d="%d" iClamp="%d" />
+</controller>""" % (name, name, name, name, name, velocity, p, i, d, iClamp)  
 
 def xml_for_hold(name, p, i, d, iClamp):
-    return '''\
-<controller name=\"%s_controller\" type=\"JointPositionControllerNode\">\
-<joint name=\"%s_joint">\
-<pid p="%d" i="%d" d="%d" iClamp="%d" />\
-</controller>''' % (name, name, p, i, d, iClamp)
+    return """
+<controller name="%s_controller" type="JointPositionControllerNode">
+<joint name="%s_joint">
+<pid p="%d" i="%d" d="%d" iClamp="%d" />
+</controller>""" % (name, name, p, i, d, iClamp)
 
 def xml_for_wrist(side):
-    return '''\
-<controller name=\"cal_%s_wrist\"  type=\"WristCalibrationControllerNode\" >\
-<calibrate transmission=\"%s_wrist_trans\"\
-actuator_l=\"%s_wrist_l_motor\" actuator_r=\"%s_wrist_r_motor\"\ 
-flex_joint=\"%s_wrist_flex_joint\" roll_joint=\"%s_wrist_roll_joint\"\ 
-velocity=\"1.5\" />\
-<pid p=\"4.0\" i=\"0.2\" d=\"0\" iClamp=\"2.0\" />\
-</controller>''' % (side, side, side, side, side, side)
+    return """
+<controller name="cal_%s_wrist"  type="WristCalibrationControllerNode">
+<calibrate transmission="%s_wrist_trans"
+actuator_l="%s_wrist_l_motor" actuator_r="%s_wrist_r_motor" 
+flex_joint="%s_wrist_flex_joint" roll_joint="%s_wrist_roll_joint" 
+velocity="1.5" />
+<pid p="4.0" i="0.2" d="0" iClamp="2.0" />
+</controller>""" % (side, side, side, side, side, side)
 
 def hold_joint(name, p, i, d, iClamp, holding):
     # Try to launch 3x
     # If launched, add to list of holding controllers and return true 
     for i in range(1,4):
         try:
-            resp = spawn_controller(xml_for_hold(name, 4, 0.5, 0.2, 1.0))
+            resp = spawn_controller(xml_for_hold(name, p, i, d, iClamp))
             if resp.ok[0] != 0:
                 holding.append(resp.name[0])
                 return True
@@ -207,7 +204,6 @@ if __name__ == '__main__':
     print "Calibrating shoulder lift"
     shoulder_lift_name = "r_shoulder_lift"
     calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("l_shoulder_lift", -1.0, 9, 1.0, 0, 6))
-
 
     hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
     hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
