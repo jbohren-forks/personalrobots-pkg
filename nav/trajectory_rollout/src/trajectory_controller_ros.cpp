@@ -186,10 +186,11 @@ namespace trajectory_rollout {
     }
 
     /* For timing uncomment
-    */
     struct timeval start, end;
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
+    */
+
     tc_->updatePlan(copiedGlobalPlan);
 
     lock_.lock();
@@ -198,12 +199,12 @@ namespace trajectory_rollout {
     lock_.unlock();
 
     /* For timing uncomment
-    */
     gettimeofday(&end, NULL);
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
     ROS_ERROR("Cycle time: %.9f", t_diff);
+    */
 
     //pass along drive commands
     cmd_vel.vel.vx = drive_cmds.getOrigin().getX();
