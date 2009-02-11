@@ -77,15 +77,14 @@ public:
       }
 
       cam_.reset( new prosilica::Camera(guid) );
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
 
       // Acquisition control
       std::string mode_str;
       param("~acquisition_mode", mode_str, std::string("Continuous"));
       if (mode_str == std::string("Continuous"))
-      {
         mode_ = prosilica::Continuous;
-        cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
-      } else if (mode_str == std::string("Triggered"))
+      else if (mode_str == std::string("Triggered"))
         mode_ = prosilica::Triggered;
       else {
         ROS_FATAL("Unknown setting\n");
@@ -143,7 +142,7 @@ public:
       // TODO: other params
       // TODO: check any diagnostics?
 
-      ROS_FATAL("Found camera, guid = %lu\n", guid);
+      ROS_INFO("Found camera, guid = %lu\n", guid);
       advertise<image_msgs::Image>("~image", 1);
     } else {
       ROS_FATAL("Found no Prosilica cameras\n");
@@ -215,6 +214,7 @@ public:
       return false;
 
     return frameToImage(frame, res.image);
+    // TODO: publish while we're at it?
   }
 
 private:
