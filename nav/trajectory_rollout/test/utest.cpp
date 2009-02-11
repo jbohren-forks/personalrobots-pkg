@@ -44,7 +44,7 @@
 #include <math.h>
 
 #include <std_msgs/Point2DFloat32.h>
-#include <std_msgs/Position2DInt.h>
+#include <trajectory_rollout/Position2DInt.h>
 
 
 using namespace std;
@@ -73,7 +73,7 @@ namespace trajectory_rollout {
 
   void TrajectoryControllerTest::correctFootprint(){
     //just create a basic footprint
-    vector<std_msgs::Position2DInt> footprint = tc.getFootprintCells(4.5, 4.5, 0, false);
+    vector<trajectory_rollout::Position2DInt> footprint = tc.getFootprintCells(4.5, 4.5, 0, false);
 
     //we expect the front line to be first
     EXPECT_EQ(footprint[0].x, 6); EXPECT_EQ(footprint[0].y, 6);

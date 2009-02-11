@@ -40,13 +40,13 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace deprecated_msgs;
 using namespace costmap_2d;
 
 namespace trajectory_rollout {
   TrajectoryControllerROS::TrajectoryControllerROS(ros::Node& ros_node, 
       const costmap_2d::CostMapAccessor& ma, 
-      std::vector<std_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
+      std::vector<deprecated_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
     : world_model_(NULL), tc_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int samples_per_dim;
@@ -133,9 +133,9 @@ namespace trajectory_rollout {
     //map_.sizeCheck(ma_.getWidth(), ma_.getHeight(), origin_x, origin_y);
 
     // Temporary Transformation till api below changes
-    std::vector<std_msgs::Point2DFloat32> copiedGlobalPlan;
+    std::vector<deprecated_msgs::Point2DFloat32> copiedGlobalPlan;
     for(std::list<deprecated_msgs::Pose2DFloat32>::const_iterator it = global_plan.begin(); it != global_plan.end(); ++it){
-      std_msgs::Point2DFloat32 p;
+      deprecated_msgs::Point2DFloat32 p;
       p.x = it->x;
       p.y = it->y;
       copiedGlobalPlan.push_back(p);

@@ -36,7 +36,7 @@
 // ROS includes
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointCloud.h>
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Polyline2D.h>
 
@@ -54,7 +54,7 @@ namespace cloud_geometry
       * \param p2 the second Point2DFloat32 point
       */
     inline bool
-      comparePoint2DFloat32 (const std_msgs::Point2DFloat32& p1, const std_msgs::Point2DFloat32& p2)
+      comparePoint2DFloat32 (const deprecated_msgs::Point2DFloat32& p1, const deprecated_msgs::Point2DFloat32& p2)
     {
       if (p1.x < p2.x)      return (true);
       else if (p1.x > p2.x) return (false);
@@ -81,7 +81,7 @@ namespace cloud_geometry
     double compute2DPolygonalArea (robot_msgs::PointCloud points, std::vector<double> normal);
     double compute2DPolygonalArea (robot_msgs::Polygon3D polygon, std::vector<double> normal);
     void convexHull2D (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, robot_msgs::Polygon3D &hull);
-    void convexHull2D (std::vector<std_msgs::Point2DFloat32> points, robot_msgs::Polyline2D &hull);
+    void convexHull2D (std::vector<deprecated_msgs::Point2DFloat32> points, robot_msgs::Polyline2D &hull);
 
     bool isPointIn2DPolygon (robot_msgs::Point32 point, robot_msgs::Polygon3D *polygon);
   }

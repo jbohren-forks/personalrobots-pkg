@@ -37,7 +37,7 @@
 #include <trajectory_rollout/costmap_model.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace deprecated_msgs;
 using namespace costmap_2d;
 
 namespace trajectory_rollout {

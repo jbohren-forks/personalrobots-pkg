@@ -87,7 +87,7 @@ namespace ros {
 
     public:
       
-      typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
+      typedef std::vector<deprecated_msgs::Point2DFloat32> footprint_t;
       
       /**
        * @brief Constructor

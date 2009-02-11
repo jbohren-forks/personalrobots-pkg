@@ -240,7 +240,7 @@ namespace ros {
       global_map_accessor_ = new CostMapAccessor(*costMap_);
       local_map_accessor_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
 
-      std_msgs::Point2DFloat32 pt;
+      deprecated_msgs::Point2DFloat32 pt;
       //create a square footprint
       pt.x = robotRadius;
       pt.y = -1 * robotRadius;
@@ -555,7 +555,7 @@ namespace ros {
     }
 
     void MoveBase::publishFootprint(double x, double y, double th){
-      std::vector<std_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
+      std::vector<deprecated_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
       robot_msgs::Polyline2D footprint_msg;
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;

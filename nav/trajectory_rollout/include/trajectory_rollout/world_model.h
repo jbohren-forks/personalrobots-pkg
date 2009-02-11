@@ -39,7 +39,7 @@
 
 #include <vector>
 #include <costmap_2d/observation.h>
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 
 namespace trajectory_rollout {
   /**
@@ -54,7 +54,7 @@ namespace trajectory_rollout {
        * @param observations The observations from various sensors 
        * @param laser_outline The polygon of the active sensor region
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<std_msgs::Point2DFloat32>& laser_outline) = 0;
+      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<deprecated_msgs::Point2DFloat32>& laser_outline) = 0;
 
       /**
        * @brief  Subclass will implement this method to check a footprint at a given position and orientation for legality in the world
@@ -64,7 +64,7 @@ namespace trajectory_rollout {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return True if the footprint is legal based on the world model, false otherwise
        */
-      virtual bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
+      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
           double inscribed_radius, double circumscribed_radius) = 0;
 
       /**

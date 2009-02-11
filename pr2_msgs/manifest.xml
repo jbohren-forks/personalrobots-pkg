@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/std_msgs</url>
   <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
   <depend package="robot_msgs"/>
+  <depend package="deprecated_msgs"/>
   <depend package="std_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

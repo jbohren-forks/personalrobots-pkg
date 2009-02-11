@@ -69,7 +69,7 @@ namespace trajectory_rollout {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return True if all points lie outside the footprint, false otherwise
        */
-      virtual bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
+      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       /**
@@ -77,7 +77,7 @@ namespace trajectory_rollout {
        * @param observations The observations from various sensors 
        * @param laser_outline The polygon of the active sensor region
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<std_msgs::Point2DFloat32>& laser_outline){}
+      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<deprecated_msgs::Point2DFloat32>& laser_outline){}
     private:
       /**
        * @brief  Rasterizes a line in the costmap grid and checks for collisions

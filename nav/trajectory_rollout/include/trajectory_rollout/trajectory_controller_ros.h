@@ -47,8 +47,7 @@
 
 #include <tf/transform_datatypes.h>
 
-#include <std_msgs/Point2DFloat32.h>
-#include <std_msgs/Position2DInt.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 #include <robot_msgs/PoseDot.h>
 
 namespace trajectory_rollout {
@@ -67,7 +66,7 @@ namespace trajectory_rollout {
        * @param circumscribed_radius The circumscribed radius of the robot
        */
       TrajectoryControllerROS(ros::Node& ros_node,
-          const costmap_2d::CostMapAccessor& ma, std::vector<std_msgs::Point2DFloat32> footprint_spec,
+          const costmap_2d::CostMapAccessor& ma, std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
           double inscribed_radius, double cirumscribed_radius);
 
       /**
@@ -82,7 +81,7 @@ namespace trajectory_rollout {
        * @param theta_i The orientation of the robot
        * @return A vector of points in world coordinates that correspond to the verticies of the robot's footprint 
        */
-      std::vector<std_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
+      std::vector<deprecated_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
 
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base

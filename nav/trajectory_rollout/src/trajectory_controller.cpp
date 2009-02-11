@@ -38,13 +38,13 @@
 #include <trajectory_rollout/trajectory_controller.h>
 
 using namespace std;
-using namespace std_msgs;
+using namespace deprecated_msgs;
 using namespace costmap_2d;
 
 namespace trajectory_rollout{
   TrajectoryController::TrajectoryController(WorldModel& world_model, 
       const costmap_2d::ObstacleMapAccessor& ma, 
-      std::vector<std_msgs::Point2DFloat32> footprint_spec,
+      std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
       double inscribed_radius, double circumscribed_radius,
       double acc_lim_x, double acc_lim_y, double acc_lim_theta,
       double sim_time, double sim_granularity, int samples_per_dim, 
@@ -625,8 +625,8 @@ namespace trajectory_rollout{
   Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
       tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations){
 
-    std::vector<std_msgs::Point2DFloat32> clear_box;
-    std_msgs::Point2DFloat32 pt;
+    std::vector<deprecated_msgs::Point2DFloat32> clear_box;
+    deprecated_msgs::Point2DFloat32 pt;
     double x_pos = global_pose.getOrigin().getX();
     double y_pos = global_pose.getOrigin().getY();
 
@@ -660,7 +660,7 @@ namespace trajectory_rollout{
 
 
     //temporarily remove obstacles that are within the footprint of the robot
-    vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, true);
+    vector<trajectory_rollout::Position2DInt> footprint_list = getFootprintCells(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, true);
 
     //mark cells within the initial footprint of the robot
     for(unsigned int i = 0; i < footprint_list.size(); ++i){
@@ -724,7 +724,7 @@ namespace trajectory_rollout{
     //build the oriented footprint
     double cos_th = cos(theta_i);
     double sin_th = sin(theta_i);
-    vector<std_msgs::Point2DFloat32> oriented_footprint;
+    vector<deprecated_msgs::Point2DFloat32> oriented_footprint;
     for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
       Point2DFloat32 new_pt;
       new_pt.x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
@@ -732,7 +732,7 @@ namespace trajectory_rollout{
       oriented_footprint.push_back(new_pt);
     }
 
-    std_msgs::Point2DFloat32 robot_position;
+    deprecated_msgs::Point2DFloat32 robot_position;
     robot_position.x = x_i;
     robot_position.y = y_i;
 
@@ -745,7 +745,7 @@ namespace trajectory_rollout{
     return -1.0;
   }
 
-  void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts){
+  void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<trajectory_rollout::Position2DInt>& pts){
     //Bresenham Ray-Tracing
     int deltax = abs(x1 - x0);        // The difference between the x's
     int deltay = abs(y1 - y0);        // The difference between the y's
@@ -755,7 +755,7 @@ namespace trajectory_rollout{
     int xinc1, xinc2, yinc1, yinc2;
     int den, num, numadd, numpixels;
 
-    std_msgs::Position2DInt pt;
+    trajectory_rollout::Position2DInt pt;
 
     if (x1 >= x0)                 // The x-values are increasing
     {
@@ -817,9 +817,9 @@ namespace trajectory_rollout{
   }
 
   //its nice to be able to draw a footprint for a particular point for debugging info
-  vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i, double y_i, double theta_i){
-    vector<std_msgs::Position2DInt> footprint_cells = getFootprintCells(x_i, y_i, theta_i, false);
-    vector<std_msgs::Point2DFloat32> footprint_pts;
+  vector<deprecated_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i, double y_i, double theta_i){
+    vector<trajectory_rollout::Position2DInt> footprint_cells = getFootprintCells(x_i, y_i, theta_i, false);
+    vector<deprecated_msgs::Point2DFloat32> footprint_pts;
     Point2DFloat32 pt;
     for(unsigned int i = 0; i < footprint_cells.size(); ++i){
       double pt_x, pt_y;
@@ -832,8 +832,8 @@ namespace trajectory_rollout{
   }
 
   //get the cellsof a footprint at a given position
-  vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x_i, double y_i, double theta_i, bool fill){
-    vector<std_msgs::Position2DInt> footprint_cells;
+  vector<trajectory_rollout::Position2DInt> TrajectoryController::getFootprintCells(double x_i, double y_i, double theta_i, bool fill){
+    vector<trajectory_rollout::Position2DInt> footprint_cells;
 
     //if we have no footprint... do nothing
     if(footprint_spec_.size() <= 1)
@@ -877,9 +877,9 @@ namespace trajectory_rollout{
     return footprint_cells;
   }
 
-  void TrajectoryController::getFillCells(vector<std_msgs::Position2DInt>& footprint){
+  void TrajectoryController::getFillCells(vector<trajectory_rollout::Position2DInt>& footprint){
     //quick bubble sort to sort pts by x
-    std_msgs::Position2DInt swap, pt;
+    trajectory_rollout::Position2DInt swap, pt;
     unsigned int i = 0;
     while(i < footprint.size() - 1){
       if(footprint[i].x > footprint[i + 1].x){
@@ -894,8 +894,8 @@ namespace trajectory_rollout{
     }
 
     i = 0;
-    std_msgs::Position2DInt min_pt;
-    std_msgs::Position2DInt max_pt;
+    trajectory_rollout::Position2DInt min_pt;
+    trajectory_rollout::Position2DInt max_pt;
     unsigned int min_x = footprint[0].x;
     unsigned int max_x = footprint[footprint.size() -1].x;
     //walk through each column and mark cells inside the footprint

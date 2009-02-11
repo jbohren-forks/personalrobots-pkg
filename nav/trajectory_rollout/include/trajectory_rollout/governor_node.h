@@ -47,7 +47,7 @@
 
 //for GUI debugging
 #include <robot_msgs/Polyline2D.h>
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 
 
 //for transform support
@@ -127,7 +127,7 @@ namespace trajectory_rollout {
   class GovernorNode: public ros::Node
   {
     public:
-      GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec);
+      GovernorNode(std::vector<deprecated_msgs::Point2DFloat32> footprint_spec);
 
       //callback for when the planned passes a new map
       void planReceived();

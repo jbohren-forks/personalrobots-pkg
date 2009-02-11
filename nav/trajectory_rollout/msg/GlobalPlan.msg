@@ -1,1 +1,1 @@
-std_msgs/Point2DFloat32[] path
+deprecated_msgs/Point2DFloat32[] path

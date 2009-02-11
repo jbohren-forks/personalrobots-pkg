@@ -52,8 +52,8 @@
 #include <trajectory_rollout/trajectory.h>
 
 //we'll take in a path as a vector of points
-#include <std_msgs/Point2DFloat32.h>
-#include <std_msgs/Position2DInt.h>
+#include <deprecated_msgs/Point2DFloat32.h>
+#include <trajectory_rollout/Position2DInt.h>
 
 //for computing path distance
 #include <queue>
@@ -97,7 +97,7 @@ namespace trajectory_rollout {
        */
       TrajectoryController(WorldModel& world_model, 
           const costmap_2d::ObstacleMapAccessor& ma, 
-          std::vector<std_msgs::Point2DFloat32> footprint_spec,
+          std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
           double inscribed_radius, double circumscribed_radius,
           double acc_lim_x = 1.0, double acc_lim_y = 1.0, double acc_lim_theta = 1.0,
           double sim_time = 1.0, double sim_granularity = 0.025, int samples_per_dim = 20, 
@@ -129,7 +129,7 @@ namespace trajectory_rollout {
        * @brief  Update the plan that the controller is following
        * @param new_plan A new plan for the controller to follow 
        */
-      void updatePlan(const std::vector<std_msgs::Point2DFloat32>& new_plan);
+      void updatePlan(const std::vector<deprecated_msgs::Point2DFloat32>& new_plan);
 
       /**
        * @brief  Used for display purposes, allows the footprint of the robot to be drawn in visualization tools
@@ -138,7 +138,7 @@ namespace trajectory_rollout {
        * @param theta_i The orientation of the robot
        * @return A vector of points in world coordinates that correspond to the verticies of the robot's footprint 
        */
-      std::vector<std_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
+      std::vector<deprecated_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
 
       /**
        * @brief  Accessor for the goal the robot is currently pursuing in world corrdinates
@@ -214,7 +214,7 @@ namespace trajectory_rollout {
        * @param  fill If true: returns all cells in the footprint of the robot. If false: returns only the cells that make up the outline of the footprint.
        * @return The cells that make up either the outline or entire footprint of the robot depending on fill
        */
-      std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
+      std::vector<trajectory_rollout::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
 
       /**
        * @brief  Use Bresenham's algorithm to trace a line between two points in a grid
@@ -224,13 +224,13 @@ namespace trajectory_rollout {
        * @param  y1 The y coordinate of the second point
        * @param  pts Will be filled with the cells that lie on the line in the grid
        */
-      void getLineCells(int x0, int x1, int y0, int y1, std::vector<std_msgs::Position2DInt>& pts);
+      void getLineCells(int x0, int x1, int y0, int y1, std::vector<trajectory_rollout::Position2DInt>& pts);
 
       /**
        * @brief Fill the outline of a polygon, in this case the robot footprint, in a grid
        * @param footprint The list of cells making up the footprint in the grid, will be modified to include all cells inside the footprint
        */
-      void getFillCells(std::vector<std_msgs::Position2DInt>& footprint);
+      void getFillCells(std::vector<trajectory_rollout::Position2DInt>& footprint);
 
       /**
        * @brief Update what cells are considered path based on the global plan 
@@ -241,11 +241,11 @@ namespace trajectory_rollout {
       const costmap_2d::ObstacleMapAccessor& ma_; ///< @brief Provides access to cost map information
       WorldModel& world_model_; ///< @brief The world model that the controller uses for collision detection
 
-      std::vector<std_msgs::Point2DFloat32> footprint_spec_; ///< @brief The footprint specification of the robot
+      std::vector<deprecated_msgs::Point2DFloat32> footprint_spec_; ///< @brief The footprint specification of the robot
 
       double inscribed_radius_, circumscribed_radius_; ///< @brief The inscribed and circumscribed radii of the robot
 
-      std::vector<std_msgs::Point2DFloat32> global_plan_; ///< @brief The global path for the robot to follow
+      std::vector<deprecated_msgs::Point2DFloat32> global_plan_; ///< @brief The global path for the robot to follow
 
       bool stuck_left, stuck_right; ///< @brief Booleans to keep the robot from oscillating during rotation
       bool rotating_left, rotating_right; ///< @brief Booleans to keep track of the direction of rotation for the robot

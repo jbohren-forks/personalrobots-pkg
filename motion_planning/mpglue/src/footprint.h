@@ -35,12 +35,12 @@
 #ifndef MPGLUE_FOOTPRINT_HPP
 #define MPGLUE_FOOTPRINT_HPP
 
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 #include <vector>
 
 namespace mpglue {
   
-  typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
+  typedef std::vector<deprecated_msgs::Point2DFloat32> footprint_t;
   
   footprint_t createSimpleFootprint(double inscribedRadius, double circumscribedRadius);
   

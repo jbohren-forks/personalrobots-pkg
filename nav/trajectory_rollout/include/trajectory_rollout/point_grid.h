@@ -39,7 +39,7 @@
 #include <vector>
 #include <list>
 #include <cfloat>
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 #include <robot_msgs/Point32.h>
 #include <costmap_2d/observation.h>
 #include <trajectory_rollout/world_model.h>
@@ -65,7 +65,7 @@ namespace trajectory_rollout {
        * @param  obstacle_range The maximum distance for obstacles to be added to the grid
        * @param  min_separation The minimum distance between points in the grid
        */
-      PointGrid(double width, double height, double resolution, std_msgs::Point2DFloat32 origin, 
+      PointGrid(double width, double height, double resolution, deprecated_msgs::Point2DFloat32 origin, 
           double max_z, double obstacle_range, double min_separation);
 
       /**
@@ -79,7 +79,7 @@ namespace trajectory_rollout {
        * @param  upper_right The upper right corner of the range search
        * @param points A vector of pointers to lists of the relevant points
        */
-      void getPointsInRange(std_msgs::Point2DFloat32 lower_left, std_msgs::Point2DFloat32 upper_right, std::vector< std::list<robot_msgs::Point32>* > points);
+      void getPointsInRange(deprecated_msgs::Point2DFloat32 lower_left, deprecated_msgs::Point2DFloat32 upper_right, std::vector< std::list<robot_msgs::Point32>* > points);
 
       /**
        * @brief  Checks if any points in the grid lie inside a convex footprint
@@ -89,7 +89,7 @@ namespace trajectory_rollout {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return True if all points lie outside the footprint, false otherwise
        */
-      virtual bool legalFootprint(const std_msgs::Point2DFloat32& position, const std::vector<std_msgs::Point2DFloat32>& footprint,
+      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       /**
@@ -97,7 +97,7 @@ namespace trajectory_rollout {
        * @param observations The observations from various sensors 
        * @param laser_outline The polygon of the active sensor region
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<std_msgs::Point2DFloat32>& laser_outline);
+      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<deprecated_msgs::Point2DFloat32>& laser_outline);
 
       /**
        * @brief  Convert from world coordinates to grid coordinates
@@ -106,7 +106,7 @@ namespace trajectory_rollout {
        * @param  gy The y coordinate of the corresponding grid cell to be set by the function
        * @return True if the conversion was successful, false otherwise
        */
-      inline bool gridCoords(std_msgs::Point2DFloat32 pt, unsigned int& gx, unsigned int& gy) const {
+      inline bool gridCoords(deprecated_msgs::Point2DFloat32 pt, unsigned int& gx, unsigned int& gy) const {
         if(pt.x < origin_.x || pt.y < origin_.y){
           gx = 0;
           gy = 0;
@@ -131,7 +131,7 @@ namespace trajectory_rollout {
        * @param  lower_left The lower left bounds of the cell in world coordinates to be filled in
        * @param  upper_right The upper right bounds of the cell in world coordinates to be filled in
        */
-      inline void getCellBounds(unsigned int gx, unsigned int gy, std_msgs::Point2DFloat32& lower_left, std_msgs::Point2DFloat32& upper_right) const {
+      inline void getCellBounds(unsigned int gx, unsigned int gy, deprecated_msgs::Point2DFloat32& lower_left, deprecated_msgs::Point2DFloat32& upper_right) const {
         lower_left.x = gx * resolution_ + origin_.x;
         lower_left.y = gy * resolution_ + origin_.y;
 
@@ -201,7 +201,7 @@ namespace trajectory_rollout {
        * @param c The point to compute orientation for
        * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
        */
-      inline double orient(const std_msgs::Point2DFloat32& a, const std_msgs::Point2DFloat32& b, const robot_msgs::Point32& c){
+      inline double orient(const deprecated_msgs::Point2DFloat32& a, const deprecated_msgs::Point2DFloat32& b, const robot_msgs::Point32& c){
         double acx = a.x - c.x;
         double bcx = b.x - c.x;
         double acy = a.y - c.y;
@@ -215,7 +215,7 @@ namespace trajectory_rollout {
        * @param poly The polygon to check against
        * @return True if the point is in the polygon, false otherwise
        */
-      bool ptInPolygon(const robot_msgs::Point32& pt, const std::vector<std_msgs::Point2DFloat32>& poly);
+      bool ptInPolygon(const robot_msgs::Point32& pt, const std::vector<deprecated_msgs::Point2DFloat32>& poly);
 
       /**
        * @brief  Insert a point into the point grid
@@ -243,11 +243,11 @@ namespace trajectory_rollout {
        * @brief  Removes points from the grid that lie within the polygon
        * @param poly A specification of the polygon to clear from the grid 
        */
-      void removePointsInPolygon(const std::vector<std_msgs::Point2DFloat32> poly);
+      void removePointsInPolygon(const std::vector<deprecated_msgs::Point2DFloat32> poly);
 
     private:
       double resolution_; ///< @brief The resolution of the grid in meters/cell
-      std_msgs::Point2DFloat32 origin_; ///< @brief The origin point of the grid
+      deprecated_msgs::Point2DFloat32 origin_; ///< @brief The origin point of the grid
       unsigned int width_; ///< @brief The width of the grid in cells
       unsigned int height_; ///< @brief The height of the grid in cells
       std::vector< std::list<robot_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid

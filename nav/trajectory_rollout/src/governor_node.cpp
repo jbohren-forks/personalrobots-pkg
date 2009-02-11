@@ -38,7 +38,7 @@ using namespace std;
 using namespace trajectory_rollout;
 
 namespace trajectory_rollout{
-  GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
+  GovernorNode::GovernorNode(std::vector<deprecated_msgs::Point2DFloat32> footprint_spec) : 
     ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
     tf_(*this, true, (uint64_t)10000000000ULL), 
     ma_(map_, OUTER_RADIUS),
@@ -86,7 +86,7 @@ namespace trajectory_rollout{
     ma_.synchronize();
 
     //update the global plan from the message
-    vector<std_msgs::Point2DFloat32> plan;
+    vector<deprecated_msgs::Point2DFloat32> plan;
 
     for(unsigned int i = 0; i < plan_msg_.plan.get_path_size(); ++i){
       plan.push_back(plan_msg_.plan.path[i]);
@@ -176,7 +176,7 @@ namespace trajectory_rollout{
       publish("local_path", path_msg);
       printf("path msg\n");
 
-      vector<std_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
+      vector<deprecated_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
       //let's also draw the footprint of the robot for the last point on the selected trajectory
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;
@@ -223,8 +223,8 @@ namespace trajectory_rollout{
 int main(int argc, char** argv){
   ros::init(argc, argv);
 
-  std::vector<std_msgs::Point2DFloat32> footprint_spec;
-  std_msgs::Point2DFloat32 pt;
+  std::vector<deprecated_msgs::Point2DFloat32> footprint_spec;
+  deprecated_msgs::Point2DFloat32 pt;
   //create a square footprint
   pt.x = ROBOT_FRONT_RADIUS;
   pt.y = ROBOT_SIDE_RADIUS;
