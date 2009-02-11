@@ -1075,7 +1075,6 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   node->advertiseService(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertiseService(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
-  node->advertiseService(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
 
