@@ -1,0 +1,17 @@
+<package>
+  <description brief='PR2 Controller Test Harness'>
+    Test harness for profiling and debugging controllers from the software perspective without hardware.
+  </description>
+  <author>Eric Berger</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="hardware_interface" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="mechanism_control" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include'/>
+  </export>
+</package>
