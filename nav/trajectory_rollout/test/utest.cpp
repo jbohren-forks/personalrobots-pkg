@@ -54,7 +54,7 @@ using namespace trajectory_rollout;
 namespace trajectory_rollout {
   class TrajectoryControllerTest : public testing::Test {
     public:
-    TrajectoryControllerTest(MapGrid& g, WavefrontMapAccessor& wave, std::vector<std_msgs::Point2DFloat32> footprint_spec);
+    TrajectoryControllerTest(MapGrid& g, WavefrontMapAccessor& wave, std::vector<deprecated_msgs::Point2DFloat32> footprint_spec);
     void correctFootprint();
     void footprintObstacles();
     void checkGoalDistance();
@@ -67,7 +67,7 @@ namespace trajectory_rollout {
     TrajectoryController tc;
   };
 
-  TrajectoryControllerTest::TrajectoryControllerTest(MapGrid& g, WavefrontMapAccessor& wave, std::vector<std_msgs::Point2DFloat32> footprint_spec) 
+  TrajectoryControllerTest::TrajectoryControllerTest(MapGrid& g, WavefrontMapAccessor& wave, std::vector<deprecated_msgs::Point2DFloat32> footprint_spec) 
     : map_(g), wa(wave), cm(wa), tc(cm, wa, footprint_spec, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0) 
   {}
 
@@ -275,8 +275,8 @@ TEST(TrajectoryControllerTest, checkPathDistance){
 int main(int argc, char** argv){
   MapGrid mg(10, 10, 1, 0, 0);
   WavefrontMapAccessor wa(mg, .25);
-  std::vector<std_msgs::Point2DFloat32> footprint_spec;
-  std_msgs::Point2DFloat32 pt;
+  std::vector<deprecated_msgs::Point2DFloat32> footprint_spec;
+  deprecated_msgs::Point2DFloat32 pt;
   //create a square footprint
   pt.x = 2;
   pt.y = 2;
