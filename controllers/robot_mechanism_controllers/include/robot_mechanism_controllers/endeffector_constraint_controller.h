@@ -31,8 +31,8 @@
  * Author: Melonee Wise
  */
 
-#ifndef ENDEFFECTOR_CONSTRAINT_CONTEROLLER_H
-#define ENDEFFECTOR_CONSTRAINT_CONTEROLLER_H
+#ifndef ENDEFFECTOR_CONSTRAINT_CONTROLLER_H
+#define ENDEFFECTOR_CONSTRAINT_CONTROLLER_H
 
 #include <vector>
 #include "boost/scoped_ptr.hpp"

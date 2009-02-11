@@ -31,8 +31,8 @@
  * Author: Melonee Wise
  */
 
-#ifndef PLUG_CONTEROLLER_H
-#define PLUG_CONTEROLLER_H
+#ifndef PLUG_CONTROLLER_H
+#define PLUG_CONTROLLER_H
 
 #include <vector>
 #include "boost/scoped_ptr.hpp"
@@ -81,7 +81,7 @@ private:
   mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
-  boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
+  boost::scoped_ptr<KDL::Chai10444nFkSolverPos> jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
   Eigen::Matrix<float,6,4> constraint_jac_;

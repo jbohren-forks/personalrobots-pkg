@@ -31,8 +31,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef CARTESIAN_TRAJECTORY_CONTEROLLER_H
-#define CARTESIAN_TRAJECTORY_CONTEROLLER_H
+#ifndef CARTESIAN_TRAJECTORY_CONTROLLER_H
+#define CARTESIAN_TRAJECTORY_CONTROLLER_H
 
 #include <vector>
 #include <string>

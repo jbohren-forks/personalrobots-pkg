@@ -31,8 +31,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef CARTESIAN_TWIST_CONTEROLLER_H
-#define CARTESIAN_TWIST_CONTEROLLER_H
+#ifndef CARTESIAN_TWIST_CONTROLLER_H
+#define CARTESIAN_TWIST_CONTROLLER_H
 
 #include <vector>
 #include <kdl/chain.hpp>
