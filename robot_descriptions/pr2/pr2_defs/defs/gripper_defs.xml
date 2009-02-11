@@ -407,7 +407,7 @@
           <elem key="material" value="Gazebo/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
-          <mesh filename="wrist_roll" />
+          <mesh filename="gripper_palm" />
         </geometry>
       </visual>
 
