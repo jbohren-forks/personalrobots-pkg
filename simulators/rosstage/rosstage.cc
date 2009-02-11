@@ -41,7 +41,7 @@ way to go.  The same technique can be used for rosgazebo.
 
 @section usage Usage
 @verbatim
-$ rosstage <world> [standard ROS args]
+$ rosstage <world> <numRobots (optional)> [standard ROS args]
 @endverbatim
 
 @param world The Stage .world file to load.
@@ -49,7 +49,7 @@ $ rosstage <world> [standard ROS args]
 @par Example
 
 @verbatim
-$ rosstage willow-erratic.world
+$ rosstage willow-erratic.world 3
 @endverbatim
 
 <hr>
@@ -57,12 +57,20 @@ $ rosstage willow-erratic.world
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "cmd_vel"/PoseDot : velocity commands to differentially drive the 
-position model.
+- @b "cmd_vel_<i>"/PoseDot : velocity commands to differentially drive the 
+                             position model of the ith robot. "_<i>" is 
+                             ommitted if the numRobots arg was ommitted.
 
 Publishes to (name / type):
-- @b "odom"/RobotBase2DOdom : odometry data from the position model.
-- @b "base_scan"/LaserScan : scans from the laser model.
+- @b "odom_<i>"/RobotBase2DOdom : odometry data from the position model of 
+                                  the ith robot. "_<i>" is ommitted if the 
+                                  numRobots arg was ommitted
+- @b "base_scan_<i>"/LaserScan :   scans from the laser model of the ith robot. 
+                                  "_<i>" is ommitted if the numRobots arg was 
+                                  ommitted.
+- @b "base_pose_ground_truth_<i>"/PoseWithRatesStamped : ground truth pos of the 
+                                  ith robot. "_<i>" is ommitted if the numRobots 
+                                  arg was ommitted.
 
 
 <hr>
@@ -92,29 +100,43 @@ Publishes to (name / type):
 
 #include "tf/transform_broadcaster.h"
 
-#define USAGE "rosstage <worldfile>"
+#define USAGE "rosstage <worldfile> <numRobots>"
+#define ODOM "odom"
+#define BASE_SCAN "base_scan"
+#define BASE_POSE_GROUND_TRUTH "base_pose_ground_truth"
+#define CMD_VEL "cmd_vel"
 
 // Our node
 class StageNode : public ros::Node
 {
   private:
+
+    int numRobots;
+  
+    // true if numRobots argument was ommitted
+    bool omitRobotID;
+
     // Messages that we'll send or receive
-    robot_msgs::PoseDot velMsg;
-    laser_scan::LaserScan laserMsg;
-    deprecated_msgs::RobotBase2DOdom odomMsg;
-    robot_msgs::PoseWithRatesStamped groundTruthMsg;
+    robot_msgs::PoseDot *velMsgs;
+    laser_scan::LaserScan *laserMsgs;
+    deprecated_msgs::RobotBase2DOdom *odomMsgs;
+    robot_msgs::PoseWithRatesStamped *groundTruthMsgs;
     roslib::Time timeMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     boost::mutex msg_lock;
 
     // The models that we're interested in
-    Stg::StgModelLaser* lasermodel;
-    Stg::StgModelPosition* positionmodel;
+    Stg::StgModelLaser **lasermodels;
+    Stg::StgModelPosition **positionmodels;
 
     // A helper function that is executed for each stage model.  We use it
     // to search for models of interest.
     static void ghfunc(gpointer key, Stg::StgModel* mod, StageNode* node);
+
+    // Appends the given robot ID to the given message name.  If omitRobotID
+    // is true, an unaltered copy of the name is returned.
+    char *appendID(const char *name, int robotID);
 
     tf::TransformBroadcaster tf;
 
@@ -128,7 +150,7 @@ class StageNode : public ros::Node
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
-    StageNode(int argc, char** argv, bool gui, const char* fname);
+     StageNode(int argc, char** argv, bool gui, const char* fname, int numRobots, bool omitRobotID);
     ~StageNode();
 
     // Subscribe to models of interest.  Currently, we find and subscribe
@@ -147,38 +169,77 @@ class StageNode : public ros::Node
     Stg::StgWorld* world;
 };
 
+char *
+StageNode::appendID(const char *name,
+		    int robotID)
+{
+  if (!this->omitRobotID) 
+    {
+      static char buf[50];
+      sprintf(buf, "%s_%d", name, robotID);
+      return buf;
+    }
+  else
+    {
+      return (char*)name;
+    }
+}
+
 void
 StageNode::ghfunc(gpointer key,
                   Stg::StgModel* mod,
                   StageNode* node)
 {
-  if(!(node->lasermodel) &&
-     (node->lasermodel = dynamic_cast<Stg::StgModelLaser*>(mod)))
-  {
-    puts("found laser");
-  }
-  if(!(node->positionmodel) &&
-     (node->positionmodel = dynamic_cast<Stg::StgModelPosition*>(mod)))
-  {
-    puts("found position");
-  }
+  for (int r = 0; r < node->numRobots; r++)
+    {
+      if(node->lasermodels[r] == NULL && 
+	 (node->lasermodels[r] = dynamic_cast<Stg::StgModelLaser*>(mod)))
+	{
+	  puts("found laser");
+	  break;
+	}
+    }
+
+  for (int r = 0; r < node->numRobots; r++)
+    {
+      if(node->positionmodels[r] == NULL &&
+	 (node->positionmodels[r] = dynamic_cast<Stg::StgModelPosition*>(mod)))
+	{
+	  puts("found position");
+	  break;
+	}
+    }
 }
 
 void
 StageNode::cmdvelReceived()
 {
   boost::mutex::scoped_lock lock(msg_lock);
-
-  this->positionmodel->SetSpeed(this->velMsg.vel.vx, this->velMsg.vel.vy, this->velMsg.ang_vel.vz);
+  for (int r = 0; r < this->numRobots; r++)
+    {
+      this->positionmodels[r]->SetSpeed(this->velMsgs[r].vel.vx, this->velMsgs[r].vel.vy, this->velMsgs[r].ang_vel.vz);
+    }
   this->base_last_cmd = this->sim_time;
 }
 
-StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
+StageNode::StageNode(int argc, char** argv, bool gui, const char* fname, int numRobots, bool omitRobotID) :
   ros::Node("rosstage"),
+  numRobots(numRobots),
+  omitRobotID(omitRobotID),
   tf(*this)
 {
-  this->lasermodel = NULL;
-  this->positionmodel = NULL;
+  this->velMsgs = new robot_msgs::PoseDot[numRobots];
+  this->laserMsgs = new laser_scan::LaserScan[numRobots];
+  this->odomMsgs = new deprecated_msgs::RobotBase2DOdom[numRobots];
+  this->groundTruthMsgs = new robot_msgs::PoseWithRatesStamped[numRobots];
+  this->lasermodels = new Stg::StgModelLaser*[numRobots];
+  this->positionmodels = new Stg::StgModelPosition*[numRobots];
+
+  for (int r = 0; r < this->numRobots; r++)
+    {
+      this->lasermodels[r] = NULL;
+      this->positionmodels[r] = NULL;
+    }
 
   this->sim_time.fromSec(0.0);
   this->base_last_cmd.fromSec(0.0);
@@ -209,31 +270,40 @@ int
 StageNode::SubscribeModels()
 {
   setParam("/use_sim_time", true);
-  if(this->lasermodel)
-    this->lasermodel->Subscribe();
-  else
-  {
-    puts("no laser");
-    return(-1);
-  }
-  if(this->positionmodel)
-    this->positionmodel->Subscribe();
-  else
-  {
-    puts("no position");
-    return(-1);
-  }
 
-  advertise<laser_scan::LaserScan>("base_scan",10);
-  advertise<deprecated_msgs::RobotBase2DOdom>("odom",10);
-  advertise<robot_msgs::PoseWithRatesStamped>("base_pose_ground_truth",10);
+  for (int r = 0; r < this->numRobots; r++)
+    {
+      if(this->lasermodels[r])
+	this->lasermodels[r]->Subscribe();
+      else
+	{
+	  puts("no laser");
+	  return(-1);
+	}
+      if(this->positionmodels[r])
+	this->positionmodels[r]->Subscribe();
+      else
+	{
+	  puts("no position");
+	  return(-1);
+	}
+      advertise<laser_scan::LaserScan>(appendID(BASE_SCAN,r), 10);
+      advertise<deprecated_msgs::RobotBase2DOdom>(appendID(ODOM,r), 10);
+      advertise<robot_msgs::PoseWithRatesStamped>(appendID(BASE_POSE_GROUND_TRUTH,r), 10);
+      subscribe(appendID(CMD_VEL,r), velMsgs[r], &StageNode::cmdvelReceived, 10);
+    }
   advertise<roslib::Time>("time",10);
-  subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
 
 StageNode::~StageNode()
 {
+  delete[] velMsgs;
+  delete[] laserMsgs;
+  delete[] odomMsgs;
+  delete[] groundTruthMsgs;
+  delete[] lasermodels;
+  delete[] positionmodels;
 }
 
 void
@@ -248,85 +318,95 @@ StageNode::Update()
 
   this->sim_time.fromSec(world->SimTimeNow() / 1e6);
 
+  // TODO make this only affect one robot if necessary
   if((this->base_watchdog_timeout.toSec() > 0.0) &&
      ((this->sim_time - this->base_last_cmd) >= this->base_watchdog_timeout))
-    this->positionmodel->SetSpeed(0.0, 0.0, 0.0);
-
-  // Get latest laser data
-  Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
-  if(samples)
-  {
-    // Translate into ROS message format and publish
-    Stg::stg_laser_cfg_t cfg = this->lasermodel->GetConfig();
-    this->laserMsg.angle_min = -cfg.fov/2.0;
-    this->laserMsg.angle_max = +cfg.fov/2.0;
-    this->laserMsg.angle_increment = cfg.fov / (double)(cfg.sample_count-1);
-    this->laserMsg.range_min = 0.0;
-    this->laserMsg.range_max = cfg.range_bounds.max;
-    this->laserMsg.ranges.resize(cfg.sample_count);
-    this->laserMsg.intensities.resize(cfg.sample_count);
-    for(unsigned int i=0;i<cfg.sample_count;i++)
     {
-      this->laserMsg.ranges[i] = samples[i].range;
-      this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
+      for (int r = 0; r < this->numRobots; r++)
+	{
+	  this->positionmodels[r]->SetSpeed(0.0, 0.0, 0.0);
+	}
     }
 
-    this->laserMsg.header.frame_id = "base_laser";
-    this->laserMsg.header.stamp = sim_time;
-    publish("base_scan",this->laserMsg);
-  }
-  
-  // Also publish the base->base_laser Tx.  This could eventually move
-  // into being retrieved from the param server as a static Tx.
-  Stg::stg_pose_t lp = this->lasermodel->GetPose();
-  tf.sendTransform(tf::Stamped<tf::Transform> 
-                   (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
-                                  tf::Point(lp.x, lp.y, 0.15)),
-                    sim_time, "base_laser", "base_link"));
-  // Send the identity transform between base_footprint and base_link
-  tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
-  tf.sendTransform(tf::Stamped<tf::Transform>
-		   (txIdentity.inverse(),
-		    sim_time, "base_footprint", "base_link"));
-  // Get latest odometry data
-  // Translate into ROS message format and publish
-  this->odomMsg.pos.x = this->positionmodel->est_pose.x;
-  this->odomMsg.pos.y = this->positionmodel->est_pose.y;
-  this->odomMsg.pos.th = this->positionmodel->est_pose.a;
-  Stg::stg_velocity_t v = this->positionmodel->GetVelocity();
-  this->odomMsg.vel.x = v.x;
-  this->odomMsg.vel.y = v.y;
-  this->odomMsg.vel.th = v.a;
-  this->odomMsg.stall = this->positionmodel->Stall();
-  this->odomMsg.header.frame_id = "odom";
-  this->odomMsg.header.stamp = sim_time;
-  publish("odom",this->odomMsg);
-  tf::Stamped<tf::Transform> 
-          tx(tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
-                           tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
-             sim_time, "odom", "base_link");
-  this->tf.sendTransform(tx);
+  // Get latest laser data
+  for (int r = 0; r < this->numRobots; r++)
+    {
+      Stg::stg_laser_sample_t* samples = this->lasermodels[r]->GetSamples();
+      if(samples)
+	{
+	  // Translate into ROS message format and publish
+	  Stg::stg_laser_cfg_t cfg = this->lasermodels[r]->GetConfig();
+	  this->laserMsgs[r].angle_min = -cfg.fov/2.0;
+	  this->laserMsgs[r].angle_max = +cfg.fov/2.0;
+	  this->laserMsgs[r].angle_increment = cfg.fov / (double)(cfg.sample_count-1);
+	  this->laserMsgs[r].range_min = 0.0;
+	  this->laserMsgs[r].range_max = cfg.range_bounds.max;
+	  this->laserMsgs[r].ranges.resize(cfg.sample_count);
+	  this->laserMsgs[r].intensities.resize(cfg.sample_count);
+	  for(unsigned int i=0;i<cfg.sample_count;i++)
+	    {
+	      this->laserMsgs[r].ranges[i] = samples[i].range;
+	      this->laserMsgs[r].intensities[i] = (uint8_t)samples[i].reflectance;
+	    }
+	  
+	  this->laserMsgs[r].header.frame_id = "base_laser";
+	  this->laserMsgs[r].header.stamp = sim_time;
+	  publish(appendID(BASE_SCAN,r), this->laserMsgs[r]);
+	}
+      
+      // Also publish the base->base_laser Tx.  This could eventually move
+      // into being retrieved from the param server as a static Tx.
+      Stg::stg_pose_t lp = this->lasermodels[r]->GetPose();
+      tf.sendTransform(tf::Stamped<tf::Transform> 
+		       (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
+				      tf::Point(lp.x, lp.y, 0.15)),
+			sim_time, "base_laser", "base_link"));
+      // Send the identity transform between base_footprint and base_link
+      tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
+      tf.sendTransform(tf::Stamped<tf::Transform>
+		       (txIdentity.inverse(),
+			sim_time, "base_footprint", "base_link"));
+      // Get latest odometry data
+      // Translate into ROS message format and publish
+      this->odomMsgs[r].pos.x = this->positionmodels[r]->est_pose.x;
+      this->odomMsgs[r].pos.y = this->positionmodels[r]->est_pose.y;
+      this->odomMsgs[r].pos.th = this->positionmodels[r]->est_pose.a;
+      Stg::stg_velocity_t v = this->positionmodels[r]->GetVelocity();
+      this->odomMsgs[r].vel.x = v.x;
+      this->odomMsgs[r].vel.y = v.y;
+      this->odomMsgs[r].vel.th = v.a;
+      this->odomMsgs[r].stall = this->positionmodels[r]->Stall();
+      this->odomMsgs[r].header.frame_id = "odom";
+      this->odomMsgs[r].header.stamp = sim_time;
 
-  // Also publish the ground truth pose
-  Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
-  // Note that we correct for Stage's screwed-up coord system.
-  tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
-                   tf::Point(gpose.y, -gpose.x, 0.0));
+      publish(appendID(ODOM,r),this->odomMsgs[r]);
 
-  this->groundTruthMsg.pos.position.x     = gt.getOrigin().x();
-  this->groundTruthMsg.pos.position.y     = gt.getOrigin().y();
-  this->groundTruthMsg.pos.position.z     = gt.getOrigin().z();
-  this->groundTruthMsg.pos.orientation.x  = gt.getRotation().x();
-  this->groundTruthMsg.pos.orientation.y  = gt.getRotation().y();
-  this->groundTruthMsg.pos.orientation.z  = gt.getRotation().z();
-  this->groundTruthMsg.pos.orientation.w  = gt.getRotation().w();
+      tf::Stamped<tf::Transform> 
+	tx(tf::Transform(tf::Quaternion(odomMsgs[r].pos.th, 0, 0), 
+			 tf::Point(odomMsgs[r].pos.x, odomMsgs[r].pos.y, 0.0)).inverse(),
+	   sim_time, "odom", "base_link");
+      this->tf.sendTransform(tx);
+      
+      // Also publish the ground truth pose
+      Stg::stg_pose_t gpose = this->positionmodels[r]->GetGlobalPose();
+      // Note that we correct for Stage's screwed-up coord system.
+      tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
+		       tf::Point(gpose.y, -gpose.x, 0.0));
 
-  this->groundTruthMsg.header.frame_id = "odom";
-  this->groundTruthMsg.header.stamp = sim_time;
+      this->groundTruthMsgs[r].pos.position.x     = gt.getOrigin().x();
+      this->groundTruthMsgs[r].pos.position.y     = gt.getOrigin().y();
+      this->groundTruthMsgs[r].pos.position.z     = gt.getOrigin().z();
+      this->groundTruthMsgs[r].pos.orientation.x  = gt.getRotation().x();
+      this->groundTruthMsgs[r].pos.orientation.y  = gt.getRotation().y();
+      this->groundTruthMsgs[r].pos.orientation.z  = gt.getRotation().z();
+      this->groundTruthMsgs[r].pos.orientation.w  = gt.getRotation().w();
+      
+      this->groundTruthMsgs[r].header.frame_id = "odom";
+      this->groundTruthMsgs[r].header.stamp = sim_time;
+      
+      publish(appendID(BASE_POSE_GROUND_TRUTH,r), this->groundTruthMsgs[r]);
 
-  publish("base_pose_ground_truth", this->groundTruthMsg);
-
-
+    }
 
   this->timeMsg.rostime = sim_time;
   publish("time", this->timeMsg);
@@ -352,17 +432,28 @@ main(int argc, char** argv)
       gui = false;
   }
 
-  StageNode sn(argc,argv,gui,argv[argc-1]);
+  int numRobots = atoi(argv[argc-1]);
+  StageNode *sn;//(argc-1,argv,gui,argv[argc-2], numRobots, false);
 
-  if(sn.SubscribeModels() != 0)
+  if (numRobots)
+    {
+      sn = new StageNode(argc-1,argv,gui,argv[argc-2], numRobots, false);   
+    }
+  else
+    {
+      // if numRobots arg is ommitted, omit the robotID tag from messages
+      sn = new StageNode(argc,argv,gui,argv[argc-1], 1, true);   
+    }
+
+  if(sn->SubscribeModels() != 0)
     exit(-1);
 
-  while(sn.ok() && !sn.world->TestQuit())
+  while(sn->ok() && !sn->world->TestQuit())
   {
-    sn.Update();
+    sn->Update();
   }
   
-  
+  delete sn;
 
   exit(0);
 }
