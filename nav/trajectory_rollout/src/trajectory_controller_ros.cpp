@@ -41,6 +41,7 @@
 
 using namespace std;
 using namespace deprecated_msgs;
+using namespace robot_msgs;
 using namespace costmap_2d;
 using namespace tf;
 using namespace laser_scan;

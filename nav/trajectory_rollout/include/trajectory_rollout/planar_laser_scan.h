@@ -37,8 +37,8 @@
 #ifndef TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
 #define TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
 
-#include <std_msgs/Point.h>
-#include <std_msgs/PointCloud.h>
+#include <robot_msgs/Point.h>
+#include <robot_msgs/PointCloud.h>
 
 namespace trajectory_rollout {
   /**
@@ -48,8 +48,8 @@ namespace trajectory_rollout {
   class PlanarLaserScan {
     public:
       PlanarLaserScan() {}
-      std_msgs::Point origin;
-      std_msgs::PointCloud cloud;
+      robot_msgs::Point origin;
+      robot_msgs::PointCloud cloud;
       double angle_min, angle_max, angle_increment;
   };
 };

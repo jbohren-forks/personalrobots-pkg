@@ -79,7 +79,7 @@ namespace trajectory_rollout {
        * @param  upper_right The upper right corner of the range search
        * @param points A vector of pointers to lists of the relevant points
        */
-      void getPointsInRange(const std_msgs::Point2DFloat32& lower_left, const deprecated_msgs::Point2DFloat32& upper_right, std::vector< std::list<std_msgs::Point32>* >& points);
+      void getPointsInRange(const deprecated_msgs::Point2DFloat32& lower_left, const deprecated_msgs::Point2DFloat32& upper_right, std::vector< std::list<robot_msgs::Point32>* >& points);
 
       /**
        * @brief  Checks if any points in the grid lie inside a convex footprint
