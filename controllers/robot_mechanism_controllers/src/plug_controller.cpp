@@ -201,12 +201,12 @@ void PlugController::computeConstraintJacobian()
   
   // put the end_effector point into eigen
   Eigen::Vector3f end_effector_pt(endeffector_frame_.p(0), endeffector_frame_.p(1), endeffector_frame_.p(2));
-  // get the vector from the plug pt to the end effector pt
-  Eigen::Vector3f vector_to_end_effector = end_effector_pt - plug_pt_;
-  // compute the scalar projection along the plug norm
-  double scalar = plug_norm_.dot(vector_to_end_effector);
+  // get the vector from the outlet pt to the end effector pt
+  Eigen::Vector3f vector_to_end_effector = end_effector_pt - outlet_pt_;
+  // compute the scalar projection along the outlet norm
+  double scalar = outlet_norm_.dot(vector_to_end_effector);
   // subtract the two points to get the normal direction to be applied to keep the end effector on the line
-  Eigen::Vector3f radial_norm = (scalar * plug_norm_) - end_effector_pt;
+  Eigen::Vector3f radial_norm = (scalar * outlet_norm_) - end_effector_pt;
   // normalize the vector
   Eigen::Vector3f radial_unit_vector = radial_norm.normalized();
   // compute the distance error from the line
@@ -327,10 +327,10 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
   node_->subscribe(topic_ + "/command", wrench_msg_,
                   &PlugControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
-  // subscribe to plug pose commands
-  node_->subscribe(topic_ + "/plug_pose", plug_pose_msg_,
-                  &PlugControllerNode::plugPose, this, 1);
-  guard_plug_pose_.set(topic_ + "/plug_pose");
+  // subscribe to outlet pose commands
+  node_->subscribe(topic_ + "/outlet_pose", outlet_pose_msg_,
+                  &PlugControllerNode::outletPose, this, 1);
+  guard_outlet_pose_.set(topic_ + "/outlet_pose");
   return true;
 }
 
@@ -340,21 +340,21 @@ void PlugControllerNode::update()
   controller_.update();
 
 }
-void PlugControllerNode::plugPose()
+void PlugControllerNode::outletPose()
 {
 
   tf::Stamped<tf::Point> point;
-  point.setX(plug_pose_msg_.point.x);
-  point.setY(plug_pose_msg_.point.y);
-  point.setZ(plug_pose_msg_.point.z);
+  point.setX(outlet_pose_msg_.point.x);
+  point.setY(outlet_pose_msg_.point.y);
+  point.setZ(outlet_pose_msg_.point.z);
   point.stamp_ = ros::Time();
-  point.frame_id_ = plug_pose_msg_.header.frame_id;
+  point.frame_id_ = outlet_pose_msg_.header.frame_id;
   
-  tf::Stamped<tf::Point> plug_pt;
+  tf::Stamped<tf::Point> outlet_pt;
 
   try
   {
-    TF.transformPoint(controller_.root_name_, point, plug_pt);
+    TF.transformPoint(controller_.root_name_, point, outlet_pt);
   }
   catch(tf::TransformException& ex)
   {
@@ -362,23 +362,23 @@ void PlugControllerNode::plugPose()
     return;
   }
   
-  controller_.plug_pt_(0) = plug_pt.x();
-  controller_.plug_pt_(1) = plug_pt.y();
-  controller_.plug_pt_(2) = plug_pt.z();
+  controller_.outlet_pt_(0) = outlet_pt.x();
+  controller_.outlet_pt_(1) = outlet_pt.y();
+  controller_.outlet_pt_(2) = outlet_pt.z();
   
   
   tf::Stamped<tf::Vector3> vector;
-  vector.setX(plug_pose_msg_.vector.x);
-  vector.setY(plug_pose_msg_.vector.y);
-  vector.setZ(plug_pose_msg_.vector.z);
+  vector.setX(outlet_pose_msg_.vector.x);
+  vector.setY(outlet_pose_msg_.vector.y);
+  vector.setZ(outlet_pose_msg_.vector.z);
   vector.stamp_ = ros::Time();
-  vector.frame_id_ = plug_pose_msg_.header.frame_id;
+  vector.frame_id_ = outlet_pose_msg_.header.frame_id;
   
-  tf::Stamped<tf::Vector3> plug_norm;
+  tf::Stamped<tf::Vector3> outlet_norm;
 
   try
   {
-    TF.transformVector(controller_.root_name_, vector, plug_norm);
+    TF.transformVector(controller_.root_name_, vector, outlet_norm);
   }
   catch(tf::TransformException& ex)
   {
@@ -386,9 +386,9 @@ void PlugControllerNode::plugPose()
     return;
   }
   
-  controller_.plug_norm_(0) = plug_norm.x();
-  controller_.plug_norm_(1) = plug_norm.y();
-  controller_.plug_norm_(2) = plug_norm.z();
+  controller_.outlet_norm_(0) = outlet_norm.x();
+  controller_.outlet_norm_(1) = outlet_norm.y();
+  controller_.outlet_norm_(2) = outlet_norm.z();
   
 }
 
