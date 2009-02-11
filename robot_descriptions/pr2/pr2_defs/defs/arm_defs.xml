@@ -9,6 +9,27 @@
   <property name="shoulder_lift_length" value="0.10" />
   <property name="shoulder_lift_radius" value="0.12" />
 
+  <!-- for non-symmetric upper arm -->
+  <property name="uar_xyz1" value= "0.21398" />
+  <property name="uar_xyz2" value="-0.01621" />
+  <property name="uar_xyz3" value="-0.00020" />
+  <property name="uar_ixx"  value= "0.01537748957" />
+  <property name="uar_ixy"  value= "0.00375711247" />
+  <property name="uar_ixz"  value="-0.00070852914" />
+  <property name="uar_iyy"  value= "0.07473670440" />
+  <property name="uar_iyz"  value="-0.00017936450" />
+  <property name="uar_izz"  value= "0.07608763307" />
+
+  <property name="ual_xyz1" value= "0.21405" />
+  <property name="ual_xyz2" value= "0.01658" />
+  <property name="ual_xyz3" value="-0.00057" />
+  <property name="ual_ixx"  value= "0.01530603856" />
+  <property name="ual_ixy"  value="-0.00339324862" />
+  <property name="ual_ixz"  value= "0.00060765455" />
+  <property name="ual_iyy"  value= "0.07473694455" />
+  <property name="ual_iyz"  value="-0.00019953729" />
+  <property name="ual_izz"  value= "0.07601594191" />
+
 
 
   <!-- Calibration offsets empirically determined by moving arm in phasespace -->
@@ -43,7 +64,7 @@
       <joint name="${side}_shoulder_pan_joint" />
       <inertial>
         <mass value="25.799322" />
-        <com xyz="-0.001201 0.024513 -0.98231" />
+        <com xyz="-0.001201 0.024513 -0.098231" />
         <inertia ixx="0.866179142480"  ixy="-0.06086507933"  ixz="-0.12118061183"
                  iyy="0.87421714893"  iyz="-0.05886609911"
                  izz="0.27353821674" />
@@ -109,7 +130,7 @@
       <inertial>
         <mass value="2.74988" />
         <com xyz="0.02195 -0.02664 -0.03127" />
-        <inertia ixx="0.02105584615" ixy="-0.00496704022"  ixz="0.00194808955"
+        <inertia ixx="0.02105584615" ixy="0.00496704022"  ixz="-0.00194808955"
                  iyy="0.02127223737" iyz="0.00110425490"
                  izz="0.01975753814" />
       </inertial>
@@ -222,12 +243,15 @@
       <joint name="${side}_upper_arm_joint" />
 
       <inertial>
-        <!-- I put in the values for SHOULDER ROLL R from function -->
-        <mass value="6.01817" />
-        <com xyz="0.214 0.00025 -0.01621" />
-        <inertia  ixx="0.01537853696" ixy="0.00070614068"  ixz="0.00375425996"
-                  iyy="0.07610460170" iyz="0.00017892501"
-                  izz="0.07475370073" />
+        <!-- NOTE:reflect==-1 for right side, reflect==1 for the left side -->
+        <mass value="6.01769" />
+        <com xyz="${0.5*((reflect+1)*ual_xyz1+(1-reflect)*uar_xyz1)} ${0.5*((reflect+1)*ual_xyz2+(1-reflect)*uar_xyz2)} ${0.5*((reflect+1)*ual_xyz3+(1-reflect)*uar_xyz3)}" />
+        <inertia  ixx="${0.5*((reflect+1)*ual_ixx+(1-reflect)*uar_ixx)}"
+                  ixy="${0.5*((reflect+1)*ual_ixy+(1-reflect)*uar_ixy)}"
+                  ixz="${0.5*((reflect+1)*ual_ixz+(1-reflect)*uar_ixz)}"
+                  iyy="${0.5*((reflect+1)*ual_iyy+(1-reflect)*uar_iyy)}"
+                  iyz="${0.5*((reflect+1)*ual_iyz+(1-reflect)*uar_iyz)}"
+                  izz="${0.5*((reflect+1)*ual_izz+(1-reflect)*uar_izz)}" />
       </inertial>
 
       <visual>
@@ -440,7 +464,7 @@
       <joint name="${side}_forearm_joint" />
       <inertial>
         <mass value="2.57968" />
-        <com xyz="0.18791 -0.000017 -0.00912" />
+        <com xyz="0.18791 -0.00017 -0.00912" />
         <inertia ixx="0.00364857222" ixy="0.00005215877" ixz="0.00071534842"
                  iyy="0.01507736897" iyz="-0.00001310770"
                  izz="0.01659310749" />

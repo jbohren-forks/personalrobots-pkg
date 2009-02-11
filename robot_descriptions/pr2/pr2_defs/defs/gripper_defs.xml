@@ -176,11 +176,11 @@
 
       <joint name="${prefix}_l_finger_tip_joint" />
       <inertial>
-        <mass value="0.03826" />
-        <com xyz="0.01019 0.0051 0.0001" />
-        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
-                  iyy="0.00000576234" iyz="-0.00000007672"
-                  izz="0.00001066429" />
+        <mass value="0.04419" />
+        <com xyz="0.00423 0.00284 0.0" />
+        <inertia  ixx="0.00000837047" ixy="0.00000583632" ixz="0.0"
+                  iyy="0.00000987067" iyz="0.0"
+                  izz="0.00001541768" />
       </inertial>
       <visual>
         <origin xyz="0 0 0 " rpy="0 0 0 " />
@@ -249,11 +249,11 @@
 
       <joint name="${prefix}_r_finger_tip_joint" />
       <inertial>
-        <mass value="0.03826" />
-        <com xyz="0.01019 0.0051 0.0001" /> <!-- I reflected y offset for CoM -->
-        <inertia  ixx="0.00000748832" ixy="0.00000376782" ixz="-0.00000006942"
-                  iyy="0.00000576234" iyz="-0.00000007672"
-                  izz="0.00001066429" />  <!-- nothing was flipped, not sure what to do here -->
+        <mass value="0.04419" />
+        <com xyz="0.00423 -0.00284 0.0" />
+        <inertia  ixx="0.00000837047" ixy="-0.00000583632" ixz="0.0"
+                  iyy="0.00000987067" iyz="0.0"
+                  izz="0.00001541768" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
