@@ -45,10 +45,21 @@
 #include <trajectory_rollout/costmap_model.h>
 #include <trajectory_rollout/trajectory_controller.h>
 
+#include <trajectory_rollout/planar_laser_scan.h>
+
 #include <tf/transform_datatypes.h>
 
 #include <deprecated_msgs/Point2DFloat32.h>
 #include <robot_msgs/PoseDot.h>
+
+#include <laser_scan/LaserScan.h>
+#include <tf/message_notifier.h>
+#include <tf/transform_listener.h>
+#include <laser_scan/laser_scan.h>
+
+#include <boost/thread.hpp>
+
+#include <string>
 
 namespace trajectory_rollout {
   /**
@@ -59,13 +70,15 @@ namespace trajectory_rollout {
     public:
       /**
        * @brief  Constructs the ros wrapper
-       * @param  ros_node The node that is running the controller, used to get parameters from the parameter server
+       * @param ros_node The node that is running the controller, used to get parameters from the parameter server
+       * @param tf A reference to a transform listener
+       * @param global_frame The frame in which the controller will operate
        * @param ma An CostMapAccessor that allows the trajectory controller to query a costmap
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        * @param inscribed_radius The inscribed radius of the robot
        * @param circumscribed_radius The circumscribed radius of the robot
        */
-      TrajectoryControllerROS(ros::Node& ros_node,
+      TrajectoryControllerROS(ros::Node& ros_node, tf::TransformListener& tf, std::string global_frame,
           const costmap_2d::CostMapAccessor& ma, std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
           double inscribed_radius, double cirumscribed_radius);
 
@@ -108,9 +121,17 @@ namespace trajectory_rollout {
        */
       void getLocalGoal(double& x, double& y);
 
+      void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
+
     private:
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryController* tc_; ///< @brief The trajectory controller
+      tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
+      tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
+      std::string global_frame_; ///< @brief The frame in which the controller will run
+      laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
+      boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
+      PlanarLaserScan base_scan_; ///< @breif Storage for the last scan the base laser took... used for clearing free-space in front of the robot
   };
 
 };

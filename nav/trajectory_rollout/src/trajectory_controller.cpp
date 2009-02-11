@@ -623,32 +623,11 @@ namespace trajectory_rollout{
 
   //given the current state of the robot, find a good trajectory
   Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
-      tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations){
-
-    std::vector<deprecated_msgs::Point2DFloat32> clear_box;
-    deprecated_msgs::Point2DFloat32 pt;
-    double x_pos = global_pose.getOrigin().getX();
-    double y_pos = global_pose.getOrigin().getY();
-
-    ///@TODO make polygon to be cleared dependent on sensor sweep of robot, for now... just a box
-    pt.x = x_pos - 2.0;
-    pt.y = y_pos - 2.0;
-    clear_box.push_back(pt);
-
-    pt.x = x_pos - 2.0;
-    pt.y = y_pos + 2.0;
-    clear_box.push_back(pt);
-
-    pt.x = x_pos + 2.0;
-    pt.y = y_pos + 2.0;
-    clear_box.push_back(pt);
-
-    pt.x = x_pos + 2.0;
-    pt.y = y_pos - 2.0;
-    clear_box.push_back(pt);
+      tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations,
+      PlanarLaserScan base_scan){
 
     //update the point grid with new observations
-    world_model_.updateWorld(observations, clear_box);
+    world_model_.updateWorld(observations, base_scan);
 
     //reset the map for new operations
     map_.resetPathDist();

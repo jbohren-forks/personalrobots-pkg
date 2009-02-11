@@ -70,7 +70,6 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
     //This may return points that are still outside of the cirumscribed square because it returns the cells
     //contained by the range
-    points_.clear();
     getPointsInRange(c_lower_left, c_upper_right, points_);
 
     //if there are no points in the circumscribed square... we don't have to check against the footprint
@@ -148,7 +147,8 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     return true;
   }
 
-  void PointGrid::getPointsInRange(Point2DFloat32 lower_left, Point2DFloat32 upper_right, vector< list<Point32>* > points){
+  void PointGrid::getPointsInRange(const Point2DFloat32& lower_left, const Point2DFloat32& upper_right, vector< list<Point32>* >& points){
+    points.clear();
 
     //compute the other corners of the box so we can get cells indicies for them
     Point2DFloat32 upper_left, lower_right;
@@ -193,7 +193,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
       for(unsigned int j = 0; j < x_steps; ++j){
         list<Point32>& cell = *cell_iterator;
         //if the cell contains any points... we need to push them back to our list
-        if(cell.empty()){
+        if(!cell.empty()){
           points.push_back(&cell);
         }
         if(j < x_steps - 1)
@@ -327,9 +327,9 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     return neighbor_sq_dist;
   }
 
-  void PointGrid::updateWorld(const vector<Observation>& observations, const vector<Point2DFloat32>& laser_outline){
+  void PointGrid::updateWorld(const vector<Observation>& observations, const PlanarLaserScan& laser_scan){
     ///@TODO Remove outdated points in the grid within the polygon of the laser sweep
-    removePointsInPolygon(laser_outline);
+    //removePointsInPolygon(laser_outline);
 
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
@@ -354,6 +354,54 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
   }
 
+  /*
+  void PointGrid::removePointInScanBoundry(const PlanarLaserScan& laser_scan){
+    if(laser_scan.cloud.pts.size() == 0)
+      return;
+
+    //compute the containing square of the scan
+    Point2DFloat32 lower_left, upper_right;
+    lower_left.x = laser_scan.cloud.pts[0].x;
+    lower_left.y = laser_scan.cloud.pts[0].y;
+    upper_right.x = laser_scan.cloud.pts[0].x;
+    upper_right.y = laser_scan.cloud.pts[0].y;
+
+    for(unsigned int i = 1; i < laser_scan.cloud.pts.size(); ++i){
+      lower_left.x = min(lower_left.x, laser_scan.cloud.pts[i].x);
+      lower_left.y = min(lower_left.y, laser_scan.cloud.pts[i].y);
+      upper_right.x = max(upper_right.x, laser_scan.cloud.pts[i].x);
+      upper_right.y = max(upper_right.y, laser_scan.cloud.pts[i].y);
+    }
+
+    getPointsInRange(lower_left, upper_right, points_);
+
+    //if there are no points in the containing square... we don't have to do anything
+    if(points_.empty())
+      return;
+
+    //if there are points, we have to check them against the scan explicitly to remove them
+    for(unsigned int i = 0; i < points_.size(); ++i){
+      list<Point32>* cell_points = points_[i];
+      if(cell_points != NULL){
+        list<Point32>::iterator it = cell_points->begin();
+        while(it != cell_points->end()){
+          const Point32& pt = *it;
+
+          //check if the point is in the polygon and if it is, erase it from the grid
+          if(ptInScan(pt, laser_scan)){
+            it = cell_points->erase(it);
+          }
+          else
+            it++;
+        }
+      }
+    }
+  }
+
+  bool PointGrid::ptInScan(const Point32& pt, const PlanarLaserScan& laser_scan){
+  }
+  */
+
   void PointGrid::removePointsInPolygon(const vector<Point2DFloat32> poly){
     if(poly.size() == 0)
       return;
@@ -373,7 +421,6 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
 
     ROS_DEBUG("Lower: (%.2f, %.2f), Upper: (%.2f, %.2f)\n", lower_left.x, lower_left.y, upper_right.x, upper_right.y);
-    points_.clear();
     getPointsInRange(lower_left, upper_right, points_);
 
     //if there are no points in the containing square... we don't have to do anything
@@ -455,8 +502,8 @@ int main(int argc, char** argv){
   pt.y = 1.325;
 
   Point32 point;
-  point.x = 1.00;
-  point.y = 1.01;
+  point.x = 1.2;
+  point.y = 1.2;
   point.z = 1.0;
 
   struct timeval start, end;

@@ -34,48 +34,24 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef TRAJECTORY_ROLLOUT_WORLD_MODEL_H_
-#define TRAJECTORY_ROLLOUT_WORLD_MODEL_H_
+#ifndef TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
+#define TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
 
-#include <vector>
-#include <costmap_2d/observation.h>
-#include <deprecated_msgs/Point2DFloat32.h>
-#include <trajectory_rollout/planar_laser_scan.h>
+#include <std_msgs/Point.h>
+#include <std_msgs/PointCloud.h>
 
 namespace trajectory_rollout {
   /**
-   * @class WorldModel
-   * @brief An interface the trajectory controller uses to interact with the
-   * world regardless of the underlying world model.
+   * @class PlanarLaserScan
+   * @brief Stores a scan from a planar laser that can be used to clear freespace
    */
-  class WorldModel{
+  class PlanarLaserScan {
     public:
-      /**
-       * @brief  Subclass will implement this method to insert observations from sensors into its world model
-       * @param observations The observations from various sensors 
-       * @param laser_scan The planar scan used to clear freespace
-       */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan) = 0;
-
-      /**
-       * @brief  Subclass will implement this method to check a footprint at a given position and orientation for legality in the world
-       * @param  position The position of the robot in world coordinates
-       * @param  footprint The specification of the footprint of the robot in world coordinates
-       * @param  inscribed_radius The radius of the inscribed circle of the robot
-       * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @return True if the footprint is legal based on the world model, false otherwise
-       */
-      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius) = 0;
-
-      /**
-       * @brief  Subclass will implement a destructor
-       */
-      virtual ~WorldModel(){}
-
-    protected:
-      WorldModel(){}
+      PlanarLaserScan() {}
+      std_msgs::Point origin;
+      std_msgs::PointCloud cloud;
+      double angle_min, angle_max, angle_increment;
   };
-
 };
+
 #endif

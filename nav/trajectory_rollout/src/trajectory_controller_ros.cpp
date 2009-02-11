@@ -42,12 +42,15 @@
 using namespace std;
 using namespace deprecated_msgs;
 using namespace costmap_2d;
+using namespace tf;
+using namespace laser_scan;
 
 namespace trajectory_rollout {
-  TrajectoryControllerROS::TrajectoryControllerROS(ros::Node& ros_node, 
+  TrajectoryControllerROS::TrajectoryControllerROS(ros::Node& ros_node, TransformListener& tf, 
+      string global_frame,
       const costmap_2d::CostMapAccessor& ma, 
       std::vector<deprecated_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
-    : world_model_(NULL), tc_(NULL){
+    : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), global_frame_(global_frame){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int samples_per_dim;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
@@ -55,6 +58,10 @@ namespace trajectory_rollout {
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th;
 
     bool freespace_model;
+
+    base_scan_notifier_ = new MessageNotifier<LaserScan>(&tf_, &ros_node,
+        boost::bind(&TrajectoryControllerROS::baseScanCallback, this, _1),
+        "base_scan", global_frame_, 50);
     
     ros_node.param("/trajectory_rollout/acc_lim_x", acc_lim_x, 2.5);
     ros_node.param("/trajectory_rollout/acc_lim_y", acc_lim_y, 2.5);
@@ -74,6 +81,8 @@ namespace trajectory_rollout {
     ros_node.param("/trajectory_rollout/min_vel_th", min_vel_th, -1.0);
     ros_node.param("/trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
     ros_node.param("/trajectory_rollout/freespace_model", freespace_model, false);
+
+
 
     if(freespace_model){
       double origin_x, origin_y;
@@ -97,11 +106,45 @@ namespace trajectory_rollout {
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th);
   }
 
+  void TrajectoryControllerROS::baseScanCallback(const MessageNotifier<LaserScan>::MessagePtr& message){
+    //project the laser into a point cloud
+    PointCloud base_cloud;
+    base_cloud.header = message->header;
+    //we want all values... even those out of range
+    projector_.projectLaser(*message, base_cloud, -1.0, true);
+    Stamped<btVector3> global_origin;
+
+    lock_.lock();
+    base_scan_.angle_min = message->angle_min;
+    base_scan_.angle_max = message->angle_max;
+    base_scan_.angle_increment = message->angle_increment;
+
+    //we know the transform is available from the laser frame to the global frame 
+    try{
+      //transform the origin for the sensor
+      Stamped<btVector3> local_origin(btVector3(0, 0, 0), base_cloud.header.stamp, base_cloud.header.frame_id);
+      tf_.transformPoint(global_frame_, local_origin, global_origin);
+      base_scan_.origin.x = global_origin.getX();
+      base_scan_.origin.y = global_origin.getY();
+      base_scan_.origin.z = global_origin.getZ();
+
+      //transform the point cloud
+      tf_.transformPointCloud(global_frame_, base_cloud, base_scan_.cloud);
+    }
+    catch(tf::TransformException& ex){
+      ROS_ERROR("TF Exception that should never happen %s", ex.what());
+      return;
+    }
+    lock_.unlock();
+  }
+
   TrajectoryControllerROS::~TrajectoryControllerROS(){
     if(tc_ != NULL)
       delete tc_;
     if(world_model_ != NULL)
       delete world_model_;
+    if(base_scan_notifier_ != NULL)
+      delete base_scan_notifier_;
   }
 
   vector<Point2DFloat32> TrajectoryControllerROS::drawFootprint(double x_i, double y_i, double theta_i){
@@ -148,8 +191,10 @@ namespace trajectory_rollout {
     gettimeofday(&start, NULL);
     tc_->updatePlan(copiedGlobalPlan);
 
+    lock_.lock();
     //compute what trajectory to drive along
-    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations);
+    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, base_scan_);
+    lock_.unlock();
 
     /* For timing uncomment
     */

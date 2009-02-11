@@ -15,11 +15,14 @@ rospack_add_boost_directories()
 rospack_add_library(trajectory_rollout src/map_cell.cpp src/map_grid.cpp src/point_grid.cpp src/costmap_model.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/trajectory_controller_ros.cpp)
 target_link_libraries(trajectory_rollout costmap_2d)
+rospack_link_boost(trajectory_rollout thread)
 
 rospack_add_executable(governor_node src/map_cell.cpp src/map_grid.cpp src/costmap_model.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp)
 rospack_link_boost(governor_node thread)
 target_link_libraries(governor_node costmap_2d)
+
+rospack_add_executable(point_grid src/point_grid.cpp)
 
 rospack_add_gtest(utest test/utest.cpp src/map_cell.cpp src/map_grid.cpp src/costmap_model.cpp src/trajectory_controller.cpp src/trajectory.cpp)
 set_target_properties(utest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)

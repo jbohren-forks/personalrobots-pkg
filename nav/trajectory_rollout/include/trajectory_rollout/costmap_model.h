@@ -75,9 +75,10 @@ namespace trajectory_rollout {
       /**
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
        * @param observations The observations from various sensors 
-       * @param laser_outline The polygon of the active sensor region
+       * @param laser_scan The scan used to clea freespace
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const std::vector<deprecated_msgs::Point2DFloat32>& laser_outline){}
+      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan){}
+
     private:
       /**
        * @brief  Rasterizes a line in the costmap grid and checks for collisions
