@@ -6,7 +6,7 @@
 #include "stdio.h"
 #include "math.h"
 
-/*
+/* CANNY PRODUCES INTERESTING RESULTS ... WS THINKING EDGE HISTOGRAM BUT HAVEN'T TRIED YET ...
 IplImage* doCanny(
     IplImage* in,
     double    lowThresh,
@@ -31,16 +31,17 @@ void help()
     printf("\n"
     "Segment outlets using stereo texture detection on walls\n"
     "Call:\n"
-    "./FindOutlet Left_image Disarity_image Base_name ChiSqrThresh BhattThresh\n"
+    "./FindOutlet Left_image Disarity_image Base_name \n"
     "Keyboard commands:\n"
-    "\tn -- Change the histogram model base name\n"
-    "\tt -- Test against next models\n"
+ //   "\tn -- Change the histogram model base name\n"
+    "\tt -- Show the found boxes, SPACE to continue ...\n"
     "\nMouse\n"
-    "\t Clicking on patch in disparity image will cause a histogram model to be saved.\n"
+//    "\t Clicking on patch in disparity image will cause a histogram model to be saved.\n"
     "\n");
 }
 /////WORKING FUNCTIONS////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
+// JUST A MODIFIED CONNECTED COMPONENTS ROUTINE
 //void cvconnectedDisparityComponents(IplImage *mask, int poly1_hull0, float perimScaleTooSmall, int *num, CvRect *bbs, CvPoint *centers)
 // This will find the blobs in the image.  I 
 //
@@ -76,21 +77,21 @@ static CvSeq*			contours	= NULL;
 	int ccnt = 0;
 	while( (c = cvFindNextContour( scanner )) != NULL )
 	{
-//		printf("CONTOR %d:\n",ccnt++);
+		printf("CONTOR %d:\n",ccnt++);
 		bb = cvBoundingRect(c);
 		float wd = (float)(bb.width);
 		float ht = (float)(bb.height);
 		float carea = (float)(wd*ht);
-//		printf("  Area = %f vs too small(%f) and too large (%f)\n",carea,areaTooSmall,areaTooLarge);
+		printf("  Area = %f vs too small(%f) and too large (%f)\n",carea,areaTooSmall,areaTooLarge);
 		float aspect;
 		if(wd > ht) //Keep this number (0,1]
 			aspect = ht/wd;
 		else
 			aspect = wd/ht;
-//		printf("  ... aspectLimit(%f) vs aspect(%f)\n",aspectLimit,aspect);
+		printf("  ... aspectLimit(%f) vs aspect(%f)\n",aspectLimit,aspect);
 		if( carea <  areaTooSmall || carea > areaTooLarge || (aspect < aspectLimit)) //Get rid of blob if it's too small or too large
 		{
-//			printf("  DELETED\n");
+			printf("  DELETED\n");
 			cvSubstituteContour( scanner, NULL );
 		}
 		else //Smooth it's edges if it's large enough
@@ -160,7 +161,10 @@ static CvSeq*			contours	= NULL;
 // Analyze the disparity image that values should not be too far off from one another
 // Id  -- 8 bit, 1 channel disparity image
 // R   -- rectangular region of interest
-double disparitySTD(IplImage *Id, CvRect &R, double minDisparity = 5.0)
+// vertical -- This is a return that tells whether something is on a wall (descending disparities) or not.
+// minDisparity -- disregard disparities less than this
+//
+double disparitySTD(IplImage *Id, CvRect &R, bool &vertical, double minDisparity = 0.5 )
 {
 	int ws = Id->widthStep;
 	unsigned char *p = (unsigned char *)(Id->imageData);
@@ -173,6 +177,13 @@ double disparitySTD(IplImage *Id, CvRect &R, double minDisparity = 5.0)
 	double mean = 0.0,var = 0.0;
 	double val;
 	int cnt = 0;
+	//For vertical objects, Disparities should decrease from top to bottom, measure that 
+	double AvgTopDisp = 0.0;
+	double AvgBotDisp = 0.0;
+	int top_cnt = 0;
+	int bot_cnt = 0;
+	bool top = true;
+	int halfwayY = rh/2;
 	for(int Y=0; Y<rh; ++Y)
 	{
 		for(int X=0; X<rw; X++, p+=nchan)
@@ -180,22 +191,44 @@ double disparitySTD(IplImage *Id, CvRect &R, double minDisparity = 5.0)
 			val = (double)*p;
 			if(val < minDisparity)
 				continue;
+			if(top){
+				AvgTopDisp += val;
+				top_cnt++;
+			}
+			else {
+				AvgBotDisp += val;
+				bot_cnt++;
+			}
 			mean += val;
 			var += val*val;
 			cnt++;
 		}
 		p+=ws-(rw*nchan);
+		if(Y >= halfwayY)
+			top = false; 
 	}
 	if(cnt == 0) //Error condition, no disparities, return impossible variance
+	{
+		vertical = false;
 		return 10000000.0;
-	//DO THE MATH
+	}
+	//FIND OUT IF THE OBJECT IS VERTICAL (Descending disparities) OR NOT:
+	if(top_cnt == 0) top_cnt = 1;
+	if(bot_cnt == 0) bot_cnt = 1;
+	AvgTopDisp = AvgTopDisp/(double)top_cnt;
+	AvgBotDisp = AvgBotDisp/(double)bot_cnt;
+	if(AvgTopDisp >= AvgBotDisp)
+		vertical = true;
+	else
+		vertical = false;	
+	//DO THE VARIANCE MATH
 	mean = mean/(double)cnt;
 	var = (var/(double)cnt) - mean*mean;
 	return(sqrt(var));
 }
 			
-//////////////
-// Get a user input string (no spaces, 255 chars max)
+////////////// 
+// UTILITY: Get an input string from a user (white space is ignored, ESC cancels, 255 chars max)
 bool getUserString(char *ObjectLabel)
 {
 	char ObjectStore[256];
@@ -241,6 +274,7 @@ bool getUserString(char *ObjectLabel)
 	return retval;
 }	
 
+/*  SIMPLE COLOR HISTOGRAMS DON'T WORK VERY WELL ...
 //////////////
 // Fill up a histogram using rectangle as the ROI
 // I3C		-- 3 channel image (input to be processed)
@@ -265,7 +299,7 @@ void fill3DHistROI(IplImage *I3C, IplImage **Iplanes, CvHistogram *H3D, CvRect &
 	cvResetImageROI(Iplanes[1]);
 	cvResetImageROI(Iplanes[2]);
 }
-	
+*/	
 
 ////SLIDERS ETC///////////////////////
 bool wupdate = true;  //Update whenever there is a change
@@ -288,7 +322,8 @@ void on_aspectLimit(int t)
 	do_blobs = true;
 }
 
-int mx, my;
+/*  I HAD USED THIS TO COLLECT HISTOGRAM TRAINING MODELS
+ int mx, my;
 bool mouse_lclick = false;
 void on_mouseD(int event, int x, int y, int flags, void* param)
 {
@@ -300,11 +335,11 @@ void on_mouseD(int event, int x, int y, int flags, void* param)
 		mouse_lclick = true;
 	}
 }	
-
+*/
 /////////////////////////////
 int main( int argc, char** argv )
 {
-  if(argc < 6)
+  if(argc < 4)
   {
      help();
     exit(0);
@@ -318,8 +353,8 @@ int main( int argc, char** argv )
 	char tstbasename[512];
  	strcpy(tstbasename,argv[3]);
  	printf("Verify basename = %s\n",tstbasename);
-  	float ChiSqrThresh = atof(argv[4]);
-  	float BhattThresh = atof(argv[5]);
+ //	float ChiSqrThresh = atof(argv[4]);
+ //	float BhattThresh = atof(argv[5]);
 
   if(!img_L || !img_D)
   {
@@ -346,11 +381,11 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
   cvCreateTrackbar("areaTooSmall","Disparity",&areaTooSmall, 500, on_areaSmall);
   cvCreateTrackbar("areaTooLarge","Disparity",&areaTooLarge, 500, on_areaLarge);
   cvCreateTrackbar("aspectLimits","Disparity",&aspectLimit, 100, on_aspectLimit);
-  cvSetMouseCallback( "Disparity", on_mouseD);
+ // cvSetMouseCallback( "Disparity", on_mouseD);
 
  
   //PREPROCESS
-  cvErode(img_S,img_S,NULL, Nerode); //Probably 1
+  cvErode(img_S,img_S,NULL, Nerode); //Probably 1  NOTE: Morphology on the gray, not binary disparity Segmentation image "S"
   cvDilate(img_S,img_S,NULL,Ndialate); //Probably 9
   cvErode(img_S,img_S,NULL, Ndialate);
   IplImage *img_Scpy = cvCloneImage(img_S);
@@ -358,7 +393,8 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
   cvShowImage("Preprocess",img_S);
   
   //SET UP MODEL COLLECTION
-  char modelbasename[256];
+/*
+ *   char modelbasename[256];
   sprintf(modelbasename,"Hist");
  // int modelCount = 0;
   int dims =  3;
@@ -375,9 +411,10 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
    IplImage* g_plane = cvCreateImage( cvGetSize(img_L), 8, 1 );
    IplImage* r_plane = cvCreateImage( cvGetSize(img_L), 8, 1 );
    IplImage* Iplanes[] = { b_plane, g_plane, r_plane };
-
+*/
  
   //PROCESSING LOOP
+  bool vertical = false;
   while(1)
   {
     //THRESHOLD FUN
@@ -390,11 +427,12 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
 		
 		cvconnectedDisparityComponents(img_S, 1, areaTooSmall*areaTooSmall,areaTooLarge*areaTooLarge,(float)(aspectLimit)/100.0, &num, bbs, centers);
 				
-		//DO LOTS OF FILTERING BASED ON BOX SIZE:
+		//DO FILTERING BASED ON BOX SIZE:
 		for(int b=0; b<num; ++b)
 		{
 			printf("%d: ",b);
-			if(mouse_lclick)
+/* FROM WHEN I WAS COLLECTING HISTOGRAM MODELS ...
+ * 			if(mouse_lclick)
 			{
 			   //If we are in a bounding box, collect a model
 				if((mx >= bbs[b].x) &&
@@ -413,26 +451,26 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
 					printf("Saved %s to disk\n",hname);
 				}
 			}
-				
-			printf("** STD = %lf\n",disparitySTD(img_Scpy, bbs[b]));
+*/				
+			printf("** STD = %lf, Vertical=%d\n",disparitySTD(img_Scpy, bbs[b],vertical),vertical);
 			printf("\n");
 		 }
        do_blobs = false;
-       mouse_lclick = false;
+//       mouse_lclick = false;
        wupdate = true;
     }
   
-		//KEYBOARD PROCESSING
-		int k = cvWaitKey(10);
+	//KEYBOARD PROCESSING
+	int k = cvWaitKey(10);
    	//End processing on ESC, q or Q
-    	if(k == 27 || k == 'q' || k == 'Q')
+    if(k == 27 || k == 'q' || k == 'Q')
        	break;
      switch(k)
      {
-     	case 'n':  //Change the model base name
-     	   printf("Change the hisogram model basename (was %s)\n\n",modelbasename);
-      	getUserString(modelbasename);
-      	break;
+ //    	case 'n':  //Change the model base name
+ //    	   printf("Change the hisogram model basename (was %s)\n\n",modelbasename);
+ //     	getUserString(modelbasename);
+ //     	break;
       case 't': //Test
       {
 			int numt = 20;
@@ -441,7 +479,7 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
 		   cvNamedWindow("Results", CV_WINDOW_AUTOSIZE );
   		   cvNamedWindow("TestDisparity", CV_WINDOW_AUTOSIZE );
   			char leftName[512],dispName[512];
-  			IplImage *img_Ltdisplay = NULL;
+  			IplImage *img_Ltdisplay = NULL,*img_Dclone = NULL;
 
 			printf("\nTESTING: (Corr, Inter, ChiSqr, Bhatt)\n");
 			for(int img = 0; img<29; ++img)
@@ -453,14 +491,17 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
 				img_Lt = cvLoadImage( leftName);
 				img_Ltdisplay = cvCloneImage(img_Lt);
 				img_Dt = cvLoadImage( dispName,CV_LOAD_IMAGE_GRAYSCALE);
+				img_Dclone = cvCloneImage(img_Dt);
 				  cvErode(img_Dt,img_Dt,NULL, Nerode); //Probably 1
 				  cvDilate(img_Dt,img_Dt,NULL,Ndialate); //Probably 9
 				  cvErode(img_Dt,img_Dt,NULL, Ndialate);				
 				cvconnectedDisparityComponents(img_Dt, 1, areaTooSmall*areaTooSmall,
 														areaTooLarge*areaTooLarge,(float)(aspectLimit)/100.0, 
 														&numt, bbst, centerst);
-//				double hmatch[4];
-				double match;
+			
+
+// SIMPLE COLOR HISTOGRAM MATCHING DOESN'T WORK STABLY... VICTOR TRY SOMETHING ELSE
+/*				double match;
 				double bestmatch = 1.0; //min is better for chisqr
 				double badmatch = 1.0; //Model for non-outlet
 				for(int t = 0; t<numt; ++t)
@@ -483,22 +524,37 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
 					//DRAW SUCCESS
 					CvPoint pt1 = cvPoint(bbst[t].x,bbst[t].y);
 					int wi = bbst[t].width;
-//					int rad = wi/2;
 					int hi = bbst[t].height;
 					CvPoint pt2 = cvPoint(bbst[t].x+wi,bbst[t].y+hi);
-//					CvPoint pc = cvPoint(bbst[t].x+(wi/2),bbst[t].y+(hi/2));
 					int intensity = 100 + 40*t;
 					if(intensity > 255) intensity = 255;
 					
 					cvLine(img_Ltdisplay,pt1,pt2,CV_RGB(intensity,0,0));
 					if((bestmatch<ChiSqrThresh)&&(bestmatch < badmatch)&&(badmatch > BhattThresh))
 						cvRectangle(img_Ltdisplay,pt1,pt2,CV_RGB(0,255,0));
-//					if(hmatch[3]<BhattThresh)
-//						cvCircle(img_Ltdisplay,pc,rad,CV_RGB(0,255,0));
+
 					
 				}//end for each box
+*/
+//INSTEAD, FOR NOW, JUST DRAW THE BOUNDING BOXES FOUND ... VICTOR, THIS SHOULD BE REPLACED BY REAL MATCHING
+				for(int t=0; t<numt; ++t)
+				{
+					CvPoint pt1 = cvPoint(bbst[t].x,bbst[t].y);
+					int wi = bbst[t].width;
+					int hi = bbst[t].height;
+					printf("Box %d: w=%d, h=%d\n",t,wi,hi);
+					double Disp = disparitySTD(img_Dclone, bbst[t],vertical);
+					printf("** STD = %lf, vertical=%d\n",Disp,vertical);
+					if(Disp >= 4.8) continue;
+					if(!vertical) continue;	
+					CvPoint pt2 = cvPoint(bbst[t].x+wi,bbst[t].y+hi);
+					int intensity = 255 - 40*t;
+					if(intensity < 60) intensity = 60;
+					cvRectangle(img_Ltdisplay,pt1,pt2,CV_RGB(intensity,0,0));		
+				}			
+
 				cvShowImage("Results", img_Ltdisplay);
-				cvShowImage("TestDisparity",img_Dt);
+				cvShowImage("TestDisparity",img_Dclone);
 				int c;
 				while(1)
 				{
@@ -511,6 +567,7 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
  				cvReleaseImage( &img_Lt);
 				cvReleaseImage( &img_Ltdisplay);
 				cvReleaseImage( &img_Dt);
+				cvReleaseImage( &img_Dclone);
 			}//end for each image
 			cvDestroyWindow("Results");
 			cvDestroyWindow("TestDisparity");
@@ -537,8 +594,8 @@ printf("Nerode = %d, Ndialate=%d\n",Nerode,Ndialate);
   cvReleaseImage( &img_S);
   cvReleaseImage( &img_D);
   
-  cvReleaseHist( &Hmodel1);
-	cvReleaseHist( &Htest);
+//  cvReleaseHist( &Hmodel1);
+//	cvReleaseHist( &Htest);
   
   cvDestroyWindow("Left");
   cvDestroyWindow("Disparity");
