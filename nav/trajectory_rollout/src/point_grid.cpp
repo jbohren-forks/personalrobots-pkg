@@ -354,7 +354,6 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
   }
 
-  /*
   void PointGrid::removePointInScanBoundry(const PlanarLaserScan& laser_scan){
     if(laser_scan.cloud.pts.size() == 0)
       return;
@@ -399,8 +398,41 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
   }
 
   bool PointGrid::ptInScan(const Point32& pt, const PlanarLaserScan& laser_scan){
+    if(!laser_scan.cloud.pts.empty()){
+      //compute the angle of the point relative to that of the scan
+      double v1_x = laser_scan.cloud.pts[0].x - laser_scan.origin.x;
+      double v1_y = laser_scan.cloud.pts[0].y - laser_scan.origin.y;
+      double v2_x = pt.x - laser_scan.origin.x;
+      double v2_y = pt.y - laser_scan.origin.y;
+
+      double vector_angle = atan2(v1_y, v1_x) - atan2(v2_y, v2_x);
+      double total_rads = laser_scan.angle_max - laser_scan.angle_min; 
+
+      //if this point lies outside of the scan field of view... it is not in the scan
+      if(vector_angle < 0 || vector_angle >= total_rads)
+        return false;
+
+      //compute the index of the point in the scan
+      unsigned int index = (unsigned int) (vector_angle / laser_scan.angle_increment);
+
+      //make sure we have a legal index... we always should at this point, but just in case
+      if(index >= laser_scan.cloud.pts.size() - 1){
+        ROS_ERROR("Unexpected illegal index while removing points from laser scans");
+        return false;
+      }
+
+      ROS_ERROR("Angle: %.2f, Increment: %.2f,  Index: %d", vector_angle, laser_scan.angle_increment, index);
+
+      //if the point lies to the right of the line between the two scan points bounding it, it is within the scan
+      if(orient(laser_scan.cloud.pts[index], laser_scan.cloud.pts[index + 1], pt) > 0)
+        return true;
+
+      //otherwise it is not
+      return false;
+    }
+    else
+      return false;
   }
-  */
 
   void PointGrid::removePointsInPolygon(const vector<Point2DFloat32> poly){
     if(poly.size() == 0)

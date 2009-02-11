@@ -43,12 +43,12 @@
 #include <trajectory_rollout/governor_node.h>
 #include <math.h>
 
-#include <std_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/Point2DFloat32.h>
 #include <trajectory_rollout/Position2DInt.h>
 
 
 using namespace std;
-using namespace std_msgs;
+using namespace deprecated_msgs;
 using namespace trajectory_rollout;
 
 namespace trajectory_rollout {

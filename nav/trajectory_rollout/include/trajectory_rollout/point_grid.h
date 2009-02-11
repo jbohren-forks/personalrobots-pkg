@@ -210,6 +210,21 @@ namespace trajectory_rollout {
       }
 
       /**
+       * @brief  Check the orientation of a pt c with respect to the vector a->b
+       * @param a The start point of the vector 
+       * @param b The end point of the vector 
+       * @param c The point to compute orientation for
+       * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
+       */
+      inline double orient(const robot_msgs::Point32& a, const robot_msgs::Point32& b, const robot_msgs::Point32& c){
+        double acx = a.x - c.x;
+        double bcx = b.x - c.x;
+        double acy = a.y - c.y;
+        double bcy = b.y - c.y;
+        return acx * bcy - acy * bcx;
+      }
+
+      /**
        * @brief  Check if a point is in a polygon
        * @param pt The point to be checked 
        * @param poly The polygon to check against
@@ -244,6 +259,20 @@ namespace trajectory_rollout {
        * @param poly A specification of the polygon to clear from the grid 
        */
       void removePointsInPolygon(const std::vector<deprecated_msgs::Point2DFloat32> poly);
+
+      /**
+       * @brief  Removes points from the grid that lie within a laser scan
+       * @param  laser_scan A specification of the laser scan to use for clearing
+       */
+      void removePointInScanBoundry(const PlanarLaserScan& laser_scan);
+
+      /**
+       * @brief  Checks to see if a point is within a laser scan specification
+       * @param  pt The point to check
+       * @param  laser_scan The specification of the scan to check against
+       * @return True if the point is contained within the scan, false otherwise
+       */
+      bool ptInScan(const robot_msgs::Point32& pt, const PlanarLaserScan& laser_scan);
 
     private:
       double resolution_; ///< @brief The resolution of the grid in meters/cell
