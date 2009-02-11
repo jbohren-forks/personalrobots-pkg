@@ -69,7 +69,7 @@ class TestSlide(unittest.TestCase):
         dy = p3d.pos.position.y - TARGET_Y
         dz = p3d.pos.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        print "P: " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
+        print "Error: " + str(dx) + " " + str(dy) + " " + str(dz)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
         if (d < TARGET_RAD):
             #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
