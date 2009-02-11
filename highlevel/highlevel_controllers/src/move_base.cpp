@@ -260,7 +260,7 @@ namespace ros {
       pt.y = 0;
       footprint_.push_back(pt);
 
-      controller_ = new trajectory_rollout::TrajectoryControllerROS(*this, *local_map_accessor_, 
+      controller_ = new trajectory_rollout::TrajectoryControllerROS(*this, tf_, global_frame_, *local_map_accessor_, 
           footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
