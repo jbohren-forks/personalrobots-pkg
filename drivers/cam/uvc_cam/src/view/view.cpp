@@ -44,7 +44,7 @@ int main(int argc, char **argv)
       memcpy(surf->pixels, frame, WIDTH*HEIGHT*3);
       cam.release(buf_idx);
     }
-    usleep(1000);
+    //usleep(1000);
     SDL_UpdateRect(surf, 0, 0, WIDTH, HEIGHT);
     SDL_Event event;
     while (SDL_PollEvent(&event))

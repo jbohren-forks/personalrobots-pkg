@@ -115,8 +115,19 @@ Cam::Cam(const char *_device, mode_t _mode)
     if ((ret = ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) == 0 &&
         !(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
     {
-      printf("  %s (id = %d): %d to %d\n", queryctrl.name, queryctrl.id, 
-             queryctrl.minimum, queryctrl.maximum);
+      const char *ctrl_type = NULL;
+      if (queryctrl.type == V4L2_CTRL_TYPE_INTEGER)
+        ctrl_type = "int";
+      else if (queryctrl.type == V4L2_CTRL_TYPE_BOOLEAN)
+        ctrl_type = "bool";
+      else if (queryctrl.type == V4L2_CTRL_TYPE_BUTTON)
+        ctrl_type = "button";
+      else if (queryctrl.type == V4L2_CTRL_TYPE_MENU)
+        ctrl_type = "menu";
+      printf("  %s (%s, %d, id = %x): %d to %d (%d)\n", 
+             ctrl_type, 
+             queryctrl.name, queryctrl.flags, queryctrl.id, 
+             queryctrl.minimum, queryctrl.maximum, queryctrl.step);
       if (queryctrl.type == V4L2_CTRL_TYPE_MENU)
       {
         v4l2_querymenu querymenu;
@@ -141,10 +152,21 @@ Cam::Cam(const char *_device, mode_t _mode)
     else if (i == V4L2_CID_PRIVATE_LAST)
       i = V4L2_CID_BASE_EXTCTR;
   }
+  //set_control(V4L2_CID_EXPOSURE_AUTO_NEW, 2);
+  set_control(10094851, 0);
+  set_control(10094849, 1);
+  //set_control(0x9a9010, 100);
 
-  set_control(V4L2_CID_EXPOSURE_AUTO_NEW, 1);
   set_control(V4L2_CID_EXPOSURE_ABSOLUTE_NEW, 300);
-
+  set_control(V4L2_CID_BRIGHTNESS, 140);
+  set_control(V4L2_CID_CONTRAST, 40);
+  //set_control(V4L2_CID_WHITE_BALANCE_TEMP_AUTO_OLD, 0);
+  set_control(9963788, 0); // auto white balance
+  set_control(9963802, 1000); // color temperature
+  set_control(9963800, 2);  // power line frequency to 60 hz
+  set_control(9963795, 100); // gain
+  set_control(9963803, 100); // sharpness
+  set_control(9963778, 50); // saturation
 /*
   v4l2_jpegcompression v4l2_jpeg;
   if (ioctl(fd, VIDIOC_G_JPEGCOMP, &v4l2_jpeg) < 0)
@@ -365,8 +387,20 @@ void Cam::set_control(uint32_t id, int val)
 {
   v4l2_control c;
   c.id = id;
+
+  if (ioctl(fd, VIDIOC_G_CTRL, &c) == 0)
+  {
+    printf("current value of %d is %d\n", id, c.value);
+    /*
+    perror("unable to get control");
+    throw std::runtime_error("unable to get control");
+    */
+  }
   c.value = val;
   if (ioctl(fd, VIDIOC_S_CTRL, &c) < 0)
+  {
+    perror("unable to set control");
     throw std::runtime_error("unable to set control");
+  }
 }
 
