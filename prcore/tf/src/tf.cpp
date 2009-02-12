@@ -35,15 +35,17 @@ using namespace tf;
 
 std::string tf::remap(const std::string& prefix, const std::string& frame_id)
 {
+  //  printf ("remapping prefix:%s with frame_id:%s\n", prefix.c_str(), frame_id.c_str());
+  if (frame_id.size() > 0)
+    if (frame_id[0] == '/')
+      return frame_id;
+  
   if (prefix.size() > 0)
   {
     if (prefix[0] == '/')
     {
-      std::string composite = "";
-      if (frame_id.size() > 0)
-        if (frame_id[0] != '/')
-          composite = "/";
-      
+      std::string composite = prefix;
+      composite.append("/");
       composite.append(frame_id);
       return composite;
     }
@@ -112,6 +114,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
 
+  //  printf("Mapped Source: %s \nMapped Target: %s\n", mapped_source_frame.c_str(), mapped_target_frame.c_str());
   int retval = NO_ERROR;
   ros::Time temp_time;
   //If getting the latest get the latest common time
