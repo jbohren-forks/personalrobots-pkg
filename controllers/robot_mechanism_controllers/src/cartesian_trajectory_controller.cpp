@@ -41,6 +41,7 @@
 
 using namespace KDL;
 using namespace tf;
+using namespace ros;
 
 
 
@@ -112,10 +113,10 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 
 
 
-bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double duration)
+Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double duration)
 {
   // don't do anything when still moving
-  if (is_moving_) return false;
+  if (is_moving_) return Duration().fromSec(0);
 
   // trajectory from pose_begin to pose_end
   pose_end_ = pose_desi;
@@ -139,7 +140,7 @@ bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double durati
   time_passed_ = 0;
   is_moving_ = true;
 
-  return true;
+  return Duration().fromSec(max_duration_);
 }
 
 
@@ -239,6 +240,10 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
   command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  
 								 boost::bind(&CartesianTrajectoryControllerNode::command, this, _1),
 								 controller_name_ + "/command", root_name_, 1);
+
+  // advertise moveto service
+  node_->advertiseService(controller_name_+"/move_to", &CartesianTrajectoryControllerNode::moveTo, this);
+
   return true;
 }
 
@@ -251,11 +256,34 @@ void CartesianTrajectoryControllerNode::update()
 
 
 
+bool CartesianTrajectoryControllerNode::moveTo(robot_mechanism_controllers::MoveToPose::Request &req, robot_mechanism_controllers::MoveToPose::Response &resp)
+{
+  Time start_time = Time().now();
+  Duration traject_time = moveTo(req.pose);
+  Duration sleep_time = Duration().fromSec(0.01);
+
+  if (traject_time == Duration().fromSec(0))
+    return false;
+
+  while (Time().now() < start_time + traject_time)
+    sleep_time.sleep();
+
+  return true;
+}
+
+
+
 void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
+{
+  moveTo(*pose_msg);
+}
+
+
+Duration CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;
-  PoseStampedMsgToTF(*pose_msg, pose_stamped);
+  PoseStampedMsgToTF(pose, pose_stamped);
 
   // convert to reference frame of root link of the controller chain  
   robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
@@ -263,8 +291,9 @@ void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs
   // tell controller where to move to
   Frame pose_desi;
   TransformToFrame(pose_stamped, pose_desi);
-  controller_.moveTo(pose_desi);
+  return controller_.moveTo(pose_desi);
 }
+
 
 
 void CartesianTrajectoryControllerNode::TransformToFrame(const Transform& trans, Frame& frame)

@@ -45,6 +45,7 @@
 #include "robot_msgs/PoseStamped.h"
 #include "mechanism_model/controller.h"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
+#include "robot_mechanism_controllers/MoveToPose.h"
 
 namespace controller {
 
@@ -59,7 +60,7 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string name = controller_name);
   void update();
-  bool moveTo(const KDL::Frame& pose_desi, double duration=0);
+  ros::Duration moveTo(const KDL::Frame& pose_desi, double duration=0);
 
 private:
   KDL::Frame getPose();
@@ -101,7 +102,10 @@ class CartesianTrajectoryControllerNode : public Controller
   void update();
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
+  bool moveTo(robot_mechanism_controllers::MoveToPose::Request &req, robot_mechanism_controllers::MoveToPose::Response &resp);
+
  private:
+  ros::Duration moveTo(robot_msgs::PoseStamped& pose);
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
   ros::Node* node_;
