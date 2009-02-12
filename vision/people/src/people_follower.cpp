@@ -127,25 +127,27 @@ namespace estimation
         people_poses_.push_back(people_pos_);
       }
 
-      // find next goal to send
-      //while (distances_.back() - distances_.front() > follow_distance_){
+      // find next goal to send, which is follow_distance_ away from people_pos_
       while  (sqrt(pow(people_pos_.goal.x-people_poses_.front().goal.x,2) +
                    pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) > follow_distance_) {
         people_poses_.pop_front();
         distances_.pop_front();
       }
-      //cout << "Incremental distance " << length << endl;
-      //cout << "Totoal distance " << distances_.back() << endl;
+      robot_pos_.goal = people_poses_.front().goal;
+      dx = people_pos_.goal.x - robot_pos_.goal.x;
+      dy = people_pos_.goal.y - robot_pos_.goal.y;
+      robot_pos_.goal.th = atan2(dy, dx);
+
       cout << "person pos " 
            << people_pos_.goal.x << " "  
            << people_pos_.goal.y << " " 
            << people_pos_.goal.th << endl;
       cout << "robot  pos " 
-           << people_poses_.front().goal.x << " "
-           << people_poses_.front().goal.y << " "
-           << people_poses_.front().goal.th << endl;
-      cout << "distance between them "<< sqrt(pow(people_pos_.goal.x-people_poses_.front().goal.x,2) +
-                                              pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) << endl;
+           << robot_pos_.goal.x << " "
+           << robot_pos_.goal.y << " "
+           << robot_pos_.goal.th << endl;
+      cout << "distance between them "<< sqrt(pow(people_pos_.goal.x-robot_pos_.goal.x,2) +
+                                              pow(people_pos_.goal.y-robot_pos_.goal.y,2) ) << endl;
 
 
       // send goal to planner
@@ -155,13 +157,13 @@ namespace estimation
       }
 
       // visualize goal
-      robot_goal_cloud_.pts[0].x = people_poses_.front().goal.x;
-      robot_goal_cloud_.pts[0].y = people_poses_.front().goal.y;
+      robot_goal_cloud_.pts[0].x = robot_pos_.goal.x;
+      robot_goal_cloud_.pts[0].y = robot_pos_.goal.y;
       robot_goal_cloud_.pts[0].z = 0.0;
       robot_goal_cloud_.header.frame_id = fixed_frame_;
       publish("goal_pos",robot_goal_cloud_);
     }
-
+    
 
     // not initialized yet
     else{

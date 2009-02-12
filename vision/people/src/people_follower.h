@@ -86,7 +86,7 @@ private:
   std::list<robot_msgs::Planner2DGoal> people_poses_;
 
   // message
-  robot_msgs::Planner2DGoal people_pos_;
+  robot_msgs::Planner2DGoal people_pos_, robot_pos_;
 
   ros::Time time_last_publish_;
 
