@@ -20,5 +20,5 @@
     <!-- send arm a command -->
     <node pkg="robot_mechanism_controllers" type="control.py" args="set head_tilt_controller 0.2" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 
-    <test test-name="test_pr2_sensors_gazebo_test_camera" pkg="test_pr2_sensors_gazebo" type="test_camera.py" />
+    <test test-name="test_pr2_sensors_gazebo_test_camera" pkg="test_pr2_sensors_gazebo" type="test_camera.py" time-limit="90" />
 </launch>

@@ -45,7 +45,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from deprecated_msgs.msg import *
+from deprecated_msgs.msg import Image as image_msg
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
 
@@ -53,7 +53,7 @@ FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
 TEST_DURATION   = 10
-TEST_INIT_WAIT  = 40
+TEST_INIT_WAIT  = 70
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
@@ -178,8 +178,8 @@ class TestCameras(unittest.TestCase):
         print " wait TEST_INIT_WAIT sec for objects to settle and arms to tuck "
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
-        #rospy.Subscriber("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups
-        rospy.Subscriber("stereo_l/image", Image, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
+        #rospy.Subscriber("test_camera/image", image_msg, self.imageInput)  # this is a test camera, simply looking at the cups
+        rospy.Subscriber("stereo_l/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         #self.pollThread.start()
         timeout_t = time.time() + TEST_DURATION
