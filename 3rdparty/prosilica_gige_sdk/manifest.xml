@@ -1,0 +1,18 @@
+<package>
+<description brief="Prosilica GigE SDK">
+
+The Prosilica GigE SDK allows users to control and capture images from Prosilica's GigE Vision gigabit Ethernet cameras.
+
+Package currently assumes x86 Linux.
+
+</description>
+<author>Prosilica, Inc.</author>
+<license>Commercial</license>
+<review status="3rdparty" notes=""/>
+<url>http://www.prosilica.com/support/gige/ge_starter.html</url>
+<export>
+  <cpp lflags="-Wl,-rpath,${prefix}/Prosilica_GigE_SDK/bin-pc/x86 -L${prefix}/Prosilica_GigE_SDK/bin-pc/x86 -lPvAPI" cflags="-I${prefix}/Prosilica_GigE_SDK/inc-pc"/>
+</export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
+</package>
