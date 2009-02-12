@@ -46,6 +46,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
+from robot_msgs.msg import *
 from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
@@ -60,7 +61,7 @@ CMD_POS_7      =  0.0
 LOWER_Z        =  0.1
 PAN_RAD        =  0.2
 G_OPEN         =  0.5;
-G_CLOSE        =  0.25;
+G_CLOSE        =  0.20;
 
 p3d_received   = False
 
