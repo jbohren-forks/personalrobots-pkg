@@ -34,6 +34,7 @@ typedef struct
 	outlet_feature_t feature2;
 	CvPoint3D32f coord_hole1;
 	CvPoint3D32f coord_hole2;
+	CvPoint3D32f coord_hole_ground;
 	float weight;
 	float weight_orient;
 } outlet_t;
@@ -155,11 +156,20 @@ IplImage* calc_tuple_distance_map(IplImage* tuple_mask);
 
 int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale);
 void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& stddev);
+void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_dist_x1, 
+								 float& ground_dist_x2, float& ground_dist_y);
 
 void filter_features_mask(vector<outlet_feature_t>& features, IplImage* mask);
 void filter_outlets_mask(vector<outlet_t>& outlets, IplImage* mask);
 void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage* distance_map);
 
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length);
+
+void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoint2D32f hor_dir);
+
+
+// retrieves coordinates of outlet holes in the following order: ground hole, left hole, right hole.
+// the size of points array should be at least 3
+void get_outlet_coordinates(const outlet_t& outlet, CvPoint3D32f* points);
 
 #endif //_OUTLET_MODEL_H

@@ -151,7 +151,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 			continue;
 		}
 #else
-		if(contrast < 1.0f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
+		if(contrast < 1.1f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.1f)
 		{
 			continue;
 		}
@@ -669,7 +669,8 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 
 #if defined(_USE_OUTLET_TUPLE)
 	CvPoint2D32f hor_dir = centers[1] - centers[0];
-	select_orient_outlets(hor_dir, outlets, 4);
+//	select_orient_outlets(hor_dir, outlets, 4);
+	filter_outlets_tuple(outlets, tuple_mask, hor_dir);
 	
 	cvReleaseImage(&tuple_mask);
 #endif //_USE_OUTLET_TUPLE
@@ -1668,7 +1669,11 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
 		it->coord_hole1 = cvPoint3D32f((dst->data.fl[0] - origin.x)*scale.x, 
 									   (dst->data.fl[1] - origin.y)*scale.y, -origin.z);
 		it->coord_hole2 = cvPoint3D32f((dst->data.fl[2] - origin.x)*scale.x, 
-									   (dst->data.fl[3] - origin.y)*scale.y, -origin.z);		
+									   (dst->data.fl[3] - origin.y)*scale.y, -origin.z);
+		const float ground_hole_offset = 11.5; // mm
+		it->coord_hole_ground = cvPoint3D32f((it->coord_hole1.x + it->coord_hole2.x)*0.5f,
+											 (it->coord_hole1.y + it->coord_hole2.y)*0.5f - ground_hole_offset,
+											 0.0f);
 	}
 	
 	cvReleaseMat(&src);
@@ -1690,6 +1695,25 @@ void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& 
 	}
 	mean = sum/outlets.size();
 	stddev = sqrt(sum2/outlets.size() - mean*mean);
+}
+
+void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_dist_x1, 
+								 float& ground_dist_x2, float& ground_dist_y)
+{
+	if(outlets.size() < 4) return;
+	
+	CvPoint2D32f ground_holes[4];
+	for(int i = 0; i < 4; i++)
+	{
+		CvPoint3D32f point = outlets[i].coord_hole_ground;
+		ground_holes[i] = cvPoint2D32f(point.x, point.y);
+	}
+	
+	order_tuple2(ground_holes);
+	
+	ground_dist_x1 = ground_holes[1].x - ground_holes[0].x;
+	ground_dist_x2 = ground_holes[2].x - ground_holes[3].x;
+	ground_dist_y = ground_holes[2].y - ground_holes[1].y;	
 }
 
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length)
@@ -1789,4 +1813,58 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 	}
 	
 	features = filtered;
+}
+
+int find_outlet_position(outlet_t outlet, IplImage* tuple_mask)
+{
+	int idx1 = (unsigned char)tuple_mask->imageData[outlet.hole1.y*tuple_mask->widthStep + outlet.hole1.x];
+	int idx2 = (unsigned char)tuple_mask->imageData[outlet.hole2.y*tuple_mask->widthStep + outlet.hole2.x];
+	
+	if(idx1 == idx2)
+	{
+		return idx1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoint2D32f hor_dir)
+{
+	vector<outlet_t> filtered;
+	vector<int> outlets_idx;
+	
+	for(vector<outlet_t>::const_iterator it = outlets.begin(); it != outlets.end(); it++)
+	{
+		int idx = find_outlet_position(*it, tuple_mask);
+		outlets_idx.push_back(idx);
+	}
+	
+	for(int i = 0; i < 4; i++)
+	{
+		vector<outlet_t> candidates;
+		for(int j = 0; j < outlets.size(); j++)
+		{
+			if(outlets_idx[j] == i + 1)
+			{
+				candidates.push_back(outlets[j]);
+			}
+		}
+		
+		if(candidates.size() > 0)
+		{
+			select_orient_outlets(hor_dir, candidates, 1);
+			filtered.push_back(candidates[0]);
+		}
+	}
+	
+	outlets = filtered;
+}
+
+void get_outlet_coordinates(const outlet_t& outlet, CvPoint3D32f* points)
+{
+	points[1] = outlet.coord_hole1;
+	points[2] = outlet.coord_hole2;
+	points[0] = outlet.coord_hole_ground;
 }

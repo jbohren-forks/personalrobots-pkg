@@ -202,7 +202,6 @@ int find_start_idx3(const vector<outlet_elem_t>& helper_vec)
 	}
 	
 	// should not get past this point
-	assert(0);
 	return -1;
 	
 }
@@ -406,7 +405,7 @@ int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers,
 			cvSetZero(outlet_mask);
 			for(int i = 0; i < 4; i++)
 			{
-				cvDrawContours(outlet_mask, tuple[i].seq, cvScalar(255), cvScalar(255), 0, CV_FILLED);
+				cvDrawContours(outlet_mask, tuple[i].seq, cvScalar(i + 1), cvScalar(i + 1), 0, CV_FILLED);
 			}
 		}
 		

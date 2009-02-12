@@ -294,6 +294,12 @@ int main(int argc,char** argv)
 			float mean, stddev;
 			calc_outlet_dist_stat(outlets, mean, stddev);
 			printf("Distance between holes: Mean = %f, stddev = %f\n", mean, stddev);
+			
+			float ground_dist_x1, ground_dist_x2, ground_dist_y;
+			calc_outlet_tuple_dist_stat(outlets, ground_dist_x1, ground_dist_x2, ground_dist_y);
+			printf("Horizontal distance between ground holes: top %f, bottom %f\n", 
+				   ground_dist_x1, ground_dist_x2);
+			printf("Vertical distance between ground holes: %f\n", ground_dist_y);
 			/*		
 			 CvPoitn3D32f origin;
 			 float bar_length;

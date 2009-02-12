@@ -53,6 +53,8 @@ typedef struct
 CvPoint2D32f calc_center(CvSeq* seq);
 int find_dir(const CvPoint2D32f* dir, int xsign, int ysign);
 int order_tuple(CvPoint2D32f* centers);
+int order_tuple2(CvPoint2D32f* centers);
+
 int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers, IplImage* outlet_mask, const char* output_path, const char* filename);
 int find_tuple(const vector<outlet_elem_t>& candidates, CvPoint2D32f* tuple);
 
