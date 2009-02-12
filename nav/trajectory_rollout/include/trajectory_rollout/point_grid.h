@@ -40,6 +40,7 @@
 #include <list>
 #include <cfloat>
 #include <deprecated_msgs/Point2DFloat32.h>
+#include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Point32.h>
 #include <costmap_2d/observation.h>
 #include <trajectory_rollout/world_model.h>
@@ -94,10 +95,12 @@ namespace trajectory_rollout {
 
       /**
        * @brief  Inserts observations from sensors into the point grid
+       * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
        * @param laser_scan The laser scan used to clear freespace
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan);
+      virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint, 
+          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan);
 
       /**
        * @brief  Convert from world coordinates to grid coordinates
@@ -264,7 +267,7 @@ namespace trajectory_rollout {
        * @brief  Removes points from the grid that lie within a laser scan
        * @param  laser_scan A specification of the laser scan to use for clearing
        */
-      void removePointInScanBoundry(const PlanarLaserScan& laser_scan);
+      void removePointsInScanBoundry(const PlanarLaserScan& laser_scan);
 
       /**
        * @brief  Checks to see if a point is within a laser scan specification
@@ -273,6 +276,12 @@ namespace trajectory_rollout {
        * @return True if the point is contained within the scan, false otherwise
        */
       bool ptInScan(const robot_msgs::Point32& pt, const PlanarLaserScan& laser_scan);
+
+      /**
+       * @brief  Get the points in the point grid
+       * @param  cloud The point cloud to insert the points into
+       */
+      void getPoints(robot_msgs::PointCloud& cloud);
 
     private:
       double resolution_; ///< @brief The resolution of the grid in meters/cell

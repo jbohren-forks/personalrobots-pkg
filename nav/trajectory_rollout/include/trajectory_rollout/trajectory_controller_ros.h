@@ -132,6 +132,8 @@ namespace trajectory_rollout {
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
       PlanarLaserScan base_scan_; ///< @breif Storage for the last scan the base laser took... used for clearing free-space in front of the robot
+      PointGrid* point_grid_; ///< @brief If using a freespace grid... we want to access it
+      bool freespace_model_;  ///< @brief Keep track of whether we are using a freespace controller or not
   };
 
 };

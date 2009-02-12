@@ -74,10 +74,12 @@ namespace trajectory_rollout {
 
       /**
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
+       * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
-       * @param laser_scan The scan used to clea freespace
+       * @param laser_scan The scan used to clear freespace
        */
-      virtual void updateWorld(const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan){}
+      virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
+          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan) {}
 
     private:
       /**

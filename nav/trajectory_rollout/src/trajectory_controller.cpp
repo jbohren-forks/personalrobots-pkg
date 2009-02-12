@@ -626,20 +626,37 @@ namespace trajectory_rollout{
       tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations,
       PlanarLaserScan base_scan){
 
+    double uselessPitch, uselessRoll, yaw, velYaw;
+    global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+    global_vel.getBasis().getEulerZYX(velYaw, uselessPitch, uselessRoll);
+
+    double x = global_pose.getOrigin().getX();
+    double y = global_pose.getOrigin().getY();
+    double theta = yaw;
+
+    double vx = global_vel.getOrigin().getX();
+    double vy = global_vel.getOrigin().getY();
+    double vtheta = velYaw;
+
+    //build the oriented footprint at the robot's current location
+    double cos_th = cos(theta);
+    double sin_th = sin(theta);
+    vector<deprecated_msgs::Point2DFloat32> oriented_footprint;
+    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
+      Point2DFloat32 new_pt;
+      new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+      new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
+      oriented_footprint.push_back(new_pt);
+    }
+
     //update the point grid with new observations
-    world_model_.updateWorld(observations, base_scan);
+    world_model_.updateWorld(oriented_footprint, observations, base_scan);
 
     //reset the map for new operations
     map_.resetPathDist();
 
-
-    double uselessPitch, uselessRoll, yaw, velYaw;
-    global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-
-
-
     //temporarily remove obstacles that are within the footprint of the robot
-    vector<trajectory_rollout::Position2DInt> footprint_list = getFootprintCells(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, true);
+    vector<trajectory_rollout::Position2DInt> footprint_list = getFootprintCells(x, y, theta, true);
 
     //mark cells within the initial footprint of the robot
     for(unsigned int i = 0; i < footprint_list.size(); ++i){
@@ -650,14 +667,9 @@ namespace trajectory_rollout{
     setPathCells();
     ROS_DEBUG("Path/Goal distance computed");
 
-
-    global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-    global_vel.getBasis().getEulerZYX(velYaw, uselessPitch, uselessRoll);
-
-
     //rollout trajectories and find the minimum cost one
-    Trajectory best = createTrajectories(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
-        global_vel.getOrigin().getX(), global_vel.getOrigin().getY(), velYaw, 
+    Trajectory best = createTrajectories(x, y, theta, 
+        vx, vy, vtheta, 
         acc_lim_x_, acc_lim_y_, acc_lim_theta_);
     ROS_DEBUG("Trajectories created");
 

@@ -327,9 +327,10 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     return neighbor_sq_dist;
   }
 
-  void PointGrid::updateWorld(const vector<Observation>& observations, const PlanarLaserScan& laser_scan){
-    ///@TODO Remove outdated points in the grid within the polygon of the laser sweep
-    //removePointsInPolygon(laser_outline);
+  void PointGrid::updateWorld(const vector<Point2DFloat32>& footprint, 
+      const vector<Observation>& observations, const PlanarLaserScan& laser_scan){
+    //remove points in the laser scan boundry
+    removePointsInScanBoundry(laser_scan);
 
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
@@ -352,20 +353,23 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
         insert(cloud.pts[i]);
       }
     }
+
+    //remove the points that are in the footprint of the robot
+    removePointsInPolygon(footprint);
   }
 
-  void PointGrid::removePointInScanBoundry(const PlanarLaserScan& laser_scan){
+  void PointGrid::removePointsInScanBoundry(const PlanarLaserScan& laser_scan){
     if(laser_scan.cloud.pts.size() == 0)
       return;
 
     //compute the containing square of the scan
     Point2DFloat32 lower_left, upper_right;
-    lower_left.x = laser_scan.cloud.pts[0].x;
-    lower_left.y = laser_scan.cloud.pts[0].y;
-    upper_right.x = laser_scan.cloud.pts[0].x;
-    upper_right.y = laser_scan.cloud.pts[0].y;
+    lower_left.x = laser_scan.origin.x;
+    lower_left.y = laser_scan.origin.y;
+    upper_right.x = laser_scan.origin.x;
+    upper_right.y = laser_scan.origin.y;
 
-    for(unsigned int i = 1; i < laser_scan.cloud.pts.size(); ++i){
+    for(unsigned int i = 0; i < laser_scan.cloud.pts.size(); ++i){
       lower_left.x = min(lower_left.x, laser_scan.cloud.pts[i].x);
       lower_left.y = min(lower_left.y, laser_scan.cloud.pts[i].y);
       upper_right.x = max(upper_right.x, laser_scan.cloud.pts[i].x);
@@ -405,7 +409,16 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
       double v2_x = pt.x - laser_scan.origin.x;
       double v2_y = pt.y - laser_scan.origin.y;
 
-      double vector_angle = atan2(v1_y, v1_x) - atan2(v2_y, v2_x);
+      double perp_dot = v1_x * v2_y - v1_y * v2_x;
+      double dot = v1_x * v2_x + v1_y * v2_y;
+
+      //get the signed angle
+      double vector_angle = atan2(perp_dot, dot);
+
+      //we want all angles to be between 0 and 2PI
+      if(vector_angle < 0)
+        vector_angle = 2 * M_PI + vector_angle;
+
       double total_rads = laser_scan.angle_max - laser_scan.angle_min; 
 
       //if this point lies outside of the scan field of view... it is not in the scan
@@ -417,21 +430,30 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
       //make sure we have a legal index... we always should at this point, but just in case
       if(index >= laser_scan.cloud.pts.size() - 1){
-        ROS_ERROR("Unexpected illegal index while removing points from laser scans");
         return false;
       }
 
-      ROS_ERROR("Angle: %.2f, Increment: %.2f,  Index: %d", vector_angle, laser_scan.angle_increment, index);
+      //ROS_ERROR("Angle: %.8f, Increment: %.8f,  Index: %d", vector_angle, laser_scan.angle_increment, index);
 
       //if the point lies to the right of the line between the two scan points bounding it, it is within the scan
-      if(orient(laser_scan.cloud.pts[index], laser_scan.cloud.pts[index + 1], pt) > 0)
+      if(orient(laser_scan.cloud.pts[index], laser_scan.cloud.pts[index + 1], pt) > 0){
+        //ROS_ERROR("Removing point");
         return true;
+      }
 
       //otherwise it is not
       return false;
     }
     else
       return false;
+  }
+
+  void PointGrid::getPoints(PointCloud& cloud){
+    for(unsigned int i = 0; i < cells_.size(); ++i){
+      for(list<Point32>::iterator it = cells_[i].begin(); it != cells_[i].end(); ++it){
+        cloud.pts.push_back(*it);
+      }
+    }
   }
 
   void PointGrid::removePointsInPolygon(const vector<Point2DFloat32> poly){

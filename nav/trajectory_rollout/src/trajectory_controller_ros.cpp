@@ -51,14 +51,12 @@ namespace trajectory_rollout {
       string global_frame,
       const costmap_2d::CostMapAccessor& ma, 
       std::vector<deprecated_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
-    : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), global_frame_(global_frame){
+    : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), global_frame_(global_frame), point_grid_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int samples_per_dim;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
     bool holonomic_robot;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th;
-
-    bool freespace_model;
 
     base_scan_notifier_ = new MessageNotifier<LaserScan>(&tf_, &ros_node,
         boost::bind(&TrajectoryControllerROS::baseScanCallback, this, _1),
@@ -81,11 +79,9 @@ namespace trajectory_rollout {
     ros_node.param("/trajectory_rollout/max_vel_th", max_vel_th, 1.0);
     ros_node.param("/trajectory_rollout/min_vel_th", min_vel_th, -1.0);
     ros_node.param("/trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
-    ros_node.param("/trajectory_rollout/freespace_model", freespace_model, false);
+    ros_node.param("/trajectory_rollout/freespace_model", freespace_model_, false);
 
-
-
-    if(freespace_model){
+    if(freespace_model_){
       double origin_x, origin_y;
       ma.getOriginInWorldCoordinates(origin_x, origin_y);
       Point2DFloat32 origin;
@@ -93,8 +89,12 @@ namespace trajectory_rollout {
       origin.y = origin_y;
       unsigned int cmap_width, cmap_height;
       ma.getCostmapDimensions(cmap_width, cmap_height);
-      world_model_ = new PointGrid(cmap_width * ma.getResolution(), cmap_height * ma.getResolution(), 1.0, origin, 2.0, 2.0, 0.01);
+      point_grid_ = new PointGrid(cmap_width * ma.getResolution(), cmap_height * ma.getResolution(), 0.2, origin, 2.0, 2.0, 0.01);
+      world_model_ = point_grid_;
       ROS_ERROR("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
+      /*For Debugging
+      ros_node.advertise<PointCloud>("point_grid", 1);
+      */
     }
     else{
       world_model_ = new CostmapModel(ma); 
@@ -229,6 +229,15 @@ namespace trajectory_rollout {
       p.th = p_th;
       localPlan.push_back(p);
     }
+
+    /* For Debugging
+    if(freespace_model_ && point_grid_ != NULL){
+      PointCloud grid_cloud;
+      grid_cloud.header.frame_id = global_frame_;
+      point_grid_->getPoints(grid_cloud);
+      ros::Node::instance()->publish("point_grid", grid_cloud);
+    }
+    */
 
     return true;
   }
