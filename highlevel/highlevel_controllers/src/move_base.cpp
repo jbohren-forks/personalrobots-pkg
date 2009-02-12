@@ -242,17 +242,17 @@ namespace ros {
 
       deprecated_msgs::Point2DFloat32 pt;
       //create a square footprint
-      pt.x = robotRadius;
-      pt.y = -1 * robotRadius;
+      pt.x = robotRadius + .01;
+      pt.y = -1 * (robotRadius + .01);
       footprint_.push_back(pt);
-      pt.x = -1 * robotRadius;
-      pt.y = -1 * robotRadius;
+      pt.x = -1 * (robotRadius + .01);
+      pt.y = -1 * (robotRadius + .01);
       footprint_.push_back(pt);
-      pt.x = -1 * robotRadius;
-      pt.y = robotRadius;
+      pt.x = -1 * (robotRadius + .01);
+      pt.y = robotRadius + .01;
       footprint_.push_back(pt);
-      pt.x = robotRadius;
-      pt.y = robotRadius;
+      pt.x = robotRadius + .01;
+      pt.y = robotRadius + .01;
       footprint_.push_back(pt);
 
       //give the robot a nose
