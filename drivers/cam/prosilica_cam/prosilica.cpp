@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include "prosilica.h"
+#include <PvRegIo.h>
 #include <cassert>
 #include <ctime>
 
@@ -264,6 +265,28 @@ void Camera::setWhiteBalance(unsigned int blue, unsigned int red, AutoSetting is
     CHECK_ERR( PvAttrUint32Set(handle_, "WhitebalValueRed", red),
                "Couldn't set white balance red value" );
   }
+}
+
+static const unsigned long USER_ADDRESS = 0x17200;
+static const unsigned long USER_MEMORY_SIZE = 512;
+
+void Camera::writeUserMemory(const char* data, size_t size)
+{
+  assert(size <= USER_MEMORY_SIZE);
+  assert(size % 4 == 0);
+
+  unsigned long written;
+  CHECK_ERR( PvMemoryWrite(handle_, USER_ADDRESS, size, (const unsigned char*)data, &written),
+             "Couldn't write to user memory" );
+}
+
+void Camera::readUserMemory(char* data, size_t size)
+{
+  assert(size <= USER_MEMORY_SIZE);
+  assert(size % 4 == 0);
+
+  CHECK_ERR( PvMemoryRead(handle_, USER_ADDRESS, size, (unsigned char*)data),
+             "Couldn't read from user memory" );
 }
 
 void Camera::frameDone(tPvFrame* frame)

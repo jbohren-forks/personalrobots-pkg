@@ -94,6 +94,10 @@ public:
   void setWhiteBalance(unsigned int blue, unsigned int red,
                        AutoSetting isauto = Manual);
 
+  //! Size must a multiple of 4, at most 512.
+  void writeUserMemory(const char* data, size_t size);
+  void readUserMemory(char* data, size_t size);
+  
 private:
   tPvHandle handle_; // handle to open camera
   tPvFrame* frames_; // array of frame buffers
