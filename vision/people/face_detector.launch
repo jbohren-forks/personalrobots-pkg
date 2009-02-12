@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="stereo_image_proc" type="stereoproc" args="" output="screen"/>
+
+  <node pkg="people" type="face_detector" args="$(find people)/face_detection_nodes.txt none" output="screen"/>
+</launch>
+
