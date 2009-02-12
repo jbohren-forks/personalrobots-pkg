@@ -219,6 +219,7 @@ CartesianTrajectoryControllerNode::CartesianTrajectoryControllerNode()
 CartesianTrajectoryControllerNode::~CartesianTrajectoryControllerNode()
 {
   if (command_notifier_) delete command_notifier_;
+  node_->unadvertiseService(controller_name_+"/move_to");
 }
 
 
@@ -305,6 +306,9 @@ void CartesianTrajectoryControllerNode::TransformToFrame(const Transform& trans,
   double Rz, Ry, Rx;
   trans.getBasis().getEulerZYX(Rz, Ry, Rx);
   frame.M = Rotation::EulerZYX(Rz, Ry, Rx);
+
+  cout << "moving to " << frame.p(0) << " " << frame.p(1) << " " << frame.p(2)
+       << " " << Rz << " " << Ry << " " << Rx << endl;
 }
 
 
