@@ -163,8 +163,8 @@ class NavStackTest(unittest.TestCase):
         pub_goal = rospy.Publisher("goal", Planner2DGoal) #received by wavefront_player or equivalent
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
-        rospy.Subscriber("base_bumper"           , String              , self.bumpedInput)
-        rospy.Subscriber("torso_lift_bumper"     , String              , self.bumpedInput)
+        rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
+        rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
 
         rospy.init_node(NAME, anonymous=True)
 

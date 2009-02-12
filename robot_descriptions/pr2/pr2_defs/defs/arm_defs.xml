@@ -569,7 +569,7 @@
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="2" />
       <calibration reference_position="${1.27+wrist_roll_cal}" values="1.5 -1" />
-      <joint_properties damping="0.1" />
+      <joint_properties damping="2.0" />
     </joint>
 
 
