@@ -200,7 +200,7 @@ void NavViewPanel::loadMap()
   robot_srvs::StaticMap::Request  req;
   robot_srvs::StaticMap::Response resp;
   printf("Requesting the map...\n");
-  if( !ros::service::call("static_map", req, resp) )
+  if( !ros::service::call("/static_map", req, resp) )
   {
     printf("request failed\n");
 
