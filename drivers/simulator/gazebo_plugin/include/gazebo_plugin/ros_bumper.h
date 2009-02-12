@@ -36,6 +36,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 #include <std_msgs/String.h>
+#include <robot_msgs/Vector3Stamped.h>
 
 namespace gazebo
 {
@@ -106,6 +107,7 @@ namespace gazebo
 
     /// \brief broadcast some string for now.
     private: std_msgs::String bumperMsg;
+    private: robot_msgs::Vector3Stamped forceMsg;
   };
   
   /** \} */

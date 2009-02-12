@@ -34,6 +34,7 @@
 #include "gazebo/GazeboError.hh"
 #include "gazebo/ControllerFactory.hh"
 #include "gazebo/Simulator.hh"
+#include "gazebo/Body.hh"
 
 using namespace gazebo;
 
@@ -81,13 +82,17 @@ void RosBumper::LoadChild(XMLConfigNode *node)
   this->bumperTopicName = this->bumperTopicNameP->GetValue();
   std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
 
-  rosnode->advertise<std_msgs::String>(this->bumperTopicName,100);
+  rosnode->advertise<std_msgs::String>(this->bumperTopicName+std::string("/info"),100);
+  rosnode->advertise<robot_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
 void RosBumper::InitChild()
 {
+      this->forceMsg.vector.x = 0;
+      this->forceMsg.vector.y = 0;
+      this->forceMsg.vector.z = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -123,7 +128,23 @@ void RosBumper::UpdateChild()
                 << std::endl;
       //std::cout << stream.str();
       this->bumperMsg.data = stream.str();
-      rosnode->publish(this->bumperTopicName,this->bumperMsg);
+
+      // for the force feedback
+      double cur_time = Simulator::Instance()->GetSimTime();
+      Body* cur_body = dynamic_cast<Body*>((this->myParent)->GetParent());
+
+      if (cur_body)
+        this->forceMsg.header.frame_id = cur_body->GetName();  // @todo: this is the link name
+      this->forceMsg.header.stamp.sec = (unsigned long)floor(cur_time);
+      this->forceMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->forceMsg.header.stamp.sec) );
+
+      double eps = 0.10; // very crude low pass filter
+      this->forceMsg.vector.x = (1.0-eps)*this->forceMsg.vector.x + eps*contact_forces.f1[0];
+      this->forceMsg.vector.y = (1.0-eps)*this->forceMsg.vector.y + eps*contact_forces.f1[1];
+      this->forceMsg.vector.z = (1.0-eps)*this->forceMsg.vector.z + eps*contact_forces.f1[2];
+
+      rosnode->publish(this->bumperTopicName+std::string("/info"),this->bumperMsg);
+      rosnode->publish(this->bumperTopicName+std::string("/force"),this->forceMsg);
     }
   }
 
