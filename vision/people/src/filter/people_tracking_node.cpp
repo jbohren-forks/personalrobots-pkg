@@ -52,7 +52,7 @@ static const double       sequencer_delay            = 0.8;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 static const unsigned int num_particles_tracker      = 1000;
-
+static const unsigned int tracker_init_dist          = 4.0;
 
 namespace estimation
 {
@@ -152,16 +152,23 @@ namespace estimation
       // initialize a new tracker
       //if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
       if (message->initialization == 1 && trackers_.empty()){
-	cout << "starting new tracker" << endl;
-	stringstream tracker_name;
-	StatePosVel prior_sigma(tf::Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
-				tf::Vector3(0.0000001, 0.0000001, 0.0000001));
-	tracker_name << "person " << tracker_counter_++;
-	Tracker* new_tracker = new TrackerKalman(tracker_name.str(), sys_sigma_);
-	//Tracker* new_tracker = new TrackerParticle(tracker_name.str(), num_particles_tracker, sys_sigma_);
-	new_tracker->initialize(meas, prior_sigma, message->header.stamp.toSec());
-	trackers_.push_back(new_tracker);
-	ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), tracker_name.str().c_str());
+	tf::Point pt;
+	tf::PointMsgToTF(message->pos, pt);
+	tf::Stamped<tf::Point> loc(pt, message->header.stamp, message->header.frame_id);
+	robot_state_.transformPoint("base_link",loc,loc);
+	if ((pow(loc[0],2.0) +  pow(loc[1],2.0)) < tracker_init_dist) {
+
+	  cout << "starting new tracker" << endl;
+	  stringstream tracker_name;
+	  StatePosVel prior_sigma(tf::Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
+				  tf::Vector3(0.0000001, 0.0000001, 0.0000001));
+	  tracker_name << "person " << tracker_counter_++;
+	  Tracker* new_tracker = new TrackerKalman(tracker_name.str(), sys_sigma_);
+	  //Tracker* new_tracker = new TrackerParticle(tracker_name.str(), num_particles_tracker, sys_sigma_);
+	  new_tracker->initialize(meas, prior_sigma, message->header.stamp.toSec());
+	  trackers_.push_back(new_tracker);
+	  ROS_INFO("%s: Initialized new tracker %s", node_name_.c_str(), tracker_name.str().c_str());
+	}
       }
     }
     lock.unlock();

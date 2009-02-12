@@ -162,11 +162,11 @@ vector<float> calcLegFeatures(SampleSet* cluster, laser_scan::LaserScan& scan)
     linearity += pow(cvmGet(rot_points, i, 1), 2);
   }
 
-  cvReleaseMat(&points);
-  cvReleaseMat(&W);
-  cvReleaseMat(&U);
-  cvReleaseMat(&V);
-  cvReleaseMat(&rot_points);
+  cvReleaseMat(&points); points = 0;
+  cvReleaseMat(&W); W = 0;
+  cvReleaseMat(&U); U = 0;
+  cvReleaseMat(&V); V = 0;
+  cvReleaseMat(&rot_points); rot_points = 0;
 
   features.push_back(linearity);
 
@@ -198,9 +198,9 @@ vector<float> calcLegFeatures(SampleSet* cluster, laser_scan::LaserScan& scan)
   float yc = cvmGet(sol, 1, 0);
   float rc = sqrt(pow(xc,2) + pow(yc,2) - cvmGet(sol, 2, 0));
 
-  cvReleaseMat(&A);
-  cvReleaseMat(&B);
-  cvReleaseMat(&sol);
+  cvReleaseMat(&A); A = 0;
+  cvReleaseMat(&B); B = 0;
+  cvReleaseMat(&sol); sol = 0;
 
   float circularity = 0.0;
   for (SampleSet::iterator i = cluster->begin();

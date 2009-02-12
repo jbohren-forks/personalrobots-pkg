@@ -655,7 +655,7 @@ public:
     filt_cloud_.header.stamp = scan->header.stamp;
     filt_cloud_.header.frame_id = scan->header.frame_id;
     publish("filt_cloud", filt_cloud_);
-    cvReleaseMat(&tmp_mat);
+    cvReleaseMat(&tmp_mat); tmp_mat = 0;
 
     vector<robot_msgs::Point32> filter_visualize(saved_features_.size());
     vector<float> weights(saved_features_.size());
