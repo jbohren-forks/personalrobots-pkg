@@ -723,7 +723,8 @@ std::string Transformer::allFramesAsDot()
       parent_id = 0;
     }
     if (parent_id != 0)
-      mstream << frameIDs_reverse[counter] << " -> " << frameIDs_reverse[parent_id] << ";" <<std::endl;
+      mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
+              << "\"" << frameIDs_reverse[parent_id] << "\"" << ";" <<std::endl;
   }
   mstream << "}";
   return mstream.str();
