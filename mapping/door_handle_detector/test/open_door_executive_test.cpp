@@ -38,6 +38,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <robot_mechanism_controllers/cartesian_trajectory_controller.h>
+#include <robot_mechanism_controllers/MoveToPose.h>
 #include <kdl/frames.hpp>
 
 using namespace tf;
@@ -67,9 +68,9 @@ public:
     param("~/door_frame_p2_y", tmp, 0.5); my_door_.frame_p2.y = tmp;
     param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
-    my_door_.header.frame_id = "base_link";
+    my_door_.header.frame_id = "odom_combined";
 
-    advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command",1);
+    advertise<robot_msgs::PoseStamped>("cartesian_trajectory_right/command",1);
   }
   
   
@@ -104,7 +105,7 @@ public:
     Vector x_axis(1,0,0);
     double z_angle = acos(dot(-normal, x_axis));
     cout << "z_angle " << z_angle << endl;
-    pose.setRotation( Quaternion(z_angle, 0, 0) ); 
+    pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
     PoseStampedTFToMsg(pose, pose_msg);
 
     // move in front of door
@@ -112,15 +113,14 @@ public:
     pose_msg.pose.position.x = pose_msg.pose.position.x + offset[0];
     pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
     pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
-    publish("cartesian_trajectory/command", pose_msg);
     usleep(1e6 * 10);
+    moveTo(pose_msg);
     
     // move over door handle
     pose_msg.pose.position.x = pose_msg.pose.position.x - offset[0];
     pose_msg.pose.position.y = pose_msg.pose.position.y - offset[1];
     pose_msg.pose.position.z = pose_msg.pose.position.z - offset[2];
-    publish("cartesian_trajectory/command", pose_msg);
-    usleep(1e6 * 10);
+    moveTo(pose_msg);
 
     return true;
   }
@@ -133,6 +133,17 @@ public:
 	switch (state_){
 	  
 	case INITIALIZED:{
+	  robot_msgs::PoseStamped init_pose;
+	  init_pose.header.frame_id = "base_link";
+	  init_pose.header.stamp = ros::Time().fromSec(0);
+	  init_pose.pose.position.x = 0.5;
+	  init_pose.pose.position.y = 0.0;
+	  init_pose.pose.position.y = 0.4;
+	  init_pose.pose.orientation.x = 0;
+	  init_pose.pose.orientation.y = 0;
+	  init_pose.pose.orientation.z = 0;
+	  init_pose.pose.orientation.w = 1;	  
+	  moveTo(init_pose);
 	  state_ = DETECTING;
 	  break;
 	}
@@ -150,6 +161,23 @@ public:
 	}
 	usleep(1e3*100);
       }
+  }
+
+
+  bool moveTo(const robot_msgs::PoseStamped& pose)
+  {
+    cout << "giving moveto command" << endl;
+    robot_mechanism_controllers::MoveToPose::Request  req;
+    robot_mechanism_controllers::MoveToPose::Response  res;
+    req.pose = pose;
+    if (ros::service::call("cartesian_trajectory_right/move_to", req, res)){
+      cout << "  moveto successful" << endl;
+      return true;
+    }
+    else{
+      cout << "  moveto failed" << endl;
+      return false;
+    }
   }
 
 

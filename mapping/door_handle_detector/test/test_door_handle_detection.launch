@@ -2,11 +2,11 @@
    <!--include file="$(find pr2_alpha)/prg.machine" /-->
 
     <param name="door_detection_test_node/door_width" type="double" value="0.9"/>
-    <param name="door_detection_test_node/door_checkerboard_x_offset" type="double" value="0.073"/>
-    <param name="door_detection_test_node/door_checkerboard_z_offset" type="double" value="1.47"/>
+    <param name="door_detection_test_node/door_checkerboard_x_offset" type="double" value="0.045"/>
+    <param name="door_detection_test_node/door_checkerboard_z_offset" type="double" value="1.25"/>
 
-    <param name="door_detection_test_node/checkerboard_handle_x_offset" type="double" value="0.0"/>
-    <param name="door_detection_test_node/checkerboard_handle_z_offset" type="double" value="0.0"/>
+    <param name="door_detection_test_node/checkerboard_handle_x_offset" type="double" value="0.73"/>
+    <param name="door_detection_test_node/checkerboard_handle_z_offset" type="double" value="0.36"/>
 
     <param name="door_detection_test_node/frame_id" type="string" value="base_link"/>
 
