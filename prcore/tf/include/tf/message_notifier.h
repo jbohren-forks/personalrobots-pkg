@@ -210,7 +210,7 @@ public:
 
       new_message_queue_.push_back(message);
 
-      NOTIFIER_DEBUG("Added message to message queue, count now %d", new_message_queue_.size());
+      NOTIFIER_DEBUG("Added message to message queue, count now %d", (int)new_message_queue_.size());
 
       new_messages_ = true;
 
