@@ -101,8 +101,8 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 
   node->param("constraint/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
 
-  node->param("constraint/f_r_max"      , f_r_max     , 100.0) ; /// max radial force of line constraint
-  node->param("constraint/f_pose_max"   , f_pose_max  , 20.0) ; /// max pose force
+  node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
+  node->param("constraint/f_pose_max"   , f_pose_max  , 50.0) ; /// max pose force
   node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max upper arm limit force
 
   // Constructs solvers and allocates matrices.
@@ -213,20 +213,6 @@ void PlugController::computeConstraintJacobian()
   double dist_to_line = r_to_line.norm();
   r_to_line = r_to_line.normalized();
 
-#if 0
-  // get the vector from the outlet pt to the end effector pt
-  Eigen::Vector3f vector_to_end_effector = end_effector_pt - outlet_pt_;
-  // compute the scalar projection along the outlet norm
-  double scalar = outlet_norm_.dot(vector_to_end_effector);
-  // subtract the two points to get the normal direction to be applied to keep the end effector on the line
-  Eigen::Vector3f radial_norm = (scalar * outlet_norm_) - end_effector_pt;
-  // normalize the vector
-  Eigen::Vector3f radial_unit_vector = radial_norm.normalized();
-  // compute the distance error from the line
-  double r_dist_to_line = radial_norm.norm();
-#endif
-
-  ROS_ERROR("D %.3lf  ", dist_to_line);
   // update the jacobian for the line constraint
   if (dist_to_line > 0)
   {
@@ -256,7 +242,7 @@ void PlugController::computeConstraintJacobian()
   //pitch constraint
   if (fabs(pose_error(4)) > 0)
   {
-    f_pitch = pose_error(4) * f_pose_max * 10; /// @todo: FIXME, replace with some exponential function
+    f_pitch = pose_error(4) * f_pose_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -279,7 +265,7 @@ void PlugController::computeConstraintJacobian()
   chain_.getPositions(robot_->joint_states_, jnt_pos);
 
   double joint_e = angles::shortest_angular_distance(jnt_pos(2), upper_arm_limit);
-  if(joint_e < -0.1)
+  if(joint_e < -0.01)
   {
     joint_constraint_jac_(2) = 1;
   }
