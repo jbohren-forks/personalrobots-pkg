@@ -83,14 +83,16 @@ namespace mpglue {
     
     
     static SBPLEnvironment * create2D(boost::shared_ptr<CostmapAccessor const> cm,
-				      boost::shared_ptr<IndexTransform const> it);
+				      boost::shared_ptr<IndexTransform const> it,
+				      bool is16connected) throw(std::exception);
     
     static SBPLEnvironment * create3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 					 boost::shared_ptr<IndexTransform const> it,
+					 //bool is16connected,
 					 footprint_t const & footprint,
 					 double nominalvel_mpersecs,
 					 double timetoturn45degsinplace_secs,
-					 std::ostream * dbgos);
+					 std::ostream * dbgos) throw(std::exception);
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
@@ -146,8 +148,6 @@ namespace mpglue {
     /** \return the stateID of a pose, or -1 if the pose lies outside
 	of the map. */
     virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const = 0;
-    
-    virtual std::string getName() const = 0;
     
     boost::shared_ptr<CostmapAccessor const> getCostmap() const { return cm_; }
     boost::shared_ptr<IndexTransform const> getIndexTransform() const { return it_; }

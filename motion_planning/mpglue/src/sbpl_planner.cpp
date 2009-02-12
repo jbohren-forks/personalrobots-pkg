@@ -194,65 +194,65 @@ namespace mpglue {
   }
   
   
-  SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<CostmapAccessor> cm,
-				    boost::shared_ptr<IndexTransform const> it,
-				    bool forward_search)
-  {
-    shared_ptr<SBPLEnvironment> environment(SBPLEnvironment::create2D(cm, it));
-    shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
-    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
-    return result;
-  }
+//   SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<CostmapAccessor> cm,
+// 				    boost::shared_ptr<IndexTransform const> it,
+// 				    bool forward_search)
+//   {
+//     shared_ptr<SBPLEnvironment> environment(SBPLEnvironment::create2D(cm, it));
+//     shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
+//     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+//     return result;
+//   }
   
   
-  SBPLPlannerWrap * createADStar2D(boost::shared_ptr<CostmapAccessor> cm,
-				   boost::shared_ptr<IndexTransform const> it,
-				   bool forward_search)
-  {
-    shared_ptr<SBPLEnvironment> environment(SBPLEnvironment::create2D(cm, it));
-    shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
-    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
-    return result;
-  }
+//   SBPLPlannerWrap * createADStar2D(boost::shared_ptr<CostmapAccessor> cm,
+// 				   boost::shared_ptr<IndexTransform const> it,
+// 				   bool forward_search)
+//   {
+//     shared_ptr<SBPLEnvironment> environment(SBPLEnvironment::create2D(cm, it));
+//     shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
+//     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+//     return result;
+//   }
   
   
-  SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
-				       boost::shared_ptr<IndexTransform const> it,
-				       bool forward_search,
-				       footprint_t const & footprint,
-				       double nominalvel_mpersecs,
-				       double timetoturn45degsinplace_secs,
-				       ostream * dbgos)
-  {
-    shared_ptr<SBPLEnvironment>
-      environment(SBPLEnvironment::create3DKIN(cm, it,
-					       footprint,
-					       nominalvel_mpersecs,
-					       timetoturn45degsinplace_secs,
-					       dbgos));
-    shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
-    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
-    return result;
-  }
+//   SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
+// 				       boost::shared_ptr<IndexTransform const> it,
+// 				       bool forward_search,
+// 				       footprint_t const & footprint,
+// 				       double nominalvel_mpersecs,
+// 				       double timetoturn45degsinplace_secs,
+// 				       ostream * dbgos)
+//   {
+//     shared_ptr<SBPLEnvironment>
+//       environment(SBPLEnvironment::create3DKIN(cm, it,
+// 					       footprint,
+// 					       nominalvel_mpersecs,
+// 					       timetoturn45degsinplace_secs,
+// 					       dbgos));
+//     shared_ptr<SBPLPlanner> planner(new ARAPlanner(environment->getDSI(), forward_search));
+//     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+//     return result;
+//   }
   
   
-  SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
-				      boost::shared_ptr<IndexTransform const> it,
-				      bool forward_search,
-				      footprint_t const & footprint,
-				      double nominalvel_mpersecs,
-				      double timetoturn45degsinplace_secs,
-				      ostream * dbgos)
-  {
-    shared_ptr<SBPLEnvironment>
-      environment(SBPLEnvironment::create3DKIN(cm, it,
-					       footprint,
-					       nominalvel_mpersecs,
-					       timetoturn45degsinplace_secs,
-					       dbgos));
-    shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
-    SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
-    return result;
-  }
+//   SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
+// 				      boost::shared_ptr<IndexTransform const> it,
+// 				      bool forward_search,
+// 				      footprint_t const & footprint,
+// 				      double nominalvel_mpersecs,
+// 				      double timetoturn45degsinplace_secs,
+// 				      ostream * dbgos)
+//   {
+//     shared_ptr<SBPLEnvironment>
+//       environment(SBPLEnvironment::create3DKIN(cm, it,
+// 					       footprint,
+// 					       nominalvel_mpersecs,
+// 					       timetoturn45degsinplace_secs,
+// 					       dbgos));
+//     shared_ptr<SBPLPlanner> planner(new ADPlanner(environment->getDSI(), forward_search));
+//     SBPLPlannerWrap * result(new SBPLPlannerWrap(environment, planner));
+//     return result;
+//   }
   
 }

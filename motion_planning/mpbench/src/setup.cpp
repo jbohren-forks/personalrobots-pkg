@@ -911,9 +911,17 @@ namespace mpbench {
       shared_ptr<mpglue::SBPLEnvironment> sbpl_environment;
       if ("2d" == envstr) {
 	if (progress_os)
-	  *progress_os << "  creating 2DEnvironment\n" << flush;
+	  *progress_os << "  creating 8-connected 2DEnvironment\n" << flush;
 	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(setup->getCostmap(),
-								 setup->getIndexTransform()));
+								 setup->getIndexTransform(),
+								 false));
+      }
+      else if ("2d16" == envstr) {
+	if (progress_os)
+	  *progress_os << "  creating 16-connected 2DEnvironment\n" << flush;
+	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(setup->getCostmap(),
+								 setup->getIndexTransform(),
+								 true));
       }
       else if ("3dkin" == envstr) {
 	if (progress_os)
@@ -930,7 +938,7 @@ namespace mpbench {
       }
       else
 	throw runtime_error("mpbench::Setup::create(): invalid environment token \""
-			    + envstr + "\", must be \"2d\" or \"3dkin\"");
+			    + envstr + "\", must be \"2d\", \"2d16\" or \"3dkin\"");
       if ( ! sbpl_environment)
 	throw runtime_error("mpbench::Setup::create(): failed to create SBPLEnvironment from \""
 			    + envstr + "\"");

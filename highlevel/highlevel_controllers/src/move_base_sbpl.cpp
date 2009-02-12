@@ -162,7 +162,9 @@ namespace ros {
 	boost::shared_ptr<mpglue::IndexTransform> mit(mpglue::createIndexTransform(&getCostMap()));
 	
 	if ("2D" == environmentType)
-	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit));
+	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, false));
+	if ("2D16" == environmentType)
+	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, true));
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
 	  //// ignored by SBPL (at least in r9900).
@@ -179,7 +181,7 @@ namespace ros {
 							  timetoturn45degsinplace_secs, 0));
 	}
 	else {
-	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
+	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D, 2D16 or 3DKIN",
 		    environmentType.c_str());
 	  throw int(2);
 	}

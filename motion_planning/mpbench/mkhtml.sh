@@ -2,7 +2,7 @@
 
 MPBENCH=`rospack find mpbench`/mpbench-base
 
-CONSTANT_OPTS="-w hc:cubicle:1.2:3"
+CONSTANT_OPTS="-w xml:../data/scrape-corner.xml"
 CONSTANT_HR=""
 
 A_OPT="-p"

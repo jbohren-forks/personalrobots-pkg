@@ -87,7 +87,8 @@ namespace {
   {
   public:
     SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
-		      boost::shared_ptr<IndexTransform const> it);
+		      boost::shared_ptr<IndexTransform const> it,
+		      EnvironmentNAV2D * env);
     virtual ~SBPLEnvironment2D();
     
     virtual DiscreteSpaceInformation * getDSI();
@@ -101,7 +102,6 @@ namespace {
     virtual void SetGoalTolerance(double tol_xy, double tol_th);
     virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
     virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
@@ -122,10 +122,10 @@ namespace {
   public:
     SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 			 boost::shared_ptr<IndexTransform const> it,
+			 EnvironmentNAV3DKIN * env,
 			 footprint_t const & footprint,
 			 double nominalvel_mpersecs,
-			 double timetoturn45degsinplace_secs,
-			 ostream * dbgos);
+			 double timetoturn45degsinplace_secs);
     virtual ~SBPLEnvironment3DKIN();
     
     virtual DiscreteSpaceInformation * getDSI();
@@ -139,7 +139,6 @@ namespace {
     virtual void SetGoalTolerance(double tol_xy, double tol_th);
     virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
     virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
-    virtual std::string getName() const;
     
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
@@ -219,38 +218,15 @@ namespace mpglue {
   
   SBPLEnvironment * SBPLEnvironment::
   create2D(boost::shared_ptr<CostmapAccessor const> cm,
-	   boost::shared_ptr<IndexTransform const> it)
+	   boost::shared_ptr<IndexTransform const> it,
+	   bool is16connected) throw(std::exception)
   {
-    SBPLEnvironment2D * env(new SBPLEnvironment2D(cm, it));
-    return env;
-  }
-  
-  
-  SBPLEnvironment * SBPLEnvironment::
-  create3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
-	      boost::shared_ptr<IndexTransform const> it,
-	      footprint_t const & footprint,
-	      double nominalvel_mpersecs,
-	      double timetoturn45degsinplace_secs,
-	      ostream * dbgos)
-  {
-    SBPLEnvironment3DKIN * env(new SBPLEnvironment3DKIN(cm, it,
-							footprint, nominalvel_mpersecs,
-							timetoturn45degsinplace_secs,
-							dbgos));
-    return env;
-  }
-
-}
-
-namespace {
-  
-  SBPLEnvironment2D::
-  SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
-		    boost::shared_ptr<IndexTransform const> it)
-    : SBPLEnvironment(cm, it),
-      env_(new EnvironmentNAV2D())
-  {
+    EnvironmentNAV2D * env(new EnvironmentNAV2D());
+    if ((is16connected) && ( ! env->SetEnvParameter("is16connected", 1))) {
+      delete env;
+      throw runtime_error("mpglue::SBPLEnvironment::create2D(): EnvironmentNAV2D::SetEnvParameter() failed for \"is16connected\"");
+    }
+    
     int const obst_cost_thresh(cm->getCSpaceObstacleCost());
     
     // good: Take advantage of the fact that InitializeEnv() can take
@@ -261,18 +237,96 @@ namespace {
     // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
     // and simply assumed to always return 0 (which they won't if we
     // use growable costmaps).
-    env_->InitializeEnv(cm->getXEnd(), // width
-			cm->getYEnd(), // height
-			0,	// mapdata
-			obst_cost_thresh);
+    env->InitializeEnv(cm->getXEnd(), // width
+		       cm->getYEnd(), // height
+		       0,	// mapdata
+		       obst_cost_thresh);
     
     // as above, assume getXBegin() and getYBegin() are always zero
     for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
       for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
 	int cost;
 	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
-	  env_->UpdateCost(ix, iy, cost);
+	  env->UpdateCost(ix, iy, cost);
       }
+    
+    return new SBPLEnvironment2D(cm, it, env);
+  }
+  
+  
+  SBPLEnvironment * SBPLEnvironment::
+  create3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
+	      boost::shared_ptr<IndexTransform const> it,
+	      //	      bool is16connected,
+	      footprint_t const & footprint,
+	      double nominalvel_mpersecs,
+	      double timetoturn45degsinplace_secs,
+	      ostream * dbgos) throw(std::exception)
+  {
+    EnvironmentNAV3DKIN * env(new EnvironmentNAV3DKIN());
+//     if ((is16connected) && ( ! env->SetEnvParameter("is16connected", 1))) {
+//       delete env;
+//       throw runtime_error("mpglue::SBPLEnvironment::create3DKIN(): EnvironmentNAV3DKIN::SetEnvParameter() failed for \"is16connected\"");
+//     }
+    
+        int const obst_cost_thresh(cm->getWSpaceObstacleCost());
+    vector<sbpl_2Dpt_t> perimeterptsV;
+    perimeterptsV.reserve(footprint.size());
+    for (size_t ii(0); ii < footprint.size(); ++ii) {
+      sbpl_2Dpt_t pt;
+      pt.x = footprint[ii].x;
+      pt.y = footprint[ii].y;
+      perimeterptsV.push_back(pt);
+    }
+    
+    if (dbgos) {
+      *dbgos << "mpglue::SBPLEnvironment3DKIN:\n"
+	     << "  perimeterptsV =\n";
+      for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
+	   ip != perimeterptsV.end(); ++ip)
+	*dbgos << "    " << ip->x << "\t" << ip->y << "\n";
+      *dbgos << "  nominalvel_mpersecs = " << nominalvel_mpersecs << "\n"
+	     << "  timetoturn45degsinplace_secs = " << timetoturn45degsinplace_secs << "\n"
+	     << "  obst_cost_thresh = " << obst_cost_thresh << "\n" << flush;
+    }
+    
+    // good: Take advantage of the fact that InitializeEnv() can take
+    // a NULL-pointer as mapdata in order to initialize to all
+    // freespace.
+    //
+    // bad: Most costmaps do not support negative grid indices, so the
+    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
+    // and simply assumed to always return 0 (which they won't if we
+    // use growable costmaps).
+    env->InitializeEnv(cm->getXEnd(), // width
+		       cm->getYEnd(), // height
+		       0,	// mapdata
+		       perimeterptsV, it->getResolution(), nominalvel_mpersecs,
+		       timetoturn45degsinplace_secs, obst_cost_thresh);
+    
+    // as above, assume getXBegin() and getYBegin() are always zero
+    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
+      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
+	int cost;
+	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
+	  env->UpdateCost(ix, iy, cost);
+      }
+    
+    return new SBPLEnvironment3DKIN(cm, it, env, footprint,
+				    nominalvel_mpersecs, timetoturn45degsinplace_secs);
+  }
+  
+}
+
+namespace {
+  
+  SBPLEnvironment2D::
+  SBPLEnvironment2D(boost::shared_ptr<CostmapAccessor const> cm,
+		    boost::shared_ptr<IndexTransform const> it,
+		    EnvironmentNAV2D * env)
+    : SBPLEnvironment(cm, it),
+      env_(env)
+  {
   }
   
   
@@ -396,70 +450,16 @@ namespace {
   }
   
   
-  std::string SBPLEnvironment2D::
-  getName() const
-  {
-    std::string name("2D");
-    return name;
-  }
-  
-  
   SBPLEnvironment3DKIN::
   SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
 		       boost::shared_ptr<IndexTransform const> it,
+		       EnvironmentNAV3DKIN * env,
 		       footprint_t const & footprint,
 		       double nominalvel_mpersecs,
-		       double timetoturn45degsinplace_secs,
-		       ostream * dbgos)
+		       double timetoturn45degsinplace_secs)
     : SBPLEnvironment(cm, it),
-      env_(new EnvironmentNAV3DKIN())
+      env_(env)
   {
-    int const obst_cost_thresh(cm->getWSpaceObstacleCost());
-    vector<sbpl_2Dpt_t> perimeterptsV;
-    perimeterptsV.reserve(footprint.size());
-    for (size_t ii(0); ii < footprint.size(); ++ii) {
-      sbpl_2Dpt_t pt;
-      pt.x = footprint[ii].x;
-      pt.y = footprint[ii].y;
-      perimeterptsV.push_back(pt);
-    }
-    
-    if (dbgos) {
-      *dbgos << "mpglue::SBPLEnvironment3DKIN:\n"
-	     << "  perimeterptsV =\n";
-      for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
-	   ip != perimeterptsV.end(); ++ip)
-	*dbgos << "    " << ip->x << "\t" << ip->y << "\n";
-      *dbgos << "  nominalvel_mpersecs = " << nominalvel_mpersecs << "\n"
-	     << "  timetoturn45degsinplace_secs = " << timetoturn45degsinplace_secs << "\n"
-	     << "  obst_cost_thresh = " << obst_cost_thresh << "\n" << flush;
-    }
-    
-    // good: Take advantage of the fact that InitializeEnv() can take
-    // a NULL-pointer as mapdata in order to initialize to all
-    // freespace.
-    //
-    // bad: Most costmaps do not support negative grid indices, so the
-    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
-    // and simply assumed to always return 0 (which they won't if we
-    // use growable costmaps).
-    //
-    // also there is quite a bit of code duplication between this, the
-    // SBPLEnvironment2D ctor, and
-    // SBPLEnvironment3DKIN::DoUpdateCost()...
-    env_->InitializeEnv(cm->getXEnd(), // width
-			cm->getYEnd(), // height
-			0,	// mapdata
-			perimeterptsV, it->getResolution(), nominalvel_mpersecs,
-			timetoturn45degsinplace_secs, obst_cost_thresh);
-    
-    // as above, assume getXBegin() and getYBegin() are always zero
-    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
-      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
-	int cost;
-	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
-	  env_->UpdateCost(ix, iy, cost);
-      }
   }
   
   
@@ -589,14 +589,6 @@ namespace {
     if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
       return -1;
     return env_->GetStateFromCoord(ix, iy, ith);
-  }
-  
-  
-  std::string SBPLEnvironment3DKIN::
-  getName() const
-  {
-    std::string name("3DKIN");
-    return name;
   }
   
 }
