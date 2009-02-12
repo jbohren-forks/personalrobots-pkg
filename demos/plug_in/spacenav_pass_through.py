@@ -12,11 +12,16 @@ rospy.init_node('wrencher', anonymous=True)
 pub = rospy.Publisher('/arm_constraint/command', Wrench)
 gripper = rospy.Publisher('/gripper_effort/set_command', Float64)
 
+def sign(x):
+  if x < 0: return -1
+  if x > 0: return 1
+  return 0
+
 closing = False
 def callback(joy):
     global closing
     def f(x):
-        return 70 * x**2
+        return sign(x) * 70 * abs(x)**2
     w = Wrench()
     w.force.x = f(joy.axes[0])
     w.force.y = f(joy.axes[1])
