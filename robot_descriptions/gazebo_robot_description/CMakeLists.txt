@@ -33,3 +33,4 @@ add_custom_target(media_files ALL DEPENDS ${pr2_gen_files})
 
 # deprecated by urdf2factory
 # add_dependencies(pr2_arm_urdf urdf2gazebo)
+
