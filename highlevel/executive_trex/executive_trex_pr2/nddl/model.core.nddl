@@ -60,7 +60,7 @@ class BaseState extends AgentTimeline {
 	}
 
 	BaseState(Mode _mode){
-		super(_mode, "Holds");
+		super(_mode, "Holds", true);
 	}
 };
 
@@ -86,7 +86,7 @@ class EndEffectorState extends AgentTimeline {
   }
 
   EndEffectorState(Mode _mode, bool _isLeft){
-    super(_mode, "Holds");
+    super(_mode, "Holds", true);
     isLeft = _isLeft;
   }
 };
@@ -110,7 +110,7 @@ class ArmState extends AgentTimeline {
   }
 
   ArmState(Mode _mode, bool _isLeft){
-    super(_mode, "Holds");
+    super(_mode, "Holds", true);
     isLeft = _isLeft;
   }
 };
@@ -133,21 +133,18 @@ class Behavior extends AgentTimeline {
     int dispatch_time; // The time at which the goal was dispatched
     int max_duration; // A duration bound
     int timeout; // Max time for behavior to be stuck internally
-    bool timed_out; // True if max_duration == duration
-
-    // Parameter Constraints
-    leq(duration, max_duration);
+    bool timed_out; // True if max_duration == duration	
     testEQ(timed_out, duration, max_duration);
-    precedes(dispatch_time, start); // This is a <= constraint	
+    precedes(dispatch_time, start); // This is a <= constraint
   }
 
   Behavior(Mode _mode){
-    super(_mode, "Inactive");
+    super(_mode, "Inactive", false);
     max_duration = +inf;
   }
 
   Behavior(Mode _mode, int max_duration_){
-    super(_mode);
+    super(_mode, "Inactive", false);
     max_duration = max_duration_;
   }
 };
@@ -166,6 +163,7 @@ class MoveBase extends Behavior {
     float desX;
     float desY;
     float desTh;
+    bool recharging;
   }
 
   // Parameters to get to the target
@@ -173,11 +171,7 @@ class MoveBase extends Behavior {
     float x;
     float y;
     float th;
-
-    // This part is particular to the MoveBase node. It is probably fair that it would apply to all behaviors
-    // in the ROS set up, but not all behaviors more generally. This pattern allows us to impose a bounded
-    // synchronization model
-    temporalDistance(dispatch_time, [0, 2], start);
+    bool recharging;
   }
 
   MoveBase(Mode _mode){
@@ -226,7 +220,7 @@ class MoveArm extends Behavior {
   }
   
   MoveArm(Mode _mode, bool _isLeft){
-    super(_mode, "Inactive");
+    super(_mode);
     isLeft = _isLeft;
   }
 };
@@ -269,7 +263,7 @@ class MoveEndEffector extends Behavior {
   }
   
   MoveEndEffector(Mode _mode, bool _isLeft){
-    super(_mode, "Inactive");
+    super(_mode);
     isLeft = _isLeft;
   }
 };
@@ -294,21 +288,21 @@ class BatteryState extends AgentTimeline {
   }
 
   BatteryState(Mode _mode, float ds, float rc, bool av){
-    super(_mode, "Holds");
+    super(_mode, "Holds", true);
     discharge_limit = ds;
     recharge_level = rc;
     actual_value = av;
   }
 
   BatteryState(Mode _mode, float ds, float rc){
-    super(_mode, "Holds");
+    super(_mode, "Holds", true);
     discharge_limit = ds;
     recharge_level = rc;
     actual_value = true;
   }
 
   BatteryState(Mode _mode){
-    super(_mode, "Holds");
+    super(_mode, "Holds", true);
     discharge_limit = 0.1;
     recharge_level = 0.9;
     actual_value = true;
@@ -341,4 +335,7 @@ class RechargeController extends Behavior {
     UNIT_FLOAT recharge_level;
   }
 
+  RechargeController(Mode _mode){
+    super(_mode);
+  }
 };

@@ -2,14 +2,11 @@
 
 
 /**
- * NOTES:
- * 1. Could bind start times of active tokens on behaviors using a sim solver. 
- * Then the model here would dispense with the actions.
+ * If an active token is dispatched, we start it immediately
  */
-
-class Actions extends AgentActions {
-  predicate startEvent{eq(duration, 1);}
-};
+Behavior::Active{
+  addEq(dispatch_time, 1, start);
+}
 
 float XY_ERROR = 0.1;
 float THETA_ERROR = 0.1;
@@ -48,7 +45,7 @@ class BaseController extends AgentTimeline {
     bool preempt;
   }
 
-  BaseController(){super(Internal, "Holds");}
+  BaseController(){super(Internal, "Holds", false);}
 };
 
 /**
@@ -208,9 +205,9 @@ BaseController::Holds{
  * duration = 1;
  *
  * on commit {
- *  x = previous.x;
- *  y = previous.y;
- *  th= previous.th;
+ *  default x = previous.x;
+ *  default y = previous.y;
+ *  default th= previous.th;
  * }
  */
 BaseState::Holds{
@@ -225,8 +222,6 @@ BaseState::Holds{
  * Behavior will be started and execute perfectly.
  */
 MoveBase::Active{
-  starts(Actions.startEvent);
-
   // Activate base controller with goals
   starts(BaseController.Holds bc);
   eq(bc.active, true);
@@ -245,17 +240,34 @@ MoveBase::Inactive{
   eq(bs.th, th);
 }
 
+float MAX_CAPACITY; // Maximum energy capacity of all batteries
+float NOMINAL_POWER_CONSUMPTION; // When not plugged in.
+float PLUGGED_IN_POWER_CONSUMPTION; // When plugged in, it should draw this amount
+
 /**
  * Behavior will be started and executed perfectly
  */
 RechargeController::Active{
-  starts(Actions.startEvent);
-  eq(duration, 5);
+  // Forces a fixed duration.
+  eq(duration, 1);
+
+  // Batteries are magically charged at the end
   meets(Inactive s);
   eq(s.x, x);
   eq(s.y, y);
   eq(s.th, th);
   eq(s.recharge_level, recharge_level);
+
+  // Fix the battery state at the end
+  ends(BatteryState.Holds bs);
+  float estEnergy, estCapacity, estConsumption;
+  mulEq(recharge_level, MAX_CAPACITY, estEnergy);
+  eq(estCapacity, MAX_CAPACITY);
+  eq(estConsumption, NOMINAL_POWER_CONSUMPTION);
+
+  defaultOnCommit(bs.energy_remaining, estEnergy);
+  defaultOnCommit(bs.energy_capacity, estCapacity);
+  defaultOnCommit(bs.power_consumption, estConsumption);
 }
 
 /**
@@ -276,9 +288,6 @@ MoveBase moveBase = new MoveBase(Internal);
 // Battery and Plug In Control
 RechargeController rechargeController = new RechargeController(Internal);
 BatteryState batteryState = new BatteryState(Internal, .7, .8);
-
-// Actions
-Actions actions = new Actions();
 
 // Internal Controllers
 BaseController baseController = new BaseController();

@@ -30,143 +30,16 @@
 
 #include "model.core.nddl"
 
-BaseState::Holds{
-  defaultOnCommit(accumulatedDistance, 0.0);
-  if(end){
-    meets(Holds s);
-    float distance;
-    calcDistance(distance, x, y, s.x, s.y);
-    addEq(accumulatedDistance, distance, s.accumulatedDistance);
-  }
-}
-
-/**
- * All behaviors will oscillate between active and inactive
- */
-Behavior::Inactive{
-  precedes(start, missionEnd);
-  // These semantics are that we want to check a constraint, but not drive planning. It would be much better
-  // to have these more explicitly listed as constraints, that get applied accordingly. For example, as transition
-  // constraints. This guard structure is a hack.
-  if(end){
-    meets(Active);
-  }
-}
-
-Behavior::Active{
-  // Constraint on successor state
-  meets(Inactive);
-
-  // All behaviors must deactivate before the end of the agent time window
-  precedes(end, missionEnd);
-}
-
-MoveBase::Inactive {
-  // If desired values are set, then they are used to bind parameters of the
-  // predecessor to accomplish the desired position.
-  if(desX){
-    if(desY) {
-      if(desTh) {
-	met_by(Active p);
-	eq(p.x, desX);
-	eq(p.y, desY);
-	eq(p.th, desTh);
-      }
-    }
-  }
-
-  // Require actual and desired values to be within some tolerance
-  addEq(x, [-1.5, 1.5], desX);
-  addEq(y, [-1.5, 1.5], desY);
-  addEq(th, [-.25, .25], desTh);
-}
-
-MoveBase::Active{
- default(th, 0.0);
-
- // If at the end, apply a default to the timeout flag so that it is not zero.
- // This ensures the flag is set even if a max duration bound is not imposed
- if(end){
-   defaultOnCommit(timed_out, false);
- }
-}
-
-MoveArm::Inactive{
-  if(des_shoulder_pan){
-    if(des_shoulder_pitch){
-      if(des_upperarm_roll){
-	if(des_elbow_flex){
-	  if(des_forearm_roll){
-	    if(des_wrist_flex){
-	      if(des_gripper_roll){
-		met_by(Active p);
-		eq(p.shoulder_pan, des_shoulder_pan);
-		eq(p.shoulder_pitch, des_shoulder_pitch);
-		eq(p.upperarm_roll, des_upperarm_roll);
-		eq(p.elbow_flex, des_elbow_flex);
-		eq(p.forearm_roll, des_forearm_roll);
-		eq(p.wrist_flex, des_wrist_flex);
-		eq(p.gripper_roll, des_gripper_roll);
-
-		//checking desired values
-		addEq(shoulder_pan, [-.15, .15], des_shoulder_pan);
-		addEq(shoulder_pitch, [-.15, .15], des_shoulder_pitch);
-		addEq(upperarm_roll, [-.15, .15], des_upperarm_roll);
-		addEq(elbow_flex, [-.15, .15], des_elbow_flex);
-		addEq(forearm_roll, [-.15, .15], des_forearm_roll);
-		addEq(wrist_flex, [-.15, .15], des_wrist_flex);
-		addEq(gripper_roll, [-.15, .15], des_gripper_roll);
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-}
-
-
-MoveEndEffector::Inactive{
-  if(des_shoulder_pan){
-    if(des_shoulder_pitch){
-      if(des_upperarm_roll){
-	if(des_elbow_flex){
-	  if(des_forearm_roll){
-	    if(des_wrist_flex){
-	      if(des_gripper_roll){
-		met_by(Active p);
-		eq(p.shoulder_pan, des_shoulder_pan);
-		eq(p.shoulder_pitch, des_shoulder_pitch);
-		eq(p.upperarm_roll, des_upperarm_roll);
-		eq(p.elbow_flex, des_elbow_flex);
-		eq(p.forearm_roll, des_forearm_roll);
-		eq(p.wrist_flex, des_wrist_flex);
-		eq(p.gripper_roll, des_gripper_roll);
-
-		//checking desired values
-		addEq(shoulder_pan, [-.15, .15], des_shoulder_pan);
-		addEq(shoulder_pitch, [-.15, .15], des_shoulder_pitch);
-		addEq(upperarm_roll, [-.15, .15], des_upperarm_roll);
-		addEq(elbow_flex, [-.15, .15], des_elbow_flex);
-		addEq(forearm_roll, [-.15, .15], des_forearm_roll);
-		addEq(wrist_flex, [-.15, .15], des_wrist_flex);
-		addEq(gripper_roll, [-.15, .15], des_gripper_roll);
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-}
 float XY_ERROR = 0.5;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
 int WAIT_TIME_AFTER_UNPLUGGING = 5;
 
+
+
 /**
- * This is an abstract state variable internal to the executive which reflects if we are 
- * able to do useful work or if we should focus on recharging. Tripping this stae variable
+ * This is an abstract state variable which reflects if we are 
+ * able to do useful work or if we should focus on recharging. Tripping this state variable
  * into a recharging state will lock out other activities from execution until we are able to
  * finish recharging.
  */
@@ -245,6 +118,159 @@ class VenusDeMiles extends AgentTimeline {
   }
 };
 
+BaseState::Holds{
+  defaultOnCommit(accumulatedDistance, 0.0);
+  if(end){
+    meets(Holds s);
+    float distance;
+    calcDistance(distance, x, y, s.x, s.y);
+    addEq(accumulatedDistance, distance, s.accumulatedDistance);
+  }
+}
+
+/**
+ * All behaviors will oscillate between active and inactive
+ */
+Behavior::Inactive{
+  precedes(start, missionEnd);
+  // These semantics are that we want to check a constraint, but not drive planning. It would be much better
+  // to have these more explicitly listed as constraints, that get applied accordingly. For example, as transition
+  // constraints. This guard structure is a hack.
+  if(end){
+    meets(Active);
+  }
+}
+
+Behavior::Active{
+  // Parameter Constraints
+  leq(duration, max_duration);
+
+  // Constraint on successor state
+  meets(Inactive);
+
+  // All behaviors must deactivate before the end of the agent time window
+  precedes(end, missionEnd);
+}
+
+MoveBase::Inactive {
+  default(recharging, false);
+
+  // If desired values are set, then they are used to bind parameters of the
+  // predecessor to accomplish the desired position.
+  if(desX){
+    if(desY) {
+      if(desTh) {
+	met_by(Active p);
+	eq(p.x, desX);
+	eq(p.y, desY);
+	eq(p.th, desTh);
+	eq(p.recharging, recharging);
+      }
+    }
+  }
+
+  // Require actual and desired values to be within some tolerance
+  addEq(x, [-1.5, 1.5], desX);
+  addEq(y, [-1.5, 1.5], desY);
+  addEq(th, [-.25, .25], desTh);
+}
+
+MoveBase::Active{
+ default(th, 0.0);
+
+ // This part is particular to the MoveBase node. It is probably fair that it would apply to all behaviors
+ // in the ROS set up, but not all behaviors more generally. This pattern allows us to impose a bounded
+ // synchronization model
+ temporalDistance(dispatch_time, [0, 2], start);
+
+ // If at the end, apply a default to the timeout flag so that it is not zero.
+ // This ensures the flag is set even if a max duration bound is not imposed
+ if(end){
+   defaultOnCommit(timed_out, false);
+ }
+
+ // If the working status indicates that we are recharging, then we better be heading for a charging station
+ contained_by(WorkingStatus.Holds ws);
+ eq(ws.recharging, recharging);
+
+ if(recharging == true){
+   ChargingStation cs;
+   eq(cs.x, x);
+   eq(cs.y, y);
+   eq(cs.th, th);
+ }
+
+}
+
+MoveArm::Inactive{
+  if(des_shoulder_pan){
+    if(des_shoulder_pitch){
+      if(des_upperarm_roll){
+	if(des_elbow_flex){
+	  if(des_forearm_roll){
+	    if(des_wrist_flex){
+	      if(des_gripper_roll){
+		met_by(Active p);
+		eq(p.shoulder_pan, des_shoulder_pan);
+		eq(p.shoulder_pitch, des_shoulder_pitch);
+		eq(p.upperarm_roll, des_upperarm_roll);
+		eq(p.elbow_flex, des_elbow_flex);
+		eq(p.forearm_roll, des_forearm_roll);
+		eq(p.wrist_flex, des_wrist_flex);
+		eq(p.gripper_roll, des_gripper_roll);
+
+		//checking desired values
+		addEq(shoulder_pan, [-.15, .15], des_shoulder_pan);
+		addEq(shoulder_pitch, [-.15, .15], des_shoulder_pitch);
+		addEq(upperarm_roll, [-.15, .15], des_upperarm_roll);
+		addEq(elbow_flex, [-.15, .15], des_elbow_flex);
+		addEq(forearm_roll, [-.15, .15], des_forearm_roll);
+		addEq(wrist_flex, [-.15, .15], des_wrist_flex);
+		addEq(gripper_roll, [-.15, .15], des_gripper_roll);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+
+
+MoveEndEffector::Inactive{
+  if(des_shoulder_pan){
+    if(des_shoulder_pitch){
+      if(des_upperarm_roll){
+	if(des_elbow_flex){
+	  if(des_forearm_roll){
+	    if(des_wrist_flex){
+	      if(des_gripper_roll){
+		met_by(Active p);
+		eq(p.shoulder_pan, des_shoulder_pan);
+		eq(p.shoulder_pitch, des_shoulder_pitch);
+		eq(p.upperarm_roll, des_upperarm_roll);
+		eq(p.elbow_flex, des_elbow_flex);
+		eq(p.forearm_roll, des_forearm_roll);
+		eq(p.wrist_flex, des_wrist_flex);
+		eq(p.gripper_roll, des_gripper_roll);
+
+		//checking desired values
+		addEq(shoulder_pan, [-.15, .15], des_shoulder_pan);
+		addEq(shoulder_pitch, [-.15, .15], des_shoulder_pitch);
+		addEq(upperarm_roll, [-.15, .15], des_upperarm_roll);
+		addEq(elbow_flex, [-.15, .15], des_elbow_flex);
+		addEq(forearm_roll, [-.15, .15], des_forearm_roll);
+		addEq(wrist_flex, [-.15, .15], des_wrist_flex);
+		addEq(gripper_roll, [-.15, .15], des_gripper_roll);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+
 /**
  * A simple iterator pattern - drives subgoaling on the Navigator Timeline
  */
@@ -274,23 +300,6 @@ VenusDeMiles::Holds{
       eq(iterationLimit, s.iterationLimit);
       eq(alwaysBusy, s.alwaysBusy);
     }
-  }
-}
-
-/**
- * Each update is monitored and can trigger a transition to recharging
- */
-BatteryState::Holds {
-  // If below the threshold, transition working status to recharge
-  // if(discharge_limit > (energy_remaining / energy_capacity))
-  //  workingStatus(start+1) == Holds(true);
-  bool mustRecharge;
-  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
-  if(mustRecharge == true){
-    any(WorkingStatus.Holds ws);
-    temporalDistance(start, [-inf, 1], ws.start); 
-    precedes(end, ws.end);
-    eq(ws.recharging, true);
   }
 }
 
@@ -324,12 +333,14 @@ WorkingStatus::Holds{
     ChargingStation cs;
     randomSelect(cs);
 
-    // allow a delay after recharging before releasing the robot
+    // allow a delay after recharging before releasing the robot. Also require that we remain 
+    // with the recharger inactive when we get back to work
     any(RechargeController.Inactive rc);
     eq(rc.x, cs.x);
     eq(rc.y, cs.y);
     eq(rc.th, cs.th);
     temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
+    precedes(end, rc.end);
 
     // check expected end conditions. Notation assumes a single predicate, otherwise it would be
     // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. At run
@@ -396,6 +407,7 @@ RechargeController::Active{
   eq(mb.desX, x);
   eq(mb.desY, y);
   eq(mb.desTh, th);
+  eq(mb.recharging, true);
   leq(duration, mb.duration);
   precedes(mb.start, start);
   precedes(end, mb.end);
@@ -435,6 +447,23 @@ Navigator::Active{
       calcDistance(distance, s.x, s.y, w.x, w.y);
       leq(distance, XY_ERROR);
     }
+  }
+}
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+  // If below the threshold, transition working status to recharge
+  // if(discharge_limit > (energy_remaining / energy_capacity))
+  //  workingStatus(start+1) == Holds(true);
+  bool mustRecharge;
+  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
+  if(mustRecharge == true){
+    any(WorkingStatus.Holds ws);
+    temporalDistance(start, [-inf, 1], ws.start); 
+    precedes(end, ws.end);
+    eq(ws.recharging, true);
   }
 }
 
