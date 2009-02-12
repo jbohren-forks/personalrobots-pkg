@@ -1,6 +1,6 @@
 <controllers>
 
-  <controller type="EndeffectorConstraintControllerNode" name="arm_constraint" topic="arm_constraint">
+  <controller type="PlugControllerNode" name="arm_constraint" topic="arm_constraint">
     <chain root="torso_lift_link" tip="r_gripper_tool_frame" offset="0 0 0" />
   </controller>
 
