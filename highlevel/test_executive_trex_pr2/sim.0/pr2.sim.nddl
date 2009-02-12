@@ -1,5 +1,9 @@
 #include "model.sim.nddl"
 
+MAX_CAPACITY = 1000.0; 
+NOMINAL_POWER_CONSUMPTION = 400.0;
+PLUGGED_IN_POWER_CONSUMPTION = -200.0;
+
 fact(baseState.Holds f0);
 f0.x = 15.0;
 f0.y = 15.0;
