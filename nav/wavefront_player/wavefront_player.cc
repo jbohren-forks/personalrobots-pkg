@@ -303,7 +303,7 @@ WavefrontNode::WavefrontNode() :
   robot_srvs::StaticMap::Request  req;
   robot_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
-  while(!ros::service::call("static_map", req, resp))
+  while(!ros::service::call("/static_map", req, resp))
   {
     puts("request failed; trying again...");
     usleep(1000000);
