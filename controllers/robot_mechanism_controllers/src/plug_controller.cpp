@@ -100,10 +100,10 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   assert(node);
 
   node->param("constraint/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
-  
-  node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
-  node->param("constraint/f_pose_max"   , f_pose_max  , 20.0) ; /// max pose force 
-  node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max upper arm limit force 
+
+  node->param("constraint/f_r_max"      , f_r_max     , 100.0) ; /// max radial force of line constraint
+  node->param("constraint/f_pose_max"   , f_pose_max  , 20.0) ; /// max pose force
+  node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max upper arm limit force
 
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
@@ -196,13 +196,24 @@ void PlugController::computeConstraintJacobian()
   constraint_jac_(0,0) = 0; // line constraint
   constraint_jac_(1,0) = 0; // line constraint
   constraint_jac_(2,0) = 0; // line constraint
-  // the pose constraint is always on 
-  constraint_jac_(3,1) = 1; // roll 
-  constraint_jac_(4,2) = 1; // pitch 
-  constraint_jac_(5,3) = 1; // yaw 
-  
+  // the pose constraint is always on
+  constraint_jac_(3,1) = 1; // roll
+  constraint_jac_(4,2) = 1; // pitch
+  constraint_jac_(5,3) = 1; // yaw
+
   // put the end_effector point into eigen
   Eigen::Vector3f end_effector_pt(endeffector_frame_.p(0), endeffector_frame_.p(1), endeffector_frame_.p(2));
+
+  // Vector from the outlet to the end effector position
+  Eigen::Vector3f v = end_effector_pt - outlet_pt_;
+
+  // Vector from the end effector position to (the closest point on ) the line constraint.
+  Eigen::Vector3f r_to_line = v.dot(outlet_norm_) * outlet_norm_ - v;
+
+  double dist_to_line = r_to_line.norm();
+  r_to_line = r_to_line.normalized();
+
+#if 0
   // get the vector from the outlet pt to the end effector pt
   Eigen::Vector3f vector_to_end_effector = end_effector_pt - outlet_pt_;
   // compute the scalar projection along the outlet norm
@@ -213,14 +224,16 @@ void PlugController::computeConstraintJacobian()
   Eigen::Vector3f radial_unit_vector = radial_norm.normalized();
   // compute the distance error from the line
   double r_dist_to_line = radial_norm.norm();
+#endif
 
+  ROS_ERROR("D %.3lf  ", dist_to_line);
   // update the jacobian for the line constraint
-  if (r_dist_to_line > 0)
+  if (dist_to_line > 0)
   {
-    constraint_jac_(0,0) = radial_unit_vector(0);
-    constraint_jac_(1,0) = radial_unit_vector(1);
-    constraint_jac_(2,0) = radial_unit_vector(2);
-    f_r = r_dist_to_line * f_r_max; /// @todo: FIXME, replace with some exponential function
+    constraint_jac_(0,0) = r_to_line(0);
+    constraint_jac_(1,0) = r_to_line(1);
+    constraint_jac_(2,0) = r_to_line(2);
+    f_r = dist_to_line * f_r_max; /// @todo: FIXME, replace with some exponential function
   }
   else
   {
@@ -260,13 +273,13 @@ void PlugController::computeConstraintJacobian()
     f_yaw = 0;
   }
 
-  
+
   //joint constraint force - stop the upper arm from going past -90 degrees (1.57 rad)
   JntArray jnt_pos(kdl_chain_.getNrOfJoints());
   chain_.getPositions(robot_->joint_states_, jnt_pos);
-  
+
   double joint_e = angles::shortest_angular_distance(jnt_pos(2), upper_arm_limit);
-  if(joint_e < -0.1) 
+  if(joint_e < -0.1)
   {
     joint_constraint_jac_(2) = 1;
   }
@@ -275,7 +288,7 @@ void PlugController::computeConstraintJacobian()
   {
     joint_constraint_force_(2) = joint_e * f_limit_max;
   }
-  else 
+  else
   {
     joint_constraint_force_(2) = 0;
   }
@@ -351,7 +364,7 @@ void PlugControllerNode::outletPose()
   point.setZ(outlet_pose_msg_.point.z);
   point.stamp_ = ros::Time();
   point.frame_id_ = outlet_pose_msg_.header.frame_id;
-  
+
   tf::Stamped<tf::Point> outlet_pt;
 
   try
@@ -363,19 +376,19 @@ void PlugControllerNode::outletPose()
     ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
-  
+
   controller_.outlet_pt_(0) = outlet_pt.x();
   controller_.outlet_pt_(1) = outlet_pt.y();
   controller_.outlet_pt_(2) = outlet_pt.z();
-  
-  
+
+
   tf::Stamped<tf::Vector3> vector;
   vector.setX(outlet_pose_msg_.vector.x);
   vector.setY(outlet_pose_msg_.vector.y);
   vector.setZ(outlet_pose_msg_.vector.z);
   vector.stamp_ = ros::Time();
   vector.frame_id_ = outlet_pose_msg_.header.frame_id;
-  
+
   tf::Stamped<tf::Vector3> outlet_norm;
 
   try
@@ -387,11 +400,11 @@ void PlugControllerNode::outletPose()
     ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
-  
+
   controller_.outlet_norm_(0) = outlet_norm.x();
   controller_.outlet_norm_(1) = outlet_norm.y();
   controller_.outlet_norm_(2) = outlet_norm.z();
-  
+
 }
 
 void PlugControllerNode::command()

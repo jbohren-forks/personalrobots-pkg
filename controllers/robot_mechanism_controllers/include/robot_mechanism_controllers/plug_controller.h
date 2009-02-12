@@ -60,6 +60,7 @@ namespace controller {
 class PlugController : public Controller
 {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   PlugController();
   ~PlugController();
 
@@ -91,10 +92,10 @@ private:
   Eigen::MatrixXf joint_constraint_force_;
   Eigen::MatrixXf joint_constraint_jac_;
   Eigen::MatrixXf joint_constraint_null_space_;
-  
+
   Eigen::MatrixXf task_jac_;
   Eigen::MatrixXf identity_;
-  Eigen::MatrixXf identity_joint_; 
+  Eigen::MatrixXf identity_joint_;
   Eigen::MatrixXf constraint_null_space_;
   Eigen::MatrixXf constraint_torq_;
   Eigen::MatrixXf joint_constraint_torq_;
@@ -107,8 +108,8 @@ private:
   double upper_arm_limit;
   double f_r_max;
   double f_pose_max;
-  double f_limit_max; 
-  
+  double f_limit_max;
+
   bool initialized_;
 };
 
@@ -116,6 +117,8 @@ private:
 class PlugControllerNode : public Controller
 {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
   PlugControllerNode();
   ~PlugControllerNode();
 
@@ -130,11 +133,11 @@ class PlugControllerNode : public Controller
   PlugController controller_;
   SubscriptionGuard guard_command_;
   SubscriptionGuard guard_outlet_pose_;
-  
+
   robot_msgs::Wrench wrench_msg_;
   robot_msgs::OutletPose outlet_pose_msg_;
   unsigned int loop_count_;
-  
+
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
 };
 
