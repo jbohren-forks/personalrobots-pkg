@@ -36,7 +36,7 @@ if __name__ == '__main__':
         print '  Amplitude:    %f Radians' % amplitude
         print '  Offset:       %f Radians' % offset
 
-        if not rospy.wait_for_service(controller + '/set_profile'):
+        while not rospy.wait_for_service(controller + '/set_profile'):
           print "Waiting for service..."
         s = rospy.ServiceProxy(controller + '/set_profile', SetProfile)
         resp = s.call(SetProfileRequest(0.0, 0.0, 0.0, 0.0, profile_type, period, amplitude, offset))
