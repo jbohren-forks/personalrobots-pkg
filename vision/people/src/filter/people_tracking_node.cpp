@@ -48,7 +48,7 @@ using namespace BFL;
 using namespace robot_msgs;
 using namespace message_sequencing;
 
-static const double       sequencer_delay            = 0.4;
+static const double       sequencer_delay            = 0.8;
 static const unsigned int sequencer_internal_buffer  = 100;
 static const unsigned int sequencer_subscribe_buffer = 10;
 static const unsigned int num_particles_tracker      = 1000;
@@ -116,6 +116,8 @@ namespace estimation
   // callback for messages
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
+    cout << "receive callback" << endl;
+
     // get measurement in fixed frame
     Stamped<tf::Vector3> meas_rel, meas;
     meas_rel.setData(tf::Vector3(message->pos.x, message->pos.y, message->pos.z));
@@ -150,6 +152,7 @@ namespace estimation
       // initialize a new tracker
       //if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
       if (message->initialization == 1 && trackers_.empty()){
+	cout << "starting new tracker" << endl;
 	stringstream tracker_name;
 	StatePosVel prior_sigma(tf::Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
 				tf::Vector3(0.0000001, 0.0000001, 0.0000001));

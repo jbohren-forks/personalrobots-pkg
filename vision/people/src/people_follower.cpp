@@ -56,7 +56,7 @@ namespace estimation
   {
     // get parameters
     param("~/follow_distance", follow_distance_, 1.0);
-    param("~/distance_threshold", distance_threshold_, 0.2);
+    param("~/distance_threshold", distance_threshold_, 0.1);
     param("~/fixed_frame", fixed_frame_, string("map"));
     param("~/publish_rate", publish_rate_, 1.0);
 
@@ -130,7 +130,7 @@ namespace estimation
       // find next goal to send
       //while (distances_.back() - distances_.front() > follow_distance_){
       while  (sqrt(pow(people_pos_.goal.x-people_poses_.front().goal.x,2) +
-                   pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) ) {
+                   pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) > follow_distance_) {
         people_poses_.pop_front();
         distances_.pop_front();
       }
@@ -159,7 +159,7 @@ namespace estimation
       robot_goal_cloud_.pts[0].y = people_poses_.front().goal.y;
       robot_goal_cloud_.pts[0].z = 0.0;
       robot_goal_cloud_.header.frame_id = fixed_frame_;
-      publish("people_follower_location_visualization",robot_goal_cloud_);
+      publish("goal_pos",robot_goal_cloud_);
     }
 
 
