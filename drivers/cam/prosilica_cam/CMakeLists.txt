@@ -12,3 +12,5 @@ target_link_libraries(prosilica_node prosilica)
 
 rospack_add_executable(prosilica_view prosilica_view.cpp)
 rospack_add_executable(prosilica_grab prosilica_grab.cpp)
+#rospack_add_executable(mem_test mem_test.cpp)
+#target_link_libraries(mem_test prosilica)

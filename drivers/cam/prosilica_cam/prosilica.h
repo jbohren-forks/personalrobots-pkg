@@ -94,7 +94,7 @@ public:
   void setWhiteBalance(unsigned int blue, unsigned int red,
                        AutoSetting isauto = Manual);
 
-  //! Size must a multiple of 4, at most 512.
+  //! Must have size <= 512.
   void writeUserMemory(const char* data, size_t size);
   void readUserMemory(char* data, size_t size);
   

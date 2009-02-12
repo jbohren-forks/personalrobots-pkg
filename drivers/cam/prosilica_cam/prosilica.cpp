@@ -36,6 +36,7 @@
 #include <PvRegIo.h>
 #include <cassert>
 #include <ctime>
+#include <cstring>
 
 #define CHECK_ERR(fnc, amsg)                               \
 do {                                                       \
@@ -273,20 +274,27 @@ static const unsigned long USER_MEMORY_SIZE = 512;
 void Camera::writeUserMemory(const char* data, size_t size)
 {
   assert(size <= USER_MEMORY_SIZE);
-  assert(size % 4 == 0);
 
+  unsigned char buffer[USER_MEMORY_SIZE];
   unsigned long written;
-  CHECK_ERR( PvMemoryWrite(handle_, USER_ADDRESS, size, (const unsigned char*)data, &written),
+  
+  memset(buffer, 0, 512);
+  memcpy(buffer, data, size);
+  
+  CHECK_ERR( PvMemoryWrite(handle_, USER_ADDRESS, USER_MEMORY_SIZE, buffer, &written),
              "Couldn't write to user memory" );
 }
 
 void Camera::readUserMemory(char* data, size_t size)
 {
   assert(size <= USER_MEMORY_SIZE);
-  assert(size % 4 == 0);
 
-  CHECK_ERR( PvMemoryRead(handle_, USER_ADDRESS, size, (unsigned char*)data),
+  unsigned char buffer[USER_MEMORY_SIZE];
+  
+  CHECK_ERR( PvMemoryRead(handle_, USER_ADDRESS, USER_MEMORY_SIZE, buffer),
              "Couldn't read from user memory" );
+
+  memcpy(data, buffer, size);
 }
 
 void Camera::frameDone(tPvFrame* frame)
