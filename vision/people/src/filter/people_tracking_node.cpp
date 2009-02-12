@@ -148,7 +148,8 @@ namespace estimation
 	if (dst < closest_tracker_dist) closest_tracker_dist = dst;
       }
       // initialize a new tracker
-      if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
+      //if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
+      if (message->initialization == 1 && trackers_.empty()){
 	stringstream tracker_name;
 	StatePosVel prior_sigma(tf::Vector3(sqrt(cov(1,1)), sqrt(cov(2,2)),sqrt(cov(3,3))), 
 				tf::Vector3(0.0000001, 0.0000001, 0.0000001));

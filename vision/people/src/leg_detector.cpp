@@ -34,9 +34,10 @@
 
 
 
-static const double no_observation_timeout_s = 0.5;
+static const double no_observation_timeout_s = 1.0;//0.5;
 static const double max_track_jump_m         = 1.0; 
-static const double max_meas_jump_m          = 1.0;
+static const double max_meas_jump_m          = 1.0;//2.0;
+static const double leg_pair_separation_m    = 1.0;
 
 
 
@@ -51,7 +52,6 @@ static const double max_meas_jump_m          = 1.0;
 
 #include "robot_msgs/PositionMeasurement.h"
 #include "laser_scan/LaserScan.h"
-
 #include "roslib/Header.h"
 
 #include "tf/transform_listener.h"
@@ -260,47 +260,222 @@ public:
 
 
   // Find the tracker that is closest to this person message
-  // If a tracker was already assigned to a person, keep this assignement when the distance between them is not too large.
+  // If a tracker was already assigned to a person, keep this assignment when the distance between them is not too large.
   void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
     Point pt;
     PointMsgToTF(people_meas->pos, pt);
+    Stamped<Point> orig_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+    orig_loc[2] = 0.0; // Ignore the height of the person measurement.
+    Stamped<Point> dest_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+
     boost::mutex::scoped_lock lock(saved_mutex_);
 
     list<SavedFeature*>::iterator closest = saved_features_.end();
+    list<SavedFeature*>::iterator closest1 = saved_features_.end();
+    list<SavedFeature*>::iterator closest2 = saved_features_.end();
     float closest_dist = max_meas_jump_m;
-      
-    // loop over trackers
-    list<SavedFeature*>::iterator it  = saved_features_.begin();
-    list<SavedFeature*>::iterator end = saved_features_.end();
-    for (; it != end; ++it )
-    {
-      // transform people position into local frame with the origin at the tracker position 
-      Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
-      tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
-                            loc, fixed_frame, loc);
-      loc[2] = 0.0;
-      float dist = loc.length();
-      // distance between tracker and people position
-      if ( dist < closest_dist )
-      {
-        closest = it;
-        closest_dist = dist;
-      }
+    float closest_pair_dist = 2*max_meas_jump_m;
+    float dist, dist1, dist2;
 
-      // If we're already tracking the object
-      if ((*it)->object_id == people_meas->object_id)
+    list<SavedFeature*>::iterator it1 = saved_features_.begin();
+    list<SavedFeature*>::iterator it2 = saved_features_.end();
+    list<SavedFeature*>::iterator end = saved_features_.end();
+
+    // If there's a pair of legs with the right label and within the max dist, return
+    // If there's one leg with the right label and within the max dist, 
+    //   find it a pair from the unlabeled legs.
+    //   If no pairs, label just the one leg.
+    // If there are no legs with the right label and within the max dist, 
+    //   find a new unlabeled leg and assign the label.
+    
+
+    // Try to find a tracker with the same label and within the max distance of the person.
+    for (; it1 != end; ++it1)
+    {
+      tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+                            orig_loc, fixed_frame, dest_loc);
+      // Compute the distance between the person and this leg.
+      dist = dest_loc.length();
+      
+      // If this leg belongs to the person...
+      if ((*it1)->object_id == people_meas->object_id) 
       {
-        if (dist < max_meas_jump_m)
-          return; 
-	// remove link between tracker and person
-        else
-          (*it)->object_id = "";
+	// and their distance is close enough, assign it2 to this leg, and look for a second leg. Otherwise, remove the tracker's label.
+	if (dist < max_meas_jump_m)
+	{
+	  if (it2 == end) 
+	    it2 = it1;
+	  else
+	    break;
+	}
+	else
+	  (*it1)->object_id = "";
       }
     }
+    // If we found two legs with the right label and within the max distance, all is good, return.
+    if (it1 != end && it2 != end) 
+    {
+      cout << "Found matching pair. The second distance was " << dist << endl;
+      return;
+    }
 
-    if (closest_dist < max_meas_jump_m)
+
+    // If we found one leg, let's try to find a second leg that doesn't yet have a label and is within the max distance.
+    float dist_between_legs, closest_dist_between_legs;
+    if (it2 != end) 
+    {
+      closest_dist = max_meas_jump_m;
+      closest = saved_features_.end();
+
+      it1 = saved_features_.begin();
+      for (; it1 != end; ++it1) 
+      {
+	if (it1 == it2)
+	  continue;
+
+	// Compute the distance between the person and this leg.
+	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+                            orig_loc, fixed_frame, dest_loc);
+	dist = dest_loc.length();
+	
+	// Get the distance between the two legs
+	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	dist_between_legs = dest_loc.length();
+
+	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
+	if ( (*it1)->object_id == "" && dist < closest_dist && dist_between_legs < leg_pair_separation_m )
+	{
+	  closest = it1;
+	  closest_dist = dist;
+	  closest_dist_between_legs = dist_between_legs;
+	}
+      }
+      // If we found a close, unlabeled leg, set it's label.
+      if (closest != end) 
+      {
+	cout << "Replaced one leg with a distance of " << closest_dist << " and a distance between the legs of " << closest_dist_between_legs << endl;
+	(*closest)->object_id = people_meas->object_id;
+      }
+      else 
+      {
+	cout << "Returned one matched leg only" << endl;
+      }
+
+      // Regardless of whether we found a second leg, return.
+      return;
+    }
+
+    // If we didn't find any legs, try to find two unlabeled legs that are close together and close to the tracker.
+    it1 = saved_features_.begin();
+    it2 = saved_features_.begin();
+    closest = saved_features_.end();
+    closest1 = saved_features_.end();
+    closest2 = saved_features_.end();
+    closest_dist = max_meas_jump_m;
+    closest_pair_dist = 2*max_meas_jump_m;
+    for (; it1 != end; it1++) 
+    {
+      // Only look at trackers without ids.
+      if ((*it1)->object_id != "")
+	continue;
+
+      // Get the distance between the leg and the person.
+      tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+                            orig_loc, fixed_frame, dest_loc);
+      dist1 = dest_loc.length();
+      // Don't jump to a far-away tracker.
+      if ( dist1 >= max_meas_jump_m ) 
+	continue;
+
+      // Keep the single closest leg around in case none of the pairs work out.
+      if ( dist1 < closest_dist ) 
+      {
+	closest_dist = dist1;
+	closest = it1;
+      }
+
+      // Find a second leg.
+      it2 = it1;
+      it2++;
+      for (; it2 != end; ++it2) 
+      {
+	// Only look at trackers without ids.
+	if ((*it2)->object_id != "") 
+	  continue;
+
+	// Get the distance between the leg and the person.
+	tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+	dist2 = dest_loc.length();
+	
+	// Get the distance between the two legs
+	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	dist_between_legs = dest_loc.length();
+
+	// Ensure that neither the second point, not the combination of points, is too far away.
+	if ( dist2 < max_meas_jump_m && dist1+dist2 < closest_pair_dist && dist_between_legs < leg_pair_separation_m ) 
+	{
+	  closest_pair_dist = dist1+dist2;
+	  closest1 = it1;
+	  closest2 = it2;
+	  closest_dist_between_legs = dist_between_legs;
+	}
+      }
+    }
+    // Found a pair of legs.
+    if (closest1 != end && closest2 != end) 
+    {
+      (*closest1)->object_id = people_meas->object_id;
+      (*closest2)->object_id = people_meas->object_id;
+      cout << "Found a completely new pair with total distance " << closest_pair_dist << " and a distance between the legs of " << closest_dist_between_legs << endl;
+      return;
+    }
+
+    // No pair worked, try for just one leg.
+    if (closest != end)
+    {
       (*closest)->object_id = people_meas->object_id;
+      cout << "Returned one new leg only" << endl;
+      return;
+    }
+
+    cout << "Nothing matched" << endl;
+
+    // Nothing matched.
+ 
+    //////////////////////////////
+
+//     // loop over trackers
+//     list<SavedFeature*>::iterator it  = saved_features_.begin();
+//     list<SavedFeature*>::iterator end = saved_features_.end();
+//     for (; it != end; ++it )
+//     {
+//       // transform people position into local frame with the origin at the tracker position 
+//       Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+//       loc[2] = 0.0; // Ignore the height of the person measurement.
+//       tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
+//                             loc, fixed_frame, loc);
+//       float dist = loc.length();
+//       // distance between tracker and people position
+//       if ( dist < closest_dist )
+//       {
+//         closest = it;
+//         closest_dist = dist;
+//       }
+
+//       // If we're already tracking the object
+//       if ((*it)->object_id == people_meas->object_id)
+//       {
+//         if (dist < max_meas_jump_m)
+//           return; 
+// 	// remove link between tracker and person
+//         else
+//           (*it)->object_id = "";
+//       }
+//     }
+
+//     if (closest_dist < max_meas_jump_m)
+//       (*closest)->object_id = people_meas->object_id;
   }
 
 
@@ -336,7 +511,7 @@ public:
     }
 
 
-    // System update of trackers, an copy updated ones in propagates list
+    // System update of trackers, and copy updated ones in propagate list
     list<SavedFeature*> propagated;
     for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
          sf_iter != saved_features_.end();
@@ -497,7 +672,11 @@ public:
       filter_visualize[i].x = est.pos_[0];
       filter_visualize[i].y = est.pos_[1];
       filter_visualize[i].z = est.pos_[2];
-      int rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | ((*sf_iter)->color_[2]);
+      int rgb;
+      if ((*sf_iter)->object_id == "") 
+	rgb = (0 << 16 | 0 << 8 | 0 << 16) ;     
+      else 
+	rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | ((*sf_iter)->color_[2]);
       weights[i] = *(float*)&(rgb);
 
       if ((*sf_iter)->meas_time_ == scan->header.stamp)
@@ -522,11 +701,11 @@ public:
 	pos.covariance[8] = 10000.0;
 	pos.initialization = 0;
 
-	cout <<  est.vel_.length() <<" " <<  est.pos_[0] <<" " <<  est.pos_[1] <<" " <<  est.pos_[2] <<" " <<  est.pos_.length() << endl;
-
         if (est.vel_.length() > 0.5)
         {
 	  // If the current velocity is greater than 0.5 (m/s, I hope), publish the position.
+	  pos.covariance[0] = 0.045;
+	  pos.covariance[4] = 0.045;
           pos.reliability = 0.80;        
           publish("people_tracker_measurements", pos);               
         }
