@@ -37,6 +37,7 @@
 #include <estar/Facade.hpp>
 #include <estar/Region.hpp>
 #include <sfl/util/numeric.hpp>
+#include <sfl/util/strutil.hpp>
 
 using namespace estar;
 using namespace std;
@@ -179,6 +180,8 @@ namespace mpglue {
 	throw runtime_error("mpglue::EstarPlanner::doCreatePlan(): NO_GOAL");	
       case ROBOT_OUT_OF_GRID:
 	throw runtime_error("mpglue::EstarPlanner::doCreatePlan(): ROBOT_OUT_OF_GRID");
+      case PLANNING:
+	break;
       case AT_GOAL:
 	run = false;
 	break;
@@ -202,7 +205,8 @@ namespace mpglue {
       case BUFFERING:
 	break;
       default:
-	throw runtime_error("mpglue::EstarPlanner::doCreatePlan(): unknown status (bug!)");	
+	throw runtime_error("mpglue::EstarPlanner::doCreatePlan(): unknown status "
+			    + sfl::to_string(status) + " (bug!)");	
       }
       if (run) {
 	if ( ! planner_->HaveWork()) {
@@ -224,7 +228,7 @@ namespace mpglue {
       static double const lookahead(30); // XXXX hardcoded
       double const stepsize(0.5 * itransform_->getResolution()); // XXXX hardcoded
       static size_t const maxnsteps(1000); // XXXX hardcoded
-      int const retval(planner_->TraceCarrot(stats_.start_ix, stats_.start_iy,
+      int const retval(planner_->TraceCarrot(stats_.start_x, stats_.start_y,
 					     lookahead, stepsize, maxnsteps,
 					     carrot, erros_));
       if (0 > retval) {
@@ -236,19 +240,8 @@ namespace mpglue {
       
       plan.reset(new waypoint_plan_t());
       PlanConverter pc(plan.get());
-      ssize_t prev_ix(0), prev_iy(0);
-      for (size_t ii(0); ii < carrot.size(); ++ii) {
-	carrot_item item(carrot[ii]);
-	ssize_t const ix(static_cast<ssize_t>(rint(item.cx)));
-	ssize_t const iy(static_cast<ssize_t>(rint(item.cy)));
-	if ((0 == ii) || (ix != prev_ix) || (iy != prev_iy)) {
-	  double px, py;
-	  itransform_->indexToGlobal(ix, iy, &px, &py);
-	  pc.addWaypoint(px, py, 0);
-	}
-	prev_ix = ix;
-	prev_iy = iy;
-      }
+      for (carrot_trace::const_iterator ic(carrot.begin()); ic != carrot.end(); ++ic)
+	pc.addWaypoint(ic->cx, ic->cy, 0);
       stats_.plan_length = pc.plan_length;
       stats_.plan_angle_change = pc.tangent_change;
     }

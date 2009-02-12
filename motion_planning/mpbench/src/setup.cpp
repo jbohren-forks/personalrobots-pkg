@@ -39,6 +39,7 @@
 #include <mpglue/navfn_planner.h>
 #include <mpglue/sbpl_environment.h>
 #include <mpglue/sbpl_planner.h>
+#include <mpglue/estar_planner.h>
 #include <costmap_2d/obstacle_map_accessor.h>
 #include <sbpl/headers.h>
 ////#include <costmap_2d/costmap_2d.h>
@@ -101,6 +102,10 @@ namespace {
       planner_alias.insert(make_pair("navfn",        "NavFn"));
       planner_alias.insert(make_pair("nf",           "NavFn"));
       planner_alias.insert(make_pair("NF",           "NavFn"));
+      
+      planner_alias.insert(make_pair("EStar",        "EStar"));
+      planner_alias.insert(make_pair("estar",        "EStar"));
+      planner_alias.insert(make_pair("Estar",        "EStar"));
     }
     
     map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
@@ -897,6 +902,26 @@ namespace mpbench {
       setup->planner_.reset(new mpglue::NavFnPlanner(setup->getCostmap(),
 						     setup->getIndexTransform(),
 						     interpolate_path));
+    }
+
+    else if ("EStar" == planner_name) {
+#ifndef MPBENCH_HAVE_ESTAR
+      throw runtime_error("mpbench::Setup::create(): no support for EStar planner, set the ESTAR_DIR environment variable and recompile mpglue and mpbench\"");
+#else // MPBENCH_HAVE_ESTAR
+      if (progress_os)
+	*progress_os << "  creating EstarPlanner\n" << flush;
+      //  string int_str("int");
+      //  sfl::token_to(opt.planner_tok, 1, int_str);
+      //  bool interpolate_path(true);
+      //  if ("dsc" == int_str)
+      // 	interpolate_path = false;
+      //  else if ("int" != int_str)
+      //throw runtime_error("mpbench::Setup::create(): invalid environment interpolate_path \""
+      //		    + int_str + "\", must be \"int\" or \"dsc\"");
+      setup->planner_.reset(new mpglue::EstarPlanner(setup->getCostmap(),
+						     setup->getIndexTransform(),
+						     &cerr));
+#endif // MPBENCH_HAVE_ESTAR
     }
     
     else {

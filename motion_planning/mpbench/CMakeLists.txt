@@ -105,6 +105,27 @@ ENDIF(WIN32)
 
 ##################################################
 
+set (ESTAR_DIR $ENV{ESTAR_DIR})
+if (ESTAR_DIR)
+  message (STATUS "ESTAR_DIR is ${ESTAR_DIR}")
+  set (CMAKE_REQUIRED_INCLUDES ${ESTAR_DIR}/include)
+  include_directories (${ESTAR_DIR}/include)
+  link_directories (${ESTAR_DIR}/lib)
+else (ESTAR_DIR)
+  message (STATUS "ESTAR_DIR is not set")
+endif (ESTAR_DIR)
+
+include (CheckIncludeFileCXX)
+check_include_file_cxx (estar/Facade.hpp MPBENCH_HAVE_ESTAR)
+if (MPBENCH_HAVE_ESTAR)
+  message (STATUS "found E*")
+  add_definitions (-DMPBENCH_HAVE_ESTAR)
+else (MPBENCH_HAVE_ESTAR)
+  message (STATUS "E* not found (optional)")
+endif (MPBENCH_HAVE_ESTAR)
+
+##################################################
+
 rospack_add_library (mpbench ${MPBENCH_SRCS})
 
 rospack_add_executable (mpbench-base src/mpbench-base.cpp)
