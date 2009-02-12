@@ -84,15 +84,16 @@ void init()
 {
   CHECK_ERR( PvInitialize(), "Failed to initialize Prosilica API" );
 
-  // TODO: should timeout after a while
-  while (true)
+  for (int tries = 0; tries < 5; ++tries)
   {
     cameraNum = PvCameraList(cameraList, MAX_CAMERA_LIST, NULL);
     if (cameraNum)
-      break;
+      return;
     usleep(1000000);
   }
 
+  throw ProsilicaException("Timed out looking for a camera");
+  
   // TODO: Callbacks for add/remove camera?
 }
 
