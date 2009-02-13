@@ -106,9 +106,9 @@ class ArmTest(unittest.TestCase):
         print "                   " + "y: " + str(p3d.pos.orientation.y)
         print "                   " + "z: " + str(p3d.pos.orientation.z)
         print "                   " + "w: " + str(p3d.pos.orientation.w)
-        print "P3D rate translan: " + "x: " + str(p3d.vel.vel.x)
-        print "                   " + "y: " + str(p3d.vel.vel.y)
-        print "                   " + "z: " + str(p3d.vel.vel.z)
+        print "P3D rate translan: " + "x: " + str(p3d.vel.vel.vx)
+        print "                   " + "y: " + str(p3d.vel.vel.vy)
+        print "                   " + "z: " + str(p3d.vel.vel.vz)
         print "P3D rate rotation: " + "x: " + str(p3d.vel.ang_vel.vx)
         print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
         print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
@@ -140,7 +140,7 @@ class ArmTest(unittest.TestCase):
 
         print " fngr Error pos: " + str(pos_error) + " rot: " + str(rot_error)
 
-        self.printP3D(p3d) #for getting new valid data
+        #self.printP3D(p3d) #for getting new valid data
 
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_fngr:
@@ -184,7 +184,7 @@ class ArmTest(unittest.TestCase):
 
         print " palm Error pos: " + str(pos_error) + " rot: " + str(rot_error)
 
-        self.printP3D(p3d) #for getting new valid data
+        #self.printP3D(p3d) #for getting new valid data
 
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_palm:
