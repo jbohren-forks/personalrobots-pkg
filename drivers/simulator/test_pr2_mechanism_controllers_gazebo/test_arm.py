@@ -70,21 +70,21 @@ POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 TEST_TIMEOUT    = 50.0
 
 # pre-recorded poses for above commands
-TARGET_PALM_TX     = 0.727619501795
-TARGET_PALM_TY     = 0.313729662125
-TARGET_PALM_TZ     = 0.789418474081
-TARGET_PALM_QX     = 0.237324223096
-TARGET_PALM_QY     = -0.182525634899
-TARGET_PALM_QZ     = 0.190044686338
-TARGET_PALM_QW     = 0.935010493487
+TARGET_PALM_TX     = 0.722460856088
+TARGET_PALM_TY     = 0.338312269174
+TARGET_PALM_TZ     = 0.7894496599
+TARGET_PALM_QX     = 0.237217830337
+TARGET_PALM_QY     = -0.182831422809
+TARGET_PALM_QZ     = 0.190058620151
+TARGET_PALM_QW     = 0.934974915551
 
-TARGET_FNGR_TX     =  0.789451486586
-TARGET_FNGR_TY     =  0.34264635999
-TARGET_FNGR_TZ     =  0.826417972272
-TARGET_FNGR_QX     =  0.207225356499
-TARGET_FNGR_QY     =  -0.216229383323
-TARGET_FNGR_QZ     =  0.327829069225
-TARGET_FNGR_QW     =  0.896008151069
+TARGET_FNGR_TX     = 0.78425155379
+TARGET_FNGR_TY     = 0.367126981144
+TARGET_FNGR_TZ     = 0.826419823596
+TARGET_FNGR_QX     = 0.207195264172
+TARGET_FNGR_QY     = -0.216258433405
+TARGET_FNGR_QZ     = 0.327789093421
+TARGET_FNGR_QW     = 0.896022724444
 
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
@@ -140,7 +140,7 @@ class ArmTest(unittest.TestCase):
 
         print " fngr Error pos: " + str(pos_error) + " rot: " + str(rot_error)
 
-        #self.printP3D(p3d) #for getting new valid data
+        self.printP3D(p3d) #for getting new valid data
 
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_fngr:
@@ -184,7 +184,7 @@ class ArmTest(unittest.TestCase):
 
         print " palm Error pos: " + str(pos_error) + " rot: " + str(rot_error)
 
-        #self.printP3D(p3d) #for getting new valid data
+        self.printP3D(p3d) #for getting new valid data
 
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_palm:
