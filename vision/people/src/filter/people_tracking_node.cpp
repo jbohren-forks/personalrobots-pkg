@@ -116,8 +116,6 @@ namespace estimation
   // callback for messages
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
   {
-    cout << "receive callback" << endl;
-
     // get measurement in fixed frame
     Stamped<tf::Vector3> meas_rel, meas;
     meas_rel.setData(tf::Vector3(message->pos.x, message->pos.y, message->pos.z));

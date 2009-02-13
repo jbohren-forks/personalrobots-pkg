@@ -78,6 +78,11 @@ namespace estimation
     people_pos_.enable = true;
     people_pos_.timeout = 1000000;
 
+    robot_pos_.header.frame_id = fixed_frame_;
+    robot_pos_.header.stamp = ros::Time().fromSec(0);
+    robot_pos_.enable = true;
+    robot_pos_.timeout = 1000000;
+
     time_last_publish_ = Time::now();
 
     // visualization
@@ -138,6 +143,7 @@ namespace estimation
       dy = people_pos_.goal.y - robot_pos_.goal.y;
       robot_pos_.goal.th = atan2(dy, dx);
 
+      /*
       cout << "person pos " 
            << people_pos_.goal.x << " "  
            << people_pos_.goal.y << " " 
@@ -147,12 +153,13 @@ namespace estimation
            << robot_pos_.goal.y << " "
            << robot_pos_.goal.th << endl;
       cout << "distance between them "<< sqrt(pow(people_pos_.goal.x-robot_pos_.goal.x,2) +
-                                              pow(people_pos_.goal.y-robot_pos_.goal.y,2) ) << endl;
+                                                    pow(people_pos_.goal.y-robot_pos_.goal.y,2) ) << endl;
+      */
 
 
       // send goal to planner
-      if ((Time::now() - time_last_publish_).toSec() > 1/publish_rate_){
-        publish("goal", people_poses_.front());
+      if ((Time::now() - time_last_publish_).toSec() > 1.0/publish_rate_){
+        publish("goal", robot_pos_);
         time_last_publish_ = Time::now();
       }
 
