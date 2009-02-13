@@ -75,7 +75,10 @@ enum AutoSetting
 class Camera
 {
 public:
-  Camera(uint64_t guid, size_t bufferSize = 8);
+  static const size_t DEFAULT_BUFFER_SIZE = 8;
+  
+  Camera(unsigned long guid, size_t bufferSize = DEFAULT_BUFFER_SIZE);
+  Camera(const char* ip_address, size_t bufferSize = DEFAULT_BUFFER_SIZE);
 
   ~Camera();
 
@@ -107,6 +110,8 @@ private:
   boost::function<void (tPvFrame*)> userCallback_;
   boost::mutex frameMutex_;
 
+  void setup();
+  
   static void frameDone(tPvFrame* frame);
 };
 

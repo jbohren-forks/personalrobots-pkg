@@ -67,6 +67,7 @@ public:
     if (num_cams > 0)
     {
       unsigned long guid;
+#if 0
       if (hasParam("~guid"))
       {
         std::string guid_str;
@@ -77,6 +78,9 @@ public:
       }
 
       cam_.reset( new prosilica::Camera(guid) );
+#else
+      cam_.reset( new prosilica::Camera("169.254.174.37") );
+#endif
       cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
 
       // Acquisition control

@@ -37,6 +37,7 @@
 #include <cassert>
 #include <ctime>
 #include <cstring>
+#include <arpa/inet.h>
 
 #define CHECK_ERR(fnc, amsg)                               \
 do {                                                       \
@@ -113,11 +114,25 @@ uint64_t getGuid(size_t i)
   return cameraList[i].UniqueId;
 }
 
-Camera::Camera(uint64_t guid, size_t bufferSize)
+Camera::Camera(unsigned long guid, size_t bufferSize)
   : bufferSize_(bufferSize), mode_(None)
 {
-  CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_), "Unable to open requested camera" );
+  CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_),
+             "Unable to open requested camera" );
+  setup();
+}
 
+Camera::Camera(const char* ip_address, size_t bufferSize)
+  : bufferSize_(bufferSize), mode_(None)
+{
+  unsigned long addr = inet_addr(ip_address);
+  CHECK_ERR( PvCameraOpenByAddr(addr, ePvAccessMaster, &handle_),
+             "Unable to open requested camera" );
+  setup();
+}
+
+void Camera::setup()
+{
   // adjust packet size according to the current network capacity
   tPvUint32 maxPacketSize = 8228;
   PvAttrUint32Get(handle_, "PacketSize", &maxPacketSize);
@@ -131,9 +146,9 @@ Camera::Camera(uint64_t guid, size_t bufferSize)
              "Unable to retrieve frame size" );
   
   // allocate frame buffers
-  frames_ = new tPvFrame[bufferSize];
-  memset(frames_, 0, sizeof(tPvFrame) * bufferSize);
-  for (unsigned int i = 0; i < bufferSize; ++i)
+  frames_ = new tPvFrame[bufferSize_];
+  memset(frames_, 0, sizeof(tPvFrame) * bufferSize_);
+  for (unsigned int i = 0; i < bufferSize_; ++i)
   {
     frames_[i].ImageBuffer = new char[frameSize_];
     frames_[i].ImageBufferSize = frameSize_;
