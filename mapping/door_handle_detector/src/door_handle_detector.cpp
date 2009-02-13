@@ -215,7 +215,7 @@ class DoorHandleDetector : public ros::Node
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
                                                                           input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
-      while (num_clouds_received_ < 1)
+      while (num_clouds_received_ < 2)
         tictoc.sleep ();
       delete message_notifier_;
 
