@@ -63,7 +63,7 @@ public:
             return false;
         }
         addPath(filename);
-        assert(!fixIncludes(m_doc->RootElement()));	
+        fixIncludes(m_doc->RootElement());	
         return true;        
     }
     
