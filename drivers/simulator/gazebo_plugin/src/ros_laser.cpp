@@ -113,7 +113,7 @@ void RosLaser::PutLaserData()
 {
   int i, ja, jb;
   double ra, rb, r, b;
-  int v;
+  double intensity;
 
   Angle maxAngle = this->myParent->GetMaxAngle();
   Angle minAngle = this->myParent->GetMinAngle();
@@ -166,8 +166,8 @@ void RosLaser::PutLaserData()
       r = (1 - b) * ra + b * rb;
     //else r = std::min(ra, rb);
 
-    // Intensity is either-or
-    v = (int) this->myParent->GetRetro(ja) || (int) this->myParent->GetRetro(jb);
+    // Intensity is averaged
+    intensity = 0.5*( this->myParent->GetRetro(ja) + (int) this->myParent->GetRetro(jb));
 
     /***************************************************************/
     /*                                                             */
@@ -178,7 +178,7 @@ void RosLaser::PutLaserData()
       this->laserMsg.ranges[i]        = r + minRange; // no noise if at max range
     else
       this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->laserMsg.intensities[i]   = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
   }
 
   // send data out via ros message

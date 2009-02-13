@@ -132,7 +132,7 @@ void RosBlockLaser::PutLaserData()
   double vb, hb;
   int    j1, j2, j3, j4; // four corners indices
   double r1, r2, r3, r4, r; // four corner values + interpolated range
-  int v;
+  double intensity;
 
   Angle maxAngle = this->myParent->GetMaxAngle();
   Angle minAngle = this->myParent->GetMinAngle();
@@ -206,9 +206,9 @@ void RosBlockLaser::PutLaserData()
       r = (1-vb)*((1 - hb) * r1 + hb * r2)
          +   vb *((1 - hb) * r3 + hb * r4);
 
-      // Intensity is either-or
-      v = (int) this->myParent->GetRetro(j1) || (int) this->myParent->GetRetro(j2) ||
-          (int) this->myParent->GetRetro(j3) || (int) this->myParent->GetRetro(j4);
+      // Intensity is averaged
+      intensity = 0.25*(this->myParent->GetRetro(j1) + (int) this->myParent->GetRetro(j2) +
+                        this->myParent->GetRetro(j3) + (int) this->myParent->GetRetro(j4));
 
       // std::cout << " block debug "
       //           << "  ij("<<i<<","<<j<<")"
@@ -239,7 +239,7 @@ void RosBlockLaser::PutLaserData()
         this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
         this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
       }
-      this->cloudMsg.chan[0].vals[n] = v + this->GaussianKernel(0,this->gaussianNoise) ;
+      this->cloudMsg.chan[0].vals[n] = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
     }
   }
 
