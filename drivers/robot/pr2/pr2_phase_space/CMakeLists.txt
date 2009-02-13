@@ -5,6 +5,7 @@ genmsg()
 #rospack_add_executable(phase_space_odometry src/phase_space_odometry.cpp)
 rospack_add_executable(phase_space_pan_tilt src/phase_space_pan_tilt.cpp)
 rospack_add_executable(phase_space_pose_stamped src/phase_space_pose_stamped.cpp)
+rospack_add_executable(phase_space_tongs src/phase_space_tongs.cpp)
 rospack_add_executable(phase_space_fake_localization src/phase_space_fake_localization.cpp)
 #rospack_add_executable(track_arm src/track_arm.cpp)
-
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
