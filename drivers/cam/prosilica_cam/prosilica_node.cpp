@@ -64,7 +64,8 @@ public:
     //diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
 
     int num_cams = prosilica::numCameras();
-    if (num_cams > 0)
+    //if (num_cams > 0)
+    if (true)
     {
       unsigned long guid;
 #if 0
