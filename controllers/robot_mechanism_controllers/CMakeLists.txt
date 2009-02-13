@@ -6,6 +6,7 @@ gensrv()
 rospack_add_library(robot_mechanism_controllers
  src/endeffector_constraint_controller.cpp
  src/plug_controller.cpp
+ src/cartesian_tff_controller.cpp
  src/cartesian_trajectory_controller.cpp
  src/cartesian_pose_controller.cpp
  src/cartesian_twist_controller.cpp
