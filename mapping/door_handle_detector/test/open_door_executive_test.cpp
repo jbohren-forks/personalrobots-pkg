@@ -79,7 +79,7 @@ public:
   {}
   
   
-  bool DetectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
+  bool detectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
   {
     door_handle_detector::DoorDetector::Request  req;
     door_handle_detector::DoorDetector::Response res;
@@ -93,7 +93,7 @@ public:
   }
 
 
-  bool GraspDoor(const robot_msgs::Door& door)
+  bool graspDoor(const robot_msgs::Door& door)
   {
     robot_msgs::PoseStamped pose_msg;
     Stamped<Pose> pose;
@@ -151,12 +151,12 @@ public:
 	  break;
 	}
 	case DETECTING:{
-	  DetectDoor(my_door_, my_door_);
+	  detectDoor(my_door_, my_door_);
 	  state_ = GRASPING;
 	  break;
 	}
 	case GRASPING:{
-	  GraspDoor(my_door_);
+	  graspDoor(my_door_);
 	  
 	  state_ = FINISHED;
 	  break;
