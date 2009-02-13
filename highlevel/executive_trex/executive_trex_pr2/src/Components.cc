@@ -12,6 +12,8 @@
 #include "CalcDistanceConstraint.hh"
 #include "OrienteeringSolver.hh"
 
+#include "topological_map.hh"
+
 /*
 #include "CalcCommandConstraint.hh"
 #include "CalcGlobalPathConstraint.hh"
@@ -90,6 +92,12 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
+
+      // Register topological map constraints
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_connector_constraint, "map_connector_constraint", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_get_region_from_position_constraint, "map_get_region_from_position_constraint", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_connected_constraint, "map_connected_constraint", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_is_doorway_constraint, "map_is_doorway_constraint", "Default");
 
       /*
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
