@@ -57,7 +57,7 @@ namespace topological_map
 
 
 
-// Typedefs for graphs
+// Typedefs for graph representing the 2d-occupancy grid
 struct coords_t { typedef boost::vertex_property_tag kind; };
 typedef boost::property<coords_t,GridCell> coords_property; 
 
@@ -494,7 +494,7 @@ bool getFreePointNear (int& r, int& c, const int s, const grid_size* dims, const
   int rMax = r+s/2;
   int cMin = c-s/2;
   int cMax = c+s/2;
-  
+
   for (r=rMin; (r<=rMax) && !foundPoint; r++) {
     for (c=cMin; (c<=cMax) && !foundPoint; c++) {
       if ((r>=0) && (r<(int)dims[0]) && (c>=0) && (c<(int)dims[1]) && gr->o[r][c])
@@ -565,7 +565,7 @@ void addSmallestDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBloc
     int blockR=-1;
     int blockC=-1;
     int blockSize = size*2/3;
-    for (int i=0; i<2; i++) {
+    for (int i=0; (i<2)&&!someChildDisconnects; i++) {
       for (int j=0; j<2; j++) {
         bool disconnected;
         blockR=i*r+(1-i)*(r+size-blockSize);
@@ -577,6 +577,7 @@ void addSmallestDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBloc
         if (disconnected) {
           someChildDisconnects=true;
           addSmallestDisconnectingBlocks (gr, disconnectingBlocks, blockR, blockC, r0, c0, r1, c1, threshold, blockSize);
+          break;
         }
       }
     }
@@ -829,8 +830,12 @@ void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int
   const grid_size* dims = gr->m.shape();
   int r0, c0, r1, c1, dist=-1;
   for (unsigned int r=1; r<dims[0]-bottleneckSize; r+=bottleneckSkip) {
+    ROS_DEBUG ("Row %d", r);
+    
     for (unsigned int c=1; c<dims[1]-bottleneckSize; c+=bottleneckSkip) {
-      ROS_DEBUG_NAMED ("bottleneck_finder","Block from (%d, %d) to (%d, %d)\n", r, c, r+bottleneckSize-1, c+bottleneckSize-1);
+      ROS_DEBUG_NAMED ("bottleneck_finder","Examining block from %d, %d to %d, %d", r, c, r+bottleneckSize-1, c+bottleneckSize-1);
+
+
       
       // Will check pairs of cells on opposite sides of this block to see if they become disconnected
       bool disconnected = false;
@@ -850,7 +855,8 @@ void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int
           c1 = c+5*bottleneckSize/2;
         }
 
-        if (bool free1 = !getFreePointNear(r0, c0, bottleneckSize, dims, gr) || !getFreePointNear(r1, c1, bottleneckSize, dims, gr))
+        bool free1 = !getFreePointNear(r0, c0, bottleneckSize, dims, gr) || !getFreePointNear(r1, c1, bottleneckSize, dims, gr);
+        if (free1)
         {
           int r=r1, c=c1;
           if (free1) { 

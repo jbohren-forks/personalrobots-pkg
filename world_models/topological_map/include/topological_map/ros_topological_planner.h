@@ -67,10 +67,10 @@ public:
   void generateRoadmap(void);
   void setupTopics(void);
   void writeToFile(char*);
+  void outputPpm (char* filename);
   void setResolution(double r) { resolution_=r; }
 
   void poseCallback(void);
-  bool navigationCostCallback(topological_map::NavigationCost::Request&, topological_map::NavigationCost::Response&);
   bool connectorCostsCallback (topological_map::ConnectorCosts::Request& req, ConnectorResponse& resp);
 
 

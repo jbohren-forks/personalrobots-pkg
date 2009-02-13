@@ -154,7 +154,7 @@ void RoadmapBottleneckGraph::initializeDistanceMap ()
     int c=cell.second;
     int new_distance_bound=distance_map_[r][c]+1;
 
-    ROS_DEBUG_COND (!(++num_propagations%100000), "Propagation %d of %d, %d with bound %d",
+    ROS_DEBUG_COND (!(++num_propagations%5000000), "Propagation %d of %d, %d with bound %d",
                     num_propagations, r, c, new_distance_bound);
     
     for (int i=0; i<4; i++) {

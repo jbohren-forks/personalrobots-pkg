@@ -59,6 +59,7 @@
 
    Required:
    - --input-file, -i
+   - --resolution, -R
 
 
    <hr>
@@ -69,16 +70,17 @@
    - @b localizedpose
 
    Services used:
-   - @b static_map.  Note: in the case of using the -i parameter to load the topological graph from a file, we're assuming the static map being provided has the same resolution as the one that was used to compute the saved graph.
+   - @b static_map (in the case when the input file is not provided).
 
    Services provided:
-   - @b navigation_plan.
+   - @b connector_costs.  
 
    <hr>
 
    <hr>
 **/
 
+#include <fstream>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include <topological_map/ros_topological_planner.h>
@@ -153,7 +155,6 @@ struct PopulateConnectorCostResponse
     response.connectors[ind].th=0;
     response.costs[ind]=pair.second;
     ind++;
-    ROS_DEBUG_STREAM ( "Now have " << ind << " connectors");
   }
 
   BottleneckGraphRos* graph;
@@ -169,21 +170,6 @@ struct PopulateConnectorCostResponse
  * Callbacks
  ************************************************************/
 
-bool BottleneckGraphRos::navigationCostCallback (topological_map::NavigationCost::Request& req, topological_map::NavigationCost::Response& resp)
-{
-  GridCell start, goal;
-
-  convertToMapIndices (req.start.x, req.start.y, &start);
-  convertToMapIndices (req.goal.x, req.goal.y, &goal);
-  
-  updateCostMap();
-
-  float cost;
-  graph_.findOptimalPath(start, goal, &cost);
-  resp.cost=cost;
-  return true;
-}
-
 bool BottleneckGraphRos::connectorCostsCallback (topological_map::ConnectorCosts::Request& req, ConnectorResponse& resp)
 {
   GridCell start, goal;
@@ -196,7 +182,6 @@ bool BottleneckGraphRos::connectorCostsCallback (topological_map::ConnectorCosts
   resp.set_connectors_size(connector_costs.size());
   resp.set_costs_size(connector_costs.size());
 
-  ROS_DEBUG_STREAM ("Expect to add " << connector_costs.size() << " connectors");
   for_each(connector_costs.begin(), connector_costs.end(), PopulateConnectorCostResponse(this, resp));
   ROS_DEBUG_STREAM ("Connector costs callback called and added " << resp.costs.size() << " points");
   return true;
@@ -298,9 +283,6 @@ void BottleneckGraphRos::setupTopics (void)
   ROS_INFO ("Setting up node topics");
   subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 10);
 
-  // Advertise 2d cost
-  advertiseService("navigation_cost", &BottleneckGraphRos::navigationCostCallback);
-
   // Advertise connector costs
   advertiseService("connector_costs", &BottleneckGraphRos::connectorCostsCallback);
 }
@@ -323,6 +305,13 @@ void BottleneckGraphRos::writeToFile (char* filename)
   ROS_INFO ("Done writing");
 }
 
+
+void BottleneckGraphRos::outputPpm (char* filename)
+{
+  ofstream stream;
+  stream.open (filename);
+  graph_.outputPpm(stream, 3);
+}
 
 
 
@@ -364,8 +353,8 @@ void BottleneckGraphRos::convertFromMapIndices (const GridCell& c, double* x, do
 void exitWithUsage(void)
 {
   cout << "Usage 1:\n Required:\n  --bottleneck-size, -b\n  --inflation-radius, -r\n Optional:\n"
-    "  --bottleneck-skip, -k\n  --distance-lower-bound, -d\n  --distance-upper-bound, -D\n  --output-file, -o\n"
-    "Usage 2:\n Required:\n  --input-file, -i";
+    "  --bottleneck-skip, -k\n  --distance-lower-bound, -d\n  --distance-upper-bound, -D\n  --output-file, -o\n --ppm-output-file, -p\n  --spin, -s\n"
+    "Usage 2:\n Required:\n  --input-file, -i\n  --resolution, -R\n";
   exit(EX_USAGE);
 }
 
@@ -383,7 +372,8 @@ int main(int argc, char** argv)
   double resolution=0.0;
   char* inputFile=0;
   char* outputFile=0;
-  char* pgmOutputFile=0;
+  char* ppmOutputFile=0;
+  int spin=1;
 
 
   while (1) {
@@ -395,12 +385,13 @@ int main(int argc, char** argv)
        {"distance-upper-bound", required_argument, 0, 'D'},
        {"input-file", required_argument, 0, 'i'},
        {"output-file", required_argument, 0, 'o'},
-       {"pgm-output-file", required_argument, 0, 'p'},
+       {"ppm-output-file", required_argument, 0, 'p'},
+       {"spin", required_argument, 0, 's'},
        {"resolution", required_argument, 0, 'R'},
        {0, 0, 0, 0}};
 
     int option_index=0;
-    int c = getopt_long (argc, argv, "b:k:r:d:D:i:o:p:R:", options, &option_index);
+    int c = getopt_long (argc, argv, "b:k:r:s:d:D:i:o:R:p:", options, &option_index);
     if (c==-1) {
       break;
     }
@@ -421,6 +412,9 @@ int main(int argc, char** argv)
       case 'd':
         distanceLower=atoi(optarg);
         break;
+      case 's':
+        spin=atoi(optarg);
+        break;
       case 'D':
         distanceUpper=atoi(optarg);
         break;
@@ -431,7 +425,7 @@ int main(int argc, char** argv)
         outputFile=optarg;
         break;
       case 'p':
-        pgmOutputFile=optarg;
+        ppmOutputFile=optarg;
         break;
       case 'R':
         resolution=atof(optarg);
@@ -471,17 +465,21 @@ int main(int argc, char** argv)
       node->writeToFile(outputFile);
     }
   }
-  if (pgmOutputFile) {
-    // node->writePgmFile(pgmOutputFile);
-  }
   
 
 
 
   ROS_INFO ("Generating roadmap");
   node->generateRoadmap();
+
+  if (ppmOutputFile) {
+    node->outputPpm(ppmOutputFile);
+  }
+
   ROS_INFO ("Entering main loop");
-  node->spin();
+  if (spin) {
+    node->spin();
+  }
   node->shutdown();
   delete node;
 
