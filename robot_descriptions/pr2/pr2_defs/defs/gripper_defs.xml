@@ -491,9 +491,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="-0.1 0 0" rpy="0 0 0" /> <!-- move it out of the way -->
         <geometry name="${side}_gripper_tool_collision">
-          <box size="0.1 0.1 0.1" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
     </link>
