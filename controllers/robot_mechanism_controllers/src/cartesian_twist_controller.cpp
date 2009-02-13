@@ -39,7 +39,6 @@
 
 using namespace KDL;
 
-static const std::string controller_name = "cartesian_twist";
 
 
 namespace controller {
@@ -59,9 +58,10 @@ CartesianTwistController::~CartesianTwistController()
 
 
 
-bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name)
+bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
 {
-  cout << "initializing cartesian twist controller between " << root_name << " and " << tip_name << endl;
+  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
+  controller_name_ = controller_name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -81,25 +81,24 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   // get pid controller
   double p, i, d, i_clamp;
   string name;
-  node_->param(controller_name+"/fb_trans_p", p, 0.0) ;
-  node_->param(controller_name+"/fb_trans_i", i, 0.0) ;
-  node_->param(controller_name+"/fb_trans_d", d, 0.0) ;
-  node_->param(controller_name+"/fb_trans_i_clamp", i_clamp, 0.0) ;
+  node_->param(controller_name_+"/fb_trans_p", p, 0.0) ;
+  node_->param(controller_name_+"/fb_trans_i", i, 0.0) ;
+  node_->param(controller_name_+"/fb_trans_d", d, 0.0) ;
+  node_->param(controller_name_+"/fb_trans_i_clamp", i_clamp, 0.0) ;
   control_toolbox::Pid fb_pid_trans(p, i, d, i_clamp, -i_clamp);
   for (unsigned int i=0; i<3; i++)
     fb_pid_controller_.push_back(fb_pid_trans);
 
-  node_->param(controller_name+"/fb_rot_p", p, 0.0) ;
-  node_->param(controller_name+"/fb_rot_i", i, 0.0) ;
-  node_->param(controller_name+"/fb_rot_d", d, 0.0) ;
-  node_->param(controller_name+"/fb_rot_i_clamp", i_clamp, 0.0) ;
+  node_->param(controller_name_+"/fb_rot_p", p, 0.0) ;
+  node_->param(controller_name_+"/fb_rot_i", i, 0.0) ;
+  node_->param(controller_name_+"/fb_rot_d", d, 0.0) ;
+  node_->param(controller_name_+"/fb_rot_i_clamp", i_clamp, 0.0) ;
   control_toolbox::Pid fb_pid_rot(p, i, d, i_clamp, -i_clamp);
   for (unsigned int i=0; i<3; i++)
     fb_pid_controller_.push_back(fb_pid_rot);
-  fprintf(stderr, "pid controllers created\n");
 
-  node_->param(controller_name+"/ff_trans", ff_trans_, 0.0) ;
-  node_->param(controller_name+"/ff_rot", ff_rot_, 0.0) ;
+  node_->param(controller_name_+"/ff_trans", ff_trans_, 0.0) ;
+  node_->param(controller_name_+"/ff_rot", ff_rot_, 0.0) ;
 
   // time
   last_time_ = robot_state->hw_->current_time_;
@@ -108,7 +107,7 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   twist_desi_ = Twist::Zero();
 
   // create wrench controller
-  wrench_controller_.initialize(robot_state, root_name, tip_name);
+  wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
 
   return true;
 }
@@ -165,28 +164,31 @@ CartesianTwistControllerNode::CartesianTwistControllerNode()
 
 CartesianTwistControllerNode::~CartesianTwistControllerNode()
 {
-  node_->unsubscribe(controller_name + "/command");
+  node_->unsubscribe(controller_name_ + "/command");
   node_->unsubscribe("spacenav/joy");
 }
 
 
 bool CartesianTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  // get the controller name
+  controller_name_ = config->Attribute("name");
+
   // get parameters
-  node_->param(controller_name+"/joystick_max_trans", joystick_max_trans_, 0.0);
-  node_->param(controller_name+"/joystick_max_rot", joystick_max_rot_, 0.0);
+  node_->param(controller_name_+"/joystick_max_trans", joystick_max_trans_, 0.0);
+  node_->param(controller_name_+"/joystick_max_rot", joystick_max_rot_, 0.0);
 
   // get name of root and tip
   string root_name, tip_name;
-  node_->param(controller_name+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
+  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name, tip_name))
+  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
     return false;
   
   // subscribe to twist commands
-  node_->subscribe(controller_name + "/command", twist_msg_,
+  node_->subscribe(controller_name_ + "/command", twist_msg_,
 		   &CartesianTwistControllerNode::command, this, 1);
 
   // subscribe to joystick commands

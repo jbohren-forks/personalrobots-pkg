@@ -54,7 +54,8 @@ public:
   CartesianTwistControllerIk();
   ~CartesianTwistControllerIk();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, TiXmlElement *config);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
+                  const std::string& tip_name, const std::string& controller_name);
   void update();
 
   // input of the controller
@@ -66,6 +67,7 @@ public:
 
 private:
   ros::Node* node_;
+  std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
 
@@ -106,6 +108,7 @@ class CartesianTwistControllerIkNode : public Controller
   
  private:
   ros::Node* node_;
+  std::string controller_name_;
   double joystick_max_trans_, joystick_max_rot_;
   std::string topic_;
 

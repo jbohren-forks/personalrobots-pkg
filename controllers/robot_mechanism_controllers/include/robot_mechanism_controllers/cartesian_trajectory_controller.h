@@ -49,8 +49,6 @@
 
 namespace controller {
 
-static const std::string controller_name = "cartesian_trajectory";
-
 
 class CartesianTrajectoryController
 {
@@ -58,7 +56,7 @@ public:
   CartesianTrajectoryController();
   ~CartesianTrajectoryController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string name = controller_name);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string controller_name);
   void update();
   ros::Duration moveTo(const KDL::Frame& pose_desi, double duration=0);
 

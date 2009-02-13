@@ -66,9 +66,10 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
 
 
   bool CartesianTwistControllerIk::initialize(mechanism::RobotState *robot_state, const string& root_name, 
-					      const string& tip_name,  TiXmlElement *config)
+					      const string& tip_name,  const string& controller_name)
 {
-  cout << "initializing cartesian ik twist controller between " << root_name << " and " << tip_name << endl;
+  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
+  controller_name_ = controller_name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -89,10 +90,10 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
 
   // get pid controller parameters
   double p, i, d, i_clamp;
-  node_->param(controller_name+"/joint_p", p, 0.0) ;
-  node_->param(controller_name+"/joint_i", i, 0.0) ;
-  node_->param(controller_name+"/joint_d", d, 0.0) ;
-  node_->param(controller_name+"/joint_i_clamp", i_clamp, 0.0) ;
+  node_->param(controller_name_+"/joint_p", p, 0.0) ;
+  node_->param(controller_name_+"/joint_i", i, 0.0) ;
+  node_->param(controller_name_+"/joint_d", d, 0.0) ;
+  node_->param(controller_name_+"/joint_i_clamp", i_clamp, 0.0) ;
   control_toolbox::Pid pid_joint(p, i, d, i_clamp, -i_clamp);
 
   // time
@@ -158,30 +159,33 @@ CartesianTwistControllerIkNode::CartesianTwistControllerIkNode()
 
 CartesianTwistControllerIkNode::~CartesianTwistControllerIkNode()
 {
-  node_->unsubscribe(controller_name + "/command");
+  node_->unsubscribe(controller_name_ + "/command");
   node_->unsubscribe("spacenav/joy");
 }
 
 
 bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  // get the controller name
+  controller_name_ = config->Attribute("name");
+
   // get parameters
-  node_->param(controller_name+"/joystick_max_trans", joystick_max_trans_, 0.0);
-  node_->param(controller_name+"/joystick_max_rot", joystick_max_rot_, 0.0);
+  node_->param(controller_name_+"/joystick_max_trans", joystick_max_trans_, 0.0);
+  node_->param(controller_name_+"/joystick_max_rot", joystick_max_rot_, 0.0);
 
   cout << "joystick max " << joystick_max_trans_ << " " << joystick_max_rot_ << endl;
 
   // get name of root and tip
   string root_name, tip_name;
-  node_->param(controller_name+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
+  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name, tip_name, config))
+  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
     return false;
   
   // subscribe to twist commands
-  node_->subscribe(controller_name + "/command", twist_msg_,
+  node_->subscribe(controller_name_ + "/command", twist_msg_,
 		   &CartesianTwistControllerIkNode::command, this, 1);
 
   // subscribe to joystick commands

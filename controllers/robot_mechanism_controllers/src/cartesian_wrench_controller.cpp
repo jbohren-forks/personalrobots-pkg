@@ -39,8 +39,6 @@
 
 using namespace KDL;
 
-static const std::string controller_name = "cartesian_wrench";
-
 
 
 namespace controller {
@@ -59,9 +57,10 @@ CartesianWrenchController::~CartesianWrenchController()
 
 
 
-bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, const std::string& root_name, const std::string& tip_name)
+bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
 {
-  cout << "initializing cartesian wrench controller between " << root_name << " and " << tip_name << endl;
+  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
+  controller_name_ = controller_name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -128,44 +127,26 @@ CartesianWrenchControllerNode::CartesianWrenchControllerNode()
 
 CartesianWrenchControllerNode::~CartesianWrenchControllerNode()
 {
-  node_->unsubscribe(controller_name + "/command");
+  node_->unsubscribe(controller_name_ + "/command");
 }
 
 
 bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get chain
-  TiXmlElement *chain = config->FirstChildElement("chain");
-  if (!chain) {
-    fprintf(stderr, "Error: EndeffectorConstraintController was not given a chain\n");
-    return false;
-  }
+  // get the controller name
+  controller_name_ = config->Attribute("name");
 
-  // get names for root and tip of robot
-  const char *root_name = chain->Attribute("root");
-  const char *tip_name = chain->Attribute("tip");
-  if (!root_name) {
-    fprintf(stderr, "Error: Chain element for EndeffectorConstraintController must specify the root\n");
-    return false;
-  }
-  if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for EndeffectorConstraintController must specify the tip\n");
-    return false;
-  }
-
-  /*
   // get name of root and tip
   string root_name, tip_name;
-  node_->param(controller_name+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
-  */
+  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize wrench controller
-  if (!controller_.initialize(robot, root_name, tip_name))
+  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
     return false;
 
   // subscribe to wrench commands
-  node_->subscribe(controller_name + "/command", wrench_msg_,
+  node_->subscribe(controller_name_ + "/command", wrench_msg_,
 		   &CartesianWrenchControllerNode::command, this, 1);
 
   return true;

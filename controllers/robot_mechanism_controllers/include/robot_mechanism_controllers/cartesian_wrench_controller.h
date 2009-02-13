@@ -43,7 +43,7 @@
 #include "mechanism_model/controller.h"
 #include "mechanism_model/chain.h"
 #include "tf/transform_datatypes.h"
-#include "joy/Joy.h"
+
 
 namespace controller {
 
@@ -53,7 +53,8 @@ public:
   CartesianWrenchController();
   ~CartesianWrenchController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
+                  const std::string& tip_name, const std::string& controller_name);
   void update();
 
   // input of the controller
@@ -61,6 +62,7 @@ public:
 
 private:
   ros::Node* node_;
+  std::string controller_name_;
   unsigned int num_joints_, num_segments_;
   mechanism::RobotState *robot_state_;
   mechanism::Chain robot_;
@@ -88,6 +90,7 @@ class CartesianWrenchControllerNode : public Controller
 
  private:
   ros::Node* node_;
+  std::string controller_name_;
   CartesianWrenchController controller_;
 
   robot_msgs::Wrench wrench_msg_;

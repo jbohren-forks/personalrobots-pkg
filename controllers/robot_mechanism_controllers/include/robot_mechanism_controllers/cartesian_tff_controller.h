@@ -54,7 +54,8 @@ public:
   CartesianTFFController();
   ~CartesianTFFController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
+                  const std::string& tip_name, const std::string& controller_name);
   void update();
 
   void tffCommand(int mode1, double value1, int mode2, double value2, int mode3, double value3,
@@ -63,6 +64,7 @@ public:
 
 private:
   ros::Node* node_;
+  std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
 
@@ -110,6 +112,7 @@ class CartesianTFFControllerNode : public Controller
 
  private:
   ros::Node* node_;
+  std::string controller_name_;
   std::string topic_;
 
   CartesianTFFController controller_;

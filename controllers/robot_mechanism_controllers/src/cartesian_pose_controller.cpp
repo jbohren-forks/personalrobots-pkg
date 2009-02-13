@@ -41,9 +41,7 @@
 
 using namespace KDL;
 using namespace tf;
-
-
-static const std::string controller_name = "cartesian_pose";
+using namespace std;
 
 
 namespace controller {
@@ -62,9 +60,10 @@ CartesianPoseController::~CartesianPoseController()
 }
 
 
-bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name)
+bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
 {
-  cout << "initializing cartesian pose controller between " << root_name << " and " << tip_name << endl;
+  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
+  controller_name_ = controller_name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -83,14 +82,13 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
 
   // get pid controller
   double p, i, d, i_clamp;
-  node_->param(controller_name+"/p", p, 0.0) ;
-  node_->param(controller_name+"/i", i, 0.0) ;
-  node_->param(controller_name+"/d", d, 0.0) ;
-  node_->param(controller_name+"/i_clamp", i_clamp, 0.0) ;
+  node_->param(controller_name_+"/p", p, 0.0) ;
+  node_->param(controller_name_+"/i", i, 0.0) ;
+  node_->param(controller_name_+"/d", d, 0.0) ;
+  node_->param(controller_name_+"/i_clamp", i_clamp, 0.0) ;
   control_toolbox::Pid pid_pose(p, i, d, i_clamp, -i_clamp);
   for (unsigned int i=0; i<6; i++)
     pid_controller_.push_back(pid_pose);
-  fprintf(stderr, "cartesian twist pid controllers created\n");
 
   // time
   last_time_ = robot_state->hw_->current_time_;
@@ -102,7 +100,7 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
   twist_ff_ = Twist::Zero();
 
   // initialize twist controller
-  twist_controller_.initialize(robot_state, root_name, tip_name);
+  twist_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/twist");
 
   return true;
 }
@@ -174,19 +172,22 @@ CartesianPoseControllerNode::~CartesianPoseControllerNode()
 
 bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  // get the controller name
+  controller_name_ = config->Attribute("name");
+
   // get name of root and tip
   string tip_name;
-  node_->param(controller_name+"/root_name", root_name_, string("no_name_given"));
-  node_->param(controller_name+"/tip_name", tip_name, string("no_name_given"));
+  node_->param(controller_name_+"/root_name", root_name_, string("no_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name_, tip_name))
+  if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
     return false;
   
   // subscribe to pose commands
   command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  
 								 boost::bind(&CartesianPoseControllerNode::command, this, _1),
-								 controller_name + "/command", root_name_, 1);
+								 controller_name_ + "/command", root_name_, 1);
   return true;
 }
 

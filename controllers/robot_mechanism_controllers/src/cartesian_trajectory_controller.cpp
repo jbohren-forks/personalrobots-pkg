@@ -62,11 +62,10 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 
 
 
-  bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string name)
+bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string controller_name)
 {
-  cout << "initializing cartesian trajectory controller between " << root_name << " and " << tip_name << endl;
-
-  controller_name_ = name;
+  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
+  controller_name_ = controller_name;
 
   // test if we got robot pointer
   assert(robot_state);
@@ -105,7 +104,7 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
   is_moving_ = false;
 
   // initialize pose controller
-  pose_controller_.initialize(robot_state, root_name, tip_name);
+  pose_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/pose");
 
   return true;
 }
@@ -135,7 +134,7 @@ Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double du
   for (unsigned int i=0; i<6; i++)
     motion_profile_[i].SetProfileDuration( 0, twist_move(i), max_duration_ );
 
-  cout << "will move to new pose in " << max_duration_ << " seconds" << endl;
+  cout << controller_name_ << " will move to new pose in " << max_duration_ << " seconds" << endl;
 
   time_passed_ = 0;
   is_moving_ = true;
@@ -226,7 +225,7 @@ CartesianTrajectoryControllerNode::~CartesianTrajectoryControllerNode()
 bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get the controller name
-  node_->param(controller_name+"/controller_name", controller_name_, controller_name);
+  controller_name_ = config->Attribute("name");
 
   // get name of root and tip
   string tip_name;
@@ -260,13 +259,9 @@ void CartesianTrajectoryControllerNode::update()
 bool CartesianTrajectoryControllerNode::moveTo(robot_mechanism_controllers::MoveToPose::Request &req, 
                                                robot_mechanism_controllers::MoveToPose::Response &resp)
 {
-  cout << "receive service call for time " << req.pose.header.stamp.toSec() << " and frame " << req.pose.header.frame_id << endl;
-
   Time start_time = Time().now();
   Duration traject_time = moveTo(req.pose);
   Duration sleep_time = Duration().fromSec(0.01);
-
-  cout << "service will take " << traject_time.toSec() << " seconds" << endl;
 
   if (traject_time == Duration().fromSec(0))
     return false;
@@ -323,9 +318,6 @@ void CartesianTrajectoryControllerNode::TransformToFrame(const Transform& trans,
   double Rz, Ry, Rx;
   trans.getBasis().getEulerZYX(Rz, Ry, Rx);
   frame.M = Rotation::EulerZYX(Rz, Ry, Rx);
-
-  cout << "moving to " << frame.p(0) << " " << frame.p(1) << " " << frame.p(2)
-       << " " << Rz << " " << Ry << " " << Rx << endl;
 }
 
 

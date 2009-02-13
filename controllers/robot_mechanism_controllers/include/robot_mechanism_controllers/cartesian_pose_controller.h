@@ -53,7 +53,8 @@ public:
   CartesianPoseController();
   ~CartesianPoseController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name);
+  bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
+                  const std::string& tip_name, const std::string& controller_name);
   void update();
 
   // input of the controller
@@ -65,6 +66,7 @@ private:
   KDL::Frame getPose();
 
   ros::Node* node_;
+  std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
 
@@ -104,6 +106,7 @@ class CartesianPoseControllerNode : public Controller
  private:
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
   ros::Node* node_;
+  std::string controller_name_;
   tf::TransformListener robot_state_;
   tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
   std::string root_name_;
