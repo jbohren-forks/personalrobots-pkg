@@ -40,9 +40,11 @@
 #include <tf/transform_listener.h>
 
 #include <robot_msgs/Door.h>
+#include <std_msgs/String.h>
 #include <door_handle_detector/DoorDetector.h>
 
 #define MIN_DIST_THRESHOLD 0.1
+#define MAX_COMPARE_TIME 20
 
 using namespace checkerboard_detector;
 using namespace tf;
@@ -72,14 +74,14 @@ class TestDoorDetectionNode : public ros::Node
       param("~/door_frame_p2_y", tmp, 0.5); door_msg_from_detector_.frame_p2.y = tmp;
       param("~/door_hinge" , tmp2, -1); door_msg_from_detector_.hinge = tmp2;
       param("~/door_rot_dir" , tmp2, -1); door_msg_from_detector_.rot_dir = tmp2;
-      my_door_.header.frame_id = frame_id_;
+      door_msg_from_detector_.header.frame_id = frame_id_;
 
       subscribe(joy_topic_, joy_msg_, &TestDoorDetectionNode::joyCallback,1);
     }
 
     ~TestDoorDetectionNode()
     {
-      unsubscribe(listen_topic_);
+      unsubscribe(joy_topic_);
     }
 
     void transformTFPoint(const std::string &frame, const Stamped<tf::Point> &in, Stamped<tf::Point> &out)
@@ -113,6 +115,7 @@ class TestDoorDetectionNode : public ros::Node
 
     void joyCallback()
     {
+      std::string status_string;
       if (joy_msg_.data != std::string("detect_door"))
       { 
         return;
@@ -137,18 +140,18 @@ class TestDoorDetectionNode : public ros::Node
 
     double distancePoints(robot_msgs::Point32 p1, robot_msgs::Point32 p2)
     {
-      return(sqrt(fpow((p1.x-p2.x),2) + fpow((p1.y-p2.y),2) + fpow((p1.z-p2.z),2)));
+      return(sqrt(pow((p1.x-p2.x),2) + pow((p1.y-p2.y),2) + pow((p1.z-p2.z),2)));
     }
     double distancePointsXY(robot_msgs::Point32 p1, robot_msgs::Point32 p2)
     {
-      return(sqrt(fpow((p1.x-p2.x),2) + fpow((p1.y-p2.y),2)));
+      return(sqrt(pow((p1.x-p2.x),2) + pow((p1.y-p2.y),2)));
     }
 
-    bool compareDoorMsgs(std_msgs::Door msg_1, std_msgs::Door msg_2)
+    bool compareDoorMsgs(robot_msgs::Door msg_1, robot_msgs::Door msg_2, std::string &print_string)
     {
-      if (fabs(msg_1.header.stamp - msg_2.header.stamp) > MAX_COMPARE_TIME)      //First check the times to make sure they are fairly recent w.r.t each other
+      if (fabs(msg_1.header.stamp.toSec() - msg_2.header.stamp.toSec()) > MAX_COMPARE_TIME)      //First check the times to make sure they are fairly recent w.r.t each other
       {
-        ROS_ERROR("Comparison invalid since time stamps for the two door messages are %f seconds apart which is greater than max allowable difference %f", fabs(msg_1.header.stamp - msg_2.header.stamp), MAX_COMPARE_TIME);
+        ROS_ERROR("Comparison invalid since time stamps for the two door messages are %f seconds apart which is greater than max allowable difference %f", fabs(msg_1.header.stamp.toSec() - msg_2.header.stamp.toSec()), (double) MAX_COMPARE_TIME);
         return false;
       }
 
@@ -157,47 +160,45 @@ class TestDoorDetectionNode : public ros::Node
         ROS_ERROR("Comparison invalid since the two door messages do not have the same frame id");
         return false;
       }
-
-      std::string print_string;
-      bool door_result_test(false), handle_result_test(false);
+      bool door_result(false), handle_result(false);
       if(distancePoints(msg_1.door_p1, msg_2.door_p1) < MIN_DIST_THRESHOLD)
       {
-        print_string << "door_p1 from the detector matches door_p1 from ground truth" << endl;
+        print_string += "door_p1 from the detector matches door_p1 from ground truth\n";
         if(distancePoints(msg_1.door_p2, msg_2.door_p2) < MIN_DIST_THRESHOLD)
         {
           door_result = true;
-          print_string << "door_p2 from the detector matches door_p2 from ground truth" << endl;
+          print_string += "door_p2 from the detector matches door_p2 from ground truth\n";
         }
         else
         {
-          print_string << "door_p2 from the detector does not match door_p2 from ground truth" << endl;
+          print_string += "door_p2 from the detector does not match door_p2 from ground truth\n";
         }
       }      
       else if(distancePointsXY(msg_1.door_p2, msg_2.door_p1) < MIN_DIST_THRESHOLD)
       {
-        print_string << "door_p2 from the detector matches door_p1 from ground truth" << endl;
+        print_string += "door_p2 from the detector matches door_p1 from ground truth\n";
         if(distancePointsXY(msg_1.door_p1, msg_2.door_p2) < MIN_DIST_THRESHOLD)
         {
           door_result = true;
-          print_string << "door_p1 from the detector matches door_p2 from ground truth" << endl;
+          print_string += "door_p1 from the detector matches door_p2 from ground truth\n";
         }
         else
         {
-          print_string << "door_p1 from the detector does not match door_p2 from ground truth" << endl;
+          print_string += "door_p1 from the detector does not match door_p2 from ground truth\n";
         }
       }
       else
       {
-        print_string << "No match found between detected door and ground truth door position" << endl;
+        print_string += "No match found between detected door and ground truth door position\n";
       }
 
       if(distancePoints(msg_1.handle, msg_2.handle) < MIN_DIST_THRESHOLD)
       {
         handle_result = true;
-        print_string << "handle location from the detector matches handle location from ground truth" << endl;
+        print_string += "handle location from the detector matches handle location from ground truth\n";
       }
       else
-        print_string << "handle location from the detector does not match handle location from ground truth" << endl;
+        print_string += "handle location from the detector does not match handle location from ground truth\n";
 
       return (door_result);
     }

@@ -1,17 +1,36 @@
 <launch>
-   <!--include file="$(find pr2_alpha)/prg.machine" /-->
 
+ <include file="$(find pr2_alpha)/prg.machine">
+
+ <!-- stereo processing for checkerboard detection -->
+ <node  machine="four" pkg="stereo_image_proc" type="stereoproc" />
+
+ <group ns="checkerdetector" clear_params="true">
+    <param name="display" type="int" value="0"/>
+    <param name="frame_id" type="string" value="stereo_optical_link"/>
+    <param name="rect0_size_x" type="double" value="0.02733"/>
+    <param name="rect0_size_y" type="double" value="0.027"/>
+    <param name="grid0_size_x" type="int" value="6"/>
+    <param name="grid0_size_y" type="int" value="8"/>
+    <param name="type0" type="string" value="data/ricebox.kinbody.xml"/>
+    <node pkg="checkerboard_detector" type="checkerboard_detector" respawn="true" output="screen">
+      <remap from="CamInfo" to="/stereo/left/cam_info"/>
+      <remap from="Image" to="/stereo/left/image_rect"/>
+        <!--       <env name="DISPLAY" value=":0.0"/> -->
+    </node>
+  </group>
+
+  <!-- checkerboard detection node -->
     <param name="door_detection_test_node/door_width" type="double" value="0.9"/>
     <param name="door_detection_test_node/door_checkerboard_x_offset" type="double" value="0.045"/>
     <param name="door_detection_test_node/door_checkerboard_z_offset" type="double" value="1.25"/>
-
     <param name="door_detection_test_node/checkerboard_handle_x_offset" type="double" value="0.73"/>
     <param name="door_detection_test_node/checkerboard_handle_z_offset" type="double" value="0.36"/>
-
     <param name="door_detection_test_node/frame_id" type="string" value="base_link"/>
+    <node pkg="door_handle_detector" type="door_checkerboard_detector" respawn="true" output="screen"/>
 
+  <!-- door handle detection test -->
+    <node pkg="door_handle_detector" type="test_door_detection" respawn="true" output="screen"/>
 
-    <node pkg="door_handle_detector" type="door_handle_detection_test" respawn="true" output="screen">
-    </node>
-
+ </group>
 </launch> 
