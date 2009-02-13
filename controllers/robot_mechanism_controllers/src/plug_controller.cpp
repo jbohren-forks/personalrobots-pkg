@@ -196,10 +196,13 @@ void PlugController::computeConstraintJacobian()
   constraint_jac_(0,0) = 0; // line constraint
   constraint_jac_(1,0) = 0; // line constraint
   constraint_jac_(2,0) = 0; // line constraint
+  constraint_jac_(0,1) = 0; // line constraint
+  constraint_jac_(1,1) = 0; // line constraint
+  constraint_jac_(2,1) = 0; // line constraint
   // the pose constraint is always on
-  constraint_jac_(3,1) = 1; // roll
-  constraint_jac_(4,2) = 1; // pitch
-  constraint_jac_(5,3) = 1; // yaw
+  constraint_jac_(3,2) = 1; // roll
+  constraint_jac_(4,3) = 1; // pitch
+  constraint_jac_(5,4) = 1; // yaw
 
   // put the end_effector point into eigen
   Eigen::Vector3f end_effector_pt(endeffector_frame_.p(0), endeffector_frame_.p(1), endeffector_frame_.p(2));
@@ -209,7 +212,8 @@ void PlugController::computeConstraintJacobian()
 
   // Vector from the end effector position to (the closest point on ) the line constraint.
   Eigen::Vector3f r_to_line = v.dot(outlet_norm_) * outlet_norm_ - v;
-
+  Eigen::Vector3f other_norm = r_to_line.cross(outlet_norm_);
+  other_norm = other_norm.normalized();
   double dist_to_line = r_to_line.norm();
   r_to_line = r_to_line.normalized();
 
@@ -219,6 +223,9 @@ void PlugController::computeConstraintJacobian()
     constraint_jac_(0,0) = r_to_line(0);
     constraint_jac_(1,0) = r_to_line(1);
     constraint_jac_(2,0) = r_to_line(2);
+    constraint_jac_(0,1) = other_norm(0);
+    constraint_jac_(1,1) = other_norm(1);
+    constraint_jac_(2,1) = other_norm(2);
     f_r = dist_to_line * f_r_max; /// @todo: FIXME, replace with some exponential function
   }
   else
@@ -280,9 +287,10 @@ void PlugController::computeConstraintJacobian()
   }
 
   constraint_force_(0) = f_r;
-  constraint_force_(1) = f_roll;
-  constraint_force_(2) = f_pitch;
-  constraint_force_(3) = f_yaw;
+  constraint_force_(1) = 0;
+  constraint_force_(2) = f_roll;
+  constraint_force_(3) = f_pitch;
+  constraint_force_(4) = f_yaw;
 }
 
 void PlugController::computeConstraintNullSpace()

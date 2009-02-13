@@ -85,9 +85,9 @@ private:
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
 
   // to get joint positions, velocities, and to set joint torques
-  Eigen::Matrix<float,6,4> constraint_jac_;
+  Eigen::Matrix<float,6,5> constraint_jac_;
   Eigen::Matrix<float,6,1> constraint_wrench_;
-  Eigen::Matrix<float,4,1> constraint_force_;
+  Eigen::Matrix<float,5,1> constraint_force_;
   // joint constraint
   Eigen::MatrixXf joint_constraint_force_;
   Eigen::MatrixXf joint_constraint_jac_;
