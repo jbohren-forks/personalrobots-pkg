@@ -93,7 +93,7 @@ void init()
     usleep(1000000);
   }
 
-  throw ProsilicaException("Timed out looking for a camera");
+  //throw ProsilicaException("Timed out looking for a camera");
   
   // TODO: Callbacks for add/remove camera?
 }
@@ -111,6 +111,8 @@ size_t numCameras()
 uint64_t getGuid(size_t i)
 {
   assert(i < MAX_CAMERA_LIST);
+  if (i >= cameraNum)
+    throw ProsilicaException("No camera at index i");
   return cameraList[i].UniqueId;
 }
 
