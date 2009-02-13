@@ -40,7 +40,7 @@ namespace KDL
         Jacobian(unsigned int size=0,unsigned int nr=1);
         Jacobian(const Jacobian& arg);
 
-        void resize(unsigned int newSize, unsigned int newNnr);
+        void resize(unsigned int newSize, unsigned int newNnr=1);
 
         Jacobian& operator=(const Jacobian& arg);
 
