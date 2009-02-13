@@ -134,10 +134,11 @@ private:
   std::string service_prefix_;                 /**< The name of the controller. */
   ros::Node *node_;
   AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
-  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
   //msgs
   std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
+
+  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
   //controller
   JointEffortController *c_;                 /**< The controller. */
