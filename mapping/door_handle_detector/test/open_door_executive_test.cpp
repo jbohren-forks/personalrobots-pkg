@@ -43,6 +43,7 @@
 
 using namespace tf;
 using namespace KDL;
+using namespace ros;
 
 class OpenDoorExecutiveTest : public ros::Node
 {
@@ -108,12 +109,14 @@ public:
     pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
     PoseStampedTFToMsg(pose, pose_msg);
 
+    // give some time for manual positioning of robot base
+    usleep(1e6 * 10);
+
     // move in front of door
     Vector offset = normal * 0.1;
     pose_msg.pose.position.x = pose_msg.pose.position.x + offset[0];
     pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
     pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
-    usleep(1e6 * 10);
     moveTo(pose_msg);
     
     // move over door handle
@@ -135,7 +138,7 @@ public:
 	case INITIALIZED:{
 	  robot_msgs::PoseStamped init_pose;
 	  init_pose.header.frame_id = "base_link";
-	  init_pose.header.stamp = ros::Time().fromSec(0);
+	  init_pose.header.stamp = Time().now() - Duration().fromSec(1); // dirty hack because service sets time 0 to time now
 	  init_pose.pose.position.x = 0.5;
 	  init_pose.pose.position.y = 0.0;
 	  init_pose.pose.position.y = 0.4;
@@ -166,7 +169,7 @@ public:
 
   bool moveTo(const robot_msgs::PoseStamped& pose)
   {
-    cout << "giving moveto command" << endl;
+    cout << "giving moveto command for time " << pose.header.stamp.toSec() << " and frame " << pose.header.frame_id << endl;
     robot_mechanism_controllers::MoveToPose::Request  req;
     robot_mechanism_controllers::MoveToPose::Response  res;
     req.pose = pose;

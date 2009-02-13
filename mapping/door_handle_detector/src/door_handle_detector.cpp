@@ -213,7 +213,7 @@ class DoorHandleDetector : public ros::Node
       // receive a new laser scan
       num_clouds_received_ = 0;
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
-                                                                        input_cloud_topic_.c_str (), door_frame_, 1);
+                                                                          input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
       while (num_clouds_received_ < 1)
         tictoc.sleep ();
@@ -234,7 +234,6 @@ class DoorHandleDetector : public ros::Node
       cout << "Start detecting door at points in frame " << cloud_frame_ << " ";
       cout << "(" << frame_p1.x << " " << frame_p1.y << ")   ";
       cout << "(" << frame_p2.x << " " << frame_p2.y << ")" << endl;
-
 
 
       ros::Time ts;
@@ -382,8 +381,7 @@ class DoorHandleDetector : public ros::Node
       if (best_cluster == -1)
       {
         ROS_ERROR ("did not find a door");
-        // @Wim: decide what you want to do here
-        //return (false);
+        return false;
       }
       else
       {
