@@ -115,41 +115,6 @@ class ArmState extends AgentTimeline {
   }
 };
 
-
-/**
- * Encapsulate Behaviors that have a state of active or inactive
- */
-class Behavior extends AgentTimeline {
-  int max_duration; // The maximum duration allowed in the active state. Bounds behavior times
-
-  predicate Inactive{
-    bool aborted;
-    bool preempted;
-    defaultOnCommit(aborted, false);
-    defaultOnCommit(preempted, false);
-  }
-
-  predicate Active{
-    int dispatch_time; // The time at which the goal was dispatched
-    int max_duration; // A duration bound
-    int timeout; // Max time for behavior to be stuck internally
-    bool timed_out; // True if max_duration == duration	
-    testEQ(timed_out, duration, max_duration);
-    precedes(dispatch_time, start); // This is a <= constraint
-  }
-
-  Behavior(Mode _mode){
-    super(_mode, "Inactive", false);
-    max_duration = +inf;
-  }
-
-  Behavior(Mode _mode, int max_duration_){
-    super(_mode, "Inactive", false);
-    max_duration = max_duration_;
-  }
-};
-
-
 /**
  * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front player in the 2D nav stack.

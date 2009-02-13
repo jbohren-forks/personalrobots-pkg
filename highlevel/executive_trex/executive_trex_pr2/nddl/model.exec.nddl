@@ -128,30 +128,6 @@ BaseState::Holds{
   }
 }
 
-/**
- * All behaviors will oscillate between active and inactive
- */
-Behavior::Inactive{
-  precedes(start, missionEnd);
-  // These semantics are that we want to check a constraint, but not drive planning. It would be much better
-  // to have these more explicitly listed as constraints, that get applied accordingly. For example, as transition
-  // constraints. This guard structure is a hack.
-  if(end){
-    meets(Active);
-  }
-}
-
-Behavior::Active{
-  // Parameter Constraints
-  leq(duration, max_duration);
-
-  // Constraint on successor state
-  meets(Inactive);
-
-  // All behaviors must deactivate before the end of the agent time window
-  precedes(end, missionEnd);
-}
-
 MoveBase::Inactive {
   default(recharging, false);
 

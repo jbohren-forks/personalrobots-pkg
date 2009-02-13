@@ -20,16 +20,6 @@ class Region extends MapEntity{
   }
 };
 
-class HasConnector {
-  Region region;
-  Connector connector;
-
-  HasConnector(Region r, Connector c){
-    region = r;
-    connector = c;
-  }
-};
-
 /***********************************************************************
  * External functions and relations for working with the topological map
  ***********************************************************************/
