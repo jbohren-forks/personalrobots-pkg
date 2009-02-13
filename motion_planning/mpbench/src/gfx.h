@@ -36,6 +36,7 @@
 #define MPBENCH_BENCHMARK_GFX_HPP
 
 #include <mpbench/setup.h>
+#include <mpbench/result.h>
 #include <mpglue/footprint.h>
 #include <mpglue/plan.h>
 
@@ -48,7 +49,7 @@ namespace mpbench {
 		    int base_width, int base_height,
 		    bool websiteMode,
 		    std::string const & baseFilename,
-		    resultlist_t const & resultlist,
+		    ResultCollection const & result,
 		    bool ignorePlanTheta,
 		    std::ostream & logOs);
       
@@ -60,7 +61,7 @@ namespace mpbench {
       bool const websiteMode;
       std::string const baseFilename;
       mpglue::footprint_t const & footprint;
-      resultlist_t const & resultlist;
+      ResultCollection const & result;
       bool const ignorePlanTheta;
       mutable std::ostream & logOs;
     };

@@ -1,0 +1,71 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>true</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>0.0003</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <map>
+    <init>
+      <!-- outer bounding box -->
+      <addline>  0     0     7    0    </addline>
+      <addline>  0     0     0    5.5  </addline>
+      <addline>  0     5.5   7    5.5  </addline>
+      <addline>  7     0     7    5.5  </addline>
+      <!-- wall with opening along y-axis -->
+      <addline>  4.5   0     4.5  4    </addline>
+      <addline>  4.5   4.75  4.5  5.5  </addline>
+      <!-- short "tunnel" along x-axis -->
+      <addline>  2.325 4     4.5  4    </addline>
+      <addline>  2.325 4.75  4.5  4.75 </addline>
+    </init>
+  </map>
+  
+  <task><description>leftmost</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>1.0   1  1.55</pose></start></task>
+  
+  <task><description>2</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>1.3   1  1.55</pose></start></task>
+  
+  <task><description>3</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>1.6   1  1.55</pose></start></task>
+  
+  <task><description>4</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>1.8   1  1.55</pose></start></task>
+  
+  <task><description>5</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>2.1   1  1.55</pose></start></task>
+  
+  <task><description>6</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>2.4   1  1.55</pose></start></task>
+  
+  <task><description>7</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>2.7   1  1.55</pose></start></task>
+  
+  <task><description>8</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>3.0   1  1.55</pose></start></task>
+  
+  <task><description>9</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>3.3   1  1.55</pose></start></task>
+  
+  <task><description>rightmost</description>
+  <goal> <pose>5.75  1 -1.55</pose></goal>
+  <start><pose>3.6   1  1.55</pose></start></task>
+
+</setup>

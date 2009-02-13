@@ -96,7 +96,7 @@ namespace mpbench {
 		  int _base_width, int _base_height,
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
-		  resultlist_t const & _resultlist,
+		  ResultCollection const & _result,
 		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
       : setup(_setup),
@@ -107,7 +107,7 @@ namespace mpbench {
 	websiteMode(_websiteMode),
 	baseFilename(_baseFilename),
 	footprint(_setup.getFootprint()),
-	resultlist(_resultlist),
+	result(_result),
 	ignorePlanTheta(_ignorePlanTheta),
 	logOs(_logOs)
     {
@@ -421,7 +421,7 @@ namespace {
   }
   
   
-  static void drawResult(task::result const & result, bool detailed)
+  static void drawResult(result::entry const & result, bool detailed)
   {
     typedef waypoint_plan_t::const_iterator wpi_t;
     shared_ptr<mpglue::waypoint_plan_t> plan(result.plan);
@@ -491,17 +491,40 @@ namespace {
   void PlanDrawing::
   Draw()
   {
-    for (resultlist_t::const_iterator ir(configptr->resultlist.begin());
-	 ir != configptr->resultlist.end(); ++ir) {
-      shared_ptr<task::result> result(*ir);
-      if ( ! result)
-	continue;
-      if ((task_id >= 0) && (static_cast<size_t>(task_id) != result->task_id))
-	continue;
-      if ((episode_id >= 0) && (static_cast<size_t>(episode_id) != result->episode_id))
-	continue;
-      drawResult(*result, detailed);
+    size_t task_begin(0);
+    size_t task_end(numeric_limits<size_t>::max());
+    if (task_id >= 0) {
+      task_begin = static_cast<size_t>(task_id);
+      task_end = task_begin + 1;
+    }
+    size_t episode_begin(0);
+    size_t episode_end(numeric_limits<size_t>::max());
+    if (episode_id >= 0) {
+      episode_begin = static_cast<size_t>(episode_id);
+      episode_end = episode_begin + 1;
+    }
+    size_t iteration_begin(0);
+    size_t iteration_end(numeric_limits<size_t>::max());
+    //     if (iteration_id >= 0) {
+    //       iteration_begin = static_cast<size_t>(iteration_id);
+    //       iteration_end = iteration_begin + 1;
+    //     }
+    result::view3_t view;
+    try {
+      configptr->result.createView(result::TASK_ID, task_begin, task_end,
+				   result::EPISODE_ID, episode_begin, episode_end,
+				   result::ITERATION_ID, iteration_begin, iteration_end,
+				   view);
+      for (result::view3_t::const_iterator i3(view.begin()); i3 != view.end(); ++i3)
+	for (result::view2_t::const_iterator i2(i3->second.begin());
+	     i2 != i3->second.end(); ++i2)
+	  for (result::view1_t::const_iterator i1(i2->second.begin());
+	       i1 != i2->second.end(); ++i1)
+	    drawResult(*i1->second, detailed);
+    }
+    catch (std::exception const & ee) {
+      cout << "EXCEPTION in [gfx.cpp anonymous] PlanDrawing::Draw(): " << ee.what() << "\n";
     }
   }
-  
+
 }

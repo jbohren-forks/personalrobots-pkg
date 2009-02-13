@@ -92,22 +92,6 @@ namespace mpbench {
       std::vector<startspec> start;
     };
     
-    struct result {
-      result(size_t task_id,
-	     size_t episode_id,
-	     startspec const & start,
-	     goalspec const & goal,
-	     boost::shared_ptr<mpglue::waypoint_plan_t> plan,
-	     boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
-      
-      size_t task_id;
-      size_t episode_id;
-      startspec start;
-      goalspec goal;
-      boost::shared_ptr<mpglue::waypoint_plan_t> plan;
-      boost::shared_ptr<mpglue::CostmapPlannerStats> stats;
-    };
-    
   }
   
   typedef std::vector<std::string> tokenlist_t;
@@ -167,7 +151,6 @@ namespace mpbench {
   
   typedef std::set<mpglue::index_pair> indexlist_t;
   typedef std::vector<boost::shared_ptr<task::setup> > tasklist_t;
-  typedef std::vector<boost::shared_ptr<task::result> > resultlist_t;
   
   
   class Setup

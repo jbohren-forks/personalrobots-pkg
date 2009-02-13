@@ -79,12 +79,11 @@ static string geometry;
 static bool websiteMode;
 
 static shared_ptr<Setup> setup;
+static shared_ptr<ResultCollection> result_collection;
 static shared_ptr<ostream> logos;
 static ostream * dbgos(0);
 
 static shared_ptr<footprint_t> footprint;
-
-static resultlist_t resultlist;
 
 
 int main(int argc, char ** argv)
@@ -111,7 +110,7 @@ int main(int argc, char ** argv)
 			       base_height,
 			       websiteMode,
 			       baseFilename(),
-			       resultlist,
+			       *result_collection,
 			       true, // XXXX to do: depends on 3DKIN
 			       *logos),
 	    "mpbench",
@@ -126,8 +125,8 @@ void cleanup()
   if (logos)
     *logos << "byebye!\n" << flush;
   setup.reset();
+  result_collection.reset();
   logos.reset();
-  resultlist.clear();
 }
 
 
@@ -296,6 +295,7 @@ void create_setup()
     errx(EXIT_FAILURE, "create_setup(): EXCEPTION %s", ee.what());
   }
   setup->dumpDescription(*logos, "", "  ");
+  result_collection.reset(new ResultCollection(setup->getOptions()));
   *logos << "finished creating setup\n" << flush;
 }
 
@@ -310,19 +310,34 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
   double cumul_actual_time_user(0);
   int cumul_expands(0);
   
-  for (size_t jj(0); true; ++jj) {
+  if (start.use_initial_solution) {
+    planner_ref.stopAtFirstSolution(true);
+    planner_ref.setAllocatedTime(numeric_limits<double>::max()); // override for 1st iteration
+  }
+  else {
+    planner_ref.stopAtFirstSolution(false);
+    planner_ref.setAllocatedTime(start.alloc_time);
+  }
+  
+  for (size_t iteration_id(0); true; ++iteration_id) {
     
     shared_ptr<waypoint_plan_t> plan;
     plan = planner_ref.createPlan();
     shared_ptr<SBPLPlannerStats> stats(planner_ref.copyMyStats());
     
-    // Regardless of the first iteration's start.from_scratch and
-    // start.use_initial_solution flags, we always allow reusing an
-    // existing solution and continuing beyond the initial solution
-    // from now on. After all, that's the whole point of incremental
-    // planning.
-    planner_ref.forcePlanningFromScratch(false);
-    planner_ref.stopAtFirstSolution(false);
+    // The first iteration might have to be handled differently from
+    // the rest.
+    if (0 == iteration_id) {
+      if (start.from_scratch)
+	planner_ref.forcePlanningFromScratch(false);
+      if (start.use_initial_solution) {
+	planner_ref.stopAtFirstSolution(false);
+	// undo the override for 1st iteration
+	planner_ref.setAllocatedTime(start.alloc_time);
+	// hack stats: pretend we allocated exactly the time we needed
+	stats->allocated_time = stats->actual_time_wall;
+      }
+    }
     
     if ( ! plan) {
       // giving up immediately sort of precludes the possibility that
@@ -330,11 +345,9 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
       // been given a chance of coming up with an initial solution
       // before... ah well, cannot handle every possible case.
       stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
-		       + sfl::to_string(jj) + ": FAILURE", "    ");
+		       + sfl::to_string(iteration_id) + ": FAILURE", "    ");
       *logos << flush;
-      shared_ptr<task::result>
-	result(new task::result(task_id, episode_id, start, goal, plan, stats));
-      resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
+      result_collection->insert(task_id, episode_id, iteration_id, start, goal, plan, stats);
       break;
     }
     
@@ -359,17 +372,14 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
     cumul_actual_time_wall += stats->actual_time_wall;
     cumul_actual_time_user += stats->actual_time_user;
     
-    if (0 == jj)
+    if (0 == iteration_id)
       stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
-		       + sfl::to_string(jj) + "  FIRST_SOLUTION", "    ");
+		       + sfl::to_string(iteration_id) + "  FIRST_SOLUTION", "    ");
     else
       stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
-		       + sfl::to_string(jj) + "  IMPROVED", "    ");
+		       + sfl::to_string(iteration_id) + "  IMPROVED", "    ");
     *logos << flush;
-    shared_ptr<task::result>
-      result(new task::result(task_id, episode_id, start, goal, plan, stats));
-    resultlist.push_back(result); // XXXX: should a separate failurelist be used instead???
-    
+    result_collection->insert(task_id, episode_id, iteration_id, start, goal, plan, stats);
     prev_epsilon = stats->solution_epsilon;
   }  
 }
@@ -398,10 +408,7 @@ static void plan_once(size_t task_id, size_t episode_id,
   shared_ptr<CostmapPlannerStats> stats(planner_ref.copyStats());
   stats->logStream(*logos, title, "    ");
   *logos << flush;
-  
-  shared_ptr<task::result>
-    result(new task::result(task_id, episode_id, start, goal, plan, stats));
-  resultlist.push_back(result);
+  result_collection->insert(task_id, episode_id, 0, start, goal, plan, stats);
 }
 
 
@@ -434,12 +441,13 @@ void run_tasks()
 	if ( ! sbpl_planner)
 	  plan_once(task_id, episode_id, start, task.goal, *planner);
 	else {
-	  sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
-	  sbpl_planner->setAllocatedTime(start.alloc_time);
 	  if (start.allow_iteration)
 	    plan_iteratively(task_id, episode_id, start, task.goal, *sbpl_planner);
-	  else
+	  else {
+	    sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+	    sbpl_planner->setAllocatedTime(start.alloc_time);
 	    plan_once(task_id, episode_id, start, task.goal, *sbpl_planner);
+	  }
 	}
       } // endfor(episode)
     } // endfor(task)
@@ -458,8 +466,9 @@ void print_summary()
   double t_fail(0);
   double lplan(0);
   double rplan(0);
-  for (resultlist_t::const_iterator ie(resultlist.begin()); ie != resultlist.end(); ++ie) {
-    shared_ptr<task::result> result(*ie);
+  result::list_t resultlist(result_collection->getAll());
+  for (result::list_t::const_iterator ie(resultlist.begin()); ie != resultlist.end(); ++ie) {
+    shared_ptr<result::entry> result(*ie);
     if ( ! result)
       errx(EXIT_FAILURE, "print_summary(): void result");
     if ( ! result->stats)
@@ -506,17 +515,6 @@ void print_summary()
 	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
 	 << "</table>\n";
   }
-}
-
-
-// a bit exagerated, at the moment results are implicitly ordered
-// anyway by the for-loops in run_tasks()...
-typedef std::map<size_t, boost::shared_ptr<mpbench::task::result> > episode_result_t;
-typedef std::map<size_t, episode_result_t> task_result_t;
-void reorder_results(task_result_t & out)
-{
-  for (resultlist_t::const_iterator ip(resultlist.begin()); ip != resultlist.end(); ++ip)
-    out[(*ip)->task_id].insert(make_pair((*ip)->episode_id, *ip));
 }
 
 
@@ -616,95 +614,119 @@ void print_gnuplot()
 	 << "# 20 plan rotation [% of final]\n";
   
   tasklist_t const & task(setup->getTasks());
-  task_result_t task_result;
-  reorder_results(task_result);
-  for (task_result_t::const_iterator it(task_result.begin()); it != task_result.end(); ++it) {
+  
+  // to be generalized... probably not in C++ though
+  static size_t const task_begin(0);
+  static size_t const task_end(numeric_limits<size_t>::max());
+  static size_t const episode_begin(0);
+  static size_t const episode_end(numeric_limits<size_t>::max());
+  static size_t const iteration_begin(0);
+  static size_t const iteration_end(numeric_limits<size_t>::max());
+  result::view3_t view;
+  try {
+    result_collection->createView(result::TASK_ID, task_begin, task_end,
+				  result::EPISODE_ID, episode_begin, episode_end,
+				  result::ITERATION_ID, iteration_begin, iteration_end,
+				  view);
+  }
+  catch (std::exception const & ee) {
+    errx(EXIT_FAILURE, "print_gnuplot(): EXCEPTION %s", ee.what());
+  }
+  for (result::view3_t::const_iterator it(view.begin()); it != view.end(); ++it) {
     dataOs << "\n\n# task[" << it->first << "]: " << task[it->first]->description << "\n";
     if (it->second.empty()) {
       dataOs << "# no episodes\n";
       continue;
     }
     
-    // first loop to get all cumulative results, so that we can give
-    // relative figures
-    double final_cumul_wall(0);
-    double final_cumul_user(0);
-    ////int final_cumul_expands(0);
-    ////int final_cost(0);
-    double final_length(0);
-    double final_rotation(0);
-    for (episode_result_t::const_iterator ie(it->second.begin()); ie != it->second.end(); ++ie) {
-      shared_ptr<task::result> result(ie->second);
-      if ( ! result) {		// "never" happens
-	dataOs << "# episode[" << ie->first << "]: void result\n";
+    for (result::view2_t::const_iterator ie(it->second.begin()); ie != it->second.end(); ++ie) {
+      if (ie->second.empty()) {
+	dataOs << "# no iterations\n";
 	continue;
       }
-      if ( ! result->stats) {	// "never" happens
-	dataOs << "# episode[" << ie->first << "]: void stats\n";
-	continue;
+      dataOs << "# episode[" << ie->first << "]\n";
+      
+      // first loop to get all cumulative results, so that we can give
+      // relative figures
+      double final_cumul_wall(0);
+      double final_cumul_user(0);
+      ////int final_cumul_expands(0);
+      ////int final_cost(0);
+      double final_length(0);
+      double final_rotation(0);
+      for (result::view1_t::const_iterator ii(ie->second.begin()); ii != ie->second.end(); ++ii) {
+	shared_ptr<result::entry> result(ii->second);
+	if ( ! result) {		// "never" happens
+	  dataOs << "# iteration[" << ii->first << "]: void result\n";
+	  continue;
+	}
+	if ( ! result->stats) {	// "never" happens
+	  dataOs << "# iteration[" << ii->first << "]: void stats\n";
+	  continue;
+	}
+	if ( ! result->stats->success) { // does happen
+	  dataOs << "# iteration[" << ii->first << "]: no solution\n";
+	  continue;
+	}
+	final_cumul_wall += result->stats->actual_time_wall;
+	final_cumul_user += result->stats->actual_time_user;
+	////final_cumul_expands += result->stats->number_of_expands;
+	////final_cost = result->stats->solution_cost;
+	final_length = result->stats->plan_length;
+	final_rotation = result->stats->plan_angle_change;
       }
-      if ( ! result->stats->success) { // does happen
-	dataOs << "# episode[" << ie->first << "]: no solution\n";
-	continue;
+      
+      // second loop to actually dump the values to file
+      double cumul_wall(0);
+      double cumul_user(0);
+      ////int cumul_expands(0);
+      for (result::view1_t::const_iterator ii(ie->second.begin()); ii != ie->second.end(); ++ii) {
+	shared_ptr<result::entry> result(ii->second);
+	if ( ! result)		// already wrote a message in 1st loop
+	  continue;
+	if ( ! result->stats)
+	  continue;
+	if ( ! result->stats->success)
+	  continue;
+	cumul_wall += result->stats->actual_time_wall;
+	cumul_user += result->stats->actual_time_user;
+	////cumul_expands += result->stats->number_of_expands;
+	dataOs
+	  // wall time
+	  << result->stats->actual_time_wall << "\t"
+	  << cumul_wall << "\t"
+	  << 100 * cumul_wall / final_cumul_wall << "\t"
+	  // user time
+	  << result->stats->actual_time_user << "\t"
+	  << cumul_user << "\t"
+	  << 100 * cumul_user / final_cumul_user << "\t"
+	  // TEMPORARILY DISABLED (always 0) expands
+	  ////<< result->stats->number_of_expands << "\t"
+	  ////<< cumul_expands << "\t"
+	  ////<< 100 * cumul_expands / final_cumul_expands << "\t"
+	  << "0\t0\t0\t"
+	  // TEMPORARILY DISABLED (always 0) expansion speed
+	  ////<< result->stats->number_of_expands / result->stats->actual_time_wall << "\t"
+	  ////<< cumul_expands / cumul_wall << "\t"
+	  ////<< result->stats->number_of_expands / result->stats->actual_time_user << "\t"
+	  ////<< cumul_expands / cumul_user << "\t"
+	  << "0\t0\t0\t0\t"
+	  // TEMPORARILY DISABLED (always 0) cost
+	  ////<< result->stats->solution_cost << "\t"
+	  ////<< (100.0 * result->stats->solution_cost) / final_cost << "\t"
+	  << "0\t0\t"
+	  // TEMPORARILY DISABLED (always 0) epsilon
+	  ////<< result->stats->solution_epsilon << "\t"
+	  << "0\t"
+	  // plan quality
+	  << result->stats->plan_length << "\t"
+	  << 100 * result->stats->plan_length / final_length << "\t"
+	  << result->stats->plan_angle_change << "\t"
+	  << 100 * result->stats->plan_angle_change / final_rotation << "\n";
       }
-      final_cumul_wall += result->stats->actual_time_wall;
-      final_cumul_user += result->stats->actual_time_user;
-      ////final_cumul_expands += result->stats->number_of_expands;
-      ////final_cost = result->stats->solution_cost;
-      final_length = result->stats->plan_length;
-      final_rotation = result->stats->plan_angle_change;
-    }
-    
-    // second loop to actually dump the values to file
-    double cumul_wall(0);
-    double cumul_user(0);
-    ////int cumul_expands(0);
-    for (episode_result_t::const_iterator ie(it->second.begin()); ie != it->second.end(); ++ie) {
-      shared_ptr<task::result> result(ie->second);
-      if ( ! result)		// already wrote a message in 1st loop
-	continue;
-      if ( ! result->stats)
-	continue;
-      if ( ! result->stats->success)
-	continue;
-      cumul_wall += result->stats->actual_time_wall;
-      cumul_user += result->stats->actual_time_user;
-      ////cumul_expands += result->stats->number_of_expands;
-      dataOs
-	// wall time
-	<< result->stats->actual_time_wall << "\t"
-	<< cumul_wall << "\t"
-	<< 100 * cumul_wall / final_cumul_wall << "\t"
-	// user time
-	<< result->stats->actual_time_user << "\t"
-	<< cumul_user << "\t"
-	<< 100 * cumul_user / final_cumul_user << "\t"
-	// TEMPORARILY DISABLED (always 0) expands
-	////<< result->stats->number_of_expands << "\t"
-	////<< cumul_expands << "\t"
-	////<< 100 * cumul_expands / final_cumul_expands << "\t"
-	<< "0\t0\t0\t"
-	// TEMPORARILY DISABLED (always 0) expansion speed
-	////<< result->stats->number_of_expands / result->stats->actual_time_wall << "\t"
-	////<< cumul_expands / cumul_wall << "\t"
-	////<< result->stats->number_of_expands / result->stats->actual_time_user << "\t"
-	////<< cumul_expands / cumul_user << "\t"
-	<< "0\t0\t0\t0\t"
-	// TEMPORARILY DISABLED (always 0) cost
-	////<< result->stats->solution_cost << "\t"
-	////<< (100.0 * result->stats->solution_cost) / final_cost << "\t"
-	<< "0\t0\t"
-	// TEMPORARILY DISABLED (always 0) epsilon
-	////<< result->stats->solution_epsilon << "\t"
-	<< "0\t"
-	// plan quality
-	<< result->stats->plan_length << "\t"
-	<< 100 * result->stats->plan_length / final_length << "\t"
-	<< result->stats->plan_angle_change << "\t"
-	<< 100 * result->stats->plan_angle_change / final_rotation << "\n";
     }
   }
-
+  
   ofstream costhistOs(costhistFilename.c_str());
   if ( ! costhistOs) {
     cout << "sorry, could not open file " << costhistFilename << "\n";
