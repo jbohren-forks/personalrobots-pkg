@@ -195,12 +195,14 @@ if __name__ == '__main__':
     upperarm_roll_name = "r_upper_arm_roll"
     calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
     hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
+    set_controller("r_upper_arm_roll_controller", float(0.0))
 
     print "Calibrating left upperarm roll" 
     upperarm_roll_name = "l_upper_arm_roll"
     calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
     hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
-        
+    set_controller("l_upper_arm_roll_controller", float(0.0))
+
     print "Calibrating shoulder lift"
     shoulder_lift_name = "r_shoulder_lift"
     calibrate(xml_for_cal("r_shoulder_lift", -1.0, 9, 1.0, 0, 6) + "\n" + xml_for_cal("l_shoulder_lift", -1.0, 9, 1.0, 0, 6))
