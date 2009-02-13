@@ -1,0 +1,20 @@
+/**
+ * Simulation model for the master reactor
+ */
+
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "driver.exports.nddl"
+#include "recharger.exports.nddl"
+#include "doorman.exports.nddl"
+#include "safety.exports.nddl"
+
+
+// Internal timelines
+Driver driver = new Driver(Internal);
+DoorMan doorman = new DoorMan(Internal);
+WorkingStatus working_status = new WorkingStatus(Internal);
+Recharger recharger = new Recharger(Internal);
+
+close();

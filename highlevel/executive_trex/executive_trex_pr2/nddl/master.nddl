@@ -1,0 +1,316 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// TREX base class declaration and definitions
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "driver.exports.nddl"
+#include "recharger.exports.nddl"
+#include "doorman.exports.nddl"
+#include "safety.exports.nddl"
+#include "topological_map.exports.nddl"
+
+// Priority for goals
+typedef int [0 5] PRIORITY;
+
+// Constaint for time delay before resuming work after unplugging
+int WAIT_TIME_AFTER_UNPLUGGING = 5; 
+
+/**
+ * A predefined location to go to
+ */
+class Location {
+  float x;
+  float y;
+  float th;
+
+  Location(float x_, float y_, float th_){
+    x = x_;
+    y = y_;
+    th = th_;
+  }
+};
+
+/**
+ * The x, y, and theta values for a charging station. These describe the
+ * target base pose for the robot when recharging.
+ */
+class ChargingStation extends Location {
+  ChargingStation(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+class Waypoint extends Location {
+  Waypoint(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+/**
+ * The Navigator turns a single navigation goal into a path over a topological map
+ */
+class Navigator extends Behavior {
+
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
+  predicate Active{
+    Waypoint w;
+  }
+
+  Navigator(){
+    super(Internal, "Inactive");
+  }
+};
+
+class Path extends AgentTimeline {
+
+  /**
+   * Extends over a traverse that is contained across a single region of the topological map.
+   * This traverse is en-route to some final destination.
+   */
+  predicate Holds{
+    // Activation status
+    bool active;
+
+    // Source pose
+    float x;
+    float y;
+    float th;
+    Connector connector;
+
+    // Target pose
+    float target_x;
+    float target_y;
+    float target_th;
+    Connector target_connector;
+
+    // Final pose
+    float final_x;
+    float final_y;
+    float final_th;
+    Region final_region;
+
+    // The region we are traversing
+    Region region;
+    bool is_doorway;
+  }
+
+  Path(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * Rules for Path Handling
+ */
+Path::Holds{
+  // By default, we should be inactive
+  default(active, false);
+
+  // Default position data on commit
+  defaultOnCommit(x, 0.0);
+  defaultOnCommit(y, 0.0);
+  defaultOnCommit(th, 0.0);
+
+  // The predecessor
+  met_by(Holds p);
+
+  // The successor
+  meets(Holds s);
+
+  // This is an end point if either:
+  // 1. It is inactive
+  // 2. It's predecessor region and the current region are the same
+  bool end_point;
+  if(end_point == false){
+    contained_by(MoveBehavior.Inactive mb);
+    eq(mb.object.for_doorways, p.is_doorway);
+    eq(mb.des_x, x);
+    eq(mb.des_y, y);
+    eq(mb.des_th, th);
+  }
+
+  if(active == false){
+    eq(end_point, true);
+  }
+
+  if(active == true){
+    // Evaluate predecessor to determine if the regions require the same drive mode
+    bool thru_way;
+    neq(thru_way, end_point);
+    testEQ(thru_way, is_doorway, p.is_doorway);
+
+    // Carry forward parameters to the successor
+    eq(s.x, target_x);
+    eq(s.y, target_y);
+    eq(s.th, target_th);
+    eq(s.final_x, final_x);
+    eq(s.final_y, final_y);
+    eq(s.final_th, final_th);
+
+    // Successor will be active if the error exceeds our error limit
+    float error;
+    bool done;
+    calcDistance(error, final_x, final_y, final_th, target_x, target_y, target_th);
+    testLT(done, error, POSE_ERROR);
+
+    // Topological map functions and relations
+    map_connector(connector, x, y, th);
+    map_connector(target_connector, target_x, target_y, target_th);
+    map_get_region_from_position(final_region, final_x, final_y);
+
+    // This relation will restrict both variables such that all ids are connectors and the source and
+    // target are adjacent (share a common region)
+    map_connected(connector, target_connector);
+    map_is_doorway(is_doorway, region);
+
+    // Once we know the kind of region to traverse, we should further decompose to handle the appropriate MoveBehavior
+    if(is_doorway){
+
+      // If we are not done then:
+      // 1. The region id should not be equal to the final region id. This is a sanity check
+      // 2. The successor should be active 
+      if(done == false){
+	map_connected(connector, target_connector, region);
+	neq(region, final_region);
+	eq(s.active, true);
+      }
+
+      // If we are done, then observe that:
+      // 1. The target connector id is always 0, indicating it is not a connector.
+      // 2. The region id is the same as the final region id
+      // 3. The successor is inactive
+      if(done == true){
+	eq(target_connector, NO_CONNECTOR);
+	eq(region, final_region);
+      }
+    }
+  }
+}
+
+/**
+ * A top level timeline that will drive navigation goals until a target iteration count is reached.
+ */
+class VenusDeMiles extends AgentTimeline {
+
+  predicate Holds{
+    int iterationCount; // Current iteration count
+    int iterationLimit; // Iteration Limit (when done)
+    bool alwaysBusy; // When true, keep going
+    Waypoint w; // Way point to achieve
+  }
+
+  VenusDeMiles(){
+    super(Internal, "Holds");
+  }
+};
+
+WorkingStatus::Holds{
+
+  // Do the recharging if appropriate
+  if(recharging == true){
+    // Selection of a charging station can happen in principle in a number of ways. The ideal scenario is that actual obstacle data
+    // is used as a constraint on the available charging station. This could occur where we would say something like:
+    //   collissionFree(cs);
+    // However, no such integration is available and it is an open question how to interpret that constraint given a temporal
+    // context.
+    //
+    // We can select from the available set via the planner. This would allow branching over the decision. This could yield a very
+    // high branching factor.
+    // We can pick the nearest available - which is simple and efficient. However, it may force a situation where we  re-commit to an
+    // unreachable location. This would look like what we had implemented before:
+    //   met_by(BaseState.Holds bs);
+    //   nearestReachableLocation(bs.x, bs.y, cs);
+    //
+    // Instead we will use the randomSelect again, and revisit this later
+    ChargingStation cs;
+    randomSelect(cs);
+
+    // allow a delay after recharging before releasing the robot. Also require that we remain 
+    // with the recharger inactive when we get back to work
+    any(Recharger.Inactive rc);
+    eq(rc.x, cs.x);
+    eq(rc.y, cs.y);
+    eq(rc.th, cs.th);
+    temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
+    precedes(end, rc.end);
+  }
+}
+
+class MotionMutex extends AgentTimeline {
+  predicate Using{
+    MoveBehavior user;
+  }
+
+  predicate Free{}
+
+  MotionMutex(){
+    super(Internal, "Free");
+  }
+
+}
+
+/**
+ * If the working status indicates that we are recharging, then we better be heading for a charging station
+ */
+MoveBehavior::Active{
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, recharging);
+
+  if(recharging == true){
+    ChargingStation cs;
+    eq(cs.x, x);
+    eq(cs.y, y);
+    eq(cs.th, th);
+  }
+
+  contained_by(MotionMutex.Using mutex);
+  eq(mutex.user, this.object);
+}
+
+
+/**
+ * Allocate common objects
+ */
+
+// Internal timelines
+MotionMutex motion_mutex = new MotionMutex();
+VenusDeMiles venus_de_miles = new VenusDeMiles();
+Navigator navigator = new Navigator();
+Path path = new Path();
+
+// External timelines
+Driver driver = new Driver(External);
+DoorMan doorman = new DoorMan(External);
+WorkingStatus working_status = new WorkingStatus(External);
+Recharger recharger = new Recharger(External);
+
