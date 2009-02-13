@@ -117,19 +117,25 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   //  printf("Mapped Source: %s \nMapped Target: %s\n", mapped_source_frame.c_str(), mapped_target_frame.c_str());
   int retval = NO_ERROR;
   ros::Time temp_time;
+  std::string error_string;
   //If getting the latest get the latest common time
   if (time == ros::Time())
-    retval = getLatestCommonTime(mapped_target_frame, mapped_source_frame, temp_time);
+    retval = getLatestCommonTime(mapped_target_frame, mapped_source_frame, temp_time, &error_string);
   else
     temp_time = time;
 
-  std::string error_string;
   TransformLists t_list;
 
   if (retval == NO_ERROR)
     retval = lookupLists(lookupFrameNumber( mapped_target_frame), temp_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (error_string == "" || error_string == " ")
+  {
+    std::stringstream error;
+    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
+    error_string = error.str().c_str();
+  }
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -156,25 +162,32 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
   int retval = NO_ERROR;
   ros::Time temp_target_time, temp_source_time;
+  std::string error_string;
   //If getting the latest get the latest common time
   if (target_time == ros::Time())
-    retval = getLatestCommonTime(mapped_target_frame, mapped_fixed_frame, temp_target_time);
+    retval = getLatestCommonTime(mapped_target_frame, mapped_fixed_frame, temp_target_time, &error_string);
   else
     temp_target_time = target_time;
 
   //If getting the latest get the latest common time
   if (source_time == ros::Time() && retval == NO_ERROR)
-    retval = getLatestCommonTime(mapped_fixed_frame, mapped_source_frame, temp_source_time);
+    retval = getLatestCommonTime(mapped_fixed_frame, mapped_source_frame, temp_source_time, &error_string);
   else
     temp_source_time = source_time;
 
-  std::string error_string;
+
   //calculate first leg
   TransformLists t_list;
   if (retval == NO_ERROR)
     retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), temp_source_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (error_string == "" || error_string == " ")
+  {
+    std::stringstream error;
+    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
+    error_string = error.str().c_str();
+  }
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -194,6 +207,12 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   ///\todo check return
   retval =  lookupLists(lookupFrameNumber( mapped_target_frame), temp_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, &error_string);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (error_string == "" || error_string == " ")
+  {
+    std::stringstream error;
+    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
+    error_string = error.str().c_str();
+  }
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -307,12 +326,12 @@ void Transformer::setExtrapolationLimit(const ros::Duration& distance)
   max_extrapolation_distance_ = distance;
 }
 
-int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time)
+int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time, std::string * error_string)
 {
   time = ros::Time::now();///\todo hack fixme
   int retval;
   TransformLists lists;
-  retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, NULL);
+  retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, error_string);
   if (retval == NO_ERROR)
   {
     for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
@@ -330,7 +349,6 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
   else
   {
     time.fromNSec(0);
-    retval = CONNECTIVITY_ERROR;
   }
 
   return retval;
