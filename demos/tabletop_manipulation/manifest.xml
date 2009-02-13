@@ -1,0 +1,14 @@
+<package>
+  <description>Tabletop object manipulation demo.</description>
+  <author>Radu Rusu, Ioan Sucan, Brian Gerkey</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki</url>
+  <depend package="2dnav_pr2"/>
+  <depend package="laser_scan"/>
+  <depend package="robot_self_filter"/>
+  <depend package="point_cloud_assembler"/>
+  <depend package="table_object_detector"/>
+  <depend package="collision_map"/>
+  <depend package="kinematic_planning"/>
+</package>
