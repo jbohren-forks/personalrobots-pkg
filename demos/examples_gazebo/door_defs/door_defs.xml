@@ -173,6 +173,9 @@
       <geometry name="door_collision_geom">
         <box size="0.1 1.0 2.0" />
       </geometry>
+      <map name="door_intensity" flag="gazebo">
+        <elem key="laserRetro" value="10.0" />
+      </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
@@ -205,6 +208,9 @@
       <geometry name="handle_collision_geom">
         <cylinder radius="0.02" length="0.2" />
       </geometry>
+      <map name="handle_intensity" flag="gazebo">
+        <elem key="laserRetro" value="100.0" />
+      </map>
     </collision>
     <map name="handle_gravity" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
