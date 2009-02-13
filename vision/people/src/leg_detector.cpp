@@ -298,8 +298,14 @@ public:
     cout << "Looking for two legs" << endl;
     for (; it1 != end; ++it1)
     {
-      tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      try {
+	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
                             orig_loc, fixed_frame, dest_loc);
+      }
+      catch (tf::TransformException& ex) {
+	cout << ex.what() << endl;
+	continue;
+      }
       // Compute the distance between the person and this leg.
       dist = dest_loc.length();
       
@@ -341,8 +347,14 @@ public:
 	  continue;
 
 	// Compute the distance between the person and this leg.
-	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
+	try {
+	  tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+			      orig_loc, fixed_frame, dest_loc);
+	}
+	catch (tf::TransformException& ex) {
+	  cout << ex.what() << endl;
+	  continue;
+	}
 	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
@@ -388,8 +400,14 @@ public:
 	continue;
 
       // Get the distance between the leg and the person.
-      tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      try {
+	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
                             orig_loc, fixed_frame, dest_loc);
+      }
+      catch (tf::TransformException& ex) {
+	cout << ex.what() << endl;
+	continue;
+      }
       dist1 = dest_loc.length();
       // Don't jump to a far-away tracker.
       if ( dist1 >= max_meas_jump_m ) 
@@ -412,7 +430,13 @@ public:
 	  continue;
 
 	// Get the distance between the leg and the person.
-	tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+	try {
+	  tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+	}
+	catch (tf::TransformException& ex) {
+	  cout << ex.what() << endl;
+	  continue;
+	}
 	dist2 = dest_loc.length();
 	
 	// Get the distance between the two legs
