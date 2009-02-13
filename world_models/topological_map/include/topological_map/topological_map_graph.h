@@ -90,7 +90,7 @@ public:
 
 private:
 
-  TopologicalGraphVertex GraphImpl::idVertex(const RegionId id) const;
+  TopologicalGraphVertex idVertex(const RegionId id) const;
 
   IdVertexMap id_vertex_map_;
   RegionMap region_map_;
