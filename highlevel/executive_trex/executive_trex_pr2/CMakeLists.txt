@@ -36,7 +36,8 @@ set(TREX_FILES src/Executive.cc
 	       src/ArmControllerAdapter.cc
 	       src/EndEffectorControllerAdapter.cc
 	       src/RechargeControllerAdapter.cc
-	       src/BatteryStateAdapter.cc)
+	       src/BatteryStateAdapter.cc
+	       src/topological_map.cc)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
