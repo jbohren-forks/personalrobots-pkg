@@ -189,7 +189,7 @@
     <joint name="handle_joint" />
     <inertial >
       <mass value="0.1" />
-      <com xyz="0.0 0.1 0.0" /> 
+      <com xyz="0.0 0.0 0.1" /> 
       <inertia  ixx="0.01"  ixy="0.0"  ixz="0.0"
                 iyy="0.01" iyz="0.0"
                 izz="0.001" />
