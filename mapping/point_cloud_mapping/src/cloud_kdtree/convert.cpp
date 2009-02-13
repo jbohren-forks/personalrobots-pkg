@@ -194,7 +194,7 @@ namespace cloud_kdtree
       for (unsigned int d = 0; d < dimensions.size (); d++)
       {
         // Check if the values in 'dimensions' are valid
-        if ( (dimensions.at (d) > 0) && (dimensions.at (d) < ros_cloud->chan.size ()) )
+        if ( dimensions.at (d) < ros_cloud->chan.size () )
 #ifdef USE_ANN
           ann_cloud[cp][d + 3] = ros_cloud->chan[dimensions.at (d)].vals[cp];
 #else
@@ -250,7 +250,7 @@ namespace cloud_kdtree
       for (unsigned int d = 0; d < dimensions.size (); d++)
       {
         // Check if the values in 'dimensions' are valid
-        if ( (dimensions.at (d) > 0) && (dimensions.at (d) < ros_cloud->chan.size ()) )
+        if ( dimensions.at (d) < ros_cloud->chan.size () )
 #ifdef USE_ANN
           ann_cloud[cp][d + 3] = ros_cloud->chan[dimensions.at (d)].vals[indices->at (cp)];
 #else
@@ -258,6 +258,7 @@ namespace cloud_kdtree
 #endif
         else
         {
+          ROS_ERROR ("[KdTree::convertCloudToArray] Dimensions index %d with value %d is invalid!", d, dimensions.at (d));
           annDeallocPts (ann_cloud);
           ann_cloud = NULL;
           return (0);

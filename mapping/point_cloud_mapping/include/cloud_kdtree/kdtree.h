@@ -91,6 +91,8 @@ namespace cloud_kdtree
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, points_);
+        if (nr_points_ == 0)
+          ROS_ERROR ("[KdTree] Could not create kD-tree for %d points!", nr_points_);
         nn_idx_    = new ANNidx [nr_points_];
         nn_dists_  = new ANNdist [nr_points_];
         // Create the kd_tree representation
@@ -128,6 +130,8 @@ namespace cloud_kdtree
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, indices, points_);
+        if (nr_points_ == 0)
+          ROS_ERROR ("[KdTree] Could not create kD-tree for %d points!", nr_points_);
         nn_idx_    = new ANNidx [nr_points_];
         nn_dists_  = new ANNdist [nr_points_];
         // Create the kd_tree representation
@@ -153,6 +157,8 @@ namespace cloud_kdtree
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, dim, points_);
+        if (nr_points_ == 0)
+          ROS_ERROR ("[KdTree] Could not create kD-tree for %d points!", nr_points_);
         nn_idx_   = new ANNidx [nr_points_];
         nn_dists_ = new ANNdist [nr_points_];
         // Create the kd_tree representation
@@ -182,6 +188,8 @@ namespace cloud_kdtree
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, indices, dimensions, points_);
+        if (nr_points_ == 0)
+          ROS_ERROR ("[KdTree] Could not create kD-tree for %d points!", nr_points_);
         nn_idx_    = new ANNidx [nr_points_];
         nn_dists_  = new ANNdist [nr_points_];
         // Create the kd_tree representation
