@@ -38,7 +38,7 @@
 #include <boost/graph/graph_traits.hpp>
 
 using boost::listS;
-using boost::undirected;
+using boost::undirectedS;
 using boost::adjacency_list;
 using boost::graph_traits;
 
@@ -57,9 +57,49 @@ struct RegionInfo
     type(region_type), region(region_cells), id(region_id) {}
 };
 
-typedef adjacency_list<listS, listS, undirected, RegionInfo> TopologicalGraph;
+typedef adjacency_list<listS, listS, undirectedS, RegionInfo> TopologicalGraph;
 typedef graph_traits<TopologicalGraph>::vertex_descriptor TopologicalGraphVertex;
 typedef graph_traits<TopologicalGraph>::adjacency_iterator AdjacencyIterator;
+typedef std::map<Cell2D, RegionId> RegionMap;
+typedef std::map<RegionId, TopologicalGraphVertex> IdVertexMap;
+
+// Implementation details for top map
+class TopologicalMap::GraphImpl
+{
+public:
+
+  /// \return Id of region containing \a p
+  /// \throws UnknownCell2DException
+  RegionId containingRegion(const Cell2D& p) const;
+
+  /// \return Integer representing type of region
+  /// \throws UnknownRegionException
+  int regionType(const RegionId id) const;
+
+  /// \return Vector of id's of neighboring regions to region \a r
+  RegionIdVector neighbors(const RegionId r) const;
+
+  /// \post New region has been added
+  /// \return Id of new region
+  /// \throws OverlappingRegionException
+  RegionId addRegion (const RegionPtr region, const int region_type);
+
+  /// \post Region no longer exists
+  /// \throws UnknownRegionException
+  void removeRegion (const RegionId id);
+
+private:
+
+  TopologicalGraphVertex GraphImpl::idVertex(const RegionId id) const;
+
+  IdVertexMap id_vertex_map_;
+  RegionMap region_map_;
+  TopologicalGraph graph_;
+  
+  int next_id_;
+};
+
+
   
 } // namespace topological_map
 

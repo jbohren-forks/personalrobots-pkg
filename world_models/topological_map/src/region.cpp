@@ -30,6 +30,7 @@
 #include <topological_map/region.h>
 
 using std::ostream;
+using std::vector;
 
 namespace topological_map
 {
@@ -48,6 +49,18 @@ int operator< (const Cell2D& c, const Cell2D& c2)
 bool operator== (const Cell2D& c, const Cell2D& c2)
 {
   return (c.r==c2.r) && (c.c==c2.c);
+}
+
+vector<Cell2D> cellNeighbors (const Cell2D& p)
+{
+  int r=p.r;
+  int c=p.c;
+  vector<Cell2D> neighbors(4);
+  neighbors[0]=Cell2D(r-1,c);
+  neighbors[1]=Cell2D(r+1,c);
+  neighbors[2]=Cell2D(r,c-1);
+  neighbors[3]=Cell2D(r,c+1);
+  return neighbors;
 }
 
 } // namespace topological_map

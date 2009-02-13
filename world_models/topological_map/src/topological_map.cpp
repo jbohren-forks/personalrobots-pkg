@@ -27,17 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include "topological_map/topological_map_graph.h"
+#include <topological_map/topological_map_graph.h>
+#include <algorithm>
+#include <topological_map/exception.h>
 
 using boost::tie;
+using std::map;
+using std::vector;
+using std::set;
 
 namespace topological_map
 {
 
-RegionId TopologicalMap::containingRegion (const Cell2D& p) const
+RegionId TopologicalMap::GraphImpl::containingRegion (const Cell2D& p) const
 {
-  if ((RegionMap::iterator pos = region_map_.find(p)) != region_map_.end()) {
+  RegionMap::const_iterator pos=region_map_.find(p);
+  if (pos!=region_map_.end()) {
     return pos->second;
   }
   else {
@@ -45,24 +50,22 @@ RegionId TopologicalMap::containingRegion (const Cell2D& p) const
   }
 }
 
-int RegionType (const RegionId id) const
+int TopologicalMap::GraphImpl::regionType (const RegionId id) const
 {
   return graph_[idVertex(id)].type;
 }
 
 
-/// Look up the vertex, get the neighbor list from the graph, then get their ids
-RegionIdVector neighbors (const RegionId id) const
+// Functor for mapping neighbor vertices to ids
+struct GetNeighborId
 {
-  // Functor for mapping neighbor vertices to ids
-  struct GetNeighborId
-  {
-    GetNeighborId(const TopologicalGraph& graph) : g(graph) {}
-    RegionId operator() (const TopologicalGraphVertex& v) { return g[v].id; }
-    const TopologicalGraph& g;
-  };
+  GetNeighborId(const TopologicalGraph& graph) : g(graph) {}
+  RegionId operator() (const TopologicalGraphVertex& v) { return g[v].id; }
+  const TopologicalGraph& g;
+};
 
-
+RegionIdVector TopologicalMap::GraphImpl::neighbors (const RegionId id) const
+{
   AdjacencyIterator v, v_end;
   tie(v,v_end) = adjacent_vertices(idVertex(id), graph_);
   RegionIdVector neighbors;
@@ -71,64 +74,92 @@ RegionIdVector neighbors (const RegionId id) const
 }
 
 
-// Add new vertex with new unique id, and do bookkeeping
-RegionId addRegion(const RegionPtr region, const int type) 
+RegionId TopologicalMap::GraphImpl::addRegion (const RegionPtr region, const int type)
 {
-  // Functor for updating region map, checking overlap, and adding edges as appropriate
-  struct UpdateRegionMap 
-  {
-    UpdateRegionMap (RegionMap& m, RegionId i) : region_map(m), id(i) {}
-    void operator() (const Cell2D& c)
-    {
-      if (m.find(c)!=m.end()) {
-        throw OverlappingRegionException(c, m.find(c)->second);
-      }
-      else {
-        m[c]=id;
-        vector<Cell
+  RegionId new_id=next_id_++;
+  for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
+    if (region_map_.find(*region_iter)!=region_map_.end()) {
+      throw OverlappingRegionException(*region_iter, region_map_.find(*region_iter)->second);
+    }
+    else {
+      // update the region map
+      region_map_[*region_iter]=new_id;
+      TopologicalGraphVertex v=add_vertex(RegionInfo(type, region, new_id), graph_);
+      id_vertex_map_[new_id]=v; 
+
+      // for each neighboring cell, if it belongs to a different region, add an edge if necessary
+      vector<Cell2D> cell_neighbors=cellNeighbors(*region_iter);
+      set<TopologicalGraphVertex> seen_neighbors;
+      for (vector<Cell2D>::iterator neighbor_iter=cell_neighbors.begin(); neighbor_iter!=cell_neighbors.end(); ++neighbor_iter) {
+        RegionMap::iterator neighbor_ptr=region_map_.find(*neighbor_iter);
+        if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=new_id) {
+          TopologicalGraphVertex neighbor_vertex=idVertex(neighbor_ptr->second);
+          if (seen_neighbors.find(neighbor_vertex)!=seen_neighbors.end()) {
+            seen_neighbors.insert(neighbor_vertex);
+            add_edge(v, neighbor_vertex, graph_);
+          }   
+        }
       }
     }
-    RegionMap& region_map;
-    RegionId id;
-    vector<BottleneckVertex> neighboring_regions;
-  };
-  
+  }
 
-  RegionId new_id=next_id_++;
-  for_each(region->begin(), region->end(), UpdateRegionMap(region_map_, new_id));
-  TopologicalGraphVertex v=add_vertex(RegionInfo(type, region, new_id), graph_);
-  id_vertex_map_[new_id] = v;
   return new_id;
 }
 
 
-
-void removeRegion (const RegionId id)
+void TopologicalMap::GraphImpl::removeRegion (const RegionId id)
 {
-  
-  // Iterate over neighbors and remove the edge
-  // Remove the region info
-  // Update id vertex map
+  // Look up id
+  // Remove vertex
   // Update region map
+  // Update id_vertex map
 }
 
 
-
-bool knownGridCell (const Cell2D& p) const
+TopologicalGraphVertex TopologicalMap::GraphImpl::idVertex(const RegionId id) const
 {
-  return region_map_.find(p) != region_map_.end();
-}
-
-TopologicalGraphVertex idVertex (const RegionId id) const
-{
-  if ((IdVertexMap::iterator pos=id_vertex_map_.find(id)) != id_vertex_map_.end()) {
-    return pos->second;
+  IdVertexMap::const_iterator map_iter=id_vertex_map_.find(id);
+  if (map_iter != id_vertex_map_.end()) {
+    return map_iter->second;
   }
   else {
     throw UnknownRegionException(id);
   }
 }
-  
+
+
+
+/************************************************************
+ * Topological graph ops are forwarded to implementation
+ ************************************************************/
+
+RegionId TopologicalMap::containingRegion (const Cell2D& p) const
+{
+  return graph_impl_->containingRegion(p);
+}
+
+int TopologicalMap::regionType (const RegionId id) const
+{
+  return graph_impl_->regionType(id);
+}
+
+
+RegionIdVector TopologicalMap::neighbors (const RegionId id) const
+{
+  return graph_impl_->neighbors(id);
+}
+
+// Add new vertex with new unique id, and do bookkeeping
+RegionId TopologicalMap::addRegion(const RegionPtr region, const int type) 
+{
+  return graph_impl_->addRegion(region, type);
+}
+
+void TopologicalMap::removeRegion (const RegionId id)
+{
+  graph_impl_->removeRegion (id);
+}
+
 
 
 

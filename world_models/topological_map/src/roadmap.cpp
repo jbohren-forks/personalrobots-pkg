@@ -59,7 +59,7 @@ struct EvaluateConnector
     if (cost < best_cost) {
       best_cost=cost;
       best_solution=solution;
-      ROS_DEBUG ("  New best connector found; solution length is %d", best_solution.size());
+      ROS_DEBUG_STREAM ("  New best connector found; solution length is " << best_solution.size());
     }
     return ConnectorCostPair(connector, cost);
   }

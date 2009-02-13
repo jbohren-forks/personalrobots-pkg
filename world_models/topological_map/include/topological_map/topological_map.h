@@ -32,13 +32,13 @@
 
 #include "region.h"
 #include <map>
+#include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace topological_map
 {
 
 typedef unsigned int RegionId;
-typedef std::map<GridCell, RegionId> RegionMap;
-typedef std::map<RegionId, TopologicalGraphVertex> IdVertexMap;
 typedef std::vector<RegionId> RegionIdVector;
 
 /// Represents a topological map of a 2-dimensional discrete grid decomposed into regions of various types
@@ -47,12 +47,12 @@ class TopologicalMap
 public:
 
   /// \return Id of region containing \a p
-  /// \throws UnknownGridCellException
-  RegionId containingRegion(const GridCell& p) const;
+  /// \throws UnknownCell2DException
+  RegionId containingRegion(const Cell2D& p) const;
 
   /// \return Integer representing type of region
   /// \throws UnknownRegionException
-  int RegionType(const RegionId id) const;
+  int regionType(const RegionId id) const;
 
   /// \return Vector of id's of neighboring regions to region \a r
   RegionIdVector neighbors(const RegionId r) const;
@@ -67,23 +67,9 @@ public:
   void removeRegion (const RegionId id);
 
 private:
-
-  /// \return Is the point known
-  bool knownGridCell(const GridCell& p) const;
-
-  /// \return vertex descriptor for this id
-  /// \throws UnknownRegionException
-  TopologicalGraphVertex idVertex (const RegionId id) const;
-
-  /// Map from grid cell to region id.  Guaranteed to be stable (unless if the region itself is removed).
-  RegionMap region_map_;
   
-  /// Graph object
-  TopologicalGraph graph_;
-
-  /// Map from region id to vertex descriptor
-  IdVertexMap id_vertex_map_;
-
+  class GraphImpl;
+  boost::shared_ptr<GraphImpl> graph_impl_;
 };
   
 } // namespace topological_map

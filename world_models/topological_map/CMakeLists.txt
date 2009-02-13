@@ -19,3 +19,7 @@ target_link_libraries(ros_topological_planner topological_map)
 rospack_add_executable(bg_driver src/bg_driver.cpp)
 target_link_libraries(bg_driver topological_map)
 
+
+
+## Rename once done
+rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp)

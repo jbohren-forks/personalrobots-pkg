@@ -27,36 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef TOPOLOGICAL_MAP_EXCEPTION_H
+#define TOPOLOGICAL_MAP_EXCEPTION_H
 
-#ifndef TOPOLOGICAL_MAP_REGION_H
-#define TOPOLOGICAL_MAP_REGION_H
+#include <boost/format.hpp>
+#include <stdexcept>
+#include <topological_map/topological_map.h>
 
-#include <iostream>
-#include <set>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-
+using boost::format;
 
 namespace topological_map
 {
 
-struct Cell2D
-{
-  int r, c;
-  Cell2D() {}
-  Cell2D(const int row, const int column) : r(row), c(column) {}
+/// \brief A base class for all topological_map exceptions_ 
+class TopologicalMapException: public std::runtime_error
+{ 
+public:
+TopologicalMapException(const format& error_string) : std::runtime_error(error_string.str()) {};
 };
 
-std::ostream& operator<< (std::ostream& str, const Cell2D& c);
-int operator< (const Cell2D& c, const Cell2D& c2);
-bool operator== (const Cell2D& c, const Cell2D& c2);
+/// \brief Exception denoting unknown grid cell
+class UnknownGridCellException: public TopologicalMapException
+{
+public:
+  UnknownGridCellException(const Cell2D& p) : TopologicalMapException(format("Unknown grid cell %1%") % p) {}
+};
 
-std::vector<Cell2D> cellNeighbors (const Cell2D& c);
+/// \brief Exception when trying to add a region containing an existing gridcell
+class OverlappingRegionException: public TopologicalMapException
+{
+public:
+  OverlappingRegionException(const Cell2D& c, const RegionId id) : TopologicalMapException(format("Grid cell %1% already exists in region %2%") % c % id) {}
+};
 
-/// Represent a region as a set of Cell2D.
-typedef std::set<Cell2D> Region;
-typedef boost::shared_ptr<const Region> RegionPtr;
+/// \brief Exception for a region id that doesn't exist
+class UnknownRegionException: public TopologicalMapException
+{
+public:
+  UnknownRegionException(const RegionId id) : TopologicalMapException(format("Unknown region id %1%") % id) {}
+};
+
+
 
 } // namespace topological_map
+
 
 #endif
