@@ -167,7 +167,7 @@ StageNode::mapName(const char *name, size_t robotID)
   if (positionmodels.size() > 1)
   {
     static char buf[100];
-    snprintf(buf, sizeof(buf), "robot_%d/%s", robotID, name);
+    snprintf(buf, sizeof(buf), "/robot_%d/%s", robotID, name);
     return buf;
   }
   else
@@ -336,8 +336,8 @@ StageNode::Update()
     // Send the identity transform between base_footprint and base_link
     tf::Transform txIdentity(tf::Quaternion(0, 0, 0), tf::Point(0, 0, 0));
     tf.sendTransform(tf::Stamped<tf::Transform>
-        (txIdentity.inverse(),
-         sim_time, mapName("base_footprint", r), mapName("base_link", r)));
+        (txIdentity,
+         sim_time, mapName("base_link", r), mapName("base_footprint", r)));
     // Get latest odometry data
     // Translate into ROS message format and publish
     this->odomMsgs[r].pos.x = this->positionmodels[r]->est_pose.x;
@@ -356,8 +356,8 @@ StageNode::Update()
     tf::Stamped<tf::Transform> tx(
         tf::Transform(
           tf::Quaternion(odomMsgs[r].pos.th, 0, 0), 
-          tf::Point(odomMsgs[r].pos.x, odomMsgs[r].pos.y, 0.0)).inverse(),
-        sim_time, mapName("odom", r), mapName("base_link", r));
+          tf::Point(odomMsgs[r].pos.x, odomMsgs[r].pos.y, 0.0)),
+        sim_time, mapName("base_footprint", r), mapName("odom", r));
     this->tf.sendTransform(tx);
       
     // Also publish the ground truth pose

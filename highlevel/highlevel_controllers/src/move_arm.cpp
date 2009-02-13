@@ -224,7 +224,7 @@ bool MoveArm::makePlan(){
   robotPose.stamp_ = ros::Time();
 
   try{
-    tf_.transformPose("map", robotPose, globalPose);
+    tf_.transformPose("/map", robotPose, globalPose);
   }
   catch(tf::LookupException& ex) {
     ROS_INFO("No Transform available Error\n");

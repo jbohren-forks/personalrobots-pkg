@@ -145,8 +145,8 @@ namespace robot_filter {
 	m_model->getKmodelSimple()->computeTransforms(m_model->getRobotStateSimple()->getParams());
     }
 
-    if (cloud.header.frame_id != "map") {
-      ROS_ERROR("Robot filter needs point clouds in the map frame. It was given a point cloud in the %s frame.",
+    if (cloud.header.frame_id != "/map") {
+      ROS_ERROR("Robot filter needs point clouds in the /map frame. It was given a point cloud in the %s frame.",
 		cloud.header.frame_id.c_str());
     }
 

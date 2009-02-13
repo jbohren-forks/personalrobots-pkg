@@ -91,7 +91,7 @@ namespace ros {
       double inscribedRadius(0.325);
       double weight(0.1); // Scale costs down by a factor of 10
       // Which frame is "global"
-      param("/global_frame_id", global_frame_, std::string("map"));
+      param("/global_frame_id", global_frame_, std::string("/map"));
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
        

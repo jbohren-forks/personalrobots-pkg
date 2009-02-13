@@ -15,6 +15,7 @@
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
 
     <!-- localization settings -->
+    <param name="pf_odom_frame_id" value="odom_combined"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
     <!-- filter out veil effect from range scans -->

@@ -1039,11 +1039,11 @@ void BaseControllerPosNode::update()
 
       robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
       out2.header.stamp.fromSec(time);
-      out2.header.frame_id = "base_footprint";
-      out2.parent_id = "base_link";
+      out2.header.frame_id = "base_link";
+      out2.parent_id = "base_footprint";
       out2.transform.translation.x = 0;
       out2.transform.translation.y = 0;
-      out2.transform.translation.z = -c_->wheel_radius_;
+      out2.transform.translation.z = c_->wheel_radius_;
       out2.transform.rotation.x = 0;
       out2.transform.rotation.y = 0;
       out2.transform.rotation.z = 0;

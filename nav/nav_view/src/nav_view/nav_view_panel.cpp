@@ -114,7 +114,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   render_panel_->getViewport()->setCamera( camera_ );
 
-  ros_node_->param("/global_frame_id", global_frame_id_, std::string("map"));
+  ros_node_->param("/global_frame_id", global_frame_id_, std::string("/map"));
 
   ros_node_->advertise<robot_msgs::Planner2DGoal>("goal", 1);
   ros_node_->advertise<deprecated_msgs::Pose2DFloat32>("initialpose", 1);

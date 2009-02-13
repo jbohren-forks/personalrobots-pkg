@@ -82,6 +82,8 @@ Publishes to (name / type):
 #include "ros/console.h"
 
 #include "tf/transform_broadcaster.h"
+#include "tf/transform_listener.h"
+#include "tf/message_notifier.h"
 
 
 class FakeOdomNode: public ros::Node
@@ -91,15 +93,18 @@ public:
     {
       advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",1);
       advertise<robot_msgs::ParticleCloud>("particlecloud",1);
-
       m_tfServer = new tf::TransformBroadcaster(*this);	
-
+      m_tfListener = new tf::TransformListener(*this);
       m_lastUpdate = ros::Time::now();
       
       m_base_pos_received = false;
 
+      param("pf_odom_frame_id", odom_frame_id_, std::string("odom"));
       m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
       m_particleCloud.set_particles_size(1);
+      notifier = new tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>(m_tfListener, this, 
+                                                                           boost::bind(&FakeOdomNode::update, this, _1),
+                                                                           "base_pose_ground_truth_BOGUS(MANUALLY STUFFING)", odom_frame_id_, 100);
       subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived,1);
     }
     
@@ -114,16 +119,20 @@ public:
     void run(void)
     {
       // A duration for sleeping will be 100 ms
-      ros::Duration snoozer(0, 100000000);
+      ros::Duration snoozer;
+      snoozer.fromSec(0.1);
 
       while(true){
 	snoozer.sleep();
       }
     }  
+
     
 private:
-    
     tf::TransformBroadcaster       *m_tfServer;
+    tf::TransformListener          *m_tfListener;
+    tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>* notifier;
+  
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     bool                           m_base_pos_received;
@@ -132,20 +141,27 @@ private:
     robot_msgs::ParticleCloud      m_particleCloud;
     deprecated_msgs::RobotBase2DOdom      m_currentPos;
     deprecated_msgs::Pose2DFloat32        m_iniPos;
-    
-    void basePosReceived(void)
-    {
-      update();
-    }
 
-  void update(){
-    tf::Transform txi(tf::Quaternion(m_basePosMsg.pos.orientation.x,
-				     m_basePosMsg.pos.orientation.y, 
-				     m_basePosMsg.pos.orientation.z, 
-				     m_basePosMsg.pos.orientation.w),
-		      tf::Point(m_basePosMsg.pos.position.x,
-				m_basePosMsg.pos.position.y,
-                                0.0*m_basePosMsg.pos.position.z )); // zero height for base_footprint
+    //parameter for what odom to use
+    std::string odom_frame_id_;
+    
+  void basePosReceived()
+  {
+    m_basePosMsg.header.frame_id = "base_footprint"; //hack to make the notifier do what I want (changed back later)
+    boost::shared_ptr<robot_msgs::PoseWithRatesStamped>  message(new robot_msgs::PoseWithRatesStamped);
+    *message = m_basePosMsg;
+    notifier->enqueueMessage(message);
+    //    update();
+  }
+public:
+  void update(const tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>::MessagePtr & message){
+    tf::Transform txi(tf::Quaternion(message->pos.orientation.x,
+				     message->pos.orientation.y, 
+				     message->pos.orientation.z, 
+				     message->pos.orientation.w),
+		      tf::Point(message->pos.position.x,
+				message->pos.position.y,
+                                0.0*message->pos.position.z )); // zero height for base_footprint
 
     double x = txi.getOrigin().x() + m_iniPos.x;
     double y = txi.getOrigin().y() + m_iniPos.y;
@@ -165,15 +181,29 @@ private:
     // A hack links the two frames.
     // m_tfServer->sendTransform(tf::Stamped<tf::Transform>
     //                           (txIdentity.inverse(),
-    //                            m_basePosMsg.header.stamp,
+    //                            message->header.stamp,
     //                            "base_footprint", "base_link"));  // this is published by base controller
+    // subtracting base to odom from map to base and send map to odom instead
+    tf::Stamped<tf::Pose> odom_to_map;
+    try
+    {
+      m_tfListener->transformPose(odom_frame_id_,tf::Stamped<tf::Pose> (txo.inverse(),
+                                                                message->header.stamp, "base_footprint"),odom_to_map);
+    }
+    catch(tf::TransformException &e){
+      ROS_DEBUG("Failed to transform to odom %s\n",e.what());
+
+      return;
+    }
+
     m_tfServer->sendTransform(tf::Stamped<tf::Transform>
-			      (txo.inverse(),
-			       m_basePosMsg.header.stamp,
-			       "map", "base_footprint"));
+			      (odom_to_map.inverse(),
+			       message->header.stamp,
+			       odom_frame_id_, "/map"));
 
     // Publish localized pose
-    m_currentPos.header = m_basePosMsg.header;
+    m_currentPos.header = message->header;
+    m_currentPos.header.frame_id = "map"; ///\todo fixme hack
     m_currentPos.pos.x = x;
     m_currentPos.pos.y = y;
     m_currentPos.pos.th = yaw;

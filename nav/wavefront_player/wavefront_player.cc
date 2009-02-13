@@ -371,7 +371,7 @@ WavefrontNode::WavefrontNode() :
   advertise<robot_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
-  scan_notifier = new tf::MessageNotifier<laser_scan::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
+  scan_notifier = new tf::MessageNotifier<laser_scan::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "/map", 1);
 }
 
 WavefrontNode::~WavefrontNode()
@@ -445,7 +445,7 @@ WavefrontNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::M
 
 	try
 	{
-		this->tf.transformPointCloud("map", local_cloud, global_cloud);
+		this->tf.transformPointCloud("/map", local_cloud, global_cloud);
 	}
 	catch(tf::LookupException& ex)
 	{
@@ -577,7 +577,7 @@ WavefrontNode::doOneCycle()
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
-    this->tf.transformPose("map", robotPose, global_pose);
+    this->tf.transformPose("/map", robotPose, global_pose);
   }
   catch(tf::LookupException& ex)
   {

@@ -242,7 +242,7 @@ AmclNode::AmclNode() :
   robot_srvs::StaticMap::Request  req;
   robot_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
-  while(!ros::service::call("static_map", req, resp))
+  while(!ros::service::call("/static_map", req, resp))
   {
     puts("request failed; trying again...");
     usleep(1000000);
@@ -491,6 +491,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                                       t, "base_footprint"),odom_to_map);
     }
     catch(tf::TransformException e){
+      ROS_DEBUG("Dropping out of process message step\n");
       return(0);
     }
     
@@ -498,8 +499,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     ros::Time transform_expiration;
     transform_expiration.fromSec(hdr->timestamp + transform_tolerance_);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
-                                                                      tf::Point(      odom_to_map.getOrigin() ) ),
-                                                        transform_expiration, "map",odom_frame_id));
+                                                                      tf::Point(      odom_to_map.getOrigin() ) ).inverse(),
+                                                        transform_expiration,odom_frame_id, "/map"));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -515,7 +516,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
-    localizedOdomMsg.header.frame_id = "map";
+    localizedOdomMsg.header.frame_id = "/map";
     /*
     printf("O: %.6f %.3f %.3f %.3f\n",
            hdr->timestamp, 

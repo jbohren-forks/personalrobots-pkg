@@ -973,13 +973,13 @@ void BaseControllerNode::update()
 
       robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
       out2.header.stamp.fromSec(time);
-      out2.header.frame_id = "base_footprint";
-      out2.parent_id = "base_link";
+      out2.header.frame_id = "base_link";
+      out2.parent_id = "base_footprint";
       out2.transform.translation.x = 0;
       out2.transform.translation.y = 0;
 
       // FIXME: this is the offset between base_link origin and the ideal floor
-      out2.transform.translation.z = -0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
+      out2.transform.translation.z = 0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
 
       out2.transform.rotation.x = 0;
       out2.transform.rotation.y = 0;
