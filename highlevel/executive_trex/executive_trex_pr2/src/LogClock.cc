@@ -4,6 +4,7 @@
 #include "LogManager.hh"
 #include "Components.hh"
 #include "Utilities.hh"
+#include "ros/time.h"
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
@@ -43,7 +44,8 @@ namespace TREX {
     // Loop forever, sleep for a tick
     double sleepTime = This->m_secondsPerTick;
     while(true){
-      Clock::sleep(sleepTime);
+      ros::Duration d(sleepTime);
+      d.sleep();
       pthread_mutex_lock(&This->m_lock);
       This->advanceTick(This->m_tick);
       This->m_file << This->m_gets << std::endl;
