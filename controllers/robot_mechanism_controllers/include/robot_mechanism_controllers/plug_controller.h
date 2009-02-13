@@ -48,6 +48,7 @@
 #include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"
 
+#include "Eigen/Geometry"
 #include "Eigen/LU"
 #include "Eigen/Core"
 #include "robot_kinematics/robot_kinematics.h"
@@ -68,6 +69,7 @@ public:
   void update();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
+
   const char *root_name_;
   // input of the controller
   KDL::Wrench wrench_desi_;
