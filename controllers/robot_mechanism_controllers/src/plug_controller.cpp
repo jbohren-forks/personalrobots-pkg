@@ -103,7 +103,8 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 
   node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
   node->param("constraint/f_pose_max"   , f_pose_max  , 50.0) ; /// max pose force
-  node->param("constraint/f_limit_max"  , f_limit_max  , 20.0) ; /// max upper arm limit force
+  node->param("constraint/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
+  node->param("constraint/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
 
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
@@ -142,6 +143,8 @@ void PlugController::update()
   if(!initialized_)
   {
     jnt_to_pose_solver_->JntToCart(jnt_pos, desired_frame_);
+    for (unsigned int i = 0; i < 3; ++i)
+      outlet_pt_[i] = desired_frame_.p[i];
     initialized_ = true;
   }
 
@@ -203,6 +206,8 @@ void PlugController::computeConstraintJacobian()
   constraint_jac_(3,2) = 1; // roll
   constraint_jac_(4,3) = 1; // pitch
   constraint_jac_(5,4) = 1; // yaw
+
+  joint_constraint_jac_(2) = 0;
 
   // put the end_effector point into eigen
   Eigen::Vector3f end_effector_pt(endeffector_frame_.p(0), endeffector_frame_.p(1), endeffector_frame_.p(2));
@@ -272,7 +277,7 @@ void PlugController::computeConstraintJacobian()
   chain_.getPositions(robot_->joint_states_, jnt_pos);
 
   double joint_e = angles::shortest_angular_distance(jnt_pos(2), upper_arm_limit);
-  if(joint_e < -0.01)
+  if(joint_e < upper_arm_dead_zone)
   {
     joint_constraint_jac_(2) = 1;
   }

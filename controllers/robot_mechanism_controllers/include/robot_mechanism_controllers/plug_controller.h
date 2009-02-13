@@ -108,6 +108,7 @@ private:
   // some parameters to define the constraint
 
   double upper_arm_limit;
+  double upper_arm_dead_zone;
   double f_r_max;
   double f_pose_max;
   double f_limit_max;
