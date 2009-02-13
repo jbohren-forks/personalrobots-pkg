@@ -809,6 +809,8 @@ namespace mpbench {
        << prefix << "        3dkin = use 3DKIN environment\n"
        << prefix << "        bwd = use backward search (default)\n"
        << prefix << "        fwd = use forward search\n"
+       << prefix << "  EStar\n"
+       << prefix << "        (no further options yet)\n"
        << prefix << "available robot specs:\n"
        << prefix << "  pr2 [: inscribed [: circumscribed [: fwd_speed [: rot_speed ]]]]\n"
        << prefix << "        inscribed radius (millimeters), default 325mm\n"

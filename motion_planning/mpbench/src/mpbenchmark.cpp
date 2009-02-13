@@ -59,6 +59,7 @@ static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
 static void print_summary();
+static void print_gnuplot();
 
 static string baseFilename();
 static string sanitizeSpec(string const & spec);
@@ -96,6 +97,7 @@ int main(int argc, char ** argv)
   create_setup();
   run_tasks();
   print_summary();
+  print_gnuplot();
   if (enableGfx) {
     int base_width(800);
     int base_height(600);
@@ -504,4 +506,235 @@ void print_summary()
 	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
 	 << "</table>\n";
   }
+}
+
+
+// a bit exagerated, at the moment results are implicitly ordered
+// anyway by the for-loops in run_tasks()...
+typedef std::map<size_t, boost::shared_ptr<mpbench::task::result> > episode_result_t;
+typedef std::map<size_t, episode_result_t> task_result_t;
+void reorder_results(task_result_t & out)
+{
+  for (resultlist_t::const_iterator ip(resultlist.begin()); ip != resultlist.end(); ++ip)
+    out[(*ip)->task_id].insert(make_pair((*ip)->episode_id, *ip));
+}
+
+
+void print_gnuplot()
+{
+  string dataFilename(baseFilename() + ".data");
+  string costhistFilename(baseFilename() + ".costhist");
+  string plotFilename(baseFilename() + ".plot");
+  ofstream plotOs(plotFilename.c_str());
+  if ( ! plotOs) {
+    cout << "sorry, could not open file " << plotFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot script file: " << plotFilename << "\n";
+  plotOs
+    << "set terminal png large\n"
+    // relative plan quality vs relative time
+    << "set output \"" << baseFilename() << "--rqual-rtime.png\"\n"
+    << "set xlabel \"cumul planning time [% of final] (wallclock)\"\n"
+    << "set ylabel \"[% of final]\"\n"
+    << "plot \"" << dataFilename << "\" using ($3):($15) title \"solution cost\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($18) title \"plan length\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($20) title \"plan rotation\" with lines\n"
+    // absolute expansion speed vs relative time
+    << "set output \"" << baseFilename() << "--speed-rtime.png\"\n"
+    << "set xlabel \"cumul planning time [% of final] (wallclock)\"\n"
+    << "set ylabel \"[1/s] (wallclock)\"\n"
+    << "plot \"" << dataFilename << "\" using ($3):($10) title \"expansion speed\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($11) title \"avg expansion speed\" with lines\n"
+    // relative plan quality vs absolute time
+    << "set output \"" << baseFilename() << "--rqual-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[% of final]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($15) title \"solution cost\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($18) title \"plan length\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($20) title \"plan rotation\" with lines\n"
+    // absolute expansion speed vs absolute time
+    << "set output \"" << baseFilename() << "--speed-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[1/s] (wallclock)\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($10) title \"expansion speed\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($11) title \"avg expansion speed\" with lines lw 2\n"
+    // absolute solution cost vs absolute time
+    << "set output \"" << baseFilename() << "--cost-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[cost]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($14) title \"solution cost\" with lines\n"
+    // absolute plan length vs absolute time
+    << "set output \"" << baseFilename() << "--length-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[m]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($17) title \"plan length\" with lines\n"
+    // absolute plan rotation vs absolute time
+    << "set output \"" << baseFilename() << "--rotation-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[rad]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($19) title \"plan rotation\" with lines\n"
+    // costmap histogram
+    << "set output \"" << baseFilename() << "--costhist.png\"\n"
+    << "set xlabel \"cell cost\"\n"
+    << "set ylabel \"log count\"\n"
+    << "plot \"" << costhistFilename << "\" using ($1):($3) title \"log cell count\" with impulses lw 10\n";
+  
+  ofstream dataOs(dataFilename.c_str());
+  if ( ! dataOs) {
+    cout << "sorry, could not open file " << dataFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot data file: " << dataFilename << "\n";
+  
+  dataOs << "# " << dataFilename << "\n"
+	 << "# data file for gnuplot\n"
+	 << "#\n"
+	 << "# multi-data sets correspond to individual tasks\n";
+  setup->dumpDescription(dataOs, "", "#   ");
+  dataOs << "#\n"
+	 << "# columns:\n"
+	 << "#  1           time actual (wall) [s]\n"
+	 << "#  2 cumulated time actual (wall) [s]\n"
+	 << "#  3 cumulated time actual (wall) [% of final]\n"
+	 << "#  4           time actual (user) [s]\n"
+	 << "#  5 cumulated time actual (user) [s]\n"
+	 << "#  6 cumulated time actual (user) [% of final]\n"
+	 << "#  7 TEMPORARILY DISABLED (always 0)           number of expands\n"
+	 << "#  8 TEMPORARILY DISABLED (always 0) cumulated number of expands\n"
+	 << "#  9 TEMPORARILY DISABLED (always 0) cumulated number of expands [% of final]\n"
+	 << "# 10 TEMPORARILY DISABLED (always 0)           expansion speed (wall) [1/s]\n"
+	 << "# 11 TEMPORARILY DISABLED (always 0) cumul avg expansion speed (wall) [1/s]\n"
+	 << "# 12 TEMPORARILY DISABLED (always 0)           expansion speed (user) [1/s]\n"
+	 << "# 13 TEMPORARILY DISABLED (always 0) cumul avg expansion speed (user) [1/s]\n"
+	 << "# 14 TEMPORARILY DISABLED (always 0) solution cost\n"
+	 << "# 15 TEMPORARILY DISABLED (always 0) solution cost [% of final]\n"
+	 << "# 16 TEMPORARILY DISABLED (always 0) solution epsilon\n"
+	 << "# 17 plan length [m]\n"
+	 << "# 18 plan length [% of final]\n"
+	 << "# 19 plan rotation [rad]\n"
+	 << "# 20 plan rotation [% of final]\n";
+  
+  tasklist_t const & task(setup->getTasks());
+  task_result_t task_result;
+  reorder_results(task_result);
+  for (task_result_t::const_iterator it(task_result.begin()); it != task_result.end(); ++it) {
+    dataOs << "\n\n# task[" << it->first << "]: " << task[it->first]->description << "\n";
+    if (it->second.empty()) {
+      dataOs << "# no episodes\n";
+      continue;
+    }
+    
+    // first loop to get all cumulative results, so that we can give
+    // relative figures
+    double final_cumul_wall(0);
+    double final_cumul_user(0);
+    ////int final_cumul_expands(0);
+    ////int final_cost(0);
+    double final_length(0);
+    double final_rotation(0);
+    for (episode_result_t::const_iterator ie(it->second.begin()); ie != it->second.end(); ++ie) {
+      shared_ptr<task::result> result(ie->second);
+      if ( ! result) {		// "never" happens
+	dataOs << "# episode[" << ie->first << "]: void result\n";
+	continue;
+      }
+      if ( ! result->stats) {	// "never" happens
+	dataOs << "# episode[" << ie->first << "]: void stats\n";
+	continue;
+      }
+      if ( ! result->stats->success) { // does happen
+	dataOs << "# episode[" << ie->first << "]: no solution\n";
+	continue;
+      }
+      final_cumul_wall += result->stats->actual_time_wall;
+      final_cumul_user += result->stats->actual_time_user;
+      ////final_cumul_expands += result->stats->number_of_expands;
+      ////final_cost = result->stats->solution_cost;
+      final_length = result->stats->plan_length;
+      final_rotation = result->stats->plan_angle_change;
+    }
+    
+    // second loop to actually dump the values to file
+    double cumul_wall(0);
+    double cumul_user(0);
+    ////int cumul_expands(0);
+    for (episode_result_t::const_iterator ie(it->second.begin()); ie != it->second.end(); ++ie) {
+      shared_ptr<task::result> result(ie->second);
+      if ( ! result)		// already wrote a message in 1st loop
+	continue;
+      if ( ! result->stats)
+	continue;
+      if ( ! result->stats->success)
+	continue;
+      cumul_wall += result->stats->actual_time_wall;
+      cumul_user += result->stats->actual_time_user;
+      ////cumul_expands += result->stats->number_of_expands;
+      dataOs
+	// wall time
+	<< result->stats->actual_time_wall << "\t"
+	<< cumul_wall << "\t"
+	<< 100 * cumul_wall / final_cumul_wall << "\t"
+	// user time
+	<< result->stats->actual_time_user << "\t"
+	<< cumul_user << "\t"
+	<< 100 * cumul_user / final_cumul_user << "\t"
+	// TEMPORARILY DISABLED (always 0) expands
+	////<< result->stats->number_of_expands << "\t"
+	////<< cumul_expands << "\t"
+	////<< 100 * cumul_expands / final_cumul_expands << "\t"
+	<< "0\t0\t0\t"
+	// TEMPORARILY DISABLED (always 0) expansion speed
+	////<< result->stats->number_of_expands / result->stats->actual_time_wall << "\t"
+	////<< cumul_expands / cumul_wall << "\t"
+	////<< result->stats->number_of_expands / result->stats->actual_time_user << "\t"
+	////<< cumul_expands / cumul_user << "\t"
+	<< "0\t0\t0\t0\t"
+	// TEMPORARILY DISABLED (always 0) cost
+	////<< result->stats->solution_cost << "\t"
+	////<< (100.0 * result->stats->solution_cost) / final_cost << "\t"
+	<< "0\t0\t"
+	// TEMPORARILY DISABLED (always 0) epsilon
+	////<< result->stats->solution_epsilon << "\t"
+	<< "0\t"
+	// plan quality
+	<< result->stats->plan_length << "\t"
+	<< 100 * result->stats->plan_length / final_length << "\t"
+	<< result->stats->plan_angle_change << "\t"
+	<< 100 * result->stats->plan_angle_change / final_rotation << "\n";
+    }
+  }
+
+  ofstream costhistOs(costhistFilename.c_str());
+  if ( ! costhistOs) {
+    cout << "sorry, could not open file " << costhistFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot cost histogram file: " << costhistFilename << "\n";
+  
+  costhistOs << "# " << costhistFilename << "\n"
+	     << "# cost histogram file for gnuplot\n"
+	     << "#\n"
+	     << "# columns:\n"
+	     << "#  1 cell cost\n"
+	     << "#  2 count\n"
+	     << "#  3 log(count)\n";
+  boost::shared_ptr<CostmapAccessor const> cm(setup->getCostmap());
+  typedef map<int, size_t> hist_t;
+  hist_t hist;
+  for (ssize_t ix(cm->getXBegin()); ix < cm->getXEnd(); ++ix)
+    for (ssize_t iy(cm->getYBegin()); iy < cm->getYEnd(); ++iy) {
+      int cost;
+      if ( ! cm->getCost(ix, iy, &cost))
+	continue;
+      hist_t::iterator ih(hist.find(cost));
+      if (hist.end() == ih)
+	hist.insert(make_pair(cost, (ssize_t) 1));
+      else
+	++ih->second;
+    }
+  for (hist_t::const_iterator ih(hist.begin()); ih != hist.end(); ++ih)
+    costhistOs << ih->first << "\t"
+	       << ih->second << "\t"
+	       << log10((double) ih->second) << "\n";
 }
