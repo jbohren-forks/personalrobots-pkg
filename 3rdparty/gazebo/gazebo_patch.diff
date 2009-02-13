@@ -682,25 +682,25 @@ Index: server/physics/Geom.cc
 +  this->iyz = this->iyzP->GetValue();
 +
 +  // setup this->mass as well
-+  this->mass.c[0] = this->cx;
-+  this->mass.c[1] = this->cy;
-+  this->mass.c[2] = this->cz;
++  // this->mass.c[0] = this->cx;
++  // this->mass.c[1] = this->cy;
++  // this->mass.c[2] = this->cz;
 +
-+  this->mass.I[0] = this->ixx;
-+  this->mass.I[1] = this->ixy;
-+  this->mass.I[2] = this->ixz;
++  // this->mass.I[0] = this->ixx;
++  // this->mass.I[1] = this->ixy;
++  // this->mass.I[2] = this->ixz;
 +
-+  this->mass.I[3] = this->ixy;
-+  this->mass.I[4] = this->iyy;
-+  this->mass.I[5] = this->iyz;
++  // this->mass.I[3] = this->ixy;
++  // this->mass.I[4] = this->iyy;
++  // this->mass.I[5] = this->iyz;
 +
-+  this->mass.I[6] = this->ixz;
-+  this->mass.I[7] = this->iyz;
-+  this->mass.I[8] = this->izz;
++  // this->mass.I[6] = this->ixz;
++  // this->mass.I[7] = this->iyz;
++  // this->mass.I[8] = this->izz;
 +
-+  this->mass.I[9] = 1;
-+  this->mass.I[10] = 1;
-+  this->mass.I[11] = 1;
++  // this->mass.I[9] = 1;
++  // this->mass.I[10] = 1;
++  // this->mass.I[11] = 1;
 +
 +  // std::cout << " c[0] " << this->mass.c[0] << std::endl;
 +  // std::cout << " c[1] " << this->mass.c[1] << std::endl;
