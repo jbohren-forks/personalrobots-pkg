@@ -21,8 +21,7 @@ class SendMessageOnSubscribeAndExit(rospy.SubscribeListener):
         sys.exit(0)
 
 def list_controllers():
-    while not rospy.wait_for_service('list_controllers'):
-      print "Waiting for service..."
+    rospy.wait_for_service('list_controllers')
     s = rospy.ServiceProxy('list_controllers', ListControllers)
     resp = s.call(ListControllersRequest())
     for t in resp.controllers:
@@ -41,29 +40,25 @@ def set_controller_vector(controller, command):
     rospy.spin()
 
 def get_controller(controller):
-    while not rospy.wait_for_service(controller + '/get_command'):
-      print "Waiting for service..."
+    rospy.wait_for_service(controller + '/get_command')
     s = rospy.ServiceProxy(controller + '/get_command', JointCmd)
     resp = s.call(JointCmdRequest())
     print str(resp.name) + ": " + str(resp.positions)+ ": " + str(resp.velocity)
 
 def get_controller_vector(controller):
-    while not rospy.wait_for_service(controller + '/get_actual'):
-      print "Waiting for service..."
+    rospy.wait_for_service(controller + '/get_actual')
     s = rospy.ServiceProxy(controller + '/get_actual', GetVector)
     resp = s()
     print "(%f, %f, %f)" % (resp.v.x, resp.v.y, resp.v.z)
 
 def set_position(controller, command):
-    while not rospy.wait_for_service(controller + '/set_position'):
-      print "Waiting for service..."
+    rospy.wait_for_service(controller + '/set_position')
     s = rospy.ServiceProxy(controller + '/set_position', SetPosition)
     resp = s.call(SetPositionRequest(command))
     print resp.command
 
 def get_position(controller):
-    while not rospy.wait_for_service(controller + '/get_position'):
-      print "Waiting for service..."
+    rospy.wait_for_service(controller + '/get_position')
     s = rospy.ServiceProxy(controller + '/get_position', GetPosition)
     resp = s.call(GetPositionRequest())
     print str(resp.time) + ": " + str(resp.command)
