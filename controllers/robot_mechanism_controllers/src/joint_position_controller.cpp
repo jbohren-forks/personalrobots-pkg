@@ -42,7 +42,7 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
-: joint_state_(NULL), robot_(NULL), last_time_(0), command_(0)
+: joint_state_(NULL), initialized_(false), robot_(NULL), last_time_(0), command_(0)
 {
 }
 
@@ -72,6 +72,7 @@ bool JointPositionController::init(mechanism::RobotState *robot, const std::stri
 
 bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  initialized_ = false;
   assert(robot);
 
   TiXmlElement *j = config->FirstChildElement("joint");
@@ -131,6 +132,12 @@ void JointPositionController::update()
   double time = robot_->hw_->current_time_;
 
   assert(joint_state_->joint_);
+
+  if (!initialized_)
+  {
+    initialized_ = true;
+    command_ = joint_state_->position_;
+  }
 
   if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
   {

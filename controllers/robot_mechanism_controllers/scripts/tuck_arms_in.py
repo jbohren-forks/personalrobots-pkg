@@ -90,16 +90,22 @@ def set_controller(controller, command):
                               SendMessageOnSubscribe(Float64(command)))
 
 def hold_side(side, pan_angle, holding):
-    hold_joint("%s_elbow_flex" % side, 50, 15, 8, 2, holding)
+    hold_joint("%s_wrist_flex" % side, 15, 1.5, 4, 2, holding)
+    set_controller("%s_wrist_flex_controller" % side, float(3.0))
+
+    hold_joint("%s_forearm_roll" % side, 15, 2, 4, 2, holding)
+    set_controller("%s_forearm_roll_controller" % side, float(0.0))
+
+    hold_joint("%s_elbow_flex" % side, 15, 4, 4, 2, holding)
     set_controller("%s_elbow_flex_controller" % side, float(3.0))
 
-    hold_joint("%s_upper_arm_roll" % side, 20, 2, 1.0, 1.0, holding)
+    hold_joint("%s_upper_arm_roll" % side, 20, 1.5, 1.0, 1.0, holding)
     set_controller("%s_upper_arm_roll_controller" % side, float(0.0))
 
-    hold_joint("%s_shoulder_lift" % side, 35, 7, 4, 3, holding)
+    hold_joint("%s_shoulder_lift" % side, 22, 2, 2, 3, holding)
     set_controller("%s_shoulder_lift_controller" % side, float(3.0))
 
-    hold_joint("%s_shoulder_pan" % side, 70, 6, 8, 4, holding)
+    hold_joint("%s_shoulder_pan" % side, 30, 2, 2, 4, holding)
     set_controller("%s_shoulder_pan_controller" % side, float(pan_angle))
 
 def main():
@@ -133,11 +139,10 @@ def main():
             sleep(0.5)
     finally:
         # Kill all holding controllers
-        # DOESN'T KILL PROPERLY, NEED TO INVESTIGATE
         print "Releasing controllers"
         for name in holding:
             print "Releasing %s" % name
-            for i in range(1,6):
+            for i in range(6):
                 try:
                     mechanism.kill_controller(name)
                     break # Go to next controller if no exception               

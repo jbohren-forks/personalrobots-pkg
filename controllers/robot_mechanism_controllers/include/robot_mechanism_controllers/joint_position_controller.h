@@ -105,7 +105,7 @@ public:
   mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
 
 private:
-
+  bool initialized_;
   mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;                          /**< Last time stamp of update. */
