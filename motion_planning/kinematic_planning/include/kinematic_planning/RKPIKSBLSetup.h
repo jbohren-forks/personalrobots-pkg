@@ -54,9 +54,9 @@ namespace kinematic_planning
 	
 	virtual ~RKPIKSBLSetup(void)
 	{
-	    if (dynamic_cast<ompl::IKSBL_t>(mp))
+	    if (dynamic_cast<ompl::IKSBL*>(mp))
 	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL_t>(mp)->getProjectionEvaluator();
+		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
 		if (pe)
 		    delete pe;
 	    }
@@ -66,8 +66,8 @@ namespace kinematic_planning
 	{
 	    preSetup(model, options);
 	    
-	    ompl::IKSBL_t sbl = new ompl::IKSBL(si);
-	    mp                = sbl;	
+	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
+	    mp               = sbl;	
 	    
 	    bool setDim  = false;
 	    bool setProj = false;
