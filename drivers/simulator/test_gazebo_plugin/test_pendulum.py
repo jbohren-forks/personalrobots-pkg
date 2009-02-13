@@ -48,6 +48,8 @@ import os, os.path, threading, time
 import rospy, rostest
 from robot_msgs.msg import *
 
+TOLERANCE = 0.0057
+
 class E:
     def __init__(self,x,y,z):
         self.x = x
@@ -95,7 +97,7 @@ class PendulumTest(unittest.TestCase):
         self.error2_count = 0
         self.error1_max = 0
         self.error2_max = 0
-        self.tolerance    = 0.01  # tolerance: 1cm error
+        self.tolerance    = TOLERANCE  # tolerance: 1cm error
         self.min_runs     = 1000  # average error over this many runs
 
 
@@ -145,11 +147,13 @@ class PendulumTest(unittest.TestCase):
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 20.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            print "E1 " + str(self.error1_count) + ":" + str(self.error1_total) + " E2 " + str(self.error2_count) + ":" + str(self.error2_total)
-            if self.error2_count > self.min_runs and self.error1_count > self.min_runs:
-              if self.error1_total / self.error1_count < self.tolerance and self.error2_total / self.error2_count < self.tolerance:
-                if self.error1_max < self.tolerance and self.error2_max < self.tolerance:
-                  self.success = True
+            if self.error1_count > 0 and self.error2_count > 0:
+              print  "E1 count:" + str(self.error1_count) + " error:" + str(self.error1_total)  + " avg err:" + str(self.error1_total / self.error1_count) \
+                  + " E2 count:" + str(self.error2_count) + " error:" + str(self.error2_total)  + " avg err:" + str(self.error2_total / self.error2_count)
+              if self.error2_count > self.min_runs and self.error1_count > self.min_runs:
+                if self.error1_total / self.error1_count < self.tolerance and self.error2_total / self.error2_count < self.tolerance:
+                  if self.error1_max < self.tolerance and self.error2_max < self.tolerance:
+                    self.success = True
             time.sleep(0.1)
         self.assert_(self.success)
         
