@@ -213,7 +213,11 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             
             static const char tagList2[3][3] = {"cx", "cy", "cz"};
             for (int j = 0 ; j < 3 ; ++j)
-                addKeyValue(geom, tagList2[j], values2str(1, link->inertial->com + j));
+            {
+                // by doing this we support only 1 geom
+                double tmp_value = (link->inertial->com)[j] - (link->collision->xyz)[j];
+                addKeyValue(geom, tagList2[j], values2str(1, &tmp_value));
+            }
             
             if (link->collision->geometry->type == robot_desc::URDF::Link::Geometry::MESH)
             {  
