@@ -36,12 +36,15 @@ rospack_link_boost(pr2_mechanism_controllers thread)
 #rospack_add_executable(testArmDynamicsController test/test_arm_dynamics_controller.cpp)
 #target_link_libraries(testRunBaseController pr2_mechanism_controllers)
 
-rospack_add_executable(testOdom test/test_odom.cpp)
+rospack_add_executable(testOdom EXCLUDE_FROM_ALL test/test_odom.cpp)
+rospack_declare_test(testOdom)
 target_link_libraries(testOdom pr2_mechanism_controllers)
 
-rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
+rospack_add_executable(testTraj EXCLUDE_FROM_ALL test/test_arm_trajectory_controller.cpp)
+rospack_declare_test(testTraj)
 target_link_libraries(testTraj pr2_mechanism_controllers)
 
-rospack_add_executable(testTrajServ test/test_arm_trajectory_service.cpp)
+rospack_add_executable(testTrajServ EXCLUDE_FROM_ALL test/test_arm_trajectory_service.cpp)
+rospack_declare_test(testTrajServ)
 target_link_libraries(testTrajServ pr2_mechanism_controllers)
 
