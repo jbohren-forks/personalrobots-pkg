@@ -263,6 +263,10 @@ public:
   // If a tracker was already assigned to a person, keep this assignment when the distance between them is not too large.
   void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
+    // If there are no legs, return.
+    if (saved_features_.empty()) 
+      return;
+
     Point pt;
     PointMsgToTF(people_meas->pos, pt);
     Stamped<Point> orig_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
@@ -291,6 +295,7 @@ public:
     
 
     // Try to find a tracker with the same label and within the max distance of the person.
+    cout << "Looking for two legs" << endl;
     for (; it1 != end; ++it1)
     {
       tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
@@ -319,9 +324,10 @@ public:
       cout << "Found matching pair. The second distance was " << dist << endl;
       return;
     }
-
+    cout << "Done looking for two legs" << endl;
 
     // If we found one leg, let's try to find a second leg that doesn't yet have a label and is within the max distance.
+    cout << "Looking for one leg plus one new leg" << endl;
     float dist_between_legs, closest_dist_between_legs;
     if (it2 != end) 
     {
@@ -361,11 +367,12 @@ public:
       {
 	cout << "Returned one matched leg only" << endl;
       }
-
+      
       // Regardless of whether we found a second leg, return.
       return;
     }
 
+    cout << "Looking for a pair of new legs" << endl;
     // If we didn't find any legs, try to find two unlabeled legs that are close together and close to the tracker.
     it1 = saved_features_.begin();
     it2 = saved_features_.begin();
@@ -374,7 +381,7 @@ public:
     closest2 = saved_features_.end();
     closest_dist = max_meas_jump_m;
     closest_pair_dist = 2*max_meas_jump_m;
-    for (; it1 != end; it1++) 
+    for (; it1 != end; ++it1) 
     {
       // Only look at trackers without ids.
       if ((*it1)->object_id != "")
@@ -431,6 +438,7 @@ public:
       return;
     }
 
+    cout << "Looking for just one leg" << endl;
     // No pair worked, try for just one leg.
     if (closest != end)
     {
