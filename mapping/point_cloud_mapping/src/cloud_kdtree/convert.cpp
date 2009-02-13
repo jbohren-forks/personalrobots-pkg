@@ -212,4 +212,60 @@ namespace cloud_kdtree
     return (nr_points);
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Converts a ROS PointCloud message to the internal ANN point array representation. Returns the number of
+    * points.
+    * \param ros_cloud the ROS PointCloud message
+    * \param indices the point cloud indices
+    * \param dimensions the indices of the extra dimensions (channels) that we want to copy into the point data
+    * \param ann_cloud the ANN point cloud array
+    */
+  int
+    KdTree::convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<int> *indices, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud)
+  {
+    // No point in doing anything if the array is empty, or if the requested number of dimensions is bigger than
+    // what the ros_cloud message holds
+    if (ros_cloud->pts.size () == 0 || indices->size () > ros_cloud->pts.size () || (dimensions.size () > ros_cloud->chan.size ()) )
+    {
+      ann_cloud = NULL;
+      return (0);
+    }
+
+    int nr_points = indices->size ();
+
+    ann_cloud = annAllocPts (nr_points, 3 + dimensions.size ());
+
+    for (int cp = 0; cp < nr_points; cp++)
+    {
+#ifdef USE_ANN
+      ann_cloud[cp][0] = ros_cloud->pts[indices->at (cp)].x;
+      ann_cloud[cp][1] = ros_cloud->pts[indices->at (cp)].y;
+      ann_cloud[cp][2] = ros_cloud->pts[indices->at (cp)].z;
+#else
+      ann_cloud[cp * 3 + 0] = ros_cloud->pts[indices->at (cp)].x;
+      ann_cloud[cp * 3 + 1] = ros_cloud->pts[indices->at (cp)].y;
+      ann_cloud[cp * 3 + 2] = ros_cloud->pts[indices->at (cp)].z;
+#endif
+      // Copy the remaining dimensions
+      for (unsigned int d = 0; d < dimensions.size (); d++)
+      {
+        // Check if the values in 'dimensions' are valid
+        if ( (dimensions.at (d) > 0) && (dimensions.at (d) < ros_cloud->chan.size ()) )
+#ifdef USE_ANN
+          ann_cloud[cp][d + 3] = ros_cloud->chan[dimensions.at (d)].vals[indices->at (cp)];
+#else
+          ann_cloud[cp * (3 + dimensions.size ()) + (d + 3)] = ros_cloud->chan[dimensions.at (d)].vals[indices->at (cp)];
+#endif
+        else
+        {
+          annDeallocPts (ann_cloud);
+          ann_cloud = NULL;
+          return (0);
+        }
+      } // for dimensions
+    } // for points
+
+    return (nr_points);
+  }
+
 }

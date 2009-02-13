@@ -165,6 +165,35 @@ namespace cloud_kdtree
 #endif
       }
 
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Constructor for KdTree.
+        * \note ATTENTION: This method breaks the 1-1 mapping between the indices returned using \a getNeighborsIndices
+        * and the ones from the \a points message ! When using this method, make sure to get the underlying point data
+        * using the \a getPoint method
+        * \param points the ROS point cloud data array
+        * \param indices the point cloud indices
+        * \param dimensions the indices of the extra dimensions (channels) that we want to copy into the point data
+        */
+      KdTree (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<unsigned int> dimensions)
+      {
+        epsilon_     = 0.0;                        // default error bound value
+        dim_         = 3 + dimensions.size ();     // default number of dimensions (3 = xyz)
+        bucket_size_ = 30;                         // default bucket size value
+
+        // Allocate enough data
+        nr_points_ = convertCloudToArray (points, indices, dimensions, points_);
+        nn_idx_    = new ANNidx [nr_points_];
+        nn_dists_  = new ANNdist [nr_points_];
+        // Create the kd_tree representation
+#ifdef USE_ANN
+        ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
+#else
+        float speedup;
+        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
+        flann_log_verbosity (LOG_NONE);
+#endif
+      }
+
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
@@ -190,6 +219,7 @@ namespace cloud_kdtree
       int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<int> *indices, ANNpointArray &ann_cloud);
       int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, unsigned int nr_dimensions, ANNpointArray &ann_cloud);
       int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
+      int convertCloudToArray (robot_msgs::PointCloud *ros_cloud, std::vector<int> *indices, std::vector<unsigned int> dimensions, ANNpointArray &ann_cloud);
 
       bool nearestKSearch (robot_msgs::Point32 *p_q, int k);
       bool nearestKSearch (robot_msgs::PointCloud *points, unsigned int index, int k);
