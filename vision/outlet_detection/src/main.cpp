@@ -203,7 +203,8 @@ int main(int argc,char** argv)
 		filter_outlets_templmatch(src, outlets, templ, output_path, buf, &homography, &origin, &scale);		
 #else
 		homography = cvCreateMat(3, 3, CV_32FC1);
-		int ret = calc_image_homography(src, homography, 0, 0, &origin, &scale, output_path, buf);
+		CvPoint2D32f centers[4];
+		int ret = calc_image_homography(src, homography, 0, 0, &origin, &scale, output_path, buf, centers);
 		if(!ret)
 		{
 			cvReleaseMat(&homography);
@@ -290,7 +291,11 @@ int main(int argc,char** argv)
 		}
 		else
 		{
-			calc_outlet_coords(outlets, homography, origin, scale);
+			CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+			CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+			calc_camera_pose(intrinsic_matrix, 0, centers, rotation_vector, translation_vector);
+			
+			calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector);
 			float mean, stddev;
 			calc_outlet_dist_stat(outlets, mean, stddev);
 			printf("Distance between holes: Mean = %f, stddev = %f\n", mean, stddev);
@@ -300,11 +305,22 @@ int main(int argc,char** argv)
 			printf("Horizontal distance between ground holes: top %f, bottom %f\n", 
 				   ground_dist_x1, ground_dist_x2);
 			printf("Vertical distance between ground holes: %f\n", ground_dist_y);
-			/*		
-			 CvPoitn3D32f origin;
-			 float bar_length;
-			 find_origin_chessboard(src, map_matrix, origin, bar_length);
-			 */
+			
+            //FIND 3D TO OUTLETS
+            CvPoint3D32f holes[3];
+            get_outlet_coordinates(outlets[0], holes);
+            // holes[0] contains ground hole
+            // holes[1] contains left hole
+            // hole[2] contains right hole
+            printf("Ground: (%f, %f, %f)\n",holes[0].x,holes[0].y,holes[0].z);
+            printf("Left:   (%f, %f, %f)\n",holes[1].x,holes[1].y,holes[1].z);
+            printf("Right:  (%f, %f, %f)\n",holes[2].x,holes[2].y,holes[2].z);  
+			
+			printf("Ground1: (%f, %f, %f)\n", outlets[1].coord_hole_ground.x, outlets[1].coord_hole_ground.y,
+				   outlets[1].coord_hole_ground.z);
+			printf("Ground2: (%f, %f, %f)\n", outlets[2].coord_hole_ground.x, outlets[2].coord_hole_ground.y,
+				   outlets[2].coord_hole_ground.z);
+			
 		}
 		printf(" done.\n");
 		

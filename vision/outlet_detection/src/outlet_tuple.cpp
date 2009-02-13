@@ -142,10 +142,6 @@ int find_start_idx(const vector<outlet_elem_t>& helper_vec)
 	
 }
 
-float length(const CvPoint2D32f& p)
-{
-	return sqrt(p.x*p.x + p.y*p.y);
-}
 
 int find_start_idx2(const vector<outlet_elem_t>& helper_vec)
 {
@@ -207,50 +203,44 @@ int find_start_idx3(const vector<outlet_elem_t>& helper_vec)
 }
 
 
-int order_tuple2(CvPoint2D32f* centers)
+int order_tuple2(vector<outlet_elem_t>& tuple)
 {
-	CvPoint2D32f ordered[4];
+	vector<outlet_elem_t> ordered;
 	
 	CvPoint2D32f center = cvPoint2D32f(0.0f, 0.0f);
 	for(int i = 0; i < 4; i++)
 	{
-		center.x += centers[i].x;
-		center.y += centers[i].y;
+		center.x += tuple[i].center.x;
+		center.y += tuple[i].center.y;
 	}
 	center.x *= 0.25f;
 	center.y *= 0.25f;
 	
 	CvPoint2D32f dir[4];
-	vector<outlet_elem_t> helper_vec;
 	for(int i = 0; i < 4; i++)
 	{
-		dir[i].x = centers[i].x - center.x;
-		dir[i].y = centers[i].y - center.y;
+		dir[i].x = tuple[i].center.x - center.x;
+		dir[i].y = tuple[i].center.y - center.y;
 
-		outlet_elem_t helper;
-		helper.angle = atan2(dir[i].y, dir[i].x);
-		helper.idx = i;
-		helper.center = centers[i];
-		helper_vec.push_back(helper);
+		tuple[i].angle = atan2(dir[i].y, dir[i].x);
+		tuple[i].idx = i;
 	}
-	sort(helper_vec.begin(), helper_vec.end(), helper_pred_greater);
+	sort(tuple.begin(), tuple.end(), helper_pred_greater);
 	
 #if 0
 	int start_idx = find_start_idx(helper_vec);
 #else
-	int start_idx = find_start_idx3(helper_vec);
+	int start_idx = find_start_idx3(tuple);
 #endif
 	
+	ordered = tuple;
 	for(int i = 0; i < 4; i++)
 	{
 		int _i = (i + start_idx)%4;
-		ordered[i] = centers[helper_vec[_i].idx];
+		ordered[i] = tuple[_i];
 	}
-	for(int i = 0; i < 4; i++)
-	{
-		centers[i] = ordered[i];
-	}
-	
+
+	tuple = ordered;
 	return 1;
 }
 
@@ -442,7 +432,7 @@ int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers,
 	
 }
 
-int find_tuple(const vector<outlet_elem_t>& candidates, CvPoint2D32f* tuple)
+int find_tuple(vector<outlet_elem_t>& candidates, CvPoint2D32f* centers)
 {
 	if(candidates.size() < 4)
 	{
@@ -459,11 +449,11 @@ int find_tuple(const vector<outlet_elem_t>& candidates, CvPoint2D32f* tuple)
 	if(candidates.size() == 4)
 	{
 		// we've got a tuple!
+		order_tuple2(candidates);
 		for(int i = 0; i < 4; i++) 
 		{
-			tuple[i] = candidates[i].center;
+			centers[i] = candidates[i].center;
 		}
-		order_tuple2(tuple);
 		return 1;
 	}
 	
@@ -486,6 +476,10 @@ int find_tuple(const vector<outlet_elem_t>& candidates, CvPoint2D32f* tuple)
 
 const int outlet_width = 50;
 const int outlet_height = 25;
+
+const float xsize = 44.67f;
+const float ysize = 38.7f;
+
 void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, CvMat* inverse_map_matrix)
 {
 	CvPoint2D32f rectified[4];
@@ -590,7 +584,7 @@ void calc_image_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* 
 }
 
 int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, CvPoint2D32f* hor_dir, CvPoint3D32f* origin, 
-						  CvPoint2D32f* scale, const char* output_path, const char* filename)
+						  CvPoint2D32f* scale, const char* output_path, const char* filename, CvPoint2D32f* _centers)
 {
 	CvPoint2D32f centers[4];
 	int ret = find_outlet_centroids(src, centers, 0, output_path, filename);
@@ -598,6 +592,11 @@ int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, Cv
 	{
 		printf("Centroids not found\n");
 		return 0;
+	}
+	
+	if(_centers)
+	{
+		memcpy(_centers, centers, 4*sizeof(CvPoint2D32f));
 	}
 	
 	if(hor_dir)
@@ -626,10 +625,7 @@ int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, Cv
 		origin->x = _dst->data.fl[0];
 		origin->y = _dst->data.fl[1];
 		origin->z = 0;
-		
-		const float xsize = 44.67f;
-		const float ysize = 38.7;
-		
+				
 		scalex = xsize/(_dst->data.fl[2] - _dst->data.fl[0]);
 		scaley = ysize/(_dst->data.fl[5] - _dst->data.fl[3]);
 		
@@ -680,4 +676,52 @@ IplImage* find_templates(IplImage* img, IplImage* templ)
 	cvReleaseImage(&templr);
 
 	return mask;
+}
+
+void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D32f* centers, 
+					  CvMat* rotation_vector, CvMat* translation_vector)
+{
+	CvMat* object_points = cvCreateMat(4, 3, CV_32FC1);
+	CvMat* image_points = cvCreateMat(4, 2, CV_32FC1);
+	
+	cvmSet(object_points, 0, 0, 0.0f);
+	cvmSet(object_points, 0, 1, 0.0f);
+	cvmSet(object_points, 0, 2, 0.0f);
+	cvmSet(object_points, 1, 0, xsize);
+	cvmSet(object_points, 1, 1, 0.0f);
+	cvmSet(object_points, 1, 2, 0.0f);
+	cvmSet(object_points, 2, 0, xsize);
+	cvmSet(object_points, 2, 1, ysize);
+	cvmSet(object_points, 2, 2, 0.0f);
+	cvmSet(object_points, 3, 0, 0.0f);
+	cvmSet(object_points, 3, 1, ysize);
+	cvmSet(object_points, 3, 2, 0.0f);
+	
+	for(int i = 0; i < 4; i++) 
+	{
+		cvmSet(image_points, i, 0, centers[i].x);
+		cvmSet(image_points, i, 1, centers[i].y);
+	}
+	
+	CvMat* _distortion_coeffs = 0;
+	if(distortion_coeffs == 0)
+	{
+		_distortion_coeffs = cvCreateMat(1, 5, CV_32FC1);
+		for(int i = 0; i < 5; i++) cvmSet(_distortion_coeffs, 0, i, 0.0f);
+	}
+	else
+	{
+		_distortion_coeffs = distortion_coeffs;
+	}
+
+	cvFindExtrinsicCameraParams2(object_points, image_points, intrinsic_mat, _distortion_coeffs, rotation_vector, 
+								 translation_vector);
+	
+	if(distortion_coeffs == 0)
+	{
+		cvReleaseMat(&_distortion_coeffs);
+	}
+	
+	cvReleaseMat(&object_points);
+	cvReleaseMat(&image_points);
 }

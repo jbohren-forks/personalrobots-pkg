@@ -154,7 +154,8 @@ int filter_outlets_templmatch(IplImage* src, vector<outlet_t>& outlets, IplImage
 IplImage* calc_tuple_distance_map(IplImage* tuple_mask);
 
 
-int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale);
+int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale,
+	CvMat* rotation_vector, CvMat* translation_vector);
 void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& stddev);
 void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_dist_x1, 
 								 float& ground_dist_x2, float& ground_dist_y);
@@ -166,7 +167,6 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length);
 
 void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoint2D32f hor_dir);
-
 
 // retrieves coordinates of outlet holes in the following order: ground hole, left hole, right hole.
 // the size of points array should be at least 3

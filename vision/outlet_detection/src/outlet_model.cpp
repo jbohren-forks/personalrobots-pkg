@@ -1653,8 +1653,28 @@ int filter_outlets_templ(vector<outlet_t>& outlets, const char* filename)
 	return 1;
 }
 
-int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale)
+CvPoint3D32f map_point(CvPoint3D32f point, CvMat* rotation_mat, CvMat* translation_vector)
+{
+	CvMat* _point = cvCreateMat(3, 1, CV_32FC1);
+	cvmSet(_point, 0, 0, point.x);
+	cvmSet(_point, 1, 0, point.y);
+	cvmSet(_point, 2, 0, point.z);
+	
+	CvMat* _res = cvCreateMat(3, 1, CV_32FC1);
+	
+	cvMatMulAdd(rotation_mat, _point, translation_vector, _res);
+	
+	CvPoint3D32f res = cvPoint3D32f(cvmGet(_res, 0, 0), cvmGet(_res, 1, 0), cvmGet(_res, 2, 0));
+	return res;
+}
+
+int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale, 
+	CvMat* rotation_vector, CvMat* translation_vector)
 {	
+	// create rotation matrix
+	CvMat* rotation_mat = cvCreateMat(3, 3, CV_32FC1);
+	cvRodrigues2(rotation_vector, rotation_mat);
+	
 	// map outlets to rectified plane
 	CvMat* src = cvCreateMat(1, 2, CV_32FC2);
 	CvMat* dst = cvCreateMat(1, 2, CV_32FC2);
@@ -1674,10 +1694,16 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
 		it->coord_hole_ground = cvPoint3D32f((it->coord_hole1.x + it->coord_hole2.x)*0.5f,
 											 (it->coord_hole1.y + it->coord_hole2.y)*0.5f - ground_hole_offset,
 											 0.0f);
+		
+		it->coord_hole1 = map_point(it->coord_hole1, rotation_mat, translation_vector);
+		it->coord_hole2 = map_point(it->coord_hole2, rotation_mat, translation_vector);
+		it->coord_hole_ground = map_point(it->coord_hole_ground, rotation_mat, translation_vector);
 	}
 	
 	cvReleaseMat(&src);
 	cvReleaseMat(&dst);
+	
+	cvReleaseMat(&rotation_mat);
 	
 	return 1;
 }
@@ -1689,7 +1715,7 @@ void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& 
 	// calculate the average distance between the holes
 	for(vector<outlet_t>::const_iterator it = outlets.begin(); it != outlets.end(); it++)
 	{
-		float diff = fabs(it->coord_hole2.x - it->coord_hole1.x);
+		float diff = length(it->coord_hole2 - it->coord_hole1);
 		sum += diff;
 		sum2 += diff*diff;
 	}
@@ -1702,18 +1728,18 @@ void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_
 {
 	if(outlets.size() < 4) return;
 	
-	CvPoint2D32f ground_holes[4];
-	for(int i = 0; i < 4; i++)
-	{
-		CvPoint3D32f point = outlets[i].coord_hole_ground;
-		ground_holes[i] = cvPoint2D32f(point.x, point.y);
-	}
+//	CvPoint2D32f ground_holes[4];
+//	for(int i = 0; i < 4; i++)
+//	{
+//		CvPoint3D32f point = outlets[i].coord_hole_ground;
+//		ground_holes[i] = cvPoint2D32f(point.x, point.y);
+//	}
 	
-	order_tuple2(ground_holes);
+//	order_tuple2(ground_holes); outlets are ordered before, no need to do it here!
 	
-	ground_dist_x1 = ground_holes[1].x - ground_holes[0].x;
-	ground_dist_x2 = ground_holes[2].x - ground_holes[3].x;
-	ground_dist_y = ground_holes[2].y - ground_holes[1].y;	
+	ground_dist_x1 = length(outlets[1].coord_hole_ground - outlets[0].coord_hole_ground);
+	ground_dist_x2 = length(outlets[2].coord_hole_ground - outlets[3].coord_hole_ground);
+	ground_dist_y = length(outlets[2].coord_hole_ground - outlets[1].coord_hole_ground);	
 }
 
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length)
