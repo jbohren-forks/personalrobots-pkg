@@ -46,9 +46,9 @@ namespace KDL
 
         bool operator ==(const Jacobian& arg);
         bool operator !=(const Jacobian& arg);
-        
+
         friend bool Equal(const Jacobian& a,const Jacobian& b,double eps=epsilon);
-        
+
 
         ~Jacobian();
 
@@ -65,6 +65,10 @@ namespace KDL
 
 
     };
+
+    void changeRefPoint(const Jacobian& src1, const Vector& base_AB, Jacobian& dest);
+    void changeBase(const Jacobian& src1, const Rotation& rot, Jacobian& dest);
+    void changeRefFrame(const Jacobian& src1,const Frame& frame, Jacobian& dest);
 }
 
 #endif

@@ -1,7 +1,7 @@
 all: installed
-  
+
 SOURCE_DIR = kdl-willow
-CMAKE = cmake 
+CMAKE = cmake
 BOOST_INCLUDE_DIR = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIR = $(shell rosboost-cfg --library_dirs)
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
@@ -10,7 +10,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DBOOST_INCLUDEDIR:STRING=$(BOOST_INCLUDE_DIR) \
 		-DBOOST_LIBRARYDIR:STRING=$(BOOST_LIBRARY_DIR)
 
-installed: wiped 
+installed: wiped
 	-mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SOURCE_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
