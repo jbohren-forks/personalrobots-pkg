@@ -91,14 +91,14 @@ namespace trajectory_rollout {
       ma.getCostmapDimensions(cmap_width, cmap_height);
       point_grid_ = new PointGrid(cmap_width * ma.getResolution(), cmap_height * ma.getResolution(), 0.2, origin, 2.0, 2.0, 0.01);
       world_model_ = point_grid_;
-      ROS_ERROR("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
+      ROS_INFO("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
       /*For Debugging
       ros_node.advertise<PointCloud>("point_grid", 1);
       */
     }
     else{
       world_model_ = new CostmapModel(ma); 
-      ROS_ERROR("Costmap\n");
+      ROS_INFO("Costmap\n");
     }
 
     tc_ = new TrajectoryController(*world_model_, ma, footprint_spec, inscribed_radius, circumscribed_radius,
@@ -203,7 +203,7 @@ namespace trajectory_rollout {
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
-    ROS_ERROR("Cycle time: %.9f", t_diff);
+    ROS_INFO("Cycle time: %.9f", t_diff);
     */
 
     //pass along drive commands
