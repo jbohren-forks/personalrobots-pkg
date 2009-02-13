@@ -40,10 +40,12 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
+#include <door_handle_detector/DoorDetector.h>
+
 using namespace checkerboard_detector;
 using namespace tf;
 
-class DoorDetectionTestNode : public ros::Node
+class DoorCheckerboardDetectorNode : public ros::Node
 {
   public:
     std::string listen_topic_, publish_topic_,frame_id_;
@@ -51,8 +53,9 @@ class DoorDetectionTestNode : public ros::Node
     double door_width_;
     double door_checkerboard_x_offset_, door_checkerboard_z_offset_, checkerboard_handle_z_offset_, checkerboard_handle_x_offset_;
     tf::TransformListener tf_; /**< Used to do transforms */
+    robot_msgs::Door door_msg_;
 
-    DoorDetectionTestNode(std::string node_name):ros::Node(node_name),tf_(*this, false, 10000000000ULL)
+    DoorCheckerboardDetectorNode(std::string node_name):ros::Node(node_name),tf_(*this, false, 10000000000ULL)
     {
       this->param<std::string>("door_detection_test_node/listen_topic",listen_topic_,"/checkerdetector/ObjectDetection");
       this->param<std::string>("door_detection_test_node/publish_topic",publish_topic_,"door_location");
@@ -66,13 +69,16 @@ class DoorDetectionTestNode : public ros::Node
       this->param<double>("door_detection_test_node/checkerboard_handle_z_offset",checkerboard_handle_z_offset_,0.0);
       this->param<double>("door_detection_test_node/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.0);
 
-      subscribe(listen_topic_, checkerboard_msg_,  &DoorDetectionTestNode::doorCallback,1);
+      subscribe(listen_topic_, checkerboard_msg_,  &DoorCheckerboardDetectorNode::doorCallback,1);
       advertise<robot_msgs::Door>(publish_topic_,1);
+      advertiseService("door_handle_checkerboard_detector", &DoorCheckerboardDetectorNode::detectDoor, this);
+
     }
 
-    ~DoorDetectionTestNode()
+    ~DoorCheckerboardDetectorNode()
     {
       unadvertise(publish_topic_);
+      unadvertiseService("door_handle_checkerboard_detector");
       unsubscribe(listen_topic_);
     }
 
@@ -106,12 +112,15 @@ class DoorDetectionTestNode : public ros::Node
       out.z = in.z();
     }
 
+    bool detectDoor(door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
+    {
+      resp.door = door_msg_;
+      return true;
+    }
+
+
     void doorCallback()
     {
-      robot_msgs::Door door_msg;
-
-      door_msg.header.stamp    = checkerboard_msg_.header.stamp;
-      door_msg.header.frame_id = frame_id_;
 
       tf::Pose door_pose;
       Stamped<tf::Point> frame_p1, frame_p2, door_p1, door_p2, handle;
@@ -127,6 +136,8 @@ class DoorDetectionTestNode : public ros::Node
 
       if(checkerboard_msg_.get_objects_size() > 0)
       {
+        door_msg_.header.stamp    = checkerboard_msg_.header.stamp;
+        door_msg_.header.frame_id = frame_id_;
         tf::PoseMsgToTF(checkerboard_msg_.objects[0].pose,door_pose);
 
         door_p1 = Stamped<tf::Point>(door_pose*Point(-door_checkerboard_x_offset_,door_checkerboard_z_offset_,0.0),checkerboard_msg_.header.stamp, checkerboard_msg_.header.frame_id,dummy);
@@ -145,21 +156,21 @@ class DoorDetectionTestNode : public ros::Node
 
         transformTFPoint(frame_id_,door_p1,target);
         ROS_INFO("door_p1 transformed : %f %f %f", target.m_floats[0], target.m_floats[1], target.m_floats[2]);
-        PointTFToMsg32(target,door_msg.door_p1);
+        PointTFToMsg32(target,door_msg_.door_p1);
 
         transformTFPoint(frame_id_,door_p2,target);
-        PointTFToMsg32(target,door_msg.door_p2);
+        PointTFToMsg32(target,door_msg_.door_p2);
 
         transformTFPoint(frame_id_,frame_p1,target);
-        PointTFToMsg32(target,door_msg.frame_p1);
+        PointTFToMsg32(target,door_msg_.frame_p1);
 
         transformTFPoint(frame_id_,frame_p2,target);
-        PointTFToMsg32(target,door_msg.frame_p2);
+        PointTFToMsg32(target,door_msg_.frame_p2);
 
         transformTFPoint(frame_id_,handle,target);
-        PointTFToMsg32(handle,door_msg.handle);
+        PointTFToMsg32(handle,door_msg_.handle);
 
-        publish(publish_topic_,door_msg);
+        publish(publish_topic_,door_msg_);
       }
     }
 };
@@ -168,7 +179,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  DoorDetectionTestNode node("test_door_detection");
+  DoorCheckerboardDetectorNode node("test_door_detection");
 
   try {
     node.spin();
