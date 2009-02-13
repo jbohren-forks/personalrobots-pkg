@@ -227,7 +227,7 @@ class NavStackTest(unittest.TestCase):
             # send goal
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
-            h.frame_id = "map"
+            h.frame_id = "/map"
             pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
             time.sleep(2.0)
             # compute angular error between deltas in odom and p3d
