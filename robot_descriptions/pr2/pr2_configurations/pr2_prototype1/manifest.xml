@@ -22,4 +22,5 @@
   <depend package="imu_node"/>
   <depend package="dcam"/>
   <depend package="robot_pose_ekf"/>
+  <depend package="mechanism_bringup"/>
 </package>
