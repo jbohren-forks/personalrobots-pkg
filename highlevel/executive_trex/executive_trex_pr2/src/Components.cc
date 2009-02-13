@@ -99,6 +99,10 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_connected_constraint, "map_connected_constraint", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::map_is_doorway_constraint, "map_is_doorway_constraint", "Default");
 
+      // Register SOLVER components
+      EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
+      REGISTER_FLAW_FILTER(cfm, TREX::map_connector_filter, map_connector_filter);
+
       /*
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGraspPositionConstraint, "calcGraspPosition", "Default");

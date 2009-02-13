@@ -16,6 +16,8 @@
 #include "IntervalIntDomain.hh"
 #include "BoolDomain.hh"
 #include "Logger.hh"
+#include "FlawFilter.hh"
+#include "UnboundVariableDecisionPoint.hh"
 
 using namespace EUROPA;
 
@@ -96,6 +98,51 @@ namespace TREX {
   private:
     
   };
+
+  /**
+   * @brief A filter to exclude variable binding decisions unless they are on a parameter variable
+   * of a token for has all required variables, and the source and final destination are already singletons
+   */
+  class map_connector_filter: public SOLVERS::FlawFilter {
+  public:
+    map_connector_filter(const TiXmlElement& configData);
+
+    bool test(const EntityId& entity);
+
+  private:
+    const LabelStr m_source;
+    const LabelStr m_final;
+    const LabelStr m_target;
+  };
+
+
+  /**
+   * @brief Implements a sort based on minimizing g_cost + h_cost for target selection
+   */
+  class map_connector_selector: public SOLVERS::UnboundVariableDecisionPoint {
+  public:
+    map_connector_selector(const DbClientId& client, const ConstrainedVariableId& flawedVariable, const TiXmlElement& configData, const LabelStr& explanation = "unknown");
+    bool hasNext() const;
+    double getNext();
+
+  private:
+    class Choice {
+    public:
+      Choice():id(0), cost(0){}
+      unsigned int id;
+      double cost;  
+      bool operator<(const map_connector_selector::Choice& rhs) const {return cost < rhs.cost;}
+    };
+
+    double g_cost(unsigned int from, unsigned int to) const;
+    double h_cost(unsigned int from, unsigned int to) const;
+
+    const LabelStr m_source;
+    const LabelStr m_final;
+    std::list<Choice> m_sorted_choices;
+    std::list<Choice>::iterator m_choice_iterator;
+  };
 }
+
 
 #endif
