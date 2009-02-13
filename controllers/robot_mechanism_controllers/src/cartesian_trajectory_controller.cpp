@@ -230,8 +230,8 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
 
   // get name of root and tip
   string tip_name;
-  node_->param(controller_name_+"/root_name", root_name_, string("no_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
+  node_->param(controller_name_+"/root_name", root_name_, string("no_root_name_given"));
+  node_->param(controller_name_+"/tip_name", tip_name, string("no_tip_name_given"));
 
   // initialize controller  
   if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
@@ -257,11 +257,16 @@ void CartesianTrajectoryControllerNode::update()
 
 
 
-bool CartesianTrajectoryControllerNode::moveTo(robot_mechanism_controllers::MoveToPose::Request &req, robot_mechanism_controllers::MoveToPose::Response &resp)
+bool CartesianTrajectoryControllerNode::moveTo(robot_mechanism_controllers::MoveToPose::Request &req, 
+                                               robot_mechanism_controllers::MoveToPose::Response &resp)
 {
+  cout << "receive service call for time " << req.pose.header.stamp.toSec() << " and frame " << req.pose.header.frame_id << endl;
+
   Time start_time = Time().now();
   Duration traject_time = moveTo(req.pose);
   Duration sleep_time = Duration().fromSec(0.01);
+
+  cout << "service will take " << traject_time.toSec() << " seconds" << endl;
 
   if (traject_time == Duration().fromSec(0))
     return false;
@@ -280,6 +285,18 @@ void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs
 }
 
 
+
+
+
+
+
+
+
+
+
+// ----------------------------------
+// helper functions
+// ----------------------------------
 Duration CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
 {
   // convert message to transform
