@@ -27,8 +27,8 @@ public:
 
   Joy() : Node("joy")
   {
-    param<string>("joy/dev", joy_dev, "/dev/input/js0");
-    param<int>("joy/deadzone", deadzone, 2000);
+    param<string>("~dev", joy_dev, "/dev/input/js0");
+    param<int>("~deadzone", deadzone, 2000);
     printf("dev:%s\n", joy_dev.c_str());
     printf("deadzone:%d\n", deadzone);
     advertise<joy::Joy>("joy",10);
