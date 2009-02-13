@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(gazebo_robot_description)
-rospack_add_executable(urdf2gazebo src/urdf2gazebo.cpp)
 
 # find needed paths
 find_ros_package(pr2_defs)
 find_ros_package(gazebo_robot_description)
-get_target_property(urdf2gazebo_exe urdf2gazebo LOCATION)
 
 # build the ogre mesh files from *.stl (and *.stlb from convex decomposition)
 file(GLOB pr2_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/*.stl ${pr2_defs_PACKAGE_PATH}/meshes/convex/*.stlb)
@@ -31,6 +29,4 @@ endforeach(it)
 
 add_custom_target(media_files ALL DEPENDS ${pr2_gen_files})
 
-# deprecated by urdf2factory
-# add_dependencies(pr2_arm_urdf urdf2gazebo)
 

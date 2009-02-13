@@ -36,4 +36,10 @@ rospack_link_boost(gazebo_battery thread)
 rospack_add_library(ros_bumper src/ros_bumper.cpp)
 rospack_link_boost(ros_bumper thread)
 
+rospack_add_library(urdf2gazebo src/urdf2gazebo.cpp)
+
 rospack_add_executable(urdf2factory src/urdf2factory.cpp)
+target_link_libraries(urdf2factory urdf2gazebo)
+
+rospack_add_executable(urdf2file src/urdf2file.cpp)
+target_link_libraries(urdf2file urdf2gazebo)

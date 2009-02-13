@@ -32,20 +32,20 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
+#include <gazebo_plugin/urdf2gazebo.h>
 
-#include <vector>
-#include <string>
-#include <sstream>
+using namespace urdf2gazebo;
 
-#include <urdf/URDF.h>
+URDF2Gazebo::URDF2Gazebo()
+{
+}
 
-#include "LinearMath/btTransform.h"
-#include "LinearMath/btVector3.h"
+URDF2Gazebo::~URDF2Gazebo()
+{
+}
 
-std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL)
+
+std::string URDF2Gazebo::values2str(unsigned int count, const double *values, double (*conv)(double) = NULL)
 {
     std::stringstream ss;
     for (unsigned int i = 0 ; i < count ; i++)
@@ -57,19 +57,14 @@ std::string values2str(unsigned int count, const double *values, double (*conv)(
     return ss.str();
 }
 
-double rad2deg(double v)
-{
-    return v * 180.0 / M_PI;
-}
-
-void setupTransform(btTransform &transform, const double *xyz, const double *rpy)
+void URDF2Gazebo::setupTransform(btTransform &transform, const double *xyz, const double *rpy)
 {
     btMatrix3x3 mat;
     mat.setEulerZYX(rpy[0],rpy[1],rpy[2]);
     transform = btTransform(mat,btVector3(xyz[0],xyz[1],xyz[2]));
 }
 
-void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &value)
+void URDF2Gazebo::addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &value)
 {
     TiXmlElement *ekey      = new TiXmlElement(key);
     TiXmlText    *text_ekey = new TiXmlText(value);
@@ -77,7 +72,7 @@ void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &
     elem->LinkEndChild(ekey); 
 }
 
-void addTransform(TiXmlElement *elem, const::btTransform& transform)
+void URDF2Gazebo::addTransform(TiXmlElement *elem, const::btTransform& transform)
 {
     btVector3 pz = transform.getOrigin();
     double cpos[3] = { pz.x(), pz.y(), pz.z() };
@@ -90,7 +85,7 @@ void addTransform(TiXmlElement *elem, const::btTransform& transform)
     addKeyValue(elem, "rpy", values2str(3, crot, rad2deg));  
 }
 
-void copyGazeboMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const std::vector<std::string> *tags = NULL)
+void URDF2Gazebo::copyGazeboMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const std::vector<std::string> *tags = NULL)
 {
     std::vector<std::string> gazebo_names;
     data.getMapTagNames("gazebo", gazebo_names);
@@ -117,11 +112,10 @@ void copyGazeboMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const 
     }
 }
 
-std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *sizeCount, double *sizeVals)
+std::string URDF2Gazebo::getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *sizeCount, double *sizeVals)
 {
     std::string type;
-
-    std::cout << " geometry type: " << geometry->type << std::endl;
+    
     switch (geometry->type)
     {
     case robot_desc::URDF::Link::Geometry::BOX:
@@ -167,7 +161,7 @@ std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *siz
     return type;
 }
 
-void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits)
+void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits)
 {
     btTransform currentTransform = transform;
     
@@ -175,6 +169,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
     double linkSize[3];
     std::string type = getGeometrySize(link->collision->geometry, &linkGeomSize, linkSize);
     
+    // This should be made smarter.
+    if(!link->visual) 
+    {
+      printf("ignoring link without visual tag: %s\n", link->name.c_str());
+      return;
+    }
+
     if (!type.empty())
     {
         /* create new body */
@@ -344,8 +345,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                 
                 for (int j = 0 ; j < 3 ; ++j)
                 {
-                    // undo Gazebo's shift of object anchor to geom xyz, stay in body cs
-                    tmpAnchor[j] = (link->joint->anchor)[j] - 0.0*(link->inertial->com)[j] - 1.0*(link->collision->xyz)[j]; /// @todo compensate for gazebo's error.  John is fixing this one
+                    // undo Gazebo's shift of object anchor to geom cg center, stay in body cs
+                    tmpAnchor[j] = (link->joint->anchor)[j] - (link->collision->xyz)[j];
                 }
                 
                 addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
@@ -372,10 +373,10 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                     addKeyValue(joint,"mimicOffset", values2str(1, &(link->joint->fMimicOffset)     ));
 
             }
-
+            
             /* copy gazebo data */
             copyGazeboMap(link->joint->data, joint);
-            
+
             /* add joint to document */
             root->LinkEndChild(joint);
         }
@@ -385,7 +386,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
         convertLink(root, link->children[i], currentTransform, enforce_limits);
 }
 
-void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
+void URDF2Gazebo::convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
 {
     TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
@@ -421,46 +422,12 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
     doc.LinkEndChild(robot);
 }
 
-void usage(const char *progname)
-{
-    printf("\nUsage: %s URDF.xml Gazebo.model\n", progname);
-    printf("       where URDF.xml is the file containing a robot description in the Willow Garage format (URDF)\n");
-    printf("       and Gazebo.model is the file where the Gazebo model should be written\n\n");
-}
 
-int main(int argc, char **argv)
-{
-    if (argc < 3)
-    {
-        usage(argv[0]);
-        exit(1);
-    }
-    
-    // Experimental: take in optional argument to disable passing the limit for grasping test
-    bool enforce_limits = true;
-    if (argc == 4)
-    {
-        printf("Not enforcing limits\n");
-        enforce_limits = false;
-    }
-    
-    robot_desc::URDF wgxml;
-    
-    if (!wgxml.loadFile(argv[1]))
-    {
-        printf("Unable to load robot model from %s\n", argv[1]);  
-        exit(2);
-    }
-    
-    TiXmlDocument doc;
-    
-    convert(wgxml, doc, enforce_limits);
-    
-    if (!doc.SaveFile(argv[2]))
-    {
-        printf("Unable to save gazebo model in %s\n", argv[2]);  
-        exit(3);
-    }
-    
-    return 0;
-}
+
+
+
+
+
+
+
+
