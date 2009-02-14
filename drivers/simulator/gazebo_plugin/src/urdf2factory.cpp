@@ -99,7 +99,7 @@ int main(int argc, char **argv)
       }
       catch (gazebo::GazeboError e)
       {
-        std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
+        ROS_ERROR("Gazebo error: Unable to connect\n %s\n",e.GetErrorStr().c_str());
         usleep(1000000);
         connected_to_server = false;
       }
@@ -112,8 +112,7 @@ int main(int argc, char **argv)
     }
     catch (gazebo::GazeboError e)
     {
-      std::cout << "Gazebo error: Unable to connect to the factory interface\n"
-      << e << "\n";
+      ROS_ERROR("Gazebo error: Unable to connect to the factory interface\n%s\n",e.GetErrorStr().c_str());
       return -1;
     }
 
@@ -121,16 +120,17 @@ int main(int argc, char **argv)
     // Load parameter server string for pr2 robot description
     ros::init(argc,argv);
     ros::Node* rosnode = new ros::Node(argv[1],ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node for pr2 param server factory \n");
+    ROS_INFO("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
     rosnode->getParam(argv[1],xml_content);
+    ROS_INFO("robotdesc/pr2 content\n%s\n",xml_content.c_str());
 
     // Parse URDF from param server
     bool enforce_limits = true;
     robot_desc::URDF wgxml;
     if (!wgxml.loadString(xml_content.c_str()))
     {
-        printf("Unable to load robot model from param server robotdesc/pr2\n");  
+        ROS_ERROR("Unable to load robot model from param server robotdesc/pr2\n");  
         exit(2);
     }
 
@@ -141,7 +141,6 @@ int main(int argc, char **argv)
     // do the number crunching to make gazebo.model file
     TiXmlDocument doc;
     u2g.convert(wgxml, doc, enforce_limits);
-
 
     //std::cout << " doc " << doc << std::endl << std::endl;
 
@@ -178,11 +177,11 @@ int main(int argc, char **argv)
     }
 
     //std::cout << " ------------------- xml ------------------- " << std::endl;
-    //std::cout << xml_string << std::endl;
+    ROS_INFO("converted to gazebo format\n%s\n",xml_string.c_str());
     //std::cout << " ------------------- xml ------------------- " << std::endl;
 
     factoryIface->Lock(1);
-    printf("Creating Robot in Gazebo\n");
+    ROS_INFO("Creating Robot in Gazebo\n");
     strcpy((char*)factoryIface->data->newModel, xml_string.c_str());
     factoryIface->Unlock();
     usleep(1000000);
