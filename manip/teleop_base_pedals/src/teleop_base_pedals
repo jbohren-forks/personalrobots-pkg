@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+PKG = 'teleop_base_pedals'
+import roslib; roslib.load_manifest(PKG)
+
+import rospy
+
+from joy.msg import Joy
+from robot_msgs.msg import PoseDot
+
+r_pedal_state = 0
+l_pedal_state = 0
+
+def l_pedal_callback(data):
+  global l_pedal_state
+  l_pedal_state = data
+
+def r_pedal_callback(data):
+  global r_pedal_state 
+  r_pedal_state = data
+
+def valid_pedals(data):
+  if(data == 0):
+    return False
+  if(len(data.axes) != 3):
+    return False
+  return True
+
+def teleop_base_pedals():
+  rospy.init_node('teleop_base_pedals')
+  pub = rospy.Publisher('cmd_vel', PoseDot)
+  rospy.Subscriber("l_pedals", Joy, l_pedal_callback)
+  rospy.Subscriber("r_pedals", Joy, r_pedal_callback)
+
+  cmd_vel = PoseDot()
+  max_rot_vel = 3
+  max_y_vel = 0.3
+  max_x_vel = 1
+ 
+  while not rospy.is_shutdown():
+    if(valid_pedals(l_pedal_state) & valid_pedals(r_pedal_state)):
+      cmd_vel.vel.vx = (l_pedal_state.axes[2] - r_pedal_state.axes[2]) * 0.5 * max_x_vel
+      cmd_vel.vel.vy = (l_pedal_state.axes[0] - r_pedal_state.axes[1]) * 0.5 * max_y_vel
+      cmd_vel.vel.vz = 0
+      cmd_vel.ang_vel.vx = 0
+      cmd_vel.ang_vel.vy = 0
+      cmd_vel.ang_vel.vz = (l_pedal_state.axes[2] + r_pedal_state.axes[2]) * 0.5 * max_rot_vel
+      pub.publish(cmd_vel)
+    rospy.sleep(0.05)
+
+if __name__ == '__main__':
+  teleop_base_pedals() 

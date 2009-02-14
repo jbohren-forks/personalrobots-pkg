@@ -1,0 +1,14 @@
+<package>
+  <description brief="Teleop Full">
+    Teleoperates the robot using the phasespace for the hands, pedals for the drive, and quadrant for the elbows
+  </description>
+  <author>Eric Berger</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="rospy" />
+  <depend package="robot_msgs" />
+  <depend package="joy" />
+  <url>http://pr.willowgarage.com</url>
+  <export>
+  </export>
+</package>
