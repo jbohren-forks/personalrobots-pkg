@@ -39,7 +39,7 @@ from robot_msgs.msg import *
 pub = rospy.Publisher('/cartesian_tff/command', TaskFrameFormalism)
 
 def p(mx, vx, my, vy, mz, vz, mxx, vxx, myy, vyy, mzz, vzz):
-  m = TaskFrameTormalism()
+  m = TaskFrameFormalism()
   m.header.frame_id = ''
   m.header.stamp = rospy.get_rostime()
   m.mode.vel.x = mx
@@ -64,9 +64,7 @@ def main():
     if len(sys.argv) < 12:
         print "Usage:  tff.py mx, vx, my, vy, mz, vz, mxx, vxx, myy, vyy, mzz, vzz"
         sys.exit(1)
-    while not rospy.is_shutdown():
-      time.sleep(0.00001)
-      p(float(sys.argv[1]), float(sys.argv[2]),float(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6]),float(sys.argv[7]),float(sys.argv[8]),float(sys.argv[9]),float(sys.argv[10]),float(sys.argv[11]),float(sys.argv[12]))
+    p(float(sys.argv[1]), float(sys.argv[2]),float(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6]),float(sys.argv[7]),float(sys.argv[8]),float(sys.argv[9]),float(sys.argv[10]),float(sys.argv[11]),float(sys.argv[12]))
 
 
 if __name__ == '__main__':

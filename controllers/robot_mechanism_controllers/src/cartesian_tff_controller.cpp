@@ -139,6 +139,7 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
   // set initial position, twist
   position_ = Twist::Zero();
   pose_meas_old_ = Frame::Identity();
+  initialized_ = false;
 
   // create wrench controller
   wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
@@ -171,7 +172,18 @@ void CartesianTFFController::update()
   twist_meas_ = pose_meas_.M.Inverse() * (frame_twist.deriv());
 
   // calculate the distance traveled along the axes of the tf
-  position_ += pose_meas_.M.Inverse() * diff(pose_meas_, pose_meas_old_);
+  if (initialized_)
+    position_ += pose_meas_.M.Inverse() * diff(pose_meas_, pose_meas_old_);
+  else{
+    pose_meas_old_ = pose_meas_;
+    initialized_ = true;
+  }
+
+  // debug
+  cout << "position ";
+  for (unsigned int i=0; i<6; i++)
+    cout << position_[i] << " ";
+  cout << endl;
 
   // calculate desired wrench
   wrench_desi_ = Wrench::Zero();
@@ -264,12 +276,12 @@ void CartesianTFFControllerNode::update()
 void CartesianTFFControllerNode::command()
 {
   // tff command
-  controller_.tffCommand(tff_msg_.mode.vel.x, tff_msg_.value.vel.x,
-                         tff_msg_.mode.vel.y, tff_msg_.value.vel.y,
-                         tff_msg_.mode.vel.z, tff_msg_.value.vel.z,
-                         tff_msg_.mode.rot.x, tff_msg_.value.rot.x,
-                         tff_msg_.mode.rot.y, tff_msg_.value.rot.y,
-                         tff_msg_.mode.rot.z, tff_msg_.value.rot.z);
+  controller_.tffCommand(trunc(tff_msg_.mode.vel.x), tff_msg_.value.vel.x,
+                         trunc(tff_msg_.mode.vel.y), tff_msg_.value.vel.y,
+                         trunc(tff_msg_.mode.vel.z), tff_msg_.value.vel.z,
+                         trunc(tff_msg_.mode.rot.x), tff_msg_.value.rot.x,
+                         trunc(tff_msg_.mode.rot.y), tff_msg_.value.rot.y,
+                         trunc(tff_msg_.mode.rot.z), tff_msg_.value.rot.z);
 }
 
 

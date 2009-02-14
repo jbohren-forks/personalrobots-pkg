@@ -67,6 +67,7 @@ private:
   std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
+  bool initialized_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> vel_pid_controller_, pos_pid_controller_;     
