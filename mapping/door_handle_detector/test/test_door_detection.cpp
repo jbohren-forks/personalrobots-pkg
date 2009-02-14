@@ -59,22 +59,21 @@ class TestDoorDetectionNode : public ros::Node
 
     robot_msgs::Door door_msg_from_checkerboard_;
     robot_msgs::Door door_msg_from_detector_;
+    robot_msgs::Door door_msg_to_detector_;
 
     TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, 10000000000ULL)
     {
-      this->param<std::string>("door_detection_test_node/joy_topic",joy_topic_,"annotation_msg");
-
-      this->param<std::string>("door_detection_test_node/frame_id",frame_id_,"base_link");
-
+      this->param<std::string>("test_door_detection_node/joy_topic",joy_topic_,"annotation_msg");
+      this->param<std::string>("test_door_detection_node/frame_id",frame_id_,"base_link");
 
       double tmp; int tmp2;
-      param("~/door_frame_p1_x", tmp, 1.5); door_msg_from_detector_.frame_p1.x = tmp;
-      param("~/door_frame_p1_y", tmp, -0.5);door_msg_from_detector_.frame_p1.y = tmp;
-      param("~/door_frame_p2_x", tmp, 1.5); door_msg_from_detector_.frame_p2.x = tmp;
-      param("~/door_frame_p2_y", tmp, 0.5); door_msg_from_detector_.frame_p2.y = tmp;
-      param("~/door_hinge" , tmp2, -1); door_msg_from_detector_.hinge = tmp2;
-      param("~/door_rot_dir" , tmp2, -1); door_msg_from_detector_.rot_dir = tmp2;
-      door_msg_from_detector_.header.frame_id = frame_id_;
+      param("~/door_frame_p1_x", tmp, 1.5); door_msg_to_detector_.frame_p1.x = tmp;
+      param("~/door_frame_p1_y", tmp, -0.5);door_msg_to_detector_.frame_p1.y = tmp;
+      param("~/door_frame_p2_x", tmp, 1.5); door_msg_to_detector_.frame_p2.x = tmp;
+      param("~/door_frame_p2_y", tmp, 0.5); door_msg_to_detector_.frame_p2.y = tmp;
+      param("~/door_hinge" , tmp2, -1); door_msg_to_detector_.hinge = tmp2;
+      param("~/door_rot_dir" , tmp2, -1); door_msg_to_detector_.rot_dir = tmp2;
+      door_msg_to_detector_.header.frame_id = frame_id_;
 
       subscribe(joy_topic_, joy_msg_, &TestDoorDetectionNode::joyCallback,1);
     }
@@ -116,11 +115,12 @@ class TestDoorDetectionNode : public ros::Node
     void joyCallback()
     {
       std::string status_string;
+      ROS_INFO("Joystick message: %s",joy_msg_.data.c_str());
       if (joy_msg_.data != std::string("detect_door"))
       { 
         return;
       }
-      if(detectDoor(door_msg_from_detector_, door_msg_from_detector_))
+      if(detectDoor(door_msg_to_detector_, door_msg_from_detector_))
       {
         if(detectDoorCheckerboard(door_msg_from_checkerboard_,door_msg_from_checkerboard_))
         {
@@ -128,14 +128,21 @@ class TestDoorDetectionNode : public ros::Node
           {
             ROS_INFO("%s",status_string.c_str());
           }
+          else
+          {
+            ROS_INFO("Failed to match door messages from laser and checkerboard");
+          }
         }
         else
         {
           ROS_WARN("Could not see checkerboard");
         }
       }
-      ROS_ERROR("No door detected");
-      return;          
+      else
+      {
+        ROS_ERROR("No door detected");
+      }
+        return;          
     }
 
     double distancePoints(robot_msgs::Point32 p1, robot_msgs::Point32 p2)

@@ -57,17 +57,17 @@ class DoorCheckerboardDetectorNode : public ros::Node
 
     DoorCheckerboardDetectorNode(std::string node_name):ros::Node(node_name),tf_(*this, false, 10000000000ULL)
     {
-      this->param<std::string>("door_detection_test_node/listen_topic",listen_topic_,"/checkerdetector/ObjectDetection");
-      this->param<std::string>("door_detection_test_node/publish_topic",publish_topic_,"door_location");
+      this->param<std::string>("door_checkerboard_detector/listen_topic",listen_topic_,"/checkerdetector/ObjectDetection");
+      this->param<std::string>("door_checkerboard_detector/publish_topic",publish_topic_,"door_location");
       
-      this->param<std::string>("door_detection_test_node/frame_id",frame_id_,"base_link");
+      this->param<std::string>("door_checkerboard_detector/frame_id",frame_id_,"base_link");
 
-      this->param<double>("door_detection_test_node/door_width",door_width_,0.9);
-      this->param<double>("door_detection_test_node/door_checkerboard_x_offset",door_checkerboard_x_offset_,0.073);
-      this->param<double>("door_detection_test_node/door_checkerboard_z_offset",door_checkerboard_z_offset_,1.47);
+      this->param<double>("door_checkerboard_detector/door_width",door_width_,0.9);
+      this->param<double>("door_checkerboard_detector/door_checkerboard_x_offset",door_checkerboard_x_offset_,0.073);
+      this->param<double>("door_checkerboard_detector/door_checkerboard_z_offset",door_checkerboard_z_offset_,1.47);
 
-      this->param<double>("door_detection_test_node/checkerboard_handle_z_offset",checkerboard_handle_z_offset_,0.0);
-      this->param<double>("door_detection_test_node/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.0);
+      this->param<double>("door_checkerboard_detector/checkerboard_handle_z_offset",checkerboard_handle_z_offset_,0.0);
+      this->param<double>("door_checkerboard_detector/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.0);
 
       subscribe(listen_topic_, checkerboard_msg_,  &DoorCheckerboardDetectorNode::doorCallback,1);
       advertise<robot_msgs::Door>(publish_topic_,1);
