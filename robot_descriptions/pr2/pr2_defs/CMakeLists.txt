@@ -7,7 +7,8 @@ rospack_add_gtest(test_update test/test_update.cpp)
 
 find_ros_package(pr2_defs)
 
-file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.xml)
+file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.xml 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/robots/*groups*.xml)
 
 # xacro file generation
 find_ros_package(xacro)
