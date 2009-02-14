@@ -68,6 +68,9 @@ class TopologicalMap::GraphImpl
 {
 public:
 
+  /// Default constructor creates empty graph
+  GraphImpl() : next_id_(0) {}
+
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
   RegionId containingRegion(const Cell2D& p) const;
@@ -78,6 +81,9 @@ public:
 
   /// \return Vector of id's of neighboring regions to region \a r
   RegionIdVector neighbors(const RegionId r) const;
+
+  /// \return Vector of all region ids
+  const RegionIdVector& allRegions() const;
 
   /// \post New region has been added
   /// \return Id of new region
@@ -90,13 +96,17 @@ public:
 
 private:
 
+  GraphImpl(const GraphImpl&);
+  GraphImpl& operator= (const GraphImpl&);
+
   TopologicalGraphVertex idVertex(const RegionId id) const;
 
   IdVertexMap id_vertex_map_;
   RegionMap region_map_;
   TopologicalGraph graph_;
+  RegionIdVector regions_;
   
-  int next_id_;
+  RegionId next_id_;
 };
 
 

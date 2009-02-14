@@ -33,7 +33,9 @@
 #include "region.h"
 #include <map>
 #include <vector>
+#include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/multi_array.hpp>
 
 namespace topological_map
 {
@@ -46,6 +48,9 @@ class TopologicalMap
 {
 public:
 
+  /// Default constructor makes an empty map (see also topologicalMapFromGrid)
+  TopologicalMap();
+
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
   RegionId containingRegion(const Cell2D& p) const;
@@ -57,8 +62,11 @@ public:
   /// \return Vector of id's of neighboring regions to region \a r
   RegionIdVector neighbors(const RegionId r) const;
 
+  /// \return Vector of all region ids.  This is a reference and may change.
+  const RegionIdVector& allRegions() const;
+
   /// \post New region has been added
-  /// \return Id of new region
+  /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)
   /// \throws OverlappingRegionException
   RegionId addRegion (const RegionPtr region, const int region_type);
 
@@ -67,10 +75,32 @@ public:
   void removeRegion (const RegionId id);
 
 private:
-  
+
+  /// Avoid client compilation dependency on implementation details
   class GraphImpl;
   boost::shared_ptr<GraphImpl> graph_impl_;
+
+  /// Forbid copy and assign
+  TopologicalMap(const TopologicalMap&);
+  TopologicalMap& operator= (const TopologicalMap&);
 };
+
+
+/************************************************************
+ * Creation
+ ************************************************************/
+
+typedef boost::multi_array<bool, 2> OccupancyGrid;
+typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
+
+/// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const uint bottleneck_length, const uint bottleneck_width, const uint inflation_radius, const std::string& pgm_output_dir);
+
+
+
+
+
+
   
 } // namespace topological_map
 

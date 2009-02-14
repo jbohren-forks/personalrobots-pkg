@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,40 +28,51 @@
  */
 
 
-#ifndef TOPOLOGICAL_MAP_REGION_H
-#define TOPOLOGICAL_MAP_REGION_H
 
-#include <iostream>
-#include <set>
-#include <vector>
-#include <boost/shared_ptr.hpp>
+
+#ifndef TOPOLOGICAL_MAP_ROS_TOPOLOGICAL_MAP_H
+#define TOPOLOGICAL_MAP_ROS_TOPOLOGICAL_MAP_H
+
+
+#include <getopt.h>
+#include <sysexits.h>
+#include <boost/thread.hpp>
+#include <ros/node.h>
+#include <string>
+#include <ros/console.h>
+#include <robot_srvs/StaticMap.h>
+#include "topological_map.h"
+
+using std::string;
 
 namespace topological_map
 {
 
-struct Cell2D
+/// Holds runtime state of ros topological map node
+class RosTopologicalMap
 {
-  int r, c;
-  Cell2D() {}
-  Cell2D(const int row, const int column) : r(row), c(column) {}
+public:
+  RosTopologicalMap (uint bottleneck_length, uint bottleneck_width, uint inflation_radius, const string& pgm_output_dir);
+  
+private:
+  // Disallow copy and assign
+  RosTopologicalMap& operator= (const RosTopologicalMap&);
+  RosTopologicalMap (const RosTopologicalMap&);
+
+  void loadMap();
+
+  OccupancyGrid occupancy_grid_;
+
+  TopologicalMapPtr topological_map_;
+
+  uint num_cols_, num_rows_;
+  double resolution_;
 };
-
-std::ostream& operator<< (std::ostream& str, const Cell2D& c);
-int operator< (const Cell2D& c, const Cell2D& c2);
-bool operator== (const Cell2D& c, const Cell2D& c2);
-
-std::vector<Cell2D> cellNeighbors (const Cell2D& c);
-
-/// Represent a region as a set of Cell2D.
-typedef std::set<Cell2D> Region;
-typedef boost::shared_ptr<const Region> RegionPtr;
-
-/// Use when creating regions
-typedef boost::shared_ptr<Region> MutableRegionPtr;
-
-/// Convenience
-typedef unsigned int uint;
+  
 
 } // namespace topological_map
 
-#endif
+
+
+
+#endif // TOPOLOGICAL_MAP_ROS_BOTTLENECK_GRAPH_H

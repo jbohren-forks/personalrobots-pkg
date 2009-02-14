@@ -9,6 +9,8 @@ rospack_add_boost_directories()
 set(ROS_COMPILE_FLAGS "-g -pg -O3" ${ROS_COMPILE_FLAGS})
 set(ROS_LINK_FLAGS "-g -pg -O3" ${ROS_LINK_FLAGS})
 
+
+## Old version
 rospack_add_library(topological_map src/bottleneck_graph.cpp src/roadmap.cpp src/gridcell.cpp)
 target_link_libraries(topological_map navfn)
 
@@ -21,5 +23,15 @@ target_link_libraries(bg_driver topological_map)
 
 
 
+
+
+## New version
 ## Rename once done
-rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp)
+rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp)
+
+rospack_add_executable(ros_topological_map src/ros_topological_map.cpp)
+target_link_libraries(ros_topological_map topological_graph)
+
+rospack_add_gtest(test/test_topological_map test/test_topological_map.cpp)
+target_link_libraries(test/test_topological_map topological_graph)
+

@@ -25,11 +25,27 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+
+/**
+ * \file
+ *
+ * Implements the basic topological_map api
+ *
+ * \author Bhaskara Marthi
  */
 
 #include <topological_map/topological_map_graph.h>
 #include <algorithm>
 #include <topological_map/exception.h>
+
+// For debugging
+#include <iostream>
+using std::cout;
+using std::endl;
+
 
 using boost::tie;
 using std::map;
@@ -73,46 +89,75 @@ RegionIdVector TopologicalMap::GraphImpl::neighbors (const RegionId id) const
   return neighbors;
 }
 
+const RegionIdVector& TopologicalMap::GraphImpl::allRegions () const
+{
+  return regions_;
+}
+
 
 RegionId TopologicalMap::GraphImpl::addRegion (const RegionPtr region, const int type)
 {
-  RegionId new_id=next_id_++;
+
+  // Make sure there's no overlap with existing regions
   for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
     if (region_map_.find(*region_iter)!=region_map_.end()) {
       throw OverlappingRegionException(*region_iter, region_map_.find(*region_iter)->second);
     }
-    else {
-      // update the region map
-      region_map_[*region_iter]=new_id;
-      TopologicalGraphVertex v=add_vertex(RegionInfo(type, region, new_id), graph_);
-      id_vertex_map_[new_id]=v; 
-
-      // for each neighboring cell, if it belongs to a different region, add an edge if necessary
-      vector<Cell2D> cell_neighbors=cellNeighbors(*region_iter);
-      set<TopologicalGraphVertex> seen_neighbors;
-      for (vector<Cell2D>::iterator neighbor_iter=cell_neighbors.begin(); neighbor_iter!=cell_neighbors.end(); ++neighbor_iter) {
-        RegionMap::iterator neighbor_ptr=region_map_.find(*neighbor_iter);
-        if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=new_id) {
-          TopologicalGraphVertex neighbor_vertex=idVertex(neighbor_ptr->second);
-          if (seen_neighbors.find(neighbor_vertex)!=seen_neighbors.end()) {
-            seen_neighbors.insert(neighbor_vertex);
-            add_edge(v, neighbor_vertex, graph_);
-          }   
-        }
-      }
-    }
   }
 
-  return new_id;
+  // maintains invariant that regions_ is sorted
+  regions_.push_back(next_id_);
+
+  // Add vertex and edges
+  TopologicalGraphVertex v=add_vertex(RegionInfo(type, region, next_id_), graph_);
+
+  // Neighbors that have been added so far
+  set<TopologicalGraphVertex> seen_neighbors;
+
+  // Update the region index and add edges to neighboring regions if necessary
+  for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
+    region_map_[*region_iter]=next_id_;
+    vector<Cell2D> cell_neighbors=cellNeighbors(*region_iter);
+    for (vector<Cell2D>::iterator neighbor_iter=cell_neighbors.begin(); neighbor_iter!=cell_neighbors.end(); ++neighbor_iter) {
+
+      RegionMap::iterator neighbor_ptr=region_map_.find(*neighbor_iter);
+      if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=next_id_) {
+        TopologicalGraphVertex neighbor_vertex=idVertex(neighbor_ptr->second);
+        if (seen_neighbors.find(neighbor_vertex)==seen_neighbors.end()) {
+          seen_neighbors.insert(neighbor_vertex);
+          add_edge(v, neighbor_vertex, graph_);
+        }   
+      }
+    }
+    id_vertex_map_[next_id_]=v; 
+  }
+  
+  return next_id_++;
 }
 
 
+
+struct RemoveFromMap
+{
+  RemoveFromMap(RegionMap& m) : region_map(m) {}
+  void operator() (const Cell2D& c) { region_map.erase(region_map.find(c)); }
+  RegionMap& region_map;
+};
+
 void TopologicalMap::GraphImpl::removeRegion (const RegionId id)
 {
-  // Look up id
-  // Remove vertex
-  // Update region map
-  // Update id_vertex map
+  TopologicalGraphVertex v=idVertex(id);
+
+  // Remove from regions_ and id_vertex_map - we don't do any check as it must exist if we got here without an exception
+  regions_.erase(lower_bound(regions_.begin(), regions_.end(), id));
+  id_vertex_map_.erase(id_vertex_map_.find(id));
+
+  // Remove all cells in this region from the region map
+  for_each(graph_[v].region->begin(), graph_[v].region->end(), RemoveFromMap(region_map_));
+
+  // Remove the vertex
+  clear_vertex(v, graph_);
+  remove_vertex(v, graph_);
 }
 
 
@@ -132,6 +177,10 @@ TopologicalGraphVertex TopologicalMap::GraphImpl::idVertex(const RegionId id) co
 /************************************************************
  * Topological graph ops are forwarded to implementation
  ************************************************************/
+
+TopologicalMap::TopologicalMap () : graph_impl_(new GraphImpl) 
+{
+}
 
 RegionId TopologicalMap::containingRegion (const Cell2D& p) const
 {
@@ -160,7 +209,10 @@ void TopologicalMap::removeRegion (const RegionId id)
   graph_impl_->removeRegion (id);
 }
 
-
+const RegionIdVector& TopologicalMap::allRegions () const
+{
+  return graph_impl_->allRegions();
+}
 
 
 
