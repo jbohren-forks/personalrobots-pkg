@@ -36,8 +36,8 @@
 
 # Author: Brian Gerkey
 
-import rostools
-rostools.update_path('executive_python')
+import roslib
+roslib.load_manifest('executive_python')
 import rospy
 import random
 from pr2_msgs.msg import MoveArmState, MoveArmGoal
