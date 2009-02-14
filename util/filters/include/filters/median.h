@@ -33,7 +33,9 @@
 #include <stdint.h>
 #include <sstream>
 #include "filters/filter_base.h"
-#include "ros/assert.h"
+
+#include "filters/realtime_vector_circular_buffer.h"
+
 /*
  * Algorithm from N. Wirth's book, implementation by N. Devillard.
  * This code in public domain.
@@ -106,7 +108,8 @@ public:
 protected:
   ///\todo change to vector
   T temp_storage_;                       ///< Preallocated storage for the list to sort
-  T data_storage_;                       ///< Storage for data between updates
+  RealtimeVectorCircularBuffer<T>* data_storage_;                       ///< Storage for data between updates
+  
 
   uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
   uint32_t iterations_;                         ///< Number of iterations up to number of observations
@@ -132,6 +135,7 @@ MedianFilter<T>::MedianFilter():
 template <typename T>
 MedianFilter<T>::~MedianFilter()
 {
+  if (data_storage_) delete data_storage_;
 };
 
 
@@ -140,13 +144,14 @@ bool MedianFilter<T>::configure(uint32_t width, const std::string& number_of_obs
 {
   if (configured_)
     return false;
+  T temp;
+  temp.resize(width);
   width_ = width;
   std::stringstream ss;
   ss << number_of_observations;
   ss >> number_of_observations_;
-  data_storage_.resize(number_of_observations_ * width_);
-  temp_storage_.resize(width_);
-  last_updated_row_ = number_of_observations_;
+  data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
+  temp_storage_.resize(number_of_observations_);
   configured_ = true;
   return true;
 };
@@ -155,43 +160,20 @@ template <typename T>
 bool MedianFilter<T>::update(const T& data_in, T& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  //  ROS_ASSERT(data_in.size() == width_);
-  // ROS_ASSERT(data_out.size() == width_);
   if (data_in.size() != width_ || data_out.size() != width_)
     return false;
   if (!configured_)
     return false;
-  //update active row
-  if (last_updated_row_ >= number_of_observations_ - 1)
-    last_updated_row_ = 0;
-  else
-    last_updated_row_++;
+  data_storage_->push_back(data_in);
 
-  //copy incoming data into perminant storage
-  memcpy(&data_storage_[width_ * last_updated_row_],
-         &data_in[0],
-         sizeof(data_in[0]) * width_);
 
-  //Return values
+  unsigned int length = data_storage_->size();
 
-  //keep track of number of rows used while starting up
-  uint32_t length;
-  if (iterations_ < number_of_observations_ )
-  {
-    iterations_++;
-    length = iterations_;
-  }
-  else //all rows are allocated
-  {
-    length = number_of_observations_;
-  }
-
-  //Return each value
   for (uint32_t i = 0; i < width_; i++)
   {
     for (uint32_t row = 0; row < length; row ++)
     {
-      temp_storage_[row] = data_storage_[i + row * width_];
+      temp_storage_[row] = data_storage_->at(row)[i];
     }
     data_out[i] = median(&temp_storage_[0], length);
   }
