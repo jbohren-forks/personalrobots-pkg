@@ -9,7 +9,7 @@
   <node machine="xenomai_root" pkg="pr2_etherCAT" type="launch" args="-i rteth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
-  <include file="$(find pr2_prototype1)/calibrate.launch" />
+  <include file="$(find pr2_full)/calibrate.launch" />
 
 <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/> 
