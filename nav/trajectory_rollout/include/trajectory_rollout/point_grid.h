@@ -88,10 +88,11 @@ namespace trajectory_rollout {
        * @param  footprint The specification of the footprint of the robot in world coordinates
        * @param  inscribed_radius The radius of the inscribed circle of the robot
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @return True if all points lie outside the footprint, false otherwise
+       * @param  risk_poly The specification of the polygon to check the footprint against
+       * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius);
+      virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
+          double inscribed_radius, double circumscribed_radius, const std::vector<deprecated_msgs::Point2DFloat32>& risk_poly);
 
       /**
        * @brief  Inserts observations from sensors into the point grid
@@ -202,7 +203,7 @@ namespace trajectory_rollout {
        * @param a The start point of the vector 
        * @param b The end point of the vector 
        * @param c The point to compute orientation for
-       * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
+       * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
        */
       inline double orient(const deprecated_msgs::Point2DFloat32& a, const deprecated_msgs::Point2DFloat32& b, const robot_msgs::Point32& c){
         double acx = a.x - c.x;
@@ -217,7 +218,23 @@ namespace trajectory_rollout {
        * @param a The start point of the vector 
        * @param b The end point of the vector 
        * @param c The point to compute orientation for
-       * @return orient(a, b, c) < 0 ----> Left, orient(a, b, c) > 0 ----> Right 
+       * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
+       */
+      inline double orient(const deprecated_msgs::Point2DFloat32& a, const deprecated_msgs::Point2DFloat32& b, 
+          const deprecated_msgs::Point2DFloat32& c){
+        double acx = a.x - c.x;
+        double bcx = b.x - c.x;
+        double acy = a.y - c.y;
+        double bcy = b.y - c.y;
+        return acx * bcy - acy * bcx;
+      }
+
+      /**
+       * @brief  Check the orientation of a pt c with respect to the vector a->b
+       * @param a The start point of the vector 
+       * @param b The end point of the vector 
+       * @param c The point to compute orientation for
+       * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
        */
       inline double orient(const robot_msgs::Point32& a, const robot_msgs::Point32& b, const robot_msgs::Point32& c){
         double acx = a.x - c.x;
@@ -226,6 +243,56 @@ namespace trajectory_rollout {
         double bcy = b.y - c.y;
         return acx * bcy - acy * bcx;
       }
+
+      /**
+       * @brief  Check if two line segmenst intersect
+       * @param v1 The first point of the first segment 
+       * @param v2 The second point of the first segment 
+       * @param u1 The first point of the second segment 
+       * @param u2 The second point of the second segment 
+       * @return True if the segments intersect, false otherwise
+       */
+      inline bool segIntersect(const robot_msgs::Point32& v1, const robot_msgs::Point32& v2, 
+          const robot_msgs::Point32& u1, const robot_msgs::Point32& u2){
+        return (orient(v1, v2, u1) * orient(v1, v2, u2) < 0) && (orient(u1, u2, v1) * orient(u1, u2, v2) < 0);
+      }
+
+      /**
+       * @brief  Find the intersection point of two lines
+       * @param v1 The first point of the first segment 
+       * @param v2 The second point of the first segment 
+       * @param u1 The first point of the second segment 
+       * @param u2 The second point of the second segment 
+       * @param result The point to be filled in
+       */
+      void intersectionPoint(const deprecated_msgs::Point2DFloat32& v1, const deprecated_msgs::Point2DFloat32& v2, 
+          const deprecated_msgs::Point2DFloat32& u1, const deprecated_msgs::Point2DFloat32& u2, 
+          deprecated_msgs::Point2DFloat32& result);
+
+      /**
+       * @brief  Clip a polygon by a plane
+       * @param poly The polygon to clip... will be set to the resulting polygon
+       * @param p1 The first point defining the plane line
+       * @param p2 The second point defining the plane line
+       */
+      void clipPolygonPlane(std::vector<deprecated_msgs::Point2DFloat32>& poly, 
+          const deprecated_msgs::Point2DFloat32& p1, const deprecated_msgs::Point2DFloat32& p2);
+
+      /**
+       * @brief  Compute the area of the polygon that lies outside the bounds of the clipping polygon
+       * @param  poly The polygon to calculate difference in area
+       * @param  clip The polygon to use to clip
+       * @return The percent area of the first polygon that lies outside the second
+       */
+      double riskAreaPercent(const std::vector<deprecated_msgs::Point2DFloat32>& poly, 
+          const std::vector<deprecated_msgs::Point2DFloat32>& clip);
+
+      /**
+       * @brief  Compute the area of a polygon
+       * @param poly The polygon 
+       * @return The area of the polygon
+       */
+      double polygonArea(const std::vector<deprecated_msgs::Point2DFloat32>& poly);
 
       /**
        * @brief  Check if a point is in a polygon
@@ -293,7 +360,8 @@ namespace trajectory_rollout {
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
       double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
       std::vector< std::list<robot_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
-
+      std::vector<deprecated_msgs::Point2DFloat32> new_poly_one_; ///< @brief Storage for risk polygon computations
+      std::vector<deprecated_msgs::Point2DFloat32> new_poly_two_; ///< @brief Storage for risk polygon computations 
   };
 };
 #endif

@@ -65,10 +65,11 @@ namespace trajectory_rollout {
        * @param  footprint The specification of the footprint of the robot in world coordinates
        * @param  inscribed_radius The radius of the inscribed circle of the robot
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @return True if the footprint is legal based on the world model, false otherwise
+       * @param  risk_poly The specification of the polygon to check the footprint against
+       * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual bool legalFootprint(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius) = 0;
+      virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
+          double inscribed_radius, double circumscribed_radius, const std::vector<deprecated_msgs::Point2DFloat32>& risk_poly) = 0;
 
       /**
        * @brief  Subclass will implement a destructor

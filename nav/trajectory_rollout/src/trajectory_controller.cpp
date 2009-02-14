@@ -269,6 +269,13 @@ namespace trajectory_rollout{
       path_dist = cell_pdist;
       goal_dist = cell_gdist;
 
+      /* For following blindly
+      goal_dist = (x_i - global_plan_[global_plan_.size() -1].x) * (x_i - global_plan_[global_plan_.size() -1].x) + 
+        (y_i - global_plan_[global_plan_.size() -1].y) * (y_i - global_plan_[global_plan_.size() -1].y);
+      path_dist = 0.0;
+      */
+
+
       //if a point on this trajectory has no clear path to goal it is invalid
       if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
         ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
@@ -728,12 +735,9 @@ namespace trajectory_rollout{
     robot_position.y = y_i;
 
     //check if the footprint is legal
-    bool legal = world_model_.legalFootprint(robot_position, oriented_footprint, inscribed_radius_, circumscribed_radius_);
+    double footprint_cost = world_model_.footprintCost(robot_position, oriented_footprint, inscribed_radius_, circumscribed_radius_, oriented_footprint);
 
-    if(legal)
-      return 1.0;
-
-    return -1.0;
+    return footprint_cost;
   }
 
   void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<trajectory_rollout::Position2DInt>& pts){

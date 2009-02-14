@@ -55,8 +55,8 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     cells_.resize(width_ * height_);
   }
 
-  bool PointGrid::legalFootprint(const Point2DFloat32& position, const vector<Point2DFloat32>& footprint, 
-      double inscribed_radius, double circumscribed_radius){
+  double PointGrid::footprintCost(const Point2DFloat32& position, const vector<Point2DFloat32>& footprint, 
+      double inscribed_radius, double circumscribed_radius, const vector<Point2DFloat32>& risk_poly){
     //the half-width of the circumscribed sqaure of the robot is equal to the circumscribed radius
     double outer_square_radius = circumscribed_radius;
 
@@ -74,7 +74,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
     //if there are no points in the circumscribed square... we don't have to check against the footprint
     if(points_.empty())
-      return true;
+      return riskAreaPercent(footprint, risk_poly);
 
     //compute the half-width of the inner square from the inscribed radius of the robot
     double inner_square_radius = sqrt((inscribed_radius * inscribed_radius) / 2.0);
@@ -98,19 +98,20 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
           if(pt.x > c_lower_left.x && pt.x < c_upper_right.x && pt.y > c_lower_left.y && pt.y < c_upper_right.y){
             //do a quick check to see if the point lies in the inner square of the robot
             if(pt.x > i_lower_left.x && pt.x < i_upper_right.x && pt.y > i_lower_left.y && pt.y < i_upper_right.y)
-              return false;
+              return -1.0;
 
             //now we really have to do a full footprint check on the point
             if(ptInPolygon(pt, footprint))
-              return false;
+              return -1.0;
           }
         }
       }
     }
 
     //if we get through all the points and none of them are in the footprint it's legal
-    return true;
+    return riskAreaPercent(footprint, risk_poly);
   }
+
   bool PointGrid::ptInPolygon(const Point32& pt, const vector<Point2DFloat32>& poly){
     if(poly.size() < 3)
       return false;
@@ -122,7 +123,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     bool all_right = false;
     for(unsigned int i = 0; i < poly.size() - 1; ++i){
       //if pt left of a->b
-      if(orient(poly[i], poly[i + 1], pt) < 0){
+      if(orient(poly[i], poly[i + 1], pt) > 0){
         if(all_right)
           return false;
         all_left = true;
@@ -135,7 +136,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
       }
     }
     //also need to check the last point with the first point
-    if(orient(poly[poly.size() - 1], poly[0], pt) < 0){
+    if(orient(poly[poly.size() - 1], poly[0], pt) > 0){
       if(all_right)
         return false;
     }
@@ -433,11 +434,8 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
         return false;
       }
 
-      //ROS_ERROR("Angle: %.8f, Increment: %.8f,  Index: %d", vector_angle, laser_scan.angle_increment, index);
-
-      //if the point lies to the right of the line between the two scan points bounding it, it is within the scan
+      //if the point lies to the left of the line between the two scan points bounding it, it is within the scan
       if(orient(laser_scan.cloud.pts[index], laser_scan.cloud.pts[index + 1], pt) > 0){
-        //ROS_ERROR("Removing point");
         return true;
       }
 
@@ -500,6 +498,87 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
   }
 
+  void PointGrid::intersectionPoint(const Point2DFloat32& v1, const Point2DFloat32& v2, 
+      const Point2DFloat32& u1, const Point2DFloat32& u2, Point2DFloat32& result){
+    //generate the equation for line 1
+    double a1 = v2.y - v1.y;
+    double b1 = v1.x - v2.x;
+    double c1 = a1 * v1.x + b1 * v1.y;
+
+    //generate the equation for line 2
+    double a2 = u2.y - u1.y;
+    double b2 = u1.x - u2.x;
+    double c2 = a2 * u1.x + b2 * u1.y;
+
+    double det = a1 * b2 - a2 * b1;
+
+    //the lines are parallel
+    if(det == 0)
+      return;
+
+    result.x = (b2 * c1 - b1 * c2) / det;
+    result.y = (a1 * c2 - a2 * c1) / det;
+  }
+
+  //Sutherland-Hodgeman Clipping... TODO: could do this more efficiently with O'Rouke's method... o(n + m) vs o(nm)
+  void PointGrid::clipPolygonPlane(vector<Point2DFloat32>& poly, const Point2DFloat32& p1, const Point2DFloat32& p2){
+    new_poly_two_.clear();
+    const Point2DFloat32* s = &poly[poly.size() - 1];
+    Point2DFloat32 new_vertex;
+    for(unsigned int i = 0; i < poly.size(); ++i){
+      const Point2DFloat32* p = &poly[i];
+      //if the p is inside the clip plane
+      if(orient(p1, p2, *p) <= 0){
+        //if s is not inside the clip plane
+        if(orient(p1, p2, *s) > 0){
+          //add the intersection point of the plane with sp to the polygon
+          intersectionPoint(*p, *s, p1, p2, new_vertex);
+          new_poly_two_.push_back(new_vertex);
+        }
+        //also add p to the polygon
+        new_poly_two_.push_back(*p);
+      }
+      //if s is inside the clipping plane
+      else if(orient(p1, p2, *s) <= 0){
+        //add the intersection point of the plane with sp to the polygon
+        intersectionPoint(*p, *s, p1, p2, new_vertex);
+        new_poly_two_.push_back(new_vertex);
+      }
+      s = p;
+    }
+    poly = new_poly_two_;
+  }
+
+  double PointGrid::riskAreaPercent(const vector<Point2DFloat32>& poly, const vector<Point2DFloat32>& clip){
+    new_poly_one_ = poly;
+    //will be at most n + m points in new polygon
+    new_poly_two_.resize(poly.size() + clip.size());
+    const Point2DFloat32* p1 = &clip[clip.size() - 1];
+    for(unsigned int i = 0; i < clip.size(); ++i){
+      const Point2DFloat32* p2 = &clip[i];
+      clipPolygonPlane(new_poly_one_, *p1, *p2);
+      p1 = p2;
+    }
+
+    double old_area = polygonArea(poly);
+    double new_area = old_area - polygonArea(new_poly_one_);
+    return new_area / old_area;
+  }
+
+  double PointGrid::polygonArea(const vector<Point2DFloat32>& poly){
+    double area = 0.0;
+    unsigned int j = 0;
+    for(unsigned int i = 0; i < poly.size(); ++i){
+      j++;
+      if(j == poly.size())
+        j = 0;
+      area += (poly[i].x + poly[j].x) * (poly[i].y - poly[j].y);
+    }
+    area *= 0.5;
+    return (area < 0.0 ? -1.0 * area : area);
+  }
+
+
 };
 
 void printPoint(Point32 pt){
@@ -552,6 +631,46 @@ int main(int argc, char** argv){
   pt.y = 1.0;
   footprint.push_back(pt);
 
+  vector<Point2DFloat32> footprint2;
+
+  pt.x = 1.325;
+  pt.y = 1.00;
+  footprint2.push_back(pt);
+
+  pt.x = 1.325;
+  pt.y = 1.75;
+  footprint2.push_back(pt);
+
+  pt.x = 1.65;
+  pt.y = 1.75;
+  footprint2.push_back(pt);
+
+  pt.x = 1.65;
+  pt.y = 1.00;
+  footprint2.push_back(pt);
+
+  vector<Point2DFloat32> footprint3;
+
+  pt.x = 0.99;
+  pt.y = 0.99;
+  footprint3.push_back(pt);
+
+  pt.x = 0.99;
+  pt.y = 1.66;
+  footprint3.push_back(pt);
+
+  pt.x = 1.3255;
+  pt.y = 1.85;
+  footprint3.push_back(pt);
+
+  pt.x = 1.66;
+  pt.y = 1.66;
+  footprint3.push_back(pt);
+
+  pt.x = 1.66;
+  pt.y = 0.99;
+  footprint3.push_back(pt);
+
   pt.x = 1.325;
   pt.y = 1.325;
 
@@ -572,18 +691,19 @@ int main(int argc, char** argv){
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
   printf("Insertion Time: %.9f \n", t_diff);
-  //pg.removePointsInPolygon(footprint);
+  pg.removePointsInPolygon(footprint);
 
   gettimeofday(&start, NULL);
-  bool legal = pg.legalFootprint(pt, footprint, 0.0, .95);
+  double legal = pg.footprintCost(pt, footprint, 0.0, .95, footprint2);
+  double legal2 = pg.footprintCost(pt, footprint, 0.0, .95, footprint);
   gettimeofday(&end, NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
   printf("Footprint calc: %.9f \n", t_diff);
 
-  if(legal)
-    printf("Legal footprint\n");
+  if(legal >= 0.0)
+    printf("Legal footprint %.4f, %.4f\n", legal, legal2);
   else
     printf("Illegal footprint\n");
 
