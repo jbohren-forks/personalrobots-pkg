@@ -80,7 +80,6 @@ namespace mpbench {
   class ResultCollection
   {
   public:
-    // well... the setup_options are not even used for the moment
     explicit ResultCollection(SetupOptions const & setup_options);
     
     void insert(size_t task_id,
@@ -98,7 +97,8 @@ namespace mpbench {
 		    result::id_t id3, size_t begin3, size_t end3,
 		    result::view3_t & view) const throw(std::exception);
     
-    ////void dumpXML(std::ostream & os) const;
+    void dumpXML(std::ostream & os,
+		 std::string const & prefix) const;
     
   protected:
     SetupOptions const & setup_options_;

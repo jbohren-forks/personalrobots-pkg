@@ -47,7 +47,8 @@ namespace mpglue {
   class SBPLEnvironment;
   
   struct SBPLPlannerStats
-    : public AnytimeCostmapPlannerStats {
+    : public AnytimeCostmapPlannerStats
+  {
     SBPLPlannerStats();
     virtual SBPLPlannerStats * copy() const;
     
@@ -61,6 +62,11 @@ namespace mpglue {
     virtual void logStream(std::ostream & os,
 			   std::string const & title,
 			   std::string const & prefix) const;
+    
+    virtual char * const getClassName() const;
+    
+    virtual void dumpSubclassXML(std::ostream & os,
+				 std::string const & prefix) const;
   };
   
   
@@ -87,35 +93,6 @@ namespace mpglue {
     boost::shared_ptr<SBPLEnvironment> environment_;
     SBPLPlannerStats stats_;
   };
-  
-  
-//   SBPLPlannerWrap * createARAStar2D(boost::shared_ptr<CostmapAccessor> cm,
-// 				    boost::shared_ptr<IndexTransform const> it,
-// 				    bool forward_search,
-// 				    int obst_cost_thresh);
-  
-//   SBPLPlannerWrap * createADStar2D(boost::shared_ptr<CostmapAccessor> cm,
-// 				   boost::shared_ptr<IndexTransform const> it,
-// 				   bool forward_search,
-// 				   int obst_cost_thresh);
-  
-//   SBPLPlannerWrap * createARAStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
-// 				       boost::shared_ptr<IndexTransform const> it,
-// 				       bool forward_search,
-// 				       int obst_cost_thresh,
-// 				       footprint_t const & footprint,
-// 				       double nominalvel_mpersecs,
-// 				       double timetoturn45degsinplace_secs,
-// 				       std::ostream * dbgos);
-  
-//   SBPLPlannerWrap * createADStar3DKIN(boost::shared_ptr<CostmapAccessor> cm,
-// 				      boost::shared_ptr<IndexTransform const> it,
-// 				      bool forward_search,
-// 				      int obst_cost_thresh,
-// 				      footprint_t const & footprint,
-// 				      double nominalvel_mpersecs,
-// 				      double timetoturn45degsinplace_secs,
-// 				      std::ostream * dbgos);
   
 }
 

@@ -93,6 +93,31 @@ namespace mpglue {
     virtual void logStream(std::ostream & os,
 			   std::string const & title,
 			   std::string const & prefix) const;
+    
+    /** Dump in XML to a stream, like this:
+	\code
+	<mpglue_costmap_planner_stats>
+	  <type> name of (sub)class </type>
+	  <goal> x y th ix iy tol_dist tol_ang </goal>
+	  <start> x y th ix iy </start>
+	  <plan_from_scratch> true or false </plan_from_scratch>
+	  <!--- etc etc --->
+	</mpglue_costmap_planner_stats>
+	\endcode
+	
+	The subclass name is retrieved using getClassName(), and
+	dumpSubclassXML() is called before the closing
+	<code>&lt;/mpglue_costmap_planner_stats&gt;</code>
+    */
+    virtual void dumpXML(std::ostream & os,
+			 std::string const & prefix) const;
+    
+    /** base implementation returns "mpglue::CostmapPlannerStats" */
+    virtual char * const getClassName() const;
+    
+    /** empty base implementation */
+    virtual void dumpSubclassXML(std::ostream & os,
+				 std::string const & prefix) const;
   };
   
   
@@ -202,6 +227,11 @@ namespace mpglue {
     virtual void logStream(std::ostream & os,
 			   std::string const & title,
 			   std::string const & prefix) const;
+    
+    virtual char * const getClassName() const;
+    
+    virtual void dumpSubclassXML(std::ostream & os,
+				 std::string const & prefix) const;
   };
   
   

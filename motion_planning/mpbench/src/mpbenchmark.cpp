@@ -97,6 +97,17 @@ int main(int argc, char ** argv)
   run_tasks();
   print_summary();
   print_gnuplot();
+  {
+    string filename(baseFilename() + ".result.xml");
+    ofstream os(filename.c_str());
+    if ( ! os) {
+      cout << "sorry, could not open file " << filename << "\n";
+    }
+    else {
+      cout << "writing XML result file: " << filename << "\n";
+      result_collection->dumpXML(os, "");
+    }
+  }
   if (enableGfx) {
     int base_width(800);
     int base_height(600);

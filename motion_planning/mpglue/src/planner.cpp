@@ -105,9 +105,11 @@ namespace mpglue {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "goal pose:                 " << goal_x << "  " << goal_y << "  " << goal_th << "\n"
+    os << prefix << "goal pose:                 " << goal_x << "  " << goal_y << "  " << goal_th
+       << "\n"
        << prefix << "goal grid:                 " << goal_ix << "  " << goal_iy << "\n"
-       << prefix << "start pose:                " << start_x << "  " << start_y << "  " << start_th << "\n"
+       << prefix << "start pose:                " << start_x << "  " << start_y << "  " << start_th
+       << "\n"
        << prefix << "start grid:                " << start_ix << "  " << start_iy << "\n"
        << prefix << "plan_from_scratch:         " << to_string(plan_from_scratch) << "\n"
        << prefix << "flush_cost_changes:        " << to_string(flush_cost_changes) << "\n"
@@ -116,6 +118,50 @@ namespace mpglue {
        << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user << "\n"
        << prefix << "plan_length [m]:           " << plan_length << "\n"
        << prefix << "plan_rotation [rad]:       " << plan_angle_change << "\n";
+  }
+  
+  
+  void CostmapPlannerStats::
+  dumpXML(std::ostream & os,
+	  std::string const & prefix) const
+  {
+    os << prefix << "<mpglue_costmap_planner_stats>\n"
+       << prefix << "  <type>" << getClassName() << "</type>\n"
+       << prefix << "  <goal>" << goal_x << "  " << goal_y << "  " << goal_th
+       << "  " << goal_ix << "  " << goal_iy
+       << "  " << goal_tol_distance << "  " << goal_tol_angle
+       << "</goal>\n"
+       << prefix << "  <start>" << start_x << "  " << start_y << "  " << start_th
+       << "  " << start_ix << "  " << start_iy
+       << "</start>\n"
+       << prefix << "  <plan_from_scratch>" << to_string(plan_from_scratch)
+       << "</plan_from_scratch>\n"
+       << prefix << "  <flush_cost_changes>" << to_string(flush_cost_changes)
+       << "</flush_cost_changes>\n"
+       << prefix << "  <success>" << to_string(success) << "</success>\n"
+       << prefix << "  <actual_time_wall unit=\"s\">" << actual_time_wall
+       << "</actual_time_wall>\n"
+       << prefix << "  <actual_time_user unit=\"s\">" << actual_time_user
+       << "</actual_time_user>\n"
+       << prefix << "  <plan_length unit=\"m\">" << plan_length << "</plan_length>\n"
+       << prefix << "  <plan_angle_change unit=\"rad\">" << plan_angle_change
+       << "</plan_angle_change>\n";
+    dumpSubclassXML(os, prefix);
+    os << prefix << "</mpglue_costmap_planner_stats>\n";
+  }
+  
+  
+  char * const CostmapPlannerStats::
+  getClassName() const
+  {
+    return "mpglue::CostmapPlannerStats";
+  }
+  
+  
+  void CostmapPlannerStats::
+  dumpSubclassXML(std::ostream & os,
+		  std::string const & prefix) const
+  {
   }
   
   
@@ -298,7 +344,25 @@ namespace mpglue {
     os << prefix << "stop_at_first_solution:    " << to_string(stop_at_first_solution) << "\n"
        << prefix << "time allocated [ms]:       " << 1.0e3 * allocated_time << "\n";
   }
-
+  
+  
+  char * const AnytimeCostmapPlannerStats::
+  getClassName() const
+  {
+    return "mpglue::AnytimeCostmapPlannerStats";
+  }
+  
+  
+  void AnytimeCostmapPlannerStats::
+  dumpSubclassXML(std::ostream & os,
+		  std::string const & prefix) const
+  {
+    CostmapPlannerStats::dumpSubclassXML(os, prefix);
+    os << prefix << "  <stop_at_first_solution>" << to_string(stop_at_first_solution)
+       << "</stop_at_first_solution>\n"
+       << prefix << "  <allocated_time unit=\"s\">" << allocated_time << "</allocated_time>\n";
+  }
+  
   
   AnytimeCostmapPlanner::
   AnytimeCostmapPlanner(AnytimeCostmapPlannerStats & stats,

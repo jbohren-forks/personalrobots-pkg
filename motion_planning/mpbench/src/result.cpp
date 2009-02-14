@@ -133,4 +133,25 @@ namespace mpbench {
     
   }
   
+  
+  void ResultCollection::
+  dumpXML(std::ostream & os,
+	  std::string const & prefix) const
+  {
+    os << "<mpbench_result_collection>\n"
+       << "  <world_spec>" << setup_options_.world_spec << "</world_spec>\n"
+       << "  <planner_spec>" << setup_options_.planner_spec << "</planner_spec>\n"
+       << "  <robot_spec>" << setup_options_.robot_spec << "</robot_spec>\n"
+       << "  <costmap_spec>" << setup_options_.costmap_spec << "</costmap_spec>\n";
+    for (result::list_t::const_iterator ir(list_.begin()); ir != list_.end(); ++ir) {
+      os << "  <result>\n"
+	 << "    <task_id>" << (*ir)->task_id << "</task_id>\n"
+	 << "    <episode_id>" << (*ir)->episode_id << "</episode_id>\n"
+	 << "    <iteration_id>" << (*ir)->iteration_id << "</iteration_id>\n";
+      (*ir)->stats->dumpXML(os, prefix + "    ");
+      os << "  </result>\n";
+    }
+    os << "</mpbench_result_collection>\n";
+  }
+  
 }
