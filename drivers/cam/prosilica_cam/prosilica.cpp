@@ -286,6 +286,14 @@ void Camera::setWhiteBalance(unsigned int blue, unsigned int red, AutoSetting is
   }
 }
 
+unsigned long Camera::guid()
+{
+  unsigned long id;
+  CHECK_ERR( PvAttrUint32Get(handle_, "UniqueId", &id),
+             "Couldn't retrieve unique id" );
+  return id;
+}
+
 static const unsigned long USER_ADDRESS = 0x17200;
 static const unsigned long USER_MEMORY_SIZE = 512;
 

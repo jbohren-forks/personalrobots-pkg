@@ -63,96 +63,104 @@ public:
     prosilica::init();
     //diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
 
-    int num_cams = prosilica::numCameras();
-    //if (num_cams > 0)
-    if (true)
+    if (prosilica::numCameras() == 0)
+      ROS_WARN("Found no cameras on local subnet\n");
+
+    unsigned long guid = 0;
+
+    if (hasParam("~guid"))
     {
-      unsigned long guid;
-#if 0
-      if (hasParam("~guid"))
-      {
-        std::string guid_str;
-        getParam("~guid", guid_str);
-        guid = strtol(guid_str.c_str(), NULL, 16);
-      } else {
-        guid = prosilica::getGuid(0);
-      }
-
+      std::string guid_str;
+      getParam("~guid", guid_str);
+      guid = strtol(guid_str.c_str(), NULL, 0);
+    }
+      
+    if (hasParam("~ip_address"))
+    {
+      std::string ip_str;
+      getParam("~ip_address", ip_str);
+      cam_.reset( new prosilica::Camera(ip_str.c_str()) );
+      
+      // Verify Guid is the one expected
+      if (guid != 0 && guid != cam_->guid())
+        throw prosilica::ProsilicaException("Guid does not match expected");
+    }
+    else if (guid != 0)
+    {
       cam_.reset( new prosilica::Camera(guid) );
-#else
-      cam_.reset( new prosilica::Camera("169.254.174.37") );
-#endif
-      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
+    }
+    else {
+      guid = prosilica::getGuid(0);
+      cam_.reset( new prosilica::Camera(guid) );
+    }
 
-      // Acquisition control
-      std::string mode_str;
-      param("~acquisition_mode", mode_str, std::string("Continuous"));
-      if (mode_str == std::string("Continuous"))
-        mode_ = prosilica::Continuous;
-      else if (mode_str == std::string("Triggered"))
-        mode_ = prosilica::Triggered;
-      else {
-        ROS_FATAL("Unknown setting\n");
-        shutdown();
-      }
-      
-      // Feature control
-      std::string auto_setting;
-      param("~exposure_auto", auto_setting, std::string("Auto"));
-      if (auto_setting == std::string("Auto"))
-        cam_->setExposure(0, prosilica::Auto);
-      else if (auto_setting == std::string("AutoOnce"))
-        cam_->setExposure(0, prosilica::AutoOnce);
-      else if (auto_setting == std::string("Manual"))
-      {
-        int val;
-        getParam("~exposure", val);
-        cam_->setExposure(val, prosilica::Manual);
-      } else {
-        ROS_FATAL("Unknown setting\n");
-        shutdown();
-      }
+    cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
 
-      param("~gain_auto", auto_setting, std::string("Auto"));
-      if (auto_setting == std::string("Auto"))
-        cam_->setGain(0, prosilica::Auto);
-      else if (auto_setting == std::string("AutoOnce"))
-        cam_->setGain(0, prosilica::AutoOnce);
-      else if (auto_setting == std::string("Manual"))
-      {
-        int val;
-        getParam("~gain", val);
-        cam_->setGain(val, prosilica::Manual);
-      } else {
-        ROS_FATAL("Unknown setting\n");
-        shutdown();
-      }
-
-      param("~whitebal_auto", auto_setting, std::string("Auto"));
-      if (auto_setting == std::string("Auto"))
-        cam_->setWhiteBalance(0, 0, prosilica::Auto);
-      else if (auto_setting == std::string("AutoOnce"))
-        cam_->setWhiteBalance(0, 0, prosilica::AutoOnce);
-      else if (auto_setting == std::string("Manual"))
-      {
-        int blue, red;
-        getParam("~whitebal_blue", blue);
-        getParam("~whitebal_red", red);
-        cam_->setWhiteBalance(blue, red, prosilica::Manual);
-      } else {
-        ROS_FATAL("Unknown setting\n");
-        shutdown();
-      }
-      
-      // TODO: other params
-      // TODO: check any diagnostics?
-
-      ROS_INFO("Found camera, guid = %lu\n", guid);
-      advertise<image_msgs::Image>("~image", 1);
-    } else {
-      ROS_FATAL("Found no Prosilica cameras\n");
+    // Acquisition control
+    std::string mode_str;
+    param("~acquisition_mode", mode_str, std::string("Continuous"));
+    if (mode_str == std::string("Continuous"))
+      mode_ = prosilica::Continuous;
+    else if (mode_str == std::string("Triggered"))
+      mode_ = prosilica::Triggered;
+    else {
+      ROS_FATAL("Unknown setting\n");
       shutdown();
     }
+    
+    // Feature control
+    std::string auto_setting;
+    param("~exposure_auto", auto_setting, std::string("Auto"));
+    if (auto_setting == std::string("Auto"))
+      cam_->setExposure(0, prosilica::Auto);
+    else if (auto_setting == std::string("AutoOnce"))
+      cam_->setExposure(0, prosilica::AutoOnce);
+    else if (auto_setting == std::string("Manual"))
+    {
+      int val;
+      getParam("~exposure", val);
+      cam_->setExposure(val, prosilica::Manual);
+    } else {
+      ROS_FATAL("Unknown setting\n");
+      shutdown();
+    }
+    
+    param("~gain_auto", auto_setting, std::string("Auto"));
+    if (auto_setting == std::string("Auto"))
+      cam_->setGain(0, prosilica::Auto);
+    else if (auto_setting == std::string("AutoOnce"))
+      cam_->setGain(0, prosilica::AutoOnce);
+    else if (auto_setting == std::string("Manual"))
+    {
+      int val;
+      getParam("~gain", val);
+      cam_->setGain(val, prosilica::Manual);
+    } else {
+      ROS_FATAL("Unknown setting\n");
+      shutdown();
+    }
+    
+    param("~whitebal_auto", auto_setting, std::string("Auto"));
+    if (auto_setting == std::string("Auto"))
+      cam_->setWhiteBalance(0, 0, prosilica::Auto);
+    else if (auto_setting == std::string("AutoOnce"))
+      cam_->setWhiteBalance(0, 0, prosilica::AutoOnce);
+    else if (auto_setting == std::string("Manual"))
+    {
+      int blue, red;
+      getParam("~whitebal_blue", blue);
+      getParam("~whitebal_red", red);
+      cam_->setWhiteBalance(blue, red, prosilica::Manual);
+    } else {
+      ROS_FATAL("Unknown setting\n");
+      shutdown();
+    }
+    
+    // TODO: other params
+    // TODO: check any diagnostics?
+    
+    ROS_INFO("Found camera, guid = %lu\n", guid);
+    advertise<image_msgs::Image>("~image", 1);
   }
 
   ~ProsilicaNode()

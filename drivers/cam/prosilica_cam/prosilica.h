@@ -97,6 +97,8 @@ public:
   void setWhiteBalance(unsigned int blue, unsigned int red,
                        AutoSetting isauto = Manual);
 
+  unsigned long guid();
+  
   //! Must have size <= 512.
   void writeUserMemory(const char* data, size_t size);
   void readUserMemory(char* data, size_t size);
