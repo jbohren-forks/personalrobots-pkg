@@ -8,8 +8,13 @@
        and for kinematics (flag contains "kinematic") -->
 
   <group name="base" flags="planning">
-    base_link
     <map name="SBL" flag="planning">
+      <elem key="projection" value="0 1"/>
+      <elem key="celldim" value="1 1"/>
+      <elem key="range" value="0.5"/>
+    </map>
+
+    <map name="IKSBL" flag="planning">
       <elem key="projection" value="0 1"/>
       <elem key="celldim" value="1 1"/>
       <elem key="range" value="0.5"/>
@@ -79,6 +84,12 @@
     <map name="SBL" flag="planning">
       <elem key="projection" value="5 6"/>
       <elem key="celldim" value="0.1 0.1"/>
+    </map>
+
+    <map name="IKSBL" flag="planning">
+      <elem key="projection" value="0 1"/>
+      <elem key="celldim" value="1 1"/>
+      <elem key="range" value="0.5"/>
     </map>
   </group>
 
