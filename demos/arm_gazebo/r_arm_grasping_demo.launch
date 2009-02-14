@@ -32,8 +32,8 @@
     <!-- for visualization -->
     <!--
     <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
-    <node pkg="rosviz" type="rxplot" args="/r_gripper_l_finger_tip_bumper/force/vector/x /r_gripper_l_finger_tip_bumper/force/vector/y /r_gripper_l_finger_tip_bumper/force/vector/z" respawn="false" output="screen" />
     -->
+    <node pkg="rosviz" type="rxplot" args="/r_gripper_l_finger_tip_bumper/force/vector/x /r_gripper_l_finger_tip_bumper/force/vector/y /r_gripper_l_finger_tip_bumper/force/vector/z" respawn="true" output="screen" />
 
     <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table" respawn="false" output="screen" />
