@@ -106,12 +106,10 @@ public:
   virtual bool update(const T& data_in, T& data_out);
 
 protected:
-  ///\todo change to vector
   T temp_storage_;                       ///< Preallocated storage for the list to sort
   RealtimeVectorCircularBuffer<T>* data_storage_;                       ///< Storage for data between updates
   
 
-  uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
   uint32_t iterations_;                         ///< Number of iterations up to number of observations
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
@@ -123,7 +121,6 @@ protected:
 
 template <typename T>
 MedianFilter<T>::MedianFilter():
-  last_updated_row_(0),
   iterations_(0),
   number_of_observations_(0),
   width_(0),

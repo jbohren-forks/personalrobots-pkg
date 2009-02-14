@@ -85,7 +85,7 @@ TEST(FilterChain, configuring){
 
   chain.clear();
 
-  for (int i = 1; i < v1.size(); i++)
+  for (unsigned int i = 1; i < v1.size(); i++)
   {
     EXPECT_NEAR(input1[i], v1a[i], epsilon);
   }

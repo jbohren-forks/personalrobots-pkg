@@ -27,71 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-///\author Tully Foote tfoote@willowgarage.com
+#include <gtest/gtest.h>
+#include <sys/time.h>
 
-#ifndef REALTIME_VECTOR_CIRCULAR_BUFFER_H_
-#define REALTIME_VECTOR_CIRCULAR_BUFFER_H_
-
-#include <stdint.h>
 #include <vector>
+#include "filters/realtime_vector_circular_buffer.h"
 
-#include <algorithm>
-#include <boost/circular_buffer.hpp>
+using namespace filters ;
 
-namespace filters
+void seed_rand()
 {
-
-/** \brief A realtime safe circular (ring) buffer.
- */
-template <typename T>
-class RealtimeVectorCircularBuffer
-{
-public:
-  
-  RealtimeVectorCircularBuffer(int size, const T& default_val):
-    counter_(0)
-  {
-    cb_.set_capacity(size);
-    for (unsigned int i = 0; i < cb_.capacity(); i++)
-    {
-      cb_.push_back(default_val);
-    }
-    
-  };
-
-  void push_back(const T& item)
-  {
-    if ( counter_ < cb_.size()) 
-    {
-      cb_[counter_] = item; 
-    }
-    else 
-      cb_.push_back(item);
-    counter_ ++;
-  };
-  
-  void clear() { counter_ = 0;};
-
-  void set_capacity(unsigned int order, const T& value);
-  
-  T& front(){return cb_.front();};
-  T& back()
-  {
-    if (counter_ < cb_.size()) 
-      return cb_[counter_]; 
-    else 
-      return cb_.back();
-  };
-  
-  unsigned int size(){  return std::min(counter_, cb_.size());};
-  bool empty(){return cb_.empty();};
-  T& at(size_t index){return cb_.at(index);};
-  T& operator[](size_t index){return cb_[index];}
-private:
-  unsigned int counter_; //<! special counter to keep track of first N times through
-
-  boost::circular_buffer<T> cb_;
-
+  //Seed random number generator with current microseond count
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  srand(temp_time_struct.tv_usec);
 };
-} //namespace filters
-#endif //#ifndef REALTIME_VECTOR_CIRCULAR_BUFFER_H_
+
+void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xvalues, std::vector<double>& yvalues, std::vector<double>&zvalues)
+{
+  seed_rand();
+  for ( uint64_t i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+  }
+}
+
+TEST(RealtimeCircularBuffer, InitializationScalar)
+{
+  
+  RealtimeVectorCircularBuffer<double> buf(3, 0);
+  for (unsigned int i = 0; i < buf.size(); i ++)
+  {
+    EXPECT_EQ(buf[i], 0);
+  }
+}
+TEST(RealtimeCircularBuffer, InitializationVector)
+{
+  std::vector<double> init_vector;
+  for (unsigned int i = 0; i < 100; i ++)
+    init_vector.push_back(i);
+  
+  RealtimeVectorCircularBuffer<std::vector<double> > vec_buf(3, init_vector);
+  for (unsigned int i = 0; i < vec_buf.size(); i ++)
+  {
+    for (unsigned int j = 0; j < 100; j ++)
+      EXPECT_EQ(vec_buf[i][j], j);
+  }
+}
+
+
+int main(int argc, char **argv){
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

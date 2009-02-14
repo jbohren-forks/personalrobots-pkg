@@ -37,6 +37,7 @@
 #include "filters/filter_base.h"
 #include "ros/assert.h"
 
+#include "filters/realtime_vector_circular_buffer.h"
 
 namespace filters
 {
@@ -64,9 +65,9 @@ public:
   virtual bool update( const T & data_in, T& data_out);
 
 protected:
-  T data_storage_;                       ///< Storage for data between updates
-  uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
-  uint32_t iterations_;                         ///< Number of iterations up to number of observations
+  RealtimeVectorCircularBuffer<T>* data_storage_; ///< Storage for data between updates
+  uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
+  uint32_t iterations_;                           ///< Number of iterations up to number of observations
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
   uint32_t width_;           ///< Number of elements per observation
@@ -81,7 +82,6 @@ ROS_REGISTER_FILTER(MeanFilter, std_vector_float)
 
 template <typename T>
 MeanFilter<T>::MeanFilter():
-  last_updated_row_(0),
   iterations_(0),
   number_of_observations_(0),
   width_(0),
@@ -98,9 +98,11 @@ bool MeanFilter<T>::configure(unsigned int width, const std::string& number_of_o
   std::stringstream ss;
   ss << number_of_observations;
   ss >> number_of_observations_;
-  last_updated_row_ = number_of_observations_;
 
-  data_storage_.resize(number_of_observations_ * width_);
+  T temp;
+  temp.resize(width);
+  data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
+
   configured_ = true;
   return true;
 }
@@ -108,6 +110,7 @@ bool MeanFilter<T>::configure(unsigned int width, const std::string& number_of_o
 template <typename T>
 MeanFilter<T>::~MeanFilter()
 {
+  if (data_storage_) delete data_storage_;
 }
 
 
@@ -125,32 +128,18 @@ bool MeanFilter<T>::update(const T & data_in, T& data_out)
   else
     last_updated_row_++;
 
-  //copy incoming data into perminant storage
-  memcpy(&data_storage_[width_ * last_updated_row_],
-         &data_in[0],
-         sizeof(data_in[0]) * width_);
+  data_storage_->push_back(data_in);
 
-  //Return values
 
-  //keep track of number of rows used while starting up
-  uint32_t length;
-  if (iterations_ < number_of_observations_ )
-  {
-    iterations_++;
-    length = iterations_;
-  }
-  else //all rows are allocated
-  {
-    length = number_of_observations_;
-  }
-
+  unsigned int length = data_storage_->size();
+  
   //Return each value
   for (uint32_t i = 0; i < width_; i++)
   {
     data_out[i] = 0;
     for (uint32_t row = 0; row < length; row ++)
     {
-      data_out[i] += data_storage_[i + row * width_];
+      data_out[i] += data_storage_->at(row)[i];
     }
     data_out[i] /= length;
   }
