@@ -129,6 +129,8 @@ public :
       tf::PoseStampedTFToMsg(tf_pose, pose_msg) ;
 
       node_->publish("tong_spacing", tong_spacing) ;
+
+      pose_msg.header.stamp = ros::Time() ;
       node_->publish("tong_pose", pose_msg) ;
     }
   }

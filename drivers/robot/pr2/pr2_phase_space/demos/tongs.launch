@@ -1,0 +1,24 @@
+<launch>
+
+  <node pkg="pr2_phase_space" type="phase_space_tongs"
+        name="left_tong" output="screen">
+    <!-- remap from="tong_pose" to="left_tong_pose" / -->
+    <remap from="tong_pose" to="cartesian_pose_left/command" />
+
+    <remap from="tong_spacing" to="left_tong_spacing" />
+    <param name="left_id" type="int" value="0" />
+    <param name="right_id" type="int" value="1" />
+    <param name="frame_id" type="string" value="phase_space" />
+  </node>
+
+  <node pkg="pr2_phase_space" type="phase_space_tongs"
+        name="right_tong" output="screen">
+    <!-- remap from="tong_pose" to="right_tong_pose" / -->
+    <remap from="tong_pose" to="cartesian_pose_right/command" />
+    <remap from="tong_spacing" to="right_tong_spacing" />
+    <param name="left_id" type="int" value="2" />
+    <param name="right_id" type="int" value="3" />
+    <param name="frame_id" type="string" value="phase_space" />
+  </node>
+
+</launch>
