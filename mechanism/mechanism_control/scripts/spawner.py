@@ -56,6 +56,12 @@ if __name__ == '__main__':
     xml = f.read()
     f.close()
 
+    # Override rospy's signal handling.  We'll invoke rospy's handler after
+    # we're done shutting down.
+    import signal
+    prev_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     resp = spawn_controller(xml)
 
     spawned = []
@@ -80,3 +86,6 @@ if __name__ == '__main__':
                 except rospy.service.ServiceException:
                     raise
                     rospy.logerr("ServiceException while killing %s" % name)
+        # We're shutdown.  Now invoke rospy's handler for full cleanup.
+        if prev_handler is not None:
+            prev_handler(signal.SIGINT,None)
