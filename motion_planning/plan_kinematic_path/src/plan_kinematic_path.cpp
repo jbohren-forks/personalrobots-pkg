@@ -259,18 +259,20 @@ int main(int argc, char **argv)
     plan->loadRobotDescription();
     if (plan->loadedRobot())
     {
-	sleep(1);
+        ros::Duration d(1.0);
+	d.sleep();
 	
 	while (1)
 	{
+            ros::Duration d(4.0);
 	    
 	    plan->runRightArmToPositionA();
 	
-	    sleep(4);
+            d.sleep();
 	    
 	    plan->runRightArmToPositionB();
 	    
-	    sleep(5);
+            d.sleep();
 	}
 	
 	/*	
