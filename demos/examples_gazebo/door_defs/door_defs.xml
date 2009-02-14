@@ -103,14 +103,17 @@
         <elem key="material" value="Gazebo/GrassFloor" />
       </map>
       <geometry name="wall1_visual_geom">
-        <mesh scale="0.2 10 2" />
+        <mesh scale="0.4 10 2" />
       </geometry>
     </visual> 
     <collision>
       <origin xyz="0 5 1" rpy="0.0 0.0 0.0" />
       <geometry name="wall1_collision_geom">
-        <box size="0.2 10 2" />
+        <box size="0.4 10 2" />
       </geometry>
+      <map name="wall1_intensity" flag="gazebo">
+        <elem key="laserRetro" value="0.5" />
+      </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
       <elem key="selfCollide" value="true" />
@@ -134,14 +137,17 @@
         <elem key="material" value="Gazebo/GrassFloor" />
       </map>
       <geometry name="wall2_visual_geom">
-        <mesh scale="0.2 10 2" />
+        <mesh scale="0.4 10 2" />
       </geometry>
     </visual> 
     <collision>
       <origin xyz="0 -5 1" rpy="0 0 0" />
       <geometry name="wall2_collision_geom">
-        <box size="0.2 10 2" />
+        <box size="0.4 10 2" />
       </geometry>
+      <map name="wall2_intensity" flag="gazebo">
+        <elem key="laserRetro" value="0.5" />
+      </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
       <elem key="selfCollide" value="true" />
