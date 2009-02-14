@@ -2,11 +2,19 @@
   <master auto="start"/>
   <group name="wg">
     <param name="use_sim_time" type="boolean" value="true" />
-    <include file="$(find pr2_gazebo)/pr2_simple_trajectory_no_x.launch"/>
+    <include file="$(find pr2_gazebo)/pr2_simple_trajectory.launch"/>
 
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="true" />
 
-    <node pkg="fake_localization" type="fake_localization" respawn="false" />
+    <param name="robot_pose_ekf/freq" value="30.0"/>
+    <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+    <param name="robot_pose_ekf/odom_used" value="true"/>
+    <param name="robot_pose_ekf/imu_used" value="true"/>
+    <param name="robot_pose_ekf/vo_used" value="false"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" respawn="true"/>
+
+    <param name="pf_odom_frame_id" value="odom_combined"/>
+    <node pkg="fake_localization" type="fake_localization" respawn="true"/>
 
     <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true"/>
     <node pkg="robot_self_filter" type="robotlinks_filter_node" args="--robotfile robots/pr2full.robot.xml --padding 0.1 --accuratetiming 0" respawn="true">
@@ -49,17 +57,17 @@
       <remap from="collision_map" to="collision_map_buffer"/>
     </node>
 
-    <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
+    <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml" />
 
 
     <node name="right_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
-      <param name="controller_frequency" value="0.6"/>
+      <param name="controller_frequency" value="50.0"/>
       <param name="planner_frequency" value="5.0"/>
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
     <node name="left_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
-      <param name="controller_frequency" value="0.6"/>
+      <param name="controller_frequency" value="50.0"/>
       <param name="planner_frequency" value="5.0"/>
       <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
