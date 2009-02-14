@@ -12,4 +12,5 @@
   <depend package="collision_map"/>
   <depend package="kinematic_planning"/>
   <depend package="executive_python"/>
+  <depend package="plan_kinematic_path"/>
 </package>
