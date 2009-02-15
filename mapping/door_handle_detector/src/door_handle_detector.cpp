@@ -110,7 +110,7 @@ class DoorHandleDetector : public ros::Node
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
-        param ("~fixed_frame", fixed_frame_, string("odom_combined"));        
+        param ("~fixed_frame", fixed_frame_, string ("odom_combined"));
 
         param ("~door_min_z", door_min_z_, 0.2);                            // the minimum Z point on the door must be lower than this value
         param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
@@ -212,7 +212,7 @@ class DoorHandleDetector : public ros::Node
 
       // receive a new laser scan
       num_clouds_received_ = 0;
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1), 
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1),
                                                                           input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
       while (num_clouds_received_ < 2)
@@ -478,6 +478,8 @@ class DoorHandleDetector : public ros::Node
       vector<double> z_axis (3, 0); z_axis[2] = 1.0;
       cloud_geometry::transforms::getPlaneToPlaneTransformation (*door_coeff, z_axis, 0, 0, 0, transformation);
       cloud_geometry::transforms::transformPoints (&door_poly->points, poly_tr.points, transformation);
+
+//      double shrink_data_threshold = / sqrt ()
       //cloud_geometry::areas::shrink2DPolygon (&poly_tr, poly_tr_shrunk, 0.2);
       //cloud_geometry::areas::expand2DPolygon (&poly_tr, poly_tr_shrunk, -0.2);
 
@@ -546,17 +548,7 @@ class DoorHandleDetector : public ros::Node
             )        // Is the viewpoint<->point intersection inside the door ?
           continue;
 
-
-// This needs to be removed
-#if 1
-        robot_msgs::Point32 pnt;
-        pnt.x = points->pts.at (indices->at (i)).x;
-        pnt.y = points->pts.at (indices->at (i)).y;
-        pnt.z = points->pts.at (indices->at (i)).z;
-        //handle_visualize.push_back (viewpoint_door_intersection);//p_tr);//pnt);
-        handle_visualize.push_back (pnt);
-#endif
-
+        // Save the point indices which satisfied all the geometric criteria so far
         possible_handle_indices[nr_phi] = indices->at (i);
         nr_phi++;
       }
@@ -622,7 +614,7 @@ class DoorHandleDetector : public ros::Node
 
         if (fabs (maxP.z - minP.z) > handle_height_threshold_)
         {
-          //ROS_WARN ("Rejecting potential handle cluster because height (%g) is above threshold (%g)!", fabs (maxP.z - minP.z), handle_height_threshold_);
+          ROS_WARN ("Rejecting potential handle cluster because height (%g) is above threshold (%g)!", fabs (maxP.z - minP.z), handle_height_threshold_);
           continue;
         }
 
@@ -647,9 +639,15 @@ class DoorHandleDetector : public ros::Node
       handle_center.z -= distance_to_plane * door_coeff->at (2);
 
 
+      // Grow the handle region
+      vector<int> final_handle_indices;
+///      growRegion (points, &handle_indices, d_idx, final_handle_indices);
+//      handle_indices = possible_handle_indices;
+
 // This needs to be removed
 #if 1
       robot_msgs::PointCloud handle_cloud;
+      handle_cloud.header = points->header;
       //        handle_indices_clusters = possible_handle_indices;
       handle_cloud.chan.resize (1);
       handle_cloud.chan[0].name = "intensities";
@@ -662,9 +660,7 @@ class DoorHandleDetector : public ros::Node
         handle_visualize[i].z = points->pts.at (handle_indices[i]).z;
         handle_cloud.chan[0].vals[i] = points->chan[d_idx].vals.at (handle_indices[i]);
       }
-      cout << "added " << handle_visualize.size() << " points to visualize" << endl;
-      handle_cloud.header.stamp = ros::Time::now ();
-      handle_cloud.header.frame_id = cloud_frame_;
+      cout << "added " << handle_visualize.size() << " points to visualize in " << handle_cloud.header.frame_id << endl;
       handle_cloud.pts = handle_visualize;
 
       publish ("handle_visualization", handle_cloud);
@@ -680,14 +676,14 @@ class DoorHandleDetector : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void cloud_cb(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+    void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
       cout << "scan received" << endl;
       cloud_in_ = *cloud;
       num_clouds_received_++;
     }
 
-  
+
   void transformPoint(const std::string &target_frame, const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
   {
     tf::Stamped<tf::Point> tmp;
@@ -709,7 +705,7 @@ class DoorHandleDetector : public ros::Node
 
 
 
-}; 
+};
 
 
 
@@ -722,14 +718,14 @@ int
   DoorHandleDetector p;
 
   door_handle_detector::DoorDetector::Request req;
-  req.door.header.frame_id = "odom_combined";
+  req.door.header.frame_id = "base_link";//odom_combined";
   req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
   req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
 
   door_handle_detector::DoorDetector::Response resp;
   ros::service::call ("door_handle_detector", req, resp);
 
-  p.spin ();
+//  p.spin ();
 
   p.shutdown ();
   return (0);

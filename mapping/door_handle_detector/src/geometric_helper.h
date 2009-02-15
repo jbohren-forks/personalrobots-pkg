@@ -86,6 +86,30 @@ inline double
   return (rgb);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+inline void
+  growRegion (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, std::vector<int> &final_handle_indices)
+{
+  std::vector<unsigned int> dimensions (1);
+  dimensions[0] = d_idx;
+  // Create a tree for these points in 4D (XYZ + Intensity)
+  cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices, dimensions);
+
+  std::vector<int> neighbors (indices->size ());
+  std::vector<double> distances (indices->size ());
+
+  for (unsigned int i = 0; i < indices->size (); i++)
+  {
+    tree->nearestKSearch (i, 2, neighbors, distances);
+
+    std::cerr << distances[1] << std::endl;
+  }
+
+  // Destroy the tree
+  delete tree;
+}
+
 void get3DBounds (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2, robot_msgs::Point32 &min_b, robot_msgs::Point32 &max_b,
                   double min_z_bounds, double max_z_bounds, int multiplier);
 

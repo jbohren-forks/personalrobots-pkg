@@ -1,5 +1,5 @@
 <launch>
-  <param name="door_handle_detector/door_frame_multiplier_threshold" value="6" />
+  <param name="door_handle_detector/door_frame_multiplier_threshold" value="4" />
 
   <param name="door_handle_detector/handle_distance_door_min_threshold" value="0.05" />
   <param name="door_handle_detector/handle_distance_door_max_threshold" value="0.20" />

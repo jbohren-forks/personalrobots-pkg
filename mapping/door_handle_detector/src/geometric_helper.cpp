@@ -457,6 +457,11 @@ int
     // Project the inliers onto the model
     model->projectPointsInPlace (inliers, coeff);
   }
+  else
+  {
+    ROS_ERROR ("Could not compute a plane model.");
+    return (-1);
+  }
   delete sac;
   delete model;
   return (0);
