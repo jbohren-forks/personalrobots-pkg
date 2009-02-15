@@ -83,7 +83,7 @@ public:
       return cb_.back();
   };
   
-  unsigned int size(){  return std::min(counter_, cb_.size());};
+  unsigned int size(){  return std::min(counter_, (unsigned int)cb_.size());};
   bool empty(){return cb_.empty();};
   T& at(size_t index){return cb_.at(index);};
   T& operator[](size_t index){return cb_[index];}
