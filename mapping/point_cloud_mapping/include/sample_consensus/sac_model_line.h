@@ -36,6 +36,9 @@
 #include <sample_consensus/sac_model.h>
 #include <sample_consensus/model_types.h>
 
+/** \brief Define the maximum number of iterations for selecting 2 unique points */
+#define MAX_ITERATIONS_UNIQUE 1000
+
 namespace sample_consensus
 {
   /** \brief A Sample Consensus Model class for 3D line segmentation.

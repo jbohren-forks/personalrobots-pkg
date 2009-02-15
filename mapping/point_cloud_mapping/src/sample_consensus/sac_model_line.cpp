@@ -55,10 +55,18 @@ namespace sample_consensus
     random_idx[0] = indices_.at (idx);
 
     // Get a second point which is different than the first
+    int iter = 0;
     do
     {
       idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
       random_idx[1] = indices_.at (idx);
+      iter++;
+
+      if (iter > MAX_ITERATIONS_UNIQUE)
+      {
+        std::cerr << "[SACModelLine::getSamples] WARNING: Could not select 2 unique points in " << MAX_ITERATIONS_UNIQUE << " iterations!!!" << std::endl;
+        break;
+      }
       iterations++;
     } while (random_idx[1] == random_idx[0]);
     iterations--;
