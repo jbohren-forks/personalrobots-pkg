@@ -172,6 +172,21 @@ namespace cloud_geometry
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the cross product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline robot_msgs::Point32
+    cross (std::vector<double> *p1, robot_msgs::Point32 *p2)
+  {
+    robot_msgs::Point32 r;
+    r.x = p1->at (1)*p2->z - p1->at (2)*p2->y;
+    r.y = p1->at (2)*p2->x - p1->at (0)*p2->z;
+    r.z = p1->at (0)*p2->y - p1->at (1)*p2->x;
+    return (r);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute the dot product between two points (vectors).
     * \param p1 the first point/vector
     * \param p2 the second point/vector
