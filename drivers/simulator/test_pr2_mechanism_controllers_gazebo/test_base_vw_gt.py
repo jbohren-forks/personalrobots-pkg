@@ -51,6 +51,7 @@ import rospy, rostest
 from robot_msgs.msg import *
 from deprecated_msgs.msg import *
 
+TEST_DURATION   = 60.0
 
 TARGET_VW       =  0.5
 TARGET_DURATION = 2.0
@@ -117,11 +118,11 @@ class BaseTest(unittest.TestCase):
     
     def test_base(self):
         print "LNK\n"
-        pub = rospy.Publisher("cmd_vel", PoseDot)
-        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("odom",                   RobotBase2DOdom,      self.odomInput)
+        pub = rospy.Publisher("/cmd_vel", PoseDot)
+        rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
+        rospy.Subscriber("/odom",                   RobotBase2DOdom,      self.odomInput)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + 60.0
+        timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             pub.publish(PoseDot(Velocity(0.0,0.0,0),AngularVelocity(0,0,TARGET_VW)))
             time.sleep(0.1)

@@ -49,6 +49,7 @@ import rospy, rostest
 from robot_msgs.msg import *
 
 TOLERANCE = 0.0057
+TEST_DURATION = 20.0
 
 class E:
     def __init__(self,x,y,z):
@@ -142,10 +143,10 @@ class PendulumTest(unittest.TestCase):
 
     def test_pendulum(self):
         print "LNK\n"
-        rospy.Subscriber("link1_pose", PoseWithRatesStamped, self.p3dInput1)
-        rospy.Subscriber("link2_pose", PoseWithRatesStamped, self.p3dInput2)
+        rospy.Subscriber("/link1_pose", PoseWithRatesStamped, self.p3dInput1)
+        rospy.Subscriber("/link2_pose", PoseWithRatesStamped, self.p3dInput2)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + 20.0
+        timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             if self.error1_count > 0 and self.error2_count > 0:
               print  "E1 count:" + str(self.error1_count) + " error:" + str(self.error1_total)  + " avg err:" + str(self.error1_total / self.error1_count) \

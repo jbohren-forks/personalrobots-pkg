@@ -6,7 +6,7 @@
   <test test-name="hztest_test_odom" pkg="rostest" type="hztest" time-limit="50" name="odom_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (odom_test vs. scan_test). -->
-    <param name="topic" value="odom" />
+    <param name="topic" value="/odom" />
     <param name="hz" value="10.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />

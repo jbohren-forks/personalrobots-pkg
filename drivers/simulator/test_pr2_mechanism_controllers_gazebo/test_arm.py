@@ -203,10 +203,10 @@ class ArmTest(unittest.TestCase):
     
     def test_arm(self):
         print "LNK\n"
-        pub_arm = rospy.Publisher("left_arm_commands", JointPosCmd)
-        pub_gripper = rospy.Publisher("l_gripper_controller/set_command", Float64)
-        rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.palmP3dInput)
-        rospy.Subscriber("l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.fngrP3dInput)
+        pub_arm = rospy.Publisher("/left_arm_commands", JointPosCmd)
+        pub_gripper = rospy.Publisher("/l_gripper_controller/set_command", Float64)
+        rospy.Subscriber("/l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.palmP3dInput)
+        rospy.Subscriber("/l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.fngrP3dInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_TIMEOUT
         while not rospy.is_shutdown() and (not self.palm_success or not self.fngr_success) and time.time() < timeout_t:
