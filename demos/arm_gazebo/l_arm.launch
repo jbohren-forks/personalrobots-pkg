@@ -23,7 +23,7 @@
     <!-- for visualization -->
     <!--
     -->
-    <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
+    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
 
   </group>
 </launch>

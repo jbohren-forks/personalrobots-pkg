@@ -36,7 +36,7 @@
 
     <!-- for visualization -->
     <!--
-    <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
+    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
     -->
 
     <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />

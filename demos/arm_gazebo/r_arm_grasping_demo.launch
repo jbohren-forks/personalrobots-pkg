@@ -31,7 +31,7 @@
 
     <!-- for visualization -->
     <!--
-    <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="false" output="screen" />
+    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
     -->
     <node pkg="rosviz" type="rxplot" args="/r_gripper_l_finger_tip_bumper/force/vector/x /r_gripper_l_finger_tip_bumper/force/vector/y /r_gripper_l_finger_tip_bumper/force/vector/z" respawn="true" output="screen" />
 
