@@ -80,7 +80,7 @@ class NavStackTest(unittest.TestCase):
 
         # default parameters
         self.nav_t_tol    = 0.1
-        self.nav_xy_tol   = 1.0
+        self.nav_xy_tol   = 0.7
         self.odom_t_tol   = 0.1
         self.odom_xy_tol  = 0.1
         self.test_timeout = 50.0
@@ -229,7 +229,8 @@ class NavStackTest(unittest.TestCase):
             h.stamp = rospy.get_rostime();
             h.frame_id = "/map"
             pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
-            time.sleep(2.0)
+            time.sleep(0.5)
+
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
             print "========================"
