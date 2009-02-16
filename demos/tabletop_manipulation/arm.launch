@@ -1,6 +1,6 @@
 <launch>
 <!-- Arm trajectory controller -->
-  <param name="right_arm_trajectory_controller/velocity_scaling_factor" type="double" value="1.0"/>
+  <param name="right_arm_trajectory_controller/velocity_scaling_factor" type="double" value="0.25"/>
   <param name="right_arm_trajectory_controller/trajectory_wait_timeout" type="double" value=".25"/>
 
   <param name="right_arm_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" type="double" value="0.1"/>
