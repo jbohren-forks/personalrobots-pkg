@@ -6,3 +6,4 @@ rospack_add_executable(phase_space_node phase_space_node.cpp)
 #rospack_add_executable(phase_space_benchmark phase_space_benchmark.cpp)
 
 target_link_libraries(phase_space_node owlsock)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

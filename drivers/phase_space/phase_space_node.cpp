@@ -84,7 +84,7 @@ void PhaseSpaceNode::startStreaming()
 bool PhaseSpaceNode::spin()
 { 
 
-  unsigned int prev_frame_num = -1 ;
+  int prev_frame_num = -1 ;
   while (ok())             // While the node has not been shutdown
   {
     usleep(1) ;
