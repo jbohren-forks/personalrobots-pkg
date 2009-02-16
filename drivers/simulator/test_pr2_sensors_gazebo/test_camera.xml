@@ -20,5 +20,13 @@
     <!-- send arm a command -->
     <node pkg="robot_mechanism_controllers" type="control.py" args="set head_tilt_controller 0.2" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 
+    <!-- set head_tilt and arm pose -->
+    <node pkg="test_pr2_sensors_gazebo" type="set_pose.py" output="screen"/>
+
+    <!-- visualization -->
+    <!--
+    <node pkg="wx_camera_panel" type="standalone_visualizer.py" args="/stereo_l" respawn="false" output="screen" />
+    -->
+
     <test test-name="test_pr2_sensors_gazebo_test_camera" pkg="test_pr2_sensors_gazebo" type="test_camera.py" time-limit="110" />
 </launch>
