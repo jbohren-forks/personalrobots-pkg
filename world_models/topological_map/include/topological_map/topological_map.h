@@ -94,7 +94,7 @@ typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
 
 /// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const uint bottleneck_length, const uint bottleneck_width, const uint inflation_radius, const std::string& pgm_output_dir);
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const std::string& pgm_output_dir);
 
 
 

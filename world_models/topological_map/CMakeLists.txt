@@ -35,3 +35,5 @@ target_link_libraries(ros_topological_map topological_graph)
 rospack_add_gtest(test/test_topological_map test/test_topological_map.cpp)
 target_link_libraries(test/test_topological_map topological_graph)
 
+rospack_add_executable(tm_driver src/tm_driver)
+target_link_libraries(tm_driver topological_graph)
