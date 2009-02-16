@@ -173,8 +173,8 @@ void CartesianTFFController::update()
 
   // calculate the distance traveled along the axes of the tf
   if (initialized_)
-    //position_ += pose_meas_.M.Inverse() * diff(pose_meas_, pose_meas_old_);
-    position_ += diff(pose_meas_, pose_meas_old_);
+    position_ += pose_meas_.M.Inverse() * diff(pose_meas_, pose_meas_old_);
+  //position_ += diff(pose_meas_, pose_meas_old_);
   else{
     initialized_ = true;
   }
