@@ -6,7 +6,7 @@
   <!-- Test for publication of 'left axis camera image publish rate' topic -->
   <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" time-limit="60" name="axis_left_image_test">
     <!-- The topic to listen for -->
-    <param name="topic" value="axis_l/image" />
+    <param name="topic" value="/axis_l/image" />
     <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
     at least one message is received. -->
     <param name="hz" value="15.0" />
@@ -25,7 +25,7 @@
 
   <!-- Test for publication of 'right axis camera image publish rate' topic -->
   <test test-name="hztest_test_axis_right_image" pkg="rostest" type="hztest" time-limit="60" name="axis_right_image_test">
-    <param name="topic" value="axis_r/image" />
+    <param name="topic" value="/axis_r/image" />
     <param name="hz" value="15.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
@@ -34,7 +34,7 @@
 
   <!-- Test for publication of 'left stereo camera image publish rate' topic -->
   <test test-name="hztest_test_stereo_left_image" pkg="rostest" type="hztest" time-limit="60" name="stereo_left_image_test">
-    <param name="topic" value="stereo_l/image" />
+    <param name="topic" value="/stereo_l/image" />
     <param name="hz" value="20.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />

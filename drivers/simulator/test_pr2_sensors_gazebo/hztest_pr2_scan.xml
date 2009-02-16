@@ -6,7 +6,7 @@
   <!-- Test for publication of 'base_scan' topic -->
   <test test-name="hztest_test_scan" pkg="rostest" type="hztest" time-limit="50" name="base_scan_test">
     <!-- The topic to listen for -->
-    <param name="topic" value="base_scan" />
+    <param name="topic" value="/base_scan" />
     <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
     at least one message is received. -->
     <param name="hz" value="20.0" />
@@ -27,7 +27,7 @@
   <test test-name="hztest_test_tilt_scan" pkg="rostest" type="hztest" time-limit="50" name="tilt_scan_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (tilt_scan_test vs. scan_test). -->
-    <param name="topic" value="tilt_scan" />
+    <param name="topic" value="/tilt_scan" />
     <param name="hz" value="20.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
@@ -38,7 +38,7 @@
   <test test-name="hztest_test_full_cloud" pkg="rostest" type="hztest" time-limit="50" name="full_cloud_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (full_cloud_test vs. scan_test). -->
-    <param name="topic" value="full_cloud" />
+    <param name="topic" value="/full_cloud" />
     <param name="hz" value="10.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
@@ -49,7 +49,7 @@
   <test test-name="hztest_test_axis_left_ptz_state" pkg="rostest" type="hztest" time-limit="50" name="axis_left_ptz_state_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (axis_left/ptz_state_test vs. scan_test). -->
-    <param name="topic" value="axis_l/ptz_state" />
+    <param name="topic" value="/axis_l/ptz_state" />
     <param name="hz" value="15.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
