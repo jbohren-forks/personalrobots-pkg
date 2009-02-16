@@ -57,7 +57,7 @@ static const bool DEBUG_ON = true ;
 
 PhaseSpaceNode::PhaseSpaceNode() : ros::Node("phase_space")
 {
-  advertise<robot_msgs::MocapSnapshot>("phase_space_snapshot", 48) ;
+  advertise<robot_msgs::MocapSnapshot>("phase_space_snapshot", 1) ;
 }
 
 PhaseSpaceNode::~PhaseSpaceNode()
