@@ -530,3 +530,46 @@ void
   // Delete the kd-tree
   delete kdtree;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Finds the best oriented line in points/indices with respect to a given axis and return the point inliers.
+  * \param points a pointer to the point cloud message
+  * \param indices the point cloud indices to use
+  * \param dist_thresh maximum allowed distance threshold of an inlier point to the line model
+  * \param axis the axis to check against
+  * \param eps_angle maximum angular line deviation from the axis (in radians)
+  * \param line_inliers the resultant point inliers
+  */
+int
+  fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices,
+                      double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers)
+{
+  if (indices.size () < 5)
+  {
+    line_inliers.resize (0);
+    return (-1);
+  }
+
+  // Create and initialize the SAC model
+  sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
+  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  sac->setMaxIterations (100);
+  model->setDataSet (points, indices);
+  model->setAxis (axis);
+  model->setEpsAngle (eps_angle);
+
+  // Search for the best line
+  if (sac->computeModel ())
+  {
+    line_inliers = sac->getInliers ();
+  }
+  else
+  {
+    ROS_ERROR ("Could not compute an oriented line model.");
+    return (-1);
+  }
+  delete sac;
+  delete model;
+  return (0);
+}
+

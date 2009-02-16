@@ -105,8 +105,9 @@ class DoorHandleDetector : public ros::Node
     double rectangle_constrain_edge_height_;
     double rectangle_constrain_edge_angle_;
 
+    int nr_scans_;
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_(NULL), tf_(*this)
+    DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_(NULL), tf_(*this)
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
@@ -137,6 +138,7 @@ class DoorHandleDetector : public ros::Node
 
       // ---[ Parameters regarding optimizations / real-time computations
       {
+        param ("~nr_scans", nr_scans_, 2);
         // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
         param ("~downsample_leaf_width", leaf_width_, 0.025);          // 2.5cm radius by default
         param ("~search_k_closest", k_search_, 10);                    // 10 k-neighbors by default
@@ -212,10 +214,11 @@ class DoorHandleDetector : public ros::Node
 
       // receive a new laser scan
       num_clouds_received_ = 0;
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1),
-                                                                          input_cloud_topic_.c_str (), door_frame_, 1);
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1),
+                                                                           input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
-      while (num_clouds_received_ < 2)
+      // @Wim : why ? :) - this became horribly slow :(
+      while (num_clouds_received_ < nr_scans_)
         tictoc.sleep ();
       delete message_notifier_;
 
@@ -225,11 +228,17 @@ class DoorHandleDetector : public ros::Node
 
       // Obtain the bounding box information in the reference frame of the laser scan
       Point32 minB, maxB;
-      tf::Stamped<Point32> frame_p1(req.door.frame_p1, cloud_time_, door_frame_);
-      tf::Stamped<Point32> frame_p2(req.door.frame_p2, cloud_time_, door_frame_);
-      transformPoint(cloud_frame_, frame_p1, frame_p1);
-      transformPoint(cloud_frame_, frame_p2, frame_p2);
-      get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
+      tf::Stamped<Point32> frame_p1 (req.door.frame_p1, cloud_time_, door_frame_);
+      tf::Stamped<Point32> frame_p2 (req.door.frame_p2, cloud_time_, door_frame_);
+      transformPoint (cloud_frame_, frame_p1, frame_p1);
+      transformPoint (cloud_frame_, frame_p2, frame_p2);
+      if (door_frame_multiplier_ == -1)
+      {
+        ROS_INFO ("Door frame multiplier set to -1. Using the entire point cloud data.");
+        cloud_geometry::statistics::getMinMax (&cloud_in_, minB, maxB);
+      }
+      else
+        get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
 
       cout << "Start detecting door at points in frame " << cloud_frame_ << " ";
       cout << "(" << frame_p1.x << " " << frame_p1.y << ")   ";
@@ -435,7 +444,7 @@ class DoorHandleDetector : public ros::Node
 
       duration = ros::Time::now () - ts;
       ROS_INFO ("Door found. Result in frame %s \n  P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. \n  Height = %f. \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
-		resp.door.header.frame_id.c_str(),
+                resp.door.header.frame_id.c_str (),
                 resp.door.door_p1.x, resp.door.door_p1.y, resp.door.door_p1.z, resp.door.door_p2.x, resp.door.door_p2.y, resp.door.door_p2.z,
                 resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 duration.toSec ());
@@ -478,10 +487,6 @@ class DoorHandleDetector : public ros::Node
       vector<double> z_axis (3, 0); z_axis[2] = 1.0;
       cloud_geometry::transforms::getPlaneToPlaneTransformation (*door_coeff, z_axis, 0, 0, 0, transformation);
       cloud_geometry::transforms::transformPoints (&door_poly->points, poly_tr.points, transformation);
-
-//      double shrink_data_threshold = / sqrt ()
-      //cloud_geometry::areas::shrink2DPolygon (&poly_tr, poly_tr_shrunk, 0.2);
-      //cloud_geometry::areas::expand2DPolygon (&poly_tr, poly_tr_shrunk, -0.2);
 
       // Install the basis for a viewpoint -> point line
       vector<double> viewpoint_pt_line (6);
@@ -581,25 +586,67 @@ class DoorHandleDetector : public ros::Node
 
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
-        ROS_INFO ("Intensity cluster %d has %d points.", i, clusters[i].size ());
-
         // Need to remove the planar cluster on which the viewpoint <-> cluster_centroid is perpendicular to (intensity artifact)
         if (checkIfClusterPerpendicular (points, &clusters[i], viewpoint, door_coeff, intensity_cluster_perpendicular_angle_tolerance_))
         {
           ROS_WARN ("Cluster %d removed due to perpendicularity condition (viewpoint<->plane) criterion.", i);
           clusters[i].resize (0);
         }
+
+        // Remove points lying on the plane
+        int nr_p = 0;
+        vector<int> cluster_revised (clusters[i].size ());
+        for (unsigned int j = 0; j < clusters[i].size (); j++)
+        {
+          if (cloud_geometry::distances::pointToPlaneDistance (&points->pts.at (clusters[i][j]), *door_coeff) > 0.01)
+          {
+            cluster_revised[nr_p] = clusters[i][j];
+            nr_p++;
+          }
+        }
+        clusters[i] = cluster_revised;
       }
 
       // ---[ Seventh test (geometric)
+      // Fit the best horizontal line through each cluster
       // Check the elongation of the clusters -- Filter clusters based on min/max Z
-      robot_msgs::Point32 minP, maxP;
-      handle_indices.resize (handle_indices_clusters.size ());
       nr_phi = 0;
-      for (unsigned int i = 0; i < clusters.size (); i++)
+
+      robot_msgs::Point32 door_axis = cloud_geometry::cross (door_coeff, &z_axis_);
+
+      vector<vector<int> > line_inliers (clusters.size ());
+      std::cout << " - prepare to fit lines in handle clusters..." << std::endl;
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)clusters.size (); i++)
       {
         if (clusters[i].size () == 0) continue;
-        cloud_geometry::statistics::getMinMax (points, &clusters[i], minP, maxP);
+        fitSACOrientedLine (points, clusters[i], 0.05, &door_axis, normal_angle_tolerance_, line_inliers[i]);
+
+      }
+      std::cout << " - lines fit" << std::endl;
+
+      // Calculate the longest horizontal line
+      double best_length = -FLT_MAX;
+      int best_i = -1;
+      robot_msgs::Point32 minP, maxP;
+      for (unsigned int i = 0; i < clusters.size (); i++)
+      {
+        if (line_inliers[i].size () == 0) continue;
+        // Compute the min/max from the inlier set
+        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], minP, maxP);
+        double line_length = cloud_geometry::distances::pointToPointDistance (&minP, &maxP);
+
+        ROS_INFO ("Best line fit found for cluster %d (%d points): %g (%d inliers).",
+                  i, clusters[i].size (), line_length, line_inliers[i].size ());
+
+        if (line_length > best_length)
+        {
+          best_length = line_length;
+          best_i      = i;
+        }
+      }
+
+/*        cloud_geometry::statistics::getMinMax (points, &clusters[i], minP, maxP);
 
         double dist_x = fabs (maxP.x - minP.x);
         double dist_y = fabs (maxP.y - minP.y);
@@ -609,23 +656,23 @@ class DoorHandleDetector : public ros::Node
         {
           ROS_WARN ("Rejecting potential handle cluster (%d) because elongation on z (%g) is larger than elongation on x (%g) and y (%g)!",
                     clusters[i].size (), dist_z, dist_x, dist_y);
-          continue;
+//          continue;
         }
 
         if (fabs (maxP.z - minP.z) > handle_height_threshold_)
         {
-          ROS_WARN ("Rejecting potential handle cluster because height (%g) is above threshold (%g)!", fabs (maxP.z - minP.z), handle_height_threshold_);
-          continue;
-        }
-
-        for (unsigned int j = 0; j < clusters[i].size (); j++)
-        {
-          handle_indices[nr_phi] = clusters[i][j];
-          nr_phi++;
-        }
-        break;      // get the first cluster
+          ROS_WARN ("Rejecting potential handle cluster (%d) because height (%g) is above threshold (%g)!",
+                    clusters[i].size (), fabs (maxP.z - minP.z), handle_height_threshold_);
+//          continue;
+        }*/
+      if (best_i == -1)
+      {
+        ROS_ERROR ("All clusters rejected! Should exit here.");
       }
-      handle_indices.resize (nr_phi);
+
+      handle_indices.resize (line_inliers[best_i].size ());
+      for (unsigned int j = 0; j < line_inliers[best_i].size (); j++)
+        handle_indices[j] = line_inliers[best_i][j];
 
       // Compute the centroid for the remaining handle indices
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
@@ -637,12 +684,6 @@ class DoorHandleDetector : public ros::Node
       handle_center.x -= distance_to_plane * door_coeff->at (0);
       handle_center.y -= distance_to_plane * door_coeff->at (1);
       handle_center.z -= distance_to_plane * door_coeff->at (2);
-
-
-      // Grow the handle region
-      vector<int> final_handle_indices;
-///      growRegion (points, &handle_indices, d_idx, final_handle_indices);
-//      handle_indices = possible_handle_indices;
 
 // This needs to be removed
 #if 1
