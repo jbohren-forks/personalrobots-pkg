@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 	
 	while (1)
 	{
-            ros::Duration d(4.0);
+            ros::Duration d(10.0);
 	    
 	    plan->runRightArmToPositionA();
 	
