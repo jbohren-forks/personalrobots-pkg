@@ -279,12 +279,12 @@ void PlugController::computeConstraintJacobian()
   double joint_e = angles::shortest_angular_distance(jnt_pos(2), upper_arm_limit);
   if(joint_e < upper_arm_dead_zone)
   {
-    joint_constraint_jac_(2) = 1;
+    joint_constraint_jac_(2) = 0;//1;
   }
 
   if(joint_e < 0)
   {
-    joint_constraint_force_(2) = joint_e * f_limit_max;
+    joint_constraint_force_(2) =0;// joint_e * f_limit_max;
   }
   else
   {
@@ -315,12 +315,14 @@ ROS_REGISTER_CONTROLLER(PlugControllerNode)
 PlugControllerNode::PlugControllerNode()
 : node_(ros::Node::instance()), loop_count_(0), TF(*ros::Node::instance(),false, 10000000000ULL)
 {
+  current_frame_publisher_=NULL;
 }
 
 
 PlugControllerNode::~PlugControllerNode()
 {
-  node_->unsubscribe(topic_ + "/command");
+  current_frame_publisher_->stop();
+  delete current_frame_publisher_;
 }
 
 bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -345,6 +347,12 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
   node_->subscribe(topic_ + "/outlet_pose", outlet_pose_msg_,
                   &PlugControllerNode::outletPose, this, 1);
   guard_outlet_pose_.set(topic_ + "/outlet_pose");
+
+  if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice                                                        
+    delete current_frame_publisher_ ;
+  current_frame_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::Transform> (topic_ + "/transform", 1) ;
+
+
   return true;
 }
 
@@ -353,7 +361,20 @@ void PlugControllerNode::update()
 {
   controller_.update();
 
+  static int count =0;
+  if (count % 100 == 0)
+  {
+    if (current_frame_publisher_->trylock())
+    {
+      tf::Transform transform;
+      mechanism::TransformKDLToTF(controller_.endeffector_frame_, transform);
+      tf::TransformTFToMsg(transform, current_frame_publisher_->msg_);
+      current_frame_publisher_->unlockAndPublish() ;
+     }
+  }
+
 }
+
 void PlugControllerNode::outletPose()
 {
 

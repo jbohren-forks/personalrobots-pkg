@@ -42,11 +42,17 @@
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "robot_msgs/OutletPose.h"
+
+#include "robot_msgs/Transform.h"
+
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"
+
+#include <realtime_tools/realtime_publisher.h>
+
 
 #include "Eigen/Geometry"
 #include "Eigen/LU"
@@ -76,6 +82,10 @@ public:
   Eigen::Matrix<float,6,1> task_wrench_;
   Eigen::Vector3f outlet_pt_;
   Eigen::Vector3f outlet_norm_; // this must be normalized
+
+  KDL::Frame endeffector_frame_;
+  KDL::Frame desired_frame_;
+
 private:
 
   mechanism::RobotState *robot_;
@@ -102,8 +112,6 @@ private:
   Eigen::MatrixXf constraint_torq_;
   Eigen::MatrixXf joint_constraint_torq_;
   Eigen::MatrixXf task_torq_;
-  KDL::Frame endeffector_frame_;
-  KDL::Frame desired_frame_;
 
   // some parameters to define the constraint
 
@@ -142,6 +150,9 @@ class PlugControllerNode : public Controller
   unsigned int loop_count_;
 
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
+  realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_; 
+  
+
 };
 
 } // namespace
