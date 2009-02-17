@@ -639,7 +639,7 @@ get_current_tab_index()
   Fl_Tabs *tb = (Fl_Tabs *)stg->window_tab;
   Fl_Widget *wd;
   wd = tb->value();
-  int ind = (int)wd->user_data();
+  int ind = (long int)wd->user_data();
   return ind;
 }
 
