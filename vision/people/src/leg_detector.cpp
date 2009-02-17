@@ -298,14 +298,15 @@ public:
     cout << "Looking for two legs" << endl;
     for (; it1 != end; ++it1)
     {
-      try {
-	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
-      }
-      catch (tf::TransformException& ex) {
-	cout << ex.what() << endl;
-	continue;
-      }
+      //      try {
+      //tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      //                     orig_loc, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+	//}
+	//catch (tf::TransformException& ex) {
+	//cout << ex.what() << endl;
+	//continue;
+    //}
       // Compute the distance between the person and this leg.
       dist = dest_loc.length();
       
@@ -347,19 +348,21 @@ public:
 	  continue;
 
 	// Compute the distance between the person and this leg.
-	try {
-	  tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-			      orig_loc, fixed_frame, dest_loc);
-	}
-	catch (tf::TransformException& ex) {
-	  cout << ex.what() << endl;
-	  continue;
-	}
+	//try {
+	//tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+	//	      orig_loc, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+	  //}
+	  //catch (tf::TransformException& ex) {
+	  //cout << ex.what() << endl;
+	  //continue;
+	  //}
 	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
         printf("get the dist between the legs\n");
-	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	//tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc); 
 	printf("done get dist\n");
         dist_between_legs = dest_loc.length();
 
@@ -402,14 +405,15 @@ public:
 	continue;
 
       // Get the distance between the leg and the person.
-      try {
-	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
-      }
-      catch (tf::TransformException& ex) {
-	cout << ex.what() << endl;
-	continue;
-      }
+      //try {
+      //	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      //                    orig_loc, fixed_frame, dest_loc);
+      tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+	//}
+	//catch (tf::TransformException& ex) {
+	//cout << ex.what() << endl;
+	//continue;
+	//}
       dist1 = dest_loc.length();
       // Don't jump to a far-away tracker.
       if ( dist1 >= max_meas_jump_m ) 
@@ -432,18 +436,20 @@ public:
 	  continue;
 
 	// Get the distance between the leg and the person.
-	try {
-	  tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
-	}
-	catch (tf::TransformException& ex) {
-	  cout << ex.what() << endl;
-	  continue;
-	}
+	//try {
+	//tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it2)->id_, (*it2)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);  
+	//}
+	  //catch (tf::TransformException& ex) {
+	  //cout << ex.what() << endl;
+	  //continue;
+	  //}
 	dist2 = dest_loc.length();
 	
 	// Get the distance between the two legs
         printf("Get the dist between the legs, take 2\n");
-	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	//tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
 	printf("Done get dist, take 2\n");
         dist_between_legs = dest_loc.length();
 
@@ -592,9 +598,7 @@ public:
            pf_iter++)
       {
         // find the closest distance between candidate and trackers
-        printf("get the dist between the candidate and trackers\n");
         float dist = loc.distance((*pf_iter)->prop_loc_);
-        printf("done get the dist between the candidate and trackers\n");
         if ( dist < closest_dist )
         {
           closest = pf_iter;
@@ -664,9 +668,7 @@ public:
              remain_iter != propagated.end();
              remain_iter++)
         {
-          printf("assign to another tracker, get dist\n");
           float dist = loc.distance((*remain_iter)->prop_loc_);
-          printf("done assign to another tracker\n");
           if ( dist < closest_dist )
           {
             closest = remain_iter;
