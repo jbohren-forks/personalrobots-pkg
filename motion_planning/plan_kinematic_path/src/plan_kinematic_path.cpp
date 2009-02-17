@@ -258,7 +258,7 @@ protected:
 	dpath.model_name = model;
 	currentState(dpath.start_state);
 	dpath.path = path;
-	m_node->publish("display_inematic_path", dpath);
+	m_node->publish("display_kinematic_path", dpath);
 	ROS_INFO("Sent planned path to display");
     }
 
