@@ -47,12 +47,12 @@ namespace controller {
 
 ROS_REGISTER_CONTROLLER(PlugController)
 
-PlugController::PlugController()
-: jnt_to_jac_solver_(NULL),
-  jnt_to_pose_solver_(NULL),
-  initialized_(false),
+PlugController::PlugController() :
   outlet_pt_(1, 0, 0),
-  outlet_norm_(1,0,0)
+  outlet_norm_(1,0,0),
+  jnt_to_jac_solver_(NULL),
+  jnt_to_pose_solver_(NULL),
+  initialized_(false)
 {
   constraint_jac_.setZero();
   constraint_wrench_.setZero();
