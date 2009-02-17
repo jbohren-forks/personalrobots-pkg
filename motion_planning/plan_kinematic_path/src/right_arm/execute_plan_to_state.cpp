@@ -227,8 +227,8 @@ protected:
 	dpath.model_name = model;
 	dpath.start_state = start;
 	dpath.path = path;
-	m_node->publish("display_kinematic_path", dpath);
-	ROS_INFO("Sent planned path to display");                                                                                                
+	m_node->publish("display_inematic_path", dpath);
+	ROS_INFO("Sent planned path to display");
     }
     
     // check if straight line path is valid (motion_validator node)

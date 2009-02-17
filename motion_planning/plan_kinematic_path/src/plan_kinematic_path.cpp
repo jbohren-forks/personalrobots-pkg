@@ -51,6 +51,9 @@
 // message for receiving the planning status
 #include <robot_msgs/KinematicPlanStatus.h>
 
+// message sent to visualizer to display the path
+#include <robot_msgs/DisplayKinematicPath.h>
+
 // messages to interact with the joint trajectory controller
 #include <robot_msgs/JointTraj.h>
 
@@ -60,7 +63,7 @@
 static const std::string GROUPNAME = "pr2::right_arm";
 
 class PlanKinematicPath : public ros::Node,
-		public kinematic_planning::KinematicStateMonitor
+			  public kinematic_planning::KinematicStateMonitor
 {
 public:
     
@@ -73,7 +76,10 @@ public:
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
-	
+
+	// advertise the topic for displaying kinematic plans
+	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+
 	subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
     }
         
@@ -238,10 +244,22 @@ protected:
     // send a command to the trajectory controller using a topic
     void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
+	sendDisplay(path, model);
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	m_node->publish("right_arm_trajectory_command", traj);
 	ROS_INFO("Sent trajectory to controller");
+    }
+
+    void sendDisplay(robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	robot_msgs::DisplayKinematicPath dpath;
+	dpath.frame_id = "base_link";
+	dpath.model_name = model;
+	currentState(dpath.start_state);
+	dpath.path = path;
+	m_node->publish("display_inematic_path", dpath);
+	ROS_INFO("Sent planned path to display");
     }
 
     robot_msgs::KinematicPlanStatus plan_status_;
