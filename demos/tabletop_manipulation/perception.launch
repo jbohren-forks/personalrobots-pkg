@@ -18,8 +18,9 @@
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
+    <remap from="full_cloud" to="tilt_laser_cloud" />
   </node>
-  <node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" />
+  <!--node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" /-->
   <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true" output="screen">
     <param name="end_effector_frame_l" type="string" value="r_gripper_l_finger_tip_link" />
     <param name="end_effector_frame_r" type="string" value="r_gripper_r_finger_tip_link" />
@@ -30,5 +31,6 @@
     <param name="leaf_width_y" type="double" value="0.02" />
     <param name="leaf_width_z" type="double" value="0.02" />
     <param name="window_size" type="int" value="20" />
+    <remap from="full_cloud" to="tilt_laser_cloud" />
   </node>
 </launch>
