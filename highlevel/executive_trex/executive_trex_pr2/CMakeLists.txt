@@ -23,8 +23,7 @@ execute_process(
 
 
 
-set(TREX_FILES src/Executive.cc 
-	       src/ROSAdapter.cc 
+set(TREX_FILES src/ROSAdapter.cc 
 	       src/Logger.cc 
                src/LogClock.cc 
 	       src/CalcAngleDiffConstraint.cc 
@@ -41,8 +40,9 @@ set(TREX_FILES src/Executive.cc
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
-rospack_add_executable(bin/trexdebug ${TREX_FILES})
-target_link_libraries(bin/trexdebug Utils_g TREX_g)
+rospack_add_library(executive_trex_pr2_g ${TREX_FILES})
+rospack_add_executable(bin/trexdebug src/Executive.cc)
+target_link_libraries(bin/trexdebug executive_trex_pr2_g Utils_g TREX_g)
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
 # rospack_add_gtest_build_flags excludes the target from all, on the
@@ -50,10 +50,10 @@ rospack_add_gtest_build_flags(bin/trexdebug)
 # true
 set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
-
 # trexfast is about an order of magnitude faster than trexdebug
-rospack_add_executable(bin/trexfast ${TREX_FILES})
-target_link_libraries(bin/trexfast Utils_o TREX_o)
+rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
+rospack_add_executable(bin/trexfast src/Executive.cc)
+target_link_libraries(bin/trexfast executive_trex_pr2_o Utils_o TREX_o)
 rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
 # rospack_add_gtest_build_flags excludes the target from all, on the
@@ -61,11 +61,16 @@ rospack_add_gtest_build_flags(bin/trexfast)
 # true
 set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
 rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
+rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
 # not received in time
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
+
+# Test target for unit tests on topological map integration components
+rospack_add_gtest(bin/topological_map_tests test/topological_map_tests.cc)
+target_link_libraries(bin/topological_map_tests executive_trex_pr2_g)
 
 # Integrated test cases for the nav stack running with the pr2 executive and model.
 rospack_add_rostest_future(wpc.0/test.xml)

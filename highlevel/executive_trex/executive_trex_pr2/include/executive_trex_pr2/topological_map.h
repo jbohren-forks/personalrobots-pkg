@@ -20,8 +20,9 @@
 #include "UnboundVariableDecisionPoint.hh"
 
 using namespace EUROPA;
+using namespace TREX;
 
-namespace TREX {
+namespace executive_trex_pr2 {
   
   /**
    * @brief A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector

@@ -2,13 +2,15 @@
  * @author Conor McGann
  */
 
-#include "topological_map.hh"
+#include <executive_trex_pr2/topological_map.h>
 #include "ConstrainedVariable.hh"
 #include "Token.hh"
 
 using namespace EUROPA;
+using namespace TREX;
 
-namespace TREX {
+namespace executive_trex_pr2 {
+
   /*
 
 // A function: given an x,y position, bind a region.
