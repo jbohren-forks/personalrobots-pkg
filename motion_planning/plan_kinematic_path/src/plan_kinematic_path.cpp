@@ -67,8 +67,8 @@ class PlanKinematicPath : public ros::Node,
 {
 public:
     
-    PlanKinematicPath() : ros::Node("example_execute_replan_to_state"),
-		kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    PlanKinematicPath() : ros::Node("plan_kinematic_path"),
+			  kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
