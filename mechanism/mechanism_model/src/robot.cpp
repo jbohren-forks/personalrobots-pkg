@@ -38,7 +38,7 @@ namespace mechanism {
 
 bool Robot::initXml(TiXmlElement *root)
 {
-  assert(hw_);
+  //assert(hw_);
   TiXmlElement *xit = NULL;
 
   // Constructs the joints.
@@ -108,7 +108,8 @@ int findIndexByName(std::vector<T*>& v, const std::string &name)
 
 int Robot::getActuatorIndex(const std::string &name)
 {
-  assert(hw_);
+  if (!hw_)
+    return -1;
   return findIndexByName(hw_->actuators_, name);
 }
 
