@@ -13,4 +13,5 @@
   <depend package="kinematic_planning"/>
   <depend package="executive_python"/>
   <depend package="plan_kinematic_path"/>
+  <depend package="pr2_msgs"/>
 </package>
