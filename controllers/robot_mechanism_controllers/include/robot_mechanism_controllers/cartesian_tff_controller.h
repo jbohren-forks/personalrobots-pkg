@@ -91,9 +91,12 @@ private:
   KDL::Twist position_, twist_meas_;
   KDL::Frame pose_meas_, pose_meas_old_;
 
+  robot_msgs::TaskFrameFormalism tff_msg_;
 
   // internal wrench controller
   CartesianWrenchController wrench_controller_;
+
+  unsigned int counter;
 };
 
 

@@ -39,9 +39,6 @@
 
 using namespace KDL;
 
-enum { POSITION, VELOCITY, FORCE };
-
-
 
 namespace controller {
 
@@ -133,7 +130,7 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
 
   // set initial modes and values
   for (unsigned int i=0; i<6; i++){
-    mode_[i] = FORCE;
+    mode_[i] = tff_msg_.FORCE;
     value_[i] = 0;
   }
   // set initial position, twist
@@ -144,6 +141,7 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
   // create wrench controller
   wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
 
+  counter = 0;
   return true;
 }
 
@@ -173,38 +171,34 @@ void CartesianTFFController::update()
 
   // calculate the distance traveled along the axes of the tf
   if (initialized_)
-    position_ += pose_meas_.M.Inverse() * diff(pose_meas_, pose_meas_old_);
-  //position_ += diff(pose_meas_, pose_meas_old_);
-  else{
+    position_ += pose_meas_.M.Inverse() * diff(pose_meas_old_, pose_meas_);
+  else
     initialized_ = true;
-  }
   pose_meas_old_ = pose_meas_;
 
   // debug
-  cout << "position ";
-  for (unsigned int i=0; i<6; i++)
-    cout << position_[i] << " ";
-  cout << endl;
+  /*
+  if (counter > 1000){
+    cout << "position ";
+    for (unsigned int i=0; i<6; i++)
+      cout << position_[i] << " ";
+    cout << endl;
+    counter = 0;
+  }
+  counter ++;
+  */
 
   // calculate desired wrench
   wrench_desi_ = Wrench::Zero();
   for (unsigned int i=0; i<6; i++){
-    switch (mode_[i]){
-    case FORCE:{
+    if (mode_[i] == tff_msg_.FORCE)
       wrench_desi_[i] = value_[i];
-      break;
-    }
-    case VELOCITY:{
+    else if (mode_[i] ==  tff_msg_.VELOCITY)
       wrench_desi_[i] = twist_to_wrench_[i] * (value_[i] + vel_pid_controller_[i].updatePid(twist_meas_[i] - value_[i], dt));
-      break;
-    }
-    case POSITION:{
+    else if (mode_[i] == tff_msg_.POSITION)
       wrench_desi_[i] = twist_to_wrench_[i] * (pos_pid_controller_[i].updatePid(position_[i] - value_[i], dt));
-      break;
-    }
   }
-  }
-
+  
   // send wrench to wrench controller
   wrench_controller_.wrench_desi_ = (pose_meas_.M * wrench_desi_);
   wrench_controller_.update();
