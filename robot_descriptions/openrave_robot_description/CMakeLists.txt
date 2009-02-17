@@ -42,6 +42,32 @@ set(robot_files ${robot_files} ${PR2_OUTPUT} ${PR2_GRIPPER_OUTPUT})
 add_custom_target(urdf_robots ALL DEPENDS ${robot_files})
 add_dependencies(urdf_robots urdf2openrave)
 
+set(PR2_ROBOT "${CMAKE_SOURCE_DIR}/robots/pr2full.robot.xml")
+set(PR2_IK_LEFT_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/ik_pr2left.h")
+add_custom_command(
+  OUTPUT ${PR2_IK_LEFT_OUTPUT}
+  # need -d 0 to suppress spurious warnings
+  COMMAND "${openrave_PACKAGE_PATH}/bin/openrave" -d 0 --generateik robot "${PR2_ROBOT}" freeparam l_shoulder_pan_joint manipulator 0 output "${PR2_IK_LEFT_OUTPUT}"
+  DEPENDS ${PR2_ROBOT}
+  )
+add_custom_target(pr2leftik ALL DEPENDS ${PR2_IK_LEFT_OUTPUT})
+add_dependencies(pr2leftik urdf_robots)
+
+set(PR2_IK_RIGHT_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/ik_pr2right.h")
+add_custom_command(
+  OUTPUT ${PR2_IK_RIGHT_OUTPUT}
+  # need -d 0 to suppress spurious warnings
+  COMMAND "${openrave_PACKAGE_PATH}/bin/openrave" -d 0 --generateik robot "${PR2_ROBOT}" freeparam r_shoulder_pan_joint manipulator 1 output "${PR2_IK_RIGHT_OUTPUT}"
+  DEPENDS ${PR2_ROBOT}
+  )
+add_custom_target(pr2rightik ALL DEPENDS ${PR2_IK_RIGHT_OUTPUT})
+add_dependencies(pr2rightik urdf_robots)
+
+# add the plugin for the inverse kinematics
+rospack_add_library(orrosik src/orrosikmain.cpp)
+add_dependencies(orrosik pr2leftik pr2rightik)
+#rospack_link_boost(orrosik thread)
+
 # add the test package
 rospack_add_gtest(test_or_robots test/test_robots.cpp)
 target_link_libraries (test_or_robots openrave-core)

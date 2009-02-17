@@ -25,7 +25,6 @@
 // \author Rosen Diankov
 #include "plugindefs.h"
 
-#include "rosarmik.h"
 #include "mocapsystem.h"
 #include "objecttransformsystem.h"
 #include "collisionmapsystem.h"
@@ -58,10 +57,6 @@ InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, Environme
         if( wcsicmp(name, L"ROSRobot") == 0 )
             return new ROSRobotController(penv);
         break;
-    case PT_InverseKinematicsSolver:
-        if( wcsicmp(name, L"ROSArmIK") == 0 )
-            return new ROSArmIK(penv);
-        break;
     case PT_ProblemInstance:
         if( wcsicmp(name, L"ROSPlanning") == 0 )
             return new ROSPlanningProblem(penv);
@@ -90,7 +85,6 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
     }
 
     pinfo->controllers.push_back(L"ROSRobot");
-    pinfo->iksolvers.push_back(L"ROSArmIK");
     pinfo->problems.push_back(L"ROSPlanning");
     pinfo->sensorsystems.push_back(L"ROSMocap");
     pinfo->sensorsystems.push_back(L"ObjectTransform");

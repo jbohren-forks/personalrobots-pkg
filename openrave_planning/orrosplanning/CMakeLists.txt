@@ -5,5 +5,5 @@ rospack(orrosplanning)
 
 rospack_add_boost_directories()
 
-rospack_add_library(orrosplanning src/orrosplanningmain.cpp src/rosarmik.cpp)
+rospack_add_library(orrosplanning src/orrosplanningmain.cpp)
 rospack_link_boost(orrosplanning thread)

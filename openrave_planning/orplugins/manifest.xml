@@ -5,4 +5,5 @@
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
   <depend package="orrosplanning"/>
+  <depend package="openrave_robot_description"/>
 </package>

@@ -153,6 +153,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
         addKeyValue(geom, "extents", values2str(3,extents));
     }
     else {
+        setupTransform(vis, link->visual->xyz, link->visual->rpy);
+        
         switch(link->visual->geometry->type) {
         case robot_desc::URDF::Link::Geometry::MESH: {
             robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
@@ -169,8 +171,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             if( mesh->filename.empty() ) {
                 cerr << "mesh file is empty for link " << link->name << ", adding box" << endl;
                 type = "box";
-                double extents[3] = {0.01,0.01,0.01};
+                double extents[3] = {0.001,0.001,0.001};
                 addKeyValue(geom, "extents", values2str(3,extents));
+                setupTransform(vis, link->collision->xyz, link->collision->rpy);
             }
             else {
                 type = "trimesh";
@@ -204,6 +207,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                 ss.str("");
                 ss << collisionfilename << " " << mesh->scale[0]; // don't use low!
                 addKeyValue(geom, "data", ss.str());
+
+                //setupTransform(vis, link->collision->xyz, link->collision->rpy);
             }
             break;
         }
@@ -232,7 +237,6 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
         }
         }
 		
-        setupTransform(vis, link->visual->xyz, link->visual->rpy);
         copyOpenraveMap(link->visual->data, geom);
     }
 

@@ -7,7 +7,6 @@
   <depend package="roscpp"/>
   <depend package="openrave"/>
   <depend package="openrave_robot_description"/>
-  <depend package="libKinematics"/>
   <depend package="checkerboard_detector"/>
   <depend package="robot_msgs"/>
   <depend package="pr2_mechanism_controllers"/>
