@@ -34,10 +34,12 @@
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
+#include <robot_msgs/TaskFrameFormalism.h>
 #include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <robot_mechanism_controllers/cartesian_trajectory_controller.h>
+#include <robot_mechanism_controllers/cartesian_tff_controller.h>
 #include <robot_mechanism_controllers/MoveToPose.h>
 #include <kdl/frames.hpp>
 
@@ -50,9 +52,10 @@ class OpenDoorExecutiveTest : public ros::Node
 private:
   tf::TransformListener tf_; 
 
-  enum {INITIALIZED, DETECTING, GRASPING, FINISHED };
+  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, FINISHED };
   int state_;
   robot_msgs::Door my_door_;
+  robot_msgs::TaskFrameFormalism tff_msg_;
 
 
 public:
@@ -125,9 +128,51 @@ public:
     pose_msg.pose.position.z = pose_msg.pose.position.z - offset[2];
     moveTo(pose_msg);
 
+    // close the gripper
+
     return true;
   }
 
+
+  bool openDoor()
+  {
+    // turn handle
+    tff_msg_.mode.vel.x = tff_msg_.FORCE;
+    tff_msg_.mode.vel.y = tff_msg_.FORCE;
+    tff_msg_.mode.vel.z = tff_msg_.FORCE;
+    tff_msg_.mode.rot.x = tff_msg_.FORCE;
+    tff_msg_.mode.rot.y = tff_msg_.FORCE;
+    tff_msg_.mode.rot.z = tff_msg_.POSITION;
+
+    tff_msg_.value.vel.x = 0.0;
+    tff_msg_.value.vel.y = -20.0;
+    tff_msg_.value.vel.z = 0.0;
+    tff_msg_.value.rot.x = -0.5;
+    tff_msg_.value.rot.y = 0.0;
+    tff_msg_.value.rot.z = 0.0;
+
+    publish("cartesian_tff/command", tff_msg_);
+    usleep(1e6*3);
+
+
+    // open door
+    tff_msg_.mode.vel.x = tff_msg_.VELOCITY;
+    tff_msg_.mode.vel.y = tff_msg_.FORCE;
+    tff_msg_.mode.vel.z = tff_msg_.FORCE;
+    tff_msg_.mode.rot.x = tff_msg_.FORCE;
+    tff_msg_.mode.rot.y = tff_msg_.FORCE;
+    tff_msg_.mode.rot.z = tff_msg_.POSITION;
+
+    tff_msg_.value.vel.x = 0.05;
+    tff_msg_.value.vel.y = 0.0;
+    tff_msg_.value.vel.z = 0.0;
+    tff_msg_.value.rot.x = 0.0;
+    tff_msg_.value.rot.y = 0.0;
+    tff_msg_.value.rot.z = 0.0;
+
+    publish("cartesian_tff/command", tff_msg_);
+    usleep(1e6*15);
+  }
 
 
   void spin()
@@ -158,9 +203,14 @@ public:
 	case GRASPING:{
 	  graspDoor(my_door_);
 	  
-	  state_ = FINISHED;
+	  state_ = OPENDOOR;
 	  break;
 	}
+        case OPENDOOR:{
+          //openDoor();
+	  state_ = FINISHED;
+          break;
+        }
 	}
 	usleep(1e3*100);
       }

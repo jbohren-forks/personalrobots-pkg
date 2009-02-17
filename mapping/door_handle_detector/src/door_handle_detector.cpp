@@ -59,8 +59,8 @@ using namespace robot_msgs;
 
 class DoorHandleDetector : public ros::Node
 {
-  public:
-
+public:
+  
     // ROS messages
     PointCloud cloud_in_, cloud_down_;
     PointCloud cloud_annotated_;
