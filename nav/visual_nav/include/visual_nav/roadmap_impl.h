@@ -64,9 +64,9 @@ struct EdgeInfo
 };
 
 typedef adjacency_list<listS, listS, undirectedS, NodeInfo, EdgeInfo> RoadmapGraph;
-typedef graph_traits<VisualNavRoadmap>::vertex_descriptor RoadmapVertex;
-typedef graph_traits<VisualNavRoadmap>::edge_descriptor RoadmapEdge;
-typedef graph_traits<VisualNavRoadmap>::adjacency_iterator AdjacencyIterator;
+typedef graph_traits<RoadmapGraph>::vertex_descriptor RoadmapVertex;
+typedef graph_traits<RoadmapGraph>::edge_descriptor RoadmapEdge;
+typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
 
 
 
