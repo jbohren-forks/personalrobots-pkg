@@ -182,7 +182,7 @@ protected:
     {
 	if (plan_id_ >= 0 && plan_status_.id == plan_id_)
 	{
-	    if (plan_status_.valid)
+	    if (plan_status_.valid && !plan_status_.unsafe)
 	    {
 		if (!plan_status_.path.states.empty())
 		{
