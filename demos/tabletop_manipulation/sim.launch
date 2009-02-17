@@ -1,0 +1,10 @@
+<launch>
+  <include file="$(find tabletop_manipulation)/pr2_simple_nocontroller.launch"/>
+  <include file="$(find tabletop_manipulation)/laser_sim.launch"/>
+  <include file="$(find tabletop_manipulation)/arm.launch"/>
+  <include file="$(find tabletop_manipulation)/perception_sim.launch"/>
+  <include file="$(find tabletop_manipulation)/planning.launch"/>
+  <node pkg="plan_kinematic_path" type="plan_kinematic_path">
+    <remap from="robot_description" to="robotdesc/pr2"/>
+  </node>
+</launch>
