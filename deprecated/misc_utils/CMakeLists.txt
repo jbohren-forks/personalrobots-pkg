@@ -4,5 +4,4 @@ rospack(misc_utils)
 
 add_definitions(-Wall)
 
-rospack_add_gtest(ring_buffer_test test/test_ring_buffer.cpp)
 
