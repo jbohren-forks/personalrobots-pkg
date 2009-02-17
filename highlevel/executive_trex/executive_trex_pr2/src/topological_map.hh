@@ -39,7 +39,10 @@ namespace TREX {
     void handleExecute();
     
   private:
-    
+    IntervalIntDomain& m_connector;
+    IntervalDomain& m_x;
+    IntervalDomain& m_y;
+    IntervalDomain& m_th;
   };
 
   /**
@@ -141,6 +144,75 @@ namespace TREX {
     const LabelStr m_final;
     std::list<Choice> m_sorted_choices;
     std::list<Choice>::iterator m_choice_iterator;
+  };
+
+
+  /**
+   * @brief A TopologicalMapAccessor is used to access the data of a topological map. This accessor will
+   * be used by the constraints and flaw filter. The accessor is a singleton.
+   */
+  class TopologicalMapAccessor {
+  public:
+
+    /**
+     * @brief Singleton accessor
+     * @return NULL if no instance created yet.
+     */
+    static TopologicalMapAccessor* instance();
+
+    /**
+     * @brief Get a region for a point
+     * @retun 0 if no region found, otherwise the region for the given point
+     */
+    virtual unsigned int get_region(double x, double y);
+
+    /**
+     * @brief Get a connector for a point
+     * @retun 0 if no connector found, otherwise the connector for the given point
+     */
+    virtual unsigned int get_connector(double x, double y);
+
+    /**
+     * @brief Get position details for a connector
+     * @return true if the given connector id was valid, otherwise false.
+     */
+    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y, double& theta);
+
+    /**
+     * @brief Get the connectors of a particular region
+     * @return true if the given region id was valid, otherwose false.
+     */
+    virtual bool get_region_connectors(unsigned int region_id, std::list<unsigned int>& connectors);
+
+    /**
+     * @brief Get the regions of a particular connector
+     * @return true if the given connector id was valid, otherwise false.
+     */
+    virtual bool get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
+
+    /**
+     * @brief Test if a given region is a doorway
+     * @return true if a doorway, otherwise false. A 0 id region is not a doorway.
+     */
+    virtual bool is_doorway(unsigned int region_id);
+
+    /**
+     * @brief Get the cost to go from a given 2D point to a connector. The point must be in a region
+     * accessible by the connector
+     * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
+     */
+    virtual double get_g_cost(double from_x, double from_y, unsigned int connector_id);
+
+    /**
+     * @brief Get the cost to go from a given connector, to a final destination given by a point in space
+     * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
+     */
+    virtual double get_h_cost(unsigned int connector_id, double to_x, double to_y);
+
+    virtual ~TopologicalMapAccessor();
+
+  protected:
+    TopologicalMapAccessor();
   };
 }
 

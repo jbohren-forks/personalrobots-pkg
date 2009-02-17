@@ -9,18 +9,60 @@
 using namespace EUROPA;
 
 namespace TREX {
-  
+  /*
+
+// A function: given an x,y position, bind a region.
+constraint map_get_region_from_position(region, x, y){ region <: Region && x <: numeric && y <: numeric }
+
+// A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
+constraint map_connected(connection_a, connection_b, region){ connection_a <: Connector && connection_b <: Connector && region <: Region }
+
+// A function to query if a region is a doorway
+constraint map_is_doorway(result, region) { result <: bool && region <: Region }
+  */
   //*******************************************************************************************
   map_connector_constraint::map_connector_constraint(const LabelStr& name,
 						     const LabelStr& propagatorName,
 						     const ConstraintEngineId& constraintEngine,
 						     const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, variables){}
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     m_connector(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     m_x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     m_y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     m_th(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))){
+    checkError(variables.size() == 4, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
     
   map_connector_constraint::~map_connector_constraint(){}
     
-  void map_connector_constraint::handleExecute(){}
-    
+  /**
+   * @brief When the connector id is bound, we bind the values for x, y, and th based on a lookup in the topological map.
+   * We can also bind the value for the connector id based on x and y inputs. This enforces the full relation.
+   */
+  void map_connector_constraint::handleExecute(){
+    if(m_connector.isSingleton()){
+      unsigned int connector_id = (unsigned int) m_connector.getSingletonValue();
+      double x, y, th;
+
+      // If we have a pose, bind the variables
+      if(TopologicalMapAccessor::instance()->get_connector_position(connector_id, x, y, th)){
+	m_x.set(x);
+
+	if(!m_x.isEmpty()) 
+	  m_y.set(y);
+
+	if(!m_y.isEmpty()) 
+	  m_th.set(th);
+      }
+    }
+
+    // If x and y are set, we can bind the connector.
+    if(m_x.isSingleton() && m_y.isSingleton()){
+      unsigned int connector_id = TopologicalMapAccessor::instance()->get_connector(m_x.getSingletonValue(), m_y.getSingletonValue());
+      m_connector.set(connector_id);
+    }
+  }
 
   //*******************************************************************************************
   map_get_region_from_position_constraint::map_get_region_from_position_constraint(const LabelStr& name,
@@ -144,5 +186,13 @@ namespace TREX {
 
   double map_connector_selector::h_cost(unsigned int from, unsigned int to) const{
     return 0;
+  }
+
+  /**
+   * Topological Map Accessor Implementation
+   */
+  TopologicalMapAccessor* TopologicalMapAccessor::instance(){
+    static TopologicalMapAccessor* sl_instance = NULL;
+    return sl_instance;
   }
 }
