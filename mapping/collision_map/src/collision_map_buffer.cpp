@@ -549,7 +549,8 @@ class CollisionMapperBuffer : public ros::Node
       updateParametersFromServer ();
       m_lock_.unlock ();
 
-      timeval t1, t2;
+      //timeval t1, t2;
+      ros::Time t1, t2;
       double time_spent;
 
       // Get the position of the end effector
@@ -570,7 +571,8 @@ class CollisionMapperBuffer : public ros::Node
           return;
 
         // Compute the static collision map
-        gettimeofday (&t1, NULL);
+        //gettimeofday (&t1, NULL);
+        t1 = ros::Time::now();
 
         // We do not subtract anything when we compute the static map
         PointCloud centers;
@@ -581,8 +583,10 @@ class CollisionMapperBuffer : public ros::Node
         acquire_static_map_ = false;
         static_map_lock_.unlock ();
 
-        gettimeofday (&t2, NULL);
-        time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+        //gettimeofday (&t2, NULL);
+        t2 = ros::Time::now();
+        //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+        time_spent = (t2 - t1).toSec();
         ROS_INFO ("Static collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)static_leaves_.size ());
 
       }
@@ -590,7 +594,8 @@ class CollisionMapperBuffer : public ros::Node
       {
         vector<Leaf> model_reunion;
         // Rotate N maps in the queue
-        gettimeofday (&t1, NULL);
+        //gettimeofday (&t1, NULL);
+        t1 = ros::Time::now();
 
         // Compute the leaves for the current dataset
         PointCloud centers;
@@ -630,8 +635,10 @@ class CollisionMapperBuffer : public ros::Node
 
         computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
 
-        gettimeofday (&t2, NULL);
-        time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+        //gettimeofday (&t2, NULL);
+        t2 = ros::Time::now();
+        //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+        time_spent = (t2 - t1).toSec();
         ROS_INFO ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
                   (unsigned int)final_collision_map_.boxes.size (), time_spent, decaying_maps_.size ());
 

@@ -355,13 +355,15 @@ class CollisionMapper : public ros::Node
       updateParametersFromServer ();
       m_lock_.unlock ();
 
-      timeval t1, t2;
+      //timeval t1, t2;
+      ros::Time t1, t2;
       double time_spent;
       
       // @bogus message for Tully - Radu discussion next week
       ROS_WARN ("Did you transform your points into the map frame today?");
             
-      gettimeofday (&t1, NULL);
+      //gettimeofday (&t1, NULL);
+      t1 = ros::Time::now();
       // If we're only interested in doing map updates
       if (only_updates_ && leaves_.size () > 0)
       {
@@ -384,8 +386,10 @@ class CollisionMapper : public ros::Node
         m_lock_.unlock ();
       }
       
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      //gettimeofday (&t2, NULL);
+      t2 = ros::Time::now();
+      //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      time_spent = (t2 - t1).toSec();
       ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
 
       publish ("collision_map", c_map_);
@@ -466,10 +470,12 @@ class CollisionMapper : public ros::Node
       updateParametersFromServer ();
       m_lock_.unlock ();
 
-      timeval t1, t2;
+      //timeval t1, t2;
+      ros::Time t1, t2;
       double time_spent;
       
-      gettimeofday (&t1, NULL);
+      //gettimeofday (&t1, NULL);
+      t1 = ros::Time::now();
       
       // Subtract the received oriented bounding box
       m_lock_.lock ();
@@ -502,8 +508,10 @@ class CollisionMapper : public ros::Node
       }
       m_lock_.unlock ();
       
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      //gettimeofday (&t2, NULL);
+      t2 = ros::Time::now();
+      //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
+      time_spent = (t2 - t1).toSec();
       ROS_INFO ("OBB subtracted from the map in %g seconds.", time_spent);
     }
 };
