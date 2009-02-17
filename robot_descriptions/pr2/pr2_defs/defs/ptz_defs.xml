@@ -29,7 +29,7 @@
 
       <visual>
         <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
-        <map name="foo" flag="gazebo">
+        <map name="gazebo_material" flag="gazebo">
 	  <elem key="material" value="Gazebo/Blue" />
         </map>
         <geometry name="${side}_ptz_pan_visual">
