@@ -80,8 +80,18 @@ typedef Loki::SingletonHolder
 
 #define ROS_REGISTER_CONTROLLER(c) \
   controller::Controller *ROS_New_##c() { return new c(); }             \
-  bool ROS_CONTROLLER_##c = \
-    controller::ControllerFactory::Instance().Register(#c, ROS_New_##c);
+  class RosController##c { \
+  public: \
+    RosController##c() \
+    { \
+      controller::ControllerFactory::Instance().Register(#c, ROS_New_##c); \
+    } \
+    ~RosController##c() \
+    { \
+      controller::ControllerFactory::Instance().Unregister(#c); \
+    } \
+  }; \
+  static RosController##c ROS_CONTROLLER_##c;
 
 class Controller
 {
