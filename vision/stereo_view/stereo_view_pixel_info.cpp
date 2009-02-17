@@ -54,6 +54,8 @@
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"
+#include "image_msgs/ColoredLines.h"
+#include "image_msgs/ColoredLine.h"
 
 #include "CvStereoCamModel.h"
 
@@ -115,8 +117,8 @@ void on_mouse(int event, int x, int y, int flags, void *params) {
 	cam_model->dispToCart(uvd,xyz);
 	printf("Stereo (x,y,z): (%f, %f, %f)\n", cvmGet(xyz,0,0), cvmGet(xyz,0,1), cvmGet(xyz,0,2));
 	delete cam_model;
-	cvReleaseMat(&uvd);
-	cvReleaseMat(&xyz);
+	cvReleaseMat(&uvd); uvd = 0;
+	cvReleaseMat(&xyz); xyz = 0;
       }
       cvCircle(mcbparams->disp, cvPoint(x,y), 2, cvScalar(255,255,255), 4);
       cvShowImage("disparity",mcbparams->disp);
@@ -157,6 +159,8 @@ public:
   image_msgs::CvBridge lbridge; /**< CvBridge for the left camera. */
   image_msgs::CvBridge rbridge; /**< CvBridge for the right camera. */
   image_msgs::CvBridge dbridge; /**< CvBridge for the disparity image. */
+  image_msgs::ColoredLines cls;
+  map<string,image_msgs::ColoredLines> map_cls;
 
   color_calib::Calibration lcal; /**< Color calibration for the left image. */
   color_calib::Calibration rcal; /**< Color calibration for the right image. */
@@ -172,7 +176,7 @@ public:
 
   MouseCallbackParams mcbparams_; /**< Parameters for the mouse callback. */
 
-  boost::mutex cv_mutex; 
+  boost::mutex cv_mutex_, lines_mutex_; 
 
   StereoView() : ros::Node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
@@ -208,16 +212,38 @@ public:
     sync.subscribe("stereo/stereo_info", stinfo, 1);
     sync.subscribe("stereo/right/cam_info", rcaminfo, 1);
     sync.ready();
+
+    subscribe<image_msgs::ColoredLines>("lines_to_draw",cls,&StereoView::line_cb,1);
   }
 
   ~StereoView()
   {
-    if (lcalimage)
-      cvReleaseImage(&lcalimage);
-    if (rcalimage)
-      cvReleaseImage(&rcalimage);
-    if (disp)
-      cvReleaseImage(&disp);
+    if (lcalimage) {
+      mcbparams_.limage = 0; cvReleaseImage(&lcalimage); lcalimage = 0;
+    }
+    if (rcalimage) {
+      cvReleaseImage(&rcalimage);  rcalimage = 0;
+    }
+    if (disp) {
+       mcbparams_.disp = 0; cvReleaseImage(&disp);  disp = 0;
+    }
+  }
+
+ void line_cb() 
+  {
+
+    boost::mutex::scoped_lock linelock(lines_mutex_);
+    // Find if there's already a message with this label.
+    map<string,image_msgs::ColoredLines>::iterator it = map_cls.find(cls.label);
+    if (it == map_cls.end()) {
+      // If not, inset this new message into the map.
+      map_cls.insert(pair<string,image_msgs::ColoredLines>(cls.label,cls));
+    }
+    else {
+      // If so, overwrite the old list of lines.
+      (*it).second.lines.clear();
+      (*it).second = cls;
+    }
   }
 
   /*! 
@@ -229,7 +255,10 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
-    cv_mutex.lock();
+    boost::mutex::scoped_lock cvlock(cv_mutex_);
+    mcbparams_.disp = 0;
+    mcbparams_.limage = 0;
+
 
     if (lbridge.fromImage(limage, "bgr"))
     {
@@ -239,13 +268,26 @@ public:
 
         lcal.correctColor(lbridge.toIpl(), lcalimage, true, recompand_, COLOR_CAL_BGR);
 
-        cvShowImage("left", lcalimage);
-	mcbparams_.limage = lcalimage;
       } else { 
-        cvShowImage("left", lbridge.toIpl());
-	mcbparams_.limage = lbridge.toIpl();
+	lcalimage = lbridge.toIpl();
       }
-    } 
+      mcbparams_.limage = lcalimage;
+
+      boost::mutex::scoped_lock linelock(lines_mutex_);
+      // Draw the lines on the image.
+      map<string,image_msgs::ColoredLines>::iterator it;
+      for (it = map_cls.begin(); it != map_cls.end(); it++) {
+	for (uint il=0; il<it->second.lines.size(); il++) {
+	  cvLine(lcalimage, 
+		 cvPoint(it->second.lines[il].x0,it->second.lines[il].y0),
+		 cvPoint(it->second.lines[il].x1,it->second.lines[il].y1), 
+		 cvScalar(it->second.lines[il].b,it->second.lines[il].g,it->second.lines[il].r),3);
+	}
+      }
+      linelock.unlock();
+      
+      cvShowImage("left", lcalimage);
+    }  
 
     if (dbridge.fromImage(dimage))
     {
@@ -274,8 +316,7 @@ public:
       }
     }
 
-
-    cv_mutex.unlock();
+    cvlock.unlock();
 
   }
 
@@ -289,17 +330,6 @@ public:
    */
   void image_cb_timeout(ros::Time t)
   {
-    if (limage.header.stamp != t)
-      printf("Timed out waiting for left image\n");
-
-    if (rimage.header.stamp != t)
-      printf("Timed out waiting for right image\n");
-
-    if (dimage.header.stamp != t)
-      printf("Timed out waiting for disparity image\n");
-
-    printf("\n");
-
     //Proceed to show images anyways
     image_cb_all(t);
   }
@@ -315,7 +345,7 @@ public:
   {
     while (ok())
     {
-      cv_mutex.lock();
+      boost::mutex::scoped_lock cvlock(cv_mutex_);
       int key = cvWaitKey(3);
       
       switch (key) {
@@ -333,7 +363,7 @@ public:
         rcal.getFromParam("stereo/right/image_rect_color");
       }
 
-      cv_mutex.unlock();
+      cvlock.unlock();
       usleep(10000);
     }
 
