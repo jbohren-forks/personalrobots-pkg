@@ -704,14 +704,15 @@ public:
       filter_visualize[i].x = est.pos_[0];
       filter_visualize[i].y = est.pos_[1];
       filter_visualize[i].z = est.pos_[2];
-      int rgb;
-      if ((*sf_iter)->object_id == "") 
-	rgb = (0 << 16 | 0 << 8 | 0 << 16) ;     
-      else 
-	rgb = ((*sf_iter)->color_[0] << 16) | ((*sf_iter)->color_[1] << 8) | ((*sf_iter)->color_[2]);
-      weights[i] = *(float*)&(rgb);
 
-      if ((*sf_iter)->meas_time_ == scan->header.stamp)
+      // reliability of tracker
+      double reliability = fmin(1, fmax(0.1, est.vel_.length() / 0.5 ));
+
+      // color depends on reliability
+      weights[i] = *(float*)&(rgb[min(998, max(1, (int)(reliability * 999)))]);
+
+      // publish trackers that are assigned to a person
+      if ((*sf_iter)->object_id != "")
       {         
 	robot_msgs::PositionMeasurement pos;
 
@@ -722,33 +723,23 @@ public:
 	pos.pos.x = est.pos_[0];
 	pos.pos.y = est.pos_[1];
 	pos.pos.z = est.pos_[2];
-	pos.covariance[0] = 0.09;
+
+        // define covariance based on reliability
+	pos.covariance[0] = pow(0.03 / reliability,2);
 	pos.covariance[1] = 0.0;
 	pos.covariance[2] = 0.0;
 	pos.covariance[3] = 0.0;
-	pos.covariance[4] = 0.09;
+	pos.covariance[4] = pow(0.03 / reliability,2);
 	pos.covariance[5] = 0.0;
 	pos.covariance[6] = 0.0;
 	pos.covariance[7] = 0.0;
 	pos.covariance[8] = 10000.0;
 	pos.initialization = 0;
 
-        if (est.vel_.length() > 0.5)
-        {
-	  // If the current velocity is greater than 0.5 (m/s, I hope), publish the position.
-	  pos.covariance[0] = 0.045;
-	  pos.covariance[4] = 0.045;
-          pos.reliability = 0.80;        
-          publish("people_tracker_measurements", pos);               
-        }
-        else if ((*sf_iter)->object_id != "")
-        {
-	  // If I've already seen this leg, publish its position.
-          pos.reliability = 0.5;
-          publish("people_tracker_measurements", pos);        
-        }
+        publish("people_tracker_measurements", pos);        
       }
     }
+
 
     // visualize all trackers
     channel.name = "rgb";

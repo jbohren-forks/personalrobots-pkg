@@ -1,7 +1,7 @@
 #ifndef __RGB__
 #define __RGB__
 
-const static float rgb[] = {
+const static int rgb[] = {
  (0x00 << 16) | (0x00 << 8) | (0x77 << 00) ,
  (0x00 << 16) | (0x00 << 8) | (0x7f << 00) ,
  (0x00 << 16) | (0x00 << 8) | (0x80 << 00) ,

@@ -225,7 +225,7 @@ namespace estimation
 	filter_visualize[i].x = est_pos.pos.x;
 	filter_visualize[i].y = est_pos.pos.y;
 	filter_visualize[i].z = est_pos.pos.z;
-	weights[i] = rgb[min(998, 999-max(1, (int)trunc( (*it)->getQuality()*999.0 )))];
+	weights[i] = *(float*)&(rgb[min(998, 999-max(1, (int)trunc( (*it)->getQuality()*999.0 )))]);
 
 	// remove trackers that have zero quality
 	ROS_INFO("%s: quality of tracker %s = %f",node_name_.c_str(), (*it)->getName().c_str(), (*it)->getQuality());
