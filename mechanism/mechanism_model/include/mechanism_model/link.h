@@ -36,13 +36,51 @@
 
 #include "mechanism_model/joint.h"
 #include <vector>
+#include "boost/scoped_ptr.hpp"
 #include "libTF/Pose3D.h"
 #include "tf/transform_datatypes.h"
 
 
 namespace mechanism {
 
+
+// Only slightly more sane than the previous version
+class Maps
+{
+public:
+  typedef std::map<std::pair<std::string,std::string>,std::string> M;
+  void put(const std::string &mapn, const std::string &key, const std::string &value)
+  {
+    map_.insert(std::make_pair(std::make_pair(mapn, key), value));
+  }
+  std::string get(const std::string &mapn, const std::string &key, const std::string &def = "")
+  {
+    M::iterator it = map_.find(std::make_pair(mapn, key));
+    return it == map_.end() ? def : it->second;
+  }
+  M map_;
+
+  void initXml(TiXmlElement *xml)
+  {
+    TiXmlElement *map = xml->FirstChildElement("map");
+    for (; map; map = map->NextSiblingElement("map"))
+    {
+      TiXmlElement *elem = map->FirstChildElement("elem");
+      for (; elem; elem = elem->NextSiblingElement("elem"))
+      {
+        if (elem->Attribute("key") && elem->Attribute("value"))
+          put(map->Attribute("name"), elem->Attribute("key"), elem->Attribute("value"));
+      }
+    }
+    // TODO: verbatim
+  }
+};
+
+
 class Robot;
+class Visual;
+class Geometry;
+class Collision;
 
 class Link
 {
@@ -68,6 +106,11 @@ public:
   {
     return tf::Transform(tf::Quaternion(origin_rpy_[2], origin_rpy_[1], origin_rpy_[0]));
   }
+
+  boost::scoped_ptr<Visual> visual_;
+  boost::scoped_ptr<Collision> collision_;
+
+  Maps maps_;
 };
 
 class LinkState
@@ -87,6 +130,81 @@ public:
   LinkState(const LinkState &s) : link_(s.link_), rel_frame_(s.rel_frame_) {}
 };
 
+
+
+class Visual
+{
+public:
+  Visual();
+  ~Visual() {}
+
+  bool initXml(TiXmlElement *config);
+
+  tf::Vector3 origin_xyz_;
+  tf::Vector3 origin_rpy_;
+  tf::Vector3 scale_;  // TODO
+  boost::scoped_ptr<Geometry> geometry_;
+
+  Maps maps_;
+};
+
+class Collision
+{
+public:
+  Collision();
+  ~Collision() {}
+
+  bool initXml(TiXmlElement *config);
+
+  tf::Vector3 origin_xyz_, origin_rpy_;
+  boost::scoped_ptr<Geometry> geometry_;
+
+  Maps maps_;
+};
+
+class Geometry
+{
+public:
+  virtual ~Geometry() {}
+
+  virtual bool initXml(TiXmlElement *) = 0;
+
+  enum {SPHERE, BOX, CYLINDER, MESH} type_;
+  // TODO: Map
+};
+
+class Sphere : public Geometry
+{
+public:
+  Sphere() { type_ = SPHERE; }
+  bool initXml(TiXmlElement *);
+  double radius_;
+};
+
+class Box : public Geometry
+{
+public:
+  Box() { type_ = BOX; }
+  bool initXml(TiXmlElement *);
+  tf::Vector3 dim_;
+};
+
+class Cylinder : public Geometry
+{
+public:
+  Cylinder() { type_ = CYLINDER; }
+  bool initXml(TiXmlElement *);
+  double length_;
+  double radius_;
+};
+
+class Mesh : public Geometry
+{
+public:
+  Mesh() { type_ = MESH; }
+  bool initXml(TiXmlElement *);
+  std::string filename_;
+};
 
 } // namespace mechanism
 
