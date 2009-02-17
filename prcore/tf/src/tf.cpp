@@ -129,13 +129,6 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   if (retval == NO_ERROR)
     retval = lookupLists(lookupFrameNumber( mapped_target_frame), temp_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
-  ///\todo WRITE HELPER FUNCITON TO RETHROW
-  if (error_string == "" || error_string == " ")
-  {
-    std::stringstream error;
-    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
-    error_string = error.str().c_str();
-  }
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -181,13 +174,6 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   if (retval == NO_ERROR)
     retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), temp_source_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
 
-  ///\todo WRITE HELPER FUNCITON TO RETHROW
-  if (error_string == "" || error_string == " ")
-  {
-    std::stringstream error;
-    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
-    error_string = error.str().c_str();
-  }
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -206,13 +192,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   TransformLists t_list2;
   ///\todo check return
   retval =  lookupLists(lookupFrameNumber( mapped_target_frame), temp_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, &error_string);
-  ///\todo WRITE HELPER FUNCITON TO RETHROW
-  if (error_string == "" || error_string == " ")
-  {
-    std::stringstream error;
-    error << "Vacuous at" << __FILE__ << ":" << __LINE__;
-    error_string = error.str().c_str();
-  }
+
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
@@ -347,9 +327,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
 
   }
   else
-  {
-    time.fromNSec(0);
-  }
+    time.fromSec(0);
 
   return retval;
 };
