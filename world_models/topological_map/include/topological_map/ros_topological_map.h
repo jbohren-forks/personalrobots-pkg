@@ -52,7 +52,7 @@ namespace topological_map
 class RosTopologicalMap
 {
 public:
-  RosTopologicalMap (uint bottleneck_length, uint bottleneck_width, uint inflation_radius, const string& pgm_output_dir);
+  RosTopologicalMap (uint bottleneck_length, uint bottleneck_width, uint inflation_radius, const string& ppm_output_dir);
   
 private:
   // Disallow copy and assign

@@ -45,11 +45,15 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <queue>
+#include <set>
+#include <algorithm>
 #include <boost/multi_array.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/breadth_first_search.hpp>     
 #include <boost/graph/connected_components.hpp>     
+#include <limits.h>
 #include <ros/console.h>
 #include <ros/assert.h>
 
@@ -65,6 +69,10 @@ using std::string;
 using std::ofstream;
 using std::endl;
 using std::map;
+using std::queue;
+using std::set;
+using std::max;
+using std::min;
 
 namespace topological_map
 {
@@ -75,6 +83,7 @@ namespace topological_map
 
 typedef adjacency_list<listS, listS, undirectedS, Cell2D> GridGraph;
 typedef graph_traits<GridGraph>::vertex_descriptor GridGraphVertex;
+typedef graph_traits<GridGraph>::adjacency_iterator GridGraphAdjacencyIterator;
 typedef map<GridGraphVertex, int> VertexIndexMap;
 
 namespace cell_stat { enum CellStatus { FREE, OBSTACLE, BOTTLENECK }; }
@@ -92,11 +101,14 @@ typedef const unsigned int cuint;
 class BottleneckFinder
 {
 public:
-  BottleneckFinder(const OccupancyGrid& g, const uint size, const uint skip, const uint r, const string& dir);
+  BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint skip, const uint r, const string& dir);
 
   void initializeFromGrid();
   void findBottlenecks();
   TopologicalMapPtr getTopologicalMap() const { return topological_map_; }
+
+  bool distanceWithoutBlockExceeds (cuint top, cuint left, cuint bottom, cuint right, cuint c1r, cuint c1c, cuint c2r, cuint c2c, cuint threshold);
+
 
 
 private:
@@ -107,26 +119,25 @@ private:
   const GridGraphVertex& cellVertex (const int r, const int c);
 
   bool validCoords (const int r, const int c) const;
-  bool validFreeCoords (const int r, const int c) const;
+  bool validNonObstacleCoords (const int r, const int c) const;
   void getConnectors (cuint vertical, cuint top, cuint left, int* c1r, int* c1c, int* c2r, int* c2c) const;
 
 
-  bool distanceWithoutBlockExceeds (cuint top, cuint left, cuint bottom, cuint right, cuint c1r, cuint c1c, cuint c2r, cuint c2c, cuint threshold);
-
-  void possiblyConnectCells (const uint r, const uint c, const uint r2, const uint c2);
-  void possiblyDisconnectCells (const uint r, const uint c, const uint r2, const uint c2);
+  void possiblyConnectCells (const int r, const int c, const int r2, const int c2);
+  void possiblyDisconnectCells (const int r, const int c, const int r2, const int c2);
   void disconnectLine (const int r0, const int c0, const int dr, const int dc, const int last);
   void connectLine (const int r0, const int c0, const int dr, const int dc, const int last);
   void disconnectBlock (cuint top, cuint left, cuint bottom, cuint right);
   void connectBlock (cuint top, cuint left, cuint bottom, cuint right);
+  void markSmallestBottleneck (int top, int left, int bottom, int right, const int c1r, const int c1c, const int c2r, const int c2c, cuint threshold);
 
-  /// Write the current cell status array to pgm file
-  void writePgm (const string& filename) const;
+  /// Write the current cell status array to ppm file
+  void writePpm (const string& filename) const;
 
   // Input params
   const OccupancyGrid& grid_;
   const uint bottleneck_size_, bottleneck_skip_, inflation_radius_;
-  const string pgm_output_dir_;
+  const string ppm_output_dir_;
   const uint num_rows_, num_cols_;
   
   // Each cell is obstacle, free, or bottleneck
@@ -142,6 +153,7 @@ private:
 
   // The computed map
   TopologicalMapPtr topological_map_;
+
 };
 
 
@@ -176,16 +188,17 @@ uint numCols(const OccupancyGrid& grid)
 }
 
 
-BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const uint size, const uint skip, const uint r, const string& dir) :
-  grid_(g), bottleneck_size_(size), bottleneck_skip_(skip), inflation_radius_(r), pgm_output_dir_(dir), 
-  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0)
-{}
+BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint skip, const uint r, const string& dir) :
+  grid_(g), bottleneck_size_(size), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 
+  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(resolution))
+{
+  ROS_ASSERT_MSG (max(num_rows_, num_cols_)<INT_MAX/2, "Grid size is %ux%u, which is too large to work given INT_MAX=%d", num_rows_, num_cols_, INT_MAX);
+}
   
 
 
 /************************************************************
  * Distance computations
- * This is ultimately done using the bgl breadth_first_search.
  ************************************************************/
 
 // Thrown as an exception to terminate bfs 
@@ -195,13 +208,14 @@ struct TerminateBfs
   TerminateBfs (bool f) : found(f) {}
 };
 
+// \todo remove the bfs visitor stuff since hand-implemented bfs below seems faster
 class BfsVisitor : public boost::default_bfs_visitor {
 public:
   void discover_vertex (const GridGraphVertex& u, const GridGraph& g) const
   {
     cuint r = g[u].r;
     cuint c = g[u].c;
-    ROS_DEBUG_NAMED ("distance_comp", "Discovering %d, %d", r, c);
+    ROS_DEBUG_NAMED ("distance_internal", "Discovering %d, %d", r, c);
     
     if ((r == rg_) && (c == cg_)) {
       ROS_DEBUG_NAMED ("distance_comp", "Terminating due to goal reached");
@@ -225,49 +239,105 @@ private:
 
 inline bool BottleneckFinder::distanceWithoutBlockExceeds (cuint top, cuint left, cuint bottom, cuint right, cuint c1r, cuint c1c, cuint c2r, cuint c2c, cuint threshold)
 {
+  ROS_DEBUG_NAMED ("distance_comp", "Checking if distance from (%u, %u) to (%u, %u) exceeds %u when block between (%u,%u) and (%u,%u) is removed.", 
+                   c1r, c1c, c2r, c2c, threshold, top, left, bottom, right);
+  typedef map<GridGraphVertex,uint> VertexIntMap;
+  VertexIntMap costs;
+  queue<GridGraphVertex> q;
+
   disconnectBlock(top, left, bottom, right);
-  BfsVisitor vis(c1r, c1c, threshold, c2r, c2c);
-  boost::associative_property_map<VertexIndexMap> index_map(vertex_index_map_);
-  ROS_DEBUG_NAMED ("find_bottlenecks", "Checking if distance from (%u, %u) to (%u, %u) exceeds %u", c1r, c1c, c2r, c2c, threshold);
-  try {
-    boost::breadth_first_search (grid_graph_, cellVertex(c1r,c1c), boost::visitor(vis).vertex_index_map(index_map));
-  }
-  catch (TerminateBfs& e) {
-    if (e.found) {
-      ROS_DEBUG_NAMED ("find_bottlenecks", "Distance does not exceed threshold");
-      connectBlock(top, left, bottom, right);
-      return false;
+
+  q.push(cellVertex(c1r,c1c));
+  costs[cellVertex(c1r,c1c)] = 0;
+  
+  // Breadth-first search
+  while (true) {
+
+    // Termination condition 1
+    if (q.empty()) {
+      ROS_DEBUG_NAMED ("distance_comp", "Queue became empty in distance computation, so goal not reachable");
+      connectBlock (top, left, bottom, right);
+      return true;
     }
-  }
-  ROS_DEBUG_NAMED ("find_bottlenecks", "Distance exceeds threshold");
-  connectBlock(top, left, bottom, right);
-  return true;
+    const GridGraphVertex v=q.front();
+    q.pop();
+    cuint cost = costs[v];
+
+    // Termination condition 2
+    if (cost >= threshold) {
+      ROS_DEBUG_NAMED ("distance_comp", "Reached cell (%u, %u) at threshold distance %u, so goal not reachable", grid_graph_[v].r, grid_graph_[v].c, threshold);
+      connectBlock (top, left, bottom, right);
+      return true;
+    }
+
+    ROS_DEBUG_NAMED ("distance_internal", "Adding neighbors of (%u, %u)", grid_graph_[v].r, grid_graph_[v].c);
+
+
+    GridGraphAdjacencyIterator iter, end;
+    for (tie(iter, end) = adjacent_vertices(v, grid_graph_); iter!=end; ++iter) {
+      const Cell2D c=grid_graph_[*iter];
+
+      // Termination condition 3
+      if ((c.r == (int)c2r) && (c.c == (int)c2c)) {
+        ROS_DEBUG_NAMED ("distance_comp", "Found goal");
+        connectBlock (top, left, bottom, right);
+        return false;
+      }
+      
+      VertexIntMap::iterator i = costs.find(*iter);
+      if (i==costs.end()) {
+        costs[*iter] = 1+costs[v];
+        ROS_DEBUG_NAMED ("distance_internal", "Adding (%u, %u) at distance %u", grid_graph_[*iter].r, grid_graph_[*iter].c, 1+costs[v]);
+        q.push(cellVertex(c));
+      }
+    }
+ }
+
+//   ROS_DEBUG_NAMED ("find_bottlenecks", "Checking if distance from (%u, %u) to (%u, %u) exceeds %u", c1r, c1c, c2r, c2c, threshold);
+//   disconnectBlock(top, left, bottom, right);
+//   BfsVisitor vis(c1r, c1c, threshold, c2r, c2c);
+//   boost::associative_property_map<VertexIndexMap> index_map(vertex_index_map_);
+//   try {
+//     boost::breadth_first_search (grid_graph_, cellVertex(c1r,c1c), boost::visitor(vis).vertex_index_map(index_map));
+//   }
+//   catch (TerminateBfs& e) {
+//     if (e.found) {
+//       ROS_DEBUG_NAMED ("find_bottlenecks", "Distance does not exceed threshold");
+//       connectBlock(top, left, bottom, right);
+//       return false;
+//     }
+//   }
+//   ROS_DEBUG_NAMED ("find_bottlenecks", "Distance exceeds threshold");
+//   connectBlock(top, left, bottom, right);
+//   return true;
 }
 
 
-void BottleneckFinder::writePgm (const string& filename) const
+void BottleneckFinder::writePpm (const string& filename) const
 {
-  if (!pgm_output_dir_.empty()) {
-    const string pathname=pgm_output_dir_+"/"+filename;
+  if (!ppm_output_dir_.empty()) {
+    const string pathname=ppm_output_dir_+"/"+filename;
     ofstream stream;
-    ROS_INFO_NAMED ("writePgm", "Beginning to write pgm file %s", pathname.c_str());
+    ROS_INFO_NAMED ("write_ppm", "Beginning to write ppm file %s", pathname.c_str());
     stream.open(pathname.c_str());
   
-    stream << "P5" << endl << num_cols_ << " " << num_rows_ << endl << "255" << endl;
+    stream << "P6" << endl << num_cols_ << " " << num_rows_ << endl << "255" << endl;
     for (uint r=0; r<num_rows_; ++r) {
-      ROS_DEBUG_COND_NAMED (!(r%100), "writePgm", "Row %u", r);
+      ROS_DEBUG_COND_NAMED (!(r%100), "write_ppm", "Row %u", r);
+      const char on = 255;
+      const char off = 0;
       for (uint c=0; c<num_cols_; ++c) {
         switch (cell_status_array_[r][c]) {
-        case cell_stat::FREE: stream << char(255); break;
-        case cell_stat::OBSTACLE: stream << char(0); break;
-        case cell_stat::BOTTLENECK: stream << char(100); break;
+        case cell_stat::FREE: stream << on << on << on; break;
+        case cell_stat::OBSTACLE: stream << off << off << off; break;
+        case cell_stat::BOTTLENECK: stream << on << off << off; break;
         }
       }
     }
-    ROS_INFO_NAMED ("writePgm", "Done writing pgm");
+    ROS_INFO_NAMED ("write_ppm", "Done writing ppm");
   }
   else {
-    ROS_INFO_NAMED ("writePgm", "Not writing pgm as directory not supplied");
+    ROS_INFO_NAMED ("write_ppm", "Not writing ppm as directory not supplied");
   }
 }
 
@@ -315,13 +385,13 @@ void BottleneckFinder::initializeFromGrid ()
   }
 
   ROS_INFO_NAMED ("initialize_from_grid", "Done initializing graph from grid");
-  writePgm("inflated.pgm");
+  writePpm("inflated.ppm");
 }
 
 
 
 // Connect r,c and r2,c2 if neither is an obstacle
-void BottleneckFinder::possiblyConnectCells (cuint r, cuint c, cuint r2, cuint c2) 
+void BottleneckFinder::possiblyConnectCells (const int r, const int c, const int r2, const int c2) 
 {
   if (validCoords(r,c) && validCoords(r2,c2) && cell_status_array_[r][c]!=cell_stat::OBSTACLE && cell_status_array_[r2][c2]!=cell_stat::OBSTACLE) {
     // Should also assert there's no existing edge
@@ -331,7 +401,7 @@ void BottleneckFinder::possiblyConnectCells (cuint r, cuint c, cuint r2, cuint c
 }
 
 // Disconnect r,c and r2,c2 if neither is an obstacle
-void BottleneckFinder::possiblyDisconnectCells (cuint r, cuint c, cuint r2, cuint c2) 
+void BottleneckFinder::possiblyDisconnectCells (const int r, const int c, const int r2, const int c2) 
 {
   if (validCoords(r,c) && validCoords(r2,c2) && cell_status_array_[r][c]!=cell_stat::OBSTACLE && cell_status_array_[r2][c2]!=cell_stat::OBSTACLE) {
     ROS_DEBUG_NAMED("connect", "Disconnecting (%u, %u) and (%d, %d)", r, c, r2, c2);
@@ -346,9 +416,9 @@ inline bool BottleneckFinder::validCoords (const int r, const int c) const
   return (r>=0) && (c>=0) && (r<(int)num_rows_) && (c<(int)num_cols_);
 }
 
-inline bool BottleneckFinder::validFreeCoords (const int r, const int c) const
+inline bool BottleneckFinder::validNonObstacleCoords (const int r, const int c) const
 { 
-  return validCoords(r,c) && cell_status_array_[r][c]==cell_stat::FREE; 
+  return validCoords(r,c) && cell_status_array_[r][c]!=cell_stat::OBSTACLE; 
 }
 
 
@@ -363,7 +433,7 @@ inline void BottleneckFinder::getConnectors (cuint vertical, cuint top, cuint le
 }
 
 
-inline void getLoopParams (const int r0, const int c0, const int dr, const int dc, const int last, uint* incr, uint* incc, uint* lastr, uint* lastc)
+inline void getLoopParams (const int r0, const int c0, const int dr, const int dc, const int last, int* incr, int* incc, int* lastr, int* lastc)
 {
   if (dr) {
     *incr=0;
@@ -381,9 +451,9 @@ inline void getLoopParams (const int r0, const int c0, const int dr, const int d
 
 void BottleneckFinder::disconnectLine (const int r0, const int c0, const int dr, const int dc, const int last)
 {
-  uint incr, incc, lastr, lastc;
+  int incr, incc, lastr, lastc;
   getLoopParams(r0, c0, dr, dc, last, &incr, &incc, &lastr, &lastc);
-  uint r(r0), c(c0);
+  int r(r0), c(c0);
   for (; r<=lastr && c<=lastc; r+=incr, c+=incc) {
     possiblyDisconnectCells (r, c, r+dr, c+dc);
   }
@@ -391,9 +461,9 @@ void BottleneckFinder::disconnectLine (const int r0, const int c0, const int dr,
 
 void BottleneckFinder::connectLine (const int r0, const int c0, const int dr, const int dc, const int last)
 {
-  uint incr, incc, lastr, lastc;
+  int incr, incc, lastr, lastc;
   getLoopParams(r0, c0, dr, dc, last, &incr, &incc, &lastr, &lastc);
-  uint r(r0), c(c0);
+  int r(r0), c(c0);
   for (; r<=lastr && c<=lastc; r+=incr, c+=incc) {
     possiblyConnectCells (r, c, r+dr, c+dc);
   }
@@ -418,33 +488,99 @@ void BottleneckFinder::connectBlock (cuint top, cuint left, cuint bottom, cuint 
 }
 
 
+
+// Helper class for markSmallestBottleneck to avoid having to write binary search four times
+struct BinarySearcher {
+  BinarySearcher (int* topIn, int* leftIn, int* bottomIn, int* rightIn, const int c1rIn, const int c1cIn, const int c2rIn, const int c2cIn, cuint thresholdIn, BottleneckFinder* bf) :
+    top(topIn), left(leftIn), bottom(bottomIn), right(rightIn), c1r(c1rIn), c1c(c1cIn), c2r(c2rIn), c2c(c2cIn), threshold(thresholdIn), bottleneck_finder(bf) {}
+  
+  void search (cuint ind, const int bound, bool upper_val)
+  {
+    int* var_of_interest;
+    switch (ind) {
+    case 0: var_of_interest=top; break;
+    case 1: var_of_interest=left; break;
+    case 2: var_of_interest=bottom; break;
+    default: var_of_interest=right; break;
+    }
+    int lower = min(*var_of_interest, bound);
+    int upper = max(*var_of_interest, bound);
+    while (upper>lower+1) {
+      ROS_DEBUG_NAMED ("find_bottlenecks", "Params are %d, %d, %d, %d", *top, *left, *bottom, *right);
+      *var_of_interest = (upper+lower)/2;
+      if (bottleneck_finder->distanceWithoutBlockExceeds(*top, *left, *bottom, *right, c1r, c1c, c2r, c2c, threshold) == upper_val)
+        upper=*var_of_interest;
+      else 
+        lower=*var_of_interest;
+    }
+    *var_of_interest = upper_val ? upper : lower;
+    ROS_DEBUG_NAMED ("find_bottlenecks", "Bsearch result is %d", *var_of_interest);
+    
+  }
+
+  int *top, *left, *bottom, *right;
+  const int c1r, c1c, c2r, c2c;
+  cuint threshold;
+  BottleneckFinder* bottleneck_finder;
+
+};
+
+
+// We know that the given block is a bottleneck w.r.t c1 and c2, and threshold
+// This function tries to shrink the block as much as possible while still retaining this property, and then marks the cells as bottlenecks
+inline void BottleneckFinder::markSmallestBottleneck (int top, int left, int bottom, int right, const int c1r, const int c1c, const int c2r, const int c2c, cuint threshold) 
+{
+  ROS_ASSERT (distanceWithoutBlockExceeds(top, left, bottom, right, c1r, c1c, c2r, c2c, threshold));
+
+  BinarySearcher b(&top, &left, &bottom, &right, c1r, c1c, c2r, c2c, threshold, this);
+  b.search (2, top-1, true);
+  b.search (3, left-1, true);
+  b.search (0, bottom+1, false);
+  b.search (1, right+1, false);
+
+  
+  ROS_DEBUG_NAMED ("find_bottlenecks", "Marking bottleneck between (%d, %d) and (%d, %d)", top, left, bottom, right);
+  for (int r=top; r<=bottom; ++r) {
+    for (int c=left; c<=right; ++c) {
+      if (cell_status_array_[r][c] == cell_stat::FREE) {
+        cell_status_array_[r][c] = cell_stat::BOTTLENECK;
+      }
+    }
+  }
+}
+
 void BottleneckFinder::findBottlenecks ()
 {
-  ROS_INFO_NAMED ("findBottlenecks", "Commencing scan for bottlenecks");
+  ROS_INFO_NAMED ("bottleneck_finder", "Commencing scan for bottlenecks");
 
-  for (uint top=0; top<num_rows_-bottleneck_size_; ++top) {
-    for (uint left=0; left<num_cols_-bottleneck_size_; ++left) {
-      for (uint vertical=0; vertical<2; vertical++) {
+  for (uint top=0; top<num_rows_-bottleneck_size_; top+=bottleneck_skip_) {
+    uint bottom = top+bottleneck_size_;
+    ROS_DEBUG_COND_NAMED (!(top%1), "bottleneck_finder", "Row %u", top);
+    for (uint left=0; left<num_cols_-bottleneck_size_; left+=bottleneck_skip_) {
+      uint right = left+bottleneck_size_;
+      ROS_DEBUG_NAMED ("find_bottlenecks", "Considering block from (%u, %u) to (%u, %u)", top, left, bottom, right);
+        for (uint vertical=0; vertical<2; vertical++) {
         int c1r, c1c, c2r, c2c;
         getConnectors (vertical, top, left, &c1r, &c1c, &c2r, &c2c);
         // At this point we've chosen a block and pair of connectors on either side
+        
 
-        // If not valid skip
-        bool valid = validFreeCoords(c1r,c1c) && validFreeCoords(c2r,c2c) && validCoords(top, left) && validCoords(top+bottleneck_size_, left+bottleneck_size_);
-        for (uint r=top; r<top+bottleneck_size_; r++) 
-          for (uint c=left; c<left+bottleneck_size_; c++) 
+        // If not valid coords, or if block contains bottleneck cells, skip
+        bool valid = validNonObstacleCoords(c1r,c1c) && validNonObstacleCoords(c2r,c2c) && validCoords(top, left) && validCoords(bottom, right);
+        for (uint r=top; r<=bottom; r++) 
+          for (uint c=left; c<=right; c++) 
             if (cell_status_array_[r][c]==cell_stat::BOTTLENECK) { valid=false; break; }
         if (!valid) break;
 
-        if (distanceWithoutBlockExceeds(top, left, top+bottleneck_size_, left+bottleneck_size_, c1r, c1c, c2r, c2c, 6*bottleneck_size_)) {
-          ROS_DEBUG_NAMED ("find_bottlenecks", "Block from (%u, %u) to (%u, %u) is a bottleneck", top, left, top+bottleneck_size_, left+bottleneck_size_);
-        }
-        else {
-          ROS_DEBUG_NAMED ("find_bottlenecks", "Block from (%u, %u) to (%u, %u) is not a bottleneck", top, left, top+bottleneck_size_, left+bottleneck_size_);
+        if (distanceWithoutBlockExceeds(top, left, bottom, right, c1r, c1c, c2r, c2c, 6*bottleneck_size_)) {
+          ROS_DEBUG_NAMED ("find_bottlenecks", "Block from (%u, %u) to (%u, %u) is a bottleneck", top, left, bottom, right);
+          markSmallestBottleneck (top, left, bottom, right, c1r, c1c, c2r, c2c, 6*bottleneck_size_);
         }
       }
     }
   }
+  ROS_INFO_NAMED ("bottleneck_finder", "Done scanning for bottlenecks.");
+  writePpm ("bottlenecks.ppm");
 }
 
   
@@ -456,9 +592,9 @@ void BottleneckFinder::findBottlenecks ()
  ************************************************************/
 
 
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const string& pgm_output_dir)
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir)
 {
-  BottleneckFinder b(grid, bottleneck_size, bottleneck_skip, inflation_radius, pgm_output_dir);
+  BottleneckFinder b(grid, resolution, bottleneck_size, bottleneck_skip, inflation_radius, ppm_output_dir);
   b.initializeFromGrid();
   b.findBottlenecks();
 

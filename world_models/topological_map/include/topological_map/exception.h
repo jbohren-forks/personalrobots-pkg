@@ -34,7 +34,6 @@
 #include <stdexcept>
 #include <topological_map/topological_map.h>
 
-using boost::format;
 
 namespace topological_map
 {
@@ -43,28 +42,35 @@ namespace topological_map
 class TopologicalMapException: public std::runtime_error
 { 
 public:
-TopologicalMapException(const format& error_string) : std::runtime_error(error_string.str()) {};
+  TopologicalMapException(const boost::format& error_string) : std::runtime_error(error_string.str()) {};
 };
 
 /// \brief Exception denoting unknown grid cell
 class UnknownGridCellException: public TopologicalMapException
 {
 public:
-  UnknownGridCellException(const Cell2D& p) : TopologicalMapException(format("Unknown grid cell %1%") % p) {}
+  UnknownGridCellException(const Cell2D& p) : TopologicalMapException(boost::format("Unknown grid cell %1%") % p) {}
+};
+
+/// \brief Exception denoting unknown 2d point
+class UnknownPointException: public TopologicalMapException
+{
+public:
+  UnknownPointException (const double x, const double y) : TopologicalMapException(boost::format("Unknown 2d point (%1%, %2%)") % x % y) {}
 };
 
 /// \brief Exception when trying to add a region containing an existing gridcell
 class OverlappingRegionException: public TopologicalMapException
 {
 public:
-  OverlappingRegionException(const Cell2D& c, const RegionId id) : TopologicalMapException(format("Grid cell %1% already exists in region %2%") % c % id) {}
+  OverlappingRegionException(const Cell2D& c, const RegionId id) : TopologicalMapException(boost::format("Grid cell %1% already exists in region %2%") % c % id) {}
 };
 
 /// \brief Exception for a region id that doesn't exist
 class UnknownRegionException: public TopologicalMapException
 {
 public:
-  UnknownRegionException(const RegionId id) : TopologicalMapException(format("Unknown region id %1%") % id) {}
+  UnknownRegionException(const RegionId id) : TopologicalMapException(boost::format("Unknown region id %1%") % id) {}
 };
 
 

@@ -72,7 +72,7 @@ int main (int argc, char* argv[])
   }
   
 
-  TopologicalMapPtr p = topologicalMapFromGrid (grid, 2, 1, 0, "local");
+  TopologicalMapPtr p = topologicalMapFromGrid (grid, 1.0, 2, 1, 0, "local");
 }
 
   

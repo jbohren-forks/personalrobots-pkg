@@ -66,6 +66,7 @@ RegionId TopologicalMap::GraphImpl::containingRegion (const Cell2D& p) const
   }
 }
 
+
 int TopologicalMap::GraphImpl::regionType (const RegionId id) const
 {
   return graph_[idVertex(id)].type;
@@ -178,13 +179,18 @@ TopologicalGraphVertex TopologicalMap::GraphImpl::idVertex(const RegionId id) co
  * Topological graph ops are forwarded to implementation
  ************************************************************/
 
-TopologicalMap::TopologicalMap () : graph_impl_(new GraphImpl) 
+TopologicalMap::TopologicalMap (double resolution) : graph_impl_(new GraphImpl) 
 {
 }
 
 RegionId TopologicalMap::containingRegion (const Cell2D& p) const
 {
   return graph_impl_->containingRegion(p);
+}
+
+RegionId TopologicalMap::containingRegion (const Point2D& p) const
+{
+  return 42;
 }
 
 int TopologicalMap::regionType (const RegionId id) const

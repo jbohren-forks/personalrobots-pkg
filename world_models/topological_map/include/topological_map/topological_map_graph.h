@@ -69,7 +69,7 @@ class TopologicalMap::GraphImpl
 public:
 
   /// Default constructor creates empty graph
-  GraphImpl() : next_id_(0) {}
+  GraphImpl(double resolution=1.0) : next_id_(0), resolution_(resolution) {}
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -107,6 +107,8 @@ private:
   RegionIdVector regions_;
   
   RegionId next_id_;
+
+  double resolution_;
 };
 
 

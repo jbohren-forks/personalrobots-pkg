@@ -40,8 +40,19 @@
 namespace topological_map
 {
 
+using std::vector;
+using std::string;
+
 typedef unsigned int RegionId;
-typedef std::vector<RegionId> RegionIdVector;
+typedef unsigned int ConnectorId;
+typedef vector<RegionId> RegionIdVector;
+
+struct Point2D 
+{
+  Point2D(double x=0.0, double y=0.0) : x(x), y(y) {}
+  double x,y;
+};
+
 
 /// Represents a topological map of a 2-dimensional discrete grid decomposed into regions of various types
 class TopologicalMap
@@ -49,16 +60,36 @@ class TopologicalMap
 public:
 
   /// Default constructor makes an empty map (see also topologicalMapFromGrid)
-  TopologicalMap();
+  TopologicalMap(double resolution=1.0);
 
-  /// \return Id of region containing \a p
-  /// \throws UnknownCell2DException
+  /// \return Id of region containing a grid cell \a p
+  /// \throws UnknownGridCellException
   RegionId containingRegion(const Cell2D& p) const;
 
-  /// \return Integer representing type of region
-  /// \throws UnknownRegionException
-  int regionType(const RegionId id) const;
+  /// \return Id of region containing a 2d point
+  /// \throws UnknownPointException
+  RegionId containingRegion(const Point2D& p) const;
 
+  /// \return Id of connector that equals a given 2d point (\a x, \a y)
+  /// \throws PointNotConnectorException
+  ConnectorId pointConnector (const Point2D& p) const;
+
+  /// \return Position of connector \a id
+  /// \throws UnknownConnectorException
+  Point2D connectorPosition (const ConnectorId id) const;
+
+  /// \return vector of ids of connectors touching the given region
+  /// \throws UnknownRegionException
+  vector<ConnectorId> adjacentConnectors (const RegionId id) const;
+
+  /// \return vector (of length 2) of ids of regions touching the given connector
+  /// \throws UnknownConnectorException
+  vector<RegionId> adjacentRegions (const ConnectorId id) const;
+
+  /// \return Type of this region
+  /// \throws UnknownRegionException
+  int regionType (const RegionId id) const;
+  
   /// \return Vector of id's of neighboring regions to region \a r
   RegionIdVector neighbors(const RegionId r) const;
 
@@ -93,9 +124,10 @@ private:
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
 
-/// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const std::string& pgm_output_dir);
+/// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
 
+enum RegionType { OPEN, DOORWAY };
 
 
 
