@@ -78,6 +78,7 @@ private:
   
 };
 
+
 } // visual_nav
 
 #endif

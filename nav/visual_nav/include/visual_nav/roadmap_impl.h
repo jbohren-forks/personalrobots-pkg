@@ -42,6 +42,7 @@ using boost::graph_traits;
 namespace visual_nav
 {
 
+typedef unsigned int uint;
 
 /************************************************************
  * RoadmapGraph typedefs
@@ -49,10 +50,15 @@ namespace visual_nav
 
 struct NodeInfo
 {
+  NodeInfo(const Position2D position, const int index) : start_node(false), position(position), index(index) {}
+
   // Flag for whether this is the start node (the only one that doesn't have an associated 2d position)
   bool start_node;
+
   // Only meaningful if start_node is false
   Position2D position;
+
+  int index;
 };
 
 struct EdgeInfo
@@ -69,16 +75,29 @@ typedef graph_traits<RoadmapGraph>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
 
 
-
 /************************************************************
  * RoadmapImpl
  ************************************************************/
 
-class RoadmapImpl
+class VisualNavRoadmap::RoadmapImpl
 {
+public:
+  RoadmapImpl() : next_node_id(0) {}
+
+  int addNode (const Position2D& pos);
+  int addEdge (const int i, const int j);
+  void addEdgeFromStart (const int i, const Position2D& relative_pos);
+  PathPtr pathToGoal (const int goal_id);
+
 private:
   RoadmapGraph graph_;
+
+  int next_node_id;
+
+  RoadmapImpl& operator= (const RoadmapImpl&);
+  RoadmapImpl(const RoadmapImpl&);
 };
+
 
 
 } // namespace visual_nav

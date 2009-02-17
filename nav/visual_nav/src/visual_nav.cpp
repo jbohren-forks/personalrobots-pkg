@@ -29,12 +29,64 @@
 
 #include <visual_nav/roadmap_impl.h>
 
+using std::vector;
+
 namespace visual_nav
 {
 
-int foo ()
+
+/************************************************************
+ * RoadmapImpl ops
+ ************************************************************/
+
+int VisualNavRoadmap::RoadmapImpl::addNode (const Position2D& pos)
+{
+  add_vertex(NodeInfo(pos, next_node_id), graph_);
+  return next_node_id++;
+}
+
+int VisualNavRoadmap::RoadmapImpl::addEdge (const int i, const int j)
 {
   return 42;
+}
+
+void VisualNavRoadmap::RoadmapImpl::addEdgeFromStart (const int i, const Position2D& relative_pos)
+{
+}
+
+PathPtr VisualNavRoadmap::RoadmapImpl::pathToGoal (const int goal_id)
+{
+  return PathPtr(new vector<int>);
+}
+
+
+
+/************************************************************
+ * VisualNavRoadmap api
+ * Constructor just creates the implementation object
+ * Other functions forward ops
+ ************************************************************/
+
+VisualNavRoadmap::VisualNavRoadmap() : roadmap_impl_(new RoadmapImpl) {}
+
+int VisualNavRoadmap::addNode (const Position2D& pos)
+{
+  return roadmap_impl_->addNode(pos);
+}
+
+void VisualNavRoadmap::addEdge (const int i, const int j)
+{
+  roadmap_impl_->addEdge(i, j);
+}
+
+void VisualNavRoadmap::addEdgeFromStart (const int i, const Position2D& relative_pos)
+{
+  roadmap_impl_->addEdgeFromStart(i, relative_pos);
+}
+
+PathPtr VisualNavRoadmap::pathToGoal (const int goal_id)
+{
+  return roadmap_impl_->pathToGoal(goal_id);
 }
 
 
