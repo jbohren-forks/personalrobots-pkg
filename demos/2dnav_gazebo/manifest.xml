@@ -24,4 +24,5 @@
   <depend package="transformations"/>
   <depend package="ransac_ground_plane_extraction"/>
   <depend package="point_cloud_assembler"/>
+  <depend package="rviz"/>
 </package>
