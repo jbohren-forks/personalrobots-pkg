@@ -358,8 +358,10 @@ public:
 	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
+        printf("get the dist between the legs\n");
 	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	dist_between_legs = dest_loc.length();
+	printf("done get dist\n");
+        dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
 	if ( (*it1)->object_id == "" && dist < closest_dist && dist_between_legs < leg_pair_separation_m )
@@ -440,8 +442,10 @@ public:
 	dist2 = dest_loc.length();
 	
 	// Get the distance between the two legs
+        printf("Get the dist between the legs, take 2\n");
 	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	dist_between_legs = dest_loc.length();
+	printf("Done get dist, take 2\n");
+        dist_between_legs = dest_loc.length();
 
 	// Ensure that neither the second point, not the combination of points, is too far away.
 	if ( dist2 < max_meas_jump_m && dist1+dist2 < closest_pair_dist && dist_between_legs < leg_pair_separation_m ) 
@@ -588,7 +592,9 @@ public:
            pf_iter++)
       {
         // find the closest distance between candidate and trackers
+        printf("get the dist between the candidate and trackers\n");
         float dist = loc.distance((*pf_iter)->prop_loc_);
+        printf("done get the dist between the candidate and trackers\n");
         if ( dist < closest_dist )
         {
           closest = pf_iter;
@@ -658,7 +664,9 @@ public:
              remain_iter != propagated.end();
              remain_iter++)
         {
+          printf("assign to another tracker, get dist\n");
           float dist = loc.distance((*remain_iter)->prop_loc_);
+          printf("done assign to another tracker\n");
           if ( dist < closest_dist )
           {
             closest = remain_iter;
