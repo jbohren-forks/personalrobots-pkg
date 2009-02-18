@@ -1,0 +1,8 @@
+<launch>
+
+  <!-- Base Pedals -->
+  <include file="$(find teleop_base_pedals)/teleop_base_pedals.launch" />
+
+  <!-- Phase Space -->
+  <node pkg="phase_space" type="phase_space_node" output="log" />
+</launch>
