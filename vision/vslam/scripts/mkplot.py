@@ -50,6 +50,7 @@ def planar(x, y, z):
   sol = optimize.fmin(silly, sol, args=((x,y,z),))
 
   a,b,c = sol
+  return (a, b, c)
   return sqrt(sum((y - (a*x + b*z + c)) ** 2) / len(x))
 
 class dcamImage:
@@ -121,11 +122,13 @@ for topic, msg, t in rosrecord.logplayer(f):
         # Log keyframes into "pool_loop"
         if not vo.keyframe.id in keys:
           k = vo.keyframe
-#          Image.fromstring("L", (640,480), k.lf.tostring()).save("pool_loop/%06dL.png" % len(keys))
-#          Image.fromstring("L", (640,480), k.rf.tostring()).save("pool_loop/%06dR.png" % len(keys))
+          Image.fromstring("L", (640,480), k.lf.tostring()).save("trial/%06dL.png" % len(keys))
+          Image.fromstring("L", (640,480), k.rf.tostring()).save("trial/%06dR.png" % len(keys))
+          print "saving frame", "id", k.id, "as key", len(keys), "inliers:", k.inl, "keypoints:", len(k.kp2d), len(k.kp)
+          #vo.report_frame(k)
           keys.add(k.id)
 
-        if i == 0:
+        if i == 999:
           skel.add(vo.keyframe)
           vo.correct(skel.correct_frame_pose, af)
         x,y,z = vo.pose.xform(0,0,0)
@@ -135,7 +138,7 @@ for topic, msg, t in rosrecord.logplayer(f):
         x1,y1,z1 = vo.pose.xform(0,0,1)
         vo_u[i].append(x1 - x)
         vo_v[i].append(z1 - z)
-      print framecounter, vo.inl, "inliers"
+      print framecounter, "kp", len(af.kp), "inliers:", vo.inl
       inliers.append(vo.inl)
 
       if 0:
@@ -230,6 +233,10 @@ for vo in vos:
 skel.summarize_timers()
 
 pylab.figure(figsize=(10,10))
+pylab.hist(inliers, bins=100)
+#pylab.show()
+sys.exit(0)
+
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
 for i in range(len(vos)):
   vos[i].planarity = planar(numpy.array([x for (x,y,z) in trajectory[i]]), numpy.array([y for (x,y,z) in trajectory[i]]), numpy.array([z for (x,y,z) in trajectory[i]]))
@@ -259,12 +266,13 @@ print "planarity of skeleton: ", pval
 
 skel.optimize()
 
-pts = dict([ (f,skel.newpose(f.id).xform(0,0,0)) for f in skel.nodes ])
+pts = dict([ (f,skel.newpose(f).xform(0,0,0)) for f in skel.nodes ])
 nodepts = pts.values()
 pval = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
 print "planarity of skeleton: ", pval
 
 skel.plot('blue')
+print vos[0].log_keyframes
 
 
 
@@ -279,4 +287,4 @@ mid = sum(ylim) / 2
 pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
-pylab.show()
+#pylab.show()

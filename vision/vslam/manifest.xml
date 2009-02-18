@@ -6,6 +6,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="visual_odometry"/>
+  <depend package="std_msgs"/>
   <depend package="rospy"/>
   <depend package="transformations"/>
   <depend package="toro"/>

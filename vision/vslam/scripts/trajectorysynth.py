@@ -22,7 +22,7 @@ pg.initializeOnlineOptimization()
 
 cam = camera.Camera((432.0, 432.0, 0.088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001))
 #vo = VisualOdometer(cam)
-vo = VisualOdometer(cam, scavenge = True, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeCalonder())
+vo = VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeCalonder())
 
 def pg_constraint(pg, a, b, pose, inf):
   pg.addIncrementalEdge(a, b, pose.xform(0,0,0), pose.euler(), inf)
@@ -73,18 +73,69 @@ else:
   else:
     vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree")
 
-f = []
-for i in range(180): # range(1,146):
-  print i
-  dir = "/u/jamesb/ros/ros-pkg/vision/vslam/pool_loop"
-  L = Image.open("%s/%06dL.png" % (dir, i))
-  R = Image.open("%s/%06dR.png" % (dir, i))
-  nf = SparseStereoFrame(L, R)
-  vo.setup_frame(nf)
-  nf.id = len(f)
-  if vt:
-    vt.add(nf.lf, nf.descriptors)
-  f.append(nf)
+  vo = VisualOdometer(cam, scavenge = False, 
+                      feature_detector = FeatureDetectorFast(), 
+                      descriptor_scheme = DescriptorSchemeCalonder(),
+                      inlier_error_threshold = 3.0, sba = None,
+                      inlier_thresh = 99999,
+                      position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
+
+  from skeleton import Skeleton
+  if 0:
+    skel = Skeleton(cam)
+    skel.node_vdist = 0
+    skel.adaptive = False
+  else:
+    skel = None
+  gt = []
+
+  f = []
+  for i in range(2100): # range(1,146):
+    dir = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
+    L = Image.open("%s/%06dL.png" % (dir, i))
+    R = Image.open("%s/%06dR.png" % (dir, i))
+    nf = SparseStereoFrame(L, R)
+    vo.setup_frame(nf)
+    print i, "kp=", len(nf.kp)
+    nf.id = len(f)
+    if vt:
+      vt.add(nf.lf, nf.descriptors)
+
+    if skel:
+      vo.handle_frame_0(nf)
+      skel.add(vo.keyframe)
+      vo.correct(skel.correct_frame_pose, nf)
+      print len(gt), vo.inl
+      gt.append(vo.pose.xform(0,0,0))
+    else:
+      pf = open("trial/%06d.pose.pickle" % i, "r")
+      gt.append(pickle.load(pf))
+      pf.close()
+
+    if 1:
+      del nf.rawdata
+      del nf.lgrad
+      del nf.rgrad
+      del nf.lf
+      del nf.rf
+      del L
+      del R
+      nf.lf = None
+    f.append(nf)
+
+if skel:
+  skel.optimize()
+  skel.plot('blue', True)
+  #pylab.plot([x for (x,y,z) in gt], [z for (x,y,z) in gt], c = 'g')
+  pylab.show()
+  node_ids = [f.id for f in skel.nodes ]
+  for i in sorted(node_ids):
+    f = open("trial/%06d.pose.pickle" % i, "w")
+    pickle.dump(skel.newpose(i), f)
+    f.close()
+  sys.exit(1)
+
+gtc = [ p.xform(0,0,0) for p in gt ]
 
 # Write confusion matrix to file - for Patrick
 if 0:
@@ -96,7 +147,6 @@ if 0:
     print >>txt, l
   txt.close()
   sys.exit(0)
-
 if 0:
   for i in range(146):
     print i, i + 1, vo.proximity(f[i], f[i+1], True)
@@ -128,28 +178,50 @@ movie = 0
 highest_scores = []
 started = time.time()
 while True:
-  print "*** focus ***", focus
+  print "*** focus ***", focus, "%d%%" % (100 * len(checked) / len(all_ids))
   count = len(f)
   to_search = all_ids - set([focus]) - checked
   if vt:
-    scores = vt.topN(f[focus].lf, f[focus].descriptors, count)
+    scores = vt.topN(None, f[focus].descriptors, count)
     if 0:
       for (sc, id) in  sorted(zip(scores, range(count)), reverse=False):
         print id, sc
       print
-    best = [id for (score,id) in sorted(zip(scores, range(count))) if (id in to_search)][:20]
+    best = [id for (score,id) in sorted(zip(scores, range(count))) if (id in to_search)]
   else:
     best = [id for id in all_ids if id in to_search]
-  prox = sorted([ vo.proximity(f[focus], f[near], True) + (near,) for near in best ], reverse=True)
-  inl_thresh = 30
-  gpass = [ (inl,pose,near) for (inl,pose,near) in prox if (inl > inl_thresh) ][:8]
+  inl_thresh = 20
+  dist_thresh = 0.9
+
+  if 0:
+    prox = sorted([ vo.proximity(f[focus], f[near], True) + (near,) for near in best[:20] ], reverse=True)
+    gpass = [ (inl,pose,near) for (inl,pose,near) in prox if (inl > inl_thresh) ][:8]
+  else:
+    gpass = []
+    for near in best:
+      (inl,pose) = vo.proximity(f[focus], f[near], False)
+      if inl > inl_thresh and pose.distance() < dist_thresh:
+        gpass.append((inl,pose,near))
+      if len(gpass) > 4:
+        break
   #if gpass != []: highest_scores.append(max([scores[n] for (_,_,n) in gpass]))
+  if gpass == []:
+    print "Searched", best, "but did not find any matches"
+    if focus+1 < len(f):
+      inl,pose = vo.proximity(f[focus], f[focus+1], True)
+      print "proximity(%d,%d)=" % (focus, focus+1), inl, pose.distance()
   for inl,pose,near in gpass:
     t = min((inl - inl_thresh) / 150., 1.0)
     edges.add((focus, near, t))
     nodes.add(near)
     pg.addIncrementalEdge(focus, near, pose.xform(0,0,0), pose.euler(), link_strength(t))
-    print "edge from", focus, near
+    print "edge from", focus, near, "(%d inliers, length %f)" % (inl, pose.distance())
+    if focus in gt:
+      gtpose = ~gt[focus] * gt[near]
+      difference = (pose * ~gtpose).distance()
+      if difference > 0.1:
+        print "difference", difference,
+        print "mine=", pose.xform(0, 0, 0), "gt=", gtpose.xform(0, 0, 0)
 
   checked.add(focus)
   if nodes == checked:
@@ -167,40 +239,54 @@ pg.initializeOnlineIterations()
 print "pg.error", pg.error()
 for i in range(120):
   pg.iterate()
-  #print i, "pg.error", pg.error()
-  snap(movie, all_ids, checked, nodes, edges, pg.error())
-  movie += 1
 print "pg.error", pg.error()
-print "Took:", time.time() - started
 
-if 1:
-  fig = pylab.figure(figsize=(7,7))
+if False:
   pts = dict([ (id,newpose(id).xform(0,0,0)) for id in nodes ])
   nodepts = pts.values()
   pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = 'blue')
-  for (id,(x,y,z)) in pts.items():
-    pylab.annotate('%d' % id, (float(x), float(z)))
-  for (f0,f1,t) in edges:
-    p0 = pts[f0]
-    p1 = pts[f1]
-    r = int(lerp(t, 250,  50))
-    g = int(lerp(t, 250,  50))
-    b = int(lerp(t, 250, 250))
-    color = '#%02x%02x%02x' % (r,g,b)
-    pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), c = color)
-  pylab.xlim(-2, 12)
-  pylab.ylim(-2, 12)
-  pylab.savefig("zero%06d.png" % i, dpi=200)
-  #pylab.show()
-  pylab.close(fig)
+  for (id,(x,y,z)) in pts.items(): pylab.annotate('%d' % id, (float(x), float(z)))
+  pylab.savefig("trajsynth.png", dpi=200)
 
-if 1:
-  xlim = pylab.xlim()
-  ylim = pylab.ylim()
-  xrange = xlim[1] - xlim[0]
-  yrange = ylim[1] - ylim[0]
-  r = max(xrange, yrange) * 0.5
-  mid = sum(xlim) / 2
-  pylab.xlim(mid - r, mid + r)
-  mid = sum(ylim) / 2
-  pylab.ylim(mid - r, mid + r)
+while True:
+  print "pg.error", pg.error()
+  for i in range(120):
+    pg.iterate()
+    #print i, "pg.error", pg.error()
+    snap(movie, all_ids, checked, nodes, edges, pg.error())
+    movie += 1
+  print "pg.error", pg.error()
+  print "Took:", time.time() - started
+
+  if 1:
+    fig = pylab.figure(figsize=(7,7))
+    pylab.plot([x for (x,y,z) in gtc], [z for (x,y,z) in gtc], c = 'g')
+    for (id,(x,y,z)) in enumerate(gtc):
+      if (id % 100) == 0:
+        pylab.annotate('%d' % id, (float(x), float(z)))
+    pts = dict([ (id,newpose(id).xform(0,0,0)) for id in nodes ])
+    nodepts = pts.values()
+    pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = 'blue')
+    for (id,(x,y,z)) in pts.items(): pylab.annotate('%d' % id, (float(x), float(z)))
+    for (f0,f1,t) in edges:
+      p0 = pts[f0]
+      p1 = pts[f1]
+      r = int(lerp(t, 250,  50))
+      g = int(lerp(t, 250,  50))
+      b = int(lerp(t, 250, 250))
+      color = '#%02x%02x%02x' % (r,g,b)
+      pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), c = color)
+
+  if 1:
+    xlim = pylab.xlim()
+    ylim = pylab.ylim()
+    xrange = xlim[1] - xlim[0]
+    yrange = ylim[1] - ylim[0]
+    r = max(xrange, yrange) * 0.5
+    mid = sum(xlim) / 2
+    pylab.xlim(mid - r, mid + r)
+    mid = sum(ylim) / 2
+    pylab.ylim(mid - r, mid + r)
+
+    pylab.show()
+    pylab.close(fig)

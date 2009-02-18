@@ -59,45 +59,33 @@ from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, Descr
 #########################################################################
 
 #########################################################################
-vos = [
-  #VisualOdometer(stereo_cam, feature_detector = FeatureDetectorStar(), descriptor_scheme = DescriptorSchemeCalonder())
-  VisualOdometer(stereo_cam, scavenge = False, sba=None, inlier_error_threshold = 3.0),
-
-  #VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
-
-  #VisualOdometer(stereo_cam, sba=(1,1,1)),
-  #VisualOdometer(stereo_cam, scavenge = True, sba=None, inlier_error_threshold = 3.0),
-  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
-  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
-  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
-  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.0),
-  #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.5),
-  #VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True, sba = None),
-
-  #PhonyVisualOdometer(stereo_cam),
-  #PhonyVisualOdometer(stereo_cam, sba = (5,5,5))
-  #VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast)),
-  #VisualOdometer(stereo_cam, scavenge = True, sba = (1,1,5)),
-]
 
 
-skel = Skeleton(stereo_cam)
+#VisualOdometer(stereo_cam, feature_detector = FeatureDetectorStar(), descriptor_scheme = DescriptorSchemeCalonder())
+#VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
 
-ground_truth = []
-started = time.time()
-for i in range(601):
-  print i
-  if 0:
-    desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
-  else:
-    theta = (i / 400.0) * math.pi * 2
-    wobble = 0.25 * (sin(theta * 9.5) + sin(theta * 3.5))
-    r = 4.0 + wobble
-    desired_pose = Pose(rotation(theta, 0,1,0), (4.0 - r * math.cos(theta),0,r * math.sin(theta)))
-  ground_truth.append(desired_pose.xform(0,0,0))
-  cam = ray_camera(desired_pose, stereo_cam)
+#VisualOdometer(stereo_cam, sba=(1,1,1)),
+#VisualOdometer(stereo_cam, scavenge = True, sba=None, inlier_error_threshold = 3.0),
+#VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
+#VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
+#VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
+#VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.0),
+#VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 3.5),
+#VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorHarris), scavenge = True, sba = None),
 
+#PhonyVisualOdometer(stereo_cam),
+#PhonyVisualOdometer(stereo_cam, sba = (5,5,5))
+#VisualOdometer(stereo_cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast)),
+#VisualOdometer(stereo_cam, scavenge = True, sba = (1,1,5)),
+
+def getImage(i):
+  theta = (i / 400.0) * math.pi * 2
+  wobble = 0.05 * (sin(theta * 9.5) + sin(theta * 3.5))
+  r = 4.0 + wobble
+  desired_pose = Pose(rotation(theta, 0,1,0), (4.0 - r * math.cos(theta),0,r * math.sin(theta)))
   if not os.access("/tmp/out%06d.png" % i, os.R_OK):
+    cam = ray_camera(desired_pose, stereo_cam)
+
     imL = Image.new("RGB", (640,480))
     imR = Image.new("RGB", (640,480))
     imD = [ Image.new("F", (640,480)), Image.new("F", (640,480)), Image.new("F", (640,480)) ]
@@ -123,16 +111,81 @@ for i in range(601):
   else:
     im = Image.open("/tmp/out%06d.png" % i)
     imL,imR,_ = im.split()
+  return (desired_pose, imL, imR)
 
-  for j,vo in enumerate(vos):
-    f = SparseStereoFrame(imL, imR)
+skel = Skeleton(stereo_cam)
+vo = VisualOdometer(stereo_cam, descriptor_scheme = DescriptorSchemeCalonder(), scavenge = False, sba=None, inlier_error_threshold = 3.0)
+vo.num_frames = 0
 
-    vo.handle_frame(f)
-    skel.add(vo.keyframe)
+ground_truth = []
+started = time.time()
+
+connected = False
+for i in range(0,100):
+  print i
+  (desired_pose, imL, imR) = getImage(i)
+  ground_truth.append(desired_pose.xform(0,0,0))
+  f = SparseStereoFrame(imL, imR)
+  vo.handle_frame(f)
+  skel.add(vo.keyframe, connected)
+  connected = True
+
+if 1:
+  (desired_pose, imL, imR) = getImage(408)
+  ground_truth.append(desired_pose.xform(0,0,0))
+  qf = SparseStereoFrame(imL, imR)
+  skel.localization(qf)
+  sys.exit(0)
+
+vo = VisualOdometer(stereo_cam, descriptor_scheme = DescriptorSchemeCalonder(), scavenge = False, sba=None, inlier_error_threshold = 3.0)
+vo.num_frames = 400
+
+connected = False
+for i in range(400,500):
+  print i
+  (desired_pose, imL, imR) = getImage(i)
+  ground_truth.append(desired_pose.xform(0,0,0))
+  f = SparseStereoFrame(imL, imR)
+  vo.handle_frame(f)
+  skel.add(vo.keyframe, connected)
+  connected = True
+
+print "nodes", skel.nodes
 
 ended = time.time()
 took = ended - started
 print "Took", took, "so", 1000*took / i, "ms/frame"
+
+
+skel.optimize()
+skel.localization()
+sys.exit(1)
+
+pts = dict([ (f,skel.newpose(f).xform(0,0,0)) for f in skel.nodes ])
+nodepts = pts.values()
+a,b,c,d = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
+mag = sqrt(float(a*a + b*b + c*c))
+a /= mag
+b /= mag
+c /= mag
+plane_xform = numpy.array([[ b, c, a ], [ c, a, b ], [ a, b, c]])
+
+if 1:
+  print "original", pts
+  projected = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ])).transpose()[0]) for (x,y,z) in nodepts ]
+  print "projected", projected
+  pylab.plot([x for (x,y,z) in ground_truth], [z for (x,y,z) in ground_truth], c = 'green', label = 'ground truth')
+  pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = 'r')
+  pylab.scatter([x for (x,y,z) in projected], [y for (x,y,z) in projected], c = 'b')
+  pylab.show()
+  sys.exit(1)
+
+skel.save("saved-skel")
+
+skel = Skeleton(stereo_cam)
+skel.load("saved-skel")
+print "about to optimize..."
+skel.optimize()
 
 def plot_poses(Ps, c, l):
   traj = [ p.xform(0,0,0) for p in Ps ]
@@ -146,25 +199,23 @@ def plot_poses(Ps, c, l):
     pylab.plot([x for (x,y,z) in traj], [z for (x,y,z) in traj], color = c, label = l)
 
 sgd = []
-for id in sorted([ f.id for f in skel.nodes ]):
+for id in sorted([ id for id in skel.nodes ]):
   xyz,euler = skel.pg.vertex(id)
   newpose = from_xyz_euler(xyz, euler)
   sgd.append(newpose)
 
-for vo in vos:
-  print vo.name()
-  print "distance from start:", vo.pose.distance()
-  vo.summarize_timers()
-  print vo.log_keyframes
-  print
+print vo.name()
+print "distance from start:", vo.pose.distance()
+vo.summarize_timers()
+print vo.log_keyframes
+print
 
 skel.summarize_timers()
 
 pylab.plot([x for (x,y,z) in ground_truth], [z for (x,y,z) in ground_truth], c = 'green', label = 'ground truth')
 plot_poses(vo.log_keyposes, 'red', 'from VO')
-#plot_poses(sgd, 'blue', 'after SGD')
-skel.optimize()
-skel.plot('blue')
+plot_poses(sgd, 'blue', 'after SGD')
+skel.plot('blue', True)
 pylab.legend()
 pylab.show()
 #pylab.savefig("foo.png", dpi=200)
