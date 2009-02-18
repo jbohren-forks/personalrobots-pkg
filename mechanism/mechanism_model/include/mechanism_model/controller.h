@@ -102,6 +102,7 @@ public:
   virtual ~Controller()
   {
   }
+  virtual bool startup() {return true;};
   virtual void update(void) = 0;
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
 };
