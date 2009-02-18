@@ -23,7 +23,8 @@ execute_process(
 
 
 
-set(TREX_FILES src/ROSAdapter.cc 
+set(TREX_FILES src/Executive.cc
+	       src/ROSAdapter.cc 
 	       src/Logger.cc 
                src/LogClock.cc 
 	       src/CalcAngleDiffConstraint.cc 
@@ -41,8 +42,9 @@ set(TREX_FILES src/ROSAdapter.cc
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
 rospack_add_library(executive_trex_pr2_g ${TREX_FILES})
-rospack_add_executable(bin/trexdebug src/Executive.cc)
-target_link_libraries(bin/trexdebug executive_trex_pr2_g Utils_g TREX_g)
+target_link_libraries(executive_trex_pr2_g Utils_g TREX_g)
+rospack_add_executable(bin/trexdebug src/main.cc)
+target_link_libraries(bin/trexdebug executive_trex_pr2_g )
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
 # rospack_add_gtest_build_flags excludes the target from all, on the
@@ -52,8 +54,9 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-rospack_add_executable(bin/trexfast src/Executive.cc)
-target_link_libraries(bin/trexfast executive_trex_pr2_o Utils_o TREX_o)
+target_link_libraries(executive_trex_pr2_o Utils_o TREX_o)
+rospack_add_executable(bin/trexfast src/main.cc)
+target_link_libraries(bin/trexfast executive_trex_pr2_o)
 rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
 # rospack_add_gtest_build_flags excludes the target from all, on the

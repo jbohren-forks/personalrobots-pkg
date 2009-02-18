@@ -23,14 +23,14 @@ namespace TREX{
     /**
      * Creates and instance of the singleton and adds a reference.
      */
-    static ExecutiveId request();
+    static ExecutiveId request(bool playback = false);
 
     /**
      * Releases a reference to the singleton.
      */
     static void release();
 
-    Executive();
+    Executive(bool playback);
 
     ~Executive();
 

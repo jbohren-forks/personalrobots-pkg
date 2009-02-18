@@ -28,62 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
-
-@mainpage
-
-@htmlinclude manifest.html
-
-@b exec_trex is a demonstration of using the TREX hybrid executive
-for planning and control. It uses the EUROPA-2 constraint-based temporal planning library
-to represent plan state, do planning, write models etc. Right now this is
-a crude integration which will evolve to include more generalized integration patterns to
-ROS nodes.
-
-<hr>
-
-@section usage Usage
-@verbatim
-$ exec_trex_g_rt cfgFile
-@endverbatim
-
-@param cfgFile Is the TREX configuration file which defines initial inputs and goals.
-
-@todo
-
-@par Example
-
-@verbatim
-$ exec_trex_g_rt exec.cfg
-@endverbatim
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- @b "state"/Planner2DState : current planner state (e.g., goal reached, no
-path)
-
-Publishes to (name/type):
-- @b "goal"/Planner2DGoal : goal for the robot.
-
-@todo
-
-<hr>
-
-@section parameters ROS parameters
-
-- None
-
- **/
-
-// For integration of testing. Ros console needs to be defined early to avoid conflict in warning
-// declaration somewhere in the include tree.
-#include <gtest/gtest.h>
 #include <ros/console.h>
 
-#include "TestMonitor.hh"
 #include "Nddl.hh"
 #include "Components.hh"
 #include "Logger.hh"
@@ -115,26 +61,11 @@ Publishes to (name/type):
 #include <stdlib.h>
 #include <unistd.h>
 
-bool g_playback = false;
-
 TREX::ExecutiveId node;
 
 namespace TREX {
 
   ExecutiveId Executive::s_id;
-
-  /**
-   * @brief Utilty to check for an argument in an arg list
-   */
-  bool isArg(int argc, char** argv, const char* argName){
-    for(int i=0;i<argc;i++){
-      std::string toCheck(argv[i]);
-      if(toCheck.find(argName) == 0)
-	return true;
-    }
-
-    return false;
-  }
 
   /**
    * Executive class implementation.
@@ -144,9 +75,9 @@ namespace TREX {
   /**
    * @brief Singleton accessor
    */
-  ExecutiveId Executive::request(){
+  ExecutiveId Executive::request(bool playback){
     if(s_id == ExecutiveId::noId()){
-      new Executive();
+      new Executive(playback);
     }
     return s_id;
   }
@@ -154,8 +85,8 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive()
-    : ros::Node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(g_playback)
+  Executive::Executive(bool playback)
+    : ros::Node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -280,84 +211,5 @@ namespace TREX {
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
     }
   }
-
-}
-
-/**
- * @brief Handle cleanup on exit
- */
-void cleanup(){
-  if(node.isId()){
-    node->shutdown();
-    delete (ros::Node*) node;
-  }
-  exit(0);
-}
-
-/**
- * Test for validating expected output. This will have to evolve
- */
-TEST(trex, validateOutput){
-  bool success = TREX::TestMonitor::success();
-  if(!success){
-    ROS_ERROR("\n%s", TREX::TestMonitor::toString().c_str());
-  }
-
-  ASSERT_EQ(success, true);
-}
-
-int main(int argc, char **argv)
-{
-  signal(SIGINT,  &TREX::signalHandler);
-  signal(SIGTERM, &TREX::signalHandler);
-  signal(SIGQUIT, &TREX::signalHandler);
-  signal(SIGKILL, &TREX::signalHandler);
-
-  ros::init(argc, argv);
-
-  if(TREX::isArg(argc, argv, "--help")){
-    std::cout << "\n";
-    std::cout << "Welcome! TREX is an executive for supervisory  control of an autonomous system. TREX requires the following ROS parameters:\n";
-    std::cout << "* trex/input_file: An xml file that defines the agent control configuration.\n";
-    std::cout << "* trex/path:       A search path for locating input files. This should include a location for\n";
-    std::cout << "                   the input configuration file, as well as locations for agent initialization files (nddl files)\n";
-    std::cout << "* trex/log_dir:    An output directory for TREX log files.\n";
-    std::cout << "\n";
-    std::cout << "Usage: trexfast  [--help | --playback]\n";
-    std::cout << "--help:            Provides this message!\n";
-    std::cout << "--playback:        Use if debugging a previous run. Expects an xml observation log file as input named <your_agent_name>.log\n";
-    std::cout << "                   and a clock log file names clock.log.\n";
-    return 0;
-  }
-
-  int success = 0;
-
-  g_playback = TREX::isArg(argc, argv, "--playback");
-
-  try{
-    node = TREX::Executive::request();
-    node->run();
-  }
-  catch(char* e){
-    ROS_INFO("Caught %s. Shutting down.\n", e);
-    success = -1;
-  }
-  catch(...){
-    ROS_INFO("Caught Unknown Exception!. Shutting down.\n");
-    success = -1;
-  }
-
-  node->shutdown();
-  delete (ros::Node*) node;
-  node = TREX::ExecutiveId::noId();
-
-
-  // Parse command line arguments to see if we must apply test case validation
-  if(TREX::isArg(argc, argv, "--gtest")){
-    testing::InitGoogleTest(&argc, argv);
-    success = RUN_ALL_TESTS();
-  }
-
-  return success;
 }
 

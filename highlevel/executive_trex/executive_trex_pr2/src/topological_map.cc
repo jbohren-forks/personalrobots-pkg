@@ -190,11 +190,24 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
     return 0;
   }
 
+
+  TopologicalMapAccessor* TopologicalMapAccessor::_singleton = NULL;
+
   /**
-   * Topological Map Accessor Implementation
+   * Topological Map Accessor Implementation. Note that it is basically just an interface.
    */
+  TopologicalMapAccessor::TopologicalMapAccessor(){
+    if(_singleton != NULL)
+      delete _singleton;
+
+    _singleton = this;
+  }
+
+  TopologicalMapAccessor::~TopologicalMapAccessor(){
+    _singleton = NULL;
+  }
+
   TopologicalMapAccessor* TopologicalMapAccessor::instance(){
-    static TopologicalMapAccessor* sl_instance = NULL;
-    return sl_instance;
+    return _singleton;
   }
 }
