@@ -4,7 +4,7 @@ rospack(calonder_descriptor)
 
 #rospack_add_boost_directories()
 
-add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
+add_definitions(-Wall -O3 -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
 #add_definitions(-Wall -O0 -g -DDEBUG)
 rospack_add_library(calonder src/randomized_tree.cpp src/rtree_classifier.cpp src/patch_generator.cpp)
 
@@ -22,4 +22,4 @@ rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers)
 
 # Commenting out because test is broken by the functions hard-coded to
 # assume d = 176, t = 50
-#rospack_add_pyunit(test/directed.py)
+rospack_add_pyunit(test/directed.py)

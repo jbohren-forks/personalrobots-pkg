@@ -106,14 +106,13 @@ inline void sum_50t_176c(uint8_t **pp, uint8_t *sig, uint16_t *temp)
   ttemp = (__m128i *)temp;
 
   // empty ttemp[]
-  tzero = _mm_xor_si128(tzero,tzero);     // set to zero
+  tzero = _mm_set_epi32(0, 0, 0, 0);
   for (int i=0; i<22; i++)
     ttemp[i] = tzero;
 
   for (int j=0; j<48; j+=16)
     {
       // empty ssig[]
-      tzero = _mm_xor_si128(tzero,tzero);
       for (int i=0; i<11; i++)
 	ssig[i] = tzero;
 
@@ -182,7 +181,6 @@ inline void sum_50t_176c(uint8_t **pp, uint8_t *sig, uint16_t *temp)
 	}
 
       // unpack to ttemp buffer and add
-      tzero = _mm_xor_si128(tzero,tzero);
       ttemp[0] = _mm_add_epi16(_mm_unpacklo_epi8(ssig[0],tzero),ttemp[0]);
       ttemp[1] = _mm_add_epi16(_mm_unpackhi_epi8(ssig[0],tzero),ttemp[1]);
       ttemp[2] = _mm_add_epi16(_mm_unpacklo_epi8(ssig[1],tzero),ttemp[2]);

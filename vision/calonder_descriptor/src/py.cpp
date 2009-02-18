@@ -104,64 +104,97 @@ typedef struct {
 static void
 signature_dealloc(PyObject *self)
 {
-  signature_t *pc = (signature_t*)self;
-  free(pc->data);
+  signature_t *ps = (signature_t*)self;
+  free(ps->data);
   PyObject_Del(self);
 }
 
-PyObject *signature_dump(PyObject *self, PyObject *args)
+PyObject *signature_reduce(PyObject *self, PyObject *args)
 {
-  signature_t *ps = (signature_t*)self;
-  PyObject* list = PyList_New(0);
-  for (int i = 0; i < ps->size; ++i)
-    PyList_Append(list, PyFloat_FromDouble(ps->data[i]));
-  return list;
+  signature_t* ps = (signature_t*)self;
+  return Py_BuildValue("(O(s#))", self->ob_type, (char*)ps->data, (int)(ps->size * sizeof(SigType)));
 }
 
-/* Method table */
-static PyMethodDef signature_methods[] = {
-  {"dump", signature_dump, METH_VARARGS},
-  {NULL, NULL},
+static int signature_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+  signature_t *object = (signature_t*)self;
+  char *s;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &s, &len))
+    return -1;
+  object->size = len;
+  posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
+  memcpy(object->data, s, object->size * sizeof(SigType));
+}
+
+static char doc_signature_MODULE[] = "doc for signature\n";
+
+static struct PyMethodDef signature_methods[] =
+{
+  {"__reduce__", (PyCFunction)signature_reduce, 0, NULL},
+  {NULL,          NULL}
 };
 
-static PyObject *
-signature_GetAttr(PyObject *self, char *attrname)
+static PyObject *signature_repr(PyObject *self)
 {
-  return Py_FindMethod(signature_methods, self, attrname);
+  signature_t* ps = (signature_t*)self;
+  char str[100 + 2 * ps->size];
+  sprintf(str, "<signature(%d ", ps->size);
+  char *d = str + strlen(str);
+  size_t i;
+  for (i = 0; i < ps->size; i++) {
+    sprintf(d, "%02x", ps->data[i]);
+    d += 2;
+  }
+  sprintf(d, ")>");
+  return PyString_FromString(str);
 }
 
+
 static PyTypeObject signature_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,
-    "signature",
-    sizeof(signature_t),
-    0,
-    (destructor)signature_dealloc,
-    0,
-    (getattrfunc)signature_GetAttr,
-    0,
-    0,
-    0, // repr
-    0,
-    0,
-    0,
+  PyObject_HEAD_INIT(&PyType_Type)
+  0,                                      /*size*/
+  "calonder.signature",                   /*name*/
+  sizeof(signature_t),                    /*basicsize*/
+  0,                                      /*itemsize*/
 
-    0,
-    0,
-    0,
-    0,
-    0,
-    
-    0,
-    
-    Py_TPFLAGS_CHECKTYPES,
+  /* methods */
+  (destructor)signature_dealloc,          /*dealloc*/
+  (printfunc)NULL,                        /*print*/
+  NULL,                                   /*getattr*/
+  NULL,                                   /*setattr*/
+  NULL,                                   /*compare*/
+  NULL,                                   /*repr*/
+  NULL,                                   /*as_number*/
+  NULL,                                   /*as_sequence*/
+  NULL,                                   /*as_mapping*/
+  (hashfunc)NULL,                         /*hash*/
+  (ternaryfunc)NULL,                      /*call*/
+  (reprfunc)signature_repr,               /*str*/
 
-    0,
-    0,
-    0,
-    0
+  /* Space for future expansion */
+  0L,0L,0L,
 
-    /* the rest are NULLs */
+  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+  doc_signature_MODULE,                   /* Documentation string */
+  0,                                      /* tp_traverse */
+  0,                                      /* tp_clear */
+  0,                                      /* tp_richcompare */
+  0,                                      /* tp_weaklistoffset */
+  0,                                      /* tp_iter */
+  0,                                      /* tp_iternext */
+  signature_methods,                      /* tp_methods */
+  0,                                      /* tp_members */
+  0,                                      /* tp_getset */
+  0,                                      /* tp_base */
+  0,                                      /* tp_dict */
+  0,                                      /* tp_descr_get */
+  0,                                      /* tp_descr_set */
+  0,                                      /* tp_dictoffset */
+  (initproc)signature_init,               /* tp_init */
+  PyType_GenericAlloc,                    /* tp_alloc */
+  0                                       /* tp_new */
 };
 
 typedef struct {
@@ -317,7 +350,6 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
     return NULL;
 
   IplImage *cva;
-  IplImage subrect;
   PyObject *imob = im2arr((CvArr**)&cva, pim);
   if (!imob) assert(0);
 
@@ -332,8 +364,6 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
     int x, y;
     if (!PyArg_ParseTuple(t, "ii", &x, &y))
         return NULL;
-    // cvGetSubRect(cva, (CvMat*)&subrect, cvRect(x - 16, y - 16, 32, 32));
-    // cvCopy(&subrect, input);
 
     cvSetImageROI(cva, cvRect(x - 16, y - 16, 32, 32));
     cvCopy(cva, input);
@@ -457,8 +487,12 @@ static PyMethodDef methods[] = {
 
 extern "C" void initcalonder()
 {
-    PyObject *m, *d;
+  PyObject *m, *d;
 
-    m = Py_InitModule("calonder", methods);
-    d = PyModule_GetDict(m);
+  signature_Type.tp_new = PyType_GenericNew;
+  if (PyType_Ready(&signature_Type) < 0)
+    return;
+  m = Py_InitModule("calonder", methods);
+  PyModule_AddObject(m, "signature", (PyObject *)&signature_Type);
+  d = PyModule_GetDict(m);
 }
