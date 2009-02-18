@@ -567,7 +567,8 @@ protected:
     
     /** Wait for a change in the environment and recompute the motion plan */
     void replanToStateThread(void)
-    {
+    {	
+	ros::Duration eps(0.001);
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
@@ -583,26 +584,37 @@ protected:
 	    currentState(m_currentPlanToStateRequest.start_state);
 	    m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
 	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
+	    bool foundSolution = solution.get_states_size() > 0;
 	    
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
 	    m_currentPlanStatus.distance = distance;
 	    m_currentPlanStatus.done = trivial ? 1 : 0;
-	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    m_currentPlanStatus.valid = foundSolution ? 1 : 0;
 	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
 	    m_statusLock.unlock();	    
 	    
 	    if (trivial)
 		break;
 	    
-	    while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
-		m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    if (foundSolution)
+		// wait for a map update
+		while (m_currentRequestType == R_STATE && !m_collisionMonitorChange)
+		    m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    else
+	    {
+		// give a chance to the map to update itself
+		m_continueReplanningLock.unlock();
+		eps.sleep();
+		m_continueReplanningLock.lock();
+	    }
 	}
     }
 
     /** Wait for a change in the environment and recompute the motion plan */
     void replanToPositionThread(void)
-    {		
+    {	
+	ros::Duration eps(0.001);
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
@@ -619,19 +631,29 @@ protected:
 	    currentState(m_currentPlanToPositionRequest.start_state);
 	    m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;
 	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
-	    
+	    bool foundSolution = solution.get_states_size() > 0;
+
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
 	    m_currentPlanStatus.distance = distance;
 	    m_currentPlanStatus.done = trivial ? 1 : 0;
-	    m_currentPlanStatus.valid = solution.get_states_size() > 0 ? 1 : 0;
+	    m_currentPlanStatus.valid = foundSolution ? 1 : 0;
 	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
 	    m_statusLock.unlock();
 	    
 	    if (trivial)
 		break;
-	    while (m_currentRequestType == R_POSITION && !m_collisionMonitorChange)
-		m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    
+	    if (foundSolution)
+		while (m_currentRequestType == R_POSITION && !m_collisionMonitorChange)
+		    m_collisionMonitorCondition.wait(m_continueReplanningLock);
+	    else
+	    {
+		// give a chance to the map to update itself
+		m_continueReplanningLock.unlock();
+		eps.sleep();
+		m_continueReplanningLock.lock();
+	    }
 	}
     }
     
