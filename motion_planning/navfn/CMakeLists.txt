@@ -8,20 +8,43 @@ cmake_minimum_required (VERSION 2.4.6)
 #set (ROS_BUILD_TYPE Debug)
 set (ROS_BUILD_TYPE Release)
 
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions (-Wall)
 rospack (navfn)
 
-#include (CheckIncludeFile)
-#check_include_file (pgm.h NAVFN_HAVE_NETPGM)
-#if (${NAVFN_HAVE_NETPGM})
-  # should probably also check for libnetpbm existence...
- # message (STATUS "OK found pgm.h")
-#else (${NAVFN_HAVE_NETPGM})
- # message (FATAL_ERROR "pgm.h not found (this could probably be made optional)")
-#endif (${NAVFN_HAVE_NETPGM})
-
 rospack_add_library (navfn src/navfn.cpp)
 
-rospack_add_executable (navtest src/navtest.cpp src/navwin.cpp)
-target_link_libraries (navtest navfn -lfltk -lnetpbm)
+### The problem with FindFLTK is that it only reports success if *all*
+### fltk components are installed, but we only need the core library.
+# include (FindFLTK)
+include (CheckIncludeFileCXX)
+check_include_file_cxx (FL/Fl.H NAVFN_HAVE_FLTK)
+message (STATUS "NAVFN_HAVE_FLTK: ${NAVFN_HAVE_FLTK}")
+if (NAVFN_HAVE_FLTK)
+  message (STATUS "FLTK found: adding navtest to build")
+  rospack_add_executable (navtest src/navtest.cpp src/navwin.cpp)
+  target_link_libraries (navtest navfn -lfltk)
+else (NAVFN_HAVE_FLTK)
+  message (STATUS "FLTK not found: cannot build navtest")
+endif (NAVFN_HAVE_FLTK)
+
+### For some reason (on cmake-2.4.7 at least) the "check" for pgm.h
+### always succeeds, even if pgm.h is not installed. It seems to be
+### caused by a bug in the rule that attempts to build the C source:
+### instead of directly calling e.g. 'gcc -c
+### /CMakeFiles/CMakeTmp/CheckIncludeFile.c' it goes through some make
+### infrastructure, which reports "Nothing to be done for
+### `CMakeFiles/cmTryCompileExec.dir/build'" and calls that a success.
+###
+### As a workaround we simply force everyone to install libnetpbm
+#
+# include (CheckIncludeFile)
+# check_include_file (pgm.h NAVFN_HAVE_NETPBM)
+# message (STATUS "NAVFN_HAVE_NETPBM: ${NAVFN_HAVE_NETPBM}")
+# if (NAVFN_HAVE_NETPBM)
+#   message (STATUS "found pgm.h")
+#   add_definitions (-DNAVFN_HAVE_NETPBM)
+target_link_libraries (navfn -lnetpbm)
+# else (NAVFN_HAVE_NETPBM)
+#   message (STATUS "pgm.h not found (optional)")
+# endif (NAVFN_HAVE_NETPBM)
