@@ -13,7 +13,8 @@ rospack_add_compile_flags(starfeature -save-temps -march=pentium3 -msse3)
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
 
-rospack_add_library(pystarfeature src/pydetector.cpp src/detector.cpp src/integral.cpp src/keypoint.cpp)
+rospack_add_library(pystarfeature src/pydetector.cpp)
+target_link_libraries(pystarfeature starfeature)
 set_target_properties(pystarfeature PROPERTIES OUTPUT_NAME starfeature PREFIX "")
 rospack_add_compile_flags(pystarfeature -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)
 
