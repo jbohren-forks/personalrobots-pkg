@@ -5,6 +5,7 @@
 #include <executive_trex_pr2/topological_map.h>
 #include "ConstrainedVariable.hh"
 #include "Token.hh"
+#include <map_server/image_loader.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -34,8 +35,6 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
     checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
-    
-  map_connector_constraint::~map_connector_constraint(){}
     
   /**
    * @brief When the connector id is bound, we bind the values for x, y, and th based on a lookup in the topological map.
@@ -80,7 +79,7 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
    */
   void map_get_region_from_position_constraint::handleExecute(){
     if(_x.isSingleton() && _y.isSingleton()){
-      unsigned int region_id = TopologicalMapAccessor::instance()->get_region(_x.getSingletonValue, _y.getSingletonValue());
+      unsigned int region_id = TopologicalMapAccessor::instance()->get_region(_x.getSingletonValue(), _y.getSingletonValue());
       _region.set(region_id);
     }
   }
@@ -93,8 +92,6 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 						     const std::vector<ConstrainedVariableId>& variables)
     :Constraint(name, propagatorName, constraintEngine, variables){}
     
-  map_connected_constraint::~map_connected_constraint(){}
-    
   void map_connected_constraint::handleExecute(){}
     
     
@@ -104,8 +101,6 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 						       const ConstraintEngineId& constraintEngine,
 						       const std::vector<ConstrainedVariableId>& variables)
     :Constraint(name, propagatorName, constraintEngine, variables){}
-    
-  map_is_doorway_constraint::~map_is_doorway_constraint(){}
     
   void map_is_doorway_constraint::handleExecute(){}
     
@@ -223,6 +218,8 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
    * Map Adapter implementation
    */
   TopologicalMapAdapter::TopologicalMapAdapter(const std::string& map_file_name){
+    robot_srvs::StaticMap::Response resp;
+    loadMapFromFile(&resp, map_file_name.c_str(), 0.25, false);
   }
 
   TopologicalMapAdapter::~TopologicalMapAdapter(){
@@ -269,11 +266,9 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 
   bool TopologicalMapAdapter::get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b){
     try{
-      std::vector<unsigned int> regions; // Should be exactly 2
-      regions = _map->adjacentRegions(connector_id);
-      checkError(regions.size() == 2, "Should be exactly 2 regions per connector. Found " << regions.size());
-      region_a = regions[0];
-      region_b = regions[1];
+      topological_map::RegionPair pair = _map->adjacentRegions(connector_id);
+      region_a = pair.first;
+      region_b = pair.second;
       return true;
     }
     catch(...){}

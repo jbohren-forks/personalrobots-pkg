@@ -1,17 +1,19 @@
 /**
- * This file provudes unit tests for components used to integrate with a toplogical map. Note that the map
+ * This file provides unit tests for components used to integrate with a toplogical map. Note that the map
  * on question is a simplified component for testing pruposes. However, it should be sufficient for testing
  * the constraints and flaw handler capabilities for integrating a topological map representation
  * int NDDL and TREX
  * @author Conor McGann
  */
 
-
 #include <executive_trex_pr2/topological_map.h>
 #include <set>
 #include <gtest/gtest.h>
 
-TEST(executive_trex_pr2, map_connector_constraint){
+using namespace executive_trex_pr2;
+
+TEST(executive_trex_pr2, map_accessor){
+  TopologicalMapAdapter map("someFile.bmp");
 }
 
 int main(int argc, char** argv){

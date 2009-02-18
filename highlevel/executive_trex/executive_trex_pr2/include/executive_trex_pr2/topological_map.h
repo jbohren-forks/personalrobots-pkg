@@ -3,8 +3,8 @@
  * @brief Implements bindings for constraints and other queries for accessing the topological map
  */
 
-#ifndef _TOPOLOGICAL_MAP_H_
-#define _TOPOLOGICAL_MAP_H_
+#ifndef EXECUTIVE_TREX_PR2_TOPOLOGICAL_MAP_H_
+#define EXECUTIVE_TREX_PR2_TOPOLOGICAL_MAP_H_
 
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
@@ -18,6 +18,7 @@
 #include "Logger.hh"
 #include "FlawFilter.hh"
 #include "UnboundVariableDecisionPoint.hh"
+#include <topological_map/topological_map.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -35,15 +36,12 @@ namespace executive_trex_pr2 {
 			     const ConstraintEngineId& constraintEngine,
 			     const std::vector<ConstrainedVariableId>& variables);
     
-    ~map_connector_constraint();
-    
-    void handleExecute();
+    virtual void handleExecute();
     
   private:
-    IntervalIntDomain& m_connector;
-    IntervalDomain& m_x;
-    IntervalDomain& m_y;
-    IntervalDomain& m_th;
+    IntervalIntDomain& _connector;
+    IntervalDomain& _x;
+    IntervalDomain& _y;
   };
 
   /**
@@ -56,13 +54,12 @@ namespace executive_trex_pr2 {
 					    const LabelStr& propagatorName,
 					    const ConstraintEngineId& constraintEngine,
 					    const std::vector<ConstrainedVariableId>& variables);
-    
-    ~map_get_region_from_position_constraint();
-    
-    void handleExecute();
+    virtual void handleExecute();
     
   private:
-    
+    IntervalIntDomain& _region;
+    IntervalDomain& _x;
+    IntervalDomain& _y;
   };
 
   /**
@@ -76,9 +73,7 @@ namespace executive_trex_pr2 {
 			     const ConstraintEngineId& constraintEngine,
 			     const std::vector<ConstrainedVariableId>& variables);
     
-    ~map_connected_constraint();
-    
-    void handleExecute();
+    virtual void handleExecute();
     
   private:
     
@@ -95,9 +90,7 @@ namespace executive_trex_pr2 {
 			      const ConstraintEngineId& constraintEngine,
 			      const std::vector<ConstrainedVariableId>& variables);
     
-    ~map_is_doorway_constraint();
-    
-    void handleExecute();
+    virtual void handleExecute();
     
   private:
     
@@ -111,12 +104,12 @@ namespace executive_trex_pr2 {
   public:
     map_connector_filter(const TiXmlElement& configData);
 
-    bool test(const EntityId& entity);
+    virtual bool test(const EntityId& entity);
 
   private:
-    const LabelStr m_source;
-    const LabelStr m_final;
-    const LabelStr m_target;
+    const LabelStr _source;
+    const LabelStr _final;
+    const LabelStr _target;
   };
 
 
@@ -141,10 +134,10 @@ namespace executive_trex_pr2 {
     double g_cost(unsigned int from, unsigned int to) const;
     double h_cost(unsigned int from, unsigned int to) const;
 
-    const LabelStr m_source;
-    const LabelStr m_final;
-    std::list<Choice> m_sorted_choices;
-    std::list<Choice>::iterator m_choice_iterator;
+    const LabelStr _source;
+    const LabelStr _final;
+    std::list<Choice> _sorted_choices;
+    std::list<Choice>::iterator _choice_iterator;
   };
 
 
@@ -177,13 +170,13 @@ namespace executive_trex_pr2 {
      * @brief Get position details for a connector
      * @return true if the given connector id was valid, otherwise false.
      */
-    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y, double& theta) = 0;
+    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y) = 0;
 
     /**
      * @brief Get the connectors of a particular region
      * @return true if the given region id was valid, otherwose false.
      */
-    virtual bool get_region_connectors(unsigned int region_id, std::list<unsigned int>& connectors) = 0;
+    virtual bool get_region_connectors(unsigned int region_id, std::vector<unsigned int>& connectors) = 0;
 
     /**
      * @brief Get the regions of a particular connector
@@ -193,9 +186,10 @@ namespace executive_trex_pr2 {
 
     /**
      * @brief Test if a given region is a doorway
-     * @return true if a doorway, otherwise false. A 0 id region is not a doorway.
+     * @param result set to true if a doorway, otherwise false.
+     * @return true if it is a valid region, otherwise false
      */
-    virtual bool is_doorway(unsigned int region_id) = 0;
+    virtual bool is_doorway(unsigned int region_id, bool& result) = 0;
 
     /**
      * @brief Get the cost to go from a given 2D point to a connector. The point must be in a region
@@ -217,6 +211,35 @@ namespace executive_trex_pr2 {
 
   private:
     static TopologicalMapAccessor* _singleton;
+  };
+
+  /**
+   * @brief This class implements and adapter to the topological map derived from a bottleneck analysis of an occupancy grid
+   */
+  class TopologicalMapAdapter: public TopologicalMapAccessor {
+  public:
+    TopologicalMapAdapter(const std::string& map_file_name);
+
+    virtual ~TopologicalMapAdapter();
+
+    virtual unsigned int get_region(double x, double y);
+
+    virtual unsigned int get_connector(double x, double y);
+
+    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y);
+
+    virtual bool get_region_connectors(unsigned int region_id, std::vector<unsigned int>& connectors);
+
+    virtual bool get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
+
+    virtual bool is_doorway(unsigned int region_id, bool& result);
+
+    virtual double get_g_cost(double from_x, double from_y, unsigned int connector_id);
+
+    virtual double get_h_cost(unsigned int connector_id, double to_x, double to_y);
+
+  private:
+    topological_map::TopologicalMapPtr _map;
   };
 }
 
