@@ -162,7 +162,7 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
   number_of_channels_ = number_of_channels;
     
   T temp;
-  temp.resize(number_of_channels);
+  temp.resize(number_of_channels_);
   data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
   temp_storage_.resize(number_of_observations_);
   

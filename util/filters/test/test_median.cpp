@@ -59,8 +59,15 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
   FilterBase<std::vector<float> > * filter = new MedianFilter<std_vector_float>();
-  EXPECT_TRUE(filter->configure(rows,"5"));
+  filter->configure(rows, config );
+  
+
   float input1[] = {1,2,3,4,5};
   float input1a[] = {1,2,3,4,5};
   std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
@@ -84,8 +91,13 @@ TEST(MedianFilter, ThreeRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
   FilterBase<std::vector<float> > * filter = new MedianFilter<std_vector_float>();
-  filter->configure(rows,"5");
+  filter->configure(rows, config );
+  
   float input1[] = {0,1,2,3,4};
   std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
   float input2[] = {1,2,3,4,5};
