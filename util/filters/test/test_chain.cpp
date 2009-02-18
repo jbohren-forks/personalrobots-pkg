@@ -93,13 +93,10 @@ TEST(FilterChain, configuring){
   
 }
 
-TEST(FilterChain, Misconfigured){
-  printf("Chain test starting\n");
+TEST(FilterChain, MisconfiguredNumberOfChannels){
   filters::FilterChain<std_vector_float > chain;
-  //filters::FilterChain<float> chain;
 
 
-  //  chain.add("TestFilter", "");
   chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
   chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
 
@@ -117,6 +114,21 @@ TEST(FilterChain, Misconfigured){
 
 }
 
+TEST(FilterChain, OverlappingNamesPrevious){
+  filters::FilterChain<std_vector_float > chain;
+
+
+  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
+  EXPECT_FALSE(chain.add("<filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"));
+
+}
+TEST(FilterChain, OverlappingNamesSelf){
+  filters::FilterChain<std_vector_float > chain;
+
+
+  EXPECT_FALSE(chain.add("<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>"));
+
+}
 
 
 

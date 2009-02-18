@@ -75,7 +75,7 @@ public:
 
        
     TiXmlElement *config = doc.RootElement();
-    for (  ; config; config->NextSiblingElement("filter"))
+    for (  ; config; config = config->NextSiblingElement("filter"))
     {
 
         
@@ -84,13 +84,14 @@ public:
 
    
        boost::shared_ptr<filters::FilterBase<T> > p(filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-       result = result &&  p->configure(size, config);    
-        //reference_pointers_.push_back(p);
+       printf("type: %s\n", p.get()->getType().c_str());
+       result = result &&  p.get()->configure(size, config);    
+       reference_pointers_.push_back(p);
         
         
     
       printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
-      config->Attribute("name"),  p);
+             config->Attribute("name"),  p.get());
   
     }
     
@@ -101,18 +102,6 @@ public:
     return result;
   };
 
- /*
- filters::FilterBase<T>* getFilterByName(std::string name)
-  {
-    typename std::vector<boost::shared_ptr<filters::FilterReference<T> > >::iterator it;
-    for (it = reference_pointers_.begin();
-         it != reference_pointers_.end(); it++)
-      if ((*it).get()->name_.c_str() == name)
-        return (*it).get()->filter_;
-
-    return NULL;
-  }
-  */
 
   /** \brief Add filters to the list of filters to run on incoming data 
    * This will not configure, you must call configure before they will 
@@ -122,11 +111,15 @@ public:
     configured_ = false;
     
  
-    doc.Parse(xml_config.c_str()); 
-   /* 
-    temp.Parse(xml_config.c_str());
-    
-    TiXmlElement *config = temp.RootElement();
+    //Parse the incoming xml into a temporary doc to test against.
+    TiXmlDocument temp_doc;
+    temp_doc.Parse(xml_config.c_str());
+    TiXmlElement *config = temp_doc.RootElement();
+    TiXmlElement *self_config = temp_doc.RootElement();
+    TiXmlElement *full_config = doc.RootElement();
+
+
+    //Verify incoming xml for proper naming and structure    
     if (!config)
     {
       ROS_ERROR("The XML given to add could not be parsed.");
@@ -139,15 +132,17 @@ public:
   \"filters\" as the root tag");
       return false;
     }
-    
+
+    //Step into the filter list if necessary
     if (config->ValueStr() == "filters")
     {
       config = config->FirstChildElement("filter");
     }
 
+    //Iterate over all filter in filters (may be just one)
     for (; config; config = config->NextSiblingElement("filter"))
     {
-      printf("FIlter NAME %s\n", config->Attribute("name"));
+      printf("Filter NAME %s\n", config->Attribute("name"));
 
       if (!config->Attribute("type"))
       {
@@ -161,18 +156,41 @@ public:
       }
       else
       {
-        //printf("name=: %s\n", config->Attribute("name"));
-        //if (getFilterByName(config->Attribute("name")))
-        //{
-        //  ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
-        //  return false;
-       // }
-        boost::shared_ptr<filters::FilterReference<T> > p(new filters::FilterReference<T>(config->Attribute("type"), config->Attribute("name"), config));
-        reference_pointers_.push_back(p);
-        printf("%s filter added to vector\n", config->Attribute("type"));
+        //Check for name collisions with already added filters
+        for (; full_config ; full_config = full_config->NextSiblingElement("filter"))
+        {
+          printf("Checking against NAME %s( %s )\n", full_config->Attribute("name"), config->Attribute("name"));
+          if (!strcmp(full_config->Attribute("name"), config->Attribute("name")))
+          {
+            ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
+            return false;
+          }
+        }
+        if (!self_config)
+          printf("SERIOUSLY no self_config\n");
+        else //Check for name collisions with self
+        {
+          for (; self_config ; self_config = self_config->NextSiblingElement("filter"))
+          {
+            if (self_config->Attribute("name"))
+              printf("no self %s\n", self_config->Attribute("name"));
+            if (config->Attribute("name"))
+              printf("no config %s\n", config->Attribute("name"));
+            ///\todo fixme crashing with double free
+            /*            if (!strcmp(self_config->Attribute("name"), config->Attribute("name")))
+            {
+              ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
+              return false;
+              }*/
+          }
+        }
       }
     }
-    */
+    
+    
+    //No all verifications passed so add it to the global doc.
+    doc.Parse(xml_config.c_str()); 
+
     return true;
   };
 
@@ -201,10 +219,8 @@ private:
 
   T buffer0_; ///<! A temporary intermediate buffer
   T buffer1_; ///<! A temporary intermediate buffer
-  //std::vector<T> buffer0_; ///<! A temporary intermediate buffer
-  //  std::vector<T> buffer1_; ///<! A temporary intermediate buffer
   bool configured_; ///<! whether the system is configured  
-  TiXmlDocument doc;
+  TiXmlDocument doc; ///<! Storage for configuration data
 };
 
 template <typename T>
