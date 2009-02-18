@@ -34,7 +34,14 @@
 
 using namespace topological_map;
 using namespace std;
+
+using std::cout;
+using std::endl;
+using boost::extents;
 using boost::shared_ptr;
+using topological_map::OccupancyGrid;
+using topological_map::TopologicalMapPtr;
+using topological_map::topologicalMapFromGrid;
 
 
 // Helpers
@@ -156,6 +163,34 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_TRUE(isRearrangement(n3,en32,2));
   EXPECT_TRUE(isRearrangement(n5,en5,1));
   EXPECT_EQ(3u, m.allRegions().size());
+}
+
+
+void setV (topological_map::OccupancyGrid& grid, unsigned r0, unsigned dr, unsigned rmax, unsigned c0, unsigned dc, unsigned cmax, bool val) 
+{
+  for (unsigned r=r0; r<rmax; r+=dr) {
+    for (unsigned c=c0; c<cmax; c+=dc) {
+      grid[r][c] = val;
+    }
+  }
+}
+
+
+TEST(TopologicalMap, Creation)
+{
+  OccupancyGrid grid(extents[21][24]);
+  setV(grid, 0, 1, 21, 0, 1, 24, false);
+  setV(grid, 7, 7, 21, 0, 1, 24, true);
+  setV(grid, 0, 1, 21, 8, 8, 24, true);
+  setV(grid, 3, 7, 21, 8, 8, 24, false);
+  setV(grid, 7, 7, 21, 4, 8, 24, false);
+  
+  TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 2, 1, 1, 0, "local");
+
+  EXPECT_EQ(m->allRegions().size(), 33u);
+  EXPECT_EQ(m->regionType(m->containingRegion(Cell2D(1,1))), 0);
+  EXPECT_EQ(m->regionType(m->containingRegion(Point2D(.35,.82))), 1);
+
 }
 
 int main (int argc, char** argv)

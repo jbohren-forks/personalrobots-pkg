@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
 
@@ -42,10 +43,13 @@ namespace topological_map
 
 using std::vector;
 using std::string;
+using std::ostream;
+using std::pair;
 
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
+typedef pair<RegionId, RegionId> RegionPair;
 
 struct Point2D 
 {
@@ -84,14 +88,19 @@ public:
 
   /// \return vector (of length 2) of ids of regions touching the given connector
   /// \throws UnknownConnectorException
-  vector<RegionId> adjacentRegions (const ConnectorId id) const;
+  RegionPair adjacentRegions (const ConnectorId id) const;
 
   /// \return Type of this region
   /// \throws UnknownRegionException
   int regionType (const RegionId id) const;
-  
+
   /// \return Vector of id's of neighboring regions to region \a r
+  /// \throws UnknownRegionException
   RegionIdVector neighbors(const RegionId r) const;
+
+  /// \return (shared pointer to) set of actual grid cells in the region given \a id
+  /// \throws UnknownRegionException
+  RegionPtr regionCells (const RegionId id) const;
 
   /// \return Vector of all region ids.  This is a reference and may change.
   const RegionIdVector& allRegions() const;
@@ -125,11 +134,18 @@ typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
 
 /// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
 
 enum RegionType { OPEN, DOORWAY };
 
 
+/************************************************************
+ * Debug
+ ************************************************************/
+
+
+/// \brief Print the topological map in human readable form
+ostream& operator<< (ostream& str, const TopologicalMap& c);
 
 
 

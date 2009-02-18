@@ -73,6 +73,21 @@ public:
   UnknownRegionException(const RegionId id) : TopologicalMapException(boost::format("Unknown region id %1%") % id) {}
 };
 
+/// \brief Exception for unknown connector
+class UnknownConnectorException: public TopologicalMapException
+{
+public:
+  UnknownConnectorException (double x, double y) : TopologicalMapException(boost::format("Unknown connector for point %1%, %2%") % x % y) {}
+  UnknownConnectorException (int r, int c) : TopologicalMapException(boost::format("Unknown connector for cell %1%, %2%") % r % c) {}
+};
+
+/// \brief Exception for unknown connector id
+class UnknownConnectorIdException: public TopologicalMapException
+{
+public:
+  UnknownConnectorIdException (ConnectorId id) : TopologicalMapException(boost::format("Unknown connector id %1%") % id) {}
+};
+
 
 
 } // namespace topological_map

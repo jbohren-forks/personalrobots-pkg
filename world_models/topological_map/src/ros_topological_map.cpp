@@ -91,7 +91,8 @@ void RosTopologicalMap::loadMap (void)
 RosTopologicalMap::RosTopologicalMap (uint bottleneck_size, uint bottleneck_skip, uint inflation_radius, const string& pgm_output_dir)
 {
   loadMap();
-  topological_map_ = topologicalMapFromGrid(occupancy_grid_, 1.0, bottleneck_size, bottleneck_skip, inflation_radius, pgm_output_dir);
+  // For now width=size
+  topological_map_ = topologicalMapFromGrid(occupancy_grid_, 1.0, bottleneck_size, bottleneck_size, bottleneck_skip, inflation_radius, pgm_output_dir);
 }
 
 

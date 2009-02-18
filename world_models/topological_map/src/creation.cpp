@@ -65,6 +65,8 @@ using boost::undirectedS;
 using boost::adjacency_list;
 using boost::graph_traits;
 using boost::extents;
+using boost::associative_property_map;
+using boost::connected_components;
 using std::string;
 using std::ofstream;
 using std::endl;
@@ -72,6 +74,7 @@ using std::map;
 using std::queue;
 using std::set;
 using std::max;
+using std::pair;
 using std::min;
 
 namespace topological_map
@@ -84,7 +87,9 @@ namespace topological_map
 typedef adjacency_list<listS, listS, undirectedS, Cell2D> GridGraph;
 typedef graph_traits<GridGraph>::vertex_descriptor GridGraphVertex;
 typedef graph_traits<GridGraph>::adjacency_iterator GridGraphAdjacencyIterator;
+typedef pair<GridGraphAdjacencyIterator, GridGraphAdjacencyIterator> AdjIterPair;
 typedef map<GridGraphVertex, int> VertexIndexMap;
+typedef map<GridGraphVertex, int> VertexCompMap;
 
 namespace cell_stat { enum CellStatus { FREE, OBSTACLE, BOTTLENECK }; }
 typedef cell_stat::CellStatus CellStatus;
@@ -97,14 +102,24 @@ typedef multi_array<bool, 2> Mask;
 
 typedef const unsigned int cuint;
 
+
+struct Block
+{
+  Block(int top, int left, int bottom, int right) : top(top), left(left), bottom(bottom), right(right) {}
+  int top, left, bottom, right;
+};
+typedef vector<Block> Blocks;
+
+
 /// Class that contains the state of the bottleneck finding algorithm
 class BottleneckFinder
 {
 public:
-  BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint skip, const uint r, const string& dir);
+  BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint width, const uint skip, const uint r, const string& dir);
 
   void initializeFromGrid();
   void findBottlenecks();
+  void findOpenRegions();
   TopologicalMapPtr getTopologicalMap() const { return topological_map_; }
 
   bool distanceWithoutBlockExceeds (cuint top, cuint left, cuint bottom, cuint right, cuint c1r, cuint c1c, cuint c2r, cuint c2c, cuint threshold);
@@ -128,7 +143,9 @@ private:
   void disconnectLine (const int r0, const int c0, const int dr, const int dc, const int last);
   void connectLine (const int r0, const int c0, const int dr, const int dc, const int last);
   void disconnectBlock (cuint top, cuint left, cuint bottom, cuint right);
+  void disconnectBlock (const Block& block);
   void connectBlock (cuint top, cuint left, cuint bottom, cuint right);
+  void connectBlock (const Block& block);
   void markSmallestBottleneck (int top, int left, int bottom, int right, const int c1r, const int c1c, const int c2r, const int c2c, cuint threshold);
 
   /// Write the current cell status array to ppm file
@@ -136,7 +153,7 @@ private:
 
   // Input params
   const OccupancyGrid& grid_;
-  const uint bottleneck_size_, bottleneck_skip_, inflation_radius_;
+  const uint bottleneck_size_, bottleneck_width_, bottleneck_skip_, inflation_radius_;
   const string ppm_output_dir_;
   const uint num_rows_, num_cols_;
   
@@ -153,6 +170,9 @@ private:
 
   // The computed map
   TopologicalMapPtr topological_map_;
+
+  // Vector of found bottlenecks
+  Blocks bottlenecks_;
 
 };
 
@@ -188,8 +208,8 @@ uint numCols(const OccupancyGrid& grid)
 }
 
 
-BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint skip, const uint r, const string& dir) :
-  grid_(g), bottleneck_size_(size), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 
+BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint width, const uint skip, const uint r, const string& dir) :
+  grid_(g), bottleneck_size_(size), bottleneck_width_(width), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 
   num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(resolution))
 {
   ROS_ASSERT_MSG (max(num_rows_, num_cols_)<INT_MAX/2, "Grid size is %ux%u, which is too large to work given INT_MAX=%d", num_rows_, num_cols_, INT_MAX);
@@ -390,13 +410,24 @@ void BottleneckFinder::initializeFromGrid ()
 
 
 
+bool areNeighbors (const GridGraphVertex& v1, const GridGraphVertex& v2, const GridGraph& g)
+{
+  AdjIterPair iter_pair = adjacent_vertices(v1,g);
+  return (iter_pair.second != find(iter_pair.first, iter_pair.second, v2));
+}
+  
+
 // Connect r,c and r2,c2 if neither is an obstacle
 void BottleneckFinder::possiblyConnectCells (const int r, const int c, const int r2, const int c2) 
 {
   if (validCoords(r,c) && validCoords(r2,c2) && cell_status_array_[r][c]!=cell_stat::OBSTACLE && cell_status_array_[r2][c2]!=cell_stat::OBSTACLE) {
-    // Should also assert there's no existing edge
-    ROS_DEBUG_NAMED("connect", "Connecting (%u, %u) and (%d, %d)", r, c, r2, c2);
-    add_edge (cellVertex(r,c), cellVertex(r2,c2), grid_graph_);
+    GridGraphVertex v1=cellVertex(r,c);
+    GridGraphVertex v2=cellVertex(r2,c2);
+
+    if (!areNeighbors(v1,v2,grid_graph_)) {
+      ROS_DEBUG_NAMED("connect", "Connecting (%u, %u) and (%d, %d)", r, c, r2, c2);
+      add_edge (cellVertex(r,c), cellVertex(r2,c2), grid_graph_);
+    }
   }
 }
 
@@ -404,8 +435,13 @@ void BottleneckFinder::possiblyConnectCells (const int r, const int c, const int
 void BottleneckFinder::possiblyDisconnectCells (const int r, const int c, const int r2, const int c2) 
 {
   if (validCoords(r,c) && validCoords(r2,c2) && cell_status_array_[r][c]!=cell_stat::OBSTACLE && cell_status_array_[r2][c2]!=cell_stat::OBSTACLE) {
-    ROS_DEBUG_NAMED("connect", "Disconnecting (%u, %u) and (%d, %d)", r, c, r2, c2);
-    remove_edge (cellVertex(r,c), cellVertex(r2,c2), grid_graph_);
+    GridGraphVertex v1=cellVertex(r,c);
+    GridGraphVertex v2=cellVertex(r2,c2);
+    
+    if (areNeighbors(v1,v2,grid_graph_)) {
+      ROS_DEBUG_NAMED("connect", "Disconnecting (%u, %u) and (%d, %d)", r, c, r2, c2);
+      remove_edge (v1, v2, grid_graph_);
+    }
   }
 }
 
@@ -478,6 +514,12 @@ void BottleneckFinder::disconnectBlock (cuint top, cuint left, cuint bottom, cui
   disconnectLine (bottom, left, 1, 0, right);
 }
 
+void BottleneckFinder::disconnectBlock (const Block& block) 
+{
+  disconnectBlock (block.top, block.left, block.bottom, block.right);
+}
+
+
 void BottleneckFinder::connectBlock (cuint top, cuint left, cuint bottom, cuint right)
 {
   ROS_DEBUG_NAMED ("connect", "Connecting block (%u, %u) to (%u, %u)", top, left, bottom, right);
@@ -485,6 +527,12 @@ void BottleneckFinder::connectBlock (cuint top, cuint left, cuint bottom, cuint 
   connectLine (top, left, -1, 0, right);
   connectLine (top, right, 0, 1, bottom);
   connectLine (bottom, left, 1, 0, right);
+}
+
+
+void BottleneckFinder::connectBlock (const Block& block)
+{
+  connectBlock (block.top, block.left, block.bottom, block.right);
 }
 
 
@@ -527,9 +575,10 @@ struct BinarySearcher {
 
 
 // We know that the given block is a bottleneck w.r.t c1 and c2, and threshold
-// This function tries to shrink the block as much as possible while still retaining this property, and then marks the cells as bottlenecks
-inline void BottleneckFinder::markSmallestBottleneck (int top, int left, int bottom, int right, const int c1r, const int c1c, const int c2r, const int c2c, cuint threshold) 
+// This function tries to shrink the block as much as possible while still retaining this property, and then marks the cells as bottlenecks and adds the region to the graph
+inline void BottleneckFinder::markSmallestBottleneck (int top_orig, int left_orig, int bottom, int right, const int c1r, const int c1c, const int c2r, const int c2c, cuint threshold) 
 {
+  int top(top_orig), left(left_orig);
   ROS_ASSERT (distanceWithoutBlockExceeds(top, left, bottom, right, c1r, c1c, c2r, c2c, threshold));
 
   BinarySearcher b(&top, &left, &bottom, &right, c1r, c1c, c2r, c2c, threshold, this);
@@ -537,6 +586,24 @@ inline void BottleneckFinder::markSmallestBottleneck (int top, int left, int bot
   b.search (3, left-1, true);
   b.search (0, bottom+1, false);
   b.search (1, right+1, false);
+
+  ROS_ASSERT ((top<=bottom)&&(left<=right));
+  uint dy=bottom-top;
+  uint dx=right-left;
+  if (dy<bottleneck_width_) {
+    top -= (bottleneck_width_-dy);
+    if (top<top_orig) {
+      top=top_orig;
+      bottom=top+bottleneck_width_;
+    }
+  }
+  if (dx<bottleneck_width_) {
+    left -= (bottleneck_width_-dx);
+    if (left<left_orig) {
+      left=left_orig;
+      right=left+bottleneck_width_;
+    }
+  }
 
   
   ROS_DEBUG_NAMED ("find_bottlenecks", "Marking bottleneck between (%d, %d) and (%d, %d)", top, left, bottom, right);
@@ -547,6 +614,7 @@ inline void BottleneckFinder::markSmallestBottleneck (int top, int left, int bot
       }
     }
   }
+  bottlenecks_.push_back(Block(top, left, bottom, right));
 }
 
 void BottleneckFinder::findBottlenecks ()
@@ -584,7 +652,48 @@ void BottleneckFinder::findBottlenecks ()
 }
 
   
+void BottleneckFinder::findOpenRegions ()
+{
+  ROS_INFO_NAMED ("bottleneck_finder", "Constructing topological graph");
+  // First disconnect all the existing bottlenecks
+  for (Blocks::iterator iter=bottlenecks_.begin(); iter!=bottlenecks_.end(); ++iter) {
+    disconnectBlock (*iter);
+  }
 
+  // Compute connected components
+  VertexCompMap components;
+  associative_property_map<VertexCompMap> adapted_comps(components);
+  associative_property_map<VertexIndexMap> adapted_index_map(vertex_index_map_);
+  int numComps = connected_components(grid_graph_, adapted_comps, vertex_index_map(adapted_index_map));
+
+  // Add them to graph (should actually do this in a single loop)
+  for (int i=0; i<numComps; i++) {
+    MutableRegionPtr r(new Region);
+    for (VertexCompMap::iterator iter=components.begin(); iter!=components.end(); ++iter) {
+      if (iter->second==i) {
+        r->insert(grid_graph_[iter->first]);
+      }
+    }
+
+    // Add to graph
+    if (r->size()>0) {
+      Cell2D cell=*r->begin();
+      if (cell_status_array_[cell.r][cell.c]==cell_stat::FREE) {
+        topological_map_->addRegion(r, OPEN);
+      }
+      else {
+        topological_map_->addRegion(r, DOORWAY);
+      }
+    }
+  }
+  ROS_INFO_NAMED ("bottleneck_finder", "Done constructing topological graph");
+}  
+
+
+
+
+  
+  
 
 
 /************************************************************
@@ -592,12 +701,13 @@ void BottleneckFinder::findBottlenecks ()
  ************************************************************/
 
 
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir)
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir)
 {
-  BottleneckFinder b(grid, resolution, bottleneck_size, bottleneck_skip, inflation_radius, ppm_output_dir);
+  BottleneckFinder b(grid, resolution, bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, ppm_output_dir);
   b.initializeFromGrid();
   b.findBottlenecks();
-
+  b.findOpenRegions();
+  
   return b.getTopologicalMap();
 }
 
