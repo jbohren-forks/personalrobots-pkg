@@ -264,11 +264,11 @@ namespace robot_model
 		    double pos = m_mechanismState.joint_states[i].position;
 		    //printf("%d: %s\n", i, m_mechanismState.joint_states[i].name.c_str());
 		    if (m_mechanismState.joint_states[i].name == "base_joint" && m_haveBasePos) {
-        	        m_robotState->setParams(m_basePos, m_mechanismState.joint_states[i].name);
+        	        m_robotState->setParamsJoint(m_basePos, m_mechanismState.joint_states[i].name);
 		    } 
 		    else 
 		    {
-		        m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+		        m_robotState->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
 		    }
 		}
 	    }	 
@@ -278,7 +278,7 @@ namespace robot_model
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
 		    double pos = m_mechanismState.joint_states[i].position;
-		    m_robotStateSimple->setParams(&pos, m_mechanismState.joint_states[i].name);
+		    m_robotStateSimple->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
 		}
 	    }
 	    m_haveMechanismState = true;
@@ -293,7 +293,7 @@ namespace robot_model
 		    planning_models::KinematicModel::PlanarJoint* pj = 
 			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
 		    if (pj)
-		        m_robotState->setParams(m_basePos, pj->name);
+		        m_robotState->setParamsJoint(m_basePos, pj->name);
 		}
 	    stateUpdate();
 	}

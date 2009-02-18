@@ -493,46 +493,108 @@ namespace planning_models
 	    /** Mark all values as unseen */
 	    void reset(void);
 
+	    /** Mark all values in a group as unseen */
+	    void resetGroup(int groupID);
+
+	    /** Mark all values in a group as unseen */
+	    void resetGroup(const std::string &group);
+
 	    /** Set all the parameters to a given value */
 	    void setAll(const double value);
+
+	    /** Set all the parameters from a group to a given value */
+	    void setAllInGroup(const double value, const std::string &group);
+	    
+	    /** Set all the parameters from a group to a given value */
+	    void setAllInGroup(const double value, int groupID);
 
 	    /** Set all planar & floating joints to 0, so that the robot is in its own frame */
 	    void setInRobotFrame(void);
 	    
+	    /** Set the parameters for the complete robot. */
+	    bool setParams(const std::vector<double> &params);
+
+	    /** Set the parameters for the complete robot. */
+	    bool setParams(const double *params);
+
 	    /** Set the parameters for a given group. Return true if
 		any change was observed in either of the set
 		values. */
-	    bool setParams(const double *params, int groupID = -1);
+	    bool setParamsGroup(const std::vector<double> &params, const std::string &group);
+
+	    /** Set the parameters for a given group. Return true if
+		any change was observed in either of the set
+		values. */
+	    bool setParamsGroup(const std::vector<double> &params, int groupID);
 	    
+	    /** Set the parameters for a given group. Return true if
+		any change was observed in either of the set
+		values. */
+	    bool setParamsGroup(const double *params, const std::string &group);
+
+	    /** Set the parameters for a given group. Return true if
+		any change was observed in either of the set
+		values. */
+	    bool setParamsGroup(const double *params, int groupID);
+
 	    /** Given the name of a joint, set the values of the
 		parameters describing the joint. Return true if any
 		change was observed in the set value */
-	    bool setParams(const double *params, const std::string &name);
+	    bool setParamsJoint(const double *params, const std::string &name);
+
+	    /** Given the name of a joint, set the values of the
+		parameters describing the joint. Return true if any
+		change was observed in the set value */
+	    bool setParamsJoint(const std::vector<double> &params, const std::string &name);
 
 	    /** Given the name of a joint, get the values of the
 		parameters describing the joint. */
-	    const double* getParams(const std::string &name);
+	    const double* getParamsJoint(const std::string &name) const;
 	    
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;
 	    
 	    /** Get the offset for the parameter of a joint in a given group */
-	    int getPos(const std::string &name, int groupID = -1) const;
+	    int getJointIndexInGroup(const std::string &name, const std::string &group) const;
+
+	    /** Get the offset for the parameter of a joint in a given group */
+	    int getJointIndexInGroup(const std::string &name, int groupID) const;
 
 	    /** Copy the parameters for a given group to a destination address */
-	    void copyParams(double *params, int groupID = -1) const;
+	    void copyParamsGroup(std::vector<double> &params, const std::string &group) const;
+
+	    /** Copy the parameters for a given group to a destination address */
+	    void copyParamsGroup(std::vector<double> &params, int groupID) const;
+
+	    /** Copy the parameters for a given group to a destination address */
+	    void copyParamsGroup(double *params, const std::string &group) const;
+
+	    /** Copy the parameters for a given group to a destination address */
+	    void copyParamsGroup(double *params, int groupID) const;
+	    
+	    /** Copy all parameters to a destination address */
+	    void copyParams(double *params) const;
+
+	    /** Copy all parameters to a destination address */
+	    void copyParams(std::vector<double> &params) const;
 	    
 	    /** Copy the parameters describen a given joint */
-	    void copyParams(double *params, const std::string &name) const;
+	    void copyParamsJoint(double *params, const std::string &name) const;
 	    
+	    /** Check if all params in a group were seen */
+	    bool seenAllGroup(const std::string &group) const;
+
+	    /** Check if all params in a group were seen */
+	    bool seenAllGroup(int groupID) const;
+
 	    /** Check if all params were seen */
-	    bool seenAll(int groupID = -1);
+	    bool seenAll(void) const;
+	    
+	    /** Print the data from the state to screen */
+	    void print(std::ostream &out = std::cout) const;
 
 	    /** Print the missing joint names */
 	    void missing(int groupID = -1, std::ostream &out = std::cout);
-	    
-	    /** Print the data from the state to screen */
-	    void print(std::ostream &out = std::cout);
 	    
 	protected:
 	    

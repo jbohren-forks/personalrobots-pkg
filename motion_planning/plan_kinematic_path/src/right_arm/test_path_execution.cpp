@@ -95,9 +95,9 @@ public:
              	double to_send[controllerDim];
                 for (int i = 0 ;  i < controllerDim ; ++i)
 	            to_send[i] = 0.0;
-                sp->setParams(&val, joints[j]);
-                sp->copyParams(to_send, m_kmodel->getGroupID(groupName));
-		int index = sp->getPos(joints[j], m_kmodel->getGroupID(groupName));
+                sp->setParamsJoint(&val, joints[j]);
+                sp->copyParamsGroup(to_send, groupName);
+		int index = sp->getJointIndexInGroup(joints[j], groupName);
 		
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     traj.points[0].positions[i] = to_send[i];
@@ -140,7 +140,7 @@ public:
 		    printf("%f ", traj.points[0].positions[i]);
 		printf("\n");
 		
-		m_robotState->copyParams(to_send, m_kmodel->getGroupID(groupName));
+		m_robotState->copyParamsGroup(to_send, groupName);
                 printf("Achieved: ");
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     printf("%f ", to_send[i]);

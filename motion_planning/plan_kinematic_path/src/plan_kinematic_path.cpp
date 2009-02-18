@@ -209,7 +209,7 @@ protected:
 	
 	// get the current params for the robot's right arm
 	double cmd[7];
-	m_robotState->copyParams(cmd, m_kmodel->getGroupID(GROUPNAME));
+	m_robotState->copyParamsGroup(cmd, GROUPNAME);
 	
 	robot_msgs::KinematicPath stop_path;	
 	stop_path.set_states_size(1);
@@ -245,6 +245,7 @@ protected:
     void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
 	sendDisplay(path, model);
+	printPath(path);
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	m_node->publish("right_arm_trajectory_command", traj);
@@ -262,6 +263,18 @@ protected:
 	ROS_INFO("Sent planned path to display");
     }
 
+    void printPath(robot_msgs::KinematicPath &path)
+    {
+	printf("Path with %d states", (int)path.states.size());	
+	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
+	{
+	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
+		printf("%f ", path.states[i].vals[j]);	    
+	    printf("\n");
+	}
+	printf("\n");
+    }
+    
     robot_msgs::KinematicPlanStatus plan_status_;
     int                             plan_id_;
     bool                            robot_stopped_;

@@ -246,16 +246,7 @@ void stateParamsToMsg(planning_models::KinematicModel::StateParams *state,
 		      std::string group, std::vector<double>& conf) {
   conf.clear();
   //Copy the stateparams in to the req.
-  unsigned int len = model->getGroupDimension(model->getGroupID(group));
-  double* param = new double[len];
-  state->copyParams(param, model->getGroupID(group));
-  
-  for (unsigned int i = 0; i < len; i++) {
-    //ROS_INFO("%f", param[i]);
-    conf.push_back(param[i]);
-  }
-
-  delete[] param;
+  state->copyParamsGroup(conf, group);
 }
 
 
@@ -291,7 +282,7 @@ bool MoveArm::makePlan()
     ROS_ASSERT(axes == 1);
     double* param = new double[axes];
     param[0] = goalMsg.configuration[i].position;
-    state->setParams(param, goalMsg.configuration[i].name);
+    state->setParamsJoint(param, goalMsg.configuration[i].name);
     delete[] param;
   }
   goalMsg.unlock();

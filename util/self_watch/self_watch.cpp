@@ -155,7 +155,7 @@ protected:
 		    if (joint->usedParams == 1)
 		    {
 			double pos = m_mechanismState.joint_states[i].position;
-			bool this_changed = m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+			bool this_changed = m_robotState->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
 			change = change || this_changed;
 		    }
 		    //			else

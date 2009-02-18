@@ -240,7 +240,10 @@ namespace kinematic_planning
 		    planning_models::KinematicModel::PlanarJoint* pj = 
 			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
 		    if (pj)
-		        change = change || m_robotState->setParams(m_basePos, pj->name);
+		    {
+			bool this_changed = m_robotState->setParamsJoint(m_basePos, pj->name);
+			change = change || this_changed;
+		    }
 		}
 	    if (change)
 		stateUpdate();
@@ -276,7 +279,7 @@ namespace kinematic_planning
 			if (joint->usedParams == 1)
 			{
 			    double pos = m_mechanismState.joint_states[i].position;
-			    bool this_changed = m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+			    bool this_changed = m_robotState->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
 			    change = change || this_changed;
 			}
 			//			else

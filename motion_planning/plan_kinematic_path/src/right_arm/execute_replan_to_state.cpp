@@ -137,7 +137,7 @@ protected:
 	
 	// get the current params for the robot's right arm
 	double cmd[7];
-	m_robotState->copyParams(cmd, m_kmodel->getGroupID(GROUPNAME));
+	m_robotState->copyParamsGroup(cmd, GROUPNAME);
 	
 	robot_msgs::KinematicPath stop_path;	
 	stop_path.set_states_size(1);

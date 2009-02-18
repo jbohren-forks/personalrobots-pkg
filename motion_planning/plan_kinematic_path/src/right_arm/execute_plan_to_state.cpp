@@ -136,6 +136,9 @@ public:
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
 	{
+	    // print the path on screen
+	    printPath(s_res.value.path);
+	    
 	    // send the path to the visualizer
 	    sendDisplay(req.start_state, s_res.value.path, GROUPNAME);
 
@@ -229,6 +232,18 @@ protected:
 	dpath.path = path;
 	m_node->publish("display_kinematic_path", dpath);
 	ROS_INFO("Sent planned path to display");
+    }
+    
+    void printPath(robot_msgs::KinematicPath &path)
+    {
+	printf("Path with %d states", (int)path.states.size());	
+	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
+	{
+	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
+		printf("%f ", path.states[i].vals[j]);	    
+	    printf("\n");
+	}
+	printf("\n");
     }
     
     // check if straight line path is valid (motion_validator node)

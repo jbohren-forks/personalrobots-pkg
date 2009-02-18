@@ -428,15 +428,15 @@ TEST(FK, OneRobot)
 
     double tmpParam[3];
     tmpParam[0] = 0.1;
-    sp->setParams(tmpParam, "link_a_joint");
+    sp->setParamsJoint(tmpParam, "link_a_joint");
     EXPECT_FALSE(sp->seenAll());
 
     tmpParam[0] = -1.0;    
-    sp->setParams(tmpParam, "link_c_joint");
+    sp->setParamsJoint(tmpParam, "link_c_joint");
     EXPECT_FALSE(sp->seenAll());
     
     tmpParam[0] = 0.5; tmpParam[1] = 0.4; tmpParam[2] = 1.1;
-    sp->setParams(tmpParam, "base_link_joint");
+    sp->setParamsJoint(tmpParam, "base_link_joint");
     EXPECT_TRUE(sp->seenAll());
     
     EXPECT_EQ(0.5, sp->getParams()[0]);
