@@ -158,7 +158,7 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
     return false;
   }
   
-  number_of_observations_ = atof(p->Attribute("number_of_observations"));
+  number_of_observations_ = atoi(p->Attribute("number_of_observations"));
   number_of_channels_ = number_of_channels;
     
   T temp;
@@ -178,16 +178,18 @@ bool MedianFilter<T>::update(const T& data_in, T& data_out)
     return false;
   if (!configured_)
     return false;
+
   data_storage_->push_back(data_in);
 
 
   unsigned int length = data_storage_->size();
+ 
 
   for (uint32_t i = 0; i < number_of_channels_; i++)
   {
     for (uint32_t row = 0; row < length; row ++)
     {
-      temp_storage_[row] = data_storage_->at(row)[i];
+      temp_storage_[row] = (*data_storage_)[row][i];
     }
     data_out[i] = median(&temp_storage_[0], length);
   }

@@ -61,7 +61,12 @@ public:
 
   void push_back(const T& item)
   {
-    cb_.push_back(item);
+    if ( counter_ < cb_.size()) 
+    {
+      cb_[counter_] = item; 
+    }
+    else 
+      cb_.push_back(item);
     counter_ ++;
   };
   

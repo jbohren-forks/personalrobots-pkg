@@ -77,9 +77,9 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   {
     filter->update(v1, v1a);
 
-    for (int i = 1; i < length; i++)
+    for (int j = 1; j < length; j++)
     {
-      EXPECT_NEAR(input1[i], v1a[i], epsilon);
+       EXPECT_NEAR(input1[j], v1a[j], epsilon);
     }
   }
 

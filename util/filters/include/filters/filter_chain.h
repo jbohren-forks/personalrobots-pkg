@@ -38,16 +38,14 @@
 
 namespace filters
 {
-
+/*
 template <typename T>
 class FilterReference
 {
 public:
   FilterReference(const std::string& filter_type, const std::string& filter_name, TiXmlElement *filter_config): type_(filter_type), name_(filter_name), config_(filter_config)
   {
-    std::stringstream constructor_string;
-    constructor_string << filter_type << typeid(T).name();
-    filter_ = filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str());
+
     printf("Created filter at %p\n in reference %p\n", filter_, this);
   };
   ~FilterReference(){ printf("reference destructor -> deleting filter\n"); delete filter_; };
@@ -57,7 +55,7 @@ public:
   std::string name_;
   TiXmlElement *config_;
 };
-
+*/
 
 template <typename T>
 class FilterChain
@@ -75,14 +73,25 @@ public:
 
     bool result = true;    
 
-    // for each element in vector configure
-    typename std::vector<boost::shared_ptr<filters::FilterReference<T> > >::iterator it;
-    
-    for (  it = reference_pointers_.begin();
-           it != reference_pointers_.end(); it++) ///\todo check allignment of for 
+       
+    TiXmlElement *config = doc.RootElement();
+    for (  ; config; config->NextSiblingElement("filter"))
     {
-      printf("Configured %s filter at %p\n", (*it).get()->name_.c_str(), (*it).get());
-      result = result && it->get()->filter_->configure(size, it->get()->config_);
+
+        
+    std::stringstream constructor_string;
+    constructor_string << config->Attribute("type") << typeid(T).name();
+
+   
+       boost::shared_ptr<filters::FilterBase<T> > p(filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+       result = result &&  p->configure(size, config);    
+        //reference_pointers_.push_back(p);
+        
+        
+    
+      printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
+      config->Attribute("name"),  p);
+  
     }
     
     if (result == true)
@@ -92,6 +101,7 @@ public:
     return result;
   };
 
+ /*
  filters::FilterBase<T>* getFilterByName(std::string name)
   {
     typename std::vector<boost::shared_ptr<filters::FilterReference<T> > >::iterator it;
@@ -102,6 +112,7 @@ public:
 
     return NULL;
   }
+  */
 
   /** \brief Add filters to the list of filters to run on incoming data 
    * This will not configure, you must call configure before they will 
@@ -110,10 +121,12 @@ public:
   {
     configured_ = false;
     
-    TiXmlDocument doc;
-    doc.Parse(xml_config.c_str());
+ 
+    doc.Parse(xml_config.c_str()); 
+   /* 
+    temp.Parse(xml_config.c_str());
     
-    TiXmlElement *config = doc.RootElement();
+    TiXmlElement *config = temp.RootElement();
     if (!config)
     {
       ROS_ERROR("The XML given to add could not be parsed.");
@@ -134,6 +147,7 @@ public:
 
     for (; config; config = config->NextSiblingElement("filter"))
     {
+      printf("FIlter NAME %s\n", config->Attribute("name"));
 
       if (!config->Attribute("type"))
       {
@@ -147,16 +161,18 @@ public:
       }
       else
       {
-        if (getFilterByName(config->Attribute("name")))
-        {
-          ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
-          return false;
-        }
+        //printf("name=: %s\n", config->Attribute("name"));
+        //if (getFilterByName(config->Attribute("name")))
+        //{
+        //  ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
+        //  return false;
+       // }
         boost::shared_ptr<filters::FilterReference<T> > p(new filters::FilterReference<T>(config->Attribute("type"), config->Attribute("name"), config));
         reference_pointers_.push_back(p);
         printf("%s filter added to vector\n", config->Attribute("type"));
       }
     }
+    */
     return true;
   };
 
@@ -181,14 +197,14 @@ public:
   };
 
 private:
-  std::vector<boost::shared_ptr<filters::FilterReference<T> > > reference_pointers_;
+  std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;
 
   T buffer0_; ///<! A temporary intermediate buffer
   T buffer1_; ///<! A temporary intermediate buffer
   //std::vector<T> buffer0_; ///<! A temporary intermediate buffer
   //  std::vector<T> buffer1_; ///<! A temporary intermediate buffer
   bool configured_; ///<! whether the system is configured  
-
+  TiXmlDocument doc;
 };
 
 template <typename T>
@@ -202,27 +218,27 @@ bool FilterChain<T>::update (const T& data_in, T& data_out)
     result = true;
   }
   else if (list_size == 1)
-    result = reference_pointers_[0]->filter_->update(data_in, data_out);
+    result = reference_pointers_[0]->update(data_in, data_out);
   else if (list_size == 2)
   {
-    result = reference_pointers_[0]->filter_->update(data_in, buffer0_);
-    result = result && reference_pointers_[1]->filter_->update(buffer0_, data_out);
+    result = reference_pointers_[0]->update(data_in, buffer0_);
+    result = result && reference_pointers_[1]->update(buffer0_, data_out);
   }
   else
   {
-    result = reference_pointers_[0]->filter_->update(data_in, buffer0_);  //first copy in
+    result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
     for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last
     {
       if (i %2 == 1)
-        result = result && reference_pointers_[i]->filter_->update(buffer0_, buffer1_);
+        result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
       else
-        result = result && reference_pointers_[i]->filter_->update(buffer1_, buffer0_);
+        result = result && reference_pointers_[i]->update(buffer1_, buffer0_);
       
     }
     if (list_size % 2 == 1) // odd number last deposit was in buffer0
-      result = result && reference_pointers_.back()->filter_->update(buffer0_, data_out);
+      result = result && reference_pointers_.back()->update(buffer0_, data_out);
     else
-      result = result && reference_pointers_.back()->filter_->update(buffer1_, data_out);
+      result = result && reference_pointers_.back()->update(buffer1_, data_out);
   }
   return result;
             

@@ -71,6 +71,7 @@ TEST(FilterChain, configuring){
 
   //  chain.add("TestFilter", "");
   chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
+  printf("second\n");
   chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
 
   chain.configure(5);
