@@ -69,9 +69,6 @@ namespace kinematic_planning
 	    ompl::EST_t est = new ompl::EST(si);
 	    mp              = est;	
 	    
-	    bool setDim  = false;
-	    bool setProj = false;
-	    
 	    if (options.find("range") != options.end())
 	    {
 		double range = parseDouble(options["range"], est->getRange());
@@ -79,44 +76,11 @@ namespace kinematic_planning
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
-	    if (options.find("projection") != options.end())
-	    {
-		std::string proj = options["projection"];
-		std::vector<unsigned int> projection;
-		std::stringstream ss(proj);
-		while (ss.good())
-		{
-		    unsigned int comp;
-		    ss >> comp;
-		    projection.push_back(comp);
-		}
-		
-		est->setProjectionEvaluator(new ompl::OrthogonalProjectionEvaluator(projection));
-		
-		ROS_INFO("Projection is set to %s", proj.c_str());
-		setProj = true;	    
-	    }
+	    est->setProjectionEvaluator(getProjectionEvaluator(model, options));
 	    
-	    if (options.find("celldim") != options.end())
+	    if (est->getProjectionEvaluator() == NULL)
 	    {
-		std::string celldim = options["celldim"];
-		std::vector<double> cdim;
-		std::stringstream ss(celldim);
-		while (ss.good())
-		{
-		    double comp;
-		    ss >> comp;
-		    cdim.push_back(comp);
-		}
-		
-		est->setCellDimensions(cdim);
-		setDim = true;
-		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
-	    }
-	    
-	    if (!setDim || !setProj)
-	    {
-		ROS_WARN("Adding EST failed: need to set both 'projection' and 'celldim' for %s", model->groupName.c_str());
+		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 		return false;
 	    }
 	    else

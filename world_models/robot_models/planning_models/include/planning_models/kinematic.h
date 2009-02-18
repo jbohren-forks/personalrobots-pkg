@@ -177,7 +177,7 @@ namespace planning_models
 
 	    /** Update varTrans if this joint is part of the group indicated by groupID
 	     *  and recompute globalTrans using varTrans */
-	    const double* computeTransform(const double *params, int groupID = -1);
+	    const double* computeTransform(const double *params, int groupID);
 	    
 	    /** Update the value of VarTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params) = 0;
@@ -371,7 +371,7 @@ namespace planning_models
 	    unsigned int computeParameterNames(unsigned int pos);
 
 	    /** recompute globalTrans */
-	    const double* computeTransform(const double *params, int groupID = -1);
+	    const double* computeTransform(const double *params, int groupID);
 
 	    /** Extract the information needed by the joint given the URDF description */
 	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
@@ -611,10 +611,15 @@ namespace planning_models
 	    m_ignoreSensors = false;
 	    m_verbose = false;	    
 	    m_built = false;
+	    m_lastTransformParams = NULL;
+	    m_lastTransformGroup = -2;
 	}
 	
 	virtual ~KinematicModel(void)
 	{
+	    if (m_lastTransformParams)
+		delete[] m_lastTransformParams;
+	    
 	    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 		delete m_robots[i];
 	}
@@ -644,13 +649,19 @@ namespace planning_models
 	void         getJoints(std::vector<Joint*> &joints) const;
 
 	/** Get the names of the joints in a specific group */
-	void         getJointsInGroup(std::vector<std::string> &names, int groupID = -1) const;
+	void         getJointsInGroup(std::vector<std::string> &names, int groupID) const;
+	/** Get the names of the joints in a specific group */
+	void         getJointsInGroup(std::vector<std::string> &names, const std::string &name) const;
 
 	/** Returns the dimension of the group (as a state, not number of joints) */
-	unsigned int getGroupDimension(int groupID = -1) const;
+	unsigned int getGroupDimension(int groupID) const;
+	
+	/** Returns the dimension of the group (as a state, not number of joints) */
+	unsigned int getGroupDimension(const std::string &name) const;
 
 	void defaultState(void);
-	void computeTransforms(const double *params, int groupID = -1);
+	void computeTransformsGroup(const double *params, int groupID);
+	void computeTransforms(const double *params);
 	
 	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */
 	bool reduceToRobotFrame(void);
@@ -675,6 +686,11 @@ namespace planning_models
 	bool                              m_ignoreSensors;
 	bool                              m_verbose;    
 	bool                              m_built;
+	
+	/* Subsequent calls with the same argument should not redo computation; 
+	 * We simply store this state information and compare against it for next time */
+	double                           *m_lastTransformParams;
+	int                               m_lastTransformGroup;
 	
     private:
 	

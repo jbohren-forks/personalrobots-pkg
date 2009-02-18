@@ -77,7 +77,7 @@ TEST(Loading, EmptyRobot)
     EXPECT_EQ(std::string("myrobot"), model->getModelName());
     EXPECT_EQ((unsigned int)0, model->getRobotCount());
     EXPECT_EQ((unsigned int)0, model->getModelInfo().stateDimension);
-    EXPECT_EQ((unsigned int)0, model->getGroupDimension());
+    EXPECT_EQ((unsigned int)0, model->getGroupDimension(-1));
     
     std::vector<planning_models::KinematicModel::Link*> links;
     model->getLinks(links);
@@ -373,7 +373,7 @@ TEST(FK, OneRobot)
     EXPECT_EQ((unsigned int)5, model->getModelInfo().stateDimension);
 
     double param[5] = { 1, 1, 0.5, -0.5, 0.1 };
-    model->computeTransforms(param, model->getGroupID("one_robot::base"));
+    model->computeTransformsGroup(param, model->getGroupID("one_robot::base"));
     
     std::stringstream ss1;
     model->printModelInfo(ss1);
@@ -743,7 +743,7 @@ TEST(FK, MoreRobots)
     std::stringstream ss;
     model->printModelInfo(ss);
     double param[8] = { -1, -1, 0, 1.57, 0.0, 5, 5, 0 };
-    model->computeTransforms(param, model->getGroupID("more_robots::parts"));    
+    model->computeTransformsGroup(param, model->getGroupID("more_robots::parts"));    
     
     EXPECT_TRUE(sameStringIgnoringWS(MODEL3_INFO, ss.str()));
 

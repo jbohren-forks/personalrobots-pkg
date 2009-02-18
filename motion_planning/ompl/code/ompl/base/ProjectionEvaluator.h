@@ -32,67 +32,54 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
+#ifndef OMPL_BASE_PROJECTION_EVALUATOR_
+#define OMPL_BASE_PROJECTION_EVALUATOR_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
+#include "ompl/base/SpaceInformation.h"
 
-namespace kinematic_planning
+namespace ompl
 {
     
-    class RKPIKSBLSetup : public RKPPlannerSetup
+    /** Forward class declaration */
+    ForwardClassDeclaration(ProjectionEvaluator);	
+    
+    /** Abstract definition for a class computing projections */
+    class ProjectionEvaluator
     {
     public:
-	
-        RKPIKSBLSetup(void) : RKPPlannerSetup()
+	/** Destructor */
+	virtual ~ProjectionEvaluator(void)
 	{
-	    name = "IKSBL";	    
 	}
 	
-	virtual ~RKPIKSBLSetup(void)
+	/** Define the dimension (each component) of a grid cell. The
+	    number of dimensions set here must be the same as the
+	    dimension of the projection computed by the projection
+	    evaluator. */
+	void setCellDimensions(const std::vector<double> &cellDimensions)
 	{
-	    if (dynamic_cast<ompl::IKSBL*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
+	    m_cellDimensions = cellDimensions;
 	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-	    mp               = sbl;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], sbl->getRange());
-		sbl->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
 
-	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (sbl->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
+	void getCellDimensions(std::vector<double> &cellDimensions) const
+	{
+	    cellDimensions = m_cellDimensions;
 	}
+
+	/** Return the dimension of the projection defined by this evaluator */
+	virtual unsigned int getDimension(void) const = 0;
+	
+	/** Compute the projection as an array of double values */
+	virtual void operator()(const SpaceInformation::State *state, double *projection) const = 0;
+
+    protected:
+	
+	std::vector<double> m_cellDimensions;
 	
     };
-
-} // kinematic_planning
+    
+}
 
 #endif
-    

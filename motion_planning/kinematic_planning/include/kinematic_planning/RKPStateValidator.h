@@ -57,7 +57,7 @@ namespace kinematic_planning
 	virtual bool operator()(const ompl::SpaceInformation::State_t state) const
 	{
 	    m_model->lock.lock();
-	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	    
 	    bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);

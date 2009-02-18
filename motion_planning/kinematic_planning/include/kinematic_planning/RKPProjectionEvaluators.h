@@ -34,65 +34,52 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
+#ifndef KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
+#define KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
+#include <ompl/extension/samplingbased/kinematic/ProjectionEvaluatorKinematic.h>
+#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include "kinematic_planning/RKPModelBase.h"
 
 namespace kinematic_planning
 {
-    
-    class RKPIKSBLSetup : public RKPPlannerSetup
+
+    class LinkPositionProjectionEvaluator : public ompl::ProjectionEvaluator
     {
     public:
-	
-        RKPIKSBLSetup(void) : RKPPlannerSetup()
-	{
-	    name = "IKSBL";	    
-	}
-	
-	virtual ~RKPIKSBLSetup(void)
-	{
-	    if (dynamic_cast<ompl::IKSBL*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-	    mp               = sbl;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], sbl->getRange());
-		sbl->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
 
-	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (sbl->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
+        LinkPositionProjectionEvaluator(RKPModelBase *model, const std::string &linkName) : ompl::ProjectionEvaluator()
+	{
+	    m_model = model;
+	    m_link  = m_model->kmodel->getLink(linkName);
 	}
+	
+	/** Return the dimension of the projection defined by this evaluator */
+	virtual unsigned int getDimension(void) const
+	{
+	    return 3;
+	}
+		
+	/** Compute the projection as an array of double values */
+	virtual void operator()(const ompl::SpaceInformation::State *state, double *projection) const
+	{  
+	    const ompl::SpaceInformationKinematic::StateKinematic *kstate = static_cast<const ompl::SpaceInformationKinematic::StateKinematic*>(state);
+	    m_model->lock.lock();
+	    m_model->kmodel->computeTransformsGroup(kstate->values, m_model->groupID);
+	    const btVector3 &origin = m_link->globalTrans.getOrigin();
+	    projection[0] = origin.x();
+	    projection[1] = origin.y();
+	    projection[2] = origin.z();
+	    m_model->lock.unlock();
+	}
+	
+    protected:
+	
+	RKPModelBase                          *m_model;
+	planning_models::KinematicModel::Link *m_link;
 	
     };
-
-} // kinematic_planning
+    
+}
 
 #endif
-    

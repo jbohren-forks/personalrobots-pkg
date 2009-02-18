@@ -293,7 +293,7 @@ int main(int argc, char **argv)
         ros::Duration d(1.0);
 	d.sleep();
 	
-	while (1)
+	while (plan->ok())
 	{
             ros::Duration d(10.0);
 	    
@@ -311,6 +311,7 @@ int main(int argc, char **argv)
 	
 	plan->runRightArmToCoordinates();
 	*/
+	
 	plan->spin();
     }
     

@@ -125,7 +125,7 @@ namespace kinematic_planning
 
 	void update(ompl::SpaceInformationKinematic::StateKinematic_t state) const
 	{
-	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	}    
 	

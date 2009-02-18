@@ -225,23 +225,31 @@ public:
     /** Free the memory */
     virtual ~KinematicPlanning(void)
     {
+	ROS_INFO("A");
+	
+	
 	stopReplanning();
+	ROS_INFO("B");
 	stopPublishingStatus();
+	ROS_INFO("C");
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
+	ROS_INFO("D");
     }
     
-    bool isSafeToPlan(void)
+    bool isSafeToPlan(bool report)
     {
 	if (!isMapUpdated(m_intervalCollisionMap))
 	{
-	    ROS_WARN("Planning is not safe: map is not up to date");
+	    if (report)
+		ROS_WARN("Planning is not safe: map is not up to date");
 	    return false;
 	}
 	
 	if (!isStateUpdated(m_intervalKinematicState))
 	{
-	    ROS_WARN("Planning is not safe: kinematic state is not up to date");
+	    if (report)
+		ROS_WARN("Planning is not safe: kinematic state is not up to date");
 	    return false;
 	}
 	
@@ -295,8 +303,11 @@ public:
     
     void startPublishingStatus(void)
     {
-	m_publishStatus = true;	
-	m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this));
+	if (loadedRobot())
+	{
+	    m_publishStatus = true;	
+	    m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this));
+	}
     }
     
     void stopPublishingStatus(void)
@@ -358,7 +369,7 @@ public:
 	
 	bool result = false;
 	
-	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	res.value.unsafe = isSafeToPlan(true) ? 0 : 1;
 	result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
 	res.value.id = -1;
 	res.value.done = trivial ? 1 : 0;
@@ -379,7 +390,7 @@ public:
 	
 	bool result = false;
 	
-	res.value.unsafe = isSafeToPlan() ? 0 : 1;
+	res.value.unsafe = isSafeToPlan(true) ? 0 : 1;
 	result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
 	
 	res.value.id = -1;
@@ -455,7 +466,7 @@ protected:
 	{
 	    ros::Time nextTime = ros::Time::now() + duration;
 	    bool wait = true;
-	    while (wait && ros::Time::now() < nextTime)
+	    while (m_publishStatus && wait && ros::Time::now() < nextTime)
 	    {
 		delta.sleep();
 		if (m_statusLock.try_lock())
@@ -465,7 +476,7 @@ protected:
 		    m_statusLock.unlock();
 		}
 	    }
-	    
+
 	    bool issueStop = false;	    
 	    bool replan_inactive = m_continueReplanningLock.try_lock();
 	    
@@ -495,7 +506,7 @@ protected:
 	    // the sent safety value is the one before the motion
 	    // planning started
 	    if (m_currentPlanStatus.path.states.empty())
-		m_currentPlanStatus.unsafe = isSafeToPlan() ? 0 : 1;
+		m_currentPlanStatus.unsafe = isSafeToPlan(false) ? 0 : 1;
 	    
 	    publish("kinematic_planning_status", m_currentPlanStatus);
 	    
@@ -579,7 +590,7 @@ protected:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
-	    bool safe = isSafeToPlan();
+	    bool safe = isSafeToPlan(true);
 
 	    currentState(m_currentPlanToStateRequest.start_state);
 	    m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
@@ -626,7 +637,7 @@ protected:
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
-	    bool safe = isSafeToPlan();
+	    bool safe = isSafeToPlan(true);
 	    
 	    currentState(m_currentPlanToPositionRequest.start_state);
 	    m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;

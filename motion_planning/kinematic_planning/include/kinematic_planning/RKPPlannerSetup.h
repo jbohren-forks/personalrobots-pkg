@@ -40,12 +40,15 @@
 #include "kinematic_planning/RKPModelBase.h"
 #include "kinematic_planning/RKPStateValidator.h"
 #include "kinematic_planning/RKPSpaceInformation.h"
+#include "kinematic_planning/RKPProjectionEvaluators.h"
+#include "kinematic_planning/RKPDistanceEvaluators.h"
 
 #include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 
 #include <ros/console.h>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cassert>
 
 #include <vector>
@@ -89,6 +92,55 @@ namespace kinematic_planning
 	    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
 	}
 	
+	virtual ompl::ProjectionEvaluator_t getProjectionEvaluator(RKPModelBase *model, const std::map<std::string, std::string> &options) const
+	{
+	    std::map<std::string, std::string>::const_iterator pit = options.find("projection");
+	    std::map<std::string, std::string>::const_iterator cit = options.find("celldim");
+	    ompl::ProjectionEvaluator_t pe = NULL;
+	    
+	    if (pit != options.end() && cit != options.end())
+	    {
+		std::string proj = pit->second;
+		boost::trim(proj);
+		std::string celldim = cit->second;
+		boost::trim(celldim);
+		
+		if (proj.substr(0, 4) == "link")
+		{
+		    std::string linkName = proj.substr(4);
+		    boost::trim(linkName);
+		    pe = new LinkPositionProjectionEvaluator(model, linkName);
+		}
+		else
+		{
+		    std::vector<unsigned int> projection;
+		    std::stringstream ss(proj);
+		    while (ss.good())
+		    {
+			unsigned int comp;
+			ss >> comp;
+			projection.push_back(comp);
+		    }
+		    pe = new ompl::OrthogonalProjectionEvaluator(projection);
+		}
+		
+		std::vector<double> cdim;
+		std::stringstream ss(celldim);
+		while (ss.good())
+		{
+		    double comp;
+		    ss >> comp;
+		    cdim.push_back(comp);
+		}
+		
+		pe->setCellDimensions(cdim);
+		ROS_INFO("Projection is set to %s", proj.c_str());
+		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
+	    }
+	    
+	    return pe;
+	}
+
 	virtual void preSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
 	    ROS_INFO("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());

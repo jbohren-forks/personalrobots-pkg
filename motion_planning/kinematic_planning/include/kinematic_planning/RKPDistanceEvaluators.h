@@ -32,65 +32,17 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_
-#define OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_
+#ifndef KINEMATIC_PLANNING_RKP_DISTANCE_EVALUATORS
+#define KINEMATIC_PLANNING_RKP_DISTANCE_EVALUATORS
 
-#include "ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h"
+#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include "kinematic_planning/RKPModelBase.h"
 
-namespace ompl
+namespace kinematic_planning
 {
-    
-    /** Forward class declaration */
-    ForwardClassDeclaration(ProjectionEvaluator);	
-    
-    /** Abstract definition for a class computing projections */
-    class ProjectionEvaluator
-    {
-    public:
-	/** Destructor */
-	virtual ~ProjectionEvaluator(void)
-	{
-	}
-	
-	/** Return the dimension of the projection defined by this evaluator */
-	virtual unsigned int getDimension(void) const = 0;
-	
-	/** Compute the projection as an array of double values */
-	virtual void operator()(const SpaceInformationKinematic::StateKinematic_t state, double *projection) const = 0;
-    };
-    
-    /** Forward class declaration */
-    ForwardClassDeclaration(OrthogonalProjectionEvaluator);	
-    
-    /** Definition for a class computing orthogonal projections */
-    class OrthogonalProjectionEvaluator : public ProjectionEvaluator
-    {
-    public:
-	
-        OrthogonalProjectionEvaluator(const std::vector<unsigned int> &components) : ProjectionEvaluator()
-	{
-	    m_components = components;
-	}
-	
-	virtual unsigned int getDimension(void) const
-	{
-	    return m_components.size();
-	}
-	
-	virtual void operator()(const SpaceInformationKinematic::StateKinematic_t state, double *projection) const
-	{
-	    for (unsigned int i = 0 ; i < m_components.size() ; ++i)
-		projection[i] = state->values[m_components[i]];
-	}
-	
-    protected:
-	
-	std::vector<unsigned int> m_components;
-	
-    };	
-    
+    // no additional distance evaluators at this point    
 }
 
 #endif

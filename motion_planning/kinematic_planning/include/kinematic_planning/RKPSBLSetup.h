@@ -69,9 +69,6 @@ namespace kinematic_planning
 	    ompl::SBL_t sbl = new ompl::SBL(si);
 	    mp              = sbl;	
 	    
-	    bool setDim  = false;
-	    bool setProj = false;
-	    
 	    if (options.find("range") != options.end())
 	    {
 		double range = parseDouble(options["range"], sbl->getRange());
@@ -79,42 +76,9 @@ namespace kinematic_planning
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
-	    if (options.find("projection") != options.end())
-	    {
-		std::string proj = options["projection"];
-		std::vector<unsigned int> projection;
-		std::stringstream ss(proj);
-		while (ss.good())
-		{
-		    unsigned int comp;
-		    ss >> comp;
-		    projection.push_back(comp);
-		}
-		
-		sbl->setProjectionEvaluator(new ompl::OrthogonalProjectionEvaluator(projection));
-		
-		ROS_INFO("Projection is set to %s", proj.c_str());
-		setProj = true;	    
-	    }
+	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
 	    
-	    if (options.find("celldim") != options.end())
-	    {
-		std::string celldim = options["celldim"];
-		std::vector<double> cdim;
-		std::stringstream ss(celldim);
-		while (ss.good())
-		{
-		    double comp;
-		    ss >> comp;
-		    cdim.push_back(comp);
-		}
-		
-		sbl->setCellDimensions(cdim);
-		setDim = true;
-		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
-	    }
-	    
-	    if (!setDim || !setProj)
+	    if (sbl->getProjectionEvaluator() == NULL)
 	    {
 		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 		return false;

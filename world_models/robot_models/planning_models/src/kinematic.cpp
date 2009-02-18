@@ -73,13 +73,34 @@ void planning_models::KinematicModel::defaultState(void)
 	    params[i] = 0.0;
 	else
 	    params[i] = (m_mi.stateBounds[2 * i] + m_mi.stateBounds[2 * i + 1]) / 2.0;
-    
-    computeTransforms(params);
+    m_lastTransformGroup = -2;
+    computeTransformsGroup(params, -1);
 }
 
-void planning_models::KinematicModel::computeTransforms(const double *params, int groupID)
+void planning_models::KinematicModel::computeTransforms(const double *params)
+{
+    computeTransformsGroup(params, -1);
+}
+
+void planning_models::KinematicModel::computeTransformsGroup(const double *params, int groupID)
 {
     assert(m_built);
+    
+    const unsigned int gdim = getGroupDimension(groupID);
+    if (m_lastTransformGroup == groupID)
+    {
+	bool same = true;
+	for (unsigned int i = 0 ; i < gdim ; ++i)
+	    if (params[i] != m_lastTransformParams[i])
+	    {
+		same = false;
+		break;
+	    }
+	if (same)
+	    return;
+    }
+    m_lastTransformGroup = groupID;
+    memcpy(m_lastTransformParams, params,  gdim * sizeof(double));
     
     if (groupID >= 0)
     {
@@ -425,6 +446,8 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool 
 	for (unsigned int j = 0 ; j < m_robots[i]->joints.size() ; ++j)
 	    m_jointMap[m_robots[i]->joints[j]->name] = m_robots[i]->joints[j];
     }
+
+    m_lastTransformParams = new double[m_mi.stateDimension];
     
     computeParameterNames();
     defaultState();
@@ -492,6 +515,16 @@ void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) con
 unsigned int planning_models::KinematicModel::getGroupDimension(int groupID) const
 {
     return groupID >= 0 ? m_mi.groupStateIndexList[groupID].size() : m_mi.stateDimension;
+}
+
+unsigned int planning_models::KinematicModel::getGroupDimension(const std::string &group) const
+{
+    return getGroupDimension(getGroupID(group));
+}
+
+void planning_models::KinematicModel::getJointsInGroup(std::vector<std::string> &names, const std::string &group) const
+{
+    getJointsInGroup(names, getGroupID(group));
 }
 
 void planning_models::KinematicModel::getJointsInGroup(std::vector<std::string> &names, int groupID) const

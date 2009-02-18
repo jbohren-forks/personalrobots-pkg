@@ -32,67 +32,48 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
+#ifndef OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_KINEMATIC_
+#define OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_KINEMATIC_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
+#include "ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h"
+#include "ompl/base/ProjectionEvaluator.h"
 
-namespace kinematic_planning
+namespace ompl
 {
     
-    class RKPIKSBLSetup : public RKPPlannerSetup
+    /** Forward class declaration */
+    ForwardClassDeclaration(OrthogonalProjectionEvaluator);	
+    
+    /** Definition for a class computing orthogonal projections */
+    class OrthogonalProjectionEvaluator : public ProjectionEvaluator
     {
     public:
 	
-        RKPIKSBLSetup(void) : RKPPlannerSetup()
+        OrthogonalProjectionEvaluator(const std::vector<unsigned int> &components) : ProjectionEvaluator()
 	{
-	    name = "IKSBL";	    
+	    m_components = components;
 	}
 	
-	virtual ~RKPIKSBLSetup(void)
+	virtual unsigned int getDimension(void) const
 	{
-	    if (dynamic_cast<ompl::IKSBL*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
+	    return m_components.size();
 	}
 	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+	virtual void operator()(const SpaceInformation::State *state, double *projection) const
 	{
-	    preSetup(model, options);
-	    
-	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-	    mp               = sbl;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], sbl->getRange());
-		sbl->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-
-	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (sbl->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
+	    const SpaceInformationKinematic::StateKinematic *kstate = static_cast<const SpaceInformationKinematic::StateKinematic*>(state);
+	    for (unsigned int i = 0 ; i < m_components.size() ; ++i)
+		projection[i] = kstate->values[m_components[i]];
 	}
 	
-    };
-
-} // kinematic_planning
+    protected:
+	
+	std::vector<unsigned int> m_components;
+	
+    };	
+    
+}
 
 #endif
-    
