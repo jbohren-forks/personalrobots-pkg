@@ -34,9 +34,9 @@
 
 
 
-static const double no_observation_timeout_s = 1.0;//0.5;
+static const double no_observation_timeout_s = 0.5;
 static const double max_track_jump_m         = 1.0; 
-static const double max_meas_jump_m          = 1.0;//2.0;
+static const double max_meas_jump_m          = 1.0;
 static const double leg_pair_separation_m    = 1.0;
 
 
@@ -81,16 +81,16 @@ public:
   ros::Time meas_time_;
   vector<unsigned char>     color_;
 
-  TransformListener& tfl_;
+  TransformListener& robot_state_;
 
-  BFL::StatePosVel sys_sigma_;
+  StatePosVel sys_sigma_;
   TrackerKalman filter_;
 
   Stamped<Point> prop_loc_;
 
   // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
-    : tfl_(tfl),
+    : robot_state_(tfl),
       sys_sigma_(Vector3(0.05, 0.05, 0.05), Vector3(1.0, 1.0, 1.0)),
       filter_("tracker_name",sys_sigma_)
   {
@@ -103,7 +103,7 @@ public:
     meas_time_ = loc.stamp_;
 
     Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
-    tfl_.setTransform(pose);
+    robot_state_.setTransform(pose);
 
     StatePosVel prior_sigma(Vector3(0.1,0.1,0.1), Vector3(0.0000001, 0.0000001, 0.0000001));
     filter_.initialize(loc, prior_sigma, time_.toSec());    
@@ -132,11 +132,11 @@ public:
     Stamped<Point> orig_loc(Point(0,0,0),  meas_time_, id_);
     Stamped<Point> inter_loc;
 
-    tfl_.transformPoint("odom", orig_loc, inter_loc);
+    robot_state_.transformPoint("odom", orig_loc, inter_loc);
       
     inter_loc.stamp_ = time_;
       
-    tfl_.transformPoint("odom", inter_loc, prop_loc_);
+    robot_state_.transformPoint("odom", inter_loc, prop_loc_);
     */
     
   }
@@ -144,7 +144,7 @@ public:
   void update(Stamped<Point> loc)
   {
     Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
-    tfl_.setTransform(pose);
+    robot_state_.setTransform(pose);
 
     meas_time_ = loc.stamp_;
     time_ = meas_time_;
@@ -194,7 +194,7 @@ static const string fixed_frame = "odom";
 class LegDetector : public Node
 {
 public:
-  TransformListener tfl_;
+  TransformListener robot_state_;
 
   robot_msgs::PointCloud filt_cloud_;
 
@@ -220,7 +220,7 @@ public:
 
   LegDetector() : 
     Node("laser_processor"), 
-    tfl_(*this), 
+    robot_state_(*this), 
     mask_count_(0), 
     connected_thresh_(0.06), 
     feat_count_(0)
@@ -240,10 +240,10 @@ public:
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
 
     // subscribe to topics
-    people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&tfl_, this,  
+    people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&robot_state_, this,  
 									    boost::bind(&LegDetector::peopleCallback, this, _1), 
 									    "people_tracker_filter", fixed_frame, 10);
-    laser_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tfl_, this,  
+    laser_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&robot_state_, this,  
 							       boost::bind(&LegDetector::laserCallback, this, _1), 
 							       "scan", fixed_frame, 10);
 
@@ -299,9 +299,9 @@ public:
     for (; it1 != end; ++it1)
     {
       //      try {
-      //tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      //robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
       //                     orig_loc, fixed_frame, dest_loc);
-	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	//}
 	//catch (tf::TransformException& ex) {
 	//cout << ex.what() << endl;
@@ -349,9 +349,9 @@ public:
 
 	// Compute the distance between the person and this leg.
 	//try {
-	//tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+	//robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
 	//	      orig_loc, fixed_frame, dest_loc);
-	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	  //}
 	  //catch (tf::TransformException& ex) {
 	  //cout << ex.what() << endl;
@@ -361,8 +361,8 @@ public:
 	
 	// Get the distance between the two legs
         printf("get the dist between the legs\n");
-	//tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc); 
+	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc); 
 	printf("done get dist\n");
         dist_between_legs = dest_loc.length();
 
@@ -406,9 +406,9 @@ public:
 
       // Get the distance between the leg and the person.
       //try {
-      //	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
+      //	robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
       //                    orig_loc, fixed_frame, dest_loc);
-      tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+      robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	//}
 	//catch (tf::TransformException& ex) {
 	//cout << ex.what() << endl;
@@ -437,8 +437,8 @@ public:
 
 	// Get the distance between the leg and the person.
 	//try {
-	//tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
-	tfl_.transformPoint((*it2)->id_, (*it2)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);  
+	//robot_state_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+	robot_state_.transformPoint((*it2)->id_, (*it2)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);  
 	//}
 	  //catch (tf::TransformException& ex) {
 	  //cout << ex.what() << endl;
@@ -448,8 +448,8 @@ public:
 	
 	// Get the distance between the two legs
         printf("Get the dist between the legs, take 2\n");
-	//tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	tfl_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
 	printf("Done get dist, take 2\n");
         dist_between_legs = dest_loc.length();
 
@@ -495,7 +495,7 @@ public:
 //       // transform people position into local frame with the origin at the tracker position 
 //       Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
 //       loc[2] = 0.0; // Ignore the height of the person measurement.
-//       tfl_.transformPoint((*it)->id_, people_meas->header.stamp,
+//       robot_state_.transformPoint((*it)->id_, people_meas->header.stamp,
 //                             loc, fixed_frame, loc);
 //       float dist = loc.length();
 //       // distance between tracker and people position
@@ -531,14 +531,8 @@ public:
     filt_cloud_.chan.resize(1);
     filt_cloud_.chan[0].name = "rgb";
 
-    ScanProcessor processor(*scan, mask_);
 
-    processor.splitConnected(connected_thresh_);
-    processor.removeLessThan(5);
-
-    CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
-
-    // if no measurement matches to a tracker in the last <no_observation_timeout>  seconds: erase tracker
+    // if no measurement matches to a tracker in the last no_observation_timeout  seconds: erase tracker
     ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-no_observation_timeout_s);
     list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
     while (sf_iter != saved_features_.end())
@@ -565,6 +559,10 @@ public:
 
 
     // Detection step: build up the set of "candidate" clusters
+    ScanProcessor processor(*scan, mask_);
+    processor.splitConnected(connected_thresh_);
+    processor.removeLessThan(5);
+    CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
     list<SampleSet*> candidates;
     for (list<SampleSet*>::iterator i = processor.getClusters().begin();
          i != processor.getClusters().end();
@@ -585,37 +583,40 @@ public:
     // For each candidate, find the closest tracker (within threshold) and add to the match list
     // If no tracker is found, start a new one
     multiset<MatchedFeature> matches;
-    for (list<SampleSet*>::iterator cf_iter = candidates.begin();
-         cf_iter != candidates.end(); cf_iter++){
-      Stamped<Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
-      tfl_.transformPoint("odom", loc, loc);
-
-      list<SavedFeature*>::iterator closest = propagated.end();
-      float closest_dist = max_track_jump_m;
-      
-      for (list<SavedFeature*>::iterator pf_iter = propagated.begin();
-           pf_iter != propagated.end();
-           pf_iter++)
+    for (list<SampleSet*>::iterator candidate_iter = candidates.begin();
+         candidate_iter != candidates.end(); 
+	 candidate_iter++)
       {
-        // find the closest distance between candidate and trackers
-        float dist = loc.distance((*pf_iter)->prop_loc_);
-        if ( dist < closest_dist )
-        {
-          closest = pf_iter;
-          closest_dist = dist;
-        }
+	// transform candidate point to fixed_frame
+	Stamped<Point> loc((*candidate_iter)->center(), scan->header.stamp, scan->header.frame_id);
+	robot_state_.transformPoint(fixed_frame, loc, loc);
+	
+	list<SavedFeature*>::iterator closest = propagated.end();
+	float closest_dist = max_track_jump_m;
+	
+	for (list<SavedFeature*>::iterator pf_iter = propagated.begin();
+	     pf_iter != propagated.end();
+	     pf_iter++)
+	  {
+	    // find the closest distance between candidate and trackers
+	    float dist = loc.distance((*pf_iter)->prop_loc_);
+	    if ( dist < closest_dist )
+	      {
+		closest = pf_iter;
+		closest_dist = dist;
+	      }
+	  }
+	// Nothing close to it, start a new track
+	if (closest == propagated.end()) 
+	  {
+	    list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, robot_state_));
+	    (*candidate_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
+	  }
+	// Add the candidate, the tracker and the distance to a match list
+	else
+	  matches.insert(MatchedFeature(*candidate_iter,*closest,closest_dist));
       }
-      // Nothing close to it, start a new track
-      if (closest == propagated.end()) 
-      {
-        list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
-        (*cf_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
-      }
-      // Add the candidate, the tracker and the distance to a match list
-      else
-        matches.insert(MatchedFeature(*cf_iter,*closest,closest_dist));
-    }
-
+    
 
 
 
@@ -631,9 +632,9 @@ public:
 	// update the tracker with this candidate
         if (matched_iter->closest_ == *pf_iter)
         {
-	  // Transform candidate to odom frame
+	  // Transform candidate to fixed frame
           Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
-          tfl_.transformPoint("odom", loc, loc);          
+          robot_state_.transformPoint(fixed_frame, loc, loc);          
 
 	  // Update the tracker with the candidate location
           matched_iter->closest_->update(loc);
@@ -658,8 +659,9 @@ public:
       // try to assign the candidate to another tracker
       if (!found)
       {
+	// transform matched point to fixed frame
         Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
-        tfl_.transformPoint("odom", loc, loc);
+        robot_state_.transformPoint(fixed_frame, loc, loc);
 
         list<SavedFeature*>::iterator closest = propagated.end();
         float closest_dist = max_track_jump_m;
@@ -680,7 +682,7 @@ public:
 	// so create a new tracker for this candidate
         if (closest == propagated.end())
         {
-          list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, tfl_));
+          list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, robot_state_));
 
           matched_iter->candidate_->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
           matches.erase(matched_iter);
