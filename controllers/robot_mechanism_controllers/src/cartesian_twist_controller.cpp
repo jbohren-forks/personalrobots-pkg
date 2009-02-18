@@ -79,23 +79,14 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   jnt_posvel_.resize(num_joints_);
 
   // get pid controller
-  double p, i, d, i_clamp;
-  string name;
-  node_->param(controller_name_+"/fb_trans_p", p, 0.0) ;
-  node_->param(controller_name_+"/fb_trans_i", i, 0.0) ;
-  node_->param(controller_name_+"/fb_trans_d", d, 0.0) ;
-  node_->param(controller_name_+"/fb_trans_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid fb_pid_trans(p, i, d, i_clamp, -i_clamp);
+  control_toolbox::Pid pid_controller;
+  pid_controller.initParam(controller_name_+"/fb_trans");
   for (unsigned int i=0; i<3; i++)
-    fb_pid_controller_.push_back(fb_pid_trans);
+    fb_pid_controller_.push_back(pid_controller);
 
-  node_->param(controller_name_+"/fb_rot_p", p, 0.0) ;
-  node_->param(controller_name_+"/fb_rot_i", i, 0.0) ;
-  node_->param(controller_name_+"/fb_rot_d", d, 0.0) ;
-  node_->param(controller_name_+"/fb_rot_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid fb_pid_rot(p, i, d, i_clamp, -i_clamp);
+  pid_controller.initParam(controller_name_+"/fb_rot");
   for (unsigned int i=0; i<3; i++)
-    fb_pid_controller_.push_back(fb_pid_rot);
+    fb_pid_controller_.push_back(pid_controller);
 
   node_->param(controller_name_+"/ff_trans", ff_trans_, 0.0) ;
   node_->param(controller_name_+"/ff_rot", ff_rot_, 0.0) ;

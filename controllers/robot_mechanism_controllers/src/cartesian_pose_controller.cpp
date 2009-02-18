@@ -81,14 +81,10 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
   jnt_pos_.resize(num_joints_);
 
   // get pid controller
-  double p, i, d, i_clamp;
-  node_->param(controller_name_+"/p", p, 0.0) ;
-  node_->param(controller_name_+"/i", i, 0.0) ;
-  node_->param(controller_name_+"/d", d, 0.0) ;
-  node_->param(controller_name_+"/i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pid_pose(p, i, d, i_clamp, -i_clamp);
+  control_toolbox::Pid pid_controller;
+  pid_controller.initParam(controller_name_);
   for (unsigned int i=0; i<6; i++)
-    pid_controller_.push_back(pid_pose);
+    pid_controller_.push_back(pid_controller);
 
   // time
   last_time_ = robot_state->hw_->current_time_;

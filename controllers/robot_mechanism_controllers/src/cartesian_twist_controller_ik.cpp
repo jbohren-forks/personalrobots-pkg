@@ -89,12 +89,8 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   jnt_vel_.resize(num_joints_);
 
   // get pid controller parameters
-  double p, i, d, i_clamp;
-  node_->param(controller_name_+"/joint_p", p, 0.0) ;
-  node_->param(controller_name_+"/joint_i", i, 0.0) ;
-  node_->param(controller_name_+"/joint_d", d, 0.0) ;
-  node_->param(controller_name_+"/joint_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pid_joint(p, i, d, i_clamp, -i_clamp);
+  control_toolbox::Pid pid_joint;
+  pid_joint.initParam(controller_name_+"/joint");
 
   // time
   last_time_ = robot_state->hw_->current_time_;

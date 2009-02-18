@@ -90,38 +90,22 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
     twist_to_wrench_[i] = rot;
 
   // get pid controllers
-  double p, i, d, i_clamp;
-  node_->param(controller_name_+"/vel_trans_p", p, 0.0) ;
-  node_->param(controller_name_+"/vel_trans_i", i, 0.0) ;
-  node_->param(controller_name_+"/vel_trans_d", d, 0.0) ;
-  node_->param(controller_name_+"/vel_trans_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid vel_pid_trans(p, i, d, i_clamp, -i_clamp);
+  control_toolbox::Pid pid_controller;
+  pid_controller.initParam(controller_name_+"/vel_trans");
   for (unsigned int i=0; i<3; i++)
-    vel_pid_controller_.push_back(vel_pid_trans);
+    vel_pid_controller_.push_back(pid_controller);
 
-  node_->param(controller_name_+"/vel_rot_p", p, 0.0) ;
-  node_->param(controller_name_+"/vel_rot_i", i, 0.0) ;
-  node_->param(controller_name_+"/vel_rot_d", d, 0.0) ;
-  node_->param(controller_name_+"/vel_rot_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid vel_pid_rot(p, i, d, i_clamp, -i_clamp);
+  pid_controller.initParam(controller_name_+"/vel_rot");
   for (unsigned int i=0; i<3; i++)
-    vel_pid_controller_.push_back(vel_pid_rot);
+    vel_pid_controller_.push_back(pid_controller);
 
-  node_->param(controller_name_+"/pos_trans_p", p, 0.0) ;
-  node_->param(controller_name_+"/pos_trans_i", i, 0.0) ;
-  node_->param(controller_name_+"/pos_trans_d", d, 0.0) ;
-  node_->param(controller_name_+"/pos_trans_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pos_pid_trans(p, i, d, i_clamp, -i_clamp);
+  pid_controller.initParam(controller_name_+"/pos_trans");
   for (unsigned int i=0; i<3; i++)
-    pos_pid_controller_.push_back(pos_pid_trans);
+    pos_pid_controller_.push_back(pid_controller);
 
-  node_->param(controller_name_+"/pos_rot_p", p, 0.0) ;
-  node_->param(controller_name_+"/pos_rot_i", i, 0.0) ;
-  node_->param(controller_name_+"/pos_rot_d", d, 0.0) ;
-  node_->param(controller_name_+"/pos_rot_i_clamp", i_clamp, 0.0) ;
-  control_toolbox::Pid pos_pid_rot(p, i, d, i_clamp, -i_clamp);
+  pid_controller.initParam(controller_name_+"/pos_rot");
   for (unsigned int i=0; i<3; i++)
-    pos_pid_controller_.push_back(pos_pid_rot);
+    pos_pid_controller_.push_back(pid_controller);
 
   fprintf(stderr, "pid controllers created\n");
 
