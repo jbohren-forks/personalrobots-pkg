@@ -27,63 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef VISUAL_NAV_VISUAL_NAV_H
-#define VISUAL_NAV_VISUAL_NAV_H
-
-#include <vector>
-#include <boost/shared_ptr.hpp>
 #include <visual_nav/transform.h>
+#include <cmath>
+#include <iostream>
 
 namespace visual_nav
 {
 
-/// Id's of nodes in the roadmap
-typedef int NodeId;
+using std::ostream;
 
-typedef boost::shared_ptr<std::vector<NodeId> > PathPtr;
-
-/// Represents the roadmap produced by visual odometry, with the localization info incorporated
-class VisualNavRoadmap
+Pose transform (const Transform2D& trans, const Pose& pose)
 {
-public:
-  /// Default constructor creates a roadmap with a single node for the current position 
-  VisualNavRoadmap();
+  double c=cos(trans.theta);
+  double s=sin(trans.theta);
+
+  return Pose(pose.x*c - pose.y*s + trans.dx, pose.x*s + pose.y*c + trans.dy, trans.theta+pose.theta);
+}
+
+Transform2D getTransformBetween (const Pose& pose1, const Pose& pose2)
+{
+  double theta = pose2.theta - pose1.theta;
+  double c=cos(theta);
+  double s=sin(theta);
+
+  return Transform2D (pose2.x - pose1.x*c + pose1.y*s, pose2.y - pose1.y*c - pose1.x*s, theta);
+}
+
+
+Transform2D inverse (const Transform2D& trans)
+{
+  double c=cos(trans.theta);
+  double s=sin(trans.theta);
+
+  return Transform2D (-c*trans.dx - s*trans.dy, s*trans.dx - c*trans.dy, -trans.theta);
+}
   
-  /// \post There is a new graph node at \a pose
-  /// \return The id of the new node
-  NodeId addNode (const Pose& pose);
 
-  /// \post There is a new graph node with pose (\a x, \a y, \a theta)
-  /// \return id of new node
-  NodeId addNode (double x, double y, double theta=0.0);
+ostream& operator<< (ostream& str, const Pose& c)
+{
+  str << "(" << c.x << ", " << c.y << ", " << c.theta << ")";
+  return str;
+}
 
-  /// \post There is an edge between nodes \a i and \a j with no label
-  /// \throws UnknownNodeId
-  /// \throws SelfEdgeException
-  /// \throws ExistingEdgeException
-  /// \throws StartEdgeException
-  void addEdge (const NodeId i, const NodeId j);
+ostream& operator<< (ostream& str, const Transform2D& c)
+{
+  str << "(" << c.dx << ", " << c.dy << ", " << c.theta << ")";
+  return str;
+}
 
-  /// \post There is an edge from the start node to node i with the given relative pose
-  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pose);
-
-  /// \returns Sequence of NodeId's of positions on path from start node to node \goal
-  PathPtr pathToGoal (const NodeId goal) const;
-
-private:
-
-  // Avoid client compilation dependency on implementation details
-  class RoadmapImpl;
-  boost::shared_ptr<RoadmapImpl> roadmap_impl_;
-
-  // Forbid copy and assign
-  VisualNavRoadmap (const VisualNavRoadmap&);
-  VisualNavRoadmap& operator= (const VisualNavRoadmap&);
-  
-};
+bool operator== (const Pose& p1, const Pose& p2)
+{
+  const double pi=3.14159265;
+  const double TOL=1e-8;
+  double intpart;
+  return (abs(p1.x-p2.x)<TOL) && (abs(p1.y-p2.y)<TOL) && (modf((p1.theta-p2.theta)/(2*pi), &intpart)<TOL);
+}
 
 
-} // visual_nav
-
-#endif
+} // namespace visual_nav
 

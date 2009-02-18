@@ -33,46 +33,96 @@
 #include "visual_nav.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <map>
+#include <visual_nav/exceptions.h>
+
+namespace visual_nav
+{
 
 using boost::listS;
 using boost::undirectedS;
 using boost::adjacency_list;
 using boost::graph_traits;
+using std::map;
+using std::pair;
 
-namespace visual_nav
-{
 
 typedef unsigned int uint;
 
+
 /************************************************************
- * RoadmapGraph typedefs
+ * RoadmapGraph
  ************************************************************/
 
 struct NodeInfo
 {
-  NodeInfo(const Position2D position, const int index) : start_node(false), position(position), index(index) {}
+public:
+  NodeInfo(const Pose pose, const NodeId index) : start_node(false), index(index), pose(pose) {}
+  NodeInfo(const NodeId index) : start_node(true), index(index) {}
 
-  // Flag for whether this is the start node (the only one that doesn't have an associated 2d position)
+  Pose getPose() const { if (start_node) throw StartNodePoseException(); else return pose; }
+
+  // Flag for whether this is the start node (the only one that doesn't have an associated 2d pose)
   bool start_node;
 
-  // Only meaningful if start_node is false
-  Position2D position;
+  NodeId index;
 
-  int index;
+private:
+  // Only meaningful if start_node is false
+  Pose pose;
+
 };
 
-struct EdgeInfo
+class EdgeInfo
 {
+public:
+  EdgeInfo(const Pose& p1, const Pose& p2);
+  EdgeInfo(const Transform2D& rel_pose);
+
+  Transform2D getRelPose() const { if (edge_from_start_node) return rel_pose; else throw NonstartRelPoseException(); }
+
   // Is this an edge from the start node?
   bool edge_from_start_node;
+  
+  double length;
+
+private:
   // Only meaningful if edge_from_start_node is true
-  Position2D offset;
+  Transform2D rel_pose;
 };
 
 typedef adjacency_list<listS, listS, undirectedS, NodeInfo, EdgeInfo> RoadmapGraph;
 typedef graph_traits<RoadmapGraph>::vertex_descriptor RoadmapVertex;
 typedef graph_traits<RoadmapGraph>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
+typedef pair<AdjacencyIterator, AdjacencyIterator> AdjIterPair;
+
+typedef map<NodeId, RoadmapVertex> IdVertexMap;
+
+
+/************************************************************
+ * Visitor for Dijkstra's algorithm
+ ************************************************************/
+
+/// \todo make the dijkstra visitor exit early when goal is discovered
+class DijkstraVisitor : public boost::default_dijkstra_visitor
+{
+public:
+  DijkstraVisitor (const RoadmapVertex& goal) : goal_(goal) {}
+  void discover_vertex(const RoadmapVertex& v, const RoadmapGraph& graph) const
+  {
+    if (graph[v].start_node) {
+      ROS_DEBUG_NAMED("dijkstra", "Discovering start node %d", graph[v].index);
+    }
+    else {
+      ROS_DEBUG_NAMED("dijkstra", "Discovering vertex %d with coords (%f, %f)", graph[v].index, graph[v].getPose().x, graph[v].getPose().y);
+    }
+  }
+private:
+  RoadmapVertex goal_;
+};
+
 
 
 /************************************************************
@@ -82,21 +132,27 @@ typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
 class VisualNavRoadmap::RoadmapImpl
 {
 public:
-  RoadmapImpl() : next_node_id(0) {}
+  RoadmapImpl();
 
-  int addNode (const Position2D& pos);
-  int addEdge (const int i, const int j);
-  void addEdgeFromStart (const int i, const Position2D& relative_pos);
-  PathPtr pathToGoal (const int goal_id);
+  NodeId addNode (const Pose& pos);
+  void addEdge (const NodeId i, const NodeId j);
+  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pos);
+  PathPtr pathToGoal (const NodeId goal_id);
 
 private:
+  RoadmapVertex idVertex (const NodeId id) const;
+
   RoadmapGraph graph_;
 
-  int next_node_id;
+  IdVertexMap id_vertex_map_;
+
+  NodeId next_node_id_;
+  NodeId start_node_id_;
 
   RoadmapImpl& operator= (const RoadmapImpl&);
   RoadmapImpl(const RoadmapImpl&);
 };
+
 
 
 

@@ -10,4 +10,8 @@ set(ROS_COMPILE_FLAGS "-O3 " ${ROS_COMPILE_FLAGS})
 set(ROS_COMPILE_FLAGS "-g -pg " ${ROS_COMPILE_FLAGS})
 set(ROS_LINK_FLAGS "-g -pg " ${ROS_LINK_FLAGS})
 
-rospack_add_library(visual_nav src/visual_nav.cpp)
+rospack_add_library(visual_nav src/visual_nav.cpp src/transform.cpp)
+
+rospack_add_gtest(test/test_visual_nav test/test_visual_nav.cpp)
+target_link_libraries(test/test_visual_nav visual_nav)
+

@@ -27,63 +27,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef VISUAL_NAV_VISUAL_NAV_H
-#define VISUAL_NAV_VISUAL_NAV_H
+#ifndef VISUAL_NAV_TRANSFORM_H
+#define VISUAL_NAV_TRANSFORM_H
 
-#include <vector>
-#include <boost/shared_ptr.hpp>
-#include <visual_nav/transform.h>
+#include <iostream>
 
 namespace visual_nav
 {
 
-/// Id's of nodes in the roadmap
-typedef int NodeId;
+using std::ostream;
 
-typedef boost::shared_ptr<std::vector<NodeId> > PathPtr;
+struct Pose {
+  Pose (double x=0.0, double y=0.0f, double theta=0.0) : x(x), y(y), theta(theta) {}
+  double x, y, theta;
+};
 
-/// Represents the roadmap produced by visual odometry, with the localization info incorporated
-class VisualNavRoadmap
-{
-public:
-  /// Default constructor creates a roadmap with a single node for the current position 
-  VisualNavRoadmap();
-  
-  /// \post There is a new graph node at \a pose
-  /// \return The id of the new node
-  NodeId addNode (const Pose& pose);
+bool operator== (const Pose& p1, const Pose& p2);
 
-  /// \post There is a new graph node with pose (\a x, \a y, \a theta)
-  /// \return id of new node
-  NodeId addNode (double x, double y, double theta=0.0);
-
-  /// \post There is an edge between nodes \a i and \a j with no label
-  /// \throws UnknownNodeId
-  /// \throws SelfEdgeException
-  /// \throws ExistingEdgeException
-  /// \throws StartEdgeException
-  void addEdge (const NodeId i, const NodeId j);
-
-  /// \post There is an edge from the start node to node i with the given relative pose
-  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pose);
-
-  /// \returns Sequence of NodeId's of positions on path from start node to node \goal
-  PathPtr pathToGoal (const NodeId goal) const;
-
-private:
-
-  // Avoid client compilation dependency on implementation details
-  class RoadmapImpl;
-  boost::shared_ptr<RoadmapImpl> roadmap_impl_;
-
-  // Forbid copy and assign
-  VisualNavRoadmap (const VisualNavRoadmap&);
-  VisualNavRoadmap& operator= (const VisualNavRoadmap&);
-  
+struct Transform2D {
+  Transform2D(double dx=0.0, double dy=0.0, double theta=0.0) : dx(dx), dy(dy), theta(theta) {}
+  double dx, dy, theta;
 };
 
 
-} // visual_nav
+/// \return \a pose transformed by \a trans
+Pose transform (const Transform2D& trans, const Pose& pose);
+
+/// \return The unique transform that sends \a pose1 to \a pose2
+Transform2D getTransformBetween (const Pose& pose1, const Pose& pose2);
+
+/// \return Inverse of \a trans
+Transform2D inverse (const Transform2D& trans);
+
+
+ostream& operator<< (ostream& str, const Pose& c);
+ostream& operator<< (ostream& str, const Transform2D& c);
+
+
+} //namespace
 
 #endif
-

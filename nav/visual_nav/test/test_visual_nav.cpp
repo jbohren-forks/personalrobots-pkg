@@ -27,63 +27,67 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef VISUAL_NAV_VISUAL_NAV_H
-#define VISUAL_NAV_VISUAL_NAV_H
-
-#include <vector>
-#include <boost/shared_ptr.hpp>
+#include <visual_nav/visual_nav.h>
+#include <visual_nav/exceptions.h>
 #include <visual_nav/transform.h>
+#include <gtest/gtest.h>
 
-namespace visual_nav
+using namespace visual_nav;
+using namespace std;
+using boost::shared_ptr;
+
+
+TEST(VisualNav, Transforms)
 {
+  Pose p1(1,5,0);
+  Pose p2(8,3,.1);
+  Pose p3(7,4,-.3);
 
-/// Id's of nodes in the roadmap
-typedef int NodeId;
+  double pi=3.14159265;
+  
+  Transform2D t1(3,6,pi/2);
 
-typedef boost::shared_ptr<std::vector<NodeId> > PathPtr;
+  EXPECT_TRUE(!(p1==p2));
+  EXPECT_EQ(transform(t1, p1), Pose(-2,7,pi/2));
+  Transform2D t2 = inverse(t1);
+  EXPECT_EQ(transform(t2, transform(t1, p1)), p1);
+  Transform2D t3 = getTransformBetween (p1, p2);
+  EXPECT_EQ(transform(t3,p1), p2);
+}
 
-/// Represents the roadmap produced by visual odometry, with the localization info incorporated
-class VisualNavRoadmap
+
+// Tests
+TEST(VisualNav, BasicAPI)
 {
-public:
-  /// Default constructor creates a roadmap with a single node for the current position 
-  VisualNavRoadmap();
+  VisualNavRoadmap r;
+  typedef vector<int> Path;
+
+  r.addNode(2,6);
+  r.addNode(4,3);
+  r.addNode(3,-1);
+  r.addEdge(2,1);
+  r.addEdgeFromStart(2,Transform2D(2,2));
+  r.addNode(1,2.5);
+  r.addEdge(4,2);
+  r.addEdge(1,4);
+  EXPECT_EQ(r.addNode(4,7), 5);
   
-  /// \post There is a new graph node at \a pose
-  /// \return The id of the new node
-  NodeId addNode (const Pose& pose);
 
-  /// \post There is a new graph node with pose (\a x, \a y, \a theta)
-  /// \return id of new node
-  NodeId addNode (double x, double y, double theta=0.0);
+  r.addEdge(1,5);
+  PathPtr path1 = r.pathToGoal(5);
+  int expected_path[4] = {0, 2, 1, 5};
+  EXPECT_TRUE(*path1==Path(expected_path, expected_path+4));
 
-  /// \post There is an edge between nodes \a i and \a j with no label
-  /// \throws UnknownNodeId
-  /// \throws SelfEdgeException
-  /// \throws ExistingEdgeException
-  /// \throws StartEdgeException
-  void addEdge (const NodeId i, const NodeId j);
-
-  /// \post There is an edge from the start node to node i with the given relative pose
-  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pose);
-
-  /// \returns Sequence of NodeId's of positions on path from start node to node \goal
-  PathPtr pathToGoal (const NodeId goal) const;
-
-private:
-
-  // Avoid client compilation dependency on implementation details
-  class RoadmapImpl;
-  boost::shared_ptr<RoadmapImpl> roadmap_impl_;
-
-  // Forbid copy and assign
-  VisualNavRoadmap (const VisualNavRoadmap&);
-  VisualNavRoadmap& operator= (const VisualNavRoadmap&);
-  
-};
+  r.addEdgeFromStart(4, Transform2D(-1,1));
+  PathPtr path2 = r.pathToGoal(5);
+  int expected_path2[4] = {0, 4, 1, 5};
+  EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
+}
 
 
-} // visual_nav
 
-#endif
-
+int main (int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
