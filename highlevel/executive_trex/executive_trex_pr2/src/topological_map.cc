@@ -28,11 +28,10 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 						     const ConstraintEngineId& constraintEngine,
 						     const std::vector<ConstrainedVariableId>& variables)
     :Constraint(name, propagatorName, constraintEngine, variables),
-     m_connector(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
-     m_x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
-     m_y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
-     m_th(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))){
-    checkError(variables.size() == 4, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _connector(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
@@ -43,26 +42,23 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
    * We can also bind the value for the connector id based on x and y inputs. This enforces the full relation.
    */
   void map_connector_constraint::handleExecute(){
-    if(m_connector.isSingleton()){
-      unsigned int connector_id = (unsigned int) m_connector.getSingletonValue();
-      double x, y, th;
+    if(_connector.isSingleton()){
+      unsigned int connector_id = (unsigned int) _connector.getSingletonValue();
+      double x, y;
 
       // If we have a pose, bind the variables
-      if(TopologicalMapAccessor::instance()->get_connector_position(connector_id, x, y, th)){
-	m_x.set(x);
+      if(TopologicalMapAccessor::instance()->get_connector_position(connector_id, x, y)){
+	_x.set(x);
 
-	if(!m_x.isEmpty()) 
-	  m_y.set(y);
-
-	if(!m_y.isEmpty()) 
-	  m_th.set(th);
+	if(!_x.isEmpty()) 
+	  _y.set(y);
       }
     }
 
     // If x and y are set, we can bind the connector.
-    if(m_x.isSingleton() && m_y.isSingleton()){
-      unsigned int connector_id = TopologicalMapAccessor::instance()->get_connector(m_x.getSingletonValue(), m_y.getSingletonValue());
-      m_connector.set(connector_id);
+    if(_x.isSingleton() && _y.isSingleton()){
+      unsigned int connector_id = TopologicalMapAccessor::instance()->get_connector(_x.getSingletonValue(), _y.getSingletonValue());
+      _connector.set(connector_id);
     }
   }
 
@@ -71,11 +67,23 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 										   const LabelStr& propagatorName,
 										   const ConstraintEngineId& constraintEngine,
 										   const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, variables){}
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _region(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
     
-  map_get_region_from_position_constraint::~map_get_region_from_position_constraint(){}
-    
-  void map_get_region_from_position_constraint::handleExecute(){}
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void map_get_region_from_position_constraint::handleExecute(){
+    if(_x.isSingleton() && _y.isSingleton()){
+      unsigned int region_id = TopologicalMapAccessor::instance()->get_region(_x.getSingletonValue, _y.getSingletonValue());
+      _region.set(region_id);
+    }
+  }
     
 
   //*******************************************************************************************
@@ -106,9 +114,9 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
   //*******************************************************************************************
   map_connector_filter::map_connector_filter(const TiXmlElement& configData)
     : SOLVERS::FlawFilter(configData, true),
-      m_source(extractData(configData, "source")),
-      m_final(extractData(configData, "final")),
-      m_target(extractData(configData, "target")){}
+      _source(extractData(configData, "source")),
+      _final(extractData(configData, "final")),
+      _target(extractData(configData, "target")){}
 
   /**
    * The filter will exclude the entity if it is not the target variable of a token with the right structure
@@ -121,7 +129,7 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 
     // Its name should match the target, it should be enumerated, and it should not be a singleton.
     ConstrainedVariableId var = (ConstrainedVariableId) entity;
-    if(var->getName() != m_target || var->lastDomain().isEnumerated() || var->lastDomain().isSingleton())
+    if(var->getName() != _target || var->lastDomain().isEnumerated() || var->lastDomain().isSingleton())
       return true;
 
     // It should have a parent that is a token
@@ -129,8 +137,8 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
       return true;
 
     TokenId parent = (TokenId) var->parent();
-    ConstrainedVariableId source = parent->getVariable(m_source, false);
-    ConstrainedVariableId final = parent->getVariable(m_final, false);
+    ConstrainedVariableId source = parent->getVariable(_source, false);
+    ConstrainedVariableId final = parent->getVariable(_final, false);
 
     return source.isNoId() || !source->lastDomain().isSingleton() || final.isNoId() || !final->lastDomain().isSingleton();
   }
@@ -139,8 +147,8 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
   //*******************************************************************************************
   map_connector_selector::map_connector_selector(const DbClientId& client, const ConstrainedVariableId& flawedVariable, const TiXmlElement& configData, const LabelStr& explanation)
     : SOLVERS::UnboundVariableDecisionPoint(client, flawedVariable, configData, explanation),
-      m_source(extractData(configData, "source")),
-      m_final(extractData(configData, "final")){
+      _source(extractData(configData, "source")),
+      _final(extractData(configData, "final")){
 
     // Verify expected structure for the variable - wrt other token parameters
     checkError(flawedVariable->parent().isId() && TokenId::convertable(flawedVariable->parent()), 
@@ -149,12 +157,12 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 
     // Obtain source and final 
     TokenId parent = (TokenId) flawedVariable->parent();
-    ConstrainedVariableId source = parent->getVariable(m_source, false);
-    ConstrainedVariableId final = parent->getVariable(m_final, false);
+    ConstrainedVariableId source = parent->getVariable(_source, false);
+    ConstrainedVariableId final = parent->getVariable(_final, false);
 
     // Double check all the inputs
-    checkError(source.isId(), "Bad filter. Invalid source name: " << m_source.toString() << " on token " << parent->toString());
-    checkError(final.isId(), "Bad filter. Invalid final name: " << m_final.toString() << " on token " << parent->toString());
+    checkError(source.isId(), "Bad filter. Invalid source name: " << _source.toString() << " on token " << parent->toString());
+    checkError(final.isId(), "Bad filter. Invalid final name: " << _final.toString() << " on token " << parent->toString());
     checkError(source->lastDomain().isSingleton(), "Bad Filter. Source is not a singleton: " << source->toString());
     checkError(final->lastDomain().isSingleton(), "Bad Filter. Final is not a singleton: " << final->toString());
 
@@ -167,18 +175,18 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
       checkError(value == id, value << " != " << id);
       choice.cost = g_cost((unsigned int) source->lastDomain().getSingletonValue(), id) + h_cost(id, (unsigned int) final->lastDomain().getSingletonValue());
       choice.id = id;
-      m_sorted_choices.push_back(choice);
+      _sorted_choices.push_back(choice);
     }
 
-    m_sorted_choices.sort();
-    m_choice_iterator = m_sorted_choices.begin();
+    _sorted_choices.sort();
+    _choice_iterator = _sorted_choices.begin();
   }
 
-  bool map_connector_selector::hasNext() const { return m_choice_iterator == m_sorted_choices.end(); }
+  bool map_connector_selector::hasNext() const { return _choice_iterator == _sorted_choices.end(); }
 
   double map_connector_selector::getNext(){
-    map_connector_selector::Choice c = *m_choice_iterator;
-    ++m_choice_iterator;
+    map_connector_selector::Choice c = *_choice_iterator;
+    ++_choice_iterator;
     return c.id;
   }
 
@@ -209,5 +217,92 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
 
   TopologicalMapAccessor* TopologicalMapAccessor::instance(){
     return _singleton;
+  }
+
+  /**
+   * Map Adapter implementation
+   */
+  TopologicalMapAdapter::TopologicalMapAdapter(const std::string& map_file_name){
+  }
+
+  TopologicalMapAdapter::~TopologicalMapAdapter(){
+  }
+
+
+  unsigned int TopologicalMapAdapter::get_region(double x, double y){
+    unsigned int result = 0;
+    try{
+      result = _map->containingRegion(topological_map::Point2D(x, y));
+    }
+    catch(...){}
+    return result;
+  }
+
+  unsigned int TopologicalMapAdapter::get_connector(double x, double y){
+    unsigned int result = 0;
+    try{
+      result = _map->pointConnector(topological_map::Point2D(x, y));
+    }
+    catch(...){}
+    return result;
+  }
+
+  bool TopologicalMapAdapter::get_connector_position(unsigned int connector_id, double& x, double& y){
+    try{
+      topological_map::Point2D p = _map->connectorPosition(connector_id);
+      x = p.x;
+      y = p.y;
+      return true;
+    }
+    catch(...){}
+    return false;
+  }
+
+  bool TopologicalMapAdapter::get_region_connectors(unsigned int region_id, std::vector<unsigned int>& connectors){
+    try{
+      connectors = _map->adjacentConnectors(region_id);
+      return true;
+    }
+    catch(...){}
+    return false;
+  }
+
+  bool TopologicalMapAdapter::get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b){
+    try{
+      std::vector<unsigned int> regions; // Should be exactly 2
+      regions = _map->adjacentRegions(connector_id);
+      checkError(regions.size() == 2, "Should be exactly 2 regions per connector. Found " << regions.size());
+      region_a = regions[0];
+      region_b = regions[1];
+      return true;
+    }
+    catch(...){}
+    return false;
+  }
+
+  bool TopologicalMapAdapter::is_doorway(unsigned int region_id, bool& result){
+    try{
+      int region_type = _map->regionType(region_id);
+      result = (region_type ==  topological_map::DOORWAY);
+      return true;
+    }
+    catch(...){}
+    return false;
+  }
+
+  double TopologicalMapAdapter::get_g_cost(double from_x, double from_y, unsigned int connector_id){
+    double x(0), y(0);
+
+    // If there is no connector for this id then we have an infinite cost
+    if(!get_connector_position(connector_id, x, y))
+      return PLUS_INFINITY;
+
+    // Otherwise we return the euclidean distance between source and target
+    return sqrt(pow(from_x - x, 2) + pow(from_y - y, 2));
+  }
+
+  double TopologicalMapAdapter::get_h_cost(unsigned int connector_id, double to_x, double to_y){
+    // For now, use g_cost approach
+    return get_g_cost(to_x, to_y, connector_id);
   }
 }
