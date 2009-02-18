@@ -263,19 +263,7 @@ namespace angles
 
     
 
-  /*!
-   * \brief modNPiBy2
-   *
-   * Returns the angle between -M_PI/2 to M_PI/2
-   */
-  static inline double modNPiBy2(double angle)
-  {
-    if (angle < -M_PI/2) 
-      angle += M_PI;
-    if(angle > M_PI/2)
-      angle -= M_PI;
-    return angle;
-  }
+
 }
 
 #endif
