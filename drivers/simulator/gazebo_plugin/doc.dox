@@ -14,7 +14,7 @@ Here are the gazebo plugins which are currently implemented:
 
 
 @section usage PR2 Simulation Quick Start Guide
-\li If you have successfully \e rosmake \e 2dnav_gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
+\li If you have successfully \e rosmake \e 2dnav_gazebo, you have EVERYTHING and more needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
   @verbatim
   $ rosmake gazebo
   $ rosmake gazebo_plugin
@@ -24,39 +24,44 @@ Here are the gazebo plugins which are currently implemented:
 \li Here is a simple launch script that starts Gazebo:
   @verbatim
   <launch>
-    <!-- automatically start a new master if none active -->
-    <master auto="start">
-    <!-- if needed, group tag allows pushing components into namespace via attribute ns="namespace" -->
-    <group name="wg">
-      <!-- assign environment variables for gazebo and startup gazebo with argument containing the world file.  -->
-      <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot.world" respawn="false" output="screen">
-        <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(env LD_LIBRARY_PATH)" />
-        <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-        <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-        <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-      </node>
-     </group>
+    <!-- send pr2.xacro.xml to param server -->
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+
+    <!-- start gazebo -->
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/simple.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+
+    <!-- load controllers -->
+    <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
   </launch>
   @endverbatim
   see <a href="http://pr.willowgarage.com/wiki/roslaunch">roslaunch</a> for more details.
 
- - To start a mechanism::MechanismControlNode and spawn some controllers, you have to first send \b pr2.xml to the parameter server, then invoke \b mech.py with the controllers xml configuration file as the argument to spawn controllers:
+ - To start a mechanism::MechanismControlNode and spawn some controllers, you have to first send \b ros-pkg/robot_descrioption/pr2/pr2_defs/robots/pr2.xacro.xml to the parameter server, then invoke \b spawner.py with the controllers xml configuration file as the argument to spawn controllers:
   @verbatim
-      <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it
+      <!-- send pr2.xacro.xml to parameter server as a string, allow retrieval by various components whe needs it
            (Mechanism Control, BaseControllerNode, etc...) -->
-      <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
-      <!-- use mech.py to spawn all controllers listed in controllers.xml -->
-      <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
+      <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+      <!-- use spawner.py to spawn all controllers listed in controllers.xml -->
+      <node pkg="mechanism_control" type="spawner.py" args="sp $(find pr2_default_controllers)/base_controller.xml" respawn="false" output="screen" />
   @endverbatim
 
- - The following \b control.py node sends a \e set_profile command of 46 to the \b tilt_laser_controller:
+ - The following \b control.py node sends a \e set_profile command of 0.5 to \b l_gripper_controller:
   @verbatim
-      <!-- start tilting Hokuyo laser by sending it a preset code of 46, this means sawtooth profile sweep.
-           for details of the profile, rates, see controller::LaserScannerControllerNode. -->
-      <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
+    <!-- start arm controller -->
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/l_arm_default_controller.xml" respawn="false"  />
+    <!-- send arm a command -->
+    <node pkg="robot_mechanism_controllers" type="control.py" args="set l_gripper_controller 0.5" respawn="false" output="screen" />
   @endverbatim
 
-\li Alternatively, one can start gazebo manually (e.g. in bash):
+\li Alternatively, one can start gazebo manually with an empty world (e.g. in bash):
   @verbatim
   $ export GAZ_TOP=`rospack find gazebo`/gazebo
   $ export OGRE_TOP=`rospack find ogre`/ogre
@@ -68,208 +73,62 @@ Here are the gazebo plugins which are currently implemented:
   $ export GAZEBO_RESOURCE_PATH=$PR2MEDIA
   $ export OGRE_RESOURCE_PATH=$OGRE_TOP/lib/OGRE
   $ export MC_RESOURCE_PATH=$PR2MEDIA
-  $ gazebo `rospack find gazebo_robot_description`/world/robot.world
+  $ gazebo `rospack find gazebo_robot_description`/gazebo_worlds/empty.world
   @endverbatim
+  To spawn the robot in an empty world, first send robot XML to the parameter server:
+  @verbatim
+  $ roslaunch `rospack find pr2_full`/send_description.launch
+  @endverbatim
+  then call Gazebo factory spawner:
+  @verbatim
+  $ rosrun gazebo_plugin urdf2factory robotdesc/pr2
+  @endverbatim
+
 
 @section parameters Robot Descriptions
 \li PR2 Robot Description
   Robot descriptions are explained in the <a href="http://pr.willowgarage.com/wiki/RobotDescriptionFormat">Robot Description Format</a> page.
-  You can find the complete PR2 description file in \b ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml.
-  - To convert \b pr2.xml into Gazebo recognizable format (\b ros-pkg/robot_descriptions/gazebo_robot_description) run the following commands:
+  For example, you can find the complete PR2 description file in \b ros-pkg/robot_descriptions/pr2/pr2_defs/robots/pr2.xacro.xml.
+  - To convert \b pr2.xacro.xml into Gazebo recognizable format run the following commands:
     @verbatim
-    $ roscd gazebo_robot_description
-    $ rosmake
+    $ rosmake gazebo_plugin
+    $ rosmake pr2_defs
+    $ rosrun gazebo_plugin urdf2file `rospack find pr2_defs`/robots/pr2.expanded.xml `rospack find gazebo_robot_description`/world/pr2.model
     @endverbatim
-    thus generating \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2_xml.model.  The \e .model-file
-    is included by the gazebo world file: \b ros-pkg/robot_descriptions/gazebo_robot_description/world/robot.world.
+    thus generating \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2.model.
 
-\li Another Example: Simple Robot (Not really a robot, single link only)
-  Here is an example demonstrating a simple mechanism control / controller stack for a single DOF
-  (You can find the equivalent version in \b ros-pkg/robot_descriptions/wg_robot_description/single_link_test).
-  - \b pr2_single_link.xml
+\li More Gazebo Examples:
     @verbatim
-      <?xml version="1.0"?>
-
-      <robot name="pr2"><!-- name of the robot-->
-        
-        <!-- joint blocks -->
-        <joint name="single_link_joint" type="revolute" >
-          <axis xyz="1 0 0" />
-          <anchor xyz="0 0 0" />
-          <limit min="-M_PI" max="M_PI" effort="100" velocity="5" />
-          <calibration values="1.5 -1 " />
-        </joint>
-        
-        <joint name="base_block_joint" type="planar"> 
-        </joint>
-
-        <!-- link blocks -->
-        <link name="base_block">
-          <parent name="world" />
-          <origin xyz="0 0 0.002 " rpy="0 0 0" />
-          <joint name="base_block_joint" />
-          <inertial>
-            <mass value="1000" />
-            <com xyz="0 0 0" />
-            <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
-          </inertial> 
-          <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <map name="gazebo_material" flag="gazebo">
-              <elem key="material">Gazebo/GrassFloor</elem>
-            </map>
-            <geometry name="base_block_visual_geom">
-              <mesh scale="20 20 0.1" />
-            </geometry>
-          </visual> 
-          <collision>
-            <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
-            <geometry name="base_block_collision_geom">
-              <box size="20 20 0.1" />
-            </geometry>
-          </collision>
-        </link>
-        
-        <link name="single_link">
-          <parent name="base_block" />
-          <origin xyz="0 0 1" rpy="0 0 0" />
-          <joint name="single_link_joint" />
-          <inertial >
-            <mass value="10" />
-            <com xyz="0 0 0" /> 
-            <inertia  ixx="0.1" ixy="0.0"  ixz="0.0"  iyy="0.1"  iyz="0.0"  izz="0.1" />
-          </inertial>
-          <visual >
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <map name="gazebo_material" flag="gazebo">
-              <elem key="material">Gazebo/Red</elem>
-            </map>
-            <geometry name="sholder_roll_mesh_file">
-              <mesh scale="1.0 0.1 0.1" />
-            </geometry>
-          </visual>
-          <collision >
-            <origin xyz="0.5 0 0" rpy="0.0 0.0 0.0 " />
-            <geometry name="single_link_collision_geom">
-              <box size="1.0 0.1 0.1" />
-            </geometry>
-          </collision>
-          <map name="single_link_gravity" flag="gazebo">
-            <elem key="turnGravityOff">true</elem>
-          </map>
-        </link>
-        <!-- Define groups of links; a link may be part of multiple groups -->
-        <include>groups_single_link.xml</include>
-        <!-- mechanism controls -->
-        <include>actuators_single_link.xml</include> 
-        <include>transmissions_single_link.xml</include> 
-
-        <!-- setup for GazeboMechanismControl plugin -->
-        <map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
-          <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
-          <!-- PR2_ACTARRAY -->
-          <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>100.0</updateRate>
-            <robot filename="pr2_single_link.xml" />
-            <gazebo_physics filename="gazebo_joints_single_link.xml" /> <!-- for simulator/physics specific settigs -->
-            <interface:audio name="gazebo_actuators_dummy_iface" />
-          </controller:gazebo_actuators>
-          </verbatim>
-        </map>
-        <!-- setup for a ground truth widget, returns pose/rate information over ROS via P3D plugin -->
-        <map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
-          <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
-
-          <!-- P3D for position groundtruth -->
-          <controller:P3D name="p3d_single_link_controller" plugin="libP3D.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bodyName>single_link</bodyName>
-              <topicName>single_link_pose</topicName>
-              <frameName>single_link_frame</frameName>
-              <interface:position name="p3d_single_link_position"/>
-          </controller:P3D>
-
-          </verbatim>
-        </map>
-      </robot>
+    $ rosmake examples_gazebo
+    $ roslaunch `rospack find examples_gazebo`/single_link.launch
+    or
+    $ roslaunch `rospack find examples_gazebo`/dual_link.launch
+    or
+    $ roslaunch `rospack find examples_gazebo`/multi_link.launch
     @endverbatim
-   - where \b gazebo_joints_single_link.xml specifies damping of the joint
+\li Arm Simulation Examples:
     @verbatim
-      <robot name="pr2">
-        <joint name="single_link_joint" >
-            <explicitDampingCoefficient>1</explicitDampingCoefficient>
-        </joint>
-      </robot>
+    $ rosmake arm_gazebo
+    $ roslaunch `rospack find arm_gazebo`/l_arm.launch
+    or
+    $ roslaunch `rospack find arm_gazebo`/r_arm.launch
+    or
+    $ roslaunch `rospack find arm_gazebo`/r_arm_grasping_demo.launch
+    or
+    $ roslaunch `rospack find arm_gazebo`/r_arm_spacenav.launch
     @endverbatim
-   - \b groups_single_link.xml is used by kinematics library to construct a kinematic chain, though meaningless in this example.
+\li PR2 Simulation Examples:
     @verbatim
-      <?xml version="1.0"?>
-      <robot name="pr2"><!-- name of the robot-->
-        <group name="my_group" flags="planning kinematic">
-          roll_link
-        </group>
-      </robot>
+    $ rosmake pr2_gazebo
+    $ roslaunch `rospack find pr2_gazebo`/pr2_empty.launch
+    or
+    $ roslaunch `rospack find pr2_gazebo`/pr2_simple.launch
+    or
+    $ roslaunch `rospack find pr2_gazebo`/pr2_wg.launch
+    or
+    $ roslaunch `rospack find pr2_gazebo`/pr2_wg_no_x.launch
     @endverbatim
-   - \b actuators_single_link.xml
-    @verbatim
-      <?xml version="1.0"?>
-      <robot name="pr2"><!-- name of the robot-->
-        <actuator name="single_link_motor">
-          <motorboardID>12345</motorboardID>
-          <maxCurrent>5</maxCurrent>
-          <motor>MAXON</motor>
-          <ip> 10.12.0.103 </ip> 
-          <port> 0 </port>
-          <reduction>10</reduction>
-          <polymap>-1 -0.2 -0.5 </polymap>
-        </actuator>
-      </robot>
-    @endverbatim
-   - \b transmissions_single_link.xml
-    @verbatim
-      <?xml version="1.0"?>
-      <robot name="pr2"><!-- name of the robot-->
-        <transmission type="SimpleTransmission" name="single_link_trans">
-          <actuator name="single_link_motor" />
-          <joint name="single_link_joint" />
-          <mechanicalReduction>1</mechanicalReduction>
-          <motorTorqueConstant>1</motorTorqueConstant>
-          <pulsesPerRevolution>90000</pulsesPerRevolution>
-        </transmission>
-      </robot>
-    @endverbatim
-   - here's a simple controller xml to control the single link \bcontroller_single_link.xml:
-    @verbatim
-      <?xml version="1.0"?>
-      <controllers>
-        <controller name="test_controller" topic="single_link_controller" type="JointPositionControllerNode">
-          <joint name="single_link_joint" >
-            <pid p="2000" d="200" i="0.1" iClamp="1" />
-          </joint>
-        </controller>
-      </controllers>
-    @endverbatim
-   - and finally, to run it all, a roslaunch script can be found in \b ros-pkg/robot_descriptions/gazebo_robot_description/single_link.xml:
-    @verbatim
-      <launch>
-        <group name="wg">
-          <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/single_link_test/pr2_single_link.xml&quot;" />
-          <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_single_link.world" respawn="false" output="screen">
-            <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(env LD_LIBRARY_PATH)" />
-            <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-            <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-            <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-          </node>
-        </group>
-        <!-- startup a single controller -->
-        <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/single_link_test/controllers_single_link.xml" respawn="false" output="screen" />
-        <!-- set controller to .5 radians -->
-        <node pkg="robot_mechanism_controllers" type="control.py" args="set test_controller 0.5" respawn="false" output="screen" />
-      </launch>
-    @endverbatim
-
+  
 @section topic PR2 ROS topics
 Various dynamically loaded plugins have been outfitted for PR2.
 Below are the ROS messages actively used by PR2 simulation as described by launch script \b roslaunch \b ros-pkg/robot_descriptions/gazebo_robot_description/pr2_gazebo_actuators.xml.
