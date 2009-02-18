@@ -63,6 +63,7 @@ def main():
     params['max_effort'] = rospy.get_param("max_effort")
     params['joy_axis'] = rospy.get_param("joy_axis")
     params['dead_zone'] = rospy.get_param("joy_dead_zone")
+    params['offset'] =  rospy.get_param("offset")
 
     resp = spawn_controller(xml_for(params['joint']))
     if len(resp.ok) < 1 or not ord(resp.ok[0]):
@@ -77,7 +78,7 @@ def main():
     kill_controller(CONTROLLER_NAME)
 
 def joy_callback(data, params):
-    command = data.axes[params['joy_axis']]
+    command = data.axes[params['joy_axis']] + params['offset']
     if(abs(command) < params['dead_zone']):
       command = 0;
     else:
@@ -86,7 +87,7 @@ def joy_callback(data, params):
       if(command < -1):
         command = -1;
     effort = command * params['max_effort']
-    print "Sending effort %d"%effort
+    print "Sending effort %f"%effort
     params['pub'].publish(Float64(effort))
 
 if __name__ == '__main__':
