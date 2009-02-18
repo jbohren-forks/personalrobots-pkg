@@ -12,4 +12,7 @@
   <!-- TF Sender to Define the phase_space frame -->
   <include file="$(find pr2_teleop)/tf_sender.launch" />
 
+  <!-- Gripper Effort Controller & Commander -->
+  <include file="$(find pr2_teleop)/teleop_gripper_pedals.launch" />
+
 </launch>
