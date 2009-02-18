@@ -105,7 +105,8 @@ public:
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
-    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    tfl_.transformPoint(fixed_frame, loc, loc);
+    Stamped<Transform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
     tfl_.setTransform(pose);
 
     StatePosVel prior_sigma(Vector3(0.1,0.1,0.1), Vector3(0.0000001, 0.0000001, 0.0000001));
@@ -550,7 +551,7 @@ public:
 	// update the tracker with this candidate
         if (matched_iter->closest_ == *pf_iter)
         {
-	  // Transform candidate to odom frame
+	  // Transform candidate to fixed frame
           Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
           tfl_.transformPoint(fixed_frame, loc, loc);          
 
