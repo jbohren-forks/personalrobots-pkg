@@ -1,6 +1,5 @@
 #!/usr/bin/python
-
-#
+ #
 # run VO
 # do plot at end
 #

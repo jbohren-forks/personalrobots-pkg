@@ -55,7 +55,7 @@ filename = "2008-11-05-14-35-11-topic.bag"
 filename = "/u/prdata/videre-bags/vo1.bag"
 filename = sys.argv[1]
 framecounter = 0
-for topic, msg in rosrecord.logplayer(filename):
+for topic, msg, t in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
     break
 
@@ -77,11 +77,11 @@ for topic, msg in rosrecord.logplayer(filename):
     #vo2 = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
     #vos = [vo1,vo2]
     vos = [
-      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), sba = True),
+      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True, sba = (3,10,10)),
 #      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
     ]
 
-  start,end = 0,2
+  start,end = 0,100
 
   if cam and topic.endswith("videre/images"):
     print framecounter

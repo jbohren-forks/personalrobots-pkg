@@ -82,10 +82,11 @@ class PhonyFrame:
     self.kp = [(x+r(),y+r(),d) for (x,y,d) in self.kp]
 
 vos = [
+  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
+  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
+
   #VisualOdometer(stereo_cam, sba=(1,1,1)),
   #VisualOdometer(stereo_cam, scavenge = True, sba=None, inlier_error_threshold = 3.0),
-  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
-  VisualOdometer(stereo_cam, scavenge = False, sba=(1,1,10), inlier_error_threshold = 3.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 1.5),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.0),
   #VisualOdometer(stereo_cam, sba=(5,5,10), inlier_error_threshold = 2.5),
@@ -118,14 +119,17 @@ use_magic_disparity = False
 disparities = []
 
 trajectory = [ [] for i in vos]
-for i in range(401):
+ground_truth = []
+for i in range(8):
   print i
   if 0:
     desired_pose = Pose(rotation(0, 0,1,0), (0,0,0.01*i))
   else:
     theta = (i / 400.0) * math.pi * 2
-    r = 4.0
-    desired_pose = Pose(rotation(theta, 0,1,0), (r - r * math.cos(theta),0,r * math.sin(theta)))
+    wobble = 0.25 * (sin(theta * 9.127) + cos(theta * 3.947))
+    r = 4.0 + wobble
+    desired_pose = Pose(rotation(theta, 0,1,0), (4.0 - r * math.cos(theta),0,r * math.sin(theta)))
+  ground_truth.append(desired_pose.xform(0,0,0))
   cam = ray_camera(desired_pose, stereo_cam)
 
   if 0: # set to 1 for the first time to generate cache
@@ -179,14 +183,16 @@ for i in range(401):
       #f = PhonyFrame(~desired_pose, stereo_cam)
       #vo.lock_handle_frame(f)
 
-      if j == 1:
-        fext = SparseStereoFrame(imgStereo(imL), imgStereo(imR))
-        #fext.pose = desired_pose * Pose(rotation(0, 0,1,0), (0.1, 0, 0))
-        #fext.pose = Pose()
-        fext.pose = desired_pose
-        vo.add_external_frame(f, fext)
-        vo.handle_frame(f)
-        vo.maintain_tracks(f, fext)
+      if j == 0:
+        if (i % 1) == 0:
+          fext = SparseStereoFrame(imgStereo(imL), imgStereo(imR))
+          fext.pose = Pose()
+          fext.pose = Pose(rotation(0, 0,1,0), (0.0, 0, 0)) * desired_pose
+          fext.pose = desired_pose
+          vo.add_external_frame(f, fext)
+          vo.process_frame(f)
+          vo.maintain_tracks(f, fext)
+          vo.handle_frame(f)
       else:
         vo.handle_frame(f)
       #visualize.viz(vo, f)
@@ -218,6 +224,7 @@ if evaluate_disparity:
   pylab.ylim((0, 64))
 else:
   if 1:
+    pylab.plot([x for (x,y,z) in ground_truth], [z for (x,y,z) in ground_truth], c = 'green', label = 'ground truth')
     colors = [ 'blue', 'red', 'green', 'black', 'magenta', 'cyan' ]
     for i in range(len(vos)):
       #print trajectory[i]

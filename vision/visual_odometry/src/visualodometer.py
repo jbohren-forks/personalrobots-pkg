@@ -226,7 +226,7 @@ class FeatureDetectorOrdered:
     return features[:target_points]
 
 def FAST(imdata, xsize, ysize, thresh, barrier = 9):
-  kp = fast.fast(imdata, xsize, ysize, barrier, thresh)
+  kp = fast.fast(imdata, xsize, ysize, barrier, int(thresh))
   return sorted(fast.nonmax(kp), key = lambda x:(x[2],x[0],x[1]), reverse = True)
 
 class FeatureDetectorFast(FeatureDetectorOrdered):
@@ -507,6 +507,12 @@ class VisualOdometer:
     print f1.id, "has", len(f1.kp), "keypoints"
     print "There are", len(pairs), "pairs"
     import pylab
+    pylab.imshow(numpy.fromstring(f0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
+    pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = '%d kp' % f0.id, c = 'red')
+    pylab.figure()
+    pylab.imshow(numpy.fromstring(f1.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
+    pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
+    pylab.figure()
     for (a,b) in pairs:
       pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
     pylab.imshow(numpy.fromstring(f0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)

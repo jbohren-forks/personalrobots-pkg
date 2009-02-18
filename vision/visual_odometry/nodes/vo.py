@@ -78,6 +78,7 @@ class VO:
     rospy.TopicSub('/videre/images', ImageArray, self.handle_array, queue_size=2, buff_size=7000000)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
     #rospy.TopicSub('/dcam/stereo_info', StereoInfo, self.handle_stereo_info)
+
     rospy.TopicSub('/dcam/right/cam_info', CamInfo, self.handle_right_cam_info)
     rospy.TopicSub('/dcam/left/image_rect', Image, self.handle_left_image, queue_size=2, buff_size=7000000)
     rospy.TopicSub('/dcam/right/image_rect', Image, self.handle_right_image, queue_size=2, buff_size=7000000)

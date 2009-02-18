@@ -21,7 +21,6 @@ import unittest
 import math
 import copy
 
-from image_msgs.msg import RawStereo
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast

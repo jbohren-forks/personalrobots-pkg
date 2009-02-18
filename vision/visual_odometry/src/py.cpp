@@ -1026,10 +1026,20 @@ PyObject *pgsave(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+PyObject *pgload(PyObject *self, PyObject *args)
+{
+  TreeOptimizer3 *to = ((treeoptimizer3_t*)self)->to;
+  char *filename;
+  PyArg_ParseTuple(args, "s", &filename);
+  to->load(filename);
+  Py_RETURN_NONE;
+}
+
 /* Method table */
 static PyMethodDef treeoptimizer3_methods[] = {
   {"initializeOnlineOptimization", pginitializeOnlineOptimization, METH_VARARGS},
   {"save", pgsave, METH_VARARGS},
+  {"load", pgload, METH_VARARGS},
   {"addIncrementalEdge", pgaddIncrementalEdge, METH_VARARGS },
   {"initializeOnlineIterations", pginitializeOnlineIterations, METH_VARARGS},
   {"error", pgerror, METH_VARARGS},
