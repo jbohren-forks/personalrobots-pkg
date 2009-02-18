@@ -36,6 +36,7 @@
 
 #include "control_toolbox/pid.h"
 #include "tinyxml/tinyxml.h"
+#include "ros/node.h"
 
 namespace control_toolbox {
 
@@ -83,6 +84,17 @@ void Pid::setGains(double P, double I, double D, double I1, double I2)
   d_gain_ = D;
   i_max_ = I1;
   i_min_ = I2;
+}
+
+bool Pid::initParam(const std::string& prefix)
+{
+  ros::Node* node = ros::Node::instance();
+  node->param(prefix+"/p", p_gain_, 0.0) ;
+  node->param(prefix+"/i", i_gain_, 0.0) ;
+  node->param(prefix+"/d", d_gain_, 0.0) ;
+  node->param(prefix+"/i_clamp", i_max_, 0.0) ;
+  i_min_ = -i_max_;
+  return true;
 }
 
 bool Pid::initXml(TiXmlElement *config)

@@ -34,6 +34,9 @@
 #ifndef CONTROL_TOOLBOX_PID_H
 #define CONTROL_TOOLBOX_PID_H
 
+
+#include <string>
+
 class TiXmlElement;
 
 namespace control_toolbox {
@@ -110,6 +113,7 @@ public:
    */
   void initPid(double P, double I, double D, double I1, double I2);
 
+  bool initParam(const std::string& prefix);
   bool initXml(TiXmlElement *config);
 
   /*!
