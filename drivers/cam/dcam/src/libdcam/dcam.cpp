@@ -82,6 +82,11 @@ dcam::init()
   {
     dcam::dcRef = dc1394_new();
 
+    if (dcam::dcRef == NULL)
+    {
+      throw DcamException("Could not initialize dc1394_context.  Make sure /dev/raw1394 exists and you have permissions to access.");
+    }
+
     if (numCameras() > 0)
     {
       dc1394camera_t *camera = dc1394_camera_new((dc1394_t *)dcam::dcRef, getGuid(0));
@@ -96,6 +101,11 @@ dcam::init()
       dc1394_free((dc1394_t *)dcam::dcRef);
 
       dcam::dcRef = dc1394_new();
+    }
+
+    if (dcam::dcRef == NULL)
+    {
+      throw DcamException("Could not initialize dc1394_context.  Make sure /dev/raw1394 exists and you have permissions to access.");
     }
 
     usleep(500000);
