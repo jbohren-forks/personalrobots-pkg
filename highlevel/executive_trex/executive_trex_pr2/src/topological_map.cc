@@ -5,7 +5,7 @@
 #include <executive_trex_pr2/topological_map.h>
 #include "ConstrainedVariable.hh"
 #include "Token.hh"
-#include <map_server/image_loader.h>
+//#include <map_server/image_loader.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -214,12 +214,12 @@ constraint map_is_doorway(result, region) { result <: bool && region <: Region }
     return _singleton;
   }
 
-  /**
+  /************************************************************************
    * Map Adapter implementation
-   */
+   ************************************************************************/
   TopologicalMapAdapter::TopologicalMapAdapter(const std::string& map_file_name){
-    robot_srvs::StaticMap::Response resp;
-    loadMapFromFile(&resp, map_file_name.c_str(), 0.25, false);
+    //robot_srvs::StaticMap::Response resp;
+    //loadMapFromFile(&resp, map_file_name.c_str(), 0.25, false);
   }
 
   TopologicalMapAdapter::~TopologicalMapAdapter(){
