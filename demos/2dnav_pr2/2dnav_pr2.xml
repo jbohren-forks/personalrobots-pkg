@@ -107,8 +107,9 @@
     <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
     <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_granularity" value="0.025" />
-    <param name="/trajectory_rollout/samples_per_dim" value="20" />
+    <param name="/trajectory_rollout/sim_granularity" value="0.05" />
+    <param name="/trajectory_rollout/vx_samples" value="3" />
+    <param name="/trajectory_rollout/vtheta_samples" value="15" />
     <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
     <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
     <param name="/trajectory_rollout/occdist_scale" value="0.2" />
@@ -120,7 +121,9 @@
     <param name="/trajectory_rollout/max_vel_th" value="1.0" />
     <param name="/trajectory_rollout/min_vel_th" value="-1.0" />
     <param name="/trajectory_rollout/min_in_place_vel_th" value="0.4" />
-    <param name="/trajectory_rollout/freespace_model" value="false" />
+    <param name="/trajectory_rollout/freespace_model" value="true" />
+    <param name="/trajectory_rollout/dwa" value="true" />
+    <param name="/trajectory_rollout/simple_attractor" value="false" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen"/>
