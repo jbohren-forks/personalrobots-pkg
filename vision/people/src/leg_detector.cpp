@@ -68,9 +68,9 @@ using namespace BFL;
 using namespace MatrixWrapper;
 
 
-static const double no_observation_timeout_s = 1.0;//0.5;
+static const double no_observation_timeout_s = 1.0;
 static const double max_track_jump_m         = 1.0; 
-static const double max_meas_jump_m          = 1.0;//2.0;
+static const double max_meas_jump_m          = 0.75; // 1.0
 static const double leg_pair_separation_m    = 1.0;
 static const string fixed_frame              = "odom_combined";
 
@@ -89,7 +89,7 @@ public:
   BFL::StatePosVel sys_sigma_;
   TrackerKalman filter_;
 
-  Stamped<Point> prop_loc_;
+  Stamped<Point> position_;
 
   // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
@@ -114,11 +114,7 @@ public:
     StatePosVel est;
     filter_.getEstimate(est);
 
-    prop_loc_[0] = est.pos_[0];
-    prop_loc_[1] = est.pos_[1];
-    prop_loc_[2] = est.pos_[2];
-    prop_loc_.stamp_ =  loc.stamp_;
-    prop_loc_.frame_id_ = fixed_frame;
+    updatePosition();
   }
 
   void propagate(ros::Time time)
@@ -127,14 +123,7 @@ public:
 
     filter_.updatePrediction(time.toSec());
 
-    StatePosVel est;
-    filter_.getEstimate(est);
-
-    prop_loc_[0] = est.pos_[0];
-    prop_loc_[1] = est.pos_[1];
-    prop_loc_[2] = est.pos_[2];
-    prop_loc_.stamp_ = time;
-    prop_loc_.frame_id_ = fixed_frame;
+    updatePosition();
   }
 
   void update(Stamped<Point> loc)
@@ -152,6 +141,21 @@ public:
     cov(3,3) = 0.0025;
 
     filter_.updateCorrection(loc, cov);
+
+    updatePosition();
+  }
+
+private:
+  void updatePosition()
+  {
+    StatePosVel est;
+    filter_.getEstimate(est);
+
+    position_[0] = est.pos_[0];
+    position_[1] = est.pos_[1];
+    position_[2] = est.pos_[2];
+    position_.stamp_ = time_;
+    position_.frame_id_ = fixed_frame;
   }
 };
 
@@ -316,7 +320,6 @@ public:
       cout << "Found matching pair. The second distance was " << dist << endl;
       return;
     }
-    cout << "Done looking for two legs" << endl;
 
     // If we found one leg, let's try to find a second leg that doesn't yet have a label and is within the max distance.
     cout << "Looking for one leg plus one new leg" << endl;
@@ -338,7 +341,7 @@ public:
 	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
-	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
@@ -408,7 +411,7 @@ public:
 	dist2 = dest_loc.length();
 	
 	// Get the distance between the two legs
-	tfl_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
 	// Ensure that neither the second point, not the combination of points, is too far away.
@@ -515,7 +518,7 @@ public:
            pf_iter++)
       {
         // find the closest distance between candidate and trackers
-        float dist = loc.distance((*pf_iter)->prop_loc_);
+        float dist = loc.distance((*pf_iter)->position_);
         if ( dist < closest_dist )
         {
           closest = pf_iter;
@@ -581,7 +584,7 @@ public:
              remain_iter != propagated.end();
              remain_iter++)
         {
-          float dist = loc.distance((*remain_iter)->prop_loc_);
+          float dist = loc.distance((*remain_iter)->position_);
           if ( dist < closest_dist )
           {
             closest = remain_iter;
