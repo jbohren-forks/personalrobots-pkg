@@ -1,0 +1,14 @@
+<package>
+
+  <description brief="Teleoperation launchfiles">
+    Contains the necessary launchfiles to bring up the teleoperation master
+  </description>
+  <author>Vijay Pradeep, Eric Berger</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  
+  <depend package="pr2_phase_space" />
+  <depend package="teleop_base_pedals" />
+  <depend package="teleop_joint_effort" />
+
+</package>

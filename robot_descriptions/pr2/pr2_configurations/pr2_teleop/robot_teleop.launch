@@ -1,0 +1,15 @@
+<launch>
+  
+  <!-- Bring up joystick and base controller -->
+  <include file="$(find pr2_alpha)/teleop_joystick.launch" />
+
+  <!-- Arm Pose Controllers -->
+  <include file="$(find pr2_teleop)/controller_cartesian_pose.launch" />
+
+  <!-- Phasespace Arm Commanders -->
+  <include file="$(find pr2_teleop)/phasespace_arm_commander.launch" />
+
+  <!-- TF Sender to Define the phase_space frame -->
+  <include file="$(find pr2_teleop)/tf_sender.launch" />
+
+</launch>

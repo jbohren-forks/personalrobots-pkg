@@ -1,0 +1,7 @@
+
+<launch>
+  <node pkg="tf" type="transform_sender"
+  	name="phase_space_tf_sender"
+	args=".5 0 .65 0 0 0 phase_space base_link 100"
+	output="log" />
+</launch>
