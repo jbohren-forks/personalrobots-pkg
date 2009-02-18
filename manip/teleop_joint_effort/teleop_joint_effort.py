@@ -59,11 +59,11 @@ def main():
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
     params = {}
-    params['joint'] = rospy.get_param("joint")
-    params['max_effort'] = rospy.get_param("max_effort")
-    params['joy_axis'] = rospy.get_param("joy_axis")
-    params['dead_zone'] = rospy.get_param("joy_dead_zone")
-    params['offset'] =  rospy.get_param("offset")
+    params['joint'] = rospy.get_param("~joint")
+    params['max_effort'] = rospy.get_param("~max_effort")
+    params['joy_axis'] = rospy.get_param("~joy_axis")
+    params['dead_zone'] = rospy.get_param("~joy_dead_zone")
+    params['offset'] =  rospy.get_param("~offset")
 
     resp = spawn_controller(xml_for(params['joint']))
     if len(resp.ok) < 1 or not ord(resp.ok[0]):
