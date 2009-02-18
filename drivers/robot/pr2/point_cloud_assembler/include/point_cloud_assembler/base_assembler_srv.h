@@ -128,8 +128,7 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   param("~tf_cache_time_secs", tf_cache_time_secs, 10.0) ;
   if (tf_cache_time_secs < 0)
     ROS_ERROR("Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs) ;
-  unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL ;
-  tf_ = new tf::TransformListener(*this, true, tf_cache_time) ;
+  tf_ = new tf::TransformListener(*this, true, ros::Duration(tf_cache_time_secs)) ;
   ROS_INFO("TF Cache Time: %f Seconds", tf_cache_time_secs) ;
 
   // ***** Set max_scans *****

@@ -61,7 +61,7 @@ class TestDoorDetectionNode : public ros::Node
     robot_msgs::Door door_msg_from_detector_;
     robot_msgs::Door door_msg_to_detector_;
 
-    TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, 10000000000ULL)
+  TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
     {
       this->param<std::string>("test_door_detection_node/joy_topic",joy_topic_,"annotation_msg");
       this->param<std::string>("test_door_detection_node/frame_id",frame_id_,"base_link");

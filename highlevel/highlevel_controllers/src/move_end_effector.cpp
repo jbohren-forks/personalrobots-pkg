@@ -144,7 +144,7 @@ static const double L1_JOINT_DIFF_MAX = .11;
 MoveEndEffector::MoveEndEffector(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
 		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
   : HighlevelController<pr2_msgs::MoveEndEffectorState, pr2_msgs::MoveEndEffectorGoal>(nodeName, stateTopic, goalTopic),
-    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*this, true, 10000000000ULL) {
+    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*this, true, ros::Duration(10)) {
   // Subscribe to arm configuration messages
   subscribe(armPosTopic, mechanismState, &MoveEndEffector::handleArmConfigurationCallback, QUEUE_MAX());
 

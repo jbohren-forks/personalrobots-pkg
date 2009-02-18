@@ -102,8 +102,7 @@ public:
             s_pmasternode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
             if (tf_cache_time_secs < 0)
                 ROS_ERROR("RobotLinksFilter: Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs);
-            unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL;
-            _tf.reset(new tf::TransformListener(*s_pmasternode, true, tf_cache_time));
+            _tf.reset(new tf::TransformListener(*s_pmasternode, true, ros::Duration(tf_cache_time_secs)));
             ROS_INFO("RobotLinksFilter: TF Cache Time: %f Seconds", tf_cache_time_secs);
 
             // **** Set TF Extrapolation Limit ****

@@ -13,7 +13,7 @@ public:
   robot_msgs::Point32 msg;
   tf::TransformListener tf;
 
-  GroundTruthTransform() : ros::Node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
+  GroundTruthTransform() : ros::Node("GroundTruthTransform"), tf(*this, true, ros::Duration(10)) {
     advertise<robot_msgs::Point32>("groundtruthposition", 1);
   }
 

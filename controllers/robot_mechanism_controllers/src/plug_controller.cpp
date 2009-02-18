@@ -313,7 +313,7 @@ ROS_REGISTER_CONTROLLER(PlugControllerNode)
 
 
 PlugControllerNode::PlugControllerNode()
-: node_(ros::Node::instance()), loop_count_(0), TF(*ros::Node::instance(),false, 10000000000ULL)
+: node_(ros::Node::instance()), loop_count_(0), TF(*ros::Node::instance(),false,ros::Duration(10.0))
 {
   current_frame_publisher_=NULL;
 }

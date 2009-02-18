@@ -40,7 +40,7 @@ using namespace trajectory_rollout;
 namespace trajectory_rollout{
   GovernorNode::GovernorNode(std::vector<deprecated_msgs::Point2DFloat32> footprint_spec) : 
     ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
-    tf_(*this, true, (uint64_t)10000000000ULL), 
+    tf_(*this, true, ros::Duration(10)), 
     ma_(map_, OUTER_RADIUS),
     cm_(ma_),
     tc_(cm_, ma_, footprint_spec, ROBOT_SIDE_RADIUS, OUTER_RADIUS, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, 

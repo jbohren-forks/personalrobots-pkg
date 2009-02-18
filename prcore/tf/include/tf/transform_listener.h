@@ -55,9 +55,9 @@ public:
    * \param max_cache_time How long to store transform information */
   TransformListener(ros::Node & rosnode,
                     bool interpolating = true,
-                    int64_t max_cache_time = DEFAULT_CACHE_TIME):
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME)):
     Transformer(interpolating,
-                ros::Duration().fromNSec(max_cache_time)),
+                max_cache_time),
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");

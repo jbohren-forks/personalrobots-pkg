@@ -187,7 +187,7 @@ void HeadServoingController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadServoingControllerNode)
 
 HeadServoingControllerNode::HeadServoingControllerNode()
-: Controller(), node_(ros::Node::instance()), TF(*ros::Node::instance(),false, 10000000000ULL)
+: Controller(), node_(ros::Node::instance()), TF(*ros::Node::instance(),false, ros::Duration(10))
 {
   c_ = new HeadServoingController();
 }

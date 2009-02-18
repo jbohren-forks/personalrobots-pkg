@@ -106,8 +106,7 @@ private:
                 pnode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
                 if (tf_cache_time_secs < 0)
                     RAVELOG_ERRORA("ROSSensorSystem: Parameter tf_cache_time_secs<0 (%f)\n", tf_cache_time_secs);
-                unsigned long long tf_cache_time = tf_cache_time_secs*1000000000ULL;
-                _tf.reset(new tf::TransformListener(*pnode, true, tf_cache_time));
+                _tf.reset(new tf::TransformListener(*pnode, true, ros::Duration(tf_cache_time_secs)));
                 RAVELOG_INFOA("ROSSensorSystem: TF Cache Time: %f Seconds\n", tf_cache_time_secs);
 
                 // **** Set TF Extrapolation Limit ****

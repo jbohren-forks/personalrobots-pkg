@@ -94,7 +94,7 @@ namespace robot_model
         planning_models::KinematicModel::StateParams* getRobotStateSimple() { return m_robotStateSimple; }
       
 	
-        NodeRobotModel(ros::Node *node, const std::string &robot_model_name) : m_tf(*node, true, 1000000000ULL)
+      NodeRobotModel(ros::Node *node, const std::string &robot_model_name) : m_tf(*node, true, ros::Duration(1))
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    m_urdf = NULL;

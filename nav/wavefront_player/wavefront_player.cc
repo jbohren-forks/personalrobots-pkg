@@ -289,7 +289,7 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 10000000000ULL) // cache for 10 sec, no extrapolation
+        tf(*this, true, ros::Duration(10)) // cache for 10 sec, no extrapolation
 {
   // Initialize global pose. Will be set in control loop based on actual data.
   ///\todo does this need to be initialized?  global_pose.setIdentity();

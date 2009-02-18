@@ -9,7 +9,7 @@ class Test
     {
       node_ = new ros::Node("test");
       tf_ = new tf::TransformListener(*node_, true, 
-                                      10000000000ULL);
+                                      ros::Duration(10));
       tf_->setExtrapolationLimit( ros::Duration().fromSec(0.2));
 
       node_->subscribe("base_scan", scan_, &Test::laser_cb, this, -1);

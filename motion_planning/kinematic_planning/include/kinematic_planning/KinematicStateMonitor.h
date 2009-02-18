@@ -95,7 +95,7 @@ namespace kinematic_planning
         planning_models::KinematicModel* getKModel(void) { return m_kmodel; }
         planning_models::KinematicModel::StateParams* getRobotState() { return m_robotState; }
 	
-        KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, 1000000000ULL)
+      KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, ros::Duration(1))
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    

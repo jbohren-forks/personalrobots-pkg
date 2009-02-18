@@ -53,7 +53,7 @@ namespace ros {
 
     MoveBase::MoveBase()
       : HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>("move_base", "state", "goal"),
-      tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
+        tf_(*this, true, ros::Duration(10)), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
       global_map_accessor_(NULL),
