@@ -91,6 +91,8 @@ public:
 
   Stamped<Point> position_;
 
+  float dist_to_person_;
+
   // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
     : tfl_(tfl),
@@ -266,9 +268,9 @@ public:
 
     Point pt;
     PointMsgToTF(people_meas->pos, pt);
-    Stamped<Point> orig_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
-    orig_loc[2] = 0.0; // Ignore the height of the person measurement.
-    Stamped<Point> dest_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+    Stamped<Point> person_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
+    person_loc[2] = 0.0; // Ignore the height of the person measurement.
+    Stamped<Point> dest_loc(pt, people_meas->header.stamp, people_meas->header.frame_id); // Holder for all transformed pts.
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
@@ -277,7 +279,6 @@ public:
     list<SavedFeature*>::iterator closest2 = saved_features_.end();
     float closest_dist = max_meas_jump_m;
     float closest_pair_dist = 2*max_meas_jump_m;
-    float dist, dist1, dist2;
 
     list<SavedFeature*>::iterator it1 = saved_features_.begin();
     list<SavedFeature*>::iterator it2 = saved_features_.end();
@@ -285,26 +286,31 @@ public:
 
     // If there's a pair of legs with the right label and within the max dist, return
     // If there's one leg with the right label and within the max dist, 
-    //   find it a pair from the unlabeled legs.
-    //   If no pairs, label just the one leg.
-    // If there are no legs with the right label and within the max dist, 
+    //   find a partner for it from the unlabeled legs.
+    //   If no partners exist, label just the one leg.
+    // If there are no legs with the right label and within the max dist,
+    //   find a pair of unlabeled legs and assign them the label.
+    // If all of the above cases fail, 
     //   find a new unlabeled leg and assign the label.
     
-
-    // Try to find a tracker with the same label and within the max distance of the person.
-    cout << "Looking for two legs" << endl;
-    for (; it1 != end; ++it1)
+    // For each tracker, get the distance to this person.
+    for (; it1 != end; ++it1) 
     {
       tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
-      // Compute the distance between the person and this leg.
-      dist = dest_loc.length();
-      
+			  person_loc, fixed_frame, dest_loc);
+      (*it1)->dist_to_person_ = dest_loc.length();
+    }
+
+    // Try to find one or two trackers with the same label and within the max distance of the person.
+    cout << "Looking for two legs" << endl;
+    it1 = saved_features_.begin();
+    for (; it1 != end; ++it1)
+    {
       // If this leg belongs to the person...
       if ((*it1)->object_id == people_meas->object_id) 
       {
 	// and their distance is close enough, assign it2 to this leg, and look for a second leg. Otherwise, remove the tracker's label.
-	if (dist < max_meas_jump_m)
+	if ((*it1)->dist_to_person_ < max_meas_jump_m)
 	{
 	  if (it2 == end) 
 	    it2 = it1;
@@ -318,7 +324,7 @@ public:
     // If we found two legs with the right label and within the max distance, all is good, return.
     if (it1 != end && it2 != end) 
     {
-      cout << "Found matching pair. The second distance was " << dist << endl;
+      cout << "Found matching pair. The second distance was " << (*it1)->dist_to_person_ << endl;
       return;
     }
 
@@ -335,21 +341,16 @@ public:
       {
 	if (it1 == it2)
 	  continue;
-
-	// Compute the distance between the person and this leg.
-	tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
-	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
-	if ( (*it1)->object_id == "" && dist < closest_dist && dist_between_legs < leg_pair_separation_m )
+	if ( (*it1)->object_id == "" && (*it1)->dist_to_person_ < closest_dist && dist_between_legs < leg_pair_separation_m )
 	{
 	  closest = it1;
-	  closest_dist = dist;
+	  closest_dist = (*it1)->dist_to_person_;
 	  closest_dist_between_legs = dist_between_legs;
 	}
       }
@@ -379,22 +380,14 @@ public:
     closest_pair_dist = 2*max_meas_jump_m;
     for (; it1 != end; ++it1) 
     {
-      // Only look at trackers without ids.
-      if ((*it1)->object_id != "")
-	continue;
-
-      // Get the distance between the leg and the person.
-      tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
-                            orig_loc, fixed_frame, dest_loc);
-      dist1 = dest_loc.length();
-      // Don't jump to a far-away tracker.
-      if ( dist1 >= max_meas_jump_m ) 
+      // Only look at trackers without ids and that are not too far away.
+      if ((*it1)->object_id != "" || (*it1)->dist_to_person_ >= max_meas_jump_m )
 	continue;
 
       // Keep the single closest leg around in case none of the pairs work out.
-      if ( dist1 < closest_dist ) 
+      if ( (*it1)->dist_to_person_ < closest_dist ) 
       {
-	closest_dist = dist1;
+	closest_dist = (*it1)->dist_to_person_;
 	closest = it1;
       }
 
@@ -403,22 +396,18 @@ public:
       it2++;
       for (; it2 != end; ++it2) 
       {
-	// Only look at trackers without ids.
-	if ((*it2)->object_id != "") 
+	// Only look at trackers without ids and that are not too far away.
+	if ((*it2)->object_id != "" || (*it2)->dist_to_person_ >= max_meas_jump_m ) 
 	  continue;
-
-	// Get the distance between the leg and the person.
-	tfl_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
-	dist2 = dest_loc.length();
-	
+   
 	// Get the distance between the two legs
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
-	// Ensure that neither the second point, not the combination of points, is too far away.
-	if ( dist2 < max_meas_jump_m && dist1+dist2 < closest_pair_dist && dist_between_legs < leg_pair_separation_m ) 
+	// Ensure that the pair of legs is the closest pair to the tracker, and that the distance between the legs isn't too large.
+	if ( (*it1)->dist_to_person_+(*it2)->dist_to_person_ < closest_pair_dist && dist_between_legs < leg_pair_separation_m ) 
 	{
-	  closest_pair_dist = dist1+dist2;
+	  closest_pair_dist = (*it1)->dist_to_person_+(*it2)->dist_to_person_;
 	  closest1 = it1;
 	  closest2 = it2;
 	  closest_dist_between_legs = dist_between_legs;
