@@ -111,6 +111,10 @@ public:
   boost::scoped_ptr<Collision> collision_;
 
   Maps maps_;
+
+private:
+  Link(Link&) {}
+  void operator =(Link&) {}
 };
 
 class LinkState
