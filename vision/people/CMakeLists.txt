@@ -4,6 +4,7 @@ rospack(people)
 #genmsg()
 #find_library(curl REQUIRED)
 
+
 rospack_add_boost_directories()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
