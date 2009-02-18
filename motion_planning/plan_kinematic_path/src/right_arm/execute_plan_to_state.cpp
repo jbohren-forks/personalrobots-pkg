@@ -236,7 +236,7 @@ protected:
     
     void printPath(robot_msgs::KinematicPath &path)
     {
-	printf("Path with %d states", (int)path.states.size());	
+	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
 	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
