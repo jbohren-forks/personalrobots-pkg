@@ -83,7 +83,7 @@ public:
     constructor_string << config->Attribute("type") << typeid(T).name();
 
    
-       boost::shared_ptr<filters::FilterBase<T> > p(filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+       boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
        printf("type: %s\n", p.get()->getType().c_str());
        result = result &&  p.get()->configure(size, config);    
        reference_pointers_.push_back(p);
@@ -115,9 +115,7 @@ public:
     TiXmlDocument temp_doc;
     temp_doc.Parse(xml_config.c_str());
     TiXmlElement *config = temp_doc.RootElement();
-    TiXmlElement *self_config = temp_doc.RootElement();
     TiXmlElement *full_config = doc.RootElement();
-
 
     //Verify incoming xml for proper naming and structure    
     if (!config)
@@ -132,18 +130,15 @@ public:
   \"filters\" as the root tag");
       return false;
     }
-
     //Step into the filter list if necessary
     if (config->ValueStr() == "filters")
     {
       config = config->FirstChildElement("filter");
     }
-
+    
     //Iterate over all filter in filters (may be just one)
     for (; config; config = config->NextSiblingElement("filter"))
     {
-      printf("Filter NAME %s\n", config->Attribute("name"));
-
       if (!config->Attribute("type"))
       {
         ROS_ERROR("Could not add a filter because no type was given");
@@ -159,34 +154,24 @@ public:
         //Check for name collisions with already added filters
         for (; full_config ; full_config = full_config->NextSiblingElement("filter"))
         {
-          printf("Checking against NAME %s( %s )\n", full_config->Attribute("name"), config->Attribute("name"));
           if (!strcmp(full_config->Attribute("name"), config->Attribute("name")))
           {
             ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
             return false;
           }
         }
-        if (!self_config)
-          printf("SERIOUSLY no self_config\n");
-        else //Check for name collisions with self
+        //Check for name collisions within the list itself.
+        for (TiXmlElement *self_config = config->NextSiblingElement("filter"); self_config ; self_config = self_config->NextSiblingElement("filter"))
         {
-          for (; self_config ; self_config = self_config->NextSiblingElement("filter"))
+          if (!strcmp(self_config->Attribute("name"), config->Attribute("name")))
           {
-            if (self_config->Attribute("name"))
-              printf("no self %s\n", self_config->Attribute("name"));
-            if (config->Attribute("name"))
-              printf("no config %s\n", config->Attribute("name"));
-            ///\todo fixme crashing with double free
-            /*            if (!strcmp(self_config->Attribute("name"), config->Attribute("name")))
-            {
-              ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
-              return false;
-              }*/
+            ROS_ERROR("A self_filter with the name %s already exists", config->Attribute("name"));
+            return false;
           }
         }
       }
     }
-    
+   
     
     //No all verifications passed so add it to the global doc.
     doc.Parse(xml_config.c_str()); 
@@ -230,7 +215,7 @@ bool FilterChain<T>::update (const T& data_in, T& data_out)
   bool result;
   if (list_size == 0)
   {
-    memcpy(&data_out, &data_in, sizeof(data_in));
+    data_out = data_in;
     result = true;
   }
   else if (list_size == 1)

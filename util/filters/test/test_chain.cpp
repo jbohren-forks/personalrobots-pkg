@@ -70,12 +70,12 @@ TEST(FilterChain, configuring){
 
 
   //  chain.add("TestFilter", "");
-  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
-  printf("second\n");
-  chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
-
-  chain.configure(5);
-
+  EXPECT_TRUE(chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"));
+ 
+  EXPECT_TRUE(chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"));
+  
+  EXPECT_TRUE(chain.configure(5));
+ 
   float input1[] = {1,2,3,4,5};
   float input1a[] = {9,9,9,9,9};//seed w/incorrect values
   std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
@@ -90,7 +90,6 @@ TEST(FilterChain, configuring){
   {
     EXPECT_NEAR(input1[i], v1a[i], epsilon);
   }
-  
 }
 
 TEST(FilterChain, MisconfiguredNumberOfChannels){
