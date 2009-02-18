@@ -30,7 +30,6 @@
 #include <gtest/gtest.h>
 #include <sys/time.h>
 
-#include "filters/median.h"
 #include "filters/mean.h"
 
 using namespace filters ;
@@ -59,8 +58,13 @@ TEST(MeanFilter, ConfirmIdentityNRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
   FilterBase<std::vector<double> > * filter = new MeanFilter<std::vector<double> > ();
-  filter->configure(rows, "5");
+  filter->configure(rows, config );
 
   double input1[] = {1,2,3,4,5};
   double input1a[] = {1,2,3,4,5};
@@ -84,8 +88,13 @@ TEST(MeanFilter, ThreeRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
   FilterBase<std::vector<double> > * filter = new MeanFilter<std::vector<double> > ();
-  filter->configure(rows, "5");
+  filter->configure(rows, config);
 
   double input1[] = {0,1,2,3,4};
   std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));

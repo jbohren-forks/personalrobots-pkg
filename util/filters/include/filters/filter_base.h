@@ -30,7 +30,7 @@
 #ifndef FILTERS_FILTER_BASE_H_
 #define FILTERS_FILTER_BASE_H_
 
-
+#include <tinyxml/tinyxml.h>
 #include <typeinfo>
 #include <loki/Factory.h>
 #include "ros/assert.h"
@@ -77,7 +77,7 @@ public:
   FilterBase(){};
   virtual ~FilterBase(){};
 
-  virtual bool configure(unsigned int number_of_elements, const std::string & arguments)=0;
+  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config)=0;
 
 
   /** \brief Update the filter and return the data seperately

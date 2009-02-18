@@ -34,28 +34,22 @@
 
 using namespace filters ;
 
-TEST(TransferFunctionFilter, Compile)
-{
-  std::vector<double> a;
-  std::vector<double> b;
-  a.push_back(1.0);
-  b.push_back(3.0);
-  TransferFunctionFilter<double > compile(b,a,7);
-
-}
 
 TEST(TransferFunctionFilter, LowPass)
 {
   double epsilon = 1e-4;
-  std::vector<double> a;
-  std::vector<double> b;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  filter->configure(1, config );
+  
+
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
-  a.push_back(1.0);
-  a.push_back(-0.509525449494429);
-  b.push_back(0.245237275252786);
-  b.push_back(0.245237275252786);
-  TransferFunctionFilter<double> filter(b,a,1);
+
   in1.push_back(10.0);
   in2.push_back(70.0);
   in3.push_back(10.0);
@@ -64,13 +58,13 @@ TEST(TransferFunctionFilter, LowPass)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(11.8008);
-  filter.update(&in1, &in1);
-  filter.update(&in2, &in2);
-  filter.update(&in3, &in3);
-  filter.update(&in4, &in4);
-  filter.update(&in5, &in5);
-  filter.update(&in6, &in6);
-  filter.update(&in7, &in7);
+  filter->update(in1, in1);
+  filter->update(in2, in2);
+  filter->update(in3, in3);
+  filter->update(in4, in4);
+  filter->update(in5, in5);
+  filter->update(in6, in6);
+  filter->update(in7, in7);
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -78,15 +72,17 @@ TEST(TransferFunctionFilter, LowPass)
 TEST(TransferFunctionFilter, LowPassNonUnity)
 {
   double epsilon = 1e-4;
-  std::vector<double> a;
-  std::vector<double> b;
+
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"2.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  filter->configure(1, config );
+    
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
-  a.push_back(2.0);
-  a.push_back(-0.509525449494429);
-  b.push_back(0.245237275252786);
-  b.push_back(0.245237275252786);
-  TransferFunctionFilter<double> filter(b,a,1);
+
   in1.push_back(10.0);
   in2.push_back(70.0);
   in3.push_back(10.0);
@@ -95,13 +91,13 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(2.4088);
-  filter.update(&in1, &in1);
-  filter.update(&in2, &in2);
-  filter.update(&in3, &in3);
-  filter.update(&in4, &in4);
-  filter.update(&in5, &in5);
-  filter.update(&in6, &in6);
-  filter.update(&in7, &in7);
+  filter->update(in1, in1);
+  filter->update(in2, in2);
+  filter->update(in3, in3);
+  filter->update(in4, in4);
+  filter->update(in5, in5);
+  filter->update(in6, in6);
+  filter->update(in7, in7);
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -109,19 +105,17 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
 TEST(TransferFunctionFilter, LowPassMulti)
 {
   double epsilon = 1e-4;
-  std::vector<double> a;
-  std::vector<double> b;
+
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 -0.278059917634546\" b=\"0.018098933007514 0.245237275252786 0.054296799022543 0.018098933007514\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  filter->configure(3, config );
+
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
-  a.push_back(1.0);
-  a.push_back(-1.760041880343169);
-  a.push_back(1.182893262037831);
-  a.push_back(-0.278059917634546);
-  b.push_back(0.018098933007514);
-  b.push_back(0.245237275252786);
-  b.push_back(0.054296799022543);
-  b.push_back(0.018098933007514);
-  TransferFunctionFilter<double> filter(b,a,3);
+  
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);
@@ -153,13 +147,13 @@ TEST(TransferFunctionFilter, LowPassMulti)
   out1.push_back(60.6216);
   out1.push_back(33.9829);
   out1.push_back(28.1027);
-  filter.update(&in1, &in1);
-  filter.update(&in2, &in2);
-  filter.update(&in3, &in3);
-  filter.update(&in4, &in4);
-  filter.update(&in5, &in5);
-  filter.update(&in6, &in6);
-  filter.update(&in7, &in7);
+  filter->update(in1, in1);
+  filter->update(in2, in2);
+  filter->update(in3, in3);
+  filter->update(in4, in4);
+  filter->update(in5, in5);
+  filter->update(in6, in6);
+  filter->update(in7, in7);
 
   for(unsigned int i=0; i<out1.size(); i++)
   {
@@ -170,18 +164,17 @@ TEST(TransferFunctionFilter, LowPassMulti)
 TEST(TransferFunctionFilter, LowPassIrrational)
 {
   double epsilon = 1e-4;
-  std::vector<double> a;
-  std::vector<double> b;
+ 
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 \" b=\"0.018098933007514 0.054296799022543 0.054296799022543 0.018098933007514\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  filter->configure(3, config );
+ 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
-  a.push_back(1.0);
-  a.push_back(-1.760041880343169);
-  a.push_back(1.182893262037831);
-  b.push_back(0.018098933007514);
-  b.push_back(0.054296799022543);
-  b.push_back(0.054296799022543);
-  b.push_back(0.018098933007514);
-  TransferFunctionFilter<double> filter(b,a,3);
+
   in1.push_back(10.0);
   in1.push_back(10.0);
   in1.push_back(10.0);
@@ -213,13 +206,13 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   out1.push_back(17.1112);
   out1.push_back(9.0285);
   out1.push_back(8.3102);
-  filter.update(&in1, &in1);
-  filter.update(&in2, &in2);
-  filter.update(&in3, &in3);
-  filter.update(&in4, &in4);
-  filter.update(&in5, &in5);
-  filter.update(&in6, &in6);
-  filter.update(&in7, &in7);
+  filter->update(in1, in1);
+  filter->update(in2, in2);
+  filter->update(in3, in3);
+  filter->update(in4, in4);
+  filter->update(in5, in5);
+  filter->update(in6, in6);
+  filter->update(in7, in7);
 
   for(unsigned int i=0; i<out1.size(); i++)
   {

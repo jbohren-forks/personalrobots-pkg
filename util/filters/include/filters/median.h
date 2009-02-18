@@ -97,23 +97,23 @@ public:
    */
   ~MedianFilter();
 
-  virtual bool configure(unsigned int elements, const std::string& arguments);
+  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
 
   /** \brief Update the filter and return the data seperately
    * \param data_in double array with length width
    * \param data_out double array with length width
    */
   virtual bool update(const T& data_in, T& data_out);
+  
+  std::string name_;  //Name of the filter.
 
 protected:
   T temp_storage_;                       ///< Preallocated storage for the list to sort
   RealtimeVectorCircularBuffer<T>* data_storage_;                       ///< Storage for data between updates
   
 
-  uint32_t iterations_;                         ///< Number of iterations up to number of observations
-
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  uint32_t width_;           ///< Number of elements per observation
+  uint32_t number_of_channels_;           ///< Number of elements per observation
 
   bool configured_;  ///< Whether the filter has been configured
 
@@ -121,9 +121,8 @@ protected:
 
 template <typename T>
 MedianFilter<T>::MedianFilter():
-  iterations_(0),
   number_of_observations_(0),
-  width_(0),
+  number_of_channels_(0),
   configured_(false)
 {
   
@@ -137,18 +136,36 @@ MedianFilter<T>::~MedianFilter()
 
 
 template <typename T>
-bool MedianFilter<T>::configure(uint32_t width, const std::string& number_of_observations)
+bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
 {
   if (configured_)
     return false;
+    
+  // Parse the name of the filter from the xml.  
+  const char *name = config->Attribute("name");
+  if (!name)
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
+    return false;
+  }
+  name_ = std::string(name);
+
+  // Parse the params of the filter from the xml.
+  TiXmlElement *p = config->FirstChildElement("params");
+  if (!p)
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter was not given params.\n");
+    return false;
+  }
+  
+  number_of_observations_ = atof(p->Attribute("number_of_observations"));
+  number_of_channels_ = number_of_channels;
+    
   T temp;
-  temp.resize(width);
-  width_ = width;
-  std::stringstream ss;
-  ss << number_of_observations;
-  ss >> number_of_observations_;
+  temp.resize(number_of_channels);
   data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
   temp_storage_.resize(number_of_observations_);
+  
   configured_ = true;
   return true;
 };
@@ -157,7 +174,7 @@ template <typename T>
 bool MedianFilter<T>::update(const T& data_in, T& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  if (data_in.size() != width_ || data_out.size() != width_)
+  if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
     return false;
   if (!configured_)
     return false;
@@ -166,7 +183,7 @@ bool MedianFilter<T>::update(const T& data_in, T& data_out)
 
   unsigned int length = data_storage_->size();
 
-  for (uint32_t i = 0; i < width_; i++)
+  for (uint32_t i = 0; i < number_of_channels_; i++)
   {
     for (uint32_t row = 0; row < length; row ++)
     {

@@ -40,9 +40,9 @@ public:
   
   ~TestFilter() { printf("Destructor\n");};
 
-  virtual bool configure(unsigned int number_of_elements, const std::string & arguments) 
+  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config) 
   {
-    printf("Configured with %d %s\n", number_of_elements, arguments.c_str());
+    printf("Configured with %d \n", number_of_channels);
     
     return true;
   };
@@ -70,8 +70,8 @@ TEST(FilterChain, configuring){
 
 
   //  chain.add("TestFilter", "");
-  chain.add("MeanFilter", "5");
-  chain.add("MedianFilter", "5");
+  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
+  chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
 
   chain.configure(5);
 
@@ -99,8 +99,8 @@ TEST(FilterChain, Misconfigured){
 
 
   //  chain.add("TestFilter", "");
-  chain.add("MeanFilter", "5");
-  chain.add("MedianFilter", "5");
+  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
+  chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
 
   chain.configure(10);
 

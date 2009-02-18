@@ -34,15 +34,18 @@
 
 #include <stdint.h>
 #include <math.h>
-#include <assert.h>
 #include <vector>
+#include <string>
+
+
+#include "urdf/parser.h"
 #include "filters/filter_base.h"
-#include "misc_utils/ring_buffer.h"
+#include "filters/realtime_vector_circular_buffer.h"
 
 namespace filters
 {
 /***************************************************/
-/*! \class TransferFunctionFilter
+/*! \class TransferFunctionFilter_back
     \brief One-dimensional digital filter class.
 
     This class calculates the output for \f$N\f$ one-dimensional
@@ -58,99 +61,169 @@ namespace filters
 
 
     If \f$a[0]\f$ is not equal to 1, the coefficients are normalized by \f$a[0]\f$.
+    
+    Example xml config:<br>
+
+    <filter type="TransferFunctionFilter" name="filter_name"><br>
+        <params a="1.0 0.5" b="0.2 0.2"/><br>
+    </filter><br>
 
 */
 /***************************************************/
 template <typename T>
-class TransferFunctionFilter: public FilterBase < std::vector<T> >
+class TransferFunctionFilter: public FilterBase <T>
 {
 public:
   /**
    * \brief Construct the filter 
-   * \param b Difference eq params for the input (See class description).
-   * \param a Difference eq params for the output (See class description).
-   * \param number_of_channels Defines the number of inputs filtered.
    */
-  TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int number_of_channels) ;
+  TransferFunctionFilter() ;
 
   /** \brief Destructor to clean up
    */
-  ~TransferFunctionFilter()
-  {
-  }
-
+  ~TransferFunctionFilter();
+  
+  /** \brief Configure the filter with the correct number of channels and params.
+   * \param number_of_channels The number of inputs filtered.
+   * \param config The xml that is parsed to configure the filter.
+   */
+  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
 
   /** \brief Update the filter and return the data seperately
    * \param data_in vector<T> with n elements
    * \param data_out vector<T> with n elements
    */
-  virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
-
+  virtual bool update(const T & data_in, T& data_out) ;
   
-  //virtual bool configure(unsigned int number_of_elements, const std::string & arguments)=0;
+  
+  std::string name_;  //Name of the filter.
 
 protected:
+  
   unsigned int number_of_channels_;
   
-  RingBuffer<std::vector<T> > input_buffer_;  
-  RingBuffer<std::vector<T> > output_buffer_;
+  RealtimeVectorCircularBuffer<T>* input_buffer_;  
+  RealtimeVectorCircularBuffer<T>* output_buffer_;
   
   std::vector<double> a_;   //Transfer functon coefficients (output)
   std::vector<double> b_;   //Transfer functon coefficients (input)
-
+  
+  bool configured_;
 
 };
 
+ROS_REGISTER_FILTER(TransferFunctionFilter, std_vector_double)
+ROS_REGISTER_FILTER(TransferFunctionFilter, std_vector_float)
+
 template <typename T>
-TransferFunctionFilter<T>::TransferFunctionFilter(std::vector<double> &b, std::vector<double> &a, unsigned int number_of_channels):
-  number_of_channels_(number_of_channels),
-  input_buffer_(b.size(), std::vector<T>(number_of_channels, (T)0.0)),
-  output_buffer_(a.size(), std::vector<T>(number_of_channels, (T)0.0)),
-  a_(a), b_(b)
+TransferFunctionFilter<T>::TransferFunctionFilter():
+  number_of_channels_(0),
+  configured_(false)
 {
-  // Prevents divide by zero.
-  assert(a[0] != 0);  
+}
+
+template <typename T>
+TransferFunctionFilter<T>::~TransferFunctionFilter()
+{
+  if (input_buffer_) delete input_buffer_;
+  if (output_buffer_) delete output_buffer_;
+};
+
+template <typename T>
+bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
+{
+  // Check if the filter is already configured.
+  if (configured_)
+    return false;
+  
+  // Parse the name of the filter from the xml.  
+  const char *name = config->Attribute("name");
+  if (!name)
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
+    return false;
+  }
+  name_ = std::string(name);
+
+  // Parse the params of the filter from the xml.
+  TiXmlElement *p = config->FirstChildElement("params");
+  if (!p)
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter was not given params.\n");
+    return false;
+  }
+  
+  // Parse a and b into a std::vector<double>.
+  if (!urdf::queryVectorAttribute(p, "a", &a_))
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter, \"%s\", params has no attribute a.\n", name_.c_str());
+    return false;
+  }
+  
+  if (!urdf::queryVectorAttribute(p, "b", &b_))
+  {
+    fprintf(stderr, "Error: TransferFunctionFilter, \"%s\", params has no attribute b.\n", name_.c_str());
+    return false;
+  }
+  
+  // Get the number of channels.
+  number_of_channels_ = number_of_channels;
+  
+  // Create the input and output buffers of the correct size.
+  T temp;
+  temp.resize(number_of_channels);
+  input_buffer_ = new RealtimeVectorCircularBuffer<T>(b_.size(), temp);
+  output_buffer_ = new RealtimeVectorCircularBuffer<T>(a_.size(), temp);
+  
+  // Prevent divide by zero while normalizing coeffs.
+  //assert(a[0] != 0);  
+  if ( a_[0] == 0)
+    return false;
   
   // Normalize the coeffs by a[0].
-  if(a[0] != 1)
+  if(a_[0] != 1)
   { 
-    for(uint32_t i = 0; i < b.size(); i++)
+    for(uint32_t i = 0; i < b_.size(); i++)
     {
-      b_[i] = (b[i] / a[0]);
+      b_[i] = (b_[i] / a_[0]);
     }
-    for(uint32_t i = 1; i < a.size(); i++)
+    for(uint32_t i = 1; i < a_.size(); i++)
     {
-      a_[i] = (a[i] / a[0]);
+      a_[i] = (a_[i] / a_[0]);
     }
-    a_[0] = (a[0] / a[0]);
+    a_[0] = (a_[0] / a_[0]);
   }
+  
+  configured_ = true;
+  return true;
 };
 
 
 template <typename T>
-bool TransferFunctionFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
+bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
 {
   // Ensure the correct number of inputs
-  assert(data_in.size() == number_of_channels_);  
+  if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_ )  
+    return false;
   
   // Copy data to prevent mutation if in and out are the same ptr
-  std::vector<T> current_input = data_in;        
+  T current_input = data_in;        
 
   for (uint32_t i = 0; i < current_input.size(); i++)
   {
     data_out[i]=b_[0] * current_input[i];
 
-    for (uint32_t row = 0; row < input_buffer_.size(); row++)
+    for (uint32_t row = 0; row < input_buffer_->size(); row++)
     {
-      (data_out)[i] += b_[row+1] * input_buffer_[row][i];
+      (data_out)[i] += b_[row+1] * (*input_buffer_)[row][i];
     }
-    for (uint32_t row = 0; row < output_buffer_.size(); row++)
+    for (uint32_t row = 0; row < output_buffer_->size(); row++)
     {
-      (data_out)[i] -= a_[row+1] * output_buffer_[row][i];
+      (data_out)[i] -= a_[row+1] * (*output_buffer_)[row][i];
     }
   }
-  input_buffer_.push(current_input);
-  output_buffer_.push(data_out);
+  input_buffer_->push_front(current_input);
+  output_buffer_->push_front(data_out);
 
   return true;
 }

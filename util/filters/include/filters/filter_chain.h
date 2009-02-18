@@ -33,7 +33,7 @@
 #include "filters/filter_base.h"
 #include <sstream>
 #include <vector>
-
+#include <tinyxml/tinyxml.h>
 #include "boost/shared_ptr.hpp"
 
 namespace filters
@@ -43,18 +43,19 @@ template <typename T>
 class FilterReference
 {
 public:
-  FilterReference(const std::string& filter_name, const std::string& filter_argsuments):name_(filter_name), arguments_(filter_argsuments)
+  FilterReference(const std::string& filter_type, const std::string& filter_name, TiXmlElement *filter_config): type_(filter_type), name_(filter_name), config_(filter_config)
   {
     std::stringstream constructor_string;
-    constructor_string << filter_name << typeid(T).name();
+    constructor_string << filter_type << typeid(T).name();
     filter_ = filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str());
     printf("Created filter at %p\n in reference %p\n", filter_, this);
   };
   ~FilterReference(){ printf("reference destructor -> deleting filter\n"); delete filter_; };
 
-  filters::FilterBase<T> * filter_;
+  filters::FilterBase<T> *filter_;
+  std::string type_;
   std::string name_;
-  std::string arguments_;
+  TiXmlElement *config_;
 };
 
 
@@ -81,7 +82,7 @@ public:
            it != reference_pointers_.end(); it++) ///\todo check allignment of for 
     {
       printf("Configured %s filter at %p\n", (*it).get()->name_.c_str(), (*it).get());
-      result = result && it->get()->filter_->configure(size, it->get()->arguments_);
+      result = result && it->get()->filter_->configure(size, it->get()->config_);
     }
     
     if (result == true)
@@ -91,15 +92,71 @@ public:
     return result;
   };
 
+ filters::FilterBase<T>* getFilterByName(std::string name)
+  {
+    typename std::vector<boost::shared_ptr<filters::FilterReference<T> > >::iterator it;
+    for (it = reference_pointers_.begin();
+         it != reference_pointers_.end(); it++)
+      if ((*it).get()->name_.c_str() == name)
+        return (*it).get()->filter_;
+
+    return NULL;
+  }
+
   /** \brief Add filters to the list of filters to run on incoming data 
    * This will not configure, you must call configure before they will 
    * be useful. */
-  bool add(const std::string& filter_name, const std::string& filter_arguments)
+  bool add(const std::string& xml_config)
   {
     configured_ = false;
-    boost::shared_ptr<filters::FilterReference<T> > p(new filters::FilterReference<T>(filter_name, filter_arguments));
-    reference_pointers_.push_back(p);
-    printf("%s filter added to vector\n", filter_name.c_str());
+    
+    TiXmlDocument doc;
+    doc.Parse(xml_config.c_str());
+    
+    TiXmlElement *config = doc.RootElement();
+    if (!config)
+    {
+      ROS_ERROR("The XML given to add could not be parsed.");
+      return false;
+    }
+    if (config->ValueStr() != "filters" &&
+        config->ValueStr() != "filter")
+    {
+      ROS_ERROR("The XML given to add must have either \"filter\" or \
+  \"filters\" as the root tag");
+      return false;
+    }
+    
+    if (config->ValueStr() == "filters")
+    {
+      config = config->FirstChildElement("filter");
+    }
+
+    for (; config; config = config->NextSiblingElement("filter"))
+    {
+
+      if (!config->Attribute("type"))
+      {
+        ROS_ERROR("Could not add a filter because no type was given");
+        return false;
+      }
+      else if (!config->Attribute("name"))
+      {
+        ROS_ERROR("Could not add a filter because no name was given");
+        return false;
+      }
+      else
+      {
+        if (getFilterByName(config->Attribute("name")))
+        {
+          ROS_ERROR("A filter with the name %s already exists", config->Attribute("name"));
+          return false;
+        }
+        boost::shared_ptr<filters::FilterReference<T> > p(new filters::FilterReference<T>(config->Attribute("type"), config->Attribute("name"), config));
+        reference_pointers_.push_back(p);
+        printf("%s filter added to vector\n", config->Attribute("type"));
+      }
+    }
     return true;
   };
 

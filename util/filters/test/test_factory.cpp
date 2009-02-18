@@ -38,9 +38,9 @@ public:
   
   ~TestFilter() { printf("Destructor\n");};
 
-  virtual bool configure(unsigned int number_of_elements, const std::string & arguments) 
+  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config) 
   {
-    printf("Configured with %d %s\n", number_of_elements, arguments.c_str());
+    printf("Configured with %d\n", number_of_channels);
     return true;
   };
 
@@ -75,7 +75,11 @@ TEST(FilterChain, configuring)
          a1_filter->getType().c_str(), 
          b_filter->getType().c_str());
 
-  a_filter->configure(4, "");
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+
+  a_filter->configure(4, config);
 
   delete a_filter;
   delete a1_filter;
