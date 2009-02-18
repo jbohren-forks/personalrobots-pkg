@@ -26,7 +26,6 @@
   <depend package="mechanism_control" />
   <depend package="mechanism_model" />
   <depend package="tinyxml" />
-  <depend package="axis_cam" />
   <depend package="bullet" />
   <depend package="wg_robot_description_parser" />
   <export>
