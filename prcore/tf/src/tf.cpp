@@ -38,13 +38,16 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
   //  printf ("remapping prefix:%s with frame_id:%s\n", prefix.c_str(), frame_id.c_str());
   if (frame_id.size() > 0)
     if (frame_id[0] == '/')
-      return frame_id;
-  
+    {
+      std::string stripped_frame_id = frame_id.substr(1,frame_id.length());
+      return stripped_frame_id;
+    }
   if (prefix.size() > 0)
   {
     if (prefix[0] == '/')
     {
-      std::string composite = prefix;
+      std::string stripped_prefix = prefix.substr(1,prefix.length());
+      std::string composite = stripped_prefix;
       composite.append("/");
       composite.append(frame_id);
       return composite;
@@ -52,8 +55,7 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
     else
     {
       std::string composite;
-      composite = "/";
-      composite.append(prefix);
+      composite = prefix;
       composite.append("/");
       composite.append(frame_id);
       return composite;
@@ -61,7 +63,9 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
 
   }
   else
+  {
     return frame_id;
+  }
 };
 
 Transformer::Transformer(bool interpolating,

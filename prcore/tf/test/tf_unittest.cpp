@@ -1215,6 +1215,21 @@ TEST(tf, RepeatedTimes)
 
 }
 
+TEST(tf, remap)
+{
+  //no prefix
+  EXPECT_STREQ("id", tf::remap("","id").c_str());
+  //prefix w/o /
+  EXPECT_STREQ("asdf/id", tf::remap("asdf","id").c_str());
+  //prefix w /
+  EXPECT_STREQ("asdf/id", tf::remap("/asdf","id").c_str());
+  // frame_id w / -> no prefix
+  EXPECT_STREQ("id", tf::remap("asdf","/id").c_str());
+  // frame_id w / -> no prefix
+  EXPECT_STREQ("id", tf::remap("/asdf","/id").c_str());
+
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
