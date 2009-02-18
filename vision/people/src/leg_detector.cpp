@@ -34,11 +34,6 @@
 
 
 
-static const double no_observation_timeout_s = 0.5;
-static const double max_track_jump_m         = 1.0; 
-static const double max_meas_jump_m          = 1.0;
-static const double leg_pair_separation_m    = 1.0;
-
 
 
 #include "laser_processor.h"
@@ -71,6 +66,16 @@ using namespace estimation;
 using namespace BFL;
 using namespace MatrixWrapper;
 
+
+static const double no_observation_timeout_s = 0.5;
+static const double max_track_jump_m         = 1.0; 
+static const double max_meas_jump_m          = 1.0;
+static const double leg_pair_separation_m    = 1.0;
+static const string fixed_frame              = "odom_combined";
+
+
+
+
 class SavedTracker
 {
 public:
@@ -86,14 +91,27 @@ public:
   StatePosVel sys_sigma_;
   TrackerKalman filter_;
 
-  Stamped<Point> prop_loc_;
+  Stamped<Point> position_;
+
+  SymmetricMatrix meas_noise;
 
   // one leg tracker
-  SavedTracker(Stamped<Point> loc, TransformListener& tfl)
-    : robot_state_(tfl),
+  SavedTracker(Stamped<Point> loc, TransformListener& robot_state)
+    : robot_state_(robot_state),
       sys_sigma_(Vector3(0.05, 0.05, 0.05), Vector3(1.0, 1.0, 1.0)),
-      filter_("tracker_name",sys_sigma_)
+      filter_("tracker_name",sys_sigma_),
+      meas_noise(3)
   {
+    // transform loc to fixed_frame
+    robot_state_.transformPoint(fixed_frame, loc, loc);
+
+    // meas noise
+    meas_noise = 0.0;
+    meas_noise(1,1) = 0.0025;
+    meas_noise(2,2) = 0.0025;
+    meas_noise(3,3) = 0.0025;
+
+
     char id[100];
     snprintf(id,100,"legtrack%d", nextid++);
     id_ = std::string(id);
@@ -102,11 +120,12 @@ public:
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
-    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
+    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, fixed_frame);
     robot_state_.setTransform(pose);
 
     StatePosVel prior_sigma(Vector3(0.1,0.1,0.1), Vector3(0.0000001, 0.0000001, 0.0000001));
     filter_.initialize(loc, prior_sigma, time_.toSec());    
+    updateLoc();
 
     color_.push_back((unsigned char)(rand()%255));
     color_.push_back((unsigned char)(rand()%255));
@@ -116,46 +135,35 @@ public:
   void propagate(ros::Time time)
   {
     time_ = time;
-
     filter_.updatePrediction(time.toSec());
+    updateLoc();
+  }
 
+  void update(Stamped<Point> meas)
+  {
+    Stamped<btTransform> pose( btTransform(Quaternion(), meas), meas.stamp_, id_, meas.frame_id_);
+    robot_state_.setTransform(pose);
+
+    meas_time_ = meas.stamp_;
+    time_ = meas_time_;
+
+    filter_.updateCorrection(meas, meas_noise);
+
+    updateLoc();
+  }
+
+
+private:
+  void updateLoc()
+  {
     StatePosVel est;
     filter_.getEstimate(est);
 
-    prop_loc_[0] = est.pos_[0];
-    prop_loc_[1] = est.pos_[1];
-    prop_loc_[2] = est.pos_[2];
-    prop_loc_.stamp_ = time;
-    prop_loc_.frame_id_ = "odom";
-
-    /*
-    Stamped<Point> orig_loc(Point(0,0,0),  meas_time_, id_);
-    Stamped<Point> inter_loc;
-
-    robot_state_.transformPoint("odom", orig_loc, inter_loc);
-      
-    inter_loc.stamp_ = time_;
-      
-    robot_state_.transformPoint("odom", inter_loc, prop_loc_);
-    */
-    
-  }
-
-  void update(Stamped<Point> loc)
-  {
-    Stamped<btTransform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
-    robot_state_.setTransform(pose);
-
-    meas_time_ = loc.stamp_;
-    time_ = meas_time_;
-
-    SymmetricMatrix cov(3);
-    cov = 0.0;
-    cov(1,1) = 0.0025;
-    cov(2,2) = 0.0025;
-    cov(3,3) = 0.0025;
-
-    filter_.updateCorrection(loc, cov);
+    position_[0] = est.pos_[0];
+    position_[1] = est.pos_[1];
+    position_[2] = est.pos_[2];
+    position_.stamp_ = time_;
+    position_.frame_id_ = fixed_frame;
   }
 };
 
@@ -186,7 +194,6 @@ public:
 int g_argc;
 char** g_argv;
 
-static const string fixed_frame = "odom";
 
 
 
@@ -298,16 +305,7 @@ public:
     cout << "Looking for two legs" << endl;
     for (; it1 != end; ++it1)
     {
-      //      try {
-      //robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
-      //                     orig_loc, fixed_frame, dest_loc);
-      cout << "1. it1 " << (*it1)->id_ << endl;
-      robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
-	//}
-	//catch (tf::TransformException& ex) {
-	//cout << ex.what() << endl;
-	//continue;
-    //}
+      robot_state_.transformPoint((*it1)->id_, (*it1)->position_.stamp_, orig_loc, fixed_frame, dest_loc);
       // Compute the distance between the person and this leg.
       dist = dest_loc.length();
       
@@ -332,7 +330,6 @@ public:
       cout << "Found matching pair. The second distance was " << dist << endl;
       return;
     }
-    cout << "Done looking for two legs" << endl;
 
     // If we found one leg, let's try to find a second leg that doesn't yet have a label and is within the max distance.
     cout << "Looking for one leg plus one new leg" << endl;
@@ -349,24 +346,11 @@ public:
 	  continue;
 
 	// Compute the distance between the person and this leg.
-	//try {
-	//robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
-	//	      orig_loc, fixed_frame, dest_loc);
-	cout << "2. it1 " << (*it1)->id_ << endl;
-	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
-	  //}
-	  //catch (tf::TransformException& ex) {
-	  //cout << ex.what() << endl;
-	  //continue;
-	  //}
+	robot_state_.transformPoint((*it1)->id_, (*it1)->position_.stamp_, orig_loc, fixed_frame, dest_loc);
 	dist = dest_loc.length();
 	
 	// Get the distance between the two legs
-        printf("get the dist between the legs\n");
-	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	cout << "3. it1 " << (*it1)->id_ << " it2 " << (*it2)->prop_loc_.frame_id_ << endl;
-	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc); 
-	printf("done get dist\n");
+	robot_state_.transformPoint((*it1)->id_, (*it1)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc); 
         dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
@@ -408,17 +392,7 @@ public:
 	continue;
 
       // Get the distance between the leg and the person.
-      //try {
-      //	robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
-      //                    orig_loc, fixed_frame, dest_loc);
-
-      cout << "4. it1 " << (*it1)->id_ << endl;
-      robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
-	//}
-	//catch (tf::TransformException& ex) {
-	//cout << ex.what() << endl;
-	//continue;
-	//}
+      robot_state_.transformPoint((*it1)->id_, (*it1)->position_.stamp_, orig_loc, fixed_frame, dest_loc);
       dist1 = dest_loc.length();
       // Don't jump to a far-away tracker.
       if ( dist1 >= max_meas_jump_m ) 
@@ -441,24 +415,11 @@ public:
 	  continue;
 
 	// Get the distance between the leg and the person.
-	//try {
-	//robot_state_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
-        cout << "5. it2 " << (*it2)->id_ <<endl;
-
-	robot_state_.transformPoint((*it2)->id_, (*it2)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);  
-	//}
-	  //catch (tf::TransformException& ex) {
-	  //cout << ex.what() << endl;
-	  //continue;
-	  //}
+	robot_state_.transformPoint((*it2)->id_, (*it2)->position_.stamp_, orig_loc, fixed_frame, dest_loc);  
 	dist2 = dest_loc.length();
 	
 	// Get the distance between the two legs
-        printf("Get the dist between the legs, take 2\n");
-	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	cout << "6. it1 " << (*it1)->id_ << " it2 " << (*it2)->prop_loc_.frame_id_ << endl;
-	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
-	printf("Done get dist, take 2\n");
+	robot_state_.transformPoint((*it1)->id_, (*it1)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
         dist_between_legs = dest_loc.length();
 
 	// Ensure that neither the second point, not the combination of points, is too far away.
@@ -491,41 +452,6 @@ public:
 
     cout << "Nothing matched" << endl;
 
-    // Nothing matched.
- 
-    //////////////////////////////
-
-//     // loop over trackers
-//     list<SavedTracker*>::iterator it  = saved_trackers_.begin();
-//     list<SavedTracker*>::iterator end = saved_trackers_.end();
-//     for (; it != end; ++it )
-//     {
-//       // transform people position into local frame with the origin at the tracker position 
-//       Stamped<Point> loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
-//       loc[2] = 0.0; // Ignore the height of the person measurement.
-//       robot_state_.transformPoint((*it)->id_, people_meas->header.stamp,
-//                             loc, fixed_frame, loc);
-//       float dist = loc.length();
-//       // distance between tracker and people position
-//       if ( dist < closest_dist )
-//       {
-//         closest = it;
-//         closest_dist = dist;
-//       }
-
-//       // If we're already tracking the object
-//       if ((*it)->object_id == people_meas->object_id)
-//       {
-//         if (dist < max_meas_jump_m)
-//           return; 
-// 	// remove link between tracker and person
-//         else
-//           (*it)->object_id = "";
-//       }
-//     }
-
-//     if (closest_dist < max_meas_jump_m)
-//       (*closest)->object_id = people_meas->object_id;
   }
 
 
@@ -542,31 +468,31 @@ public:
 
     // if no measurement matches to a tracker in the last no_observation_timeout  seconds: erase tracker
     ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-no_observation_timeout_s);
-    list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
-    while (sf_iter != saved_trackers_.end())
+    list<SavedTracker*>::iterator saved_tracker_iter = saved_trackers_.begin();
+    while (saved_tracker_iter != saved_trackers_.end())
     {
-      if ((*sf_iter)->meas_time_ < purge)
+      if ((*saved_tracker_iter)->meas_time_ < purge)
       {
-        delete (*sf_iter);
-        saved_trackers_.erase(sf_iter++);
+        delete (*saved_tracker_iter);
+        saved_trackers_.erase(saved_tracker_iter++);
       }
       else
-        ++sf_iter;
+        ++saved_tracker_iter;
     }
 
 
     // System update of trackers, and copy updated ones in propagate list
     list<SavedTracker*> propagated;
-    for (list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
-         sf_iter != saved_trackers_.end();
-         sf_iter++)
+    for (list<SavedTracker*>::iterator saved_tracker_iter = saved_trackers_.begin();
+         saved_tracker_iter != saved_trackers_.end();
+         saved_tracker_iter++)
     {
-      (*sf_iter)->propagate(scan->header.stamp);
-      propagated.push_back(*sf_iter);
+      (*saved_tracker_iter)->propagate(scan->header.stamp);
+      propagated.push_back(*saved_tracker_iter);
     }
 
 
-    // Detection step: build up the set of "measurement" clusters
+    // Detection step: build up the set of measurement clusters
     ScanProcessor processor(*scan, mask_);
     processor.splitConnected(connected_thresh_);
     processor.removeLessThan(5);
@@ -607,7 +533,7 @@ public:
 	     pf_iter++)
 	  {
 	    // find the closest distance between measurement and trackers
-	    float dist = loc.distance((*pf_iter)->prop_loc_);
+	    float dist = loc.distance((*pf_iter)->position_);
 	    if ( dist < closest_dist )
 	      {
 		closest = pf_iter;
@@ -678,7 +604,7 @@ public:
              remain_iter != propagated.end();
              remain_iter++)
         {
-          float dist = loc.distance((*remain_iter)->prop_loc_);
+          float dist = loc.distance((*remain_iter)->position_);
           if ( dist < closest_dist )
           {
             closest = remain_iter;
@@ -714,13 +640,13 @@ public:
     robot_msgs::ChannelFloat32 channel;
     int i = 0;
 
-    for (list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
-         sf_iter != saved_trackers_.end();
-         sf_iter++,i++)
+    for (list<SavedTracker*>::iterator saved_tracker_iter = saved_trackers_.begin();
+         saved_tracker_iter != saved_trackers_.end();
+         saved_tracker_iter++,i++)
     {
       // publish filter result
       StatePosVel est;
-      (*sf_iter)->filter_.getEstimate(est);
+      (*saved_tracker_iter)->filter_.getEstimate(est);
       filter_visualize[i].x = est.pos_[0];
       filter_visualize[i].y = est.pos_[1];
       filter_visualize[i].z = est.pos_[2];
@@ -732,14 +658,14 @@ public:
       weights[i] = *(float*)&(rgb[min(998, max(1, (int)(reliability * 999)))]);
 
       // publish trackers that are assigned to a person
-      if ((*sf_iter)->object_id != "")
+      if ((*saved_tracker_iter)->object_id != "")
       {         
 	robot_msgs::PositionMeasurement pos;
 
-	pos.header.stamp = (*sf_iter)->time_;
-	pos.header.frame_id = "odom";
+	pos.header.stamp = (*saved_tracker_iter)->time_;
+	pos.header.frame_id = fixed_frame;
 	pos.name = "leg_detector";
-	pos.object_id = (*sf_iter)->object_id;
+	pos.object_id = (*saved_tracker_iter)->object_id;
 	pos.pos.x = est.pos_[0];
 	pos.pos.y = est.pos_[1];
 	pos.pos.z = est.pos_[2];
@@ -766,7 +692,7 @@ public:
     channel.vals = weights;
     robot_msgs::PointCloud  people_cloud; 
     people_cloud.chan.push_back(channel);
-    people_cloud.header.frame_id = "odom";//scan_.header.frame_id;
+    people_cloud.header.frame_id = fixed_frame;
     people_cloud.header.stamp = scan->header.stamp;
     people_cloud.pts  = filter_visualize;
     publish("kalman_filt_cloud", people_cloud);
