@@ -55,9 +55,11 @@ namespace trajectory_rollout {
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
        * @param laser_scan The planar scan used to clear freespace
+       * @param  risk_poly The specification of the polygon to check the footprint against
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan) = 0;
+          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
+          std::vector<deprecated_msgs::Point2DFloat32> risk_poly) = 0;
 
       /**
        * @brief  Subclass will implement this method to check a footprint at a given position and orientation for legality in the world
@@ -65,11 +67,10 @@ namespace trajectory_rollout {
        * @param  footprint The specification of the footprint of the robot in world coordinates
        * @param  inscribed_radius The radius of the inscribed circle of the robot
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @param  risk_poly The specification of the polygon to check the footprint against
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
       virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius, const std::vector<deprecated_msgs::Point2DFloat32>& risk_poly) = 0;
+          double inscribed_radius, double circumscribed_radius) = 0;
 
       /**
        * @brief  Subclass will implement a destructor

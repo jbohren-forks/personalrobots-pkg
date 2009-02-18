@@ -44,7 +44,7 @@ namespace trajectory_rollout{
     ma_(map_, OUTER_RADIUS),
     cm_(ma_),
     tc_(cm_, ma_, footprint_spec, ROBOT_SIDE_RADIUS, OUTER_RADIUS, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, 
-        SIM_TIME, SIM_RES, VEL_SAMPLES, PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE),
+        SIM_TIME, SIM_RES, VEL_SAMPLES, VEL_SAMPLES, PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE),
     cycle_time_(0.1)
   {
     robot_vel_.setIdentity();

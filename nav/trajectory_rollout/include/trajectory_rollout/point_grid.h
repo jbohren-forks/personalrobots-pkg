@@ -88,20 +88,21 @@ namespace trajectory_rollout {
        * @param  footprint The specification of the footprint of the robot in world coordinates
        * @param  inscribed_radius The radius of the inscribed circle of the robot
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @param  risk_poly The specification of the polygon to check the footprint against
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
       virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius, const std::vector<deprecated_msgs::Point2DFloat32>& risk_poly);
+          double inscribed_radius, double circumscribed_radius);
 
       /**
        * @brief  Inserts observations from sensors into the point grid
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
        * @param laser_scan The laser scan used to clear freespace
+       * @param  risk_poly The specification of the polygon to check the footprint against
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint, 
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan);
+          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
+          std::vector<deprecated_msgs::Point2DFloat32> risk_poly);
 
       /**
        * @brief  Convert from world coordinates to grid coordinates
@@ -360,6 +361,7 @@ namespace trajectory_rollout {
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
       double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
       std::vector< std::list<robot_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
+      std::vector<deprecated_msgs::Point2DFloat32> risk_poly_; ///< @brief Risk polygon
       std::vector<deprecated_msgs::Point2DFloat32> new_poly_one_; ///< @brief Storage for risk polygon computations
       std::vector<deprecated_msgs::Point2DFloat32> new_poly_two_; ///< @brief Storage for risk polygon computations 
   };

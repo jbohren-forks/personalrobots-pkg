@@ -45,6 +45,34 @@ using namespace robot_msgs;
 using namespace deprecated_msgs;
 using namespace costmap_2d;
 
+void printPoint(Point32 pt){
+  printf("(%.2f, %.2f, %.2f)", pt.x, pt.y, pt.z);
+}
+
+void printPSHeader(){
+  printf("%%!PS\n");
+  printf("%%%%Creator: Eitan Marder-Eppstein (Willow Garage)\n");
+  printf("%%%%EndComments\n");
+}
+
+void printPSFooter(){
+  printf("showpage\n%%%%EOF\n");
+}
+
+void printPolygonPS(const vector<Point2DFloat32>& poly, double line_width){
+  if(poly.size() < 2)
+    return;
+
+  printf("%.2f setlinewidth\n", line_width);
+  printf("newpath\n");
+  printf("%.4f\t%.4f\tmoveto\n", poly[0].x * 10, poly[0].y * 10);
+  for(unsigned int i = 1; i < poly.size(); ++i)
+    printf("%.4f\t%.4f\tlineto\n", poly[i].x * 10, poly[i].y * 10);
+  printf("%.4f\t%.4f\tlineto\n", poly[0].x * 10, poly[0].y * 10);
+  printf("closepath stroke\n");
+
+}
+
 namespace trajectory_rollout {
 
 PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated_msgs::Point2DFloat32 origin, double max_z, double obstacle_range, double min_seperation) :
@@ -56,7 +84,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
   }
 
   double PointGrid::footprintCost(const Point2DFloat32& position, const vector<Point2DFloat32>& footprint, 
-      double inscribed_radius, double circumscribed_radius, const vector<Point2DFloat32>& risk_poly){
+      double inscribed_radius, double circumscribed_radius){
     //the half-width of the circumscribed sqaure of the robot is equal to the circumscribed radius
     double outer_square_radius = circumscribed_radius;
 
@@ -74,7 +102,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
     //if there are no points in the circumscribed square... we don't have to check against the footprint
     if(points_.empty())
-      return riskAreaPercent(footprint, risk_poly);
+      return riskAreaPercent(risk_poly_, footprint);
 
     //compute the half-width of the inner square from the inscribed radius of the robot
     double inner_square_radius = sqrt((inscribed_radius * inscribed_radius) / 2.0);
@@ -109,7 +137,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
 
     //if we get through all the points and none of them are in the footprint it's legal
-    return riskAreaPercent(footprint, risk_poly);
+    return riskAreaPercent(risk_poly_, footprint);
   }
 
   bool PointGrid::ptInPolygon(const Point32& pt, const vector<Point2DFloat32>& poly){
@@ -329,7 +357,16 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
   }
 
   void PointGrid::updateWorld(const vector<Point2DFloat32>& footprint, 
-      const vector<Observation>& observations, const PlanarLaserScan& laser_scan){
+      const vector<Observation>& observations, const PlanarLaserScan& laser_scan,
+      vector<Point2DFloat32> risk_poly){
+    //update the risk polygon
+    risk_poly_ = risk_poly;
+
+    //printPSHeader();
+    //printPolygonPS(risk_poly, 0.1);
+    //riskAreaPercent(risk_poly, footprint);
+    //printPSFooter();
+
     //remove points in the laser scan boundry
     removePointsInScanBoundry(laser_scan);
 
@@ -550,6 +587,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
   }
 
   double PointGrid::riskAreaPercent(const vector<Point2DFloat32>& poly, const vector<Point2DFloat32>& clip){
+    return 1.0;
     new_poly_one_ = poly;
     //will be at most n + m points in new polygon
     new_poly_two_.resize(poly.size() + clip.size());
@@ -562,6 +600,8 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
     double old_area = polygonArea(poly);
     double new_area = old_area - polygonArea(new_poly_one_);
+    //printPolygonPS(poly, 0.1);
+    //printPolygonPS(new_poly_one_, 0.3);
     return new_area / old_area;
   }
 
@@ -581,9 +621,6 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
 };
 
-void printPoint(Point32 pt){
-  printf("(%.2f, %.2f, %.2f)", pt.x, pt.y, pt.z);
-}
 
 using namespace trajectory_rollout;
 
@@ -682,6 +719,8 @@ int main(int argc, char** argv){
   struct timeval start, end;
   double start_t, end_t, t_diff;
 
+  printPSHeader();
+
   gettimeofday(&start, NULL);
   for(unsigned int i = 0; i < 2000; ++i){
     pg.insert(point);
@@ -690,22 +729,29 @@ int main(int argc, char** argv){
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
-  printf("Insertion Time: %.9f \n", t_diff);
-  pg.removePointsInPolygon(footprint);
+  printf("%%Insertion Time: %.9f \n", t_diff);
+
+  vector<Observation> obs;
+  PlanarLaserScan scan;
 
   gettimeofday(&start, NULL);
-  double legal = pg.footprintCost(pt, footprint, 0.0, .95, footprint2);
-  double legal2 = pg.footprintCost(pt, footprint, 0.0, .95, footprint);
+  pg.updateWorld(footprint, obs, scan, footprint2);
+  double legal = pg.footprintCost(pt, footprint, 0.0, .95);
+  pg.updateWorld(footprint, obs, scan, footprint);
+  double legal2 = pg.footprintCost(pt, footprint, 0.0, .95);
   gettimeofday(&end, NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
-  printf("Footprint calc: %.9f \n", t_diff);
+
+  printf("%%Footprint calc: %.9f \n", t_diff);
 
   if(legal >= 0.0)
-    printf("Legal footprint %.4f, %.4f\n", legal, legal2);
+    printf("%%Legal footprint %.4f, %.4f\n", legal, legal2);
   else
-    printf("Illegal footprint\n");
+    printf("%%Illegal footprint\n");
+
+  printPSFooter();
 
   return 0;
 }

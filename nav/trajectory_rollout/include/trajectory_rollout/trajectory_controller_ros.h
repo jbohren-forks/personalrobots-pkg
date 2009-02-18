@@ -122,11 +122,13 @@ namespace trajectory_rollout {
       void getLocalGoal(double& x, double& y);
 
       void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
+      void tiltScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
 
     private:
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryController* tc_; ///< @brief The trajectory controller
       tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
+      tf::MessageNotifier<laser_scan::LaserScan>* tilt_scan_notifier_; ///< @brief Used to guarantee that a transform is available for tilt scans
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       std::string global_frame_; ///< @brief The frame in which the controller will run
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
@@ -134,6 +136,8 @@ namespace trajectory_rollout {
       PlanarLaserScan base_scan_; ///< @breif Storage for the last scan the base laser took... used for clearing free-space in front of the robot
       PointGrid* point_grid_; ///< @brief If using a freespace grid... we want to access it
       bool freespace_model_;  ///< @brief Keep track of whether we are using a freespace controller or not
+      double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
+      std::vector<deprecated_msgs::Point2DFloat32> risk_poly_;
   };
 
 };

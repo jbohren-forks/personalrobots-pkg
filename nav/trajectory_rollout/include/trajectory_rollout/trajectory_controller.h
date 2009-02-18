@@ -81,7 +81,8 @@ namespace trajectory_rollout {
        * @param acc_lim_theta The acceleration limit of the robot in the theta direction
        * @param sim_time The number of seconds to "roll-out" each trajectory
        * @param sim_granularity The distance between simulation points should be small enough that the robot doesn't hit things
-       * @param samples_per_dim The number of trajectories to sample in each dimension
+       * @param vx_samples The number of trajectories to sample in the x dimension
+       * @param vtheta_samples The number of trajectories to sample in the theta dimension
        * @param pdist_scale A scaling factor for how close the robot should stay to the path
        * @param gdist_scale A scaling factor for how aggresively the robot should pursue a local goal
        * @param occdist_scale A scaling factor for how much the robot should prefer to stay away from obstacles
@@ -93,6 +94,8 @@ namespace trajectory_rollout {
        * @param max_vel_th The maximum rotational velocity the controller will explore
        * @param min_vel_th The minimum rotational velocity the controller will explore
        * @param min_in_place_vel_th The absolute value of the minimum in-place rotational velocity the controller will explore
+       * @param dwa Set this to true to use the Dynamic Window Approach, false to use acceleration limits
+       * @param simple_attractor Set this to true to allow simple attraction to a goal point instead of intelligent cost propagation
        * @param y_vels A vector of the y velocities the controller will explore
        */
       TrajectoryController(WorldModel& world_model, 
@@ -100,12 +103,14 @@ namespace trajectory_rollout {
           std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
           double inscribed_radius, double circumscribed_radius,
           double acc_lim_x = 1.0, double acc_lim_y = 1.0, double acc_lim_theta = 1.0,
-          double sim_time = 1.0, double sim_granularity = 0.025, int samples_per_dim = 20, 
+          double sim_time = 1.0, double sim_granularity = 0.025, 
+          int vx_samples = 20, int vtheta_samples = 20,
           double pdist_scale = 0.6, double gdist_scale = 0.8, double occdist_scale = 0.2,
           double heading_lookahead = 0.325, double oscillation_reset_dist = 0.05, 
           bool holonomic_robot = true,
           double max_vel_x = 0.5, double min_vel_x = 0.1, 
           double max_vel_th = 1.0, double min_vel_th = -1.0, double min_in_place_vel_th = 0.4,
+          bool dwa = true, bool simple_attractor = false,
           std::vector<double> y_vels = std::vector<double>(4));
 
       /**
@@ -120,12 +125,14 @@ namespace trajectory_rollout {
        * @param drive_velocities Will be set to velocities to send to the robot base
        * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
        * @param base_scan The latest base scan taken... used to clear freespace in front of the robot depending on the model
+       * @param risk_poly The polygon to score the footprint of the robot against
        * @return The selected path or trajectory
        */
       Trajectory findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel,
           tf::Stamped<tf::Pose>& drive_velocities, 
           std::vector<costmap_2d::Observation> observations = std::vector<costmap_2d::Observation>(0),
-          PlanarLaserScan base_scan = PlanarLaserScan());
+          PlanarLaserScan base_scan = PlanarLaserScan(), 
+          std::vector<deprecated_msgs::Point2DFloat32> risk_poly = std::vector<deprecated_msgs::Point2DFloat32>(0));
 
       /**
        * @brief  Update the plan that the controller is following
@@ -261,7 +268,8 @@ namespace trajectory_rollout {
       double sim_time_; ///< @brief The number of seconds each trajectory is "rolled-out"
       double sim_granularity_; ///< @brief The distance between simulation points
 
-      int samples_per_dim_; ///< @brief The number of samples we'll take in each dimension of the control space
+      int vx_samples_; ///< @brief The number of samples we'll take in the x dimenstion of the control space
+      int vtheta_samples_; ///< @brief The number of samples we'll take in the theta dimension of the control space
 
       double pdist_scale_, gdist_scale_, occdist_scale_; ///< @brief Scaling factors for the controller's cost function
       double acc_lim_x_, acc_lim_y_, acc_lim_theta_; ///< @brief The acceleration limits of the robot
@@ -275,6 +283,10 @@ namespace trajectory_rollout {
       bool holonomic_robot_; ///< @brief Is the robot holonomic or not? 
       
       double max_vel_x_, min_vel_x_, max_vel_th_, min_vel_th_, min_in_place_vel_th_; ///< @brief Velocity limits for the controller
+
+      bool dwa_;  ///< @brief Should we use the dynamic window approach?
+      bool simple_attractor_;  ///< @brief Enables simple attraction to a goal point
+
       std::vector<double> y_vels_; ///< @brief Y velocities to explore
 
       /**

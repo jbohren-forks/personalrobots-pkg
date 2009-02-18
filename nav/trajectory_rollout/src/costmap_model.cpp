@@ -44,7 +44,7 @@ namespace trajectory_rollout {
   CostmapModel::CostmapModel(const ObstacleMapAccessor& ma) : ma_(ma) {}
 
   double CostmapModel::footprintCost(const Point2DFloat32& position, const vector<Point2DFloat32>& footprint, 
-      double inscribed_radius, double circumscribed_radius, const vector<Point2DFloat32>& risk_poly){
+      double inscribed_radius, double circumscribed_radius){
     if(footprint.size() < 3)
       return -1.0;
 

@@ -47,25 +47,28 @@ namespace trajectory_rollout{
       std::vector<deprecated_msgs::Point2DFloat32> footprint_spec,
       double inscribed_radius, double circumscribed_radius,
       double acc_lim_x, double acc_lim_y, double acc_lim_theta,
-      double sim_time, double sim_granularity, int samples_per_dim, 
+      double sim_time, double sim_granularity, 
+      int vx_samples, int vtheta_samples,
       double pdist_scale, double gdist_scale, double occdist_scale,
       double heading_lookahead, double oscillation_reset_dist,
       bool holonomic_robot,
       double max_vel_x, double min_vel_x,
       double max_vel_th, double min_vel_th, double min_in_place_vel_th,
+      bool dwa, bool simple_attractor,
       vector<double> y_vels)
     : map_(ma.getWidth(), ma.getHeight()), ma_(ma), 
     world_model_(world_model), footprint_spec_(footprint_spec),
     inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius),
     goal_x_(0), goal_y_(0),
-    sim_time_(sim_time), sim_granularity_(sim_granularity), samples_per_dim_(samples_per_dim),
+    sim_time_(sim_time), sim_granularity_(sim_granularity), 
+    vx_samples_(vx_samples), vtheta_samples_(vtheta_samples),
     pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), occdist_scale_(occdist_scale),
     acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta),
     prev_x_(0), prev_y_(0), heading_lookahead_(heading_lookahead), 
     oscillation_reset_dist_(oscillation_reset_dist), holonomic_robot_(holonomic_robot),
     max_vel_x_(max_vel_x), min_vel_x_(min_vel_x), 
     max_vel_th_(max_vel_th), min_vel_th_(min_vel_th), min_in_place_vel_th_(min_in_place_vel_th),
-    y_vels_(y_vels)
+    dwa_(dwa), simple_attractor_(simple_attractor), y_vels_(y_vels)
   {
     //the robot is not stuck to begin with
     stuck_left = false;
@@ -214,9 +217,12 @@ namespace trajectory_rollout{
     double x_i = x;
     double y_i = y;
     double theta_i = theta;
-    double vx_i = vx;
-    double vy_i = vy;
-    double vtheta_i = vtheta;
+
+    double vx_i, vy_i, vtheta_i;
+
+    vx_i = vx;
+    vy_i = vy;
+    vtheta_i = vtheta;
 
     //compute the magnitude of the velocities
     double vmag = sqrt(vx_samp * vx_samp + vy_samp * vy_samp);
@@ -269,18 +275,19 @@ namespace trajectory_rollout{
       path_dist = cell_pdist;
       goal_dist = cell_gdist;
 
-      /* For following blindly
-      goal_dist = (x_i - global_plan_[global_plan_.size() -1].x) * (x_i - global_plan_[global_plan_.size() -1].x) + 
-        (y_i - global_plan_[global_plan_.size() -1].y) * (y_i - global_plan_[global_plan_.size() -1].y);
-      path_dist = 0.0;
-      */
-
-
-      //if a point on this trajectory has no clear path to goal it is invalid
-      if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
-        ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
-        traj.cost_ = -2.0;
-        return;
+      //do we want to follow blindly
+      if(simple_attractor_){
+        goal_dist = (x_i - global_plan_[global_plan_.size() -1].x) * (x_i - global_plan_[global_plan_.size() -1].x) + 
+          (y_i - global_plan_[global_plan_.size() -1].y) * (y_i - global_plan_[global_plan_.size() -1].y);
+        path_dist = 0.0;
+      }
+      else{
+        //if a point on this trajectory has no clear path to goal it is invalid
+        if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
+          ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
+          traj.cost_ = -2.0;
+          return;
+        }
       }
 
       //the point is legal... add it to the trajectory
@@ -318,15 +325,26 @@ namespace trajectory_rollout{
     double max_vel_x, max_vel_theta;
     double min_vel_x, min_vel_theta;
 
-    max_vel_x = min(max_vel_x_, vx + acc_x * sim_time_);
-    min_vel_x = max(min_vel_x_, vx - acc_x * sim_time_);
+    //should we use the dynamic window approach?
+    if(dwa_){
+      max_vel_x = min(max_vel_x_, vx + acc_x * sim_time_ * sim_granularity_);
+      min_vel_x = max(min_vel_x_, vx - acc_x * sim_time_ * sim_granularity_);
 
-    max_vel_theta = min(max_vel_th_, vtheta + acc_theta * sim_time_);
-    min_vel_theta = max(min_vel_th_, vtheta - acc_theta * sim_time_);
+      max_vel_theta = min(max_vel_th_, vtheta + acc_theta * sim_time_ * sim_granularity_);
+      min_vel_theta = max(min_vel_th_, vtheta - acc_theta * sim_time_ * sim_granularity_);
+    }
+    else{
+      max_vel_x = min(max_vel_x_, vx + acc_x * sim_time_);
+      min_vel_x = max(min_vel_x_, vx - acc_x * sim_time_);
+
+      max_vel_theta = min(max_vel_th_, vtheta + acc_theta * sim_time_);
+      min_vel_theta = max(min_vel_th_, vtheta - acc_theta * sim_time_);
+    }
+
 
     //we want to sample the velocity space regularly
-    double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-    double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
+    double dvx = (max_vel_x - min_vel_x) / vx_samples_;
+    double dvtheta = (max_vel_theta - min_vel_theta) / (vtheta_samples_ - 1);
 
     double vx_samp = min_vel_x;
     double vtheta_samp = min_vel_theta;
@@ -345,7 +363,7 @@ namespace trajectory_rollout{
     double impossible_cost = map_.map_.size();
 
     //loop through all x velocities
-    for(int i = 0; i < samples_per_dim_; ++i){
+    for(int i = 0; i < vx_samples_; ++i){
       vtheta_samp = 0;
       //first sample the straight trajectory
       generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
@@ -359,7 +377,7 @@ namespace trajectory_rollout{
 
       vtheta_samp = min_vel_theta;
       //next sample all theta trajectories
-      for(int j = 0; j < samples_per_dim_ - 1; ++j){
+      for(int j = 0; j < vtheta_samples_ - 1; ++j){
         generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
@@ -409,7 +427,7 @@ namespace trajectory_rollout{
     //let's try to rotate toward open space
     double heading_dist = DBL_MAX;
 
-    for(int i = 0; i < samples_per_dim_; ++i){
+    for(int i = 0; i < vtheta_samples_; ++i){
       //enforce a minimum rotational velocity because the base can't handle small in-place rotations
       double vtheta_samp_limited = vtheta_samp > 0 ? max(vtheta_samp, min_in_place_vel_th_) : min(vtheta_samp, -1.0 * min_in_place_vel_th_);
 
@@ -610,7 +628,6 @@ namespace trajectory_rollout{
     best_traj = comp_traj;
     comp_traj = swap;
     
-
     strafe_left = false;
     strafe_right = false;
     stuck_left_strafe = false;
@@ -631,7 +648,7 @@ namespace trajectory_rollout{
   //given the current state of the robot, find a good trajectory
   Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
       tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations,
-      PlanarLaserScan base_scan){
+      PlanarLaserScan base_scan, vector<Point2DFloat32> risk_poly){
 
     double uselessPitch, uselessRoll, yaw, velYaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
@@ -657,7 +674,7 @@ namespace trajectory_rollout{
     }
 
     //update the point grid with new observations
-    world_model_.updateWorld(oriented_footprint, observations, base_scan);
+    world_model_.updateWorld(oriented_footprint, observations, base_scan, risk_poly);
 
     //reset the map for new operations
     map_.resetPathDist();
@@ -735,7 +752,7 @@ namespace trajectory_rollout{
     robot_position.y = y_i;
 
     //check if the footprint is legal
-    double footprint_cost = world_model_.footprintCost(robot_position, oriented_footprint, inscribed_radius_, circumscribed_radius_, oriented_footprint);
+    double footprint_cost = world_model_.footprintCost(robot_position, oriented_footprint, inscribed_radius_, circumscribed_radius_);
 
     return footprint_cost;
   }

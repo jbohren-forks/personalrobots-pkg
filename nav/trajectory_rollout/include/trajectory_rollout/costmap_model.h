@@ -67,20 +67,21 @@ namespace trajectory_rollout {
        * @param  footprint The specification of the footprint of the robot in world coordinates
        * @param  inscribed_radius The radius of the inscribed circle of the robot
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
-       * @param  risk_poly The specification of the polygon to check the footprint against
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
       virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          double inscribed_radius, double circumscribed_radius, const std::vector<deprecated_msgs::Point2DFloat32>& risk_poly);
+          double inscribed_radius, double circumscribed_radius);
 
       /**
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
        * @param laser_scan The scan used to clear freespace
+       * @param  risk_poly The specification of the polygon to check the footprint against
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan) {}
+          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
+          std::vector<deprecated_msgs::Point2DFloat32> risk_poly) {}
 
     private:
       /**
