@@ -71,7 +71,7 @@ using namespace estimation;
 using namespace BFL;
 using namespace MatrixWrapper;
 
-class SavedFeature
+class SavedTracker
 {
 public:
   static int nextid;
@@ -89,7 +89,7 @@ public:
   Stamped<Point> prop_loc_;
 
   // one leg tracker
-  SavedFeature(Stamped<Point> loc, TransformListener& tfl)
+  SavedTracker(Stamped<Point> loc, TransformListener& tfl)
     : robot_state_(tfl),
       sys_sigma_(Vector3(0.05, 0.05, 0.05), Vector3(1.0, 1.0, 1.0)),
       filter_("tracker_name",sys_sigma_)
@@ -159,25 +159,25 @@ public:
   }
 };
 
-int SavedFeature::nextid = 0;
+int SavedTracker::nextid = 0;
 
 
 
 
-class MatchedFeature
+class MatchedTracker
 {
 public:
-  SampleSet* candidate_;
-  SavedFeature* closest_;
+  SampleSet* measurement_;
+  SavedTracker* closest_tracker_;
   float distance_;
 
-  MatchedFeature(SampleSet* candidate, SavedFeature* closest, float distance)
-  : candidate_(candidate)
-  , closest_(closest)
+  MatchedTracker(SampleSet* measurement, SavedTracker* closest_tracker, float distance)
+  : measurement_(measurement)
+  , closest_tracker_(closest_tracker)
   , distance_(distance)
   {}
 
-  inline bool operator< (const MatchedFeature& b) const
+  inline bool operator< (const MatchedTracker& b) const
   {
     return (distance_ <  b.distance_);
   }
@@ -210,10 +210,10 @@ public:
 
   char save_[100];
 
-  list<SavedFeature*> saved_features_;
+  list<SavedTracker*> saved_trackers_;
   boost::mutex saved_mutex_;
 
-  int feature_id_;
+  int tracker_id_;
 
   MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
   MessageNotifier<laser_scan::LaserScan>*  laser_notifier_;
@@ -228,7 +228,7 @@ public:
     if (g_argc > 1) {
       forest.load(g_argv[1]);
       feat_count_ = forest.get_active_var_mask()->cols;
-      printf("Loaded forest with %d features: %s\n", feat_count_, g_argv[1]);
+      printf("Loaded forest with %d trackers: %s\n", feat_count_, g_argv[1]);
     } else {
       printf("Please provide a trained random forests classifier as an input.\n");
       shutdown();
@@ -247,7 +247,7 @@ public:
 							       boost::bind(&LegDetector::laserCallback, this, _1), 
 							       "scan", fixed_frame, 10);
 
-    feature_id_ = 0;
+    tracker_id_ = 0;
   }
 
 
@@ -264,7 +264,7 @@ public:
   void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
   {
     // If there are no legs, return.
-    if (saved_features_.empty()) 
+    if (saved_trackers_.empty()) 
       return;
 
     Point pt;
@@ -275,16 +275,16 @@ public:
 
     boost::mutex::scoped_lock lock(saved_mutex_);
 
-    list<SavedFeature*>::iterator closest = saved_features_.end();
-    list<SavedFeature*>::iterator closest1 = saved_features_.end();
-    list<SavedFeature*>::iterator closest2 = saved_features_.end();
+    list<SavedTracker*>::iterator closest = saved_trackers_.end();
+    list<SavedTracker*>::iterator closest1 = saved_trackers_.end();
+    list<SavedTracker*>::iterator closest2 = saved_trackers_.end();
     float closest_dist = max_meas_jump_m;
     float closest_pair_dist = 2*max_meas_jump_m;
     float dist, dist1, dist2;
 
-    list<SavedFeature*>::iterator it1 = saved_features_.begin();
-    list<SavedFeature*>::iterator it2 = saved_features_.end();
-    list<SavedFeature*>::iterator end = saved_features_.end();
+    list<SavedTracker*>::iterator it1 = saved_trackers_.begin();
+    list<SavedTracker*>::iterator it2 = saved_trackers_.end();
+    list<SavedTracker*>::iterator end = saved_trackers_.end();
 
     // If there's a pair of legs with the right label and within the max dist, return
     // If there's one leg with the right label and within the max dist, 
@@ -340,9 +340,9 @@ public:
     if (it2 != end) 
     {
       closest_dist = max_meas_jump_m;
-      closest = saved_features_.end();
+      closest = saved_trackers_.end();
 
-      it1 = saved_features_.begin();
+      it1 = saved_trackers_.begin();
       for (; it1 != end; ++it1) 
       {
 	if (it1 == it2)
@@ -394,11 +394,11 @@ public:
 
     cout << "Looking for a pair of new legs" << endl;
     // If we didn't find any legs, try to find two unlabeled legs that are close together and close to the tracker.
-    it1 = saved_features_.begin();
-    it2 = saved_features_.begin();
-    closest = saved_features_.end();
-    closest1 = saved_features_.end();
-    closest2 = saved_features_.end();
+    it1 = saved_trackers_.begin();
+    it2 = saved_trackers_.begin();
+    closest = saved_trackers_.end();
+    closest1 = saved_trackers_.end();
+    closest2 = saved_trackers_.end();
     closest_dist = max_meas_jump_m;
     closest_pair_dist = 2*max_meas_jump_m;
     for (; it1 != end; ++it1) 
@@ -496,8 +496,8 @@ public:
     //////////////////////////////
 
 //     // loop over trackers
-//     list<SavedFeature*>::iterator it  = saved_features_.begin();
-//     list<SavedFeature*>::iterator end = saved_features_.end();
+//     list<SavedTracker*>::iterator it  = saved_trackers_.begin();
+//     list<SavedTracker*>::iterator end = saved_trackers_.end();
 //     for (; it != end; ++it )
 //     {
 //       // transform people position into local frame with the origin at the tracker position 
@@ -542,13 +542,13 @@ public:
 
     // if no measurement matches to a tracker in the last no_observation_timeout  seconds: erase tracker
     ros::Time purge = scan->header.stamp + ros::Duration().fromSec(-no_observation_timeout_s);
-    list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
-    while (sf_iter != saved_features_.end())
+    list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
+    while (sf_iter != saved_trackers_.end())
     {
       if ((*sf_iter)->meas_time_ < purge)
       {
         delete (*sf_iter);
-        saved_features_.erase(sf_iter++);
+        saved_trackers_.erase(sf_iter++);
       }
       else
         ++sf_iter;
@@ -556,9 +556,9 @@ public:
 
 
     // System update of trackers, and copy updated ones in propagate list
-    list<SavedFeature*> propagated;
-    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
-         sf_iter != saved_features_.end();
+    list<SavedTracker*> propagated;
+    for (list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
+         sf_iter != saved_trackers_.end();
          sf_iter++)
     {
       (*sf_iter)->propagate(scan->header.stamp);
@@ -566,12 +566,12 @@ public:
     }
 
 
-    // Detection step: build up the set of "candidate" clusters
+    // Detection step: build up the set of "measurement" clusters
     ScanProcessor processor(*scan, mask_);
     processor.splitConnected(connected_thresh_);
     processor.removeLessThan(5);
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
-    list<SampleSet*> candidates;
+    list<SampleSet*> measurements;
     for (list<SampleSet*>::iterator i = processor.getClusters().begin();
          i != processor.getClusters().end();
          i++)
@@ -583,30 +583,30 @@ public:
 
       if (forest.predict( tmp_mat ) > 0)
       {
-        candidates.push_back(*i);
+        measurements.push_back(*i);
       }
     }
 
 
-    // For each candidate, find the closest tracker (within threshold) and add to the match list
+    // For each measurement, find the closest tracker (within threshold) and add to the match list
     // If no tracker is found, start a new one
-    multiset<MatchedFeature> matches;
-    for (list<SampleSet*>::iterator candidate_iter = candidates.begin();
-         candidate_iter != candidates.end(); 
-	 candidate_iter++)
+    multiset<MatchedTracker> matches;
+    for (list<SampleSet*>::iterator measurement_iter = measurements.begin();
+         measurement_iter != measurements.end(); 
+	 measurement_iter++)
       {
-	// transform candidate point to fixed_frame
-	Stamped<Point> loc((*candidate_iter)->center(), scan->header.stamp, scan->header.frame_id);
+	// transform measurement point to fixed_frame
+	Stamped<Point> loc((*measurement_iter)->center(), scan->header.stamp, scan->header.frame_id);
 	robot_state_.transformPoint(fixed_frame, loc, loc);
 	
-	list<SavedFeature*>::iterator closest = propagated.end();
+	list<SavedTracker*>::iterator closest = propagated.end();
 	float closest_dist = max_track_jump_m;
 	
-	for (list<SavedFeature*>::iterator pf_iter = propagated.begin();
+	for (list<SavedTracker*>::iterator pf_iter = propagated.begin();
 	     pf_iter != propagated.end();
 	     pf_iter++)
 	  {
-	    // find the closest distance between candidate and trackers
+	    // find the closest distance between measurement and trackers
 	    float dist = loc.distance((*pf_iter)->prop_loc_);
 	    if ( dist < closest_dist )
 	      {
@@ -617,12 +617,12 @@ public:
 	// Nothing close to it, start a new track
 	if (closest == propagated.end()) 
 	  {
-	    list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, robot_state_));
-	    (*candidate_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
+	    list<SavedTracker*>::iterator new_saved = saved_trackers_.insert(saved_trackers_.end(), new SavedTracker(loc, robot_state_));
+	    (*measurement_iter)->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
 	  }
-	// Add the candidate, the tracker and the distance to a match list
+	// Add the measurement, the tracker and the distance to a match list
 	else
-	  matches.insert(MatchedFeature(*candidate_iter,*closest,closest_dist));
+	  matches.insert(MatchedTracker(*measurement_iter,*closest,closest_dist));
       }
     
 
@@ -632,24 +632,24 @@ public:
     // find the match with the shortest distance for each tracker
     while (matches.size() > 0)
     {
-      multiset<MatchedFeature>::iterator matched_iter = matches.begin();
+      multiset<MatchedTracker>::iterator matched_iter = matches.begin();
       bool found = false;
-      list<SavedFeature*>::iterator pf_iter = propagated.begin();
+      list<SavedTracker*>::iterator pf_iter = propagated.begin();
       while (pf_iter != propagated.end())
       {
-	// update the tracker with this candidate
-        if (matched_iter->closest_ == *pf_iter)
+	// update the tracker with this measurement
+        if (matched_iter->closest_tracker_ == *pf_iter)
         {
-	  // Transform candidate to fixed frame
-          Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
+	  // Transform measurement to fixed frame
+          Stamped<Point> loc(matched_iter->measurement_->center(), scan->header.stamp, scan->header.frame_id);
           robot_state_.transformPoint(fixed_frame, loc, loc);          
 
-	  // Update the tracker with the candidate location
-          matched_iter->closest_->update(loc);
+	  // Update the tracker with the measurement location
+          matched_iter->closest_tracker_->update(loc);
           
 	  // visualize
-          matched_iter->candidate_->appendToCloud(filt_cloud_, matched_iter->closest_->color_[0], 
-						  matched_iter->closest_->color_[1], matched_iter->closest_->color_[2]);
+          matched_iter->measurement_->appendToCloud(filt_cloud_, matched_iter->closest_tracker_->color_[0], 
+						  matched_iter->closest_tracker_->color_[1], matched_iter->closest_tracker_->color_[2]);
 	  // remove this match and 
           matches.erase(matched_iter);
           propagated.erase(pf_iter++);
@@ -664,17 +664,17 @@ public:
       }
 
       // didn't find tracker to update, because it was deleted above
-      // try to assign the candidate to another tracker
+      // try to assign the measurement to another tracker
       if (!found)
       {
 	// transform matched point to fixed frame
-        Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
+        Stamped<Point> loc(matched_iter->measurement_->center(), scan->header.stamp, scan->header.frame_id);
         robot_state_.transformPoint(fixed_frame, loc, loc);
 
-        list<SavedFeature*>::iterator closest = propagated.end();
+        list<SavedTracker*>::iterator closest = propagated.end();
         float closest_dist = max_track_jump_m;
       
-        for (list<SavedFeature*>::iterator remain_iter = propagated.begin();
+        for (list<SavedTracker*>::iterator remain_iter = propagated.begin();
              remain_iter != propagated.end();
              remain_iter++)
         {
@@ -686,18 +686,18 @@ public:
           }
         }
 
-	// no tracker is within a threshold of this candidate
-	// so create a new tracker for this candidate
+	// no tracker is within a threshold of this measurement
+	// so create a new tracker for this measurement
         if (closest == propagated.end())
         {
-          list<SavedFeature*>::iterator new_saved = saved_features_.insert(saved_features_.end(), new SavedFeature(loc, robot_state_));
+          list<SavedTracker*>::iterator new_saved = saved_trackers_.insert(saved_trackers_.end(), new SavedTracker(loc, robot_state_));
 
-          matched_iter->candidate_->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
+          matched_iter->measurement_->appendToCloud(filt_cloud_, (*new_saved)->color_[0], (*new_saved)->color_[1], (*new_saved)->color_[2]);
           matches.erase(matched_iter);
         }
         else
         {
-          matches.insert(MatchedFeature(matched_iter->candidate_,*closest,closest_dist));
+          matches.insert(MatchedTracker(matched_iter->measurement_,*closest,closest_dist));
           matches.erase(matched_iter);
         }
       }
@@ -709,13 +709,13 @@ public:
     publish("filt_cloud", filt_cloud_);
     cvReleaseMat(&tmp_mat); tmp_mat = 0;
 
-    vector<robot_msgs::Point32> filter_visualize(saved_features_.size());
-    vector<float> weights(saved_features_.size());
+    vector<robot_msgs::Point32> filter_visualize(saved_trackers_.size());
+    vector<float> weights(saved_trackers_.size());
     robot_msgs::ChannelFloat32 channel;
     int i = 0;
 
-    for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
-         sf_iter != saved_features_.end();
+    for (list<SavedTracker*>::iterator sf_iter = saved_trackers_.begin();
+         sf_iter != saved_trackers_.end();
          sf_iter++,i++)
     {
       // publish filter result
