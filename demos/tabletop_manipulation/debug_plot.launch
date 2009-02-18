@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="rosviz" type="rxplot" args="-m. -p10 /mechanism_state/joint_states[25]/position:commanded_effort,/mechanism_state/joint_states[28]/position:commanded_effort" output="screen"/>
+  <node pkg="rosviz" type="rxplot" args="-m. -p10 /mechanism_state/joint_states[25]/position,/mechanism_state/joint_states[28]/position" output="screen"/>
+</launch>
+
