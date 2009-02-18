@@ -301,7 +301,8 @@ public:
       //      try {
       //robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
       //                     orig_loc, fixed_frame, dest_loc);
-	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
+      cout << "1. it1 " << (*it1)->id_ << endl;
+      robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	//}
 	//catch (tf::TransformException& ex) {
 	//cout << ex.what() << endl;
@@ -351,6 +352,7 @@ public:
 	//try {
 	//robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
 	//	      orig_loc, fixed_frame, dest_loc);
+	cout << "2. it1 " << (*it1)->id_ << endl;
 	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	  //}
 	  //catch (tf::TransformException& ex) {
@@ -362,6 +364,7 @@ public:
 	// Get the distance between the two legs
         printf("get the dist between the legs\n");
 	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	cout << "3. it1 " << (*it1)->id_ << " it2 " << (*it2)->prop_loc_.frame_id_ << endl;
 	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc); 
 	printf("done get dist\n");
         dist_between_legs = dest_loc.length();
@@ -408,6 +411,8 @@ public:
       //try {
       //	robot_state_.transformPoint((*it1)->id_, people_meas->header.stamp,
       //                    orig_loc, fixed_frame, dest_loc);
+
+      cout << "4. it1 " << (*it1)->id_ << endl;
       robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);
 	//}
 	//catch (tf::TransformException& ex) {
@@ -438,6 +443,8 @@ public:
 	// Get the distance between the leg and the person.
 	//try {
 	//robot_state_.transformPoint((*it2)->id_, people_meas->header.stamp, orig_loc, fixed_frame, dest_loc);
+        cout << "5. it2 " << (*it2)->id_ <<endl;
+
 	robot_state_.transformPoint((*it2)->id_, (*it2)->prop_loc_.stamp_, orig_loc, fixed_frame, dest_loc);  
 	//}
 	  //catch (tf::TransformException& ex) {
@@ -449,6 +456,7 @@ public:
 	// Get the distance between the two legs
         printf("Get the dist between the legs, take 2\n");
 	//robot_state_.transformPoint((*it1)->id_, (*it2)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
+	cout << "6. it1 " << (*it1)->id_ << " it2 " << (*it2)->prop_loc_.frame_id_ << endl;
 	robot_state_.transformPoint((*it1)->id_, (*it1)->prop_loc_.stamp_, (*it2)->prop_loc_, fixed_frame, dest_loc);
 	printf("Done get dist, take 2\n");
         dist_between_legs = dest_loc.length();
