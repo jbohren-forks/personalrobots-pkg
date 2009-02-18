@@ -37,32 +37,53 @@ class LinkageTest : public testing::Test
 {
 protected:
   LinkageTest()
-    : link_models(4), links(4),
-      joint_models(3), joints(3)
   {
+    for (size_t i = 0; i < 4; ++i)
+    {
+      link_models.push_back(new Link());
+      links.push_back(new LinkState());
+    }
+    for (size_t i = 0; i < 3; ++i)
+    {
+      joint_models.push_back(new Joint());
+      joints.push_back(new JointState());
+    }
+  }
+  ~LinkageTest()
+  {
+    for (size_t i = 0; i < link_models.size(); ++i)
+    {
+      delete link_models[i];
+      delete links[i];
+    }
+    for (size_t i = 0; i < joint_models.size(); ++i)
+    {
+      delete joint_models[i];
+      delete joints[i];
+    }
   }
 
   virtual void SetUp()
   {
     unsigned int i;
     for (i = 0; i < links.size(); ++i)
-      links[i].link_ = &link_models[i];
+      links[i]->link_ = link_models[i];
     for (i = 0; i < joints.size(); ++i) {
-      joints[i].joint_ = &joint_models[i];
-      joint_models[i].type_ = JOINT_CONTINUOUS;
+      joints[i]->joint_ = joint_models[i];
+      joint_models[i]->type_ = JOINT_CONTINUOUS;
     }
 
     // Link 0
     // Stationary
     // Link 1
-    link_models[1].origin_xyz_.setValue(1, 0, 0);
-    joint_models[0].axis_.setValue(0, 0, 1);
+    link_models[1]->origin_xyz_.setValue(1, 0, 0);
+    joint_models[0]->axis_.setValue(0, 0, 1);
     // Link 2
-    link_models[2].origin_xyz_.setValue(1, 0, 0);
-    joint_models[1].axis_.setValue(0, 1, 0);
+    link_models[2]->origin_xyz_.setValue(1, 0, 0);
+    joint_models[1]->axis_.setValue(0, 1, 0);
     // Link 3
-    link_models[3].origin_xyz_.setValue(1, 0, 0);
-    joint_models[2].axis_.setValue(0, 0, 1);
+    link_models[3]->origin_xyz_.setValue(1, 0, 0);
+    joint_models[2]->axis_.setValue(0, 0, 1);
   }
 
   virtual void TearDown()
@@ -71,21 +92,21 @@ protected:
 
   void propagate()
   {
-    links[0].propagateFK(NULL, NULL);
+    links[0]->propagateFK(NULL, NULL);
     for (unsigned int i = 1; i < links.size(); ++i)
-      links[i].propagateFK(&links[i-1], &joints[i-1]);
+      links[i]->propagateFK(links[i-1], joints[i-1]);
   }
 
   void set_joint(int i, double p, double v)
   {
-    joints[i].position_ = p;
-    joints[i].velocity_ = v;
+    joints[i]->position_ = p;
+    joints[i]->velocity_ = v;
   }
 
-  std::vector<Link> link_models;
-  std::vector<LinkState> links;
-  std::vector<Joint> joint_models;
-  std::vector<JointState> joints;
+  std::vector<Link*> link_models;
+  std::vector<LinkState*> links;
+  std::vector<Joint*> joint_models;
+  std::vector<JointState*> joints;
 };
 
 TEST_F(LinkageTest, AtZeroPosition)
@@ -96,15 +117,15 @@ TEST_F(LinkageTest, AtZeroPosition)
 
   propagate();
 
-  EXPECT_NEAR(links[1].abs_position_[0], 1, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[1], 0, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[2], 0, 0.001);
-  EXPECT_NEAR(links[2].abs_position_[0], 2, 0.001);
-  EXPECT_NEAR(links[2].abs_position_[1], 0, 0.001);
-  EXPECT_NEAR(links[2].abs_position_[2], 0, 0.001);
-  EXPECT_NEAR(links[3].abs_position_[0], 3, 0.001);
-  EXPECT_NEAR(links[3].abs_position_[1], 0, 0.001);
-  EXPECT_NEAR(links[3].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[0], 1, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[1], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[0], 2, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[1], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[0], 3, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[1], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[2], 0, 0.001);
 }
 
 TEST_F(LinkageTest, Joint0Bent)
@@ -115,17 +136,17 @@ TEST_F(LinkageTest, Joint0Bent)
 
   propagate();
 
-  EXPECT_NEAR(links[1].abs_position_[0], 1, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[1], 0, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[0], 1, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[1], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[2], 0, 0.001);
 
-  EXPECT_NEAR(links[2].abs_position_[0], 1, 0.001);
-  EXPECT_NEAR(links[2].abs_position_[1], 1, 0.001);
-  EXPECT_NEAR(links[2].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[0], 1, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[1], 1, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[2], 0, 0.001);
 
-  EXPECT_NEAR(links[3].abs_position_[0], 1, 0.001);
-  EXPECT_NEAR(links[3].abs_position_[1], 2, 0.001);
-  EXPECT_NEAR(links[3].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[0], 1, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[1], 2, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[2], 0, 0.001);
 }
 
 TEST_F(LinkageTest, ComplexBending)
@@ -136,17 +157,17 @@ TEST_F(LinkageTest, ComplexBending)
 
   propagate();
 
-  EXPECT_NEAR(links[1].abs_position_[0], 1, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[1], 0, 0.001);
-  EXPECT_NEAR(links[1].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[0], 1, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[1], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_position_[2], 0, 0.001);
 
-  EXPECT_NEAR(links[2].abs_position_[0], 1 - cos(M_PI/4), 0.001);
-  EXPECT_NEAR(links[2].abs_position_[1], sin(M_PI/4), 0.001);
-  EXPECT_NEAR(links[2].abs_position_[2], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[0], 1 - cos(M_PI/4), 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[1], sin(M_PI/4), 0.001);
+  EXPECT_NEAR(links[2]->abs_position_[2], 0, 0.001);
 
-  EXPECT_NEAR(links[3].abs_position_[0], 1 - cos(M_PI/4), 0.001);
-  EXPECT_NEAR(links[3].abs_position_[1], sin(M_PI/4), 0.001);
-  EXPECT_NEAR(links[3].abs_position_[2], -1, 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[0], 1 - cos(M_PI/4), 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[1], sin(M_PI/4), 0.001);
+  EXPECT_NEAR(links[3]->abs_position_[2], -1, 0.001);
 }
 
 TEST_F(LinkageTest, AtZeroVelocity)
@@ -157,15 +178,15 @@ TEST_F(LinkageTest, AtZeroVelocity)
 
   propagate();
 
-  EXPECT_NEAR(links[1].abs_velocity_[0], 0, 0.001);
-  EXPECT_NEAR(links[1].abs_velocity_[1], 0, 0.001);
-  EXPECT_NEAR(links[1].abs_velocity_[2], 0, 0.001);
-  EXPECT_NEAR(links[2].abs_velocity_[0], 0, 0.001);
-  EXPECT_NEAR(links[2].abs_velocity_[1], 0, 0.001);
-  EXPECT_NEAR(links[2].abs_velocity_[2], 0, 0.001);
-  EXPECT_NEAR(links[3].abs_velocity_[0], 0, 0.001);
-  EXPECT_NEAR(links[3].abs_velocity_[1], 0, 0.001);
-  EXPECT_NEAR(links[3].abs_velocity_[2], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_velocity_[0], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_velocity_[1], 0, 0.001);
+  EXPECT_NEAR(links[1]->abs_velocity_[2], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_velocity_[0], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_velocity_[1], 0, 0.001);
+  EXPECT_NEAR(links[2]->abs_velocity_[2], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_velocity_[0], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_velocity_[1], 0, 0.001);
+  EXPECT_NEAR(links[3]->abs_velocity_[2], 0, 0.001);
 }
 
 int main(int argc, char **argv){
