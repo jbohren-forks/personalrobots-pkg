@@ -54,7 +54,8 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph image_loader)
+#target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph image_loader)
+target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
 rospack_add_executable(bin/trexfast src/main.cc)
 target_link_libraries(bin/trexfast executive_trex_pr2_o)
 rospack_link_boost(bin/trexfast thread)
