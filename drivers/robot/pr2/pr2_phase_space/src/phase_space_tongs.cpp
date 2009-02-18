@@ -67,9 +67,11 @@ public :
   int right_id_ ;
   robot_msgs::MocapSnapshot snapshot_ ;
   string frame_id_ ;
+  unsigned int prev_seq_num ;
 
   PhaseSpaceTongs(ros::Node& node) : node_(&node)
   {
+    prev_seq_num = 0 ;
     node_->advertise<robot_msgs::PoseStamped>("tong_pose", 1) ;
     node_->advertise<std_msgs::Float64>("tong_spacing",1) ;
     node_->subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceTongs::snapshotCallback, this, 1) ;
@@ -89,6 +91,13 @@ public :
 
   void snapshotCallback()
   {
+    if (prev_seq_num+1 != snapshot_.header.seq)
+      printf("%u: Dropped %i Snapshot Packets\n", snapshot_.header.seq,
+	       snapshot_.header.seq - prev_seq_num) ;
+    //    else
+    //      printf("%u: \n", snapshot_.header.seq) ;
+    prev_seq_num = snapshot_.header.seq ;
+
     tf::Pose left ;
     tf::Pose right ;
 
@@ -130,7 +139,7 @@ public :
 
       node_->publish("tong_spacing", tong_spacing) ;
 
-      pose_msg.header.stamp = ros::Time() ;
+      pose_msg.header.stamp = ros::Time::now() - ros::Duration(.5) ;
       node_->publish("tong_pose", pose_msg) ;
     }
   }

@@ -154,7 +154,7 @@ public :
 
         tf::PointTFToMsg(pose_result.getOrigin(), pose_msg.pose.position) ;
         tf::QuaternionTFToMsg(pose_result.getRotation(), pose_msg.pose.orientation) ;
-
+	pose_msg.header.stamp = ros::Time::now() - ros::Duration(.5) ;
         publish("cmd", pose_msg) ;
 
         return ;
