@@ -34,10 +34,10 @@
 #include "ros/node.h"
 #include "filter_coefficient_server/Filter.h"
 
-class GenFilter : public ros::Node
+class GenFilter 
 {
 public:
-  GenFilter() : ros::Node("filter_coeff_client")
+  GenFilter() 
   {
   }
   bool call_add(std::string name, std::vector<std::string> args, std::vector<double> &b, std::vector<double> &a)
@@ -75,6 +75,9 @@ int main(int argc, char **argv)
     printf("usage: filter_coeff_client butter 2 .1 .5 stop\n");
     return 1;
   }
+  
+  ros::Node n("filter_coeff_client");
+
   GenFilter a;
   std::vector<double> tf_a;
   std::vector<double> tf_b;
@@ -88,7 +91,7 @@ int main(int argc, char **argv)
   {
     for(uint32_t i=0; i<tf_a.size();i++)
     {
-      printf("a[%d]:%f b[%d]:%f \n",i,i,tf_b[i], tf_a[i]);
+      printf("a[%d]:%f b[%d]:%f \n",i,tf_a[i],i, tf_b[i]);
     }
   }
   else
