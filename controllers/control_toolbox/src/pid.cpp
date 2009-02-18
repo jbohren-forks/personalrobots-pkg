@@ -61,6 +61,12 @@ void Pid::initPid(double P, double I, double D, double I1, double I2)
   d_gain_ = D;
   i_max_ = I1;
   i_min_ = I2;
+
+  reset();
+}
+
+void Pid::reset()
+{
   p_error_last_ = 0.0;
   p_error_ = 0.0;
   d_error_ = 0.0;
@@ -94,6 +100,8 @@ bool Pid::initParam(const std::string& prefix)
   node->param(prefix+"/d", d_gain_, 0.0) ;
   node->param(prefix+"/i_clamp", i_max_, 0.0) ;
   i_min_ = -i_max_;
+
+  reset();
   return true;
 }
 
@@ -104,6 +112,8 @@ bool Pid::initXml(TiXmlElement *config)
   d_gain_ = config->Attribute("d") ? atof(config->Attribute("d")) : 0.0;
   i_max_ = config->Attribute("iClamp") ? atof(config->Attribute("iClamp")) : 0.0;
   i_min_ = -i_max_;
+
+  reset();
   return true;
 }
 

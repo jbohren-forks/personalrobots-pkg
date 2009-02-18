@@ -117,6 +117,11 @@ public:
   bool initXml(TiXmlElement *config);
 
   /*!
+   * \brief Reset the state of this PID controller
+   */
+  void reset();
+
+  /*!
    * \brief Set current command for this PID controller
    */
   void setCurrentCmd(double cmd);
