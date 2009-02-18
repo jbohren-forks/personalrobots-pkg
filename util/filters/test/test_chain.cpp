@@ -57,8 +57,13 @@ public:
 
 };
 
+
 ROS_REGISTER_FILTER(TestFilter, double)
 ROS_REGISTER_FILTER(TestFilter, float)
+
+
+static std::string mean_filter_5 = "<filter type=\"MeanFilter\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
+static std::string median_filter_5 = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
 
 
 
@@ -70,9 +75,9 @@ TEST(FilterChain, configuring){
 
 
   //  chain.add("TestFilter", "");
-  EXPECT_TRUE(chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"));
+  EXPECT_TRUE(chain.add(mean_filter_5));
  
-  EXPECT_TRUE(chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"));
+  EXPECT_TRUE(chain.add(median_filter_5));
   
   EXPECT_TRUE(chain.configure(5));
  
@@ -96,10 +101,10 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
   filters::FilterChain<std_vector_float > chain;
 
 
-  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
-  chain.add("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>");
+  EXPECT_TRUE(chain.add(mean_filter_5));
+  EXPECT_TRUE(chain.add(median_filter_5));
 
-  chain.configure(10);
+  EXPECT_TRUE(chain.configure(10));
 
   float input1[] = {1,2,3,4,5};
   float input1a[] = {1,2,3,4,5};
@@ -117,8 +122,8 @@ TEST(FilterChain, OverlappingNamesPrevious){
   filters::FilterChain<std_vector_float > chain;
 
 
-  chain.add("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>");
-  EXPECT_FALSE(chain.add("<filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"));
+  EXPECT_TRUE(chain.add(mean_filter_5));
+  EXPECT_FALSE(chain.add(mean_filter_5));
 
 }
 TEST(FilterChain, OverlappingNamesSelf){
