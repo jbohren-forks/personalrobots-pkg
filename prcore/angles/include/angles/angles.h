@@ -37,7 +37,7 @@
 
 #include <algorithm>
 #include <cmath>
-
+#include <stdio.h>
 
 namespace angles
 {
@@ -116,7 +116,7 @@ namespace angles
   /*!
    * \function
    *
-   * \brief returns the angle in [0, 2*M_PI]  going the other way along the unit circle. 
+   * \brief returns the angle in [-2*M_PI, 2*M_PI]  going the other way along the unit circle. 
    * E.g. add_mod_2Pi(-M_PI/4) returns 7_M_PI/4
    * add_mod_2Pi(M_PI/4) returns -7*M_PI/4
    *
@@ -134,9 +134,9 @@ namespace angles
    *
    * \brief Returns the min and max amount (in radians) that can be moved from "from" angle to "left_limit" and "right_limit".
    * \return returns false if "from" angle does not lie in the interval [left_limit,right_limit]
-   * \param from - "from" angle
-   * \param left_limit - left limit of valid interval for angular position
-   * \param right_limit - right limit of valid interval for angular position
+   * \param from - "from" angle - must lie in [-M_PI, M_PI]
+   * \param left_limit - left limit of valid interval for angular position - must lie in [-M_PI, M_PI]
+   * \param right_limit - right limit of valid interval for angular position - must lie in [-M_PI, M_PI]
    * \param min_delta - minimum (delta) angle (in radians) that can be moved from "from" position before hitting the joint stop
    * \param max_delta - maximum (delta) angle (in radians) that can be movedd from "from" position before hitting the joint stop
    */
@@ -167,13 +167,16 @@ namespace angles
     }
 
 
+//    printf("%f %f %f %f\n",delta_min,delta_min_2pi,delta_max,delta_max_2pi);
     if((delta_min <= delta_max_2pi) || (delta_max >= delta_min_2pi))
     {
       result_min_delta = delta_max_2pi;
       result_max_delta = delta_min_2pi;
-      return false;
+      if(min_angle == -M_PI && max_angle == M_PI)
+        return true;
+      else
+        return false;
     }
-//      printf("%f %f %f %f\n",delta_min,delta_min_2pi,delta_max,delta_max_2pi);
     result_min_delta = delta_min;
     result_max_delta = delta_max;
     return true;
