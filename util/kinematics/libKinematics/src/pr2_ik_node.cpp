@@ -201,14 +201,16 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
 
   if(arm_kinematics_->computeIKFast(g0,2,init_solution_theta3_))
   {
+     ROS_INFO("Solution::");
     resp.traj.set_points_size(arm_kinematics_->solution_ik_.size());
 
-    for(int i=0; i < 7; i++)
+    for(int i=0; i < (int) arm_kinematics_->solution_ik_.size(); i++)
     {
       resp.traj.points[i].set_positions_size(7); 
       for(int j=0; j < 7; j++)
       {
         resp.traj.points[i].positions[j] = arm_kinematics_->solution_ik_[i][j]; 
+        ROS_INFO("%f\n",arm_kinematics_->solution_ik_[i][j]);
       }
     }
 
@@ -253,7 +255,13 @@ int main(int argc, char **argv)
    printf("\n");
  }
 
+  try {
+    kn.spin();
+  }
+  catch(char const* e){
+    std::cout << e << std::endl;
+  }
   
-  return 0;
+  return(0);
 }
 

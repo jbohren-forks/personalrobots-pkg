@@ -905,11 +905,15 @@ bool arm7DOF::computeNewGuess(const double &initial_value, double &return_val, i
 {
   if(negative_increment_valid_)
   {
+     printf("\n\nnegative increment valid\n");
+     printf("min limit: %f, max limit: %f\n",min_joint_limits_[joint_num],max_joint_limits_[joint_num]);
     if(last_increment_positive_ || !positive_increment_valid_)
     {
       return_val = initial_value - num_negative_increments_ * increment_;
+      printf("last increment positive, new return val: %f\n",return_val);
       if(return_val < min_joint_limits_[joint_num])
       {
+        printf("return val %f invalid, min limit: %f\n",return_val,min_joint_limits_[joint_num]);
         negative_increment_valid_ = false;
       }
       else
@@ -917,17 +921,21 @@ bool arm7DOF::computeNewGuess(const double &initial_value, double &return_val, i
         last_increment_positive_ = false;
         last_increment_negative_ = true;
         num_negative_increments_++;
+        printf("return val %f valid\n",return_val);
         return true;
       }
     }
   }    
   if(positive_increment_valid_)
   {
+     printf("\n\npositive increment valid\n");
     if(last_increment_negative_ || !negative_increment_valid_)
     {
       return_val = initial_value + num_positive_increments_ * increment_;
+      printf("last increment negative, new return val: %f\n",return_val);
       if(return_val > max_joint_limits_[joint_num])
       {
+        printf("return val %f invalid, max limit: %f\n",return_val,max_joint_limits_[joint_num]);
         positive_increment_valid_ = false;
       }
       else
@@ -935,10 +943,13 @@ bool arm7DOF::computeNewGuess(const double &initial_value, double &return_val, i
         last_increment_positive_ = true;
         last_increment_negative_ = false;
         num_positive_increments_++;
+        printf("return val %f valid\n",return_val);
         return true;
       }
+
     }
   }    
+  printf("returning false\n");
   return false;  
 }
 
@@ -985,14 +996,16 @@ bool arm7DOF::computeIKFast(NEWMAT::Matrix g, int joint_num, double &initial_gue
     while(1)
     {
       ComputeIKEfficientTheta3(g,current_guess);
-//      printf("current_guess:: %f\n",current_guess);
+      printf("current_guess:: %f\n",current_guess);
       if(solution_ik_.size() > 0)
       {
            initial_guess = current_guess;
+           printf("ik_node: Found solution\n");
             return true;
       }
       if(!computeNewGuess(initial_guess,current_guess,joint_num))
       {
+        printf("ik_node: Did not find solution\n");
         return false;
       }
     }
