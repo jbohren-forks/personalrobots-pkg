@@ -75,6 +75,13 @@ public:
 
        
     TiXmlElement *config = doc.RootElement();
+
+    //Step into the filter list if necessary
+    if (config->ValueStr() == "filters")
+    {
+     config = config->FirstChildElement("filter");
+    }
+
     for (  ; config; config = config->NextSiblingElement("filter"))
     {
 
@@ -82,16 +89,15 @@ public:
     std::stringstream constructor_string;
     constructor_string << config->Attribute("type") << typeid(T).name();
 
-   
-       boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-       printf("type: %s\n", p.get()->getType().c_str());
-       result = result &&  p.get()->configure(size, config);    
-       reference_pointers_.push_back(p);
+    boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+    printf("type: %s\n", p.get()->getType().c_str());
+    result = result &&  p.get()->configure(size, config);    
+    reference_pointers_.push_back(p);
         
         
     
-      printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
-             config->Attribute("name"),  p.get());
+    printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
+           config->Attribute("name"),  p.get());
   
     }
     
