@@ -14,5 +14,6 @@
 
   <depend package="checkerboard_detector" />
   <depend package="robot_mechanism_controllers" />
+  <depend package="arm_life_test" />
 
 </package>

@@ -57,6 +57,15 @@ private:
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
 
+  std_srvs::Empty::Request  req_empty;
+  std_srvs::Empty::Response res_empty;
+
+  door_handle_detector::DoorDetector::Request  req_doordetect;
+  door_handle_detector::DoorDetector::Response res_doordetect;
+
+  robot_mechanism_controllers::MoveToPose::Request  req_moveto;
+  robot_mechanism_controllers::MoveToPose::Response res_moveto;
+
 
 public:
   OpenDoorExecutiveTest(std::string node_name):
@@ -73,8 +82,6 @@ public:
     param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
     my_door_.header.frame_id = "odom_combined";
-
-    advertise<robot_msgs::PoseStamped>("cartesian_trajectory_right/command",1);
   }
   
   
@@ -84,11 +91,10 @@ public:
   
   bool detectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
   {
-    door_handle_detector::DoorDetector::Request  req;
-    door_handle_detector::DoorDetector::Response res;
-    req.door = door_estimate;
-    if (ros::service::call("door_handle_detector", req, res)){
-      door_detection = res.door;
+    // start detection
+    req_doordetect.door = door_estimate;
+    if (ros::service::call("door_handle_detector", req_doordetect, res_doordetect)){
+      door_detection = res_doordetect.door;
       return true;
     }
     else
@@ -136,6 +142,11 @@ public:
 
   bool openDoor()
   {
+    // turn on tff controller
+    cout << "starting tff controller" << endl;
+    if (!ros::service::call("cartesian_tff_right/start", req_empty, res_empty))
+      return false;
+
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
     tff_msg_.mode.vel.y = tff_msg_.FORCE;
@@ -151,7 +162,7 @@ public:
     tff_msg_.value.rot.y = 0.0;
     tff_msg_.value.rot.z = 0.0;
 
-    publish("cartesian_tff/command", tff_msg_);
+    publish("cartesian_tff_right/command", tff_msg_);
     usleep(1e6*3);
 
 
@@ -170,9 +181,17 @@ public:
     tff_msg_.value.rot.y = 0.0;
     tff_msg_.value.rot.z = 0.0;
 
-    publish("cartesian_tff/command", tff_msg_);
+    publish("cartesian_tff_right/command", tff_msg_);
     usleep(1e6*15);
+
+    // turn off tff controller
+    cout << "stopping tff controller" << endl;
+    if (!ros::service::call("cartesian_tff_right/stop", req_empty, res_empty))
+      return false;
+
+    return true;
   }
+
 
 
   void spin()
@@ -183,7 +202,8 @@ public:
 	case INITIALIZED:{
 	  robot_msgs::PoseStamped init_pose;
 	  init_pose.header.frame_id = "base_link";
-	  init_pose.header.stamp = Time().now() - Duration().fromSec(1); // dirty hack because service sets time 0 to time now
+          // dirty hack because service sets time 0 to time now
+	  init_pose.header.stamp = Time().now() - Duration().fromSec(1); 
 	  init_pose.pose.position.x = 0.5;
 	  init_pose.pose.position.y = 0.0;
 	  init_pose.pose.position.y = 0.4;
@@ -219,18 +239,24 @@ public:
 
   bool moveTo(const robot_msgs::PoseStamped& pose)
   {
-    cout << "giving moveto command for time " << pose.header.stamp.toSec() << " and frame " << pose.header.frame_id << endl;
-    robot_mechanism_controllers::MoveToPose::Request  req;
-    robot_mechanism_controllers::MoveToPose::Response  res;
-    req.pose = pose;
-    if (ros::service::call("cartesian_trajectory_right/move_to", req, res)){
-      cout << "  moveto successful" << endl;
-      return true;
-    }
-    else{
-      cout << "  moveto failed" << endl;
+    // start arm trajectory controller
+    cout << "starting moveto controller" << endl;
+    if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
       return false;
-    }
+
+    cout << "giving moveto command for time " 
+         << pose.header.stamp.toSec() << " and frame " 
+         << pose.header.frame_id << endl;
+    req_moveto.pose = pose;
+    if (!ros::service::call("cartesian_trajectory_right/move_to", req_moveto, res_moveto))
+      return false;
+
+    // stop arm trajectory controller
+    cout << "stopping moveto controller" << endl;
+    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
+      return false;
+
+    return true;
   }
 
 
