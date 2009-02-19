@@ -54,11 +54,28 @@ namespace mpglue {
   void NavFnPlanner::
   preCreatePlan() throw(std::exception)
   {
+    bool init_costs(false);
     if ( ! planner_) {
       // NavFn cannot handle negative costmap indices, so cut off at [0][0]
       int const nx(costmap_->getXEnd());
       int const ny(costmap_->getYEnd());
       planner_.reset(new NavFn(nx, ny));
+      init_costs = true;
+    }
+    
+    if (start_changed_) {
+      int foo[2] = { stats_.start_ix, stats_.start_iy };
+      planner_->setStart(foo);
+    }
+    
+    if (goal_pose_changed_) {
+      int foo[2] = { stats_.goal_ix, stats_.goal_iy };
+      planner_->setGoal(foo);
+    }
+    
+    if (stats_.flush_cost_changes || init_costs) {
+      int const nx(costmap_->getXEnd());
+      int const ny(costmap_->getYEnd());
       COSTTYPE * cm(planner_->costarr);
       for (int iy(0); iy < ny; ++iy)
 	for (int ix(0); ix < nx; ++ix, ++cm) {
@@ -75,16 +92,6 @@ namespace mpglue {
 	    }
 	  }
 	}
-    }
-    
-    if (start_changed_) {
-      int foo[2] = { stats_.start_ix, stats_.start_iy };
-      planner_->setStart(foo);
-    }
-    
-    if (goal_pose_changed_) {
-      int foo[2] = { stats_.goal_ix, stats_.goal_iy };
-      planner_->setGoal(foo);
     }
   }
   

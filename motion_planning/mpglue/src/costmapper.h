@@ -67,6 +67,8 @@ namespace mpglue {
   */
   class ObstacleDelta {
   public:
+    bool empty() const { return added_.empty() && removed_.empty(); }
+    
     index_collection_t const * getAddedIndices() const { return &added_; }
     index_collection_t const * getRemovedIndices() const { return &removed_; }
     
