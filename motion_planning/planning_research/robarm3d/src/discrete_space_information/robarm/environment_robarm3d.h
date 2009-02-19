@@ -262,8 +262,7 @@ private:
     void PrintHashTableHist();
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, short unsigned int action, bool bIsGoal);
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int action);
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action, double orientation[3][3]);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action, double orientation[3][3]);
 
     //initialization
@@ -278,10 +277,10 @@ private:
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
-    void Cell2ContXY(int x, int y, int z, double *pX, double *pY, double *pZ);
-    void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
+    void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
+    void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
     void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
@@ -289,8 +288,6 @@ private:
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);  //get rid of this
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm, char*** Grid3D);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D, int grid_dims[3], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int shoulder[3],double orientation[3][3]);
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
     
     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
@@ -302,7 +299,6 @@ private:
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
-    int cost(short unsigned int state1coord[], short unsigned int state2coord[], bool bState2IsGoal,short unsigned int action1, short unsigned int action2);
     int cost(EnvROBARMHashEntry_t* HashEntry1, EnvROBARMHashEntry_t* HashEntry2, bool bState2IsGoal);
     int GetEdgeCost(int FromStateID, int ToStateID);
     void ComputeActionCosts();
@@ -333,7 +329,7 @@ private:
 
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3],double desired_orientation[3][3]);
     void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
