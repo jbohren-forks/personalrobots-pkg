@@ -90,7 +90,7 @@ public:
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
+	req.params.planner_id = "KPIECE";
 	req.threshold = 0.1;
 	req.interpolate = 1;
 	req.times = 1;
@@ -140,14 +140,15 @@ public:
 	req.goal_constraints[0].z = 0.829675;	
 
 	req.goal_constraints[0].roll = 0.0;
+	req.goal_constraints[0].pitch = 0.0;
 	req.goal_constraints[0].yaw = 0.0;
 	
-	req.goal_constraints[0].position_distance = 0.001;
-	req.goal_constraints[0].orientation_distance = 0.03;
-	req.goal_constraints[0].orientation_importance = 0.01;
+	req.goal_constraints[0].position_distance = 0.0001;
+	req.goal_constraints[0].orientation_distance = 0.1;
+	req.goal_constraints[0].orientation_importance = 0.0001;
 	
 	// allow 1 second computation time
-	req.allowed_time = 1.0;
+	req.allowed_time = 0.5;
 	
 	// define the service messages
 	robot_srvs::KinematicReplanLinkPosition::Request  s_req;
