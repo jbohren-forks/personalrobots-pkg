@@ -241,7 +241,7 @@ Index: server/physics/BoxGeom.cc
 ===================================================================
 --- server/physics/BoxGeom.cc	(revision 7168)
 +++ server/physics/BoxGeom.cc	(working copy)
-@@ -66,9 +66,18 @@
+@@ -66,9 +66,28 @@
    this->sizeP->SetValue( size );
  
    // Initialize box mass matrix
@@ -250,6 +250,16 @@ Index: server/physics/BoxGeom.cc
 -      this->sizeP->GetValue().z);
 +  // set mass matrix if user provides some info
 +  // pending a tag <massMatrix>true</massMatrix> in geom:
++  // 
++  //
++  // cx,cy,cz passed to ode is actually
++  // com described by the model subtracted by the position of the collision geometry cg
++  //
++  //
++  if (this->customMassMatrix)
++    std::cout << " BoxGeom name: " << this->GetName()
++              << " cxyz " << cx << "," << cy << "," << cz
++              << std::endl;
 +  if (this->customMassMatrix)
 +    dMassSetParameters(&this->mass, this->massP->GetValue(),
 +           this->cx, this->cy, this->cz,
@@ -772,7 +782,19 @@ Index: server/physics/Geom.cc
  
    stream << prefix << "</geom:" << this->typeName << ">\n";
  }
-@@ -307,7 +402,8 @@
+@@ -297,6 +392,11 @@
+     // Transform into CoM relative Pose
+     localPose = pose - this->body->GetCoMPose();
+ 
++    std::cout << " geom name: " << this->GetName() << std::endl;
++    std::cout << " in SetPose, pose: " << pose << std::endl;
++    std::cout << " in SetPose, GetCoMPose returns: " << this->body->GetCoMPose() << std::endl;
++    std::cout << " in SetPose, localPose: " << localPose << std::endl;
++
+     q[0] = localPose.rot.u;
+     q[1] = localPose.rot.x;
+     q[2] = localPose.rot.y;
+@@ -307,11 +407,13 @@
      dGeomSetPosition(this->geomId, localPose.pos.x, localPose.pos.y, localPose.pos.z);
      dGeomSetQuaternion(this->geomId, q);
  
@@ -782,7 +804,12 @@ Index: server/physics/Geom.cc
  
      if (updateCoM)
      {
-@@ -396,23 +492,24 @@
+       this->body->UpdateCoM();
++      std::cout << " in SetPose, after UpdateCoM() GetCoMPose returns: " << this->body->GetCoMPose() << std::endl;
+     }
+   }
+ }
+@@ -396,23 +498,24 @@
    Pose3d pose;
    dQuaternion q;
    dMatrix3 r;
@@ -811,7 +838,7 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-@@ -454,8 +551,9 @@
+@@ -454,8 +557,9 @@
  /// Set the visibility of the Bounding box of this geometry
  void Geom::ShowBoundingBox(bool show)
  {
@@ -823,7 +850,7 @@ Index: server/physics/Geom.cc
  }
  
  // FIXME: ShowJoints and ShowPhysics will mess with each other and with the user's defined transparency visibility
-@@ -465,20 +563,21 @@
+@@ -465,20 +569,21 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -855,7 +882,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -487,26 +586,27 @@
+@@ -487,26 +592,27 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -899,7 +926,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -521,15 +621,21 @@
+@@ -521,15 +627,21 @@
  /// Get the number of visuals
  unsigned int Geom::GetVisualCount() const
  {
@@ -923,7 +950,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -538,11 +644,12 @@
+@@ -538,11 +650,12 @@
  {
    std::vector<OgreVisual*>::const_iterator iter;
  
@@ -941,52 +968,6 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,41 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+    private: double current_time_mimic, last_time_mimic;
-+    private: double current_error_mimic, last_error_mimic;
-+
-+    private: ParamT<std::string> *latchJointP;
-+    private: ParamT<double> *latchAngleP;
-+    private: ParamT<double> *doorClosedAngleP;
-+    private: ParamT<double> *latchKpP;
-+    private: ParamT<double> *latchKdP;
-+    private: ParamT<double> *latchFMaxP;
-+
-+    private: Joint* latchJoint;
-+    private: bool enableLatch;
-+    private: double latchAngle;
-+    private: double doorClosedAngle;
-+    private: double latchKp;
-+    private: double latchKd;
-+    private: double latchFMax;
-+    private: double current_time_latch, last_time_latch;
-+    private: double current_error_latch, last_error_latch;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -1078,7 +1059,7 @@ Index: server/physics/Body.cc
  // Initialize the body
  void Body::Init()
  {
-@@ -218,25 +254,52 @@
+@@ -218,25 +254,53 @@
    std::vector< Sensor* >::iterator sensorIter;
    std::map< std::string, Geom* >::iterator geomIter;
  
@@ -1090,8 +1071,8 @@ Index: server/physics/Body.cc
  
 +#ifdef TIMING
 +  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "           body Name (" << this->nameP->GetValue() << ")" << std::endl;
-+  std::cout << "           UpdatePose dt (" << tmpT2-tmpT1 << ")" << std::endl;
++  std::cout << "           Body Name (" << this->nameP->GetValue() << ")" << std::endl;
++  std::cout << "               UpdatePose dt (" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
 +
    if (!this->IsStatic())
@@ -1104,7 +1085,7 @@ Index: server/physics/Body.cc
  
 +#ifdef TIMING
 +  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << "           Static SetPose dt (" << tmpT3-tmpT2 << ")" << std::endl;
++  std::cout << "               Static SetPose dt (" << tmpT3-tmpT2 << ")" << std::endl;
 +#endif
 +
    for (geomIter=this->geoms.begin();
@@ -1115,7 +1096,7 @@ Index: server/physics/Body.cc
  
 +#ifdef TIMING
 +  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << "           Geom Update dt (" << tmpT4-tmpT3 << ")" << std::endl;
++  std::cout << "               Geom Update DT (" << tmpT4-tmpT3 << ")" << std::endl;
 +#endif
 +
    for (sensorIter=this->sensors.begin();
@@ -1126,13 +1107,14 @@ Index: server/physics/Body.cc
 +
 +#ifdef TIMING
 +  double tmpT5 = Simulator::Instance()->GetWallTime();
-+  std::cout << "           sensors Update dt (" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << "               Sensor Update DT (" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << "               Body::Update Total DT (" << tmpT5-tmpT1 << ")" << std::endl;
 +#endif
 +
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -329,7 +392,8 @@
+@@ -329,7 +393,8 @@
      dBodySetPosition(this->bodyId, pos.x, pos.y, pos.z);
  
    // Set the position of the scene node
@@ -1142,7 +1124,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -350,7 +414,8 @@
+@@ -350,7 +415,8 @@
    }
  
    // Set the orientation of the scene node
@@ -1152,7 +1134,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -404,6 +469,88 @@
+@@ -404,6 +470,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1241,7 +1223,7 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -506,7 +653,6 @@
+@@ -506,7 +654,6 @@
  void Body::UpdateCoM()
  {
    const dMass *lmass;
@@ -1249,7 +1231,12 @@ Index: server/physics/Body.cc
    std::map< std::string, Geom* >::iterator giter;
  
    if (!this->bodyId)
-@@ -524,7 +670,13 @@
+@@ -521,12 +668,23 @@
+     if (giter->second->IsPlaceable() && giter->second->GetGeomId())
+     {
+       dMassAdd( &this->mass, lmass );
++      std::cout << " in UpdateCoM, mass : " << giter->second->GetName() << ":" << this->mass.c[0] <<","<<this->mass.c[1]<<","<<this->mass.c[2] << std::endl;
++      std::cout << " in UpdateCoM, lmass : " << giter->second->GetName() << ":" << lmass->c[0] <<","<<lmass->c[1]<<","<<lmass->c[2] << std::endl;
      }
    }
  
@@ -1262,8 +1249,21 @@ Index: server/physics/Body.cc
 +  // newPose is mass CoM
    oldPose = this->comPose;
  
++  std::cout << " in UpdateCoM, name: " << this->GetName() << std::endl;
++  std::cout << " in UpdateCoM, comPose or oldPose: " << this->comPose << std::endl;
++
    if (std::isnan(this->mass.c[0]))
-@@ -546,19 +698,25 @@
+     this->mass.c[0] = 0;
+ 
+@@ -541,24 +699,37 @@
+   newPose.pos.y = this->mass.c[1];
+   newPose.pos.z = this->mass.c[2];
+ 
++  std::cout << " in UpdateCoM, mass : " << this->mass.c[0] <<","<<this->mass.c[1]<<","<<this->mass.c[2] << std::endl;
++  std::cout << " in UpdateCoM, newPose : " << newPose << std::endl;
++
+   // Fixup the poses of the geoms (they are attached to the CoM)
+   for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
    {
      if (giter->second->IsPlaceable())
      {
@@ -1280,6 +1280,7 @@ Index: server/physics/Body.cc
      }
    }
  
++  std::cout << " in UpdateCoM, new comPose should be same as newPose : " << this->comPose << std::endl;
  
 -  // Fixup the pose of the CoM (ODE body)
 +  // FOR BODY: Fixup the pose of the CoM (ODE body)
@@ -1287,13 +1288,71 @@ Index: server/physics/Body.cc
    this->comPose = oldPose;
 -  pose = this->GetPose();
 +  tmpPose = this->GetPose();
++  std::cout << " in UpdateCoM, tmpPose: " << tmpPose << std::endl;
 +  // get pose with comPose set to newPose
++  std::cout << " in UpdateCoM, GetPose with comPose=oldPose: " << this->GetPose() << std::endl;
    this->comPose = newPose;
 -  this->SetPose(pose);
++  std::cout << " in UpdateCoM, GetPose with comPose=newPose: " << this->GetPose() << std::endl;
 +  this->SetPose(tmpPose);
  
  
    // Settle on the new CoM pose
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -156,6 +156,8 @@
+     /// Name of this joint
+     private: ParamT<double> *erpP;
+     private: ParamT<double> *cfmP;
++    private: ParamT<double> *stopKpP;
++    private: ParamT<double> *stopKdP;
+     private: ParamT<std::string> *body1NameP;
+     private: ParamT<std::string> *body2NameP;
+     private: ParamT<std::string> *anchorBodyNameP;
+@@ -163,6 +165,41 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++    private: double current_time_mimic, last_time_mimic;
++    private: double current_error_mimic, last_error_mimic;
++
++    private: ParamT<std::string> *latchJointP;
++    private: ParamT<double> *latchAngleP;
++    private: ParamT<double> *doorClosedAngleP;
++    private: ParamT<double> *latchKpP;
++    private: ParamT<double> *latchKdP;
++    private: ParamT<double> *latchFMaxP;
++
++    private: Joint* latchJoint;
++    private: bool enableLatch;
++    private: double latchAngle;
++    private: double doorClosedAngle;
++    private: double latchKp;
++    private: double latchKd;
++    private: double latchFMax;
++    private: double current_time_latch, last_time_latch;
++    private: double current_error_latch, last_error_latch;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 7168)
@@ -1479,7 +1538,7 @@ Index: server/physics/ode/ODEPhysics.cc
    stream << prefix << "</physics:ode>\n";
  }
  
-@@ -126,20 +138,37 @@
+@@ -126,20 +138,38 @@
    dWorldSetGravity(this->worldId, g.x, g.y, g.z);
    dWorldSetCFM(this->worldId, this->globalCFMP->GetValue());
    dWorldSetERP(this->worldId, this->globalERPP->GetValue());
@@ -1501,7 +1560,7 @@ Index: server/physics/ode/ODEPhysics.cc
  
 +#ifdef TIMING
 +  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "    collision dt (" << tmpT2-tmpT1 << ")" << std::endl;
++  std::cout << "      Collision DT (" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
 +
    // Update the dynamical model
@@ -1514,13 +1573,14 @@ Index: server/physics/ode/ODEPhysics.cc
  
 +#ifdef TIMING
 +  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << "    ode step dt (" << tmpT3-tmpT2 << ")" << std::endl;
++  std::cout << "      ODE step DT (" << tmpT3-tmpT2 << ")" << std::endl;
++  std::cout << "  Physics Total DT (" << tmpT3-tmpT1 << ")" << std::endl;
 +#endif
 +
    // Very important to clear out the contact group
    dJointGroupEmpty( this->contactGroup );
  
-@@ -263,18 +292,19 @@
+@@ -263,18 +293,19 @@
            continue;
  
          contact.geom = contactGeoms[i];
@@ -1545,7 +1605,7 @@ Index: server/physics/ode/ODEPhysics.cc
  
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
-@@ -290,6 +320,13 @@
+@@ -290,6 +321,13 @@
          dJointID c = dJointCreateContact (self->worldId,
                                            self->contactGroup, &contact);
  
@@ -1563,16 +1623,17 @@ Index: server/physics/Joint.cc
 ===================================================================
 --- server/physics/Joint.cc	(revision 7168)
 +++ server/physics/Joint.cc	(working copy)
-@@ -30,6 +30,8 @@
+@@ -30,6 +30,9 @@
  #include "Model.hh"
  #include "World.hh"
  #include "Joint.hh"
 +#include "HingeJoint.hh"
 +#include "Simulator.hh"
++#include "PhysicsEngine.hh"
  
  using namespace gazebo;
  
-@@ -41,6 +43,12 @@
+@@ -41,16 +44,39 @@
    this->visual = NULL;
    this->model = NULL;
  
@@ -1585,7 +1646,11 @@ Index: server/physics/Joint.cc
    Param::Begin(&this->parameters);
    this->erpP = new ParamT<double>("erp",0.4,0);
    this->cfmP = new ParamT<double>("cfm",10e-3,0);
-@@ -50,7 +58,22 @@
++  this->stopKpP = new ParamT<double>("stopKp",100000000.0,0);
++  this->stopKdP = new ParamT<double>("stopKd",1.0,0);
+   this->body1NameP = new ParamT<std::string>("body1",std::string(),1);
+   this->body2NameP = new ParamT<std::string>("body2",std::string(),1);
+   this->anchorBodyNameP = new ParamT<std::string>("anchor",std::string(),0);
    this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0), 0);
    this->provideFeedbackP = new ParamT<bool>("provideFeedback", false, 0);
    this->fudgeFactorP = new ParamT<double>( "fudgeFactor", 1.0, 0 );
@@ -1608,7 +1673,15 @@ Index: server/physics/Joint.cc
  }
  
  
-@@ -67,6 +90,18 @@
+@@ -61,12 +87,26 @@
+   dJointDestroy( this->jointId );
+   delete this->erpP;
+   delete this->cfmP;
++  delete this->stopKpP;
++  delete this->stopKdP;
+   delete this->body1NameP;
+   delete this->body2NameP;
+   delete this->anchorBodyNameP;
    delete this->anchorOffsetP;
    delete this->provideFeedbackP;
    delete this->fudgeFactorP;
@@ -1627,8 +1700,12 @@ Index: server/physics/Joint.cc
  }
  
  
-@@ -92,6 +127,18 @@
+@@ -90,8 +130,22 @@
+   this->anchorOffsetP->Load(node);
+   this->erpP->Load(node);
    this->cfmP->Load(node);
++  this->stopKpP->Load(node);
++  this->stopKdP->Load(node);
    this->provideFeedbackP->Load(node);
    this->fudgeFactorP->Load(node);
 +  this->mimicJointP->Load(node);
@@ -1646,7 +1723,19 @@ Index: server/physics/Joint.cc
  
    Body *body1 = this->model->GetBody( **(this->body1NameP));
    Body *body2 = this->model->GetBody(**(this->body2NameP));
-@@ -116,23 +163,26 @@
+@@ -108,6 +162,11 @@
+   // Set joint parameters
+   this->SetParam(dParamSuspensionERP, **(this->erpP));
+   this->SetParam(dParamCFM, **(this->cfmP));
++  double h = World::Instance()->GetPhysicsEngine()->GetStepTime();
++  double stopErp = h * this->stopKpP->GetValue() / (h * this->stopKpP->GetValue() + this->stopKdP->GetValue());
++  double stopCfm = 1.0 / (h * this->stopKpP->GetValue() + this->stopKdP->GetValue());
++  this->SetParam(dParamStopERP, stopErp);
++  this->SetParam(dParamStopCFM, stopCfm);
+   this->SetParam(dParamFudgeFactor, **(this->fudgeFactorP));
+   this->SetParam(dParamVel,0);
+   this->SetParam(dParamFMax,0);
+@@ -116,23 +175,26 @@
    this->Attach(body1,body2);
  
    /// Add a renderable for the joint
@@ -1686,7 +1775,7 @@ Index: server/physics/Joint.cc
  
    if (**this->provideFeedbackP)
    {
-@@ -147,6 +197,37 @@
+@@ -147,6 +209,37 @@
    {
      this->SetAnchor(anchorVec);
    }
@@ -1724,7 +1813,16 @@ Index: server/physics/Joint.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -184,13 +265,121 @@
+@@ -172,6 +265,8 @@
+ 
+   stream << prefix << "  " << *(this->erpP) << "\n";
+   stream << prefix << "  " << *(this->cfmP) << "\n";
++  stream << prefix << "  " << *(this->stopKpP) << "\n";
++  stream << prefix << "  " << *(this->stopKdP) << "\n";
+   stream << prefix << "  " << *(this->fudgeFactorP) << "\n";
+ 
+   std::string p = prefix + "  ";
+@@ -184,13 +279,121 @@
  /// Update the joint
  void Joint::Update()
  {
@@ -1849,7 +1947,7 @@ Index: server/physics/Joint.cc
  
    Vector3 start;
    if (this->body1)
-@@ -206,6 +395,7 @@
+@@ -206,6 +409,7 @@
      this->line2->SetPoint(0, start);
      this->line2->Update();
    }
@@ -2607,7 +2705,7 @@ Index: server/sensors/Sensor.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -104,7 +114,8 @@
+@@ -104,12 +114,14 @@
  /// Update the sensor
  void Sensor::Update()
  {
@@ -2617,7 +2715,13 @@ Index: server/sensors/Sensor.cc
    {
      this->UpdateChild();
      this->lastUpdate = Simulator::Instance()->GetSimTime();
-@@ -185,4 +196,11 @@
+   }
+ 
++  // update any controllers that are children of sensors, e.g. ros_bumper
+   if (this->controller)
+     this->controller->Update();
+ }
+@@ -185,4 +197,11 @@
    this->active = value;
  }
  
@@ -2778,19 +2882,20 @@ Index: server/Simulator.cc
  
    double currTime;
    double elapsedTime;
-@@ -295,6 +309,11 @@
+@@ -295,6 +309,12 @@
    {
      currTime = this->GetRealTime();
  
 +#ifdef TIMING
 +    double tmpT1 = this->GetWallTime();
-+    std::cout << "CURRENT simTime(" << this->simTime << ") current world time (" << tmpT1 << ")" << std::endl;
++    std::cout << "--------------------------- START Simulator::MainLoop() --------------------------" << std::endl;
++    std::cout << "Simulator::MainLoop() simTime(" << this->simTime << ") world time (" << tmpT1 << ")" << std::endl;
 +#endif
 +
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -319,18 +338,28 @@
+@@ -319,18 +339,28 @@
        World::Instance()->Update();
      }
  
@@ -2798,7 +2903,7 @@ Index: server/Simulator.cc
 -    if (renderUpdateRate == 0 || 
 +#ifdef TIMING
 +    double tmpT2 = this->GetWallTime();
-+    std::cout << " World::Instance() TOTAL DT(" << tmpT2-tmpT1 << ")" << std::endl;
++    std::cout << "Simulator::MainLoop()  World::Instance() TOTAL DT(" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
 +
 +    // Update the gui
@@ -2820,7 +2925,7 @@ Index: server/Simulator.cc
 +        this->gui->Update();
 +#ifdef TIMING
 +      double tmpT3 = this->GetWallTime();
-+      std::cout << " GUI TOTAL DT(" << tmpT3-tmpT2 << ")" << std::endl;
++      std::cout << "Simulator::MainLoop()  GUI DT(" << tmpT3-tmpT2 << ")" << std::endl;
 +#endif
 +      }
 +
@@ -2828,7 +2933,18 @@ Index: server/Simulator.cc
      }
  
      elapsedTime = (this->GetRealTime() - currTime);
-@@ -362,7 +391,10 @@
+@@ -341,6 +371,10 @@
+       usleep( (int)((1.0/MAX_FRAME_RATE - elapsedTime) * 1e6)  );
+     }*/
+ 
++#ifdef TIMING
++    std::cout << "--------------------------- END Simulator::MainLoop() --------------------------" << std::endl;
++#endif
++
+     if (this->timeout > 0 && this->GetRealTime() > this->timeout)
+       break;
+   }
+@@ -362,7 +396,10 @@
  
  OgreAdaptor *Simulator::GetRenderEngine() const
  {
@@ -2840,7 +2956,7 @@ Index: server/Simulator.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -463,6 +495,20 @@
+@@ -463,6 +500,20 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -2861,7 +2977,7 @@ Index: server/Simulator.cc
  /// Set the length of time the simulation should run.
  void Simulator::SetTimeout(double time)
  {
-@@ -512,6 +558,34 @@
+@@ -512,6 +563,34 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -3207,6 +3323,125 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7168)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -127,7 +132,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -255,10 +263,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -305,7 +314,7 @@
+ 
+   return this->InitChild();
+ }
+-
++  
+ ////////////////////////////////////////////////////////////////////////////////
+ // Update the model
+ int Model::Update()
+@@ -316,6 +325,11 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++  std::cout << "  Model Name (" << this->GetName() << ")" << std::endl;
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +338,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Bodies DT (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +351,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Controllers DT (" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,6 +374,12 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Joints/canonical body DT (" << tmpT4-tmpT3 << ")" << std::endl;
++  std::cout << "      Models::Update() Total DT (" << tmpT4-tmpT1 << ")" << std::endl;
++#endif
++
+   return this->UpdateChild();
+ }
+ 
+@@ -730,10 +760,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
 Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7168)
@@ -3384,123 +3619,6 @@ Index: server/gui/GLWindow.cc
          case XK_Up:
          case XK_w:
            this->directionVec.x += this->moveAmount;
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7168)
-+++ server/Model.cc	(working copy)
-@@ -46,7 +46,12 @@
- #include "ControllerFactory.hh"
- #include "IfaceFactory.hh"
- #include "Model.hh"
-+#include "Simulator.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -127,7 +132,10 @@
-   if (this->type == "physical")
-     this->LoadPhysical(node);
-   else if (this->type == "renderable")
--    this->LoadRenderable(node);
-+  {
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      this->LoadRenderable(node);
-+  }
-   else if (this->type != "empty")
-   {
-     gzthrow("Invalid model type[" + this->type + "]\n");
-@@ -255,10 +263,11 @@
-   }
-   else
-   {
--    if (!this->lightName.empty())
--    {
--      OgreCreator::SaveLight(p, this->lightName, stream);
--    }
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      if (!this->lightName.empty())
-+      {
-+        OgreCreator::SaveLight(p, this->lightName, stream);
-+      }
-   }
- 
-   if (this->parentBodyNameP && this->myBodyNameP)
-@@ -305,7 +314,7 @@
- 
-   return this->InitChild();
- }
--
-+  
- ////////////////////////////////////////////////////////////////////////////////
- // Update the model
- int Model::Update()
-@@ -316,6 +325,10 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +337,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +350,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,6 +373,11 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
-+#endif
-+
-   return this->UpdateChild();
- }
- 
-@@ -730,10 +758,11 @@
-   body->SetPose(Pose3d());
-   this->bodies[body->GetName()] = body;
- 
--  if ((childNode = node->GetChild("light")))
--  {
--    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
--  }
-+  if (Simulator::Instance()->GetRenderEngineEnabled())
-+    if ((childNode = node->GetChild("light")))
-+    {
-+      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
-+    }
- 
- }
- 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7168)
@@ -3586,6 +3704,100 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/Controller.cc
+===================================================================
+--- server/controllers/Controller.cc	(revision 7168)
++++ server/controllers/Controller.cc	(working copy)
+@@ -34,6 +34,8 @@
+ #include "World.hh"
+ #include "Controller.hh"
+ #include "Simulator.hh"
++#include "PhysicsEngine.hh"
++#include "Global.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -43,6 +45,7 @@
+ {
+   Param::Begin(&this->parameters);
+   this->nameP = new ParamT<std::string>("name","",1);
++  this->alwaysOnP = new ParamT<bool>("alwaysOn", false, 0);
+   this->updatePeriodP = new ParamT<double>("updateRate", 10, 0);
+   Param::End();
+ 
+@@ -60,6 +63,7 @@
+ {
+   this->Fini();
+   delete this->nameP;
++  delete this->alwaysOnP;
+   delete this->updatePeriodP;
+ }
+ 
+@@ -75,10 +79,17 @@
+   this->typeName = node->GetName();
+ 
+   this->nameP->Load(node);
++
++  this->alwaysOnP->Load(node);
++
+   this->updatePeriodP->Load(node);
+-  this->updatePeriod = 1.0 / (this->updatePeriodP->GetValue() + 1e-6);
+ 
+-  this->lastUpdate = -1e6;
++  double updateRate  = this->updatePeriodP->GetValue();
++  if (updateRate == 0)
++    this->updatePeriod = 0.0; // no throttling if updateRate is 0
++  else
++    this->updatePeriod = 1.0 / updateRate;
++  this->lastUpdate   = Simulator::Instance()->GetSimTime();
+ 
+   childNode = node->GetChildByNSPrefix("interface");
+ 
+@@ -178,12 +189,31 @@
+ /// Update the controller. Called every cycle.
+ void Controller::Update()
+ {
+-  if (this->IsConnected())
++  if (this->IsConnected() || this->alwaysOnP->GetValue())
+   {
+-    if (lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
++    // round time difference to this->physicsEngine->GetStepTime()
++    double physics_dt = World::Instance()->GetPhysicsEngine()->GetStepTime();
++
++    // if (this->GetName() == std::string("p3d_base_controller"))
++    // std::cout << " sim update: " << this->GetName()
++    //           << " , " << Simulator::Instance()->GetSimTime() - lastUpdate
++    //           << " , " << lastUpdate
++    //           << " , " << updatePeriod
++    //           << " i1 " << round((Simulator::Instance()->GetSimTime()-lastUpdate)/physics_dt)
++    //           << " i2 " << round(updatePeriod/physics_dt)
++    //           << std::endl;
++#ifdef TIMING
++    double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++    if (round((Simulator::Instance()->GetSimTime()-lastUpdate-updatePeriod)/physics_dt) >= 0)
+     {
+       this->UpdateChild();
+       lastUpdate = Simulator::Instance()->GetSimTime();
++#ifdef TIMING
++      double tmpT2 = Simulator::Instance()->GetWallTime();
++      std::cout << "           Controller Name (" << this->GetName() << ")" << std::endl;
++      std::cout << "               UpdateChild dt (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
+     }
+   }
+ }
+@@ -210,6 +240,10 @@
+ {
+   std::vector<Iface*>::const_iterator iter;
+ 
++  // if the alwaysOn flag is true, this controller is connected
++  if (this->alwaysOnP->GetValue())
++    return true;
++
+   for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
+   {
+     if ((*iter)->GetOpenCount() > 0)
 Index: server/controllers/factory/Factory.cc
 ===================================================================
 --- server/controllers/factory/Factory.cc	(revision 7168)
@@ -3618,89 +3830,6 @@ Index: server/controllers/factory/Factory.cc
  
  }
  
-Index: server/controllers/Controller.cc
-===================================================================
---- server/controllers/Controller.cc	(revision 7168)
-+++ server/controllers/Controller.cc	(working copy)
-@@ -34,6 +34,7 @@
- #include "World.hh"
- #include "Controller.hh"
- #include "Simulator.hh"
-+#include "PhysicsEngine.hh"
- 
- using namespace gazebo;
- 
-@@ -43,6 +44,7 @@
- {
-   Param::Begin(&this->parameters);
-   this->nameP = new ParamT<std::string>("name","",1);
-+  this->alwaysOnP = new ParamT<bool>("alwaysOn", false, 0);
-   this->updatePeriodP = new ParamT<double>("updateRate", 10, 0);
-   Param::End();
- 
-@@ -60,6 +62,7 @@
- {
-   this->Fini();
-   delete this->nameP;
-+  delete this->alwaysOnP;
-   delete this->updatePeriodP;
- }
- 
-@@ -75,10 +78,17 @@
-   this->typeName = node->GetName();
- 
-   this->nameP->Load(node);
-+
-+  this->alwaysOnP->Load(node);
-+
-   this->updatePeriodP->Load(node);
--  this->updatePeriod = 1.0 / (this->updatePeriodP->GetValue() + 1e-6);
- 
--  this->lastUpdate = -1e6;
-+  double updateRate  = this->updatePeriodP->GetValue();
-+  if (updateRate == 0)
-+    this->updatePeriod = 0.0; // no throttling if updateRate is 0
-+  else
-+    this->updatePeriod = 1.0 / updateRate;
-+  this->lastUpdate   = Simulator::Instance()->GetSimTime();
- 
-   childNode = node->GetChildByNSPrefix("interface");
- 
-@@ -178,9 +188,21 @@
- /// Update the controller. Called every cycle.
- void Controller::Update()
- {
--  if (this->IsConnected())
-+  if (this->IsConnected() || this->alwaysOnP->GetValue())
-   {
--    if (lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
-+    // round time difference to this->physicsEngine->GetStepTime()
-+    double physics_dt = World::Instance()->GetPhysicsEngine()->GetStepTime();
-+
-+    // if (this->GetName() == std::string("p3d_base_controller"))
-+    // std::cout << " sim update: " << this->GetName()
-+    //           << " , " << Simulator::Instance()->GetSimTime() - lastUpdate
-+    //           << " , " << lastUpdate
-+    //           << " , " << updatePeriod
-+    //           << " i1 " << round((Simulator::Instance()->GetSimTime()-lastUpdate)/physics_dt)
-+    //           << " i2 " << round(updatePeriod/physics_dt)
-+    //           << std::endl;
-+
-+    if (round((Simulator::Instance()->GetSimTime()-lastUpdate-updatePeriod)/physics_dt) >= 0)
-     {
-       this->UpdateChild();
-       lastUpdate = Simulator::Instance()->GetSimTime();
-@@ -210,6 +232,10 @@
- {
-   std::vector<Iface*>::const_iterator iter;
- 
-+  // if the alwaysOn flag is true, this controller is connected
-+  if (this->alwaysOnP->GetValue())
-+    return true;
-+
-   for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
-   {
-     if ((*iter)->GetOpenCount() > 0)
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
@@ -3769,7 +3898,7 @@ Index: server/World.cc
  
 +#ifdef TIMING
 +  double tmpT2 = this->GetWallTime();
-+  std::cout << " models update dt(" << tmpT2-tmpT1 << ")" << std::endl;
++  std::cout << " World::Update() ALL Models update DT(" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
 +
    if (!Simulator::Instance()->IsPaused() &&
@@ -3784,14 +3913,14 @@ Index: server/World.cc
  
 +#ifdef TIMING
 +  double tmpT3 = this->GetWallTime();
-+  std::cout << " physics engine dt(" << tmpT3-tmpT2 << ")" << std::endl;
++  std::cout << " World::Update() Physics engine DT(" << tmpT3-tmpT2 << ")" << std::endl;
 +#endif
 +
    this->UpdateSimulationIface();
  
 +#ifdef TIMING
 +  double tmpT4 = this->GetWallTime();
-+  std::cout << " sim Iface dt(" << tmpT4-tmpT3 << ")" << std::endl;
++  std::cout << " World::Update() Iface DT(" << tmpT4-tmpT3 << ")" << std::endl;
 +#endif
 +
    // Copy the newly created models into the main model vector
@@ -3803,7 +3932,7 @@ Index: server/World.cc
  
 +#ifdef TIMING
 +  double tmpT5 = this->GetWallTime();
-+  std::cout << " add/del models dt(" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << " World::Update() add/del models dt(" << tmpT5-tmpT4 << ")" << std::endl;
 +#endif
 +
    return 0;
