@@ -73,7 +73,7 @@ class TopologicalMap::GraphImpl
 public:
 
   /// Default constructor creates empty graph
-  GraphImpl(double resolution=1.0) : next_id_(0), resolution_(resolution) {}
+  GraphImpl(double resolution=1.0) : next_id_(1), resolution_(resolution) {}
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -126,7 +126,8 @@ private:
   GraphImpl& operator= (const GraphImpl&);
 
   TopologicalGraphVertex idVertex(const RegionId id) const;
-  
+
+  Cell2D getConnector(const ConnectorId id) const;
 
   Cell2D containingCell(const Point2D& p) const;
   Point2D cellCorner (const Cell2D& cell) const;

@@ -105,13 +105,14 @@ public:
   /// \return Vector of all region ids.  This is a reference and may change.
   const RegionIdVector& allRegions() const;
 
-  /// \post New region has been added
+  /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)
   /// \throws OverlappingRegionException
   RegionId addRegion (const RegionPtr region, const int region_type);
 
   /// \post Region no longer exists
   /// \throws UnknownRegionException
+  /// \todo currently doesn't work properly with connectors
   void removeRegion (const RegionId id);
 
 private:

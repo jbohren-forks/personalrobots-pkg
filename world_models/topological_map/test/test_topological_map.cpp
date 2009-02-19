@@ -80,7 +80,7 @@ TEST(TopologicalMap, BasicAPI)
     }
   }
   unsigned int id=m.addRegion(r1, 3);
-  EXPECT_EQ(0u, id);
+  EXPECT_EQ(1u, id);
   EXPECT_EQ(1u, m.allRegions().size());
 
   MutableRegionPtr r2(new Region);
@@ -91,13 +91,13 @@ TEST(TopologicalMap, BasicAPI)
     }
   }
   
-  EXPECT_EQ(1u, m.addRegion(r2, 4));
+  EXPECT_EQ(2u, m.addRegion(r2, 4));
   EXPECT_EQ(2u, m.allRegions().size());
 
-  RegionIdVector n1=m.neighbors(0);
-  RegionIdVector n2=m.neighbors(1);
-  RegionId en1[1] = {1};
-  RegionId en2[1] = {0};
+  RegionIdVector n1=m.neighbors(1);
+  RegionIdVector n2=m.neighbors(2);
+  RegionId en1[1] = {2};
+  RegionId en2[1] = {1};
   EXPECT_TRUE(isRearrangement(n1, en1, 1u));
   EXPECT_TRUE(isRearrangement(n2, en2, 1u));
 
@@ -117,35 +117,35 @@ TEST(TopologicalMap, BasicAPI)
   MutableRegionPtr r3(new Region);
   r3->insert(Cell2D(3,3));
   r3->insert(Cell2D(4,3));
-  EXPECT_EQ(2u, m.addRegion(r3, 3));
+  EXPECT_EQ(3u, m.addRegion(r3, 3));
   EXPECT_EQ(3u, m.allRegions().size());
 
-  n1=m.neighbors(0);
-  n2=m.neighbors(1);
-  RegionIdVector n3=m.neighbors(2);
-  RegionId en11[2]={1,2};
-  RegionId en3[1]={0};
+  n1=m.neighbors(1);
+  n2=m.neighbors(2);
+  RegionIdVector n3=m.neighbors(3);
+  RegionId en11[2]={3,2};
+  RegionId en3[1]={1};
   EXPECT_TRUE(isRearrangement(n1, en11, 2u));
   EXPECT_TRUE(isRearrangement(n2, en2, 1u));
   EXPECT_TRUE(isRearrangement(n3, en3, 1u));
   
 
-  EXPECT_EQ(0u, m.containingRegion(Cell2D(3,0)));
-  EXPECT_EQ(2u, m.containingRegion(Cell2D(4,3)));
-  EXPECT_EQ(1u, m.containingRegion(Cell2D(4,-1)));
+  EXPECT_EQ(1u, m.containingRegion(Cell2D(3,0)));
+  EXPECT_EQ(3u, m.containingRegion(Cell2D(4,3)));
+  EXPECT_EQ(2u, m.containingRegion(Cell2D(4,-1)));
 
-  m.removeRegion(1);
+  m.removeRegion(2);
   try {
-    m.removeRegion(1);
+    m.removeRegion(2);
     ADD_FAILURE() << "Expected UnknownRegionException didn't happen";
   }
   catch (topological_map::UnknownRegionException& e) {}
 
   EXPECT_EQ(2u, m.allRegions().size());
-  n1=m.neighbors(0);
-  n3=m.neighbors(2);
+  n1=m.neighbors(1);
+  n3=m.neighbors(3);
 
-  RegionId en12[2]={2};
+  RegionId en12[1]={3};
   EXPECT_TRUE(isRearrangement(n1, en12, 1));
   EXPECT_TRUE(isRearrangement(n3, en3, 1));
 
@@ -153,12 +153,12 @@ TEST(TopologicalMap, BasicAPI)
   for (c=-10; c<10; c++) {
     r5->insert(Cell2D(5,c));
   }
-  EXPECT_EQ(3u, m.addRegion(r5,1));
-  n1=m.neighbors(0);
-  n3=m.neighbors(2);
-  RegionIdVector n5=m.neighbors(3);
-  RegionId en32[2]={0,3};
-  RegionId en5[1]={2};
+  EXPECT_EQ(4u, m.addRegion(r5,1));
+  n1=m.neighbors(1);
+  n3=m.neighbors(3);
+  RegionIdVector n5=m.neighbors(4);
+  RegionId en32[2]={1,4};
+  RegionId en5[1]={3};
   EXPECT_TRUE(isRearrangement(n1,en12,1));
   EXPECT_TRUE(isRearrangement(n3,en32,2));
   EXPECT_TRUE(isRearrangement(n5,en5,1));
