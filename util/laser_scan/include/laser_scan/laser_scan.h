@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,10 +42,10 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/PointCloud.h"
 
-/* \mainpage 
- * This is a class for laser scan utilities.  
- * \todo The first goal will be to project laser scans into point clouds efficiently.  
- * The second goal is to provide median filtering.  
+/* \mainpage
+ * This is a class for laser scan utilities.
+ * \todo The first goal will be to project laser scans into point clouds efficiently.
+ * The second goal is to provide median filtering.
  * \todo Other potential additions are upsampling and downsampling algorithms for the scans.
  */
 
@@ -57,18 +57,18 @@ namespace laser_scan
   const int MASK_INDEX     = 0x02;
   const int MASK_DISTANCE  = 0x04;
   const int MASK_TIMESTAMP = 0x08;
-  const int DEFAULT_MASK   = (MASK_INTENSITY + MASK_INDEX);
-  
+  const int DEFAULT_MASK   = (MASK_INTENSITY | MASK_INDEX);
+
   /** \brief A Class to Project Laser Scan
-   * This class will project laser scans into point clouds, and caches unit vectors 
-   * between runs so as not to need to recalculate.  
+   * This class will project laser scans into point clouds, and caches unit vectors
+   * between runs so as not to need to recalculate.
    */
   class LaserProjection
     {
     public:
       /** \brief Destructor to deallocate stored unit vectors */
-      ~LaserProjection(); 
-      
+      ~LaserProjection();
+
       /** \brief Project Laser Scan
        * This will project a laser scan from a linear array into a 3D point cloud
        * \param scan_in The input laser scan
@@ -82,7 +82,7 @@ namespace laser_scan
       /** \brief Transform a laser_scan::LaserScan into a PointCloud in target frame */
       void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const laser_scan::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK);
 
-      
+
     private:
       /** \brief Return the unit vectors for this configuration
        * Return the unit vectors for this configuration.
@@ -92,8 +92,8 @@ namespace laser_scan
 
       ///The map of pointers to stored values
       std::map<std::string,boost::numeric::ublas::matrix<double>* > unit_vector_map_;
-      
+
     };
-  
+
 }
 #endif //LASER_SCAN_UTILS_LASERSCAN_H

@@ -214,7 +214,7 @@ class ScanShadowsFilter : public ros::Node
       int n_scan = tilt_scan_msg_.ranges.size ();      // Save the number of measurements
 
       // Transform into a PointCloud message
-      int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
+      int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
       
       if (high_fidelity_)
       {
