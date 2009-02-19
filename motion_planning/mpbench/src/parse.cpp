@@ -151,7 +151,8 @@ namespace mpbench {
   
   
   void SetupParser::
-  Parse(std::string xml_filename, Setup * setup, std::ostream * progress_os)
+  Parse(std::string xml_filename, Setup * setup,
+	std::ostream * progress_os, std::ostream * debug_os)
     throw(std::runtime_error)
   {
     if (0 == parser)
@@ -163,6 +164,7 @@ namespace mpbench {
     filename = xml_filename;
     this->setup = setup;
     this->progress_os = progress_os;
+    this->debug_os = debug_os;
     file.reset(new File(filename.c_str(), O_RDONLY));
     
     // clear tag_stack
@@ -217,42 +219,76 @@ void start_element_handler(void * user_data,
   string const tag(name);
   
   if (("addline" == tag) || ("rmline" == tag)) {
-    if (("init" != prevtag) && ("change" != prevtag))
-      throwme(sp, "<" + tag + "> only allowed in <init> or <change>, not in <" + prevtag + ">");
+    if ("world" != prevtag)
+      throwme(sp, "<" + tag + "> only allowed in <world>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
+    sp->tmp_episode = 0;
+    while ((0 != atts) && (0 != *atts)) {
+      string const name(*atts);
+      ++atts;
+      if (0 == atts)
+	throwme(sp, "bug in expat? while parsing attribute " + name + "of <" + tag
+		+ ">: attribute value is null");
+      if ("episode" == name) {
+	string value(*atts);
+	if ( ! value.empty()) {
+	  if ('"' == value[0])
+	    value[0] = ' ';
+	  istringstream is(value);
+	  int ep;
+	  is >> ep;
+	  if ( ! is)
+	    throwme(sp, "could not read episode attribute value from " + value);
+	  if (0 < ep)
+	    sp->tmp_episode = ep;
+	}
+      }
+      else if (sp->debug_os)
+	*sp->debug_os << "mpbench::parse: ignoring attribute " << name << " in <" << tag << ">\n";
+      ++atts;
+    }
   }
+  
   else if ("description" == tag) {
     if ("task" != prevtag)
       throwme(sp, "<description> only allowed in <task>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
   }
+  
   else if (("from_scratch" == tag) || ("use_initial_solution" == tag)
 	   || ("allow_iteration" == tag) || ("alloc_time" == tag)) {
     if ("start" != prevtag)
       throwme(sp, "<" + tag + "> only allowed in <start>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
   }
+  
   else if ("tolerance" == tag) {
     if ("goal" != prevtag)
       throwme(sp, "<tolerance> only allowed in <goal>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
   }
+  
   else if ("pose" == tag) {
     if (("start" != prevtag) && ("goal" != prevtag))
       throwme(sp, "<pose> only allowed in <start> or <goal>, not in <" + prevtag + ">");
     sp->buffer.reset(new mpbench::StringBuffer());
   }
+  
   else if ("task" == tag) {
     sp->tmp_task.description = "none";
     sp->tmp_task.start.clear();
   }
+  
   else if ("start" == tag) {
     sp->tmp_start = sp->def_start;
   }
+  
   else if ("goal" == tag) {
     sp->tmp_goal = sp->def_goal;
   }
-  // else just ignore it
+  
+  else if (sp->debug_os)
+    *sp->debug_os << "mpbench::parse: ignoring start tag <" << tag << ">\n";
   
   sp->tag_stack.push(tag);
 }
@@ -270,22 +306,20 @@ void end_element_handler(void * user_data,
     prevtag = sp->tag_stack.top();
   string const tag(name);
   
-  if ("addline" == tag) {
+  if (("addline" == tag) || ("rmline" == tag)){
     if ( ! sp->buffer)
-      throwme(sp, "BUG: no string buffer for <addline>");
+      throwme(sp, "BUG: no string buffer for <" + tag + ">");
     else {
       istringstream is(sp->buffer->GetString());
       double x0, y0, x1, y1;
       is >> x0 >> y0 >> x1 >> y1;
       if ( ! is)
 	throwme(sp, "could not read x0 y0 x1 y1 from \"" + sp->buffer->GetString() + "\"");
-      static ostream * dbgos(0); // XXXX maybe switchable one day...
-      sp->setup->drawLine(x0, y0, x1, y1, sp->progress_os, dbgos);
+      if ("addline" == tag)
+	sp->setup->drawLine(sp->tmp_episode, true, x0, y0, x1, y1, sp->progress_os, sp->debug_os);
+      else
+	sp->setup->drawLine(sp->tmp_episode, false, x0, y0, x1, y1, sp->progress_os, sp->debug_os);
     }
-  }
-  
-  else if ("rmline" == tag) {
-    warnx("WIP: ignoring <rmline>");
   }
   
   else if ("description" == tag) {
@@ -382,8 +416,8 @@ void end_element_handler(void * user_data,
     sp->setup->addTask(sp->tmp_task);
   }
   
-  else				// dbg
-    warnx("unhandled closing </%s>", name);
+  else if (sp->debug_os)
+    *sp->debug_os << "mpbench::parse: ignoring end tag <" << tag << ">\n";
   
   sp->buffer.reset();
 }

@@ -42,7 +42,6 @@
 #include <mpglue/estar_planner.h>
 #include <costmap_2d/obstacle_map_accessor.h>
 #include <sbpl/headers.h>
-////#include <costmap_2d/costmap_2d.h>
 #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
 #include <sfl/util/strutil.hpp>
@@ -53,7 +52,7 @@
 #ifdef MPBENCH_HAVE_NETPGM
 extern "C" {
 #include <stdio.h>
-// pgm.h is not very friendly with system headers... need to undef max() and min() afterwards
+  // pgm.h is not very friendly with system headers... need to undef max() and min() afterwards
 #include <pgm.h>
 #undef max
 #undef min
@@ -69,17 +68,27 @@ using namespace std;
 namespace {
   
   
-  struct obstacle_adder: public sfl::GridFrame::draw_callback {
-    obstacle_adder(mpbench::indexlist_t & _il, ostream * _dbgos)
-      : il(_il), dbgos(_dbgos) {}
+  struct obstupdate: public sfl::GridFrame::draw_callback {
+    obstupdate(mpglue::ObstacleDelta & _od, bool _add, ostream * _dbgos)
+      : od(_od), add(_add), dbgos(_dbgos) {}
     
     virtual void operator () (ssize_t ix, ssize_t iy) {
-      if (dbgos)
-	*dbgos << "obstacle_adder: " << ix << " " << iy << "\n";
-      il.insert(mpglue::index_pair(ix, iy));
+      if (dbgos) {
+	*dbgos << "obstupdate: ";
+	if (add)
+	  *dbgos << "add ";
+	else
+	  *dbgos << "rem ";
+	*dbgos << ix << " " << iy << "\n";
+      }
+      if (add)
+	od.addIndex(ix, iy);
+      else
+	od.removeIndex(ix, iy);
     }
     
-    mpbench::indexlist_t & il;
+    mpglue::ObstacleDelta & od;
+    bool add;
     ostream * dbgos;
   };
   
@@ -119,20 +128,20 @@ namespace {
 		double hall, double door,
 		std::ostream * progress_os)
   {
-    setup.drawPoint(   0,     0, progress_os);
-    setup.drawPoint(   0,  hall, progress_os);
-    setup.drawPoint(hall,     0, progress_os);
-    setup.drawPoint(hall,  hall, progress_os);
-    setup.drawPoint(door,  door, progress_os);
+    setup.legacyDrawPoint(   0,     0, progress_os);
+    setup.legacyDrawPoint(   0,  hall, progress_os);
+    setup.legacyDrawPoint(hall,     0, progress_os);
+    setup.legacyDrawPoint(hall,  hall, progress_os);
+    setup.legacyDrawPoint(door,  door, progress_os);
     
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.legacyAddTask("left to right", true,
-		     0, 0.5 * hall, 0,
-		  hall, 0.5 * hall, 0, tol_xy, tol_th);
+			0, 0.5 * hall, 0,
+			hall, 0.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("right to left", false,
-		  hall, 0.5 * hall, 0,
-		     0, 0.5 * hall, 0, tol_xy, tol_th);
+			hall, 0.5 * hall, 0,
+			0, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
   
@@ -140,19 +149,19 @@ namespace {
 		  double hall, double door,
 		  std::ostream * progress_os, std::ostream * debug_os)
   {
-    setup.drawLine(   0,     0,  hall,     0, progress_os, debug_os);
-    setup.drawLine(   0,     0,     0,  hall, progress_os, debug_os);
-    setup.drawLine(   0,  hall,  hall,  hall, progress_os, debug_os);
-    setup.drawLine(hall,     0,  hall,  hall, progress_os, debug_os);
+    setup.legacyDrawLine(   0,     0,  hall,     0, progress_os, debug_os);
+    setup.legacyDrawLine(   0,     0,     0,  hall, progress_os, debug_os);
+    setup.legacyDrawLine(   0,  hall,  hall,  hall, progress_os, debug_os);
+    setup.legacyDrawLine(hall,     0,  hall,  hall, progress_os, debug_os);
 
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.legacyAddTask("left to right", true,
-		         door, 0.5 * hall,   M_PI / 4,
-		  hall - door, 0.5 * hall, 0, tol_xy, tol_th);
+			door, 0.5 * hall,   M_PI / 4,
+			hall - door, 0.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("right to left", false,
-		  hall - door, 0.5 * hall, - M_PI / 4,
-		         door, 0.5 * hall, 0, tol_xy, tol_th);
+			hall - door, 0.5 * hall, - M_PI / 4,
+			door, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
   
@@ -161,26 +170,26 @@ namespace {
 		   std::ostream * progress_os, std::ostream * debug_os)
   {
     // outer bounding box
-    setup.drawLine(       0,         0,  3 * hall,         0, progress_os, debug_os);
-    setup.drawLine(       0,         0,         0,  5 * hall, progress_os, debug_os);
-    setup.drawLine(       0,  5 * hall,  3 * hall,  5 * hall, progress_os, debug_os);
-    setup.drawLine(3 * hall,         0,  3 * hall,  5 * hall, progress_os, debug_os);
+    setup.legacyDrawLine(       0,         0,  3 * hall,         0, progress_os, debug_os);
+    setup.legacyDrawLine(       0,         0,         0,  5 * hall, progress_os, debug_os);
+    setup.legacyDrawLine(       0,  5 * hall,  3 * hall,  5 * hall, progress_os, debug_os);
+    setup.legacyDrawLine(3 * hall,         0,  3 * hall,  5 * hall, progress_os, debug_os);
     
     // two long walls along y-axis, each with a door near the northern end
-    setup.drawLine(    hall,  3 * hall,      hall,  5 * hall - 2 * door, progress_os, debug_os);
-    setup.drawLine(    hall,  5 * hall,      hall,  5 * hall -     door, progress_os, debug_os);
-    setup.drawLine(2 * hall,      hall,  2 * hall,  5 * hall - 2 * door, progress_os, debug_os);
-    setup.drawLine(2 * hall,  5 * hall,  2 * hall,  5 * hall -     door, progress_os, debug_os);
+    setup.legacyDrawLine(    hall,  3 * hall,      hall,  5 * hall - 2 * door, progress_os, debug_os);
+    setup.legacyDrawLine(    hall,  5 * hall,      hall,  5 * hall -     door, progress_os, debug_os);
+    setup.legacyDrawLine(2 * hall,      hall,  2 * hall,  5 * hall - 2 * door, progress_os, debug_os);
+    setup.legacyDrawLine(2 * hall,  5 * hall,  2 * hall,  5 * hall -     door, progress_os, debug_os);
     
     // some shorter walls along x-axis
-    setup.drawLine(         0,      hall,  0.5 * hall,      hall, progress_os, debug_os);
-    setup.drawLine(         0,  2 * hall,  0.5 * hall,  2 * hall, progress_os, debug_os);
-    setup.drawLine(1.5 * hall,      hall,  2   * hall,      hall, progress_os, debug_os);
+    setup.legacyDrawLine(         0,      hall,  0.5 * hall,      hall, progress_os, debug_os);
+    setup.legacyDrawLine(         0,  2 * hall,  0.5 * hall,  2 * hall, progress_os, debug_os);
+    setup.legacyDrawLine(1.5 * hall,      hall,  2   * hall,      hall, progress_os, debug_os);
     
     // y-axis wall with two office doors
-    setup.drawLine(0.5*hall,              0,  0.5*hall,    hall - 2*door, progress_os, debug_os);
-    setup.drawLine(0.5*hall,  hall -   door,  0.5*hall,    hall +   door, progress_os, debug_os);
-    setup.drawLine(0.5*hall,  hall + 2*door,  0.5*hall,  2*hall         , progress_os, debug_os);
+    setup.legacyDrawLine(0.5*hall,              0,  0.5*hall,    hall - 2*door, progress_os, debug_os);
+    setup.legacyDrawLine(0.5*hall,  hall -   door,  0.5*hall,    hall +   door, progress_os, debug_os);
+    setup.legacyDrawLine(0.5*hall,  hall + 2*door,  0.5*hall,  2*hall         , progress_os, debug_os);
     
     // tasks...
     if (progress_os)
@@ -189,35 +198,35 @@ namespace {
     double const tol_xy(0.25 * door);
     double const tol_th(M_PI);
     setup.legacyAddTask("through door or around hall", true,
-		  0.5 * hall, 4.5 * hall, 0,
-		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
+			0.5 * hall, 4.5 * hall, 0,
+			1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("through door or around hall, return trip", false,
-		  1.5 * hall, 4.5 * hall, 0,
-		  0.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
+			1.5 * hall, 4.5 * hall, 0,
+			0.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("through door or around long hall", true,
-		  1.5 * hall, 4.5 * hall, 0,
-		  2.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
+			1.5 * hall, 4.5 * hall, 0,
+			2.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("through door or around long hall, return trip", false,
-		  2.5 * hall, 4.5 * hall, 0,
-		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
+			2.5 * hall, 4.5 * hall, 0,
+			1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("office to office", true,
-		  0.25 * hall, 0.5 * hall, 0,
-		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
+			0.25 * hall, 0.5 * hall, 0,
+			0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("office to office, return trip", false,
-		  0.25 * hall, 1.5 * hall, 0,
-		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
+			0.25 * hall, 1.5 * hall, 0,
+			0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("office to hall", true,
-		  0.25 * hall, 0.5 * hall, 0,
-		         hall,       hall, 0, tol_xy, tol_th);
+			0.25 * hall, 0.5 * hall, 0,
+			hall,       hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("office to hall, return trip", false,
-		         hall,        hall, 0,
-		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
+			hall,        hall, 0,
+			0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("hall to office", true,
-		         hall,       hall, 0,
-		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
+			hall,       hall, 0,
+			0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
     setup.legacyAddTask("hall to office, return trip", false,
-		  0.25 * hall, 1.5 * hall, 0,
-		         hall,       hall, 0, tol_xy, tol_th);
+			0.25 * hall, 1.5 * hall, 0,
+			hall,       hall, 0, tol_xy, tol_th);
   }
   
   
@@ -237,10 +246,10 @@ namespace {
     double const yoff(0.5 * hall * R1 / R0);
     
     // lowermost wall
-    setup.drawLine(R0,
-		   - 0.5 * hall + yoff,
-		   R1 * cos( - alpha / 2),
-		   R1 * sin( - alpha / 2) + yoff, progress_os, debug_os);
+    setup.legacyDrawLine(R0,
+			 - 0.5 * hall + yoff,
+			 R1 * cos( - alpha / 2),
+			 R1 * sin( - alpha / 2) + yoff, progress_os, debug_os);
     
     for (size_t ii(0); ii < ncube; ++ii) {
       double const ux(cos(ii * alpha));
@@ -249,24 +258,24 @@ namespace {
       double const ny(ux);
       
       // door
-      setup.drawLine(R0 * ux - 0.5 * hall * nx,
-		     R0 * uy - 0.5 * hall * ny + yoff,
-		     R0 * ux - 0.5 * door * nx,
-		     R0 * uy - 0.5 * door * ny + yoff, progress_os, debug_os);
-      setup.drawLine(R0 * ux + 0.5 * door * nx,
-		     R0 * uy + 0.5 * door * ny + yoff,
-		     R0 * ux + 0.5 * hall * nx,
-		     R0 * uy + 0.5 * hall * ny + yoff, progress_os, debug_os);
+      setup.legacyDrawLine(R0 * ux - 0.5 * hall * nx,
+			   R0 * uy - 0.5 * hall * ny + yoff,
+			   R0 * ux - 0.5 * door * nx,
+			   R0 * uy - 0.5 * door * ny + yoff, progress_os, debug_os);
+      setup.legacyDrawLine(R0 * ux + 0.5 * door * nx,
+			   R0 * uy + 0.5 * door * ny + yoff,
+			   R0 * ux + 0.5 * hall * nx,
+			   R0 * uy + 0.5 * hall * ny + yoff, progress_os, debug_os);
       // upper wall
-      setup.drawLine(R0 * ux + 0.5 * hall * nx,
-		     R0 * uy + 0.5 * hall * ny + yoff,
-		     R1 * cos((ii + 0.5) * alpha),
-		     R1 * sin((ii + 0.5) * alpha) + yoff, progress_os, debug_os);
+      setup.legacyDrawLine(R0 * ux + 0.5 * hall * nx,
+			   R0 * uy + 0.5 * hall * ny + yoff,
+			   R1 * cos((ii + 0.5) * alpha),
+			   R1 * sin((ii + 0.5) * alpha) + yoff, progress_os, debug_os);
       // hind wall
-      setup.drawLine(R1 * cos((ii + 0.5) * alpha),
-		     R1 * sin((ii + 0.5) * alpha) + yoff,
-		     R1 * cos((ii - 0.5) * alpha),
-		     R1 * sin((ii - 0.5) * alpha) + yoff, progress_os, debug_os);
+      setup.legacyDrawLine(R1 * cos((ii + 0.5) * alpha),
+			   R1 * sin((ii + 0.5) * alpha) + yoff,
+			   R1 * cos((ii - 0.5) * alpha),
+			   R1 * sin((ii - 0.5) * alpha) + yoff, progress_os, debug_os);
     }
     
     // tasks...
@@ -282,12 +291,12 @@ namespace {
       ostringstream os;
       os << "from hall to cubicle " << ii;
       if (incremental) {
-	mpbench::task::setup foo(os.str(),
-				 mpbench::task::goalspec((R0 + hall / 2) * cos(ii * alpha),
-							 (R0 + hall / 2) * sin(ii * alpha) + yoff,
-							 0, tol_xy, tol_th));
-	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600, gx, gy, 0));
-	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time, gx, gy, 0));
+	mpbench::episode::taskspec foo(os.str(),
+				       mpbench::episode::goalspec((R0 + hall / 2) * cos(ii * alpha),
+								  (R0 + hall / 2) * sin(ii * alpha) + yoff,
+								  0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::episode::startspec(true, true, false, 3600, gx, gy, 0));
+	foo.start.push_back(mpbench::episode::startspec(false, false, true, alloc_time, gx, gy, 0));
 	setup.addTask(foo);
       }
       else
@@ -299,16 +308,16 @@ namespace {
 	break;
       os << ", return trip";
       if (incremental) {
-	mpbench::task::setup foo(os.str(),
-				 mpbench::task::goalspec(gx, gy, 0, tol_xy, tol_th));
-	foo.start.push_back(mpbench::task::startspec(true, true, false, 3600,
-						     (R0 + hall / 2) * cos(ii * alpha),
-						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
-						     0));
-	foo.start.push_back(mpbench::task::startspec(false, false, true, alloc_time,
-						     (R0 + hall / 2) * cos(ii * alpha),
-						     (R0 + hall / 2) * sin(ii * alpha) + yoff,
-						     0));
+	mpbench::episode::taskspec foo(os.str(),
+				       mpbench::episode::goalspec(gx, gy, 0, tol_xy, tol_th));
+	foo.start.push_back(mpbench::episode::startspec(true, true, false, 3600,
+							(R0 + hall / 2) * cos(ii * alpha),
+							(R0 + hall / 2) * sin(ii * alpha) + yoff,
+							0));
+	foo.start.push_back(mpbench::episode::startspec(false, false, true, alloc_time,
+							(R0 + hall / 2) * cos(ii * alpha),
+							(R0 + hall / 2) * sin(ii * alpha) + yoff,
+							0));
 	setup.addTask(foo);
       }
       else
@@ -347,7 +356,7 @@ namespace {
       for (int jj(ncols - 1); jj >= 0; --jj)
 	if ((       invert_gray  && (obstacle_gray >= row[jj]))
 	    || (( ! invert_gray) && (obstacle_gray <= row[jj])))
-	  setup.drawPoint(jj * resolution, ii * resolution, 0);
+	  setup.legacyDrawPoint(jj * resolution, ii * resolution, 0);
     }
     pgm_freerow(row);
   }
@@ -375,13 +384,16 @@ namespace {
   
   
   mpbench::Setup * createNetPGMBenchmark(mpbench::SetupOptions const & opt,
-					 std::ostream * progress_os) throw(runtime_error);
+					 std::ostream * progress_os, std::ostream * debug_os)
+    throw(runtime_error);
   
-  void readXML(string const & xmlFileName, mpbench::Setup * setup, std::ostream * progress_os)
+  void readXML(string const & xmlFileName, mpbench::Setup * setup,
+	       std::ostream * progress_os, std::ostream * debug_os)
     throw(runtime_error);  
   
   mpbench::Setup * createXMLBenchmark(mpbench::SetupOptions const & opt,
-				      std::ostream * progress_os) throw(runtime_error);
+				      std::ostream * progress_os, std::ostream * debug_os)
+    throw(runtime_error);
   
 }
 
@@ -407,38 +419,94 @@ namespace mpbench {
   }
   
   
-  void Setup::
-  drawLine(double x0, double y0, double x1, double y1,
-	   std::ostream * progress_os, std::ostream * debug_os)
+  boost::shared_ptr<mpglue::ObstacleDelta> Setup::
+  getObstdelta(size_t episode_id,
+	       std::ostream * debug_os)
   {
-    if (progress_os)
-      *progress_os << "Setup::drawLine(" << x0 << "  " << y0 << "  "
-		   << x1 << "  " << y1 << ")\n" << flush;
-    obstacle_adder obstadd(wspace_obstacles_, debug_os);
-    gridframe_.DrawGlobalLine(x0, y0, x1, y1,
-			      0, std::numeric_limits<ssize_t>::max(),
-			      0, std::numeric_limits<ssize_t>::max(),
-			      obstadd);
-    bbx0_ = minval(bbx0_, minval(x0, x1));
-    bby0_ = minval(bby0_, minval(y0, y1));
-    bbx1_ = maxval(bbx1_, maxval(x0, x1));
-    bby1_ = maxval(bby1_, maxval(y0, y1));
+    if (episode_id >= worldupdate_.size()) {
+      if (debug_os)
+	*debug_os << "Setup::getObstdelta(): making space for episode " << episode_id << "\n";
+      worldupdate_.resize(episode_id + 1);
+    }
+    
+    shared_ptr<mpglue::ObstacleDelta> & obstd(worldupdate_[episode_id]);
+    if ( ! obstd) {
+      if (debug_os)
+	*debug_os << "Setup::getObstdelta(): allocating delta for episode " << episode_id << "\n";
+      obstd.reset(new mpglue::ObstacleDelta());
+    }
+    
+    return obstd;
   }
   
   
   void Setup::
-  drawPoint(double xx, double yy,
-	    std::ostream * progress_os)
+  drawLine(size_t episode_id, bool add,
+	   double x0, double y0, double x1, double y1,
+	   std::ostream * progress_os, std::ostream * debug_os)
   {
     if (progress_os)
-      *progress_os << "Setup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
+      *progress_os << "Setup::drawLine(" << episode_id << "  " << sfl::to_string(add)
+		   << x0 << "  " << y0 << "  " << x1 << "  " << y1 << ")\n" << flush;
+    
+    obstupdate wu(*getObstdelta(episode_id, debug_os), add, debug_os);
+    gridframe_.DrawGlobalLine(x0, y0, x1, y1,
+			      0, std::numeric_limits<ssize_t>::max(),
+			      0, std::numeric_limits<ssize_t>::max(),
+			      wu);
+    
+    if (add) {
+      if (debug_os)
+	*debug_os << "Setup::drawLine(): updating bounding box\n";
+      bbx0_ = minval(bbx0_, minval(x0, x1));
+      bby0_ = minval(bby0_, minval(y0, y1));
+      bbx1_ = maxval(bbx1_, maxval(x0, x1));
+      bby1_ = maxval(bby1_, maxval(y0, y1));
+    }
+  }
+  
+  
+  void Setup::
+  drawPoint(size_t episode_id, bool add,
+	    double xx, double yy,
+	    std::ostream * progress_os, std::ostream * debug_os)
+  {
+    if (progress_os)
+      *progress_os << "Setup::drawPoint(" << episode_id << "  " << sfl::to_string(add)
+		   << xx << "  " << yy << ")\n" << flush;
+    
+    shared_ptr<mpglue::ObstacleDelta> obstd(getObstdelta(episode_id, debug_os));
     sfl::GridFrame const gridframe(opt_.costmap_resolution);
     sfl::GridFrame::index_t const idx(gridframe_.GlobalIndex(xx, yy));
-    wspace_obstacles_.insert(mpglue::index_pair(idx.v0, idx.v1));
-    bbx0_ = minval(bbx0_, xx);
-    bby0_ = minval(bby0_, yy);
-    bbx1_ = maxval(bbx1_, xx);
-    bby1_ = maxval(bby1_, yy);
+    if (add)
+      obstd->addIndex(idx.v0, idx.v1);
+    else
+      obstd->removeIndex(idx.v0, idx.v1);
+    
+    if (add) {
+      if (debug_os)
+	*debug_os << "Setup::drawPoint(): updating bounding box\n";
+      bbx0_ = minval(bbx0_, xx);
+      bby0_ = minval(bby0_, yy);
+      bbx1_ = maxval(bbx1_, xx);
+      bby1_ = maxval(bby1_, yy);
+    }
+  }
+  
+  
+  void Setup::
+  legacyDrawLine(double x0, double y0, double x1, double y1,
+		 std::ostream * progress_os, std::ostream * debug_os)
+  {
+    drawLine(0, true, x0, y0, x1, y1, progress_os, debug_os);
+  }
+  
+  
+  void Setup::
+  legacyDrawPoint(double xx, double yy,
+		  std::ostream * progress_os)
+  {
+    drawPoint(0, true, xx, yy, progress_os, 0);
   }
   
   
@@ -449,20 +517,20 @@ namespace mpbench {
 		double goal_x, double goal_y, double goal_th, 
 		double goal_tol_xy, double goal_tol_th)
   {
-    shared_ptr<task::setup>
-      setup(new task::setup(description, task::goalspec(goal_x, goal_y, goal_th,
-							goal_tol_xy, goal_tol_th)));
-    setup->start.push_back(task::startspec(from_scratch,
-					   false, false, numeric_limits<double>::max(),
-					   start_x, start_y, start_th));
+    shared_ptr<episode::taskspec>
+      setup(new episode::taskspec(description, episode::goalspec(goal_x, goal_y, goal_th,
+								 goal_tol_xy, goal_tol_th)));
+    setup->start.push_back(episode::startspec(from_scratch,
+					      false, false, numeric_limits<double>::max(),
+					      start_x, start_y, start_th));
     tasklist_.push_back(setup);
   }
   
   
   void Setup::
-  addTask(task::setup const & setup)
+  addTask(episode::taskspec const & setup)
   {
-    shared_ptr<task::setup> foo(new task::setup(setup));
+    shared_ptr<episode::taskspec> foo(new episode::taskspec(setup));
     tasklist_.push_back(foo);
   }
   
@@ -589,7 +657,7 @@ namespace mpbench {
 	os << prefix << " (" << (*it)->start.size() << " episodes)\n";
       os << prefix << "    goal " << (*it)->goal.px << "  " << (*it)->goal.py << "  "
 	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
-      for (vector<task::startspec>::const_iterator is((*it)->start.begin());
+      for (vector<episode::startspec>::const_iterator is((*it)->start.begin());
 	   is != (*it)->start.end(); ++is)
 	os << prefix << "    start " << to_string(is->from_scratch)
 	   << " " << to_string(is->use_initial_solution)
@@ -608,7 +676,7 @@ namespace mpbench {
   }
   
   
-  namespace task {
+  namespace episode {
     
     startspec::
     startspec(bool _from_scratch,
@@ -642,15 +710,15 @@ namespace mpbench {
     {
     }
     
-    setup::
-    setup(std::string const & _description, goalspec const & _goal)
+    taskspec::
+    taskspec(std::string const & _description, goalspec const & _goal)
       : description(_description),
 	goal(_goal)
     {
     }
     
-    setup::
-    setup(setup const & orig)
+    taskspec::
+    taskspec(taskspec const & orig)
       : description(orig.description),
 	goal(orig.goal),
 	start(orig.start)
@@ -831,9 +899,9 @@ namespace mpbench {
     if ("hc" == opt.world_tok[0])
       setup = OfficeBenchmark::create(opt, progress_os, debug_os);
     else if ("pgm" == opt.world_tok[0])
-      setup.reset(createNetPGMBenchmark(opt, progress_os));
+      setup.reset(createNetPGMBenchmark(opt, progress_os, debug_os));
     else if ("xml" == opt.world_tok[0])
-      setup.reset(createXMLBenchmark(opt, progress_os));
+      setup.reset(createXMLBenchmark(opt, progress_os, debug_os));
     else
       throw runtime_error("mpbench::Setup::create(): invalid format \"" + opt.world_tok[0]
 			  + "\" in spec \"" + opt.world_spec + "\"");
@@ -864,7 +932,7 @@ namespace mpbench {
     
     if (progress_os)
       *progress_os << "creating cost map (currently just one episode)\n" << flush;
-    setup->costmapper_->addObstacles(setup->wspace_obstacles_, debug_os);
+    setup->costmapper_->updateObstacles(*setup->getObstdelta(0, debug_os), debug_os);
     
     if (progress_os)
       *progress_os << "creating planner from \"" << opt.planner_spec << "\"\n" << flush;
@@ -985,12 +1053,7 @@ namespace mpbench {
 	throw runtime_error("mpbench::Setup::create(): invalid planner name \"" + planner_name
 			    + "\"");
       
-      shared_ptr<mpglue::AnytimeCostmapPlanner>
-	foo(new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner));
-      foo->stopAtFirstSolution(false); // XXXX to do: use task::start
-      foo->setAllocatedTime(numeric_limits<double>::max()); // XXXX to do: use task::start
-      
-      setup->planner_ = foo;
+      setup->planner_.reset(new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner));
     }
     
     if ( ! setup->planner_)
@@ -1020,7 +1083,8 @@ namespace mpbench {
 namespace {
   
   mpbench::Setup * createNetPGMBenchmark(SetupOptions const & opt,
-					 std::ostream * progress_os) throw(runtime_error)
+					 std::ostream * progress_os, std::ostream * debug_os)
+    throw(runtime_error)
   {
     mpbench::Setup * bench(0);
 
@@ -1058,7 +1122,7 @@ namespace {
 	       opt.costmap_resolution);
     
     if (opt.world_tok.size() > 2)
-      readXML(opt.world_tok[2], bench, progress_os);
+      readXML(opt.world_tok[2], bench, progress_os, debug_os);
     
 #endif // MPBENCH_HAVE_NETPGM
     
@@ -1066,7 +1130,8 @@ namespace {
   }
   
   
-  void readXML(string const & xmlFileName, mpbench::Setup * setup, std::ostream * progress_os)
+  void readXML(string const & xmlFileName, mpbench::Setup * setup,
+	       std::ostream * progress_os, std::ostream * debug_os)
     throw(runtime_error)
   {
     
@@ -1084,7 +1149,7 @@ namespace {
     if (progress_os)
       *progress_os << "parsing XML file " << xmlFileName << "\n";
     mpbench::SetupParser sp;
-    sp.Parse(xmlFileName, setup, progress_os);
+    sp.Parse(xmlFileName, setup, progress_os, debug_os);
     
 #endif // MPBENCH_HAVE_EXPAT    
     
@@ -1092,7 +1157,8 @@ namespace {
   
   
   mpbench::Setup * createXMLBenchmark(SetupOptions const & opt,
-				      std::ostream * progress_os) throw(runtime_error)
+				      std::ostream * progress_os, std::ostream * debug_os)
+    throw(runtime_error)
   {
     mpbench::Setup * bench(0);
     
@@ -1118,7 +1184,7 @@ namespace {
     bench = new mpbench::Setup(opt);
     if (progress_os)
       *progress_os << "createXMLBenchmark(): parsing " << opt.world_tok[1] << "\n";
-    readXML(opt.world_tok[1], bench, progress_os);
+    readXML(opt.world_tok[1], bench, progress_os, debug_os);
     
 #endif // MPBENCH_HAVE_EXPAT
     

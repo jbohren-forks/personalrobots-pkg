@@ -12,21 +12,19 @@
     </goal>
   </defaults>
   
-  <map>
-    <init>
-      <!-- outer bounding box -->
-      <addline>  0     0     7    0    </addline>
-      <addline>  0     0     0    5.5  </addline>
-      <addline>  0     5.5   7    5.5  </addline>
-      <addline>  7     0     7    5.5  </addline>
-      <!-- wall with opening along y-axis -->
-      <addline>  4.5   0     4.5  4    </addline>
-      <addline>  4.5   4.75  4.5  5.5  </addline>
-      <!-- short "tunnel" along x-axis -->
-      <addline>  2.325 4     4.5  4    </addline>
-      <addline>  2.325 4.75  4.5  4.75 </addline>
-    </init>
-  </map>
+  <world>
+    <!-- outer bounding box -->
+    <addline>  0     0     7    0    </addline>
+    <addline>  0     0     0    5.5  </addline>
+    <addline>  0     5.5   7    5.5  </addline>
+    <addline>  7     0     7    5.5  </addline>
+    <!-- wall with opening along y-axis -->
+    <addline>  4.5   0     4.5  4    </addline>
+    <addline>  4.5   4.75  4.5  5.5  </addline>
+    <!-- short "tunnel" along x-axis -->
+    <addline>  2.325 4     4.5  4    </addline>
+    <addline>  2.325 4.75  4.5  4.75 </addline>
+  </world>
   
   <task><description>leftmost</description>
   <goal> <pose>5.75  1 -1.55</pose></goal>

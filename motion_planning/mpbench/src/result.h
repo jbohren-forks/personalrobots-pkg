@@ -53,8 +53,8 @@ namespace mpbench {
       entry(size_t task_id,
 	    size_t episode_id,
 	    size_t iteration_id,
-	    task::startspec const & start,
-	    task::goalspec const & goal,
+	    episode::startspec const & start,
+	    episode::goalspec const & goal,
 	    boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 	    boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
       
@@ -63,8 +63,8 @@ namespace mpbench {
       size_t task_id;
       size_t episode_id;
       size_t iteration_id;
-      task::startspec start;
-      task::goalspec goal;
+      episode::startspec start;
+      episode::goalspec goal;
       boost::shared_ptr<mpglue::waypoint_plan_t> plan;
       boost::shared_ptr<mpglue::CostmapPlannerStats> stats;
     };
@@ -85,8 +85,8 @@ namespace mpbench {
     void insert(size_t task_id,
 		size_t episode_id,
 		size_t iteration_id,
-		task::startspec const & start,
-		task::goalspec const & goal,
+		episode::startspec const & start,
+		episode::goalspec const & goal,
 		boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 		boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
     

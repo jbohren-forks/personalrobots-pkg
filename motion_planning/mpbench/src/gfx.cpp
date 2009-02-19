@@ -454,7 +454,7 @@ namespace {
       }	// endif(plan)
     } // endif(detailed)
     
-    task::startspec const & start(result.start);
+    episode::startspec const & start(result.start);
     glPushMatrix();
     glTranslated(start.px, start.py, 0);
     glColor3d(1, 1, 0);
@@ -463,7 +463,7 @@ namespace {
     drawFootprint();
     glPopMatrix();
     
-    task::goalspec const & goal(result.goal);
+    episode::goalspec const & goal(result.goal);
     glPushMatrix();
     glTranslated(goal.px, goal.py, 0);
     glColor3d(1, 0.5, 0);

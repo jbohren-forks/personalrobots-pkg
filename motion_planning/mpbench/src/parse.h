@@ -87,7 +87,8 @@ namespace mpbench {
     SetupParser();
     virtual ~SetupParser();
     
-    void Parse(std::string xml_filename, Setup * setup, std::ostream * progress_os)
+    void Parse(std::string xml_filename, Setup * setup,
+	       std::ostream * progress_os, std::ostream * debug_os)
       throw(std::runtime_error);
     
     // Everything is public for easy access from C callback functions.
@@ -100,11 +101,13 @@ namespace mpbench {
     int bufsize;
     Setup * setup;
     std::ostream * progress_os;
-    task::startspec def_start;
-    task::goalspec def_goal;
-    task::startspec tmp_start;
-    task::goalspec tmp_goal;
-    task::setup tmp_task;
+    std::ostream * debug_os;
+    episode::startspec def_start;
+    episode::goalspec def_goal;
+    episode::startspec tmp_start;
+    episode::goalspec tmp_goal;
+    episode::taskspec tmp_task;
+    ssize_t tmp_episode;
   };
   
 }

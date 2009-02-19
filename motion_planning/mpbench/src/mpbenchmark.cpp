@@ -312,7 +312,7 @@ void create_setup()
 
 
 static void plan_iteratively(size_t task_id, size_t episode_id,
-			     task::startspec const & start, task::goalspec const & goal,
+			     episode::startspec const & start, episode::goalspec const & goal,
 			     SBPLPlannerWrap & planner_ref)
 {
   double prev_epsilon(-1);
@@ -397,7 +397,7 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
 
 
 static void plan_once(size_t task_id, size_t episode_id,
-		      task::startspec const & start, task::goalspec const & goal,
+		      episode::startspec const & start, episode::goalspec const & goal,
 		      CostmapPlanner & planner_ref)
 {
   shared_ptr<waypoint_plan_t> plan;
@@ -433,7 +433,7 @@ void run_tasks()
     for (size_t task_id(0); task_id < tasklist.size(); ++task_id) {
       if ( ! tasklist[task_id])
 	errx(EXIT_FAILURE, "run_tasks(): no task with ID %zu", task_id);
-      task::setup const task(*tasklist[task_id]);
+      episode::taskspec const task(*tasklist[task_id]);
       if (task.start.empty())
 	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
@@ -442,7 +442,7 @@ void run_tasks()
       planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
       for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
-	task::startspec const & start(task.start[episode_id]);
+	episode::startspec const & start(task.start[episode_id]);
 	
 	planner->setStart(start.px, start.py, start.pth);
 	planner->forcePlanningFromScratch(start.from_scratch);

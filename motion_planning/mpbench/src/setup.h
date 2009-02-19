@@ -49,7 +49,7 @@
 
 namespace mpbench {
   
-  namespace task {
+  namespace episode {
     
     struct startspec {
       startspec(bool from_scratch,
@@ -82,17 +82,18 @@ namespace mpbench {
       double tol_xy;
       double tol_th;
     };
-    
-    struct setup {
-      setup(std::string const & description, goalspec const & goal);
-      setup(setup const & orig);
+
+    struct taskspec {
+      taskspec(std::string const & description, goalspec const & goal);
+      taskspec(taskspec const & orig);
       
       std::string description;
       goalspec goal;
-      std::vector<startspec> start;
+      std::vector<startspec> start; // per episode
     };
     
   }
+  
   
   typedef std::vector<std::string> tokenlist_t;
   
@@ -149,8 +150,8 @@ namespace mpbench {
     bool pgm_invert_gray;
   };
   
-  typedef std::set<mpglue::index_pair> indexlist_t;
-  typedef std::vector<boost::shared_ptr<task::setup> > tasklist_t;
+  typedef std::vector<boost::shared_ptr<episode::taskspec> > tasklist_t;
+  typedef std::vector<boost::shared_ptr<mpglue::ObstacleDelta> > worldupdate_t;
   
   
   class Setup
@@ -201,17 +202,33 @@ namespace mpbench {
        radius and with costs descending out up to the freespace
        distance.
     */
-    void drawLine(double x0, double y0, double x1, double y1,
+    void drawLine(size_t episode_id, bool add,
+		  double x0, double y0, double x1, double y1,
 		  /** optional: verbose operation if non-null */
 		  std::ostream * progress_os, std::ostream * debug_os);
+
+    void drawPoint(size_t episode_id, bool add,
+		   double xx, double yy,
+		   /** optional: verbose operation if non-null */
+		   std::ostream * progress_os, std::ostream * debug_os);
     
-    void drawPoint(double xx, double yy,
-		   std::ostream * progress_os);
+    /**
+       For old code: calls drawLine(0, true, ...)
+    */
+    void legacyDrawLine(double x0, double y0, double x1, double y1,
+			/** optional: verbose operation if non-null */
+			std::ostream * progress_os, std::ostream * debug_os);
+    
+    /**
+       For old code: calls drawPoint(0, true, ...)
+    */
+    void legacyDrawPoint(double xx, double yy,
+			 std::ostream * progress_os);
     
     /**
        Add a (copy of a) task to the task list.
     */
-    void addTask(task::setup const & setup);
+    void addTask(episode::taskspec const & setup);
     
     void legacyAddTask(std::string const & description,
 		       bool from_scratch,
@@ -233,10 +250,13 @@ namespace mpbench {
     SetupOptions const & getOptions() const { return opt_; }
     
   protected:
+    boost::shared_ptr<mpglue::ObstacleDelta> getObstdelta(size_t episode_id,
+							  std::ostream * debug_os);
+    
     SetupOptions opt_;
     sfl::GridFrame gridframe_;
-    indexlist_t wspace_obstacles_;
     tasklist_t tasklist_;
+    worldupdate_t worldupdate_;
     double bbx0_, bby0_, bbx1_, bby1_; // workspace bounding box
     
   private:
