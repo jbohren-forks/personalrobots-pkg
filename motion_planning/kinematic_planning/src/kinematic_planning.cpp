@@ -225,16 +225,10 @@ public:
     /** Free the memory */
     virtual ~KinematicPlanning(void)
     {
-	ROS_INFO("A");
-	
-	
 	stopReplanning();
-	ROS_INFO("B");
 	stopPublishingStatus();
-	ROS_INFO("C");
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
-	ROS_INFO("D");
     }
     
     bool isSafeToPlan(bool report)

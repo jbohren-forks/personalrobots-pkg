@@ -32,67 +32,15 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_KPIECE_SETUP_
-#define KINEMATIC_PLANNING_RKP_KPIECE_SETUP_
+#ifndef OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_EXTENSION_RRT_IKLRRT_
+#define OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_EXTENSION_RRT_IKLRRT_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/kpiece/KPIECE1.h>
+#include "ompl/extension/samplingbased/kinematic/extension/ik/IKPlanner.h"
+#include "ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h"
 
-namespace kinematic_planning
+namespace ompl
 {
-    
-    class RKPKPIECESetup : public RKPPlannerSetup
-    {
-    public:
-	
-        RKPKPIECESetup(void) : RKPPlannerSetup()
-	{
-	    name = "KPIECE";	    
-	}
-	
-	virtual ~RKPKPIECESetup(void)
-	{
-	    if (dynamic_cast<ompl::KPIECE1_t>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::KPIECE1_t>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::KPIECE1_t kpiece = new ompl::KPIECE1(si);
-	    mp                     = kpiece;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], kpiece->getRange());
-		kpiece->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    kpiece->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (kpiece->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
-	}
-	
-    };
-
-} // kinematic_planning
-
-#endif
-    
+    typedef IKPlanner<LazyRRT> IKLRRT;
+}
