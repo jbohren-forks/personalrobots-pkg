@@ -35,6 +35,7 @@
 #include "costmapper.h"
 #include <sfl/gplan/Mapper2d.hpp>
 
+using namespace mpglue;
 using namespace boost;
 using namespace std;
 
@@ -65,15 +66,15 @@ namespace {
       return idxt_;
     }
     
-    virtual size_t updateObstacles(collection_t const * added_obstacle_indices,
-				   collection_t const * removed_obstacle_indices,
+    virtual size_t updateObstacles(index_collection_t const * added_obstacle_indices,
+				   index_collection_t const * removed_obstacle_indices,
 				   ostream * dbgos)
     {
       sfl::Mapper2d::index_buffer_t add_b;
       sfl::Mapper2d::index_buffer_t * add_p(0);
       if (added_obstacle_indices) {
 	add_p = &add_b;
-	for (collection_t::const_iterator ia(added_obstacle_indices->begin());
+	for (index_collection_t::const_iterator ia(added_obstacle_indices->begin());
 	     ia != added_obstacle_indices->end(); ++ia)
 	  add_b.insert(sfl::Mapper2d::index_t(ia->ix, ia->iy));
 	if (dbgos)
@@ -86,7 +87,7 @@ namespace {
       sfl::Mapper2d::index_buffer_t * remove_p(0);
       if (removed_obstacle_indices) {
 	remove_p = &remove_b;
-	for (collection_t::const_iterator ir(removed_obstacle_indices->begin());
+	for (index_collection_t::const_iterator ir(removed_obstacle_indices->begin());
 	     ir != removed_obstacle_indices->end(); ++ir)
 	  remove_b.insert(sfl::Mapper2d::index_t(ir->ix, ir->iy));
 	if (dbgos)

@@ -53,12 +53,12 @@ namespace sfl {
 
 namespace mpglue {
   
+  typedef ssize_t index_t;
   
   class CostmapAccessor
   {
   public:
     typedef int cost_t;
-    typedef ssize_t index_t;
     
     virtual ~CostmapAccessor() {}
     
