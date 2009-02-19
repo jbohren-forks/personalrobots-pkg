@@ -62,6 +62,8 @@ typedef struct STATE3D_t
     short unsigned int x;
     short unsigned int y;
     short unsigned int z;
+//     int heapindex;
+//     struct listelement* listelem[2];
 } State3D;
 
 // robot arm physical configuration structure
@@ -80,8 +82,8 @@ typedef struct ENV_ROBARM_CONFIG
     int EnvWidth_c;
     int EnvHeight_c;
     int EnvDepth_c;
-
-    //fixed location of shoulder base (cells)
+    
+    //fixed location of shoulder base (cells) 
     int BaseX_c;
     int BaseY_c;
     int BaseZ_c;
@@ -96,6 +98,11 @@ typedef struct ENV_ROBARM_CONFIG
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
 
+    //low resolution environment dimensions (cells)
+    int LowResEnvWidth_c;
+    int LowResEnvHeight_c;
+    int LowResEnvDepth_c;
+    
     //flag determines if the environment has been initialized or not
     bool EnvInitialized;
 
@@ -108,9 +115,11 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
 
-    //3d grid of world space 
+    //3D grid of world space 
     char*** Grid3D;
-    double GridCellWidth;   // cells are square (width=height=depth)
+    char*** LowResGrid3D;
+    double GridCellWidth;           // cells are square (width=height=depth)
+    double LowResGridCellWidth;     // cells are square (width=height=depth)
 
     //DH Parameters
     double DH_alpha[NUMOFLINKS_DH];
@@ -120,7 +129,7 @@ typedef struct ENV_ROBARM_CONFIG
 
     //Motor Limits
     double PosMotorLimits[NUMOFLINKS];
-    double NegMotorLimits[NUMOFLINKS];
+    double NegMotorLimits[NUMOFLINKS]; //must be negative values
 
     //joint angle discretization
     double angledelta[NUMOFLINKS];
@@ -136,6 +145,8 @@ typedef struct ENV_ROBARM_CONFIG
 
     //options
     bool use_DH;
+    bool lowres_collision_checking;
+    bool multires_succ_actions;
     bool enforce_motor_limits;
     bool dijkstra_heuristic;
     bool endeff_check_only;
@@ -150,10 +161,12 @@ typedef struct ENV_ROBARM_CONFIG
     double goal_moe_m;
     double goal_moe_r;
 
-    //velocities
+    //successor actions
+    double ** SuccActions;
     int nSuccActions;
-    double ** succ_vel;
-    int ** ActionCosts;
+    int nLowResActions;
+    int ** ActiontoActionCosts;
+    int HighResActionsThreshold_c;
 
     //for precomputing cos/sin & DH matrices 
     double cos_r[360];
@@ -204,7 +217,7 @@ typedef struct
     int* Heur;
 }EnvironmentROBARM_t;
 
-class EnvironmentROBARM : public DiscreteSpaceInformation 
+class EnvironmentROBARM: public DiscreteSpaceInformation 
 {
 
 public:
@@ -251,15 +264,17 @@ private:
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int action);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], short unsigned int action, double orientation[3][3]);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action, double orientation[3][3]);
 
     //initialization
     void ReadParamsFile(FILE* fCfg);
     void ReadConfiguration(FILE* fCfg);
     void InitializeEnvConfig();
+    void InitializeEnvGrid();
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
     double IsPathFeasible();
-    void AddObstacleToGrid(double* obstacle, int type);
+    void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
@@ -268,15 +283,22 @@ private:
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
     void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
+    void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
+    void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);  //get rid of this
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm, char*** Grid3D);
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D, int grid_dims[3], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int shoulder[3],double orientation[3][3]);
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
+    
     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
+    int GetEuclideanDistToGoal(short unsigned int* xyz);
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -305,7 +327,9 @@ private:
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);
     void Create3DStateSpace(State3D**** statespace3D);
     void Delete3DStateSpace(State3D**** statespace3D);
+    int XYZTO3DIND(int x, int y, int z);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
+//     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
 
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);

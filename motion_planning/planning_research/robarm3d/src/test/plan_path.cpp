@@ -2,7 +2,7 @@
 #include "../headers.h"
 
 #define VERBOSE 1
-#define MAX_RUNTIME 120.0
+#define MAX_RUNTIME 60.0
 
 void PrintUsage(char *argv[])
 {
@@ -57,7 +57,7 @@ int planrobarm(int argc, char *argv[])
     planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
     //set search mode (true - settle with first solution)
-//     planner.set_search_mode(true);
+    planner.set_search_mode(true);
 
     printf("start planning...\n");
     bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
