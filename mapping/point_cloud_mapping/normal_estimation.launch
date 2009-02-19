@@ -1,6 +1,6 @@
 <launch>
-  <param name="downsample" value="false" />
-  <param name="cut_distance" value="15" />
+  <param name="/normal_estimation/downsample" value="0" />
+  <param name="/normal_estimation/cut_distance" value="15" />
 
-  <node pkg="point_cloud_mapping" type="normal_estimation_node" name="door_handle_detector" output="screen" respawn="true" />
+  <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation" output="screen" respawn="true" />
 </launch>

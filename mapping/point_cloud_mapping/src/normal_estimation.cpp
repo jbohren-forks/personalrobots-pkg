@@ -81,7 +81,7 @@ class NormalEstimation : public ros::Node
     double radius_;
     int k_;
     // additional downsampling parameters
-    bool downsample_;
+    int downsample_;
     Point leaf_width_;
     double cut_distance_;
 
@@ -95,13 +95,13 @@ class NormalEstimation : public ros::Node
       param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default
       param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
-      param ("~downsample", downsample_, true);    // Downsample cloud before normal estimation
+      param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
       param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 2cm radius by default
       param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 2cm radius by default
       param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 2cm radius by default
       param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
-      if (downsample_)
+      if (downsample_ != 0)
         k_ = 10;          // Reduce the size of K significantly
 
       string cloud_topic ("tilt_laser_cloud");
@@ -136,6 +136,12 @@ class NormalEstimation : public ros::Node
     void
       updateParametersFromServer ()
     {
+      if (hasParam ("~downsample")) getParam ("~downsample", downsample_);
+      if (downsample_ != 0)
+        k_ = 10;
+      else
+        k_ = 25;
+
       if (hasParam ("~downsample_leaf_width_x")) getParam ("~downsample_leaf_width_x", leaf_width_.x);
       if (hasParam ("~downsample_leaf_width_y")) getParam ("~downsample_leaf_width_y", leaf_width_.y);
       if (hasParam ("~downsample_leaf_width_z")) getParam ("~downsample_leaf_width_z", leaf_width_.z);
@@ -177,7 +183,7 @@ class NormalEstimation : public ros::Node
       double time_spent;
 
       // If a-priori downsampling is enabled...
-      if (downsample_)
+      if (downsample_ != 0)
       {
         gettimeofday (&t1, NULL);
         int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
@@ -203,7 +209,7 @@ class NormalEstimation : public ros::Node
 #else
       // We need to copy the original point cloud data, and this looks like a good way to do it
       int original_chan_size;
-      if (downsample_)
+      if (downsample_ != 0)
       {
         cloud_normals_ = cloud_down_;
         // There's no point in saving: intensity, indices, distances, timestamps once we go to downsampled 3D
@@ -232,7 +238,7 @@ class NormalEstimation : public ros::Node
       }
       for (unsigned int d = original_chan_size; d < cloud_normals_.chan.size (); d++)
       {
-        if (downsample_)
+        if (downsample_ != 0)
           cloud_normals_.chan[d].vals.resize (cloud_down_.pts.size ());
         else
           cloud_normals_.chan[d].vals.resize (cloud_.pts.size ());
