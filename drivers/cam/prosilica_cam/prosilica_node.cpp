@@ -257,7 +257,7 @@ private:
                   frame->ImageBuffer);
         */
         
-        // Debayer to bgr format
+        // Debayer to bgr format so CvBridge can handle it
         image.label = "image";
         image.encoding = "bgr";
         image.depth = "uint8";

@@ -140,9 +140,6 @@ void Camera::setup()
   PvAttrUint32Get(handle_, "PacketSize", &maxPacketSize);
   PvCaptureAdjustPacketSize(handle_, maxPacketSize);
 
-  // set pixel format
-  //CHECK_ERR( PvAttrEnumSet(handle_, "PixelFormat", "Rgb24"), "Unable to set pixel format" );
-  
   // query for attributes (TODO: more)
   CHECK_ERR( PvAttrUint32Get(handle_, "TotalBytesPerFrame", &frameSize_),
              "Unable to retrieve frame size" );

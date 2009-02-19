@@ -10,18 +10,21 @@ static char wndname[] = "Captured image";
 
 image_msgs::CvBridge bridge;
 
+// NOTE: res must be global! CvBridge assumes it can just point
+//       to the pixel data in the image message.
+prosilica_cam::PolledImage::Request req;
+prosilica_cam::PolledImage::Response res;
+
 IplImage* callPollProsilica(int timeout)
 {
-  prosilica_cam::PolledImage::Request req;
-  prosilica_cam::PolledImage::Response res;
   req.timeout_ms = timeout;
   if (!ros::service::call("prosilica/poll", req, res)) {
-    ROS_FATAL("Service call failed\n");
+    ROS_FATAL("Service call failed");
     return NULL;
   }
   
   if (!bridge.fromImage(res.image, "bgr")) {
-    ROS_FATAL("CvBridge::fromImage failed\n");
+    ROS_FATAL("CvBridge::fromImage failed");
     return NULL;
   }
   
