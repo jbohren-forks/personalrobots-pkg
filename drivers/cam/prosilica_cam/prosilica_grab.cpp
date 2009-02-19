@@ -34,7 +34,10 @@ int main(int argc, char** argv)
   ros::Node n("poll_prosilica_client");
 
   cvNamedWindow(wndname);
-  
+
+  unsigned int index = 0;
+  IplImage* display = NULL;
+  char filename[16];
   while (true)
   {
     int k = cvWaitKey(0);
@@ -43,9 +46,16 @@ int main(int argc, char** argv)
       case 'q':
         goto exit_main;
       case 'c':
-        IplImage* display = callPollProsilica(100);
+        display = callPollProsilica(100);
         if (display)
           cvShowImage(wndname, display);
+        break;
+      case 's':
+        if (display) {
+          sprintf(filename, "frame%04u.jpg", index++);
+          cvSaveImage( filename, display );
+          ROS_FATAL("Saved image %s\n", filename);
+        }
         break;
     }
   }

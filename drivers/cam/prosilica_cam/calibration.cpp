@@ -458,7 +458,8 @@ int main( int argc, char** argv )
         }
 
         cvShowImage( "Image View", view );
-        key = cvWaitKey(capture ? 50 : 500);
+        //key = cvWaitKey(capture ? 50 : 500);
+        key = cvWaitKey(0);
 
         if( key == 27 )
             break;
