@@ -31,6 +31,9 @@
 #include "laser_scan/LaserScan.h"
 #include "laser_scan/median_filter.h"
 
+static std::string median_filter_xml = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
+
+
 class MedianFilterNode : public ros::Node
 {
 public:
@@ -39,7 +42,11 @@ public:
 
   MedianFilterNode() : ros::Node("median_filter_node"), filter()
   {
+    std::string filter_xml;
     advertise<laser_scan::LaserScan>("~output", 1000);
+    param("~filters", filter_xml, median_filter_xml);
+    printf("Got ~filters as: %s\n", filter_xml.c_str());
+    filter.configure(filter_xml);
     subscribe("scan_in", msg, &MedianFilterNode::callback, 3);
   }
   void callback()

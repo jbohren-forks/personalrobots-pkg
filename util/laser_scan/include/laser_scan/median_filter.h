@@ -53,6 +53,9 @@ public:
    */
   LaserMedianFilter();//const std::string & xml_parameters);
   ~LaserMedianFilter();
+
+  bool configure(const std::string & xml);
+
   /** \brief Update the filter and get the response
    * \param scan_in The new scan to filter
    * \param scan_out The filtered scan
@@ -70,6 +73,7 @@ private:
   filters::FilterChain<std_vector_float > * range_filter_;
   filters::FilterChain<std_vector_float > * intensity_filter_;
 
+  std::string latest_xml_;
 };
 
 

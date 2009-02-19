@@ -35,17 +35,22 @@ using namespace filters ;
 
 namespace laser_scan{
 
-static std::string median_filter_xml = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
 
-LaserMedianFilter::LaserMedianFilter()://const std::string & xml_parameters):
+LaserMedianFilter::LaserMedianFilter():
   num_ranges_(1)
 {
+  
+};
+
+bool LaserMedianFilter::configure(const std::string & xml_parameters)
+{
+  latest_xml_ = xml_parameters;
   range_filter_ = new FilterChain<std_vector_float >();
-  range_filter_->add(median_filter_xml);
+  range_filter_->add(latest_xml_);
   range_filter_->configure(num_ranges_);
   
   intensity_filter_ = new FilterChain<std_vector_float >();
-  intensity_filter_->add(median_filter_xml);
+  intensity_filter_->add(latest_xml_);
   intensity_filter_->configure(num_ranges_);
 };
 
@@ -62,7 +67,7 @@ bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan:
 
   if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
   {
-    ROS_INFO("Median filter clearning and reallocating due to larger scan size");
+    ROS_INFO("Laser filter clearning and reallocating due to larger scan size");
     delete range_filter_;
     delete intensity_filter_;
 
@@ -70,11 +75,11 @@ bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan:
     num_ranges_ = scan_in.get_ranges_size();
     
     range_filter_ = new FilterChain<std_vector_float >();
-    range_filter_->add(median_filter_xml);
+    range_filter_->add(latest_xml_);
     range_filter_->configure(num_ranges_);
     
     intensity_filter_ = new FilterChain<std_vector_float >();
-    intensity_filter_->add(median_filter_xml);
+    intensity_filter_->add(latest_xml_);
     intensity_filter_->configure(num_ranges_);
     
   }
