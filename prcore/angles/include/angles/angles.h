@@ -117,6 +117,7 @@ namespace angles
    * \function
    *
    * \brief returns the angle in [-2*M_PI, 2*M_PI]  going the other way along the unit circle. 
+   * \param angle The angle to which you want to turn in the range [-2*M_PI, 2*M_PI] 
    * E.g. add_mod_2Pi(-M_PI/4) returns 7_M_PI/4
    * add_mod_2Pi(M_PI/4) returns -7*M_PI/4
    *

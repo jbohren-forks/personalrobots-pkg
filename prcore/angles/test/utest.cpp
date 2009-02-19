@@ -177,6 +177,7 @@ TEST(Angles, add_mod_2Pi)
   EXPECT_NEAR(add_mod_2Pi(M_PI), -M_PI, epsilon);
   EXPECT_NEAR(add_mod_2Pi(-M_PI), M_PI, epsilon);
   EXPECT_NEAR(add_mod_2Pi(-M_PI/2), 3*M_PI/2, epsilon);
+
 }
 
 /** \todo find_min_max_delta is always returning false commented until fixed */
@@ -201,8 +202,8 @@ TEST(Angles, find_min_max_delta)
   EXPECT_NEAR(max_delta, 3*M_PI/2, epsilon);
 
   
-//  EXPECT_FALSE(find_min_max_delta( 2*M_PI, -M_PI, M_PI, min_delta, max_delta));
-//  EXPECT_FALSE(find_min_max_delta( -M_PI, -M_PI/2, M_PI/2, min_delta, max_delta));
+  //Test out of range
+  EXPECT_FALSE(find_min_max_delta( -M_PI, -M_PI/2, M_PI/2, min_delta, max_delta));
 
 }
 
