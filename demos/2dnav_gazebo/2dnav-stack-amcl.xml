@@ -1,21 +1,24 @@
 <launch>
   <group name="wg">
 
+    <!-- filter out veil effect from range scans -->
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="false" output="screen" />
+
     <!-- publish mapping between odom and base_footprint -->
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
     <param name="robot_pose_ekf/odom_used" value="true"/>
     <param name="robot_pose_ekf/imu_used" value="true"/>
     <param name="robot_pose_ekf/vo_used" value="false"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
 
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
 
     <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
     <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
 
     <!-- localization settings -->
-    <param name="laser_x_offset" type="double" value=".275" /> <!-- for wavefront? -->
+    <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
     <param name="pf_max_samples" value="10000"/>
@@ -26,19 +29,8 @@
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
     <param name="pf_odom_frame_id" value="odom_combined"/>
-    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
-
-    <!-- wavefront_player settings -->
-    <!--
-    <param name="max_publish_frequency" value="100.0" />
-    <param name="dist_eps" value="0" />
-    <param name="robot_x_start" value="0" />
-    <param name="robot_y_start" value="0" />
-    <param name="robot_th_start" value="0" />
-    <param name="robot_radius" value="0.3" />
-    <param name="dist_penalty" value="2.0" />
-    <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
-    -->
+    <param name="pf_transform_tolerance" value="0.2" />
+    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" />
 
     <!-- Run this node if you want to aggregate laser_scans into a point cloud -->
     <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
@@ -48,67 +40,78 @@
       <param name="ignore_laser_skew" type="bool" value="true" />
       <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
+
     <!-- Run this node if you want clouds automatically published during laser shutter messages -->
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
       <remap from="full_cloud" to="snapshot_cloud" />
     </node>
-    <!-- starting ransac node -->
-    <param name="ransac_ground_plane_extraction/listen_topic" value="tilt_scan_cloud"/>
-    <param name="ransac_ground_plane_extraction/publish_ground_plane_topic" value="ground_plane"/>
-    <param name="ransac_ground_plane_extraction/publish_obstacle_topic" value="obstacle_cloud"/>
-    <param name="ransac_ground_plane_extraction/min_ignore_distance" value="-0.13"/>
-    <param name="ransac_ground_plane_extraction/max_ignore_distance" value="0.07"/>
-    <param name="ransac_ground_plane_extraction/distance_threshold" value="0.03"/>
-    <param name="ransac_ground_plane_extraction/far_remove_distance_threshold" value="0.06"/>
-    <param name="ransac_ground_plane_extraction/far_remove_distance" value="6.0"/>
-    <param name="ransac_ground_plane_extraction/filter_delta" value="1.0"/>
-    <param name="ransac_ground_plane_extraction/max_ransac_iterations" value="500"/>
-    <param name="ransac_ground_plane_extraction/publish_obstacle_cloud" type="string" value="yes"/>
-    <node pkg="ransac_ground_plane_extraction" type="ransacnode" respawn="false" output="screen" />
 
-    <!-- filter out veil effect from range scans -->
-    <param name="/scan_shadows_filter/filter_min_angle" value="10"/>
-    <param name="/scan_shadows_filter/filter_max_angle" value="170"/>
-    <param name="/scan_shadows_filter/filter_window"    value="2"/>
-    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="false" output="screen" />
+    <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
+    <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
+    <param name="sac_ground_removal/clusters_min_pts" value="5" />
+    
+    <param name="sac_ground_removal/z_threshold" value="0.2" />
+    <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
+    
+    <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
 
-    <!-- move_base_sbpl settings -->
-    <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
-    <param name="move_base/controller_frequency" value="15.0"/>
+    <param name="move_base/controller_frequency" value="30.0"/>
     <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="5.0"/>
-    <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
-    <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
+    <param name="move_base/plannerTimeLimit" value="0.5"/>
+    <param name="move_base/map_update_frequency" value="5.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="20.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="2.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
     <param name="/costmap_2d/no_information_value" value="255"/>
     <param name="/costmap_2d/z_threshold_max" value="2.0"/>
-    <param name="/costmap_2d/z_threshold_min" value="0.06"/>
+    <param name="/costmap_2d/z_threshold_min" value="0.13"/>
     <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
-    <param name="/costmap_2d/inflation_radius" value="0.55"/>
+    <param name="/costmap_2d/inflation_radius" value="0.65"/>
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
-    <param name="/costmap_2d/raytrace_window" value="4.0"/>
+    <param name="/costmap_2d/raytrace_window" value="10.0"/>
     <param name="/costmap_2d/weight" value="0.1"/>
-    <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
 
-    <param name="/trajectory_rollout/occdist_scale" type="double" value="0.002"/>
-    <param name="/trajectory_rollout/yaw_goal_tolerance" type="double" value="0.1"/>
-    <param name="/trajectory_rollout/xy_goal_tolerance" type="double" value="0.35"/>
+    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 10 Hz -->
+    <param name="/costmap_2d/base_laser_update_rate" value="2.0"/>
 
-    <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_steps" value="10" />
-    <param name="/trajectory_rollout/samples_per_dim" value="10" />
-    <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
-    <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
+    <!-- Forces a check that we are receiving tilt scans that are correctly up to date at a rate of at least 10 Hz -->
+    <param name="/costmap_2d/tilt_laser_update_rate" value="2.0"/>
+
+    <!-- we don't have stereo data yet -->
+    <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
+
+    <!--- Checks for ground plane obstacles -->
+    <param name="/costmap_2d/low_obstacle_update_rate" value="0.2"/>
+
+    <param name="/trajectory_rollout/map_size" value="4.0" />
     <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
     <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
+    <param name="/trajectory_rollout/sim_time" value="1.0" />
+    <param name="/trajectory_rollout/sim_granularity" value="0.05" />
+    <param name="/trajectory_rollout/vx_samples" value="15" />
+    <param name="/trajectory_rollout/vtheta_samples" value="15" />
+    <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
+    <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
+    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
+    <param name="/trajectory_rollout/heading_lookahead" value="0.325" />
+    <param name="/trajectory_rollout/oscillation_reset_dist" value="0.05" />
+    <param name="/trajectory_rollout/holonomic_robot" value="true" />
+    <param name="/trajectory_rollout/max_vel_x" value="0.5" />
+    <param name="/trajectory_rollout/min_vel_x" value="0.1" />
+    <param name="/trajectory_rollout/max_vel_th" value="1.0" />
+    <param name="/trajectory_rollout/min_vel_th" value="-1.0" />
+    <param name="/trajectory_rollout/min_in_place_vel_th" value="0.4" />
+    <param name="/trajectory_rollout/freespace_model" value="true" />
+    <param name="/trajectory_rollout/dwa" value="false" />
+    <param name="/trajectory_rollout/simple_attractor" value="false" />
 
     <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
