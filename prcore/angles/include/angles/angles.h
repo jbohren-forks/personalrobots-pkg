@@ -118,11 +118,11 @@ namespace angles
    *
    * \brief returns the angle in [-2*M_PI, 2*M_PI]  going the other way along the unit circle. 
    * \param angle The angle to which you want to turn in the range [-2*M_PI, 2*M_PI] 
-   * E.g. add_mod_2Pi(-M_PI/4) returns 7_M_PI/4
-   * add_mod_2Pi(M_PI/4) returns -7*M_PI/4
+   * E.g. shortest_angular_distance_complement(-M_PI/4) returns 7_M_PI/4
+   * shortest_angular_distance_complement(M_PI/4) returns -7*M_PI/4
    *
    */
-  static inline double add_mod_2Pi(double angle)
+  static inline double shortest_angular_distance_complement(double angle)
   {
     if(angle < 0)
       return (2*M_PI+angle);
@@ -136,8 +136,8 @@ namespace angles
    * \brief Returns the min and max amount (in radians) that can be moved from "from" angle to "left_limit" and "right_limit".
    * \return returns false if "from" angle does not lie in the interval [left_limit,right_limit]
    * \param from - "from" angle - must lie in [-M_PI, M_PI]
-   * \param left_limit - left limit of valid interval for angular position - must lie in [-M_PI, M_PI]
-   * \param right_limit - right limit of valid interval for angular position - must lie in [-M_PI, M_PI]
+   * \param min_angle - left limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards
+   * \param max_angle - right limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards 
    * \param min_delta - minimum (delta) angle (in radians) that can be moved from "from" position before hitting the joint stop
    * \param max_delta - maximum (delta) angle (in radians) that can be movedd from "from" position before hitting the joint stop
    */
@@ -148,8 +148,8 @@ namespace angles
     delta[0] = shortest_angular_distance(from,min_angle);
     delta[1] = shortest_angular_distance(from,max_angle);
 
-    delta[2] = add_mod_2Pi(delta[0]);
-    delta[3] = add_mod_2Pi(delta[1]);
+    delta[2] = shortest_angular_distance_complement(delta[0]);
+    delta[3] = shortest_angular_distance_complement(delta[1]);
 
     double delta_min = delta[0];
     double delta_min_2pi = delta[2];
@@ -197,8 +197,8 @@ namespace angles
    * \return true if "from" and "to" positions are within the limit interval, false otherwise
    * \param from - "from" angle
    * \param to - "to" angle
-   * \param left_limit - left limit of valid interval for angular position
-   * \param right_limit - right limit of valid interval for angular position
+   * \param left_limit - left limit of valid interval for angular position, left and right limits are specified on the unit circle w.r.t to a reference pointing inwards
+   * \param right_limit - right limit of valid interval for angular position, left and right limits are specified on the unit circle w.r.t to a reference pointing inwards
    * \param shortest_angle - result of the shortest angle calculation
    */
   static inline bool shortest_angular_distance_with_limits(double from, double to, double left_limit, double right_limit, double &shortest_angle)
@@ -210,7 +210,7 @@ namespace angles
     double max_delta_to = 2*M_PI;
     bool flag    = find_min_max_delta(from,left_limit,right_limit,min_delta,max_delta);
     double delta = shortest_angular_distance(from,to);
-    double delta_mod_2pi  = add_mod_2Pi(delta);
+    double delta_mod_2pi  = shortest_angular_distance_complement(delta);
 
 
     if(flag)//from position is within the limits

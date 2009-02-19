@@ -167,16 +167,16 @@ TEST(Angles, shortest_angular_distance)
 
 }
 
-TEST(Angles, add_mod_2Pi)
+TEST(Angles, shortest_angular_distance_complement)
 {
   double epsilon = 1e-9;
-  EXPECT_NEAR(add_mod_2Pi(0), -2*M_PI, epsilon); //Should this be?
-  EXPECT_NEAR(add_mod_2Pi(2*M_PI), 0, epsilon); 
-  EXPECT_NEAR(add_mod_2Pi(-2*M_PI), 0, epsilon); 
-  EXPECT_NEAR(add_mod_2Pi(M_PI/2), -3*M_PI/2, epsilon);
-  EXPECT_NEAR(add_mod_2Pi(M_PI), -M_PI, epsilon);
-  EXPECT_NEAR(add_mod_2Pi(-M_PI), M_PI, epsilon);
-  EXPECT_NEAR(add_mod_2Pi(-M_PI/2), 3*M_PI/2, epsilon);
+  EXPECT_NEAR(shortest_angular_distance_complement(0), -2*M_PI, epsilon); //Should this be?
+  EXPECT_NEAR(shortest_angular_distance_complement(2*M_PI), 0, epsilon); 
+  EXPECT_NEAR(shortest_angular_distance_complement(-2*M_PI), 0, epsilon); 
+  EXPECT_NEAR(shortest_angular_distance_complement(M_PI/2), -3*M_PI/2, epsilon);
+  EXPECT_NEAR(shortest_angular_distance_complement(M_PI), -M_PI, epsilon);
+  EXPECT_NEAR(shortest_angular_distance_complement(-M_PI), M_PI, epsilon);
+  EXPECT_NEAR(shortest_angular_distance_complement(-M_PI/2), 3*M_PI/2, epsilon);
 
 }
 
