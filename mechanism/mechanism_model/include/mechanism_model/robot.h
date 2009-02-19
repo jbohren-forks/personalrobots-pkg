@@ -62,7 +62,7 @@ namespace mechanism
 class Robot
 {
 public:
-  Robot() {}
+  Robot() : hw_(NULL) {}
 
   ~Robot()
   {
