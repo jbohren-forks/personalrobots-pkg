@@ -105,22 +105,22 @@ class Path extends AgentTimeline {
     float x;
     float y;
     float th;
-    Connector connector;
+    MAP_KEY connector;
 
     // Target pose
     float target_x;
     float target_y;
     float target_th;
-    Connector target_connector;
+    MAP_KEY target_connector;
 
     // Final pose
     float final_x;
     float final_y;
     float final_th;
-    Region final_region;
+    MAP_KEY final_region;
 
     // The region we are traversing
-    Region region;
+    MAP_KEY region;
     bool is_doorway;
   }
 

@@ -28,10 +28,10 @@ namespace executive_trex_pr2 {
   /**
    * @brief A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
    */
-  class map_connector_constraint : public Constraint {
+  class MapConnectorConstraint : public Constraint {
   public:
     
-    map_connector_constraint(const LabelStr& name,
+    MapConnectorConstraint(const LabelStr& name,
 			     const LabelStr& propagatorName,
 			     const ConstraintEngineId& constraintEngine,
 			     const std::vector<ConstrainedVariableId>& variables);
@@ -47,13 +47,13 @@ namespace executive_trex_pr2 {
   /**
    * @brief A function: given an x,y position, bind a region.
    */
-  class map_get_region_from_position_constraint : public Constraint {
+  class MapGetRegionFromPositionConstraint : public Constraint {
   public:
     
-    map_get_region_from_position_constraint(const LabelStr& name,
-					    const LabelStr& propagatorName,
-					    const ConstraintEngineId& constraintEngine,
-					    const std::vector<ConstrainedVariableId>& variables);
+    MapGetRegionFromPositionConstraint(const LabelStr& name,
+				       const LabelStr& propagatorName,
+				       const ConstraintEngineId& constraintEngine,
+				       const std::vector<ConstrainedVariableId>& variables);
     virtual void handleExecute();
     
   private:
@@ -65,10 +65,10 @@ namespace executive_trex_pr2 {
   /**
    * @brief A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
    */
-  class map_connected_constraint : public Constraint {
+  class MapConnectedConstraint : public Constraint {
   public:
     
-    map_connected_constraint(const LabelStr& name,
+    MapConnectedConstraint(const LabelStr& name,
 			     const LabelStr& propagatorName,
 			     const ConstraintEngineId& constraintEngine,
 			     const std::vector<ConstrainedVariableId>& variables);
@@ -82,10 +82,10 @@ namespace executive_trex_pr2 {
   /**
    * @brief A function to query if a region is a doorway
    */
-  class map_is_doorway_constraint : public Constraint {
+  class MapIsDoorwayConstraint : public Constraint {
   public:
     
-    map_is_doorway_constraint(const LabelStr& name,
+    MapIsDoorwayConstraint(const LabelStr& name,
 			      const LabelStr& propagatorName,
 			      const ConstraintEngineId& constraintEngine,
 			      const std::vector<ConstrainedVariableId>& variables);
@@ -100,9 +100,9 @@ namespace executive_trex_pr2 {
    * @brief A filter to exclude variable binding decisions unless they are on a parameter variable
    * of a token for has all required variables, and the source and final destination are already singletons
    */
-  class map_connector_filter: public SOLVERS::FlawFilter {
+  class MapConnectorFilter: public SOLVERS::FlawFilter {
   public:
-    map_connector_filter(const TiXmlElement& configData);
+    MapConnectorFilter(const TiXmlElement& configData);
 
     virtual bool test(const EntityId& entity);
 
@@ -116,9 +116,9 @@ namespace executive_trex_pr2 {
   /**
    * @brief Implements a sort based on minimizing g_cost + h_cost for target selection
    */
-  class map_connector_selector: public SOLVERS::UnboundVariableDecisionPoint {
+  class MapConnectorSelector: public SOLVERS::UnboundVariableDecisionPoint {
   public:
-    map_connector_selector(const DbClientId& client, const ConstrainedVariableId& flawedVariable, const TiXmlElement& configData, const LabelStr& explanation = "unknown");
+    MapConnectorSelector(const DbClientId& client, const ConstrainedVariableId& flawedVariable, const TiXmlElement& configData, const LabelStr& explanation = "unknown");
     bool hasNext() const;
     double getNext();
 
@@ -128,11 +128,11 @@ namespace executive_trex_pr2 {
       Choice():id(0), cost(0){}
       unsigned int id;
       double cost;  
-      bool operator<(const map_connector_selector::Choice& rhs) const {return cost < rhs.cost;}
+      bool operator<(const MapConnectorSelector::Choice& rhs) const {return cost < rhs.cost;}
     };
 
-    double g_cost(unsigned int from, unsigned int to) const;
-    double h_cost(unsigned int from, unsigned int to) const;
+    double gCost(unsigned int from, unsigned int to) const;
+    double hCost(unsigned int from, unsigned int to) const;
 
     const LabelStr _source;
     const LabelStr _final;
@@ -158,59 +158,68 @@ namespace executive_trex_pr2 {
      * @brief Get a region for a point
      * @retun 0 if no region found, otherwise the region for the given point
      */
-    virtual unsigned int get_region(double x, double y) = 0;
+    virtual unsigned int getRegion(double x, double y) = 0;
 
     /**
      * @brief Get a connector for a point
      * @retun 0 if no connector found, otherwise the connector for the given point
      */
-    virtual unsigned int get_connector(double x, double y) = 0;
+    virtual unsigned int getConnector(double x, double y) = 0;
 
     /**
      * @brief Get position details for a connector
      * @return true if the given connector id was valid, otherwise false.
      */
-    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y) = 0;
+    virtual bool getConnectorPosition(unsigned int connector_id, double& x, double& y) = 0;
 
     /**
      * @brief Get the connectors of a particular region
      * @return true if the given region id was valid, otherwose false.
      */
-    virtual bool get_region_connectors(unsigned int region_id, std::vector<unsigned int>& connectors) = 0;
+    virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors) = 0;
 
     /**
      * @brief Get the regions of a particular connector
      * @return true if the given connector id was valid, otherwise false.
      */
-    virtual bool get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b) = 0;
+    virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b) = 0;
 
     /**
      * @brief Test if a given region is a doorway
      * @param result set to true if a doorway, otherwise false.
      * @return true if it is a valid region, otherwise false
      */
-    virtual bool is_doorway(unsigned int region_id, bool& result) = 0;
+    virtual bool isDoorway(unsigned int region_id, bool& result) = 0;
+
+    /**
+     * @brief Test if a point is in collision
+     * @return true if it is in an obstacle
+     */
+    virtual bool isObstacle(double x, double y) = 0;
 
     /**
      * @brief Get the cost to go from a given 2D point to a connector. The point must be in a region
      * accessible by the connector
      * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
      */
-    virtual double get_g_cost(double from_x, double from_y, unsigned int connector_id) = 0;
+    virtual double gCost(double from_x, double from_y, unsigned int connector_id) = 0;
 
     /**
      * @brief Get the cost to go from a given connector, to a final destination given by a point in space
      * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
      */
-    virtual double get_h_cost(unsigned int connector_id, double to_x, double to_y) = 0;
+    virtual double hCost(unsigned int connector_id, double to_x, double to_y) = 0;
 
     virtual ~TopologicalMapAccessor();
 
+    double getResolution() const{return _resolution;}
+
   protected:
-    TopologicalMapAccessor();
+    TopologicalMapAccessor(double resolution);
 
   private:
     static TopologicalMapAccessor* _singleton;
+    const double _resolution;
   };
 
   /**
@@ -218,25 +227,28 @@ namespace executive_trex_pr2 {
    */
   class TopologicalMapAdapter: public TopologicalMapAccessor {
   public:
-    TopologicalMapAdapter(const std::string& map_file_name);
+
+    TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution);
 
     virtual ~TopologicalMapAdapter();
 
-    virtual unsigned int get_region(double x, double y);
+    virtual unsigned int getRegion(double x, double y);
 
-    virtual unsigned int get_connector(double x, double y);
+    virtual unsigned int getConnector(double x, double y);
 
-    virtual bool get_connector_position(unsigned int connector_id, double& x, double& y);
+    virtual bool getConnectorPosition(unsigned int connector_id, double& x, double& y);
 
-    virtual bool get_region_connectors(unsigned int region_id, std::vector<unsigned int>& connectors);
+    virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors);
 
-    virtual bool get_connector_regions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
+    virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
 
-    virtual bool is_doorway(unsigned int region_id, bool& result);
+    virtual bool isDoorway(unsigned int region_id, bool& result);
 
-    virtual double get_g_cost(double from_x, double from_y, unsigned int connector_id);
+    virtual bool isObstacle(double x, double y);
 
-    virtual double get_h_cost(unsigned int connector_id, double to_x, double to_y);
+    virtual double gCost(double from_x, double from_y, unsigned int connector_id);
+
+    virtual double hCost(unsigned int connector_id, double to_x, double to_y);
 
   private:
     topological_map::TopologicalMapPtr _map;

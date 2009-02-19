@@ -8,7 +8,6 @@
   <depend package="rosconsole"/>
   <depend package="rospy" />
   <depend package="highlevel_controllers" />
-  <depend package="map_server" />
   <depend package="topological_map" />
   <depend package="gtest" />
   <depend package="deprecated_msgs" />

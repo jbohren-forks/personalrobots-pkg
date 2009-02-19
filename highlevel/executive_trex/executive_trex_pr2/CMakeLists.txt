@@ -54,7 +54,7 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-#target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph image_loader)
+#target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
 target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
 rospack_add_executable(bin/trexfast src/main.cc)
 target_link_libraries(bin/trexfast executive_trex_pr2_o)
@@ -73,8 +73,8 @@ rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 
 # Test target for unit tests on topological map integration components
-rospack_add_gtest(bin/topological_map_tests test/topological_map_tests.cc)
-target_link_libraries(bin/topological_map_tests executive_trex_pr2_g)
+rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
+target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 
 # Integrated test cases for the nav stack running with the pr2 executive and model.
 rospack_add_rostest_future(wpc.0/test.xml)

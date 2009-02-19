@@ -1,41 +1,21 @@
-/**
- * Constructs for the static topological map
- */
-class MapEntity {
-  int key;
-  MapEntity(int _key){
-    key = _key;
-  }
-};
-
-class Connector extends MapEntity{
-  Connector(int _key){
-    super(_key);
-  }
-};
-
-class Region extends MapEntity{
-  Region(int _key){
-    super(_key);
-  }
-};
-
 /***********************************************************************
  * External functions and relations for working with the topological map
  ***********************************************************************/
 
+// Define a MAP_KEY type to give positive integer id's for keys in the topological mapp
+typedef [0 +inf] MAP_KEY;
+
+// A 0 key value indicates no key, and thus no map entity
+MAP_KEY NO_KEY = 0;
+
 // A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
-constraint map_connector(connection, x, y, th) { connection <: Connector && x <: numeric && y <: numeric && th <: numeric }
+constraint map_connector(connection, x, y, th) { connection <: MAP_KEY && x <: numeric && y <: numeric && th <: numeric }
 
 // A function: given an x,y position, bind a region.
-constraint map_get_region_from_position(region, x, y){ region <: Region && x <: numeric && y <: numeric }
+constraint map_get_region_from_position(region, x, y){ region <: MAP_KEY && x <: numeric && y <: numeric }
 
 // A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
-constraint map_connected(connection_a, connection_b, region){ connection_a <: Connector && connection_b <: Connector && region <: Region }
+constraint map_connected(connection_a, connection_b, region){ connection_a <: MAP_KEY && connection_b <: MAP_KEY && region <: MAP_KEY }
 
 // A function to query if a region is a doorway
-constraint map_is_doorway(result, region) { result <: bool && region <: Region }
-
-// Allocate constants
-Connector NO_CONNECTOR = new Connector(0);
-Region NO_REGION = new Region(0);
+constraint map_is_doorway(result, region) { result <: bool && region <: MAP_KEY }
