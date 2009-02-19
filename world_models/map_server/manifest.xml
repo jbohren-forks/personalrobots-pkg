@@ -11,6 +11,10 @@
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp"/>
   <depend package="robot_srvs"/>
+  <export>
+     <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread`"/>
+  </export>
+
   <!-- <depend package="sdl_image"/> -->
   <sysdepend os="ubuntu" version="7.04-feisty" package="libsdl-image1.2-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
