@@ -79,6 +79,12 @@ bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, c
   jnt_eff_.resize(num_joints_);
   jacobian_.resize(num_joints_, num_segments_);
 
+  return true;
+}
+
+
+bool CartesianWrenchController::start()
+{
   // set desired wrench to 0
   wrench_desi_ = Wrench::Zero();
 
@@ -87,9 +93,12 @@ bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, c
 
 
 
-
 void CartesianWrenchController::update()
 {
+  // check if joints are calibrated
+  if (!robot_.allCalibrated(robot_state_->joint_states_))
+    return;
+
   // check if joints are calibrated
   if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
 
@@ -152,6 +161,10 @@ bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   return true;
 }
 
+bool CartesianWrenchControllerNode::start()
+{
+  return controller_.start();
+}
 
 void CartesianWrenchControllerNode::update()
 {

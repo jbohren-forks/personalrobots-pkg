@@ -109,36 +109,43 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
 
   fprintf(stderr, "pid controllers created\n");
 
+  // create wrench controller
+  wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+
+  return true;
+}
+
+
+
+bool CartesianTFFController::start()
+{
   // time
-  last_time_ = robot_state->hw_->current_time_;
+  last_time_ = robot_state_->hw_->current_time_;
 
   // set initial modes and values
   for (unsigned int i=0; i<6; i++){
     mode_[i] = tff_msg_.FORCE;
     value_[i] = 0;
   }
+
+  // reset pid controllers
+  for (unsigned int i=0; i<6; i++){
+    vel_pid_controller_[i].reset();
+    pos_pid_controller_[i].reset();
+  }
+
   // set initial position, twist
+  FrameVel frame_twist; 
+  jnt_to_twist_solver_->JntToCart(jnt_posvel_, frame_twist);
+  pose_meas_old_ = frame_twist.value();
   position_ = Twist::Zero();
-  pose_meas_old_ = Frame::Identity();
-  initialized_ = false;
 
-  // create wrench controller
-  wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
-
-  counter = 0;
-  return true;
+  return wrench_controller_.start();
 }
-
-
-
-
 
 
 void CartesianTFFController::update()
 {
-  // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
-
   // get time
   double time = robot_state_->hw_->current_time_;
   double dt = time - last_time_;
@@ -154,23 +161,8 @@ void CartesianTFFController::update()
   twist_meas_ = pose_meas_.M.Inverse() * (frame_twist.deriv());
 
   // calculate the distance traveled along the axes of the tf
-  if (initialized_)
-    position_ += pose_meas_.M.Inverse() * diff(pose_meas_old_, pose_meas_);
-  else
-    initialized_ = true;
+  position_ += pose_meas_.M.Inverse() * diff(pose_meas_old_, pose_meas_);
   pose_meas_old_ = pose_meas_;
-
-  // debug
-  /*
-  if (counter > 1000){
-    cout << "position ";
-    for (unsigned int i=0; i<6; i++)
-      cout << position_[i] << " ";
-    cout << endl;
-    counter = 0;
-  }
-  counter ++;
-  */
 
   // calculate desired wrench
   wrench_desi_ = Wrench::Zero();
@@ -187,6 +179,8 @@ void CartesianTFFController::update()
   wrench_controller_.wrench_desi_ = (pose_meas_.M * wrench_desi_);
   wrench_controller_.update();
 }
+
+
 
 
 void CartesianTFFController::tffCommand(int mode1, double value1, int mode2, double value2, int mode3, double value3,
@@ -243,6 +237,11 @@ bool CartesianTFFControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
 		   &CartesianTFFControllerNode::command, this, 1);
 
   return true;
+}
+
+bool CartesianTFFControllerNode::start()
+{
+  return controller_.start();
 }
 
 

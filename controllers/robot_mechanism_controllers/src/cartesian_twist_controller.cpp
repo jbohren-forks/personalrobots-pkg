@@ -91,12 +91,6 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   node_->param(controller_name_+"/ff_trans", ff_trans_, 0.0) ;
   node_->param(controller_name_+"/ff_rot", ff_rot_, 0.0) ;
 
-  // time
-  last_time_ = robot_state->hw_->current_time_;
-
-  // set disired twist to 0
-  twist_desi_ = Twist::Zero();
-
   // create wrench controller
   wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
 
@@ -104,7 +98,25 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
 }
 
 
+bool CartesianTwistController::start()
+{
+  cout << "reset pid" << endl;
 
+  // reset pid controllers
+  for (unsigned int i=0; i<6; i++)
+    fb_pid_controller_[i].reset();
+
+  cout << "init time" << endl;
+  // time
+  last_time_ = robot_state_->hw_->current_time_;
+
+  // set disired twist to 0
+  twist_desi_ = Twist::Zero();
+
+  cout << "start wrench" << endl;
+
+  return wrench_controller_.start();
+}
 
 
 
@@ -189,6 +201,11 @@ bool CartesianTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlEl
   return true;
 }
 
+
+bool CartesianTwistControllerNode::start()
+{
+  return controller_.start();
+}
 
 void CartesianTwistControllerNode::update()
 {

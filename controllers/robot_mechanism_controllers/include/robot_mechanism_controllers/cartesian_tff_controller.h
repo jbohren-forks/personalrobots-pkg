@@ -56,6 +56,7 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
                   const std::string& tip_name, const std::string& controller_name);
+  bool start();
   void update();
 
   void tffCommand(int mode1, double value1, int mode2, double value2, int mode3, double value3,
@@ -67,7 +68,6 @@ private:
   std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_;
-  bool initialized_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> vel_pid_controller_, pos_pid_controller_;     
@@ -111,6 +111,7 @@ class CartesianTFFControllerNode : public Controller
   ~CartesianTFFControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool start();
   void update();
   void command();
 

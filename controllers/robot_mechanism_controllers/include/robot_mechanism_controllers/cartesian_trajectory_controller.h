@@ -57,6 +57,7 @@ public:
   ~CartesianTrajectoryController();
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string controller_name);
+  bool start();
   void update();
   ros::Duration moveTo(const KDL::Frame& pose_desi, double duration=0);
 
@@ -97,6 +98,7 @@ class CartesianTrajectoryControllerNode : public Controller
   ~CartesianTrajectoryControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool start();
   void update();
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 

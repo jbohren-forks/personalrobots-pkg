@@ -55,6 +55,7 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
                   const std::string& tip_name, const std::string& controller_name);
+  bool start();
   void update();
 
   // input of the controller
@@ -99,6 +100,7 @@ class CartesianPoseControllerNode : public Controller
   ~CartesianPoseControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool start();
   void update();
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 

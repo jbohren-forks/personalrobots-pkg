@@ -92,12 +92,6 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   control_toolbox::Pid pid_joint;
   pid_joint.initParam(controller_name_+"/joint");
 
-  // time
-  last_time_ = robot_state->hw_->current_time_;
-
-  // set disired twist to 0
-  twist_desi_ = Twist::Zero();
-
   // create and initialize joint velocity controllers
   for (unsigned int i=0 ;i<num_joints_; i++)
     joint_vel_controllers_.push_back(new JointVelocityController);
@@ -110,7 +104,21 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
 
 
 
+bool CartesianTwistControllerIk::start()
+{
+  // time
+  last_time_ = robot_state_->hw_->current_time_;
 
+  // set disired twist to 0
+  twist_desi_ = Twist::Zero();
+
+  // start joint velocity controllers
+  bool res = true;
+  //for (unsigned int i=0 ;i<num_joints_; i++)
+  // if (!joint_vel_controllers_[i]->start()) res = false;
+
+  return res;
+}
 
 
 void CartesianTwistControllerIk::update()
@@ -123,13 +131,6 @@ void CartesianTwistControllerIk::update()
 
   // calculate joint velocities
   twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
-
-  /*
-  cout << "vel ";
-  for (unsigned int i=0; i<num_joints_; i++)
-    cout << jnt_vel_(i) << "  ";
-  cout << endl;
-  */
 
   // send joint velocities to joint velocity controllers
   for (unsigned int i=0; i<num_joints_; i++){
@@ -189,6 +190,12 @@ bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXml
 		   &CartesianTwistControllerIkNode::joystick, this, 1);
 
   return true;
+}
+
+
+bool CartesianTwistControllerIkNode::start()
+{
+  return controller_.start();
 }
 
 

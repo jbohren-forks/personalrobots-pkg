@@ -70,7 +70,7 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state->model_, root_name, tip_name))
+  if (!robot_.init(robot_state_->model_, root_name, tip_name))
     return false;
   robot_.toKDL(chain_);
 
@@ -86,30 +86,31 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
   for (unsigned int i=0; i<6; i++)
     pid_controller_.push_back(pid_controller);
 
-  // time
-  last_time_ = robot_state->hw_->current_time_;
-
-  // set desired pose to current pose
-  pose_desi_ = getPose();
-
-  // set the twist feedworward to zero
-  twist_ff_ = Twist::Zero();
-
   // initialize twist controller
-  twist_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/twist");
+  twist_controller_.initialize(robot_state_, root_name, tip_name, controller_name_+"/twist");
 
   return true;
 }
 
 
+bool CartesianPoseController::start()
+{
+  // reset pid controllers
+  for (unsigned int i=0; i<6; i++)
+    pid_controller_[i].reset();
 
+  // initialize desired pose/twist
+  twist_ff_ = Twist::Zero();
+  pose_desi_ = getPose();
+  last_time_ = robot_state_->hw_->current_time_;
+
+  return twist_controller_.start();
+}
 
 
 
 void CartesianPoseController::update()
 {
-  // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
 
   // get time
   double time = robot_state_->hw_->current_time_;
@@ -129,6 +130,7 @@ void CartesianPoseController::update()
   twist_controller_.twist_desi_ = twist_fb + twist_ff_;
   twist_controller_.update();
 }
+
 
 
 
@@ -187,6 +189,10 @@ bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   return true;
 }
 
+bool CartesianPoseControllerNode::start()
+{
+  return controller_.start();
+}
 
 void CartesianPoseControllerNode::update()
 {

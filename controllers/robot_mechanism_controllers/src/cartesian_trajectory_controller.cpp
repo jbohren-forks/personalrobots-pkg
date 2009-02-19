@@ -93,16 +93,6 @@ bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_stat
     motion_profile_[i+3].SetMax(max_vel_rot,   max_acc_rot);
   }
 
-  // time
-  last_time_ = robot_state->hw_->current_time_;
-
-  // set desired pose to current pose
-  pose_current_ = getPose();
-  twist_current_ = Twist::Zero();
-
-  // start not moving
-  is_moving_ = false;
-
   // initialize pose controller
   pose_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/pose");
 
@@ -142,6 +132,22 @@ Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double du
   return Duration().fromSec(max_duration_);
 }
 
+
+
+bool CartesianTrajectoryController::start()
+{
+  // time
+  last_time_ = robot_state_->hw_->current_time_;
+
+  // set desired pose to current pose
+  pose_current_ = getPose();
+  twist_current_ = Twist::Zero();
+
+  // start not moving
+  is_moving_ = false;
+
+  return pose_controller_.start();
+}
 
 
 
@@ -248,6 +254,10 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
 }
 
 
+bool CartesianTrajectoryControllerNode::start()
+{
+  return controller_.start();
+}
 
 void CartesianTrajectoryControllerNode::update()
 {
