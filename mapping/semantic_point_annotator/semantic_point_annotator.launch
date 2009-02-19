@@ -1,0 +1,6 @@
+<launch>
+  <param name="rule_wall" value="1.0" />
+  <param name="min_cluster_pts" value="20" />
+
+  <node pkg="semantic_point_annotator" type="semantic_point_annotator_node" name="semantic_point_annotator" output="screen" respawn="true" />
+</launch>

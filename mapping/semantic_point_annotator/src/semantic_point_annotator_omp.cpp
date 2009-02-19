@@ -95,6 +95,7 @@ class SemanticPointAnnotator : public ros::Node
     double region_growing_tolerance_;
     
     bool polygonal_map_, concave_;
+    int min_cluster_pts_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     SemanticPointAnnotator () : ros::Node ("semantic_point_annotator_omp"), tf_(*this)
@@ -104,6 +105,8 @@ class SemanticPointAnnotator : public ros::Node
       param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
       param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
       param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
+      
+      param ("~min_cluster_pts", min_cluster_pts_, 10);  // Display only clusters with more than 10 points
 
       param ("~region_growing_tolerance", region_growing_tolerance_, 0.25);  // 10 cm
 
@@ -479,13 +482,13 @@ class SemanticPointAnnotator : public ros::Node
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
-      findClusters (&cloud_, &indices_z, region_growing_tolerance_, clusters, nx, ny, nz, 10);
+      findClusters (&cloud_, &indices_z, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
       int z_c = clusters.size ();
       for (int i = 0; i < z_c; i++)
         clusters[i].region_type = 0;
 
       // Split the Z-perpendicular points into clusters
-      findClusters (&cloud_, &indices_xy, region_growing_tolerance_, clusters, nx, ny, nz, 10);
+      findClusters (&cloud_, &indices_xy, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
       for (unsigned int i = z_c; i < clusters.size (); i++)
         clusters[i].region_type = 1;
 
