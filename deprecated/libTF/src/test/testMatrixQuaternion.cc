@@ -4,6 +4,21 @@
 #include <sys/time.h>
 #include <cstdlib>
 
+  /*!
+   * \brief modNPiBy2
+   *
+   * Returns the angle between -M_PI/2 to M_PI/2
+   */
+namespace angles{
+static inline double modNPiBy2(double angle)
+  {
+    if (angle < -M_PI/2) 
+      angle += M_PI;
+    if(angle > M_PI/2)
+      angle -= M_PI;
+    return angle;
+  }
+}
 int main(int argc, char ** argv)
 {
   //Seed random number generator with current microseond count
