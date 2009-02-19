@@ -43,6 +43,7 @@ using boost::extents;
 using topological_map::OccupancyGrid;
 using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
+using topological_map::Point2D;
 
 
 void setV (topological_map::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, cuint dc, cuint cmax, bool val) 

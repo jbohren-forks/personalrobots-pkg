@@ -56,7 +56,7 @@ public:
 class UnknownPointException: public TopologicalMapException
 {
 public:
-  UnknownPointException (const double x, const double y) : TopologicalMapException(boost::format("Unknown 2d point (%1%, %2%)") % x % y) {}
+  UnknownPointException (const double x, const double y) : TopologicalMapException(boost::format("Illegal 2d point (%1%, %2%)") % x % y) {}
 };
 
 /// \brief Exception when trying to add a region containing an existing gridcell

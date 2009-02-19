@@ -73,7 +73,7 @@ class TopologicalMap::GraphImpl
 public:
 
   /// Default constructor creates empty graph
-  GraphImpl(double resolution=1.0) : next_id_(1), resolution_(resolution) {}
+  GraphImpl(uint nr, uint nc, double resolution=1.0) : next_id_(1), resolution_(resolution), num_rows_(nr), num_cols_(nc) {}
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -102,6 +102,8 @@ public:
 
   /// \return Vector of all region ids
   const RegionIdVector& allRegions() const;
+
+  bool isObstacle (const Point2D& p) const ;
 
   /// \return vector of adjacent connector ids to region \a id
   /// \throws UnknownRegionException
@@ -149,6 +151,7 @@ private:
   RegionId next_id_;
 
   double resolution_;
+  uint num_rows_, num_cols_;
 };
 
 

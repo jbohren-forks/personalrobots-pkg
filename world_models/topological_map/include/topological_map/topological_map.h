@@ -64,7 +64,7 @@ class TopologicalMap
 public:
 
   /// Default constructor makes an empty map (see also topologicalMapFromGrid)
-  TopologicalMap(double resolution=1.0);
+  TopologicalMap(uint num_rows, uint num_cols, double resolution=1.0);
 
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
@@ -72,14 +72,17 @@ public:
 
   /// \return Id of region containing a 2d point
   /// \throws UnknownPointException
+  /// \throws UnknownGridCellException
   RegionId containingRegion(const Point2D& p) const;
 
   /// \return Id of connector that equals a given 2d point (\a x, \a y)
   /// \throws PointNotConnectorException
+  /// \throws UnknownGridCellException
   ConnectorId pointConnector (const Point2D& p) const;
 
   /// \return Position of connector \a id
   /// \throws UnknownConnectorException
+  /// \throws UnknownGridCellException
   Point2D connectorPosition (const ConnectorId id) const;
 
   /// \return vector of ids of connectors touching the given region
@@ -93,6 +96,11 @@ public:
   /// \return Type of this region
   /// \throws UnknownRegionException
   int regionType (const RegionId id) const;
+
+  /// \return Is this point in an obstacle cell?
+  /// \throws UnknownPointException
+  /// \throws UnknownGridCellException
+  bool isObstacle (const Point2D& p) const ;
 
   /// \return Vector of id's of neighboring regions to region \a r
   /// \throws UnknownRegionException

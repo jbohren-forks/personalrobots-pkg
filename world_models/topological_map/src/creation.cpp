@@ -210,7 +210,7 @@ uint numCols(const OccupancyGrid& grid)
 
 BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint width, const uint skip, const uint r, const string& dir) :
   grid_(g), bottleneck_size_(size), bottleneck_width_(width), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 
-  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(resolution))
+  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(num_rows_, num_cols_, resolution))
 {
   ROS_ASSERT_MSG (max(num_rows_, num_cols_)<INT_MAX/2, "Grid size is %ux%u, which is too large to work given INT_MAX=%d", num_rows_, num_cols_, INT_MAX);
 }

@@ -74,7 +74,7 @@ RegionId TopologicalMap::GraphImpl::containingRegion (const Point2D& p) const
 {
   Cell2D c=containingCell(p);
   ROS_DEBUG_STREAM_NAMED ("point_cell_map", "point " << p.x << ", " << p.y << " maps to cell " << c);
-  return containingRegion(containingCell(p));
+  return containingRegion(c);
 }
 
 
@@ -168,6 +168,25 @@ RegionPair TopologicalMap::GraphImpl::adjacentRegions (const ConnectorId id) con
   return RegionPair(); // to prevent warning
 }
 
+
+bool TopologicalMap::GraphImpl::isObstacle (const Point2D& p) const
+{
+  Cell2D cell;
+  try {
+    cell=containingCell(p);
+    RegionId r=containingRegion(cell);
+    ROS_DEBUG_NAMED("obstacle", "not an obstacle as it belongs to region %u", r);
+    return false;
+  }
+  catch (UnknownPointException& e) {
+    ROS_DEBUG_NAMED("obstacle", "not an obstacle as it's off the map");
+    return false;
+  }
+  catch (UnknownGridCellException& e) {
+    ROS_DEBUG_STREAM_NAMED("obstacle", "obstacle as it's on the map at cell " << cell << " but has no region");
+    return true;
+  }
+}
 
 
 RegionPtr TopologicalMap::GraphImpl::regionCells (const RegionId id) const 
@@ -295,6 +314,9 @@ TopologicalGraphVertex TopologicalMap::GraphImpl::idVertex(const RegionId id) co
 
 Cell2D TopologicalMap::GraphImpl::containingCell (const Point2D& p) const
 {
+  if ((p.x<0) || (p.y<0) || (p.x>num_cols_*resolution_) || (p.y>num_rows_*resolution_)) {
+    throw UnknownPointException(p.x,p.y);
+  }
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
 
@@ -309,7 +331,7 @@ Point2D TopologicalMap::GraphImpl::cellCorner (const Cell2D& cell) const
  * Topological graph ops are forwarded to implementation
  ************************************************************/
 
-TopologicalMap::TopologicalMap (double resolution) : graph_impl_(new GraphImpl(resolution)) 
+TopologicalMap::TopologicalMap (uint nr, uint nc, double resolution) : graph_impl_(new GraphImpl(nr, nc, resolution)) 
 {
 }
 
@@ -363,6 +385,11 @@ RegionId TopologicalMap::addRegion(const RegionPtr region, const int type)
 void TopologicalMap::removeRegion (const RegionId id)
 {
   graph_impl_->removeRegion (id);
+}
+
+bool TopologicalMap::isObstacle (const Point2D& p) const
+{
+  return graph_impl_->isObstacle(p);
 }
 
 const RegionIdVector& TopologicalMap::allRegions () const

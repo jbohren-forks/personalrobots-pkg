@@ -67,7 +67,7 @@ bool isRearrangement (RegionIdVector v, RegionId* a, unsigned int k)
 
 TEST(TopologicalMap, BasicAPI)
 {
-  TopologicalMap m;
+  TopologicalMap m(100, 100);
   unsigned int s=m.allRegions().size();
   int r, c;
 
@@ -190,7 +190,8 @@ TEST(TopologicalMap, Creation)
   EXPECT_EQ(m->allRegions().size(), 33u);
   EXPECT_EQ(m->regionType(m->containingRegion(Cell2D(1,1))), 0);
   EXPECT_EQ(m->regionType(m->containingRegion(Point2D(.35,.82))), 1);
-
+  EXPECT_TRUE(m->isObstacle(Point2D(2.35,.75)));
+  EXPECT_TRUE(!(m->isObstacle(Point2D(2.35,.65))));
 }
 
 int main (int argc, char** argv)
