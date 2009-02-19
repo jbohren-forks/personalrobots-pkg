@@ -659,8 +659,13 @@ namespace planning_models
 	/** Returns the dimension of the group (as a state, not number of joints) */
 	unsigned int getGroupDimension(const std::string &name) const;
 
+	/** Bring the robot to a default state */
 	void defaultState(void);
+
+	/** Apply the transforms to a group, based on the params */
 	void computeTransformsGroup(const double *params, int groupID);
+
+	/** Apply the transforms to the entire robot, based on the params */
 	void computeTransforms(const double *params);
 	
 	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */

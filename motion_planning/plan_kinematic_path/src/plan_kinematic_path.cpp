@@ -125,7 +125,7 @@ public:
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "IKSBL";
+	req.params.planner_id = "IKKPIECE";
 	req.interpolate = 1;
 	req.times = 1;
 

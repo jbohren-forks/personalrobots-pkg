@@ -766,6 +766,14 @@ private:
 	    options = data.getMapTagValues("planning", "KPIECE");
 	}
 	model->addKPIECE(options); 
+
+	options.clear();
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    options = data.getMapTagValues("planning", "IKKPIECE");
+	}
+	model->addIKKPIECE(options); 
     }
     
     ModelMap                                                        m_models;

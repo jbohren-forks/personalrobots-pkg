@@ -45,6 +45,7 @@
 #include "kinematic_planning/RKPESTSetup.h"
 #include "kinematic_planning/RKPIKSBLSetup.h"
 #include "kinematic_planning/RKPKPIECESetup.h"
+#include "kinematic_planning/RKPIKKPIECESetup.h"
 
 #include <string>
 #include <map>
@@ -119,6 +120,17 @@ namespace kinematic_planning
 	    else
 		delete kpiece;
 	}
+
+	
+	void addIKKPIECE(std::map<std::string, std::string> &options)
+	{
+	    RKPPlannerSetup *kpiece = new RKPIKKPIECESetup();
+	    if (kpiece->setup(dynamic_cast<RKPModelBase*>(this), options))
+		planners[kpiece->name] = kpiece;
+	    else
+		delete kpiece;
+	}
+
 	std::map<std::string, RKPPlannerSetup*> planners;
     };
     
