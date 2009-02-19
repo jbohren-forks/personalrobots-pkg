@@ -31,16 +31,21 @@
 #define VISUAL_NAV_VISUAL_NAV_H
 
 #include <vector>
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include <visual_nav/transform.h>
 
 namespace visual_nav
 {
 
+using boost::shared_ptr;
+using std::vector;
+using std::string;
+
 /// Id's of nodes in the roadmap
 typedef int NodeId;
 
-typedef boost::shared_ptr<std::vector<NodeId> > PathPtr;
+typedef shared_ptr<vector<NodeId> > PathPtr;
 
 /// Represents the roadmap produced by visual odometry, with the localization info incorporated
 class VisualNavRoadmap
@@ -50,11 +55,11 @@ public:
   VisualNavRoadmap();
   
   /// \post There is a new graph node at \a pose
-  /// \return The id of the new node
+  /// \return The id of the new node.  It is guaranteed the id returns 1 the first time, and increases by 1 on each call.
   NodeId addNode (const Pose& pose);
 
   /// \post There is a new graph node with pose (\a x, \a y, \a theta)
-  /// \return id of new node
+  /// \return id of new node.  It is guaranteed the id returns 1 the first time, and increases by 1 on each call.
   NodeId addNode (double x, double y, double theta=0.0);
 
   /// \post There is an edge between nodes \a i and \a j with no label
@@ -70,17 +75,31 @@ public:
   /// \returns Sequence of NodeId's of positions on path from start node to node \goal
   PathPtr pathToGoal (const NodeId goal) const;
 
+  /// \returns First point where path exits a circle of radius \a r around robot
+  /// \throws InsufficientlyLongPathException 
+  /// \throws InvalidPathException
+  /// For now, just look at the discrete waypoints on the path rather than interpolating between them to find the exact exit point
+  Pose pathExitPoint (PathPtr p, double r) const;
+
+  /// \return estimated current pos in navigation frame given the first node in this path
+  Pose estimatedPose (PathPtr p) const;
+
 private:
 
   // Avoid client compilation dependency on implementation details
   class RoadmapImpl;
-  boost::shared_ptr<RoadmapImpl> roadmap_impl_;
+  shared_ptr<RoadmapImpl> roadmap_impl_;
 
   // Forbid copy and assign
   VisualNavRoadmap (const VisualNavRoadmap&);
   VisualNavRoadmap& operator= (const VisualNavRoadmap&);
   
 };
+
+
+/// \return A pointer to a roadmap read from file f
+typedef shared_ptr<VisualNavRoadmap> RoadmapPtr;
+RoadmapPtr readRoadmapFromFile(const string& filename);
 
 
 } // visual_nav

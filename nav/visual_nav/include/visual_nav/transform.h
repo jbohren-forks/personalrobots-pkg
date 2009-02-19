@@ -36,6 +36,7 @@ namespace visual_nav
 {
 
 using std::ostream;
+using std::istream;
 
 struct Pose {
   Pose (double x=0.0, double y=0.0f, double theta=0.0) : x(x), y(y), theta(theta) {}
@@ -62,6 +63,8 @@ Transform2D inverse (const Transform2D& trans);
 
 ostream& operator<< (ostream& str, const Pose& c);
 ostream& operator<< (ostream& str, const Transform2D& c);
+istream& operator>> (istream& str, Pose& c);
+istream& operator>> (istream& str, Transform2D& c);
 
 
 } //namespace

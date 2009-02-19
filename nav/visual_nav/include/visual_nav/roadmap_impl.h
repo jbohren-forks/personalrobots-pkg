@@ -46,10 +46,11 @@ using boost::adjacency_list;
 using boost::graph_traits;
 using std::map;
 using std::pair;
+using std::vector;
 
 
 typedef unsigned int uint;
-
+typedef vector<int> Path; // Note dependency between this and PathPtr
 
 /************************************************************
  * RoadmapGraph
@@ -138,8 +139,13 @@ public:
   void addEdge (const NodeId i, const NodeId j);
   void addEdgeFromStart (const NodeId i, const Transform2D& relative_pos);
   PathPtr pathToGoal (const NodeId goal_id);
+  Pose pathExitPoint (PathPtr p, double r) const;
+  Pose estimatedPose (PathPtr p) const;
+  
+  bool distanceLessThan (const Pose& pose, NodeId id, double r) const;
 
 private:
+
   RoadmapVertex idVertex (const NodeId id) const;
 
   RoadmapGraph graph_;

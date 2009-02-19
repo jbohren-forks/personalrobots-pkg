@@ -31,6 +31,7 @@
 #include <visual_nav/exceptions.h>
 #include <visual_nav/transform.h>
 #include <gtest/gtest.h>
+#include <iostream>
 
 using namespace visual_nav;
 using namespace std;
@@ -56,7 +57,6 @@ TEST(VisualNav, Transforms)
 }
 
 
-// Tests
 TEST(VisualNav, BasicAPI)
 {
   VisualNavRoadmap r;
@@ -77,11 +77,32 @@ TEST(VisualNav, BasicAPI)
   PathPtr path1 = r.pathToGoal(5);
   int expected_path[4] = {0, 2, 1, 5};
   EXPECT_TRUE(*path1==Path(expected_path, expected_path+4));
+  EXPECT_EQ(r.pathExitPoint(path1, .1), Pose(4,3,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 2.5), Pose(4,3,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 3.0), Pose(2,6,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 5.0), Pose(2,6,0));
 
   r.addEdgeFromStart(4, Transform2D(-1,1));
   PathPtr path2 = r.pathToGoal(5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
+  EXPECT_EQ(r.pathExitPoint(path2, 1.0), Pose(1,2.5));
+  EXPECT_EQ(r.pathExitPoint(path2, 2.0), Pose(2,6));
+}
+
+
+
+// Just repeat the above tests but read in the file
+TEST(VisualNav, ReadFromFile)
+{
+  RoadmapPtr r = readRoadmapFromFile("test/example_roadmap.dat");
+  typedef vector<int> Path;
+
+  PathPtr path2 = r->pathToGoal(5);
+  int expected_path2[4] = {0, 4, 1, 5};
+  EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
+  EXPECT_EQ(r->pathExitPoint(path2, 1.0), Pose(1,2.5));
+  EXPECT_EQ(r->pathExitPoint(path2, 2.0), Pose(2,6));
 }
 
 

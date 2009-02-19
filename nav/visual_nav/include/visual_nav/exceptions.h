@@ -92,6 +92,29 @@ public:
   NonstartRelPoseException () : VisualNavException(format("Attempted to access relative pose field of edge not involving start node")) {}
 };
 
+class InvalidPathException: public VisualNavException
+{
+public:
+  InvalidPathException (const NodeId id) : VisualNavException (format("Path begins at %1% instead of start node") % id) {}
+};
+
+class InsufficientlyLongPathException: public VisualNavException
+{
+public:
+  InsufficientlyLongPathException () : VisualNavException (format("Insufficiently long path")) {}
+};
+
+class ReadRoadmapException: public VisualNavException
+{
+public:
+  ReadRoadmapException (const string& filename) : VisualNavException (format("Unable to open %1%") % filename) {}
+};
+
+
+
+
+
+
 
 } // namespace visual_nav
 

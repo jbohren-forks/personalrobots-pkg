@@ -35,6 +35,7 @@ namespace visual_nav
 {
 
 using std::ostream;
+using std::istream;
 
 Pose transform (const Transform2D& trans, const Pose& pose)
 {
@@ -74,6 +75,20 @@ ostream& operator<< (ostream& str, const Transform2D& c)
   str << "(" << c.dx << ", " << c.dy << ", " << c.theta << ")";
   return str;
 }
+
+istream& operator>> (istream& str, Pose& p)
+{
+  str >> p.x >> p.y >> p.theta;
+  return str;
+}
+
+istream& operator>> (istream& str, Transform2D& trans)
+{
+  str >> trans.dx >> trans.dy >> trans.theta;
+  return str;
+}
+
+
 
 bool operator== (const Pose& p1, const Pose& p2)
 {
