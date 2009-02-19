@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <robot_mechanism_controllers/joint_pd_controller.h>
+#include <angles/angles.h>
 
 using namespace std;
 using namespace controller;
@@ -144,7 +145,24 @@ void JointPDController::update()
   }
 
   error_dot = joint_state_->velocity_ - command_dot_;
-  error = joint_state_->position_ - command_;
+//  error = joint_state_->position_ - command_;
+
+  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+  {
+    angles::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
+
+  }
+  else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+  {
+    error = angles::shortest_angular_distance(command_, joint_state_->position_);
+  }
+  else //prismatic
+  {
+    error = joint_state_->position_ - command_;
+  }
+
+//  error = joint_state_->position_ - command_;
+
   joint_state_->commanded_effort_ = pid_controller_.updatePid(error, error_dot, time - last_time_);
   last_time_ = time;
 }
