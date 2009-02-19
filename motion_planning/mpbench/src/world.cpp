@@ -262,7 +262,7 @@ namespace mpbench {
   }
   
   
-  void World::
+  bool World::
   select(size_t task_id, size_t episode_id) throw(std::exception)
   {
     task_episode_map_t::iterator item(task_episode_map_.find(task_id));
@@ -272,7 +272,7 @@ namespace mpbench {
 	if (debug_os_)
 	  *debug_os_ << "mpbench::World::select(" << task_id << ", " << episode_id
 		     << "): already up to date\n";
-	return;
+	return false;
       }
       if (item->second > episode_id)
 	throw runtime_error("mpbench::World::select(" + to_string(task_id) + ", "
@@ -283,11 +283,16 @@ namespace mpbench {
     }
     
     shared_ptr<mpglue::Costmapper> cm(getCostmapper(task_id));
+    bool costs_changed(false);
     while (delta_id <= episode_id) {
-      if (verbose_os_)
-	*verbose_os_ << "World::select(" << task_id << ", " << episode_id
-		     << "): applying obstacle delta ID " << delta_id << "\n";
-      cm->updateObstacles(*getObstdelta(delta_id), debug_os_);
+      shared_ptr<mpglue::ObstacleDelta const> od(getObstdelta(delta_id));
+      if ( ! od->empty()) {
+	costs_changed = true;
+	if (verbose_os_)
+	  *verbose_os_ << "World::select(" << task_id << ", " << episode_id
+		       << "): applying obstacle delta ID " << delta_id << "\n";
+	cm->updateObstacles(*od, debug_os_);
+      }
       ++delta_id;
     }
     
@@ -295,6 +300,8 @@ namespace mpbench {
       item->second = episode_id;
     else
       task_episode_map_.insert(make_pair(task_id, episode_id));
+    
+    return costs_changed;
   }
 
 }

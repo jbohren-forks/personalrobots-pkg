@@ -447,11 +447,12 @@ void run_tasks()
       planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
       for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
-	setup->getWorld()->select(task_id, episode_id);
+	bool const costs_changed(setup->getWorld()->select(task_id, episode_id));
 	episode::startspec const & start(task.start[episode_id]);
 	
 	planner->setStart(start.px, start.py, start.pth);
 	planner->forcePlanningFromScratch(start.from_scratch);
+	planner->flushCostChanges(costs_changed);
 	
 	// not all planners can be run iteratively...
 	if ( ! sbpl_planner)

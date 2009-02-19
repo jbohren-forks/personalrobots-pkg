@@ -1,0 +1,78 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>inf</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <world>
+    <!-- outer bounding box -->
+    <addline>  0     0     7    0    </addline>
+    <addline>  0     0     0    5.5  </addline>
+    <addline>  0     5.5   7    5.5  </addline>
+    <addline>  7     0     7    5.5  </addline>
+    <!-- wall with opening along y-axis -->
+    <addline>  4.5   0     4.5  4    </addline>
+    <addline>  4.5   4.75  4.5  5.5  </addline>
+    <!-- short "tunnel" along x-axis -->
+    <addline>  2.325 4     4.5  4    </addline>
+    <addline>  2.325 4.75  4.5  4.75 </addline>
+    
+    <!-- the tunnel retracts while we move -->
+    <rmline episode="1">  2.325  4  2.525  4</rmline>
+    <rmline episode="2">  2.525  4  2.725  4</rmline>
+    <rmline episode="3">  2.725  4  2.925  4</rmline>
+    <rmline episode="4">  2.925  4  3.125  4</rmline>
+    <rmline episode="5">  3.125  4  3.325  4</rmline>
+    <rmline episode="6">  3.325  4  3.525  4</rmline>
+    <rmline episode="7">  3.525  4  3.725  4</rmline>
+    <rmline episode="8">  3.725  4  3.925  4</rmline>
+    <rmline episode="9">  3.925  4  4.125  4</rmline>
+    <rmline episode="10"> 4.125  4  4.325  4</rmline>
+    
+  </world>
+  
+  <task>
+    <description>left to right</description>
+    <goal>
+      <pose>5.75  1 -1.55</pose>
+    </goal>
+    <start>
+      <pose>1.0   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.3   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.6   1  1.55</pose>
+    </start>
+    <start>
+      <pose>1.8   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.1   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.4   1  1.55</pose>
+    </start>
+    <start>
+      <pose>2.7   1  1.55</pose>
+    </start>
+    <start>
+      <pose>3.0   1  1.55</pose>
+    </start>
+    <start>
+      <pose>3.3   1  1.55</pose>
+    </start>
+    <start>
+      <pose>3.6   1  1.55</pose>
+    </start>
+  </task>
+</setup>

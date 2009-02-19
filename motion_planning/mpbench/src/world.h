@@ -64,8 +64,16 @@ namespace mpbench {
     void drawPoint(size_t episode_id, bool add,
 		   double xx, double yy);
     
-    /** For each task_id, you can never go backwards in episode_id. */
-    void select(size_t task_id, size_t episode_id) throw(std::exception);
+    /**
+       For each task_id, you can never go backwards in episode_id.
+       
+       \note The way things are used, you probably won't see a true
+       return value for episode_id==0 because that gets initialized
+       implicitly the first time getCostmap() is called.
+       
+       \return true if the costmap has changed, false otherwise.
+    */
+    bool select(size_t task_id, size_t episode_id) throw(std::exception);
     
     boost::shared_ptr<mpglue::CostmapAccessor const> getCostmap(size_t task_id) const;
     //future//boost::shared_ptr<mpglue::CostmapAccessor const> getSnapshot(size_t episode_id) const;
