@@ -23,6 +23,7 @@ LIST (APPEND MPBENCH_LIBS
 LIST (APPEND MPBENCH_SRCS
       src/setup.cpp
       src/result.cpp
+      src/world.cpp
       src/gfx.cpp)
 
 SET (CMAKE_REQUIRED_INCLUDES /usr/local/include)

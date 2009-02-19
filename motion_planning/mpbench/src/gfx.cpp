@@ -100,6 +100,7 @@ namespace mpbench {
 		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
       : setup(_setup),
+	world(*_setup.getWorld()),
 	resolution(_setup.getOptions().costmap_resolution),
 	inscribedRadius(_setup.getOptions().robot_inscribed_radius),
 	base_width(_base_width),
@@ -136,7 +137,7 @@ namespace mpbench {
       }
       
       double x0, y0, x1, y1;
-      configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+      configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
       glut_width = (int) ceil(glut_aspect * (y1 - y0) / configptr->resolution);
       glut_height = (int) ceil((x1 - x0) / configptr->resolution);
       double const wscale(config.base_width / static_cast<double>(glut_width));
@@ -188,8 +189,8 @@ namespace {
   
   class CostmapWrapProxy: public npm::TravProxyAPI {
   public:
-    CostmapWrapProxy()
-      : costmap(configptr->setup.getCostmap()), gframe(configptr->resolution) {}
+    explicit CostmapWrapProxy(size_t task_id)
+      : costmap(configptr->world.getCostmap(task_id)), gframe(configptr->resolution) {}
     
     virtual bool Enabled() const { return true; }
     virtual double GetX() const { return 0; }
@@ -219,13 +220,13 @@ namespace {
 void init_layout_one()
 {
   double x0, y0, x1, y1;
-  configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+  configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   glut_aspect = 3 * (x1 - x0) / (y1 - y0);
   
-  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy());
+  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
   ////  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
   new PlanDrawing("plan", -1, -1, false);
   
@@ -266,13 +267,13 @@ void init_layout_two()
   }
   
   double x0, y0, x1, y1;
-  configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+  configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   glut_aspect = ceil(tl.size() * 0.5) * (x1 - x0) / (2 * (y1 - y0));
   
-  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy());
+  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
   double const v_width(2.0 / tl.size());
   for (int ix(0), itask(0); itask < static_cast<int>(tl.size()); ++ix)
     for (int iy(1); iy >= 0; --iy, ++itask) {
@@ -295,7 +296,7 @@ void init_layout_two()
 void init_layout_three()
 {  
   double x0, y0, x1, y1;
-  configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+  configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
@@ -303,7 +304,7 @@ void init_layout_three()
   double const ncols(nplanners + 1.0);
   glut_aspect = ncols * (x1 - x0) / (y1 - y0);
   
-  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy());
+  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
   double const v_width(1.0 / ncols);
   npm::View * view(new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >()));
   // beware of weird npm::View::Configure() param order: x, y, width, height
@@ -313,7 +314,7 @@ void init_layout_three()
   if ( ! view->AddDrawing("costmap"))
     errx(EXIT_FAILURE, "no drawing called \"costmap\"");
 
-  new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(),
+  new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(0),
 				 npm::TraversabilityDrawing::MINIMAL_DARK);
   new PlanDrawing("planner", -1, -1, false);
   view = new npm::View("planner", npm::Instance<npm::UniqueManager<npm::View> >());
@@ -343,7 +344,7 @@ void draw()
 {
   if (configptr->websiteMode) {
     double x0, y0, x1, y1;
-    configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
+    configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();

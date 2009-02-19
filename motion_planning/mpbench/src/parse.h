@@ -41,6 +41,7 @@
 #ifdef MPBENCH_HAVE_EXPAT
 
 #include <mpbench/setup.h>
+#include <mpbench/world.h>
 #include <expat.h>
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -100,6 +101,7 @@ namespace mpbench {
     boost::shared_ptr<File> file;
     int bufsize;
     Setup * setup;
+    World * world;
     std::ostream * progress_os;
     std::ostream * debug_os;
     episode::startspec def_start;

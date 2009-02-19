@@ -36,6 +36,7 @@
 #define MPBENCH_BENCHMARK_GFX_HPP
 
 #include <mpbench/setup.h>
+#include <mpbench/world.h>
 #include <mpbench/result.h>
 #include <mpglue/footprint.h>
 #include <mpglue/plan.h>
@@ -54,6 +55,7 @@ namespace mpbench {
 		    std::ostream & logOs);
       
       Setup const & setup;
+      World const & world;
       double const resolution;
       double const inscribedRadius;
       int const base_width;

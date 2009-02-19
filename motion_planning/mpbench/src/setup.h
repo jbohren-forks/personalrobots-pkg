@@ -49,6 +49,8 @@
 
 namespace mpbench {
   
+  class World;
+  
   namespace episode {
     
     struct startspec {
@@ -151,13 +153,12 @@ namespace mpbench {
   };
   
   typedef std::vector<boost::shared_ptr<episode::taskspec> > tasklist_t;
-  typedef std::vector<boost::shared_ptr<mpglue::ObstacleDelta> > worldupdate_t;
   
   
   class Setup
   {
   public:
-    explicit Setup(SetupOptions const & options);
+    Setup(SetupOptions const & options, std::ostream * verbose_os, std::ostream * debug_os);
     
     virtual ~Setup();
     
@@ -165,7 +166,7 @@ namespace mpbench {
 					   std::string const & planner_spec,
 					   std::string const & robot_spec,
 					   std::string const & costmap_spec,
-					   std::ostream * progress_os,
+					   std::ostream * verbose_os,
 					   std::ostream * debug_os)
       throw(std::runtime_error);
     
@@ -192,38 +193,9 @@ namespace mpbench {
 					except for the title. */
 				    std::string const & prefix) const;
     
-    /**
-       \todo re-implement
-    */
-    void dumpTravmap(std::ostream & os) const;
+    void legacyDrawLine(double x0, double y0, double x1, double y1);
     
-    /**
-       Draw an obstacle line into the costmap, expanded by the robot
-       radius and with costs descending out up to the freespace
-       distance.
-    */
-    void drawLine(size_t episode_id, bool add,
-		  double x0, double y0, double x1, double y1,
-		  /** optional: verbose operation if non-null */
-		  std::ostream * progress_os, std::ostream * debug_os);
-
-    void drawPoint(size_t episode_id, bool add,
-		   double xx, double yy,
-		   /** optional: verbose operation if non-null */
-		   std::ostream * progress_os, std::ostream * debug_os);
-    
-    /**
-       For old code: calls drawLine(0, true, ...)
-    */
-    void legacyDrawLine(double x0, double y0, double x1, double y1,
-			/** optional: verbose operation if non-null */
-			std::ostream * progress_os, std::ostream * debug_os);
-    
-    /**
-       For old code: calls drawPoint(0, true, ...)
-    */
-    void legacyDrawPoint(double xx, double yy,
-			 std::ostream * progress_os);
+    void legacyDrawPoint(double xx, double yy);
     
     /**
        Add a (copy of a) task to the task list.
@@ -236,33 +208,25 @@ namespace mpbench {
 		       double goal_x, double goal_y, double goal_th, 
 		       double goal_tol_xy, double goal_tol_th);
     
-    boost::shared_ptr<mpglue::CostmapPlanner> getPlanner();
-    boost::shared_ptr<mpglue::CostmapAccessor const> getCostmap() const;
-    boost::shared_ptr<mpglue::IndexTransform const> getIndexTransform() const;
+    boost::shared_ptr<mpglue::CostmapPlanner> getPlanner(size_t task_id) throw(std::exception);
+    boost::shared_ptr<World> getWorld()             { return world_; }
+    boost::shared_ptr<World const> getWorld() const { return world_; }
     
     tasklist_t const & getTasks() const;
-    void getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const;
-    void getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
-    void getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
-    void getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const;
     
     mpglue::footprint_t const & getFootprint() const;
     SetupOptions const & getOptions() const { return opt_; }
     
   protected:
-    boost::shared_ptr<mpglue::ObstacleDelta> getObstdelta(size_t episode_id,
-							  std::ostream * debug_os);
-    
-    SetupOptions opt_;
-    sfl::GridFrame gridframe_;
+    SetupOptions const opt_;
+    std::ostream * verbose_os_;
+    std::ostream * debug_os_;
     tasklist_t tasklist_;
-    worldupdate_t worldupdate_;
-    double bbx0_, bby0_, bbx1_, bby1_; // workspace bounding box
+    boost::shared_ptr<World> world_;
     
   private:
     mutable boost::shared_ptr<mpglue::footprint_t> footprint_;
-    boost::shared_ptr<mpglue::CostmapPlanner> planner_;
-    boost::shared_ptr<mpglue::Costmapper> costmapper_;
+    std::vector<boost::shared_ptr<mpglue::CostmapPlanner> > planner_; // one per task
   };
   
 }

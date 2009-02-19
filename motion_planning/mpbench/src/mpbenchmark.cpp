@@ -80,7 +80,7 @@ static bool websiteMode;
 
 static shared_ptr<Setup> setup;
 static shared_ptr<ResultCollection> result_collection;
-static shared_ptr<ostream> logos;
+static ostream * logos(0);
 static ostream * dbgos(0);
 
 static shared_ptr<footprint_t> footprint;
@@ -92,7 +92,10 @@ int main(int argc, char ** argv)
     errx(EXIT_FAILURE, "atexit() failed");
   parse_options(argc, argv);
   string logFilename(baseFilename() + ".txt");
-  logos.reset(new ofstream(logFilename.c_str()));
+  if (dbgos)
+    logos = dbgos;
+  else
+    logos = new ofstream(logFilename.c_str());
   create_setup();
   run_tasks();
   print_summary();
@@ -133,11 +136,12 @@ int main(int argc, char ** argv)
 
 void cleanup()
 {
-  if (logos)
-    *logos << "byebye!\n" << flush;
+  if (dbgos)
+    *dbgos << "byebye!\n" << flush;
+  else
+    delete logos;
   setup.reset();
   result_collection.reset();
-  logos.reset();
 }
 
 
@@ -300,7 +304,7 @@ void parse_options(int argc, char ** argv)
 void create_setup()
 {
   try {
-    setup = Setup::create(world_spec, planner_spec, robot_spec, costmap_spec, logos.get(), dbgos);
+    setup = Setup::create(world_spec, planner_spec, robot_spec, costmap_spec, logos, dbgos);
   }
   catch (std::exception const & ee) {
     errx(EXIT_FAILURE, "create_setup(): EXCEPTION %s", ee.what());
@@ -426,7 +430,6 @@ static void plan_once(size_t task_id, size_t episode_id,
 void run_tasks()
 {
   try {
-    boost::shared_ptr<mpglue::CostmapPlanner> planner(setup->getPlanner());
     *logos << "running tasks\n" << flush;
     
     tasklist_t const & tasklist(setup->getTasks());
@@ -438,17 +441,19 @@ void run_tasks()
 	errx(EXIT_FAILURE, "run_tasks(): task ID %zu has no episodes", task_id);
       
       *logos << "\n  task " << task_id << ": " << task.description << "\n" << flush;
+      boost::shared_ptr<mpglue::CostmapPlanner> planner(setup->getPlanner(task_id));
+      SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(planner.get()));
       planner->setGoal(task.goal.px, task.goal.py, task.goal.pth);
       planner->setGoalTolerance(task.goal.tol_xy, task.goal.tol_th);
       
       for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
+	setup->getWorld()->select(task_id, episode_id);
 	episode::startspec const & start(task.start[episode_id]);
 	
 	planner->setStart(start.px, start.py, start.pth);
 	planner->forcePlanningFromScratch(start.from_scratch);
 	
 	// not all planners can be run iteratively...
-	SBPLPlannerWrap * sbpl_planner(dynamic_cast<SBPLPlannerWrap *>(planner.get()));
 	if ( ! sbpl_planner)
 	  plan_once(task_id, episode_id, start, task.goal, *planner);
 	else {
@@ -497,7 +502,7 @@ void print_summary()
   }
   rplan *= 180.0 / M_PI;
   double x0, y0, x1, y1;
-  setup->getWorkspaceBounds(x0, y0, x1, y1);
+  setup->getWorld()->getWorkspaceBounds(x0, y0, x1, y1);
   double area((x1-x0)*(y1-y0));
   double ncells(ceil(area / pow(setup->getOptions().costmap_resolution, 2)));
   *logos << "\nsummary:\n"
@@ -752,7 +757,10 @@ void print_gnuplot()
 	     << "#  1 cell cost\n"
 	     << "#  2 count\n"
 	     << "#  3 log(count)\n";
-  boost::shared_ptr<CostmapAccessor const> cm(setup->getCostmap());
+  // XXXX to do: would make more sense to plot costhist for each
+  // snapshot, or all combined, but for now just take the last episode
+  // of the first planner
+  boost::shared_ptr<CostmapAccessor const> cm(setup->getWorld()->getCostmap(0));
   typedef map<int, size_t> hist_t;
   hist_t hist;
   for (ssize_t ix(cm->getXBegin()); ix < cm->getXEnd(); ++ix)

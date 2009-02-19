@@ -163,6 +163,7 @@ namespace mpbench {
     
     filename = xml_filename;
     this->setup = setup;
+    this->world = setup->getWorld().get();
     this->progress_os = progress_os;
     this->debug_os = debug_os;
     file.reset(new File(filename.c_str(), O_RDONLY));
@@ -316,9 +317,9 @@ void end_element_handler(void * user_data,
       if ( ! is)
 	throwme(sp, "could not read x0 y0 x1 y1 from \"" + sp->buffer->GetString() + "\"");
       if ("addline" == tag)
-	sp->setup->drawLine(sp->tmp_episode, true, x0, y0, x1, y1, sp->progress_os, sp->debug_os);
+	sp->world->drawLine(sp->tmp_episode, true, x0, y0, x1, y1);
       else
-	sp->setup->drawLine(sp->tmp_episode, false, x0, y0, x1, y1, sp->progress_os, sp->debug_os);
+	sp->world->drawLine(sp->tmp_episode, false, x0, y0, x1, y1);
     }
   }
   
