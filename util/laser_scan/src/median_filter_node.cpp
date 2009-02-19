@@ -34,36 +34,39 @@
 static std::string median_filter_xml = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
 
 
-class MedianFilterNode : public ros::Node
+class MedianFilterNode 
 {
 public:
   laser_scan::LaserScan msg;
 
 
-  MedianFilterNode() : ros::Node("median_filter_node"), filter()
+  MedianFilterNode(ros::Node& anode) :  filter(), node_(anode)
   {
     std::string filter_xml;
-    advertise<laser_scan::LaserScan>("~output", 1000);
-    param("~filters", filter_xml, median_filter_xml);
+    node_.advertise<laser_scan::LaserScan>("~output", 1000);
+    node_.param("~filters", filter_xml, median_filter_xml);
     printf("Got ~filters as: %s\n", filter_xml.c_str());
     filter.configure(filter_xml);
-    subscribe("scan_in", msg, &MedianFilterNode::callback, 3);
+    node_.subscribe("scan_in", msg, &MedianFilterNode::callback,this, 3);
   }
   void callback()
   {
     filter.update (msg, msg);
-    publish("~output", msg);
+    node_.publish("~output", msg);
   }
 
 protected:
   laser_scan::LaserMedianFilter filter;
+  ros::Node& node_;
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-  MedianFilterNode t;
-  t.spin();
+  ros::Node ros_node("scan_filter_node");
+  
+  MedianFilterNode t(ros_node);
+  ros_node.spin();
   
   return 0;
 }
