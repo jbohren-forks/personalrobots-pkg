@@ -37,7 +37,7 @@ public:
   laser_scan::LaserScan msg;
 
 
-  MedianFilterNode() : ros::Node("median_filter_node"), filter(5)
+  MedianFilterNode() : ros::Node("median_filter_node"), filter()
   {
     advertise<laser_scan::LaserScan>("~output", 1000);
     subscribe("scan_in", msg, &MedianFilterNode::callback, 3);

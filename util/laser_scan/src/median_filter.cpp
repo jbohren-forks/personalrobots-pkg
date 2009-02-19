@@ -32,19 +32,21 @@
 
 using namespace filters ;
 
+
 namespace laser_scan{
 
-LaserMedianFilter::LaserMedianFilter(unsigned int filter_length):
-  filter_length_(filter_length),
+static std::string median_filter_xml = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
+
+LaserMedianFilter::LaserMedianFilter()://const std::string & xml_parameters):
   num_ranges_(1)
 {
-  range_filter_ = new MedianFilter<std::vector<float> >();
-  std::stringstream ss;
-  ss << filter_length_;
-  range_filter_->configure(num_ranges_, ss.str());
+  range_filter_ = new FilterChain<std_vector_float >();
+  range_filter_->add(median_filter_xml);
+  range_filter_->configure(num_ranges_);
   
-  intensity_filter_ = new MedianFilter<std::vector<float> >();//(filter_length_, num_ranges_);
-  intensity_filter_->configure(num_ranges_, ss.str());
+  intensity_filter_ = new FilterChain<std_vector_float >();
+  intensity_filter_->add(median_filter_xml);
+  intensity_filter_->configure(num_ranges_);
 };
 
 LaserMedianFilter::~LaserMedianFilter()
@@ -66,14 +68,15 @@ bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan:
 
 
     num_ranges_ = scan_in.get_ranges_size();
-    range_filter_ = new MedianFilter<std::vector<float> >();
-    std::stringstream ss;
-    ss << filter_length_;
-    range_filter_->configure(num_ranges_, ss.str());
     
-    intensity_filter_ = new MedianFilter<std::vector<float> >();//(filter_length_, num_ranges_);
-    intensity_filter_->configure(num_ranges_, ss.str());
-  
+    range_filter_ = new FilterChain<std_vector_float >();
+    range_filter_->add(median_filter_xml);
+    range_filter_->configure(num_ranges_);
+    
+    intensity_filter_ = new FilterChain<std_vector_float >();
+    intensity_filter_->add(median_filter_xml);
+    intensity_filter_->configure(num_ranges_);
+    
   }
 
   /** \todo check for length of intensities too */

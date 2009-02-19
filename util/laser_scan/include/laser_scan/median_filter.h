@@ -38,6 +38,8 @@
 #include "laser_scan/LaserScan.h"
 
 #include "filters/median.h"
+#include "filters/mean.h"
+#include "filters/filter_chain.h"
 #include "boost/thread/mutex.hpp"
 
 namespace laser_scan{
@@ -49,7 +51,7 @@ public:
   /** \brief Constructor
    * \param averaging_length How many scans to average over.
    */
-  LaserMedianFilter(unsigned int averaging_length);
+  LaserMedianFilter();//const std::string & xml_parameters);
   ~LaserMedianFilter();
   /** \brief Update the filter and get the response
    * \param scan_in The new scan to filter
@@ -65,8 +67,8 @@ private:
   boost::mutex data_lock; /// Protection from multi threaded programs
   laser_scan::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
-  filters::MedianFilter<std::vector<float> > * range_filter_;
-  filters::MedianFilter<std::vector<float> > * intensity_filter_;
+  filters::FilterChain<std_vector_float > * range_filter_;
+  filters::FilterChain<std_vector_float > * intensity_filter_;
 
 };
 
