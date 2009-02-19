@@ -100,7 +100,7 @@ Point2D TopologicalMap::GraphImpl::connectorPosition (const ConnectorId id) cons
 
 Cell2D TopologicalMap::GraphImpl::connectorCell (const ConnectorId id) const
 {
-  if (id<=connectors_.size()) {
+  if (id<=connectors_.size() && id > 0) {
     return getConnector(id);
   }
   else {

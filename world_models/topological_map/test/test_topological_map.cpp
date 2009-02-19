@@ -185,6 +185,7 @@ TEST(TopologicalMap, Creation)
   setV(grid, 3, 7, 21, 8, 8, 24, false);
   setV(grid, 7, 7, 21, 4, 8, 24, false);
   
+
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 2, 1, 1, 0, "local");
 
   EXPECT_EQ(m->allRegions().size(), 33u);
