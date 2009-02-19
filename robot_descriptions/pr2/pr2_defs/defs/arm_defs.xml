@@ -56,6 +56,10 @@
       <calibration reference_position="${reflect*M_PI/4+shoulder_pan_cal}" values="1.5 -1" />
 
       <joint_properties damping="10.0" />
+      <map name="${side}_shoulder_pan_joint_stop" flag="gazebo">
+        <elem key="stopKd" value="1.0" />
+        <elem key="stopKp" value="1000000.0" />
+      </map>
     </joint>
 
     <link name="${side}_shoulder_pan_link">
@@ -121,6 +125,10 @@
       <calibration reference_position="shoulder_lift_cal" values="1.5 -1 " />
 
       <joint_properties damping="100.0" />
+      <map name="${side}_shoulder_lift_joint_stop" flag="gazebo">
+        <elem key="stopKd" value="1.0" />
+        <elem key="stopKp" value="1000000.0" />
+      </map>
     </joint>
 
     <link name="${side}_shoulder_lift_link">
@@ -186,6 +194,11 @@
       <calibration reference_position="${reflect*M_PI/2 + upper_arm_roll_cal}" values="1.5 -1 " />
 
       <joint_properties damping="1.0" />
+      <map name="${side}_upper_arm_roll_joint_ode" flag="gazebo">
+        <elem key="stopKd" value="1.0" />
+        <elem key="stopKp" value="1000000.0" />
+        <elem key="fudgeFactor" value="0.5" />
+      </map>
     </joint>
 
     <link name="${side}_upper_arm_roll_link">
@@ -303,6 +316,10 @@
       <calibration reference_position="${-1.1+elbow_flex_cal}" values="1.5 -1" />
 
       <joint_properties damping="10.0" />
+      <map name="${side}_elbow_flex_joint_ode" flag="gazebo">
+        <elem key="stopKd" value="1.0" />
+        <elem key="stopKp" value="1000000.0" />
+      </map>
     </joint>
 
     <link name="${side}_elbow_flex_link">
@@ -410,6 +427,9 @@
       <calibration reference_position="forearm_roll_cal" values="1.5 -1" />
 
       <joint_properties damping="1.0" />
+      <map name="${side}_forearm_roll_joint_ode" flag="gazebo">
+        <elem key="fudgeFactor" value="0.5" />
+      </map>
     </joint>
 
     <link name="${side}_forearm_roll_link">
@@ -515,6 +535,10 @@
       <calibration reference_position="${0.4+wrist_flex_cal}" values="1.5 -1" />
 
       <joint_properties damping="1.0" />
+      <map name="${side}_wrist_flex_joint_ode" flag="gazebo">
+        <elem key="stopKd" value="1.0" />
+        <elem key="stopKp" value="1000000.0" />
+      </map>
     </joint>
 
     <link name="${side}_wrist_flex_link">
@@ -570,6 +594,9 @@
       <limit effort="10" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="2" />
       <calibration reference_position="${1.27+wrist_roll_cal}" values="1.5 -1" />
       <joint_properties damping="2.0" />
+      <map name="${side}_wrist_roll_joint_ode" flag="gazebo">
+        <elem key="fudgeFactor" value="0.5" />
+      </map>
     </joint>
 
 
