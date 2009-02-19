@@ -77,7 +77,7 @@ typedef Loki::SingletonHolder
 <
   Loki::Factory< Controller, std::string >,
   Loki::CreateUsingNew,
-  Loki::LongevityLifetime::DieAsSmallObjectChild
+  Loki::LongevityLifetime::DieAsSmallObjectParent
 > ControllerFactory;
 
 #define ROS_REGISTER_CONTROLLER(c) \
