@@ -46,6 +46,8 @@
 #include <mechanism_model/robot.h>
 
 #include <tinyxml/tinyxml.h>
+#include <std_srvs/Empty.h>
+#include <ros/node.h>
 
 namespace controller
 {
@@ -93,18 +95,101 @@ typedef Loki::SingletonHolder
   }; \
   static RosController##c ROS_CONTROLLER_##c;
 
+
+
 class Controller
 {
 public:
+  enum {CONSTRUCTED, INITIALIZED, RUNNING};
+  int state_;
+  bool autostart_;
+  std::string controller_name_;
+
   Controller()
   {
+    state_ = CONSTRUCTED;
+    autostart_ = true;
   }
   virtual ~Controller()
   {
+    if (!autostart_){
+      // what if multiple controllers have same name?
+      ros::Node::instance()->unadvertiseService(controller_name_+"/start");
+      ros::Node::instance()->unadvertiseService(controller_name_+"/stop");
+    }
   }
-  virtual bool startup() {return true;};
+
+  virtual bool start() {return true;};
   virtual void update(void) = 0;
+  virtual bool stop() {return true;};
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
+
+
+  void update_request()
+  {
+    if (state_ == RUNNING)
+      update();
+  }
+
+  bool start_request(std_srvs::Empty::Request &req,
+                     std_srvs::Empty::Request &res)
+  {
+    bool ret = false;
+
+    if (state_ == INITIALIZED){
+      ret = start();
+      if (ret) state_ = RUNNING;
+    }
+
+    return ret;
+  }
+
+
+  bool stop_request(std_srvs::Empty::Request &req,
+                    std_srvs::Empty::Request &res)
+
+  {
+    bool ret = false;
+
+    if (state_ == RUNNING){
+      ret = stop();
+      if (ret) state_ = INITIALIZED;
+    }
+
+    return ret;
+  }
+
+  bool initXml_request(mechanism::RobotState *robot, TiXmlElement *config, std::string controller_name)
+  {
+    if (state_ != CONSTRUCTED)
+      return false;
+    else
+    {
+      controller_name_ = controller_name;
+
+      // initialize
+      if (!initXml(robot, config))
+        return false;
+      state_ = INITIALIZED;
+
+      // autostart
+      ros::Node::instance()->param(controller_name+"/autostart", autostart_, true);
+      std_srvs::Empty::Request req;
+      std_srvs::Empty::Request res;
+      if (autostart_ && !start_request(req, res))
+        return false;
+      
+      // what if multiple controllers have same name?
+      if (!autostart_){
+        ros::Node::instance()->advertiseService(controller_name+"/start", &Controller::start_request, this);
+        ros::Node::instance()->advertiseService(controller_name+"/stop", &Controller::stop_request, this);
+      }
+
+
+      return true;
+    }
+  }
+
 };
 
 }
